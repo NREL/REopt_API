@@ -972,16 +972,7 @@ class ValidateNestedInput:
                         else:
                             updated_set[param] = real_values.get(param)
 
-                    if updated_set['elec_effic_full_load'] + updated_set['thermal_effic_full_load'] > 1:
-                        self.input_data_errors.append(
-                            'The sum of CHP elec_effic_full_load and thermal_effic_full_load parameters cannot be greater than 1')
-
-                    if updated_set['elec_effic_half_load'] + updated_set['thermal_effic_half_load'] > 1:
-                        self.input_data_errors.append(
-                            'The sum of CHP elec_effic_half_load and thermal_effic_half_load parameters cannot be greater than 1')
-
-                    if updated_set['min_allowable_kw'] > updated_set['max_kw']:
-                        self.input_data_errors.append('The CHP min_allowable_kw cannot be greater than its max_kw')
+                    self.chp_checks(updated_set, object_name_path, number)
 
                 # otherwise, check if the user intended to run CHP and supplied sufficient info
                 else:
@@ -1016,14 +1007,8 @@ class ValidateNestedInput:
                         for k,v in filtered_values.items():
                             if v is None:
                                 self.input_data_errors.append('CHP is missing a value for the {} parameter'.format(k))
-                        if filtered_values['elec_effic_full_load'] + filtered_values['thermal_effic_full_load'] > 1:
-                            self.input_data_errors.append('The sum of CHP elec_effic_full_load and thermal_effic_full_load parameters cannot be greater than 1')
 
-                        if filtered_values['elec_effic_half_load'] + filtered_values['thermal_effic_half_load'] > 1:
-                            self.input_data_errors.append('The sum of CHP elec_effic_half_load and thermal_effic_half_load parameters cannot be greater than 1')
-
-                        if filtered_values['min_allowable_kw'] or 0 > filtered_values['max_kw'] or 0:
-                            self.input_data_errors.append('The CHP min_allowable_kw cannot be greater than its max_kw')
+                        self.chp_checks(filtered_values, object_name_path, number)
 
                     # otherwise assume user did not want to run CHP and set it's max_kw to 0 to deactivate it
                     else:
@@ -1890,3 +1875,34 @@ class ValidateNestedInput:
             uuid.UUID(user_uuid)  # raises ValueError if not valid uuid
         except:
             self.input_data_errors.append(err_msg)
+
+    def chp_checks(self, params, object_name_path, number):
+        # Check that electric and thermal efficiency inputs don't sum to greater than 1
+        if params['elec_effic_full_load'] + params['thermal_effic_full_load'] > 1:
+            self.input_data_errors.append(
+                'The sum of CHP elec_effic_full_load and thermal_effic_full_load parameters cannot be greater than 1')
+
+        if params['elec_effic_half_load'] + params['thermal_effic_half_load'] > 1:
+            self.input_data_errors.append(
+                'The sum of CHP elec_effic_half_load and thermal_effic_half_load parameters cannot be greater than 1')
+
+        # Make sure min_allowable_kw is greater than max_kw, or else that will result in an optimization error
+        if params['min_allowable_kw'] > params['max_kw']:
+            self.input_data_errors.append('The CHP min_allowable_kw cannot be greater than its max_kw')
+
+        # Cost curve
+        if len(params['installed_cost_us_dollars_per_kw']) > 1:
+            if len(params['installed_cost_us_dollars_per_kw']) != len(
+                    params['tech_size_for_cost_curve']):
+                self.input_data_errors.append(
+                    'The number of installed cost points does not equal the number sizes corresponding to those costs')
+            ascending_sizes = True
+            for i, size in enumerate(params['tech_size_for_cost_curve'][1:], 1):
+                if size <= params['tech_size_for_cost_curve'][i - 1]:
+                    ascending_sizes = False
+            if not ascending_sizes:
+                self.input_data_errors.append(
+                    'The sizes corresponding to installed cost are not in ascending order')
+        else:
+            self.update_attribute_value(object_name_path, number, 'tech_size_for_cost_curve', [])
+
