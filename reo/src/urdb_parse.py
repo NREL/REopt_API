@@ -164,7 +164,7 @@ class UrdbParse:
     """
     days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
-    def __init__(self, big_number, elec_tariff, techs, bau_techs, gen=None):
+    def __init__(self, big_number, elec_tariff, techs, bau_techs):
         self.urdb_rate = elec_tariff.urdb_response
         self.year = elec_tariff.load_year
         self.time_steps_per_hour = elec_tariff.time_steps_per_hour
@@ -181,16 +181,6 @@ class UrdbParse:
         self.custom_tou_energy_rates = elec_tariff.tou_energy_rates
         self.add_tou_energy_rates_to_urdb_rate = elec_tariff.add_tou_energy_rates_to_urdb_rate
         self.override_urdb_rate_with_tou_energy_rates = elec_tariff.override_urdb_rate_with_tou_energy_rates
-        if gen is not None:
-            self.generator_fuel_slope = gen.fuel_slope
-            self.generator_fuel_intercept = gen.fuel_intercept
-            self.generator_fuel_avail = gen.fuel_avail
-            self.diesel_fuel_cost_us_dollars_per_gallon = gen.diesel_fuel_cost_us_dollars_per_gallon
-            self.diesel_cost_array = [self.diesel_fuel_cost_us_dollars_per_gallon] * self.ts_per_year
-        else:
-            self.generator_fuel_slope = 0.0
-            self.generator_fuel_intercept = 0.0
-            self.generator_fuel_avail = 0.0
 
         log.info("URDB parse with year: " + str(self.year) + " net_metering: " + str(self.net_metering))
 
