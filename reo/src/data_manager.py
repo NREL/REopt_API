@@ -731,8 +731,9 @@ class DataManager:
         discharge_efficiency.append(1.0)
 
         return tech_to_location, derate, \
-               om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, production_factor, charge_efficiency, \
-               discharge_efficiency, electric_derate
+               om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, om_cost_us_dollars_per_hr_per_kw_rated, \
+               production_factor, charge_efficiency, discharge_efficiency, \
+               electric_derate, chp_thermal_prod_factor
 
     def _get_REopt_techs(self, techs):
         reopt_techs = list()
@@ -779,7 +780,6 @@ class DataManager:
             techs_in_class.append(class_list)
 
         return tech_class_min_size, techs_in_class
-
 
     def _get_REopt_tech_max_sizes_min_turn_down(self, techs, bau=False):
         max_sizes = list()
@@ -990,7 +990,6 @@ class DataManager:
             storage_min_power, storage_max_power, storage_min_energy, \
             storage_max_energy, storage_decay_rate
 
-
     def finalize(self):
         """
         necessary for writing out parameters that depend on which Techs are defined
@@ -1004,12 +1003,14 @@ class DataManager:
         tech_class_min_size, techs_in_class = self._get_REopt_tech_classes(self.available_techs, False)
         tech_class_min_size_bau, techs_in_class_bau = self._get_REopt_tech_classes(self.bau_techs, True)
 
-        tech_to_location, derate, om_cost_us_dollars_per_kw,\
-            om_cost_us_dollars_per_kwh, production_factor, charge_efficiency,  \
-            discharge_efficiency, electric_derate = self._get_REopt_array_tech_load(self.available_techs)
-        tech_to_location_bau, derate_bau, \
-            om_dollars_per_kw_bau, om_dollars_per_kwh_bau, production_factor_bau, charge_efficiency_bau,  \
-            discharge_efficiency_bau, electric_derate_bau = self._get_REopt_array_tech_load(self.bau_techs)
+        tech_to_location, derate, om_cost_us_dollars_per_kw, \
+               om_cost_us_dollars_per_kwh, om_cost_us_dollars_per_hr_per_kw_rated, production_factor, \
+               charge_efficiency, discharge_efficiency, \
+               electric_derate, chp_thermal_prod_factor = self._get_REopt_array_tech_load(self.available_techs)
+        tech_to_location_bau, derate_bau, om_cost_us_dollars_per_kw_bau, \
+               om_cost_us_dollars_per_kwh_bau, om_cost_us_dollars_per_hr_per_kw_rated_bau, production_factor_bau, \
+               charge_efficiency_bau, discharge_efficiency_bau, \
+               electric_derate_bau, chp_thermal_prod_factor_bau  = self._get_REopt_array_tech_load(self.bau_techs)
 
         max_sizes, min_turn_down, max_sizes_location, min_allowable_size = self._get_REopt_tech_max_sizes_min_turn_down(self.available_techs)
         max_sizes_bau, min_turn_down_bau, max_sizes_location_bau, min_allowable_size_bau = self._get_REopt_tech_max_sizes_min_turn_down(self.bau_techs, bau=True)
