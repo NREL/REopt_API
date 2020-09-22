@@ -523,6 +523,13 @@ class LoadProfile(BuiltInProfile):
             self.bau_load_list = copy.copy(self.load_list)
 
         else:  # building type and (annual_kwh OR monthly_totals_energy) defined by user
+            if len(doe_reference_name_list) == 0:
+                message = ("Invalid LoadProfile inputs. At a minimum, please supply a loads_kw or doe_reference_name.")
+                log.error("Scenario.py raising error: " + message)
+                lp_error = LoadProfileError(task='reo.src.load_profile.py', run_uuid=dfm.run_id, user_uuid=dfm.user_id, message=message)
+                lp_error.save_to_db()
+                raise lp_error
+
             combine_loadlist = []
             for i in range(len(doe_reference_name_list)):
                 percent_share = self.percent_share_list[i]
@@ -530,6 +537,7 @@ class LoadProfile(BuiltInProfile):
                 if self.annual_kwh_list is not None:
                     kwargs["annual_energy"] = self.annual_kwh_list[i]
                 kwargs['monthly_totals_energy'] = kwargs.get('monthly_totals_kwh')
+
                 super(LoadProfile, self).__init__(**kwargs)
                 load_list = [val for val in self.built_in_profile for _ in range(self.time_steps_per_hour)]
                 # appending the weighted load at every timestep, for making hybrid loadlist
