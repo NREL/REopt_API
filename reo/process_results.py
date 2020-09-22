@@ -1214,7 +1214,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
         #simple payback needs all data to be computed so running that calculation here
         simple_payback, irr = calculate_simple_payback_and_irr(data)  
         data['outputs']['Scenario']['Site']['Financial']['simple_payback_years'] = simple_payback
-        data['outputs']['Scenario']['Site']['Financial']['irr_pct'] = irr
+        data['outputs']['Scenario']['Site']['Financial']['irr_pct'] = irr if not np.isnan(irr or np.nan) else None
         data = EmissionsCalculator.add_to_data(data)
 
         pv_watts_station_check = data['outputs']['Scenario']['Site']['PV'][0].get('station_distance_km') or 0

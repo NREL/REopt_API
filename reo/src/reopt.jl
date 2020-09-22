@@ -107,7 +107,7 @@ function add_export_expressions(m, p)
 			) for ts in p.TimeStep )
 		)
 		m[:CurtailedElecWIND] = @expression(m,
-			p.TimeStepScaling * sum(m[:dvProductionToGrid][t,u,ts] 
+			p.TimeStepScaling * sum(m[:dvProductionToGrid][t,u,ts]
 				for t in m[:WindTechs], u in p.CurtailmentTiers, ts in p.TimeStep)
 		)
 		m[:ExportedElecWIND] = @expression(m,
@@ -360,7 +360,7 @@ function add_storage_op_constraints(m, p)
 	)
 	# Constraint (4e): Electrical production sent to storage or grid must be less than technology's rated production - no grid
 	@constraint(m, ElecTechProductionFlowNoGridCon[b in p.ElecStorage, t in p.ElectricTechs, ts in p.TimeStepsWithoutGrid],
-		m[:dvProductionToStorage][b,t,ts] + sum(m[:dvProductionToGrid][t,u,ts] for u in p.CurtailmentTiers)  <= 
+		m[:dvProductionToStorage][b,t,ts] + sum(m[:dvProductionToGrid][t,u,ts] for u in p.CurtailmentTiers)  <=
 		p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts]
 	)
 	# Constraint (4f)-1: (Hot) Thermal production sent to storage or grid must be less than technology's rated production
@@ -1280,7 +1280,7 @@ function add_pv_results(m, p, r::Dict)
 			PVtoCurtail = @expression(m, [ts in p.TimeStep],
 					sum(m[:dvProductionToGrid][t,u,ts] for t in PVtechs_in_class, u in p.CurtailmentTiers))
     	    r[string(PVclass, "toCurtail")] = round.(value.(PVtoCurtail), digits=3)
-			
+
 			PVtoGrid = @expression(m, [ts in p.TimeStep],
 					sum(m[:dvProductionToGrid][t,u,ts] for t in PVtechs_in_class, u in p.SalesTiersByTech[t]) - PVtoCurtail[ts])
     	    r[string(PVclass, "toGrid")] = round.(value.(PVtoGrid), digits=3)

@@ -64,22 +64,26 @@ class REoptArgs:
         self.demand_lookback_range = 0
         self.demand_min = 0
 
- 
+
         self.energy_costs = []
         self.energy_costs_bau = []
         self.energy_tiers_num = 1
         self.energy_max_in_tiers = 1 * [big_number]
-        self.energy_avail = []
-        self.energy_avail_bau = []
-        self.energy_burn_rate = []
-        self.energy_burn_rate_bau = []
-        self.energy_burn_intercept = []
-        self.energy_burn_intercept_bau = []
 
+        self.energy_costs = []
+        self.energy_costs_bau = []
         self.fuel_costs = []
         self.fuel_costs_bau = []
         self.grid_export_rates = []
         self.grid_export_rates_bau = []
+        self.fuel_burn_rate = []
+        self.fuel_burn_rate_bau = []
+        self.fuel_burn_intercept = []
+        self.fuel_burn_intercept_bau = []
+        self.fuel_burn_rate = []
+        self.fuel_burn_rate_bau = []
+        self.fuel_burn_intercept = []
+        self.fuel_burn_intercept_bau = []
         self.fuel_limit = []
         self.fuel_limit_bau = []
 
@@ -180,14 +184,10 @@ class RateData:
 class UrdbParse:
     """
     Sub-function of DataManager.
-    Makes all REopt args for dat files in Inputs/Utility directory
-
-    Note: (diesel) generator parameters for mosel are defined here because they depend on number of energy tiers in
-    utility rate.
     """
     days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
-    def __init__(self, big_number, elec_tariff, fuel_tariff, techs, bau_techs, loads, gen=None, chp=None,
+    def __init__(self, big_number, elec_tariff, fuel_tariff, techs, bau_techs, chp=None,
                  boiler=None, electric_chiller=None, absorption_chiller=None):
 
         self.urdb_rate = elec_tariff.urdb_response
@@ -203,22 +203,11 @@ class UrdbParse:
         self.reopt_args = REoptArgs(big_number)
         self.techs = techs
         self.bau_techs = bau_techs
-        self.loads = loads
         self.chp_standby_rate_us_dollars_per_kw_per_month = elec_tariff.chp_standby_rate_us_dollars_per_kw_per_month
         self.chp_does_not_reduce_demand_charges = elec_tariff.chp_does_not_reduce_demand_charges
         self.custom_tou_energy_rates = elec_tariff.tou_energy_rates
         self.add_tou_energy_rates_to_urdb_rate = elec_tariff.add_tou_energy_rates_to_urdb_rate
         self.override_urdb_rate_with_tou_energy_rates = elec_tariff.override_urdb_rate_with_tou_energy_rates
-        if gen is not None:
-            self.generator_fuel_slope = gen.fuel_slope
-            self.generator_fuel_intercept = gen.fuel_intercept
-            self.generator_fuel_avail = gen.fuel_avail
-            self.diesel_fuel_cost_us_dollars_per_gallon = gen.diesel_fuel_cost_us_dollars_per_gallon
-            self.diesel_cost_array = [self.diesel_fuel_cost_us_dollars_per_gallon] * self.ts_per_year
-        else:
-            self.generator_fuel_slope = 0.0
-            self.generator_fuel_intercept = 0.0
-            self.generator_fuel_avail = 0.0
 
         # Assign monthly fuel rates for boiler and chp and then convert to timestep intervals
         self.boiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu = fuel_tariff.monthly_rates('boiler')
@@ -509,22 +498,20 @@ class UrdbParse:
 
         negative_energy_costs = [cost * -0.999 for cost in
                                  energy_costs[tier_with_lowest_energy_cost*self.ts_per_year:(tier_with_lowest_energy_cost+1)*self.ts_per_year]]
-        positive_energy_costs = [cost * 0.999 for cost in
-                                 energy_costs[tier_with_lowest_energy_cost*self.ts_per_year:(tier_with_lowest_energy_cost+1)*self.ts_per_year]]
 
         # wholesale and excess rates can be either scalar (floats or ints) or lists of floats
         if len(self.wholesale_rate) == 1:
             negative_wholesale_rate_costs = self.ts_per_year * [-1.0 * self.wholesale_rate[0]]
-            wholesale_rate_costs = self.ts_per_year * [1.0 * self.wholesale_rate[0]]
         else:
             negative_wholesale_rate_costs = [-1.0 * x for x in self.wholesale_rate]
-            wholesale_rate_costs = [1.0 * x for x in self.wholesale_rate]
         if len(self.excess_rate) == 1:
             negative_excess_rate_costs = self.ts_per_year * [-1.0 * self.excess_rate[0]]
-            excess_rate_costs = self.ts_per_year * [1.0 * self.excess_rate[0]]
         else:
             negative_excess_rate_costs = [-1.0 * x for x in self.excess_rate]
-            excess_rate_costs = [1.0 * x for x in self.excess_rate]
+
+        if sum(negative_wholesale_rate_costs) == 0:
+            # no export to grid benefit, so force excess energy into curtailment
+            negative_wholesale_rate_costs = [1000.0 for x in self.wholesale_rate]
 
         # FuelCost = array(FuelType, TimeStep) is the cost of electricity from each Tech, so 0's for PV, PVNM
         fuel_costs = list()
@@ -557,25 +544,37 @@ class UrdbParse:
         # ExportRate is the value of exporting a Tech to the grid under a certain Load bin
         # If there is net metering and no wholesale rate, appears to be zeros for all but 'PV' at '1W'
         grid_export_rates = list()
-        rates_by_tech = list()
+        rates_by_tech = list()  # SalesTiersByTech, list of lists, becomes indexed on techs in julia
+        num_sales_tiers = 0
+        techs_by_rate = []  # TechsBySalesTier, list of lists, with inner lists containing strings for techs
+                            # corresponding to rate tiers (outer index)
+        """
+        Sales tiers:
+        1. NEM
+        2. Wholesale
+        3. Curtailment
+        TODO is it an issue that techs cannot take advantave of both NEM and Wholsale rates? 
+            Do users expect this behavior?
+        """
         if len(techs) > 0:
             num_sales_tiers = 3
             techs_by_rate = [list(), list(), list()]
             grid_export_rates = operator.add(grid_export_rates, negative_energy_costs)
             grid_export_rates = operator.add(grid_export_rates, negative_wholesale_rate_costs)
             grid_export_rates = operator.add(grid_export_rates, negative_excess_rate_costs)
-        else: 
-            num_sales_tiers = 0
-            techs_by_rate = []
-        for tech in techs:
-            if self.net_metering and not tech.lower().endswith('nm'):
-                rates_by_tech.append([1,3])
-                techs_by_rate[0].append(tech.upper())
-                techs_by_rate[2].append(tech.upper())
-            else:     
-                rates_by_tech.append([2,3])
-                techs_by_rate[1].append(tech.upper())
-                techs_by_rate[2].append(tech.upper())
+
+            for tech in techs:
+                if self.net_metering and not tech.lower().endswith('nm'):
+                    # techs that end with 'nm' are the option to install capacity beyond the net metering capacity limit
+                    # these techs can access NEM and curtailment rates
+                    rates_by_tech.append([1, 3])  # 1, 3 correspond to the 0, 2 entries in techs_by_rate
+                    techs_by_rate[0].append(tech.upper())
+                    techs_by_rate[2].append(tech.upper())
+                else:
+                    # these techs can access wholesale and curtailment rates
+                    rates_by_tech.append([2, 3])  # 2, 3 correspond to the 1, 2 entries in techs_by_rate
+                    techs_by_rate[1].append(tech.upper())
+                    techs_by_rate[2].append(tech.upper())
 
         # FuelBurnSlope = array(Tech)
         energy_burn_rate = []
@@ -643,16 +642,16 @@ class UrdbParse:
     def prepare_demand_lookback(self, current_rate):
         """
         URDB lookback fields:
-            lookbackMonths	
+            lookbackMonths
             Type: array
-            Array of 12 booleans, true or false, indicating months in which lookbackPercent applies. 
+            Array of 12 booleans, true or false, indicating months in which lookbackPercent applies.
                 If any of these is true, lookbackRange should be zero.
-            
-            lookbackPercent	
+
+            lookbackPercent
             Type: decimal
             Lookback percentage. Applies to either lookbackMonths with value=1, or a lookbackRange.
-            
-            lookbackRange	
+
+            lookbackRange
             Type: integer
             Number of months for which lookbackPercent applies. If not 0, lookbackMonths values should all be 0.
         """

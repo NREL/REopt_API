@@ -38,6 +38,7 @@ import logging
 log = logging.getLogger(__name__)
 import geopandas as gpd
 from shapely import geometry as g
+from reo.exceptions import LoadProfileError
 
 
 default_annual_electric_loads = {
@@ -514,8 +515,8 @@ class LoadProfile(BuiltInProfile):
         self.year  = kwargs.get('year')
         self.percent_share_list = kwargs.get("percent_share")
         # "pop"ing the following two values to replace them before calling BuiltInProfile (super class)
-        doe_reference_name_list = kwargs.pop("doe_reference_name", None)
-        self.annual_kwh_list = kwargs.pop("annual_kwh", None)
+        doe_reference_name_list = kwargs.pop("doe_reference_name", [])
+        self.annual_kwh_list = kwargs.pop("annual_kwh", [])
 
         if user_profile:
             self.load_list = user_profile
@@ -617,7 +618,7 @@ class LoadProfile(BuiltInProfile):
                                                                    existing_pv_kw_list, gen_existing_kw, gen_min_turn_down,
                                                                    fuel_avail_before_outage, fuel_slope, fuel_intercept,
                                                                    self.time_steps_per_hour)
-            
+
             self.bau_load_list[outage_start_hour:outage_start_hour + sustain_hours] = \
                 critical_loads_kw[outage_start_hour:outage_start_hour + sustain_hours]
 
