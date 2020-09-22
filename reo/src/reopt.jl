@@ -1018,7 +1018,7 @@ function add_wind_results(m, p, r::Dict)
 
 	@expression(m, WINDtoCurtail[ts in p.TimeStep],
 				sum(m[:dvProductionToGrid][t,u,ts] for t in m[:WindTechs], u in p.CurtailmentTiers))
-	
+
 	r["WINDtoCurtail"] = round.(value.(WINDtoCurtail), digits=3)
 
 	@expression(m, WINDtoGrid[ts in p.TimeStep],
