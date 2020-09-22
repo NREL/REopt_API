@@ -365,7 +365,7 @@ def generate_proforma(scenariomodel, output_file_path):
 
     current_row += 1
     ws['A{}'.format(current_row)] = "Present value of annual Business as Usual export credits ($/year)"
-    ws['B{}'.format(current_row)] = -1 * electric_tariff.year_one_export_benefit_bau_us_dollars or 0
+    ws['B{}'.format(current_row)] = -1 * (electric_tariff.year_one_export_benefit_bau_us_dollars or 0)
     year_one_bau_credits_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
@@ -377,7 +377,7 @@ def generate_proforma(scenariomodel, output_file_path):
 
     current_row += 1
     ws['A{}'.format(current_row)] = "Present value of annual Optimal export credits ($/year)"
-    ws['B{}'.format(current_row)] = -1 * electric_tariff.year_one_export_benefit_us_dollars or 0
+    ws['B{}'.format(current_row)] = -1 * (electric_tariff.year_one_export_benefit_us_dollars or 0)
     year_one_credits_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 

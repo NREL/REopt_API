@@ -96,7 +96,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
     try:
         inputs_dict = data['inputs']['Scenario']
-        dfm = DataManager(run_id=run_uuid, n_timesteps=int(inputs_dict['time_steps_per_hour'] * 8760))
+        dfm = DataManager(run_id=run_uuid, user_id=inputs_dict.get('user_uuid'), n_timesteps=int(inputs_dict['time_steps_per_hour'] * 8760))
 
         # storage is always made, even if max size is zero (due to REopt's expected inputs)
         storage = Storage(dfm=dfm, **inputs_dict["Site"]["Storage"])

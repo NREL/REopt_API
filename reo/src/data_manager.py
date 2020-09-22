@@ -50,7 +50,7 @@ class DataManager:
     Creates input dicts for reopt.jl and manages data transfer between Celery tasks
     """
 
-    def __init__(self, run_id, n_timesteps=8760):
+    def __init__(self, run_id, user_id=None, n_timesteps=8760):
         self.pvs = []
         self.pvnms = []
         self.pv1 = None
@@ -86,12 +86,14 @@ class DataManager:
                                 'elecchl', 'absorpchl']  # order is critical for REopt! Note these are passed to reopt.jl as uppercase
         self.available_tech_classes = ['PV1', 'WIND', 'GENERATOR', 'CHP', 'BOILER',
                                        'ELECCHL', 'ABSORPCHL']  # this is a REopt 'class', not a python class
+        # TODO check if chpbeta is using these available_loads below
         self.available_loads = ['retail', 'wholesale', 'export', 'storage', 'boiler', 'tes']  # order is critical for REopt!
         self.bau_techs = []
         self.NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
         self.fuel_burning_techs = ['GENERATOR', 'CHP']
 
         self.run_id = run_id
+        self.user_id = user_id
         self.n_timesteps = n_timesteps
         self.steplength = 8760.0 / self.n_timesteps
         self.pwf_e = 0  # used in results.py -> outage_costs.py to escalate & discount avoided outage costs
@@ -249,7 +251,6 @@ class DataManager:
     def _get_REopt_production_incentives(self, techs):
         sf = self.site.financial
         pwf_prod_incent = list()
-        prod_incent_rate = list()
         max_prod_incent = list()
         max_size_for_prod_incent = list()
 
@@ -277,10 +278,6 @@ class DataManager:
                     max_size_for_prod_incent.append(
                         eval('self.' + tech + '.incentives.production_based.max_kw')
                     )
-                    for load in self.available_loads:
-                        prod_incent_rate.append(
-                            eval('self.' + tech + '.incentives.production_based.us_dollars_per_kw')
-                        )
 
                     production_incentive_rate.append(
                         eval('self.' + tech + '.incentives.production_based.us_dollars_per_kw')
@@ -292,10 +289,7 @@ class DataManager:
                     max_size_for_prod_incent.append(0.0)
                     production_incentive_rate.append(0.0)
 
-                    for load in self.available_loads:
-                        prod_incent_rate.append(0.0)
-
-        return pwf_prod_incent, prod_incent_rate, max_prod_incent, max_size_for_prod_incent, production_incentive_rate
+        return pwf_prod_incent, max_prod_incent, max_size_for_prod_incent, production_incentive_rate
 
     def _get_REopt_cost_curve(self, techs):
         regions = ['utility', 'state', 'federal', 'combined']
@@ -730,6 +724,8 @@ class DataManager:
         discharge_efficiency.append(1.0)
         discharge_efficiency.append(1.0)
 
+        # In BAU case, storage.dat must be filled out for REopt initializations, but max size is set to zero
+
         return tech_to_location, derate, \
                om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, om_cost_us_dollars_per_hr_per_kw_rated, \
                production_factor, charge_efficiency, discharge_efficiency, \
@@ -738,10 +734,8 @@ class DataManager:
     def _get_REopt_techs(self, techs):
         reopt_techs = list()
         for tech in techs:
-
             if eval('self.' + tech) is not None:
-
-                reopt_techs.append(tech.upper() if tech not in ['util'] else tech.upper() + '1')
+                reopt_techs.append(tech.upper())
 
         return reopt_techs
 
@@ -776,10 +770,11 @@ class DataManager:
             for tech in techs:
                 if eval('self.' + tech) is not None:
                     if eval('self.' + tech + '.reopt_class').upper() == tc.upper():
-                        class_list.append(tech.upper() if tech is not 'util' else tech.upper() + '1')
+                        class_list.append(tech.upper())
             techs_in_class.append(class_list)
 
         return tech_class_min_size, techs_in_class
+
 
     def _get_REopt_tech_max_sizes_min_turn_down(self, techs, bau=False):
         max_sizes = list()
@@ -904,6 +899,32 @@ class DataManager:
                 time_steps_without_grid.append(i+1)
         return time_steps_with_grid, time_steps_without_grid
 
+
+    def _get_fuel_burning_tech_params(self, techs):
+        """
+        In the Julia model we have:
+         - FuelCost = AxisArray(d["FuelCost"], d["FuelType"])
+         - FuelLimit: AxisArray(d["FuelLimit"], d["FuelType"])
+         - FuelType: Array{String,1}
+         - TechsByFuelType: AxisArray(d["TechsByFuelType"], d["FuelType"])
+        :return: fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type (all lists)
+        """
+        fuel_costs = list()
+        fuel_limit = list()
+        fuel_types = list()
+        techs_by_fuel_type = [list()]
+        fuel_burn_rate = list()
+        fuel_burn_intercept = list()
+
+        if "GENERATOR" in techs:
+            fuel_costs = [self.generator.diesel_fuel_cost_us_dollars_per_gallon]
+            fuel_limit = [self.generator.fuel_avail]
+            fuel_types = ["DIESEL"]
+            techs_by_fuel_type = [['GENERATOR']]
+            fuel_burn_rate.append(self.generator.fuel_slope)
+            fuel_burn_intercept.append(self.generator.fuel_intercept)
+        return fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type, fuel_burn_rate, fuel_burn_intercept
+
     def _get_REopt_storage_techs_and_params(self):
         storage_techs = ['Elec']
         storage_power_cost = list()
@@ -1004,29 +1025,32 @@ class DataManager:
         tech_class_min_size_bau, techs_in_class_bau = self._get_REopt_tech_classes(self.bau_techs, True)
 
         tech_to_location, derate, om_cost_us_dollars_per_kw, \
-               om_cost_us_dollars_per_kwh, om_cost_us_dollars_per_hr_per_kw_rated, production_factor, \
-               charge_efficiency, discharge_efficiency, \
-               electric_derate, chp_thermal_prod_factor = self._get_REopt_array_tech_load(self.available_techs)
+        om_cost_us_dollars_per_kwh, om_cost_us_dollars_per_hr_per_kw_rated, production_factor, \
+        charge_efficiency, discharge_efficiency, \
+        electric_derate, chp_thermal_prod_factor = self._get_REopt_array_tech_load(self.available_techs)
         tech_to_location_bau, derate_bau, om_cost_us_dollars_per_kw_bau, \
-               om_cost_us_dollars_per_kwh_bau, om_cost_us_dollars_per_hr_per_kw_rated_bau, production_factor_bau, \
-               charge_efficiency_bau, discharge_efficiency_bau, \
-               electric_derate_bau, chp_thermal_prod_factor_bau  = self._get_REopt_array_tech_load(self.bau_techs)
+        om_cost_us_dollars_per_kwh_bau, om_cost_us_dollars_per_hr_per_kw_rated_bau, production_factor_bau, \
+        charge_efficiency_bau, discharge_efficiency_bau, \
+        electric_derate_bau, chp_thermal_prod_factor_bau = self._get_REopt_array_tech_load(self.bau_techs)
 
-        max_sizes, min_turn_down, max_sizes_location, min_allowable_size = self._get_REopt_tech_max_sizes_min_turn_down(self.available_techs)
-        max_sizes_bau, min_turn_down_bau, max_sizes_location_bau, min_allowable_size_bau = self._get_REopt_tech_max_sizes_min_turn_down(self.bau_techs, bau=True)
+        max_sizes, min_turn_down, max_sizes_location, min_allowable_size = self._get_REopt_tech_max_sizes_min_turn_down(
+            self.available_techs)
+        max_sizes_bau, min_turn_down_bau, max_sizes_location_bau, min_allowable_size_bau = self._get_REopt_tech_max_sizes_min_turn_down(
+            self.bau_techs, bau=True)
 
         levelization_factor, pwf_e, pwf_om, two_party_factor, \
-            pwf_boiler_fuel, pwf_chp_fuel, pwf_fuel_by_tech = self._get_REopt_pwfs(self.available_techs)
+        pwf_boiler_fuel, pwf_chp_fuel, pwf_fuel_by_tech = self._get_REopt_pwfs(self.available_techs)
         levelization_factor_bau, pwf_e_bau, pwf_om_bau, two_party_factor_bau, \
-            pwf_boiler_fuel_bau, pwf_chp_fuel_bau, pwf_fuel_by_tech_bau = self._get_REopt_pwfs(self.bau_techs)
+        pwf_boiler_fuel_bau, pwf_chp_fuel_bau, pwf_fuel_by_tech_bau = self._get_REopt_pwfs(self.bau_techs)
 
-        pwf_prod_incent, prod_incent_rate, max_prod_incent, max_size_for_prod_incent, production_incentive_rate  \
+        pwf_prod_incent, prod_incent_rate, max_prod_incent, max_size_for_prod_incent, production_incentive_rate \
             = self._get_REopt_production_incentives(self.available_techs)
         pwf_prod_incent_bau, prod_incent_rate_bau, max_prod_incent_bau, max_size_for_prod_incent_bau, production_incentive_rate_bau \
             = self._get_REopt_production_incentives(self.bau_techs)
 
         cap_cost_slope, cap_cost_x, cap_cost_yint, n_segments = self._get_REopt_cost_curve(self.available_techs)
-        cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau, n_segments_bau = self._get_REopt_cost_curve(self.bau_techs)
+        cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau, n_segments_bau = self._get_REopt_cost_curve(
+            self.bau_techs)
         n_segments_list = [x for x in range(n_segments)]
         n_segments_list_bau = [x for x in range(n_segments_bau)]
 
@@ -1038,7 +1062,7 @@ class DataManager:
         parser = UrdbParse(big_number=big_number, elec_tariff=self.elec_tariff, fuel_tariff=self.fuel_tariff,
                           techs=get_techs_not_none(self.available_techs, self),
                            bau_techs=get_techs_not_none(self.bau_techs, self),
-                           loads=self.available_loads, gen=self.generator, chp=eval('self.chp'),
+                           chp=eval('self.chp'),
                            boiler=eval('self.boiler'), electric_chiller=eval('self.elecchl'),
                            absorption_chiller=eval('self.absorpchl'))
         tariff_args = parser.parse_rate(self.elec_tariff.utility_name, self.elec_tariff.rate_name)
@@ -1059,8 +1083,6 @@ class DataManager:
 
 
         subdivisions = ['CapCost']
-        fuel_type = ['DIESEL'] if 'GENERATOR' in reopt_techs else []
-        fuel_type_bau = ['DIESEL'] if 'GENERATOR' in reopt_techs_bau else []
 
         subdivisions_by_tech = self._get_tech_subsets(reopt_techs)
         subdivisions_by_tech_bau = self._get_tech_subsets(reopt_techs_bau)
@@ -1074,6 +1096,12 @@ class DataManager:
                 seg_by_tech_subdivision.append(n_segments)
             for  _ in reopt_techs_bau:
                 seg_by_tech_subdivision_bau.append(n_segments_bau)
+
+        # TODO rectify this redundancy with new method for fuel burn
+        fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type, fuel_burn_rate, fuel_burn_intercept \
+            = self._get_fuel_burning_tech_params(reopt_techs)
+        fuel_costs_bau, fuel_limit_bau, fuel_types_bau, techs_by_fuel_type_bau, fuel_burn_rate_bau, \
+            fuel_burn_intercept_bau =  self._get_fuel_burning_tech_params(reopt_techs_bau)
 
         # TODO: switch back to cap_cost_x input since we are just repeating its values?
         segment_min_size = []
@@ -1221,7 +1249,6 @@ class DataManager:
             'MaxDemandInTier': tariff_args.demand_max_in_tiers,
             'MaxUsageInTier': tariff_args.energy_max_in_tiers,
             'MaxDemandMonthsInTier': tariff_args.demand_month_max_in_tiers,
-            'FuelAvail': tariff_args.energy_avail,
             'FixedMonthlyCharge': tariff_args.fixed_monthly_charge,
             'AnnualMinCharge': tariff_args.annual_min_charge,
             'MonthlyMinCharge': tariff_args.min_monthly_charge,
@@ -1347,7 +1374,6 @@ class DataManager:
             'MaxDemandInTier': tariff_args.demand_max_in_tiers,
             'MaxUsageInTier': tariff_args.energy_max_in_tiers,
             'MaxDemandMonthsInTier': tariff_args.demand_month_max_in_tiers,
-            'FuelAvail': tariff_args.energy_avail_bau,
             'FixedMonthlyCharge': tariff_args.fixed_monthly_charge,
             'AnnualMinCharge': tariff_args.annual_min_charge,
             'MonthlyMinCharge': tariff_args.min_monthly_charge,
