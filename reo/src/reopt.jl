@@ -1230,11 +1230,15 @@ function add_wind_results(m, p, r::Dict)
 	@expression(m, WINDtoBatt[ts in p.TimeStep],
 	            sum(sum(m[:dvProductionToStorage][b, t, ts] for t in m[:WindTechs]) for b in p.ElecStorage))
 	r["WINDtoBatt"] = round.(value.(WINDtoBatt), digits=3)
+
 	@expression(m, WINDtoCurtail[ts in p.TimeStep],
 				sum(m[:dvProductionToGrid][t,u,ts] for t in m[:WindTechs], u in p.CurtailmentTiers))
+
 	r["WINDtoCurtail"] = round.(value.(WINDtoCurtail), digits=3)
+
 	@expression(m, WINDtoGrid[ts in p.TimeStep],
 				sum(m[:dvProductionToGrid][t,u,ts] for t in m[:WindTechs], u in p.SalesTiersByTech[t]) - WINDtoCurtail[ts])
+
 	r["WINDtoGrid"] = round.(value.(WINDtoGrid), digits=3)
 
 	@expression(m, WINDtoLoad[ts in p.TimeStep],
