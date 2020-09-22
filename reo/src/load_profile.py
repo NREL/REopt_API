@@ -512,7 +512,7 @@ class LoadProfile(BuiltInProfile):
         self.n_timesteps = self.time_steps_per_hour * 8760
         self.doe_reference_name = kwargs.get('doe_reference_name')
         self.nearest_city = None
-        self.year  = kwargs.get('year')
+        self.year = kwargs.get('year')
         self.percent_share_list = kwargs.get("percent_share")
         # "pop"ing the following two values to replace them before calling BuiltInProfile (super class)
         doe_reference_name_list = kwargs.pop("doe_reference_name", [])
@@ -531,19 +531,33 @@ class LoadProfile(BuiltInProfile):
                 lp_error.save_to_db()
                 raise lp_error
 
-            combine_loadlist = []
-            for i in range(len(doe_reference_name_list)):
-                percent_share = self.percent_share_list[i]
-                kwargs["doe_reference_name"] = doe_reference_name_list[i]
-                if self.annual_kwh_list is not None:
-                    kwargs["annual_energy"] = self.annual_kwh_list[i]
-                kwargs['monthly_totals_energy'] = kwargs.get('monthly_totals_kwh')
-
+            if len(doe_reference_name_list) == 1:
+                kwargs["doe_reference_name"] = doe_reference_name_list[0]
+                if len(self.annual_kwh_list) == 1:
+                    kwargs["annual_kwh"] = self.annual_kwh_list[0]
                 super(LoadProfile, self).__init__(**kwargs)
-                load_list = [val for val in self.built_in_profile for _ in range(self.time_steps_per_hour)]
-                # appending the weighted load at every timestep, for making hybrid loadlist
-                combine_loadlist.append([load * (percent_share / 100.0) for load in load_list])  # list of lists
-            self.unmodified_load_list = list(np.sum(np.array(combine_loadlist), axis=0))
+
+                self.load_list = self.built_in_profile
+                self.load_list_original = copy.deepcopy(self.load_list)
+
+                self.load_list = [val for val in self.load_list_original for _ in
+                                           range(self.time_steps_per_hour)]
+                self.unmodified_load_list = copy.copy(self.load_list)
+                self.bau_load_list = copy.copy(self.load_list)
+
+            else:
+                combine_loadlist = []
+                for i in range(len(doe_reference_name_list)):
+                    percent_share = self.percent_share_list[i]
+                    kwargs["doe_reference_name"] = doe_reference_name_list[i]
+                    if self.annual_kwh_list is not None:
+                        kwargs["annual_energy"] = self.annual_kwh_list[i]
+                    kwargs['monthly_totals_energy'] = kwargs.get('monthly_totals_kwh')
+                    super(LoadProfile, self).__init__(**kwargs)
+                    load_list = [val for val in self.built_in_profile for _ in range(self.time_steps_per_hour)]
+                    # appending the weighted load at every timestep, for making hybrid loadlist
+                    combine_loadlist.append([load * (percent_share / 100.0) for load in load_list])  # list of lists
+                self.unmodified_load_list = list(np.sum(np.array(combine_loadlist), axis=0))
 
         if loads_kw_is_net:
             self.load_list, existing_pv_kw_list = self._account_for_existing_pv(pvs, analysis_years)
