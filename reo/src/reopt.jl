@@ -723,6 +723,50 @@ function add_cost_function(m, p)
 end
 
 
+function add_re_and_emissions_constraints(m,p) 
+	## Annual renewable electricity targets
+	# Only PV and Wind generation count as RE (CHP does not)
+	m[:AnnualREkWh_YesExportRECredit] = @expression(m,
+		sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] for t in p.RETechs, ts in p.TimeStep) #total RE generation
+		- sum(m[:dvProductionToStorage][b,t,ts]*(1-p.ChargeEfficiency[t,b]*p.DischargeEfficiency[b]) for t in p.RETechs, b in p.ElecStorage, ts in p.TimeStep) #minus battery efficiency losses. might delete
+		- sum(m[:dvProductionToGrid][t,u,ts] for t in p.RETechs, u in p.CurtailmentTiers, ts in p.TimeStep )) # minus curtailment. confirm CHP curtailment. 
+	if p.REAccountingMethod == 1 # yes RE "credit" for exported RE
+		m[:AnnualREkWh] = @expression(m, m[:AnnualREkWh_YesExportRECredit])
+	elseif p.REAccountingMethod == 0 # no RE "credit" for exported RE
+		m[:AnnualREkWh] = @expression(m, m[:AnnualREkWh_YesExportRECredit]
+			- sum(m[:dvProductionToGrid][t,u,ts] for t in p.RETechs, u in p.SalesTiersByTech[t], ts in p.TimeStep if !(u in p.CurtailmentTiers))) # minus exported RE. 
+		# if battery ends up being able to discharge to grid, need to make sure only RE that is being consumed onsite are counted so battery doesn't become a back door for RE to grid. 
+	end
+	#@constraint(m, MinRECon, m[:AnnualREkWh]) >= p.MinAnnualREPct*p.AnnualElecLoad)
+	#@constraint(m, MaxRECon, m[:AnnualREkWh]) <= p.MaxAnnualREPct*p.AnnualElecLoad)
+
+	### Year 1 Emissions Profile and Reduction Targets
+	# Scope 1: Direct emissions from onsite generation 
+	m[:EmissionsProfile_Scope1_LbsCO2e] = @expression(m, [t in p.Tech, ts in p.TimeStep],  
+		m[:dvFuelUsage][t,ts]*p.TechEmissionsFactors[t]) 
+	# Scope 2: Indirect emissions from grid purchases
+	m[:EmissionsProfile_Scope2_LbsCO2e] = @expression(m,[ts in p.TimeStep], 
+		sum(m[:dvGridPurchase][u,ts]*p.GridEmissionsFactor[ts] for u in p.PricingTier)) # emissions from grid purchases
+	# Non-Scope potential "credits" for additional displaced emissions (exports that become Scope 2 emissions for another organization)
+	m[:EmissionsProfile_NonScope_LbsCO2e] = @expression(m, [t in p.ElectricTechs, ts in p.TimeStep], 
+		-1*sum(m[:dvProductionToGrid][t,u,ts]  * (p.GridEmissionsFactor[ts] - p.TechEmissionsFactors[t]) 
+		for u in p.SalesTiersByTech[t] if !(u in p.CurtailmentTiers)))
+		# if battery ends up being able to discharge to grid, need to incorporate here 
+		# when CHP is added, need to incorporate exported steam/heat here too, not just p.ElectricTechs.
+	# Aggregate for Year 1; incorporate user-selected accounting method
+	m[:EmissionsYr1_Scope1_LbsCO2e] = @expression(m, sum(m[:EmissionsProfile_Scope1_LbsCO2e][t,ts] for t in p.Tech, ts in p.TimeStep))
+	m[:EmissionsYr1_Scope2_LbsCO2e] = @expression(m, sum(m[:EmissionsProfile_Scope2_LbsCO2e][ts] for ts in p.TimeStep))
+	m[:EmissionsYr1_NonScope_LbsCO2e] = @expression(m, sum(m[:EmissionsProfile_NonScope_LbsCO2e][t,ts] for t in p.ElectricTechs, ts in p.TimeStep))
+	if p.EmissionsAccountingMethod == 0 # no emissions "credit" for non-scope exports 
+		m[:EmissionsYr1_Total_LbsCO2e] = @expression(m, m[:EmissionsYr1_Scope1_LbsCO2e] + m[:EmissionsYr1_Scope2_LbsCO2e])
+	elseif p.EmissionsAccountingMethod == 1 # yes emissions "credit" for non-scope exports
+		m[:EmissionsYr1_Total_LbsCO2e] = @expression(m, m[:EmissionsYr1_Scope1_LbsCO2e] + m[:EmissionsYr1_Scope2_LbsCO2e] + m[:EmissionsYr1_NonScope_LbsCO2e] )
+	end
+	#@constraint(m, MinEmissionsReductionCon, m[:Year1EmissionsLbsCO2e]) <= (1-p.MinPercentEmissionsReduction)*p.BAUYr1Emissions
+	#@constraint(m, MaxEmissionsReductionCon, m[:Year1EmissionsLbsCO2e]) <= (1-p.MaxPercentEmissionsReduction)*p.BAUYr1Emissions
+end
+
+
 function add_yearone_expressions(m, p)
     m[:Year1UtilityEnergy] = @expression(m,  p.TimeStepScaling * sum(
 		m[:dvGridPurchase][u,ts] for ts in p.TimeStep, u in p.PricingTier)
@@ -835,7 +879,7 @@ function reopt_run(m, p::Parameter)
 	add_cost_expressions(m, p)
 	add_export_expressions(m, p)
 	add_util_fixed_and_min_charges(m, p)
-	
+	add_re_and_emissions_constraints(m, p)
 	add_cost_function(m, p)
 
     if Obj == 1
@@ -900,6 +944,7 @@ function reopt_results(m, p, r::Dict)
     	r["WINDtoGrid"] = []
 	end
 	add_util_results(m, p, r)
+	add_site_results(m, p, r)
 	return r
 end
 
@@ -973,7 +1018,13 @@ function add_generator_results(m, p, r::Dict)
 			for t in m[:GeneratorTechs], ts in p.TimeStep)
 	)
 	r["average_yearly_gen_energy_produced"] = round(value(m[:AverageGenProd]), digits=0)
-
+	
+	r["generator_emissions_scope1_lbsCO2e"] = round(value(sum(m[:EmissionsProfile_Scope1_LbsCO2e][t,ts] for t in m[:GeneratorTechs], ts in p.TimeStep)), digits=2) 
+	r["generator_emissions_nonscope_lbsCO2e"] = round(value(sum(m[:EmissionsProfile_NonScope_LbsCO2e][t,ts] for t in m[:GeneratorTechs], ts in p.TimeStep)), digits=2) 
+	@expression(m, EmissionsProfile_Scope1Expr_GEN[ts in p.TimeStep], sum(m[:EmissionsProfile_Scope1_LbsCO2e][t,ts] for t in m[:GeneratorTechs]))
+	r["generator_emissions_profile_scope1_lbsCO2e"] = round.(value.(EmissionsProfile_Scope1Expr_GEN), digits=2)
+	@expression(m, EmissionsProfile_NonScopeExpr_GEN[ts in p.TimeStep], sum(m[:EmissionsProfile_NonScope_LbsCO2e][t,ts] for t in m[:GeneratorTechs])) 
+	r["generator_emissions_profile_nonscope_lbsCO2e"] = round.(value.(EmissionsProfile_NonScopeExpr_GEN), digits=2)
 	nothing
 end
 
@@ -1008,6 +1059,14 @@ function add_wind_results(m, p, r::Dict)
 			for t in m[:WindTechs], ts in p.TimeStep)
 	)
 	r["average_wind_energy_produced"] = round(value(m[:AverageWindProd]), digits=0)
+	
+	r["wind_emissions_scope1_lbsCO2e"] = round(value(sum(m[:EmissionsProfile_Scope1_LbsCO2e][t,ts] for t in m[:WindTechs], ts in p.TimeStep)), digits=2) 
+	r["wind_emissions_nonscope_lbsCO2e"] = round(value(sum(m[:EmissionsProfile_NonScope_LbsCO2e][t,ts] for t in m[:WindTechs], ts in p.TimeStep)), digits=2) 
+	@expression(m, EmissionsProfile_Scope1Expr_WIND[ts in p.TimeStep], sum(m[:EmissionsProfile_Scope1_LbsCO2e][t,ts] for t in m[:WindTechs]))
+	r["wind_emissions_profile_scope1_lbsCO2e"] = round.(value.(EmissionsProfile_Scope1Expr_WIND), digits=2)
+	@expression(m, EmissionsProfile_NonScopeExpr_WIND[ts in p.TimeStep], sum(m[:EmissionsProfile_NonScope_LbsCO2e][t,ts] for t in m[:WindTechs])) 
+	r["wind_emissions_profile_nonscope_lbsCO2e"] = round.(value.(EmissionsProfile_NonScopeExpr_WIND), digits=2)
+
 	nothing
 end
 
@@ -1058,6 +1117,13 @@ function add_pv_results(m, p, r::Dict)
 
             PVPerUnitSizeOMCosts = @expression(m, sum(p.OMperUnitSize[t] * p.pwf_om * m[:dvSize][t] for t in PVtechs_in_class))
             r[string(PVclass, "_net_fixed_om_costs")] = round(value(PVPerUnitSizeOMCosts) * m[:r_tax_fraction_owner], digits=0)
+		
+			r[string(PVclass,"_emissions_scope1_lbsCO2e")] = round(value(sum(m[:EmissionsProfile_Scope1_LbsCO2e][t,ts] for t in PVtechs_in_class, ts in p.TimeStep)), digits=2) 
+			r[string(PVclass,"_emissions_nonscope_lbsCO2e")] = round(value(sum(m[:EmissionsProfile_NonScope_LbsCO2e][t,ts] for t in PVtechs_in_class, ts in p.TimeStep)), digits=2) 
+			EmissionsProfile_Scope1Expr_PV = @expression(m, [ts in p.TimeStep], sum(m[:EmissionsProfile_Scope1_LbsCO2e][t,ts] for t in PVtechs_in_class))
+			r[string(PVclass,"_emissions_profile_scope1_lbsCO2e")] = round.(value.(EmissionsProfile_Scope1Expr_PV), digits=2)
+			@expression(m, EmissionsProfile_NonScopeExpr_PV[ts in p.TimeStep], sum(m[:EmissionsProfile_NonScope_LbsCO2e][t,ts] for t in PVtechs_in_class)) 
+			r[string(PVclass,"_emissions_profile_nonscope_lbsCO2e")] = round.(value.(EmissionsProfile_NonScopeExpr_PV), digits=2)
         end
 	end
 end
@@ -1092,4 +1158,26 @@ function add_util_results(m, p, r::Dict)
     @expression(m, GridToLoad[ts in p.TimeStep],
                 sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) - m[:dvGridToStorage][ts] )
     r["GridToLoad"] = round.(value.(GridToLoad), digits=3)
+	
+	r["elec_grid_year_one_emissions_lbsCO2e"] = round(value(m[:EmissionsYr1_Scope2_LbsCO2e]), digits=3)
+	@expression(m, EmissionsProfile_Scope2Expr_Grid[ts in p.TimeStep], m[:EmissionsProfile_Scope2_LbsCO2e][ts])
+	r["elec_grid_year_one_emissions_profile_lbsCO2e"] = round.(value.(EmissionsProfile_Scope2Expr_Grid), digits=3)
 end
+
+function add_site_results(m, p, r::Dict)
+
+	r["annual_re_kwh"] = round(value(m[:AnnualREkWh]), digits=2)
+	r["annual_re_percent"] = round(value(m[:AnnualREkWh]/p.AnnualElecLoad*100), digits=2)
+	r["year_one_emissions_lbsCO2e"] = round(value(m[:EmissionsYr1_Total_LbsCO2e]), digits=2) 
+	r["year_one_emissionsreduction_percent"] = round(value(100*(1-m[:EmissionsYr1_Total_LbsCO2e]/p.BAUYr1Emissions)), digits=2)
+	r["year_one_scope1_emissions_lbsCO2e"] = round(value(m[:EmissionsYr1_Scope1_LbsCO2e]), digits=2)
+	r["year_one_scope2_emissions_lbsCO2e"] = round(value(m[:EmissionsYr1_Scope2_LbsCO2e]), digits=2)
+	r["year_one_nonscope_emissions_lbsCO2e"] = round(value(m[:EmissionsYr1_NonScope_LbsCO2e]), digits=2)
+	@expression(m, EmissionsProfile_Scope1Expr[ts in p.TimeStep], sum(m[:EmissionsProfile_Scope1_LbsCO2e][t,ts] for t in p.Tech))
+	r["emissions_profile_scope1_lbsCO2e"] = round.(value.(EmissionsProfile_Scope1Expr), digits=2)
+	@expression(m, EmissionsProfile_Scope2Expr[ts in p.TimeStep], m[:EmissionsProfile_Scope2_LbsCO2e][ts])
+	r["emissions_profile_scope2_lbsCO2e"] = round.(value.(EmissionsProfile_Scope2Expr), digits=2)
+	@expression(m, EmissionsProfile_NonScopeExpr[ts in p.TimeStep], sum(m[:EmissionsProfile_NonScope_LbsCO2e][t,ts] for t in p.ElectricTechs))
+	r["emissions_profile_nonscope_lbsCO2e"] = round.(value.(EmissionsProfile_NonScopeExpr), digits=2)
+	
+end 
