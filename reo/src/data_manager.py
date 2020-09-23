@@ -1051,8 +1051,6 @@ class DataManager:
         cap_cost_slope, cap_cost_x, cap_cost_yint, n_segments = self._get_REopt_cost_curve(self.available_techs)
         cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau, n_segments_bau = self._get_REopt_cost_curve(
             self.bau_techs)
-        n_segments_list = [x for x in range(n_segments)]
-        n_segments_list_bau = [x for x in range(n_segments_bau)]
 
         storage_techs, thermal_storage_techs, hot_tes_techs, \
             cold_tes_techs, storage_power_cost, storage_energy_cost, \
