@@ -1043,9 +1043,9 @@ class DataManager:
         levelization_factor_bau, pwf_e_bau, pwf_om_bau, two_party_factor_bau, \
         pwf_boiler_fuel_bau, pwf_chp_fuel_bau, pwf_fuel_by_tech_bau = self._get_REopt_pwfs(self.bau_techs)
 
-        pwf_prod_incent, prod_incent_rate, max_prod_incent, max_size_for_prod_incent, production_incentive_rate \
+        pwf_prod_incent, max_prod_incent, max_size_for_prod_incent, production_incentive_rate \
             = self._get_REopt_production_incentives(self.available_techs)
-        pwf_prod_incent_bau, prod_incent_rate_bau, max_prod_incent_bau, max_size_for_prod_incent_bau, production_incentive_rate_bau \
+        pwf_prod_incent_bau, max_prod_incent_bau, max_size_for_prod_incent_bau, production_incentive_rate_bau \
             = self._get_REopt_production_incentives(self.bau_techs)
 
         cap_cost_slope, cap_cost_x, cap_cost_yint, n_segments = self._get_REopt_cost_curve(self.available_techs)
