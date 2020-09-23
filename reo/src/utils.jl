@@ -67,7 +67,10 @@ Base.@kwdef struct Parameter
 	 #CHPTechs::Array{String,1}  # T^{CHP} \subset T: CHP technologies (IGNORE)
 	 #CoolingTechs::Array{String,1}  # T^{cl} \subset T: Cooling technologies (IGNORE)
 	 ElectricTechs::Array{String,1}  # T^{e} \subset T: Electricity-producing technologies
+     RETechs::Array{String,1}
+     #ElectricChillers::Array{String,1}  # T^{ec} \subset T: Electric chillers  (IGNORE) 
 	 #ElectricChillers::Array{String,1}  # T^{ec} \subset T: Electric chillers  (IGNORE) 
+     #ElectricChillers::Array{String,1}  # T^{ec} \subset T: Electric chillers  (IGNORE) 
 	 FuelBurningTechs::Array{String,1}  # T^{f} \subset T: Fuel-burning technologies
 	 #HeatingTechs::Array{String,1}  # T^{ht} \subset T: Heating technologies (IGNORE)
 	 TechsNoTurndown::Array{String,1}  # T^{ac} \subset T: Technologies that cannot turn down, i.e., PV and wind
@@ -201,7 +204,7 @@ Base.@kwdef struct Parameter
     MaxPercentEmissionsReduction::Float64
     BAUYr1Emissions::Float64
     GridEmissionsFactor::Array{Float64,1}
-    TechEmissionsFactors::Array{Float64,1}
+    TechEmissionsFactors::AxisArray
     
 end
 
@@ -273,6 +276,7 @@ function Parameter(d::Dict)
     d["NMILLimits"] = AxisArray(d["NMILLimits"], d["NMILRegime"])
     d["TechToNMILMapping"] = vector_to_axisarray(d["TechToNMILMapping"], d["Tech"], d["NMILRegime"])
     d["OMcostPerUnitProd"] = AxisArray(d["OMcostPerUnitProd"], d["Tech"])
+    d["TechEmissionsFactors"] = AxisArray(d["TechEmissionsFactors"], d["Tech"])
 
     # Reformulation additions
     d["StorageCostPerKW"] = AxisArray([d["StorageCostPerKW"]], d["Storage"])
