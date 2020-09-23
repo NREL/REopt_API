@@ -87,8 +87,6 @@ class DataManager:
                                 'elecchl', 'absorpchl']  # order is critical for REopt! Note these are passed to reopt.jl as uppercase
         self.available_tech_classes = ['PV1', 'WIND', 'GENERATOR', 'CHP', 'BOILER',
                                        'ELECCHL', 'ABSORPCHL']  # this is a REopt 'class', not a python class
-        # TODO check if chpbeta is using these available_loads below
-        self.available_loads = ['retail', 'wholesale', 'export', 'storage', 'boiler', 'tes']  # order is critical for REopt!
         self.bau_techs = []
         self.NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
         self.fuel_burning_techs = ['GENERATOR', 'CHP']
@@ -1036,8 +1034,7 @@ class DataManager:
 
         parser = UrdbParse(big_number=big_number, elec_tariff=self.elec_tariff,
                           techs=get_techs_not_none(self.available_techs, self),
-                           bau_techs=get_techs_not_none(self.bau_techs, self),
-                           chp=eval('self.chp'))
+                           bau_techs=get_techs_not_none(self.bau_techs, self))
         tariff_args = parser.parse_rate(self.elec_tariff.utility_name, self.elec_tariff.rate_name)
         TechToNMILMapping, TechsByNMILRegime, NMIL_regime = self._get_REopt_techToNMILMapping(self.available_techs)
         TechToNMILMapping_bau, TechsByNMILRegime_bau, NMIL_regime_bau = self._get_REopt_techToNMILMapping(self.bau_techs)
@@ -1054,16 +1051,15 @@ class DataManager:
         self.year_one_energy_cost_series_us_dollars_per_kwh = parser.energy_rates_summary
         self.year_one_demand_cost_series_us_dollars_per_kw = parser.demand_rates_summary
 
-        fuel_params = FuelParams(big_number=big_number, fuel_tariff=self.fuel_tariff,
+        fuel_params = FuelParams(big_number=big_number, elec_tariff=self.elec_tariff, fuel_tariff=self.fuel_tariff,
                            generator=eval('self.generator'),
                            chp=eval('self.chp'),
                            boiler=eval('self.boiler'))
 
-        # TODO rectify this redundancy with new method for fuel burn
         fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type, fuel_burn_slope, fuel_burn_intercept, \
             = fuel_params._get_fuel_burning_tech_params(reopt_techs)
         fuel_costs_bau, fuel_limit_bau, fuel_types_bau, techs_by_fuel_type_bau, fuel_burn_slope_bau, \
-            fuel_burn_intercept_bau =  self._get_fuel_burning_tech_params(reopt_techs_bau)
+            fuel_burn_intercept_bau =  fuel_params._get_fuel_burning_tech_params(reopt_techs_bau)
 
         subdivisions = ['CapCost']
 

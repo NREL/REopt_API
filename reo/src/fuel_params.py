@@ -43,22 +43,14 @@ class FuelParams:
     """
     days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
-    def __init__(self, big_number, fuel_tariff, generator=None, chp=None, boiler=None):
+    def __init__(self, big_number, elec_tariff, fuel_tariff, generator=None, chp=None, boiler=None):
         self.big_number = big_number
+        self.time_steps_per_hour = elec_tariff.time_steps_per_hour
 
         # Make certain techs an attribute of this class
         self.generator = generator
         self.chp = chp
         self.boiler = boiler
-
-        self.fuel_costs = []
-        self.fuel_costs_bau = []
-        self.fuel_burn_slope = []
-        self.fuel_burn_slope_bau = []
-        self.fuel_burn_intercept = []
-        self.fuel_burn_intercept_bau = []
-        self.fuel_limit = []
-        self.fuel_limit_bau = []
 
         # Assign monthly fuel rates for boiler and chp and then convert to timestep intervals
         self.boiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu = fuel_tariff.monthly_rates('boiler')
@@ -86,6 +78,11 @@ class FuelParams:
             self.chp_thermal_prod_intercept = list()
             self.chp_derate = list()
 
+        # CHP is not available in bau case
+        self.chp_thermal_prod_slope_bau = 0
+        self.chp_thermal_prod_intercept_bau = 0
+        self.chp_fuel_burn_intercept_bau = 0
+
     def _get_fuel_burning_tech_params(self, techs):
         """
         In the Julia model we have:
@@ -96,31 +93,39 @@ class FuelParams:
         :return: fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type (all lists)
         """
 
+        fuel_costs = []
+        fuel_burn_slope = []
+        fuel_burn_intercept = []
+        fuel_limit = []
+        fuel_types = []
+        techs_by_fuel_type = []
+
         for tech in techs:
             # have to rubber stamp other tech values for each energy tier so that array is filled appropriately
             if tech.lower() == 'generator':
                 # generator fuel is not free anymore since generator is also a design variable
-                self.fuel_costs = operator.add(self.fuel_costs, self.generator_fuel_rate_array)
-                self.fuel_burn_slope.append(self.generator.fuel_slope)
-                self.fuel_burn_intercept.append(self.generator.fuel_intercept)
-                self.fuel_limit.append(self.generator_fuel_avail)
-                # TODO figure out how to populate fuel costs for all fb techs
-                self.techs_by_fuel_type.append([tech.upper()])
-                self.fuel_types.append("DIESEL")
+                fuel_costs = operator.add(fuel_costs, self.generator_fuel_rate_array)
+                fuel_burn_slope.append(self.generator.fuel_slope)
+                fuel_burn_intercept.append(self.generator.fuel_intercept)
+                fuel_limit.append(self.generator.fuel_avail)
+                techs_by_fuel_type.append([tech.upper()])
+                fuel_types.append("DIESEL")
             elif tech.lower() == 'boiler':
-                self.fuel_costs = operator.add(self.fuel_costs, self.boiler_fuel_rate_array)
-                self.fuel_burn_slope.append(1 / self.boiler_efficiency)
-                self.fuel_limit.append(self.big_number)
-                self.techs_by_fuel_type.append([tech.upper()])
-                self.fuel_types.append("BOILERFUEL")
+                fuel_costs = operator.add(fuel_costs, self.boiler_fuel_rate_array)
+                # Fuel for boiler is not handled by fuel_burn slope/intercept
+                # fuel_burn_slope.append(1 / self.boiler.boiler_efficiency)
+                # fuel_burn_intercept.append(0.0)
+                fuel_limit.append(self.big_number)
+                techs_by_fuel_type.append([tech.upper()])
+                fuel_types.append("BOILERFUEL")
             elif tech.lower() == 'chp':
-                self.fuel_costs = operator.add(self.fuel_costs, self.chp_fuel_rate_array)
-                self.fuel_burn_slope.append(self.chp.fuel_burn_slope)
-                self.fuel_burn_intercept.append(self.chp.fuel_burn_intercept[0])
-                self.fuel_limit.append(self.big_number)
-                self.techs_by_fuel_type.append([tech.upper()])
-                self.fuel_types.append("CHPFUEL")
+                fuel_costs = operator.add(fuel_costs, self.chp_fuel_rate_array)
+                fuel_burn_slope.append(self.chp.fuel_burn_slope)
+                # CHP has a separate fuel burn y-intercept that is size-specific, so assign 0 to this one
+                fuel_burn_intercept.append(0.0)
+                fuel_limit.append(self.big_number)
+                techs_by_fuel_type.append([tech.upper()])
+                fuel_types.append("CHPFUEL")
 
 
-        return self.fuel_costs, self.fuel_limit, self.fuel_types, self.techs_by_fuel_type, self.fuel_burn_rate, \
-               self.fuel_burn_intercept
+        return fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type, fuel_burn_slope, fuel_burn_intercept
