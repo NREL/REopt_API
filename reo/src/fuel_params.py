@@ -43,14 +43,9 @@ class FuelParams:
     """
     days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
-    def __init__(self, big_number, elec_tariff, fuel_tariff, generator=None, chp=None, boiler=None):
+    def __init__(self, big_number, elec_tariff, fuel_tariff, generator=None):
         self.big_number = big_number
         self.time_steps_per_hour = elec_tariff.time_steps_per_hour
-
-        # Make certain techs an attribute of this class
-        self.generator = generator
-        self.chp = chp
-        self.boiler = boiler
 
         # Assign monthly fuel rates for boiler and chp and then convert to timestep intervals
         self.boiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu = fuel_tariff.monthly_rates('boiler')
@@ -63,33 +58,17 @@ class FuelParams:
                                       self.days_in_month[month] * 24 * self.time_steps_per_hour)
             self.chp_fuel_rate_array.extend([self.chp_fuel_blended_monthly_rates_us_dollars_per_mmbtu[month]] *
                                       self.days_in_month[month] * 24 * self.time_steps_per_hour)
-            if self.generator is not None:
-                self.generator_fuel_rate_array = [self.generator.diesel_fuel_cost_us_dollars_per_gallon for _ in range(8760 * self.time_steps_per_hour)]
+        if generator is not None:
+            self.generator_fuel_rate_array = [generator.diesel_fuel_cost_us_dollars_per_gallon for
+                                              _ in range(8760 * self.time_steps_per_hour)]
 
-        # Unique parameters for CHP
-        if chp is not None:
-            self.chp_fuel_burn_intercept = [chp.fuel_burn_intercept]
-            self.chp_thermal_prod_slope = [chp.thermal_prod_slope]
-            self.chp_thermal_prod_intercept = [chp.thermal_prod_intercept]
-            self.chp_derate = [chp.derate]
-        else:
-            self.chp_fuel_burn_intercept = list()
-            self.chp_thermal_prod_slope = list()
-            self.chp_thermal_prod_intercept = list()
-            self.chp_derate = list()
-
-        # CHP is not available in bau case
-        self.chp_thermal_prod_slope_bau = 0
-        self.chp_thermal_prod_intercept_bau = 0
-        self.chp_fuel_burn_intercept_bau = 0
-
-    def _get_fuel_burning_tech_params(self, techs):
+    def _get_fuel_burning_tech_params(self, techs, generator=None, chp=None):
         """
         In the Julia model we have:
-         - FuelCost = AxisArray(d["FuelCost"], d["FuelType"])
-         - FuelLimit: AxisArray(d["FuelLimit"], d["FuelType"])
-         - FuelType: Array{String,1}
-         - TechsByFuelType: AxisArray(d["TechsByFuelType"], d["FuelType"])
+         - d["FuelCost"] = vector_to_axisarray(d["FuelCost"], d["FuelType"], d[:TimeStep])
+         - d["FuelLimit"] = AxisArray(d["FuelLimit"], d["FuelType"])
+         - FuelType::Array{String,1}
+         - d["TechsByFuelType"] = AxisArray(d["TechsByFuelType"], d["FuelType"])
         :return: fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type (all lists)
         """
 
@@ -105,9 +84,9 @@ class FuelParams:
             if tech.lower() == 'generator':
                 # generator fuel is not free anymore since generator is also a design variable
                 fuel_costs = operator.add(fuel_costs, self.generator_fuel_rate_array)
-                fuel_burn_slope.append(self.generator.fuel_slope)
-                fuel_burn_intercept.append(self.generator.fuel_intercept)
-                fuel_limit.append(self.generator.fuel_avail)
+                fuel_burn_slope.append(generator.fuel_slope)
+                fuel_burn_intercept.append(generator.fuel_intercept)
+                fuel_limit.append(generator.fuel_avail)
                 techs_by_fuel_type.append([tech.upper()])
                 fuel_types.append("DIESEL")
             elif tech.lower() == 'boiler':
@@ -120,7 +99,7 @@ class FuelParams:
                 fuel_types.append("BOILERFUEL")
             elif tech.lower() == 'chp':
                 fuel_costs = operator.add(fuel_costs, self.chp_fuel_rate_array)
-                fuel_burn_slope.append(self.chp.fuel_burn_slope)
+                fuel_burn_slope.append(chp.fuel_burn_slope)
                 # CHP has a separate fuel burn y-intercept that is size-specific, so assign 0 to this one
                 fuel_burn_intercept.append(0.0)
                 fuel_limit.append(self.big_number)
@@ -129,3 +108,26 @@ class FuelParams:
 
 
         return fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type, fuel_burn_slope, fuel_burn_intercept
+
+    def _get_chp_unique_params(self, chp_techs, chp=None):
+        """
+        In the Julia model we have:
+           - d["CHPThermalProdSlope"] = AxisArray(d["CHPThermalProdSlope"],d["CHPTechs"])
+           - d["CHPThermalProdIntercept"] = AxisArray(d["CHPThermalProdIntercept"],d["CHPTechs"])
+           - d["FuelBurnYIntRate"] = AxisArray(d["FuelBurnYIntRate"],d["CHPTechs"])
+           - d["CHPThermalProdFactor"] = vector_to_axisarray(d["CHPThermalProdFactor"],d["CHPTechs"],d[:TimeStep])
+        :return: chp_fuel_burn_intercept, chp_thermal_prod_slope, chp_thermal_prod_intercept, chp_derate (all lists)
+        """
+        # Unique parameters for CHP
+        if chp_techs not in [None, []]:
+            chp_fuel_burn_intercept = [chp.fuel_burn_intercept]
+            chp_thermal_prod_slope = [chp.thermal_prod_slope]
+            chp_thermal_prod_intercept = [chp.thermal_prod_intercept]
+            chp_derate = [chp.derate]
+        else:
+            chp_fuel_burn_intercept = list()
+            chp_thermal_prod_slope = list()
+            chp_thermal_prod_intercept = list()
+            chp_derate = list()
+
+        return chp_fuel_burn_intercept, chp_thermal_prod_slope, chp_thermal_prod_intercept, chp_derate

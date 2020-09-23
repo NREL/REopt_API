@@ -1051,16 +1051,6 @@ class DataManager:
         self.year_one_energy_cost_series_us_dollars_per_kwh = parser.energy_rates_summary
         self.year_one_demand_cost_series_us_dollars_per_kw = parser.demand_rates_summary
 
-        fuel_params = FuelParams(big_number=big_number, elec_tariff=self.elec_tariff, fuel_tariff=self.fuel_tariff,
-                           generator=eval('self.generator'),
-                           chp=eval('self.chp'),
-                           boiler=eval('self.boiler'))
-
-        fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type, fuel_burn_slope, fuel_burn_intercept, \
-            = fuel_params._get_fuel_burning_tech_params(reopt_techs)
-        fuel_costs_bau, fuel_limit_bau, fuel_types_bau, techs_by_fuel_type_bau, fuel_burn_slope_bau, \
-            fuel_burn_intercept_bau =  fuel_params._get_fuel_burning_tech_params(reopt_techs_bau)
-
         subdivisions = ['CapCost']
 
         subdivisions_by_tech = self._get_tech_subsets(reopt_techs)
@@ -1175,13 +1165,22 @@ class DataManager:
         elec_chiller_cop = self.elecchl.chiller_cop if self.elecchl != None else 1.0
         absorp_chiller_cop = self.absorpchl.chiller_cop if self.absorpchl != None else 1.0
 
-        # Specific attributes for CHP tech
-        chp_thermal_prod_slope = fuel_params.chp_thermal_prod_slope if len(chp_techs) > 0 else []
-        chp_thermal_prod_slope_bau = fuel_params.chp_thermal_prod_slope_bau if len(chp_techs_bau) > 0 else []
-        chp_thermal_prod_intercept = fuel_params.chp_thermal_prod_intercept if len(chp_techs) > 0 else []
-        chp_thermal_prod_intercept_bau = fuel_params.chp_thermal_prod_intercept_bau if len(chp_techs_bau) > 0 else []
-        chp_fuel_burn_intercept = fuel_params.chp_fuel_burn_intercept if len(chp_techs) > 0 else []
-        chp_fuel_burn_intercept_bau = fuel_params.chp_fuel_burn_intercept_bau if len(chp_techs_bau) > 0 else []
+        # Fuel burning parameters and other CHP-specific parameters
+        fuel_params = FuelParams(big_number=big_number, elec_tariff=self.elec_tariff, fuel_tariff=self.fuel_tariff,
+                           generator=eval('self.generator'))
+
+        fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type, fuel_burn_slope, fuel_burn_intercept \
+            = fuel_params._get_fuel_burning_tech_params(reopt_techs, generator=eval('self.generator'),
+                                                        chp=eval('self.chp'))
+        fuel_costs_bau, fuel_limit_bau, fuel_types_bau, techs_by_fuel_type_bau, fuel_burn_slope_bau, \
+            fuel_burn_intercept_bau =  fuel_params._get_fuel_burning_tech_params(reopt_techs_bau,
+                                                        generator=eval('self.generator'), chp=eval('self.chp'))
+
+        chp_thermal_prod_slope, chp_thermal_prod_intercept, chp_fuel_burn_intercept, chp_derate \
+            = fuel_params._get_chp_unique_params(chp_techs, chp=eval('self.chp'))
+        chp_thermal_prod_slope_bau, chp_thermal_prod_intercept_bau, chp_fuel_burn_intercept_bau, chp_derate_bau \
+            = fuel_params._get_chp_unique_params(chp_techs_bau, chp=eval('self.chp'))
+
 
         self.reopt_inputs = {
             'Tech': reopt_techs,
