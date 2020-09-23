@@ -1337,14 +1337,14 @@ function add_chp_results(m, p, r::Dict)
 	r["chp_electric_to_load_series"] = round.(value.(CHPtoLoad), digits=3)
 	@expression(m, CHPtoHotTES[ts in p.TimeStep],
 		sum(m[:dvProductionToStorage]["HotTES",t,ts] for t in p.CHPTechs))
-	r["chp_thermal_to_tes_series"] = round.(value.(CHPtoHotTES), digits=3)
+	r["chp_thermal_to_tes_series"] = round.(value.(CHPtoHotTES), digits=5)
 	@expression(m, CHPThermalToWaste[ts in p.TimeStep],
 		sum(m[:dvProductionToWaste][t,ts] for t in p.CHPTechs))
-	r["chp_thermal_to_waste_series"] = round.(value.(CHPThermalToWaste))
+	r["chp_thermal_to_waste_series"] = round.(value.(CHPThermalToWaste), digits=5)
 	@expression(m, CHPThermalToLoad[ts in p.TimeStep],
 		sum(m[:dvThermalProduction][t,ts]
 			for t in p.CHPTechs) - CHPtoHotTES[ts] - CHPThermalToWaste[ts])
-	r["chp_thermal_to_load_series"] = round.(value.(CHPThermalToLoad), digits=3)
+	r["chp_thermal_to_load_series"] = round.(value.(CHPThermalToLoad), digits=5)
 	@expression(m, TotalCHPFuelCharges,
 		p.pwf_fuel["CHP"] * p.TimeStepScaling * sum(p.FuelCost["CHPFUEL",ts] * m[:dvFuelUsage]["CHP",ts]
 			for ts in p.TimeStep))
