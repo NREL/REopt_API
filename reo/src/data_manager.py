@@ -975,6 +975,8 @@ class DataManager:
         
         electric_techs = [t for t in reopt_techs if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR")]
         electric_techs_bau = [t for t in reopt_techs_bau if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR")]
+        re_techs = [t for t in reopt_techs if t.startswith("PV") or t.startswith("WIND")]
+        re_techs_bau = [t for t in reopt_techs_bau if t.startswith("PV") or t.startswith("WIND")]
         
         if len(reopt_techs) > 0:
             non_storage_sales_tiers = [1, 2]
@@ -1087,6 +1089,7 @@ class DataManager:
             'TechsInClass': techs_in_class,
             'TechsByFuelType': techs_by_fuel_type,
             'ElectricTechs': electric_techs,
+            'RETechs': re_techs,
             'FuelBurningTechs': fb_techs,
             'TechsNoTurndown': techs_no_turndown,
             'SalesTierCount': tariff_args.num_sales_tiers,
@@ -1199,6 +1202,7 @@ class DataManager:
             'TechsInClass': techs_in_class_bau,
             'TechsByFuelType': techs_by_fuel_type_bau,
             'ElectricTechs': electric_techs_bau,
+            'RETechs': re_techs_bau,
             'FuelBurningTechs': fb_techs_bau,
             'TechsNoTurndown': techs_no_turndown_bau,
             'SalesTierCount': tariff_args.num_sales_tiers_bau,
