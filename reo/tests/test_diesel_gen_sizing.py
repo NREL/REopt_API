@@ -83,33 +83,33 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat(d['outputs'])
-        c['year_one_emissions_lb_C02'] = d['outputs']['Scenario']['Site']['year_one_emissions_lb_C02']
-        c['year_one_emissions_bau_lb_C02'] = d['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_C02']
-        c['utility_year_one_emissions_lb_C02'] = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_lb_C02']
-        c['utility_year_one_emissions_bau_lb_C02'] = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_bau_lb_C02']
-        c['generator_year_one_emissions_lb_C02'] = d['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_C02']
-        c['generator_year_one_emissions_bau_lb_C02'] = d['outputs']['Scenario']['Site']['Generator']['year_one_emissions_bau_lb_C02']
 
+        c['year_one_emissions_lb_CO2'] = d['outputs']['Scenario']['Site']['year_one_emissions_lb_CO2']
+        c['year_one_emissions_bau_lb_CO2'] = d['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_CO2']
+        c['utility_year_one_emissions_lb_CO2'] = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_lb_CO2']
+        c['utility_year_one_emissions_bau_lb_CO2'] = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_bau_lb_CO2']
+        c['generator_year_one_emissions_lb_CO2'] = d['outputs']['Scenario']['Site']['Generator']['year_one_scope1_emissions_lb_CO2']
+        c['generator_year_one_emissions_bau_lb_CO2'] = d['outputs']['Scenario']['Site']['Generator']['year_one_scope1_emissions_bau_lb_CO2'] or 0.0
 
         d_expected = dict()
-        d_expected['lcc'] = 245232.0
-        d_expected['npv'] = -4139.0
+        d_expected['lcc'] = 245231.0
+        d_expected['npv'] = -4138.0
         d_expected['pv_kw'] = 100.0
         d_expected['batt_kw'] = 0.0
         d_expected['batt_kwh'] = 0.0
         d_expected['gen_kw'] = 6.12358
         d_expected['fuel_used_gal'] = 0.8
         #d_expected['avoided_outage_costs_us_dollars'] = 2980.31
-        d_expected['microgrid_upgrade_cost_us_dollars'] = 1102.2
+        d_expected['microgrid_upgrade_cost_us_dollars'] = 1102.245
         d_expected['gen_total_variable_om_cost_us_dollars'] = 1.0
         d_expected['existing_pv_om_cost_us_dollars'] = 11507.0
-        d_expected['net_capital_costs_plus_om'] = 15647.0
-        d_expected['year_one_emissions_lb_C02'] = 431428.8
-        d_expected['year_one_emissions_bau_lb_C02'] = 431410.8
-        d_expected['utility_year_one_emissions_lb_C02'] = 431410.8
-        d_expected['utility_year_one_emissions_bau_lb_C02'] = 431410.8
-        d_expected['generator_year_one_emissions_lb_C02'] = 18
-        d_expected['generator_year_one_emissions_bau_lb_C02'] = 0
+        d_expected['net_capital_costs_plus_om'] = 15646.0 #15647.0
+        d_expected['year_one_emissions_lb_CO2'] =  431428.8 #.79
+        d_expected['year_one_emissions_bau_lb_CO2'] = 431410.8 #0.78
+        d_expected['utility_year_one_emissions_lb_CO2'] = 431410.8
+        d_expected['utility_year_one_emissions_bau_lb_CO2'] = 431410.8
+        d_expected['generator_year_one_emissions_lb_CO2'] = 18.0
+        d_expected['generator_year_one_emissions_bau_lb_CO2'] = 0.0
         
         try:
             self.assertEqual(d['outputs']['Scenario']['Site']['ElectricTariff']['emissions_region'], 'Southeast')
