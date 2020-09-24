@@ -29,6 +29,7 @@
 # *********************************************************************************
 import copy
 from reo.src.urdb_parse import UrdbParse
+from reo.src.fuel_params import FuelParams
 from reo.utilities import annuity, degradation_factor, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
     insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, annuity_escalation
 max_incentive = 1.0e10
@@ -86,8 +87,6 @@ class DataManager:
                                 'elecchl', 'absorpchl']  # order is critical for REopt! Note these are passed to reopt.jl as uppercase
         self.available_tech_classes = ['PV1', 'WIND', 'GENERATOR', 'CHP', 'BOILER',
                                        'ELECCHL', 'ABSORPCHL']  # this is a REopt 'class', not a python class
-        # TODO check if chpbeta is using these available_loads below
-        self.available_loads = ['retail', 'wholesale', 'export', 'storage', 'boiler', 'tes']  # order is critical for REopt!
         self.bau_techs = []
         self.NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
         self.fuel_burning_techs = ['GENERATOR', 'CHP']
@@ -899,32 +898,6 @@ class DataManager:
                 time_steps_without_grid.append(i+1)
         return time_steps_with_grid, time_steps_without_grid
 
-
-    def _get_fuel_burning_tech_params(self, techs):
-        """
-        In the Julia model we have:
-         - FuelCost = AxisArray(d["FuelCost"], d["FuelType"])
-         - FuelLimit: AxisArray(d["FuelLimit"], d["FuelType"])
-         - FuelType: Array{String,1}
-         - TechsByFuelType: AxisArray(d["TechsByFuelType"], d["FuelType"])
-        :return: fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type (all lists)
-        """
-        fuel_costs = list()
-        fuel_limit = list()
-        fuel_types = list()
-        techs_by_fuel_type = [list()]
-        fuel_burn_rate = list()
-        fuel_burn_intercept = list()
-
-        if "GENERATOR" in techs:
-            fuel_costs = [self.generator.diesel_fuel_cost_us_dollars_per_gallon]
-            fuel_limit = [self.generator.fuel_avail]
-            fuel_types = ["DIESEL"]
-            techs_by_fuel_type = [['GENERATOR']]
-            fuel_burn_rate.append(self.generator.fuel_slope)
-            fuel_burn_intercept.append(self.generator.fuel_intercept)
-        return fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type, fuel_burn_rate, fuel_burn_intercept
-
     def _get_REopt_storage_techs_and_params(self):
         storage_techs = ['Elec']
         storage_power_cost = list()
@@ -1025,13 +998,13 @@ class DataManager:
         tech_class_min_size_bau, techs_in_class_bau = self._get_REopt_tech_classes(self.bau_techs, True)
 
         tech_to_location, derate, om_cost_us_dollars_per_kw, \
-        om_cost_us_dollars_per_kwh, om_cost_us_dollars_per_hr_per_kw_rated, production_factor, \
-        charge_efficiency, discharge_efficiency, \
-        electric_derate, chp_thermal_prod_factor = self._get_REopt_array_tech_load(self.available_techs)
+            om_cost_us_dollars_per_kwh, om_cost_us_dollars_per_hr_per_kw_rated, production_factor, \
+            charge_efficiency, discharge_efficiency, \
+            electric_derate, chp_thermal_prod_factor = self._get_REopt_array_tech_load(self.available_techs)
         tech_to_location_bau, derate_bau, om_cost_us_dollars_per_kw_bau, \
-        om_cost_us_dollars_per_kwh_bau, om_cost_us_dollars_per_hr_per_kw_rated_bau, production_factor_bau, \
-        charge_efficiency_bau, discharge_efficiency_bau, \
-        electric_derate_bau, chp_thermal_prod_factor_bau = self._get_REopt_array_tech_load(self.bau_techs)
+            om_cost_us_dollars_per_kwh_bau, om_cost_us_dollars_per_hr_per_kw_rated_bau, production_factor_bau, \
+            charge_efficiency_bau, discharge_efficiency_bau, \
+            electric_derate_bau, chp_thermal_prod_factor_bau = self._get_REopt_array_tech_load(self.bau_techs)
 
         max_sizes, min_turn_down, max_sizes_location, min_allowable_size = self._get_REopt_tech_max_sizes_min_turn_down(
             self.available_techs)
@@ -1057,12 +1030,9 @@ class DataManager:
             storage_min_power, storage_max_power, storage_min_energy, \
             storage_max_energy, storage_decay_rate = self._get_REopt_storage_techs_and_params()
 
-        parser = UrdbParse(big_number=big_number, elec_tariff=self.elec_tariff, fuel_tariff=self.fuel_tariff,
+        parser = UrdbParse(big_number=big_number, elec_tariff=self.elec_tariff,
                           techs=get_techs_not_none(self.available_techs, self),
-                           bau_techs=get_techs_not_none(self.bau_techs, self),
-                           chp=eval('self.chp'),
-                           boiler=eval('self.boiler'), electric_chiller=eval('self.elecchl'),
-                           absorption_chiller=eval('self.absorpchl'))
+                           bau_techs=get_techs_not_none(self.bau_techs, self))
         tariff_args = parser.parse_rate(self.elec_tariff.utility_name, self.elec_tariff.rate_name)
         TechToNMILMapping, TechsByNMILRegime, NMIL_regime = self._get_REopt_techToNMILMapping(self.available_techs)
         TechToNMILMapping_bau, TechsByNMILRegime_bau, NMIL_regime_bau = self._get_REopt_techToNMILMapping(self.bau_techs)
@@ -1079,7 +1049,6 @@ class DataManager:
         self.year_one_energy_cost_series_us_dollars_per_kwh = parser.energy_rates_summary
         self.year_one_demand_cost_series_us_dollars_per_kw = parser.demand_rates_summary
 
-
         subdivisions = ['CapCost']
 
         subdivisions_by_tech = self._get_tech_subsets(reopt_techs)
@@ -1094,12 +1063,6 @@ class DataManager:
                 seg_by_tech_subdivision.append(n_segments)
             for  _ in reopt_techs_bau:
                 seg_by_tech_subdivision_bau.append(n_segments_bau)
-
-        # TODO rectify this redundancy with new method for fuel burn
-        fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type, fuel_burn_rate, fuel_burn_intercept \
-            = self._get_fuel_burning_tech_params(reopt_techs)
-        fuel_costs_bau, fuel_limit_bau, fuel_types_bau, techs_by_fuel_type_bau, fuel_burn_rate_bau, \
-            fuel_burn_intercept_bau =  self._get_fuel_burning_tech_params(reopt_techs_bau)
 
         # TODO: switch back to cap_cost_x input since we are just repeating its values?
         segment_min_size = []
@@ -1200,13 +1163,22 @@ class DataManager:
         elec_chiller_cop = self.elecchl.chiller_cop if self.elecchl != None else 1.0
         absorp_chiller_cop = self.absorpchl.chiller_cop if self.absorpchl != None else 1.0
 
-        #TODO: handle chp parameter population directly in urdb_parse, or move all to data_manager
-        chp_thermal_prod_slope = tariff_args.chp_thermal_prod_slope if len(chp_techs) > 0 else []
-        chp_thermal_prod_slope_bau = tariff_args.chp_thermal_prod_slope_bau if len(chp_techs_bau) > 0 else []
-        chp_thermal_prod_intercept = tariff_args.chp_thermal_prod_intercept if len(chp_techs) > 0 else []
-        chp_thermal_prod_intercept_bau = tariff_args.chp_thermal_prod_intercept_bau if len(chp_techs_bau) > 0 else []
-        chp_fuel_burn_intercept = tariff_args.chp_fuel_burn_intercept if len(chp_techs) > 0 else []
-        chp_fuel_burn_intercept_bau = tariff_args.chp_fuel_burn_intercept_bau if len(chp_techs_bau) > 0 else []
+        # Fuel burning parameters and other CHP-specific parameters
+        fuel_params = FuelParams(big_number=big_number, elec_tariff=self.elec_tariff, fuel_tariff=self.fuel_tariff,
+                           generator=eval('self.generator'))
+
+        fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type, fuel_burn_slope, fuel_burn_intercept \
+            = fuel_params._get_fuel_burning_tech_params(reopt_techs, generator=eval('self.generator'),
+                                                        chp=eval('self.chp'))
+        fuel_costs_bau, fuel_limit_bau, fuel_types_bau, techs_by_fuel_type_bau, fuel_burn_slope_bau, \
+            fuel_burn_intercept_bau =  fuel_params._get_fuel_burning_tech_params(reopt_techs_bau,
+                                                        generator=eval('self.generator'), chp=eval('self.chp'))
+
+        chp_thermal_prod_slope, chp_thermal_prod_intercept, chp_fuel_burn_intercept, chp_derate \
+            = fuel_params._get_chp_unique_params(chp_techs, chp=eval('self.chp'))
+        chp_thermal_prod_slope_bau, chp_thermal_prod_intercept_bau, chp_fuel_burn_intercept_bau, chp_derate_bau \
+            = fuel_params._get_chp_unique_params(chp_techs_bau, chp=eval('self.chp'))
+
 
         self.reopt_inputs = {
             'Tech': reopt_techs,
@@ -1263,16 +1235,16 @@ class DataManager:
             'TechToNMILMapping': TechToNMILMapping,
             'CapCostSegCount': n_segments,
             # new parameters for reformulation
-	        'FuelCost': tariff_args.fuel_costs,
+	        'FuelCost': fuel_costs,
 	        'ElecRate': tariff_args.energy_costs,
 	        'GridExportRates': tariff_args.grid_export_rates, # seems like the wrong size
-	        'FuelBurnSlope': tariff_args.energy_burn_rate,
-	        'FuelBurnYInt': tariff_args.energy_burn_intercept,
+	        'FuelBurnSlope': fuel_burn_slope,
+	        'FuelBurnYInt': fuel_burn_intercept,
 	        'MaxGridSales': max_grid_sales,
 	        'ProductionIncentiveRate': production_incentive_rate,
 	        'ProductionFactor': production_factor,
 	        'ElecLoad': non_cooling_electric_load,
-	        'FuelLimit': tariff_args.fuel_limit,
+	        'FuelLimit': fuel_limit,
 	        'ChargeEfficiency': charge_efficiency, # Do we need this indexed on tech?
 	        'GridChargeEfficiency': grid_charge_efficiency,
 	        'DischargeEfficiency': discharge_efficiency,
@@ -1287,14 +1259,14 @@ class DataManager:
             'SegmentMaxSize': segment_max_size,
             # Sets that need to be populated
             'Storage': storage_techs,
-            'FuelType': tariff_args.fuel_types,
+            'FuelType': fuel_types,
             'Subdivision': subdivisions,
             'PricingTierCount': tariff_args.energy_tiers_num,
             'ElecStorage': ['Elec'],
             'SubdivisionByTech': subdivisions_by_tech,
             'SegByTechSubdivision': seg_by_tech_subdivision,
             'TechsInClass': techs_in_class,
-            'TechsByFuelType': tariff_args.techs_by_fuel_type,
+            'TechsByFuelType': techs_by_fuel_type,
             'ElectricTechs': electric_techs,
             'FuelBurningTechs': fb_techs,
             'TechsNoTurndown': techs_no_turndown,
@@ -1388,16 +1360,16 @@ class DataManager:
             'TechToNMILMapping': TechToNMILMapping_bau,
             'CapCostSegCount': n_segments_bau,
             # new parameters for reformulation
-	        'FuelCost': tariff_args.fuel_costs_bau,
+	        'FuelCost': fuel_costs_bau,
 	        'ElecRate': tariff_args.energy_costs_bau,
 	        'GridExportRates': tariff_args.grid_export_rates_bau,
-	        'FuelBurnSlope': tariff_args.energy_burn_rate_bau,
-	        'FuelBurnYInt': tariff_args.energy_burn_intercept_bau,
+	        'FuelBurnSlope': fuel_burn_slope_bau,
+	        'FuelBurnYInt': fuel_burn_intercept_bau,
 	        'MaxGridSales': max_grid_sales_bau,
 	        'ProductionIncentiveRate': production_incentive_rate_bau,
 	        'ProductionFactor': production_factor_bau,
 	        'ElecLoad': non_cooling_electric_load_bau,
-	        'FuelLimit': tariff_args.fuel_limit_bau,
+	        'FuelLimit': fuel_limit_bau,
 	        'ChargeEfficiency': charge_efficiency_bau,
 	        'GridChargeEfficiency': grid_charge_efficiency,
 	        'DischargeEfficiency': discharge_efficiency_bau,
@@ -1412,14 +1384,14 @@ class DataManager:
             'SegmentMaxSize': segment_max_size_bau,
             # Sets that need to be populated
             'Storage': storage_techs,
-            'FuelType': tariff_args.fuel_types_bau,
+            'FuelType': fuel_types_bau,
             'Subdivision': subdivisions,
             'PricingTierCount': tariff_args.energy_tiers_num,
             'ElecStorage': [],
             'SubdivisionByTech': subdivisions_by_tech_bau,
             'SegByTechSubdivision': seg_by_tech_subdivision_bau,
             'TechsInClass': techs_in_class_bau,
-            'TechsByFuelType': tariff_args.techs_by_fuel_type_bau,
+            'TechsByFuelType': techs_by_fuel_type_bau,
             'ElectricTechs': electric_techs_bau,
             'FuelBurningTechs': fb_techs_bau,
             'TechsNoTurndown': techs_no_turndown_bau,
