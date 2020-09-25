@@ -396,32 +396,32 @@ def generate_proforma(scenariomodel, output_file_path):
                            number_format='##%')
     current_row += 1
     ws['A{}'.format(current_row)] = "Year one total site carbon dioxide emissions (lb CO2 equivalent)"
-    ws['B{}'.format(current_row)] = site.year_one_emissions_lb_C02
+    ws['B{}'.format(current_row)] = site.year_one_emissions_lb_CO2
     make_attribute_row(ws, current_row)
     current_row += 1
 
     ws['A{}'.format(current_row)] = "Year one total site carbon dioxide emissions BAU (lb CO2 equivalent)"
-    ws['B{}'.format(current_row)] = site.year_one_emissions_bau_lb_C02
+    ws['B{}'.format(current_row)] = site.year_one_emissions_bau_lb_CO2
     make_attribute_row(ws, current_row)
     current_row += 1
     
     ws['A{}'.format(current_row)] = "Year one total carbon dioxide emissions from utility purchases (lb CO2 equivalent)"
-    ws['B{}'.format(current_row)] = electric_tariff.year_one_emissions_lb_C02
+    ws['B{}'.format(current_row)] = electric_tariff.year_one_emissions_lb_CO2
     make_attribute_row(ws, current_row)
     current_row += 1
     
     ws['A{}'.format(current_row)] = "Year one total carbon dioxide emissions from utility purchases BAU (lb CO2 equivalent)"
-    ws['B{}'.format(current_row)] = electric_tariff.year_one_emissions_bau_lb_C02
+    ws['B{}'.format(current_row)] = electric_tariff.year_one_emissions_bau_lb_CO2
     make_attribute_row(ws, current_row)
     current_row += 1
     
     ws['A{}'.format(current_row)] = "Year one total carbon dioxide emissions from generator use (lb CO2 equivalent)"
-    ws['B{}'.format(current_row)] = generator.year_one_emissions_lb_C02
+    ws['B{}'.format(current_row)] = generator.year_one_emissions_lb_CO2
     make_attribute_row(ws, current_row)
     current_row += 1
     
     ws['A{}'.format(current_row)] = "Year one total carbon dioxide emissions from generator use BAU (lb CO2 equivalent)"
-    ws['B{}'.format(current_row)] = generator.year_one_emissions_bau_lb_C02
+    ws['B{}'.format(current_row)] = generator.year_one_emissions_bau_lb_CO2
     make_attribute_row(ws, current_row)
     current_row += 1
 
