@@ -146,14 +146,14 @@ nested_input_definitions = {
         "min": 0,
         "max": 1,
         "default": 0,
-        "description": "Minumum acceptable percent of total generation provided by renewable energy."
+        "description": "Minumum acceptable percent of total energy consumption provided by renewable energy."
       },
       "renewable_generation_max_pct": {
         "type": "float",
         "min": 0,
         "max": 1,
         "default": 1,
-        "description": "Maximum acceptable percent of total generation provided by renewable energy."
+        "description": "Maximum acceptable percent of total energy consumption provided by renewable energy."
       },
       "emissions_reduction_min_pct": {
         "type": "float",
@@ -172,14 +172,14 @@ nested_input_definitions = {
       "emissions_reduction_accounting_method": {
         "type": "int",
         "restrict_to": [0,1],
-        "default": 1, 
+        "default": 0,
         "description": "Method for carbon emission accounting. Method 1 gives credits for exported electricity derived from onsite renewable resources, whereas Method 0 does not. "
       },
       "renewable_generation_accounting_method": {
         "type": "int",
         "restrict_to": [0,1],
-        "default": 1, 
-        "description": "Method for calculting the percent of electricity that is sourced from onsite renewable resources. Method 1 gives credits for exported electricity derived from renewable resources, whereas Method 0 does not. "
+        "default": 1,
+        "description": "Method for calculating the percent of electricity that is sourced from onsite renewable resources. Method 1 gives credits for exported electricity derived from renewable resources, whereas Method 0 does not. "
       },
       "Financial": {
         "om_cost_escalation_pct": {

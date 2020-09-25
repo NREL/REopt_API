@@ -665,7 +665,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             self.nested_outputs["Scenario"]["Site"]["year_one_renewable_generation_bau_pct"] = self.results_dict.get("annual_re_percent_bau")
             self.nested_outputs["Scenario"]["Site"]["year_one_renewable_generation_bau_kwh"] = self.results_dict.get("annual_re_kwh_bau")
             self.nested_outputs["Scenario"]["Site"]["year_one_emissions_bau_lb_CO2"] = self.results_dict.get("year_one_emissions_lbsCO2e_bau")
-            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_reduction_bau_pct"] = self.results_dict.get("year_one_emissionsreduction_percent_bau")
             self.nested_outputs["Scenario"]["Site"]["year_one_scope1_emissions_bau_lb_CO2"] = self.results_dict.get("year_one_scope1_emissions_lbsCO2e_bau")
             self.nested_outputs["Scenario"]["Site"]["year_one_scope2_emissions_bau_lb_CO2"] = self.results_dict.get("year_one_scope2_emissions_lbsCO2e_bau")
             self.nested_outputs["Scenario"]["Site"]["year_one_nonscope_emissions_bau_lb_CO2"] = self.results_dict.get("year_one_nonscope_emissions_lbsCO2e_bau")
@@ -867,15 +866,15 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_energy_supplied_kwh_bau"] = self.results_dict.get("year_one_utility_kwh_bau")
 
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_lb_CO2"] = self.results_dict.get("elec_grid_year_one_emissions_lbsCO2e")
+                        "year_one_scope2_emissions_lb_CO2"] = self.results_dict.get("elec_grid_year_one_emissions_lbsCO2e")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_series_lb_CO2"] = self.results_dict.get(
+                        "year_one_scope2_emissions_series_lb_CO2"] = self.results_dict.get(
                         "elec_grid_year_one_emissions_profile_lbsCO2e")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_bau_lb_CO2"] = self.results_dict.get(
+                        "year_one_scope2_emissions_bau_lb_CO2"] = self.results_dict.get(
                         "elec_grid_year_one_emissions_lbsCO2e_bau")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_series_bau_lb_CO2"] = self.results_dict.get(
+                        "year_one_scope2_emissions_series_bau_lb_CO2"] = self.results_dict.get(
                         "elec_grid_year_one_emissions_profile_lbsCO2e_bau")
 
                 elif name == "Generator":
