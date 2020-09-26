@@ -6,6 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
+        ('reo', '0076_auto_20200916_1556'),
         ('reo', '0078_cost_curve'),
     ]
 
