@@ -531,26 +531,12 @@ class LoadProfile(BuiltInProfile):
                 lp_error.save_to_db()
                 raise lp_error
 
-            if len(doe_reference_name_list) == 1:
-                kwargs["doe_reference_name"] = doe_reference_name_list[0]
-                if len(self.annual_kwh_list) == 1:
-                    kwargs["annual_kwh"] = self.annual_kwh_list[0]
-                super(LoadProfile, self).__init__(**kwargs)
-
-                self.load_list = self.built_in_profile
-                self.load_list_original = copy.deepcopy(self.load_list)
-
-                self.load_list = [val for val in self.load_list_original for _ in
-                                           range(self.time_steps_per_hour)]
-                self.unmodified_load_list = copy.copy(self.load_list)
-                self.bau_load_list = copy.copy(self.load_list)
-
             else:
                 combine_loadlist = []
                 for i in range(len(doe_reference_name_list)):
                     percent_share = self.percent_share_list[i]
                     kwargs["doe_reference_name"] = doe_reference_name_list[i]
-                    if self.annual_kwh_list is not None:
+                    if len(self.annual_kwh_list or []) > 0:
                         kwargs["annual_energy"] = self.annual_kwh_list[i]
                     kwargs['monthly_totals_energy'] = kwargs.get('monthly_totals_kwh')
                     super(LoadProfile, self).__init__(**kwargs)
