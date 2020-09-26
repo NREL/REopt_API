@@ -1174,9 +1174,9 @@ class DataManager:
             fuel_burn_intercept_bau =  fuel_params._get_fuel_burning_tech_params(reopt_techs_bau,
                                                         generator=eval('self.generator'), chp=eval('self.chp'))
 
-        chp_thermal_prod_slope, chp_thermal_prod_intercept, chp_fuel_burn_intercept, chp_derate \
+        chp_fuel_burn_intercept, chp_thermal_prod_slope, chp_thermal_prod_intercept, chp_derate \
             = fuel_params._get_chp_unique_params(chp_techs, chp=eval('self.chp'))
-        chp_thermal_prod_slope_bau, chp_thermal_prod_intercept_bau, chp_fuel_burn_intercept_bau, chp_derate_bau \
+        chp_fuel_burn_intercept_bau, chp_thermal_prod_slope_bau, chp_thermal_prod_intercept_bau, chp_derate_bau \
             = fuel_params._get_chp_unique_params(chp_techs_bau, chp=eval('self.chp'))
 
 
