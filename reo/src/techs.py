@@ -1096,6 +1096,9 @@ class CHP(Tech):
             cf_tp_grade_full_load = 1
             cf_tp_grade_half_load = 1
 
+        cf_tp_grade_full_load = 1
+        cf_tp_grade_half_load = 1
+
         thermal_prod_full_load = cf_tp_grade_full_load * (1.0 * 1 / elec_effic_full_load * \
                                                           thermal_effic_full_load * 3412.0 / 1.0E6)  # [MMBtu/hr/kW]
         thermal_prod_half_load = cf_tp_grade_half_load * (0.5 * 1 / elec_effic_half_load * \
@@ -1138,35 +1141,27 @@ class CHP(Tech):
             cf_fb = np.ones(8760 * self.time_steps_per_hour)
             cf_tp = np.ones(8760 * self.time_steps_per_hour)
 
-        # overwrite for no time dependence
-        # cf_fb = 1
-        # cf_tp = 1
+        cf_fb = np.ones(8760 * self.time_steps_per_hour)
+        cf_tp = np.ones(8760 * self.time_steps_per_hour)
 
         # FUEL BURN CALCULATIONS
-        fuel_burn_slope = np.ones(8760)  # initialize
-        fuel_burn_intercept = np.ones(8760)  # initialize
-        for i in range(8760):
+        fuel_burn_slope = np.ones(8760* self.time_steps_per_hour)  # initialize
+        fuel_burn_intercept = np.ones(8760* self.time_steps_per_hour)  # initialize
+        for i in range(8760* self.time_steps_per_hour):
             fuel_burn_slope[i] = cf_fb[i] * fuel_burn_slope_nominal  # [MMBtu/hr/kW]
             fuel_burn_intercept[i] = cf_fb[i] * fuel_burn_intercept_nominal  # [MMBtu/hr/kW_rated]
         fuel_burn_slope = list(fuel_burn_slope)  # convert var type
         fuel_burn_intercept = list(fuel_burn_intercept)  # convert var type
 
         # THERMAL PRODUCTION CALCULATIONS
-        thermal_prod_slope = np.ones(8760)  # initialize
-        thermal_prod_intercept = np.ones(8760)  # initialize
-        for i in range(8760):
+        thermal_prod_slope = np.ones(8760* self.time_steps_per_hour)  # initialize
+        thermal_prod_intercept = np.ones(8760* self.time_steps_per_hour)  # initialize
+        for i in range(8760 * self.time_steps_per_hour):
             thermal_prod_slope[i] = cf_tp[i] * thermal_prod_slope_nominal  # [MMBtu/hr/kW]
             thermal_prod_intercept[i] = cf_tp[i] * thermal_prod_intercept_nominal  # [MMBtu/hr/kW_rated]
         thermal_prod_slope = list(thermal_prod_slope)  # convert var type
         thermal_prod_intercept = list(thermal_prod_intercept)  # convert var type
 
-        # overwrite for no time dependence
-        # # FUEL BURN
-        # fuel_burn_slope = fuel_burn_slope_nominal #[fuel_burn_slope_nominal] * 8760*self.time_steps_per_hour
-        # fuel_burn_intercept = fuel_burn_intercept_nominal
-        # # THERMAL PROD
-        # thermal_prod_slope = thermal_prod_slope_nominal
-        # thermal_prod_intercept = thermal_prod_intercept_nominal
 
         return fuel_burn_slope, fuel_burn_intercept, thermal_prod_slope, thermal_prod_intercept
 
