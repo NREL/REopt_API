@@ -1174,9 +1174,9 @@ class DataManager:
             fuel_burn_intercept_bau =  fuel_params._get_fuel_burning_tech_params(reopt_techs_bau,
                                                         generator=eval('self.generator'), chp=eval('self.chp'))
 
-        chp_fuel_burn_intercept, chp_thermal_prod_slope, chp_thermal_prod_intercept, chp_derate \
+        chp_fuel_burn_slope, chp_fuel_burn_intercept, chp_thermal_prod_slope, chp_thermal_prod_intercept \
             = fuel_params._get_chp_unique_params(chp_techs, chp=eval('self.chp'))
-        chp_fuel_burn_intercept_bau, chp_thermal_prod_slope_bau, chp_thermal_prod_intercept_bau, chp_derate_bau \
+        chp_fuel_burn_slope_bau, chp_fuel_burn_intercept_bau, chp_thermal_prod_slope_bau, chp_thermal_prod_intercept_bau \
             = fuel_params._get_chp_unique_params(chp_techs_bau, chp=eval('self.chp'))
 
 
@@ -1296,6 +1296,7 @@ class DataManager:
             'AbsorptionChillerCOP': absorp_chiller_cop,
             'CHPThermalProdSlope': chp_thermal_prod_slope,
             'CHPThermalProdIntercept': chp_thermal_prod_intercept,
+            'CHPFuelBurnSlope': chp_fuel_burn_slope,
             'FuelBurnYIntRate': chp_fuel_burn_intercept,
             'CHPThermalProdFactor': chp_thermal_prod_factor,
             'CHPDoesNotReduceDemandCharges': tariff_args.chp_does_not_reduce_demand_charges,
@@ -1421,6 +1422,7 @@ class DataManager:
             'AbsorptionChillerCOP': absorp_chiller_cop,
             'CHPThermalProdSlope': chp_thermal_prod_slope_bau,
             'CHPThermalProdIntercept': chp_thermal_prod_intercept_bau,
+            'CHPFuelBurnSlope': chp_fuel_burn_slope_bau,
             'FuelBurnYIntRate': chp_fuel_burn_intercept_bau,
             'CHPThermalProdFactor': chp_thermal_prod_factor_bau,
             'CHPDoesNotReduceDemandCharges': tariff_args.chp_does_not_reduce_demand_charges,

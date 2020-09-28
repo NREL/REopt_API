@@ -99,8 +99,8 @@ class FuelParams:
                 fuel_types.append("BOILERFUEL")
             elif tech.lower() == 'chp':
                 fuel_costs = operator.add(fuel_costs, self.chp_fuel_rate_array)
-                fuel_burn_slope.append(chp.fuel_burn_slope)
-                # CHP has a separate fuel burn y-intercept that is size-specific, so assign 0 to this one
+                # CHP has a separate fuel burn y-intercept + slope parameters than other techs, so assign 0 to this one
+                fuel_burn_slope.append(0.0)
                 fuel_burn_intercept.append(0.0)
                 fuel_limit.append(self.big_number)
                 techs_by_fuel_type.append([tech.upper()])
@@ -120,14 +120,15 @@ class FuelParams:
         """
         # Unique parameters for CHP
         if chp_techs not in [None, []]:
+            chp_fuel_burn_slope = [chp.fuel_burn_slope]
             chp_fuel_burn_intercept = [chp.fuel_burn_intercept]
             chp_thermal_prod_slope = [chp.thermal_prod_slope]
             chp_thermal_prod_intercept = [chp.thermal_prod_intercept]
-            chp_derate = [chp.derate]
         else:
+            chp_fuel_burn_slope = list()
             chp_fuel_burn_intercept = list()
             chp_thermal_prod_slope = list()
             chp_thermal_prod_intercept = list()
-            chp_derate = list()
 
-        return chp_fuel_burn_intercept, chp_thermal_prod_slope, chp_thermal_prod_intercept, chp_derate
+
+        return chp_fuel_burn_slope, chp_fuel_burn_intercept, chp_thermal_prod_slope, chp_thermal_prod_intercept
