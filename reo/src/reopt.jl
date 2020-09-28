@@ -277,12 +277,12 @@ function add_fuel_constraints(m, p)
 		#Constraint (1c): Total Fuel burn for CHP
 		@constraint(m, CHPFuelBurnCon[t in p.CHPTechs, ts in p.TimeStep],
 					m[:dvFuelUsage][t,ts]  == m[:dvFuelBurnYIntercept][t,ts] +
-						p.ProductionFactor[t,ts] * p.FuelBurnSlope[t] * m[:dvRatedProduction][t,ts]
+						p.ProductionFactor[t,ts] * p.CHPFuelBurnSlope[t,ts] * m[:dvRatedProduction][t,ts]
 					)
 
 		#Constraint (1d): Y-intercept fuel burn for CHP
 		@constraint(m, CHPFuelBurnYIntCon[t in p.CHPTechs, ts in p.TimeStep],
-					p.FuelBurnYIntRate[t] * m[:dvSize][t] - m[:NewMaxSize][t] * (1-m[:binTechIsOnInTS][t,ts])  <= m[:dvFuelBurnYIntercept][t,ts]
+					p.FuelBurnYIntRate[t,ts] * m[:dvSize][t] - m[:NewMaxSize][t] * (1-m[:binTechIsOnInTS][t,ts])  <= m[:dvFuelBurnYIntercept][t,ts]
 					)
 	end
 
@@ -304,21 +304,21 @@ function add_thermal_production_constraints(m, p)
 	if !isempty(p.CHPTechs)
 		#Constraint (2a-1): Upper Bounds on Thermal Production Y-Intercept
 		@constraint(m, CHPYInt2a1Con[t in p.CHPTechs, ts in p.TimeStep],
-					m[:dvThermalProductionYIntercept][t,ts] <= p.CHPThermalProdIntercept[t] * m[:dvSize][t]
+					m[:dvThermalProductionYIntercept][t,ts] <= p.CHPThermalProdIntercept[t,ts] * m[:dvSize][t]
 					)
 		# Constraint (2a-2): Upper Bounds on Thermal Production Y-Intercept
 		@constraint(m, CHPYInt2a2Con[t in p.CHPTechs, ts in p.TimeStep],
-					m[:dvThermalProductionYIntercept][t,ts] <= p.CHPThermalProdIntercept[t] * m[:NewMaxSize][t] * m[:binTechIsOnInTS][t,ts]
+					m[:dvThermalProductionYIntercept][t,ts] <= p.CHPThermalProdIntercept[t,ts] * m[:NewMaxSize][t] * m[:binTechIsOnInTS][t,ts]
 					)
 		#Constraint (2b): Lower Bounds on Thermal Production Y-Intercept
 		@constraint(m, CHPYInt2bCon[t in p.CHPTechs, ts in p.TimeStep],
-					m[:dvThermalProductionYIntercept][t,ts] >= p.CHPThermalProdIntercept[t] * m[:dvSize][t] - p.CHPThermalProdIntercept[t] * m[:NewMaxSize][t] * (1 - m[:binTechIsOnInTS][t,ts])
+					m[:dvThermalProductionYIntercept][t,ts] >= p.CHPThermalProdIntercept[t,ts] * m[:dvSize][t] - p.CHPThermalProdIntercept[t,ts] * m[:NewMaxSize][t] * (1 - m[:binTechIsOnInTS][t,ts])
 					)
 		# Constraint (2c): Thermal Production of CHP
 		# Note: p.HotWaterAmbientFactor[t,ts] * p.HotWaterThermalFactor[t,ts] removed from this but present in math
 		@constraint(m, CHPThermalProductionCon[t in p.CHPTechs, ts in p.TimeStep],
 					m[:dvThermalProduction][t,ts] ==
-					p.CHPThermalProdSlope[t] * p.ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts] + m[:dvThermalProductionYIntercept][t,ts]
+					p.CHPThermalProdSlope[t,ts] * p.ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts] + m[:dvThermalProductionYIntercept][t,ts]
 					)
 	end
 end
