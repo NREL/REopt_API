@@ -212,6 +212,7 @@ Base.@kwdef struct Parameter
 	AbsorptionChillerCOP::Float64
 	CHPThermalProdSlope::AxisArray
 	CHPThermalProdIntercept::AxisArray
+	CHPFuelBurnSlope::AxisArray
 	FuelBurnYIntRate::AxisArray
 	CHPThermalProdFactor::AxisArray
 	CHPStandbyCharge::Float64
@@ -322,9 +323,10 @@ function Parameter(d::Dict)
     d["MaxGridSales"] = [d["MaxGridSales"]]
 
 	# CHP Additions
-	d["CHPThermalProdSlope"] = AxisArray(d["CHPThermalProdSlope"],d["CHPTechs"])
-	d["CHPThermalProdIntercept"] = AxisArray(d["CHPThermalProdIntercept"],d["CHPTechs"])
-	d["FuelBurnYIntRate"] = AxisArray(d["FuelBurnYIntRate"],d["CHPTechs"])
+	d["CHPThermalProdSlope"] = AxisArray(d["CHPThermalProdSlope"],d["CHPTechs"],d[:TimeStep])
+	d["CHPThermalProdIntercept"] = AxisArray(d["CHPThermalProdIntercept"],d["CHPTechs"],d[:TimeStep])
+	d["CHPFuelBurnSlope"] = AxisArray(d["CHPFuelBurnSlope"],d["CHPTechs"],d[:TimeStep])
+	d["FuelBurnYIntRate"] = AxisArray(d["FuelBurnYIntRate"],d["CHPTechs"],d[:TimeStep])
 	d["CHPThermalProdFactor"] = vector_to_axisarray(d["CHPThermalProdFactor"],d["CHPTechs"],d[:TimeStep])
 	d["pwf_fuel"] = AxisArray(d["pwf_fuel"], d["Tech"])
 	d["StorageDecayRate"] = AxisArray(d["StorageDecayRate"], d["Storage"])
