@@ -27,6 +27,7 @@ class ColdTest(ResourceTestCaseMixin, TestCase):
 
         return self.api_client.post(self.reopt_base, format='json', data=data)
 
+    @skip("CHP test")
     def test_heat_cool_energy_balance(self):
         """
 
