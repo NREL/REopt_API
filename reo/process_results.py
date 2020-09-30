@@ -337,7 +337,8 @@ def calculate_proforma_metrics(data):
         #when the cumulative cashflow goes positive, scale the amount by the free cashflow to 
         #approximate a partial year
         if cumulative_cashflow[-1] < 0:
-            return None, None, net_present_cost
+            return None, None, round(net_present_cost,4) if net_present_cost is not None else None, \
+               round(annualized_payment_to_third_party_us_dollars,4) if annualized_payment_to_third_party_us_dollars is not None else None
             
         simple_payback_years = 0
         for i in range(1, years+1):
