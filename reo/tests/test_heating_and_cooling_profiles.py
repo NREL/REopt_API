@@ -82,10 +82,6 @@ post = {"Scenario": {
     }
 }}}
 
-# json_file = open("results_processing/job1-input.json")
-# json_str = json_file.read()
-# post = json.loads(json_str)
-
 class HeatingCoolingTest(ResourceTestCaseMixin, TestCase):
     REopt_tol = 1e-2
 
@@ -97,7 +93,7 @@ class HeatingCoolingTest(ResourceTestCaseMixin, TestCase):
 
         return self.api_client.post(self.reopt_base, format='json', data=data)
 
-
+    @skip("CHP test")
     def test_heating_cooling_inputs(self):
         
         resp = self.get_response(data=post)
