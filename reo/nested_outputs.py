@@ -198,7 +198,7 @@ nested_output_definitions = {
                                   "distributed energy resource assets. Also, this is equivalent to the net present "
                                   "value of the costs the host will pay to the third-party owner."),
                   "units": "$"
-                 },
+                 }
                   
               },
 
