@@ -346,7 +346,7 @@ def calculate_simple_payback_and_irr_and_npc(data):
                 simple_payback_years += -(cumulative_cashflow[i-1]/free_cashflow[i])
             # skip years where cumulative cashflow is positive and the previous year's is too
         
-        return round(simple_payback_years,4), round(irr,4), round(net_present_cost,4)
+        return round(simple_payback_years,4), round(irr,4), round(net_present_cost,4) if net_present_cost is not None else None
 
 @shared_task(bind=True, base=ProcessResultsTask, ignore_result=True)
 def process_results(self, dfm_list, data, meta, saveToDB=True):
