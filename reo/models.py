@@ -172,6 +172,7 @@ class FinancialModel(models.Model):
     simple_payback_years = models.FloatField(null=True, blank=True)
     irr_pct = models.FloatField(null=True, blank=True)
     net_present_cost_us_dollars = models.FloatField(null=True, blank=True)
+    annualized_payment_to_third_party_us_dollars = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):

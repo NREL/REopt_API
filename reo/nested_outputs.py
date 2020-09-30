@@ -195,8 +195,12 @@ nested_output_definitions = {
                  "net_present_cost_us_dollars": {
                   "type": float,
                   "description": ("Present value of the total costs incurred by the third-party owning and operating the "
-                                  "distributed energy resource assets. Also, this is equivalent to the net present "
-                                  "value of the costs the host will pay to the third-party owner."),
+                                  "distributed energy resource assets."),
+                  "units": "$"
+                 },
+                 "annualized_payment_to_third_party_us_dollars": {
+                  "type": float,
+                  "description": ("The annualized amount the host will pay to the third-party owner over the life of the project."),
                   "units": "$"
                  }
                   
