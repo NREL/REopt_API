@@ -36,31 +36,16 @@ from reo.models import ModelManager
 from reo.utilities import check_common_outputs
 
 
-class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
+class REandEmissionsTests(ResourceTestCaseMixin, TestCase):
     REopt_tol = 1e-2
 
     def setUp(self):
-        super(GeneratorSizingTests, self).setUp()
+        super(REandEmissionsTests, self).setUp()
         self.reopt_base = '/v1/job/'
         self.test_post = os.path.join('reo', 'tests', 'posts', 'generatorSizingPost.json')
 
     def get_response(self, data):
         return self.api_client.post(self.reopt_base, format='json', data=data)
-
-    def outage_tech_to_load(self, list_to_load, outage_start, outage_end):
-        """
-        To resolve indexing empty list when checking critical_load=generator_to_load,
-        define a function that sums up all technologies_to_load and skip if the tech is empty
-        @param list_to_load:
-        @param outage_start:
-        @param outage_end:
-        @return:
-        """
-        tech_to_load = list()
-        for tech in list_to_load:
-            if tech is not None:
-                tech_to_load = [sum_t + t for sum_t, t in zip(tech_to_load, tech[outage_start:outage_end])]
-        return tech_to_load
 
     def test_generator_sizing_with_existing_pv(self):
         """
@@ -71,41 +56,48 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         - Unlimited max storage
         - generator doesn't sell energy to grid
         - generator is only allowed to operate during outage hours
+        Site CAN receive emissions reductions credits and RE credits for exported RE
         """
         nested_data = json.load(open(self.test_post, 'rb'))
+        nested_data['Scenario']['Site']['renewable_generation_min_pct'] = 0.7
+        nested_data['Scenario']['Site']['renewable_generation_accounting_method'] = 1
+        nested_data['Scenario']['Site']['emissions_reduction_accounting_method'] = 1
+        nested_data['Scenario']['Site']['PV']['existing_kw'] = 10
+        nested_data['Scenario']['Site']['Generator']['existing_kw'] = 10
         nested_data['Scenario']['Site']['LoadProfile']['outage_is_major_event'] = True
-        nested_data['Scenario']['Site']['PV']['max_kw'] = 0
-        nested_data['Scenario']['Site']['Generator']['existing_kw'] = 0
-        nested_data['Scenario']['Site']['PV']['existing_kw'] = 100
+
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat(d['outputs'])
-        c['year_one_emissions_lb_CO2'] = d['outputs']['Scenario']['Site']['year_one_emissions_lb_CO2']
-        c['year_one_emissions_bau_lb_CO2'] = d['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_CO2']
-        c['utility_year_one_emissions_lb_CO2'] = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_lb_CO2']
-        c['utility_year_one_emissions_bau_lb_CO2'] = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_bau_lb_CO2']
-        c['generator_year_one_emissions_lb_CO2'] = d['outputs']['Scenario']['Site']['Generator']['year_one_scope1_emissions_lb_CO2']
-        c['generator_year_one_emissions_bau_lb_CO2'] = d['outputs']['Scenario']['Site']['Generator']['year_one_scope1_emissions_bau_lb_CO2']
 
-        #d['outputs']["Scenario"]["Site"]["year_one_renewable_generation_pct"]
-        #d['outputs']["Scenario"]["Site"]["year_one_renewable_generation_kwh"]
-        #d['outputs']["Scenario"]["Site"]["year_one_emissions_lb_CO2"]
-        #d['outputs']["Scenario"]["Site"]["year_one_emissions_reduction_pct"]
-        #d['outputs']["Scenario"]["Site"]["year_one_scope1_emissions_lb_CO2"]
-        #d['outputs']["Scenario"]["Site"]["year_one_scope2_emissions_lb_CO2"]
-        #d['outputs']["Scenario"]["Site"]["year_one_nonscope_emissions_lb_CO2"]
-        #d['outputs']["Scenario"]["Site"]["year_one_scope1_emissions_series_lb_CO2"]
-        #d['outputs']["Scenario"]["Site"]["year_one_scope2_emissions_series_lb_CO2"]
-        #d['outputs']["Scenario"]["Site"]["year_one_nonscope_emissions_series_lb_CO2"]
-        # Grid emissions and offsets
-        #d['outputs']["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_lb_CO2"]
-        #d['outputs']["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_offset_lb_CO2"]
-        # Generator
-        #d['outputs']["Scenario"]["Site"]["Generator"]["year_one_emissions_lb_CO2"]
+        c['year_one_emissions_lb_CO2'] = d['outputs']['Scenario']['Site']['year_one_emissions_lb_CO2'] or 0.0
+        c['year_one_emissions_bau_lb_CO2'] = d['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_CO2'] or 0.0
+        c['year_one_renewable_generation_pct'] = d['outputs']['Scenario']['Site']['year_one_renewable_generation_pct'] or 0.0
+        c['year_one_renewable_generation_kwh'] = d['outputs']['Scenario']['Site']['year_one_renewable_generation_kwh'] or 0.0
+        c['year_one_emissions_reduction_pct'] = d['outputs']['Scenario']['Site']['year_one_emissions_reduction_pct'] or 0.0
+        c['year_one_scope1_emissions_lb_CO2'] = d['outputs']['Scenario']['Site']['year_one_scope1_emissions_lb_CO2'] or 0.0
+        c['year_one_scope2_emissions_lb_CO2'] = d['outputs']['Scenario']['Site']['year_one_scope2_emissions_lb_CO2'] or 0.0
+        c['year_one_nonscope_emissions_lb_CO2'] = d['outputs']['Scenario']['Site']['year_one_nonscope_emissions_lb_CO2'] or 0.0
+        c['year_one_renewable_generation_bau_pct'] = d['outputs']['Scenario']['Site']['year_one_renewable_generation_bau_pct'] or 0.0
+        c['year_one_renewable_generation_bau_kwh'] = d['outputs']['Scenario']['Site']['year_one_renewable_generation_bau_kwh'] or 0.0
+        c['year_one_scope1_emissions_bau_lb_CO2'] = d['outputs']['Scenario']['Site']['year_one_scope1_emissions_bau_lb_CO2'] or 0.0
+        c['year_one_scope2_emissions_bau_lb_CO2'] = d['outputs']['Scenario']['Site']['year_one_scope2_emissions_bau_lb_CO2'] or 0.0
+        c['year_one_nonscope_emissions_bau_lb_CO2'] = d['outputs']['Scenario']['Site']['year_one_nonscope_emissions_bau_lb_CO2'] or 0.0
+        c['utility_year_one_emissions_lb_CO2'] = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_scope2_emissions_lb_CO2'] or 0.0
+        c['utility_year_one_emissions_bau_lb_CO2'] = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_scope2_emissions_bau_lb_CO2'] or 0.0
+        c['generator_year_one_emissions_lb_CO2'] = d['outputs']['Scenario']['Site']['Generator']['year_one_scope1_emissions_lb_CO2'] or 0.0
+        c['generator_year_one_emissions_bau_lb_CO2'] = d['outputs']['Scenario']['Site']['Generator']['year_one_scope1_emissions_bau_lb_CO2'] or 0.0
+        c['generator_year_one_emissions_lb_CO2'] = d['outputs']['Scenario']['Site']['Generator']['year_one_nonscope_emissions_lb_CO2'] or 0.0
+        c['generator_year_one_emissions_bau_lb_CO2'] = d['outputs']['Scenario']['Site']['Generator']['year_one_nonscope_emissions_bau_lb_CO2'] or 0.0
+        c['PV_year_one_emissions_lb_CO2'] = d['outputs']['Scenario']['Site']['PV']['year_one_scope1_emissions_lb_CO2'] or 0.0
+        c['PV_year_one_emissions_bau_lb_CO2'] = d['outputs']['Scenario']['Site']['PV']['year_one_scope1_emissions_bau_lb_CO2'] or 0.0
+        c['PV_year_one_emissions_lb_CO2'] = d['outputs']['Scenario']['Site']['PV']['year_one_nonscope_emissions_lb_CO2'] or 0.0
+        c['PV_year_one_emissions_bau_lb_CO2'] = d['outputs']['Scenario']['Site']['PV']['year_one_nonscope_emissions_bau_lb_CO2'] or 0.0
 
+        # need to grab values here via debugging and update numbers below (this test is currently expected to fail)
         d_expected = dict()
         d_expected['lcc'] = 245232.0
         d_expected['npv'] = -4139.0

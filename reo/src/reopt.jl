@@ -737,8 +737,8 @@ function add_re_and_emissions_constraints(m,p)
 			- sum(m[:dvProductionToGrid][t,u,ts] for t in p.RETechs, u in p.SalesTiersByTech[t], ts in p.TimeStep if !(u in p.CurtailmentTiers))) # minus exported RE. 
 		# if battery ends up being able to discharge to grid, need to make sure only RE that is being consumed onsite are counted so battery doesn't become a back door for RE to grid. 
 	end
-	#@constraint(m, MinRECon, m[:AnnualREkWh]) >= p.MinAnnualREPct*p.AnnualElecLoad)
-	#@constraint(m, MaxRECon, m[:AnnualREkWh]) <= p.MaxAnnualREPct*p.AnnualElecLoad)
+	#@constraint(m, MinRECon, m[:AnnualREkWh] >= p.MinAnnualPercentRE*p.AnnualElecLoad)
+	#@constraint(m, MaxRECon, m[:AnnualREkWh] <= p.MaxAnnualPercentRE*p.AnnualElecLoad)
 
 	### Year 1 Emissions Profile and Reduction Targets
 	# Scope 1: Direct emissions from onsite generation 
@@ -762,8 +762,8 @@ function add_re_and_emissions_constraints(m,p)
 	elseif p.EmissionsAccountingMethod == 1 # yes emissions "credit" for non-scope exports
 		m[:EmissionsYr1_Total_LbsCO2e] = @expression(m, m[:EmissionsYr1_Scope1_LbsCO2e] + m[:EmissionsYr1_Scope2_LbsCO2e] + m[:EmissionsYr1_NonScope_LbsCO2e] )
 	end
-	#@constraint(m, MinEmissionsReductionCon, m[:Year1EmissionsLbsCO2e]) <= (1-p.MinPercentEmissionsReduction)*p.BAUYr1Emissions
-	#@constraint(m, MaxEmissionsReductionCon, m[:Year1EmissionsLbsCO2e]) <= (1-p.MaxPercentEmissionsReduction)*p.BAUYr1Emissions
+	#@constraint(m, MinEmissionsReductionCon, m[:EmissionsYr1_Total_LbsCO2e] <= (1-p.MinPercentEmissionsReduction)*p.BAUYr1Emissions)
+	#@constraint(m, MaxEmissionsReductionCon, m[:EmissionsYr1_Total_LbsCO2e] >= (1-p.MaxPercentEmissionsReduction)*p.BAUYr1Emissions)
 end
 
 
@@ -1159,9 +1159,9 @@ function add_util_results(m, p, r::Dict)
                 sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) - m[:dvGridToStorage][ts] )
     r["GridToLoad"] = round.(value.(GridToLoad), digits=3)
 	
-	r["elec_grid_year_one_emissions_lbsCO2e"] = round(value(m[:EmissionsYr1_Scope2_LbsCO2e]), digits=3)
+	r["year_one_elec_grid_emissions_scope2_lbsCO2e"] = round(value(m[:EmissionsYr1_Scope2_LbsCO2e]), digits=3)
 	@expression(m, EmissionsProfile_Scope2Expr_Grid[ts in p.TimeStep], m[:EmissionsProfile_Scope2_LbsCO2e][ts])
-	r["elec_grid_year_one_emissions_profile_lbsCO2e"] = round.(value.(EmissionsProfile_Scope2Expr_Grid), digits=3)
+	r["year_one_elec_grid_emissions_profile_scope2_lbsCO2e"] = round.(value.(EmissionsProfile_Scope2Expr_Grid), digits=3)
 end
 
 function add_site_results(m, p, r::Dict)
