@@ -93,7 +93,7 @@ class HeatingCoolingTest(ResourceTestCaseMixin, TestCase):
 
         return self.api_client.post(self.reopt_base, format='json', data=data)
 
-    @skip("CHP test")
+    #@skip("CHP test")
     def test_heating_cooling_inputs(self):
         
         resp = self.get_response(data=post)
