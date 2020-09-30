@@ -74,9 +74,10 @@ class ProcessResultsTask(Task):
         self.request.callback = None
         self.request.chord = None  # this seems to stop the infinite chord_unlock call
 
-def calculate_simple_payback_and_irr_and_npc(data):
+def calculate_proforma_metrics(data):
         """
-        Recreates the ProForma spreadsheet calculations to get the simple payback period
+        Recreates the ProForma spreadsheet calculations to get the simple payback period, irr, net present cost (3rd
+        party case), and payment to third party (3rd party case)
         :param data: dict a complete response from the REopt API for a successfully completed job
         :return: float, the simple payback of the system, if the system recuperates its costs
         """
@@ -300,12 +301,14 @@ def calculate_simple_payback_and_irr_and_npc(data):
         free_cashflow_before_income[0] += federal_itc
         free_cashflow_before_income = np.append([(-1 * financials['initial_capital_costs']) + total_ibi_and_cbi], free_cashflow_before_income)
         net_present_cost = None
+        annualized_payment_to_third_party_us_dollars = None
         if third_party:
             # get cumulative cashflow for developer
             discounted_cashflow = [v/((1+financials['owner_discount_pct'])**yr) for yr, v in enumerate(free_cashflow_before_income)]
             net_present_cost = sum(discounted_cashflow) * -1
             capital_recovery_factor = (financials['owner_discount_pct'] * (1+financials['owner_discount_pct'])**years) / \
                                         ((1+financials['owner_discount_pct'])**years - 1) / (1 - tax_pct)
+            annualized_payment_to_third_party_us_dollars = net_present_cost * capital_recovery_factor
             annual_income_from_host = -1 * sum(discounted_cashflow) * capital_recovery_factor * (1-tax_pct)
             free_cashflow = copy.deepcopy(free_cashflow_before_income)
             free_cashflow[1:] += annual_income_from_host
@@ -346,7 +349,8 @@ def calculate_simple_payback_and_irr_and_npc(data):
                 simple_payback_years += -(cumulative_cashflow[i-1]/free_cashflow[i])
             # skip years where cumulative cashflow is positive and the previous year's is too
         
-        return round(simple_payback_years,4), round(irr,4), round(net_present_cost,4) if net_present_cost is not None else None
+        return round(simple_payback_years,4), round(irr,4), round(net_present_cost,4) if net_present_cost is not None else None, \
+               round(annualized_payment_to_third_party_us_dollars,4) if annualized_payment_to_third_party_us_dollars is not None else None
 
 @shared_task(bind=True, base=ProcessResultsTask, ignore_result=True)
 def process_results(self, dfm_list, data, meta, saveToDB=True):
@@ -880,10 +884,11 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
         data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
         
         #simple payback needs all data to be computed so running that calculation here
-        simple_payback, irr, net_present_cost = calculate_simple_payback_and_irr_and_npc(data)  
+        simple_payback, irr, net_present_cost, annualized_payment_to_third_party_us_dollars  = calculate_proforma_metrics(data)  
         data['outputs']['Scenario']['Site']['Financial']['simple_payback_years'] = simple_payback
         data['outputs']['Scenario']['Site']['Financial']['irr_pct'] = irr if not np.isnan(irr or np.nan) else None
         data['outputs']['Scenario']['Site']['Financial']['net_present_cost_us_dollars'] = net_present_cost
+        data['outputs']['Scenario']['Site']['Financial']['annualized_payment_to_third_party_us_dollars'] = annualized_payment_to_third_party_us_dollars        
         data = EmissionsCalculator.add_to_data(data)
 
         pv_watts_station_check = data['outputs']['Scenario']['Site']['PV'][0].get('station_distance_km') or 0
