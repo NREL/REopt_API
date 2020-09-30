@@ -22,7 +22,7 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
 
         return self.api_client.post(self.reopt_base, format='json', data=data)
 
-    @skip("CHP test")
+    #@skip("CHP test")
     def test_chp_sizing_decomposition_7pct(self):
         """
         Validation to ensure that:
@@ -67,7 +67,7 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
             print("Error message: {}".format(d['messages'].get('error')))
             raise
 
-    @skip("CHP test")
+    #@skip("CHP test")
     def test_chp_sizing_monolith_1pct(self):
         """
         Validation to ensure that:
@@ -110,7 +110,7 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
             print("Error message: {}".format(d['messages'].get('error')))
             raise
 
-    @skip("CHP test")
+    #@skip("CHP test")
     def test_cost_curve(self):
         """
         Validation to ensure that:
