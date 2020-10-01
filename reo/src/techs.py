@@ -967,10 +967,11 @@ class CHP(Tech):
         self.derate_slope_pct_per_degF = kwargs['derate_slope_pct_per_degF']
 
         self.fuel_burn_slope, self.fuel_burn_intercept, self.thermal_prod_slope, self.thermal_prod_intercept = \
-            self.convert_performance_params(self.elec_effic_full_load, self.elec_effic_half_load,
+            self.convert_performance_params(self, self.elec_effic_full_load, self.elec_effic_half_load,
                                             self.thermal_effic_full_load,
-                                            self.thermal_effic_half_load,
-                                            self, oa_temp_degF)  # add additional inputs
+                                            self.thermal_effic_half_load, oa_temp_degF)  # add additional inputs
+
+        oa_temp_degF = np.array(oa_temp_degF)
         if self.use_default_derate:
             # TODO: Use either site altitude OR derate_max, depending on which, if any, are input. VALIDATORS.PY to handle this!
             # TODO: implement derate factor array based on input temperature profile, with derate_max from above TODO
@@ -980,16 +981,16 @@ class CHP(Tech):
             if self.prime_mover == 'micro_turbine':
                 # 72 F at 0 ft elevation
                 self.derate_start_temp_degF = self.derate_start_temp_degF * \
-                                              (((7.80007*10**(-7))*site_elevation_ft**2 \
-                                                - 0.00931037*site_elevation_ft \
+                                              (((7.80007*10**(-7))*site_elevation_ft**2
+                                                - 0.00931037*site_elevation_ft
                                                 + 71.593203) / 71.593203)
                 # 0.5 % per F at 0 ft elevation
                 self.derate_slope_pct_per_degF = self.derate_slope_pct_per_degF * \
                                                  ((0.000000153006*site_elevation_ft - 0.005127) / -0.005127)
                 # 1 at 0 ft elevation
                 self.max_derate_factor = self.max_derate_factor * \
-                                         (((-3.64189*10**(-9))*site_elevation_ft**2 \
-                                           + (7.03742*10**(-6))*site_elevation_ft \
+                                         (((-3.64189*10**(-9))*site_elevation_ft**2
+                                           + (7.03742*10**(-6))*site_elevation_ft
                                            + 1.002) / 1.002)
             elif self.prime_mover == 'recip_engine':
                 if self.size_class == 1:
@@ -1025,18 +1026,21 @@ class CHP(Tech):
                 self.max_derate_factor = self.max_derate_factor * 1
 
         # calculate power de-rate CF for the specific site
-        if self.prime_mover != 'combustion_turbine':  # all prime movers exhibit same general derate except for CT's
-            for i in range(8760 * self.time_steps_per_hour):
-                if oa_temp_degF[i] <= self.derate_start_temp_degF:
-                    self.chp_power_derate[i] = 1.0 * self.max_derate_factor
-                else:
-                    self.chp_power_derate[i] = 1.0 * self.max_derate_factor - \
+            if self.prime_mover != 'combustion_turbine':  # all prime movers exhibit same general derate except for CT's
+                for i in range(8760 * self.time_steps_per_hour):
+                    if oa_temp_degF[i] <= self.derate_start_temp_degF:
+                        self.chp_power_derate[i] = 1.0 * self.max_derate_factor
+                    else:
+                        self.chp_power_derate[i] = 1.0 * self.max_derate_factor - \
                                                self.derate_slope_pct_per_degF * (
                                                            oa_temp_degF[i] - self.derate_start_temp_degF)
+
+            self.chp_power_derate = list(self.chp_power_derate)
 
         else:  # if using defualt_derate boolean
             # no power de-rate considered
             self.chp_power_derate = [1.0 for _ in range(8760 * self.time_steps_per_hour)]
+            self.chp_power_derate = list(self.chp_power_derate)
 
         dfm.add_chp(self)
 
@@ -1048,16 +1052,15 @@ class CHP(Tech):
 
         return chp_elec_prod_factor, chp_thermal_prod_factor
 
-    @staticmethod
-    def convert_performance_params(elec_effic_full_load, elec_effic_half_load, thermal_effic_full_load,
-                                   thermal_effic_half_load, self, oa_temp_degF):
-        # add self and oa_temp_degF to function inputs
-        # why is self not showing up???
+    #@staticmethod #use this or no?
+    def convert_performance_params(self,elec_effic_full_load, elec_effic_half_load, thermal_effic_full_load,
+                                   thermal_effic_half_load, oa_temp_degF):
+
         """
         Convert the performance parameter inputs to coefficients used readily in Xpress
         :return: fuel_burn_slope, fuel_burn_intercept, thermal_prod_slope, thermal_prod_intercept
         """
-
+    #if passsing in self, then wouldn't need efficiency values as their own variable names
         fuel_burn_full_load = 1 / elec_effic_full_load * 3412.0 / 1.0E6 * 1.0  # [MMBtu/hr/kW]
         fuel_burn_half_load = 1 / elec_effic_half_load * 3412.0 / 1.0E6 * 0.5  # [MMBtu/hr/kW]
         fuel_burn_slope_nominal = (fuel_burn_full_load - fuel_burn_half_load) / (1.0 - 0.5)  # [MMBtu/hr/kW]
@@ -1090,32 +1093,23 @@ class CHP(Tech):
                 cf_tp_grade_full_load = 1
             elif P_steam > 150:
                 cf_tp_grade_full_load = 1 - (P_steam - 150)*((1-0.94)/(300-150))
-
             cf_tp_grade_half_load = cf_tp_grade_full_load
         elif self.prime_mover == 'fuel_cell':
             cf_tp_grade_full_load = 1
             cf_tp_grade_half_load = 1
 
-        cf_tp_grade_full_load = 1
-        cf_tp_grade_half_load = 1
-
-        thermal_prod_full_load = cf_tp_grade_full_load * (1.0 * 1 / elec_effic_full_load * \
-                                                          thermal_effic_full_load * 3412.0 / 1.0E6)  # [MMBtu/hr/kW]
-        thermal_prod_half_load = cf_tp_grade_half_load * (0.5 * 1 / elec_effic_half_load * \
-                                                          thermal_effic_half_load * 3412.0 / 1.0E6)  # [MMBtu/hr/kW]
+        thermal_prod_full_load = cf_tp_grade_full_load * (1.0 * 1 / elec_effic_full_load * thermal_effic_full_load * 3412.0 / 1.0E6)  # [MMBtu/hr/kW]
+        thermal_prod_half_load = cf_tp_grade_half_load * (0.5 * 1 / elec_effic_half_load * thermal_effic_half_load * 3412.0 / 1.0E6)  # [MMBtu/hr/kW]
         thermal_prod_slope_nominal = (thermal_prod_full_load - thermal_prod_half_load) / (1.0 - 0.5)  # [MMBtu/hr/kW]
         thermal_prod_intercept_nominal = thermal_prod_full_load - thermal_prod_slope_nominal * 1.0  # [MMBtu/hr/kW_rated]
 
         # -----Ambient correction factor-----
         # functions of T_amb (shift ISO part load thermal production and fuel burn curves)
         t_amb_f = np.array(oa_temp_degF)
-        # mode_ambient = 0 # 0 = off (ISO only) , 1 = on (non-ISO)
-        # COULD USE ----> if self.use_default_derate:
-        # if mode_ambient == 1:
         if self.use_default_derate:
             if self.prime_mover == 'micro_turbine':
                 # see thesis
-                use_cf = 1
+                use_cf = 1 #placeholder boolean
                 if use_cf == 0:
                     cf_fb = np.ones(8760 * self.time_steps_per_hour)  # initialize
                     cf_tp = np.ones(8760 * self.time_steps_per_hour)  # initialize
@@ -1141,22 +1135,20 @@ class CHP(Tech):
             cf_fb = np.ones(8760 * self.time_steps_per_hour)
             cf_tp = np.ones(8760 * self.time_steps_per_hour)
 
-        cf_fb = np.ones(8760 * self.time_steps_per_hour)
-        cf_tp = np.ones(8760 * self.time_steps_per_hour)
 
         # FUEL BURN CALCULATIONS
-        fuel_burn_slope = np.ones(8760* self.time_steps_per_hour)  # initialize
-        fuel_burn_intercept = np.ones(8760* self.time_steps_per_hour)  # initialize
-        for i in range(8760* self.time_steps_per_hour):
+        fuel_burn_slope = np.ones(8760)  # initialize
+        fuel_burn_intercept = np.ones(8760)  # initialize
+        for i in range(8760):
             fuel_burn_slope[i] = cf_fb[i] * fuel_burn_slope_nominal  # [MMBtu/hr/kW]
             fuel_burn_intercept[i] = cf_fb[i] * fuel_burn_intercept_nominal  # [MMBtu/hr/kW_rated]
         fuel_burn_slope = list(fuel_burn_slope)  # convert var type
         fuel_burn_intercept = list(fuel_burn_intercept)  # convert var type
 
         # THERMAL PRODUCTION CALCULATIONS
-        thermal_prod_slope = np.ones(8760* self.time_steps_per_hour)  # initialize
-        thermal_prod_intercept = np.ones(8760* self.time_steps_per_hour)  # initialize
-        for i in range(8760 * self.time_steps_per_hour):
+        thermal_prod_slope = np.ones(8760)  # initialize
+        thermal_prod_intercept = np.ones(8760)  # initialize
+        for i in range(8760):
             thermal_prod_slope[i] = cf_tp[i] * thermal_prod_slope_nominal  # [MMBtu/hr/kW]
             thermal_prod_intercept[i] = cf_tp[i] * thermal_prod_intercept_nominal  # [MMBtu/hr/kW_rated]
         thermal_prod_slope = list(thermal_prod_slope)  # convert var type
