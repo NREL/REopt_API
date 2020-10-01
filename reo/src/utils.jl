@@ -323,10 +323,10 @@ function Parameter(d::Dict)
     d["MaxGridSales"] = [d["MaxGridSales"]]
 
 	# CHP Additions
-	d["CHPThermalProdSlope"] = AxisArray(d["CHPThermalProdSlope"],d["CHPTechs"],d[:TimeStep])
-	d["CHPThermalProdIntercept"] = AxisArray(d["CHPThermalProdIntercept"],d["CHPTechs"],d[:TimeStep])
-	d["CHPFuelBurnSlope"] = AxisArray(d["CHPFuelBurnSlope"],d["CHPTechs"],d[:TimeStep])
-	d["FuelBurnYIntRate"] = AxisArray(d["FuelBurnYIntRate"],d["CHPTechs"],d[:TimeStep])
+	d["CHPThermalProdSlope"] = vector_to_axisarray(d["CHPThermalProdSlope"],d["CHPTechs"],d[:TimeStep])
+	d["CHPThermalProdIntercept"] = vector_to_axisarray(d["CHPThermalProdIntercept"],d["CHPTechs"],d[:TimeStep])
+	d["CHPFuelBurnSlope"] = vector_to_axisarray(d["CHPFuelBurnSlope"],d["CHPTechs"],d[:TimeStep])
+	d["FuelBurnYIntRate"] = vector_to_axisarray(d["FuelBurnYIntRate"],d["CHPTechs"],d[:TimeStep])
 	d["CHPThermalProdFactor"] = vector_to_axisarray(d["CHPThermalProdFactor"],d["CHPTechs"],d[:TimeStep])
 	d["pwf_fuel"] = AxisArray(d["pwf_fuel"], d["Tech"])
 	d["StorageDecayRate"] = AxisArray(d["StorageDecayRate"], d["Storage"])
