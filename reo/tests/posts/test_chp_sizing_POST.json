@@ -14,7 +14,7 @@
         "chp_fuel_escalation_pct": 0.034,
         "offtaker_tax_pct": 0.26,
         "offtaker_discount_pct": 0.083,
-        "two_party_ownership": false,
+        "third_party_ownership": false,
         "owner_tax_pct": 0.26,
         "owner_discount_pct": 0.083,
         "analysis_years": 25,
