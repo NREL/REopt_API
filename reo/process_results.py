@@ -317,7 +317,7 @@ def calculate_proforma_metrics(data):
                 (-1 * total_kwh * chp['om_cost_us_dollars_per_kwh']) + \
                 (-1 * total_runtime * total_kw * chp['om_cost_us_dollars_per_hr_per_kw_rated'])
             om_series += np.array([annual_om * (1+financials['om_cost_escalation_pct'])**yr for yr in range(1, years+1)])
-            if not two_party:
+            if not third_party:
                 om_series += np.array([-1 * (fuel_tariff.get("year_one_chp_fuel_cost_us_dollars") or 0) * (1+financials['chp_fuel_escalation_pct'])**yr for yr in range(1, years+1)])
                 om_series += np.array([-1 * (fuel_tariff.get("year_one_boiler_fuel_cost_us_dollars") or 0) * (1+financials['boiler_fuel_escalation_pct'])**yr for yr in range(1, years+1)])
                 om_series_bau += np.array([-1 * (fuel_tariff.get("year_one_boiler_fuel_cost_bau_us_dollars") or 0) * (1+financials['boiler_fuel_escalation_pct'])**yr for yr in range(1, years+1)])
