@@ -8,7 +8,7 @@ from reo.src.data_manager import big_number
 from reo.nested_inputs import macrs_five_year, macrs_seven_year
 
 one_party_workbook = os.path.join('proforma', 'REoptCashFlowTemplateOneParty.xlsx')
-two_party_workbook = os.path.join('proforma', 'REoptCashFlowTemplateTwoParty.xlsx')
+third_party_workbook = os.path.join('proforma', 'REoptCashFlowTemplateThirdPartyOwner.xlsx')
 
 
 def generate_proforma(scenariomodel, output_file_path):
@@ -55,13 +55,13 @@ def generate_proforma(scenariomodel, output_file_path):
     boiler = BoilerModel.objects.filter(run_uuid=scenario.run_uuid).first()
 
     # Open file for reading
-    if financial.two_party_ownership is True:
-        wb = load_workbook(two_party_workbook, read_only=False, keep_vba=True)
-        developer_cashflow_sheet_name = 'Developer Cash Flow'
+    if financial.third_party_ownership is True:
+        wb = load_workbook(third_party_workbook, read_only=False, keep_vba=True)
+        third_party_cashflow_sheet_name = 'Third-party Owner Cash Flow'
         host_cashflow_sheet_name = 'Host Cash Flow'
     else:
         wb = load_workbook(one_party_workbook, read_only=False, keep_vba=True)
-        developer_cashflow_sheet_name = 'Optimal Cash Flow'
+        third_party_cashflow_sheet_name = 'Optimal Cash Flow'
         host_cashflow_sheet_name = 'BAU Cash Flow'
 
     # Open Inputs Sheet
@@ -179,7 +179,7 @@ def generate_proforma(scenariomodel, output_file_path):
     number_of_alphabet_iterations = round(financial.analysis_years/26) + 1
     base_upper_case_letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
                           'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
-    upper_case_letters = []                         
+    upper_case_letters = []
     for i in range(number_of_alphabet_iterations):
         if i == 0:
             upper_case_letters += base_upper_case_letters
@@ -341,7 +341,7 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['B{}'.format(current_row)] = cold_tes.size_gal or 0
     cold_tes_size_gal_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row, alignment=right_align)
-    
+
     current_row += 1
     ws['A{}'.format(current_row)] = "Hot water TES capacity (gallons)"
     ws['B{}'.format(current_row)] = hot_tes.size_gal or 0
@@ -430,25 +430,25 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['A{}'.format(current_row)] = "Total optimal electricity produced (kWh/year)"
     ws['B{}'.format(current_row)] = wind_energy + generator_energy + sum([pv['pv_energy'] for pv in pv_data]) + (chp.year_one_electric_energy_produced_kwh or 0)
     make_attribute_row(ws, current_row)
-    
+
     current_row += 1
     ws['A{}'.format(current_row)] = "Present value of annual Business as Usual boiler fuels utility bill ($/year)"
     ws['B{}'.format(current_row)] = fuel_tariff.year_one_boiler_fuel_cost_bau_us_dollars or 0
     boiler_fuel_bill_bau_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
-    
+
     current_row += 1
     ws['A{}'.format(current_row)] = "Present value of annual Optimal boiler fuels utility bill ($/year)"
     ws['B{}'.format(current_row)] = fuel_tariff.year_one_boiler_fuel_cost_us_dollars or 0
     boiler_fuel_bill_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
-    
+
     current_row += 1
     ws['A{}'.format(current_row)] = "Present value of annual CHP fuels utility bill ($/year)"
     ws['B{}'.format(current_row)] = fuel_tariff.year_one_chp_fuel_cost_us_dollars or 0
     chp_fuel_bill_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
-    
+
     current_row += 1
     ws['A{}'.format(current_row)] = "CHP annual optimal thermal energy produced (MMBtu/year)"
     ws['B{}'.format(current_row)] = chp.year_one_thermal_energy_produced_mmbtu or 0
@@ -465,15 +465,15 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
     ws['A{}'.format(current_row)] = "Percent reduction in annual electricity bill"
     ws['B{}'.format(current_row)] = '=IF({bau_bill}=0,"N/A",ROUND(({bau_bill} - {optimal_bill})/{bau_bill},2))'.format(
-        bau_bill=year_one_bau_bill_cell, 
+        bau_bill=year_one_bau_bill_cell,
         optimal_bill=year_one_bill_cell)
     make_attribute_row(ws, current_row, alignment=right_align,
                            number_format='##%')
-    
+
     current_row += 1
     ws['A{}'.format(current_row)] = "Percent reduction in annual fuels bill"
     ws['B{}'.format(current_row)] = '==IF({bau_bill}=0,"N/A",ROUND(({bau_bill} - SUM({optimal_boiler_bill},{optimal_chp_bill}))/{bau_bill},2))'.format(
-        bau_bill=boiler_fuel_bill_bau_cell, 
+        bau_bill=boiler_fuel_bill_bau_cell,
         optimal_boiler_bill=boiler_fuel_bill_cell,
         optimal_chp_bill=chp_fuel_bill_cell
         )
@@ -664,7 +664,7 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['A{}'.format(current_row)].alignment = one_tab_indent
     ws['B{}'.format(current_row)] = batt.battery_replacement_year
     make_attribute_row(ws, current_row)
-    
+
     current_row += 1
     ws['A{}'.format(current_row)] = "Fixed CHP O&M cost ($/kW-yr)"
     ws['A{}'.format(current_row)].alignment = one_tab_indent
@@ -678,28 +678,28 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['B{}'.format(current_row)] = chp.om_cost_us_dollars_per_kwh or 0
     chp_om_cost_us_dollars_per_kwh_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
-    
+
     current_row += 1
     ws['A{}'.format(current_row)] = "Runtime CHP O&M cost ($/kW-rated/run-hour)"
     ws['A{}'.format(current_row)].alignment = one_tab_indent
     ws['B{}'.format(current_row)] = chp.om_cost_us_dollars_per_hr_per_kw_rated or 0
     chp_om_cost_us_dollars_per_kw_rated__cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row, number_format='0.000')
-    
+
     current_row += 1
     ws['A{}'.format(current_row)] = "Fixed Absorption Chiller O&M cost ($/ton-yr)"
     ws['A{}'.format(current_row)].alignment = one_tab_indent
     ws['B{}'.format(current_row)] = absorption_chiller.om_cost_us_dollars_per_ton or 0
     absorption_chiller_om_cost_us_dollars_per_ton_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
-    
+
     current_row += 1
     ws['A{}'.format(current_row)] = "Fixed Chilled water TES O&M cost ($/gallon-year)"
     ws['A{}'.format(current_row)].alignment = one_tab_indent
-    ws['B{}'.format(current_row)] = cold_tes.om_cost_us_dollars_per_gal or 0 
+    ws['B{}'.format(current_row)] = cold_tes.om_cost_us_dollars_per_gal or 0
     cold_tes_om_cost_us_dollars_per_gal_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
-    
+
     current_row += 1
     ws['A{}'.format(current_row)] = "Fixed Hot water TES O&M cost ($/gallon-year)"
     ws['A{}'.format(current_row)].alignment = one_tab_indent
@@ -754,8 +754,8 @@ def generate_proforma(scenariomodel, output_file_path):
     make_attribute_row(ws, current_row)
     
     # NOTE: the following two party logic relies on no lines being inserted here!
-    if financial.two_party_ownership:
-        ws['A{}'.format(current_row)] = "Nominal Developer discount rate (%/year)"
+    if financial.third_party_ownership:
+        ws['A{}'.format(current_row)] = "Nominal third-party discount rate (%/year)"
         ws['B{}'.format(current_row)] = financial.owner_discount_pct * 100
         make_attribute_row(ws, current_row, alignment=right_align)
 
@@ -782,10 +782,10 @@ def generate_proforma(scenariomodel, output_file_path):
     host_fed_tax_rate_cell = fed_tax_rate_cell
     make_attribute_row(ws, current_row)
 
-    if financial.two_party_ownership:
-        ws['A{}'.format(current_row)] = "Developer Federal income tax rate (%)"
+    if financial.third_party_ownership:
+        ws['A{}'.format(current_row)] = "Third-party owner Federal income tax rate (%)"
         ws['B{}'.format(current_row)] = financial.owner_tax_pct * 100
-        developer_fed_tax_rate_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+        third_party_fed_tax_rate_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
         make_attribute_row(ws, current_row)
 
         current_row += 1
@@ -1602,7 +1602,7 @@ def generate_proforma(scenariomodel, output_file_path):
         chp_thermal_production_series.append("\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[year+1],
                                                                 current_row))
     fill_in_annual_values(current_row)
-    
+
     current_row += 1
     for idx, pv in enumerate(pv_data):
         ws['A{}'.format(current_row)] = "{} Federal depreciation percentages (fraction)".format(pv['name'])
@@ -1612,7 +1612,7 @@ def generate_proforma(scenariomodel, output_file_path):
             ws[upper_case_letters[2 + ii] + str(current_row)] = '=' + c
             pv_cell_locations[idx]["pv_macrs_cells"].append("\'{}\'!".format(
                 inandout_sheet_name) + upper_case_letters[2 + ii] + str(current_row))
-        
+
         start_number = pv['pv'].macrs_option_years
         if start_number == 0:
             start_number = -1
@@ -1631,7 +1631,7 @@ def generate_proforma(scenariomodel, output_file_path):
     for i, c in enumerate(macrs_cells[wind.macrs_option_years]):
         ws[upper_case_letters[2 + i] + str(current_row)] = '=' + c
         wind_macrs_cells.append("\'{}\'!".format(inandout_sheet_name) + upper_case_letters[2 + i] + str(current_row))
-    
+
     start_number = wind.macrs_option_years
     if start_number == 0:
         start_number = -1
@@ -1750,7 +1750,7 @@ def generate_proforma(scenariomodel, output_file_path):
     ####################################################################################################################
     ####################################################################################################################
 
-    dcs = wb.get_sheet_by_name(developer_cashflow_sheet_name)
+    dcs = wb.get_sheet_by_name(third_party_cashflow_sheet_name)
     current_row = 2
 
     ####################################################################################################################
@@ -1772,10 +1772,9 @@ def generate_proforma(scenariomodel, output_file_path):
     make_title_row(dcs, current_row, length=financial.analysis_years+2)
 
     current_row += 1
-    
     start_om_row = current_row
-    if not financial.two_party_ownership:  # Bill and export credit move to Host cashflow for two party
-        
+
+    if not financial.third_party_ownership:  # Bill and export credit move to Host cashflow for two party
         dcs['A{}'.format(current_row)] = "Electricity bill with system before export credits"
 
         for year in range(1, financial.analysis_years + 1):
@@ -1827,7 +1826,7 @@ def generate_proforma(scenariomodel, output_file_path):
         pv_cell_locations[i]['new_o_and_m_cashflow_cells'] = []
         for year in range(1, financial.analysis_years + 1):
             pv_cell_locations[i]['new_o_and_m_cashflow_cells'].append('\'{}\'!{}{}'.format(
-                developer_cashflow_sheet_name, upper_case_letters[year + 1], current_row))
+                third_party_cashflow_sheet_name, upper_case_letters[year + 1], current_row))
             dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
                 '=-{pv_om_cost_us_dollars_per_kw_cell} * (1 + {om_escalation_rate_cell}/100)^{year}'
                 ' * ({pv_size_kw_cell})'
@@ -1845,7 +1844,7 @@ def generate_proforma(scenariomodel, output_file_path):
         pv_cell_locations[i]['existing_o_and_m_cashflow_cells'] = []
         for year in range(1, financial.analysis_years + 1):
             pv_cell_locations[i]['existing_o_and_m_cashflow_cells'].append('\'{}\'!{}{}'.format(
-                developer_cashflow_sheet_name, upper_case_letters[year + 1], current_row))
+                third_party_cashflow_sheet_name, upper_case_letters[year + 1], current_row))
             dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
                 '=-{pv_om_cost_us_dollars_per_kw_cell} * (1 + {om_escalation_rate_cell}/100)^{year}'
                 ' * ({pv_existing_kw_cell})'
@@ -1853,7 +1852,7 @@ def generate_proforma(scenariomodel, output_file_path):
             pv_om_cost_us_dollars_per_kw_cell=pv_cell_locations[i]["pv_om_cost_us_dollars_per_kw_cell"],
             om_escalation_rate_cell=om_escalation_rate_cell,
             year=year,
-            pv_existing_kw_cell=pv_cell_locations[i]["pv_existing_kw_cell"] if not financial.two_party_ownership else 0,
+            pv_existing_kw_cell=pv_cell_locations[i]["pv_existing_kw_cell"] if not financial.third_party_ownership else 0,
             )
         make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                            number_format='#,##0', border=no_border)
@@ -1864,7 +1863,7 @@ def generate_proforma(scenariomodel, output_file_path):
     wind_o_and_m_cashflow_cells = []
     for year in range(1, financial.analysis_years + 1):
         wind_o_and_m_cashflow_cells.append('\'{}\'!{}{}'.format(
-            developer_cashflow_sheet_name, upper_case_letters[year + 1], current_row))
+            third_party_cashflow_sheet_name, upper_case_letters[year + 1], current_row))
         dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1 + {}/100)^{} * {}'.format(
             wind_om_cost_us_dollars_per_kw_cell, om_escalation_rate_cell, year, wind_size_kw_cell)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
@@ -1885,7 +1884,7 @@ def generate_proforma(scenariomodel, output_file_path):
                 om_escalation_rate=om_escalation_rate_cell,
                 year=year,
                 gen_kw=generator_size_kw_cell,
-                existing_gen_kw=generator_existing_kw_cell if not financial.two_party_ownership else 0,
+                existing_gen_kw=generator_existing_kw_cell if not financial.third_party_ownership else 0,
             )
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
@@ -1904,7 +1903,7 @@ def generate_proforma(scenariomodel, output_file_path):
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
 
-    if not financial.two_party_ownership:  # otherwise on Host's cash flow
+    if not financial.third_party_ownership:  # otherwise on Host's cash flow
         current_row += 1
         dcs['A{}'.format(current_row)] = "Generator diesel fuel cost ($)"
         dcs['A{}'.format(current_row)].alignment = one_tab_indent
@@ -2056,7 +2055,7 @@ def generate_proforma(scenariomodel, output_file_path):
         dcs['B{}'.format(current_row)] = "=SUM(B{},B{})".format(
             pv_cell_locations[idx]["pv_state_ibi_row"], pv_cell_locations[idx]["pv_utility_ibi_row"])
         make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
-        pv_cell_locations[idx]["pv_total_ibi_cell"] = "\'{}\'!B{}".format(developer_cashflow_sheet_name, current_row)
+        pv_cell_locations[idx]["pv_total_ibi_cell"] = "\'{}\'!B{}".format(third_party_cashflow_sheet_name, current_row)
         ibi_and_cbi_totals_rows.append(current_row)
      
 
@@ -2096,7 +2095,7 @@ def generate_proforma(scenariomodel, output_file_path):
         dcs['B{}'.format(current_row)] = "=SUM(B{},B{},B{})".format(
             pv_cell_locations[idx]["pv_federal_cbi_row"], pv_cell_locations[idx]["pv_state_cbi_row"],
             pv_cell_locations[idx]["pv_utility_cbi_row"])
-        pv_cell_locations[idx]["pv_total_cbi_cell"] = "\'{}\'!B{}".format(developer_cashflow_sheet_name, current_row)
+        pv_cell_locations[idx]["pv_total_cbi_cell"] = "\'{}\'!B{}".format(third_party_cashflow_sheet_name, current_row)
         make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
         ibi_and_cbi_totals_rows.append(current_row)
         current_row += 1
@@ -2128,7 +2127,7 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     dcs['B{}'.format(current_row)] = "=SUM(B{},B{})".format(wind_state_ibi_row, wind_utility_ibi_row)
     make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
-    wind_total_ibi_cell = "\'{}\'!B{}".format(developer_cashflow_sheet_name, current_row) 
+    wind_total_ibi_cell = "\'{}\'!B{}".format(third_party_cashflow_sheet_name, current_row)
     ibi_and_cbi_totals_rows.append(current_row)
 
     current_row += 1
@@ -2165,7 +2164,7 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['B{}'.format(current_row)] = "=SUM(B{},B{},B{})".format(wind_federal_cbi_row, wind_state_cbi_row,
                                                                 wind_utility_cbi_row)
     make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
-    wind_total_cbi_cell = "\'{}\'!B{}".format(developer_cashflow_sheet_name, current_row)
+    wind_total_cbi_cell = "\'{}\'!B{}".format(third_party_cashflow_sheet_name, current_row)
     ibi_and_cbi_totals_rows.append(current_row)
 
     ####################################################################################################################
@@ -2197,7 +2196,7 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     dcs['B{}'.format(current_row)] = "=SUM(B{},B{})".format(batt_state_ibi_row, batt_utility_ibi_row)
     make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
-    batt_total_ibi_cell = "\'{}\'!B{}".format(developer_cashflow_sheet_name, current_row) 
+    batt_total_ibi_cell = "\'{}\'!B{}".format(third_party_cashflow_sheet_name, current_row)
     ibi_and_cbi_totals_rows.append(current_row)
     current_row += 1
 
@@ -2228,7 +2227,7 @@ def generate_proforma(scenariomodel, output_file_path):
     batt_total_cbi_cell = 'B{}'.format(current_row)
     ibi_and_cbi_totals_rows.append(current_row)
     current_row += 1
-    
+
     ####################################################################################################################
     # CHP
     ####################################################################################################################
@@ -2256,7 +2255,7 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     dcs['B{}'.format(current_row)] = "=SUM(B{},B{})".format(chp_state_ibi_row, chp_utility_ibi_row)
     make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
-    chp_total_ibi_cell = "\'{}\'!B{}".format(developer_cashflow_sheet_name, current_row) 
+    chp_total_ibi_cell = "\'{}\'!B{}".format(developer_cashflow_sheet_name, current_row)
     ibi_and_cbi_totals_rows.append(current_row)
 
     current_row += 1
@@ -2305,7 +2304,7 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
     current_row += 1
 
-    
+
 
     ####################################################################################################################
     # PBI
@@ -2322,7 +2321,7 @@ def generate_proforma(scenariomodel, output_file_path):
         pv_cell_locations[idx]["new_pv_pbi_series"] = []
         for year in range(financial.analysis_years):
             pv_cell_locations[idx]["new_pv_pbi_series"].append("\'{}\'!{}{}".format(
-                developer_cashflow_sheet_name, upper_case_letters[year + 2], current_row))
+                third_party_cashflow_sheet_name, upper_case_letters[year + 2], current_row))
             dcs['{}{}'.format(upper_case_letters[year + 2], current_row)] = (
                 "=IF({year} < {pbi_year_limit}, "
                 "MIN({dol_per_kwh} * ({pv_kwh} - {existing_pv_kwh}), "
@@ -2346,7 +2345,7 @@ def generate_proforma(scenariomodel, output_file_path):
         dcs['A{}'.format(current_row)].alignment = one_tab_indent
         pv_cell_locations[idx]["existing_pv_pbi_series"] = []
         for year in range(financial.analysis_years):
-            pv_cell_locations[idx]["existing_pv_pbi_series"].append("\'{}\'!{}{}".format(developer_cashflow_sheet_name, upper_case_letters[year + 2], current_row))
+            pv_cell_locations[idx]["existing_pv_pbi_series"].append("\'{}\'!{}{}".format(third_party_cashflow_sheet_name, upper_case_letters[year + 2], current_row))
             dcs['{}{}'.format(upper_case_letters[year + 2], current_row)] = (
                 "=IF({year} < {pbi_year_limit}, "
                 "MIN({dol_per_kwh} * ({existing_pv_kwh}), "
@@ -2356,7 +2355,7 @@ def generate_proforma(scenariomodel, output_file_path):
                 pbi_year_limit=pv_cell_locations[idx]["pv_pbi_years_cell"], 
                 dol_per_kwh=pv_cell_locations[idx]["pv_pbi_cell"],
                 col=upper_case_letters[year + 2],
-                existing_pv_kwh=(pv_cell_locations[idx]['pv_production_series_bau'][year]) if not financial.two_party_ownership else 0,
+                existing_pv_kwh=(pv_cell_locations[idx]['pv_production_series_bau'][year]) if not financial.third_party_ownership else 0,
                 pbi_max=pv_cell_locations[idx]["pv_pbi_max_cell"],
                 pv_degradation_rate=pv_cell_locations[idx]["pv_degradation_rate_cell"],
             )
@@ -2371,7 +2370,7 @@ def generate_proforma(scenariomodel, output_file_path):
     wind_pbi_series = []
     for year in range(financial.analysis_years):
         wind_pbi_series.append("\'{}\'!{}{}".format(
-            developer_cashflow_sheet_name, upper_case_letters[year + 2], current_row))
+            third_party_cashflow_sheet_name, upper_case_letters[year + 2], current_row))
         dcs['{}{}'.format(upper_case_letters[year+2], current_row)] = (
                 "=IF({year} < {pbi_year_limit}, "
                 "MIN({dol_per_kwh} * {wind_kwh}, {pbi_max}), 0)"
@@ -2682,7 +2681,7 @@ def generate_proforma(scenariomodel, output_file_path):
         pv_cell_locations[idx]["pv_depreciation_benefit"] = list()
         for i in range(financial.analysis_years):
             pv_cell_locations[idx]["pv_depreciation_benefit"].append("\'{}\'!{}{}".format(
-                    developer_cashflow_sheet_name, upper_case_letters[i+2], current_row))
+                    third_party_cashflow_sheet_name, upper_case_letters[i+2], current_row))
             if i == 0:
                 dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = \
                     '={basis_cell}*{col}{macrs_row} + ({bonus_basis_cell}*{bonus_basis_pct_cell})'.format(
@@ -2740,7 +2739,7 @@ def generate_proforma(scenariomodel, output_file_path):
     wind_depreciation_benefit = list()
     for i in range(financial.analysis_years):
         wind_depreciation_benefit.append("\'{}\'!{}{}".format(
-            developer_cashflow_sheet_name, upper_case_letters[i+2], current_row))
+            third_party_cashflow_sheet_name, upper_case_letters[i+2], current_row))
         
         if i == 0:
             dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = \
@@ -2800,7 +2799,7 @@ def generate_proforma(scenariomodel, output_file_path):
                        number_format='#,##0', border=no_border)
     batt_fed_income_total = current_row
     current_row += 1
-    
+
     ####################################################################################################################
     # CHP depreciation
     ####################################################################################################################
@@ -2838,7 +2837,7 @@ def generate_proforma(scenariomodel, output_file_path):
     for i in range(financial.analysis_years):
         chp_depreciation_benefit.append("\'{}\'!{}{}".format(
             developer_cashflow_sheet_name, upper_case_letters[i+2], current_row))
-        
+
         if i == 0:
             dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = \
                 '={basis_cell}*{col}{macrs_row} + ({bonus_basis_cell}*{bonus_basis_pct_cell})'.format(
@@ -2876,7 +2875,7 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['B{}'.format(current_row)] = (
             "=IF(OR({absorption_chiller_macrs_option_cell}=5,{absorption_chiller_macrs_option_cell}=7),"
             "{absorption_chiller_cost_cell},0)").format(
-            absorption_chiller_macrs_option_cell=absorption_chiller_macrs_option_cell, 
+            absorption_chiller_macrs_option_cell=absorption_chiller_macrs_option_cell,
             absorption_chiller_cost_cell=absorption_chiller_cost_cell)
     absorption_chiller_bonus_basis_cell = 'B{}'.format(current_row)
 
@@ -2894,7 +2893,7 @@ def generate_proforma(scenariomodel, output_file_path):
     for i in range(financial.analysis_years):
         absorption_chiller_depreciation_benefit.append("\'{}\'!{}{}".format(
             developer_cashflow_sheet_name, upper_case_letters[i+2], current_row))
-        
+
         if i == 0:
             dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = \
                 '={basis_cell}*{col}{macrs_row} + ({bonus_basis_cell}*{bonus_basis_pct_cell})'.format(
@@ -2932,7 +2931,7 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['B{}'.format(current_row)] = (
             "=IF(OR({hot_tes_macrs_option_cell}=5,{hot_tes_macrs_option_cell}=7),"
             "{hot_tes_cost_cell},0)").format(
-            hot_tes_macrs_option_cell=hot_tes_macrs_option_cell, 
+            hot_tes_macrs_option_cell=hot_tes_macrs_option_cell,
             hot_tes_cost_cell=hot_tes_cost_cell)
     hot_tes_bonus_basis_cell = 'B{}'.format(current_row)
 
@@ -2950,7 +2949,7 @@ def generate_proforma(scenariomodel, output_file_path):
     for i in range(financial.analysis_years):
         hot_tes_depreciation_benefit.append("\'{}\'!{}{}".format(
             developer_cashflow_sheet_name, upper_case_letters[i+2], current_row))
-        
+
         if i == 0:
             dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = \
                 '={basis_cell}*{col}{macrs_row} + ({bonus_basis_cell}*{bonus_basis_pct_cell})'.format(
@@ -2988,7 +2987,7 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['B{}'.format(current_row)] = (
             "=IF(OR({cold_tes_macrs_option_cell}=5,{cold_tes_macrs_option_cell}=7),"
             "{cold_tes_cost_cell},0)").format(
-            cold_tes_macrs_option_cell=cold_tes_macrs_option_cell, 
+            cold_tes_macrs_option_cell=cold_tes_macrs_option_cell,
             cold_tes_cost_cell=cold_tes_cost_cell)
     cold_tes_bonus_basis_cell = 'B{}'.format(current_row)
 
@@ -3006,7 +3005,7 @@ def generate_proforma(scenariomodel, output_file_path):
     for i in range(financial.analysis_years):
         cold_tes_depreciation_benefit.append("\'{}\'!{}{}".format(
             developer_cashflow_sheet_name, upper_case_letters[i+2], current_row))
-        
+
         if i == 0:
             dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = \
                 '={basis_cell}*{col}{macrs_row} + ({bonus_basis_cell}*{bonus_basis_pct_cell})'.format(
@@ -3033,7 +3032,7 @@ def generate_proforma(scenariomodel, output_file_path):
         dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = \
             '=SUM({pv_string},{col}{wind},{col}{batt},{col}{chp},{col}{absorption_chiller},{col}{hot_tes},{col}{cold_tes})'.format(
                 col=upper_case_letters[i + 2], pv_string=pv_string,
-                wind=wind_fed_income_total, batt=batt_fed_income_total, 
+                wind=wind_fed_income_total, batt=batt_fed_income_total,
                 chp=chp_fed_income_total, absorption_chiller=absorption_chiller_fed_income_total,
                 hot_tes=hot_tes_fed_income_total, cold_tes=cold_tes_fed_income_total)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
@@ -3061,7 +3060,7 @@ def generate_proforma(scenariomodel, output_file_path):
                     fed_tax_rate_cell=fed_tax_rate_cell
                 )
             pv_cell_locations[idx]["pv_income_tax_benefits"].append("\'{}\'!{}{}".format(
-                developer_cashflow_sheet_name, upper_case_letters[year+1], current_row))
+                third_party_cashflow_sheet_name, upper_case_letters[year+1], current_row))
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
@@ -3077,7 +3076,7 @@ def generate_proforma(scenariomodel, output_file_path):
                 fed_tax_rate_cell=fed_tax_rate_cell
             )
         wind_income_tax_benefits.append("\'{}\'!{}{}".format(
-            developer_cashflow_sheet_name, upper_case_letters[year+1], current_row))
+            third_party_cashflow_sheet_name, upper_case_letters[year+1], current_row))
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
@@ -3140,7 +3139,7 @@ def generate_proforma(scenariomodel, output_file_path):
         make_attribute_row(dcs, current_row, length=3, alignment=right_align, number_format='#,##0', border=no_border)
         pv_cell_locations[idx]["pv_federal_itc_amount_row"] = current_row
         pv_cell_locations[idx]["pv_federal_itc_amount_cell"] = "\'{}\'!C{}".format(
-                developer_cashflow_sheet_name, current_row)
+                third_party_cashflow_sheet_name, current_row)
         current_row += 1
 
     dcs['A{}'.format(current_row)] = "Federal ITC basis: Wind"
@@ -3191,7 +3190,7 @@ def generate_proforma(scenariomodel, output_file_path):
     make_attribute_row(dcs, current_row, length=3, alignment=right_align, number_format='#,##0', border=no_border)
     wind_federal_itc_amount_row = current_row
     wind_federal_itc_amount_cell = "\'{}\'!C{}".format(
-                developer_cashflow_sheet_name, current_row)
+                third_party_cashflow_sheet_name, current_row)
 
     current_row += 1
     dcs['A{}'.format(current_row)] = "Federal ITC basis: Battery"
@@ -3420,13 +3419,13 @@ def generate_proforma(scenariomodel, output_file_path):
 
     current_row += 1
     dcs['A{}'.format(current_row)] = "Optimal Life Cycle Cost"
-    if financial.two_party_ownership:
-        dcs['A{}'.format(current_row)] = "Developer Net Present Cost"
+    if financial.third_party_ownership:
+        dcs['A{}'.format(current_row)] = "Third-party Owner Net Present Cost"
     dcs['B{}'.format(current_row)] = "=SUM(B{row}:{col}{row})".format(
         row=optimal_dcf_row,
         col=upper_case_letters[financial.analysis_years+1]
     )
-    optimal_LCC_cell = "\'{}\'!B{}".format(developer_cashflow_sheet_name, current_row)
+    optimal_LCC_cell = "\'{}\'!B{}".format(third_party_cashflow_sheet_name, current_row)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     dcs['A{}'.format(current_row)].font = title_font
@@ -3436,7 +3435,7 @@ def generate_proforma(scenariomodel, output_file_path):
     # Income From Host
     ####################################################################################################################
 
-    if financial.two_party_ownership:
+    if financial.third_party_ownership:
 
         current_row += 1
         dcs['A{}'.format(current_row)] = "Capital Recovery Factor"
@@ -3461,7 +3460,7 @@ def generate_proforma(scenariomodel, output_file_path):
                 npc=optimal_LCC_cell,
                 crf=capital_recovery_factor_cell,
             )
-        income_from_host_cell = "\'{}\'!C{}".format(developer_cashflow_sheet_name, current_row)
+        income_from_host_cell = "\'{}\'!C{}".format(third_party_cashflow_sheet_name, current_row)
         make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
                            number_format='#,##0', border=no_border)
 
@@ -3474,7 +3473,7 @@ def generate_proforma(scenariomodel, output_file_path):
                 income=income_from_host_cell,
                 tax_rate=fed_tax_rate_cell,
             )
-        income_from_host_after_tax_cell = "\'{}\'!C{}".format(developer_cashflow_sheet_name, current_row)
+        income_from_host_after_tax_cell = "\'{}\'!C{}".format(third_party_cashflow_sheet_name, current_row)
         make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
                            number_format='#,##0', border=no_border)
         income_after_tax_row = current_row
@@ -3508,10 +3507,10 @@ def generate_proforma(scenariomodel, output_file_path):
         dcs['A{}'.format(current_row)] = "Free Cash Flow after income"
         dcs['B{}'.format(current_row)] = "=B{}".format(optimal_fcf_row)
         free_cashflow_cells = ["\'{}\'!{}{}".format(
-                developer_cashflow_sheet_name, "B", current_row)]
+                third_party_cashflow_sheet_name, "B", current_row)]
         for i in range(financial.analysis_years):
             free_cashflow_cells.append("\'{}\'!{}{}".format(
-                developer_cashflow_sheet_name, upper_case_letters[i + 2], current_row))
+                third_party_cashflow_sheet_name, upper_case_letters[i + 2], current_row))
             dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = (
                 "={col}{fcf} + {col}{income}"
                 ).format(
@@ -3521,7 +3520,7 @@ def generate_proforma(scenariomodel, output_file_path):
             )
         make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                            number_format='#,##0', border=no_border)
-        developer_fcf_row = current_row
+        third_party_fcf_row = current_row
         fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
 
         current_row += 1
@@ -3529,22 +3528,22 @@ def generate_proforma(scenariomodel, output_file_path):
         cumulative_cashflow_cells = []
         for year in range(financial.analysis_years+1):
             cumulative_cashflow_cells.append("\'{}\'!{}{}".format(
-                developer_cashflow_sheet_name, upper_case_letters[year + 1], current_row))
+                third_party_cashflow_sheet_name, upper_case_letters[year + 1], current_row))
             if year == 0:
                 dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
                     "={yr0_cashflow}"
                     ).format(
                         yr0_cashflow="\'{}\'!{}{}".format(
-                        developer_cashflow_sheet_name, upper_case_letters[year + 1], current_row -1)
+                        third_party_cashflow_sheet_name, upper_case_letters[year + 1], current_row -1)
                     )
             else:                    
                 dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
                     "={yr_cashflow} + {prev_year_cashflow}"
                     ).format(
                         yr_cashflow="\'{}\'!{}{}".format(
-                        developer_cashflow_sheet_name, upper_case_letters[year + 1], current_row -1),
+                        third_party_cashflow_sheet_name, upper_case_letters[year + 1], current_row -1),
                         prev_year_cashflow="\'{}\'!{}{}".format(
-                        developer_cashflow_sheet_name, upper_case_letters[year], current_row)
+                        third_party_cashflow_sheet_name, upper_case_letters[year], current_row)
                     )
         make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                            number_format='#,##0', border=no_border)
@@ -3606,7 +3605,7 @@ def generate_proforma(scenariomodel, output_file_path):
                        number_format='#,##0', border=no_border)
     bau_export_credit_row = current_row
 
-    if not financial.two_party_ownership:  # Show BAU costs
+    if not financial.third_party_ownership:  # Show BAU costs
         """
         BAU O&M costs do not matter in two party proforma. They are sunk costs. They are shown for single party model
         to account for BAU LCC. However, in the two party proforma we don't show optimal and BAU LCC's; instead we show
@@ -3783,12 +3782,12 @@ def generate_proforma(scenariomodel, output_file_path):
         chp_bill_row = current_row
 
         current_row += 1
-        hcs['A{}'.format(current_row)] = "Payment to Developer ($)"
+        hcs['A{}'.format(current_row)] = "Payment to Third-party Owner"
         for year in range(1, financial.analysis_years + 1):
             hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = "=-{}".format(income_from_host_cell)
         make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
                            number_format='#,##0', border=no_border)
-        developer_payment_row = current_row
+        third_party_payment_row = current_row
 
         current_row += 1
         hcs['A{}'.format(current_row)] = "Existing Generator fuel cost ($)"
@@ -3812,7 +3811,7 @@ def generate_proforma(scenariomodel, output_file_path):
         hcs['A{}'.format(current_row)] = "Net Energy Costs"
         for year in range(1, financial.analysis_years + 1):
             hcs['{}{}'.format(upper_case_letters[year+1], current_row)] = (
-                "=-{bau_bill} - {bau_export_credit} + {with_sys_bill} + {export_credits} + {developer_payment} "
+                "=-{bau_bill} - {bau_export_credit} + {with_sys_bill} + {export_credits} + {third_party_payment} "
                 " - {bau_gen_fuel} + {gen_fuel}"
                 " - {boiler_bill_bau} + {boiler_bill} + {chp_bill}"
                 ).format(
@@ -3820,7 +3819,7 @@ def generate_proforma(scenariomodel, output_file_path):
                 bau_export_credit="{}{}".format(upper_case_letters[year+1], bau_export_credit_row),
                 with_sys_bill="{}{}".format(upper_case_letters[year+1], bill_with_sys_row),
                 export_credits="{}{}".format(upper_case_letters[year+1], export_credits_row),
-                developer_payment="{}{}".format(upper_case_letters[year+1], developer_payment_row),
+                third_party_payment="{}{}".format(upper_case_letters[year+1], third_party_payment_row),
                 gen_fuel="{}{}".format(upper_case_letters[year+1], gen_fuel_costs_row),
                 bau_gen_fuel="{}{}".format(upper_case_letters[year+1], bau_gen_fuel_costs_row),
                 chp_bill="{}{}".format(upper_case_letters[year+1], chp_bill_row),
@@ -3856,7 +3855,7 @@ def generate_proforma(scenariomodel, output_file_path):
     # Existing PBI
     ####################################################################################################################
 
-    if not financial.two_party_ownership:
+    if not financial.third_party_ownership:
 
         hcs['A{}'.format(current_row)] = "Production-based incentives (PBI)"
         make_title_row(hcs, current_row, length=financial.analysis_years + 2)
@@ -3959,10 +3958,10 @@ def generate_proforma(scenariomodel, output_file_path):
                        number_format='#,##0', border=no_border)
     bau_opex_after_tax_row = current_row
 
-    if financial.two_party_ownership:
+    if financial.third_party_ownership:
         bau_fcf_row = current_row  # for discounted cash flow
 
-    if not financial.two_party_ownership:
+    if not financial.third_party_ownership:
         current_row += 1
         hcs['A{}'.format(current_row)] = "Total Cash incentives, after-tax"
         for year in range(1, financial.analysis_years + 1):
@@ -4014,7 +4013,7 @@ def generate_proforma(scenariomodel, output_file_path):
 
     current_row += 1
     hcs['A{}'.format(current_row)] = "BAU Life Cycle Cost"
-    if financial.two_party_ownership:
+    if financial.third_party_ownership:
         hcs['A{}'.format(current_row)] = "Host Net Present Value"
     hcs['B{}'.format(current_row)] = "=SUM(B{row}:{col}{row})".format(
         row=bau_dcf_row,
@@ -4043,16 +4042,16 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
     ws['D{}'.format(current_row)] = "Business as usual LCC, $"
     ws['E{}'.format(current_row)] = "=-{}".format(bau_LCC_cell)
-    if financial.two_party_ownership:
-        ws['D{}'.format(current_row)] = "Annual payment to developer, $"
+    if financial.third_party_ownership:
+        ws['D{}'.format(current_row)] = "Annual payment to third-party, $"
         ws['E{}'.format(current_row)] = "={}".format(income_from_host_cell)
     make_attribute_row(ws, current_row, length=2, offset=3, number_format="#,##0")
     fill_cols(ws, range(4, 5), current_row, calculated_fill)
 
     current_row += 1
     ws['D{}'.format(current_row)] = "Optimal LCC, $"
-    if financial.two_party_ownership:
-        ws['D{}'.format(current_row)] = "Developer NPC, $"
+    if financial.third_party_ownership:
+        ws['D{}'.format(current_row)] = "Third-party Owner NPC, $"
     ws['E{}'.format(current_row)] = "=-{}".format(optimal_LCC_cell)
     make_attribute_row(ws, current_row, length=2, offset=3, number_format="#,##0")
     fill_cols(ws, range(4, 5), current_row, calculated_fill)
@@ -4061,7 +4060,7 @@ def generate_proforma(scenariomodel, output_file_path):
     )
 
     current_row += 1
-    if not financial.two_party_ownership:
+    if not financial.third_party_ownership:
         ws['D{}'.format(current_row)] = "NPV, $"
         ws['E{}'.format(current_row)] = (
             "=E{} - E{}"
@@ -4081,7 +4080,7 @@ def generate_proforma(scenariomodel, output_file_path):
     fill_cols(ws, range(4, 5), current_row, calculated_fill)
 
 
-    if not financial.two_party_ownership:
+    if not financial.third_party_ownership:
         current_row += 1
         irr_row = current_row
         ws['D{}'.format(current_row)] = "IRR, %"
@@ -4108,7 +4107,7 @@ def generate_proforma(scenariomodel, output_file_path):
                 "={optimal_fcf} - {bau_fcf}"
             ).format(
                 optimal_fcf="\'{}\'!{}{}".format(
-                    developer_cashflow_sheet_name, upper_case_letters[year + 1], optimal_fcf_row),
+                    third_party_cashflow_sheet_name, upper_case_letters[year + 1], optimal_fcf_row),
                 bau_fcf="\'{}\'!{}{}".format(
                     host_cashflow_sheet_name, upper_case_letters[year + 1], bau_fcf_row),
             )
@@ -4162,14 +4161,14 @@ def generate_proforma(scenariomodel, output_file_path):
     else:
         current_row += 1
         irr_row = current_row
-        ws['D{}'.format(current_row)] = "Developer IRR, %"
+        ws['D{}'.format(current_row)] = "Third-party Owner IRR, %"
         ws['E{}'.format(current_row)] = (
              "=IF({npv_cell}=0,"",IRR({optimal_fcf_B}:{optimal_fcf_N},{discount_rate_cell}/100))"
             ).format(npv_cell = npv_cell,
             optimal_fcf_B="\'{}\'!B{}".format(
-                developer_cashflow_sheet_name, developer_fcf_row),
+                third_party_cashflow_sheet_name, third_party_fcf_row),
             optimal_fcf_N="\'{}\'!{}{}".format(
-                developer_cashflow_sheet_name, upper_case_letters[financial.analysis_years + 1], developer_fcf_row),
+                third_party_cashflow_sheet_name, upper_case_letters[financial.analysis_years + 1], third_party_fcf_row),
             discount_rate_cell=discount_rate_cell,
         )
         make_attribute_row(ws, current_row, length=2, offset=3, number_format="0.00%")
@@ -4192,7 +4191,7 @@ def generate_proforma(scenariomodel, output_file_path):
         simple_payback += ', '.join(simple_payback_terms) + "))"
 
         current_row = irr_row + 1
-        ws['D{}'.format(current_row)] = "Developer Simple Payback Period, years"
+        ws['D{}'.format(current_row)] = "Third-party Owner Simple Payback Period, years"
         ws['E{}'.format(current_row)] = simple_payback
         make_attribute_row(ws, current_row, length=2, offset=3, number_format="0.00")
         fill_cols(ws, range(4, 5), current_row, calculated_fill)
@@ -4201,13 +4200,13 @@ def generate_proforma(scenariomodel, output_file_path):
     
 
 
-    def two_party_factor(pwf_offtaker_cell, offtaker_tax_pct_cell, pwf_owner_cell, owner_tax_pct_cell):
+    def third_party_factor(pwf_offtaker_cell, offtaker_tax_pct_cell, pwf_owner_cell, owner_tax_pct_cell):
         """
         :param pwf_offtaker_cell: present worth factor offtacker cell in spreadsheet
         :param offtaker_tax_pct_cell: offtacker tax percent cell in spreadsheet
         :param pwf_owner_cell: present worth factor owner cell in spreadsheet
         :param owner_tax_pct_cell: owner tax percent cell in spreadsheet
-        :return: two_party_factor
+        :return: third_party_factor
         """
         tpf =   ("ROUND((({pwf_offtaker_cell}/100) * (1 - ({offtaker_tax_pct_cell}/100))) / "
                 "(({pwf_owner_cell}/100) * (1 - ({owner_tax_pct_cell}/100))),4)".format(
