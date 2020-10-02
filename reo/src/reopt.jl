@@ -1120,7 +1120,7 @@ function add_pv_results(m, p, r::Dict)
 		
 			r[string("year_one_",PVclass,"_emissions_scope1_lbsCO2e")] = round(value(sum(m[:EmissionsProfile_Scope1_LbsCO2e][t,ts] for t in PVtechs_in_class, ts in p.TimeStep)), digits=2) 
 			r[string("year_one_",PVclass,"_emissions_nonscope_lbsCO2e")] = round(value(sum(m[:EmissionsProfile_NonScope_LbsCO2e][t,ts] for t in PVtechs_in_class, ts in p.TimeStep)), digits=2) 
-			EmissionsProfile_Scope1Expr_PV = @expression(m, [ts in p.TimeStep], sum(m[:EmissionsProfile_Scope1_LbsCO2e][t,ts] for t in PVtechs_in_class))
+			@expression(m, EmissionsProfile_Scope1Expr_PV[ts in p.TimeStep], sum(m[:EmissionsProfile_Scope1_LbsCO2e][t,ts] for t in PVtechs_in_class))
 			r[string("year_one_",PVclass,"_emissions_profile_scope1_lbsCO2e")] = round.(value.(EmissionsProfile_Scope1Expr_PV), digits=2)
 			@expression(m, EmissionsProfile_NonScopeExpr_PV[ts in p.TimeStep], sum(m[:EmissionsProfile_NonScope_LbsCO2e][t,ts] for t in PVtechs_in_class)) 
 			r[string("year_one_",PVclass,"_emissions_profile_nonscope_lbsCO2e")] = round.(value.(EmissionsProfile_NonScopeExpr_PV), digits=2)
