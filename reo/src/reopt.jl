@@ -1167,7 +1167,7 @@ end
 function add_site_results(m, p, r::Dict)
 
 	r["annual_re_kwh"] = round(value(m[:AnnualREkWh]), digits=2)
-	r["annual_re_percent"] = round(value(m[:AnnualREkWh]/(sum(p.ElecLoad[ts] for ts in p.TimeStep))*100), digits=2)
+	#r["annual_re_percent"] = round(value(m[:AnnualREkWh]/(sum(p.ElecLoad[ts] for ts in p.TimeStep))*100), digits=2)
 	r["year_one_emissions_lbsCO2e"] = round(value(m[:EmissionsYr1_Total_LbsCO2e]), digits=2) 
 	r["year_one_emissionsreduction_percent"] = round(value(100*(1-m[:EmissionsYr1_Total_LbsCO2e]/p.BAUYr1Emissions)), digits=2)
 	r["year_one_scope1_emissions_lbsCO2e"] = round(value(m[:EmissionsYr1_Scope1_LbsCO2e]), digits=2)
