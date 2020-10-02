@@ -737,8 +737,8 @@ function add_re_and_emissions_constraints(m,p)
 			- sum(m[:dvProductionToGrid][t,u,ts] for t in p.RETechs, u in p.SalesTiersByTech[t], ts in p.TimeStep if !(u in p.CurtailmentTiers))) # minus exported RE. 
 		# if battery ends up being able to discharge to grid, need to make sure only RE that is being consumed onsite are counted so battery doesn't become a back door for RE to grid. 
 	end
-	#@constraint(m, MinRECon, m[:AnnualREkWh] >= p.MinAnnualPercentRE*p.AnnualElecLoad)
-	#@constraint(m, MaxRECon, m[:AnnualREkWh] <= p.MaxAnnualPercentRE*p.AnnualElecLoad)
+	#@constraint(m, MinRECon, m[:AnnualREkWh] >= p.MinAnnualPercentRE*(sum(p.ElecLoad[ts] for ts in p.TimeStep))
+	#@constraint(m, MaxRECon, m[:AnnualREkWh] <= p.MaxAnnualPercentRE*(sum(p.ElecLoad[ts] for ts in p.TimeStep))
 
 	### Year 1 Emissions Profile and Reduction Targets
 	# Scope 1: Direct emissions from onsite generation 
@@ -1167,7 +1167,7 @@ end
 function add_site_results(m, p, r::Dict)
 
 	r["annual_re_kwh"] = round(value(m[:AnnualREkWh]), digits=2)
-	r["annual_re_percent"] = round(value(m[:AnnualREkWh]/p.AnnualElecLoad*100), digits=2)
+	r["annual_re_percent"] = round(value(m[:AnnualREkWh]/(sum(p.ElecLoad[ts] for ts in p.TimeStep))*100), digits=2)
 	r["year_one_emissions_lbsCO2e"] = round(value(m[:EmissionsYr1_Total_LbsCO2e]), digits=2) 
 	r["year_one_emissionsreduction_percent"] = round(value(100*(1-m[:EmissionsYr1_Total_LbsCO2e]/p.BAUYr1Emissions)), digits=2)
 	r["year_one_scope1_emissions_lbsCO2e"] = round(value(m[:EmissionsYr1_Scope1_LbsCO2e]), digits=2)
