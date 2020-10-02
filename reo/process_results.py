@@ -74,6 +74,7 @@ class ProcessResultsTask(Task):
         self.request.callback = None
         self.request.chord = None  # this seems to stop the infinite chord_unlock call
 
+
 def calculate_proforma_metrics(data):
         """
         Recreates the ProForma spreadsheet calculations to get the simple payback period, irr, net present cost (3rd
@@ -353,6 +354,7 @@ def calculate_proforma_metrics(data):
         return round(simple_payback_years,4), round(irr,4), round(net_present_cost,4) if net_present_cost is not None else None, \
                round(annualized_payment_to_third_party_us_dollars,4) if annualized_payment_to_third_party_us_dollars is not None else None
 
+
 @shared_task(bind=True, base=ProcessResultsTask, ignore_result=True)
 def process_results(self, dfm_list, data, meta, saveToDB=True):
     """
@@ -491,15 +493,17 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             """
             The net_capital_costs output is the upfront capex after incentives, except it includes the battery
             replacement cost in present value. So we calculate the upfront_capex_after_incentives as net_capital_costs
-            minus the battery replacement cost in present value
+            minus the battery replacement cost in present value.
+            Note that the owner_discount_pct and owner_tax_pct are set to the offtaker_discount_pct and offtaker_tax_pct
+            respectively when third_party_ownership is False.
             """
             upfront_capex_after_incentives = self.nested_outputs["Scenario"]["Site"]["Financial"]["net_capital_costs"]
 
-            pwf_inverter = 1 / ((1 + self.inputs["Financial"]["offtaker_discount_pct"])
-                           **self.inputs["Storage"]["inverter_replacement_year"])
+            pwf_inverter = 1 / ((1 + self.inputs["Financial"]["owner_discount_pct"])
+                                ** self.inputs["Storage"]["inverter_replacement_year"])
 
-            pwf_storage = 1 / ((1 + self.inputs["Financial"]["offtaker_discount_pct"])
-                          **self.inputs["Storage"]["battery_replacement_year"])
+            pwf_storage = 1 / ((1 + self.inputs["Financial"]["owner_discount_pct"])
+                               ** self.inputs["Storage"]["battery_replacement_year"])
 
             inverter_future_cost = self.inputs["Storage"]["replace_cost_us_dollars_per_kw"] * \
                                    self.nested_outputs["Scenario"]["Site"]["Storage"]["size_kw"]
@@ -509,9 +513,9 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
 
             # NOTE these upfront costs include the tax benefit available to commercial entities
             upfront_capex_after_incentives -= inverter_future_cost * pwf_inverter * \
-                                              (1 - self.inputs["Financial"]["offtaker_tax_pct"])
+                                              (1 - self.inputs["Financial"]["owner_tax_pct"])
             upfront_capex_after_incentives -= storage_future_cost * pwf_storage * \
-                                              (1 - self.inputs["Financial"]["offtaker_tax_pct"])
+                                              (1 - self.inputs["Financial"]["owner_tax_pct"])
             return round(upfront_capex_after_incentives, 2)
 
         def calculate_lcoe(self, tech_results_dict, tech_inputs_dict, financials):
