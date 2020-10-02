@@ -70,4 +70,4 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
 
         self.assertTrue(text_to_check in response['messages']['warnings'])
         self.assertTrue(response['outputs']['Scenario']['Site']['year_one_emissions_lb_CO2'] is None)
-        self.assertTrue(response['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_lb_CO2'] is None)
+        self.assertTrue(response['outputs']['Scenario']['Site']['ElectricTariff']['year_one_scope2_emissions_lb_CO2'] is None)
