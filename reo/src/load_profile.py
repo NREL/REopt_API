@@ -647,6 +647,7 @@ class LoadProfile(BuiltInProfile):
                 # Add existing pv in if net critical load provided
                 for i, p in enumerate(existing_pv_kw_list):
                     critical_loads_kw[i] += p
+            if existing_pv_kw_list is not None:
                 existing_pv_kw_list = existing_pv_kw_list[outage_start_hour:outage_end_hour]
 
             # modify loads based on custom critical loads profile
@@ -656,7 +657,7 @@ class LoadProfile(BuiltInProfile):
 
             # fill in with zeros when diesel generator run out of fuel
             resilience_check_flag, sustain_hours = resilienceCheck(critical_loads_kw[outage_start_hour:outage_end_hour],
-                                                                   existing_pv_kw_list[outage_start_hour:outage_end_hour], gen_existing_kw, gen_min_turn_down,
+                                                                   existing_pv_kw_list, gen_existing_kw, gen_min_turn_down,
                                                                    fuel_avail_before_outage, fuel_slope, fuel_intercept, 
                                                                    self.time_steps_per_hour)
             self.bau_load_list[outage_start_hour:outage_start_hour+sustain_hours] = critical_loads_kw[outage_start_hour:outage_start_hour+sustain_hours]
@@ -677,7 +678,7 @@ class LoadProfile(BuiltInProfile):
 
             # fill in with zeros when diesel generator run out of fuel
             resilience_check_flag, sustain_hours = resilienceCheck(critical_loads_kw[outage_start_hour:outage_end_hour],
-                                                                   existing_pv_kw_list[outage_start_hour:outage_end_hour], gen_existing_kw, gen_min_turn_down,
+                                                                   existing_pv_kw_list, gen_existing_kw, gen_min_turn_down,
                                                                    fuel_avail_before_outage, fuel_slope, fuel_intercept, 
                                                                    self.time_steps_per_hour)
 
