@@ -79,7 +79,6 @@ class WindTests(ResourceTestCaseMixin, TestCase):
             print("Wind Dataset Timed Out")
         else:
             c = nested_to_flat(d['outputs'])
-            print(d['outputs']['Scenario']['Site'].keys())
             c['average_annual_energy_curtailed_pv'] = sum(d['outputs']['Scenario']['Site']['PV'][
                                                               'year_one_curtailed_production_series_kw'])
             c['average_annual_energy_curtailed_wind'] = sum(d['outputs']['Scenario']['Site']['Wind'][

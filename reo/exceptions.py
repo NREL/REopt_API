@@ -31,6 +31,7 @@ from reo.models import ErrorModel
 import logging
 log = logging.getLogger(__name__)
 import rollbar
+import traceback as tb
 
 
 class REoptError(Exception):
