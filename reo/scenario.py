@@ -96,7 +96,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
     try:
         inputs_dict = data['inputs']['Scenario']
-        dfm = DataManager(run_id=run_uuid, n_timesteps=int(inputs_dict['time_steps_per_hour'] * 8760))
+        dfm = DataManager(run_id=run_uuid, user_id=inputs_dict.get('user_uuid'), n_timesteps=int(inputs_dict['time_steps_per_hour'] * 8760))
 
         # storage is always made, even if max size is zero (due to REopt's expected inputs)
         storage = Storage(dfm=dfm, **inputs_dict["Site"]["Storage"])
@@ -179,6 +179,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
             tmp['annual_calculated_kwh'] = lp.annual_kwh
             tmp['resilience_check_flag'] = lp.resilience_check_flag
             tmp['sustain_hours'] = lp.sustain_hours
+            tmp['loads_kw'] = lp.load_list
             ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
         else:
             lp = LoadProfile(dfm=dfm,
@@ -198,6 +199,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
             tmp['annual_calculated_kwh'] = lp.annual_kwh
             tmp['resilience_check_flag'] = lp.resilience_check_flag
             tmp['sustain_hours'] = lp.sustain_hours
+            tmp['loads_kw'] = lp.load_list
             ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
 
         # Checks that the load being sent to optimization does not contatin negative values. We check the loads against
@@ -331,6 +333,10 @@ def setup_scenario(self, run_uuid, data, raw_post):
                     outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
                     )
 
+        # Assign decomposition subproblem optimization parameters - only used if decomposition is selected
+        dfm.optimality_tolerance_decomp_subproblem = inputs_dict['optimality_tolerance_decomp_subproblem']
+        dfm.timeout_decomp_subproblem_seconds = inputs_dict['timeout_decomp_subproblem_seconds']
+
         dfm.finalize()
         dfm_dict = vars(dfm)  # serialize for celery
 
@@ -356,7 +362,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         if hasattr(e, 'args'):
             if len(e.args) > 0:
-                if e.args[0] == 'Wind Dataset Timed Out':
+                if e.args[0] == 'Unable to download wind data':
                     raise WindDownloadError(task=self.name, run_uuid=run_uuid, user_uuid=self.data['inputs']['Scenario'].get('user_uuid'))
                 if isinstance(e.args[0], str):
                     if e.args[0].startswith('PVWatts'):

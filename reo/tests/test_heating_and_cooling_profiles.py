@@ -14,7 +14,7 @@ from reo.src.wind import WindSAMSDK, combine_wind_files
 
 post = {"Scenario": {
     "timeout_seconds": 420,
-    "optimality_tolerance": 1.0,
+    "optimality_tolerance_techs": 0.7,
     "Site": {
     "latitude": 37.78, "longitude": -122.45,
     "Financial": {
@@ -82,10 +82,6 @@ post = {"Scenario": {
     }
 }}}
 
-# json_file = open("results_processing/job1-input.json")
-# json_str = json_file.read()
-# post = json.loads(json_str)
-
 class HeatingCoolingTest(ResourceTestCaseMixin, TestCase):
     REopt_tol = 1e-2
 
@@ -97,7 +93,7 @@ class HeatingCoolingTest(ResourceTestCaseMixin, TestCase):
 
         return self.api_client.post(self.reopt_base, format='json', data=data)
 
-
+    #@skip("CHP test")
     def test_heating_cooling_inputs(self):
         
         resp = self.get_response(data=post)

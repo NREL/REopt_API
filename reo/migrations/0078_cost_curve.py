@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('reo', '0075_remove_loadprofilemodel_year_one_electric_load_series_kw_bau'),
+        ('reo', '0077_scenariomodel_timeout_decomp_subproblem_seconds'),
     ]
 
     operations = [

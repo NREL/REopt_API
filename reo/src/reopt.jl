@@ -22,7 +22,7 @@ function add_continuous_variables(m, p)
 	    dvProdIncent[p.Tech] >= 0   # X^{pi}_{t}: Production incentive collected for technology [$]
 		dvPeakDemandE[p.Ratchets, p.DemandBin] >= 0  # X^{de}_{re}:  Peak electrical power demand allocated to tier e during ratchet r [kW]
 		dvPeakDemandEMonth[p.Month, p.DemandMonthsBin] >= 0  #  X^{dn}_{mn}: Peak electrical power demand allocated to tier n during month m [kW]
-		dvPeakDemandELookback >= 0  # X^{lp}: Peak electric demand look back [kW]
+		dvPeakDemandELookback[p.Month] >= 0  # X^{lp}: Peak electric demand look back [kW]
         MinChargeAdder >= 0   #to be removed
 		#UtilityMinChargeAdder[p.Month] >= 0   #X^{mc}_m: Annual utility minimum charge adder in month m [\$]
 		#CHP and Fuel-burning variables
@@ -106,9 +106,13 @@ function add_export_expressions(m, p)
 				  for u in p.SalesTiers, t in p.TechsBySalesTier[u]
 			) for ts in p.TimeStep )
 		)
-		m[:ExportedElecWIND] = @expression(m,
+		m[:CurtailedElecWIND] = @expression(m,
 			p.TimeStepScaling * sum(m[:dvProductionToGrid][t,u,ts]
-				for t in m[:WindTechs], u in p.SalesTiersByTech[t], ts in p.TimeStep)
+				for t in m[:WindTechs], u in p.CurtailmentTiers, ts in p.TimeStep)
+		)
+		m[:ExportedElecWIND] = @expression(m,
+			p.TimeStepScaling * sum(m[:dvProductionToGrid][t,u,ts] 
+				for t in m[:WindTechs], u in p.SalesTiersByTech[t], ts in p.TimeStep) - m[:CurtailedElecWIND]
 		)
 		m[:ExportedElecGEN] = @expression(m,
 			p.TimeStepScaling * sum(m[:dvProductionToGrid][t,u,ts]
@@ -123,6 +127,7 @@ function add_export_expressions(m, p)
 		)
 	else
 		m[:TotalExportBenefit] = 0
+		m[:CurtailedElecWIND] = 0
 		m[:ExportedElecWIND] = 0
 		m[:ExportedElecGEN] = 0
 		m[:ExportBenefitYr1] = 0
@@ -355,7 +360,7 @@ function add_storage_op_constraints(m, p)
 	)
 	# Constraint (4e): Electrical production sent to storage or grid must be less than technology's rated production - no grid
 	@constraint(m, ElecTechProductionFlowNoGridCon[b in p.ElecStorage, t in p.ElectricTechs, ts in p.TimeStepsWithoutGrid],
-		m[:dvProductionToStorage][b,t,ts]  <=
+		m[:dvProductionToStorage][b,t,ts] + sum(m[:dvProductionToGrid][t,u,ts] for u in p.CurtailmentTiers)  <=
 		p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts]
 	)
 	# Constraint (4f)-1: (Hot) Thermal production sent to storage or grid must be less than technology's rated production
@@ -628,11 +633,26 @@ end
 
 
 function add_nem_constraint(m, p)
+	# NEM is SalesTier 1
+	# dvStorageToGrid is always fixed at 0.0, remove it?
 	@constraint(m, GridSalesLimit,
 		p.TimeStepScaling * sum(m[:dvProductionToGrid][t,1,ts] for t in p.TechsBySalesTier[1], ts in p.TimeStep)  +
-		sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers, ts in p.TimeStep) <= p.TimeStepScaling *
-		sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier, ts in p.TimeStep)
+		sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers, ts in p.TimeStep)
+		<= p.TimeStepScaling * sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier, ts in p.TimeStep)
 	)
+end
+
+
+function add_no_grid_export_constraint(m, p)
+	for ts in p.TimeStepsWithoutGrid
+		for u in p.SalesTiers
+			if !(u in p.CurtailmentTiers)
+				for t in p.TechsBySalesTier[u]
+					fix(m[:dvProductionToGrid][t, u, ts], 0.0, force=true)
+				end
+			end
+		end
+	end
 end
 
 
@@ -709,16 +729,48 @@ function add_tou_demand_charge_constraints(m, p)
 		sum( m[:dvGridPurchase][u, ts] for u in p.PricingTier )
 	)
 
-	##Constraint (12e): Peak demand used in percent lookback calculation
-	@constraint(m, [mth in p.DemandLookbackMonths],
-		m[:dvPeakDemandELookback] >= sum(m[:dvPeakDemandEMonth][mth, n] for n in p.DemandMonthsBin)
-	)
+	if p.DemandLookbackRange != 0  # then the dvPeakDemandELookback varies by month
 
-	##Constraint (12f): Ratchet peak demand charge is bounded below by lookback
-	@constraint(m, [r in p.Ratchets],
-		sum( m[:dvPeakDemandE][r,e] for e in p.DemandBin ) >=
-		p.DemandLookbackPercent * m[:dvPeakDemandELookback]
-	)
+		##Constraint (12e): dvPeakDemandELookback is the highest peak demand in DemandLookbackMonths
+		for mth in p.Month
+			if mth > p.DemandLookbackRange
+				@constraint(m, [lm in 1:p.DemandLookbackRange, ts in p.TimeStepRatchetsMonth[mth - lm]],
+					m[:dvPeakDemandELookback][mth]
+					≥ sum( m[:dvGridPurchase][u, ts] for u in p.PricingTier )
+				)
+			else  # need to handle rollover months
+				for lm in 1:p.DemandLookbackRange
+					lkbkmonth = mth - lm
+					if lkbkmonth ≤ 0
+						lkbkmonth += 12
+					end
+					@constraint(m, [ts in p.TimeStepRatchetsMonth[lkbkmonth]],
+						m[:dvPeakDemandELookback][mth]
+						≥ sum( m[:dvGridPurchase][u, ts] for u in p.PricingTier )
+					)
+				end
+			end
+		end
+
+		##Constraint (12f): Ratchet peak demand charge is bounded below by lookback
+		@constraint(m, [mth in p.Month],
+			sum( m[:dvPeakDemandEMonth][mth, n] for n in p.DemandMonthsBin ) >=
+			p.DemandLookbackPercent * m[:dvPeakDemandELookback][mth]
+		)
+
+	else  # dvPeakDemandELookback does not vary by month
+
+		##Constraint (12e): dvPeakDemandELookback is the highest peak demand in DemandLookbackMonths
+		@constraint(m, [lm in p.DemandLookbackMonths],
+			m[:dvPeakDemandELookback][1] >= sum(m[:dvPeakDemandEMonth][lm, n] for n in p.DemandMonthsBin)
+		)
+
+		##Constraint (12f): Ratchet peak demand charge is bounded below by lookback
+		@constraint(m, [mth in p.Month],
+			sum( m[:dvPeakDemandEMonth][mth, n] for n in p.DemandMonthsBin ) >=
+			p.DemandLookbackPercent * m[:dvPeakDemandELookback][1]
+		)
+	end
 
 	if !isempty(p.DemandRates)
 		m[:DemandTOUCharges] = @expression(m, p.pwf_e * sum( p.DemandRates[r,e] * m[:dvPeakDemandE][r,e] for r in p.Ratchets, e in p.DemandBin) )
@@ -754,17 +806,17 @@ function add_chp_hourly_opex_charges(m, p)
 					p.OMcostPerUnitHourPerSize[t] * m[:dvSize][t] -
 					m[:NewMaxSize][t] * p.OMcostPerUnitHourPerSize[t] * (1-m[:binTechIsOnInTS][t,ts])
 					   <= m[:dvOMByHourBySizeCHP][t, ts]
-					)		
+					)
 	#Constraint CHP-hourly-om-b: om per hour, per time step <= per_unit_size_cost * size for each hour
 	@constraint(m, CHPHourlyOMBySizeB[t in p.CHPTechs, ts in p.TimeStep],
-					p.OMcostPerUnitHourPerSize[t] * m[:dvSize][t] 
+					p.OMcostPerUnitHourPerSize[t] * m[:dvSize][t]
 					   >= m[:dvOMByHourBySizeCHP][t, ts]
-					)		
+					)
 	#Constraint CHP-hourly-om-c: om per hour, per time step <= zero when off, <= per_unit_size_cost*max_size
 	@constraint(m, CHPHourlyOMBySizeC[t in p.CHPTechs, ts in p.TimeStep],
 					m[:NewMaxSize][t] * p.OMcostPerUnitHourPerSize[t] * m[:binTechIsOnInTS][t,ts]
 					   >= m[:dvOMByHourBySizeCHP][t, ts]
-					)		
+					)
 end
 
 function add_cost_function(m, p)
@@ -847,6 +899,7 @@ function reopt_run(m, p::Parameter)
 	## Temporary workaround for outages TimeStepsWithoutGrid
 	if !isempty(p.TimeStepsWithoutGrid)
 		add_no_grid_constraints(m, p)
+		add_no_grid_export_constraint(m, p)
 	end
 
 	#don't allow curtailment or sales of stroage
@@ -1174,22 +1227,23 @@ end
 
 function add_wind_results(m, p, r::Dict)
 	r["wind_kw"] = round(value(sum(m[:dvSize][t] for t in m[:WindTechs])), digits=4)
-	#@expression(m, WINDtoBatt[ts in p.TimeStep],
-	#            sum(m[:dvProductionToStorage][b, t, ts] for t in m[:WindTechs], b in p.ElecStorage))
-	WINDtoBatt = 0.0*Array{Float64,1}(undef,p.TimeStepCount)
-	for ts in p.TimeStep
-		for t in m[:WindTechs]
-			for b in p.ElecStorage
-				WINDtoBatt[ts] += value(m[:dvProductionToStorage][b, t, ts])
-			end
-		end
-	end
+	@expression(m, WINDtoBatt[ts in p.TimeStep],
+	            sum(sum(m[:dvProductionToStorage][b, t, ts] for t in m[:WindTechs]) for b in p.ElecStorage))
+	r["WINDtoBatt"] = round.(value.(WINDtoBatt), digits=3)
+
+	@expression(m, WINDtoCurtail[ts in p.TimeStep],
+				sum(m[:dvProductionToGrid][t,u,ts] for t in m[:WindTechs], u in p.CurtailmentTiers))
+
+	r["WINDtoCurtail"] = round.(value.(WINDtoCurtail), digits=3)
+
 	@expression(m, WINDtoGrid[ts in p.TimeStep],
-				sum(m[:dvProductionToGrid][t,u,ts] for t in m[:WindTechs], u in p.SalesTiers))
+				sum(m[:dvProductionToGrid][t,u,ts] for t in m[:WindTechs], u in p.SalesTiersByTech[t]) - WINDtoCurtail[ts])
+
 	r["WINDtoGrid"] = round.(value.(WINDtoGrid), digits=3)
+
 	@expression(m, WINDtoLoad[ts in p.TimeStep],
 				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
-					for t in m[:WindTechs]) - WINDtoGrid[ts] - WINDtoBatt[ts] )
+					for t in m[:WindTechs]) - WINDtoGrid[ts] - WINDtoBatt[ts] - WINDtoCurtail[ts] )
 	r["WINDtoLoad"] = round.(value.(WINDtoLoad), digits=3)
 	m[:Year1WindProd] = @expression(m,
 		p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts]
@@ -1222,14 +1276,18 @@ function add_pv_results(m, p, r::Dict)
 				PVtoBatt = @expression(m, [ts in p.TimeStep], 0.0)
             end
 			r[string(PVclass, "toBatt")] = round.(value.(PVtoBatt), digits=3)
+			
+			PVtoCurtail = @expression(m, [ts in p.TimeStep],
+					sum(m[:dvProductionToGrid][t,u,ts] for t in PVtechs_in_class, u in p.CurtailmentTiers))
+    	    r[string(PVclass, "toCurtail")] = round.(value.(PVtoCurtail), digits=3)
 
 			PVtoGrid = @expression(m, [ts in p.TimeStep],
-					sum(m[:dvProductionToGrid][t,u,ts] for t in PVtechs_in_class, u in p.SalesTiersByTech[t]))
+					sum(m[:dvProductionToGrid][t,u,ts] for t in PVtechs_in_class, u in p.SalesTiersByTech[t]) - PVtoCurtail[ts])
     	    r[string(PVclass, "toGrid")] = round.(value.(PVtoGrid), digits=3)
 
 			PVtoLoad = @expression(m, [ts in p.TimeStep],
-				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] for t in PVtechs_in_class)
-				- PVtoGrid[ts] - PVtoBatt[ts]
+				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] for t in PVtechs_in_class) 
+				- PVtoGrid[ts] - PVtoBatt[ts] - PVtoCurtail[ts]
 				)
             r[string(PVclass, "toLoad")] = round.(value.(PVtoLoad), digits=3)
 
@@ -1279,14 +1337,14 @@ function add_chp_results(m, p, r::Dict)
 	r["chp_electric_to_load_series"] = round.(value.(CHPtoLoad), digits=3)
 	@expression(m, CHPtoHotTES[ts in p.TimeStep],
 		sum(m[:dvProductionToStorage]["HotTES",t,ts] for t in p.CHPTechs))
-	r["chp_thermal_to_tes_series"] = round.(value.(CHPtoHotTES), digits=3)
+	r["chp_thermal_to_tes_series"] = round.(value.(CHPtoHotTES), digits=5)
 	@expression(m, CHPThermalToWaste[ts in p.TimeStep],
 		sum(m[:dvProductionToWaste][t,ts] for t in p.CHPTechs))
-	r["chp_thermal_to_waste_series"] = round.(value.(CHPThermalToWaste))
+	r["chp_thermal_to_waste_series"] = round.(value.(CHPThermalToWaste), digits=5)
 	@expression(m, CHPThermalToLoad[ts in p.TimeStep],
 		sum(m[:dvThermalProduction][t,ts]
 			for t in p.CHPTechs) - CHPtoHotTES[ts] - CHPThermalToWaste[ts])
-	r["chp_thermal_to_load_series"] = round.(value.(CHPThermalToLoad), digits=3)
+	r["chp_thermal_to_load_series"] = round.(value.(CHPThermalToLoad), digits=5)
 	@expression(m, TotalCHPFuelCharges,
 		p.pwf_fuel["CHP"] * p.TimeStepScaling * sum(p.FuelCost["CHPFUEL",ts] * m[:dvFuelUsage]["CHP",ts]
 			for ts in p.TimeStep))
@@ -1416,6 +1474,7 @@ function add_util_results(m, p, r::Dict)
 						 "total_min_charge_adder" => round(value(m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker], digits=2),
 						 "net_capital_costs_plus_om" => round(net_capital_costs_plus_om, digits=0),
 						 "average_annual_energy_exported_wind" => round(value(m[:ExportedElecWIND]), digits=0),
+						 "average_annual_energy_curtailed_wind" => round(value(m[:CurtailedElecWIND]), digits=0),
                          "average_annual_energy_exported_gen" => round(value(m[:ExportedElecGEN]), digits=0),
 						 "net_capital_costs" => round(value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]), digits=2),
 						 "total_opex_costs" => round(total_opex_costs, digits=0),
@@ -1424,5 +1483,4 @@ function add_util_results(m, p, r::Dict)
     @expression(m, GridToLoad[ts in p.TimeStep],
                 sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) - m[:dvGridToStorage][ts] )
     r["GridToLoad"] = round.(value.(GridToLoad), digits=3)
-	nothing
 end

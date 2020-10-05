@@ -87,7 +87,7 @@ nested_input_definitions = {
     "timeout_seconds": {
       "type": "int",
       "min": 1,
-      "max": 5000,
+      "max": 50000,
       "default": 420,
       "description": "The number of seconds allowed before the optimization times out"
     },
@@ -109,12 +109,38 @@ nested_input_definitions = {
       "type": "str",
       "description": "The unique ID of a scenario created by the REopt Lite Webtool. Note that this ID can be shared by several REopt Lite API Scenarios (for example when users select a 'Resilience' analysis more than one REopt API Scenario is created)."
     },
-	"optimality_tolerance": {
+	"optimality_tolerance_bau": {
       "type": "float",
-      "min": 0.0,
+      "min": 1.0e-5,
       "max": 10.0,
-      "default": 1.0e-3,
+      "default": 0.001,
       "description": "The threshold for the difference between the solution's objective value and the best possible value at which the solver terminates"
+    },
+	"optimality_tolerance_techs": {
+      "type": "float",
+      "min": 1.0e-5,
+      "max": 10.0,
+      "default": 0.001,
+      "description": "The threshold for the difference between the solution's objective value and the best possible value at which the solver terminates"
+    },
+	"use_decomposition_model": {
+      "type": "bool",
+      "default": False,
+      "description": "Toggle to use the decomposition model/algorithm"
+    },
+	"optimality_tolerance_decomp_subproblem": {
+      "type": "float",
+      "min": 1.0e-5,
+      "max": 10.0,
+      "default": 0.02,
+      "description": "The threshold for the difference between the decomposition subproblem solution's objective value and the best possible value at which the solver terminates"
+    },
+    "timeout_decomp_subproblem_seconds": {
+      "type": "int",
+      "min": 1,
+      "max": 10000,
+      "default": 120,
+      "description": "The number of seconds allowed before the decomposition subproblem optimization times out"
     },
 
     "Site": {
@@ -203,7 +229,7 @@ nested_input_definitions = {
           "default": 0.083,
           "description": "Nominal energy offtaker discount rate. In single ownership model the offtaker is also the generation owner."
         },
-        "two_party_ownership": {
+        "third_party_ownership": {
           "default": False,
           "type": "bool",
           "description": "Specify if ownership model is direct ownership or two party. In two party model the offtaker does not purcharse the generation technologies, but pays the generation owner for energy from the generator(s)."
@@ -316,7 +342,7 @@ nested_input_definitions = {
         "critical_load_pct": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0,
+          "max": 2.0,
           "default": 0.5,
           "description": "Critical load factor is multiplied by the typical load to determine the critical load that must be met during an outage. Value must be between zero and one, inclusive."
         },

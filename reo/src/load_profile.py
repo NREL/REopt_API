@@ -38,6 +38,7 @@ import logging
 log = logging.getLogger(__name__)
 import geopandas as gpd
 from shapely import geometry as g
+from reo.exceptions import LoadProfileError
 
 
 default_annual_electric_loads = {
@@ -511,11 +512,11 @@ class LoadProfile(BuiltInProfile):
         self.n_timesteps = self.time_steps_per_hour * 8760
         self.doe_reference_name = kwargs.get('doe_reference_name')
         self.nearest_city = None
-        self.year  = kwargs.get('year')
+        self.year = kwargs.get('year')
         self.percent_share_list = kwargs.get("percent_share")
         # "pop"ing the following two values to replace them before calling BuiltInProfile (super class)
-        doe_reference_name_list = kwargs.pop("doe_reference_name", None)
-        self.annual_kwh_list = kwargs.pop("annual_kwh", None)
+        doe_reference_name_list = kwargs.pop("doe_reference_name", [])
+        self.annual_kwh_list = kwargs.pop("annual_kwh", [])
 
         if user_profile:
             self.load_list = user_profile
@@ -523,18 +524,26 @@ class LoadProfile(BuiltInProfile):
             self.bau_load_list = copy.copy(self.load_list)
 
         else:  # building type and (annual_kwh OR monthly_totals_energy) defined by user
-            combine_loadlist = []
-            for i in range(len(doe_reference_name_list)):
-                percent_share = self.percent_share_list[i]
-                kwargs["doe_reference_name"] = doe_reference_name_list[i]
-                if self.annual_kwh_list is not None:
-                    kwargs["annual_energy"] = self.annual_kwh_list[i]
-                kwargs['monthly_totals_energy'] = kwargs.get('monthly_totals_kwh')
-                super(LoadProfile, self).__init__(**kwargs)
-                load_list = [val for val in self.built_in_profile for _ in range(self.time_steps_per_hour)]
-                # appending the weighted load at every timestep, for making hybrid loadlist
-                combine_loadlist.append([load * (percent_share / 100.0) for load in load_list])  # list of lists
-            self.unmodified_load_list = list(np.sum(np.array(combine_loadlist), axis=0))
+            if len(doe_reference_name_list) == 0:
+                message = ("Invalid LoadProfile inputs. At a minimum, please supply a loads_kw or doe_reference_name.")
+                log.error("Scenario.py raising error: " + message)
+                lp_error = LoadProfileError(task='reo.src.load_profile.py', run_uuid=dfm.run_id, user_uuid=dfm.user_id, message=message)
+                lp_error.save_to_db()
+                raise lp_error
+
+            else:
+                combine_loadlist = []
+                for i in range(len(doe_reference_name_list)):
+                    percent_share = self.percent_share_list[i]
+                    kwargs["doe_reference_name"] = doe_reference_name_list[i]
+                    if len(self.annual_kwh_list or []) > 0:
+                        kwargs["annual_energy"] = self.annual_kwh_list[i]
+                    kwargs['monthly_totals_energy'] = kwargs.get('monthly_totals_kwh')
+                    super(LoadProfile, self).__init__(**kwargs)
+                    load_list = [val for val in self.built_in_profile for _ in range(self.time_steps_per_hour)]
+                    # appending the weighted load at every timestep, for making hybrid loadlist
+                    combine_loadlist.append([load * (percent_share / 100.0) for load in load_list])  # list of lists
+                self.unmodified_load_list = list(np.sum(np.array(combine_loadlist), axis=0))
 
         if loads_kw_is_net:
             self.load_list, existing_pv_kw_list = self._account_for_existing_pv(pvs, analysis_years)
@@ -609,7 +618,7 @@ class LoadProfile(BuiltInProfile):
                                                                    existing_pv_kw_list, gen_existing_kw, gen_min_turn_down,
                                                                    fuel_avail_before_outage, fuel_slope, fuel_intercept,
                                                                    self.time_steps_per_hour)
-            
+
             self.bau_load_list[outage_start_hour:outage_start_hour + sustain_hours] = \
                 critical_loads_kw[outage_start_hour:outage_start_hour + sustain_hours]
 

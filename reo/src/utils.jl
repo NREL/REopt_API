@@ -57,8 +57,9 @@ Base.@kwdef struct Parameter
 	 TimeStepRatchetsMonth::Array{Array{Int64,1},1}   #  H_m: Time steps in month m
 	 TimeStepRatchets::Array{Array{Int64,1},1}   #  H_r: Time steps in ratchet r
      TimeStepsWithGrid::Array{Int64,1}  # H_g: Time steps with grid connection
-     TimeStepsWithoutGrid::Array{Int64,1}	 # H \setminus H_g: Time steps without grid connection
-	 DemandLookbackMonths::Array{Any,1}   # M^{lb}: Look back months considered for peak pricing
+     TimeStepsWithoutGrid::Array{Int64,1}	 # H \setminus H_g: Time steps without grid connection 
+	 DemandLookbackMonths::Array{Any,1}   # M^{lb}: fixed Look back months considered for peak pricing
+	 DemandLookbackRange::Int   # number of Look back months considered for peak pricing
 	 SegByTechSubdivision::AxisArray # S_{kt}: System size segments from segmentation k applied to technology t
 	 TechsInClass::AxisArray # T_c \subset T: Technologies that are in class c
 	 TechsByFuelType::AxisArray # T_f \subset T: Technologies that burn fuel type f
@@ -216,6 +217,8 @@ Base.@kwdef struct Parameter
 	CHPStandbyCharge::Float64
 	CHPDoesNotReduceDemandCharges::Int64
 	StorageDecayRate::AxisArray
+	DecompOptTol::Float64
+	DecompTimeOut::Int32
 end
 
 
@@ -299,8 +302,8 @@ function Parameter(d::Dict)
 	d["FuelCost"] = vector_to_axisarray(d["FuelCost"], d["FuelType"], d[:TimeStep])
     d["ElecRate"] = transpose(reshape(d["ElecRate"], d["TimeStepCount"], d["PricingTierCount"]))
     d["GridExportRates"] = transpose(reshape(d["GridExportRates"], d["TimeStepCount"], d["SalesTierCount"]))
-    d["FuelBurnSlope"] = AxisArray(d["FuelBurnSlope"], d["Tech"])
-    d["FuelBurnYInt"] = AxisArray(d["FuelBurnYInt"], d["Tech"])
+    d["FuelBurnSlope"] = AxisArray(d["FuelBurnSlope"], d["FuelBurningTechs"])
+    d["FuelBurnYInt"] = AxisArray(d["FuelBurnYInt"], d["FuelBurningTechs"])
     d["ProductionFactor"] = vector_to_axisarray(d["ProductionFactor"], d["Tech"], d[:TimeStep])
     d["ProductionIncentiveRate"] = AxisArray(d["ProductionIncentiveRate"], d["Tech"])
     d["FuelLimit"] = AxisArray(d["FuelLimit"], d["FuelType"])
@@ -327,6 +330,9 @@ function Parameter(d::Dict)
 	d["StorageDecayRate"] = AxisArray(d["StorageDecayRate"], d["Storage"])
 
     # Indexed Sets
+    if isempty(d["FuelType"])
+        d["TechsByFuelType"] = []  # array of arrays is not empty, but needs to be for AxisArray conversion
+    end
     d["SegByTechSubdivision"] = vector_to_axisarray(d["SegByTechSubdivision"], d["Subdivision"], d["Tech"])
     d["TechsByFuelType"] = AxisArray(d["TechsByFuelType"], d["FuelType"])
     d["TechsInClass"] = AxisArray(d["TechsInClass"], d["TechClass"])
