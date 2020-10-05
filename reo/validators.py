@@ -50,7 +50,7 @@ class URDB_RateValidator:
 
     error_folder = 'urdb_rate_errors'
 
-    def __init__(self,_log_errors=True, **kwargs):
+    def __init__(self, _log_errors=True, **kwargs):
         """
         Takes a dictionary parsed from a URDB Rate Json response
         - See http://en.openei.org/services/doc/rest/util_rates/?version=3
@@ -107,7 +107,14 @@ class URDB_RateValidator:
         kwargs.setdefault("label", "custom")
         for key in kwargs:                           #Load in attributes
             setattr(self, key, kwargs[key])
-
+        self.numbers = [
+            'fixedmonthlycharge',
+            'fixedchargefirstmeter',
+            'mincharge',
+            'minmonthlycharge',
+            'annualmincharge',
+            'peakkwcapacitymin',
+        ]
         self.validate()                              #Validate attributes
 
         if _log_errors:
@@ -115,7 +122,6 @@ class URDB_RateValidator:
                 log_urdb_errors(self.label, self.errors, self.warnings)
 
     def validate(self):
-
         # Check if in known hard problems
         if self.label in hard_problem_labels:
             self.errors.append("URDB Rate (label={}) is currently restricted due to performance limitations".format(self.label))
@@ -126,10 +132,13 @@ class URDB_RateValidator:
             if self.isNotNone(f):
                 self.isNotEmptyList(f)
 
-        for key in dir(self) :
-            v = 'validate_' + key
-            if hasattr(self, v):
-                getattr(self, v)()
+        for key in dir(self):
+            if key in self.numbers:
+                self.validate_number(key)
+            else:
+                v = 'validate_' + key
+                if hasattr(self, v):
+                    getattr(self, v)()
 
     @property
     def dependencies(self):
@@ -208,34 +217,6 @@ class URDB_RateValidator:
         if self.validDependencies(name):
             self.validSchedule(name, 'flatdemandstructure')
 
-    def validate_fixedmonthlycharge(self):
-        name = 'fixedmonthlycharge'
-        self.validNumber(name)
-
-    def validate_fixedmonthlycharge(self):
-        name = 'fixedmonthlycharge'
-        self.validNumber(name)
-
-    def validate_fixedchargefirstmeter(self):
-        name = 'fixedchargefirstmeter'
-        self.validNumber(name)
-
-    def validate_mincharge(self):
-        name = 'mincharge'
-        self.validNumber(name)
-
-    def validate_minmonthlycharge(self):
-        name = 'minmonthlycharge'
-        self.validNumber(name)
-
-    def validate_annualmincharge(self):
-        name = 'annualmincharge'
-        self.validNumber(name)
-
-    def validate_peakkwcapacitymin(self):
-        name = 'peakkwcapacitymin'
-        self.validNumber(name)
-
     def validate_demandratchetpercentage(self):
         if type(self.demandratchetpercentage) != list:
             self.errors.append('Expecting demandratchetpercentage to be a list of 12 values.')
@@ -284,13 +265,11 @@ class URDB_RateValidator:
             recursive_search(schedule)
         return valid
 
-    def validNumber(self, name):
+    def validate_number(self, name):
         try:
-            float(getattr(self,name, 0))
+            float(getattr(self, name, 0))
         except:
-            self.errors.append('Entry for {} ({}) is not a valid number.'.format(name, getattr(self,name)))
-            return False
-        return True
+            self.errors.append('Entry for {} ({}) is not a valid number.'.format(name, getattr(self, name)))
 
     def isNotNone(self, name):
         if getattr(self,name, None) is None:
