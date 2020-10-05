@@ -301,8 +301,14 @@ class URDB_RateValidator:
     def isNotEmptyList(self, name):
         if type(getattr(self,name)) != list:
             self.errors.append('Expecting a list for {}.'.format(name))
-            if len(getattr(self,name)) == 0:
-                self.errors.append('List is empty for {}.'.format(name))
+            return False
+        if len(getattr(self,name)) == 0:
+            self.errors.append('List is empty for {}.'.format(name))
+            return False
+        if None in getattr(self,name):
+            self.errors.append('List for {} contains null value(s).'.format(name))
+            return False
+        return True
     
     def validRate(self, rate):
         # check that each  tier in rate structure array has a rate attribute, and that all rates except one contain a 'max' attribute
