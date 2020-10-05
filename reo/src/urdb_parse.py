@@ -61,26 +61,16 @@ class REoptArgs:
         self.demand_month_max_in_tiers = 1 * [big_number]
         self.demand_lookback_months = []
         self.demand_lookback_percent = 0.0
+        self.demand_lookback_range = 0
         self.demand_min = 0
 
- 
-        self.energy_costs = []
-        self.energy_costs_bau = []
         self.energy_tiers_num = 1
         self.energy_max_in_tiers = 1 * [big_number]
-        self.energy_avail = []
-        self.energy_avail_bau = []
-        self.energy_burn_rate = []
-        self.energy_burn_rate_bau = []
-        self.energy_burn_intercept = []
-        self.energy_burn_intercept_bau = []
 
-        self.fuel_costs = []
-        self.fuel_costs_bau = []
+        self.energy_costs = []
+        self.energy_costs_bau = []
         self.grid_export_rates = []
         self.grid_export_rates_bau = []
-        self.fuel_limit = []
-        self.fuel_limit_bau = []
 
         self.fixed_monthly_charge = 0
         self.annual_min_charge = 0
@@ -88,14 +78,6 @@ class REoptArgs:
 
         self.chp_standby_rate_us_dollars_per_kw_per_month = 0
         self.chp_does_not_reduce_demand_charges = 0
-
-        # Unique parameters for chp and new boiler/chiller efficiency/cop
-        self.chp_thermal_prod_slope = 0.0
-        self.chp_thermal_prod_intercept = 0.0
-        self.chp_derate = 0.0
-        self.boiler_efficiency = 0.32
-        self.electric_chiller_cop = 0.32
-        self.absorption_chiller_cop = 0.32
 
 
 class RateData:
@@ -125,9 +107,12 @@ class RateData:
             'demandunits',
             'demandweekdayschedule',
             'demandweekendschedule',
-            'demandratchetpercentage',
             'demandwindow',
             'demandreactivepowercharge',
+            # lookback demand charges
+            'lookbackMonths',
+            'lookbackPercent',
+            'lookbackRange',
             # coincident rates
             'coincidentrateunit',
             'coincidentratestructure',
@@ -176,15 +161,10 @@ class RateData:
 class UrdbParse:
     """
     Sub-function of DataManager.
-    Makes all REopt args for dat files in Inputs/Utility directory
-
-    Note: (diesel) generator parameters for mosel are defined here because they depend on number of energy tiers in
-    utility rate.
     """
     days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
-    def __init__(self, big_number, elec_tariff, fuel_tariff, techs, bau_techs, loads, gen=None, chp=None,
-                 boiler=None, electric_chiller=None, absorption_chiller=None):
+    def __init__(self, big_number, elec_tariff, techs, bau_techs):
 
         self.urdb_rate = elec_tariff.urdb_response
         self.year = elec_tariff.load_year
@@ -199,65 +179,11 @@ class UrdbParse:
         self.reopt_args = REoptArgs(big_number)
         self.techs = techs
         self.bau_techs = bau_techs
-        self.loads = loads
         self.chp_standby_rate_us_dollars_per_kw_per_month = elec_tariff.chp_standby_rate_us_dollars_per_kw_per_month
         self.chp_does_not_reduce_demand_charges = elec_tariff.chp_does_not_reduce_demand_charges
         self.custom_tou_energy_rates = elec_tariff.tou_energy_rates
         self.add_tou_energy_rates_to_urdb_rate = elec_tariff.add_tou_energy_rates_to_urdb_rate
         self.override_urdb_rate_with_tou_energy_rates = elec_tariff.override_urdb_rate_with_tou_energy_rates
-        if gen is not None:
-            self.generator_fuel_slope = gen.fuel_slope
-            self.generator_fuel_intercept = gen.fuel_intercept
-            self.generator_fuel_avail = gen.fuel_avail
-            self.diesel_fuel_cost_us_dollars_per_gallon = gen.diesel_fuel_cost_us_dollars_per_gallon
-            self.diesel_cost_array = [self.diesel_fuel_cost_us_dollars_per_gallon] * self.ts_per_year
-        else:
-            self.generator_fuel_slope = 0.0
-            self.generator_fuel_intercept = 0.0
-            self.generator_fuel_avail = 0.0
-
-        # Assign monthly fuel rates for boiler and chp and then convert to timestep intervals
-        self.boiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu = fuel_tariff.monthly_rates('boiler')
-        self.chp_fuel_blended_monthly_rates_us_dollars_per_mmbtu = fuel_tariff.monthly_rates('chp')
-        self.chp_fuel_rate_array = []
-        self.boiler_fuel_rate_array = []
-        for month in range(0, 12):
-            # Create full length (timestep) array of NG cost in $/MMBtu
-            self.boiler_fuel_rate_array.extend([self.boiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu[month]] *
-                                      self.days_in_month[month] * 24 * self.time_steps_per_hour)
-            self.chp_fuel_rate_array.extend([self.chp_fuel_blended_monthly_rates_us_dollars_per_mmbtu[month]] *
-                                      self.days_in_month[month] * 24 * self.time_steps_per_hour)
-
-        if chp is not None:
-            self.chp_fuel_burn_slope = chp.fuel_burn_slope
-            self.chp_fuel_burn_intercept = [chp.fuel_burn_intercept]
-            self.chp_thermal_prod_slope = [chp.thermal_prod_slope]
-            self.chp_thermal_prod_intercept = [chp.thermal_prod_intercept]
-            self.chp_derate = [chp.derate]
-        else:
-            self.chp_fuel_burn_slope = 0.0
-            self.chp_fuel_burn_intercept = list()
-            self.chp_thermal_prod_slope = list()
-            self.chp_thermal_prod_intercept = list()
-            self.chp_derate = list()
-
-        if boiler is not None:
-            self.boiler_efficiency = boiler.boiler_efficiency
-        else:
-            # Make arbitrary non-zero value (pi/10) to avoid divide-by-zero issue
-            self.boiler_efficiency = 0.314
-
-        if electric_chiller is not None:
-            self.electric_chiller_cop = electric_chiller.chiller_cop
-        else:
-            # Make arbitrary non-zero value (pi/10) to avoid divide-by-zero issue
-            self.electric_chiller_cop = 0.314
-
-        if absorption_chiller is not None:
-            self.absorption_chiller_cop = absorption_chiller.chiller_cop
-        else:
-            # Make arbitrary non-zero value (pi/10) to avoid divide-by-zero issue
-            self.absorption_chiller_cop = 0.314
 
         log.info("URDB parse with year: " + str(self.year) + " net_metering: " + str(self.net_metering))
 
@@ -296,47 +222,21 @@ class UrdbParse:
             self.prepare_energy_costs(current_rate)
             self.prepare_fixed_charges(current_rate)
 
-        self.reopt_args.fuel_costs, \
-        self.reopt_args.fuel_limit,  \
-        self.reopt_args.fuel_types,  \
-        self.reopt_args.techs_by_fuel_type,  \
-        self.reopt_args.energy_burn_rate, \
-        self.reopt_args.energy_burn_intercept, \
         self.reopt_args.energy_costs, \
         self.reopt_args.grid_export_rates, \
         self.reopt_args.rates_by_tech,   \
         self.reopt_args.techs_by_rate,   \
         self.reopt_args.num_sales_tiers, \
-        self.reopt_args.chp_thermal_prod_slope, \
-        self.reopt_args.chp_thermal_prod_intercept, \
-        self.reopt_args.chp_fuel_burn_intercept, \
-        self.reopt_args.chp_derate, \
         self.reopt_args.chp_standby_rate_us_dollars_per_kw_per_month, \
-        self.reopt_args.chp_does_not_reduce_demand_charges, \
-        self.reopt_args.boiler_efficiency, \
-        self.reopt_args.electric_chiller_cop, \
-        self.reopt_args.absorption_chiller_cop = self.prepare_techs_and_loads(self.techs)
+        self.reopt_args.chp_does_not_reduce_demand_charges = self.prepare_techs_and_loads(self.techs)
 
-        self.reopt_args.fuel_costs_bau, \
-        self.reopt_args.fuel_limit_bau,  \
-        self.reopt_args.fuel_types_bau,  \
-        self.reopt_args.techs_by_fuel_type_bau,  \
-        self.reopt_args.energy_burn_rate_bau, \
-        self.reopt_args.energy_burn_intercept_bau, \
         self.reopt_args.energy_costs_bau, \
         self.reopt_args.grid_export_rates_bau, \
         self.reopt_args.rates_by_tech_bau,   \
         self.reopt_args.techs_by_rate_bau,   \
         self.reopt_args.num_sales_tiers_bau, \
-        self.reopt_args.chp_thermal_prod_slope_bau, \
-        self.reopt_args.chp_thermal_prod_intercept_bau, \
-        self.reopt_args.chp_fuel_burn_intercept_bau, \
-        self.reopt_args.chp_derate_bau, \
         self.reopt_args.chp_standby_rate_us_dollars_per_kw_per_month_bau, \
-        self.reopt_args.chp_does_not_reduce_demand_charges_bau, \
-        self.reopt_args.boiler_efficiency_bau, \
-        self.reopt_args.electric_chiller_cop_bau, \
-        self.reopt_args.absorption_chiller_cop_bau = self.prepare_techs_and_loads(self.bau_techs)
+        self.reopt_args.chp_does_not_reduce_demand_charges_bau = self.prepare_techs_and_loads(self.bau_techs)
         
         return self.reopt_args
 
@@ -505,116 +405,62 @@ class UrdbParse:
 
         negative_energy_costs = [cost * -0.999 for cost in
                                  energy_costs[tier_with_lowest_energy_cost*self.ts_per_year:(tier_with_lowest_energy_cost+1)*self.ts_per_year]]
-        positive_energy_costs = [cost * 0.999 for cost in
-                                 energy_costs[tier_with_lowest_energy_cost*self.ts_per_year:(tier_with_lowest_energy_cost+1)*self.ts_per_year]]
 
         # wholesale and excess rates can be either scalar (floats or ints) or lists of floats
         if len(self.wholesale_rate) == 1:
             negative_wholesale_rate_costs = self.ts_per_year * [-1.0 * self.wholesale_rate[0]]
-            wholesale_rate_costs = self.ts_per_year * [1.0 * self.wholesale_rate[0]]
         else:
             negative_wholesale_rate_costs = [-1.0 * x for x in self.wholesale_rate]
-            wholesale_rate_costs = [1.0 * x for x in self.wholesale_rate]
         if len(self.excess_rate) == 1:
             negative_excess_rate_costs = self.ts_per_year * [-1.0 * self.excess_rate[0]]
-            excess_rate_costs = self.ts_per_year * [1.0 * self.excess_rate[0]]
         else:
             negative_excess_rate_costs = [-1.0 * x for x in self.excess_rate]
-            excess_rate_costs = [1.0 * x for x in self.excess_rate]
 
-        # FuelCost = array(FuelType, TimeStep) is the cost of electricity from each Tech, so 0's for PV, PVNM
-        fuel_costs = list()
-        # FuelLimit: array(FuelType)
-        fuel_limit = list()
-        # Set FuelType
-        fuel_types = list()
-        # Set TechsByFuelType(FuelType)
-        techs_by_fuel_type = list()
-        for tech in techs:
-            # have to rubber stamp other tech values for each energy tier so that array is filled appropriately
-            if tech.lower() == 'generator':
-                # generator fuel is not free anymore since generator is also a design variable
-                fuel_costs = operator.add(fuel_costs, self.diesel_cost_array)
-                fuel_limit.append(self.generator_fuel_avail)
-                # TODO figure out how to populate fuel costs for all fb techs
-                techs_by_fuel_type.append([tech.upper()])
-                fuel_types.append("DIESEL")
-            elif tech.lower() == 'boiler':
-                fuel_costs = operator.add(fuel_costs, self.boiler_fuel_rate_array)
-                fuel_limit.append(self.big_number)
-                techs_by_fuel_type.append([tech.upper()])
-                fuel_types.append("BOILERFUEL")
-            elif tech.lower() == 'chp':
-                fuel_costs = operator.add(fuel_costs, self.chp_fuel_rate_array)
-                fuel_limit.append(self.big_number)
-                techs_by_fuel_type.append([tech.upper()])
-                fuel_types.append("CHPFUEL")
+        if sum(negative_wholesale_rate_costs) == 0:
+            # no export to grid benefit, so force excess energy into curtailment
+            negative_wholesale_rate_costs = [1000.0 for x in self.wholesale_rate]
 
         # ExportRate is the value of exporting a Tech to the grid under a certain Load bin
         # If there is net metering and no wholesale rate, appears to be zeros for all but 'PV' at '1W'
         grid_export_rates = list()
-        rates_by_tech = list()
+        rates_by_tech = list()  # SalesTiersByTech, list of lists, becomes indexed on techs in julia
+        num_sales_tiers = 0
+        techs_by_rate = []  # TechsBySalesTier, list of lists, with inner lists containing strings for techs
+                            # corresponding to rate tiers (outer index)
+        """
+        Sales tiers:
+        1. NEM
+        2. Wholesale
+        3. Curtailment
+        TODO is it an issue that techs cannot take advantave of both NEM and Wholsale rates? 
+            Do users expect this behavior?
+        """
         if len(techs) > 0:
             num_sales_tiers = 3
             techs_by_rate = [list(), list(), list()]
             grid_export_rates = operator.add(grid_export_rates, negative_energy_costs)
             grid_export_rates = operator.add(grid_export_rates, negative_wholesale_rate_costs)
             grid_export_rates = operator.add(grid_export_rates, negative_excess_rate_costs)
-        else: 
-            num_sales_tiers = 0
-            techs_by_rate = []
-        for tech in techs:
-            if self.net_metering and not tech.lower().endswith('nm'):
-                rates_by_tech.append([1,3])
-                techs_by_rate[0].append(tech.upper())
-                techs_by_rate[2].append(tech.upper())
-            else:     
-                rates_by_tech.append([2,3])
-                techs_by_rate[1].append(tech.upper())
-                techs_by_rate[2].append(tech.upper())
 
-        # FuelBurnSlope = array(Tech)
-        energy_burn_rate = []
-        for tech in techs:
-            if tech.lower() == 'util':
-                energy_burn_rate.append(1.0)
-            elif tech.lower() == 'boiler':
-                energy_burn_rate.append(1 / self.boiler_efficiency)
-            elif tech.lower() == 'generator':
-                energy_burn_rate.append(self.generator_fuel_slope)
-            elif tech.lower() == 'chp':
-                energy_burn_rate.append(self.chp_fuel_burn_slope)
-            else:
-                energy_burn_rate.append(0.0)
-
-        # FuelBurnYInt = array(Tech)
-        energy_burn_intercept = []
-        chp_energy_burn_yint = []
-        for tech in techs:
-            if tech.lower() == 'generator':
-                energy_burn_intercept.append(self.generator_fuel_intercept)
-            elif tech.lower() == 'chp':
-                energy_burn_intercept.append(self.chp_fuel_burn_intercept[0])
-                chp_energy_burn_yint.append(self.chp_fuel_burn_intercept)
-            else:
-                energy_burn_intercept.append(0)
+            for tech in techs:
+                if self.net_metering and not tech.lower().endswith('nm'):
+                    # techs that end with 'nm' are the option to install capacity beyond the net metering capacity limit
+                    # these techs can access NEM and curtailment rates
+                    rates_by_tech.append([1, 3])  # 1, 3 correspond to the 0, 2 entries in techs_by_rate
+                    techs_by_rate[0].append(tech.upper())
+                    techs_by_rate[2].append(tech.upper())
+                else:
+                    # these techs can access wholesale and curtailment rates
+                    rates_by_tech.append([2, 3])  # 2, 3 correspond to the 1, 2 entries in techs_by_rate
+                    techs_by_rate[1].append(tech.upper())
+                    techs_by_rate[2].append(tech.upper())
 
         # CHP-specific parameters
-        chp_thermal_prod_slope = self.chp_thermal_prod_slope
-        chp_thermal_prod_intercept = self.chp_thermal_prod_intercept
-        chp_fuel_burn_intercept = self.chp_fuel_burn_intercept
-        chp_derate = self.chp_derate #[az] TODO: where is this used in mosel?
         chp_standby_rate = self.chp_standby_rate_us_dollars_per_kw_per_month
         chp_does_not_reduce_demand_charges = self.chp_does_not_reduce_demand_charges
-        boiler_efficiency = self.boiler_efficiency
-        electric_chiller_cop = self.electric_chiller_cop
-        absorption_chiller_cop = self.absorption_chiller_cop
 
-        return fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type, energy_burn_rate, energy_burn_intercept, \
-            energy_costs, grid_export_rates, rates_by_tech, techs_by_rate, num_sales_tiers, \
-            chp_thermal_prod_slope, chp_thermal_prod_intercept, chp_fuel_burn_intercept, \
-            chp_derate, chp_standby_rate, chp_does_not_reduce_demand_charges, \
-            boiler_efficiency, electric_chiller_cop, absorption_chiller_cop
+        return energy_costs, grid_export_rates, rates_by_tech, techs_by_rate, num_sales_tiers, \
+                chp_standby_rate, chp_does_not_reduce_demand_charges
 
     def prepare_demand_periods(self, current_rate):
 
@@ -633,25 +479,42 @@ class UrdbParse:
             self.prepare_demand_tiers(current_rate, n_tou, False)
             self.prepare_tou_demand(current_rate)
 
-        self.prepare_demand_ratchets(current_rate)
+        self.prepare_demand_lookback(current_rate)
         self.prepare_demand_rate_summary()
 
-    def prepare_demand_ratchets(self, current_rate):
+    def prepare_demand_lookback(self, current_rate):
+        """
+        URDB lookback fields:
+            lookbackMonths
+            Type: array
+            Array of 12 booleans, true or false, indicating months in which lookbackPercent applies.
+                If any of these is true, lookbackRange should be zero.
 
-        demand_lookback_months = list()
-        demand_ratchet_percentages = 12 * [0]
-        if len(current_rate.demandratchetpercentage) == 12:
-            demand_ratchet_percentages = current_rate.demandratchetpercentage
-        demand_lookback_percentage = 0
+            lookbackPercent
+            Type: decimal
+            Lookback percentage. Applies to either lookbackMonths with value=1, or a lookbackRange.
 
-        # REopt currently only supports one lookback percentage, so use the last one
-        for month in range(0, 12):
-            if (demand_ratchet_percentages[month] > 0):
-                demand_lookback_months.append(month + 1)
-                demand_lookback_percentage = demand_ratchet_percentages[month]
+            lookbackRange
+            Type: integer
+            Number of months for which lookbackPercent applies. If not 0, lookbackMonths values should all be 0.
+        """
+        if current_rate.lookbackPercent in [None, 0, []]:
+            reopt_lookback_months = []
+            lookback_percentage = 0
+            lookback_range = 0
+        else:
+            lookback_percentage = current_rate.lookbackPercent or 0.0
+            lookback_months = current_rate.lookbackMonths  # defaults to empty list
+            lookback_range = current_rate.lookbackRange or 0
+            reopt_lookback_months = []
+            if lookback_range != 0 and len(lookback_months) == 12:
+                for month in range(1, 13):
+                    if lookback_months[month] == 1:
+                        reopt_lookback_months.append(month)
 
-        self.reopt_args.demand_lookback_months = demand_lookback_months
-        self.reopt_args.demand_lookback_percent = float(demand_lookback_percentage)
+        self.reopt_args.demand_lookback_months = reopt_lookback_months
+        self.reopt_args.demand_lookback_percent = float(lookback_percentage)
+        self.reopt_args.demand_lookback_range = lookback_range
 
     def prepare_demand_tiers(self, current_rate, n_periods, monthly):
 
