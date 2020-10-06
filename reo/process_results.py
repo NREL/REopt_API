@@ -461,7 +461,7 @@ def calculate_proforma_metrics(data):
         else:
             deductable_operating_expenses_series = np.array([0]*years)
 
-        operating_expenses_after_tax = deductable_operating_expenses_series * (1 - tax_pct)
+        operating_expenses_after_tax = (total_operating_expenses - deductable_operating_expenses_series) + (deductable_operating_expenses_series * (1 - financials['offtaker_tax_pct']))
         total_cash_incentives = total_pbi * (1 - tax_pct) 
         total_depreciation = total_depreciation * tax_pct
         free_cashflow_before_income = total_depreciation + total_cash_incentives + operating_expenses_after_tax
@@ -493,7 +493,7 @@ def calculate_proforma_metrics(data):
                 deductable_operating_expenses_series_bau = copy.deepcopy(total_operating_expenses_bau) 
             else:
                 deductable_operating_expenses_series_bau = np.array([0]*years)
-            operating_expenses_after_tax_bau = deductable_operating_expenses_series_bau * (1 - financials['offtaker_tax_pct'])
+            operating_expenses_after_tax_bau = (total_operating_expenses_bau - deductable_operating_expenses_series_bau) + (deductable_operating_expenses_series_bau * (1 - financials['offtaker_tax_pct']))
             free_cashflow_before_income_bau = operating_expenses_after_tax_bau + total_cash_incentives_bau
             free_cashflow_before_income_bau = np.append([0], free_cashflow_before_income_bau)
             # difference optimal and BAU
