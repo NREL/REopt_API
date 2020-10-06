@@ -166,7 +166,7 @@ class FinancialModel(models.Model):
     offtaker_tax_pct = models.FloatField()
     value_of_lost_load_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
     microgrid_upgrade_cost_pct = models.FloatField(null=True, blank=True)
-    two_party_ownership = models.BooleanField(default=False)
+    third_party_ownership = models.BooleanField(default=False)
     owner_discount_pct = models.FloatField(null=True, blank=True)
     owner_tax_pct = models.FloatField(null=True, blank=True)
 
@@ -186,6 +186,8 @@ class FinancialModel(models.Model):
     year_one_opex_costs_us_dollars = models.FloatField(null=True, blank=True)
     simple_payback_years = models.FloatField(null=True, blank=True)
     irr_pct = models.FloatField(null=True, blank=True)
+    net_present_cost_us_dollars = models.FloatField(null=True, blank=True)
+    annualized_payment_to_third_party_us_dollars = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):

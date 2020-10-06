@@ -127,7 +127,7 @@ nested_output_definitions = {
                   "type": int,
                   "description": "Number of hours the existing system can sustain with resilience check",
                   "units": "hours"
-                }                
+                }
               },
 
               "LoadProfileBoilerFuel": {
@@ -169,7 +169,7 @@ nested_output_definitions = {
                   "type": list_of_float,
                   "description": "Year one hourly time series of chiller electric load in business-as-usual case.",
                   "units": "kW"
-                },                
+                },
                 "annual_calculated_kwh_bau": {
                   "type": float,
                   "description": "Annual chiller electric consumption calculated by summing up 8760 electric load "
@@ -256,7 +256,18 @@ nested_output_definitions = {
                   "description": ("Internal Rate of Return of the cost-optimal system. In two-party cases the "
                                   "developer discount rate is used in place of the offtaker discount rate."),
                   "units": "%"
-                }               
+                 },
+                 "net_present_cost_us_dollars": {
+                  "type": float,
+                  "description": ("Present value of the total costs incurred by the third-party owning and operating the "
+                                  "distributed energy resource assets."),
+                  "units": "$"
+                 },
+                 "annualized_payment_to_third_party_us_dollars": {
+                  "type": float,
+                  "description": ("The annualized amount the host will pay to the third-party owner over the life of the project."),
+                  "units": "$"
+                 }
               },
 
               "PV": {

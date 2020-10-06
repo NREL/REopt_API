@@ -24,7 +24,7 @@ post = {"Scenario":
                    "blended_monthly_rates_us_dollars_per_kwh": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2]
                },
                "Financial": {
-                   "two_party_ownership": False,
+                   "third_party_ownership": False,
                    "offtaker_tax_pct": 0,
                    "offtaker_discount_pct": 0.08,
                    "owner_tax_pct": 0.26,
@@ -54,15 +54,15 @@ class TwoPartyTests(ResourceTestCaseMixin, TestCase):
 
         return d
 
-    def test_two_party_factor(self):
-        two_party_post = deepcopy(post)
-        two_party_post['Scenario']['Site']['Financial']['two_party_ownership'] = True
+    def test_third_party_owner(self):
+        third_party_post = deepcopy(post)
+        third_party_post['Scenario']['Site']['Financial']['two_party_ownership'] = True
 
         direct = self.validate_and_get_outputs(post)
-        two_party = self.validate_and_get_outputs(two_party_post)
+        third_party = self.validate_and_get_outputs(third_party_post)
 
         d = direct['outputs']['Scenario']['Site']['Financial']['lcc_us_dollars']
-        t = two_party['outputs']['Scenario']['Site']['Financial']['lcc_us_dollars']
+        t = third_party['outputs']['Scenario']['Site']['Financial']['lcc_us_dollars']
 
         self.assertTrue(((t - d) - 11976) / 11976 < 0.005,  # less than 0.5% change from expected difference
            msg='Difference between two party and direct ownership LCCs has changed.')

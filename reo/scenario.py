@@ -179,6 +179,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
             tmp['annual_calculated_kwh'] = lp.annual_kwh
             tmp['resilience_check_flag'] = lp.resilience_check_flag
             tmp['sustain_hours'] = lp.sustain_hours
+            tmp['loads_kw'] = lp.load_list
             ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
         else:
             lp = LoadProfile(dfm=dfm,
@@ -198,6 +199,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
             tmp['annual_calculated_kwh'] = lp.annual_kwh
             tmp['resilience_check_flag'] = lp.resilience_check_flag
             tmp['sustain_hours'] = lp.sustain_hours
+            tmp['loads_kw'] = lp.load_list
             ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
 
         # Checks that the load being sent to optimization does not contatin negative values. We check the loads against
@@ -317,7 +319,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         # Absorption chiller
         if inputs_dict["Site"]["AbsorptionChiller"]["max_ton"] > 0:
-            absorpchl = AbsorptionChiller(dfm=dfm, max_cooling_load=elecchl.max_cooling_load,
+            absorpchl = AbsorptionChiller(dfm=dfm, max_cooling_load_tons=elecchl.max_cooling_load_tons,
                                           hw_or_steam=boiler.existing_boiler_production_type_steam_or_hw,
                                           chp_prime_mover=chp.prime_mover,
                                           **inputs_dict['Site']['AbsorptionChiller'])
