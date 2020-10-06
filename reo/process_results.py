@@ -114,11 +114,11 @@ def calculate_proforma_metrics(data):
         # Need to update two cost input attributes which are calculated in techs.py and updated in scenario.py
         absorption_chiller.update({"installed_cost_us_dollars_per_ton": absorp_chl.installed_cost_us_dollars_per_ton,
                                    "om_cost_us_dollars_per_ton": absorp_chl.om_cost_us_dollars_per_ton})
-        hot_tes =  copy.deepcopy(data['outputs']['Scenario']['Site']['HotTES'])
+        hot_tes = copy.deepcopy(data['outputs']['Scenario']['Site']['HotTES'])
         hot_tes.update(data['inputs']['Scenario']['Site']['HotTES'])
-        cold_tes =  copy.deepcopy(data['outputs']['Scenario']['Site']['ColdTES'])
+        cold_tes = copy.deepcopy(data['outputs']['Scenario']['Site']['ColdTES'])
         cold_tes.update(data['inputs']['Scenario']['Site']['ColdTES'])
-        fuel_tariff =  copy.deepcopy(data['outputs']['Scenario']['Site']['FuelTariff'])
+        fuel_tariff = copy.deepcopy(data['outputs']['Scenario']['Site']['FuelTariff'])
         fuel_tariff.update(data['inputs']['Scenario']['Site']['FuelTariff'])
         
         #Create placeholder variables to store summed totals across all relevant techs
@@ -685,7 +685,12 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             # storage capacity
             upfront_capex += (self.inputs["Storage"].get("installed_cost_us_dollars_per_kwh") or 0) * \
                              (self.nested_outputs["Scenario"]["Site"]["Storage"].get("size_kwh") or 0)
-
+            if self.nested_outputs["Scenario"]["Site"]["AbsorptionChiller"].get("size_ton"):
+                # Need to update two cost input attributes which are calculated in techs.py and updated in scenario.py
+                absorp_chl = AbsorptionChillerModel.objects.filter(run_uuid=data['outputs']['Scenario']['run_uuid'])[0]
+                self.inputs["AbsorptionChiller"].update(
+                    {"installed_cost_us_dollars_per_ton": absorp_chl.installed_cost_us_dollars_per_ton,
+                     "om_cost_us_dollars_per_ton": absorp_chl.om_cost_us_dollars_per_ton})
             upfront_capex += (self.inputs["AbsorptionChiller"].get("installed_cost_us_dollars_per_ton") or 0) * \
                              (self.nested_outputs["Scenario"]["Site"]["AbsorptionChiller"].get("size_ton") or 0)
 
