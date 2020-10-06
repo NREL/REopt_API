@@ -564,9 +564,41 @@ def generate_proforma(scenariomodel, output_file_path):
     batt_cost_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
+    if (chp.size_kw or 0) > 0:
+        #replicated logic from reo/process_results.py
+        total_kw = chp.size_kw or 0
+        total_kwh = chp.year_one_electric_energy_produced_kwh or 0
+        total_runtime = sum(np.array(chp.year_one_electric_production_series_kw or []) > 0) / float(scenario.time_steps_per_hour)
+        # Calculate capital cost from cost curve list
+        cost_list = chp.installed_cost_us_dollars_per_kw or []
+        size_list = chp.tech_size_for_cost_curve or []
+        
+        chp_size = total_kw
+        if len(cost_list) > 1:
+            if chp_size <= size_list[1]:
+                chp_installed_cost_us_dollars = "= {} + ({} * {})".format(chp.installed_cost_us_dollars_per_kw[0], chp_size_kw_cell, chp.installed_cost_us_dollars_per_kw[1])
+            elif chp_size > size_list[-1]:
+                chp_installed_cost_us_dollars = "= ({} * {})".format(chp_size_kw_cell, chp.installed_cost_us_dollars_per_kw[-1])
+            else:
+                chp_installed_cost_us_dollars_terms = []
+                for s in range(1, len(size_list)-1):
+                    if (chp_size > size_list[s]) and (chp_size <= size_list[s+1]):
+                        chp_installed_cost_us_dollars_terms.append( "({}*{}) + (({}-{})*{})".format(
+                            chp.installed_cost_us_dollars_per_kw[s],
+                            chp.tech_size_for_cost_curve[s],
+                            chp_size_kw_cell,
+                            chp.tech_size_for_cost_curve[s],
+                            chp.installed_cost_us_dollars_per_kw[s+1]
+                            ))
+                chp_installed_cost_us_dollars = "=({})".format('+'.join(chp_installed_cost_us_dollars_terms)) 
+        else:
+            chp_installed_cost_us_dollars = "= {} * {}".format(chp.installed_cost_us_dollars_per_kw[0], chp_size_kw_cell)
+    else:
+        chp_installed_cost_us_dollars = 0
+
     current_row += 1
     ws['A{}'.format(current_row)] = "CHP Installed Cost ($)"
-    ws['B{}'.format(current_row)] = (chp.installed_cost_us_dollars_per_kw or 0) * (chp.size_kw or 0)
+    ws['B{}'.format(current_row)] = chp_installed_cost_us_dollars
     chp_cost_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
@@ -2255,7 +2287,7 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     dcs['B{}'.format(current_row)] = "=SUM(B{},B{})".format(chp_state_ibi_row, chp_utility_ibi_row)
     make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
-    chp_total_ibi_cell = "\'{}\'!B{}".format(developer_cashflow_sheet_name, current_row)
+    chp_total_ibi_cell = "\'{}\'!B{}".format(third_party_cashflow_sheet_name, current_row)
     ibi_and_cbi_totals_rows.append(current_row)
 
     current_row += 1
@@ -2292,7 +2324,7 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['B{}'.format(current_row)] = "=SUM(B{},B{},B{})".format(chp_federal_cbi_row, chp_state_cbi_row,
                                                                 chp_utility_cbi_row)
     make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
-    chp_total_cbi_cell = "\'{}\'!B{}".format(developer_cashflow_sheet_name, current_row)
+    chp_total_cbi_cell = "\'{}\'!B{}".format(third_party_cashflow_sheet_name, current_row)
     ibi_and_cbi_totals_rows.append(current_row)
     current_row += 1
     current_row += 1
@@ -2393,7 +2425,7 @@ def generate_proforma(scenariomodel, output_file_path):
     chp_pbi_series = []
     for year in range(financial.analysis_years):
         chp_pbi_series.append("\'{}\'!{}{}".format(
-            developer_cashflow_sheet_name, upper_case_letters[year + 2], current_row))
+            third_party_cashflow_sheet_name, upper_case_letters[year + 2], current_row))
         dcs['{}{}'.format(upper_case_letters[year+2], current_row)] = (
                 "=IF({year} < {pbi_year_limit}, "
                 "MIN({dol_per_kwh} * {chp_kwh}, {pbi_max}), 0)"
@@ -2836,7 +2868,7 @@ def generate_proforma(scenariomodel, output_file_path):
     chp_depreciation_benefit = list()
     for i in range(financial.analysis_years):
         chp_depreciation_benefit.append("\'{}\'!{}{}".format(
-            developer_cashflow_sheet_name, upper_case_letters[i+2], current_row))
+            third_party_cashflow_sheet_name, upper_case_letters[i+2], current_row))
 
         if i == 0:
             dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = \
@@ -2892,7 +2924,7 @@ def generate_proforma(scenariomodel, output_file_path):
     absorption_chiller_depreciation_benefit = list()
     for i in range(financial.analysis_years):
         absorption_chiller_depreciation_benefit.append("\'{}\'!{}{}".format(
-            developer_cashflow_sheet_name, upper_case_letters[i+2], current_row))
+            third_party_cashflow_sheet_name, upper_case_letters[i+2], current_row))
 
         if i == 0:
             dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = \
@@ -2948,7 +2980,7 @@ def generate_proforma(scenariomodel, output_file_path):
     hot_tes_depreciation_benefit = list()
     for i in range(financial.analysis_years):
         hot_tes_depreciation_benefit.append("\'{}\'!{}{}".format(
-            developer_cashflow_sheet_name, upper_case_letters[i+2], current_row))
+            third_party_cashflow_sheet_name, upper_case_letters[i+2], current_row))
 
         if i == 0:
             dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = \
@@ -3004,7 +3036,7 @@ def generate_proforma(scenariomodel, output_file_path):
     cold_tes_depreciation_benefit = list()
     for i in range(financial.analysis_years):
         cold_tes_depreciation_benefit.append("\'{}\'!{}{}".format(
-            developer_cashflow_sheet_name, upper_case_letters[i+2], current_row))
+            third_party_cashflow_sheet_name, upper_case_letters[i+2], current_row))
 
         if i == 0:
             dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = \
@@ -3287,7 +3319,7 @@ def generate_proforma(scenariomodel, output_file_path):
     make_attribute_row(dcs, current_row, length=3, alignment=right_align, number_format='#,##0', border=no_border)
     chp_federal_itc_amount_row = current_row
     chp_federal_itc_amount_cell = "\'{}\'!C{}".format(
-                developer_cashflow_sheet_name, current_row)
+                third_party_cashflow_sheet_name, current_row)
 
     current_row += 1
     dcs['A{}'.format(current_row)] = "Total Federal ITC"
