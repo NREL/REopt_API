@@ -319,7 +319,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         # Absorption chiller
         if inputs_dict["Site"]["AbsorptionChiller"]["max_ton"] > 0:
-            absorpchl = AbsorptionChiller(dfm=dfm, max_cooling_load=elecchl.max_cooling_load,
+            absorpchl = AbsorptionChiller(dfm=dfm, max_cooling_load_tons=elecchl.max_cooling_load_tons,
                                           hw_or_steam=boiler.existing_boiler_production_type_steam_or_hw,
                                           chp_prime_mover=chp.prime_mover,
                                           **inputs_dict['Site']['AbsorptionChiller'])
