@@ -651,6 +651,8 @@ def chiller_defaults(request):
             max_chiller_thermal_capacity = float(max_elec_chiller_elec_load) * \
                                             elec_chiller_cop_defaults['convert_elec_to_thermal'] / 3.51685 * \
                                             float(max_cooling_factor)
+            max_cooling_load_tons = float(max_elec_chiller_elec_load) * \
+                                            elec_chiller_cop_defaults['convert_elec_to_thermal'] / 3.51685
 
             # Electric chiller COP
             if max_chiller_thermal_capacity < 100.0:
@@ -670,28 +672,29 @@ def chiller_defaults(request):
                 defaults_sizes = absorp_chiller_cost_defaults_all["hot_water"]
                 absorp_chiller_cop = absorp_chiller_cop_defaults["hot_water"]
 
-            if max_chiller_thermal_capacity <= defaults_sizes[0][0]:
+            if max_cooling_load_tons <= defaults_sizes[0][0]:
                 absorp_chiller_capex = defaults_sizes[0][1]
                 absorp_chiller_opex = defaults_sizes[0][2]
-            elif max_chiller_thermal_capacity >= defaults_sizes[-1][0]:
+            elif max_cooling_load_tons >= defaults_sizes[-1][0]:
                 absorp_chiller_capex = defaults_sizes[-1][1]
                 absorp_chiller_opex = defaults_sizes[-1][2]
             else:
                 for size in range(1, len(defaults_sizes)):
-                    if max_chiller_thermal_capacity > defaults_sizes[size - 1][0] and \
-                            max_chiller_thermal_capacity <= defaults_sizes[size][0]:
+                    if max_cooling_load_tons > defaults_sizes[size - 1][0] and \
+                            max_cooling_load_tons <= defaults_sizes[size][0]:
                         slope_capex = (defaults_sizes[size][1] - defaults_sizes[size - 1][1]) / \
                                       (defaults_sizes[size][0] - defaults_sizes[size - 1][0])
                         slope_opex = (defaults_sizes[size][2] - defaults_sizes[size - 1][2]) / \
                                      (defaults_sizes[size][0] - defaults_sizes[size - 1][0])
                         absorp_chiller_capex = defaults_sizes[size - 1][1] + slope_capex * \
-                                               (max_chiller_thermal_capacity - defaults_sizes[size - 1][0])
+                                               (max_cooling_load_tons - defaults_sizes[size - 1][0])
                         absorp_chiller_opex = defaults_sizes[size - 1][2] + slope_opex * \
-                                              (max_chiller_thermal_capacity - defaults_sizes[size - 1][0])
+                                              (max_cooling_load_tons - defaults_sizes[size - 1][0])
 
         response = JsonResponse(
-            {"PeakCoolingLoadTons": max_chiller_thermal_capacity,
+            {"PeakCoolingLoadTons": max_cooling_load_tons,
                 "ElectricChiller": {
+                 "MaxCapacityTons": max_chiller_thermal_capacity,
                  "chiller_cop": elec_chiller_cop
                 },
             "AbsorptionChiller": {
