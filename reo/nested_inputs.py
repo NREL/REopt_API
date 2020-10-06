@@ -229,7 +229,7 @@ nested_input_definitions = {
           "default": 0.083,
           "description": "Nominal energy offtaker discount rate. In single ownership model the offtaker is also the generation owner."
         },
-        "two_party_ownership": {
+        "third_party_ownership": {
           "default": False,
           "type": "bool",
           "description": "Specify if ownership model is direct ownership or two party. In two party model the offtaker does not purcharse the generation technologies, but pays the generation owner for energy from the generator(s)."

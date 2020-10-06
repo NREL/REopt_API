@@ -1416,28 +1416,33 @@ class ValidateNestedInput:
                     data_validators = template_values[name]
 
                     if "list_of_float" in data_validators['type'] and isinstance(value, list):
-                        if data_validators.get('min') is not None:
-                            if any([v < data_validators['min'] for v in value]):
-                                if input_isDict or input_isDict is None:
-                                    self.input_data_errors.append(
-                                        'At least one value in %s (from %s) exceeds allowable min of %s' % (
-                                            name, self.object_name_string(object_name_path), data_validators['min']))
-                                if input_isDict is False:
-                                    self.input_data_errors.append(
-                                        'At least one value in %s (from %s number %s) exceeds allowable min of %s' % (
-                                            name, self.object_name_string(object_name_path), number, data_validators['min']))
+                        if None in value:
+                            self.input_data_errors.append(
+                                'At least one value in %s (from %s) is null' % (
+                                    name, self.object_name_string(object_name_path), data_validators['min']))
+                        else:
+                            if data_validators.get('min') is not None:
+                                if any([v < data_validators['min'] for v in value]):
+                                    if input_isDict or input_isDict is None:
+                                        self.input_data_errors.append(
+                                            'At least one value in %s (from %s) exceeds allowable min of %s' % (
+                                                name, self.object_name_string(object_name_path), data_validators['min']))
+                                    if input_isDict is False:
+                                        self.input_data_errors.append(
+                                            'At least one value in %s (from %s number %s) exceeds allowable min of %s' % (
+                                                name, self.object_name_string(object_name_path), number, data_validators['min']))
 
-                        if data_validators.get('max') is not None:
-                            if any([v > data_validators['max'] for v in value]):
-                                if input_isDict or input_isDict is None:
-                                    self.input_data_errors.append(
-                                        'At least one value in %s (from %s) exceeds allowable max of %s' % (
-                                            name, self.object_name_string(object_name_path), data_validators['max']))
-                                if input_isDict is False:
-                                    self.input_data_errors.append(
-                                        'At least one value in %s (from %s number %s) exceeds allowable max of %s' % (
-                                            name, self.object_name_string(object_name_path), number, data_validators['max']))
-                        continue
+                            if data_validators.get('max') is not None:
+                                if any([v > data_validators['max'] for v in value]):
+                                    if input_isDict or input_isDict is None:
+                                        self.input_data_errors.append(
+                                            'At least one value in %s (from %s) exceeds allowable max of %s' % (
+                                                name, self.object_name_string(object_name_path), data_validators['max']))
+                                    if input_isDict is False:
+                                        self.input_data_errors.append(
+                                            'At least one value in %s (from %s number %s) exceeds allowable max of %s' % (
+                                                name, self.object_name_string(object_name_path), number, data_validators['max']))
+                            continue
                     elif "list_of_str" in data_validators['type'] and isinstance(value, list):
                         data_type = list
                     elif isinstance(data_validators['type'], list) and 'float' in data_validators['type']:
