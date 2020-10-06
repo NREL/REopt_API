@@ -1071,18 +1071,18 @@ class ElectricChiller(Tech):
 
         # Update COP (if not user-entered) based on estimated max chiller load
         if self.chiller_cop is None:
-            self.max_cooling_load = max(chiller_electric_series_bau) * \
+            self.max_cooling_load_tons = max(chiller_electric_series_bau) / 3.51685 * \
                                     ElectricChiller.electric_chiller_cop_defaults["convert_elec_to_thermal"]
-            self.max_chiller_thermal_capacity_tons = self.max_cooling_load * \
-                                                self.max_thermal_factor_on_peak_load / 3.51685
+            self.max_chiller_thermal_capacity_tons = self.max_cooling_load_tons * \
+                                                self.max_thermal_factor_on_peak_load
             if self.max_chiller_thermal_capacity_tons < 100.0:
                 self.chiller_cop = ElectricChiller.electric_chiller_cop_defaults["less_than_100_tons"]
             else:
                 self.chiller_cop = ElectricChiller.electric_chiller_cop_defaults["greater_than_100_tons"]
         else:
-            self.max_cooling_load = max(chiller_electric_series_bau) * self.chiller_cop
-            self.max_chiller_thermal_capacity_tons = self.max_cooling_load * \
-                                                     self.max_thermal_factor_on_peak_load / 3.51685
+            self.max_cooling_load_tons = max(chiller_electric_series_bau) * self.chiller_cop / 3.51685
+            self.max_chiller_thermal_capacity_tons = self.max_cooling_load_tons * \
+                                                     self.max_thermal_factor_on_peak_load
 
         # Unless max_kw is a user-input, set the max_kw with the cooling load and factor
         if self.max_kw is None:
@@ -1109,7 +1109,7 @@ class AbsorptionChiller(Tech):
     absorption_chiller_cost_defaults = {"hot_water": [(50, 6000.0, 42.0), (440, 2250.0, 14.0), (1320, 2000.0, 7.0)],
                                         "steam": [(330, 3300.0, 21.0), (1000, 2000.0, 7.0)]}
 
-    def __init__(self, dfm, max_cooling_load, hw_or_steam, chp_prime_mover, **kwargs):
+    def __init__(self, dfm, max_cooling_load_tons, hw_or_steam, chp_prime_mover, **kwargs):
         super(AbsorptionChiller, self).__init__(**kwargs)
 
         self.loads_served = ['retail', 'tes']
@@ -1124,13 +1124,13 @@ class AbsorptionChiller(Tech):
         self.max_kw = kwargs.get('max_ton') * 3.51685
         self.installed_cost_us_dollars_per_ton = kwargs.get('installed_cost_us_dollars_per_ton')
         self.om_cost_us_dollars_per_ton = kwargs.get('om_cost_us_dollars_per_ton')
-        self.max_cooling_load = max_cooling_load
+        self.max_cooling_load_tons = max_cooling_load_tons
         self.hw_or_steam = hw_or_steam
         self.chp_prime_mover = chp_prime_mover
 
         # Calc default CapEx and OpEx costs, and use if the user did not enter a value
-        installed_cost_per_ton_calc, om_cost_per_ton_per_yr_calc = self.get_absorp_chiller_costs(self.max_cooling_load, self.hw_or_steam,
-                                                                     self.chp_prime_mover)
+        installed_cost_per_ton_calc, om_cost_per_ton_per_yr_calc = self.get_absorp_chiller_costs(
+            self.max_cooling_load_tons, self.hw_or_steam, self.chp_prime_mover)
 
         if self.installed_cost_us_dollars_per_ton is None and self.om_cost_us_dollars_per_ton is None:
             self.installed_cost_us_dollars_per_ton = installed_cost_per_ton_calc
@@ -1157,7 +1157,7 @@ class AbsorptionChiller(Tech):
         return chiller_prod_factor
 
     @staticmethod
-    def get_absorp_chiller_costs(max_cooling_load, hw_or_steam, chp_prime_mover):
+    def get_absorp_chiller_costs(max_cooling_load_tons, hw_or_steam, chp_prime_mover):
         if hw_or_steam is not None:
             defaults_sizes = AbsorptionChiller.absorption_chiller_cost_defaults[hw_or_steam]
         elif chp_prime_mover is not None:
@@ -1166,24 +1166,24 @@ class AbsorptionChiller(Tech):
             # If hw_or_steam and CHP prime_mover are not provided, use hot_water defaults
             defaults_sizes = AbsorptionChiller.absorption_chiller_cost_defaults["hot_water"]
 
-        if max_cooling_load <= defaults_sizes[0][0]:
+        if max_cooling_load_tons <= defaults_sizes[0][0]:
             absorp_chiller_capex = defaults_sizes[0][1]
             absorp_chiller_opex = defaults_sizes[0][2]
-        elif max_cooling_load >= defaults_sizes[-1][0]:
+        elif max_cooling_load_tons >= defaults_sizes[-1][0]:
             absorp_chiller_capex = defaults_sizes[-1][1]
             absorp_chiller_opex = defaults_sizes[-1][2]
         else:
             for size in range(1, len(defaults_sizes)):
-                if max_cooling_load > defaults_sizes[size - 1][0] and \
-                        max_cooling_load <= defaults_sizes[size][0]:
+                if max_cooling_load_tons > defaults_sizes[size - 1][0] and \
+                        max_cooling_load_tons <= defaults_sizes[size][0]:
                     slope_capex = (defaults_sizes[size][1] - defaults_sizes[size - 1][1]) / \
                                   (defaults_sizes[size][0] - defaults_sizes[size - 1][0])
                     slope_opex = (defaults_sizes[size][2] - defaults_sizes[size - 1][2]) / \
                                  (defaults_sizes[size][0] - defaults_sizes[size - 1][0])
                     absorp_chiller_capex = defaults_sizes[size - 1][1] + slope_capex * \
-                                           (max_cooling_load - defaults_sizes[size - 1][0])
+                                           (max_cooling_load_tons - defaults_sizes[size - 1][0])
                     absorp_chiller_opex = defaults_sizes[size - 1][2] + slope_opex * \
-                                          (max_cooling_load - defaults_sizes[size - 1][0])
+                                          (max_cooling_load_tons - defaults_sizes[size - 1][0])
 
         return absorp_chiller_capex, absorp_chiller_opex
 
