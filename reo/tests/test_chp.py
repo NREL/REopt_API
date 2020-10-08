@@ -83,6 +83,7 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         nested_data["Scenario"]["timeout_seconds"] = 420
         nested_data["Scenario"]["optimality_tolerance_bau"] = 0.001
         nested_data["Scenario"]["optimality_tolerance_techs"] = 0.01
+        nested_data["Scenario"]["Site"]["outdoor_air_temp_degF"] = [59.0] * 8760
 
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
