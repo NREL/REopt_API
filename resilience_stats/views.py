@@ -41,6 +41,7 @@ from reo.models import ScenarioModel, PVModel, StorageModel, LoadProfileModel, G
 from reo.utilities import annuity
 from resilience_stats.models import ResilienceModel
 from resilience_stats.outage_simulator_LF import simulate_outages
+import numpy as np
 
 
 def resilience_stats(request: Union[Dict, HttpRequest], run_uuid=None):
@@ -227,7 +228,7 @@ def run_outage_sim(run_uuid, with_tech=True, bau=False):
     load_profile = LoadProfileModel.objects.filter(run_uuid=run_uuid).first()
     gen = GeneratorModel.objects.filter(run_uuid=run_uuid).first()
     batt = StorageModel.objects.filter(run_uuid=run_uuid).first()
-    pv = PVModel.objects.filter(run_uuid=run_uuid).first()
+    pvs = PVModel.objects.filter(run_uuid=run_uuid)
     financial = FinancialModel.objects.filter(run_uuid=run_uuid).first()
     wind = WindModel.objects.filter(run_uuid=run_uuid).first()
 
@@ -249,10 +250,15 @@ def run_outage_sim(run_uuid, with_tech=True, bau=False):
         except KeyError:
             pass  # in case no outage has been defined
         """
+        pv_kw_ac_hourly = np.zeros(len(pvs[0].year_one_power_production_series_kw))
+        for pv in pvs:
+            pv_kw_ac_hourly += np.array(pv.year_one_power_production_series_kw) 
+        pv_kw_ac_hourly = list(pv_kw_ac_hourly) 
+        
         tech_results = simulate_outages(
             batt_kwh=batt.size_kwh or 0,
             batt_kw=batt.size_kw or 0,
-            pv_kw_ac_hourly=pv.year_one_power_production_series_kw,
+            pv_kw_ac_hourly=pv_kw_ac_hourly,
             wind_kw_ac_hourly=wind.year_one_power_production_series_kw,
             init_soc=batt.year_one_soc_series_pct,
             critical_loads_kw=load_profile.critical_load_series_kw,
@@ -268,10 +274,16 @@ def run_outage_sim(run_uuid, with_tech=True, bau=False):
 
     if bau:
         # only PV and diesel generator may have existing size
+        pv_kw_ac_hourly = np.zeros(len(load_profile.critical_load_series_kw))
+        for pv in pvs:
+            if pv.existing_kw > 0:
+                pv_kw_ac_hourly += np.array(pv.year_one_power_production_series_kw) * pv.existing_kw / pv.size_kw
+        pv_kw_ac_hourly = list(pv_kw_ac_hourly) 
+        
         bau_results = simulate_outages(
             batt_kwh=0,
             batt_kw=0,
-            pv_kw_ac_hourly=[p / pv.size_kw * pv.existing_kw for p in pv.year_one_power_production_series_kw],
+            pv_kw_ac_hourly=pv_kw_ac_hourly,
             critical_loads_kw=load_profile.critical_load_series_kw,
             diesel_kw=gen.existing_kw or 0,
             fuel_available=gen.fuel_avail_gal,
