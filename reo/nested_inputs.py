@@ -145,28 +145,24 @@ nested_input_definitions = {
         "type": "float",
         "min": 0,
         "max": 1,
-        "default": 0,
         "description": "Minumum acceptable percent of total energy consumption provided by renewable energy."
       },
       "renewable_generation_max_pct": {
         "type": "float",
         "min": 0,
         "max": 1,
-        "default": 1,
         "description": "Maximum acceptable percent of total energy consumption provided by renewable energy."
       },
       "emissions_reduction_min_pct": {
         "type": "float",
         "min": 0,
         "max": 1,
-        "default": 0,
         "description": "Minumum acceptable percent of carbon emissions reduction relative to the business-as-usual case."
       },
       "emissions_reduction_max_pct": {
         "type": "float",
         "min": 0,
         "max": 1,
-        "default": 1,
         "description": "Maximum acceptable percent of carbon emissions reduction relative to the business-as-usual case."
       },
       "emissions_reduction_accounting_method": {

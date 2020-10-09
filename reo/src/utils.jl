@@ -198,10 +198,10 @@ Base.@kwdef struct Parameter
     # Annual RE & emissions parameters
     REAccountingMethod::Int64
     EmissionsAccountingMethod::Int64
-    MinAnnualPercentRE::Float64
-    MaxAnnualPercentRE::Float64
-    MinPercentEmissionsReduction::Float64
-    MaxPercentEmissionsReduction::Float64
+    MinAnnualPercentRE::Array{Float64,1}
+    MaxAnnualPercentRE::Array{Float64,1}
+    MinPercentEmissionsReduction::Array{Float64,1}
+    MaxPercentEmissionsReduction::Array{Float64,1}
     BAUYr1Emissions::Float64
     GridEmissionsFactor::Array{Float64,1}
     TechEmissionsFactors::AxisArray
@@ -225,7 +225,11 @@ function Parameter(d::Dict)
 		"TechsBySalesTier",
 		"SalesTiersByTech",
 		"NMILRegime",
-		"TechsByNMILRegime"
+        "TechsByNMILRegime",
+        "MinAnnualPercentRE",
+        "MaxAnnualPercentRE",
+        "MinPercentEmissionsReduction",
+        "MaxPercentEmissionsReduction",
      )
     if typeof(d["Tech"]) === Array{Any, 1}  # came from Python as empty array
         d["Tech"] = convert(Array{String, 1}, d["Tech"])

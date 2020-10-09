@@ -737,8 +737,12 @@ function add_re_and_emissions_constraints(m,p)
 			- sum(m[:dvProductionToGrid][t,u,ts] for t in p.RETechs, u in p.SalesTiersByTech[t], ts in p.TimeStep if !(u in p.CurtailmentTiers))) # minus exported RE. 
 		# if battery ends up being able to discharge to grid, need to make sure only RE that is being consumed onsite are counted so battery doesn't become a back door for RE to grid. 
 	end
-	#@constraint(m, MinRECon, m[:AnnualREkWh] >= p.MinAnnualPercentRE*(sum(p.ElecLoad[ts] for ts in p.TimeStep))
-	#@constraint(m, MaxRECon, m[:AnnualREkWh] <= p.MaxAnnualPercentRE*(sum(p.ElecLoad[ts] for ts in p.TimeStep))
+	if !isempty(p.MinAnnualPercentRE)
+		@constraint(m, MinRECon, m[:AnnualREkWh] >= p.MinAnnualPercentRE*(sum(p.ElecLoad[ts] for ts in p.TimeStep)))
+	end
+	if !isempty(p.MaxAnnualPercentRE) 
+		@constraint(m, MaxRECon, m[:AnnualREkWh] <= p.MaxAnnualPercentRE*(sum(p.ElecLoad[ts] for ts in p.TimeStep)))
+	end
 
 	### Year 1 Emissions Profile and Reduction Targets
 	# Scope 1: Direct emissions from onsite generation 
@@ -762,8 +766,12 @@ function add_re_and_emissions_constraints(m,p)
 	elseif p.EmissionsAccountingMethod == 1 # yes emissions "credit" for non-scope exports
 		m[:EmissionsYr1_Total_LbsCO2e] = @expression(m, m[:EmissionsYr1_Scope1_LbsCO2e] + m[:EmissionsYr1_Scope2_LbsCO2e] + m[:EmissionsYr1_NonScope_LbsCO2e] )
 	end
-	#@constraint(m, MinEmissionsReductionCon, m[:EmissionsYr1_Total_LbsCO2e] <= (1-p.MinPercentEmissionsReduction)*p.BAUYr1Emissions)
-	#@constraint(m, MaxEmissionsReductionCon, m[:EmissionsYr1_Total_LbsCO2e] >= (1-p.MaxPercentEmissionsReduction)*p.BAUYr1Emissions)
+	if !isempty(p.MinPercentEmissionsReduction)
+		@constraint(m, MinEmissionsReductionCon, m[:EmissionsYr1_Total_LbsCO2e] <= (1-p.MinPercentEmissionsReduction)*p.BAUYr1Emissions)
+	end
+	if !isempty(p.MaxPercentEmissionsReduction)
+		@constraint(m, MaxEmissionsReductionCon, m[:EmissionsYr1_Total_LbsCO2e] >= (1-p.MaxPercentEmissionsReduction)*p.BAUYr1Emissions)
+	end
 end
 
 

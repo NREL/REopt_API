@@ -905,6 +905,26 @@ class DataManager:
         self.year_one_energy_cost_series_us_dollars_per_kwh = parser.energy_rates_summary
         self.year_one_demand_cost_series_us_dollars_per_kw = parser.demand_rates_summary
 
+        if self.site.renewable_generation_min_pct is None:
+            renewable_generation_min_pct = []
+        else:
+            renewable_generation_min_pct = self.site.renewable_generation_min_pct
+        if self.site.renewable_generation_max_pct is None:
+            renewable_generation_max_pct = []
+        else:
+            renewable_generation_max_pct = self.site.renewable_generation_max_pct
+        if self.site.emissions_reduction_min_pct is None:
+            emissions_reduction_min_pct = []
+        else:
+            emissions_reduction_min_pct = self.site.emissions_reduction_min_pct
+        if self.site.emissions_reduction_max_pct is None:
+            emissions_reduction_max_pct = []
+        else:
+            emissions_reduction_max_pct = self.site.emissions_reduction_max_pct
+        renewable_generation_min_pct_bau = []
+        renewable_generation_max_pct_bau = []
+        emissions_reduction_min_pct_bau = []
+        emissions_reduction_max_pct_bau = []
 
         subdivisions = ['CapCost']
         fuel_type = ['DIESEL'] if 'GENERATOR' in reopt_techs else []
@@ -1103,11 +1123,11 @@ class DataManager:
             'ElectricDerate':electric_derate,
             'TechsByNMILRegime':TechsByNMILRegime,
             "GridEmissionsFactor": grid_emissions_factor,
-            "TechEmissionsFactors": emissions_factors, 
-            "MinAnnualPercentRE": self.site.renewable_generation_min_pct,
-            "MaxAnnualPercentRE": self.site.renewable_generation_max_pct,
-            "MinPercentEmissionsReduction": self.site.emissions_reduction_min_pct,
-            "MaxPercentEmissionsReduction": self.site.emissions_reduction_max_pct,
+            "TechEmissionsFactors": emissions_factors,
+            "MinAnnualPercentRE": renewable_generation_min_pct,
+            "MaxAnnualPercentRE": renewable_generation_max_pct,
+            "MinPercentEmissionsReduction": emissions_reduction_min_pct,
+            "MaxPercentEmissionsReduction": emissions_reduction_max_pct,
             "REAccountingMethod": self.site.renewable_generation_accounting_method,
             "EmissionsAccountingMethod": self.site.emissions_reduction_accounting_method,
             "BAUYr1Emissions": bau_emissions,
@@ -1217,10 +1237,10 @@ class DataManager:
             'TechsByNMILRegime':TechsByNMILRegime_bau,
             "GridEmissionsFactor": grid_emissions_factor,
             "TechEmissionsFactors": emissions_factors_bau, 
-            "MinAnnualPercentRE": 0.0,
-            "MaxAnnualPercentRE": 1.0,
-            "MinPercentEmissionsReduction": 0.0,
-            "MaxPercentEmissionsReduction": 1.0,
+            "MinAnnualPercentRE": renewable_generation_min_pct_bau,
+            "MaxAnnualPercentRE": renewable_generation_max_pct_bau,
+            "MinPercentEmissionsReduction": emissions_reduction_min_pct_bau,
+            "MaxPercentEmissionsReduction": emissions_reduction_max_pct_bau,
             "REAccountingMethod": self.site.renewable_generation_accounting_method,
             "EmissionsAccountingMethod": self.site.emissions_reduction_accounting_method,
             "BAUYr1Emissions": bau_emissions,
