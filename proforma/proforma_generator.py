@@ -576,7 +576,7 @@ def generate_proforma(scenariomodel, output_file_path):
         chp_size = total_kw
         if len(cost_list) > 1:
             if chp_size <= size_list[1]:
-                chp_installed_cost_us_dollars = "= {} + ({} * {})".format(chp.installed_cost_us_dollars_per_kw[0], chp_size_kw_cell, chp.installed_cost_us_dollars_per_kw[1])
+                chp_installed_cost_us_dollars = "= {} + ({} * {})".format(chp_size_kw_cell, chp.installed_cost_us_dollars_per_kw[0])
             elif chp_size > size_list[-1]:
                 chp_installed_cost_us_dollars = "= ({} * {})".format(chp_size_kw_cell, chp.installed_cost_us_dollars_per_kw[-1])
             else:
