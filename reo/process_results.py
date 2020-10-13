@@ -305,7 +305,7 @@ def calculate_proforma_metrics(data):
             chp_size = total_kw
             if len(cost_list) > 1:
                 if chp_size <= size_list[1]:
-                    capital_costs = cost_list[0] + chp_size * cost_list[1]
+                    capital_costs = chp_size * cost_list[0]  # Currently not handling non-zero cost ($) for 0 kW size input
                 elif chp_size > size_list[-1]:
                     capital_costs = chp_size * cost_list[-1]
                 else:
@@ -672,7 +672,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 chp_size = self.nested_outputs["Scenario"]["Site"][tech].get("size_kw")
                 if len(cost_list) > 1:
                     if chp_size <= size_list[1]:
-                        upfront_capex += cost_list[0] + chp_size * cost_list[1]
+                        upfront_capex += chp_size * cost_list[0]  # Currently not handling non-zero cost ($) for 0 kW size input
                     elif chp_size > size_list[-1]:
                         upfront_capex += chp_size * cost_list[-1]
                     else:
