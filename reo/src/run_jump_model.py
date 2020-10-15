@@ -197,7 +197,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
     except Exception as e:
         if isinstance(e, REoptFailedToStartError):
             raise e
-        elif "DimensionMismatch" in e.args[0]:  # bug in Xpress.jl and/or JuMP that mishandles timeouts
+        elif "DimensionMismatch" in e.args[0]:  # JuMP may mishandle a timeout when no feasible solution is returned
             msg = "Optimization exceeded timeout: {} seconds.".format(data["inputs"]["Scenario"]["timeout_seconds"])
             logger.info(msg)
             raise OptimizationTimeout(task=name, message=msg, run_uuid=self.run_uuid, user_uuid=self.user_uuid)
@@ -219,8 +219,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
             msg = "Optimization exceeded timeout: {} seconds.".format(data["inputs"]["Scenario"]["timeout_seconds"])
             logger.info(msg)
             raise OptimizationTimeout(task=name, message=msg, run_uuid=self.run_uuid, user_uuid=self.user_uuid)
-
-        if status.strip().lower() != 'optimal':
+        elif status.strip().lower() != 'optimal':
             logger.error("REopt status not optimal. Raising NotOptimal Exception.")
             raise NotOptimal(task=name, run_uuid=self.run_uuid, status=status.strip(), user_uuid=self.user_uuid)
 
