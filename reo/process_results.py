@@ -304,14 +304,16 @@ def calculate_proforma_metrics(data):
             size_list = chp.get("tech_size_for_cost_curve") or []
             chp_size = total_kw
             if len(cost_list) > 1:
-                if chp_size <= size_list[1]:
+                if chp_size <= size_list[0]:
                     capital_costs = chp_size * cost_list[0]  # Currently not handling non-zero cost ($) for 0 kW size input
                 elif chp_size > size_list[-1]:
                     capital_costs = chp_size * cost_list[-1]
                 else:
-                    for s in range(1, len(size_list)-1):
-                        if (chp_size > size_list[s]) and (chp_size <= size_list[s+1]):
-                            capital_costs += cost_list[s] * size_list[s] + (chp_size - size_list[s]) * cost_list[s+1]
+                    for s in range(1, len(size_list)):
+                        if (chp_size > size_list[s-1]) and (chp_size <= size_list[s]):
+                            slope = (cost_list[s] * size_list[s] - cost_list[s-1] * size_list[s-1]) / \
+                                    (size_list[s] - size_list[s-1])
+                            capital_costs += cost_list[s-1] * size_list[s-1] + (chp_size - size_list[s-1]) * slope
             else:
                 capital_costs = (cost_list[0] or 0) * (chp_size or 0)
             annual_om = (-1 * total_kw * chp['om_cost_us_dollars_per_kw']) + \
@@ -671,16 +673,16 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 size_list = self.inputs[tech].get("tech_size_for_cost_curve") or []
                 chp_size = self.nested_outputs["Scenario"]["Site"][tech].get("size_kw")
                 if len(cost_list) > 1:
-                    if chp_size <= size_list[1]:
+                    if chp_size <= size_list[0]:
                         upfront_capex += chp_size * cost_list[0]  # Currently not handling non-zero cost ($) for 0 kW size input
                     elif chp_size > size_list[-1]:
                         upfront_capex += chp_size * cost_list[-1]
                     else:
-                        for s in range(1, len(size_list)-1):
-                            if (chp_size > size_list[s]) and (chp_size <= size_list[s+1]):
-                                slope = (cost_list[s+1] * size_list[s+1] - cost_list[s] * size_list[s]) / \
-                                        (size_list[s+1] - size_list[s])
-                                upfront_capex += cost_list[s] * size_list[s] + (chp_size - size_list[s]) * slope
+                        for s in range(1, len(size_list)):
+                            if (chp_size > size_list[s-1]) and (chp_size <= size_list[s]):
+                                slope = (cost_list[s] * size_list[s] - cost_list[s-1] * size_list[s-1]) / \
+                                        (size_list[s] - size_list[s-1])
+                                upfront_capex += cost_list[s-1] * size_list[s-1] + (chp_size - size_list[s-1]) * slope
                 elif len(cost_list) == 1:
                     upfront_capex += (cost_list[0] or 0) * (chp_size or 0)
 
