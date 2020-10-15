@@ -1275,7 +1275,7 @@ nested_input_definitions = {
         },
         "size_class": {
           "type": "int",
-          "restrict_to": [0, 1, 2, 3, 4],
+          "restrict_to": [0, 1, 2, 3, 4, 5, 6],
           "description": "CHP size class for using appropriate default inputs"
         },
         "min_kw": {
