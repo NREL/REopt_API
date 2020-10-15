@@ -378,13 +378,15 @@ class ValidateNestedInput:
         self.emission_warning = []
         self.defaults_inserted = []
         self.input_dict = dict()
-        self.input_dict['Scenario'] = input_dict.get('Scenario') or {}
+        if type(input_dict) is not dict:
+            self.input_data_errors.append("POST must contain a valid JSON formatted accoring to format described in https://developer.nrel.gov/docs/energy-optimization/reopt-v1/")
+        else:        
+            self.input_dict['Scenario'] = input_dict.get('Scenario') or {}
+            for k,v in input_dict.items():
+                if k != 'Scenario':
+                    self.invalid_inputs.append([k, ["Top Level"]])
 
-        for k,v in input_dict.items():
-            if k != 'Scenario':
-                self.invalid_inputs.append([k, ["Top Level"]])
-
-        self.check_object_types(self.input_dict)
+            self.check_object_types(self.input_dict)
         if self.isValid:
             self.recursively_check_input_dict(self.nested_input_definitions, self.remove_invalid_keys)
             self.recursively_check_input_dict(self.nested_input_definitions, self.remove_nones)
@@ -1051,7 +1053,9 @@ class ValidateNestedInput:
 
             for blended in ['blended_monthly_demand_charges_us_dollars_per_kw','blended_monthly_rates_us_dollars_per_kwh']:
                 if electric_tariff.get(blended) is not None:
-                    if len(electric_tariff.get(blended)) != 12:
+                    if type(electric_tariff.get(blended)) is not list:
+                        self.input_data_errors.append('{} needs to be an array that contains 12 valid numbers.'.format(blended) )
+                    elif len(electric_tariff.get(blended)) != 12:
                         self.input_data_errors.append('{} array needs to contain 12 valid numbers.'.format(blended) )
 
             if electric_tariff.get('tou_energy_rates_us_dollars_per_kwh') is not None:
