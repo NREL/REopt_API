@@ -106,6 +106,13 @@ class ElecTariff(object):
         self.interconnection_limit_kw = interconnection_limit_kw
         self.emissions_factor_series_lb_CO2_per_kwh = emissions_factor_series_lb_CO2_per_kwh
 
+        # Standby charges for CHP
+        self.chp_standby_rate_us_dollars_per_kw_per_month = kwargs['chp_standby_rate_us_dollars_per_kw_per_month']
+        if kwargs.get('chp_does_not_reduce_demand_charges') in [None, False]:
+            self.chp_does_not_reduce_demand_charges = 0
+        else:
+            self.chp_does_not_reduce_demand_charges = 1
+
         dfm.add_elec_tariff(self)
 
     def update_urdb_with_monthly_energy_and_demand(self, urdb_rate, monthly_energy, monthly_demand):
