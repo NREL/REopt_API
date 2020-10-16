@@ -298,7 +298,7 @@ version = "1.2.0"
 
 [[Xpress]]
 deps = ["Libdl", "LinearAlgebra", "MathOptInterface", "SparseArrays"]
-git-tree-sha1 = "39337d9976c8e0e6e98cf5efe9346841f6f2b32b"
+git-tree-sha1 = "43b93e26ea692e8b7ea01b030b043774025ba258"
 repo-rev = "master"
 repo-url = "https://github.com/JuliaOpt/Xpress.jl.git"
 uuid = "9e70acf3-d6c9-5be6-b5bd-4e2c73e3e054"
