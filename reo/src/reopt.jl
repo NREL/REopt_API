@@ -1141,7 +1141,7 @@ function reopt_run(m, p::Parameter)
 	
 end
 
-
+function reopt_results(m, p, r::Dict)
 	add_storage_results(m, p, r)
 	add_pv_results(m, p, r)
 	if !isempty(m[:GeneratorTechs])
