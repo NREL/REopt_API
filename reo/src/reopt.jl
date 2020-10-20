@@ -1249,36 +1249,59 @@ function add_null_cold_tes_results(m, p, r::Dict)
 end
 
 function add_storage_results(m, p, r::Dict)
+	try
+		m[:soc] = @expression(m, [ts in m[:TimeStep]], m[:dvStorageSOC]["Elec",ts])
+		m[:GridToBatt] = @expression(m, [ts in m[:TimeStep]], m[:dvGridToStorage][ts])
+		m[:ElecFromBatt] = @expression(m, [ts in m[:TimeStep]],
+			sum(m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage))
+		m[:ElecFromBattExport] = @expression(m, [ts in m[:TimeStep]],
+			sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers))
+	catch
+	end
     r["batt_kwh"] = value(m[:dvStorageCapEnergy]["Elec"])
     r["batt_kw"] = value(m[:dvStorageCapPower]["Elec"])
-
     if r["batt_kwh"] != 0
-    	@expression(m, soc[ts in m[:TimeStep]], m[:dvStorageSOC]["Elec",ts] / r["batt_kwh"])
-        r["year_one_soc_series_pct"] = value.(soc)
+        r["year_one_soc_series_pct"] = value.(m[:soc]) / r["batt_kwh"]
     else
-        r["year_one_soc_series_pct"] = []
+        r["year_one_soc_series_pct"] = value.(m[:soc])
     end
-    @expression(m, GridToBatt[ts in m[:TimeStep]], m[:dvGridToStorage][ts])
-	r["GridToBatt"] = round.(value.(GridToBatt), digits=3)
-
-	@expression(m, ElecFromBatt[ts in m[:TimeStep]],
-		sum(m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage))
-	r["ElecFromBatt"] = round.(value.(ElecFromBatt), digits=3)
-	@expression(m, ElecFromBattExport[ts in m[:TimeStep]],
-		sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers))
-	r["ElecFromBattExport"] = round.(value.(ElecFromBattExport), digits=3)
+	r["GridToBatt"] = round.(value.(m[:GridToBatt]), digits=3)
+	r["ElecFromBatt"] = round.(value.(m[:ElecFromBatt]), digits=3)
+	r["ElecFromBattExport"] = round.(value.(m[:ElecFromBattExport]), digits=3)
 	nothing
 end
 
 
 function add_generator_results(m, p, r::Dict)
-	m[:GenPerUnitSizeOMCosts] = @expression(m, p.two_party_factor *
-		sum(p.OMperUnitSize[t] * p.pwf_om * m[:dvSize][t] for t in m[:GeneratorTechs])
-	)
-	m[:GenPerUnitProdOMCosts] = @expression(m, p.two_party_factor *
-		sum(m[:dvRatedProduction][t,ts] * p.TimeStepScaling * p.ProductionFactor[t,ts] * p.OMcostPerUnitProd[t] * p.pwf_om
-			for t in m[:GeneratorTechs], ts in m[:TimeStep])
-	)
+	try
+		m[:GenPerUnitSizeOMCosts] = @expression(m, p.two_party_factor * m[:weight] * 
+			sum(p.OMperUnitSize[t] * p.pwf_om * m[:dvSize][t] for t in m[:GeneratorTechs])
+		)
+		m[:GenPerUnitProdOMCosts] = @expression(m, p.two_party_factor * 
+			sum(m[:dvRatedProduction][t,ts] * p.TimeStepScaling * p.ProductionFactor[t,ts] * p.OMcostPerUnitProd[t] * p.pwf_om
+				for t in m[:GeneratorTechs], ts in m[:TimeStep])
+		)
+		@expression(m, GENERATORtoBatt[ts in m[:TimeStep]],
+				sum(m[:dvProductionToStorage]["Elec",t,ts] for t in m[:GeneratorTechs]))
+		@expression(m, GENERATORtoGrid[ts in m[:TimeStep]],
+					sum(m[:dvProductionToGrid][t,u,ts] for t in m[:GeneratorTechs], u in p.SalesTiersByTech[t]))
+		@expression(m, GENERATORtoLoad[ts in m[:TimeStep]],
+				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
+					for t in m[:GeneratorTechs]) - 
+					GENERATORtoBatt[ts] - GENERATORtoGrid[ts]
+					)
+		@expression(m, GeneratorFuelUsed, sum(m[:dvFuelUsage][t, ts] for t in m[:GeneratorTechs], ts in m[:TimeStep]))
+		m[:Year1GenProd] = @expression(m, 
+			p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] 
+				for t in m[:GeneratorTechs], ts in m[:TimeStep])
+		)
+		m[:AverageGenProd] = @expression(m, 
+			p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
+				for t in m[:GeneratorTechs], ts in m[:TimeStep])
+		)
+	catch
+	end
+	
 	if value(sum(m[:dvSize][t] for t in m[:GeneratorTechs])) > 0
 		r["generator_kw"] = value(sum(m[:dvSize][t] for t in m[:GeneratorTechs]))
 		r["gen_net_fixed_om_costs"] = round(value(m[:GenPerUnitSizeOMCosts]) * m[:r_tax_fraction_owner], digits=0)
@@ -1288,70 +1311,41 @@ function add_generator_results(m, p, r::Dict)
 		r["gen_year_one_variable_om_costs"] = round(value(m[:GenPerUnitProdOMCosts]) / (p.pwf_om * p.two_party_factor), digits=0)
 		r["gen_year_one_fixed_om_costs"] = round(value(m[:GenPerUnitSizeOMCosts]) / (p.pwf_om * p.two_party_factor), digits=0)
 	end
-	@expression(m, GENERATORtoBatt[ts in m[:TimeStep]],
-				sum(m[:dvProductionToStorage]["Elec",t,ts] for t in m[:GeneratorTechs]))
-	r["GENERATORtoBatt"] = round.(value.(GENERATORtoBatt), digits=3)
-
-	@expression(m, GENERATORtoGrid[ts in m[:TimeStep]],
-				sum(m[:dvProductionToGrid][t,u,ts] for t in m[:GeneratorTechs], u in p.SalesTiersByTech[t]))
-	r["GENERATORtoGrid"] = round.(value.(GENERATORtoGrid), digits=3)
-
-	@expression(m, GENERATORtoLoad[ts in m[:TimeStep]],
-				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
-					for t in m[:GeneratorTechs]) -
-					GENERATORtoBatt[ts] - GENERATORtoGrid[ts]
-					)
-	r["GENERATORtoLoad"] = round.(value.(GENERATORtoLoad), digits=3)
-
-    @expression(m, GeneratorFuelUsed, sum(m[:dvFuelUsage][t, ts] for t in m[:GeneratorTechs], ts in m[:TimeStep]))
-	r["fuel_used_gal"] = round(value(GeneratorFuelUsed), digits=2)
-
-
-	m[:Year1GenProd] = @expression(m,
-		p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts]
-			for t in m[:GeneratorTechs], ts in m[:TimeStep])
-	)
+	
+	r["GENERATORtoBatt"] = round.(value.(m[:GENERATORtoBatt]), digits=3)
+	r["GENERATORtoGrid"] = round.(value.(m[:GENERATORtoGrid]), digits=3)
+	r["GENERATORtoLoad"] = round.(value.(m[:GENERATORtoLoad]), digits=3)
+	r["fuel_used_gal"] = round(value(m[:GeneratorFuelUsed]), digits=2)
 	r["year_one_gen_energy_produced"] = round(value(m[:Year1GenProd]), digits=0)
-	m[:AverageGenProd] = @expression(m,
-		p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
-			for t in m[:GeneratorTechs], ts in m[:TimeStep])
-	)
 	r["average_yearly_gen_energy_produced"] = round(value(m[:AverageGenProd]), digits=0)
-
 	nothing
 end
 
 
 
 function add_wind_results(m, p, r::Dict)
-	r["wind_kw"] = round(value(sum(m[:dvSize][t] for t in m[:WindTechs])), digits=4)
-	@expression(m, WINDtoBatt[ts in m[:TimeStep]],
+	try
+		@expression(m, WINDtoBatt[ts in m[:TimeStep]],
 	            sum(sum(m[:dvProductionToStorage][b, t, ts] for t in m[:WindTechs]) for b in p.ElecStorage))
-	r["WINDtoBatt"] = round.(value.(WINDtoBatt), digits=3)
-
-	@expression(m, WINDtoCurtail[ts in m[:TimeStep]],
-				sum(m[:dvProductionToGrid][t,u,ts] for t in m[:WindTechs], u in p.CurtailmentTiers))
-
-	r["WINDtoCurtail"] = round.(value.(WINDtoCurtail), digits=3)
-
-	@expression(m, WINDtoGrid[ts in m[:TimeStep]],
-				sum(m[:dvProductionToGrid][t,u,ts] for t in m[:WindTechs], u in p.SalesTiersByTech[t]) - WINDtoCurtail[ts])
-
-	r["WINDtoGrid"] = round.(value.(WINDtoGrid), digits=3)
-
-	@expression(m, WINDtoLoad[ts in m[:TimeStep]],
+		@expression(m, WINDtoGrid[ts in m[:TimeStep]],
+				sum(m[:dvProductionToGrid][t,u,ts] for t in m[:WindTechs], u in p.SalesTiers))
+		@expression(m, WINDtoLoad[ts in m[:TimeStep]],
 				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
-					for t in m[:WindTechs]) - WINDtoGrid[ts] - WINDtoBatt[ts] - WINDtoCurtail[ts] )
-	r["WINDtoLoad"] = round.(value.(WINDtoLoad), digits=3)
-	m[:Year1WindProd] = @expression(m,
-		p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts]
-			for t in m[:WindTechs], ts in m[:TimeStep])
-	)
+					for t in m[:WindTechs]) - WINDtoGrid[ts] - WINDtoBatt[ts] )
+		m[:Year1WindProd] = @expression(m, 
+			p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] 
+				for t in m[:WindTechs], ts in m[:TimeStep])
+		)
+		m[:AverageWindProd] = @expression(m, 
+			p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
+				for t in m[:WindTechs], ts in m[:TimeStep])
+		)
+		catch
+	end
+	r["wind_kw"] = round(value(sum(m[:dvSize][t] for t in m[:WindTechs])), digits=4)	
+	r["WINDtoGrid"] = round.(value.(m[:WINDtoGrid]), digits=3)	
+	r["WINDtoLoad"] = round.(value.(m[:WINDtoLoad]), digits=3)	
 	r["year_one_wind_energy_produced"] = round(value(m[:Year1WindProd]), digits=0)
-	m[:AverageWindProd] = @expression(m,
-		p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
-			for t in m[:WindTechs], ts in m[:TimeStep])
-	)
 	r["average_wind_energy_produced"] = round(value(m[:AverageWindProd]), digits=0)
 	nothing
 end
@@ -1409,142 +1403,159 @@ function add_pv_results(m, p, r::Dict)
 end
 
 function add_chp_results(m, p, r::Dict)
+	try
+		@expression(m, CHPFuelUsed, sum(m[:dvFuelUsage][t, ts] for t in p.CHPTechs, ts in m[:TimeStep]))
+		@expression(m, Year1CHPElecProd,
+			p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts]
+				for t in p.CHPTechs, ts in m[:TimeStep]))
+		@expression(m, Year1CHPThermalProd,
+			p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts]-m[:dvProductionToWaste][t,ts] for t in p.CHPTechs, ts in m[:TimeStep]))
+		@expression(m, CHPElecProdTotal[ts in m[:TimeStep]],
+			sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] for t in p.CHPTechs))
+		@expression(m, CHPtoGrid[ts in m[:TimeStep]], sum(m[:dvProductionToGrid][t,u,ts]
+			for t in p.CHPTechs, u in p.SalesTiersByTech[t]))
+		@expression(m, CHPtoBatt[ts in m[:TimeStep]],
+			sum(m[:dvProductionToStorage]["Elec",t,ts] for t in p.CHPTechs))
+		@expression(m, CHPtoLoad[ts in m[:TimeStep]],
+			sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
+				for t in p.CHPTechs) - CHPtoBatt[ts] - CHPtoGrid[ts])
+		@expression(m, CHPtoHotTES[ts in m[:TimeStep]],
+			sum(m[:dvProductionToStorage]["HotTES",t,ts] for t in p.CHPTechs))
+		@expression(m, CHPThermalToWaste[ts in m[:TimeStep]],
+			sum(m[:dvProductionToWaste][t,ts] for t in p.CHPTechs))
+		@expression(m, CHPThermalToLoad[ts in m[:TimeStep]],
+			sum(m[:dvThermalProduction][t,ts]
+				for t in p.CHPTechs) - CHPtoHotTES[ts] - CHPThermalToWaste[ts])
+		@expression(m, TotalCHPFuelCharges,
+			p.pwf_fuel["CHP"] * p.TimeStepScaling * sum(p.FuelCost["CHPFUEL",ts] * m[:dvFuelUsage]["CHP",ts]
+				for ts in m[:TimeStep]))
+	catch
+	end
 	r["CHP"] = Dict()
 	r["chp_kw"] = value(sum(m[:dvSize][t] for t in p.CHPTechs))
-	@expression(m, CHPFuelUsed, sum(m[:dvFuelUsage][t, ts] for t in p.CHPTechs, ts in m[:TimeStep]))
-	r["year_one_chp_fuel_used"] = round(value(CHPFuelUsed), digits=3)
-	@expression(m, Year1CHPElecProd,
-		p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts]
-			for t in p.CHPTechs, ts in m[:TimeStep]))
-	r["year_one_chp_electric_energy_produced"] = round(value(Year1CHPElecProd), digits=3)
-	@expression(m, Year1CHPThermalProd,
-		p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts]-m[:dvProductionToWaste][t,ts] for t in p.CHPTechs, ts in m[:TimeStep]))
-	r["year_one_chp_thermal_energy_produced"] = round(value(Year1CHPThermalProd), digits=3)
-	@expression(m, CHPElecProdTotal[ts in m[:TimeStep]],
-		sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] for t in p.CHPTechs))
-	r["chp_electric_production_series"] = round.(value.(CHPElecProdTotal))
-	@expression(m, CHPtoGrid[ts in m[:TimeStep]], sum(m[:dvProductionToGrid][t,u,ts]
-			for t in p.CHPTechs, u in p.SalesTiersByTech[t]))
-	r["chp_to_grid_series"] = round.(value.(CHPtoGrid), digits=3)
-	@expression(m, CHPtoBatt[ts in m[:TimeStep]],
-		sum(m[:dvProductionToStorage]["Elec",t,ts] for t in p.CHPTechs))
-	r["chp_to_battery_series"] = round.(value.(CHPtoBatt), digits=3)
-	@expression(m, CHPtoLoad[ts in m[:TimeStep]],
-		sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
-			for t in p.CHPTechs) - CHPtoBatt[ts] - CHPtoGrid[ts])
-	r["chp_electric_to_load_series"] = round.(value.(CHPtoLoad), digits=3)
-	@expression(m, CHPtoHotTES[ts in m[:TimeStep]],
-		sum(m[:dvProductionToStorage]["HotTES",t,ts] for t in p.CHPTechs))
-	r["chp_thermal_to_tes_series"] = round.(value.(CHPtoHotTES), digits=5)
-	@expression(m, CHPThermalToWaste[ts in m[:TimeStep]],
-		sum(m[:dvProductionToWaste][t,ts] for t in p.CHPTechs))
-	r["chp_thermal_to_waste_series"] = round.(value.(CHPThermalToWaste), digits=5)
-	@expression(m, CHPThermalToLoad[ts in m[:TimeStep]],
-		sum(m[:dvThermalProduction][t,ts]
-			for t in p.CHPTechs) - CHPtoHotTES[ts] - CHPThermalToWaste[ts])
-	r["chp_thermal_to_load_series"] = round.(value.(CHPThermalToLoad), digits=5)
-	@expression(m, TotalCHPFuelCharges,
-		p.pwf_fuel["CHP"] * p.TimeStepScaling * sum(p.FuelCost["CHPFUEL",ts] * m[:dvFuelUsage]["CHP",ts]
-			for ts in m[:TimeStep]))
-	r["total_chp_fuel_cost"] = round(value(TotalCHPFuelCharges) * m[:r_tax_fraction_offtaker], digits=3)
-	r["year_one_chp_fuel_cost"] = round(value(TotalCHPFuelCharges / p.pwf_fuel["CHP"]), digits=3)
+	r["year_one_chp_fuel_used"] = round(value(m[:CHPFuelUsed]), digits=3)
+	r["year_one_chp_electric_energy_produced"] = round(value(m[:Year1CHPElecProd]), digits=3)
+	r["year_one_chp_thermal_energy_produced"] = round(value(m[:Year1CHPThermalProd]), digits=3)
+	r["chp_electric_production_series"] = round.(value.(m[:CHPElecProdTotal]))
+	r["chp_to_grid_series"] = round.(value.(m[:CHPtoGrid]), digits=3)
+	r["chp_to_battery_series"] = round.(value.(m[:CHPtoBatt]), digits=3)
+	r["chp_electric_to_load_series"] = round.(value.(m[:CHPtoLoad]), digits=3)
+	r["chp_thermal_to_tes_series"] = round.(value.(m[:CHPtoHotTES]), digits=3)
+	r["chp_thermal_to_waste_series"] = round.(value.(m[:CHPThermalToWaste]))
+	r["chp_thermal_to_load_series"] = round.(value.(m[:CHPThermalToLoad]), digits=3)
+	r["total_chp_fuel_cost"] = round(value(m[:TotalCHPFuelCharges]) * m[:r_tax_fraction_offtaker], digits=3)
+	r["year_one_chp_fuel_cost"] = round(value(m[:TotalCHPFuelCharges] / p.pwf_fuel["CHP"]), digits=3)
 	r["year_one_chp_standby_cost"] = round(value(m[:Year1CHPStandbyCharges]), digits=0)
 	r["total_chp_standby_cost"] = round(value(m[:TotalCHPStandbyCharges] * m[:r_tax_fraction_offtaker]), digits=0)
 	nothing
 end
 
 function add_boiler_results(m, p, r::Dict)
-	##Boiler results go here; need to populate expressions for first collection
-	@expression(m, FuelToBoiler[ts in m[:TimeStep]], m[:dvFuelUsage]["BOILER", ts])
-	r["fuel_to_boiler_series"] = round.(value.(FuelToBoiler), digits=3)
-	@expression(m, BoilerThermalProd[ts in m[:TimeStep]], p.ProductionFactor["BOILER",ts] * m[:dvThermalProduction]["BOILER",ts])
-	r["boiler_thermal_production_series"] = round.(value.(BoilerThermalProd), digits=3)
-	@expression(m, BoilerFuelUsed, sum(m[:dvFuelUsage]["BOILER", ts] for ts in m[:TimeStep]))
-	r["year_one_fuel_to_boiler_mmbtu"] = round(value(BoilerFuelUsed), digits=3)
-	@expression(m, BoilerThermalProduced, sum(p.ProductionFactor["BOILER",ts] * m[:dvThermalProduction]["BOILER",ts]
-		for ts in m[:TimeStep]))
-	r["year_one_boiler_thermal_production_mmbtu"] = round(value(BoilerThermalProduced), digits=3)
-	@expression(m, BoilerToHotTES[ts in m[:TimeStep]],
-		sum(m[:dvProductionToStorage]["HotTES",t,ts] for t in ["BOILER"]))
-	r["boiler_thermal_to_tes_series"] = round.(value.(BoilerToHotTES), digits=3)
-	@expression(m, BoilerToLoad[ts in m[:TimeStep]],
-		sum(m[:dvThermalProduction][t,ts] * p.ProductionFactor[t,ts]
-			for t in ["BOILER"]) - BoilerToHotTES[ts] )
-	r["boiler_thermal_to_load_series"] = round.(value.(BoilerToLoad), digits=3)
-	@expression(m, TotalBoilerFuelCharges,
-		p.pwf_fuel["BOILER"] * p.TimeStepScaling * sum(p.FuelCost["BOILERFUEL",ts] * m[:dvFuelUsage]["BOILER",ts]
+	try
+		@expression(m, FuelToBoiler[ts in m[:TimeStep]], m[:dvFuelUsage]["BOILER", ts])
+		@expression(m, BoilerThermalProd[ts in m[:TimeStep]], p.ProductionFactor["BOILER",ts] * m[:dvThermalProduction]["BOILER",ts])
+		@expression(m, BoilerFuelUsed, sum(m[:dvFuelUsage]["BOILER", ts] for ts in m[:TimeStep]))
+		@expression(m, BoilerThermalProduced, sum(p.ProductionFactor["BOILER",ts] * m[:dvThermalProduction]["BOILER",ts]
 			for ts in m[:TimeStep]))
-	r["total_boiler_fuel_cost"] = round(value(TotalBoilerFuelCharges * m[:r_tax_fraction_offtaker]), digits=3)
-	r["year_one_boiler_fuel_cost"] = round(value(TotalBoilerFuelCharges / p.pwf_fuel["BOILER"]), digits=3)
+		@expression(m, BoilerToHotTES[ts in m[:TimeStep]],
+			sum(m[:dvProductionToStorage]["HotTES",t,ts] for t in ["BOILER"]))
+		@expression(m, BoilerToLoad[ts in m[:TimeStep]],
+			sum(m[:dvThermalProduction][t,ts] * p.ProductionFactor[t,ts]
+				for t in ["BOILER"]) - BoilerToHotTES[ts] )
+		@expression(m, TotalBoilerFuelCharges,
+			p.pwf_fuel["BOILER"] * p.TimeStepScaling * sum(p.FuelCost["BOILERFUEL",ts] * m[:dvFuelUsage]["BOILER",ts]
+				for ts in m[:TimeStep]))
+	catch
+	end
+	r["fuel_to_boiler_series"] = round.(value.(m[:FuelToBoiler]), digits=3)
+	r["boiler_thermal_production_series"] = round.(value.(m[:BoilerThermalProd]), digits=3)
+	r["year_one_fuel_to_boiler_mmbtu"] = round(value(m[:BoilerFuelUsed]), digits=3)
+	r["year_one_boiler_thermal_production_mmbtu"] = round(value(m[:BoilerThermalProduced]), digits=3)
+	r["boiler_thermal_to_tes_series"] = round.(value.(m[:BoilerToHotTES]), digits=3)
+	r["boiler_thermal_to_load_series"] = round.(value.(m[:BoilerToLoad]), digits=3)
+	r["total_boiler_fuel_cost"] = round(value(m[:TotalBoilerFuelCharges] * m[:r_tax_fraction_offtaker]), digits=3)
+	r["year_one_boiler_fuel_cost"] = round(value(m[:TotalBoilerFuelCharges] / p.pwf_fuel["BOILER"]), digits=3)
 	nothing
 end
 
 function add_elec_chiller_results(m, p, r::Dict)
-	@expression(m, ELECCHLtoTES[ts in m[:TimeStep]],
-		sum(m[:dvProductionToStorage][b,t,ts] for b in p.ColdTES, t in p.ElectricChillers))
-	r["electric_chiller_to_tes_series"] = round.(value.(ELECCHLtoTES), digits=3)
-	@expression(m, ELECCHLtoLoad[ts in m[:TimeStep]],
-		sum(m[:dvThermalProduction][t,ts] * p.ProductionFactor[t,ts] for t in p.ElectricChillers)
-			- ELECCHLtoTES[ts])
-	r["electric_chiller_to_load_series"] = round.(value.(ELECCHLtoLoad), digits=3)
-	@expression(m, ELECCHLElecConsumptionSeries[ts in m[:TimeStep]],
-		sum(m[:dvThermalProduction][t,ts] / p.ElectricChillerCOP for t in p.ElectricChillers))
-	r["electric_chiller_consumption_series"] = round.(value.(ELECCHLElecConsumptionSeries), digits=3)
-	@expression(m, Year1ELECCHLElecConsumption,
-		p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts] / p.ElectricChillerCOP
-			for t in p.ElectricChillers, ts in m[:TimeStep]))
-	r["year_one_electric_chiller_electric_kwh"] = round(value(Year1ELECCHLElecConsumption), digits=3)
-	@expression(m, Year1ELECCHLThermalProd,
-		p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts]
-			for t in p.ElectricChillers, ts in m[:TimeStep]))
-	r["year_one_electric_chiller_thermal_kwh"] = round(value(Year1ELECCHLThermalProd), digits=3)
+	try
+		@expression(m, ELECCHLtoTES[ts in m[:TimeStep]],
+			sum(m[:dvProductionToStorage][b,t,ts] for b in p.ColdTES, t in p.ElectricChillers))
+		@expression(m, ELECCHLtoLoad[ts in m[:TimeStep]],
+			sum(m[:dvThermalProduction][t,ts] * p.ProductionFactor[t,ts] for t in p.ElectricChillers)
+				- ELECCHLtoTES[ts])
+		@expression(m, ELECCHLElecConsumptionSeries[ts in m[:TimeStep]],
+			sum(m[:dvThermalProduction][t,ts] / p.ElectricChillerCOP for t in p.ElectricChillers))
+		@expression(m, Year1ELECCHLElecConsumption,
+			p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts] / p.ElectricChillerCOP
+				for t in p.ElectricChillers, ts in m[:TimeStep]))
+		@expression(m, Year1ELECCHLThermalProd,
+			p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts]
+				for t in p.ElectricChillers, ts in m[:TimeStep]))
+	catch
+	end
+	r["electric_chiller_to_tes_series"] = round.(value.(m[:ELECCHLtoTES]), digits=3)
+	r["electric_chiller_to_load_series"] = round.(value.(m[:ELECCHLtoLoad]), digits=3)
+	r["electric_chiller_consumption_series"] = round.(value.(m[:ELECCHLElecConsumptionSeries]), digits=3)
+	r["year_one_electric_chiller_electric_kwh"] = round(value(m[:Year1ELECCHLElecConsumption]), digits=3)
+	r["year_one_electric_chiller_thermal_kwh"] = round(value(m[:Year1ELECCHLThermalProd]), digits=3)
 	nothing
 end
 
 function add_absorption_chiller_results(m, p, r::Dict)
+	try
+		@expression(m, ABSORPCHLtoTES[ts in m[:TimeStep]],
+			sum(m[:dvProductionToStorage][b,t,ts] for b in p.ColdTES, t in p.AbsorptionChillers))
+		@expression(m, ABSORPCHLtoLoad[ts in m[:TimeStep]],
+			sum(m[:dvThermalProduction][t,ts] * p.ProductionFactor[t,ts] for t in p.AbsorptionChillers)
+				- ABSORPCHLtoTES[ts])
+		@expression(m, ABSORPCHLThermalConsumptionSeries[ts in m[:TimeStep]],
+			sum(m[:dvThermalProduction][t,ts] / p.AbsorptionChillerCOP * 3412.0 / 1.0E6 for t in p.AbsorptionChillers))
+		@expression(m, Year1ABSORPCHLThermalConsumption,
+			p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts] / p.AbsorptionChillerCOP * 3412.0 / 1.0E6
+				for t in p.AbsorptionChillers, ts in m[:TimeStep]))
+		@expression(m, Year1ABSORPCHLThermalProd,
+			p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts]
+				for t in p.AbsorptionChillers, ts in m[:TimeStep]))
+	catch
+	end
 	r["absorpchl_kw"] = value(sum(m[:dvSize][t] for t in p.AbsorptionChillers))
-	@expression(m, ABSORPCHLtoTES[ts in m[:TimeStep]],
-		sum(m[:dvProductionToStorage][b,t,ts] for b in p.ColdTES, t in p.AbsorptionChillers))
-	r["absorption_chiller_to_tes_series"] = round.(value.(ABSORPCHLtoTES), digits=3)
-	@expression(m, ABSORPCHLtoLoad[ts in m[:TimeStep]],
-		sum(m[:dvThermalProduction][t,ts] * p.ProductionFactor[t,ts] for t in p.AbsorptionChillers)
-			- ABSORPCHLtoTES[ts])
-	r["absorption_chiller_to_load_series"] = round.(value.(ABSORPCHLtoLoad), digits=3)
-	@expression(m, ABSORPCHLThermalConsumptionSeries[ts in m[:TimeStep]],
-		sum(m[:dvThermalProduction][t,ts] / p.AbsorptionChillerCOP * 3412.0 / 1.0E6 for t in p.AbsorptionChillers))
-	r["absorption_chiller_consumption_series"] = round.(value.(ABSORPCHLThermalConsumptionSeries), digits=3)
-	@expression(m, Year1ABSORPCHLThermalConsumption,
-		p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts] / p.AbsorptionChillerCOP * 3412.0 / 1.0E6
-			for t in p.AbsorptionChillers, ts in m[:TimeStep]))
-	r["year_one_absorp_chiller_thermal_consumption_mmbtu"] = round(value(Year1ABSORPCHLThermalConsumption), digits=3)
-	@expression(m, Year1ABSORPCHLThermalProd,
-		p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts]
-			for t in p.AbsorptionChillers, ts in m[:TimeStep]))
-	r["year_one_absorp_chiller_thermal_prod_kwh"] = round(value(Year1ABSORPCHLThermalProd), digits=3)
+	r["absorption_chiller_to_tes_series"] = round.(value.(m[:ABSORPCHLtoTES]), digits=3)
+	r["absorption_chiller_to_load_series"] = round.(value.(m[:ABSORPCHLtoLoad]), digits=3)
+	r["absorption_chiller_consumption_series"] = round.(value.(m[:ABSORPCHLThermalConsumptionSeries]), digits=3)
+	r["year_one_absorp_chiller_thermal_consumption_mmbtu"] = round(value(m[:Year1ABSORPCHLThermalConsumption]), digits=3)
+	r["year_one_absorp_chiller_thermal_prod_kwh"] = round(value(m[:Year1ABSORPCHLThermalProd]), digits=3)
 	nothing
 end
 
 function add_hot_tes_results(m, p, r::Dict)
-	@expression(m, HotTESSizeMMBTU, sum(m[:dvStorageCapEnergy][b] for b in p.HotTES))
-	r["hot_tes_size_mmbtu"] = round(value(HotTESSizeMMBTU), digits=5)
-	@expression(m, HotTESDischargeSeries[ts in m[:TimeStep]], sum(m[:dvDischargeFromStorage][b, ts]
+	try
+		@expression(m, HotTESSizeMMBTU, sum(m[:dvStorageCapEnergy][b] for b in p.HotTES))
+		@expression(m, HotTESDischargeSeries[ts in m[:TimeStep]], sum(m[:dvDischargeFromStorage][b, ts]
 		for b in p.HotTES))
-	r["hot_tes_thermal_production_series"] = round.(value.(HotTESDischargeSeries), digits=5)
-	@expression(m, HotTESsoc[ts in m[:TimeStep]], sum(m[:dvStorageSOC][b,ts] for b in p.HotTES))
-	r["hot_tes_pct_soc_series"] = round.(value.(HotTESsoc) / value(HotTESSizeMMBTU), digits=5)
+		@expression(m, HotTESsoc[ts in m[:TimeStep]], sum(m[:dvStorageSOC][b,ts] for b in p.HotTES))
+	catch
+	end
+	r["hot_tes_size_mmbtu"] = round(value(m[:HotTESSizeMMBTU]), digits=5)
+	r["hot_tes_thermal_production_series"] = round.(value.(m[:HotTESDischargeSeries]), digits=5)
+	r["hot_tes_pct_soc_series"] = round.(value.(m[:HotTESsoc]) / value(m[:HotTESSizeMMBTU]), digits=5)
 	nothing
 end
 
 function add_cold_tes_results(m, p, r::Dict)
-	@expression(m, ColdTESSizeKWHT, sum(m[:dvStorageCapEnergy][b] for b in p.ColdTES))
-	r["cold_tes_size_kwht"] = round(value(ColdTESSizeKWHT), digits=5)
-	@expression(m, ColdTESDischargeSeries[ts in m[:TimeStep]], sum(m[:dvDischargeFromStorage][b, ts]
+	try
+		@expression(m, ColdTESSizeKWHT, sum(m[:dvStorageCapEnergy][b] for b in p.ColdTES))
+		@expression(m, ColdTESDischargeSeries[ts in m[:TimeStep]], sum(m[:dvDischargeFromStorage][b, ts]
 		for b in p.ColdTES))
-	r["cold_tes_thermal_production_series"] = round.(value.(ColdTESDischargeSeries), digits=5)
-	@expression(m, ColdTESsoc[ts in m[:TimeStep]], sum(m[:dvStorageSOC][b,ts] for b in p.ColdTES))
-	r["cold_tes_pct_soc_series"] = round.(value.(ColdTESsoc) / value(ColdTESSizeKWHT), digits=5)
+		@expression(m, ColdTESsoc[ts in m[:TimeStep]], sum(m[:dvStorageSOC][b,ts] for b in p.ColdTES))
+	catch
+	end
+	r["cold_tes_size_kwht"] = round(value(m[:ColdTESSizeKWHT]), digits=5)
+	r["cold_tes_thermal_production_series"] = round.(value.(m[:ColdTESDischargeSeries]), digits=5)
+	r["cold_tes_pct_soc_series"] = round.(value.(m[:ColdTESsoc]) / value(m[:ColdTESSizeKWHT]), digits=5)
 	nothing
-end
+end	
 
 function add_util_results(m, p, r::Dict)
     net_capital_costs_plus_om = value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]) +
@@ -1578,9 +1589,13 @@ function add_util_results(m, p, r::Dict)
 						 "total_opex_costs" => round(total_opex_costs, digits=0),
 						 "year_one_opex_costs" => round(year_one_opex_costs, digits=0))...)
 
-    @expression(m, GridToLoad[ts in m[:TimeStep]],
+	try
+		@expression(m, GridToLoad[ts in m[:TimeStep]],
                 sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) - m[:dvGridToStorage][ts] )
-    r["GridToLoad"] = round.(value.(GridToLoad), digits=3)
+    catch
+	end
+	r["GridToLoad"] = round.(value.(m[:GridToLoad]), digits=3)
+	nothing
 end
 
 function get_initial_decomp_penalties(m,p)
