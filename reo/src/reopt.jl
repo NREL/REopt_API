@@ -965,21 +965,32 @@ function reopt(reo_model, model_inputs::Dict)
 	return results
 end
 
-
-function reopt_run(m, p::Parameter)
-
+function reopt_build(m, p::Parameter)
 	t_start = time()
 	results = Dict{String, Any}()
     Obj = 1  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
 
 	## Big-M adjustments; these need not be replaced in the parameter object.
 	add_bigM_adjustments(m, p)
+	## Time sets
+	if m[:model_type] == "monolith"
+		add_monolith_time_sets(m, p)
+	else
+		add_subproblem_time_sets(m, p)
+	end
 	results["julia_reopt_preamble_seconds"] = time() - t_start
 	t_start = time()
 
 	add_continuous_variables(m, p)
 	add_integer_variables(m, p)
 
+	if m[:model_type] != "monolith"
+		add_subproblem_variables(m, p)
+	end
+	
+	if m[:model_type] == "lb"
+		get_initial_decomp_penalties(m, p)
+	end
 	results["julia_reopt_variables_seconds"] = time() - t_start
 	t_start = time()
     ##############################################################################
@@ -1076,8 +1087,13 @@ function reopt_run(m, p::Parameter)
 	elseif Obj == 2  # Keep SOC high
 		@objective(m, Min, m[:REcosts] + m[:LagrangianPenalties] - sum(m[:dvStorageSOC]["Elec",ts] for ts in m[:TimeStep])/8760.)
 	end
-
+	
 	results["julia_reopt_constriants_seconds"] = time() - t_start
+	
+	return results
+end
+
+function reopt_solve(m, p::Parameter, results::Dict)
 	t_start = time()
 
 	optimize!(m)
@@ -1110,11 +1126,22 @@ function reopt_run(m, p::Parameter)
 
 	results = reopt_results(m, p, results)
 	results["julia_reopt_postprocess_seconds"] = time() - t_start
+	
+	if m[:model_type] != "monolith"
+		results = convert_to_arrays(m, results)
+	end
 	return results
 end
 
+function reopt_run(m, p::Parameter)
+	m[:model_type] = "monolith"
+	results = reopt_build(m, p)
+	results = reopt_solve(m, p, results, false)
+	return results
+	
+end
 
-function reopt_results(m, p, r::Dict)
+
 	add_storage_results(m, p, r)
 	add_pv_results(m, p, r)
 	if !isempty(m[:GeneratorTechs])
