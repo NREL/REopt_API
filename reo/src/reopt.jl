@@ -111,31 +111,41 @@ function add_monolith_time_sets(m, p)
 end
 
 function add_cost_expressions(m, p)
-	m[:TotalTechCapCosts] = @expression(m, p.two_party_factor * (
-		sum( p.CapCostSlope[t,s] * m[:dvSystemSizeSegment][t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) +
-		sum( p.CapCostYInt[t,s] * m[:binSegmentSelect][t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] )
+	m[:TotalTechCapCosts] = @expression(m, m[:weight] * p.two_party_factor * (
+		sum( p.CapCostSlope[t,s] * m[:dvSystemSizeSegment][t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) + 
+		sum( p.CapCostYInt[t,s] * m[:binSegmentSelect][t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) 
 	))
-	m[:TotalStorageCapCosts] = @expression(m, p.two_party_factor *
+	m[:TotalStorageCapCosts] = @expression(m, m[:weight] * p.two_party_factor *
 		sum( p.StorageCostPerKW[b]*m[:dvStorageCapPower][b] + p.StorageCostPerKWH[b]*m[:dvStorageCapEnergy][b] for b in p.Storage )
 	)
-	m[:TotalPerUnitSizeOMCosts] = @expression(m, p.two_party_factor * p.pwf_om *
+	m[:TotalPerUnitSizeOMCosts] = @expression(m, p.two_party_factor * p.pwf_om * m[:weight] * 
 		sum( p.OMperUnitSize[t] * m[:dvSize][t] for t in p.Tech )
 	)
     if !isempty(p.FuelBurningTechs)
 		m[:TotalPerUnitProdOMCosts] = @expression(m, p.two_party_factor * p.pwf_om *
-			sum( p.OMcostPerUnitProd[t] * m[:dvRatedProduction][t,ts] for t in p.FuelBurningTechs, ts in m[:TimeStep] )
+			sum( p.OMcostPerUnitProd[t] * m[:dvRatedProduction][t,ts] for t in p.FuelBurningTechs, ts in m[:TimeStep] ) 
 		)
     else
         m[:TotalPerUnitProdOMCosts] = @expression(m, 0.0)
 	end
 	if !isempty(p.CHPTechs)
-		m[:TotalCHPStandbyCharges] = @expression(m, p.pwf_e * p.CHPStandbyCharge * 12 *
+		m[:TotalCHPStandbyCharges] = @expression(m, m[:weight] * p.pwf_e * p.CHPStandbyCharge * 12 *
 			sum(m[:dvSize][t] for t in p.CHPTechs))
 		m[:TotalHourlyCHPOpExCosts] = @expression(m, p.two_party_factor * p.pwf_om *
 			sum(m[:dvOMByHourBySizeCHP][t, ts] for t in p.CHPTechs, ts in m[:TimeStep]))
 	else
 		m[:TotalCHPStandbyCharges] = @expression(m, 0.0)
 		m[:TotalHourlyCHPOpExCosts] = @expression(m, 0.0)
+	end
+	if m[:model_type] == "lb"
+		m[:LagrangianPenalties] = @expression(m, sum(m[:tech_size_penalty][t] * m[:dvSize][t] for t in p.Tech)
+			+ sum(m[:storage_power_size_penalty][b] * m[:dvStorageCapPower][b]
+				+ m[:storage_energy_size_penalty][b] * m[:dvStorageCapEnergy][b]
+				+ m[:storage_inventory_penalty][b] * m[:dvStorageResetSOC][b]
+				for b in p.Storage)
+		)
+	else
+		m[:LagrangianPenalties] = @expression(m, 0.0)
 	end
 end
 
@@ -216,13 +226,13 @@ function add_bigM_adjustments(m, p)
 			if e > 1
 				m[:NewMaxDemandInTier][r,e] = minimum([p.MaxDemandInTier[e],
 				added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts]
-					for ts in m[:TimeStep]])  -
+					for ts in p.TimeStep])  -
 				sum(m[:NewMaxDemandInTier][r,ep] for ep in 1:(e-1))
 				])
 			else
 				m[:NewMaxDemandInTier][r,e] = minimum([p.MaxDemandInTier[e],
 				added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts]
-					for ts in m[:TimeStep]])
+					for ts in p.TimeStep])
 				])
 			end
 		end
@@ -266,7 +276,7 @@ function add_bigM_adjustments(m, p)
 		end
 	end
 	for t in p.CHPTechs
-		m[:NewMaxSize][t] = maximum([p.ElecLoad[ts] for ts in m[:TimeStep]])
+		m[:NewMaxSize][t] = maximum([p.ElecLoad[ts] for ts in p.TimeStep])
 		if (m[:NewMaxSize][t] > p.MaxSize[t])
 			m[:NewMaxSize][t] = p.MaxSize[t]
 		end
@@ -274,10 +284,10 @@ function add_bigM_adjustments(m, p)
 
 	# NewMaxSizeByHour is designed to scale the right-hand side of the constraint limiting rated production in each hour to the production factor; in most cases this is unaffected unless the production factor is zero, in which case the right-hand side is set to zero.
 	#for t in p.ElectricTechs
-	#	for ts in m[:TimeStep]
+	#	for ts in p.TimeStep
 	#		NewMaxSizeByHour[t,ts] = minimum([m[:NewMaxSize][t],
 	#			sum(p.ProdFactor[t,d,ts] for d in p.Load if p.LoadProfile[d,ts] > 0)  * m[:NewMaxSize][t],
-	#			sum(p.LoadProfile[d,ts] for d in ["1R"], ts in m[:TimeStep])
+	#			sum(p.LoadProfile[d,ts] for d in ["1R"], ts in p.TimeStep)
 	#		])
 	#	end
 	#end
@@ -837,8 +847,22 @@ function add_util_fixed_and_min_charges(m, p)
 			m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] + m[:TotalExportBenefit] + m[:TotalFixedCharges])
 		)
 	else
-		@constraint(m, MinChargeAddCon, m[:MinChargeAdder] == 0)
+		m[:TotalMinCharge] = 12 * p.MonthlyMinCharge
+	end
 
+	if !(m[:model_type] == "monolith")
+		m[:TotalMinCharge] *= m[:weight]
+		m[:TotalFixedCharges] *= m[:weight]
+	end
+
+	if !(m[:model_type] == "lb")
+		if m[:TotalMinCharge] >= 1e-2
+			@constraint(m, MinChargeAddCon, m[:MinChargeAdder] >= m[:TotalMinCharge] - ( 
+				m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] + m[:TotalExportBenefit] + m[:TotalFixedCharges])
+			)
+		else
+			@constraint(m, MinChargeAddCon, m[:MinChargeAdder] == 0)
+		end
 	end
 end
 
@@ -1048,9 +1072,9 @@ function reopt_run(m, p::Parameter)
 	add_cost_function(m, p)
 
     if Obj == 1
-		@objective(m, Min, m[:REcosts])
+		@objective(m, Min, m[:REcosts] + m[:LagrangianPenalties])
 	elseif Obj == 2  # Keep SOC high
-		@objective(m, Min, m[:REcosts] - sum(m[:dvStorageSOC]["Elec",ts] for ts in m[:TimeStep])/8760.)
+		@objective(m, Min, m[:REcosts] + m[:LagrangianPenalties] - sum(m[:dvStorageSOC]["Elec",ts] for ts in m[:TimeStep])/8760.)
 	end
 
 	results["julia_reopt_constriants_seconds"] = time() - t_start
@@ -1134,6 +1158,9 @@ function reopt_results(m, p, r::Dict)
 		add_null_cold_tes_results(m, p, r)
 	end
 	add_util_results(m, p, r)
+	if m[:model_type] == "ub"
+		add_sub_obj_value_results(m, p, r)
+	end
 	return r
 end
 
@@ -1655,7 +1682,7 @@ function convert_to_axis_arrays(p, r::Dict)
 	for key in keys(r)
 		#if the value has been converted to an array for manipulation within python, then convert back to a DenseAxisArray
 		if typeof(r[key])== Array{Float64,1} && length(r[key]) == p.TimeStepCount
-			new_r[key] = JuMP.Containers.DenseAxisArray(r[key], m[:TimeStep])
+			new_r[key] = JuMP.Containers.DenseAxisArray(r[key], p.TimeStep)
 		#remove subproblem outputs
 		elseif !(key in ["obj_no_annuals","min_charge_adder_comp","sub_incentive","peak_demand_for_month","peak_ratchets","total_min_charge"])
 			new_r[key] = r[key]
