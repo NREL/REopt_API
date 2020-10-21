@@ -982,14 +982,23 @@ class CHP(Tech):
             # MICRO-TURBINE
             if self.prime_mover == 'micro_turbine':
                 # 72 F at 0 ft elevation
-                self.derate_start_temp_degF = self.derate_start_temp_degF * \
-                                              (( (7.80007*10**(-7))*site_elevation_ft**2- 0.00931037*site_elevation_ft + 71.593203) / 71.593203)
+                #self.derate_start_temp_degF = self.derate_start_temp_degF * \
+                #                              (( (7.80007*10**(-7))*site_elevation_ft**2- 0.00931037*site_elevation_ft + 71.593203) / 71.593203)
                 # 0.5 % per F at 0 ft elevation
-                self.derate_slope_pct_per_degF = self.derate_slope_pct_per_degF * \
-                                                 ((0.000000153006*site_elevation_ft - 0.005127) / -0.005127)
+                #self.derate_slope_pct_per_degF = self.derate_slope_pct_per_degF * \
+                #                                 ((0.000000153006*site_elevation_ft - 0.005127) / -0.005127)
                 # 1 at 0 ft elevation
+                #self.max_derate_factor = self.max_derate_factor * \
+                #                         (((-3.64189*10**(-9))*site_elevation_ft**2+ (7.03742*10**(-6))*site_elevation_ft + 1.002) / 1.002)
+                #
+
+                # change function form
+                self.derate_start_temp_degF = self.derate_start_temp_degF * \
+                                              ((0.000000695716691*site_elevation_ft**2 - 0.010091818622835*site_elevation_ft + 72.437513911480153) / 72.437513911480153)
+                self.derate_slope_pct_per_degF = self.derate_slope_pct_per_degF * \
+                                                 ((0.000000153005769*site_elevation_ft - 0.005127272115385) / -0.005127272115385)
                 self.max_derate_factor = self.max_derate_factor * \
-                                         (((-3.64189*10**(-9))*site_elevation_ft**2+ (7.03742*10**(-6))*site_elevation_ft + 1.002) / 1.002)
+                                         ((-0.000000003086647*site_elevation_ft**2 + 0.000007180801741*site_elevation_ft + 1.008418711476466) / 1.008418711476466)
 
                 for i in range(8760 * self.time_steps_per_hour): #can an if statement be in that other type of looping method??
                     if oa_temp_degF[i] <= self.derate_start_temp_degF:
@@ -1019,17 +1028,25 @@ class CHP(Tech):
                             chp_power_derate[i] = 1.0 * self.max_derate_factor - \
                                               self.derate_slope_pct_per_degF * (oa_temp_degF[i] - self.derate_start_temp_degF)
             elif self.prime_mover == 'combustion_turbine':
-                # function of site_elevation_ft CT's (find data for this!!!!)
                 # CT derate does not take the form like other prime movers (ie do not use 3 generic params)
-                # use average CF for size range of Solar Turbines (could break up into size classes later)
                 # Be careful of info: cannot share power derate info publicly ....use EPA data instead
-                p1 = -0.000010167585638
-                p2 = -0.002412376387979
-                p3 = 1.167666148633726
+
+                # Average Solar de-rate (from Gregg)
+                #p1 = -0.000010167585638
+                #p2 = -0.002412376387979
+                #p3 = 1.167666148633726
+                # Gregg's relationship
+                #cf_altitude = 1 - (0.1245 * site_elevation_ft / 3.281 / 1000) + 0.0068*(site_elevation_ft / 3.281 / 1000)**2
+
+                #EPA de-rate (Taurus 70)
+                p1 = -0.000013122282921
+                p2 = -0.003019828034576
+                p3 = 1.218517247421827
+
+                #EPA elevation de-rate (linearly extrapolated past 5000 ft)
+                cf_altitude = (-0.00004)*site_elevation_ft + 1
+
                 x = oa_temp_degF
-
-                cf_altitude = 1 - (0.1245 * site_elevation_ft / 3.281 / 1000) + 0.0068*(site_elevation_ft / 3.281 / 1000)**2
-
                 chp_power_derate = [ cf_altitude*(p1*x[i]**2 + p2*x[i] + p3) for i in range(8760 * self.time_steps_per_hour)]
             elif self.prime_mover == 'fuel_cell':
                 # do not know exactly what de-rate as a function of elevation looks like for FC's ......
@@ -1123,10 +1140,11 @@ class CHP(Tech):
                     cf_fb = np.ones(8760 * self.time_steps_per_hour)  # initialize
                     cf_tp = np.ones(8760 * self.time_steps_per_hour)  # initialize
                 else:
-                    cf_fb = [0.9529*np.exp(0.0008249*t_amb_f[i]) - (7.496*(10**(-6)))*np.exp(0.06726*t_amb_f[i]) \
-                         for i in range(8760 * self.time_steps_per_hour)]
-                    cf_tp = [0.005852 * t_amb_f[i] + 0.6615 \
-                         for i in range(8760 * self.time_steps_per_hour)]
+                    #cf_fb = [0.9529*np.exp(0.0008249*t_amb_f[i]) - (7.496*(10**(-6)))*np.exp(0.06726*t_amb_f[i]) \
+                     #    for i in range(8760 * self.time_steps_per_hour)] # this func breaks down after 120 F
+                        #fine tuned func (acts linearly past 120 F, cold temp efficiency reduced slightly)
+                    cf_fb = [0.0007071*t_amb_f[i] + 0.9587 for i in range(8760 * self.time_steps_per_hour)]
+                    cf_tp = [0.005852 * t_amb_f[i] + 0.6615 for i in range(8760 * self.time_steps_per_hour)]
             elif self.prime_mover == 'recip_engine':
                 # see thesis (these can change but for sake of generality and lack of sensitivity, it seems best to ...
                 # keep these corrections to values of 1)
