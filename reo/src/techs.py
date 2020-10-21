@@ -979,27 +979,32 @@ class CHP(Tech):
             # TODO: implement derate factor array based on input temperature profile, with derate_max from above TODO
             chp_power_derate = [1.0 for _ in range(8760 * self.time_steps_per_hour)]  # initialize
             oa_temp_degF = np.array(oa_temp_degF)
-            # MICRO-TURBINE
+
             if self.prime_mover == 'micro_turbine':
+            # create the de-rate curve for the corresponding elevation
                 # 72 F at 0 ft elevation
-                #self.derate_start_temp_degF = self.derate_start_temp_degF * \
-                #                              (( (7.80007*10**(-7))*site_elevation_ft**2- 0.00931037*site_elevation_ft + 71.593203) / 71.593203)
-                # 0.5 % per F at 0 ft elevation
-                #self.derate_slope_pct_per_degF = self.derate_slope_pct_per_degF * \
-                #                                 ((0.000000153006*site_elevation_ft - 0.005127) / -0.005127)
-                # 1 at 0 ft elevation
-                #self.max_derate_factor = self.max_derate_factor * \
-                #                         (((-3.64189*10**(-9))*site_elevation_ft**2+ (7.03742*10**(-6))*site_elevation_ft + 1.002) / 1.002)
-                #
-
-                # change function form
+                p1 = -0.000000000039870
+                p2 = 0.000001163139968
+                p3 = -0.011086702413053
+                p4 = 72.568538058825453
                 self.derate_start_temp_degF = self.derate_start_temp_degF * \
-                                              ((0.000000695716691*site_elevation_ft**2 - 0.010091818622835*site_elevation_ft + 72.437513911480153) / 72.437513911480153)
+                        ((p1*site_elevation_ft**3 + p2*site_elevation_ft**2 + p3*site_elevation_ft + p4) / p4)
+                # 0.5 % per F at 0 ft elevation
+                p1 =  0.000000153005769
+                p2 = -0.005127272115385
                 self.derate_slope_pct_per_degF = self.derate_slope_pct_per_degF * \
-                                                 ((0.000000153005769*site_elevation_ft - 0.005127272115385) / -0.005127272115385)
-                self.max_derate_factor = self.max_derate_factor * \
-                                         ((-0.000000003086647*site_elevation_ft**2 + 0.000007180801741*site_elevation_ft + 1.008418711476466) / 1.008418711476466)
+                                        ((p1*site_elevation_ft + p2) / p2)
+                # 1 at 0 ft elevation
+                p1 = -0.000000003072106
+                p2 = 0.000005739931623
+                p3 = 1.010408869405444
+                if site_elevation_ft <= 3000: # [ft]
+                    self.max_derate_factor = self.max_derate_factor*1 # (equal to 1)
+                else:
+                    self.max_derate_factor = self.max_derate_factor * \
+                        (( p1*site_elevation_ft**2 + p2*site_elevation_ft + p3) / p3)
 
+                #calculate hourly power derate as a function of temperature
                 for i in range(8760 * self.time_steps_per_hour): #can an if statement be in that other type of looping method??
                     if oa_temp_degF[i] <= self.derate_start_temp_degF:
                         chp_power_derate[i] = 1.0 * self.max_derate_factor
