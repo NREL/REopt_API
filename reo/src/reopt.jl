@@ -781,7 +781,7 @@ function add_tou_demand_charge_constraints(m, p)
 		sum( m[:dvGridPurchase][u, ts] for u in p.PricingTier )
 	)
 
-	if p.DemandLookbackRange != 0  # then the dvPeakDemandELookback varies by month
+	if p.DemandLookbackRange != 0 && m[:model_type] == "monolith" # then the dvPeakDemandELookback varies by month
 
 		##Constraint (12e): dvPeakDemandELookback is the highest peak demand in DemandLookbackMonths
 		for mth in m[:Month]
@@ -810,7 +810,7 @@ function add_tou_demand_charge_constraints(m, p)
 			p.DemandLookbackPercent * m[:dvPeakDemandELookback][mth]
 		)
 
-	else  # dvPeakDemandELookback does not vary by month
+	elseif m[:model_type] == "monolith" # dvPeakDemandELookback does not vary by month
 
 		##Constraint (12e): dvPeakDemandELookback is the highest peak demand in DemandLookbackMonths
 		@constraint(m, [lm in p.DemandLookbackMonths],
@@ -820,7 +820,7 @@ function add_tou_demand_charge_constraints(m, p)
 		##Constraint (12f): Ratchet peak demand charge is bounded below by lookback
 		@constraint(m, [mth in m[:Month]],
 			sum( m[:dvPeakDemandEMonth][mth, n] for n in p.DemandMonthsBin ) >=
-			p.DemandLookbackPercent * m[:dvPeakDemandELookback][1]
+			p.DemandLookbackPercent * m[:dvPeakDemandELookback]
 		)
 	end
 
@@ -1136,7 +1136,7 @@ end
 function reopt_run(m, p::Parameter)
 	m[:model_type] = "monolith"
 	results = reopt_build(m, p)
-	results = reopt_solve(m, p, results, false)
+	results = reopt_solve(m, p, results)
 	return results
 	
 end

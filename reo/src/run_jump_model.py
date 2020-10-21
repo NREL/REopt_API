@@ -325,7 +325,7 @@ def solve_subproblems(models, reopt_param, results_dicts, update):
 
 
 def solve_subproblem(kwargs):
-    kwargs["r"] = julia.Main.reopt_solve(kwargs["m"], kwargs["p"], kwargs["r"], kwargs["u"])
+    kwargs["r"] = julia.Main.reopt_solve(kwargs["m"], kwargs["p"], kwargs["r"])
 
 
 def fix_sizing_decisions(ub_models, reopt_param, system_sizes):
