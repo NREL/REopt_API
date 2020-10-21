@@ -503,6 +503,73 @@ class GeneratorModel(models.Model):
         obj.save()
         return obj
 
+class NuclearModel(models.Model):
+    # Inputs
+    run_uuid = models.UUIDField(unique=True)
+    existing_kw = models.FloatField(null=True, blank=True, default=0)
+    min_kw = models.FloatField(default=0)
+    max_kw = models.FloatField(null=True, blank=True)
+    installed_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True,)
+    om_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True,)
+    om_cost_us_dollars_per_kwh = models.FloatField(null=True, blank=True,)
+    diesel_fuel_cost_us_dollars_per_gallon = models.FloatField(null=True, blank=True)
+    fuel_slope_gal_per_kwh = models.FloatField(null=True, blank=True,)
+    fuel_intercept_gal_per_hr = models.FloatField(null=True, blank=True,)
+    fuel_avail_gal = models.FloatField(null=True, blank=True,)
+    min_turn_down_pct = models.FloatField(null=True, blank=True)
+    generator_only_runs_during_grid_outage = models.BooleanField(default=True)
+    generator_sells_energy_back_to_grid = models.BooleanField(default=False)
+    macrs_option_years = models.IntegerField(null=True, blank=True)
+    macrs_bonus_pct = models.FloatField(null=True, blank=True)
+    macrs_itc_reduction = models.FloatField(null=True, blank=True)
+    federal_itc_pct = models.FloatField(null=True, blank=True)
+    state_ibi_pct = models.FloatField(null=True, blank=True)
+    state_ibi_max_us_dollars = models.FloatField(null=True, blank=True)
+    utility_ibi_pct = models.FloatField(null=True, blank=True)
+    utility_ibi_max_us_dollars = models.FloatField(null=True, blank=True)
+    federal_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+    state_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+    state_rebate_max_us_dollars = models.FloatField(null=True, blank=True)
+    utility_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+    utility_rebate_max_us_dollars = models.FloatField(null=True, blank=True)
+    pbi_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
+    pbi_max_us_dollars = models.FloatField(null=True, blank=True)
+    pbi_years = models.FloatField(null=True, blank=True)
+    pbi_system_max_kw = models.FloatField(null=True, blank=True)
+    emissions_factor_lb_CO2_per_gal = models.FloatField(null=True, blank=True)
+
+    # Outputs
+    fuel_used_gal = models.FloatField(null=True, blank=True)
+    fuel_used_gal_bau = models.FloatField(null=True, blank=True)
+    size_kw = models.FloatField(null=True, blank=True)
+    average_yearly_energy_produced_kwh = models.FloatField(null=True, blank=True)
+    average_yearly_energy_exported_kwh = models.FloatField(null=True, blank=True)
+    year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)
+    year_one_power_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True,
+                                                     blank=True)
+    year_one_to_battery_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_to_grid_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    year_one_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
+    year_one_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    total_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    total_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
+    total_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    existing_gen_year_one_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    existing_gen_year_one_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
+    existing_gen_total_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    existing_gen_total_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
+    existing_gen_total_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
+    year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
+
+    @classmethod
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
+        obj.save()
+        return obj
+
 
 class MessageModel(models.Model):
     """

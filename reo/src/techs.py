@@ -304,3 +304,72 @@ class Generator(Tech):
             m = 0.0657
             b = 0.004
         return m, b
+
+class Nuclear(Tech):
+
+    def __init__(self, dfm, run_uuid, min_kw, max_kw, existing_kw, fuel_slope_gal_per_kwh, fuel_intercept_gal_per_hr,
+                 fuel_avail_gal, min_turn_down_pct, outage_start_hour=None, outage_end_hour=None, time_steps_per_hour=1,
+                 fuel_avail_before_outage_pct=1, emissions_factor_lb_CO2_per_gal=None, **kwargs):
+        super(Generator, self).__init__(min_kw=min_kw, max_kw=max_kw, **kwargs)
+        """
+        A modification of the generator class that is designed to size nuclear components either SMR or
+        traditional nuclear applications.
+        
+        Note that default burn rate, slope, and min/max sizes are handled in ValidateNestedInput.
+        """
+
+        self.fuel_slope = fuel_slope_gal_per_kwh
+        self.fuel_intercept = fuel_intercept_gal_per_hr
+        self.fuel_avail = fuel_avail_gal
+        self.min_turn_down = min_turn_down_pct
+        self.reopt_class = 'GENERATOR'
+        self.outage_start_hour = outage_start_hour
+        self.outage_end_hour = outage_end_hour
+        self.time_steps_per_hour = time_steps_per_hour
+        self.generator_only_runs_during_grid_outage = kwargs['generator_only_runs_during_grid_outage']
+        self.fuel_avail_before_outage_pct = fuel_avail_before_outage_pct
+        self.generator_sells_energy_back_to_grid = kwargs['generator_sells_energy_back_to_grid']
+        self.diesel_fuel_cost_us_dollars_per_gallon = kwargs['diesel_fuel_cost_us_dollars_per_gallon']
+        self.derate = 0.0
+        self.loads_served = ['retail', 'storage']
+        self.incentives = Incentives(**kwargs)
+        if max_kw < min_kw:
+            min_kw = max_kw
+        self.min_kw = min_kw
+        self.max_kw = max_kw
+        self.existing_kw = existing_kw
+        self.emissions_factor_lb_CO2_per_gal = emissions_factor_lb_CO2_per_gal
+
+        # no net-metering for gen so it can only sell in "wholesale" bin (and not "export" bin)
+        if self.generator_sells_energy_back_to_grid:
+            self.loads_served.append('wholesale')
+
+        dfm.add_generator(self)
+
+    @property
+    def prod_factor(self):
+        gen_prod_factor = [0.0 for _ in range(8760*self.time_steps_per_hour)]
+
+        if self.generator_only_runs_during_grid_outage:
+            if self.outage_start_hour is not None and self.outage_end_hour is not None:
+                gen_prod_factor[self.outage_start_hour:self.outage_end_hour] \
+                    = [1]*(self.outage_end_hour - self.outage_start_hour)
+
+        else:
+            gen_prod_factor = [1] * len(gen_prod_factor)
+
+        return gen_prod_factor
+
+    @staticmethod
+    def default_fuel_burn_rate(size_kw):
+        """
+        Based off of size_kw, we have default (fuel_slope_gal_per_kwh, fuel_intercept_gal_per_hr) pairs
+        :return: (fuel_slope_gal_per_kwh, fuel_intercept_gal_per_hr)
+        """
+        if size_kw <= 50000:
+            m = 0.068
+            b = 0.0125
+        else:
+            m = 0.0657
+            b = 0.004
+        return m, b
