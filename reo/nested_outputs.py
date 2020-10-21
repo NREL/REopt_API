@@ -640,6 +640,124 @@ nested_output_definitions = {
                   "description": "Total equivalent pounds of carbon dioxide emitted from BAU generator use in the first year.",
                   "units": "lb CO2"
                 }
+            },
+
+              "Nuclear": {
+                "size_kw": {
+                  "type": float,
+                  "description": "Optimal diesel generator system size",
+                  "units": "kW"
+                },
+                "fuel_used_gal": {
+                  "type": float,
+                  "description": "Generator fuel used to meet critical load during grid outage.",
+                  "units": "US gallons"
+                },
+                "fuel_used_gal_bau": {
+                  "type": float,
+                  "description": "Generator fuel used to meet critical load during grid outage in bau case.",
+                  "units": "US gallons"
+                },
+                "average_yearly_energy_produced_kwh": {
+                  "type": float,
+                  "description": "Average annual energy produced by the diesel generator over one year",
+                  "units": "kWh"
+                },
+                "average_yearly_energy_exported_kwh": {
+                  "type": float,
+                  "description": "Average annual energy exported by the diesel generator",
+                  "units": "kWh"
+                },
+                "year_one_energy_produced_kwh": {
+                  "type": float,
+                  "description": "Year one energy produced by the diesel generator",
+                  "units": "kWh"
+                },
+                "year_one_power_production_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one diesel generator power production time series",
+                  "units": "kW"
+                },
+                "year_one_to_battery_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of diesel generator charging",
+                  "units": "kW"
+                },
+                "year_one_to_load_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one generator to load time series.",
+                  "units": "kW"
+                },
+                "year_one_to_grid_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of diesel generator exporting to grid",
+                  "units": "kW"
+                },
+                "existing_gen_total_fixed_om_cost_us_dollars": {
+                  "type": float,
+                  "description": "Lifetime fixed O&M cost for existing diesel generator system in bau case.",
+                  "units": "$"
+                },
+                "existing_gen_total_variable_om_cost_us_dollars": {
+                  "type": float,
+                  "description": "Lifetime variable (based on kwh produced) O&M cost for existing diesel generator system.",
+                  "units": "$"
+                },
+                "existing_gen_year_one_variable_om_cost_us_dollars": {
+                  "type": float,
+                  "description": "Year one variable (based on kwh produced) O&M cost for existing diesel generator system.",
+                  "units": "$"
+                },
+                "total_fixed_om_cost_us_dollars": {
+                  "type": float,
+                  "description": "Total lifecycle fixed (based on kW capacity) O&M cost for existing + recommended diesel generator system.",
+                  "units": "$"
+                },
+                "total_variable_om_cost_us_dollars": {
+                  "type": float,
+                  "description": "Total lifecycle variable (based on kWh produced) O&M cost for existing + recommended diesel generator system",
+                  "units": "$"
+                },
+                "year_one_variable_om_cost_us_dollars": {
+                  "type": float,
+                  "description": "Year one variable (based on kwh produced) O&M cost for existing + recommended diesel generator system",
+                  "units": "$"
+                },
+                "year_one_fixed_om_cost_us_dollars": {
+                  "type": float,
+                  "description": "Year one fixed (based on kW capacity) O&M cost for existing + recommended diesel generator system.",
+                  "units": "$"
+                },
+                "total_fuel_cost_us_dollars": {
+                  "type": float,
+                  "description": "Total lifecycle fuel cost for existing + newly recommended diesel generator system",
+                  "units": "$"
+                },
+                "year_one_fuel_cost_us_dollars": {
+                  "type": float,
+                  "description": "Year one fuel cost for existing + newly recommended diesel generator system",
+                  "units": "$"
+                },
+                "existing_gen_total_fuel_cost_us_dollars": {
+                  "type": float,
+                  "description": "Total lifecycle fuel cost for existing diesel generator system",
+                  "units": "$"
+                },
+                "existing_gen_year_one_fuel_cost_us_dollars": {
+                  "type": float,
+                  "description": "Year one fuel cost for existing diesel generator system",
+                  "units": "$"
+                },
+                "year_one_emissions_lb_C02": {
+                  "type": int,
+                  "description": "Total equivalent pounds of carbon dioxide emitted from generator use in the first year.",
+                  "units": "lb CO2"
+                },
+                "year_one_emissions_bau_lb_C02": {
+                  "type": int,
+                  "description": "Total equivalent pounds of carbon dioxide emitted from BAU generator use in the first year.",
+                  "units": "lb CO2"
+                }
             }
           }
         }

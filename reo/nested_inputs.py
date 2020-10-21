@@ -1107,6 +1107,218 @@ nested_input_definitions = {
           "type": "float",
           "description": "Pounds of carbon dioxide emitted per gallon of fuel burned"
          }
+      },
+
+      "Nuclear": {
+        "existing_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e5,
+          "default": 0.0,
+          "description": "Existing nuclear reactor size"
+        },
+        "min_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 0.0,
+          "description": "Minimum nuclear reactor size constraint for optimization"
+        },
+        "max_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 1.0e9,
+          "description": "Maximum nuclear reactor size constraint for optimization. Set to zero to disable gen"
+        },
+        "installed_cost_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e5,
+          "default": 4500.0,
+          "description": "Installed nuclear reactor cost in $/kW"
+        },
+        "om_cost_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e3,
+          "default": 101.0,
+          "description": "Annual nuclear reactor fixed operations and maintenance costs in $/kW"
+        },
+        "om_cost_us_dollars_per_kwh": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e3,
+          "default": 0.02,
+          "description": "Nuclear reactor per unit production (variable) operations and maintenance costs in $/kWh"
+        },
+        "diesel_fuel_cost_us_dollars_per_gallon": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e2,
+          "default": 7.0,
+          "description": "Uranium cost as a proxy in $/gallon"
+        },
+        "fuel_slope_gal_per_kwh": {
+          "type": "float",
+          "min": 0.0,
+          "max": 10,
+          "default": 0.001,
+          "description": "Nuclear fuel burn rate in gallons/kWh, gallons used as a proxy to estimate $/MWh nuclear fuel costs."
+        },
+        "fuel_intercept_gal_per_hr": {
+          "type": "float",
+          "min": 0.0,
+          "max": 10,
+          "default": 0.0,
+          "description": "Nuclear fuel consumption curve y-intercept in gallons per hour."
+        },
+        "fuel_avail_gal": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 1.0e9,
+          "description": "On-site nuclear fuel available in gallons, assumed infinite for nuclear."
+        },
+        "min_turn_down_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "description": "Minimum nuclear reactor loading in percent of capacity (size_kw)."
+        },
+        "nuclear_only_runs_during_grid_outage": {
+          "default": True,
+          "type": "bool",
+          "description": "If there is existing nuclear reactor, must specify whether it should run only during grid outage or all the time in the bau case."
+        },
+        "nuclear_sells_energy_back_to_grid": {
+          "default": True,
+          "type": "bool",
+          "description": "If there is existing nuclear reactor, must specify whether it should run only during grid outage or all the time in the bau case."
+        },
+        "macrs_option_years": {
+          "type": "int",
+          "restrict_to": macrs_schedules,
+          "default": 0,
+          "description": "MACRS schedule for financial analysis. Set to zero to disable"
+        },
+        "macrs_bonus_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 1.0,
+          "description": "Percent of upfront project costs to depreciate under MACRS"
+        },
+        "macrs_itc_reduction": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "description": "Percent of the full ITC that depreciable basis is reduced by"
+        },
+        "federal_itc_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "description": "Percent federal capital cost incentive"
+        },
+        "state_ibi_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "description": "Percent of upfront project costs to discount under state investment based incentives"
+        },
+        "state_ibi_max_us_dollars": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e10,
+          "default": 0.0,
+          "description": "Maximum rebate allowed under state investment based incentives"
+        },
+        "utility_ibi_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "description": "Percent of upfront project costs to discount under utility investment based incentives"
+        },
+        "utility_ibi_max_us_dollars": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e10,
+          "default": 0.0,
+          "description": "Maximum rebate allowed under utility investment based incentives"
+        },
+        "federal_rebate_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 0.0,
+          "description": "Federal rebate based on installed capacity"
+        },
+        "state_rebate_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 0.0,
+          "description": "State rebates based on installed capacity"
+        },
+        "state_rebate_max_us_dollars": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e10,
+          "default": 0.0,
+          "description": "Maximum rebate allowed under state rebates"
+        },
+        "utility_rebate_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 0.0,
+          "description": "Utility rebates based on installed capacity"
+        },
+        "utility_rebate_max_us_dollars": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e10,
+          "default": 0.0,
+          "description": "Maximum rebate allowed under utility rebates"
+        },
+        "pbi_us_dollars_per_kwh": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 0.0,
+          "description": "Production-based incentive value"
+        },
+        "pbi_max_us_dollars": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 0.0,
+          "description": "Maximum rebate allowed under utility production-based incentives"
+        },
+        "pbi_years": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 0.0,
+          "description": "Duration of production-based incentives from installation date"
+        },
+        "pbi_system_max_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 0.0,
+          "description": "Maximum system size for which production-based incentives apply"
+        },
+         "emissions_factor_lb_CO2_per_gal": {
+          "type": "float",
+          "description": "Pounds of carbon dioxide emitted per gallon of fuel burned"
+         }
       }
     }
   }
@@ -1236,6 +1448,35 @@ def flat_to_nested(i):
                   "om_cost_us_dollars_per_kwh": i.get("gen_om_kwh"),
                   "generator_only_runs_during_grid_outage": i.get("gen_during_grid_outage"),
                   "generator_sells_energy_back_to_grid": i.get("gen_sells_energy_to_grid"),
+                  "macrs_option_years": i.get("gen_macrs_schedule"),
+                  "macrs_bonus_pct": i.get("gen_macrs_bonus_fraction"),
+                  "macrs_itc_reduction": i.get("gen_macrs_itc_reduction"),
+                  "federal_itc_pct": i.get("gen_itc_federal"),
+                  "state_ibi_pct": i.get("gen_ibi_state"),
+                  "state_ibi_max_us_dollars": i.get("gen_ibi_state_max"),
+                  "utility_ibi_pct": i.get("gen_ibi_utility"),
+                  "utility_ibi_max_us_dollars": i.get("gen_ibi_utility_max"),
+                  "federal_rebate_us_dollars_per_kw": i.get("gen_rebate_federal"),
+                  "state_rebate_us_dollars_per_kw": i.get("gen_rebate_state"),
+                  "state_rebate_max_us_dollars": i.get("gen_rebate_state_max"),
+                  "utility_rebate_us_dollars_per_kw": i.get("gen_rebate_utility"),
+                  "utility_rebate_max_us_dollars": i.get("gen_rebate_utility_max"),
+                  "pbi_us_dollars_per_kwh": i.get("gen_pbi"),
+                  "pbi_max_us_dollars": i.get("gen_pbi_max"),
+                  "pbi_years": i.get("gen_pbi_years"),
+                  "pbi_system_max_kw": i.get("gen_pbi_system_max"),
+                },
+
+              "Nuclear":
+                {
+                  "min_kw": i.get("gen_kw_min"),
+                  "max_kw": i.get("gen_kw_max"),
+                  "existing_kw": i.get("gen_existing_kw"),
+                  "installed_cost_us_dollars_per_kw": i.get("gen_cost"),
+                  "om_cost_us_dollars_per_kw": i.get("gen_om_kw"),
+                  "om_cost_us_dollars_per_kwh": i.get("gen_om_kwh"),
+                  "nuclear_only_runs_during_grid_outage": i.get("gen_during_grid_outage"),
+                  "nuclear_sells_energy_back_to_grid": i.get("gen_sells_energy_to_grid"),
                   "macrs_option_years": i.get("gen_macrs_schedule"),
                   "macrs_bonus_pct": i.get("gen_macrs_bonus_fraction"),
                   "macrs_itc_reduction": i.get("gen_macrs_itc_reduction"),
