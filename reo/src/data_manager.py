@@ -58,6 +58,7 @@ class DataManager:
         self.wind = None
         self.windnm = None
         self.generator = None
+        self.nuclear = None
         self.util = None
         self.storage = None
         self.site = None
