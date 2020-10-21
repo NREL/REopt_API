@@ -1208,8 +1208,12 @@ function add_null_generator_results(m, p, r::Dict)
 end
 
 function add_null_wind_results(m, p, r::Dict)
-	r["WINDtoLoad"] = []
+	r["WINDtoBatt"] = []
 	r["WINDtoGrid"] = []
+	r["WINDtoCurtail"] = []
+	r["WINDtoLoad"] = []
+	r["year_one_wind_energy_produced"] = 0.0
+	r["average_wind_energy_produced"] = 0.0
 	nothing
 end
 
@@ -1354,11 +1358,13 @@ function add_wind_results(m, p, r::Dict)
 	try
 		@expression(m, WINDtoBatt[ts in m[:TimeStep]],
 	            sum(sum(m[:dvProductionToStorage][b, t, ts] for t in m[:WindTechs]) for b in p.ElecStorage))
+		@expression(m, WINDtoCurtail[ts in m[:TimeStep]],
+				sum(m[:dvProductionToGrid][t,u,ts] for t in m[:WindTechs], u in p.CurtailmentTiers))
 		@expression(m, WINDtoGrid[ts in m[:TimeStep]],
-				sum(m[:dvProductionToGrid][t,u,ts] for t in m[:WindTechs], u in p.SalesTiers))
+				sum(m[:dvProductionToGrid][t,u,ts] for t in m[:WindTechs], u in p.SalesTiersByTech[t]) - WINDtoCurtail[ts])
 		@expression(m, WINDtoLoad[ts in m[:TimeStep]],
 				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
-					for t in m[:WindTechs]) - WINDtoGrid[ts] - WINDtoBatt[ts] )
+					for t in m[:WindTechs]) - WINDtoGrid[ts] - WINDtoBatt[ts] - WINDtoCurtail[ts])
 		m[:Year1WindProd] = @expression(m, 
 			p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] 
 				for t in m[:WindTechs], ts in m[:TimeStep])
@@ -1370,7 +1376,9 @@ function add_wind_results(m, p, r::Dict)
 		catch
 	end
 	r["wind_kw"] = round(value(sum(m[:dvSize][t] for t in m[:WindTechs])), digits=4)	
+	r["WINDtoBatt"] = round.(value.(m[:WINDtoBatt]), digits=3)
 	r["WINDtoGrid"] = round.(value.(m[:WINDtoGrid]), digits=3)	
+	r["WINDtoCurtail"] = round.(value.(m[:WINDtoCurtail]), digits=3)
 	r["WINDtoLoad"] = round.(value.(m[:WINDtoLoad]), digits=3)	
 	r["year_one_wind_energy_produced"] = round(value(m[:Year1WindProd]), digits=0)
 	r["average_wind_energy_produced"] = round(value(m[:AverageWindProd]), digits=0)
