@@ -33,6 +33,7 @@ function add_continuous_variables(m, p)
 		dvAbsorptionChillerDemand[p.TimeStep] >= 0  #X^{ac}_h: Thermal power consumption by absorption chiller in time step h
 		dvElectricChillerDemand[p.TimeStep] >= 0  #X^{ec}_h: Electrical power consumption by electric chiller in time step h
 		dvOMByHourBySizeCHP[p.Tech, p.TimeStep] >= 0
+		dvTemperatures[p.TempNodes, p.TimeStep] #>= 0
     end
 end
 
@@ -227,6 +228,13 @@ function add_bigM_adjustments(m, p)
 		if (m[:NewMaxSize][t] > p.MaxSize[t])
 			m[:NewMaxSize][t] = p.MaxSize[t]
 		end
+	end
+
+	for t in p.FlexTechs
+		m[:NewMaxSize][t] = p.MaxSize[t] #maximum([p.ElecLoad[ts] for ts in p.TimeStep])
+# 		if (m[:NewMaxSize][t] > p.MaxSize[t])
+# 			m[:NewMaxSize][t] = p.MaxSize[t]
+# 		end
 	end
 
 	# NewMaxSizeByHour is designed to scale the right-hand side of the constraint limiting rated production in each hour to the production factor; in most cases this is unaffected unless the production factor is zero, in which case the right-hand side is set to zero.
@@ -491,6 +499,7 @@ function add_prod_incent_constraints(m, p)
 		m[:dvProdIncent][t] <= p.TimeStepScaling * p.ProductionIncentiveRate[t] * p.pwf_prod_incent[t] * p.two_party_factor *
 			sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] for ts in p.TimeStep)
 	)
+
 	##Constraint (6b): System size max to achieve production incentive
 	@constraint(m, IncentBySystemSizeCon[t in p.Tech],
 		m[:dvSize][t]  <= p.MaxSizeForProdIncent[t] + m[:NewMaxSize][t] * (1 - m[:binProdIncent][t]))
@@ -566,10 +575,21 @@ function add_tech_size_constraints(m, p)
 	@constraint(m, SegmentSelectCon[c in p.TechClass, t in p.TechsInClass[c], k in p.Subdivision],
 		sum(m[:binSegmentSelect][t,k,s] for s in 1:p.SegByTechSubdivision[k,t]) <= m[:binSingleBasicTech][t,c]
 	)
+
+	##Flex loads
+	if !isempty(p.FlexTechs)
+		@constraint(m, FlexTechProductionCon[t in p.FlexTechs, ts in p.TimeStep],
+			m[:dvRatedProduction][t,ts] <= m[:dvSize][t]
+		)
+	end
 end
 
 
 function add_load_balance_constraints(m, p)
+
+	m[:ElecPenalty] = @expression(m, [ts in p.TimeStep],
+		sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] * p.OperatingPenalty[t,ts] for t in p.Tech))
+
 	@constraint(m, ElecLoadBalanceCon[ts in p.TimeStepsWithGrid],
 		sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] for t in p.ElectricTechs) +
 		sum( m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage ) +
@@ -578,7 +598,7 @@ function add_load_balance_constraints(m, p)
 			sum(m[:dvProductionToGrid][t,u,ts] for u in p.SalesTiersByTech[t]) for t in p.ElectricTechs) +
 		sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers) + m[:dvGridToStorage][ts] +
 		 sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
-		p.ElecLoad[ts]
+		p.ElecLoad[ts] + m[:ElecPenalty][ts]
 	)
 
 	##Constraint (8b): Electrical Load Balancing without Grid
@@ -819,6 +839,27 @@ function add_chp_hourly_opex_charges(m, p)
 					)
 end
 
+function add_flex_load_constraints(m, p)
+
+     @constraint(m, [tn in p.TempNodes, ts in UnitRange(2:length(p.TimeStep))],
+	 	m[:dvTemperatures][tn, ts] == sum(m[:dvTemperatures][u, ts-1] * p.AMatrix[tn, u] for u in p.TempNodes) +
+ 		sum(p.UInputs[i, ts-1] * p.BMatrix[tn, i] for i in [1:p.SpaceNode-1; p.SpaceNode+1:p.InputNodesCount]) +
+		(p.UInputs[p.SpaceNode,ts-1] - p.ProductionFactor["AC", ts-1] * m[:dvRatedProduction]["AC",ts-1] * p.SHR[ts-1] +
+ 		p.ProductionFactor["HP", ts-1] * m[:dvRatedProduction]["HP",ts-1]) * p.BMatrix[tn, p.SpaceNode]
+     )
+	#initialize state space
+	@constraint(m, [n in p.TempNodes],
+        m[:dvTemperatures][n, 1] == p.InitTemperatures[n]
+	)
+	@constraint(m, [ts in p.TimeStep],
+        m[:dvTemperatures][p.SpaceNode, ts] >=20.55
+    )
+	@constraint(m, [ts in p.TimeStep],
+        m[:dvTemperatures][p.SpaceNode, ts] <=23.35
+    )
+
+end
+
 function add_cost_function(m, p)
 	m[:REcosts] = @expression(m,
 
@@ -974,6 +1015,10 @@ function reopt_run(m, p::Parameter)
 		add_chp_hourly_opex_charges(m, p)
 	end
 
+	if p.UseFlexLoadsModel
+		add_flex_load_constraints(m, p)
+	end
+
 	add_cost_function(m, p)
 
     if Obj == 1
@@ -1062,6 +1107,11 @@ function reopt_results(m, p, r::Dict)
 	else
 		add_null_cold_tes_results(m, p, r)
 	end
+	if p.UseFlexLoadsModel
+		add_flex_load_results(m, p, r)
+	else
+		add_null_flex_load_results(m, p, r)
+	end
 	add_util_results(m, p, r)
 	return r
 end
@@ -1147,6 +1197,15 @@ function add_null_cold_tes_results(m, p, r::Dict)
 	r["cold_tes_size_kwht"] = 0.0
 	r["cold_tes_thermal_production_series"] = []
 	r["cold_tes_pct_soc_series"] = []
+	nothing
+end
+
+function add_null_flex_load_results(m, p, r::Dict)
+	r["indoor_temperatures"] = []
+	r["ac_size_kw"] = 0.0
+	r["ac_production_series"] = []
+	r["hp_size_kw"] = 0.0
+	r["hp_production_series"] = []
 	nothing
 end
 
@@ -1445,6 +1504,22 @@ function add_cold_tes_results(m, p, r::Dict)
 	r["cold_tes_thermal_production_series"] = round.(value.(ColdTESDischargeSeries), digits=5)
 	@expression(m, ColdTESsoc[ts in p.TimeStep], sum(m[:dvStorageSOC][b,ts] for b in p.ColdTES))
 	r["cold_tes_pct_soc_series"] = round.(value.(ColdTESsoc) / value(ColdTESSizeKWHT), digits=5)
+	nothing
+end
+
+function add_flex_load_results(m, p, r::Dict)
+	@expression(m, IndoorTemperatures[ts in p.TimeStep], m[:dvTemperatures][p.SpaceNode, ts])
+	r["indoor_temperatures"] = round.(value.(IndoorTemperatures), digits=4)
+	r["ac_size_kw"] = round(value(m[:dvSize]["AC"]), digits=4)
+	@expression(m, ACProduction[ts in p.TimeStep],
+				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] for t in ["AC"])
+				)
+	r["ac_production_series"] = round.(value.(ACProduction), digits=3)
+	r["hp_size_kw"] = round(value(m[:dvSize]["HP"]), digits=4)
+	@expression(m, HPProduction[ts in p.TimeStep],
+				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] for t in ["HP"])
+				)
+	r["hp_production_series"] = round.(value.(HPProduction), digits=3)
 	nothing
 end
 

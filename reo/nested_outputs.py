@@ -959,7 +959,38 @@ nested_output_definitions = {
                   "description": "Year one hourly time series of hot TES state of charge",
                   "units": "%"
                 }
-            }
+              },
+              "RC": {
+                "temperatures_degree_C": {
+                  "type": list_of_float,
+                  "description": "Hourly time series of indoor temperature",
+                  "units": "Celsius"
+                }
+              },
+              "FlexTechAC": {
+                "size_kw": {
+                  "type": float,
+                  "description": "AC size",
+                  "units": "kW"
+                },
+                "year_one_power_production_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one AC power production time series",
+                  "units": "kW"
+                }
+              },
+              "FlexTechHP": {
+                "size_kw": {
+                  "type": float,
+                  "description": "HP size",
+                  "units": "kW"
+                },
+                "year_one_power_production_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one HP power production time series",
+                  "units": "kW"
+                }
+              }
           }
         }
       },

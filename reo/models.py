@@ -815,6 +815,75 @@ class HotTESModel(models.Model):
         return obj
 
 
+class RCModel(models.Model):
+    # Inputs
+    run_uuid = models.UUIDField(unique=True)
+    use_flexloads_model = models.BooleanField(default=False)
+    a_matrix = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    b_matrix = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    u_inputs = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    init_temperatures = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    n_temp_nodes = models.IntegerField(null=True, blank=True)
+    n_input_nodes = models.IntegerField(null=True, blank=True)
+    shr = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    space_node = models.IntegerField(null=True, blank=True)
+
+    # Outputs
+    temperatures_degree_C = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+
+    @classmethod
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
+        obj.save()
+
+        return obj
+
+
+class FlexTechACModel(models.Model):
+    # Inputs
+    run_uuid = models.UUIDField(unique=True)
+    existing_kw = models.FloatField(null=True, blank=True, default=0)
+    min_kw = models.FloatField(null=True, blank=True, default=0)
+    max_kw = models.FloatField(null=True, blank=True, default=0)
+    installed_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+    om_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+    prod_factor_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    operating_penalty_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+
+    # Outputs
+    size_kw = models.FloatField(null=True, blank=True)
+    year_one_power_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+
+    @classmethod
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
+        obj.save()
+
+        return obj
+
+
+class FlexTechHPModel(models.Model):
+    # Inputs
+    run_uuid = models.UUIDField(unique=True)
+    existing_kw = models.FloatField(null=True, blank=True, default=0)
+    min_kw = models.FloatField(null=True, blank=True, default=0)
+    max_kw = models.FloatField(null=True, blank=True, default=0)
+    installed_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+    om_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+    prod_factor_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    operating_penalty_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+
+    # Outputs
+    size_kw = models.FloatField(null=True, blank=True)
+    year_one_power_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+
+    @classmethod
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
+        obj.save()
+
+        return obj
+
 class MessageModel(models.Model):
     """
     For Example:
@@ -885,6 +954,9 @@ class ModelManager(object):
         self.absorption_chillerM = None
         self.hot_tesM = None
         self.cold_tesM = None
+        self.rcM = None
+        self.flex_tech_acM = None
+        self.flex_tech_hpM = None
         self.profileM = None
         self.messagesM = None
 
@@ -933,6 +1005,12 @@ class ModelManager(object):
                                                              **attribute_inputs(d['Site']['HotTES']))
         self.cold_tesM = ColdTESModel.create(run_uuid=self.scenarioM.run_uuid,
                                            **attribute_inputs(d['Site']['ColdTES']))
+        self.rcM = RCModel.create(run_uuid=self.scenarioM.run_uuid,
+                                           **attribute_inputs(d['Site']['RC']))
+        self.flex_tech_acM = FlexTechACModel.create(run_uuid=self.scenarioM.run_uuid,
+                                           **attribute_inputs(d['Site']['FlexTechAC']))
+        self.flex_tech_hpM = FlexTechHPModel.create(run_uuid=self.scenarioM.run_uuid,
+                                           **attribute_inputs(d['Site']['FlexTechHP']))
         for message_type, message in data['messages'].items():
             MessageModel.create(run_uuid=self.scenarioM.run_uuid, message_type=message_type, message=message)
 
@@ -970,6 +1048,9 @@ class ModelManager(object):
         AbsorptionChillerModel.objects.filter(run_uuid=run_uuid).delete()
         HotTESModel.objects.filter(run_uuid=run_uuid).delete()
         ColdTESModel.objects.filter(run_uuid=run_uuid).delete()
+        RCModel.objects.filter(run_uuid=run_uuid).delete()
+        FlexTechACModel.objects.filter(run_uuid=run_uuid).delete()
+        FlexTechHPModel.objects.filter(run_uuid=run_uuid).delete()
         MessageModel.objects.filter(run_uuid=run_uuid).delete()
         ErrorModel.objects.filter(run_uuid=run_uuid).delete()
 
@@ -1007,6 +1088,9 @@ class ModelManager(object):
             **attribute_inputs(d['Site']['AbsorptionChiller']))
         HotTESModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['HotTES']))
         ColdTESModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['ColdTES']))
+        RCModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['RC']))
+        FlexTechACModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['FlexTechAC']))
+        FlexTechHPModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['FlexTechHP']))
 
         for message_type, message in data['messages'].items():
             if len(MessageModel.objects.filter(run_uuid=run_uuid, message=message)) > 0:
@@ -1108,7 +1192,7 @@ class ModelManager(object):
         # add try/except for get fail / bad run_uuid
         site_keys = ['PV', 'Storage', 'Financial', 'LoadProfile', 'LoadProfileBoilerFuel', 'LoadProfileChillerElectric',
                      'ElectricTariff', 'FuelTariff', 'Generator', 'Wind', 'CHP', 'Boiler', 'ElectricChiller',
-                     'AbsorptionChiller', 'HotTES', 'ColdTES']
+                     'AbsorptionChiller', 'HotTES', 'ColdTES', 'RC', 'FlexTechAC', 'FlexTechHP']
 
         resp = dict()
         resp['outputs'] = dict()
@@ -1167,6 +1251,12 @@ class ModelManager(object):
             model_to_dict(HotTESModel.objects.get(run_uuid=run_uuid)))
         resp['outputs']['Scenario']['Site']['ColdTES'] = remove_ids(
             model_to_dict(ColdTESModel.objects.get(run_uuid=run_uuid)))
+        resp['outputs']['Scenario']['Site']['RC'] = remove_ids(
+            model_to_dict(RCModel.objects.get(run_uuid=run_uuid)))
+        resp['outputs']['Scenario']['Site']['FlexTechAC'] = remove_ids(
+            model_to_dict(FlexTechACModel.objects.get(run_uuid=run_uuid)))
+        resp['outputs']['Scenario']['Site']['FlexTechHP'] = remove_ids(
+            model_to_dict(FlexTechHPModel.objects.get(run_uuid=run_uuid)))
         profile_data = ProfileModel.objects.filter(run_uuid=run_uuid)
 
         if len(profile_data) > 0:
