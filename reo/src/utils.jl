@@ -350,11 +350,9 @@ function Parameter(d::Dict)
 	d["StorageDecayRate"] = AxisArray(d["StorageDecayRate"], d["Storage"])
 
 	# Flexible load additions
-# 	if d["UseFlexLoadsModel"]
 	d["AMatrix"] = transpose(reshape(d["AMatrix"],d["TempNodesCount"],d["TempNodesCount"]))
 	d["BMatrix"] = transpose(reshape(d["BMatrix"],d["InputNodesCount"],d["TempNodesCount"]))
 	d["UInputs"] = transpose(reshape(d["UInputs"],d["TimeStepCount"],d["InputNodesCount"]))
-# 	end
 	d["OperatingPenalty"] = vector_to_axisarray(d["OperatingPenalty"],d["Tech"], d[:TimeStep])
 
     # Indexed Sets
