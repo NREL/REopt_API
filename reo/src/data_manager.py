@@ -73,6 +73,9 @@ class DataManager:
         self.load = None
         self.heating_load = None
         self.cooling_load = None
+        self.rc = None
+        self.ac = None
+        self.hp = None
         self.reopt_inputs = None
         self.reopt_inputs_bau = None
         self.optimality_tolerance_decomp_subproblem = None
@@ -84,9 +87,9 @@ class DataManager:
         self.year_one_demand_cost_series_us_dollars_per_kw = []
 
         self.available_techs = ['pv1', 'pv1nm', 'wind', 'windnm', 'generator', 'chp', 'boiler',
-                                'elecchl', 'absorpchl']  # order is critical for REopt! Note these are passed to reopt.jl as uppercase
+                                'elecchl', 'absorpchl', 'ac', 'hp']  # order is critical for REopt! Note these are passed to reopt.jl as uppercase
         self.available_tech_classes = ['PV1', 'WIND', 'GENERATOR', 'CHP', 'BOILER',
-                                       'ELECCHL', 'ABSORPCHL']  # this is a REopt 'class', not a python class
+                                       'ELECCHL', 'ABSORPCHL', 'AC', 'HP']  # this is a REopt 'class', not a python class
         self.bau_techs = []
         self.NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
         self.fuel_burning_techs = ['GENERATOR', 'CHP']
@@ -124,6 +127,23 @@ class DataManager:
         self.elecchl = electric_chiller
         self.elecchl_cop = electric_chiller.chiller_cop
         self.bau_techs.append('elecchl')
+
+    def add_rc(self, rc):
+        self.rc = rc
+
+    def add_flex_tech_ac(self, flex_tech_ac):
+        self.ac = flex_tech_ac
+        if self.ac.existing_kw > 0:
+            self.rc.use_flexloads_model_bau = True
+            if 'ac' not in self.bau_techs:
+                self.bau_techs.append('ac')
+
+    def add_flex_tech_hp(self, flex_tech_hp):
+        self.hp = flex_tech_hp
+        if self.hp.existing_kw > 0:
+            self.rc.use_flexloads_model_bau = True
+            if 'hp' not in self.bau_techs:
+                self.bau_techs.append('hp')
 
     def add_pv(self, pv):
         junk = pv.prod_factor  # avoids redundant PVWatts call for pvnm
@@ -259,7 +279,7 @@ class DataManager:
 
             if eval('self.' + tech) is not None:
 
-                if tech not in ['util', 'generator', 'boiler', 'elecchl', 'absorpchl']:
+                if tech not in ['util', 'generator', 'boiler', 'elecchl', 'absorpchl', 'ac', 'hp']:
 
                     # prod incentives don't need escalation
                     if tech.startswith("pv"):  # PV has degradation
@@ -315,7 +335,7 @@ class DataManager:
                 for region in regions[:-1]:
                     tech_incentives[region] = dict()
 
-                    if tech not in ['generator']:
+                    if tech not in ['generator', 'ac', 'hp']:
 
                         if region == 'federal' or region == 'total':
                             tech_incentives[region]['%'] = eval('self.' + tech + '.incentives.' + region + '.itc')
@@ -526,37 +546,39 @@ class DataManager:
                 updated_cap_cost_slope = list()
                 updated_y_intercept = list()
 
-                for s in range(n_segments):
+                if tech not in ['ac', 'hp']:
 
-                    if cost_curve_bp_x[s + 1] > 0:
-                        # Remove federal incentives for ITC basis and tax benefit calculations
-                        itc = eval('self.' + tech + '.incentives.federal.itc')
-                        rebate_federal = eval('self.' + tech + '.incentives.federal.rebate')
-                        itc_unit_basis = (tmp_cap_cost_slope[s] + rebate_federal) / (1 - itc)
+                    for s in range(n_segments):
 
-                    sf = self.site.financial
-                    updated_slope = setup_capital_cost_incentive(
-                        itc_basis=itc_unit_basis,  # input tech cost with incentives, but no ITC
-                        replacement_cost=0,
-                        replacement_year=sf.analysis_years,
-                        discount_rate=sf.owner_discount_pct,
-                        tax_rate=sf.owner_tax_pct,
-                        itc=itc,
-                        macrs_schedule=eval('self.' + tech + '.incentives.macrs_schedule'),
-                        macrs_bonus_pct=eval('self.' + tech + '.incentives.macrs_bonus_pct'),
-                        macrs_itc_reduction=eval('self.' + tech + '.incentives.macrs_itc_reduction')
-                    )
-                    # The way REopt incentives currently work, the federal rebate is the only incentive that doesn't reduce ITC basis
-                    updated_slope -= rebate_federal
-                    updated_cap_cost_slope.append(updated_slope)
+                        if cost_curve_bp_x[s + 1] > 0:
+                            # Remove federal incentives for ITC basis and tax benefit calculations
+                            itc = eval('self.' + tech + '.incentives.federal.itc')
+                            rebate_federal = eval('self.' + tech + '.incentives.federal.rebate')
+                            itc_unit_basis = (tmp_cap_cost_slope[s] + rebate_federal) / (1 - itc)
 
-                for p in range(1, n_segments + 1):
-                    cost_curve_bp_y[p] = cost_curve_bp_y[p - 1] + updated_cap_cost_slope[p - 1] * \
-                                                                  (cost_curve_bp_x[p] - cost_curve_bp_x[p - 1])
-                    updated_y_intercept.append(cost_curve_bp_y[p] - updated_cap_cost_slope[p - 1] * cost_curve_bp_x[p])
+                        sf = self.site.financial
+                        updated_slope = setup_capital_cost_incentive(
+                            itc_basis=itc_unit_basis,  # input tech cost with incentives, but no ITC
+                            replacement_cost=0,
+                            replacement_year=sf.analysis_years,
+                            discount_rate=sf.owner_discount_pct,
+                            tax_rate=sf.owner_tax_pct,
+                            itc=itc,
+                            macrs_schedule=eval('self.' + tech + '.incentives.macrs_schedule'),
+                            macrs_bonus_pct=eval('self.' + tech + '.incentives.macrs_bonus_pct'),
+                            macrs_itc_reduction=eval('self.' + tech + '.incentives.macrs_itc_reduction')
+                        )
+                        # The way REopt incentives currently work, the federal rebate is the only incentive that doesn't reduce ITC basis
+                        updated_slope -= rebate_federal
+                        updated_cap_cost_slope.append(updated_slope)
 
-                tmp_cap_cost_slope = updated_cap_cost_slope
-                tmp_cap_cost_yint = updated_y_intercept
+                    for p in range(1, n_segments + 1):
+                        cost_curve_bp_y[p] = cost_curve_bp_y[p - 1] + updated_cap_cost_slope[p - 1] * \
+                                                                      (cost_curve_bp_x[p] - cost_curve_bp_x[p - 1])
+                        updated_y_intercept.append(cost_curve_bp_y[p] - updated_cap_cost_slope[p - 1] * cost_curve_bp_x[p])
+
+                    tmp_cap_cost_slope = updated_cap_cost_slope
+                    tmp_cap_cost_yint = updated_y_intercept
 
                 """
                 Adjust first cost curve segment to account for existing_kw.
@@ -984,6 +1006,20 @@ class DataManager:
             storage_min_power, storage_max_power, storage_min_energy, \
             storage_max_energy, storage_decay_rate
 
+    def _get_REopt_elecPenalty(self, techs):
+
+        elec_penalty = list()
+
+        for tech in techs:
+            if eval('self.' + tech) is not None:
+                if tech in ['ac', 'hp']:
+                    for op in eval('self.' + tech + '.operating_penalty_kw'):
+                        elec_penalty.append(float(op))
+                else:
+                    elec_penalty.extend([0.0] * self.n_timesteps)
+
+        return elec_penalty
+
     def finalize(self):
         """
         necessary for writing out parameters that depend on which Techs are defined
@@ -996,6 +1032,9 @@ class DataManager:
 
         tech_class_min_size, techs_in_class = self._get_REopt_tech_classes(self.available_techs, False)
         tech_class_min_size_bau, techs_in_class_bau = self._get_REopt_tech_classes(self.bau_techs, True)
+
+        elec_penalty = self._get_REopt_elecPenalty(self.available_techs)
+        elec_penalty_bau = self._get_REopt_elecPenalty(self.bau_techs)
 
         tech_to_location, derate, om_cost_us_dollars_per_kw, \
             om_cost_us_dollars_per_kwh, om_cost_us_dollars_per_hr_per_kw_rated, production_factor, \
@@ -1100,6 +1139,9 @@ class DataManager:
         electric_techs = [t for t in reopt_techs if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR") or t.startswith("CHP")]
         electric_techs_bau = [t for t in reopt_techs_bau if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR") or t.startswith("CHP")]
 
+        flex_techs = [t for t in reopt_techs if t.startswith("AC") or t.startswith("HP")]
+        flex_techs_bau = [t for t in reopt_techs_bau if t.startswith("AC") or t.startswith("HP")]
+
         if len(reopt_techs) > 0:
             non_storage_sales_tiers = [1, 2]
             storage_sales_tiers = [3]
@@ -1178,7 +1220,6 @@ class DataManager:
             = fuel_params._get_chp_unique_params(chp_techs, chp=eval('self.chp'))
         chp_fuel_burn_intercept_bau, chp_thermal_prod_slope_bau, chp_thermal_prod_intercept_bau, chp_derate_bau \
             = fuel_params._get_chp_unique_params(chp_techs_bau, chp=eval('self.chp'))
-
 
         self.reopt_inputs = {
             'Tech': reopt_techs,
@@ -1302,8 +1343,20 @@ class DataManager:
             'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month,
             'StorageDecayRate': storage_decay_rate,
             'DecompOptTol': self.optimality_tolerance_decomp_subproblem,
-            'DecompTimeOut': self.timeout_decomp_subproblem_seconds
-            }
+            'DecompTimeOut': self.timeout_decomp_subproblem_seconds,
+            # Flex loads
+            'FlexTechs': flex_techs,
+            'UseFlexLoadsModel': self.rc.use_flexloads_model,
+            'AMatrix': self.rc.a_matrix,
+            'BMatrix': self.rc.b_matrix,
+            'UInputs': self.rc.u_inputs,
+            'SHR': self.rc.shr,
+            'InitTemperatures': self.rc.init_temperatures,
+            'TempNodesCount': self.rc.n_temp_nodes,
+            'InputNodesCount': self.rc.n_input_nodes,
+            'SpaceNode': self.rc.space_node,
+            'OperatingPenalty': elec_penalty
+        }
 
         self.reopt_inputs_bau = {
             'Tech': reopt_techs_bau,
@@ -1427,5 +1480,17 @@ class DataManager:
             'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month,
             'StorageDecayRate': storage_decay_rate,
             'DecompOptTol': self.optimality_tolerance_decomp_subproblem,
-            'DecompTimeOut': self.timeout_decomp_subproblem_seconds
+            'DecompTimeOut': self.timeout_decomp_subproblem_seconds,
+            # Flex loads
+            'FlexTechs': flex_techs_bau,
+            'UseFlexLoadsModel': self.rc.use_flexloads_model_bau,
+            'AMatrix': self.rc.a_matrix,
+            'BMatrix': self.rc.b_matrix,
+            'UInputs': self.rc.u_inputs,
+            'SHR': self.rc.shr,
+            'InitTemperatures': self.rc.init_temperatures,
+            'TempNodesCount': self.rc.n_temp_nodes,
+            'InputNodesCount': self.rc.n_input_nodes,
+            'SpaceNode': self.rc.space_node,
+            'OperatingPenalty': elec_penalty_bau
         }

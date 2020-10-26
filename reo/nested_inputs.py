@@ -1775,7 +1775,150 @@ nested_input_definitions = {
           "default": 0.0,
           "description": "Maximum rebate allowed under utility rebates"
         }
+      },
+      ##################################################################################################################
+      "RC": {
+        "use_flexloads_model": {
+          "type": "bool",
+          "default": False,
+          "description": "Toggle to turn on flexible loads modeling."
+        },
+        "a_matrix": {
+          "type": "list_of_float",
+          "default": [0.0],
+          "description": "A matrix"
+        },
+        "b_matrix": {
+          "type": "list_of_float",
+          "default": [0.0],
+          "description": "B matrix"
+        },
+        "u_inputs": {
+          "type": "list_of_float",
+          "default": [0.0]*8760,
+          "description": "Inputs"
+        },
+        "init_temperatures": {
+          "type": "list_of_float",
+          "default": [],
+          "description": "Initial temperatures at each temperature node"
+        },
+        "shr": {
+          "type": "list_of_float",
+          "default": [],
+          "description": "Time-varying SHR"
+        },
+        "n_temp_nodes": {
+          "type": "int",
+          "default": 1,
+          "description": "Number of temperature nodes"
+        },
+        "n_input_nodes": {
+          "type": "int",
+          "default": 1,
+          "description": "Number of current/voltage sources"
+        },
+        "space_node": {
+          "type": "int",
+          "default": 1,
+          "description": "Space node number"
+        }
+      },
+      "FlexTechAC": {
+        "existing_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e5,
+          "default": 0.0,
+          "description": "Existing AC size"
+        },
+        "min_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 0.0,
+          "description": "Minimum AC size constraint for optimization"
+        },
+        "max_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 0.0,
+          "description": "Maximum AC size constraint for optimization. Set to zero to disable AC"
+        },
+        "installed_cost_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e5,
+          "default": 0.0,
+          "description": "Installed AC cost in $/kW"
+        },
+        "om_cost_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e3,
+          "default": 0.0,
+          "description": "Annual AC operations and maintenance costs in $/kW"
+        },
+        "prod_factor_series_kw": {
+          "type": "list_of_float",
+          "default": [],
+          "description": "User-defined production factors. Entries have units of kWh/kW, representing the energy (kWh) output of a 1 kW system in each time step. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+        },
+        "operating_penalty_kw": {
+          "type": "list_of_float",
+          "default": [],
+          "description": "User-defined operating penalty in kW. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+        }
+      },
+      "FlexTechHP": {
+        "existing_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e5,
+          "default": 0.0,
+          "description": "Existing HP size"
+        },
+        "min_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 0.0,
+          "description": "Minimum HP size constraint for optimization"
+        },
+        "max_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 0.0,
+          "description": "Maximum HP size constraint for optimization. Set to zero to disable HP"
+        },
+        "installed_cost_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e5,
+          "default": 0.0,
+          "description": "Installed HP cost in $/kW"
+        },
+        "om_cost_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e3,
+          "default": 0.0,
+          "description": "Annual HP operations and maintenance costs in $/kW"
+        },
+        "prod_factor_series_kw": {
+          "type": "list_of_float",
+          "default": [],
+          "description": "User-defined production factors. Entries have units of kWh/kW, representing the energy (kWh) output of a 1 kW system in each time step. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+        },
+        "operating_penalty_kw": {
+          "type": "list_of_float",
+          "default": [],
+          "description": "User-defined operating penalty in kW. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+        }
       }
+
     }
   }
 }

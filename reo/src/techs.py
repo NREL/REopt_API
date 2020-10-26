@@ -1187,3 +1187,59 @@ class AbsorptionChiller(Tech):
 
         return absorp_chiller_capex, absorp_chiller_opex
 
+
+class RC():
+
+    def __init__(self, dfm, **kwargs):
+
+        self.use_flexloads_model = kwargs.get('use_flexloads_model')
+        self.use_flexloads_model_bau = False
+        self.a_matrix = kwargs.get('a_matrix')
+        self.b_matrix = kwargs.get('b_matrix')
+        self.u_inputs = kwargs.get('u_inputs')
+        self.init_temperatures = kwargs.get('init_temperatures')
+        self.n_temp_nodes = kwargs.get('n_temp_nodes')
+        self.n_input_nodes = kwargs.get('n_input_nodes')
+        self.shr = kwargs.get('shr')
+        self.space_node = kwargs.get('space_node')
+
+        dfm.add_rc(self)
+
+
+class FlexTechAC(Tech):
+
+    def __init__(self, dfm, **kwargs):
+        super(FlexTechAC, self).__init__(**kwargs)
+
+        self.reopt_class = 'AC'
+        self.existing_kw = kwargs.get('existing_kw')
+        self.prod_factor_series_kw = kwargs.get('prod_factor_series_kw')
+        self.operating_penalty_kw = kwargs.get('operating_penalty_kw')
+
+        dfm.add_flex_tech_ac(self)
+
+    @property
+    def prod_factor(self):
+        if self.prod_factor_series_kw is None:
+            print('No input AC production factors') # TODO
+        else:
+            return self.prod_factor_series_kw
+
+class FlexTechHP(Tech):
+
+    def __init__(self, dfm, **kwargs):
+        super(FlexTechHP, self).__init__(**kwargs)
+
+        self.reopt_class = 'HP'
+        self.existing_kw = kwargs.get('existing_kw')
+        self.prod_factor_series_kw = kwargs.get('prod_factor_series_kw')
+        self.operating_penalty_kw = kwargs.get('operating_penalty_kw')
+
+        dfm.add_flex_tech_hp(self)
+
+    @property
+    def prod_factor(self):
+        if self.prod_factor_series_kw is None:
+            print('No input HP production factors')  # TODO
+        else:
+            return self.prod_factor_series_kw

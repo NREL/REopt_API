@@ -1181,6 +1181,19 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_cold_tes_soc_series_pct"] = self.results_dict.get("cold_tes_pct_soc_series")
                     if np.isnan(sum(self.results_dict.get("cold_tes_pct_soc_series") or [np.nan])):
                         self.nested_outputs["Scenario"]["Site"][name]["year_one_cold_tes_soc_series_pct"] = None
+                elif name == "RC":
+                    self.nested_outputs["Scenario"]["Site"][name]["temperatures_degree_C"] = self.results_dict.get(
+                        "indoor_temperatures")
+                elif name == "FlexTechAC":
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "size_kw"] = self.results_dict.get("ac_size_kw")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_power_production_series_kw"] = self.results_dict.get("ac_production_series")
+                elif name == "FlexTechHP":
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "size_kw"] = self.results_dict.get("hp_size_kw")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_power_production_series_kw"] = self.results_dict.get("hp_production_series")
 
             # outputs that depend on multiple object results:
             self.nested_outputs["Scenario"]["Site"]["Financial"]["initial_capital_costs"] = self.upfront_capex
