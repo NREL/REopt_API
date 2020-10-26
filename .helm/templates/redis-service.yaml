@@ -1,0 +1,15 @@
+{{ if .Values.deploySharedResources }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Chart.Name }}-redis-service
+  namespace: {{ .Values.sharedResourcesNamespace | quote }}
+  annotations:
+    "helm.sh/resource-policy": keep
+spec:
+  selector:
+    app: {{ .Chart.Name }}-redis
+  ports:
+    - protocol: TCP
+      port: 6379
+{{ end }}

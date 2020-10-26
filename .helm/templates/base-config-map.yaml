@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Chart.Name }}-base-config-map
+data:
+  APP_ENV: {{ .Values.appEnv | quote }}
+  DB_NAME: {{ .Values.dbName | quote }}
+  # Use the database name as the queue name so that separate branches or
+  # databases on staging remain in separate queues.
+  APP_QUEUE_NAME: {{ .Values.dbName | quote }}
+  DJANGO_SETTINGS_MODULE: {{ .Values.djangoSettingsModule | quote }}
+  SOLVER: xpress
+  REDIS_HOST: {{ tpl .Values.redisHost . | quote }}
+  REDIS_PORT: {{ .Values.redisPort | quote }}

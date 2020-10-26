@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-. /opt/xpressmp/bin/xpvars.sh
-export XPRESS=/opt/xpressmp/bin
+set -Eeuxo pipefail
 
-exec ./env/bin/gunicorn --config ./config/gunicorn.conf.py reopt_api.wsgi
+exec gunicorn --config ./config/gunicorn.conf.py reopt_api.wsgi

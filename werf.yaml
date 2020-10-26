@@ -1,0 +1,9 @@
+project: reopt-api
+configVersion: 1
+---
+image: reopt-api
+dockerfile: Dockerfile.dev
+args:
+  # Bust Werf stage caching whenever new versions of the docker base image are
+  # released (even if the tag is the same).
+  DOCKER_BASE_IMAGE_DIGEST: {{ env "DOCKER_BASE_IMAGE_DIGEST" | quote }}
