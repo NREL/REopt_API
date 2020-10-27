@@ -94,12 +94,6 @@ class Rate(object):
         else:
             return None
 
-        try:
-            if rate_dict['energyratestructure'] is None:
-                rate_dict = None
-        except KeyError:
-            rate_dict = None
-
         return rate_dict
 
     def download_rate(self):
