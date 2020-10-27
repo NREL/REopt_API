@@ -8,3 +8,4 @@ args:
   # released (even if the tag is the same).
   DOCKER_BASE_IMAGE_DIGEST: {{ env "DOCKER_BASE_IMAGE_DIGEST" | quote }}
   XPRESS_LICENSE_HOST: {{ env "XPRESS_LICENSE_HOST" | quote }}
+  NREL_ROOT_CERT_URL_ROOT: {{ env "NREL_ROOT_CERT_URL_ROOT" | quote }}
