@@ -16,7 +16,8 @@ WORKDIR /opt/reopt/solver
 COPY solver/install.sh .
 COPY solver/xp8.0.4_linux_x86_64.tar.gz .
 RUN sed -i -e 's/\r$//' install.sh
-RUN printf 'f\nc\n\nn\nn\ny\nlcssvr\ny\n' | ./install.sh >> license_info.txt;
+ARG XPRESS_LICENSE_HOST=lcssvr
+RUN printf "f\nc\n\nn\nn\ny\n${XPRESS_LICENSE_HOST}\ny\n" | ./install.sh >> license_info.txt;
 RUN rm xp8.0.4_linux_x86_64.tar.gz
 
 
