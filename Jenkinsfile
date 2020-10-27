@@ -15,6 +15,7 @@ pipeline {
     STAGING_BASE_DOMAIN = credentials("reopt-api-staging-base-domain")
     STAGING_TEMP_BASE_DOMAIN = credentials("reopt-api-staging-temp-base-domain")
     PRODUCTION_DOMAIN = credentials("reopt-api-production-domain")
+    XPRESS_LICENSE_HOST = credentials("reopt-api-xpress-license-host")
   }
 
   parameters {
@@ -50,7 +51,7 @@ pipeline {
       agent {
         dockerfile {
           filename "Dockerfile.dev"
-          additionalBuildArgs "--pull"
+          additionalBuildArgs "--pull --build-arg XPRESS_LICENSE_HOST=${XPRESS_LICENSE_HOST}"
         }
       }
 
