@@ -61675,5 +61675,6 @@
       0.004
     ] ,
     "DecompOptTol": 0.03,
-    "DecompTimeOut": 120
+    "DecompTimeOut": 120,
+    "CHPFuelBurnSlope": []
   }
