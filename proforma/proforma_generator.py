@@ -2687,7 +2687,8 @@ def generate_proforma(scenariomodel, output_file_path):
         dcs['A{}'.format(current_row)] = "Percentage"
         dcs['A{}'.format(current_row)].alignment = two_tab_indent
         for i in range(len(pv_cell_locations[idx]["pv_macrs_cells"])):
-            dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(
+            if i < financial.analysis_years:
+                dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(
                 pv_cell_locations[idx]["pv_macrs_cells"][i])
         make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                            number_format='#,##0.0000', border=no_border)
@@ -2747,7 +2748,8 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)] = "Percentage"
     dcs['A{}'.format(current_row)].alignment = two_tab_indent
     for i in range(len(wind_macrs_cells)):
-        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(wind_macrs_cells[i])
+        if i < financial.analysis_years:
+            dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(wind_macrs_cells[i])
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0.0000', border=no_border)
     wind_macrs_percent_row = current_row
@@ -2798,7 +2800,8 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)] = "Percentage"
     dcs['A{}'.format(current_row)].alignment = two_tab_indent
     for i in range(len(batt_macrs_cells)):
-        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(batt_macrs_cells[i])
+        if i < financial.analysis_years:
+            dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(batt_macrs_cells[i])
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0.0000', border=no_border)
     batt_macrs_percent_row = current_row

@@ -189,7 +189,8 @@ def calculate_proforma_metrics(data):
                 macrs_basis = macrs_bonus_basis * (1 - pv['macrs_bonus_pct'])
                 depreciation_schedule = np.array([0.0 for _ in range(years)])
                 for i,r in enumerate(schedule):
-                    depreciation_schedule[i] = macrs_basis * r
+                    if i < len(depreciation_schedule):
+                        depreciation_schedule[i] = macrs_basis * r
                 depreciation_schedule[0] += (pv['macrs_bonus_pct'] * macrs_bonus_basis)
                 total_depreciation += depreciation_schedule
 
@@ -232,7 +233,8 @@ def calculate_proforma_metrics(data):
                 macrs_basis = macrs_bonus_basis * (1 - wind['macrs_bonus_pct'])
                 depreciation_schedule = np.array([0.0 for _ in range(years)])
                 for i,r in enumerate(schedule):
-                    depreciation_schedule[i] = macrs_basis * r
+                    if i < len(depreciation_schedule):
+                        depreciation_schedule[i] = macrs_basis * r
                 depreciation_schedule[0] += (wind['macrs_bonus_pct'] * macrs_bonus_basis)
                 total_depreciation += depreciation_schedule
 
@@ -263,7 +265,8 @@ def calculate_proforma_metrics(data):
                 macrs_basis = macrs_bonus_basis * (1 - storage['macrs_bonus_pct'])
                 depreciation_schedule = np.array([0.0 for _ in range(years)])
                 for i,r in enumerate(schedule):
-                    depreciation_schedule[i] = macrs_basis * r
+                    if i < len(depreciation_schedule):
+                        depreciation_schedule[i] = macrs_basis * r
                 depreciation_schedule[0] += (storage['macrs_bonus_pct'] * macrs_bonus_basis)
                 total_depreciation += depreciation_schedule
 
@@ -463,7 +466,9 @@ def calculate_proforma_metrics(data):
         else:
             deductable_operating_expenses_series = np.array([0]*years)
 
-        operating_expenses_after_tax = (total_operating_expenses - deductable_operating_expenses_series) + (deductable_operating_expenses_series * (1 - financials['offtaker_tax_pct']))
+        
+        operating_expenses_after_tax = (total_operating_expenses - deductable_operating_expenses_series) + (deductable_operating_expenses_series * (1 - tax_pct))
+        
         total_cash_incentives = total_pbi * (1 - tax_pct) 
         total_depreciation = total_depreciation * tax_pct
         free_cashflow_before_income = total_depreciation + total_cash_incentives + operating_expenses_after_tax
@@ -806,7 +811,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 macrs_bonus_basis = federal_itc_basis - (federal_itc_basis * tech_inputs_dict['federal_itc_pct'] * tech_inputs_dict['macrs_itc_reduction'])
                 macrs_basis = macrs_bonus_basis * (1 - tech_inputs_dict['macrs_bonus_pct'])
                 for i,r in enumerate(schedule):
-                    depreciation_schedule[i] = macrs_basis * r
+                    if i < len(depreciation_schedule):
+                        depreciation_schedule[i] = macrs_basis * r
                 depreciation_schedule[0] += (tech_inputs_dict['macrs_bonus_pct'] * macrs_bonus_basis)
 
             tax_deductions = (np.array(om_series)  + np.array(depreciation_schedule)) * federal_tax_pct
