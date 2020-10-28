@@ -36,11 +36,9 @@ import logging
 from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
 from reo.models import ModelManager, PVModel, FinancialModel, WindModel
-from reo.src.outage_costs import calc_avoided_outage_costs
 from reo.src.profiler import Profiler
 from reo.src.emissions_calculator import EmissionsCalculator
-from reo.utilities import annuity, degradation_factor
-from proforma.models import ProForma
+from reo.utilities import annuity
 from reo.nested_inputs import macrs_five_year, macrs_seven_year
 log = logging.getLogger(__name__)
 
@@ -502,7 +500,14 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             Note that the owner_discount_pct and owner_tax_pct are set to the offtaker_discount_pct and offtaker_tax_pct
             respectively when third_party_ownership is False.
             """
-            upfront_capex_after_incentives = self.nested_outputs["Scenario"]["Site"]["Financial"]["net_capital_costs"]
+            yrs = self.inputs["Financial"]["analysis_years"]
+            pwf_offtaker = annuity(yrs, 0, self.inputs["Financial"]["offtaker_discount_pct"])
+            pwf_owner = annuity(yrs, 0, self.inputs["Financial"]["owner_discount_pct"])
+            third_party_factor = (pwf_offtaker * (1 - self.inputs["Financial"]["offtaker_tax_pct"])) \
+                                  / (pwf_owner * (1 - self.inputs["Financial"]["owner_tax_pct"]))
+
+            upfront_capex_after_incentives = self.nested_outputs["Scenario"]["Site"]["Financial"]["net_capital_costs"] \
+                                             / third_party_factor
 
             pwf_inverter = 1 / ((1 + self.inputs["Financial"]["owner_discount_pct"])
                                 ** self.inputs["Storage"]["inverter_replacement_year"])
@@ -686,12 +691,16 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                             if pv["year_one_power_production_series_kw"] is None:
                                 pv["year_one_power_production_series_kw"] = pv.get("year_one_to_battery_series_kw")
                             else:
-                                pv["year_one_power_production_series_kw"]  = list(np.array(pv["year_one_power_production_series_kw"]) + np.array(pv.get("year_one_to_battery_series_kw")))
+                                pv["year_one_power_production_series_kw"] = \
+                                    list(np.array(pv["year_one_power_production_series_kw"]) +
+                                         np.array(pv.get("year_one_to_battery_series_kw")))
                         if not pv.get("year_one_to_load_series_kw") is None:
                             if pv["year_one_power_production_series_kw"] is None:
                                 pv["year_one_power_production_series_kw"] = pv.get("year_one_to_load_series_kw")
                             else:
-                                pv["year_one_power_production_series_kw"]  = list(np.array(pv["year_one_power_production_series_kw"]) + np.array(pv.get("year_one_to_load_series_kw")))                        
+                                pv["year_one_power_production_series_kw"] = \
+                                    list(np.array(pv["year_one_power_production_series_kw"]) +
+                                         np.array(pv.get("year_one_to_load_series_kw")))
                         if pv["year_one_power_production_series_kw"] is None:
                             pv["year_one_power_production_series_kw"] = []
                         pv["existing_pv_om_cost_us_dollars"] = self.results_dict.get("PV{}_net_fixed_om_costs_bau".format(i))
@@ -721,8 +730,10 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_power_production_series_kw"] = self.compute_total_power(name)
                     if self.nested_outputs["Scenario"]["Site"][name]["size_kw"] > 0: #setting up
                         wind_model = WindModel.objects.get(run_uuid=meta['run_uuid'])
-                        self.nested_outputs["Scenario"]["Site"][name]['lcoe_us_dollars_per_kwh'] = self.calculate_lcoe(self.nested_outputs["Scenario"]["Site"][name], wind_model.__dict__, financials)
-                        data['inputs']['Scenario']["Site"]["Wind"]["installed_cost_us_dollars_per_kw"] = wind_model.installed_cost_us_dollars_per_kw
+                        self.nested_outputs["Scenario"]["Site"][name]['lcoe_us_dollars_per_kwh'] = \
+                            self.calculate_lcoe(self.nested_outputs["Scenario"]["Site"][name], wind_model.__dict__, financials)
+                        data['inputs']['Scenario']["Site"]["Wind"]["installed_cost_us_dollars_per_kw"] = \
+                            wind_model.installed_cost_us_dollars_per_kw
                         data['inputs']['Scenario']["Site"]["Wind"]["federal_itc_pct"] = wind_model.federal_itc_pct
                     else:
                         self.nested_outputs["Scenario"]["Site"][name]['lcoe_us_dollars_per_kwh'] = None
@@ -895,11 +906,13 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
         data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
         
         #simple payback needs all data to be computed so running that calculation here
-        simple_payback, irr, net_present_cost, annualized_payment_to_third_party_us_dollars  = calculate_proforma_metrics(data)  
+        simple_payback, irr, net_present_cost, annualized_payment_to_third_party_us_dollars = \
+            calculate_proforma_metrics(data)
         data['outputs']['Scenario']['Site']['Financial']['simple_payback_years'] = simple_payback
         data['outputs']['Scenario']['Site']['Financial']['irr_pct'] = irr if not np.isnan(irr or np.nan) else None
         data['outputs']['Scenario']['Site']['Financial']['net_present_cost_us_dollars'] = net_present_cost
-        data['outputs']['Scenario']['Site']['Financial']['annualized_payment_to_third_party_us_dollars'] = annualized_payment_to_third_party_us_dollars        
+        data['outputs']['Scenario']['Site']['Financial']['annualized_payment_to_third_party_us_dollars'] = \
+            annualized_payment_to_third_party_us_dollars
         data = EmissionsCalculator.add_to_data(data)
 
         pv_watts_station_check = data['outputs']['Scenario']['Site']['PV'][0].get('station_distance_km') or 0
