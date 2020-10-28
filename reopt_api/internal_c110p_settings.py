@@ -153,5 +153,8 @@ if 'test' in sys.argv:
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_URL = '/static/'
 
+APPEND_SLASH = False
+TASTYPIE_ALLOW_MISSING_SLASH = True
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "reopt_api.internal_c110p_settings")
 django.setup()
