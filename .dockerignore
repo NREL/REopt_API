@@ -1,3 +1,4 @@
+.git
 env/
 *.pyc
 *.rdb
@@ -8,3 +9,6 @@ tmp/
 docs/
 Jenkinsfile
 *.md
+.helm
+.kube*
+werf.yaml
