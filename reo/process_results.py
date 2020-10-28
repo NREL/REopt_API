@@ -686,12 +686,16 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                             if pv["year_one_power_production_series_kw"] is None:
                                 pv["year_one_power_production_series_kw"] = pv.get("year_one_to_battery_series_kw")
                             else:
-                                pv["year_one_power_production_series_kw"]  = list(np.array(pv["year_one_power_production_series_kw"]) + np.array(pv.get("year_one_to_battery_series_kw")))
+                                pv["year_one_power_production_series_kw"] = \
+                                    list(np.array(pv["year_one_power_production_series_kw"]) +
+                                         np.array(pv.get("year_one_to_battery_series_kw")))
                         if not pv.get("year_one_to_load_series_kw") is None:
                             if pv["year_one_power_production_series_kw"] is None:
                                 pv["year_one_power_production_series_kw"] = pv.get("year_one_to_load_series_kw")
                             else:
-                                pv["year_one_power_production_series_kw"]  = list(np.array(pv["year_one_power_production_series_kw"]) + np.array(pv.get("year_one_to_load_series_kw")))                        
+                                pv["year_one_power_production_series_kw"] = \
+                                    list(np.array(pv["year_one_power_production_series_kw"]) +
+                                         np.array(pv.get("year_one_to_load_series_kw")))
                         if pv["year_one_power_production_series_kw"] is None:
                             pv["year_one_power_production_series_kw"] = []
                         pv["existing_pv_om_cost_us_dollars"] = self.results_dict.get("PV{}_net_fixed_om_costs_bau".format(i))
@@ -721,8 +725,10 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_power_production_series_kw"] = self.compute_total_power(name)
                     if self.nested_outputs["Scenario"]["Site"][name]["size_kw"] > 0: #setting up
                         wind_model = WindModel.objects.get(run_uuid=meta['run_uuid'])
-                        self.nested_outputs["Scenario"]["Site"][name]['lcoe_us_dollars_per_kwh'] = self.calculate_lcoe(self.nested_outputs["Scenario"]["Site"][name], wind_model.__dict__, financials)
-                        data['inputs']['Scenario']["Site"]["Wind"]["installed_cost_us_dollars_per_kw"] = wind_model.installed_cost_us_dollars_per_kw
+                        self.nested_outputs["Scenario"]["Site"][name]['lcoe_us_dollars_per_kwh'] = \
+                            self.calculate_lcoe(self.nested_outputs["Scenario"]["Site"][name], wind_model.__dict__, financials)
+                        data['inputs']['Scenario']["Site"]["Wind"]["installed_cost_us_dollars_per_kw"] = \
+                            wind_model.installed_cost_us_dollars_per_kw
                         data['inputs']['Scenario']["Site"]["Wind"]["federal_itc_pct"] = wind_model.federal_itc_pct
                     else:
                         self.nested_outputs["Scenario"]["Site"][name]['lcoe_us_dollars_per_kwh'] = None
@@ -895,11 +901,13 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
         data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
         
         #simple payback needs all data to be computed so running that calculation here
-        simple_payback, irr, net_present_cost, annualized_payment_to_third_party_us_dollars  = calculate_proforma_metrics(data)  
+        simple_payback, irr, net_present_cost, annualized_payment_to_third_party_us_dollars = \
+            calculate_proforma_metrics(data)
         data['outputs']['Scenario']['Site']['Financial']['simple_payback_years'] = simple_payback
         data['outputs']['Scenario']['Site']['Financial']['irr_pct'] = irr if not np.isnan(irr or np.nan) else None
         data['outputs']['Scenario']['Site']['Financial']['net_present_cost_us_dollars'] = net_present_cost
-        data['outputs']['Scenario']['Site']['Financial']['annualized_payment_to_third_party_us_dollars'] = annualized_payment_to_third_party_us_dollars        
+        data['outputs']['Scenario']['Site']['Financial']['annualized_payment_to_third_party_us_dollars'] = \
+            annualized_payment_to_third_party_us_dollars
         data = EmissionsCalculator.add_to_data(data)
 
         pv_watts_station_check = data['outputs']['Scenario']['Site']['PV'][0].get('station_distance_km') or 0
