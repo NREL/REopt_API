@@ -483,9 +483,11 @@ function add_tech_size_constraints(m, p)
 	)
 		
 	##Constraint (7e): Derate factor limits production variable (separate from ProductionFactor)
-	@constraint(m, TurbineRatedProductionCon[t in p.Tech, ts in p.TimeStep; !(t in p.TechsNoTurndown)],
-		m[:dvRatedProduction][t,ts]  <= p.ElectricDerate[t,ts] * m[:dvSize][t]
-	)
+	for ts in p.TimeStep
+		@constraint(m, [t in p.Tech; !(t in p.TechsNoTurndown)],
+			m[:dvRatedProduction][t,ts]  <= p.ElectricDerate[t,ts] * m[:dvSize][t]
+		)
+	end
 		
 	##Constraint (7f)-1: Minimum segment size
 	@constraint(m, SegmentSizeMinCon[t in p.Tech, k in p.Subdivision, s in 1:p.SegByTechSubdivision[k,t]],

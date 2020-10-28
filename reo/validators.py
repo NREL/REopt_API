@@ -50,7 +50,7 @@ class URDB_RateValidator:
 
     error_folder = 'urdb_rate_errors'
 
-    def __init__(self,_log_errors=True, **kwargs):
+    def __init__(self, _log_errors=True, **kwargs):
         """
         Takes a dictionary parsed from a URDB Rate Json response
         - See http://en.openei.org/services/doc/rest/util_rates/?version=3
@@ -107,7 +107,14 @@ class URDB_RateValidator:
         kwargs.setdefault("label", "custom")
         for key in kwargs:                           #Load in attributes
             setattr(self, key, kwargs[key])
-
+        self.numbers = [
+            'fixedmonthlycharge',
+            'fixedchargefirstmeter',
+            'mincharge',
+            'minmonthlycharge',
+            'annualmincharge',
+            'peakkwcapacitymin',
+        ]
         self.validate()                              #Validate attributes
 
         if _log_errors:
@@ -115,16 +122,23 @@ class URDB_RateValidator:
                 log_urdb_errors(self.label, self.errors, self.warnings)
 
     def validate(self):
-
         # Check if in known hard problems
         if self.label in hard_problem_labels:
             self.errors.append("URDB Rate (label={}) is currently restricted due to performance limitations".format(self.label))
 
          # Validate each attribute with custom valdidate function
+        required_fields = ['energyweekdayschedule','energyweekendschedule','energyratestructure']
+        for f in required_fields:
+            if self.isNotNone(f):
+                self.isNotEmptyList(f)
+
         for key in dir(self):
-            v = 'validate_' + key
-            if hasattr(self, v):
-                getattr(self, v)()
+            if key in self.numbers:
+                self.validate_number(key)
+            else:
+                v = 'validate_' + key
+                if hasattr(self, v):
+                    getattr(self, v)()
 
     @property
     def dependencies(self):
@@ -203,6 +217,11 @@ class URDB_RateValidator:
         if self.validDependencies(name):
             self.validSchedule(name, 'flatdemandstructure')
 
+    def validate_demandratchetpercentage(self):
+        if type(self.demandratchetpercentage) != list:
+            self.errors.append('Expecting demandratchetpercentage to be a list of 12 values.')
+        if len(self.demandratchetpercentage) != 12:
+            self.errors.append('Expecting demandratchetpercentage to be a list of 12 values.')
 
     #### FUNCTIONS TO VALIDATE ATTRIBUTES ####
 
@@ -246,6 +265,30 @@ class URDB_RateValidator:
             recursive_search(schedule)
         return valid
 
+    def validate_number(self, name):
+        try:
+            float(getattr(self, name, 0))
+        except:
+            self.errors.append('Entry for {} ({}) is not a valid number.'.format(name, getattr(self, name)))
+
+    def isNotNone(self, name):
+        if getattr(self,name, None) is None:
+            self.errors.append('Missing valid entry for {}.'.format(name))
+            return False
+        return True
+    
+    def isNotEmptyList(self, name):
+        if type(getattr(self,name)) != list:
+            self.errors.append('Expecting a list for {}.'.format(name))
+            return False
+        if len(getattr(self,name)) == 0:
+            self.errors.append('List is empty for {}.'.format(name))
+            return False
+        if None in getattr(self,name):
+            self.errors.append('List for {} contains null value(s).'.format(name))
+            return False
+        return True
+    
     def validRate(self, rate):
         # check that each  tier in rate structure array has a rate attribute, and that all rates except one contain a 'max' attribute
         # return Boolean if any errors found
@@ -254,19 +297,19 @@ class URDB_RateValidator:
 
             for i, r in enumerate(getattr(self, rate)):
                 if len(r) == 0:
-                    self.errors.append('Missing rate information for rate ' + str(i) + ' in ' + rate)
+                    self.errors.append('Missing rate information for rate ' + str(i) + ' in ' + rate + '.')
                     valid = False
                 num_max_tags = 0
                 for ii, t in enumerate(r):
                     if t.get('max') is not None:
                         num_max_tags +=1
                     if t.get('rate') is None and t.get('sell') is None and t.get('adj') is None:
-                        self.errors.append('Missing rate/sell/adj attributes for tier ' + str(ii) + " in rate " + str(i) + ' ' + rate)
+                        self.errors.append('Missing rate/sell/adj attributes for tier ' + str(ii) + " in rate " + str(i) + ' ' + rate + '.')
                         valid = False
                 if len(r) > 1:
                     num_missing_max_tags = len(r) - 1 - num_max_tags
                     if num_missing_max_tags > 0:
-                        self.errors.append("Missing 'max' tag for {} tiers in rate {} for {}".format( num_missing_max_tags, i, rate ))
+                        self.errors.append("Missing 'max' tag for {} tiers in rate {} for {}.".format( num_missing_max_tags, i, rate ))
                         valid = False
             return valid
         return False
@@ -287,11 +330,11 @@ class URDB_RateValidator:
                 for period in periods:
                     if period > len(getattr(self, rate)) - 1 or period < 0:
                         self.errors.append(
-                            '%s contains value %s which has no associated rate in %s' % (schedules, period, rate))
+                            '%s contains value %s which has no associated rate in %s.' % (schedules, period, rate))
                         valid = False
                 return valid
             else:
-                self.warnings.append('{} does not exist to check {}'.format(rate,schedules))
+                self.warnings.append('{} does not exist to check {}.'.format(rate,schedules))
         return False
 
 
@@ -378,13 +421,15 @@ class ValidateNestedInput:
         self.emission_warning = []
         self.defaults_inserted = []
         self.input_dict = dict()
-        self.input_dict['Scenario'] = input_dict.get('Scenario') or {}
+        if type(input_dict) is not dict:
+            self.input_data_errors.append("POST must contain a valid JSON formatted accoring to format described in https://developer.nrel.gov/docs/energy-optimization/reopt-v1/")
+        else:        
+            self.input_dict['Scenario'] = input_dict.get('Scenario') or {}
+            for k,v in input_dict.items():
+                if k != 'Scenario':
+                    self.invalid_inputs.append([k, ["Top Level"]])
 
-        for k,v in input_dict.items():
-            if k != 'Scenario':
-                self.invalid_inputs.append([k, ["Top Level"]])
-
-        self.check_object_types(self.input_dict)
+            self.check_object_types(self.input_dict)
         if self.isValid:
             self.recursively_check_input_dict(self.nested_input_definitions, self.remove_invalid_keys)
             self.recursively_check_input_dict(self.nested_input_definitions, self.remove_nones)
@@ -443,11 +488,11 @@ class ValidateNestedInput:
             output["input_errors"] = self.input_data_errors
 
         if self.urdb_errors and self.input_data_errors:
-            output["input_errors"] += self.urdb_errors
+            output["input_errors"] += ['URDB Rate: ' + ' '.join(self.urdb_errors)]
 
         elif self.urdb_errors:
             output["error"] = "Invalid inputs. See 'input_errors'."
-            output["input_errors"] = self.urdb_errors
+            output["input_errors"] = ['URDB Rate: ' + ' '.join(self.urdb_errors)]
 
         return output
 
@@ -1018,6 +1063,7 @@ class ValidateNestedInput:
                         .format(electric_tariff.get('urdb_label'))
                     )
                 else:
+                    self.update_attribute_value(object_name_path, number,  'urdb_response', rate.urdb_dict)
                     electric_tariff['urdb_response'] = rate.urdb_dict
                     self.validate_urdb_response()
 
@@ -1030,6 +1076,7 @@ class ValidateNestedInput:
                         .format(electric_tariff.get('urdb_rate_name'))
                     )
                 else:
+                    self.update_attribute_value(object_name_path, number,  'urdb_response', rate.urdb_dict)
                     electric_tariff['urdb_response'] = rate.urdb_dict
                     self.validate_urdb_response()
 
@@ -1051,7 +1098,9 @@ class ValidateNestedInput:
 
             for blended in ['blended_monthly_demand_charges_us_dollars_per_kw','blended_monthly_rates_us_dollars_per_kwh']:
                 if electric_tariff.get(blended) is not None:
-                    if len(electric_tariff.get(blended)) != 12:
+                    if type(electric_tariff.get(blended)) is not list:
+                        self.input_data_errors.append('{} needs to be an array that contains 12 valid numbers.'.format(blended) )
+                    elif len(electric_tariff.get(blended)) != 12:
                         self.input_data_errors.append('{} array needs to contain 12 valid numbers.'.format(blended) )
 
             if electric_tariff.get('tou_energy_rates_us_dollars_per_kwh') is not None:
@@ -1481,7 +1530,7 @@ class ValidateNestedInput:
             try:
                 rate_checker = URDB_RateValidator(**urdb_response)
                 if rate_checker.errors:
-                    self.urdb_errors.append(rate_checker.errors)
+                    self.urdb_errors += rate_checker.errors
             except:
                 self.urdb_errors.append('Error parsing urdb rate in %s ' % (["Scenario", "Site", "ElectricTariff"]))
 
