@@ -36,11 +36,9 @@ import logging
 from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
 from reo.models import ModelManager, PVModel, FinancialModel, WindModel
-from reo.src.outage_costs import calc_avoided_outage_costs
 from reo.src.profiler import Profiler
 from reo.src.emissions_calculator import EmissionsCalculator
-from reo.utilities import annuity, degradation_factor
-from proforma.models import ProForma
+from reo.utilities import annuity
 from reo.nested_inputs import macrs_five_year, macrs_seven_year
 log = logging.getLogger(__name__)
 
@@ -502,7 +500,14 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             Note that the owner_discount_pct and owner_tax_pct are set to the offtaker_discount_pct and offtaker_tax_pct
             respectively when third_party_ownership is False.
             """
-            upfront_capex_after_incentives = self.nested_outputs["Scenario"]["Site"]["Financial"]["net_capital_costs"]
+            yrs = self.inputs["Financial"]["analysis_years"]
+            pwf_offtaker = annuity(yrs, 0, self.inputs["Financial"]["offtaker_discount_pct"])
+            pwf_owner = annuity(yrs, 0, self.inputs["Financial"]["owner_discount_pct"])
+            third_party_factor = (pwf_offtaker * (1 - self.inputs["Financial"]["offtaker_tax_pct"])) \
+                                  / (pwf_owner * (1 - self.inputs["Financial"]["owner_tax_pct"]))
+
+            upfront_capex_after_incentives = self.nested_outputs["Scenario"]["Site"]["Financial"]["net_capital_costs"] \
+                                             / third_party_factor
 
             pwf_inverter = 1 / ((1 + self.inputs["Financial"]["owner_discount_pct"])
                                 ** self.inputs["Storage"]["inverter_replacement_year"])
