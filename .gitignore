@@ -121,3 +121,5 @@ docs/formulation/*log
 julia_envs/**/**.so
 julia_envs/**/**.dylib
 julia_envs/**/**.dll
+
+/.werf_secret_key
