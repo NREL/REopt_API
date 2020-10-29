@@ -62,6 +62,10 @@ def make_error_resp(msg):
         return resp
 
 
+def health(request):
+    return HttpResponse("OK")
+
+
 def errors(request, page_uuid):
     
     template= loader.get_template("errors.html")

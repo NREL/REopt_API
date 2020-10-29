@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+set -Eeuxo pipefail
+
+while true; do
+  migrations=$(python manage.py showmigrations --plan)
+  { set +x; } 2>/dev/null
+  pending_migrations=$(echo "$migrations" | grep '\[ \]' || true)
+  if [ -z "$pending_migrations" ]; then
+    echo "Migrations up to date."
+    break
+  else
+    echo "Waiting for migrations to complete:"
+    echo "$pending_migrations"
+    sleep 3
+  fi
+  set -x
+done

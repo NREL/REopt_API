@@ -1,0 +1,30 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ .Chart.Name }}-django-ingress
+  annotations:
+    # Size should be kept in sync with "client_max_body_size" in
+    # config/templates/nginx/site.conf.tmpl.
+    nginx.ingress.kubernetes.io/proxy-body-size: "2048m"
+spec:
+  tls:
+    - hosts:
+      - {{ .Values.ingressHost }}
+      {{ if .Values.tempIngressHost }}
+      - {{ .Values.tempIngressHost }}
+      {{ end }}
+  rules:
+    - host: {{ .Values.ingressHost }}
+      http:
+        paths:
+          - backend:
+              serviceName: {{ .Chart.Name }}-django-service
+              servicePort: 8000
+    {{ if .Values.tempIngressHost }}
+    - host: {{ .Values.tempIngressHost }}
+      http:
+        paths:
+          - backend:
+              serviceName: {{ .Chart.Name }}-django-service
+              servicePort: 8000
+    {{ end }}
