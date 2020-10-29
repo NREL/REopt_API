@@ -137,6 +137,8 @@ class DataManager:
             self.rc.use_flexloads_model_bau = True
             if 'ac' not in self.bau_techs:
                 self.bau_techs.append('ac')
+            if 'hp' not in self.bau_techs:
+                self.bau_techs.append('hp')
 
     def add_flex_tech_hp(self, flex_tech_hp):
         self.hp = flex_tech_hp
@@ -144,6 +146,8 @@ class DataManager:
             self.rc.use_flexloads_model_bau = True
             if 'hp' not in self.bau_techs:
                 self.bau_techs.append('hp')
+            if 'ac' not in self.bau_techs:
+                self.bau_techs.append('ac')
 
     def add_pv(self, pv):
         junk = pv.prod_factor  # avoids redundant PVWatts call for pvnm
@@ -1020,6 +1024,13 @@ class DataManager:
 
         return elec_penalty
 
+    def _get_RC_inputs(self, use_flexloads_model):
+
+        if use_flexloads_model:
+            return self.rc.a_matrix, self.rc.b_matrix, self.rc.u_inputs, self.rc.n_temp_nodes, self.rc.n_input_nodes
+        else:
+            return [0.0], [0.0], [0.0]*self.n_timesteps, 1, 1
+
     def finalize(self):
         """
         necessary for writing out parameters that depend on which Techs are defined
@@ -1035,6 +1046,10 @@ class DataManager:
 
         elec_penalty = self._get_REopt_elecPenalty(self.available_techs)
         elec_penalty_bau = self._get_REopt_elecPenalty(self.bau_techs)
+
+        a_matrix, b_matrix, u_inputs, n_temp_nodes, n_input_nodes = self._get_RC_inputs(self.rc.use_flexloads_model)
+        a_matrix_bau, b_matrix_bau, u_inputs_bau, n_temp_nodes_bau, n_input_nodes_bau = self._get_RC_inputs(
+            self.rc.use_flexloads_model_bau)
 
         tech_to_location, derate, om_cost_us_dollars_per_kw, \
             om_cost_us_dollars_per_kwh, om_cost_us_dollars_per_hr_per_kw_rated, production_factor, \
@@ -1347,13 +1362,13 @@ class DataManager:
             # Flex loads
             'FlexTechs': flex_techs,
             'UseFlexLoadsModel': self.rc.use_flexloads_model,
-            'AMatrix': self.rc.a_matrix,
-            'BMatrix': self.rc.b_matrix,
-            'UInputs': self.rc.u_inputs,
+            'AMatrix': a_matrix,
+            'BMatrix': b_matrix,
+            'UInputs': u_inputs,
             'SHR': self.rc.shr,
             'InitTemperatures': self.rc.init_temperatures,
-            'TempNodesCount': self.rc.n_temp_nodes,
-            'InputNodesCount': self.rc.n_input_nodes,
+            'TempNodesCount': n_temp_nodes,
+            'InputNodesCount': n_input_nodes,
             'SpaceNode': self.rc.space_node,
             'OperatingPenalty': elec_penalty
         }
@@ -1484,13 +1499,13 @@ class DataManager:
             # Flex loads
             'FlexTechs': flex_techs_bau,
             'UseFlexLoadsModel': self.rc.use_flexloads_model_bau,
-            'AMatrix': self.rc.a_matrix,
-            'BMatrix': self.rc.b_matrix,
-            'UInputs': self.rc.u_inputs,
+            'AMatrix': a_matrix_bau,
+            'BMatrix': b_matrix_bau,
+            'UInputs': u_inputs_bau,
             'SHR': self.rc.shr,
             'InitTemperatures': self.rc.init_temperatures,
-            'TempNodesCount': self.rc.n_temp_nodes,
-            'InputNodesCount': self.rc.n_input_nodes,
+            'TempNodesCount': n_temp_nodes_bau,
+            'InputNodesCount': n_input_nodes_bau,
             'SpaceNode': self.rc.space_node,
             'OperatingPenalty': elec_penalty_bau
         }

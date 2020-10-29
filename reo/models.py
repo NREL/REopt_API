@@ -853,6 +853,7 @@ class FlexTechACModel(models.Model):
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)
     year_one_power_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_power_consumption_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -876,6 +877,7 @@ class FlexTechHPModel(models.Model):
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)
     year_one_power_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_power_consumption_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):

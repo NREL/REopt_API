@@ -83,7 +83,7 @@ class TestFlexLoads(ResourceTestCaseMixin, TestCase):
                 "pbi_years": 0,
                 "macrs_bonus_pct": 0.0,
                 "min_kw": 0,
-                "max_kw": 100000,
+                "max_kw": 0,
                 "pbi_max_us_dollars": 0.0,
                 "radius": 0.0,
                 "state_ibi_pct": 0.0,
@@ -101,7 +101,7 @@ class TestFlexLoads(ResourceTestCaseMixin, TestCase):
                 "state_rebate_max_us_dollars": 0.0,
                 "dc_ac_ratio": 1.1,
                 "federal_itc_pct": 0.0,
-                "existing_kw": 0.0,
+                "existing_kw": 5.0,
                 "module_type": 0,
                 "array_type": 1,
                 "pbi_us_dollars_per_kwh": 0.0,
@@ -181,7 +181,7 @@ class TestFlexLoads(ResourceTestCaseMixin, TestCase):
                 "pbi_years": 0.0,
                 "macrs_bonus_pct": 0.0,
                 "om_cost_us_dollars_per_kwh": 0.01,
-                "max_kw": 1000000000.0,
+                "max_kw": 0.0,
                 "pbi_max_us_dollars": 0.0,
                 "state_ibi_pct": 0.0,
                 "fuel_intercept_gal_per_hr": 0.0125,
@@ -244,9 +244,6 @@ class TestFlexLoads(ResourceTestCaseMixin, TestCase):
           }
         }
 
-    # Can HVAC turndown?
-    # dvTemp = free?
-
     def get_response(self, data):
         initial_post = self.api_client.post(self.submit_url, format='json', data=data)
         uuid = json.loads(initial_post.content)['run_uuid']
@@ -272,8 +269,10 @@ class TestFlexLoads(ResourceTestCaseMixin, TestCase):
         print('Indoor temps: ', response['outputs']['Scenario']['Site']['RC']['temperatures_degree_C'])
         print('AC size: ', response['outputs']['Scenario']['Site']['FlexTechAC']['size_kw'])
         print('AC production: ', response['outputs']['Scenario']['Site']['FlexTechAC']['year_one_power_production_series_kw'])
+        print('AC consumption: ',response['outputs']['Scenario']['Site']['FlexTechAC']['year_one_power_consumption_series_kw'])
         print('HP size: ', response['outputs']['Scenario']['Site']['FlexTechHP']['size_kw'])
         print('HP production: ', response['outputs']['Scenario']['Site']['FlexTechHP']['year_one_power_production_series_kw'])
+        print('HP consumption: ', response['outputs']['Scenario']['Site']['FlexTechHP']['year_one_power_consumption_series_kw'])
 
         tariff_out = response['outputs']['Scenario']['Site']['ElectricTariff']
         messages = response['messages']
