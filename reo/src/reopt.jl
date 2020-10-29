@@ -136,6 +136,7 @@ end
 
 
 function add_bigM_adjustments(m, p)
+	m[:kWh_per_MMBTU] = 293.07107018  #Supports numerical stability in constraints using MMBTU units
 	m[:NewMaxUsageInTier] = Array{Float64,2}(undef,12, p.PricingTierCount+1)
 	m[:NewMaxDemandInTier] = Array{Float64,2}(undef, length(p.Ratchets), p.DemandBinCount)
 	m[:NewMaxDemandMonthsInTier] = Array{Float64,2}(undef,12, p.DemandMonthsBinCount)
@@ -304,21 +305,21 @@ function add_thermal_production_constraints(m, p)
 	if !isempty(p.CHPTechs)
 		#Constraint (2a-1): Upper Bounds on Thermal Production Y-Intercept
 		@constraint(m, CHPYInt2a1Con[t in p.CHPTechs, ts in p.TimeStep],
-					m[:dvThermalProductionYIntercept][t,ts] <= p.CHPThermalProdIntercept[t] * m[:dvSize][t]
+					m[:kWh_per_MMBTU] * m[:dvThermalProductionYIntercept][t,ts] <= m[:kWh_per_MMBTU] * p.CHPThermalProdIntercept[t] * m[:dvSize][t]
 					)
 		# Constraint (2a-2): Upper Bounds on Thermal Production Y-Intercept
 		@constraint(m, CHPYInt2a2Con[t in p.CHPTechs, ts in p.TimeStep],
-					m[:dvThermalProductionYIntercept][t,ts] <= p.CHPThermalProdIntercept[t] * m[:NewMaxSize][t] * m[:binTechIsOnInTS][t,ts]
+					m[:kWh_per_MMBTU] * m[:dvThermalProductionYIntercept][t,ts] <= m[:kWh_per_MMBTU] * p.CHPThermalProdIntercept[t] * m[:NewMaxSize][t] * m[:binTechIsOnInTS][t,ts]
 					)
 		#Constraint (2b): Lower Bounds on Thermal Production Y-Intercept
 		@constraint(m, CHPYInt2bCon[t in p.CHPTechs, ts in p.TimeStep],
-					m[:dvThermalProductionYIntercept][t,ts] >= p.CHPThermalProdIntercept[t] * m[:dvSize][t] - p.CHPThermalProdIntercept[t] * m[:NewMaxSize][t] * (1 - m[:binTechIsOnInTS][t,ts])
+					m[:kWh_per_MMBTU] * m[:dvThermalProductionYIntercept][t,ts] >= m[:kWh_per_MMBTU] * (p.CHPThermalProdIntercept[t] * m[:dvSize][t] - p.CHPThermalProdIntercept[t] * m[:NewMaxSize][t] * (1 - m[:binTechIsOnInTS][t,ts]))
 					)
 		# Constraint (2c): Thermal Production of CHP
 		# Note: p.HotWaterAmbientFactor[t,ts] * p.HotWaterThermalFactor[t,ts] removed from this but present in math
 		@constraint(m, CHPThermalProductionCon[t in p.CHPTechs, ts in p.TimeStep],
-					m[:dvThermalProduction][t,ts] ==
-					p.CHPThermalProdSlope[t] * p.ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts] + m[:dvThermalProductionYIntercept][t,ts]
+					m[:kWh_per_MMBTU] * m[:dvThermalProduction][t,ts] ==
+					m[:kWh_per_MMBTU] * (p.CHPThermalProdSlope[t] * p.ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts] + m[:dvThermalProductionYIntercept][t,ts])
 					)
 	end
 end
@@ -471,12 +472,15 @@ function add_thermal_load_constraints(m, p)
 	##Constraint (5b): Hot thermal loads
 	if !isempty(p.HeatingTechs)
 		@constraint(m, HotThermalLoadCon[ts in p.TimeStep],
-				sum(m[:dvThermalProduction][t,ts] for t in p.CHPTechs) +
-				sum(p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts] for t in p.BoilerTechs) +
-				sum(m[:dvDischargeFromStorage][b,ts] for b in p.HotTES) ==
-				p.HeatingLoad[ts] * p.BoilerEfficiency +
-				sum(m[:dvProductionToWaste][t,ts] for t in p.CHPTechs) + sum(m[:dvProductionToStorage][b,t,ts] for b in p.HotTES, t in p.HeatingTechs)  +
-				sum(m[:dvThermalProduction][t,ts] * 3412.0 / 1.0E6 for t in p.AbsorptionChillers) / p.AbsorptionChillerCOP
+				m[:kWh_per_MMBTU] * (
+					sum(m[:dvThermalProduction][t,ts] for t in p.CHPTechs) +
+					sum(p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts] for t in p.BoilerTechs) +
+					sum(m[:dvDischargeFromStorage][b,ts] for b in p.HotTES) 
+				) == m[:kWh_per_MMBTU] * (
+					p.HeatingLoad[ts] * p.BoilerEfficiency +
+					sum(m[:dvProductionToWaste][t,ts] for t in p.CHPTechs) + sum(m[:dvProductionToStorage][b,t,ts] for b in p.HotTES, t in p.HeatingTechs)  +
+					sum(m[:dvThermalProduction][t,ts] * 3412.0 / 1.0E6 for t in p.AbsorptionChillers) / p.AbsorptionChillerCOP
+				)
 		)
 	end
 end
