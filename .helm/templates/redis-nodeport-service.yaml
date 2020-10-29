@@ -1,0 +1,18 @@
+{{ if .Values.deploySharedResources }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Chart.Name }}-redis-nodeport-service
+  namespace: {{ .Values.sharedResourcesNamespace | quote }}
+  annotations:
+    "helm.sh/resource-policy": keep
+spec:
+  type: NodePort
+  selector:
+    app: {{ .Chart.Name }}-redis
+  ports:
+    - protocol: TCP
+      port: 6379
+      targetPort: 6379
+      nodePort: 30500
+{{ end }}

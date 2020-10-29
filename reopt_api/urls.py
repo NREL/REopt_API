@@ -53,6 +53,7 @@ def page_not_found(request, url):
     return HttpResponse("Invalid URL: {}".format(url), status=404)
 
 urlpatterns = [
+    url(r'^_health/?$', views.health, name='health'),
     url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/proforma/?$', proforma, name='proforma'),
     url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/resilience_stats/?$', resilience_stats, name='resilience_stats'),
     url(r'^v1/outagesimjob/(?P<run_uuid>[0-9a-f-]+)/?$', resilience_stats, name='resilience_stats'),
