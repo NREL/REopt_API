@@ -163,5 +163,8 @@ ROLLBAR = {
 import rollbar
 rollbar.init(**ROLLBAR)
 
+APPEND_SLASH = False
+TASTYPIE_ALLOW_MISSING_SLASH = True
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "reopt_api.production_settings")
 django.setup()
