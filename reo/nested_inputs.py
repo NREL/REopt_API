@@ -1795,7 +1795,7 @@ nested_input_definitions = {
         },
         "u_inputs": {
           "type": "list_of_float",
-          "default": [0.0]*8760,
+          "default": [0.0],
           "description": "Inputs"
         },
         "init_temperatures": {

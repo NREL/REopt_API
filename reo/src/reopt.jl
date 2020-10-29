@@ -1204,8 +1204,10 @@ function add_null_flex_load_results(m, p, r::Dict)
 	r["indoor_temperatures"] = []
 	r["ac_size_kw"] = 0.0
 	r["ac_production_series"] = []
+	r["ac_consumption_series"] = []
 	r["hp_size_kw"] = 0.0
 	r["hp_production_series"] = []
+	r["hp_consumption_series"] = []
 	nothing
 end
 
@@ -1514,12 +1516,20 @@ function add_flex_load_results(m, p, r::Dict)
 	@expression(m, ACProduction[ts in p.TimeStep],
 				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] for t in ["AC"])
 				)
-	r["ac_production_series"] = round.(value.(ACProduction), digits=3)
+	r["ac_production_series"] = round.(value.(ACProduction), digits=4)
+	@expression(m, ACConsumption[ts in p.TimeStep],
+	 			sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] * p.OperatingPenalty[t,ts] for t in ["AC"])
+				)
+	r["ac_consumption_series"] = round.(value.(ACConsumption), digits=4)
 	r["hp_size_kw"] = round(value(m[:dvSize]["HP"]), digits=4)
 	@expression(m, HPProduction[ts in p.TimeStep],
 				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] for t in ["HP"])
 				)
-	r["hp_production_series"] = round.(value.(HPProduction), digits=3)
+	r["hp_production_series"] = round.(value.(HPProduction), digits=4)
+	@expression(m, HPConsumption[ts in p.TimeStep],
+				sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] * p.OperatingPenalty[t,ts] for t in ["HP"])
+				)
+	r["hp_consumption_series"] = round.(value.(HPConsumption), digits=4)
 	nothing
 end
 

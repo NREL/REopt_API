@@ -977,6 +977,11 @@ nested_output_definitions = {
                   "type": list_of_float,
                   "description": "Year one AC power production time series",
                   "units": "kW"
+                },
+                "year_one_power_consumption_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one AC power consumption time series",
+                  "units": "kW"
                 }
               },
               "FlexTechHP": {
@@ -988,6 +993,11 @@ nested_output_definitions = {
                 "year_one_power_production_series_kw": {
                   "type": list_of_float,
                   "description": "Year one HP power production time series",
+                  "units": "kW"
+                },
+                "year_one_power_consumption_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one HP power consumption time series",
                   "units": "kW"
                 }
               }
