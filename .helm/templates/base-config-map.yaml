@@ -4,6 +4,7 @@ metadata:
   name: {{ .Chart.Name }}-base-config-map
 data:
   APP_ENV: {{ .Values.appEnv | quote }}
+  BRANCH_NAME: {{ .Values.branchName | quote }}
   DB_NAME: {{ .Values.dbName | quote }}
   # Use the database name as the queue name so that separate branches or
   # databases on staging remain in separate queues.
