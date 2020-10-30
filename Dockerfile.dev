@@ -31,7 +31,7 @@ RUN rm xp8.0.4_linux_x86_64.tar.gz
 COPY julia_envs/Xpress /opt/reopt/julia_envs/Xpress/
 ENV LD_PRELOAD=/usr/src/julia-1.5.2/lib/julia/libstdc++.so.6
 WORKDIR /opt/reopt/julia_envs/Xpress/
-RUN julia --project="." -e 'import Pkg; Pkg.instantiate(); include("precompile.jl")'
+RUN julia --project="." -e 'import Pkg; Pkg.instantiate(); include("buildpkgs.jl")'
 RUN python -c 'import julia; julia.install()'
 
 
