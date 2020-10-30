@@ -30,6 +30,7 @@
 import os
 import sys
 import uuid
+import traceback
 from django.http import JsonResponse
 from proforma.models import ProForma, ScenarioModel
 from django.http import HttpResponse
@@ -48,7 +49,7 @@ def proforma(request, run_uuid):
             return JsonResponse(resp, status=400)
         else:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            err = UnexpectedError(exc_type, exc_value, exc_traceback, task='proforma', run_uuid=run_uuid)
+            err = UnexpectedError(exc_type, exc_value, traceback.format_tb(exc_traceback), task='proforma', run_uuid=run_uuid)
             err.save_to_db()
             return JsonResponse({"Error": str(err.message)}, status=400)
 
@@ -83,6 +84,6 @@ def proforma(request, run_uuid):
             return HttpResponse(msg, status=404)
         else:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            err = UnexpectedError(exc_type, exc_value, exc_traceback, task='proforma', run_uuid=run_uuid)
+            err = UnexpectedError(exc_type, exc_value, traceback.format_tb(exc_traceback), task='proforma', run_uuid=run_uuid)
             err.save_to_db()
             return HttpResponse({"Error": str(err.message)}, status=400)
