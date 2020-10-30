@@ -608,7 +608,7 @@ function add_load_balance_constraints(m, p)
 		sum( sum(m[:dvProductionToStorage][b,t,ts] for b in p.ElecStorage) +
 			sum(m[:dvProductionToGrid][t,u,ts] for u in p.CurtailmentTiers) for t in p.ElectricTechs) +
 		    sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
-		p.ElecLoad[ts]
+		p.ElecLoad[ts] + m[:ElecPenalty][ts]
 	)
 end
 

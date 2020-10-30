@@ -181,7 +181,7 @@ class TestFlexLoads(ResourceTestCaseMixin, TestCase):
                 "pbi_years": 0.0,
                 "macrs_bonus_pct": 0.0,
                 "om_cost_us_dollars_per_kwh": 0.01,
-                "max_kw": 0.0,
+                "max_kw": 100.0,
                 "pbi_max_us_dollars": 0.0,
                 "state_ibi_pct": 0.0,
                 "fuel_intercept_gal_per_hr": 0.0125,
@@ -204,7 +204,7 @@ class TestFlexLoads(ResourceTestCaseMixin, TestCase):
                 "existing_kw": 0.0,
                 "om_cost_us_dollars_per_kw": 10.0,
                 "utility_rebate_us_dollars_per_kw": 0.0,
-                "min_kw": 0.0,
+                "min_kw": 5.0,
                 "macrs_itc_reduction": 0.0,
                 "federal_rebate_us_dollars_per_kw": 0.0,
                 "generator_sells_energy_back_to_grid": False
