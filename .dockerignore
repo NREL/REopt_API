@@ -12,3 +12,5 @@ Jenkinsfile
 .helm
 .kube*
 werf.yaml
+**/*.dylib
+**/*.dll
