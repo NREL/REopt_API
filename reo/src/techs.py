@@ -1212,6 +1212,7 @@ class FlexTechAC(Tech):
         super(FlexTechAC, self).__init__(**kwargs)
 
         self.reopt_class = 'AC'
+        self.loads_served = ['retail']
         self.existing_kw = kwargs.get('existing_kw')
         self.prod_factor_series_kw = kwargs.get('prod_factor_series_kw')
         self.operating_penalty_kw = kwargs.get('operating_penalty_kw')
@@ -1231,6 +1232,7 @@ class FlexTechHP(Tech):
         super(FlexTechHP, self).__init__(**kwargs)
 
         self.reopt_class = 'HP'
+        self.loads_served = ['retail']
         self.existing_kw = kwargs.get('existing_kw')
         self.prod_factor_series_kw = kwargs.get('prod_factor_series_kw')
         self.operating_penalty_kw = kwargs.get('operating_penalty_kw')
