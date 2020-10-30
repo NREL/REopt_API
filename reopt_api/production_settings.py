@@ -148,6 +148,9 @@ CELERY_IMPORTS = (
     'resilience_stats.outage_simulator_LF',
 )
 
+# limit number of concurrent workers
+CELERY_WORKER_CONCURRENCY = 2
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
