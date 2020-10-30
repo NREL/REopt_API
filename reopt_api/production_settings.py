@@ -138,7 +138,8 @@ USE_TZ = True
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_WORKER_MAX_TASKS_PER_CHILD = 50
 CELERY_WORKER_MAX_MEMORY_PER_CHILD = 6000000 # 6 GB
-
+# limit number of concurrent workers, by default = number of CPUs
+CELERY_WORKER_CONCURRENCY = 2
 
 # celery task registration
 CELERY_IMPORTS = (
@@ -148,9 +149,6 @@ CELERY_IMPORTS = (
     'reo.src.run_jump_model',
     'resilience_stats.outage_simulator_LF',
 )
-
-# limit number of concurrent workers
-CELERY_WORKER_CONCURRENCY = 2
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
