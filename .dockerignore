@@ -4,7 +4,7 @@ env/
 *.rdb
 *.log
 */.*
-static/
+static/files/*
 tmp/
 docs/
 Jenkinsfile
