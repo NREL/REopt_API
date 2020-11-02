@@ -97,17 +97,17 @@ def debug_task(self):
 
 @after_setup_logger.connect
 def setup_loggers(logger, *args, **kwargs):
-    file_formatter = logging.Formatter(
-        '%(asctime)s %(name)-12s %(levelname)-8s %(filename)s::%(funcName)s line %(lineno)s %(message)s')
+    # file_formatter = logging.Formatter(
+    #     '%(asctime)s %(name)-12s %(levelname)-8s %(filename)s::%(funcName)s line %(lineno)s %(message)s')
     console_formatter = logging.Formatter(
         '%(name)-12s %(levelname)-8s %(filename)s::%(funcName)s line %(lineno)s %(message)s')
 
-    logfile = os.path.join(os.getcwd(), "log", "reopt_api.log")
-
-    file_handler = logging.FileHandler(filename=logfile, mode='a')
-    file_handler.setFormatter(file_formatter)
-    file_handler.setLevel(logging.INFO)
-    logger.addHandler(file_handler)
+    # logfile = os.path.join(os.getcwd(), "log", "reopt_api.log")
+    #
+    # file_handler = logging.FileHandler(filename=logfile, mode='a')
+    # file_handler.setFormatter(file_formatter)
+    # file_handler.setLevel(logging.INFO)
+    # logger.addHandler(file_handler)
 
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(console_formatter)
