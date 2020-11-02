@@ -176,6 +176,7 @@ nested_input_definitions = {
       },
       "outdoor_air_temp_degF": {
         "type": "list_of_float",
+        "default": [],
         "description": "Hourly outdoor air temperature (dry-bulb)."
       },
       "elevation_ft": {
