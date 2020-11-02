@@ -102,8 +102,6 @@ pipeline {
                           --set='ingressHost=${DEPLOY_BRANCH_DOMAIN}' \
                           --set='tempIngressHost=${tadaDeployBranchDomain(baseDomain: env.STAGING_TEMP_BASE_DOMAIN, primaryBranch: "master")}' \
                           --set='dbName=${DEPLOY_BRANCH_DB_NAME}' \
-                          --set='deploySharedResources=${DEPLOY_BRANCH_DEPLOY_SHARED_RESOURCES}' \
-                          --set='sharedResourcesNamespace=${DEPLOY_SHARED_RESOURCES_NAMESPACE_NAME}'
                       """
                     }
                   }
@@ -130,7 +128,6 @@ pipeline {
                           --values=./.helm/values.${DEPLOY_ENV}.yaml \
                           --secret-values=./.helm/secret-values.${DEPLOY_ENV}.yaml \
                           --set='ingressHost=${PRODUCTION_DOMAIN}' \
-                          --set='sharedResourcesNamespace=${DEPLOY_SHARED_RESOURCES_NAMESPACE_NAME}'
                       """
                     }
                   }
