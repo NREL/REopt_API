@@ -176,6 +176,7 @@ nested_input_definitions = {
       },
       "outdoor_air_temp_degF": {
         "type": "list_of_float",
+        "default": [],
         "description": "Hourly outdoor air temperature (dry-bulb)."
       },
       "elevation_ft": {
@@ -218,7 +219,7 @@ nested_input_definitions = {
         "offtaker_tax_pct": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0,
+          "max": 0.999,
           "default": 0.26,
           "description": "Host tax rate"
         },
@@ -236,8 +237,8 @@ nested_input_definitions = {
         },
         "owner_tax_pct": {
           "type": "float",
-          "min": 0.0,
-          "max": 1.0,
+          "min": 0,
+          "max": 0.999,
           "default": 0.26,
           "description": "Generation owner tax rate. Used for two party financing model. In two party ownership model the offtaker does not own the generator(s)."
         },

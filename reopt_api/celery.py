@@ -49,7 +49,7 @@ try:
         redis_host = ':' + staging_redis_password + '@' + staging_redis_host
     elif env == 'production':
         raw_env = 'reopt_api.production_settings'
-        redis_host = ':' + production_redis_password + '@' + prod_redis_host
+        redis_host = ':' + production_redis_password + '@' + production_redis_host
     else:
         raw_env = 'reopt_api.dev_settings'
         redis_host = os.environ.get('REDIS_HOST', 'localhost')

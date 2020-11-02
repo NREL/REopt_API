@@ -6,9 +6,6 @@ pipeline {
     disableConcurrentBuilds()
     buildDiscarder(logRotator(numToKeepStr: "365"))
   }
-  triggers {
-    cron(env.BRANCH_NAME == "main" ? "H H(0-5) * * *" : "")
-  }
 
   environment {
     IMAGE_REPO_DOMAIN = credentials("reopt-api-image-repo-domain")
@@ -17,34 +14,6 @@ pipeline {
     PRODUCTION_DOMAIN = credentials("reopt-api-production-domain")
     XPRESS_LICENSE_HOST = credentials("reopt-api-xpress-license-host")
     NREL_ROOT_CERT_URL_ROOT = credentials("reopt-api-nrel-root-cert-url-root")
-  }
-
-  parameters {
-    booleanParam(
-      name: "SKIP_TESTS",
-      defaultValue: false,
-      description: "Skip tests before deploying.",
-    )
-    booleanParam(
-      name: "FORCE_STAGING_DEPLOY",
-      defaultValue: false,
-      description: "Staging Only: Force a staging deployment for a non-main branch, even if no pull request is open.",
-    )
-    choice(
-      name: "STAGING_SYNC_DB",
-      choices: [
-        "",
-        "production_latest_nightly",
-        "production",
-        "staging",
-      ],
-      description: "Staging Only: Sync the branched database from this environment's database before deploying. The 'production_latest_nightly' option will use the latest dump stored on the db-data-dump Jenkins job. The other options will produce a fresh dump first.",
-    )
-    string(
-      name: "STAGING_SYNC_DB_OVERRIDE_NAME",
-      defaultValue: "",
-      description: "Staging Only: Override the database name to sync from in order to sync from other branched databases on staging.",
-    )
   }
 
   stages {
@@ -58,36 +27,14 @@ pipeline {
 
       stages {
         stage("tests") {
-          when { expression { !params.SKIP_TESTS } }
-
-          environment {
-            CI = "true"
-            HOME = "/tmp"
-            TMPDIR = "/tmp"
-            APP_ENV = "test"
-            DB_HOST = "localhost"
-            DB_PORT = "5412"
-            DB_USERNAME = "postgres"
-            DB_PASSWORD = "postgres"
-            // Use different databases for each branch so Jenkins multibranch runs
-            // don't conflict.
-            DB_TEST_NAME = "reopt_api_test_${BRANCH_NAME.replaceAll(/[^\w]+/, '_')}"
-          }
-
-          parallel {
-            stage("echo") {
-              steps {
-                sh "echo 'Container built and running.'"
-              }
-            }
+          steps {
+            sh "echo 'Container built and running.'"
           }
         }
       }
     }
 
     stage("deploy-agent") {
-      when { not { triggeredBy "TimerTrigger" } }
-
       agent {
         docker {
           image "${IMAGE_REPO_DOMAIN}/tada-public/tada-jenkins-kube-deploy:latest"
@@ -110,8 +57,6 @@ pipeline {
 
       stages {
         stage("deploy") {
-          when { expression { env.CHANGE_ID || params.FORCE_STAGING_DEPLOY || env.BRANCH_NAME == "main" } }
-
           stages {
             stage("lint") {
               steps {
@@ -138,8 +83,6 @@ pipeline {
             }
 
             stage("deploy-staging") {
-              when { expression { env.CHANGE_ID || params.FORCE_STAGING_DEPLOY || env.BRANCH_NAME == "main" } }
-
               environment {
                 DEPLOY_ENV = "staging"
                 DEPLOY_SHARED_RESOURCES_NAMESPACE_POD_LIMIT = "4"
@@ -148,21 +91,17 @@ pipeline {
 
               steps {
                 withKubeConfig([credentialsId: "kubeconfig-nrel-test"]) {
-                  // TODO: Remove `primaryBranch: "rancher"` from these lines once
-                  // this is merged into master (to revert to default behavior of
-                  // treating "master" as the primary branch).
-                  tadaWithWerfNamespaces(rancherProject: "reopt-api-stage", primaryBranch: "rancher", dbBaseName: "reopt_api_staging", baseDomain: "${STAGING_BASE_DOMAIN}") {
+                  tadaWithWerfNamespaces(rancherProject: "reopt-api-stage", primaryBranch: "master", dbBaseName: "reopt_api_staging", baseDomain: "${STAGING_BASE_DOMAIN}") {
                     withCredentials([string(credentialsId: "reopt-api-werf-secret-key", variable: "WERF_SECRET_KEY")]) {
                       sh """
                         werf deploy \
                           --values=./.helm/values.deploy.yaml \
                           --values=./.helm/values.${DEPLOY_ENV}.yaml \
                           --secret-values=./.helm/secret-values.${DEPLOY_ENV}.yaml \
+                          --set='branchName=${BRANCH_NAME}' \
                           --set='ingressHost=${DEPLOY_BRANCH_DOMAIN}' \
-                          --set='tempIngressHost=${tadaDeployBranchDomain(baseDomain: env.STAGING_TEMP_BASE_DOMAIN, primaryBranch: "rancher")}' \
+                          --set='tempIngressHost=${tadaDeployBranchDomain(baseDomain: env.STAGING_TEMP_BASE_DOMAIN, primaryBranch: "master")}' \
                           --set='dbName=${DEPLOY_BRANCH_DB_NAME}' \
-                          --set='deploySharedResources=${DEPLOY_BRANCH_DEPLOY_SHARED_RESOURCES}' \
-                          --set='sharedResourcesNamespace=${DEPLOY_SHARED_RESOURCES_NAMESPACE_NAME}'
                       """
                     }
                   }
@@ -171,7 +110,7 @@ pipeline {
             }
 
             stage("deploy-production") {
-              when { branch "main" }
+              when { branch "master" }
 
               environment {
                 DEPLOY_ENV = "production"
@@ -181,7 +120,7 @@ pipeline {
 
               steps {
                 withKubeConfig([credentialsId: "kubeconfig-nrel-prod"]) {
-                  tadaWithWerfNamespaces(rancherProject: "reopt-api-prod") {
+                  tadaWithWerfNamespaces(rancherProject: "reopt-api-prod", primaryBranch: "master") {
                     withCredentials([string(credentialsId: "reopt-api-werf-secret-key", variable: "WERF_SECRET_KEY")]) {
                       sh """
                         werf deploy \
@@ -189,7 +128,6 @@ pipeline {
                           --values=./.helm/values.${DEPLOY_ENV}.yaml \
                           --secret-values=./.helm/secret-values.${DEPLOY_ENV}.yaml \
                           --set='ingressHost=${PRODUCTION_DOMAIN}' \
-                          --set='sharedResourcesNamespace=${DEPLOY_SHARED_RESOURCES_NAMESPACE_NAME}'
                       """
                     }
                   }

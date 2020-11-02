@@ -1,9 +1,7 @@
-{{ if .Values.deploySharedResources }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: {{ .Chart.Name }}-redis-stateful-set
-  namespace: {{ .Values.sharedResourcesNamespace | quote }}
   labels:
     app: {{ .Chart.Name }}-redis
   annotations:
@@ -30,7 +28,7 @@ spec:
             - name: REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Chart.Name }}-shared-resources-secrets
+                  name: {{ .Chart.Name }}-secrets
                   key: redis_password
   volumeClaimTemplates:
     - metadata:
@@ -41,4 +39,3 @@ spec:
         resources:
           requests:
             storage: 1.5Gi
-{{ end }}
