@@ -183,6 +183,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
             results = Main.reopt(model, reopt_inputs)
             time_dict["pyjulia_run_reopt_seconds"] = time.time() - t_start
         else:
+            Main.include("reo/src/decomposed_reopt.jl")
             t_start = time.time()
             results = run_decomposed_model(data, model, reopt_inputs)
             time_dict["pyjulia_run_reopt_seconds"] = time.time() - t_start
