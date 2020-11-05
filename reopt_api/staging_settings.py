@@ -136,7 +136,8 @@ USE_TZ = True
 
 # Results backend
 CELERY_RESULT_BACKEND = 'django-db'
-CELERY_WORKER_MAX_TASKS_PER_CHILD = 50
+if os.environ.get('K8S_DEPLOY') is not None:
+    CELERY_WORKER_MAX_TASKS_PER_CHILD = 50
 CELERY_WORKER_MAX_MEMORY_PER_CHILD = 6000000 # 6 GB
 
 # celery task registration
