@@ -43,13 +43,22 @@ try:
         redis_host = ':' + dev_redis_password + '@localhost'
     elif env == 'development':
         raw_env = 'reopt_api.dev_settings'
-        redis_host = ':' + dev_redis_password + '@' + dev_redis_host
+        if os.environ.get('K8S_DEPLOY') is None:
+            redis_host = ':' + dev_redis_password + '@' + dev_database_host
+        else:
+            redis_host = ':' + dev_redis_password + '@' + dev_redis_host
     elif env == 'staging':
         raw_env = 'reopt_api.staging_settings'
-        redis_host = ':' + staging_redis_password + '@' + staging_redis_host
+        if os.environ.get('K8S_DEPLOY') is None:
+            redis_host = ':' + staging_redis_password + '@' + staging_database_host
+        else:
+            redis_host = ':' + staging_redis_password + '@' + staging_redis_host
     elif env == 'production':
         raw_env = 'reopt_api.production_settings'
-        redis_host = ':' + production_redis_password + '@' + production_redis_host
+        if os.environ.get('K8S_DEPLOY') is None:
+            redis_host = ':' + production_redis_password + '@' + prod_database_host
+        else:
+            redis_host = ':' + production_redis_password + '@' + production_redis_host
     else:
         raw_env = 'reopt_api.dev_settings'
         redis_host = os.environ.get('REDIS_HOST', 'localhost')
@@ -97,17 +106,17 @@ def debug_task(self):
 
 @after_setup_logger.connect
 def setup_loggers(logger, *args, **kwargs):
-    file_formatter = logging.Formatter(
-        '%(asctime)s %(name)-12s %(levelname)-8s %(filename)s::%(funcName)s line %(lineno)s %(message)s')
+    # file_formatter = logging.Formatter(
+    #     '%(asctime)s %(name)-12s %(levelname)-8s %(filename)s::%(funcName)s line %(lineno)s %(message)s')
     console_formatter = logging.Formatter(
         '%(name)-12s %(levelname)-8s %(filename)s::%(funcName)s line %(lineno)s %(message)s')
 
-    logfile = os.path.join(os.getcwd(), "log", "reopt_api.log")
-
-    file_handler = logging.FileHandler(filename=logfile, mode='a')
-    file_handler.setFormatter(file_formatter)
-    file_handler.setLevel(logging.INFO)
-    logger.addHandler(file_handler)
+    # logfile = os.path.join(os.getcwd(), "log", "reopt_api.log")
+    #
+    # file_handler = logging.FileHandler(filename=logfile, mode='a')
+    # file_handler.setFormatter(file_formatter)
+    # file_handler.setLevel(logging.INFO)
+    # logger.addHandler(file_handler)
 
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(console_formatter)
