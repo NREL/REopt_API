@@ -5,6 +5,7 @@ set -Eeuxo pipefail
 if [ -n "${K8S_DEPLOY:-}" ]; then
     exec celery -A reopt_api worker --loglevel=info --queues="$APP_QUEUE_NAME"
 else
+    set +u
     if [ "$APP_ENV" == "local" ]
     then
         if ["$UNAME" != "Linux"]

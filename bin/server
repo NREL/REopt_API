@@ -5,6 +5,7 @@ set -Eeuxo pipefail
 if [ -n "${K8S_DEPLOY:-}" ]; then
     exec gunicorn --config ./config/gunicorn.conf.py reopt_api.wsgi
 else
+    set +u
     . /opt/xpressmp/bin/xpvars.sh
     export XPRESS=/opt/xpressmp/bin
 
