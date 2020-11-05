@@ -21,3 +21,4 @@ data:
   SOLVER: xpress
   REDIS_HOST: {{ tpl .Values.redisHost . | quote }}
   REDIS_PORT: {{ .Values.redisPort | quote }}
+  K8S_DEPLOY: "true"
