@@ -1152,34 +1152,6 @@ nested_input_definitions = {
           "default": 0.02,
           "description": "Nuclear reactor per unit production (variable) operations and maintenance costs in $/kWh"
         },
-        "diesel_fuel_cost_us_dollars_per_gallon": {
-          "type": "float",
-          "min": 0.0,
-          "max": 1.0e2,
-          "default": 7.0,
-          "description": "Uranium cost as a proxy in $/gallon"
-        },
-        "fuel_slope_gal_per_kwh": {
-          "type": "float",
-          "min": 0.0,
-          "max": 10,
-          "default": 0.001,
-          "description": "Nuclear fuel burn rate in gallons/kWh, gallons used as a proxy to estimate $/MWh nuclear fuel costs."
-        },
-        "fuel_intercept_gal_per_hr": {
-          "type": "float",
-          "min": 0.0,
-          "max": 10,
-          "default": 0.0,
-          "description": "Nuclear fuel consumption curve y-intercept in gallons per hour."
-        },
-        "fuel_avail_gal": {
-          "type": "float",
-          "min": 0.0,
-          "max": 1.0e9,
-          "default": 1.0e9,
-          "description": "On-site nuclear fuel available in gallons, assumed infinite for nuclear."
-        },
         "min_turn_down_pct": {
           "type": "float",
           "min": 0.0,
@@ -1315,10 +1287,27 @@ nested_input_definitions = {
           "default": 0.0,
           "description": "Maximum system size for which production-based incentives apply"
         },
-         "emissions_factor_lb_CO2_per_gal": {
+         "fuel_cost_us_dollars_per_mmbtu": {
           "type": "float",
-          "description": "Pounds of carbon dioxide emitted per gallon of fuel burned"
-         }
+          "min": 0.0,
+          "max": 100.0,
+          "default": 5.0,
+          "description": "Estimate of the price of Uranium per million BTU"
+        },
+        "fuel_slope_mmbtu_per_kwh": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0014,
+          "description": "Conversion rate from mmbtu to kwh in the reactor"
+        },
+        "effective_full_power_days_between_refueling": {
+          "type": "float",
+          "min": 0.0,
+          "max": 7300.0,
+          "default": 730.0,
+          "description": "Provides the number of full power days between refueling for a reactor design."
+        },
       }
     }
   }
@@ -1494,6 +1483,9 @@ def flat_to_nested(i):
                   "pbi_max_us_dollars": i.get("gen_pbi_max"),
                   "pbi_years": i.get("gen_pbi_years"),
                   "pbi_system_max_kw": i.get("gen_pbi_system_max"),
+                  "fuel_cost_us_dollars_per_mmbtu" : i.get("fuel_cost_us_dollars_per_mmbtu"),
+                  "fuel_slope_mmbtu_per_kwh" : i.get("fuel_slope_mmbtu_per_kwh"),
+                  "effective_full_power_days_between_refueling" : i.get("effective_full_power_days_between_refueling"),
                 },
 
                 "Storage":

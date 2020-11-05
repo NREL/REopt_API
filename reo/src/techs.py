@@ -307,9 +307,10 @@ class Generator(Tech):
 
 class Nuclear(Tech):
 
-    def __init__(self, dfm, run_uuid, min_kw, max_kw, existing_kw, fuel_slope_gal_per_kwh, fuel_intercept_gal_per_hr,
-                 fuel_avail_gal, min_turn_down_pct, outage_start_hour=None, outage_end_hour=None, time_steps_per_hour=1,
-                 fuel_avail_before_outage_pct=1, emissions_factor_lb_CO2_per_gal=None, **kwargs):
+    def __init__(self, dfm, run_uuid, min_kw, max_kw, existing_kw, min_turn_down_pct, 
+                    fuel_cost_us_dollars_per_mmbtu, fuel_slope_mmbtu_per_kwh, effective_full_power_days_between_refueling, 
+                    outage_start_hour=None, outage_end_hour=None, time_steps_per_hour=1,
+                     **kwargs):
         super(Nuclear, self).__init__(min_kw=min_kw, max_kw=max_kw, **kwargs)
         """
         A modification of the generator class that is designed to size nuclear components either SMR or
@@ -318,27 +319,27 @@ class Nuclear(Tech):
         Note that default burn rate, slope, and min/max sizes are handled in ValidateNestedInput.
         """
 
-        self.fuel_slope = fuel_slope_gal_per_kwh
-        self.fuel_intercept = fuel_intercept_gal_per_hr
-        self.fuel_avail = fuel_avail_gal
         self.min_turn_down = min_turn_down_pct
         self.reopt_class = 'NUCLEAR'
         self.outage_start_hour = outage_start_hour
         self.outage_end_hour = outage_end_hour
         self.time_steps_per_hour = time_steps_per_hour
         self.nuclear_only_runs_during_grid_outage = kwargs['nuclear_only_runs_during_grid_outage']
-        self.fuel_avail_before_outage_pct = fuel_avail_before_outage_pct
         self.nuclear_sells_energy_back_to_grid = kwargs['nuclear_sells_energy_back_to_grid']
-        self.diesel_fuel_cost_us_dollars_per_gallon = kwargs['diesel_fuel_cost_us_dollars_per_gallon']
         self.derate = 0.0
         self.loads_served = ['retail', 'storage']
         self.incentives = Incentives(**kwargs)
+
+        ## Added keywords
+        self.fuel_cost_us_dollars_per_mmbtu = kwargs['fuel_cost_us_dollars_per_mmbtu']
+        self.fuel_slope_mmbtu_per_kwh = kwargs['fuel_slope_mmbtu_per_kwh']
+        self.effective_full_power_days_between_refueling = kwargs['effective_full_power_days_between_refueling']
+
         if max_kw < min_kw:
             min_kw = max_kw
         self.min_kw = min_kw
         self.max_kw = max_kw
         self.existing_kw = existing_kw
-        self.emissions_factor_lb_CO2_per_gal = emissions_factor_lb_CO2_per_gal
 
         # no net-metering for gen so it can only sell in "wholesale" bin (and not "export" bin)
         if self.nuclear_sells_energy_back_to_grid:
@@ -346,6 +347,8 @@ class Nuclear(Tech):
 
         dfm.add_nuclear(self)
 
+    ## Essentially sets the production factor based on if it runs
+    ## during grid outages or no.
     @property
     def prod_factor(self):
         gen_prod_factor = [0.0 for _ in range(8760*self.time_steps_per_hour)]
@@ -359,17 +362,3 @@ class Nuclear(Tech):
             gen_prod_factor = [1] * len(gen_prod_factor)
 
         return gen_prod_factor
-
-    @staticmethod
-    def default_fuel_burn_rate(size_kw):
-        """
-        Based off of size_kw, we have default (fuel_slope_gal_per_kwh, fuel_intercept_gal_per_hr) pairs
-        :return: (fuel_slope_gal_per_kwh, fuel_intercept_gal_per_hr)
-        """
-        if size_kw <= 50000:
-            m = 0.068
-            b = 0.0125
-        else:
-            m = 0.0657
-            b = 0.004
-        return m, b

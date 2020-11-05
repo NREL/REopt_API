@@ -115,5 +115,24 @@ def nested_to_flat(nested_output):
             'existing_gen_total_fuel_cost_us_dollars': nested_output['Scenario']['Site']['Generator'][
                 'existing_gen_total_fuel_cost_us_dollars'],
        })
+    if nested_output['Scenario']['Site'].get('Nuclear') is not None:
+        base.update({
+            'nuc_kw':nested_output['Scenario']['Site']['Nuclear']['size_kw'],
+            'average_yearly_nuc_energy_produced':nested_output['Scenario']['Site']['Nuclear']['average_yearly_energy_produced_kwh'],
+            'average_annual_energy_exported_nuc': nested_output['Scenario']['Site']['Nuclear']['average_yearly_energy_exported_kwh'],
+            'year_one_nuc_to_battery_series': nested_output['Scenario']['Site']['Nuclear']['year_one_to_battery_series_kw'],
+            'year_one_nuc_to_load_series': nested_output['Scenario']['Site']['Nuclear']['year_one_to_load_series_kw'],
+            'year_one_nuc_to_grid_series': nested_output['Scenario']['Site']['Nuclear']['year_one_to_grid_series_kw'],
+            #'fuel_used_gal': nested_output['Scenario']['Site']['Generator']['fuel_used_gal'],
+            'existing_nuc_total_fixed_om_cost_us_dollars': nested_output['Scenario']['Site']['Nuclear']['existing_nuc_total_fixed_om_cost_us_dollars'],
+            'existing_nuc_total_variable_om_cost_us_dollars': nested_output['Scenario']['Site']['Nuclear'][
+                'existing_nuc_total_variable_om_cost_us_dollars'],
+            'total_fuel_cost_us_dollars': nested_output['Scenario']['Site']['Nuclear'][
+                'total_fuel_cost_us_dollars'],
+            'gen_total_variable_om_cost_us_dollars': nested_output['Scenario']['Site']['Nuclear'][
+                'total_variable_om_cost_us_dollars'],
+            'existing_gen_total_fuel_cost_us_dollars': nested_output['Scenario']['Site']['Nuclear'][
+                'existing_nuc_total_fuel_cost_us_dollars'],
+       })
     return base
 

@@ -512,13 +512,13 @@ class NuclearModel(models.Model):
     installed_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True,)
     om_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True,)
     om_cost_us_dollars_per_kwh = models.FloatField(null=True, blank=True,)
-    diesel_fuel_cost_us_dollars_per_gallon = models.FloatField(null=True, blank=True)
-    fuel_slope_gal_per_kwh = models.FloatField(null=True, blank=True,)
-    fuel_intercept_gal_per_hr = models.FloatField(null=True, blank=True,)
-    fuel_avail_gal = models.FloatField(null=True, blank=True,)
+    # diesel_fuel_cost_us_dollars_per_gallon = models.FloatField(null=True, blank=True)
+    # fuel_slope_gal_per_kwh = models.FloatField(null=True, blank=True,)
+    # fuel_intercept_gal_per_hr = models.FloatField(null=True, blank=True,)
+    # fuel_avail_gal = models.FloatField(null=True, blank=True,)
     min_turn_down_pct = models.FloatField(null=True, blank=True)
-    nuclear_only_runs_during_grid_outage = models.BooleanField(default=True)
-    nuclear_sells_energy_back_to_grid = models.BooleanField(default=False)
+    nuclear_only_runs_during_grid_outage = models.BooleanField(default=False)
+    nuclear_sells_energy_back_to_grid = models.BooleanField(default=True)
     macrs_option_years = models.IntegerField(null=True, blank=True)
     macrs_bonus_pct = models.FloatField(null=True, blank=True)
     macrs_itc_reduction = models.FloatField(null=True, blank=True)
@@ -536,11 +536,22 @@ class NuclearModel(models.Model):
     pbi_max_us_dollars = models.FloatField(null=True, blank=True)
     pbi_years = models.FloatField(null=True, blank=True)
     pbi_system_max_kw = models.FloatField(null=True, blank=True)
-    emissions_factor_lb_CO2_per_gal = models.FloatField(null=True, blank=True)
+    # emissions_factor_lb_CO2_per_gal = models.FloatField(null=True, blank=True)
+
+    # Added Inputs
+    fuel_cost_us_dollars_per_mmbtu = models.FloatField(null=True, blank=True)
+    fuel_slope_mmbtu_per_kwh = models.FloatField(null=True, blank=True)
+    #### Would like to add an mmbtu between refueling, but will likely wait and 
+    #### assume fuel is always available.
+    effective_full_power_days_between_refueling = models.FloatField(null=True, blank=True)
 
     # Outputs
-    fuel_used_gal = models.FloatField(null=True, blank=True)
-    fuel_used_gal_bau = models.FloatField(null=True, blank=True)
+    #fuel_used_gal = models.FloatField(null=True, blank=True)
+    #fuel_used_gal_bau = models.FloatField(null=True, blank=True)
+    ## Nuclear Specific Outputs
+    effective_full_power_days_in_one_year = models.FloatField(null=True, blank=True)
+    years_between_refueling = models.FloatField(null=True, blank=True)
+
     size_kw = models.FloatField(null=True, blank=True)
     average_yearly_energy_produced_kwh = models.FloatField(null=True, blank=True)
     average_yearly_energy_exported_kwh = models.FloatField(null=True, blank=True)
@@ -556,13 +567,19 @@ class NuclearModel(models.Model):
     total_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
     total_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
     total_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-    existing_gen_year_one_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-    existing_gen_year_one_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
-    existing_gen_total_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-    existing_gen_total_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
-    existing_gen_total_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-    year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
-    year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
+    # existing_gen_year_one_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    existing_nuc_year_one_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    #existing_gen_year_one_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
+    existing_nuc_year_one_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
+    #existing_gen_total_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    existing_nuc_total_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    #existing_gen_total_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
+    existing_nuc_total_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
+    #existing_gen_total_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    existing_nuc_total_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+
+    #year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
+    #year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
