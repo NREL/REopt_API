@@ -184,6 +184,7 @@ class UrdbParse:
         self.custom_tou_energy_rates = elec_tariff.tou_energy_rates
         self.add_tou_energy_rates_to_urdb_rate = elec_tariff.add_tou_energy_rates_to_urdb_rate
         self.override_urdb_rate_with_tou_energy_rates = elec_tariff.override_urdb_rate_with_tou_energy_rates
+        self.chp_allowed_to_export = elec_tariff.chp_allowed_to_export
 
         log.info("URDB parse with year: " + str(self.year) + " net_metering: " + str(self.net_metering))
 
@@ -449,6 +450,12 @@ class UrdbParse:
                     rates_by_tech.append([1, 3])  # 1, 3 correspond to the 0, 2 entries in techs_by_rate
                     techs_by_rate[0].append(tech.upper())
                     techs_by_rate[2].append(tech.upper())
+                elif tech.lower() in ["chp", "generator"]:  # Don't allow CHP or generator to write to Curtailment Tier (also no option for NM currently)
+                    if tech.lower() == "chp" and self.chp_allowed_to_export or tech.lower() == "generator":
+                        rates_by_tech.append([2])  # 2, 3 correspond to the 1, 2 entries in techs_by_rate
+                        techs_by_rate[1].append(tech.upper())
+                    else:
+                        rates_by_tech.append([])
                 else:
                     # these techs can access wholesale and curtailment rates
                     rates_by_tech.append([2, 3])  # 2, 3 correspond to the 1, 2 entries in techs_by_rate
