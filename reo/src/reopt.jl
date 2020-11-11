@@ -112,7 +112,7 @@ function add_export_expressions(m, p)
 				for t in m[:WindTechs], u in p.CurtailmentTiers, ts in p.TimeStep)
 		)
 		m[:ExportedElecWIND] = @expression(m,
-			p.TimeStepScaling * sum(m[:dvProductionToGrid][t,u,ts] 
+			p.TimeStepScaling * sum(m[:dvProductionToGrid][t,u,ts]
 				for t in m[:WindTechs], u in p.SalesTiersByTech[t], ts in p.TimeStep) - m[:CurtailedElecWIND]
 		)
 		m[:ExportedElecGEN] = @expression(m,
@@ -538,9 +538,11 @@ function add_tech_size_constraints(m, p)
 	)
 
 	##Constraint (7e): Derate factor limits production variable (separate from ProductionFactor)
-	@constraint(m, TurbineRatedProductionCon[t in p.FuelBurningTechs, ts in p.TimeStep; !(t in p.TechsNoTurndown)],
-		m[:dvRatedProduction][t,ts] <= p.ElectricDerate[t,ts] * m[:dvSize][t]
-	)
+    for ts in p.TimeStep
+		@constraint(m, [t in p.Tech; !(t in p.TechsNoTurndown)],
+			m[:dvRatedProduction][t,ts]  <= p.ElectricDerate[t,ts] * m[:dvSize][t]
+		)
+	end
 
 	##Constraint (7_heating_prod_size): Production limit based on size for boiler
 	if !isempty(p.BoilerTechs)
@@ -1339,7 +1341,7 @@ function add_pv_results(m, p, r::Dict)
 				PVtoBatt = @expression(m, [ts in p.TimeStep], 0.0)
             end
 			r[string(PVclass, "toBatt")] = round.(value.(PVtoBatt), digits=3)
-			
+
 			PVtoCurtail = @expression(m, [ts in p.TimeStep],
 					sum(m[:dvProductionToGrid][t,u,ts] for t in PVtechs_in_class, u in p.CurtailmentTiers))
     	    r[string(PVclass, "toCurtail")] = round.(value.(PVtoCurtail), digits=3)
@@ -1349,7 +1351,7 @@ function add_pv_results(m, p, r::Dict)
     	    r[string(PVclass, "toGrid")] = round.(value.(PVtoGrid), digits=3)
 
 			PVtoLoad = @expression(m, [ts in p.TimeStep],
-				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] for t in PVtechs_in_class) 
+				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] for t in PVtechs_in_class)
 				- PVtoGrid[ts] - PVtoBatt[ts] - PVtoCurtail[ts]
 				)
             r[string(PVclass, "toLoad")] = round.(value.(PVtoLoad), digits=3)

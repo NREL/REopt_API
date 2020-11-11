@@ -218,7 +218,7 @@ nested_input_definitions = {
         "offtaker_tax_pct": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0,
+          "max": 0.999,
           "default": 0.26,
           "description": "Host tax rate"
         },
@@ -236,8 +236,8 @@ nested_input_definitions = {
         },
         "owner_tax_pct": {
           "type": "float",
-          "min": 0.0,
-          "max": 1.0,
+          "min": 0,
+          "max": 0.999,
           "default": 0.26,
           "description": "Generation owner tax rate. Used for two party financing model. In two party ownership model the offtaker does not own the generator(s)."
         },
@@ -1052,7 +1052,7 @@ nested_input_definitions = {
           "total_rebate_us_dollars_per_kwh": {
             "type": "float", "min": 0, "max": 1e9, "default": 0,
             "description": "Rebate based on installed energy capacity"
-           }             
+           }
         },
 
       "Generator": {

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Env.WERF_HELM_RELEASE_STORAGE_NAMESPACE }}
+  annotations:
+    field.cattle.io/projectId: {{ .Env.RANCHER_PROJECT_ID }}
+    field.cattle.io/resourceQuota: '{"limit":{"pods":"0"}}'

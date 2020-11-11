@@ -136,6 +136,8 @@ USE_TZ = True
 
 # Results backend
 CELERY_RESULT_BACKEND = 'django-db'
+if os.environ.get('K8S_DEPLOY') is not None:
+    CELERY_WORKER_MAX_TASKS_PER_CHILD = 50
 CELERY_WORKER_MAX_MEMORY_PER_CHILD = 6000000 # 6 GB
 
 # celery task registration
@@ -164,6 +166,9 @@ ROLLBAR = {
 
 import rollbar
 rollbar.init(**ROLLBAR)
+
+APPEND_SLASH = False
+TASTYPIE_ALLOW_MISSING_SLASH = True
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "reopt_api.staging_settings")
 django.setup()
