@@ -1201,7 +1201,10 @@ class RC():
         self.n_temp_nodes = kwargs.get('n_temp_nodes')
         self.n_input_nodes = kwargs.get('n_input_nodes')
         self.shr = kwargs.get('shr')
+        self.injection_node = kwargs.get('injection_node')
         self.space_node = kwargs.get('space_node')
+        self.temperature_lower_bound = kwargs.get('temperature_lower_bound')
+        self.temperature_upper_bound = kwargs.get('temperature_upper_bound')
 
         dfm.add_rc(self)
 

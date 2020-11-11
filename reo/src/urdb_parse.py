@@ -443,7 +443,10 @@ class UrdbParse:
             grid_export_rates = operator.add(grid_export_rates, negative_excess_rate_costs)
 
             for tech in techs:
-                if self.net_metering and not tech.lower().endswith('nm'):
+                if tech.lower() in ['ac','hp']:
+                    rates_by_tech.append([3])  # 3 correspond to the 2nd entry in techs_by_rate
+                    techs_by_rate[2].append(tech.upper())
+                elif self.net_metering and not tech.lower().endswith('nm'):
                     # techs that end with 'nm' are the option to install capacity beyond the net metering capacity limit
                     # these techs can access NEM and curtailment rates
                     rates_by_tech.append([1, 3])  # 1, 3 correspond to the 0, 2 entries in techs_by_rate

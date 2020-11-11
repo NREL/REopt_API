@@ -232,7 +232,10 @@ Base.@kwdef struct Parameter
 	SHR::Array{Float64,1}
 	TempNodes::UnitRange{Int64}
 	InputNodes::UnitRange{Int64}
+	InjectionNode::Int64
 	SpaceNode::Int64
+	TempLowerBound::Float64
+	TempUpperBound::Float64
 	OperatingPenalty::AxisArray
 end
 
@@ -350,8 +353,8 @@ function Parameter(d::Dict)
 	d["StorageDecayRate"] = AxisArray(d["StorageDecayRate"], d["Storage"])
 
 	# Flexible load additions
-	d["AMatrix"] = transpose(reshape(d["AMatrix"],d["TempNodesCount"],d["TempNodesCount"]))
-	d["BMatrix"] = transpose(reshape(d["BMatrix"],d["InputNodesCount"],d["TempNodesCount"]))
+	d["AMatrix"] = reshape(d["AMatrix"],d["TempNodesCount"],d["TempNodesCount"])
+	d["BMatrix"] = reshape(d["BMatrix"],d["TempNodesCount"],d["InputNodesCount"])
 	d["UInputs"] = transpose(reshape(d["UInputs"],d["TimeStepCount"],d["InputNodesCount"]))
 	d["OperatingPenalty"] = vector_to_axisarray(d["OperatingPenalty"],d["Tech"], d[:TimeStep])
 

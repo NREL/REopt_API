@@ -1818,10 +1818,29 @@ nested_input_definitions = {
           "default": 1,
           "description": "Number of current/voltage sources"
         },
+        "injection_node": {
+          "type": "int",
+          "default": 1,
+          "description": "Injection node number"
+        },
         "space_node": {
           "type": "int",
           "default": 1,
           "description": "Space node number"
+        },
+        "temperature_lower_bound": {
+          "type": "float",
+          "min": 0.0,
+          "max": 40.0,
+          "default": 19.5,
+          "description": "Minimum allowable indoor air temperature"
+        },
+        "temperature_upper_bound": {
+          "type": "float",
+          "min": 0.0,
+          "max": 40.0,
+          "default": 23.5,
+          "description": "Maximum allowable indoor air temperature"
         }
       },
       "FlexTechAC": {

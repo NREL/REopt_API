@@ -826,7 +826,10 @@ class RCModel(models.Model):
     n_temp_nodes = models.IntegerField(null=True, blank=True)
     n_input_nodes = models.IntegerField(null=True, blank=True)
     shr = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    injection_node = models.IntegerField(null=True, blank=True)
     space_node = models.IntegerField(null=True, blank=True)
+    temperature_lower_bound = models.FloatField(null=True, blank=True)
+    temperature_upper_bound = models.FloatField(null=True, blank=True)
 
     # Outputs
     temperatures_degree_C = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)

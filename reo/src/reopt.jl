@@ -635,7 +635,9 @@ function add_prod_grid_constraints(m, p)
 	##Constraint (8f): Total sales to grid no greater than annual allocation - storage tiers
 	@constraint(m,  AnnualGridSalesLimitCon,
 	 p.TimeStepScaling * (
-		sum( m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers, ts in p.TimeStepsWithGrid if !(u in p.CurtailmentTiers)) +  sum(m[:dvProductionToGrid][t,u,ts] for u in p.SalesTiers, t in p.TechsBySalesTier[u], ts in p.TimeStepsWithGrid if !(u in p.CurtailmentTiers))) <= p.MaxGridSales[1]
+		sum( m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers, ts in p.TimeStepsWithGrid if !(u in p.CurtailmentTiers)) +
+		sum(m[:dvProductionToGrid][t,u,ts] for u in p.SalesTiers, t in p.TechsBySalesTier[u], ts in p.TimeStepsWithGrid if !(u in p.CurtailmentTiers))) <=
+		p.MaxGridSales[1] + sum(m[:ElecPenalty][ts] for ts in p.TimeStep)
 	)
 end
 
@@ -843,19 +845,19 @@ function add_flex_load_constraints(m, p)
 
      @constraint(m, [tn in p.TempNodes, ts in UnitRange(2:length(p.TimeStep))],
 	 	m[:dvTemperatures][tn, ts] == sum(m[:dvTemperatures][u, ts-1] * p.AMatrix[tn, u] for u in p.TempNodes) +
- 		sum(p.UInputs[i, ts-1] * p.BMatrix[tn, i] for i in [1:p.SpaceNode-1; p.SpaceNode+1:p.InputNodesCount]) +
-		(p.UInputs[p.SpaceNode,ts-1] - p.ProductionFactor["AC", ts-1] * m[:dvRatedProduction]["AC",ts-1] * p.SHR[ts-1] +
- 		p.ProductionFactor["HP", ts-1] * m[:dvRatedProduction]["HP",ts-1]) * p.BMatrix[tn, p.SpaceNode]
+ 		sum(p.UInputs[i, ts-1] * p.BMatrix[tn, i] for i in [1:p.InjectionNode-1; p.InjectionNode+1:p.InputNodesCount]) +
+		(p.UInputs[p.InjectionNode,ts-1] - p.ProductionFactor["AC", ts-1] * m[:dvRatedProduction]["AC",ts-1] * 1000 * p.SHR[ts-1] +
+ 		p.ProductionFactor["HP", ts-1] * m[:dvRatedProduction]["HP",ts-1] * 1000) * p.BMatrix[tn, p.InjectionNode]
      )
 	#initialize state space
 	@constraint(m, [n in p.TempNodes],
         m[:dvTemperatures][n, 1] == p.InitTemperatures[n]
 	)
 	@constraint(m, [ts in p.TimeStep],
-        m[:dvTemperatures][p.SpaceNode, ts] >=20.55
+        m[:dvTemperatures][p.SpaceNode, ts] >= p.TempLowerBound
     )
 	@constraint(m, [ts in p.TimeStep],
-        m[:dvTemperatures][p.SpaceNode, ts] <=23.35
+        m[:dvTemperatures][p.SpaceNode, ts] <= p.TempUpperBound
     )
 
 end
