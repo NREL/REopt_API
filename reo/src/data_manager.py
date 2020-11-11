@@ -1369,7 +1369,10 @@ class DataManager:
             'InitTemperatures': self.rc.init_temperatures,
             'TempNodesCount': n_temp_nodes,
             'InputNodesCount': n_input_nodes,
+            'InjectionNode': self.rc.injection_node,
             'SpaceNode': self.rc.space_node,
+            'TempLowerBound': self.rc.temperature_lower_bound,
+            'TempUpperBound': self.rc.temperature_upper_bound,
             'OperatingPenalty': elec_penalty
         }
 
@@ -1506,6 +1509,9 @@ class DataManager:
             'InitTemperatures': self.rc.init_temperatures,
             'TempNodesCount': n_temp_nodes_bau,
             'InputNodesCount': n_input_nodes_bau,
+            'InjectionNode': self.rc.injection_node,
             'SpaceNode': self.rc.space_node,
+            'TempLowerBound': self.rc.temperature_lower_bound,
+            'TempUpperBound': self.rc.temperature_upper_bound,
             'OperatingPenalty': elec_penalty_bau
         }

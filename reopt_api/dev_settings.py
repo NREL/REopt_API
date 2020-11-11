@@ -117,6 +117,7 @@ ROLLBAR = {
 
 if 'test' in sys.argv or os.environ.get('APP_ENV') == 'local':
     ROLLBAR['enabled'] = False
+    DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
