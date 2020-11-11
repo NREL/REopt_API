@@ -65,11 +65,15 @@ def make_error_resp(msg):
         return resp
 
 
+def health(request):
+    return HttpResponse("OK")
+
+
 def errors(request, page_uuid):
-    
+
     template= loader.get_template("errors.html")
     return HttpResponse(template.render())
-    
+
 
 def help(request):
 
@@ -87,7 +91,7 @@ def invalid_urdb(request):
         # invalid set is populated by the urdb validator, hard problems defined in csv
         invalid_set = list(set([i.label for i in URDBError.objects.filter(type='Error')]))
         return JsonResponse({"Invalid IDs": list(set(invalid_set + hard_problem_labels))})
-        
+
     except Exception as e:
         return JsonResponse({"Error": "Unexpected error in invalid_urdb endpoint: {}".format(e.args[0])}, status=500)
 
@@ -112,7 +116,7 @@ def annual_kwh(request):
         uuidFilter = UUIDFilter('no_id')
         log.addFilter(uuidFilter)
         b = BuiltInProfile(latitude=latitude, longitude=longitude, doe_reference_name=doe_reference_name)
-        
+
         response = JsonResponse(
             {'annual_kwh': b.annual_kwh,
              'city': b.city},
@@ -156,7 +160,7 @@ def annual_mmbtu(request):
 
         b = LoadProfileBoilerFuel(dfm=None, latitude=latitude, longitude=longitude,
                                   doe_reference_name=[doe_reference_name], time_steps_per_hour=1)
-        
+
         response = JsonResponse(
             {'annual_mmbtu': b.annual_mmbtu,
              'city': b.nearest_city},
@@ -224,9 +228,9 @@ def emissions_profile(request):
         longitude = float(request.GET['longitude'])
 
         ec = EmissionsCalculator(latitude=latitude,longitude=longitude)
-        
-        try: 
-            response = JsonResponse({   
+
+        try:
+            response = JsonResponse({
                     'region_abbr': ec.region_abbr,
                     'region': ec.region,
                     'emissions_series_lb_CO2_per_kWh': ec.emissions_series,
@@ -237,7 +241,7 @@ def emissions_profile(request):
             return response
         except AttributeError as e:
             return JsonResponse({"Error": str(e.args[0])}, status=500)
-    
+
     except KeyError as e:
         return JsonResponse({"Error. Missing Parameter": str(e.args[0])}, status=500)
 
@@ -310,7 +314,7 @@ def simulated_load(request):
             if annual_kwh is not None:
                 if len(annual_kwh) != len(doe_reference_name):
                     raise ValueError("The number of annual_kwh entries does not match that of the number of doe_reference_name entries")
-            
+
             #Monthly loads
             monthly_totals_kwh = None
             if 'monthly_totals_kwh' in request.GET.keys():
@@ -327,9 +331,9 @@ def simulated_load(request):
             b = LoadProfile(dfm=None, latitude=latitude, longitude=longitude, doe_reference_name=doe_reference_name,
                            annual_kwh=annual_kwh, monthly_totals_kwh=monthly_totals_kwh, critical_load_pct=0,
                            percent_share=percent_share_list)
-            
+
             lp = b.load_list
-            
+
             response = JsonResponse(
                 {'loads_kw': [round(ld, 3) for ld in lp],
                  'annual_kwh': b.annual_kwh,
@@ -372,11 +376,11 @@ def simulated_load(request):
                 monthly_mmbtu = None
 
             b = LoadProfileBoilerFuel(dfm=None, latitude=latitude, longitude=longitude, doe_reference_name=doe_reference_name,
-                           annual_mmbtu=annual_mmbtu, monthly_mmbtu=monthly_mmbtu, time_steps_per_hour=1, 
+                           annual_mmbtu=annual_mmbtu, monthly_mmbtu=monthly_mmbtu, time_steps_per_hour=1,
                            percent_share_list=percent_share_list)
-            
+
             lp = b.load_list
-            
+
             response = JsonResponse(
                 {'loads_mmbtu': [round(ld, 3) for ld in lp],
                  'annual_mmbtu': b.annual_mmbtu,
@@ -391,11 +395,11 @@ def simulated_load(request):
         if load_type == "cooling":
 
             if request.GET.get('annual_fraction') is not None:  # annual_kwh is optional. if not provided, then DOE reference value is used.
-                
+
                 annual_fraction = float(request.GET['annual_fraction'])
 
                 lp = [annual_fraction]*8760
-                
+
                 response = JsonResponse(
                     {'loads_fraction': [round(ld, 3) for ld in lp],
                      'annual_fraction': round(sum(lp) / len(lp), 3),
@@ -408,8 +412,8 @@ def simulated_load(request):
                 return response
 
             if (request.GET.get('monthly_fraction') is not None) or (request.GET.get('monthly_fraction[0]') is not None):  # annual_kwh is optional. if not provided, then DOE reference value is used.
-                
-                if 'monthly_fraction' in request.GET.keys():                
+
+                if 'monthly_fraction' in request.GET.keys():
                     string_array = request.GET.get('monthly_fraction')
                     monthly_fraction = [float(v) for v in string_array.strip('[]').split(',')]
 
@@ -419,7 +423,7 @@ def simulated_load(request):
                         bad_index = monthly_fraction.index(None)
                         raise ValueError("monthly_fraction must contain a value for each month. {} is null".format('monthly_fraction[{}]'.format(bad_index)))
                     monthly_fraction = [float(i) for i in monthly_fraction]
-                
+
 
                 days_in_month = {   0:31,
                                     1:28,
@@ -436,7 +440,7 @@ def simulated_load(request):
                 lp = []
                 for i in range(12):
                     lp += [monthly_fraction[i]] * days_in_month[i] *24
-                
+
                 response = JsonResponse(
                     {'loads_fraction': [round(ld, 3) for ld in lp],
                      'annual_fraction': round(sum(lp) / len(lp), 3),
@@ -447,26 +451,26 @@ def simulated_load(request):
                     )
 
                 return response
-            
-            
+
+
             if doe_reference_name is not None:
                 if len(doe_reference_name) > 1:
                     raise ValueError("Cooling load series does not support hybrid load profiles")
-                
+
                 doe_reference_name = doe_reference_name[0]
-                
+
                 b = BuiltInProfile(
                         {},
                         "Cooling8760_fraction_",
                         latitude = latitude,
                         longitude = longitude,
-                        doe_reference_name = doe_reference_name,                    
+                        doe_reference_name = doe_reference_name,
                         annual_energy = 1,
                         monthly_totals_energy = None)
 
-                
+
                 lp = b.built_in_profile
-                
+
                 response = JsonResponse(
                     {'loads_fraction': [round(ld, 3) for ld in lp],
                      'annual_fraction': round(sum(lp) / len(lp), 3),
@@ -475,7 +479,7 @@ def simulated_load(request):
                      'max_fraction': round(max(lp), 3),
                      }
                     )
-            
+
                 return response
 
             else:

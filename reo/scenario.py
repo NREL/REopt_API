@@ -68,8 +68,10 @@ class ScenarioTask(Task):
         """
         if not isinstance(exc, REoptError):
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            exc = UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task=self.name, run_uuid=kwargs['run_uuid'],
-                              user_uuid=kwargs['data']['inputs']['Scenario'].get('user_uuid'))
+            exc = UnexpectedError(exc_type, exc_value.args[0], traceback.format_tb(exc_traceback),
+                                  task=self.name,
+                                  run_uuid=kwargs['run_uuid'],
+                                  user_uuid=kwargs['data']['inputs']['Scenario'].get('user_uuid'))
         msg = exc.message
         exc.save_to_db()
         self.data["messages"]["error"] = msg
