@@ -307,7 +307,7 @@ class Generator(Tech):
 
 class Nuclear(Tech):
 
-    def __init__(self, dfm, run_uuid, min_kw, max_kw, existing_kw, min_turn_down_pct, 
+    def __init__(self, dfm, run_uuid, min_kw, max_kw, min_turn_down_pct, 
                     fuel_cost_us_dollars_per_mmbtu, fuel_slope_mmbtu_per_kwh, effective_full_power_days_between_refueling, 
                     outage_start_hour=None, outage_end_hour=None, time_steps_per_hour=1,
                      **kwargs):
@@ -339,7 +339,6 @@ class Nuclear(Tech):
             min_kw = max_kw
         self.min_kw = min_kw
         self.max_kw = max_kw
-        self.existing_kw = existing_kw
 
         # no net-metering for gen so it can only sell in "wholesale" bin (and not "export" bin)
         if self.nuclear_sells_energy_back_to_grid:

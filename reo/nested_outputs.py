@@ -645,17 +645,12 @@ nested_output_definitions = {
               "Nuclear": {
                 "size_kw": {
                   "type": float,
-                  "description": "Optimal diesel generator system size",
+                  "description": "Optimal nuclear system size",
                   "units": "kW"
                 },
-                "fuel_used_gal": {
+                "fuel_used_mmbtu": {
                   "type": float,
                   "description": "Generator fuel used to meet critical load during grid outage.",
-                  "units": "US gallons"
-                },
-                "fuel_used_gal_bau": {
-                  "type": float,
-                  "description": "Generator fuel used to meet critical load during grid outage in bau case.",
                   "units": "US gallons"
                 },
                 "average_yearly_energy_produced_kwh": {
@@ -693,21 +688,6 @@ nested_output_definitions = {
                   "description": "Year one hourly time series of diesel generator exporting to grid",
                   "units": "kW"
                 },
-                "existing_gen_total_fixed_om_cost_us_dollars": {
-                  "type": float,
-                  "description": "Lifetime fixed O&M cost for existing diesel generator system in bau case.",
-                  "units": "$"
-                },
-                "existing_gen_total_variable_om_cost_us_dollars": {
-                  "type": float,
-                  "description": "Lifetime variable (based on kwh produced) O&M cost for existing diesel generator system.",
-                  "units": "$"
-                },
-                "existing_gen_year_one_variable_om_cost_us_dollars": {
-                  "type": float,
-                  "description": "Year one variable (based on kwh produced) O&M cost for existing diesel generator system.",
-                  "units": "$"
-                },
                 "total_fixed_om_cost_us_dollars": {
                   "type": float,
                   "description": "Total lifecycle fixed (based on kW capacity) O&M cost for existing + recommended diesel generator system.",
@@ -738,25 +718,15 @@ nested_output_definitions = {
                   "description": "Year one fuel cost for existing + newly recommended diesel generator system",
                   "units": "$"
                 },
-                "existing_gen_total_fuel_cost_us_dollars": {
+                "year_one_effective_full_power_days": {
                   "type": float,
-                  "description": "Total lifecycle fuel cost for existing diesel generator system",
-                  "units": "$"
+                  "description": "Number of Effective Full Power Days used in one year of the reactor lifetime",
+                  "units": "days"
                 },
-                "existing_gen_year_one_fuel_cost_us_dollars": {
+                "years_until_full_burnup": {
                   "type": float,
-                  "description": "Year one fuel cost for existing diesel generator system",
-                  "units": "$"
-                },
-                "year_one_emissions_lb_C02": {
-                  "type": int,
-                  "description": "Total equivalent pounds of carbon dioxide emitted from generator use in the first year.",
-                  "units": "lb CO2"
-                },
-                "year_one_emissions_bau_lb_C02": {
-                  "type": int,
-                  "description": "Total equivalent pounds of carbon dioxide emitted from BAU generator use in the first year.",
-                  "units": "lb CO2"
+                  "description": "Based on number of Effective Full Power Days estimates the number of years before refueling or replacement",
+                  "units": "days"
                 }
             }
           }

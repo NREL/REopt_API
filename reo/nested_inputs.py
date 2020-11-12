@@ -1110,13 +1110,6 @@ nested_input_definitions = {
       },
 
       "Nuclear": {
-        "existing_kw": {
-          "type": "float",
-          "min": 0.0,
-          "max": 1.0e5,
-          "default": 0.0,
-          "description": "Existing nuclear reactor size"
-        },
         "min_kw": {
           "type": "float",
           "min": 0.0,
@@ -1128,7 +1121,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e9,
-          "default": 1.0e9,
+          "default": 0,
           "description": "Maximum nuclear reactor size constraint for optimization. Set to zero to disable gen"
         },
         "installed_cost_us_dollars_per_kw": {
@@ -1160,7 +1153,7 @@ nested_input_definitions = {
           "description": "Minimum nuclear reactor loading in percent of capacity (size_kw)."
         },
         "nuclear_only_runs_during_grid_outage": {
-          "default": True,
+          "default": False,
           "type": "bool",
           "description": "If there is existing nuclear reactor, must specify whether it should run only during grid outage or all the time in the bau case."
         },

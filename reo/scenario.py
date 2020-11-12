@@ -38,7 +38,7 @@ from reo.src.load_profile import LoadProfile
 from reo.src.profiler import Profiler
 from reo.src.site import Site
 from reo.src.storage import Storage
-from reo.src.techs import PV, Util, Wind, Generator
+from reo.src.techs import PV, Util, Wind, Generator, Nuclear
 from celery import shared_task, Task
 from reo.models import ModelManager
 from reo.exceptions import REoptError, UnexpectedError, LoadProfileError, WindDownloadError, PVWattsDownloadError
@@ -214,6 +214,11 @@ def setup_scenario(self, run_uuid, data, raw_post):
                                  load_year=inputs_dict['Site']['LoadProfile']['year'],
                                  time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
                                  **inputs_dict['Site']['ElectricTariff'])
+
+        if inputs_dict["Site"]["Nuclear"]["max_kw"] > 0:
+            nuclear = Nuclear(dfm=dfm, inputs_path=inputs_path, 
+                        **inputs_dict["Site"]["Nuclear"])
+            # TODO: Add more functionality
 
         if inputs_dict["Site"]["Wind"]["max_kw"] > 0:
             wind = Wind(dfm=dfm, inputs_path=inputs_path, 

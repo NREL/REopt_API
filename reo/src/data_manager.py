@@ -72,11 +72,11 @@ class DataManager:
         self.year_one_energy_cost_series_us_dollars_per_kwh = []
         self.year_one_demand_cost_series_us_dollars_per_kw = []
 
-        self.available_techs = ['pv1', 'pv1nm', 'wind', 'windnm', 'generator']  # order is critical for REopt! Note these are passed to reopt.jl as uppercase
-        self.available_tech_classes = ['PV1', 'WIND', 'GENERATOR']  # this is a REopt 'class', not a python class
+        self.available_techs = ['pv1', 'pv1nm', 'wind', 'windnm', 'generator', 'nuclear']  # order is critical for REopt! Note these are passed to reopt.jl as uppercase
+        self.available_tech_classes = ['PV1', 'WIND', 'GENERATOR', 'NUCLEAR']  # this is a REopt 'class', not a python class
         self.bau_techs = []
         self.NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
-        self.fuel_burning_techs = ['GENERATOR']
+        self.fuel_burning_techs = ['GENERATOR', 'NUCLEAR']
 
         self.run_id = run_id
         self.user_id = user_id
@@ -136,6 +136,9 @@ class DataManager:
             # bau_techs will never have more than 1 entry for 'generator'
             if 'generator' not in self.bau_techs:
                 self.bau_techs.append('generator')
+
+    def add_nuclear(self, nuclear):
+        self.nuclear = nuclear
 
     def add_site(self, site):
         self.site = site
@@ -575,8 +578,8 @@ class DataManager:
                 charge_efficiency.append(self.storage.rectifier_efficiency_pct *
                                                  self.storage.internal_efficiency_pct**0.5)
 
-                # only generator tech has variable o&m cost
-                if tech.lower() == 'generator':
+                # only generator and nuclear techs have variable o&m cost
+                if tech.lower() == 'generator' or tech.lower() == 'nuclear':
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.kwargs["om_cost_us_dollars_per_kwh"]')))
                 else:
                     om_cost_us_dollars_per_kwh.append(0.0)

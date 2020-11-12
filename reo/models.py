@@ -506,7 +506,7 @@ class GeneratorModel(models.Model):
 class NuclearModel(models.Model):
     # Inputs
     run_uuid = models.UUIDField(unique=True)
-    existing_kw = models.FloatField(null=True, blank=True, default=0)
+    #existing_kw = models.FloatField(null=True, blank=True, default=0)
     min_kw = models.FloatField(default=0)
     max_kw = models.FloatField(null=True, blank=True)
     installed_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True,)
