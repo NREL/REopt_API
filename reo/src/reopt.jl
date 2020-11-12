@@ -619,6 +619,17 @@ function add_prod_grid_constraints(m, p)
 	 p.TimeStepScaling * (
 		sum( m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers, ts in p.TimeStepsWithGrid if !(u in p.CurtailmentTiers)) +  sum(m[:dvProductionToGrid][t,u,ts] for u in p.SalesTiers, t in p.TechsBySalesTier[u], ts in p.TimeStepsWithGrid if !(u in p.CurtailmentTiers))) <= p.MaxGridSales[1]
 	)
+
+	##Grid sales forced to zero if Tech is not in TechsBySalesTier[u] 
+	for ts in p.TimeStep
+		for u in p.SalesTiers
+			for t in p.ElectricTechs
+				if !(t in p.TechsBySalesTier[u])
+					fix(m[:dvProductionToGrid][t, u, ts], 0.0, force=true)
+				end
+			end 
+		end
+	end
 end
 
 
