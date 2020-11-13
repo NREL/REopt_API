@@ -72,7 +72,7 @@ end
 
 function add_monolith_time_sets(m, p)
 	m[:TimeStep] = p.TimeStep
-	m[:start_period] = m[:TimeStep][1]
+	m[:start_period] = m[:TimeStep][1]-1
 	m[:end_period] = p.TimeStepCount
 	m[:TimeStepBat] = p.TimeStepBat
 	m[:Month] = p.Month
