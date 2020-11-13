@@ -795,7 +795,7 @@ function add_tou_demand_charge_constraints(m, p)
 		##Constraint (12f): Ratchet peak demand charge is bounded below by lookback
 		@constraint(m, [mth in m[:Month]],
 			sum( m[:dvPeakDemandEMonth][mth, n] for n in p.DemandMonthsBin ) >=
-			p.DemandLookbackPercent * m[:dvPeakDemandELookback][mth]
+			p.DemandLookbackPercent * m[:dvPeakDemandELookback][1]
 		)
 	end
 
@@ -863,7 +863,7 @@ end
 function add_inventory_constraints(m, p)
 	
 	### Constraint (14a): Beginning SOC = Storage Inventory
-	if !(m[:start_period] == 1)
+	if !(m[:start_period] == 0)
 		@constraint(m, StartInventoryCon[b in p.Storage], m[:dvStorageSOC][b,m[:start_period]] == m[:dvStorageResetSOC][b] )
 	end
 	### Constraint (14b): Ending SOC = Storage Inventory
@@ -1047,7 +1047,7 @@ function reopt_build(m, p::Parameter)
 	elseif Obj == 2  # Keep SOC high
 		@objective(m, Min, m[:REcosts] + m[:LagrangianPenalties] - sum(m[:dvStorageSOC]["Elec",ts] for ts in m[:TimeStep])/8760.)
 	end
-	
+
 	results["julia_reopt_constriants_seconds"] = time() - t_start
 	
 	return results
