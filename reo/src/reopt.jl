@@ -308,14 +308,14 @@ function add_fuel_constraints(m, p)
 
 		#Constraint (1d): Y-intercept fuel burn for CHP
 		@constraint(m, CHPFuelBurnYIntCon[t in p.CHPTechs, ts in m[:TimeStep]],
-					p.FuelBurnYIntRate[t] * m[:dvSize][t] - m[:NewMaxSize][t] * (1-m[:binTechIsOnInTS][t,ts])  <= m[:dvFuelBurnYIntercept][t,ts]   					
+					p.FuelBurnYIntRate[t] * m[:dvSize][t] - m[:NewMaxSize][t] * (1-m[:binTechIsOnInTS][t,ts])  <= m[:dvFuelBurnYIntercept][t,ts]
 					)
 	end
 
 	if !isempty(p.BoilerTechs)
 		#Constraint (1e): Total Fuel burn for Boiler
 		@constraint(m, BoilerFuelBurnCon[t in p.BoilerTechs, ts in m[:TimeStep]],
-					m[:dvFuelUsage][t,ts]  ==  p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts] / p.BoilerEfficiency 			
+					m[:dvFuelUsage][t,ts]  ==  p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts] / p.BoilerEfficiency
 					)
 	end
 
@@ -1550,7 +1550,7 @@ function add_cold_tes_results(m, p, r::Dict)
 	r["cold_tes_thermal_production_series"] = round.(value.(m[:ColdTESDischargeSeries]), digits=5)
 	r["cold_tes_pct_soc_series"] = round.(value.(m[:ColdTESsoc]) / value(m[:ColdTESSizeKWHT]), digits=5)
 	nothing
-end	
+end
 
 function add_util_results(m, p, r::Dict)
     net_capital_costs_plus_om = value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]) +
