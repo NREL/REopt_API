@@ -22,7 +22,7 @@ function add_continuous_variables(m, p)
 	    dvProdIncent[p.Tech] >= 0   # X^{pi}_{t}: Production incentive collected for technology [$]
 		dvPeakDemandE[p.Ratchets, p.DemandBin] >= 0  # X^{de}_{re}:  Peak electrical power demand allocated to tier e during ratchet r [kW]
 		dvPeakDemandEMonth[m[:Month], p.DemandMonthsBin] >= 0  #  X^{dn}_{mn}: Peak electrical power demand allocated to tier n during month m [kW]
-		dvPeakDemandELookback >= 0  # X^{lp}: Peak electric demand look back [kW]
+		dvPeakDemandELookback[m[:Month]] >= 0  # X^{lp}: Peak electric demand look back [kW]
         MinChargeAdder >= 0   #to be removed
 		#CHP and Fuel-burning variables
 		dvFuelUsage[p.Tech, m[:TimeStep]] >= 0  # Fuel burned by technology t in time step h
@@ -795,7 +795,7 @@ function add_tou_demand_charge_constraints(m, p)
 		##Constraint (12f): Ratchet peak demand charge is bounded below by lookback
 		@constraint(m, [mth in m[:Month]],
 			sum( m[:dvPeakDemandEMonth][mth, n] for n in p.DemandMonthsBin ) >=
-			p.DemandLookbackPercent * m[:dvPeakDemandELookback]
+			p.DemandLookbackPercent * m[:dvPeakDemandELookback][mth]
 		)
 	end
 
