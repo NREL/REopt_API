@@ -623,7 +623,7 @@ function add_prod_grid_constraints(m, p)
 	##Grid sales forced to zero if Tech is not in TechsBySalesTier[u] 
 	for ts in p.TimeStep
 		for u in p.SalesTiers
-			for t in p.ElectricTechs
+			for t in p.Tech
 				if !(t in p.TechsBySalesTier[u])
 					fix(m[:dvProductionToGrid][t, u, ts], 0.0, force=true)
 				end

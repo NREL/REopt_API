@@ -452,10 +452,14 @@ class UrdbParse:
                     techs_by_rate[2].append(tech.upper())
                 elif tech.lower() in ["chp", "generator"]:  # Don't allow CHP or generator to write to Curtailment Tier (also no option for NM currently)
                     if tech.lower() == "chp" and self.chp_allowed_to_export or tech.lower() == "generator":
-                        rates_by_tech.append([2])  # 2, 3 correspond to the 1, 2 entries in techs_by_rate
+                        rates_by_tech.append([2])  # 2 corresponds to the 1 entry in techs_by_rate
                         techs_by_rate[1].append(tech.upper())
                     else:
                         rates_by_tech.append([])
+                elif tech.lower() in ["boiler", "elecchl", "absorpchl"]:
+                        # Only assigning a SalesTier (Curtail) to these techs to avoid a 0-dimension on TechsBySalesTier
+                        rates_by_tech.append([3])
+                        techs_by_rate[2].append(tech.upper())
                 else:
                     # these techs can access wholesale and curtailment rates
                     rates_by_tech.append([2, 3])  # 2, 3 correspond to the 1, 2 entries in techs_by_rate
