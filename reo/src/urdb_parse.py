@@ -444,13 +444,7 @@ class UrdbParse:
             grid_export_rates = operator.add(grid_export_rates, negative_excess_rate_costs)
 
             for tech in techs:
-                if self.net_metering and not tech.lower().endswith('nm'):
-                    # techs that end with 'nm' are the option to install capacity beyond the net metering capacity limit
-                    # these techs can access NEM and curtailment rates
-                    rates_by_tech.append([1, 3])  # 1, 3 correspond to the 0, 2 entries in techs_by_rate
-                    techs_by_rate[0].append(tech.upper())
-                    techs_by_rate[2].append(tech.upper())
-                elif tech.lower() in ["chp", "generator"]:  # Don't allow CHP or generator to write to Curtailment Tier (also no option for NM currently)
+                if tech.lower() in ["chp", "generator"]:  # Don't allow CHP or generator to write to Curtailment Tier (also no option for NM currently)
                     if tech.lower() == "chp" and self.chp_allowed_to_export or tech.lower() == "generator":
                         rates_by_tech.append([2])  # 2 corresponds to the 1 entry in techs_by_rate
                         techs_by_rate[1].append(tech.upper())
@@ -460,6 +454,12 @@ class UrdbParse:
                         # Only assigning a SalesTier (Curtail) to these techs to avoid a 0-dimension on TechsBySalesTier
                         rates_by_tech.append([3])
                         techs_by_rate[2].append(tech.upper())
+                elif self.net_metering and not tech.lower().endswith('nm'):
+                    # techs that end with 'nm' are the option to install capacity beyond the net metering capacity limit
+                    # these techs can access NEM and curtailment rates
+                    rates_by_tech.append([1, 3])  # 1, 3 correspond to the 0, 2 entries in techs_by_rate
+                    techs_by_rate[0].append(tech.upper())
+                    techs_by_rate[2].append(tech.upper())
                 else:
                     # these techs can access wholesale and curtailment rates
                     rates_by_tech.append([2, 3])  # 2, 3 correspond to the 1, 2 entries in techs_by_rate
