@@ -230,6 +230,24 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(pv_out.station_longitude, -91.74, 1)
         self.assertAlmostEqual(financial.lcc_us_dollars, 437842, -1)
 
+    def test_time_of_export_rate(self):
+        """
+        add a time-of-export rate that is greater than retail rate for the month of January,
+        check to see if PV is exported for whole month of January.
+        """
+        post = copy.deepcopy(self.post)
+        jan_rate = post["Scenario"]["Site"]["ElectricTariff"]["blended_monthly_rates_us_dollars_per_kwh"][0]
+        post["Scenario"]["Site"]["ElectricTariff"]["wholesale_rate_us_dollars_per_kwh"] = \
+            [jan_rate + 0.1] * 31 * 24 + [0.0] * (8760 - 31*24)
+
+        post["Scenario"]["Site"]["ElectricTariff"]["blended_monthly_demand_charges_us_dollars_per_kw"] = [0]*12
+        response = self.get_response(post)
+        pv_out = ClassAttributes(response['outputs']['Scenario']['Site']['PV'])
+        financial = ClassAttributes(response['outputs']['Scenario']['Site']['Financial'])
+        self.assertTrue(all(x == 0 for x in pv_out.year_one_to_load_series_kw[:744]))
+        self.assertEqual(pv_out.size_kw, 70.2846)
+        self.assertAlmostEqual(financial.lcc_us_dollars, 431483, -1)
+
     def test_time_of_use_energy_rate(self):
         """
         test custom time-of-use energy rate
