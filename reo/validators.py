@@ -1159,6 +1159,16 @@ class ValidateNestedInput:
                 # Use 2017 b/c it is most recent year that starts on a Sunday and all reference profiles start on
                 # Sunday
 
+        if object_name_path[-1] == "Financial":
+            # Making sure discount and tax rates are correct when saved to the database later in non-third party cases, 
+            # this logic is assumed in calculating after incentive capex costs
+            if real_values.get("third_party_ownership") is False:
+                self.update_attribute_value(object_name_path, number, 'owner_discount_pct', real_values.get("offtaker_discount_pct"))
+                self.defaults_inserted.append(["Financial", 'owner_discount_pct'])
+                self.update_attribute_value(object_name_path, number, 'owner_tax_pct', real_values.get("offtaker_tax_pct"))
+                self.defaults_inserted.append(["Financial", 'owner_tax_pct'])
+
+
     def check_min_max_restrictions(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
         """
         comparison_function for recursively_check_input_dict.
