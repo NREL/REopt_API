@@ -1131,6 +1131,10 @@ class DataManager:
             heating_load = [0.0 for _ in self.load.load_list]
         if self.cooling_load != None:
             cooling_load = self.cooling_load.load_list
+            # Zero out cooling load for outage hours
+            if time_steps_without_grid not in [None, []]:
+                for outage_hour in time_steps_without_grid:
+                    cooling_load[outage_hour] = 0.0
         else:
             cooling_load = [0.0 for _ in self.load.load_list]
 
