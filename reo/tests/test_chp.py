@@ -17,6 +17,7 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         super(CHPTest, self).setUp()
         self.reopt_base = '/v1/job/'
         self.test_post = os.path.join('reo', 'tests', 'posts', 'test_chp_sizing_POST.json')
+        self.resilience_post = os.path.join('reo', 'tests', 'posts', 'test_chp_resilience_POST.json')
 
     def get_response(self, data):
 
@@ -174,4 +175,48 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(init_capex_total_expected, init_capex_total, delta=1.0)
         self.assertAlmostEqual(net_capex_total_expected, net_capex_total, delta=1.0)
 
+    def test_chp_resilience(self):
+        """
+        Validation to ensure that:
+            1) CHP meets load during outage without exporting
+            2) CHP never exports if chp_allowed_to_export input is False
+            3) CHP does not "curtail", i.e. send power to a load bank
+            4) Cooling load gets zeroed out during the outage period
+
+        :return:
+        """
+
+        # Call API, get results in "d" dictionary
+        nested_data = json.load(open(self.resilience_post, 'rb'))
+        nested_data["Scenario"]["timeout_seconds"] = 420
+        nested_data["Scenario"]["optimality_tolerance_bau"] = 0.001
+        nested_data["Scenario"]["optimality_tolerance_techs"] = 0.01
+        # Specify the CHP.min_turn_down_pct which is NOT used during an outage
+        nested_data["Scenario"]["Site"]["CHP"]["min_turn_down_pct"] = 0.5
+        # Specify outage period
+        outage_start = 14
+        nested_data["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = outage_start
+        outage_duration = 24 * 2
+        outage_end = outage_start + outage_duration
+        nested_data["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"] = outage_end
+        nested_data["Scenario"]["Site"]["LoadProfile"]["critical_load_pct"] = 0.25
+    
+        resp = self.get_response(data=nested_data)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+        d = ModelManager.make_response(run_uuid=run_uuid)
+
+        tot_elec_load = d['outputs']['Scenario']['Site']['LoadProfile']['year_one_electric_load_series_kw']
+        chp_total_elec_prod = d['outputs']['Scenario']['Site']['CHP']['year_one_electric_production_series_kw']
+        chp_to_load = d['outputs']['Scenario']['Site']['CHP']['year_one_to_load_series_kw']
+        chp_export = d['outputs']['Scenario']['Site']['CHP']['year_one_to_grid_series_kw']
+        cooling_elec_load = d['outputs']['Scenario']['Site']['LoadProfileChillerElectric']['year_one_chiller_electric_load_series_kw']
+
+        # The values compared to the expected values
+        #self.assertTrue(all(chp_to_load[i] == tot_elec_load[i] for i in range(outage_start, outage_end)))
+        self.assertAlmostEqual(sum(chp_to_load[outage_start:outage_end]),sum(tot_elec_load[outage_start:outage_end]), places=1)
+        self.assertEqual(sum(chp_export), 0.0)
+        self.assertAlmostEqual(sum(chp_total_elec_prod), sum(chp_to_load), delta=1.0E-5*sum(chp_total_elec_prod))
+        self.assertEqual(sum(cooling_elec_load[outage_start+1:outage_end]), 0.0)
 

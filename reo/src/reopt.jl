@@ -47,6 +47,7 @@ function add_integer_variables(m, p)
 		binDemandTier[p.Ratchets, p.DemandBin], Bin  # 1 If tier e has allocated demand during ratchet r; 0 otherwise
         binDemandMonthsTier[p.Month, p.DemandMonthsBin], Bin # 1 If tier n has allocated demand during month m; 0 otherwise
 		binEnergyTier[p.Month, p.PricingTier], Bin    #  Z^{ut}_{mu} 1 If demand tier $u$ is active in month m; 0 otherwise (NEW)
+		binNoGridPurchases[p.TimeStep], Bin  # Binary for the condition where the site load is met by on-site resources so no grid purchases
     end
 end
 
@@ -330,8 +331,8 @@ function add_binTechIsOnInTS_constraints(m, p)
 	@constraint(m, ProduceIfOnCon[t in p.FuelBurningTechs, ts in p.TimeStep],
 		m[:dvRatedProduction][t,ts] <= m[:NewMaxSize][t] * m[:binTechIsOnInTS][t,ts]
 	)
-	#Constraint (3b): Technologies that are turned on must not be turned down
-	@constraint(m, MinTurndownCon[t in p.FuelBurningTechs, ts in p.TimeStep],
+	#Constraint (3b): Technologies that are turned on must not be turned down below minimum, except during outage
+	@constraint(m, MinTurndownCon[t in p.FuelBurningTechs, ts in p.TimeStepsWithGrid],
 		p.MinTurndown[t] * m[:dvSize][t] - m[:dvRatedProduction][t,ts] <= m[:NewMaxSize][t] * (1-m[:binTechIsOnInTS][t,ts])
 	)
 end
@@ -618,6 +619,29 @@ function add_prod_grid_constraints(m, p)
 	@constraint(m,  AnnualGridSalesLimitCon,
 	 p.TimeStepScaling * (
 		sum( m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers, ts in p.TimeStepsWithGrid if !(u in p.CurtailmentTiers)) +  sum(m[:dvProductionToGrid][t,u,ts] for u in p.SalesTiers, t in p.TechsBySalesTier[u], ts in p.TimeStepsWithGrid if !(u in p.CurtailmentTiers))) <= p.MaxGridSales[1]
+	)
+
+	##Grid sales forced to zero if Tech is not in TechsBySalesTier[u] 
+	for ts in p.TimeStep
+		for u in p.SalesTiers
+			for t in p.Tech
+				if !(t in p.TechsBySalesTier[u])
+					fix(m[:dvProductionToGrid][t, u, ts], 0.0, force=true)
+				end
+			end 
+		end
+	end
+
+	# Cannot export power while importing from Grid
+	@constraint(m, NoGridPurchasesBinary[ts in p.TimeStep],
+		sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) + m[:dvGridToStorage][ts] - 
+		(1 - m[:binNoGridPurchases][ts]) * 1.0E9 <= 0
+	)
+	
+	@constraint(m, ExportOnlyAfterSiteLoadMetCon[ts in p.TimeStep],
+		sum(sum(m[:dvProductionToGrid][t,u,ts] for t in p.Tech, u in p.SalesTiers if !(u in p.CurtailmentTiers)) +
+			sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers)) -
+			m[:binNoGridPurchases][ts] * 1.0E9 <= 0
 	)
 end
 

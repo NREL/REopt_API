@@ -512,6 +512,11 @@ nested_input_definitions = {
           "default": False,
           "description": "Boolean indicator if CHP does not reduce demand charges"
         },
+        "chp_allowed_to_export": {
+          "type": "bool",
+          "default": False,
+          "description": "Boolean indicator if CHP is allowed to export electric power to the grid"
+        },
       },
 
       "FuelTariff": {
