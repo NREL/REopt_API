@@ -19,5 +19,5 @@ Pkg.build("Xpress")
 include(joinpath(ENV["PROJECT_PATH"], "reo", "src", "reopt_xpress_model.jl"))
 include(joinpath(ENV["PROJECT_PATH"], "reo", "src", "reopt.jl"))
 
-model = reopt_model(300, 0.001)
+model = reopt_model(300, 0.001, 3)
 results = reopt(model, mi)

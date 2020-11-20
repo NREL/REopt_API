@@ -136,10 +136,12 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
             t_start = time.time()
             if bau:
                 model = Main.reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]),
-                                         float(data["inputs"]["Scenario"]["optimality_tolerance_bau"]))
+                                         float(data["inputs"]["Scenario"]["optimality_tolerance_bau"]),
+                                         3)
             else:
                 model = Main.reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]),
-                                         float(data["inputs"]["Scenario"]["optimality_tolerance_techs"]))
+                                         float(data["inputs"]["Scenario"]["optimality_tolerance_techs"]),
+                                         3)
             time_dict["pyjulia_make_model_seconds"] = time.time() - t_start
 
         elif os.environ.get("SOLVER") == "cbc":
