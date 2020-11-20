@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Chart.Name }}-db-migrate-job-{{ .Release.Revision }}
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      volumes:
+        - name: {{ .Chart.Name }}-secrets-volume
+          secret:
+            secretName: {{ .Chart.Name }}-secrets
+      containers:
+        - name: {{ .Chart.Name }}-job
+{{ tuple "reopt-api" . | werf_container_image | indent 10 }}
+          args: ["python", "manage.py", "migrate"]
+          envFrom:
+            - configMapRef:
+                name: {{ .Chart.Name }}-base-config-map
+          env:
+{{ tuple "reopt-api" . | werf_container_env | indent 12 }}
+          volumeMounts:
+            - name: {{ .Chart.Name }}-secrets-volume
+              readOnly: true
+              mountPath: /opt/reopt/keys.py
+              subPath: {{ .Values.appEnv }}-keys.py

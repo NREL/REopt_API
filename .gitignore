@@ -125,3 +125,5 @@ julia_envs/**/**.dll
 docker-compose.xpressOS.yml
 Dockerfile.xpressOS.pyjul
 docker-compose.xpress_os.yml
+
+/.werf_secret_key

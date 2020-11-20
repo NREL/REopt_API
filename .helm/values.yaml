@@ -1,0 +1,8 @@
+ingressHost: localhost
+appEnv: development
+djangoSettingsModule: reopt_api.dev_settings
+redisDataVolumeStorageClassName:
+redisHost: "{{ .Chart.Name }}-redis-service"
+redisPort: 6379
+djangoReplicas: 1
+celeryReplicas: 1

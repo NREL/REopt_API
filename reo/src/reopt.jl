@@ -47,6 +47,7 @@ function add_integer_variables(m, p)
 		binDemandTier[p.Ratchets, p.DemandBin], Bin  # 1 If tier e has allocated demand during ratchet r; 0 otherwise
         binDemandMonthsTier[p.Month, p.DemandMonthsBin], Bin # 1 If tier n has allocated demand during month m; 0 otherwise
 		binEnergyTier[p.Month, p.PricingTier], Bin    #  Z^{ut}_{mu} 1 If demand tier $u$ is active in month m; 0 otherwise (NEW)
+		binNoGridPurchases[p.TimeStep], Bin  # Binary for the condition where the site load is met by on-site resources so no grid purchases
     end
 end
 
@@ -111,7 +112,7 @@ function add_export_expressions(m, p)
 				for t in m[:WindTechs], u in p.CurtailmentTiers, ts in p.TimeStep)
 		)
 		m[:ExportedElecWIND] = @expression(m,
-			p.TimeStepScaling * sum(m[:dvProductionToGrid][t,u,ts] 
+			p.TimeStepScaling * sum(m[:dvProductionToGrid][t,u,ts]
 				for t in m[:WindTechs], u in p.SalesTiersByTech[t], ts in p.TimeStep) - m[:CurtailedElecWIND]
 		)
 		m[:ExportedElecGEN] = @expression(m,
@@ -330,8 +331,8 @@ function add_binTechIsOnInTS_constraints(m, p)
 	@constraint(m, ProduceIfOnCon[t in p.FuelBurningTechs, ts in p.TimeStep],
 		m[:dvRatedProduction][t,ts] <= m[:NewMaxSize][t] * m[:binTechIsOnInTS][t,ts]
 	)
-	#Constraint (3b): Technologies that are turned on must not be turned down
-	@constraint(m, MinTurndownCon[t in p.FuelBurningTechs, ts in p.TimeStep],
+	#Constraint (3b): Technologies that are turned on must not be turned down below minimum, except during outage
+	@constraint(m, MinTurndownCon[t in p.FuelBurningTechs, ts in p.TimeStepsWithGrid],
 		p.MinTurndown[t] * m[:dvSize][t] - m[:dvRatedProduction][t,ts] <= m[:NewMaxSize][t] * (1-m[:binTechIsOnInTS][t,ts])
 	)
 end
@@ -529,9 +530,11 @@ function add_tech_size_constraints(m, p)
 	)
 
 	##Constraint (7e): Derate factor limits production variable (separate from ProductionFactor)
-	@constraint(m, TurbineRatedProductionCon[t in p.FuelBurningTechs, ts in p.TimeStep; !(t in p.TechsNoTurndown)],
-		m[:dvRatedProduction][t,ts] <= p.ElectricDerate[t,ts] * m[:dvSize][t]
-	)
+    for ts in p.TimeStep
+        @constraint(m, [t in p.Tech; !(t in p.TechsNoTurndown)],
+            m[:dvRatedProduction][t,ts]  <= p.ElectricDerate[t,ts] * m[:dvSize][t]
+        )
+    end
 
 	##Constraint (7_heating_prod_size): Production limit based on size for boiler
 	if !isempty(p.BoilerTechs)
@@ -616,6 +619,29 @@ function add_prod_grid_constraints(m, p)
 	@constraint(m,  AnnualGridSalesLimitCon,
 	 p.TimeStepScaling * (
 		sum( m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers, ts in p.TimeStepsWithGrid if !(u in p.CurtailmentTiers)) +  sum(m[:dvProductionToGrid][t,u,ts] for u in p.SalesTiers, t in p.TechsBySalesTier[u], ts in p.TimeStepsWithGrid if !(u in p.CurtailmentTiers))) <= p.MaxGridSales[1]
+	)
+
+	##Grid sales forced to zero if Tech is not in TechsBySalesTier[u] 
+	for ts in p.TimeStep
+		for u in p.SalesTiers
+			for t in p.Tech
+				if !(t in p.TechsBySalesTier[u])
+					fix(m[:dvProductionToGrid][t, u, ts], 0.0, force=true)
+				end
+			end 
+		end
+	end
+
+	# Cannot export power while importing from Grid
+	@constraint(m, NoGridPurchasesBinary[ts in p.TimeStep],
+		sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) + m[:dvGridToStorage][ts] - 
+		(1 - m[:binNoGridPurchases][ts]) * 1.0E9 <= 0
+	)
+	
+	@constraint(m, ExportOnlyAfterSiteLoadMetCon[ts in p.TimeStep],
+		sum(sum(m[:dvProductionToGrid][t,u,ts] for t in p.Tech, u in p.SalesTiers if !(u in p.CurtailmentTiers)) +
+			sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers)) -
+			m[:binNoGridPurchases][ts] * 1.0E9 <= 0
 	)
 end
 
@@ -1276,7 +1302,7 @@ function add_pv_results(m, p, r::Dict)
 				PVtoBatt = @expression(m, [ts in p.TimeStep], 0.0)
             end
 			r[string(PVclass, "toBatt")] = round.(value.(PVtoBatt), digits=3)
-			
+
 			PVtoCurtail = @expression(m, [ts in p.TimeStep],
 					sum(m[:dvProductionToGrid][t,u,ts] for t in PVtechs_in_class, u in p.CurtailmentTiers))
     	    r[string(PVclass, "toCurtail")] = round.(value.(PVtoCurtail), digits=3)
@@ -1286,7 +1312,7 @@ function add_pv_results(m, p, r::Dict)
     	    r[string(PVclass, "toGrid")] = round.(value.(PVtoGrid), digits=3)
 
 			PVtoLoad = @expression(m, [ts in p.TimeStep],
-				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] for t in PVtechs_in_class) 
+				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] for t in PVtechs_in_class)
 				- PVtoGrid[ts] - PVtoBatt[ts] - PVtoCurtail[ts]
 				)
             r[string(PVclass, "toLoad")] = round.(value.(PVtoLoad), digits=3)
