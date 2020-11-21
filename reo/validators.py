@@ -1063,12 +1063,8 @@ class ValidateNestedInput:
         if object_name_path[-1] == "Generator":
             if self.isValid:
                 
-                fuel_conversion_per_gal = {
-                    'diesel_oil': 22.51
-                }
-
                 if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_CO2_per_gal') is None:
-                    self.update_attribute_value(object_name_path, number, 'emissions_factor_lb_CO2_per_gal', fuel_conversion_per_gal.get('diesel_oil'))
+                    self.update_attribute_value(object_name_path, number, 'emissions_factor_lb_CO2_per_gal', self.fuel_conversion_per_gal.get('diesel_oil'))
                 
                 if (real_values["max_kw"] > 0 or real_values["existing_kw"] > 0):
                     # then replace zeros in default burn rate and slope, and set min/max kw values appropriately for
