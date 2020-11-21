@@ -299,6 +299,7 @@ class ElectricTariffModel(models.Model):
     tou_energy_rates_us_dollars_per_kwh =ArrayField(models.FloatField(blank=True), default=list)
     emissions_factor_series_lb_CO2_per_kwh = ArrayField(models.FloatField(blank=True), default=list)
     emissions_region = models.TextField(null=True, blank=True)
+    chp_allowed_to_export = models.BooleanField(null=True, blank=True)
 
     # Ouptuts
     year_one_energy_cost_us_dollars = models.FloatField(null=True, blank=True)
