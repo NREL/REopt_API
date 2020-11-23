@@ -524,7 +524,7 @@ nested_input_definitions = {
           "type": "str",
           "default": 'natural_gas',
           "restrict_to": ["natural_gas", "landfill_bio_gas", "propane", "diesel_oil"],
-          "description": "Boiler fuel type one of (natural_gas, landfill_bio_gas, propane, coal, diesel_oil)"
+          "description": "Boiler fuel type one of (natural_gas, landfill_bio_gas, propane, diesel_oil)"
         },
         "boiler_fuel_blended_annual_rates_us_dollars_per_mmbtu": {
           "type": "float",
@@ -539,8 +539,8 @@ nested_input_definitions = {
         "chp_fuel_type": {
           "type": "str",
           "default": 'natural_gas',
-          "restrict_to": ["natural_gas", "landfill_bio_gas", "propane"],
-          "description": "Boiler fuel type (natural_gas, landfill_bio_gas, propane)"
+          "restrict_to": ["natural_gas", "landfill_bio_gas", "propane", "diesel_oil"],
+          "description": "Boiler fuel type (natural_gas, landfill_bio_gas, propane, diesel_oil)"
         },
         "chp_fuel_blended_annual_rates_us_dollars_per_mmbtu": {
           "type": "float",
