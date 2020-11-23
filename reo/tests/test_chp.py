@@ -17,6 +17,7 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         super(CHPTest, self).setUp()
         self.reopt_base = '/v1/job/'
         self.test_post = os.path.join('reo', 'tests', 'posts', 'test_chp_sizing_POST.json')
+        #self.test_post = os.path.join('reo', 'tests', 'posts', 'debug_cf_1.json')
 
     def get_response(self, data):
 
