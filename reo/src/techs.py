@@ -33,6 +33,9 @@ from reo.src.wind import WindSAMSDK
 from reo.src.incentives import Incentives, IncentivesNoProdBased
 from reo.models import ModelManager
 import numpy as np
+import scipy.interpolate
+import pandas as pd
+import os
 
 
 class Tech(object):
@@ -932,6 +935,10 @@ class CHP(Tech):
                               "micro_turbine": 0,
                               "combustion_turbine": 0,
                               "fuel_cell": 0}
+    # Define valid parameters for looking up thermal grade correction factor (hot water)
+    #thermal_grade_valid_inputs = {"t_supply_max": 200,
+    #                              "t_return_min": 100,
+    #                              "delta_t_min": 10}
 
     def __init__(self, dfm, run_uuid, existing_boiler_production_type_steam_or_hw, oa_temp_degF, site_elevation_ft,
                  time_steps_per_hour=1, **kwargs):
@@ -969,6 +976,8 @@ class CHP(Tech):
         self.fuel_burn_slope, self.fuel_burn_intercept, self.thermal_prod_slope, self.thermal_prod_intercept = \
                     self.convert_performance_params(oa_temp_degF)
         self.chp_power_derate = self.calculate_chp_power_derate(site_elevation_ft, oa_temp_degF)
+
+        #self.library_path = os.path.join('reo', 'src')
 
         dfm.add_chp(self)
 
@@ -1096,9 +1105,48 @@ class CHP(Tech):
 
         # -----Hot water or steam grade correction factor-----
         # functions of T_water_in and T_water_out or P_steam (need to make inputs for these parameters!!!!)
-        t_water_in = 160  # [F]
-        t_water_out = 180  # [F]
+        #---defaults----
+        # if self.prime_mover == 'micro_turbine':
+        #     t_water_in = 160  # [deg F]
+        #     t_water_out = 180  # [deg F]
+        # elif self.prime_mover == 'recip_engine':
+        #     t_water_in = 140 # [deg F]
+        #     t_water_out = 180 # [deg F]
+        # else:
+        #     t_water_in = 160  # [deg F]
+        #     t_water_out = 180  # [deg F]
+
+        # filter water temperature inputs (do this
+        # in = return
+        # out = supply
+        # t_water_in must be between 100 and 180 deg F
+        # if t_water_in < 100:
+        #     t_water_in = 100
+        # elif t_water_in > 180:
+        #     t_water_in = 180
+        # else:
+        #     t_water_in = t_water_in
+        #
+        # # t_water_out must be between 110 and 200 deg F
+        # if t_water_out < 100:
+        #     t_water_out = t_water_in + 10
+        # elif t_water_out > 200:
+        #     t_water_out = 200
+        # else:
+        #     t_water_out = t_water_out
+        #
+        # # Delta T_water must be between 10 and 100
+        # if t_water_out - t_water_in < 10:
+        #     t_water_out = t_water_in + 10
+        # elif t_water_out - t_water_in > 100:
+        #     t_water_out = t_water_in + 100
+        # else:
+        #     t_water_out = t_water_out
+
+
         if self.prime_mover == 'micro_turbine':
+            t_water_in = 160.0  # [deg F]
+            t_water_out = 180.0  # [deg F]
 
             p00 = 363.9501194987893
             p10 = 2.7767557065540
@@ -1112,9 +1160,37 @@ class CHP(Tech):
             normalization_factor = 238.751  # [kW_th]
             cf_tp_grade_full_load = (p00 + p10*x + p01*y + p20*x**2 + p11*x*y + p02*y**2) / normalization_factor
             cf_tp_grade_half_load = cf_tp_grade_full_load
+
         elif self.prime_mover == 'recip_engine':
-            cf_tp_grade_full_load = 1
-            cf_tp_grade_half_load = 1
+            t_water_in = 140.0  # [deg F]
+            t_water_out = 180.0 # [deg F]
+
+            data_full_load = np.array(pd.read_csv(os.path.join(os.path.join('reo', 'src', 'data'), 'ICE_HW_Map_FullLoad_v3.csv'))) #thermal prod (full load data)
+            data_half_load = np.array(pd.read_csv(os.path.join(os.path.join('reo', 'src', 'data'), 'ICE_HW_Map_HalfLoad_v3.csv'))) #thermal prod (half load data)
+            x = data_full_load[:, 0]  # t_water_in data [deg F]
+            y = data_full_load[:, 1]  # t_water_out data [deg F]
+            q_full_load = data_full_load[:, 4]  # hot water recovery (full load data) [kW]
+            q_half_load = data_half_load[:, 4]  # hot water recovery (half load data) [kW]
+
+            # function to interpolate discontinuous data
+            f_full_load = scipy.interpolate.interp2d(x, y, q_full_load, kind='linear')
+            f_half_load = scipy.interpolate.interp2d(x, y, q_half_load, kind='linear')
+
+            # calculate cf
+            q_full_load_query = f_full_load(t_water_in, t_water_out)
+            q_full_load_normalization_factor = float(811.0)  # [kW] (default loop of 140 - 180 deg F)
+            cf_tp_grade_full_load = float(q_full_load_query[0]) / q_full_load_normalization_factor
+
+            q_half_load_query = f_half_load(t_water_in, t_water_out)
+            q_half_load_normalization_factor = float(491.0)  # [kW]
+            cf_tp_grade_half_load = float(q_half_load_query[0]) / q_half_load_normalization_factor
+
+            #half load factor does not work when it is different than full load factor (not as accurate)
+            cf_tp_grade_half_load = cf_tp_grade_full_load
+
+            #from celery.contrib import rdb;
+            #rdb.set_trace()
+
         elif self.prime_mover == 'combustion_turbine':
             p_steam = 150 #default
             if p_steam <= 150:
@@ -1122,6 +1198,7 @@ class CHP(Tech):
             else:
                 cf_tp_grade_full_load = 1 - (p_steam - 150)*((1-0.94)/(300-150))
             cf_tp_grade_half_load = cf_tp_grade_full_load
+
         elif self.prime_mover == 'fuel_cell':
             cf_tp_grade_full_load = 1
             cf_tp_grade_half_load = 1
@@ -1129,10 +1206,15 @@ class CHP(Tech):
             cf_tp_grade_full_load = 1
             cf_tp_grade_half_load = 1
 
-        thermal_prod_full_load = cf_tp_grade_full_load * (1.0 * 1 / self.elec_effic_full_load * self.thermal_effic_full_load * 3412.0 / 1.0E6)  # [MMBtu/hr/kW]
-        thermal_prod_half_load = cf_tp_grade_half_load * (0.5 * 1 / self.elec_effic_half_load * self.thermal_effic_half_load * 3412.0 / 1.0E6)  # [MMBtu/hr/kW]
+        # apply thermal grade correction factor
+        thermal_effic_full_load = self.thermal_effic_full_load*cf_tp_grade_full_load
+        thermal_effic_half_load = self.thermal_effic_half_load*cf_tp_grade_half_load
+        thermal_prod_full_load = 1.0 * 1.0 / self.elec_effic_full_load * thermal_effic_full_load * 3412.0 / 1.0E6  # [MMBtu/hr/kW]
+        thermal_prod_half_load = 0.5 * 1.0 / self.elec_effic_half_load * thermal_effic_half_load * 3412.0 / 1.0E6  # [MMBtu/hr/kW]
         thermal_prod_slope_nominal = (thermal_prod_full_load - thermal_prod_half_load) / (1.0 - 0.5)  # [MMBtu/hr/kW]
         thermal_prod_intercept_nominal = thermal_prod_full_load - thermal_prod_slope_nominal * 1.0  # [MMBtu/hr/kW_rated]
+        #from celery.contrib import rdb;
+        #rdb.set_trace()
 
         # -----Ambient correction factor-----
         # functions of T_amb (shift ISO part load thermal production and fuel burn curves)
@@ -1149,7 +1231,7 @@ class CHP(Tech):
                      #    for i in range(8760 * self.time_steps_per_hour)] # this func breaks down after 120 F
                         #fine tuned func (acts linearly past 120 F, cold temp efficiency reduced slightly)
                     cf_fb = [0.0007071*t_amb_f[i] + 0.9587 for i in range(8760 * self.time_steps_per_hour)]
-                    cf_tp = [0.005852 * t_amb_f[i] + 0.6615 for i in range(8760 * self.time_steps_per_hour)]
+                    cf_tp = [0.0058520*t_amb_f[i] + 0.6615 for i in range(8760 * self.time_steps_per_hour)]
             elif self.prime_mover == 'recip_engine':
                 # see thesis (these can change but for sake of generality and lack of sensitivity, it seems best to ...
                 # keep these corrections to values of 1)
@@ -1171,17 +1253,13 @@ class CHP(Tech):
             cf_tp = np.ones(8760 * self.time_steps_per_hour)
 
 
-        # FUEL BURN CALCULATIONS
+        # FUEL BURN CALCULATIONS (list variable types)
         fuel_burn_slope = [cf_fb[i] * fuel_burn_slope_nominal for i in range(8760 * self.time_steps_per_hour)] # [MMBtu/hr/kW]
         fuel_burn_intercept = [cf_fb[i] * fuel_burn_intercept_nominal for i in range(8760 * self.time_steps_per_hour)] # [MMBtu/hr/kW_rated]
-        fuel_burn_slope = list(fuel_burn_slope)  # convert var type
-        fuel_burn_intercept = list(fuel_burn_intercept)  # convert var type
 
         # THERMAL PRODUCTION CALCULATIONS
         thermal_prod_slope = [cf_tp[i] * thermal_prod_slope_nominal for i in range(8760 * self.time_steps_per_hour)] # [MMBtu/hr/kW]
         thermal_prod_intercept = [cf_tp[i] * thermal_prod_intercept_nominal for i in range(8760 * self.time_steps_per_hour)] # [MMBtu/hr/kW_rated]
-        thermal_prod_slope = list(thermal_prod_slope)  # convert var type
-        thermal_prod_intercept = list(thermal_prod_intercept)  # convert var type
 
         return fuel_burn_slope, fuel_burn_intercept, thermal_prod_slope, thermal_prod_intercept
 
