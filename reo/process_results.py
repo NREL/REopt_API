@@ -888,7 +888,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 elif name == "LoadProfileChillerElectric":
                     lpce = LoadProfileChillerElectricModel.objects.filter(run_uuid=meta['run_uuid'])
                     if len(lpce) > 0:
-                        lpce = lpbf[0]
+                        lpce = lpce[0]
                         self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_kwh_bau"] = lpce.annual_calculated_kwh_bau
                         self.nested_outputs["Scenario"]["Site"][name]["year_one_chiller_electric_load_series_kw"] = self.dm["LoadProfile"].get("year_one_chiller_electric_load_series_kw")
                         self.nested_outputs["Scenario"]["Site"][name]["year_one_chiller_thermal_load_series_ton"] = [x * self.dm.get("elecchl_cop", 0) / 3.5168545 for x in self.dm["LoadProfile"].get("year_one_chiller_electric_load_series_kw")]
