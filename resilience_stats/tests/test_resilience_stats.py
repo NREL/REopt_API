@@ -423,3 +423,22 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         self.assertEqual(resp.status_code, 200)
         results = json.loads(resp.content)
         self.assertTrue(results["survives_specified_outage"])
+
+    def test_outage_sim_chp(self):
+        expected = {
+            'resilience_hours_min': 0,
+            'resilience_hours_max': 10,
+            'resilience_hours_avg': 0.01,
+            "outage_durations": list(range(1, 11)),
+            "probs_of_surviving": [0.0011, 0.001, 0.0009, 0.0008, 0.0007, 0.0006, 0.0005, 0.0003, 0.0002, 0.0001]
+        }
+        inputs = self.inputs
+        inputs.update(pv_kw_ac_hourly=[], batt_kw=0, diesel_kw=0, chp_kw=10, critical_loads_kw=[10]*10 + [11]*8750)
+        resp = simulate_outages(**inputs)
+
+        self.assertAlmostEqual(expected['resilience_hours_min'], resp['resilience_hours_min'], places=4)
+        self.assertAlmostEqual(expected['resilience_hours_max'], resp['resilience_hours_max'], places=4)
+        self.assertAlmostEqual(expected['resilience_hours_avg'], resp['resilience_hours_avg'], places=4)
+        self.assertListEqual(expected['outage_durations'], resp['outage_durations'])
+        for x, y in zip(expected['probs_of_surviving'], resp['probs_of_surviving']):
+            self.assertAlmostEquals(x, y, places=4)
