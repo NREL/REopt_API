@@ -310,8 +310,12 @@ def calculate_proforma_metrics(data):
             # get cumulative cashflow for developer
             discounted_cashflow = [v/((1+financials['owner_discount_pct'])**yr) for yr, v in enumerate(free_cashflow_before_income)]
             net_present_cost = sum(discounted_cashflow) * -1
-            capital_recovery_factor = (financials['owner_discount_pct'] * (1+financials['owner_discount_pct'])**years) / \
+            if financials['owner_discount_pct'] != 0:
+                capital_recovery_factor = (financials['owner_discount_pct'] * (1+financials['owner_discount_pct'])**years) / \
                                         ((1+financials['owner_discount_pct'])**years - 1) / (1 - tax_pct)
+            else:
+                capital_recovery_factor = (1/years) / (1 - tax_pct)
+            
             annualized_payment_to_third_party_us_dollars = net_present_cost * capital_recovery_factor
             annual_income_from_host = -1 * sum(discounted_cashflow) * capital_recovery_factor * (1-tax_pct)
             free_cashflow = copy.deepcopy(free_cashflow_before_income)
