@@ -38,9 +38,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
 
     def setUp(self):
         super(TestResilStats, self).setUp()
-        self.test_path = os.path.join('resilience_stats', 'tests')
-        self.reopt_base_sim = '/v1/outagesimjob/'
-        
+
         def readFiles(path):
             test_path = os.path.join('resilience_stats', 'tests', path)
             results = json.loads(open(os.path.join(test_path, 'REopt_results.json')).read())
@@ -81,23 +79,9 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
             }
             return inputDict
 
-        inputDict = readFiles('')
-        inputDict1 = readFiles('timestep_1')
-        inputDict2 = readFiles('timestep_2')
-
-        self.inputs = inputDict
-        self.inputs1 = inputDict1
-        self.inputs2 = inputDict2
-
-        self.submit_url = '/v1/job/'
-        self.resil_stats_url = '/v1/job/<run_uuid>/resilience_stats/'
-        self.financial_check_url = '/v1/financial_check/'
-
-    def post_outagesimjob(self, data_sim):
-        return self.api_client.post(self.reopt_base_sim, format='json', data=data_sim)
-
-    def get_resiliencestats(self, run_uuid):
-        return self.api_client.get(self.resil_stats_url.replace("<run_uuid>", run_uuid))
+        self.inputs = readFiles('')
+        self.inputs1 = readFiles('timestep_1')
+        self.inputs2 = readFiles('timestep_2')
 
     def test_outage_sim_no_diesel(self):
         """
@@ -407,14 +391,14 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
             self.assertAlmostEquals(x, y, places=1)
 
     def test_resil_endpoint(self):
-        post = json.load(open(os.path.join(self.test_path, 'POST_nested.json'), 'r'))
-        r = self.api_client.post(self.submit_url, format='json', data=post)
+        post = json.load(open(os.path.join('resilience_stats', 'tests', 'POST_nested.json'), 'r'))
+        r = self.api_client.post('/v1/job/', format='json', data=post)
         reopt_resp = json.loads(r.content)
         run_uuid = reopt_resp['run_uuid']
 
-        resp = self.post_outagesimjob(data_sim={"run_uuid": run_uuid, "bau": True})
+        resp = self.api_client.post('/v1/outagesimjob/', format='json', data={"run_uuid": run_uuid, "bau": True})
         self.assertEqual(resp.status_code, 201)
-        resp = self.get_resiliencestats(run_uuid)
+        resp = self.api_client.get('/v1/job/<run_uuid>/resilience_stats/'.replace("<run_uuid>", run_uuid))
         resp_dict = json.loads(resp.content)['outage_sim_results']
 
         # NOTE: probabilities are sensitive to the SOC series,
@@ -434,7 +418,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         resilience scenario system capacities
         """
         resp = self.api_client.get(
-            self.financial_check_url + "?financial_uuid={0}&resilience_uuid={0}".format(run_uuid),
+            '/v1/financial_check/?financial_uuid={0}&resilience_uuid={0}'.format(run_uuid),
             format='json')
         self.assertEqual(resp.status_code, 200)
         results = json.loads(resp.content)
