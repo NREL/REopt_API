@@ -115,7 +115,7 @@ def simulate_outage(init_time_step, diesel_kw, fuel_available, b, m, diesel_min_
     return n_timesteps / n_steps_per_hour  # met the critical load for all time steps
 
 
-def simulate_outages(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critical_loads_kw=[], wind_kw_ac_hourly=None,
+def simulate_outages(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=[], init_soc=0, critical_loads_kw=[], wind_kw_ac_hourly=None,
                      batt_roundtrip_efficiency=0.829, diesel_kw=0, fuel_available=0, b=0, m=0, diesel_min_turndown=0.3,
                      celery_eager=True, chp_kw=0
                      ):
@@ -151,7 +151,7 @@ def simulate_outages(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, criti
     if batt_kw == 0 or batt_kwh == 0:
         init_soc = [0] * n_timesteps  # default is None
 
-        if ((pv_kw_ac_hourly in [None, []]) or (sum(pv_kw_ac_hourly) == 0)) and diesel_kw == 0:
+        if ((pv_kw_ac_hourly in [None, []]) or (sum(pv_kw_ac_hourly) == 0)) and diesel_kw == 0 and chp_kw == 0:
             # no pv, generator, nor battery --> no resilience
             return {"resilience_by_timestep": r,
                     "resilience_hours_min": 0,
