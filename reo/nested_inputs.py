@@ -1385,6 +1385,12 @@ nested_input_definitions = {
           "max": 1.0,
           "description": "Derate slope as a percent/fraction of rated power per degree F"
         },
+        "chp_unavailability_hourly": {
+          "type": "list_of_float",
+          "min": 0.0,
+          "max": 1.0,
+          "description": "CHP unavailability: hourly list (8760) of 1.0 for unavailable and 0.0 for available"
+        },
         "macrs_option_years": {
           "type": "int",
           "restrict_to": macrs_schedules,
