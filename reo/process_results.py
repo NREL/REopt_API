@@ -301,14 +301,15 @@ def calculate_proforma_metrics(data):
         
         total_cash_incentives = total_pbi * (1 - tax_pct) 
         total_depreciation = total_depreciation * tax_pct
-        free_cashflow_before_income = total_depreciation + total_cash_incentives + operating_expenses_after_tax
-        free_cashflow_before_income[0] += federal_itc
-        free_cashflow_before_income = np.append([(-1 * financials['initial_capital_costs']) + total_ibi_and_cbi], free_cashflow_before_income)
+        free_cashflow = total_depreciation + total_cash_incentives + operating_expenses_after_tax
+        free_cashflow[0] += federal_itc
+        free_cashflow = np.append([(-1 * financials['initial_capital_costs']) + total_ibi_and_cbi], free_cashflow)
         net_present_cost = None
         annualized_payment_to_third_party_us_dollars = None
         if third_party:
             # get cumulative cashflow for developer
-            discounted_cashflow = [v/((1+financials['owner_discount_pct'])**yr) for yr, v in enumerate(free_cashflow_before_income)]
+            developer_free_cashflow = copy.deepcopy(free_cashflow)
+            discounted_cashflow = [v/((1+financials['owner_discount_pct'])**yr) for yr, v in enumerate(developer_free_cashflow)]
             net_present_cost = sum(discounted_cashflow) * -1
             if financials['owner_discount_pct'] != 0:
                 capital_recovery_factor = (financials['owner_discount_pct'] * (1+financials['owner_discount_pct'])**years) / \
@@ -318,10 +319,11 @@ def calculate_proforma_metrics(data):
             
             annualized_payment_to_third_party_us_dollars = net_present_cost * capital_recovery_factor
             annual_income_from_host = -1 * sum(discounted_cashflow) * capital_recovery_factor * (1-tax_pct)
-            free_cashflow = copy.deepcopy(free_cashflow_before_income)
-            free_cashflow[1:] += annual_income_from_host
-            irr = np.irr(free_cashflow)
-            cumulative_cashflow =  np.cumsum(free_cashflow)
+            developer_free_cashflow[1:] += annual_income_from_host
+            irr = np.irr(developer_free_cashflow)
+            cumulative_cashflow =  np.cumsum(developer_free_cashflow)
+
+            free_cashflow, free_cashflow_bau, discounted_cashflow, discounted_cashflow_bau  = None, None, None, None
         else:
             # get cumulative cashflow for host by comparing to BAU cashflow
             electricity_bill_bau_series_bau = np.array([-1 * electric_tariff['year_one_bill_bau_us_dollars'] * \
@@ -335,18 +337,24 @@ def calculate_proforma_metrics(data):
             else:
                 deductable_operating_expenses_series_bau = np.array([0]*years)
             operating_expenses_after_tax_bau = (total_operating_expenses_bau - deductable_operating_expenses_series_bau) + (deductable_operating_expenses_series_bau * (1 - financials['offtaker_tax_pct']))
-            free_cashflow_before_income_bau = operating_expenses_after_tax_bau + total_cash_incentives_bau
-            free_cashflow_before_income_bau = np.append([0], free_cashflow_before_income_bau)
+            free_cashflow_bau = operating_expenses_after_tax_bau + total_cash_incentives_bau
+            free_cashflow_bau = np.append([0], free_cashflow_bau)
             # difference optimal and BAU
-            free_cashflow =  free_cashflow_before_income - free_cashflow_before_income_bau                                          
-            irr = np.irr(free_cashflow)
-            cumulative_cashflow =  np.cumsum(free_cashflow)
+            net_free_cashflow =  free_cashflow - free_cashflow_bau                                          
+            irr = np.irr(net_free_cashflow)
+            cumulative_cashflow =  np.cumsum(net_free_cashflow)
+
+            free_cashflow = list(free_cashflow)
+            free_cashflow_bau = list(free_cashflow_bau)
+            discounted_cashflow = [v/((1+financials['offtaker_discount_pct'])**yr) for yr, v in enumerate(free_cashflow)]
+            discounted_cashflow_bau = [v/((1+financials['offtaker_discount_pct'])**yr) for yr, v in enumerate(free_cashflow_bau)]
         
         #when the cumulative cashflow goes positive, scale the amount by the free cashflow to 
         #approximate a partial year
         if cumulative_cashflow[-1] < 0:
             return None, None, round(net_present_cost,4) if net_present_cost is not None else None, \
-               round(annualized_payment_to_third_party_us_dollars,4) if annualized_payment_to_third_party_us_dollars is not None else None
+               round(annualized_payment_to_third_party_us_dollars,4) if annualized_payment_to_third_party_us_dollars is not None else None, \
+               free_cashflow, free_cashflow_bau, discounted_cashflow, discounted_cashflow_bau
             
         simple_payback_years = 0
         for i in range(1, years+1):
@@ -355,11 +363,12 @@ def calculate_proforma_metrics(data):
                 simple_payback_years += 1
             # fractionally add years where the cumulative cashflow became positive
             elif (cumulative_cashflow[i-1] < 0) and (cumulative_cashflow[i] > 0): 
-                simple_payback_years += -(cumulative_cashflow[i-1]/free_cashflow[i])
+                simple_payback_years += -(cumulative_cashflow[i-1]/net_free_cashflow[i])
             # skip years where cumulative cashflow is positive and the previous year's is too
         
         return round(simple_payback_years,4), round(irr,4), round(net_present_cost,4) if net_present_cost is not None else None, \
-               round(annualized_payment_to_third_party_us_dollars,4) if annualized_payment_to_third_party_us_dollars is not None else None
+               round(annualized_payment_to_third_party_us_dollars,4) if annualized_payment_to_third_party_us_dollars is not None else None, \
+               free_cashflow, free_cashflow_bau, discounted_cashflow, discounted_cashflow_bau
 
 
 @shared_task(bind=True, base=ProcessResultsTask, ignore_result=True)
@@ -910,13 +919,24 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
         data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
         
         #simple payback needs all data to be computed so running that calculation here
-        simple_payback, irr, net_present_cost, annualized_payment_to_third_party_us_dollars = \
+        simple_payback, irr, net_present_cost, annualized_payment_to_third_party_us_dollars, \
+        annual_free_cashflow_series_us_dollars, annual_free_cashflow_series_bau_us_dollars, \
+        discounted_annual_free_cashflow_series_us_dollars, discounted_annual_free_cashflow_series_bau_us_dollars = \
             calculate_proforma_metrics(data)
         data['outputs']['Scenario']['Site']['Financial']['simple_payback_years'] = simple_payback
         data['outputs']['Scenario']['Site']['Financial']['irr_pct'] = irr if not np.isnan(irr or np.nan) else None
         data['outputs']['Scenario']['Site']['Financial']['net_present_cost_us_dollars'] = net_present_cost
         data['outputs']['Scenario']['Site']['Financial']['annualized_payment_to_third_party_us_dollars'] = \
             annualized_payment_to_third_party_us_dollars
+        data['outputs']['Scenario']['Site']['Financial']['annual_free_cashflow_series_us_dollars'] = \
+            annual_free_cashflow_series_us_dollars
+        data['outputs']['Scenario']['Site']['Financial']['annual_free_cashflow_series_bau_us_dollars'] = \
+            annual_free_cashflow_series_bau_us_dollars
+        data['outputs']['Scenario']['Site']['Financial']['discounted_annual_free_cashflow_series_us_dollars'] = \
+            discounted_annual_free_cashflow_series_us_dollars
+        data['outputs']['Scenario']['Site']['Financial']['discounted_annual_free_cashflow_series_bau_us_dollars'] = \
+            discounted_annual_free_cashflow_series_bau_us_dollars
+
         data = EmissionsCalculator.add_to_data(data)
 
         pv_watts_station_check = data['outputs']['Scenario']['Site']['PV'][0].get('station_distance_km') or 0

@@ -173,6 +173,10 @@ class FinancialModel(models.Model):
     irr_pct = models.FloatField(null=True, blank=True)
     net_present_cost_us_dollars = models.FloatField(null=True, blank=True)
     annualized_payment_to_third_party_us_dollars = models.FloatField(null=True, blank=True)
+    annual_free_cashflow_series_us_dollars = ArrayField(models.FloatField(null=True, blank=True), default=list)
+    discounted_annual_free_cashflow_series_us_dollars = ArrayField(models.FloatField(null=True, blank=True), default=list)
+    annual_free_cashflow_series_bau_us_dollars = ArrayField(models.FloatField(null=True, blank=True), default=list)
+    discounted_annual_free_cashflow_series_bau_us_dollars = ArrayField(models.FloatField(null=True, blank=True), default=list)
 
     @classmethod
     def create(cls, **kwargs):
