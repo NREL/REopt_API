@@ -38,10 +38,11 @@ import copy
 from reo.src.urdb_rate import Rate
 import re
 import uuid
-import pickle
 from reo.src.techs import Generator, Boiler, CHP, AbsorptionChiller
 from reo.nested_inputs import max_big_number
 from reo.src.emissions_calculator import EmissionsCalculator
+import calendar
+import datetime
 
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'r'))]
@@ -1016,6 +1017,35 @@ class ValidateNestedInput:
                             self.update_attribute_value(object_name_path, number, param, value)
                         else:
                             updated_set[param] = real_values.get(param)
+                    # Establish a CHP unavailability profile consistent with the appropriate year calendar
+                    if real_values.get("chp_unavailability_hourly") is None:
+                        # TODO put in "prime_mover" instead of hard-coded "recip_engine" for path (after adding other prime_mover unavailability periods)
+                        chp_unavailability_path = os.path.join('input_files', 'CHP', 'recip_engine_unavailability_periods.csv')
+                        chp_unavailability_periods = pd.read_csv(chp_unavailability_path)
+                        if self.input_dict['Scenario']['Site']['LoadProfile'].get("doe_reference_name") is not None:
+                            year = 2017  # If using DOE building, load matches with 2017 calendar
+                        elif self.input_dict['Scenario']['Site']['LoadProfile'].get("year") is None:
+                            year = 2019 # Default year is 2019
+                        else: 
+                            year = self.input_dict['Scenario']['Site']['LoadProfile'].get("year")
+                        if calendar.isleap(year):  # Remove last day of the year if leap year
+                            end_date = "12/31/"+str(year)
+                        else:
+                            end_date = "1/1/"+str(year+1)
+                        dt_profile = pd.date_range(start='1/1/'+str(year), end=end_date, freq="1H", closed="left")
+                        chp_unavailability_hourly = pd.Series(np.zeros(8760), index=dt_profile)
+                        for i in range(len(chp_unavailability_periods)):
+                            month = chp_unavailability_periods["Month"][i]
+                            day_of_month = calendar.Calendar().monthdayscalendar(year=year,month=month)[chp_unavailability_periods["Start Week of Month"][i]][chp_unavailability_periods["Start Day of Week"][i]]
+                            hour_of_day = chp_unavailability_periods["Start Hour"][i]
+                            start_datetime = datetime.datetime(year=year, month=month, day=day_of_month, hour=hour_of_day)
+                            duration = pd.to_timedelta(chp_unavailability_periods["Duration"][i])
+                            chp_unavailability_hourly[start_datetime:start_datetime+duration-datetime.timedelta(hours=1)] = 1.0
+                            chp_unavailability_hourly_list = list(chp_unavailability_hourly)
+                        self.update_attribute_value(object_name_path, number, "chp_unavailability_hourly", chp_unavailability_hourly_list)
+                    else:
+                        self.validate_8760(real_values.get("chp_unavailability_hourly"),
+                                            "CHP", "chp_unavailability_hourly", self.input_dict['Scenario']['time_steps_per_hour'])
 
                     self.chp_checks(updated_set, object_name_path, number)
 
