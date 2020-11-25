@@ -640,6 +640,7 @@ class CHPModel(models.Model):
     max_derate_factor = models.FloatField(null=True, blank=True)
     derate_start_temp_degF = models.FloatField(null=True, blank=True)
     derate_slope_pct_per_degF = models.FloatField(null=True, blank=True)
+    chp_unavailability_hourly = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
 
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)
