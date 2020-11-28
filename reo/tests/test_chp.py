@@ -178,13 +178,15 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(init_capex_total_expected, init_capex_total, delta=1.0)
         self.assertAlmostEqual(net_capex_total_expected, net_capex_total, delta=1.0)
 
-    def test_chp_resilience(self):
+    def test_chp_resilience_unavailability(self):
         """
         Validation to ensure that:
             1) CHP meets load during outage without exporting
             2) CHP never exports if chp_allowed_to_export input is False
             3) CHP does not "curtail", i.e. send power to a load bank
             4) Cooling load gets zeroed out during the outage period
+            5) Unavailability intervals that intersect with grid-outages get ignored
+            6) Unavailability intervals that do not intersect with grid-outages result in no CHP production
 
         :return:
         """
@@ -203,6 +205,14 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         outage_end = outage_start + outage_duration
         nested_data["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"] = outage_end
         nested_data["Scenario"]["Site"]["LoadProfile"]["critical_load_pct"] = 0.25
+
+        # Add unavailability periods that intersect (ignored) and don't intersect with outage period
+        unavailability = [0.0 if (i < outage_start or i > outage_end) else 0.0 for i in range(8760)]
+        unavail_start = outage_end + 2  # Start effective unavailability 2 hrs after the outage ends which forces CHP production to zero
+        unavail_duration = 24
+        unavail_end = unavail_start + unavail_duration
+        unavailability = [unavailability[i] if (i < unavail_start or i >= unavail_end) else 1.0 for i in range(8760)]
+        nested_data["Scenario"]["Site"]["CHP"]["chp_unavailability_hourly"] = unavailability
     
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
@@ -221,5 +231,6 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(sum(chp_to_load[outage_start:outage_end]),sum(tot_elec_load[outage_start:outage_end]), places=1)
         self.assertEqual(sum(chp_export), 0.0)
         self.assertAlmostEqual(sum(chp_total_elec_prod), sum(chp_to_load), delta=1.0E-5*sum(chp_total_elec_prod))
-        self.assertEqual(sum(cooling_elec_load[outage_start+1:outage_end]), 0.0)
+        self.assertEqual(sum(cooling_elec_load[outage_start:outage_end]), 0.0)
+        self.assertEqual(sum(chp_total_elec_prod[unavail_start:unavail_end]), 0.0)
 
