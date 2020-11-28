@@ -1044,6 +1044,8 @@ class ValidateNestedInput:
                             chp_unavailability_hourly_list = list(chp_unavailability_hourly)
                         self.update_attribute_value(object_name_path, number, "chp_unavailability_hourly", chp_unavailability_hourly_list)
                     else:
+                        if min(real_values.get("chp_unavailability_hourly")) < 0 or max(real_values.get("chp_unavailability_hourly")) > 1.0:
+                            self.input_data_errors.append('All values for CHP unavailability must be between 0.0 and 1.0')
                         self.validate_8760(real_values.get("chp_unavailability_hourly"),
                                             "CHP", "chp_unavailability_hourly", self.input_dict['Scenario']['time_steps_per_hour'])
 
@@ -1082,6 +1084,14 @@ class ValidateNestedInput:
                         for k,v in filtered_values.items():
                             if v is None:
                                 self.input_data_errors.append('CHP is missing a value for the {} parameter'.format(k))
+
+                        if real_values.get("chp_unavailability_hourly") is None:
+                            self.input_data_errors.append('Must input an 8760 profile for CHP unavailability')
+                        else:
+                            if min(real_values.get("chp_unavailability_hourly")) < 0 or max(real_values.get("chp_unavailability_hourly")) > 1.0:
+                                self.input_data_errors.append('All values for CHP unavailability must be between 0.0 and 1.0')
+                            self.validate_8760(real_values.get("chp_unavailability_hourly"),
+                                                "CHP", "chp_unavailability_hourly", self.input_dict['Scenario']['time_steps_per_hour'])
 
                         self.chp_checks(filtered_values, object_name_path, number)
 
