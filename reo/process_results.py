@@ -263,8 +263,7 @@ def calculate_proforma_metrics(data):
                     (generator['existing_gen_year_one_variable_om_cost_us_dollars']) + 
                     (generator['existing_gen_year_one_fuel_cost_us_dollars']))
             else:
-                annual_om = -1 * ((total_kw * generator['om_cost_us_dollars_per_kw']) + \
-                    (generator['year_one_variable_om_cost_us_dollars']))
+                annual_om = -1 * ((new_kw * generator['om_cost_us_dollars_per_kw']) + (generator['year_one_variable_om_cost_us_dollars']))
                 
                 annual_om_bau = -1 * ((existing_kw * generator['om_cost_us_dollars_per_kw']) + \
                     (generator['existing_gen_year_one_variable_om_cost_us_dollars']))
@@ -344,9 +343,10 @@ def calculate_proforma_metrics(data):
                 deductable_net_energy_costs = copy.deepcopy(net_energy_costs) 
             else:
                 deductable_net_energy_costs = np.array([0]*years)
-            offtaker_free_cashflow = [round(i,2) for i in list((net_energy_costs - deductable_net_energy_costs) + (deductable_net_energy_costs * (1-financials['owner_tax_pct'])))]
-            offtaker_discounted_cashflow = [round(v/((1+financials['offtaker_discount_pct'])**(yr+1)),2) for yr, v in enumerate(offtaker_free_cashflow)]
-            offtaker_free_cashflow_bau = None
+                
+            offtaker_free_cashflow = [round(i,2) for i in [0] + list(electricity_bill_series + export_credit_series + genertor_fuel_cost_series + annual_income_from_host_series)]
+            offtaker_discounted_cashflow = None
+            offtaker_free_cashflow_bau = [round(i,2) for i in [0] + list(electricity_bill_bau_series_bau + export_credit_bau_series_bau + existing_genertor_fuel_cost_series)]
             offtaker_discounted_cashflow_bau = None
         else:
             # get cumulative cashflow for offtaker
