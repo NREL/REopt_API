@@ -908,19 +908,19 @@ class DataManager:
         if self.site.renewable_generation_min_pct is None:
             renewable_generation_min_pct = []
         else:
-            renewable_generation_min_pct = self.site.renewable_generation_min_pct
+            renewable_generation_min_pct = [self.site.renewable_generation_min_pct]
         if self.site.renewable_generation_max_pct is None:
             renewable_generation_max_pct = []
         else:
-            renewable_generation_max_pct = self.site.renewable_generation_max_pct
+            renewable_generation_max_pct = [self.site.renewable_generation_max_pct]
         if self.site.emissions_reduction_min_pct is None:
             emissions_reduction_min_pct = []
         else:
-            emissions_reduction_min_pct = self.site.emissions_reduction_min_pct
+            emissions_reduction_min_pct = [self.site.emissions_reduction_min_pct]
         if self.site.emissions_reduction_max_pct is None:
             emissions_reduction_max_pct = []
         else:
-            emissions_reduction_max_pct = self.site.emissions_reduction_max_pct
+            emissions_reduction_max_pct = [self.site.emissions_reduction_max_pct]
         renewable_generation_min_pct_bau = []
         renewable_generation_max_pct_bau = []
         emissions_reduction_min_pct_bau = []
