@@ -986,7 +986,7 @@ class CHP(Tech):
         chp_thermal_prod_factor = [1.0 - self.chp_unavailability_hourly[i] for i in range(8760*self.time_steps_per_hour)]
 
         # Ignore unavailability in timestep if it intersects with an outage interval
-        if self.outage_start_hour:
+        if self.outage_start_hour and self.outage_end_hour:
             for i in range(self.outage_start_hour, self.outage_end_hour):
               chp_elec_prod_factor[i] = 1.0
               chp_thermal_prod_factor[i] = 1.0
