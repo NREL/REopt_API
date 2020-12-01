@@ -1387,7 +1387,7 @@ nested_input_definitions = {
         },
         "chp_unavailability_hourly": {
           "type": "list_of_float",
-          "description": "CHP unavailability: hourly list (8760) of 1.0 for unavailable and 0.0 for available"
+          "description": "CHP unavailability for scheduled and unschedules maintenance; it is an hourly list (8760) of 1.0 for unavailable and 0.0 for available. Default unavailability profiles are used based on the prime_mover input to represent approximately 3-8 percent unavailability"
         },
         "macrs_option_years": {
           "type": "int",
