@@ -981,13 +981,13 @@ class CHP(Tech):
 
     @property
     def prod_factor(self):
-        chp_elec_prod_factor = [1.0 - self.chp_unavailability_hourly[i] for i in range(8760*self.time_steps_per_hour)]
+        chp_elec_prod_factor = [1.0 - self.chp_unavailability_hourly[i] for i in range(8760) for _ in range(self.time_steps_per_hour)]
         # Note, we are handling boiler efficiency explicitly so not embedding that into chp thermal prod factor
-        chp_thermal_prod_factor = [1.0 - self.chp_unavailability_hourly[i] for i in range(8760*self.time_steps_per_hour)]
+        chp_thermal_prod_factor = [1.0 - self.chp_unavailability_hourly[i] for i in range(8760) for _ in range(self.time_steps_per_hour)]
 
         # Ignore unavailability in timestep if it intersects with an outage interval
         if self.outage_start_hour and self.outage_end_hour:
-            for i in range(self.outage_start_hour, self.outage_end_hour):
+            for i in range(self.outage_start_hour * self.time_steps_per_hour, self.outage_end_hour * self.time_steps_per_hour):
               chp_elec_prod_factor[i] = 1.0
               chp_thermal_prod_factor[i] = 1.0
 
