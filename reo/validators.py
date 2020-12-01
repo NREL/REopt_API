@@ -41,8 +41,7 @@ import uuid
 from reo.src.techs import Generator, Boiler, CHP, AbsorptionChiller
 from reo.nested_inputs import max_big_number
 from reo.src.emissions_calculator import EmissionsCalculator
-import calendar
-import datetime
+from reo.utilities import generate_year_profile_hourly
 
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'r'))]
@@ -1028,20 +1027,7 @@ class ValidateNestedInput:
                             year = 2019 # Default year is 2019
                         else: 
                             year = self.input_dict['Scenario']['Site']['LoadProfile'].get("year")
-                        if calendar.isleap(year):  # Remove last day of the year if leap year
-                            end_date = "12/31/"+str(year)
-                        else:
-                            end_date = "1/1/"+str(year+1)
-                        dt_profile = pd.date_range(start='1/1/'+str(year), end=end_date, freq="1H", closed="left")
-                        chp_unavailability_hourly = pd.Series(np.zeros(8760), index=dt_profile)
-                        for i in range(len(chp_unavailability_periods)):
-                            month = chp_unavailability_periods["Month"][i]
-                            day_of_month = calendar.Calendar().monthdayscalendar(year=year,month=month)[chp_unavailability_periods["Start Week of Month"][i]][chp_unavailability_periods["Start Day of Week"][i]]
-                            hour_of_day = chp_unavailability_periods["Start Hour"][i]
-                            start_datetime = datetime.datetime(year=year, month=month, day=day_of_month, hour=hour_of_day)
-                            duration = pd.to_timedelta(chp_unavailability_periods["Duration"][i])
-                            chp_unavailability_hourly[start_datetime:start_datetime+duration-datetime.timedelta(hours=1)] = 1.0
-                            chp_unavailability_hourly_list = list(chp_unavailability_hourly)
+                        chp_unavailability_hourly_list = generate_year_profile_hourly(year, chp_unavailability_periods)
                         self.update_attribute_value(object_name_path, number, "chp_unavailability_hourly", chp_unavailability_hourly_list)
                     else:
                         if min(real_values.get("chp_unavailability_hourly")) < 0 or max(real_values.get("chp_unavailability_hourly")) > 1.0:
