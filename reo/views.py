@@ -49,10 +49,7 @@ from reo.src.techs import Generator, CHP, ElectricChiller, AbsorptionChiller, Bo
 from reo.src.emissions_calculator import EmissionsCalculator
 from django.http import HttpResponse
 from django.template import  loader
-import pandas as pd
-import numpy as np
-import calendar
-import datetime
+from reo.utilities import generate_year_profile_hourly
 
 
 # loading the labels of hard problems - doing it here so loading happens once on startup
@@ -602,20 +599,7 @@ def chp_defaults(request):
                 # TODO put in "prime_mover" instead of hard-coded "recip_engine" for path (after adding other prime_mover unavailability periods)
                 chp_unavailability_path = os.path.join('input_files', 'CHP', 'recip_engine_unavailability_periods.csv')
                 chp_unavailability_periods = pd.read_csv(chp_unavailability_path)
-                if calendar.isleap(year):  # Remove last day of the year if leap year
-                    end_date = "12/31/"+str(year)
-                else:
-                    end_date = "1/1/"+str(year+1)
-                dt_profile = pd.date_range(start='1/1/'+str(year), end=end_date, freq="1H", closed="left")
-                chp_unavailability_hourly = pd.Series(np.zeros(8760), index=dt_profile)
-                for i in range(len(chp_unavailability_periods)):
-                    month = chp_unavailability_periods["Month"][i]
-                    day_of_month = calendar.Calendar().monthdayscalendar(year=year,month=month)[chp_unavailability_periods["Start Week of Month"][i]][chp_unavailability_periods["Start Day of Week"][i]]
-                    hour_of_day = chp_unavailability_periods["Start Hour"][i]
-                    start_datetime = datetime.datetime(year=year, month=month, day=day_of_month, hour=hour_of_day)
-                    duration = pd.to_timedelta(chp_unavailability_periods["Duration"][i])
-                    chp_unavailability_hourly[start_datetime:start_datetime+duration-datetime.timedelta(hours=1)] = 1.0
-                    chp_unavailability_hourly_list = list(chp_unavailability_hourly)
+                chp_unavailability_hourly_list = generate_year_profile_hourly(year, chp_unavailability_periods)
             else:
                 chp_unavailability_hourly_list = []
         else:
