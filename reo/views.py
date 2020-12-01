@@ -49,6 +49,7 @@ from reo.src.techs import Generator, CHP, ElectricChiller, AbsorptionChiller, Bo
 from reo.src.emissions_calculator import EmissionsCalculator
 from django.http import HttpResponse
 from django.template import  loader
+import pandas as pd
 from reo.utilities import generate_year_profile_hourly
 
 
