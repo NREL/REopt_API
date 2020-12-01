@@ -3091,9 +3091,14 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['E{}'.format(current_row)] = "=-{}".format(optimal_LCC_cell)
     make_attribute_row(ws, current_row, length=2, offset=3, number_format="#,##0")
     fill_cols(ws, range(4, 5), current_row, calculated_fill)
-    ws['F{}'.format(current_row)] = (
+    if financial.third_party_ownership:
+        ws['F{}'.format(current_row)] = (
+        'NOTE: A negative Net Present Cost can occur if incentives are greater than costs.'
+        )
+    else:
+        ws['F{}'.format(current_row)] = (
         'NOTE: A negative LCC indicates a profit (for example when production based incentives are greater than costs.'
-    )
+        )
 
     current_row += 1
     if not financial.third_party_ownership:
