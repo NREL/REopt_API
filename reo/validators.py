@@ -379,8 +379,6 @@ class ValidateNestedInput:
 
 
     # EXAMPLE 1 - BASIC POST
-
-
     # {
     #     "Scenario": {
     #         "Site": {
@@ -409,7 +407,6 @@ class ValidateNestedInput:
     #             }
     #         }
     #     }
-
     def __init__(self, input_dict):
         self.list_or_dict_objects = ['PV']
         self.nested_input_definitions = nested_input_definitions
@@ -422,7 +419,8 @@ class ValidateNestedInput:
         self.defaults_inserted = []
         self.input_dict = dict()
         if type(input_dict) is not dict:
-            self.input_data_errors.append("POST must contain a valid JSON formatted accoring to format described in https://developer.nrel.gov/docs/energy-optimization/reopt-v1/")
+            self.input_data_errors.append(("POST must contain a valid JSON formatted accoring to format described in "
+                                           "https://developer.nrel.gov/docs/energy-optimization/reopt-v1/"))
         else:        
             self.input_dict['Scenario'] = input_dict.get('Scenario') or {}
             for k,v in input_dict.items():

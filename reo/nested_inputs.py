@@ -271,14 +271,14 @@ nested_input_definitions = {
           "type": "int",
           "min": 0,
           "max": 8759,
-          "depends_on":["outage_end_hour"],
+          "depends_on": ["outage_end_hour"],
           "description": "Hour of year that grid outage starts. Must be less than outage_end."
         },
         "outage_end_hour": {
           "type": "int",
           "min": 0,
           "max": 8759,
-          "depends_on":["outage_start_hour"],
+          "depends_on": ["outage_start_hour"],
           "description": "Hour of year that grid outage ends. Must be greater than outage_start."
         },
         "critical_load_pct": {
