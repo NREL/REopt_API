@@ -281,6 +281,20 @@ nested_input_definitions = {
           "depends_on": ["outage_start_hour"],
           "description": "Hour of year that grid outage ends. Must be greater than outage_start."
         },
+        "outage_start_time_step": {
+          "type": "int",
+          "min": 1,
+          "max": 35040,
+          "depends_on": ["outage_end_time_step"],
+          "description": "Time step that grid outage starts. Must be less than outage_end."
+        },
+        "outage_end_time_step": {
+          "type": "int",
+          "min": 1,
+          "max": 35040,
+          "depends_on": ["outage_start_time_step"],
+          "description": "Time step that grid outage ends. Must be greater than outage_start."
+        },
         "critical_load_pct": {
           "type": "float",
           "min": 0.0,
@@ -1103,10 +1117,10 @@ nested_input_definitions = {
           "default": 0.0,
           "description": "Maximum system size for which production-based incentives apply"
         },
-         "emissions_factor_lb_CO2_per_gal": {
+        "emissions_factor_lb_CO2_per_gal": {
           "type": "float",
           "description": "Pounds of carbon dioxide emitted per gallon of fuel burned"
-         }
+        }
       }
     }
   }
