@@ -28,7 +28,6 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
 import json
-import os
 from tastypie.test import ResourceTestCaseMixin
 from django.test import TestCase
 from reo.nested_to_flat_output import nested_to_flat
@@ -48,8 +47,8 @@ fts_post_2 = {"Scenario":
                        "PV": {
                             "pbi_years": 1.0,
                             "macrs_bonus_pct": 0.4,
-                            "max_kw": 100.0,
-                            "existing_kw": 100.0,
+                            "max_kw": 0.0,
+                            "existing_kw": 0.0,
                             "pbi_max_us_dollars": 1000000000.0,
                             "radius": 0.0,
                             "state_ibi_pct": 0.0,
@@ -80,10 +79,10 @@ fts_post_2 = {"Scenario":
                             "inv_eff": 0.96,
                             "azimuth": 180.0 },
                        "Generator": {"pbi_years": 0.0, "macrs_bonus_pct": 0.0, "om_cost_us_dollars_per_kwh": 0.01,
-                                     "max_kw": 1000000000.0, "pbi_max_us_dollars": 0.0, "state_ibi_pct": 0.0,
+                                     "max_kw": 10000000.0, "pbi_max_us_dollars": 0.0, "state_ibi_pct": 0.0,
                                      "fuel_intercept_gal_per_hr": 0.0125, "generator_only_runs_during_grid_outage": True,
                                      "state_rebate_us_dollars_per_kw": 0.0, "installed_cost_us_dollars_per_kw": 600.0,
-                                     "utility_ibi_max_us_dollars": 0.0, "fuel_avail_gal": 1000000000.0,
+                                     "utility_ibi_max_us_dollars": 0.0, "fuel_avail_gal": 100000.0,
                                      "min_turn_down_pct": 0.0, "pbi_system_max_kw": 0.0, "utility_ibi_pct": 0.0,
                                      "state_ibi_max_us_dollars": 0.0, "diesel_fuel_cost_us_dollars_per_gallon": 3.0,
                                      "fuel_slope_gal_per_kwh": 0.068, "utility_rebate_max_us_dollars": 0.0,
@@ -93,7 +92,7 @@ fts_post_2 = {"Scenario":
                                      "federal_rebate_us_dollars_per_kw": 0.0, "generator_sells_energy_back_to_grid": False},
                        "LoadProfile": {"loads_kw": load_list_2, "critical_loads_kw_is_net": False, "critical_load_pct": 0.5,
                                        "loads_kw_is_net": True, "monthly_totals_kwh": [],
-                                       "outage_start_hour": None, "outage_end_hour": None,
+                                       "outage_start_hour": 100, "outage_end_hour": 124,
                                        "year": 2018, "outage_is_major_event": True,
                                        "critical_loads_kw": [], "annual_kwh": None},
                        "Storage": {"max_kwh": 0.0, "max_kw": 0.0},
@@ -137,7 +136,6 @@ class TestFlexibleTimeSteps(ResourceTestCaseMixin, TestCase):
         c2 = nested_to_flat(d2['outputs'])
 
         self.assertEqual(len(c2["year_one_grid_to_load_series"]), 35040)
-        self.assertEqual(len(c2["year_one_pv_to_load_series"]), 35040)
 
         # results for time_steps_per_hour = 1
         fts_post_2["Scenario"]["time_steps_per_hour"] = 1
