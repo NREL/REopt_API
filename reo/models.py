@@ -995,7 +995,7 @@ class ModelManager(object):
         self.cold_tesM = ColdTESModel.create(run_uuid=self.scenarioM.run_uuid,
                                            **attribute_inputs(d['Site']['ColdTES']))
         self.nuclearM = NuclearModel.create(run_uuid=self.scenarioM.run_uuid,
-                                           **attribute_inputs(d['Site']["Nuclear"])
+                                           **attribute_inputs(d['Site']["Nuclear"]))
 
         for message_type, message in data['messages'].items():
             MessageModel.create(run_uuid=self.scenarioM.run_uuid, message_type=message_type, message=message)
