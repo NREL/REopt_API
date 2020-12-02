@@ -13,7 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changes
 - changed `test_flexible_time_steps` to include an outage
 - changed check in `validators.py` from "outage_start_hour and outage_end_hour cannot be the same" to "outage_start_hour must be less than outage_end_hour"
-- `outage_start_hour` and `outage_end_hour`  Started the deprecation of `outage_start_hour` and `outage_end_hour` with ...
 - new inputs `outage_start_time_step` and `outage_end_time_step` to replace deprecated `outage_start_hour` and `outage_end_hour`. The latter are used as time step indices in the code, so for sub-hourly problems they do not have hourly units. For now `outage_start_hour` and `outage_end_hour` are kept in place to preserve backwards-compatibility. Also note that the new inputs are not zero-indexed.
 - new output `bau_sustained_time_steps` to replace deprecated `sustain_hours` (also not deprecated yet but warning is now in response).
 
