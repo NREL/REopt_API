@@ -232,7 +232,8 @@ def check_common_outputs(Test, d_calculated, d_expected):
                             - float(c['total_fixed_cost_bau'] or 0)
                             - float(c['existing_gen_total_variable_om_cost_us_dollars'] or 0)
                             - float(c['existing_gen_total_fixed_om_cost_us_dollars'] or 0)
-                            - float(c['existing_gen_total_fuel_cost_us_dollars'] or 0))
+                            - float(c['existing_gen_total_fuel_cost_us_dollars'] or 0)
+                            - float(c.get('total_boiler_fuel_cost_bau') or 0))
                             / float(c['lcc_bau'] or 0)) < Test.REopt_tol,
                             "LCC_BAU doesn't add up to sum of individual costs")
     except Exception as e:

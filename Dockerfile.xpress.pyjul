@@ -36,3 +36,7 @@ WORKDIR /opt/reopt
 EXPOSE 8000
 RUN ["pip", "install", "-r", "requirements.txt"]
 ENTRYPOINT ["/bin/bash", "-c"]
+
+# Add remote debugging capability
+RUN apt-get update && apt-get install telnet
+RUN pip install pdbpp

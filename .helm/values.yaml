@@ -1,10 +1,8 @@
-deploySharedResources: true
-sharedResourcesNamespace: shared-resources
 ingressHost: localhost
 appEnv: development
 djangoSettingsModule: reopt_api.dev_settings
 redisDataVolumeStorageClassName:
-redisHost: "{{ .Chart.Name }}-redis-service.{{ .Values.sharedResourcesNamespace }}.svc.cluster.local"
+redisHost: "{{ .Chart.Name }}-redis-service"
 redisPort: 6379
 djangoReplicas: 1
 celeryReplicas: 1
