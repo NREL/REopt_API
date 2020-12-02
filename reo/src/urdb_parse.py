@@ -445,11 +445,14 @@ class UrdbParse:
             grid_export_rates = operator.add(grid_export_rates, negative_excess_rate_costs)
 
             for tech in techs:
-                if tech.lower() in ["chp", "generator"]:  # Don't allow CHP or generator to write to Curtailment Tier (also no option for NM currently)
+                if tech.lower() in ["chp", "generator", "nuclear"]:  # Don't allow CHP or generator to write to Curtailment Tier (also no option for NM currently)
                     if tech.lower() == "chp" and self.chp_allowed_to_export:
                         rates_by_tech.append([2])  # 2 corresponds to the 1 entry in techs_by_rate
                         techs_by_rate[1].append(tech.upper())
                     elif tech.lower() == "generator" and self.generator.generator_sells_energy_back_to_grid:
+                        rates_by_tech.append([2])  # 2 corresponds to the 1 entry in techs_by_rate
+                        techs_by_rate[1].append(tech.upper())
+                    elif tech.lower() == "nuclear":  # Always allow nuclear to export
                         rates_by_tech.append([2])  # 2 corresponds to the 1 entry in techs_by_rate
                         techs_by_rate[1].append(tech.upper())
                     else:

@@ -702,7 +702,7 @@ class DataManager:
                     om_cost_us_dollars_per_kw.append(eval('self.' + tech + '.om_cost_us_dollars_per_kw'))
 
 
-                # only generator and nuclear techs have variable o&m cost
+                # only generator, chp, and nuclear techs have variable o&m cost
                 if tech.lower() == 'generator' or tech.lower() == 'nuclear':
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.kwargs["om_cost_us_dollars_per_kwh"]')))
                     om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
@@ -1101,8 +1101,8 @@ class DataManager:
         techs_no_turndown = [t for t in reopt_techs if t.startswith("PV") or t.startswith("WIND")]
         techs_no_turndown_bau = [t for t in reopt_techs_bau if t.startswith("PV") or t.startswith("WIND")]
 
-        electric_techs = [t for t in reopt_techs if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR") or t.startswith("CHP")]
-        electric_techs_bau = [t for t in reopt_techs_bau if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR") or t.startswith("CHP")]
+        electric_techs = [t for t in reopt_techs if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR") or t.startswith("CHP") or t.startswith("NUCLEAR")]
+        electric_techs_bau = [t for t in reopt_techs_bau if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR") or t.startswith("CHP") or t.startswith("NUCLEAR")]
 
         if len(reopt_techs) > 0:
             non_storage_sales_tiers = [1, 2]
@@ -1167,13 +1167,16 @@ class DataManager:
         boiler_techs = [t for t in reopt_techs if t.lower().startswith('boiler')]
         boiler_techs_bau = [t for t in reopt_techs_bau if t.lower().startswith('boiler')]
 
+        nuclear_techs = [t for t in reopt_techs if t.lower().startswith('nuclear')]
+        nuclear_techs_bau = [t for t in reopt_techs_bau if t.lower().startswith('nuclear')]
+
         boiler_efficiency = self.boiler.boiler_efficiency if self.boiler != None else 1.0
         elec_chiller_cop = self.elecchl.chiller_cop if self.elecchl != None else 1.0
         absorp_chiller_cop = self.absorpchl.chiller_cop if self.absorpchl != None else 1.0
 
         # Fuel burning parameters and other CHP-specific parameters
         fuel_params = FuelParams(big_number=big_number, elec_tariff=self.elec_tariff, fuel_tariff=self.fuel_tariff,
-                           generator=eval('self.generator'))
+                           generator=eval('self.generator'), nuclear=eval('self.nuclear'))
 
         fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type, fuel_burn_slope, fuel_burn_intercept \
             = fuel_params._get_fuel_burning_tech_params(reopt_techs, generator=eval('self.generator'),
@@ -1310,7 +1313,8 @@ class DataManager:
             'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month,
             'StorageDecayRate': storage_decay_rate,
             'DecompOptTol': self.optimality_tolerance_decomp_subproblem,
-            'DecompTimeOut': self.timeout_decomp_subproblem_seconds
+            'DecompTimeOut': self.timeout_decomp_subproblem_seconds,
+            'NuclearTechs': nuclear_techs
             }
 
         self.reopt_inputs_bau = {
@@ -1435,5 +1439,6 @@ class DataManager:
             'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month,
             'StorageDecayRate': storage_decay_rate,
             'DecompOptTol': self.optimality_tolerance_decomp_subproblem,
-            'DecompTimeOut': self.timeout_decomp_subproblem_seconds
+            'DecompTimeOut': self.timeout_decomp_subproblem_seconds,
+            'NuclearTechs': nuclear_techs_bau
         }

@@ -43,7 +43,7 @@ class FuelParams:
     """
     days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
-    def __init__(self, big_number, elec_tariff, fuel_tariff, generator=None):
+    def __init__(self, big_number, elec_tariff, fuel_tariff, generator=None, nuclear=None):
         self.big_number = big_number
         self.time_steps_per_hour = elec_tariff.time_steps_per_hour
 
@@ -60,6 +60,9 @@ class FuelParams:
                                       self.days_in_month[month] * 24 * self.time_steps_per_hour)
         if generator is not None:
             self.generator_fuel_rate_array = [generator.diesel_fuel_cost_us_dollars_per_gallon for
+                                              _ in range(8760 * self.time_steps_per_hour)]
+        if nuclear is not None:
+            self.nuclear_fuel_rate_array = [nuclear.fuel_cost_us_dollars_per_mmbtu for
                                               _ in range(8760 * self.time_steps_per_hour)]
 
     def _get_fuel_burning_tech_params(self, techs, generator=None, chp=None):
@@ -105,6 +108,13 @@ class FuelParams:
                 fuel_limit.append(self.big_number)
                 techs_by_fuel_type.append([tech.upper()])
                 fuel_types.append("CHPFUEL")
+            elif tech.lower() == 'nuclear':
+                fuel_costs = operator.add(fuel_costs, self.nuclear_fuel_rate_array)
+                fuel_burn_slope.append(nuclear.fuel_slope_mmbtu_per_kwh)
+                fuel_burn_intercept.append(0.0)
+                fuel_limit.append(self.big_number)
+                techs_by_fuel_type.append([tech.upper()])
+                fuel_types.append("URANIUM")
 
 
         return fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type, fuel_burn_slope, fuel_burn_intercept
