@@ -246,10 +246,12 @@ function add_fuel_constraints(m, p)
 	
 	# Constraint (1b): Fuel burn for non-CHP Constraints
 	@constraint(m, FuelBurnCon[t in p.FuelBurningTechs, ts in p.TimeStep],
-		m[:dvFuelUsage][t,ts]  == (p.FuelBurnSlope[t] * p.ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts]) + 
-			(p.FuelBurnYInt[t] * m[:binTechIsOnInTS][t,ts])
+		m[:dvFuelUsage][t,ts]  == p.TimeStepScaling * (
+			p.FuelBurnSlope[t] * p.ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts] + 
+			p.FuelBurnYInt[t] * m[:binTechIsOnInTS][t,ts]
+		)
 	)
-	m[:TotalGenFuelCharges] = @expression(m, p.pwf_e * p.TimeStepScaling * sum( p.FuelCost[f] *
+	m[:TotalGenFuelCharges] = @expression(m, p.pwf_e * sum( p.FuelCost[f] *
 		sum(m[:dvFuelUsage][t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep)
 		for f in p.FuelType)
 	)
