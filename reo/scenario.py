@@ -290,11 +290,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
                                  time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
                                  **inputs_dict['Site']['ElectricTariff'])
 
-        if inputs_dict["Site"]["Nuclear"]["max_kw"] > 0:
-            nuclear = Nuclear(dfm=dfm, inputs_path=inputs_path, 
-                        **inputs_dict["Site"]["Nuclear"])
-            # TODO: Add more functionality
-
         if inputs_dict["Site"]["Wind"]["max_kw"] > 0:
             wind = Wind(dfm=dfm, inputs_path=inputs_path, 
                         latitude=inputs_dict['Site'].get('latitude'),
@@ -334,6 +329,12 @@ def setup_scenario(self, run_uuid, data, raw_post):
             tmp['installed_cost_us_dollars_per_ton'] = absorpchl.installed_cost_us_dollars_per_ton
             tmp['om_cost_us_dollars_per_ton'] = absorpchl.om_cost_us_dollars_per_ton
             ModelManager.updateModel('AbsorptionChillerModel', tmp, run_uuid)
+
+        # Nuclear
+        if inputs_dict["Site"]["Nuclear"]["max_kw"] > 0:
+            nuclear = Nuclear(dfm=dfm, time_steps_per_hour=inputs_dict.get('time_steps_per_hour'), 
+                        **inputs_dict["Site"]["Nuclear"])
+            # TODO: Add more functionality
 
         util = Util(dfm=dfm,
                     outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
