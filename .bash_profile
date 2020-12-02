@@ -42,6 +42,7 @@ export SOLVER="cbc"
 #------------------------------------------------------------------------------
 #XPRESSDIR="/usr/local/opt/xpress"
 #DYLD_LIBRARY_PATH="${XPRESSDIR}/lib:${SRC_DIR}:${DYLD_LIBRARY_PATH}"  # for Mac
+#LD_LIBRARY_PATH="${XPRESSDIR}/lib:${SRC_DIR}:${LD_LIBRARY_PATH}"  # for Linux
 #CLASSPATH="${XPRESSDIR}/lib/xprs.jar:${XPRESSDIR}/lib/xprb.jar:${XPRESSDIR}/lib/xprm.jar:${CLASSPATH}"
 #PATH="${XPRESSDIR}/bin:${PATH}"
 #
