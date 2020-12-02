@@ -23,9 +23,9 @@
 					"year": 2019,
 					"loads_kw_is_net": true,
 					"critical_loads_kw_is_net": false,
-                    "outage_start_hour":2441,
-                    "outage_end_hour":2541,
-                    "critical_load_pct":0.25,
+                    "outage_start_time_step": 2442,
+                    "outage_end_time_step": 2542,
+                    "critical_load_pct": 0.25,
 					"outage_is_major_event": true
                 },
 

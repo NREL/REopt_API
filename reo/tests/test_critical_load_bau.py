@@ -49,8 +49,8 @@ class CriticalLoadBAUTests(ResourceTestCaseMixin, TestCase):
     def test_critical_load_bau_can_sustain_outage(self):
         """
         Test scenario with
-        - outage_start_hour: 16
-        - outage_end_hour: 20
+        - outage_start_time_step: 17
+        - outage_end_time_step: 21
         - existing diesel generator 20 kW
         - existing PV 3 kW
         - available fuel 50 gallons
