@@ -985,8 +985,8 @@ class ValidateNestedInput:
         if object_name_path[-1] == "LoadProfile":
             if self.isValid:
                 if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
-                    if real_values.get('outage_start_hour') == real_values.get('outage_end_hour'):
-                        self.input_data_errors.append('LoadProfile outage_start_hour and outage_end_hour cannot be the same')
+                    if real_values.get('outage_start_hour') >= real_values.get('outage_end_hour'):
+                        self.input_data_errors.append('LoadProfile outage_start_hour must be less than outage_end_hour.')
                     # the way that we use outage_start/end_hour in the code is really the outage_start/end_timestep
                     # so here we convert the values to timestep integer. note that these are zero-indexed
                     # TODO: deprecate outage_start/end_hour for outage_start/end_timestep
