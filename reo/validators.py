@@ -988,6 +988,11 @@ class ValidateNestedInput:
                 if real_values.get('outage_start_time_step') is not None and real_values.get('outage_end_time_step') is not None:
                     if real_values.get('outage_start_time_step') >= real_values.get('outage_end_time_step'):
                         self.input_data_errors.append('LoadProfile outage_start_time_step must be less than outage_end_time_step.')
+                    if self.input_dict['Scenario']['time_steps_per_hour'] == 1 and real_values.get('outage_end_time_step') > 8760:
+                        self.input_data_errors.append('outage_end_time_step must be <= 8760 when time_steps_per_hour = 1')
+                    if self.input_dict['Scenario']['time_steps_per_hour'] == 2 and real_values.get('outage_end_time_step') > 17520:
+                        self.input_data_errors.append('outage_end_time_step must be <= 17520 when time_steps_per_hour = 2')
+                    # case of 'time_steps_per_hour' == 4 and outage_end_time_step > 35040 handled by "max" value
 
                 if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
                     if real_values.get('outage_start_hour') >= real_values.get('outage_end_hour'):
