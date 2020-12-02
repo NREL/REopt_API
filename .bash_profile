@@ -22,6 +22,10 @@ fi
 #------------------------------------------------------------------------------
 #  path to reopt_api/reo/src for SAM SDK C libraries
 SRC_DIR="${HOME}/reopt_api/reo/src"
+DYLD_LIBRARY_PATH="${SRC_DIR}:${DYLD_LIBRARY_PATH}"  # for Mac
+#LD_LIBRARY_PATH="${SRC_DIR}:${LD_LIBRARY_PATH}"  # for Linux
+export DYLD_LIBRARY_PATH  # for Mac
+# export LD_LIBRARY_PATH  # for Linux
 #==============================================================================
 
 
@@ -38,7 +42,6 @@ export SOLVER="cbc"
 #------------------------------------------------------------------------------
 #XPRESSDIR="/usr/local/opt/xpress"
 #DYLD_LIBRARY_PATH="${XPRESSDIR}/lib:${SRC_DIR}:${DYLD_LIBRARY_PATH}"  # for Mac
-#LD_LIBRARY_PATH="${XPRESSDIR}/lib:${SRC_DIR}:${LD_LIBRARY_PATH}"  # for Linux
 #CLASSPATH="${XPRESSDIR}/lib/xprs.jar:${XPRESSDIR}/lib/xprb.jar:${XPRESSDIR}/lib/xprm.jar:${CLASSPATH}"
 #PATH="${XPRESSDIR}/bin:${PATH}"
 #
