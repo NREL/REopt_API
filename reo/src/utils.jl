@@ -218,7 +218,8 @@ Base.@kwdef struct Parameter
 	CHPDoesNotReduceDemandCharges::Int64
 	StorageDecayRate::AxisArray
 	DecompOptTol::Float64
-	DecompTimeOut::Int32
+    DecompTimeOut::Int32
+    NuclearTechs::Array{String,1}
 end
 
 
