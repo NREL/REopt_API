@@ -77,7 +77,7 @@ Base.@kwdef struct Parameter
 	 TechToNMILMapping::AxisArray  # Defines set T_v: Technologies that may be access net-metering regime v 
 	 
 	 ###  Scaling Parameters ###
-	 TimeStepScaling::Float64  # \Delta: Time step scaling [h]
+	 TimeStepScaling::Float64  # \Delta: Time step scaling [h], eg. 30 minute resolution -> TimeStepScaling = 0.5
 	 
 	 ###  Parameters for Costs and their Functional Forms ###
      AnnualMinCharge::Float64    # c^{amc}: Utility annual minimum charge
