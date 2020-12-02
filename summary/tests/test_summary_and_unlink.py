@@ -29,12 +29,10 @@
 # *********************************************************************************
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
-from reo.nested_inputs import flat_to_nested
-import json 
+import json
 import uuid
 import logging
 logging.disable(logging.CRITICAL)
-
 
 
 class SummaryResourceTest(ResourceTestCaseMixin, TestCase):
