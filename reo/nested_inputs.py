@@ -1826,15 +1826,26 @@ nested_input_definitions = {
           "default": 0.0,
           "description": "Minimum nuclear reactor loading in percent of capacity (size_kw)."
         },
-        "nuclear_only_runs_during_grid_outage": {
-          "default": False,
-          "type": "bool",
-          "description": "If there is existing nuclear reactor, must specify whether it should run only during grid outage or all the time in the bau case."
+        "fuel_slope_mmbtu_per_kwh": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0014,
+          "description": "Conversion rate from mmbtu to kwh in the reactor"
         },
-        "nuclear_sells_energy_back_to_grid": {
-          "default": True,
-          "type": "bool",
-          "description": "If there is existing nuclear reactor, must specify whether it should run only during grid outage or all the time in the bau case."
+        "fuel_cost_us_dollars_per_mmbtu": {
+          "type": "float",
+          "min": 0.0,
+          "max": 100.0,
+          "default": 5.0,
+          "description": "Estimate of the price of Uranium per million BTU"
+        },
+        "effective_full_power_days_between_refueling": {
+          "type": "float",
+          "min": 0.0,
+          "max": 7300.0,
+          "default": 730.0,
+          "description": "Provides the number of full power days between refueling for a reactor design."
         },
         "macrs_option_years": {
           "type": "int",
@@ -1953,27 +1964,6 @@ nested_input_definitions = {
           "max": 1.0e9,
           "default": 0.0,
           "description": "Maximum system size for which production-based incentives apply"
-        },
-         "fuel_cost_us_dollars_per_mmbtu": {
-          "type": "float",
-          "min": 0.0,
-          "max": 100.0,
-          "default": 5.0,
-          "description": "Estimate of the price of Uranium per million BTU"
-        },
-        "fuel_slope_mmbtu_per_kwh": {
-          "type": "float",
-          "min": 0.0,
-          "max": 1.0,
-          "default": 0.0014,
-          "description": "Conversion rate from mmbtu to kwh in the reactor"
-        },
-        "effective_full_power_days_between_refueling": {
-          "type": "float",
-          "min": 0.0,
-          "max": 7300.0,
-          "default": 730.0,
-          "description": "Provides the number of full power days between refueling for a reactor design."
         }
       }
     }

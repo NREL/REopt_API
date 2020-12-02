@@ -599,90 +599,6 @@ class GeneratorModel(models.Model):
         obj.save()
         return obj
 
-class NuclearModel(models.Model):
-    # Inputs
-    run_uuid = models.UUIDField(unique=True)
-    #existing_kw = models.FloatField(null=True, blank=True, default=0)
-    min_kw = models.FloatField(default=0)
-    max_kw = models.FloatField(null=True, blank=True)
-    installed_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True,)
-    om_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True,)
-    om_cost_us_dollars_per_kwh = models.FloatField(null=True, blank=True,)
-    # diesel_fuel_cost_us_dollars_per_gallon = models.FloatField(null=True, blank=True)
-    # fuel_slope_gal_per_kwh = models.FloatField(null=True, blank=True,)
-    # fuel_intercept_gal_per_hr = models.FloatField(null=True, blank=True,)
-    # fuel_avail_gal = models.FloatField(null=True, blank=True,)
-    min_turn_down_pct = models.FloatField(null=True, blank=True)
-    nuclear_only_runs_during_grid_outage = models.BooleanField(default=False)
-    nuclear_sells_energy_back_to_grid = models.BooleanField(default=True)
-    macrs_option_years = models.IntegerField(null=True, blank=True)
-    macrs_bonus_pct = models.FloatField(null=True, blank=True)
-    macrs_itc_reduction = models.FloatField(null=True, blank=True)
-    federal_itc_pct = models.FloatField(null=True, blank=True)
-    state_ibi_pct = models.FloatField(null=True, blank=True)
-    state_ibi_max_us_dollars = models.FloatField(null=True, blank=True)
-    utility_ibi_pct = models.FloatField(null=True, blank=True)
-    utility_ibi_max_us_dollars = models.FloatField(null=True, blank=True)
-    federal_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
-    state_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
-    state_rebate_max_us_dollars = models.FloatField(null=True, blank=True)
-    utility_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
-    utility_rebate_max_us_dollars = models.FloatField(null=True, blank=True)
-    pbi_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
-    pbi_max_us_dollars = models.FloatField(null=True, blank=True)
-    pbi_years = models.FloatField(null=True, blank=True)
-    pbi_system_max_kw = models.FloatField(null=True, blank=True)
-    # emissions_factor_lb_CO2_per_gal = models.FloatField(null=True, blank=True)
-
-    # Added Inputs
-    fuel_cost_us_dollars_per_mmbtu = models.FloatField(null=True, blank=True)
-    fuel_slope_mmbtu_per_kwh = models.FloatField(null=True, blank=True)
-    #### Would like to add an mmbtu between refueling, but will likely wait and 
-    #### assume fuel is always available.
-    effective_full_power_days_between_refueling = models.FloatField(null=True, blank=True)
-
-    # Outputs
-    #fuel_used_gal = models.FloatField(null=True, blank=True)
-    #fuel_used_gal_bau = models.FloatField(null=True, blank=True)
-    ## Nuclear Specific Outputs
-    effective_full_power_days_in_one_year = models.FloatField(null=True, blank=True)
-    years_between_refueling = models.FloatField(null=True, blank=True)
-
-    size_kw = models.FloatField(null=True, blank=True)
-    average_yearly_energy_produced_kwh = models.FloatField(null=True, blank=True)
-    average_yearly_energy_exported_kwh = models.FloatField(null=True, blank=True)
-    year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)
-    year_one_power_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True,
-                                                     blank=True)
-    year_one_to_battery_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    year_one_to_grid_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    year_one_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-    year_one_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
-    year_one_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-    total_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-    total_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
-    total_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-    # existing_gen_year_one_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-    existing_nuc_year_one_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-    #existing_gen_year_one_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
-    existing_nuc_year_one_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
-    #existing_gen_total_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-    existing_nuc_total_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-    #existing_gen_total_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
-    existing_nuc_total_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
-    #existing_gen_total_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-    existing_nuc_total_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-
-    #year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
-    #year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
-
-    @classmethod
-    def create(cls, **kwargs):
-        obj = cls(**kwargs)
-        obj.save()
-        return obj
-
 
 class CHPModel(models.Model):
     # Inputs
@@ -900,6 +816,65 @@ class HotTESModel(models.Model):
         return obj
 
 
+class NuclearModel(models.Model):
+    # Inputs
+    run_uuid = models.UUIDField(unique=True)
+    min_kw = models.FloatField(null=True, blank=True)
+    max_kw = models.FloatField(null=True, blank=True)
+    installed_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+    om_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+    om_cost_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
+    min_turn_down_pct = models.FloatField(null=True, blank=True)
+    fuel_slope_mmbtu_per_kwh = models.FloatField(null=True, blank=True)
+    fuel_cost_us_dollars_per_mmbtu = models.FloatField(null=True, blank=True)
+    #### Would like to add an mmbtu between refueling, but will likely wait and 
+    #### assume fuel is always available.
+    effective_full_power_days_between_refueling = models.FloatField(null=True, blank=True)
+    # Incentives
+    macrs_option_years = models.IntegerField(null=True, blank=True)
+    macrs_bonus_pct = models.FloatField(null=True, blank=True)
+    macrs_itc_reduction = models.FloatField(null=True, blank=True)
+    federal_itc_pct = models.FloatField(null=True, blank=True)
+    state_ibi_pct = models.FloatField(null=True, blank=True)
+    state_ibi_max_us_dollars = models.FloatField(null=True, blank=True)
+    utility_ibi_pct = models.FloatField(null=True, blank=True)
+    utility_ibi_max_us_dollars = models.FloatField(null=True, blank=True)
+    federal_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+    state_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+    state_rebate_max_us_dollars = models.FloatField(null=True, blank=True)
+    utility_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+    utility_rebate_max_us_dollars = models.FloatField(null=True, blank=True)
+    pbi_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
+    pbi_max_us_dollars = models.FloatField(null=True, blank=True)
+    pbi_years = models.FloatField(null=True, blank=True)
+    pbi_system_max_kw = models.FloatField(null=True, blank=True)
+
+    # Outputs
+    size_kw = models.FloatField(null=True, blank=True)
+    year_one_fuel_used_mmbtu = models.FloatField(null=True, blank=True)
+    year_one_electric_energy_produced_kwh = models.FloatField(null=True, blank=True)
+    year_one_power_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True,
+                                                     blank=True)
+    year_one_to_battery_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_to_grid_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    total_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    total_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    total_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
+    year_one_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    year_one_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    year_one_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
+    ## Nuclear Specific Outputs
+    year_one_effective_full_power_days = models.FloatField(null=True, blank=True)
+    years_until_full_burnup = models.FloatField(null=True, blank=True)
+
+    @classmethod
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
+        obj.save()
+        return obj
+
+
 class MessageModel(models.Model):
     """
     For Example:
@@ -972,6 +947,7 @@ class ModelManager(object):
         self.cold_tesM = None
         self.profileM = None
         self.messagesM = None
+        self.nuclearM = None
 
     def create_and_save(self, data):
         """
@@ -1018,6 +994,9 @@ class ModelManager(object):
                                                              **attribute_inputs(d['Site']['HotTES']))
         self.cold_tesM = ColdTESModel.create(run_uuid=self.scenarioM.run_uuid,
                                            **attribute_inputs(d['Site']['ColdTES']))
+        self.nuclearM = NuclearModel.create(run_uuid=self.scenarioM.run_uuid,
+                                           **attribute_inputs(d['Site']["Nuclear"])
+
         for message_type, message in data['messages'].items():
             MessageModel.create(run_uuid=self.scenarioM.run_uuid, message_type=message_type, message=message)
 
@@ -1057,6 +1036,7 @@ class ModelManager(object):
         ColdTESModel.objects.filter(run_uuid=run_uuid).delete()
         MessageModel.objects.filter(run_uuid=run_uuid).delete()
         ErrorModel.objects.filter(run_uuid=run_uuid).delete()
+        NuclearModel.objects.filter(run_uuid=run_uuid).delete()
 
     @staticmethod
     def update(data, run_uuid):
@@ -1092,6 +1072,8 @@ class ModelManager(object):
             **attribute_inputs(d['Site']['AbsorptionChiller']))
         HotTESModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['HotTES']))
         ColdTESModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['ColdTES']))
+        NuclearModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']["Nuclear"]))
+
 
         for message_type, message in data['messages'].items():
             if len(MessageModel.objects.filter(run_uuid=run_uuid, message=message)) > 0:
@@ -1193,7 +1175,7 @@ class ModelManager(object):
         # add try/except for get fail / bad run_uuid
         site_keys = ['PV', 'Storage', 'Financial', 'LoadProfile', 'LoadProfileBoilerFuel', 'LoadProfileChillerElectric',
                      'ElectricTariff', 'FuelTariff', 'Generator', 'Wind', 'CHP', 'Boiler', 'ElectricChiller',
-                     'AbsorptionChiller', 'HotTES', 'ColdTES']
+                     'AbsorptionChiller', 'HotTES', 'ColdTES', 'Nuclear']
 
         resp = dict()
         resp['outputs'] = dict()
@@ -1252,6 +1234,8 @@ class ModelManager(object):
             model_to_dict(HotTESModel.objects.get(run_uuid=run_uuid)))
         resp['outputs']['Scenario']['Site']['ColdTES'] = remove_ids(
             model_to_dict(ColdTESModel.objects.get(run_uuid=run_uuid)))
+        resp['outputs']['Scenario']['Site']['Nuclear'] = remove_ids(
+            model_to_dict(NuclearModel.objects.get(run_uuid=run_uuid)))
         profile_data = ProfileModel.objects.filter(run_uuid=run_uuid)
 
         if len(profile_data) > 0:

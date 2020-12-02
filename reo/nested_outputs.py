@@ -967,74 +967,64 @@ nested_output_definitions = {
                   "description": "Optimal nuclear system size",
                   "units": "kW"
                 },
-                "fuel_used_mmbtu": {
+                "year_one_fuel_used_mmbtu": {
                   "type": float,
-                  "description": "Generator fuel used to meet critical load during grid outage.",
-                  "units": "US gallons"
+                  "description": "Nuclear fuel used",
+                  "units": "MMbtu"
                 },
-                "average_yearly_energy_produced_kwh": {
+                "year_one_electric_energy_produced_kwh": {
                   "type": float,
-                  "description": "Average annual energy produced by the diesel generator over one year",
-                  "units": "kWh"
-                },
-                "average_yearly_energy_exported_kwh": {
-                  "type": float,
-                  "description": "Average annual energy exported by the diesel generator",
-                  "units": "kWh"
-                },
-                "year_one_energy_produced_kwh": {
-                  "type": float,
-                  "description": "Year one energy produced by the diesel generator",
+                  "description": "Year one electric energy produced by nuclear",
                   "units": "kWh"
                 },
                 "year_one_power_production_series_kw": {
                   "type": list_of_float,
-                  "description": "Year one diesel generator power production time series",
+                  "description": "Year one time series of nuclear total power production",
                   "units": "kW"
                 },
                 "year_one_to_battery_series_kw": {
                   "type": list_of_float,
-                  "description": "Year one hourly time series of diesel generator charging",
+                  "description": "Year one hourly time series of electric power to battery charging",
                   "units": "kW"
                 },
                 "year_one_to_load_series_kw": {
                   "type": list_of_float,
-                  "description": "Year one generator to load time series.",
+                  "description": "Year one hourly time series of electric power to load",
                   "units": "kW"
                 },
                 "year_one_to_grid_series_kw": {
                   "type": list_of_float,
-                  "description": "Year one hourly time series of diesel generator exporting to grid",
+                  "description": "Year one hourly time series of nuclear electric power exporting to grid",
                   "units": "kW"
                 },
                 "total_fixed_om_cost_us_dollars": {
                   "type": float,
-                  "description": "Total lifecycle fixed (based on kW capacity) O&M cost for existing + recommended diesel generator system.",
+                  "description": "Total lifecycle fixed (based on kW capacity) O&M cost for nuclear system.",
                   "units": "$"
                 },
                 "total_variable_om_cost_us_dollars": {
                   "type": float,
-                  "description": "Total lifecycle variable (based on kWh produced) O&M cost for existing + recommended diesel generator system",
-                  "units": "$"
-                },
-                "year_one_variable_om_cost_us_dollars": {
-                  "type": float,
-                  "description": "Year one variable (based on kwh produced) O&M cost for existing + recommended diesel generator system",
-                  "units": "$"
-                },
-                "year_one_fixed_om_cost_us_dollars": {
-                  "type": float,
-                  "description": "Year one fixed (based on kW capacity) O&M cost for existing + recommended diesel generator system.",
+                  "description": "Total lifecycle variable (based on kWh produced) O&M cost for nuclear system",
                   "units": "$"
                 },
                 "total_fuel_cost_us_dollars": {
                   "type": float,
-                  "description": "Total lifecycle fuel cost for existing + newly recommended diesel generator system",
+                  "description": "Total lifecycle fuel cost for nuclear system",
+                  "units": "$"
+                },
+                "year_one_fixed_om_cost_us_dollars": {
+                  "type": float,
+                  "description": "Year one fixed (based on kW capacity) O&M cost for nuclear system.",
+                  "units": "$"
+                },
+                "year_one_variable_om_cost_us_dollars": {
+                  "type": float,
+                  "description": "Year one variable (based on kwh produced) O&M cost for nuclear system",
                   "units": "$"
                 },
                 "year_one_fuel_cost_us_dollars": {
                   "type": float,
-                  "description": "Year one fuel cost for existing + newly recommended diesel generator system",
+                  "description": "Year one fuel cost for nuclear system",
                   "units": "$"
                 },
                 "year_one_effective_full_power_days": {
