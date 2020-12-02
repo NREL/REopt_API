@@ -419,8 +419,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             Convenience (and legacy) class for handling REopt results
             :param results_dict: flat dict of results from reopt.jl
             :param results_dict_bau: flat dict of results from reopt.jl for bau case
-            :param instance of DataManager class
-            :param dict, data['inputs']['Scenario']['Site']
+            :param dm: instance of DataManager class
+            :param inputs: dict, data['inputs']['Scenario']['Site']
             """
             self.dm = dm
             self.inputs = inputs
@@ -658,7 +658,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["critical_load_series_kw"] = self.dm["LoadProfile"].get("critical_load_series_kw")
                     self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_kwh"] = self.dm["LoadProfile"].get("annual_kwh")
                     self.nested_outputs["Scenario"]["Site"][name]["resilience_check_flag"] = self.dm["LoadProfile"].get("resilience_check_flag")
-                    self.nested_outputs["Scenario"]["Site"][name]["sustain_hours"] = self.dm["LoadProfile"].get("sustain_hours")
+                    self.nested_outputs["Scenario"]["Site"][name]["sustain_hours"] = int(self.dm["LoadProfile"].get("bau_sustained_time_steps") / (len(self.dm["LoadProfile"].get("year_one_electric_load_series_kw"))/8760))
+                    self.nested_outputs["Scenario"]["Site"][name]["bau_sustained_time_steps"] = self.dm["LoadProfile"].get("bau_sustained_time_steps")
                     self.nested_outputs["Scenario"]["Site"][name]['loads_kw'] = self.dm["LoadProfile"].get("loads_kw")
                 elif name == "Financial":
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_us_dollars"] = self.results_dict.get("lcc")
@@ -940,6 +941,11 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
 
         profiler.profileEnd()
         data['outputs']["Scenario"]["Profile"]["parse_run_outputs_seconds"] = profiler.getDuration()
+
+        data["messages"]["warnings"]["Deprecations"] = [
+            "The sustain_hours output will be deprecated soon in favor of bau_sustained_time_steps.",
+            "outage_start_hour and outage_end_hour will be deprecated soon in favor of outage_start_time_step and outage_end_time_step",
+        ]
 
         if saveToDB:
             ModelManager.update(data, run_uuid=self.run_uuid)
