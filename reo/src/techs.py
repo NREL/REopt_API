@@ -310,62 +310,6 @@ class Generator(Tech):
             b = 0.004
         return m, b
 
-class Nuclear(Tech):
-
-    def __init__(self, dfm, run_uuid, min_kw, max_kw, min_turn_down_pct, 
-                    fuel_cost_us_dollars_per_mmbtu, fuel_slope_mmbtu_per_kwh, effective_full_power_days_between_refueling, 
-                    outage_start_hour=None, outage_end_hour=None, time_steps_per_hour=1,
-                     **kwargs):
-        super(Nuclear, self).__init__(min_kw=min_kw, max_kw=max_kw, **kwargs)
-        """
-        A modification of the generator class that is designed to size nuclear components either SMR or
-        traditional nuclear applications.
-        
-        Note that default burn rate, slope, and min/max sizes are handled in ValidateNestedInput.
-        """
-
-        self.min_turn_down = min_turn_down_pct
-        self.reopt_class = 'NUCLEAR'
-        self.outage_start_hour = outage_start_hour
-        self.outage_end_hour = outage_end_hour
-        self.time_steps_per_hour = time_steps_per_hour
-        self.nuclear_only_runs_during_grid_outage = kwargs['nuclear_only_runs_during_grid_outage']
-        self.nuclear_sells_energy_back_to_grid = kwargs['nuclear_sells_energy_back_to_grid']
-        self.derate = 0.0
-        self.loads_served = ['retail', 'storage']
-        self.incentives = Incentives(**kwargs)
-
-        ## Added keywords
-        self.fuel_cost_us_dollars_per_mmbtu = kwargs['fuel_cost_us_dollars_per_mmbtu']
-        self.fuel_slope_mmbtu_per_kwh = kwargs['fuel_slope_mmbtu_per_kwh']
-        self.effective_full_power_days_between_refueling = kwargs['effective_full_power_days_between_refueling']
-
-        if max_kw < min_kw:
-            min_kw = max_kw
-        self.min_kw = min_kw
-        self.max_kw = max_kw
-
-        # no net-metering for gen so it can only sell in "wholesale" bin (and not "export" bin)
-        if self.nuclear_sells_energy_back_to_grid:
-            self.loads_served.append('wholesale')
-
-        dfm.add_nuclear(self)
-
-    ## Essentially sets the production factor based on if it runs
-    ## during grid outages or no.
-    @property
-    def prod_factor(self):
-        gen_prod_factor = [0.0 for _ in range(8760*self.time_steps_per_hour)]
-
-        if self.nuclear_only_runs_during_grid_outage:
-            if self.outage_start_hour is not None and self.outage_end_hour is not None:
-                gen_prod_factor[self.outage_start_hour:self.outage_end_hour] \
-                    = [1]*(self.outage_end_hour - self.outage_start_hour)
-
-        else:
-            gen_prod_factor = [1] * len(gen_prod_factor)
-
-        return gen_prod_factor
 
 class CHP(Tech):
     """
@@ -1243,3 +1187,33 @@ class AbsorptionChiller(Tech):
 
         return absorp_chiller_capex, absorp_chiller_opex
 
+
+class Nuclear(Tech):
+
+    def __init__(self, dfm, time_steps_per_hour=1, **kwargs):
+        super(Nuclear, self).__init__()
+        """
+        A modification of the generator class that is designed to size nuclear components either SMR or
+        traditional nuclear applications.
+        
+        """
+        # Attributes assigned by inheriting Tech class: (self.) min_kw, max_kw, installed_cost_us_dollars_per_kw, om_cost_us_dollars_per_kw
+        # All inputs for nuclear currently have defaults assigned in nested_inputs, so they will be included in **kwargs
+        # These next handful of attributes are unique to Nuclear, so they need to be assigned to self
+        self.om_cost_us_dollars_per_kwh = om_cost_us_dollars_per_kwh
+        self.min_turn_down_pct = min_turn_down_pct
+        self.fuel_slope_mmbtu_per_kwh = fuel_slope_mmbtu_per_kwh
+        self.fuel_cost_us_dollars_per_mmbtu = fuel_cost_us_dollars_per_mmbtu
+        self.effective_full_power_days_between_refueling = effective_full_power_days_between_refueling  
+        # End Nuclear-specific inputs that must be passed in explicitly to this Nuclear class
+        self.reopt_class = 'NUCLEAR'
+        self.time_steps_per_hour = time_steps_per_hour
+        
+        self.incentives = Incentives(**kwargs)
+
+        dfm.add_nuclear(self)
+
+    @property
+    def prod_factor(self):
+        gen_prod_factor = [1.0 for _ in range(8760*self.time_steps_per_hour)]
+        return gen_prod_factor
