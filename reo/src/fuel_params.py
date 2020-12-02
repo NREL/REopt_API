@@ -65,7 +65,7 @@ class FuelParams:
             self.nuclear_fuel_rate_array = [nuclear.fuel_cost_us_dollars_per_mmbtu for
                                               _ in range(8760 * self.time_steps_per_hour)]
 
-    def _get_fuel_burning_tech_params(self, techs, generator=None, chp=None):
+    def _get_fuel_burning_tech_params(self, techs, generator=None, chp=None, nuclear=None):
         """
         In the Julia model we have:
          - d["FuelCost"] = vector_to_axisarray(d["FuelCost"], d["FuelType"], d[:TimeStep])

@@ -1197,14 +1197,16 @@ class Nuclear(Tech):
         traditional nuclear applications.
         
         """
-        # Attributes assigned by inheriting Tech class: (self.) min_kw, max_kw, installed_cost_us_dollars_per_kw, om_cost_us_dollars_per_kw
-        # All inputs for nuclear currently have defaults assigned in nested_inputs, so they will be included in **kwargs
-        # These next handful of attributes are unique to Nuclear, so they need to be assigned to self
-        self.om_cost_us_dollars_per_kwh = om_cost_us_dollars_per_kwh
-        self.min_turn_down_pct = min_turn_down_pct
-        self.fuel_slope_mmbtu_per_kwh = fuel_slope_mmbtu_per_kwh
-        self.fuel_cost_us_dollars_per_mmbtu = fuel_cost_us_dollars_per_mmbtu
-        self.effective_full_power_days_between_refueling = effective_full_power_days_between_refueling  
+        # All inputs for nuclear currently have defaults assigned in nested_inputs, so they will always be included in **kwargs
+        self.min_kw = kwargs.get("min_kw")
+        self.max_kw = kwargs.get("max_kw")
+        self.installed_cost_us_dollars_per_kw = kwargs.get("installed_cost_us_dollars_per_kw")
+        self.om_cost_us_dollars_per_kw = kwargs.get("om_cost_us_dollars_per_kw")
+        self.om_cost_us_dollars_per_kwh = kwargs.get("om_cost_us_dollars_per_kwh")
+        self.min_turn_down_pct = kwargs.get("min_turn_down_pct")
+        self.fuel_slope_mmbtu_per_kwh = kwargs.get("fuel_slope_mmbtu_per_kwh")
+        self.fuel_cost_us_dollars_per_mmbtu = kwargs.get("fuel_cost_us_dollars_per_mmbtu")
+        self.effective_full_power_days_between_refueling = kwargs.get("effective_full_power_days_between_refueling")
         # End Nuclear-specific inputs that must be passed in explicitly to this Nuclear class
         self.reopt_class = 'NUCLEAR'
         self.time_steps_per_hour = time_steps_per_hour

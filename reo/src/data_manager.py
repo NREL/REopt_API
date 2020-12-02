@@ -703,9 +703,11 @@ class DataManager:
 
 
                 # only generator, chp, and nuclear techs have variable o&m cost
-                if tech.lower() == 'generator' or tech.lower() == 'nuclear':
+                if tech.lower() == 'generator':
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.kwargs["om_cost_us_dollars_per_kwh"]')))
                     om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
+                elif tech.lower() == 'nuclear':
+                    om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kwh')))
                 elif tech.lower() == 'chp':
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kwh')))
                     om_cost_us_dollars_per_hr_per_kw_rated.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_hr_per_kw_rated')))
@@ -1180,10 +1182,10 @@ class DataManager:
 
         fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type, fuel_burn_slope, fuel_burn_intercept \
             = fuel_params._get_fuel_burning_tech_params(reopt_techs, generator=eval('self.generator'),
-                                                        chp=eval('self.chp'))
+                                                        chp=eval('self.chp'), nuclear=eval('self.nuclear'))
         fuel_costs_bau, fuel_limit_bau, fuel_types_bau, techs_by_fuel_type_bau, fuel_burn_slope_bau, \
             fuel_burn_intercept_bau =  fuel_params._get_fuel_burning_tech_params(reopt_techs_bau,
-                                                        generator=eval('self.generator'), chp=eval('self.chp'))
+                                                        generator=eval('self.generator'), chp=eval('self.chp'), nuclear=eval('self.nuclear'))
 
         chp_fuel_burn_intercept, chp_thermal_prod_slope, chp_thermal_prod_intercept, chp_derate \
             = fuel_params._get_chp_unique_params(chp_techs, chp=eval('self.chp'))
