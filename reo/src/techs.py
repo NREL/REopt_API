@@ -932,7 +932,7 @@ class CHP(Tech):
                               "combustion_turbine": 0,
                               "fuel_cell": 0}
 
-    def __init__(self, dfm, run_uuid, existing_boiler_production_type_steam_or_hw, oa_temp_degF, site_elevation_ft,
+    def __init__(self, dfm, run_uuid, existing_boiler_production_type_steam_or_hw, oa_temp_degF, site_elevation_ft, outage_start_hour=None, outage_end_hour=None,
                  time_steps_per_hour=1, **kwargs):
         super(CHP, self).__init__()
 
@@ -964,6 +964,9 @@ class CHP(Tech):
         self.max_derate_factor = kwargs['max_derate_factor']
         self.derate_start_temp_degF = kwargs['derate_start_temp_degF']
         self.derate_slope_pct_per_degF = kwargs['derate_slope_pct_per_degF']
+        self.chp_unavailability_hourly = kwargs['chp_unavailability_hourly']
+        self.outage_start_hour = outage_start_hour
+        self.outage_end_hour = outage_end_hour
 
         self.fuel_burn_slope, self.fuel_burn_intercept, self.thermal_prod_slope, self.thermal_prod_intercept = \
             self.convert_performance_params(self.elec_effic_full_load, self.elec_effic_half_load,
@@ -978,9 +981,15 @@ class CHP(Tech):
 
     @property
     def prod_factor(self):
-        chp_elec_prod_factor = [1.0 for _ in range(8760 * self.time_steps_per_hour)]
+        chp_elec_prod_factor = [1.0 - self.chp_unavailability_hourly[i] for i in range(8760) for _ in range(self.time_steps_per_hour)]
         # Note, we are handling boiler efficiency explicitly so not embedding that into chp thermal prod factor
-        chp_thermal_prod_factor = [1.0 for _ in range(8760 * self.time_steps_per_hour)]
+        chp_thermal_prod_factor = [1.0 - self.chp_unavailability_hourly[i] for i in range(8760) for _ in range(self.time_steps_per_hour)]
+
+        # Ignore unavailability in timestep if it intersects with an outage interval
+        if self.outage_start_hour and self.outage_end_hour:
+            for i in range(self.outage_start_hour * self.time_steps_per_hour, self.outage_end_hour * self.time_steps_per_hour):
+              chp_elec_prod_factor[i] = 1.0
+              chp_thermal_prod_factor[i] = 1.0
 
         return chp_elec_prod_factor, chp_thermal_prod_factor
 

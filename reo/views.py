@@ -49,6 +49,8 @@ from reo.src.techs import Generator, CHP, ElectricChiller, AbsorptionChiller, Bo
 from reo.src.emissions_calculator import EmissionsCalculator
 from django.http import HttpResponse
 from django.template import  loader
+import pandas as pd
+from reo.utilities import generate_year_profile_hourly
 
 
 # loading the labels of hard problems - doing it here so loading happens once on startup
@@ -546,6 +548,8 @@ def chp_defaults(request):
         2. Prime mover and average heating load
     If both size class and average heating load are given, the size class will be used.
     Boiler efficiency is assumed and may not be consistent with actual input value.
+
+    The year input is required for getting the chp_unavailability_hourly series output, otherwise it will return [] for that.
     """
     prime_mover_defaults_all = copy.deepcopy(CHP.prime_mover_defaults_all)
     n_classes = {pm: len(CHP.class_bounds[pm]) for pm in CHP.class_bounds.keys()}
@@ -554,6 +558,7 @@ def chp_defaults(request):
         prime_mover = request.GET.get('prime_mover')
         avg_boiler_fuel_load_mmbtu_per_hr = request.GET.get('avg_boiler_fuel_load_mmbtu_per_hr')
         size_class = request.GET.get('size_class')
+        year = request.GET.get('year')
         if prime_mover is not None:
             # Calculate heuristic CHP size based on average thermal load, using the default size class efficiency data
             if avg_boiler_fuel_load_mmbtu_per_hr is not None:
@@ -590,6 +595,14 @@ def chp_defaults(request):
                 size_class = CHP.default_chp_size_class[prime_mover]
             prime_mover_defaults = {param: prime_mover_defaults_all[prime_mover][param][size_class]
                                     for param in prime_mover_defaults_all[prime_mover].keys()}
+            if year is not None:
+                year = int(year)
+                # TODO put in "prime_mover" instead of hard-coded "recip_engine" for path (after adding other prime_mover unavailability periods)
+                chp_unavailability_path = os.path.join('input_files', 'CHP', 'recip_engine_unavailability_periods.csv')
+                chp_unavailability_periods = pd.read_csv(chp_unavailability_path)
+                chp_unavailability_hourly_list = generate_year_profile_hourly(year, chp_unavailability_periods)
+            else:
+                chp_unavailability_hourly_list = []
         else:
             raise ValueError("Missing prime_mover type query parameter.")
 
@@ -598,7 +611,8 @@ def chp_defaults(request):
              "size_class": size_class,
              "default_inputs": prime_mover_defaults,
              "chp_size_based_on_avg_heating_load_kw": chp_elec_size_heuristic_kw,
-             "size_class_bounds": CHP.class_bounds
+             "size_class_bounds": CHP.class_bounds,
+             "chp_unavailability_hourly": chp_unavailability_hourly_list
              }
         )
         return response
