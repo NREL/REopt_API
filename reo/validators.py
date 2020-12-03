@@ -997,6 +997,10 @@ class ValidateNestedInput:
                 prime_mover = real_values.get('prime_mover')
                 size_class = real_values.get('size_class')
                 if prime_mover is not None:
+                    if prime_mover not in prime_mover_defaults_all.keys():
+                        self.input_data_errors.append(
+                                'prime_mover not in valid options of ' + str(list(prime_mover_defaults_all.keys())))
+                        prime_mover = list(prime_mover_defaults_all.keys())[0]  # dummy valid prime_mover to make indexing below not error
                     if size_class is not None:
                         if (size_class >= 0) and (size_class < n_classes[prime_mover]):
                             prime_mover_defaults = {param: prime_mover_defaults_all[prime_mover][param][size_class]
@@ -1051,7 +1055,8 @@ class ValidateNestedInput:
                         filtered_values = {k: real_values.get(k) for k in required_keys}
                         for k,v in filtered_values.items():
                             if v is None:
-                                self.input_data_errors.append('CHP is missing a value for the {} parameter'.format(k))
+                                self.input_data_errors.append('No prime_mover was input so all cost and performance parameters must be input. \
+                                    CHP is missing a value for the {} parameter'.format(k))
 
                         self.chp_checks(filtered_values, object_name_path, number)
 
