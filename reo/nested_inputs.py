@@ -1276,7 +1276,6 @@ nested_input_definitions = {
       "CHP": {
         "prime_mover": {
           "type": "str",
-          "restrict_to": ['recip_engine', 'micro_turbine', 'combustion_turbine', 'fuel_cell'],
           "description": "CHP prime mover type (recip_engine, micro_turbine, combustion_turbine, fuel_cell)"
         },
         "size_class": {
@@ -1311,7 +1310,8 @@ nested_input_definitions = {
         "tech_size_for_cost_curve": {
           "type": ["float", "list_of_float"],
           "min": 0.0,
-          "max": 1.0e5,
+          "max": 1.0e10,
+          "default": 1.0e10,
           "description": "Size of CHP systems corresponding to installed cost input points"
         },
         "om_cost_us_dollars_per_kw": {
