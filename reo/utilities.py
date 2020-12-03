@@ -30,6 +30,10 @@
 from numpy import npv
 from math import log10
 from reo.models import ErrorModel
+import pandas as pd
+import numpy as np
+import calendar
+import datetime
 
 
 class API_Error:
@@ -248,3 +252,33 @@ def check_common_outputs(Test, d_calculated, d_expected):
             )
         else:
             raise e
+
+def generate_year_profile_hourly(year, relative_periods_df):
+    '''
+    This function creates a year-specific 8760 profile with 1.0 for timesteps which are defined in the relative_periods_df based on 
+        generalized (non-year specific) datetime metrics. All other values are 0.0. This functions uses numpy, pandas, datetime, and calendar packages/libraries.
+
+    :param year: year for applying relative_periods changes based on year and leap years (cut off 12/31/year)
+    :param relative_periods_df: pandas DataFrame with columns=["Month", "Start Week of Month", "Start Day of Week", "Start Hour", "Duration"] of length N periods.
+        All of the value types are integers **except** "Duration" which is of type timedelta (string equivalent to timedelta format)
+    :return: hourly_list: 8760 profile with 1.0 for timesteps defined in relative_periods_df, else 0.0.
+    NOTE: Blank
+    '''
+    if calendar.isleap(year):  # Remove last day of the year if leap year
+        end_date = "12/31/"+str(year)
+    else:
+        end_date = "1/1/"+str(year+1)
+    dt_profile = pd.date_range(start='1/1/'+str(year), end=end_date, freq="1H", closed="left")
+    year_profile_hourly_series = pd.Series(np.zeros(8760), index=dt_profile)
+    for i in range(len(relative_periods_df)):
+        start_month = relative_periods_df["Month"][i]
+        start_week = relative_periods_df["Start Week of Month"][i]
+        start_weekday = relative_periods_df["Start Day of Week"][i]
+        day_of_month = calendar.Calendar().monthdayscalendar(year=year,month=start_month)[start_week][start_weekday]
+        hour_of_day = relative_periods_df["Start Hour"][i]
+        start_datetime = datetime.datetime(year=year, month=start_month, day=day_of_month, hour=hour_of_day)
+        duration = pd.to_timedelta(relative_periods_df["Duration"][i])
+        year_profile_hourly_series[start_datetime:start_datetime+duration-datetime.timedelta(hours=1)] = 1.0
+        year_profile_hourly_list = list(year_profile_hourly_series)
+
+    return year_profile_hourly_list
