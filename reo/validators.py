@@ -1032,7 +1032,7 @@ class ValidateNestedInput:
                         if template_values.get(k) is not None:
                             # check if there is a default that filled in this value
                             if template_values[k].get('default') is not None:
-                                if template_values[k]['default'] != v:
+                                if v not in [template_values[k]['default'], [template_values[k]['default']]]:
                                     user_supplied_chp_inputs = True
 
                             # check the special case default for emissions
