@@ -263,7 +263,7 @@ def summary(request, user_uuid):
                 results['description'] = scenario.description
 
                 # Focus
-                if load['outage_start_hour']:
+                if load['outage_start_hour'] is not None:
                     results['focus'] = "Resilience"
                 else:
                     results['focus'] = "Financial"
