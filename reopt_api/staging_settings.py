@@ -112,7 +112,7 @@ DATABASES = {
     'default':{
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'HOST': staging_database_host,
-        'NAME': 'reopt_chp_staging_internal',
+        'NAME': 'reopt_chp_staging_external',
         'OPTIONS': {
             'options': '-c search_path=reopt_api'
         },
