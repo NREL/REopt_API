@@ -1311,7 +1311,6 @@ nested_input_definitions = {
           "type": ["float", "list_of_float"],
           "min": 0.0,
           "max": 1.0e10,
-          "default": 1.0e10,
           "description": "Size of CHP systems corresponding to installed cost input points"
         },
         "om_cost_us_dollars_per_kw": {

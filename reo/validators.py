@@ -1000,46 +1000,46 @@ class ValidateNestedInput:
                     if prime_mover not in prime_mover_defaults_all.keys():
                         self.input_data_errors.append(
                                 'prime_mover not in valid options of ' + str(list(prime_mover_defaults_all.keys())))
-                        prime_mover = list(prime_mover_defaults_all.keys())[0]  # dummy valid prime_mover to make indexing below not error
-                    if size_class is not None:
-                        if (size_class >= 0) and (size_class < n_classes[prime_mover]):
+                    else:  # Only do further checks on CHP if the prime_mover is a valid input
+                        if size_class is not None:
+                            if (size_class >= 0) and (size_class < n_classes[prime_mover]):
+                                prime_mover_defaults = {param: prime_mover_defaults_all[prime_mover][param][size_class]
+                                                for param in prime_mover_defaults_all[prime_mover].keys()}
+                            else:
+                                self.input_data_errors.append(
+                                    'The size class input is outside the valid range for ' + str(prime_mover))
+                        else:
+                            size_class = CHP.default_chp_size_class[prime_mover]
                             prime_mover_defaults = {param: prime_mover_defaults_all[prime_mover][param][size_class]
-                                            for param in prime_mover_defaults_all[prime_mover].keys()}
+                                                for param in prime_mover_defaults_all[prime_mover].keys()}
+                        # create an updated attribute set to check invalid combinations of input data later
+                        prime_mover_defaults.update({"size_class": size_class})
+                        updated_set = copy.deepcopy(prime_mover_defaults)
+                        for param, value in prime_mover_defaults.items():
+                            if real_values.get(param) is None:
+                                self.update_attribute_value(object_name_path, number, param, value)
+                            else:
+                                updated_set[param] = real_values.get(param)
+                        # Establish a CHP unavailability profile consistent with the appropriate year calendar
+                        if real_values.get("chp_unavailability_hourly") is None:
+                            # TODO put in "prime_mover" instead of hard-coded "recip_engine" for path (after adding other prime_mover unavailability periods)
+                            chp_unavailability_path = os.path.join('input_files', 'CHP', 'recip_engine_unavailability_periods.csv')
+                            chp_unavailability_periods = pd.read_csv(chp_unavailability_path)
+                            if self.input_dict['Scenario']['Site']['LoadProfile'].get("doe_reference_name") is not None:
+                                year = 2017  # If using DOE building, load matches with 2017 calendar
+                            elif self.input_dict['Scenario']['Site']['LoadProfile'].get("year") is None:
+                                year = 2019 # Default year is 2019
+                            else: 
+                                year = self.input_dict['Scenario']['Site']['LoadProfile'].get("year")
+                            chp_unavailability_hourly_list = generate_year_profile_hourly(year, chp_unavailability_periods)
+                            self.update_attribute_value(object_name_path, number, "chp_unavailability_hourly", chp_unavailability_hourly_list)
                         else:
-                            self.input_data_errors.append(
-                                'The size class input is outside the valid range for ' + str(prime_mover))
-                    else:
-                        size_class = CHP.default_chp_size_class[prime_mover]
-                        prime_mover_defaults = {param: prime_mover_defaults_all[prime_mover][param][size_class]
-                                            for param in prime_mover_defaults_all[prime_mover].keys()}
-                    # create an updated attribute set to check invalid combinations of input data later
-                    prime_mover_defaults.update({"size_class": size_class})
-                    updated_set = copy.deepcopy(prime_mover_defaults)
-                    for param, value in prime_mover_defaults.items():
-                        if real_values.get(param) is None:
-                            self.update_attribute_value(object_name_path, number, param, value)
-                        else:
-                            updated_set[param] = real_values.get(param)
-                    # Establish a CHP unavailability profile consistent with the appropriate year calendar
-                    if real_values.get("chp_unavailability_hourly") is None:
-                        # TODO put in "prime_mover" instead of hard-coded "recip_engine" for path (after adding other prime_mover unavailability periods)
-                        chp_unavailability_path = os.path.join('input_files', 'CHP', 'recip_engine_unavailability_periods.csv')
-                        chp_unavailability_periods = pd.read_csv(chp_unavailability_path)
-                        if self.input_dict['Scenario']['Site']['LoadProfile'].get("doe_reference_name") is not None:
-                            year = 2017  # If using DOE building, load matches with 2017 calendar
-                        elif self.input_dict['Scenario']['Site']['LoadProfile'].get("year") is None:
-                            year = 2019 # Default year is 2019
-                        else: 
-                            year = self.input_dict['Scenario']['Site']['LoadProfile'].get("year")
-                        chp_unavailability_hourly_list = generate_year_profile_hourly(year, chp_unavailability_periods)
-                        self.update_attribute_value(object_name_path, number, "chp_unavailability_hourly", chp_unavailability_hourly_list)
-                    else:
-                        if min(real_values.get("chp_unavailability_hourly")) < 0 or max(real_values.get("chp_unavailability_hourly")) > 1.0:
-                            self.input_data_errors.append('All values for CHP unavailability must be between 0.0 and 1.0')
-                        self.validate_8760(real_values.get("chp_unavailability_hourly"),
-                                            "CHP", "chp_unavailability_hourly", self.input_dict['Scenario']['time_steps_per_hour'])
+                            if min(real_values.get("chp_unavailability_hourly")) < 0 or max(real_values.get("chp_unavailability_hourly")) > 1.0:
+                                self.input_data_errors.append('All values for CHP unavailability must be between 0.0 and 1.0')
+                            self.validate_8760(real_values.get("chp_unavailability_hourly"),
+                                                "CHP", "chp_unavailability_hourly", self.input_dict['Scenario']['time_steps_per_hour'])
 
-                    self.chp_checks(updated_set, object_name_path, number)
+                        self.chp_checks(updated_set, object_name_path, number)
 
                 # otherwise, check if the user intended to run CHP and supplied sufficient info
                 else:
@@ -1050,7 +1050,7 @@ class ValidateNestedInput:
                         if template_values.get(k) is not None:
                             # check if there is a default that filled in this value
                             if template_values[k].get('default') is not None:
-                                if v not in [template_values[k]['default'], [template_values[k]['default']]]:
+                                if template_values[k]['default'] != v:
                                     user_supplied_chp_inputs = True
 
                             # check the special case default for emissions
