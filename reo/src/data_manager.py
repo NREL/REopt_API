@@ -904,23 +904,19 @@ class DataManager:
         electric_techs_bau = [t for t in reopt_techs_bau if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR")]
         
         if len(reopt_techs) > 0:
-            non_storage_sales_tiers = [1, 2]
             storage_sales_tiers = [3]
             curtailment_tiers = [3]
             max_grid_sales = self.load.annual_kwh
         else:
-            non_storage_sales_tiers = []
             storage_sales_tiers = []
             curtailment_tiers = []
             max_grid_sales = 0
             
         if len(reopt_techs_bau) > 0:
-            non_storage_sales_tiers_bau = [1, 2]
             storage_sales_tiers_bau = [3]
             curtailment_tiers_bau = [3]
             max_grid_sales_bau = self.load.annual_kwh
         else:
-            non_storage_sales_tiers_bau = []
             storage_sales_tiers_bau = []
             curtailment_tiers_bau = []
             max_grid_sales_bau = 0
@@ -1016,7 +1012,6 @@ class DataManager:
             'TechsNoTurndown': techs_no_turndown,
             'SalesTierCount': tariff_args.num_sales_tiers,
             'StorageSalesTiers': storage_sales_tiers,
-            'NonStorageSalesTiers': non_storage_sales_tiers,
             'TimeStepsWithGrid': time_steps_with_grid,
             'TimeStepsWithoutGrid': time_steps_without_grid,
             'SalesTiersByTech': tariff_args.rates_by_tech,
@@ -1113,7 +1108,6 @@ class DataManager:
             'TechsNoTurndown': techs_no_turndown_bau,
             'SalesTierCount': tariff_args.num_sales_tiers_bau,
             'StorageSalesTiers': storage_sales_tiers_bau,
-            'NonStorageSalesTiers': non_storage_sales_tiers_bau,
             'TimeStepsWithGrid': time_steps_with_grid,
             'TimeStepsWithoutGrid': time_steps_without_grid,
             'SalesTiersByTech': tariff_args.rates_by_tech_bau,
