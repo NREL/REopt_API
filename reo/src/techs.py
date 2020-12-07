@@ -45,8 +45,6 @@ class Tech(object):
         self.max_kw = max_kw
         self.installed_cost_us_dollars_per_kw = installed_cost_us_dollars_per_kw
         self.om_cost_us_dollars_per_kw = om_cost_us_dollars_per_kw
-
-        self.loads_served = ['retail', 'wholesale', 'export', 'storage']
         self.nmil_regime = None
         self.reopt_class = ""
         self.derate = 1.0
@@ -63,11 +61,6 @@ class Tech(object):
         """
         return None
 
-    def can_serve(self, load):
-        if load in self.loads_served:
-            return True
-        return False
-
 
 class Util(Tech):
 
@@ -76,7 +69,6 @@ class Util(Tech):
 
         self.outage_start_time_step = outage_start_time_step
         self.outage_end_time_step = outage_end_time_step
-        self.loads_served = ['retail', 'storage']
         self.derate = 0.0
         self.n_timesteps = dfm.n_timesteps
 
@@ -235,7 +227,6 @@ class Generator(Tech):
         
         Note that default burn rate, slope, and min/max sizes are handled in ValidateNestedInput.
         """
-
         self.fuel_slope = fuel_slope_gal_per_kwh
         self.fuel_intercept = fuel_intercept_gal_per_hr
         self.fuel_avail = fuel_avail_gal
@@ -249,7 +240,6 @@ class Generator(Tech):
         self.generator_sells_energy_back_to_grid = kwargs['generator_sells_energy_back_to_grid']
         self.diesel_fuel_cost_us_dollars_per_gallon = kwargs['diesel_fuel_cost_us_dollars_per_gallon']
         self.derate = 0.0
-        self.loads_served = ['retail', 'storage']
         self.incentives = Incentives(**kwargs)
         if max_kw < min_kw:
             min_kw = max_kw
@@ -257,10 +247,6 @@ class Generator(Tech):
         self.max_kw = max_kw
         self.existing_kw = existing_kw
         self.emissions_factor_lb_CO2_per_gal = emissions_factor_lb_CO2_per_gal
-
-        # no net-metering for gen so it can only sell in "wholesale" bin (and not "export" bin)
-        if self.generator_sells_energy_back_to_grid:
-            self.loads_served.append('wholesale')
 
         dfm.add_generator(self)
 
