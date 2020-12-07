@@ -183,7 +183,6 @@ Base.@kwdef struct Parameter
      # New Sets
      SalesTiers::UnitRange
      StorageSalesTiers::Array{Int, 1}
-     NonStorageSalesTiers::Array{Int, 1}
 	 SalesTiersByTech::AxisArray
 	 TechsBySalesTier::AxisArray
 	 CurtailmentTiers::Array{Int, 1}
