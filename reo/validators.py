@@ -433,6 +433,7 @@ class ValidateNestedInput:
         if self.isValid:
             self.recursively_check_input_dict(self.nested_input_definitions, self.remove_invalid_keys)
             self.recursively_check_input_dict(self.nested_input_definitions, self.remove_nones)
+            self.recursively_check_input_dict(self.nested_input_definitions, self.check_for_nans)            
             self.recursively_check_input_dict(self.nested_input_definitions, self.convert_data_types)
             self.recursively_check_input_dict(self.nested_input_definitions, self.fillin_defaults)
             self.recursively_check_input_dict(self.nested_input_definitions, self.check_min_max_restrictions)
@@ -812,6 +813,32 @@ class ValidateNestedInput:
                             self.input_as_none.append([name, object_name_path[-1]])
                         if input_isDict == False:
                             self.input_as_none.append([name, object_name_path[-1] + ' (number {})'.format(number)])
+
+    def check_for_nans(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
+        """
+        comparison_function for recursively_check_input_dict.
+        flag any inputs that have been parameterized as NaN and do not let the optimization continue.
+        this step is important to prevent exceptions in later optimization and post-processings steps.
+        :param object_name_path: list of str, location of an object in self.input_dict being validated,
+            eg. ["Scenario", "Site", "PV"]
+        :param template_values: reference dictionary for checking real_values, for example
+            {'latitude':{'type':'float',...}...}, which comes from nested_input_definitions
+        :param real_values: dict, the attributes corresponding to the object at object_name_path within the
+            input_dict to check and/or modify. For example, with a object_name_path of ["Scenario", "Site", "PV"]
+                the real_values would look like: {'latitude': 39.345678, 'longitude': -90.3, ... }
+        :param number: int, order of the dict in the list
+        :param input_isDict: bool, indicates if the object input came in as a dict or list
+        :return: None
+        """
+        if real_values is not None:
+            rv = copy.deepcopy(real_values)
+            for name, value in rv.items():
+                if self.isAttribute(name):
+                    if type(value) == float:
+                        if np.isnan(value):
+                            self.input_data_errors.append(
+                                'NaN is not a valid input for %s in %s' % (name, self.object_name_string(object_name_path))
+                                )
 
     def remove_invalid_keys(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
         """
