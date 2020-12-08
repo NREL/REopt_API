@@ -37,7 +37,7 @@ from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
 from reo.models import ModelManager, PVModel, LoadProfileModel, ScenarioModel, LoadProfileBoilerFuelModel, \
     LoadProfileChillerElectricModel, ElectricChillerModel, BoilerModel, FinancialModel, WindModel, \
-    AbsorptionChillerModel
+    AbsorptionChillerModel, NuclearModel
 from reo.src.outage_costs import calc_avoided_outage_costs
 from reo.src.profiler import Profiler
 from reo.src.emissions_calculator import EmissionsCalculator
@@ -1191,7 +1191,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_hot_tes_soc_series_pct"] = self.results_dict.get("hot_tes_pct_soc_series")
                     if np.isnan(sum(self.results_dict.get("hot_tes_pct_soc_series") or [np.nan])):
                         self.nested_outputs["Scenario"]["Site"][name]["year_one_hot_tes_soc_series_pct"] = None
-
                 elif name == "ColdTES":
                     self.nested_outputs["Scenario"]["Site"][name][
                         "size_gal"] = self.results_dict.get("cold_tes_size_kwht",0) / 0.0287
@@ -1201,6 +1200,35 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_cold_tes_soc_series_pct"] = self.results_dict.get("cold_tes_pct_soc_series")
                     if np.isnan(sum(self.results_dict.get("cold_tes_pct_soc_series") or [np.nan])):
                         self.nested_outputs["Scenario"]["Site"][name]["year_one_cold_tes_soc_series_pct"] = None
+                elif name == "Nuclear":
+                    self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get(
+                        "nuclear_kw", 0)
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_fuel_used_mmbtu"] = self.results_dict.get(
+                        "year_one_nuclear_fuel_used_mmbtu")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_electric_energy_produced_kwh"] = self.results_dict.get(
+                        "year_one_nuclear_electric_energy_produced")                   
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_to_battery_series_kw"] = self.results_dict.get('NUCLEARtoBatt')                    
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_to_load_series_kw"] = self.results_dict.get('NUCLEARtoLoad')
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_to_grid_series_kw"] = self.results_dict.get('NUCLEARtoGrid')
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_power_production_series_kw"] = self.compute_total_power(name)  # Uses previous 3 series to calc total, so must be after those                    
+                    self.nested_outputs["Scenario"]["Site"][name]["total_fixed_om_cost_us_dollars"] = self.results_dict.get(
+                        "nuclear_net_fixed_om_costs")
+                    self.nested_outputs["Scenario"]["Site"][name]["total_variable_om_cost_us_dollars"] = self.results_dict.get(
+                        "nuclear_net_variable_om_costs")
+                    self.nested_outputs["Scenario"]["Site"][name]["total_fuel_cost_us_dollars"] = self.results_dict.get(
+                        "nuclear_total_fuel_cost")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_fixed_om_cost_us_dollars"] = self.results_dict.get(
+                        "nuclear_year_one_fixed_om_costs")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_variable_om_cost_us_dollars"] = self.results_dict.get(
+                        "nuclear_year_one_variable_om_costs")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_fuel_cost_us_dollars"] = self.results_dict.get(
+                        "nuclear_year_one_fuel_cost")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_effective_full_power_days"], \
+                        self.nested_outputs["Scenario"]["Site"][name]["years_until_full_burnup"] = self.nuclear_calcs() 
 
             # outputs that depend on multiple object results:
             self.nested_outputs["Scenario"]["Site"]["Financial"]["initial_capital_costs"] = self.upfront_capex
@@ -1239,6 +1267,21 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
 
             power = [sum(x) for x in zip(*power_lists)]
             return power
+        
+        def nuclear_calcs(self):
+            # Method returns Nuclear metrics of:
+            #   1. year_one_effective_full_power_days
+            #   2. years_until_full_burnup
+            
+            nuclear_data = NuclearModel.objects.filter(run_uuid=meta['run_uuid']).first()
+            d = self.nested_outputs["Scenario"]["Site"]["Nuclear"]
+            size_kw = d.get('size_kw')  # [kW]
+            effective_full_power_days_between_refueling = nuclear_data.effective_full_power_days_between_refueling  # [days]
+            year_one_electric_energy_produced_kwh = d.get("year_one_electric_energy_produced_kwh")  # [kWh]
+            year_one_effective_full_power_days = year_one_electric_energy_produced_kwh / size_kw / 24.0  # [days/yr]
+            years_until_full_burnup = effective_full_power_days_between_refueling / year_one_effective_full_power_days  # [yr]
+
+            return year_one_effective_full_power_days, years_until_full_burnup
 
     self.data = data
     self.run_uuid = data['outputs']['Scenario']['run_uuid']
