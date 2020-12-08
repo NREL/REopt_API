@@ -119,6 +119,10 @@ function add_export_expressions(m, p)
 			p.TimeStepScaling * sum(m[:dvProductionToGrid][t,u,ts]
 				for t in m[:GeneratorTechs], u in p.SalesTiersByTech[t], ts in p.TimeStep)
 		)
+		m[:ExportedElecNUCLEAR] = @expression(m,
+			p.TimeStepScaling * sum(m[:dvProductionToGrid][t,u,ts]
+				for t in p.NuclearTechs, u in p.SalesTiersByTech[t], ts in p.TimeStep)
+		)
 		m[:ExportBenefitYr1] = @expression(m,
 			p.TimeStepScaling * sum(
 			sum( p.GridExportRates[u,ts] * m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers)
@@ -271,6 +275,16 @@ function add_fuel_constraints(m, p)
 		)
 		m[:TotalGeneratorFuelCharges] = @expression(m, p.pwf_fuel["GENERATOR"] * p.TimeStepScaling
 				* sum(p.FuelCost["DIESEL",ts] * m[:dvFuelUsage]["GENERATOR",ts] for ts in p.TimeStep)
+		)
+	end
+
+	if !isempty(p.TechsInClass["NUCLEAR"])
+		@constraint(m, FuelBurnCon[t in p.TechsInClass["NUCLEAR"], ts in p.TimeStep],
+			m[:dvFuelUsage][t,ts]  == (p.FuelBurnSlope[t] * p.ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts]) +
+				(p.FuelBurnYInt[t] * m[:binTechIsOnInTS][t,ts])
+		)
+		m[:TotalNuclearFuelCharges] = @expression(m, p.pwf_om * p.TimeStepScaling
+				* sum(p.FuelCost["URANIUM",ts] * m[:dvFuelUsage]["NUCLEAR",ts] for ts in p.TimeStep)
 		)
 	end
 
@@ -1088,6 +1102,11 @@ function reopt_results(m, p, r::Dict)
 	else
 		add_null_cold_tes_results(m, p, r)
 	end
+	if !isempty(p.NuclearTechs)
+		add_nuclear_results(m, p, r)
+    else
+		add_null_nuclear_results(m, p, r)
+	end
 	add_util_results(m, p, r)
 	return r
 end
@@ -1173,6 +1192,21 @@ function add_null_cold_tes_results(m, p, r::Dict)
 	r["cold_tes_size_kwht"] = 0.0
 	r["cold_tes_thermal_production_series"] = []
 	r["cold_tes_pct_soc_series"] = []
+	nothing
+end
+
+function add_null_nuclear_results(m, p, r::Dict)
+	r["year_one_fuel_used_mmbtu"] = 0
+	r["year_one_electric_energy_produced_kwh"] = 0
+	r["NUCLEARtoBatt"] = []
+	r["NUCLEARtoGrid"] = []
+	r["NUCLEARtoLoad"] = []
+	r["nuclear_net_fixed_om_costs"] = 0
+	r["nuclear_net_variable_om_costs"] = 0
+	r["nuclear_total_fuel_cost"] = 0
+	r["nuclear_year_one_fixed_om_costs"] = 0
+	r["nuclear_year_one_variable_om_costs"] = 0
+	r["nuclear_year_one_fuel_cost"] = 0
 	nothing
 end
 
@@ -1471,6 +1505,49 @@ function add_cold_tes_results(m, p, r::Dict)
 	r["cold_tes_thermal_production_series"] = round.(value.(ColdTESDischargeSeries), digits=5)
 	@expression(m, ColdTESsoc[ts in p.TimeStep], sum(m[:dvStorageSOC][b,ts] for b in p.ColdTES))
 	r["cold_tes_pct_soc_series"] = round.(value.(ColdTESsoc) / value(ColdTESSizeKWHT), digits=5)
+	nothing
+end
+
+function add_nuclear_results(m, p, r::Dict)
+	r["nuclear_kw"] = value(sum(m[:dvSize][t] for t in p.NuclearTechs))
+
+	@expression(m, NuclearFuelUsed, sum(m[:dvFuelUsage][t, ts] for t in p.NuclearTechs, ts in p.TimeStep))
+	r["year_one_nuclear_fuel_used_mmbtu"] = round(value(NuclearFuelUsed), digits=2)
+
+	m[:Year1NuclearProd] = @expression(m,
+		p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts]
+			for t in p.NuclearTechs, ts in p.TimeStep)
+	)
+	r["year_one_nuclear_electric_energy_produced"] = round(value(m[:Year1NuclearProd]), digits=0)
+
+	@expression(m, NUCLEARtoBatt[ts in p.TimeStep],
+		sum(m[:dvProductionToStorage]["Elec",t,ts] for t in p.NuclearTechs))
+	r["NUCLEARtoBatt"] = round.(value.(NUCLEARtoBatt), digits=3)
+	
+	@expression(m, NUCLEARtoGrid[ts in p.TimeStep],
+		sum(m[:dvProductionToGrid][t,u,ts] for t in p.NuclearTechs, u in p.SalesTiersByTech[t]))
+	r["NUCLEARtoGrid"] = round.(value.(NUCLEARtoGrid), digits=3)
+
+	@expression(m, NUCLEARtoLoad[ts in p.TimeStep],
+		sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
+			for t in p.NuclearTechs) -
+			NUCLEARtoBatt[ts] - NUCLEARtoGrid[ts]
+			)
+	r["NUCLEARtoLoad"] = round.(value.(NUCLEARtoLoad), digits=3)
+
+	m[:NuclearPerUnitSizeOMCosts] = @expression(m, p.two_party_factor *
+		sum(p.OMperUnitSize[t] * p.pwf_om * m[:dvSize][t] for t in p.NuclearTechs)
+	)
+	m[:NuclearPerUnitProdOMCosts] = @expression(m, p.two_party_factor *
+		sum(m[:dvRatedProduction][t,ts] * p.TimeStepScaling * p.ProductionFactor[t,ts] * p.OMcostPerUnitProd[t] * p.pwf_om
+			for t in p.NuclearTechs, ts in p.TimeStep)
+	)
+	r["nuclear_net_fixed_om_costs"] = round(value(m[:NuclearPerUnitSizeOMCosts]) * m[:r_tax_fraction_owner], digits=0)
+	r["nuclear_net_variable_om_costs"] = round(value(m[:NuclearPerUnitProdOMCosts]) * m[:r_tax_fraction_owner], digits=0)
+	r["nuclear_total_fuel_cost"] = round(value(m[:TotalNuclearFuelCharges]) * m[:r_tax_fraction_offtaker], digits=2)
+	r["nuclear_year_one_fixed_om_costs"] = round(value(m[:NuclearPerUnitSizeOMCosts]) / (p.pwf_om * p.two_party_factor), digits=0)
+	r["nuclear_year_one_variable_om_costs"] = round(value(m[:NuclearPerUnitProdOMCosts]) / (p.pwf_om * p.two_party_factor), digits=0)
+	r["nuclear_year_one_fuel_cost"] = round(value(m[:TotalNuclearFuelCharges]) / p.pwf_e, digits=2)
 	nothing
 end
 
