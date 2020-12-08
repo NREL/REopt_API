@@ -985,20 +985,16 @@ class DataManager:
         if len(reopt_techs) > 0:
             storage_sales_tiers = [3]
             sales_beyond_site_load_tiers = [3]
-            max_grid_sales = self.load.annual_kwh
         else:
             storage_sales_tiers = []
             sales_beyond_site_load_tiers = []
-            max_grid_sales = 0
             
         if len(reopt_techs_bau) > 0:
             storage_sales_tiers_bau = [3]
             sales_beyond_site_load_tiers_bau = [3]
-            max_grid_sales_bau = self.load.annual_kwh
         else:
             storage_sales_tiers_bau = []
             sales_beyond_site_load_tiers_bau = []
-            max_grid_sales_bau = 0
 
         time_steps_with_grid, time_steps_without_grid = self._get_time_steps_with_grid()
         
@@ -1060,7 +1056,6 @@ class DataManager:
             'GridExportRates': tariff_args.grid_export_rates, # seems like the wrong size
             'FuelBurnSlope': fuel_burn_rate,
             'FuelBurnYInt': fuel_burn_intercept,
-            'MaxGridSales': max_grid_sales,
             'ProductionIncentiveRate': production_incentive_rate,
             'ProductionFactor': production_factor,
             'ElecLoad': self.load.load_list,
@@ -1157,7 +1152,6 @@ class DataManager:
             'GridExportRates': tariff_args.grid_export_rates_bau,
             'FuelBurnSlope': fuel_burn_rate_bau,
             'FuelBurnYInt': fuel_burn_intercept_bau,
-            'MaxGridSales': max_grid_sales_bau,
             'ProductionIncentiveRate': production_incentive_rate_bau,
             'ProductionFactor': production_factor_bau,
             'ElecLoad': self.load.bau_load_list,
