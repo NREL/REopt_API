@@ -50,7 +50,10 @@ class Tech(object):
         self.derate = 1.0
         self.acres_per_kw = None  # for land constraints
         self.kw_per_square_foot = None  # for roof constraints
-
+        self.can_net_meter = kwargs.get("can_net_meter", False)
+        self.can_wholesale = kwargs.get("can_wholesale", False)
+        self.can_export_beyond_site_load = kwargs.get("can_export_beyond_site_load", False)
+        self.can_curtail = kwargs.get("can_curtail", False)
         self.kwargs = kwargs
 
     @property
@@ -96,7 +99,9 @@ class PV(Tech):
         4: 0
     }
 
-    def __init__(self, dfm, degradation_pct, time_steps_per_hour=1, acres_per_kw=6e-3, kw_per_square_foot=0.01, existing_kw=0.0, tilt=0.537, azimuth=180, pv_number=1, location='both', prod_factor_series_kw=None, **kwargs):
+    def __init__(self, dfm, degradation_pct, time_steps_per_hour=1, acres_per_kw=6e-3, kw_per_square_foot=0.01,
+                 existing_kw=0.0, tilt=0.537, azimuth=180, pv_number=1, location='both', prod_factor_series_kw=None,
+                 **kwargs):
         super(PV, self).__init__(**kwargs)
 
         self.degradation_pct = degradation_pct
