@@ -771,6 +771,85 @@ class DataManager:
             fuel_burn_intercept.append(self.generator.fuel_intercept)
         return fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type, fuel_burn_rate, fuel_burn_intercept
 
+    def _get_export_curtailment_params(self, techs, export_rates, net_metering_limit_kw):
+        """
+        :param techs: list of string
+        :param export_rates: list of lists from UrdbParse, rates in order of the export tiers:
+            1. Net metering [NEM]
+            2. Wholesale [WHL]
+            3. Excess beyond site load [EXC]
+        :returns
+            rates_by_tech: list of lists
+            techs_by_export_tier: dict with valid export_tiers as keys, lists of tech strings as values
+            export_tiers: list of string
+            techs_cannot_curtail: list of string
+            filtered_export_rates: list of lists
+        """
+        rates_by_tech = list()  # ExportTiersByTech, list of lists, becomes indexed on techs in julia
+        export_tiers = list()
+        techs_by_export_tier = dict()
+        techs_cannot_curtail = list()
+        filtered_export_rates = list()
+
+        if len(techs) > 0:
+            net_metering = False
+            any_can_net_meter = False
+            for tech in techs:  # have to do these for loops because `any` changes the scope and can't access `self`
+                if eval('self.' + tech.lower() + '.can_net_meter'):
+                    any_can_net_meter = True
+                    break
+            if any_can_net_meter and net_metering_limit_kw > 0:
+                net_metering = True
+                filtered_export_rates.append(export_rates[0])
+                export_tiers.append("NEM")
+                techs_by_export_tier["NEM"] = list()
+
+            wholesale_exporting = False
+            any_can_wholesale = False
+            for tech in techs:
+                if eval('self.' + tech.lower() + '.can_wholesale'):
+                    any_can_wholesale = True
+                    break
+            if any_can_wholesale and sum(export_rates[1]) != 0:
+                wholesale_exporting = True
+                filtered_export_rates.append(export_rates[1])
+                export_tiers.append("WHL")
+                techs_by_export_tier["WHL"] = list()
+
+            exporting_beyond_site_load = False
+            any_can_export_beyond_site_load = False
+            for tech in techs:
+                if eval('self.' + tech.lower() + '.can_export_beyond_site_load'):
+                    any_can_export_beyond_site_load = True
+                    break
+            if any_can_export_beyond_site_load and sum(export_rates[2]) != 0:
+                exporting_beyond_site_load = True
+                filtered_export_rates.append(export_rates[2])
+                export_tiers.append("EXC")
+                techs_by_export_tier["EXC"] = list()
+
+            for tech in techs:
+                rates = list()
+                if not tech.lower().endswith('nm') and net_metering:
+                    # these techs can access NEM and curtailment rates, and are limited to the net_metering_limit_kw
+                    if eval('self.' + tech.lower() + '.can_net_meter'):
+                        rates.append("NEM")
+                        techs_by_export_tier["NEM"].append(tech.upper())
+                else:
+                    # techs that end with 'nm' are the option to install capacity beyond the net metering capacity limit
+                    # these techs can access wholesale and curtailment rates
+                    if eval('self.' + tech.lower() + '.can_wholesale') and wholesale_exporting:
+                        rates.append("WHL")
+                        techs_by_export_tier["WHL"].append(tech.upper())
+                if eval('self.' + tech.lower() + '.can_export_beyond_site_load') and exporting_beyond_site_load:
+                    rates.append("EXC")
+                    techs_by_export_tier["EXC"].append(tech.upper())
+                rates_by_tech.append(rates)
+                if not eval('self.' + tech.lower() + '.can_curtail'):
+                    techs_cannot_curtail.append(tech.upper())
+
+        return rates_by_tech, techs_by_export_tier, export_tiers, techs_cannot_curtail, filtered_export_rates
+
     def finalize(self):
         """
         necessary for writing out parameters that depend on which Techs are defined
