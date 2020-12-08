@@ -195,7 +195,6 @@ class DataManager:
 
             if eval('self.' + tech) is not None:
 
-
                 if tech not in ['generator']:
 
                     # prod incentives don't need escalation
@@ -639,7 +638,6 @@ class DataManager:
 
         return tech_class_min_size, techs_in_class
 
-
     def _get_REopt_tech_max_sizes_min_turn_down(self, techs, bau=False):
         max_sizes = list()
         min_turn_down = list()
@@ -744,7 +742,6 @@ class DataManager:
             else:
                 time_steps_without_grid.append(i+1)
         return time_steps_with_grid, time_steps_without_grid
-
 
     def _get_fuel_burning_tech_params(self, techs):
         """
@@ -883,8 +880,6 @@ class DataManager:
 
         cap_cost_slope, cap_cost_x, cap_cost_yint, n_segments = self._get_REopt_cost_curve(self.available_techs)
         cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau, n_segments_bau = self._get_REopt_cost_curve(self.bau_techs)
-        n_segments_list = [x for x in range(n_segments)]
-        n_segments_list_bau = [x for x in range(n_segments_bau)]
 
         sf = self.site.financial
         StorageCostPerKW = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kw,  # use full cost as basis
@@ -919,15 +914,14 @@ class DataManager:
             NMILLimits = []
         else:
             NMILLimits = [self.elec_tariff.net_metering_limit_kw, self.elec_tariff.interconnection_limit_kw,
-                      self.elec_tariff.interconnection_limit_kw * 10]
+                          self.elec_tariff.interconnection_limit_kw * 10]
         if len(NMIL_regime_bau) == 0:
             NMILLimits_bau = []
         else:
             NMILLimits_bau = [self.elec_tariff.net_metering_limit_kw, self.elec_tariff.interconnection_limit_kw,
-                      self.elec_tariff.interconnection_limit_kw * 10]
+                              self.elec_tariff.interconnection_limit_kw * 10]
         self.year_one_energy_cost_series_us_dollars_per_kwh = parser.energy_rates_summary
         self.year_one_demand_cost_series_us_dollars_per_kw = parser.demand_rates_summary
-
 
         subdivisions = ['CapCost']
 
@@ -981,22 +975,15 @@ class DataManager:
         
         electric_techs = [t for t in reopt_techs if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR")]
         electric_techs_bau = [t for t in reopt_techs_bau if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR")]
-        
-        if len(reopt_techs) > 0:
-            storage_sales_tiers = [3]
-            sales_beyond_site_load_tiers = [3]
-        else:
-            storage_sales_tiers = []
-            sales_beyond_site_load_tiers = []
-            
-        if len(reopt_techs_bau) > 0:
-            storage_sales_tiers_bau = [3]
-            sales_beyond_site_load_tiers_bau = [3]
-        else:
-            storage_sales_tiers_bau = []
-            sales_beyond_site_load_tiers_bau = []
 
         time_steps_with_grid, time_steps_without_grid = self._get_time_steps_with_grid()
+
+        rates_by_tech, techs_by_export_tier, export_tiers, techs_cannot_curtail, export_rates = \
+            self._get_export_curtailment_params(reopt_techs, tariff_args.grid_export_rates,
+                                                self.elec_tariff.net_metering_limit_kw)
+        rates_by_tech_bau, techs_by_export_tier_bau, export_tiers_bau, techs_cannot_curtail_bau, export_rates_bau = \
+            self._get_export_curtailment_params(reopt_techs_bau, tariff_args.grid_export_rates_bau,
+                                                self.elec_tariff.net_metering_limit_kw)
         
         self.reopt_inputs = {
             'Tech': reopt_techs,
@@ -1053,7 +1040,7 @@ class DataManager:
             # new parameters for reformulation
             'FuelCost': fuel_costs,
             'ElecRate': tariff_args.energy_costs,
-            'GridExportRates': tariff_args.grid_export_rates, # seems like the wrong size
+            'GridExportRates': export_rates,
             'FuelBurnSlope': fuel_burn_rate,
             'FuelBurnYInt': fuel_burn_intercept,
             'ProductionIncentiveRate': production_incentive_rate,
@@ -1084,15 +1071,15 @@ class DataManager:
             'ElectricTechs': electric_techs,
             'FuelBurningTechs': fb_techs,
             'TechsNoTurndown': techs_no_turndown,
-            'SalesTierCount': tariff_args.num_sales_tiers,
-            'StorageSalesTiers': storage_sales_tiers,
+            'ExportTiers': export_tiers,
             'TimeStepsWithGrid': time_steps_with_grid,
             'TimeStepsWithoutGrid': time_steps_without_grid,
-            'SalesTiersByTech': tariff_args.rates_by_tech,
-            'TechsBySalesTier': tariff_args.techs_by_rate,
-            'SalesTiersBeyondSiteLoad': sales_beyond_site_load_tiers,
+            'ExportTiersByTech': rates_by_tech,
+            'TechsByExportTier': [techs_by_export_tier[k] for k in export_tiers],
+            'ExportTiersBeyondSiteLoad': ["EXC"],
             'ElectricDerate': electric_derate,
-            'TechsByNMILRegime': TechsByNMILRegime
+            'TechsByNMILRegime': TechsByNMILRegime,
+            'TechsCannotCurtail': techs_cannot_curtail
             }
 
         self.reopt_inputs_bau = {
@@ -1149,7 +1136,7 @@ class DataManager:
             'StorageCostPerKWH': StorageCostPerKWH,
             'FuelCost': fuel_costs_bau,
             'ElecRate': tariff_args.energy_costs_bau,
-            'GridExportRates': tariff_args.grid_export_rates_bau,
+            'GridExportRates': export_rates_bau,
             'FuelBurnSlope': fuel_burn_rate_bau,
             'FuelBurnYInt': fuel_burn_intercept_bau,
             'ProductionIncentiveRate': production_incentive_rate_bau,
@@ -1179,13 +1166,13 @@ class DataManager:
             'ElectricTechs': electric_techs_bau,
             'FuelBurningTechs': fb_techs_bau,
             'TechsNoTurndown': techs_no_turndown_bau,
-            'SalesTierCount': tariff_args.num_sales_tiers_bau,
-            'StorageSalesTiers': storage_sales_tiers_bau,
+            'ExportTiers': export_tiers_bau,
             'TimeStepsWithGrid': time_steps_with_grid,
             'TimeStepsWithoutGrid': time_steps_without_grid,
-            'SalesTiersByTech': tariff_args.rates_by_tech_bau,
-            'TechsBySalesTier': tariff_args.techs_by_rate_bau,
-            'SalesTiersBeyondSiteLoad': sales_beyond_site_load_tiers_bau,
+            'ExportTiersByTech': rates_by_tech_bau,
+            'TechsByExportTier': [techs_by_export_tier_bau[k] for k in export_tiers_bau],
+            'ExportTiersBeyondSiteLoad':  ["EXC"],
             'ElectricDerate': electric_derate_bau,
-            'TechsByNMILRegime': TechsByNMILRegime_bau
+            'TechsByNMILRegime': TechsByNMILRegime_bau,
+            'TechsCannotCurtail': techs_cannot_curtail_bau
         }
