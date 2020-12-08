@@ -21,7 +21,7 @@ function add_continuous_variables(m, p)
 	    dvProdIncent[p.Tech] >= 0   # X^{pi}_{t}: Production incentive collected for technology [$]
 		dvPeakDemandE[p.Ratchets, p.DemandBin] >= 0  # X^{de}_{re}:  Peak electrical power demand allocated to tier e during ratchet r [kW]
 		dvPeakDemandEMonth[p.Month, p.DemandMonthsBin] >= 0  #  X^{dn}_{mn}: Peak electrical power demand allocated to tier n during month m [kW]
-		dvPeakDemandELookback >= 0  # X^{lp}: Peak electric demand look back [kW]
+		dvPeakDemandELookback[p.Month] >= 0  # X^{lp}: Peak electric demand look back [kW]
         MinChargeAdder >= 0   #to be removed
 		#UtilityMinChargeAdder[p.Month] >= 0   #X^{mc}_m: Annual utility minimum charge adder in month m [\$]
 		#CHP and Fuel-burning variables
@@ -483,9 +483,11 @@ function add_tech_size_constraints(m, p)
 	)
 		
 	##Constraint (7e): Derate factor limits production variable (separate from ProductionFactor)
-	@constraint(m, TurbineRatedProductionCon[t in p.Tech, ts in p.TimeStep; !(t in p.TechsNoTurndown)],
-		m[:dvRatedProduction][t,ts]  <= p.ElectricDerate[t,ts] * m[:dvSize][t]
-	)
+	for ts in p.TimeStep
+		@constraint(m, [t in p.Tech; !(t in p.TechsNoTurndown)],
+			m[:dvRatedProduction][t,ts]  <= p.ElectricDerate[t,ts] * m[:dvSize][t]
+		)
+	end
 		
 	##Constraint (7f)-1: Minimum segment size
 	@constraint(m, SegmentSizeMinCon[t in p.Tech, k in p.Subdivision, s in 1:p.SegByTechSubdivision[k,t]],
@@ -575,9 +577,9 @@ end
 function add_nem_constraint(m, p)
 	# NEM is SalesTier 1
 	# dvStorageToGrid is always fixed at 0.0, remove it?
-	@constraint(m, GridSalesLimit, 
-		p.TimeStepScaling * sum(m[:dvProductionToGrid][t,1,ts] for t in p.TechsBySalesTier[1], ts in p.TimeStep)  + 
-		sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers, ts in p.TimeStep) 
+	@constraint(m, GridSalesLimit,
+		p.TimeStepScaling * sum(m[:dvProductionToGrid][t,1,ts] for t in p.TechsBySalesTier[1], ts in p.TimeStep)  +
+		sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers, ts in p.TimeStep)
 		<= p.TimeStepScaling * sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier, ts in p.TimeStep)
 	)
 end
@@ -585,7 +587,7 @@ end
 
 function add_no_grid_export_constraint(m, p)
 	for ts in p.TimeStepsWithoutGrid
-		for u in p.SalesTiers 
+		for u in p.SalesTiers
 			if !(u in p.CurtailmentTiers)
 				for t in p.TechsBySalesTier[u]
 					fix(m[:dvProductionToGrid][t, u, ts], 0.0, force=true)
@@ -658,17 +660,49 @@ function add_tou_demand_charge_constraints(m, p)
 		sum( m[:dvPeakDemandE][r, e] for e in p.DemandBin ) >= 
 		sum( m[:dvGridPurchase][u, ts] for u in p.PricingTier )
 	)
-	
-	##Constraint (12e): Peak demand used in percent lookback calculation 
-	@constraint(m, [mth in p.DemandLookbackMonths],
-		m[:dvPeakDemandELookback] >= sum(m[:dvPeakDemandEMonth][mth, n] for n in p.DemandMonthsBin)
-	)
-	
-	##Constraint (12f): Ratchet peak demand charge is bounded below by lookback
-	@constraint(m, [mth in p.DemandLookbackMonths],
-		sum( m[:dvPeakDemandEMonth][mth,e] for e in p.DemandBin ) >= 
-		p.DemandLookbackPercent * m[:dvPeakDemandELookback] 
-	)
+
+	if p.DemandLookbackRange != 0  # then the dvPeakDemandELookback varies by month
+
+		##Constraint (12e): dvPeakDemandELookback is the highest peak demand in DemandLookbackMonths
+		for mth in p.Month
+			if mth > p.DemandLookbackRange
+				@constraint(m, [lm in 1:p.DemandLookbackRange, ts in p.TimeStepRatchetsMonth[mth - lm]],
+					m[:dvPeakDemandELookback][mth]
+					≥ sum( m[:dvGridPurchase][u, ts] for u in p.PricingTier )
+				)
+			else  # need to handle rollover months
+				for lm in 1:p.DemandLookbackRange
+					lkbkmonth = mth - lm
+					if lkbkmonth ≤ 0
+						lkbkmonth += 12
+					end
+					@constraint(m, [ts in p.TimeStepRatchetsMonth[lkbkmonth]],
+						m[:dvPeakDemandELookback][mth]
+						≥ sum( m[:dvGridPurchase][u, ts] for u in p.PricingTier )
+					)
+				end
+			end
+		end
+
+		##Constraint (12f): Ratchet peak demand charge is bounded below by lookback
+		@constraint(m, [mth in p.Month],
+			sum( m[:dvPeakDemandEMonth][mth, n] for n in p.DemandMonthsBin ) >=
+			p.DemandLookbackPercent * m[:dvPeakDemandELookback][mth]
+		)
+
+	else  # dvPeakDemandELookback does not vary by month
+
+		##Constraint (12e): dvPeakDemandELookback is the highest peak demand in DemandLookbackMonths
+		@constraint(m, [lm in p.DemandLookbackMonths],
+			m[:dvPeakDemandELookback][1] >= sum(m[:dvPeakDemandEMonth][lm, n] for n in p.DemandMonthsBin)
+		)
+		
+		##Constraint (12f): Ratchet peak demand charge is bounded below by lookback
+		@constraint(m, [mth in p.Month],
+			sum( m[:dvPeakDemandEMonth][mth, n] for n in p.DemandMonthsBin ) >= 
+			p.DemandLookbackPercent * m[:dvPeakDemandELookback][1]
+		)
+	end
 
 	if !isempty(p.DemandRates)
 		m[:DemandTOUCharges] = @expression(m, p.pwf_e * sum( p.DemandRates[r,e] * m[:dvPeakDemandE][r,e] for r in p.Ratchets, e in p.DemandBin) )
@@ -1044,17 +1078,17 @@ function add_wind_results(m, p, r::Dict)
 	@expression(m, WINDtoBatt[ts in p.TimeStep],
 	            sum(sum(m[:dvProductionToStorage][b, t, ts] for t in m[:WindTechs]) for b in p.ElecStorage))
 	r["WINDtoBatt"] = round.(value.(WINDtoBatt), digits=3)
-	
+
 	@expression(m, WINDtoCurtail[ts in p.TimeStep],
 				sum(m[:dvProductionToGrid][t,u,ts] for t in m[:WindTechs], u in p.CurtailmentTiers))
-				
+
 	r["WINDtoCurtail"] = round.(value.(WINDtoCurtail), digits=3)
-	
+
 	@expression(m, WINDtoGrid[ts in p.TimeStep],
 				sum(m[:dvProductionToGrid][t,u,ts] for t in m[:WindTechs], u in p.SalesTiersByTech[t]) - WINDtoCurtail[ts])
-				
+
 	r["WINDtoGrid"] = round.(value.(WINDtoGrid), digits=3)
-	
+
 	@expression(m, WINDtoLoad[ts in p.TimeStep],
 				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
 					for t in m[:WindTechs]) - WINDtoGrid[ts] - WINDtoBatt[ts] - WINDtoCurtail[ts] )

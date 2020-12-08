@@ -195,7 +195,7 @@ nested_input_definitions = {
         "offtaker_tax_pct": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0,
+          "max": 0.999,
           "default": 0.26,
           "description": "Host tax rate"
         },
@@ -206,7 +206,7 @@ nested_input_definitions = {
           "default": 0.083,
           "description": "Nominal energy offtaker discount rate. In single ownership model the offtaker is also the generation owner."
         },
-        "two_party_ownership": {
+        "third_party_ownership": {
           "default": False,
           "type": "bool",
           "description": "Specify if ownership model is direct ownership or two party. In two party model the offtaker does not purcharse the generation technologies, but pays the generation owner for energy from the generator(s)."
@@ -214,7 +214,7 @@ nested_input_definitions = {
         "owner_tax_pct": {
           "type": "float",
           "min": 0,
-          "max": 1,
+          "max": 0.999,
           "default": 0.26,
           "description": "Generation owner tax rate. Used for two party financing model. In two party ownership model the offtaker does not own the generator(s)."
         },

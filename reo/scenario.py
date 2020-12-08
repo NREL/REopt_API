@@ -65,8 +65,10 @@ class ScenarioTask(Task):
         """
         if not isinstance(exc, REoptError):
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            exc = UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task=self.name, run_uuid=kwargs['run_uuid'],
-                              user_uuid=kwargs['data']['inputs']['Scenario'].get('user_uuid'))
+            exc = UnexpectedError(exc_type, exc_value.args[0], traceback.format_tb(exc_traceback),
+                                  task=self.name,
+                                  run_uuid=kwargs['run_uuid'],
+                                  user_uuid=kwargs['data']['inputs']['Scenario'].get('user_uuid'))
         msg = exc.message
         exc.save_to_db()
         self.data["messages"]["error"] = msg
@@ -258,7 +260,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         if hasattr(e, 'args'):
             if len(e.args) > 0:
-                if e.args[0] == 'Wind Dataset Timed Out':
+                if e.args[0] == 'Unable to download wind data':
                     raise WindDownloadError(task=self.name, run_uuid=run_uuid, user_uuid=self.data['inputs']['Scenario'].get('user_uuid'))
                 if isinstance(e.args[0], str):
                     if e.args[0].startswith('PVWatts'):

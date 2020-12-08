@@ -181,7 +181,7 @@ class FinancialModel(models.Model):
     offtaker_tax_pct = models.FloatField()
     value_of_lost_load_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
     microgrid_upgrade_cost_pct = models.FloatField(null=True, blank=True)
-    two_party_ownership = models.BooleanField(default=False)
+    third_party_ownership = models.BooleanField(default=False)
     owner_discount_pct = models.FloatField(null=True, blank=True)
     owner_tax_pct = models.FloatField(null=True, blank=True)
 
@@ -199,6 +199,13 @@ class FinancialModel(models.Model):
     initial_capital_costs_after_incentives = models.FloatField(null=True, blank=True)
     simple_payback_years = models.FloatField(null=True, blank=True)
     irr_pct = models.FloatField(null=True, blank=True)
+    net_present_cost_us_dollars = models.FloatField(null=True, blank=True)
+    annualized_payment_to_third_party_us_dollars = models.FloatField(null=True, blank=True)
+    offtaker_annual_free_cashflow_series_us_dollars = ArrayField(models.FloatField(null=True, blank=True), default=list)
+    offtaker_discounted_annual_free_cashflow_series_us_dollars = ArrayField(models.FloatField(null=True, blank=True), default=list)
+    offtaker_annual_free_cashflow_series_bau_us_dollars = ArrayField(models.FloatField(null=True, blank=True), default=list)
+    offtaker_discounted_annual_free_cashflow_series_bau_us_dollars = ArrayField(models.FloatField(null=True, blank=True), default=list)
+    developer_annual_free_cashflow_series_us_dollars = ArrayField(models.FloatField(null=True, blank=True), default=list)
 
     @classmethod
     def create(cls, **kwargs):

@@ -181,5 +181,8 @@ CELERY_WORKER_MAX_MEMORY_PER_CHILD = 6000000 # 6 GB
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_URL = '/static/'
 
+APPEND_SLASH = False
+TASTYPIE_ALLOW_MISSING_SLASH = True
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "reopt_api.dev_settings")
 django.setup()

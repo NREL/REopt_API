@@ -36,11 +36,9 @@ import logging
 from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
 from reo.models import ModelManager, PVModel, FinancialModel, WindModel
-from reo.src.outage_costs import calc_avoided_outage_costs
 from reo.src.profiler import Profiler
 from reo.src.emissions_calculator import EmissionsCalculator
-from reo.utilities import annuity, degradation_factor
-from proforma.models import ProForma
+from reo.utilities import annuity
 from reo.nested_inputs import macrs_five_year, macrs_seven_year
 log = logging.getLogger(__name__)
 
@@ -74,9 +72,11 @@ class ProcessResultsTask(Task):
         self.request.callback = None
         self.request.chord = None  # this seems to stop the infinite chord_unlock call
 
-def calculate_simple_payback_and_irr(data):
+
+def calculate_proforma_metrics(data):
         """
-        Recreates the ProForma spreadsheet calculations to get the simple payback period
+        Recreates the ProForma spreadsheet calculations to get the simple payback period, irr, net present cost (3rd
+        party case), and payment to third party (3rd party case)
         :param data: dict a complete response from the REopt API for a successfully completed job
         :return: float, the simple payback of the system, if the system recuperates its costs
         """
@@ -101,7 +101,7 @@ def calculate_simple_payback_and_irr(data):
         generator =  copy.deepcopy(data['outputs']['Scenario']['Site']['Generator'])
         generator.update(data['inputs']['Scenario']['Site']['Generator'])
         years = financials['analysis_years']
-        two_party = financials['two_party_ownership']
+        third_party = financials['third_party_ownership']
         
         #Create placeholder variables to store summed totals across all relevant techs
         federal_itc = 0
@@ -120,7 +120,7 @@ def calculate_simple_payback_and_irr(data):
             #existing PV is considered free
             capital_costs = new_kw * pv['installed_cost_us_dollars_per_kw'] 
             #assume owner is responsible for both new and existing PV maintenance in optimal case
-            if two_party:
+            if third_party:
                 annual_om = -1 * new_kw * pv['om_cost_us_dollars_per_kw'] 
             else:
                 annual_om = -1 * total_kw * pv['om_cost_us_dollars_per_kw'] 
@@ -139,7 +139,7 @@ def calculate_simple_payback_and_irr(data):
             
             pbi_series = np.array([])
             pbi_series_bau = np.array([])
-            existing_energy_bau = (pv.get('year_one_energy_produced_bau_kwh') or 0) if two_party else 0
+            existing_energy_bau = (pv.get('year_one_energy_produced_bau_kwh') or 0) if third_party else 0
             # Production-based incentives
             for yr in range(years):
                 if yr < pv['pbi_years']:
@@ -168,7 +168,8 @@ def calculate_simple_payback_and_irr(data):
                 macrs_basis = macrs_bonus_basis * (1 - pv['macrs_bonus_pct'])
                 depreciation_schedule = np.array([0.0 for _ in range(years)])
                 for i,r in enumerate(schedule):
-                    depreciation_schedule[i] = macrs_basis * r
+                    if i < len(depreciation_schedule):
+                        depreciation_schedule[i] = macrs_basis * r
                 depreciation_schedule[0] += (pv['macrs_bonus_pct'] * macrs_bonus_basis)
                 total_depreciation += depreciation_schedule
 
@@ -209,7 +210,8 @@ def calculate_simple_payback_and_irr(data):
                 macrs_basis = macrs_bonus_basis * (1 - wind['macrs_bonus_pct'])
                 depreciation_schedule = np.array([0.0 for _ in range(years)])
                 for i,r in enumerate(schedule):
-                    depreciation_schedule[i] = macrs_basis * r
+                    if i < len(depreciation_schedule):
+                        depreciation_schedule[i] = macrs_basis * r
                 depreciation_schedule[0] += (wind['macrs_bonus_pct'] * macrs_bonus_basis)
                 total_depreciation += depreciation_schedule
 
@@ -238,7 +240,8 @@ def calculate_simple_payback_and_irr(data):
                 macrs_basis = macrs_bonus_basis * (1 - storage['macrs_bonus_pct'])
                 depreciation_schedule = np.array([0.0 for _ in range(years)])
                 for i,r in enumerate(schedule):
-                    depreciation_schedule[i] = macrs_basis * r
+                    if i < len(depreciation_schedule):
+                        depreciation_schedule[i] = macrs_basis * r
                 depreciation_schedule[0] += (storage['macrs_bonus_pct'] * macrs_bonus_basis)
                 total_depreciation += depreciation_schedule
 
@@ -251,7 +254,7 @@ def calculate_simple_payback_and_irr(data):
             # In the two party case the developer does not include the fuel cost in their costs
             # It is assumed that the offtaker will pay for this at a rate that is not marked up
             # to cover developer profits
-            if not two_party:
+            if not third_party:
                 annual_om = -1 * ((total_kw * generator['om_cost_us_dollars_per_kw']) + \
                     (generator['year_one_variable_om_cost_us_dollars']) + 
                     (generator['year_one_fuel_cost_us_dollars']))
@@ -260,8 +263,7 @@ def calculate_simple_payback_and_irr(data):
                     (generator['existing_gen_year_one_variable_om_cost_us_dollars']) + 
                     (generator['existing_gen_year_one_fuel_cost_us_dollars']))
             else:
-                annual_om = -1 * ((total_kw * generator['om_cost_us_dollars_per_kw']) + \
-                    (generator['year_one_variable_om_cost_us_dollars']))
+                annual_om = -1 * ((new_kw * generator['om_cost_us_dollars_per_kw']) + (generator['year_one_variable_om_cost_us_dollars']))
                 
                 annual_om_bau = -1 * ((existing_kw * generator['om_cost_us_dollars_per_kw']) + \
                     (generator['existing_gen_year_one_variable_om_cost_us_dollars']))
@@ -276,13 +278,13 @@ def calculate_simple_payback_and_irr(data):
                                 (1+financials['escalation_pct'])**yr for yr in range(1, years+1)])
         
         # In the two party case the electricity and export credits are incurred by the offtaker not the developer
-        if two_party:
+        if third_party:
             total_operating_expenses = om_series
         else:
             total_operating_expenses = electricity_bill_series + export_credit_series + om_series
 
         # Set tax rate based off ownership type
-        if two_party:
+        if third_party:
             tax_pct = financials['owner_tax_pct']
         else:
             tax_pct = financials['offtaker_tax_pct']
@@ -293,25 +295,61 @@ def calculate_simple_payback_and_irr(data):
         else:
             deductable_operating_expenses_series = np.array([0]*years)
 
-        operating_expenses_after_tax = deductable_operating_expenses_series * (1 - tax_pct)
+        
+        operating_expenses_after_tax = (total_operating_expenses - deductable_operating_expenses_series) + (deductable_operating_expenses_series * (1 - tax_pct))
         total_cash_incentives = total_pbi * (1 - tax_pct) 
         total_depreciation = total_depreciation * tax_pct
-        free_cashflow_before_income = total_depreciation + total_cash_incentives + operating_expenses_after_tax
-        free_cashflow_before_income[0] += federal_itc
-        free_cashflow_before_income = np.append([(-1 * financials['initial_capital_costs']) + total_ibi_and_cbi], free_cashflow_before_income)
-        
-        if two_party:
-            # get cumulative cashflow for developer
-            discounted_cashflow = [v/((1+financials['owner_discount_pct'])**yr) for yr, v in enumerate(free_cashflow_before_income)]
-            capital_recovery_factor = (financials['owner_discount_pct'] * (1+financials['owner_discount_pct'])**years) / \
+        free_cashflow = total_depreciation + total_cash_incentives + operating_expenses_after_tax
+        free_cashflow[0] += federal_itc
+        free_cashflow = np.append([(-1 * financials['initial_capital_costs']) + total_ibi_and_cbi], free_cashflow)
+        #At this point the logic branches based on third-party ownership or not - see comments
+        net_present_cost = None
+        annualized_payment_to_third_party_us_dollars = None
+        developer_free_cashflow = None
+        # get cumulative cashflow for developer
+        if third_party:
+            developer_free_cashflow = copy.deepcopy(free_cashflow)
+            discounted_developer_cashflow = [v/((1+financials['owner_discount_pct'])**yr) for yr, v in enumerate(developer_free_cashflow)]
+            net_present_cost = sum(discounted_developer_cashflow) * -1
+            if financials['owner_discount_pct'] != 0:
+                capital_recovery_factor = (financials['owner_discount_pct'] * (1+financials['owner_discount_pct'])**years) / \
                                         ((1+financials['owner_discount_pct'])**years - 1) / (1 - tax_pct)
-            annual_income_from_host = -1 * sum(discounted_cashflow) * capital_recovery_factor * (1-tax_pct)
-            free_cashflow = copy.deepcopy(free_cashflow_before_income)
-            free_cashflow[1:] += annual_income_from_host
-            irr = np.irr(free_cashflow)
-            cumulative_cashflow =  np.cumsum(free_cashflow)
+            else:
+                capital_recovery_factor = (1/years) / (1 - tax_pct)
+            annualized_payment_to_third_party_us_dollars = net_present_cost * capital_recovery_factor
+            annual_income_from_host = -1 * sum(discounted_developer_cashflow) * capital_recovery_factor * (1-tax_pct)
+            developer_free_cashflow[1:] += annual_income_from_host
+            irr = np.irr(developer_free_cashflow)
+            cumulative_cashflow =  np.cumsum(developer_free_cashflow)
+            net_free_cashflow = developer_free_cashflow
+            developer_free_cashflow = [round(i,2) for i in developer_free_cashflow]
+            electricity_bill_bau_series_bau = np.array([-1 * electric_tariff['year_one_bill_bau_us_dollars'] * \
+                                    (1+financials['escalation_pct'])**yr for yr in range(1, years+1)])
+            export_credit_bau_series_bau = np.array([electric_tariff['total_export_benefit_bau_us_dollars'] * \
+                                    (1+financials['escalation_pct'])**yr for yr in range(1, years+1)])
+            electricity_bill_series = np.array([-1 * electric_tariff['year_one_bill_us_dollars'] * \
+                                    (1+financials['escalation_pct'])**yr for yr in range(1, years+1)])
+            export_credit_series = np.array([electric_tariff['total_export_benefit_us_dollars'] * \
+                                    (1+financials['escalation_pct'])**yr for yr in range(1, years+1)])
+            annual_income_from_host_series = [-1 * annualized_payment_to_third_party_us_dollars for _ in range(years)]
+            existing_genertor_fuel_cost_series = np.array([-1 * generator['existing_gen_year_one_fuel_cost_us_dollars'] * \
+                                    (1+financials['om_cost_escalation_pct'])**yr for yr in range(1, years+1)])
+            genertor_fuel_cost_series = np.array([-1 * generator['year_one_fuel_cost_us_dollars'] * \
+                                    (1+financials['om_cost_escalation_pct'])**yr for yr in range(1, years+1)])
+            net_energy_costs = -electricity_bill_bau_series_bau - export_credit_bau_series_bau + electricity_bill_series + \
+                                export_credit_series + annual_income_from_host_series - existing_genertor_fuel_cost_series + \
+                                genertor_fuel_cost_series
+            if financials['owner_tax_pct'] > 0:
+                deductable_net_energy_costs = copy.deepcopy(net_energy_costs) 
+            else:
+                deductable_net_energy_costs = np.array([0]*years)
+                
+            offtaker_free_cashflow = [round(i,2) for i in [0] + list(electricity_bill_series + export_credit_series + genertor_fuel_cost_series + annual_income_from_host_series)]
+            offtaker_discounted_cashflow = None
+            offtaker_free_cashflow_bau = [round(i,2) for i in [0] + list(electricity_bill_bau_series_bau + export_credit_bau_series_bau + existing_genertor_fuel_cost_series)]
+            offtaker_discounted_cashflow_bau = None
         else:
-            # get cumulative cashflow for host by comparing to BAU cashflow
+            # get cumulative cashflow for offtaker
             electricity_bill_bau_series_bau = np.array([-1 * electric_tariff['year_one_bill_bau_us_dollars'] * \
                                     (1+financials['escalation_pct'])**yr for yr in range(1, years+1)])
             export_credit_bau_series_bau = np.array([electric_tariff['total_export_benefit_bau_us_dollars'] * \
@@ -322,18 +360,23 @@ def calculate_simple_payback_and_irr(data):
                 deductable_operating_expenses_series_bau = copy.deepcopy(total_operating_expenses_bau) 
             else:
                 deductable_operating_expenses_series_bau = np.array([0]*years)
-            operating_expenses_after_tax_bau = deductable_operating_expenses_series_bau * (1 - financials['offtaker_tax_pct'])
-            free_cashflow_before_income_bau = operating_expenses_after_tax_bau + total_cash_incentives_bau
-            free_cashflow_before_income_bau = np.append([0], free_cashflow_before_income_bau)
+            operating_expenses_after_tax_bau = (total_operating_expenses_bau - deductable_operating_expenses_series_bau) + (deductable_operating_expenses_series_bau * (1 - financials['offtaker_tax_pct']))
+            free_cashflow_bau = operating_expenses_after_tax_bau + total_cash_incentives_bau
+            free_cashflow_bau = np.append([0], free_cashflow_bau)
+            offtaker_free_cashflow = list([round(i,2) for i in free_cashflow])
+            offtaker_discounted_cashflow = [round(v/((1+financials['offtaker_discount_pct'])**yr),2) for yr, v in enumerate(offtaker_free_cashflow)]
+            offtaker_free_cashflow_bau = list([round(i,2) for i in free_cashflow_bau])
+            offtaker_discounted_cashflow_bau = [round(v/((1+financials['offtaker_discount_pct'])**yr),2) for yr, v in enumerate(free_cashflow_bau)]
             # difference optimal and BAU
-            free_cashflow =  free_cashflow_before_income - free_cashflow_before_income_bau                                          
-            irr = np.irr(free_cashflow)
-            cumulative_cashflow =  np.cumsum(free_cashflow)
-        
-        #when the cumulative cashflow goes positive, scale the amount by the free cashflow to 
-        #approximate a partial year
-        if cumulative_cashflow[-1] < 0:
-            return None, None
+            net_free_cashflow =  free_cashflow - free_cashflow_bau                                          
+            irr = np.irr(net_free_cashflow)
+            cumulative_cashflow =  np.cumsum(net_free_cashflow)
+        #At this point we have the cumulative_cashflow for the developer or offtaker so the payback calculation is the same
+        if cumulative_cashflow[-1] < 0: #case where the system does not pay itself back in the analysis period
+            return None, None, round(net_present_cost,4) if net_present_cost is not None else None, \
+               round(annualized_payment_to_third_party_us_dollars,4) if annualized_payment_to_third_party_us_dollars is not None else None, \
+               offtaker_free_cashflow, offtaker_free_cashflow_bau, offtaker_discounted_cashflow, offtaker_discounted_cashflow_bau, \
+               developer_free_cashflow
             
         simple_payback_years = 0
         for i in range(1, years+1):
@@ -342,10 +385,14 @@ def calculate_simple_payback_and_irr(data):
                 simple_payback_years += 1
             # fractionally add years where the cumulative cashflow became positive
             elif (cumulative_cashflow[i-1] < 0) and (cumulative_cashflow[i] > 0): 
-                simple_payback_years += -(cumulative_cashflow[i-1]/free_cashflow[i])
+                simple_payback_years += -(cumulative_cashflow[i-1]/net_free_cashflow[i])
             # skip years where cumulative cashflow is positive and the previous year's is too
         
-        return round(simple_payback_years,4), round(irr,4)
+        return round(simple_payback_years,4), round(irr,4), round(net_present_cost,4) if net_present_cost is not None else None, \
+               round(annualized_payment_to_third_party_us_dollars,4) if annualized_payment_to_third_party_us_dollars is not None else None, \
+               offtaker_free_cashflow, offtaker_free_cashflow_bau, offtaker_discounted_cashflow, offtaker_discounted_cashflow_bau, \
+               developer_free_cashflow
+
 
 @shared_task(bind=True, base=ProcessResultsTask, ignore_result=True)
 def process_results(self, dfm_list, data, meta, saveToDB=True):
@@ -505,15 +552,24 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             """
             The net_capital_costs output is the upfront capex after incentives, except it includes the battery
             replacement cost in present value. So we calculate the upfront_capex_after_incentives as net_capital_costs
-            minus the battery replacement cost in present value
+            minus the battery replacement cost in present value.
+            Note that the owner_discount_pct and owner_tax_pct are set to the offtaker_discount_pct and offtaker_tax_pct
+            respectively when third_party_ownership is False.
             """
-            upfront_capex_after_incentives = self.nested_outputs["Scenario"]["Site"]["Financial"]["net_capital_costs"]
+            yrs = self.inputs["Financial"]["analysis_years"]
+            pwf_offtaker = annuity(yrs, 0, self.inputs["Financial"]["offtaker_discount_pct"])
+            pwf_owner = annuity(yrs, 0, self.inputs["Financial"]["owner_discount_pct"])
+            third_party_factor = (pwf_offtaker * (1 - self.inputs["Financial"]["offtaker_tax_pct"])) \
+                                  / (pwf_owner * (1 - self.inputs["Financial"]["owner_tax_pct"]))
 
-            pwf_inverter = 1 / ((1 + self.inputs["Financial"]["offtaker_discount_pct"])
-                           **self.inputs["Storage"]["inverter_replacement_year"])
+            upfront_capex_after_incentives = self.nested_outputs["Scenario"]["Site"]["Financial"]["net_capital_costs"] \
+                                             / third_party_factor
 
-            pwf_storage = 1 / ((1 + self.inputs["Financial"]["offtaker_discount_pct"])
-                          **self.inputs["Storage"]["battery_replacement_year"])
+            pwf_inverter = 1 / ((1 + self.inputs["Financial"]["owner_discount_pct"])
+                                ** self.inputs["Storage"]["inverter_replacement_year"])
+
+            pwf_storage = 1 / ((1 + self.inputs["Financial"]["owner_discount_pct"])
+                               ** self.inputs["Storage"]["battery_replacement_year"])
 
             inverter_future_cost = self.inputs["Storage"]["replace_cost_us_dollars_per_kw"] * \
                                    self.nested_outputs["Scenario"]["Site"]["Storage"]["size_kw"]
@@ -523,9 +579,9 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
 
             # NOTE these upfront costs include the tax benefit available to commercial entities
             upfront_capex_after_incentives -= inverter_future_cost * pwf_inverter * \
-                                              (1 - self.inputs["Financial"]["offtaker_tax_pct"])
+                                              (1 - self.inputs["Financial"]["owner_tax_pct"])
             upfront_capex_after_incentives -= storage_future_cost * pwf_storage * \
-                                              (1 - self.inputs["Financial"]["offtaker_tax_pct"])
+                                              (1 - self.inputs["Financial"]["owner_tax_pct"])
             return round(upfront_capex_after_incentives, 2)
 
         def calculate_lcoe(self, tech_results_dict, tech_inputs_dict, financials):
@@ -539,7 +595,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             """
             years = financials.analysis_years # length of financial life
 
-            if financials.two_party_ownership:
+            if financials.third_party_ownership:
                 discount_pct = financials.owner_discount_pct
                 federal_tax_pct = financials.owner_tax_pct
             else:
@@ -598,7 +654,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 macrs_bonus_basis = federal_itc_basis - (federal_itc_basis * tech_inputs_dict['federal_itc_pct'] * tech_inputs_dict['macrs_itc_reduction'])
                 macrs_basis = macrs_bonus_basis * (1 - tech_inputs_dict['macrs_bonus_pct'])
                 for i,r in enumerate(schedule):
-                    depreciation_schedule[i] = macrs_basis * r
+                    if i < len(depreciation_schedule):
+                        depreciation_schedule[i] = macrs_basis * r
                 depreciation_schedule[0] += (tech_inputs_dict['macrs_bonus_pct'] * macrs_bonus_basis)
 
             tax_deductions = (np.array(om_series)  + np.array(depreciation_schedule)) * federal_tax_pct
@@ -716,12 +773,16 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                             if pv["year_one_power_production_series_kw"] is None:
                                 pv["year_one_power_production_series_kw"] = pv.get("year_one_to_battery_series_kw")
                             else:
-                                pv["year_one_power_production_series_kw"]  = list(np.array(pv["year_one_power_production_series_kw"]) + np.array(pv.get("year_one_to_battery_series_kw")))
+                                pv["year_one_power_production_series_kw"] = \
+                                    list(np.array(pv["year_one_power_production_series_kw"]) +
+                                         np.array(pv.get("year_one_to_battery_series_kw")))
                         if not pv.get("year_one_to_load_series_kw") is None:
                             if pv["year_one_power_production_series_kw"] is None:
                                 pv["year_one_power_production_series_kw"] = pv.get("year_one_to_load_series_kw")
                             else:
-                                pv["year_one_power_production_series_kw"]  = list(np.array(pv["year_one_power_production_series_kw"]) + np.array(pv.get("year_one_to_load_series_kw")))                        
+                                pv["year_one_power_production_series_kw"] = \
+                                    list(np.array(pv["year_one_power_production_series_kw"]) +
+                                         np.array(pv.get("year_one_to_load_series_kw")))
                         if pv["year_one_power_production_series_kw"] is None:
                             pv["year_one_power_production_series_kw"] = []
                         pv["existing_pv_om_cost_us_dollars"] = self.results_dict.get("PV{}_net_fixed_om_costs_bau".format(i))
@@ -784,8 +845,10 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
 
                     if self.nested_outputs["Scenario"]["Site"][name]["size_kw"] > 0: #setting up
                         wind_model = WindModel.objects.get(run_uuid=meta['run_uuid'])
-                        self.nested_outputs["Scenario"]["Site"][name]['lcoe_us_dollars_per_kwh'] = self.calculate_lcoe(self.nested_outputs["Scenario"]["Site"][name], wind_model.__dict__, financials)
-                        data['inputs']['Scenario']["Site"]["Wind"]["installed_cost_us_dollars_per_kw"] = wind_model.installed_cost_us_dollars_per_kw
+                        self.nested_outputs["Scenario"]["Site"][name]['lcoe_us_dollars_per_kwh'] = \
+                            self.calculate_lcoe(self.nested_outputs["Scenario"]["Site"][name], wind_model.__dict__, financials)
+                        data['inputs']['Scenario']["Site"]["Wind"]["installed_cost_us_dollars_per_kw"] = \
+                            wind_model.installed_cost_us_dollars_per_kw
                         data['inputs']['Scenario']["Site"]["Wind"]["federal_itc_pct"] = wind_model.federal_itc_pct
                     else:
                         self.nested_outputs["Scenario"]["Site"][name]['lcoe_us_dollars_per_kwh'] = None
@@ -997,9 +1060,28 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
         data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
         
         #simple payback needs all data to be computed so running that calculation here
-        simple_payback, irr = calculate_simple_payback_and_irr(data)  
+        simple_payback, irr, net_present_cost, annualized_payment_to_third_party_us_dollars, \
+        offtaker_annual_free_cashflow_series_us_dollars, offtaker_annual_free_cashflow_series_bau_us_dollars, \
+        offtaker_discounted_annual_free_cashflow_series_us_dollars, offtaker_discounted_annual_free_cashflow_series_bau_us_dollars,\
+        developer_annual_free_cashflow_series_us_dollars = \
+            calculate_proforma_metrics(data)
         data['outputs']['Scenario']['Site']['Financial']['simple_payback_years'] = simple_payback
-        data['outputs']['Scenario']['Site']['Financial']['irr_pct'] = irr
+
+        data['outputs']['Scenario']['Site']['Financial']['irr_pct'] = irr if not np.isnan(irr or np.nan) else None
+        data['outputs']['Scenario']['Site']['Financial']['net_present_cost_us_dollars'] = net_present_cost
+        data['outputs']['Scenario']['Site']['Financial']['annualized_payment_to_third_party_us_dollars'] = \
+            annualized_payment_to_third_party_us_dollars
+        data['outputs']['Scenario']['Site']['Financial']['developer_annual_free_cashflow_series_us_dollars'] = \
+            developer_annual_free_cashflow_series_us_dollars
+        data['outputs']['Scenario']['Site']['Financial']['offtaker_annual_free_cashflow_series_us_dollars'] = \
+            offtaker_annual_free_cashflow_series_us_dollars
+        data['outputs']['Scenario']['Site']['Financial']['offtaker_annual_free_cashflow_series_bau_us_dollars'] = \
+            offtaker_annual_free_cashflow_series_bau_us_dollars
+        data['outputs']['Scenario']['Site']['Financial']['offtaker_discounted_annual_free_cashflow_series_us_dollars'] = \
+            offtaker_discounted_annual_free_cashflow_series_us_dollars
+        data['outputs']['Scenario']['Site']['Financial']['offtaker_discounted_annual_free_cashflow_series_bau_us_dollars'] = \
+            offtaker_discounted_annual_free_cashflow_series_bau_us_dollars
+
         #data = EmissionsCalculator.add_to_data(data)
 
         pv_watts_station_check = data['outputs']['Scenario']['Site']['PV'][0].get('station_distance_km') or 0

@@ -74,7 +74,6 @@ class DataManager:
 
         self.available_techs = ['pv1', 'pv1nm', 'wind', 'windnm', 'generator']  # order is critical for REopt! Note these are passed to reopt.jl as uppercase
         self.available_tech_classes = ['PV1', 'WIND', 'GENERATOR']  # this is a REopt 'class', not a python class
-        self.available_loads = ['retail', 'wholesale', 'export', 'storage']  # order is critical for REopt!
         self.bau_techs = []
         self.NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
         self.fuel_burning_techs = ['GENERATOR']
@@ -160,7 +159,7 @@ class DataManager:
         self.pwf_e = pwf_e
         # pwf_op = annuity(sf.analysis_years, sf.escalation_pct, sf.owner_discount_pct)
 
-        if sf.two_party_ownership:
+        if sf.third_party_ownership:
             two_party_factor = (pwf_offtaker * (1 - sf.offtaker_tax_pct)) \
                                 / (pwf_owner * (1 - sf.owner_tax_pct))
         else:
@@ -188,7 +187,6 @@ class DataManager:
     def _get_REopt_production_incentives(self, techs):
         sf = self.site.financial
         pwf_prod_incent = list()
-        prod_incent_rate = list()
         max_prod_incent = list()
         max_size_for_prod_incent = list()
 
@@ -217,10 +215,6 @@ class DataManager:
                     max_size_for_prod_incent.append(
                         eval('self.' + tech + '.incentives.production_based.max_kw')
                     )
-                    for load in self.available_loads:
-                        prod_incent_rate.append(
-                            eval('self.' + tech + '.incentives.production_based.us_dollars_per_kw')
-                        )
 
                     production_incentive_rate.append(
                         eval('self.' + tech + '.incentives.production_based.us_dollars_per_kw')
@@ -232,10 +226,7 @@ class DataManager:
                     max_size_for_prod_incent.append(0.0)
                     production_incentive_rate.append(0.0)
 
-                    for load in self.available_loads:
-                        prod_incent_rate.append(0.0)
-
-        return pwf_prod_incent, prod_incent_rate, max_prod_incent, max_size_for_prod_incent, production_incentive_rate
+        return pwf_prod_incent, max_prod_incent, max_size_for_prod_incent, production_incentive_rate
 
     def _get_REopt_cost_curve(self, techs):
         regions = ['utility', 'state', 'federal', 'combined']
@@ -559,7 +550,7 @@ class DataManager:
         """
         Many arrays are built from Tech and Load. As many as possible are defined here to reduce for-loop iterations
         :param techs: list of strings, eg. ['pv', 'pvnm']
-        :return: tech_to_location, derate, eta_storage_in, eta_storage_out, \
+        :return: tech_to_location, derate, \
                om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, production_factor, charge_efficiency, \
                discharge_efficiency, techs_charging_storage, electric_derate
         """
@@ -567,8 +558,6 @@ class DataManager:
         tech_to_location = list()
         derate = list()
         electric_derate = list()
-        eta_storage_in = list()
-        eta_storage_out = list()
         om_cost_us_dollars_per_kw = list()
         om_cost_us_dollars_per_kwh = list()
 
@@ -603,11 +592,6 @@ class DataManager:
                     om_cost_us_dollars_per_kwh.append(0.0)
                     emissions_factors.append(0.0)
 
-                for load in self.available_loads:
-
-                    eta_storage_in.append(self.storage.rectifier_efficiency_pct *
-                                          self.storage.internal_efficiency_pct**0.5 if load == 'storage' else float(1))
-
                 for location in ['roof', 'ground', 'both']:
                     if tech.startswith('pv'):
                         if eval('self.' + tech + '.location') == location:
@@ -617,16 +601,11 @@ class DataManager:
                     else:
                         tech_to_location.append(0)
 
-        for load in self.available_loads:
-            # eta_storage_out is array(Load) of real
-            eta_storage_out.append(self.storage.inverter_efficiency_pct * self.storage.internal_efficiency_pct**0.5
-                                   if load == 'storage' else 1.0)
-
         discharge_efficiency.append(self.storage.inverter_efficiency_pct * self.storage.internal_efficiency_pct**0.5)
 
         # In BAU case, storage.dat must be filled out for REopt initializations, but max size is set to zero
 
-        return tech_to_location, derate, eta_storage_in, eta_storage_out, \
+        return tech_to_location, derate, \
                om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, production_factor, charge_efficiency, \
                discharge_efficiency, electric_derate, emissions_factors
 
@@ -823,6 +802,31 @@ class DataManager:
 
         return total_emissions
 
+    def _get_fuel_burning_tech_params(self, techs):
+        """
+        In the Julia model we have:
+         - FuelCost = AxisArray(d["FuelCost"], d["FuelType"])
+         - FuelLimit: AxisArray(d["FuelLimit"], d["FuelType"])
+         - FuelType: Array{String,1}
+         - TechsByFuelType: AxisArray(d["TechsByFuelType"], d["FuelType"])
+        :return: fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type (all lists)
+        """
+        fuel_costs = list()
+        fuel_limit = list()
+        fuel_types = list()
+        techs_by_fuel_type = [list()]
+        fuel_burn_rate = list()
+        fuel_burn_intercept = list()
+
+        if "GENERATOR" in techs:
+            fuel_costs = [self.generator.diesel_fuel_cost_us_dollars_per_gallon]
+            fuel_limit = [self.generator.fuel_avail]
+            fuel_types = ["DIESEL"]
+            techs_by_fuel_type = [['GENERATOR']]
+            fuel_burn_rate.append(self.generator.fuel_slope)
+            fuel_burn_intercept.append(self.generator.fuel_intercept)
+        return fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type, fuel_burn_rate, fuel_burn_intercept
+
     def finalize(self):
         """
         necessary for writing out parameters that depend on which Techs are defined
@@ -836,10 +840,11 @@ class DataManager:
         tech_class_min_size, techs_in_class = self._get_REopt_tech_classes(self.available_techs, False)
         tech_class_min_size_bau, techs_in_class_bau = self._get_REopt_tech_classes(self.bau_techs, True)
 
-        tech_to_location, derate, eta_storage_in, eta_storage_out, om_cost_us_dollars_per_kw,\
+        tech_to_location, derate, om_cost_us_dollars_per_kw,\
             om_cost_us_dollars_per_kwh, production_factor, charge_efficiency,  \
             discharge_efficiency, electric_derate, emissions_factors = self._get_REopt_array_tech_load(self.available_techs)
-        tech_to_location_bau, derate_bau, eta_storage_in_bau, eta_storage_out_bau, \
+        
+        tech_to_location_bau, derate_bau, \
             om_dollars_per_kw_bau, om_dollars_per_kwh_bau, production_factor_bau, charge_efficiency_bau,  \
             discharge_efficiency_bau, electric_derate_bau, emissions_factors_bau = self._get_REopt_array_tech_load(self.bau_techs)
 
@@ -853,9 +858,9 @@ class DataManager:
         levelization_factor, pwf_e, pwf_om, two_party_factor = self._get_REopt_pwfs(self.available_techs)
         levelization_factor_bau, pwf_e_bau, pwf_om_bau, two_party_factor_bau = self._get_REopt_pwfs(self.bau_techs)
         
-        pwf_prod_incent, prod_incent_rate, max_prod_incent, max_size_for_prod_incent, production_incentive_rate  \
+        pwf_prod_incent, max_prod_incent, max_size_for_prod_incent, production_incentive_rate  \
             = self._get_REopt_production_incentives(self.available_techs)
-        pwf_prod_incent_bau, prod_incent_rate_bau, max_prod_incent_bau, max_size_for_prod_incent_bau, production_incentive_rate_bau \
+        pwf_prod_incent_bau, max_prod_incent_bau, max_size_for_prod_incent_bau, production_incentive_rate_bau \
             = self._get_REopt_production_incentives(self.bau_techs)
 
         cap_cost_slope, cap_cost_x, cap_cost_yint, n_segments = self._get_REopt_cost_curve(self.available_techs)
@@ -886,9 +891,9 @@ class DataManager:
         StorageCostPerKWH -= self.storage.incentives.rebate_kwh
         
         parser = UrdbParse(big_number=big_number, elec_tariff=self.elec_tariff,
-                          techs=get_techs_not_none(self.available_techs, self),
+                           techs=get_techs_not_none(self.available_techs, self),
                            bau_techs=get_techs_not_none(self.bau_techs, self),
-                           loads=self.available_loads, gen=self.generator)
+                           )
         tariff_args = parser.parse_rate(self.elec_tariff.utility_name, self.elec_tariff.rate_name)
         TechToNMILMapping, TechsByNMILRegime, NMIL_regime = self._get_REopt_techToNMILMapping(self.available_techs)
         TechToNMILMapping_bau, TechsByNMILRegime_bau, NMIL_regime_bau = self._get_REopt_techToNMILMapping(self.bau_techs)
@@ -927,8 +932,6 @@ class DataManager:
         emissions_reduction_max_pct_bau = []
 
         subdivisions = ['CapCost']
-        fuel_type = ['DIESEL'] if 'GENERATOR' in reopt_techs else []
-        fuel_type_bau = ['DIESEL'] if 'GENERATOR' in reopt_techs_bau else []
 
         # There are no cost curves yet, but incentive size limits and existing techs require cost curve segments
         # TODO: create this array in _get_REopt_cost_curve?
@@ -940,25 +943,10 @@ class DataManager:
             for  _ in reopt_techs_bau:
                 seg_by_tech_subdivision_bau.append(n_segments_bau)
 
-        if len(reopt_techs) == 0:
-            techs_by_fuel_type = []
-        else:
-            techs_by_fuel_type = [['GENERATOR'] if ft == 'DIESEL' else [] for ft in fuel_type]
-        if len(reopt_techs_bau) == 0:
-            techs_by_fuel_type_bau = []
-        else:
-            techs_by_fuel_type_bau = [['GENERATOR'] if ft == 'DIESEL' else [] for ft in fuel_type_bau]
-
-        fuel_limit = [0.0 for _ in fuel_type]
-        fuel_limit_bau = [0.0 for _ in fuel_type_bau]
-        for f in range(len(fuel_type)):
-            for t in techs_by_fuel_type[f]:
-                tech_idx = reopt_techs.index(t)
-                fuel_limit[f] += tariff_args.energy_avail[tech_idx]
-        for f in range(len(fuel_type_bau)):
-            for t in techs_by_fuel_type_bau[f]:
-                tech_idx = reopt_techs_bau.index(t)
-                fuel_limit_bau[f] += tariff_args.energy_avail_bau[tech_idx]
+        fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type, fuel_burn_rate, fuel_burn_intercept \
+            = self._get_fuel_burning_tech_params(reopt_techs)
+        fuel_costs_bau, fuel_limit_bau, fuel_types_bau, techs_by_fuel_type_bau, fuel_burn_rate_bau, \
+            fuel_burn_intercept_bau =  self._get_fuel_burning_tech_params(reopt_techs_bau)
 
         # TODO: switch back to cap_cost_x input since we are just repeating its values?
         segment_min_size = []
@@ -1059,11 +1047,11 @@ class DataManager:
             'MaxDemandInTier': tariff_args.demand_max_in_tiers,
             'MaxUsageInTier': tariff_args.energy_max_in_tiers,
             'MaxDemandMonthsInTier': tariff_args.demand_month_max_in_tiers,
-            'FuelAvail': tariff_args.energy_avail,
             'FixedMonthlyCharge': tariff_args.fixed_monthly_charge,
             'AnnualMinCharge': tariff_args.annual_min_charge,
             'MonthlyMinCharge': tariff_args.min_monthly_charge,
             'DemandLookbackMonths': tariff_args.demand_lookback_months,
+            'DemandLookbackRange': tariff_args.demand_lookback_range,
             'DemandLookbackPercent': tariff_args.demand_lookback_percent,
             'TimeStepRatchetsMonth': tariff_args.demand_ratchets_monthly,
             'TimeStepCount': self.n_timesteps,
@@ -1075,33 +1063,31 @@ class DataManager:
             'TechToNMILMapping': TechToNMILMapping,
             'CapCostSegCount': n_segments,
             # new parameters for reformulation
-            'StorageCostPerKW': StorageCostPerKW,
-	        'StorageCostPerKWH': StorageCostPerKWH,
-	        'FuelCost': tariff_args.fuel_costs,
-	        'ElecRate': tariff_args.energy_costs,
-	        'GridExportRates': tariff_args.grid_export_rates, # seems like the wrong size
-	        'FuelBurnSlope': tariff_args.fuel_burn_rate,
-	        'FuelBurnYInt': tariff_args.fuel_burn_intercept,
-	        'MaxGridSales': max_grid_sales,
-	        'ProductionIncentiveRate': production_incentive_rate,
-	        'ProductionFactor': production_factor,
-	        'ElecLoad': self.load.load_list,
-	        'FuelLimit': fuel_limit,
-	        'ChargeEfficiency': charge_efficiency, # Do we need this indexed on tech?
-	        'GridChargeEfficiency': grid_charge_efficiency,
-	        'DischargeEfficiency': discharge_efficiency,
-	        'StorageMinSizeEnergy': self.storage.min_kwh,
-	        'StorageMaxSizeEnergy': self.storage.max_kwh,
-	        'StorageMinSizePower': self.storage.min_kw,
-	        'StorageMaxSizePower': self.storage.max_kw,
-	        'StorageMinSOC': self.storage.soc_min_pct,
-	        'StorageInitSOC': self.storage.soc_init_pct,
+            'FuelCost': fuel_costs,
+            'ElecRate': tariff_args.energy_costs,
+            'GridExportRates': tariff_args.grid_export_rates, # seems like the wrong size
+            'FuelBurnSlope': fuel_burn_rate,
+            'FuelBurnYInt': fuel_burn_intercept,
+            'MaxGridSales': max_grid_sales,
+            'ProductionIncentiveRate': production_incentive_rate,
+            'ProductionFactor': production_factor,
+            'ElecLoad': self.load.load_list,
+            'FuelLimit': fuel_limit,
+            'ChargeEfficiency': charge_efficiency, # Do we need this indexed on tech?
+            'GridChargeEfficiency': grid_charge_efficiency,
+            'DischargeEfficiency': discharge_efficiency,
+            'StorageMinSizeEnergy': self.storage.min_kwh,
+            'StorageMaxSizeEnergy': self.storage.max_kwh,
+            'StorageMinSizePower': self.storage.min_kw,
+            'StorageMaxSizePower': self.storage.max_kw,
+            'StorageMinSOC': self.storage.soc_min_pct,
+            'StorageInitSOC': self.storage.soc_init_pct,
             'StorageCanGridCharge': self.storage.canGridCharge,
             'SegmentMinSize': segment_min_size,
             'SegmentMaxSize': segment_max_size,
             # Sets that need to be populated
             'Storage': ['Elec'],
-            'FuelType': fuel_type,
+            'FuelType': fuel_types,
             'Subdivision': subdivisions,
             'PricingTierCount': tariff_args.energy_tiers_num,
             'ElecStorage': ['Elec'],
@@ -1159,8 +1145,6 @@ class DataManager:
             'CapCostYInt': cap_cost_yint_bau,
             'r_tax_owner': sf.owner_tax_pct,
             'r_tax_offtaker': sf.offtaker_tax_pct,
-            'StorageCostPerKW': StorageCostPerKW,
-            'StorageCostPerKWH': StorageCostPerKWH,
             'OMperUnitSize': om_dollars_per_kw_bau,
             'OMcostPerUnitProd': om_dollars_per_kwh_bau,
             'analysis_years': int(sf.analysis_years),
@@ -1174,11 +1158,11 @@ class DataManager:
             'MaxDemandInTier': tariff_args.demand_max_in_tiers,
             'MaxUsageInTier': tariff_args.energy_max_in_tiers,
             'MaxDemandMonthsInTier': tariff_args.demand_month_max_in_tiers,
-            'FuelAvail': tariff_args.energy_avail_bau,
             'FixedMonthlyCharge': tariff_args.fixed_monthly_charge,
             'AnnualMinCharge': tariff_args.annual_min_charge,
             'MonthlyMinCharge': tariff_args.min_monthly_charge,
             'DemandLookbackMonths': tariff_args.demand_lookback_months,
+            'DemandLookbackRange': tariff_args.demand_lookback_range,
             'DemandLookbackPercent': tariff_args.demand_lookback_percent,
             'TimeStepRatchetsMonth': tariff_args.demand_ratchets_monthly,
             'TimeStepCount': self.n_timesteps,
@@ -1190,31 +1174,31 @@ class DataManager:
             'TechToNMILMapping': TechToNMILMapping_bau,
             'CapCostSegCount': n_segments_bau,
             'StorageCostPerKW': StorageCostPerKW,
-	        'StorageCostPerKWH': StorageCostPerKWH,
-	        'FuelCost': tariff_args.fuel_costs_bau,
-	        'ElecRate': tariff_args.energy_costs_bau,
-	        'GridExportRates': tariff_args.grid_export_rates_bau,
-	        'FuelBurnSlope': tariff_args.fuel_burn_rate_bau,
-	        'FuelBurnYInt': tariff_args.fuel_burn_intercept_bau,
-	        'MaxGridSales': max_grid_sales_bau,
-	        'ProductionIncentiveRate': production_incentive_rate_bau,
-	        'ProductionFactor': production_factor_bau,
-	        'ElecLoad': self.load.bau_load_list,
-	        'FuelLimit': fuel_limit_bau,
-	        'ChargeEfficiency': charge_efficiency_bau,
-	        'GridChargeEfficiency': grid_charge_efficiency,
-	        'DischargeEfficiency': discharge_efficiency_bau,
-	        'StorageMinSizeEnergy': 0,
-	        'StorageMaxSizeEnergy': 0,
-	        'StorageMinSizePower': 0,
-	        'StorageMaxSizePower': 0,
-	        'StorageMinSOC': self.storage.soc_min_pct,
-	        'StorageInitSOC': self.storage.soc_init_pct,
+            'StorageCostPerKWH': StorageCostPerKWH,
+            'FuelCost': fuel_costs_bau,
+            'ElecRate': tariff_args.energy_costs_bau,
+            'GridExportRates': tariff_args.grid_export_rates_bau,
+            'FuelBurnSlope': fuel_burn_rate_bau,
+            'FuelBurnYInt': fuel_burn_intercept_bau,
+            'MaxGridSales': max_grid_sales_bau,
+            'ProductionIncentiveRate': production_incentive_rate_bau,
+            'ProductionFactor': production_factor_bau,
+            'ElecLoad': self.load.bau_load_list,
+            'FuelLimit': fuel_limit_bau,
+            'ChargeEfficiency': charge_efficiency_bau,
+            'GridChargeEfficiency': grid_charge_efficiency,
+            'DischargeEfficiency': discharge_efficiency_bau,
+            'StorageMinSizeEnergy': 0,
+            'StorageMaxSizeEnergy': 0,
+            'StorageMinSizePower': 0,
+            'StorageMaxSizePower': 0,
+            'StorageMinSOC': self.storage.soc_min_pct,
+            'StorageInitSOC': self.storage.soc_init_pct,
             'StorageCanGridCharge': self.storage.canGridCharge,
             'SegmentMinSize': segment_min_size_bau,
             'SegmentMaxSize': segment_max_size_bau,
             'Storage': ['Elec'],
-            'FuelType': fuel_type_bau,
+            'FuelType': fuel_types_bau,
             'Subdivision': subdivisions,
             'PricingTierCount': tariff_args.energy_tiers_num,
             'ElecStorage': [],

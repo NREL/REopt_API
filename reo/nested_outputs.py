@@ -276,7 +276,43 @@ nested_output_definitions = {
                   "description": ("Internal Rate of Return of the cost-optimal system. In two-party cases the "
                                   "developer discount rate is used in place of the offtaker discount rate."),
                   "units": "%"
-                 }               
+                 },
+                 "net_present_cost_us_dollars": {
+                  "type": float,
+                  "description": ("Present value of the total costs incurred by the third-party owning and operating the "
+                                  "distributed energy resource assets."),
+                  "units": "$"
+                 },
+                 "annualized_payment_to_third_party_us_dollars": {
+                  "type": float,
+                  "description": ("The annualized amount the host will pay to the third-party owner over the life of the project."),
+                  "units": "$"
+                 },
+                 "offtaker_annual_free_cashflow_series_us_dollars": {
+                  "type": float,
+                  "description": ("Annual free cashflow for the host in the optimal case for all analysis years, including year 0. Future years have not been discounted to account for the time value of money."),
+                  "units": "$"
+                 },
+                 "offtaker_discounted_annual_free_cashflow_series_us_dollars": {
+                  "type": float,
+                  "description": ("Annual discounted free cashflow for the host in the optimal case for all analysis years, including year 0. Future years have been discounted to account for the time value of money."),
+                  "units": "$"
+                 },
+                 "offtaker_annual_free_cashflow_series_bau_us_dollars": {
+                  "type": float,
+                  "description": ("Annual free cashflow for the host in the business-as-usual case for all analysis years, including year 0. Future years have not been discounted to account for the time value of money. Only calcualted in the non-third-party case."),
+                  "units": "$"
+                 },
+                 "offtaker_discounted_annual_free_cashflow_series_bau_us_dollars": {
+                  "type": float,
+                  "description": ("Annual discounted free cashflow for the host in the business-as-usual case for all analysis years, including year 0. Future years have been discounted to account for the time value of money. Only calcualted in the non-third-party case."),
+                  "units": "$"
+                 },
+                 "developer_annual_free_cashflow_series_bau_us_dollars": {
+                  "type": float,
+                  "description": ("Annual free cashflow for the developer in the business-as-usual third party case for all analysis years, including year 0. Future years have not been discounted to account for the time value of money. Only calcualted in the third-party case."),
+                  "units": "$"
+                 },
               },
 
               "PV": {

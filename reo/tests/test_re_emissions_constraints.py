@@ -267,25 +267,25 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Wind']['size_kw'], 22.2391, places=1)
         # Year 1 Site RE / emissions - non-BAU
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_generation_pct'], 0.89, places=1)
-        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_generation_kwh'], 88636.25,places=1)
-        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_lb_CO2'], 12781.15, places=1)
+        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_generation_kwh'], 88636.25,places=0)
+        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_lb_CO2'], 12781.15, places=0)
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_reduction_pct'], 0.9, places=1)
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_scope1_emissions_lb_CO2'], 0.0, places=1)
-        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_scope2_emissions_lb_CO2'], 12781.15, places=1)
+        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_scope2_emissions_lb_CO2'], 12781.15, places=0)
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_nonscope_emissions_lb_CO2'], 0,places=1) # model is choosing to curtail
-        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_scope2_emissions_lb_CO2'], 12781.15,places=1)
+        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_scope2_emissions_lb_CO2'], 12781.15,places=0)
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['year_one_scope1_emissions_lb_CO2'], 0.0,places=1)
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['year_one_nonscope_emissions_lb_CO2'],0.0, places=1) # model is choosing to curtail
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Wind']['year_one_scope1_emissions_lb_CO2'], 0.0,places=1) 
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Wind']['year_one_nonscope_emissions_lb_CO2'],0.0, places=1) # model is choosing to curtail rather than count the credit for this...
         # Year 1 Site RE / emissions - BAU case
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_generation_bau_pct'], 0.14,places=1)
-        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_generation_bau_kwh'], 13542.62,places=1)
-        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_CO2'], 127811.53,places=1)
+        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_generation_bau_kwh'], 13542.62,places=0)
+        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_CO2'], 127811.53,places=0)
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_scope1_emissions_bau_lb_CO2'], 0.0,places=1)
-        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_scope2_emissions_bau_lb_CO2'], 127811.53,places=1)
+        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_scope2_emissions_bau_lb_CO2'], 127811.53,places=0)
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_nonscope_emissions_bau_lb_CO2'], 0.0,places=1)
-        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_scope2_emissions_bau_lb_CO2'],127811.53, places=1)
+        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_scope2_emissions_bau_lb_CO2'],127811.53, places=0)
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['year_one_scope1_emissions_bau_lb_CO2'], 0.0,places=1)
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['year_one_nonscope_emissions_bau_lb_CO2'],0.0, places=1)
 

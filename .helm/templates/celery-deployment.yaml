@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}-celery-deployment
+  labels:
+    app: {{ .Chart.Name }}-celery
+spec:
+  replicas: {{ .Values.celeryReplicas }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}-celery
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}-celery
+    spec:
+      volumes:
+        - name: {{ .Chart.Name }}-secrets-volume
+          secret:
+            secretName: {{ .Chart.Name }}-secrets
+      initContainers:
+        - name: {{ .Chart.Name }}-ready-wait
+{{ tuple "reopt-api" . | werf_container_image | indent 10 }}
+          args: ["bin/ready-wait"]
+          envFrom:
+            - configMapRef:
+                name: {{ .Chart.Name }}-base-config-map
+          env:
+{{ tuple "reopt-api" . | werf_container_env | indent 12 }}
+          volumeMounts:
+            - name: {{ .Chart.Name }}-secrets-volume
+              readOnly: true
+              mountPath: /opt/reopt/keys.py
+              subPath: {{ .Values.appEnv }}-keys.py
+      containers:
+        - name: {{ .Chart.Name }}-celery
+{{ tuple "reopt-api" . | werf_container_image | indent 10 }}
+          args: ["bin/worker"]
+          envFrom:
+            - configMapRef:
+                name: {{ .Chart.Name }}-base-config-map
+          env:
+{{ tuple "reopt-api" . | werf_container_env | indent 12 }}
+          volumeMounts:
+            - name: {{ .Chart.Name }}-secrets-volume
+              readOnly: true
+              mountPath: /opt/reopt/keys.py
+              subPath: {{ .Values.appEnv }}-keys.py
+          readinessProbe:
+            exec:
+              command: ["pgrep", "-f", "bin/celery"]
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            exec:
+              command: ["pgrep", "-f", "bin/celery"]
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 30
+            failureThreshold: 10

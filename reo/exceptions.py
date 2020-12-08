@@ -31,6 +31,7 @@ from reo.models import ErrorModel
 import logging
 log = logging.getLogger(__name__)
 import rollbar
+import traceback as tb
 
 
 class REoptError(Exception):
@@ -200,7 +201,7 @@ class WindDownloadError(REoptError):
     __name__ = 'WindDownloadError'
 
     def __init__(self, task='', run_uuid='', user_uuid=''):
-        message = "Wind Dataset Timed Out"
+        message = "Unable to download wind data"
         super(WindDownloadError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid,
                                                 message=message, traceback='')
 

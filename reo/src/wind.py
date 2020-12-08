@@ -65,10 +65,10 @@ system_capacity_lookup = {'large': 2000,
 """
 Corresponding rotor diameter in meters for generic reference turbines sizes
 """
-rotor_diameter_lookup = {'large': 55,
-                         'medium': 21.9,
-                         'commercial': 13.8,
-                         'residential': 1.85}
+rotor_diameter_lookup = {'large': 55*2,
+                         'medium': 21.9*2,
+                         'commercial': 13.8*2,
+                         'residential': 1.85*2}
 
 
 """

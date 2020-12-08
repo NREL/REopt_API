@@ -21,13 +21,16 @@ properties([
 ])
 
 pipeline {
-  agent any
+  agent {
+    docker {
+      image "ruby:2.7.2-buster"
+    }
+  }
   options {
     disableConcurrentBuilds()
   }
 
   environment {
-    PATH = "${JENKINS_HOME}/.rbenv/bin:${JENKINS_HOME}/.rbenv/shims:/usr/local/bin:/sbin:/usr/sbin:/bin:/usr/bin"
     C110P_URL = credentials("reopt-api-c110p-url")
     DEV_URL = credentials("reopt-api-dev-url")
     STAGE_URL = credentials("reopt-api-stage-url")
@@ -44,12 +47,6 @@ pipeline {
     stage("checkout-deploy-branch") {
       steps {
         tadaCheckoutDeployBranch("https://github.com/NREL/REopt_Lite_API.git")
-      }
-    }
-
-    stage("rbenv-install") {
-      steps {
-        sh 'rbenv install --skip-existing $(cat .ruby-version)'
       }
     }
 

@@ -94,12 +94,6 @@ class Rate(object):
         else:
             return None
 
-        try:
-            if rate_dict['energyratestructure'] is None:
-                rate_dict = None
-        except KeyError:
-            rate_dict = None
-
         return rate_dict
 
     def download_rate(self):
@@ -111,7 +105,7 @@ class Rate(object):
         url_base = "http://api.openei.org/utility_rates?"
         api_key = "BLLsYv81d8y4w6UPYCfGFsuWlu4IujlZYliDmoq6"
         request_params = {
-            "version": "7",
+            "version": "8",
             "format": "json",
             "detail": "full",
             "api_key": api_key,
