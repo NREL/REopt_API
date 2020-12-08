@@ -58,19 +58,25 @@ class NuclearTests(ResourceTestCaseMixin, TestCase):
         # Call API, get results in "d" dictionary
         nested_data = json.load(open(self.test_post, 'rb'))
         nested_data["Scenario"]["timeout_seconds"] = 420
-        # nested_data["Scenario"]["optimality_tolerance_bau"] = 0.001
-        # nested_data["Scenario"]["optimality_tolerance_techs"] = 0.01
+        nested_data["Scenario"]["optimality_tolerance_bau"] = 0.001
+        nested_data["Scenario"]["optimality_tolerance_techs"] = 0.01
+
+        # Specify/overwrite nuclear inputs
+        nested_data["Scenario"]["Site"]["Nuclear"]["min_kw"] = 800.0
+        nested_data["Scenario"]["Site"]["Nuclear"]["max_kw"] = 800.0
 
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
-        c = nested_to_flat_chp(d['outputs'])
 
         # The values compared to the expected values may change if optimization parameters were changed
         d_expected = dict()
-        d_expected['lcc'] = 13476072.0
-        d_expected['npv'] = 1231748.579
+        #d_expected['lcc'] = 13476072.0
+        #d_expected['npv'] = 1231748.579
+
+        #self.assertAlmostEqual(Val1,Val2, places=1)
+        #self.assertEqual(Val2, 0.0)
 
        
