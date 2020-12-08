@@ -421,7 +421,7 @@ class UrdbParse:
         Sales tiers:
         1. NEM
         2. Wholesale
-        3. Curtailment
+        3. Excess beyond site load
         TODO is it an issue that techs cannot take advantave of both NEM and Wholsale rates? 
             Do users expect this behavior?
         """

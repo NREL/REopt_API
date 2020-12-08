@@ -185,7 +185,7 @@ Base.@kwdef struct Parameter
      StorageSalesTiers::Array{Int, 1}
 	 SalesTiersByTech::AxisArray
 	 TechsBySalesTier::AxisArray
-	 CurtailmentTiers::Array{Int, 1}
+	 SalesTiersBeyondSiteLoad::Array{Int, 1}
 
     # Feature Additions
      TechToLocation::AxisArray
