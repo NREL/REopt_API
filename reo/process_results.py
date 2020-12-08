@@ -1308,15 +1308,18 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             # Method returns Nuclear metrics of:
             #   1. year_one_effective_full_power_days
             #   2. years_until_full_burnup
-            
-            nuclear_data = NuclearModel.objects.filter(run_uuid=meta['run_uuid']).first()
+
             d = self.nested_outputs["Scenario"]["Site"]["Nuclear"]
             size_kw = d.get('size_kw')  # [kW]
-            effective_full_power_days_between_refueling = nuclear_data.effective_full_power_days_between_refueling  # [days]
-            year_one_electric_energy_produced_kwh = d.get("year_one_electric_energy_produced_kwh")  # [kWh]
-            year_one_effective_full_power_days = year_one_electric_energy_produced_kwh / size_kw / 24.0  # [days/yr]
-            years_until_full_burnup = effective_full_power_days_between_refueling / year_one_effective_full_power_days  # [yr]
-
+            if size_kw not in [0.0, None]:
+                nuclear_data = NuclearModel.objects.filter(run_uuid=meta['run_uuid']).first()
+                effective_full_power_days_between_refueling = nuclear_data.effective_full_power_days_between_refueling  # [days]
+                year_one_electric_energy_produced_kwh = d.get("year_one_electric_energy_produced_kwh")  # [kWh]
+                year_one_effective_full_power_days = year_one_electric_energy_produced_kwh / size_kw / 24.0  # [days/yr]
+                years_until_full_burnup = effective_full_power_days_between_refueling / year_one_effective_full_power_days  # [yr]
+            else:
+                year_one_effective_full_power_days = None
+                years_until_full_burnup = None
             return year_one_effective_full_power_days, years_until_full_burnup
 
     self.data = data
