@@ -31,14 +31,15 @@ import julia
 import sys
 import traceback
 import os
+import time
+import platform
 from celery import shared_task, Task
 from reo.exceptions import REoptError, OptimizationTimeout, UnexpectedError, NotOptimal, REoptFailedToStartError
 from reo.models import ModelManager
 from reo.src.profiler import Profiler
 from celery.utils.log import get_task_logger
 from julia.api import LibJulia
-import time
-import platform
+from reo.utilities import scrub_numpy_arrays_from_dict
 # julia.install()  # needs to be run if it is the first time you are using julia package
 logger = get_task_logger(__name__)
 
@@ -172,6 +173,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
 
         t_start = time.time()
         results = Main.reopt(model, reopt_inputs)
+        results = scrub_numpy_arrays_from_dict(results)
         time_dict["pyjulia_run_reopt_seconds"] = time.time() - t_start
 
         results.update(time_dict)
