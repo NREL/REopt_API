@@ -1081,6 +1081,9 @@ class DataManager:
             'TechsByNMILRegime': TechsByNMILRegime,
             'TechsCannotCurtail': techs_cannot_curtail
             }
+        ## Uncomment the following and run a scenario to get an updated modelinputs.json for creating Julia system image
+        # import json
+        # json.dump(self.reopt_inputs, open("modelinputs.json", "w"))
 
         self.reopt_inputs_bau = {
             'Tech': reopt_techs_bau,
