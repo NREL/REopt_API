@@ -88,7 +88,7 @@ Base.@kwdef struct Parameter
 	 OMperUnitSize::AxisArray # c^{om}_{t}: Operation and maintenance cost of technology t per unit of system size [$/kW]
      OMcostPerUnitProd::AxisArray
      
-	 GridExportRates::Array{Float64, 2}  # c^{e}_{uh}: Export rate for energy in energy pricing tier u in time step h   (NEW)
+	 GridExportRates::AxisArray  # c^{e}_{uh}: Export rate for energy in energy pricing tier u in time step h   (NEW)
 	 CapCostSlope::AxisArray   # c^{cm}_{ts}: Slope of capital cost curve for technology t in segment s 
      CapCostYInt::AxisArray  # c^{cb}_{ts}: Y-Intercept of capital cost curve for technology t in segment s 
      CapCostX::AxisArray    # X-value of inflection point (will be changed)
@@ -180,11 +180,11 @@ Base.@kwdef struct Parameter
 	 ElectricDerate::AxisArray
 
      # New Sets
-     SalesTiers::UnitRange
-     StorageSalesTiers::Array{Int, 1}
-	 SalesTiersByTech::AxisArray
-	 TechsBySalesTier::AxisArray
-	 SalesTiersBeyondSiteLoad::Array{Int, 1}
+     ExportTiers::Array{String,1}
+	 ExportTiersByTech::AxisArray
+	 TechsByExportTier::AxisArray
+     ExportTiersBeyondSiteLoad::Array{String, 1}
+     TechsCannotCurtail::Array{String, 1}
 
     # Feature Additions
      TechToLocation::AxisArray
@@ -206,8 +206,8 @@ function Parameter(d::Dict)
         "LevelizationFactor",
         "NMILLimits",
         "TechClassMinSize",
-		"TechsBySalesTier",
-		"SalesTiersByTech",
+		"TechsByExportTier",
+		"ExportTiersByTech",
 		"NMILRegime",
 		"TechsByNMILRegime"
      )
@@ -231,7 +231,6 @@ function Parameter(d::Dict)
     d[:DemandMonthsBin] = 1:d["DemandMonthsBinCount"]
     d[:TimeStep] = 1:d["TimeStepCount"]
     d[:TimeStepBat] = 0:d["TimeStepCount"]
-	d[:SalesTiers] = 1:d["SalesTierCount"]
     n_location = length(d["MaxSizesLocation"])
     d[:Location] = 1:n_location
 
@@ -266,7 +265,12 @@ function Parameter(d::Dict)
     d["StorageCostPerKWH"] = AxisArray([d["StorageCostPerKWH"]], d["Storage"])
     d["FuelCost"] = AxisArray(d["FuelCost"], d["FuelType"])
     d["ElecRate"] = transpose(reshape(d["ElecRate"], d["TimeStepCount"], d["PricingTierCount"]))
-    d["GridExportRates"] = transpose(reshape(d["GridExportRates"], d["TimeStepCount"], d["SalesTierCount"]))
+
+    if !isempty(d["GridExportRates"])
+        d["GridExportRates"] = AxisArray(d["GridExportRates"], d["ExportTiers"], d[:TimeStep])
+    else
+        d["GridExportRates"] = AxisArray([])
+    end
     d["FuelBurnSlope"] = AxisArray(d["FuelBurnSlope"], d["FuelBurningTechs"])
     d["FuelBurnYInt"] = AxisArray(d["FuelBurnYInt"], d["FuelBurningTechs"])
     d["ProductionFactor"] = vector_to_axisarray(d["ProductionFactor"], d["Tech"], d[:TimeStep])
@@ -291,12 +295,13 @@ function Parameter(d::Dict)
     d["SegByTechSubdivision"] = vector_to_axisarray(d["SegByTechSubdivision"], d["Subdivision"], d["Tech"])
     d["TechsByFuelType"] = AxisArray(d["TechsByFuelType"], d["FuelType"])
     d["TechsInClass"] = AxisArray(d["TechsInClass"], d["TechClass"])
-	d["SalesTiersByTech"] = AxisArray(d["SalesTiersByTech"], d["Tech"])
-	d["TechsBySalesTier"] = AxisArray(d["TechsBySalesTier"], d[:SalesTiers])
-	d["TechsByNMILRegime"] = AxisArray(d["TechsByNMILRegime"], d["NMILRegime"])
+    d["ExportTiersByTech"] = AxisArray(d["ExportTiersByTech"], d["Tech"])
+	d["TechsByExportTier"] = AxisArray(d["TechsByExportTier"], d["ExportTiers"])
+    d["TechsByNMILRegime"] = AxisArray(d["TechsByNMILRegime"], d["NMILRegime"])
 
     d = string_dictkeys_tosymbols(d)
     d = filter_dict_to_match_struct_field_names(d, Parameter)
+
     param = Parameter(;d...)
 end
 
