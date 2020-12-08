@@ -351,7 +351,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
         # delete python objects, which are not serializable
 
         for k in ['storage', 'hot_tes', 'cold_tes', 'site', 'elec_tariff', 'fuel_tariff', 'pvs', 'pvnms',
-				'load', 'util', 'heating_load', 'cooling_load', 'Nuclear'] + dfm.available_techs:
+				'load', 'util', 'heating_load', 'cooling_load', 'nuclear'] + dfm.available_techs:
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
 
