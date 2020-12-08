@@ -708,6 +708,7 @@ class DataManager:
                     om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
                 elif tech.lower() == 'nuclear':
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kwh')))
+                    om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
                 elif tech.lower() == 'chp':
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kwh')))
                     om_cost_us_dollars_per_hr_per_kw_rated.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_hr_per_kw_rated')))
