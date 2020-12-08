@@ -905,20 +905,20 @@ class DataManager:
         
         if len(reopt_techs) > 0:
             storage_sales_tiers = [3]
-            curtailment_tiers = [3]
+            sales_beyond_site_load_tiers = [3]
             max_grid_sales = self.load.annual_kwh
         else:
             storage_sales_tiers = []
-            curtailment_tiers = []
+            sales_beyond_site_load_tiers = []
             max_grid_sales = 0
             
         if len(reopt_techs_bau) > 0:
             storage_sales_tiers_bau = [3]
-            curtailment_tiers_bau = [3]
+            sales_beyond_site_load_tiers_bau = [3]
             max_grid_sales_bau = self.load.annual_kwh
         else:
             storage_sales_tiers_bau = []
-            curtailment_tiers_bau = []
+            sales_beyond_site_load_tiers_bau = []
             max_grid_sales_bau = 0
 
         time_steps_with_grid, time_steps_without_grid = self._get_time_steps_with_grid()
@@ -1016,7 +1016,7 @@ class DataManager:
             'TimeStepsWithoutGrid': time_steps_without_grid,
             'SalesTiersByTech': tariff_args.rates_by_tech,
             'TechsBySalesTier': tariff_args.techs_by_rate,
-            'CurtailmentTiers': curtailment_tiers,
+            'SalesTiersBeyondSiteLoad': sales_beyond_site_load_tiers,
             'ElectricDerate': electric_derate,
             'TechsByNMILRegime': TechsByNMILRegime
             }
@@ -1112,7 +1112,7 @@ class DataManager:
             'TimeStepsWithoutGrid': time_steps_without_grid,
             'SalesTiersByTech': tariff_args.rates_by_tech_bau,
             'TechsBySalesTier': tariff_args.techs_by_rate_bau,
-            'CurtailmentTiers': curtailment_tiers_bau,
+            'SalesTiersBeyondSiteLoad': sales_beyond_site_load_tiers_bau,
             'ElectricDerate': electric_derate_bau,
             'TechsByNMILRegime': TechsByNMILRegime_bau
         }
