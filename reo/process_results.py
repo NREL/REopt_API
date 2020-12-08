@@ -469,28 +469,59 @@ def calculate_proforma_metrics(data):
 
 
         operating_expenses_after_tax = (total_operating_expenses - deductable_operating_expenses_series) + (deductable_operating_expenses_series * (1 - tax_pct))
-
         total_cash_incentives = total_pbi * (1 - tax_pct)
         total_depreciation = total_depreciation * tax_pct
-        free_cashflow_before_income = total_depreciation + total_cash_incentives + operating_expenses_after_tax
-        free_cashflow_before_income[0] += federal_itc
-        free_cashflow_before_income = np.append([(-1 * financials['initial_capital_costs']) + total_ibi_and_cbi], free_cashflow_before_income)
+        free_cashflow = total_depreciation + total_cash_incentives + operating_expenses_after_tax
+        free_cashflow[0] += federal_itc
+        free_cashflow = np.append([(-1 * financials['initial_capital_costs']) + total_ibi_and_cbi], free_cashflow)
+        #At this point the logic branches based on third-party ownership or not - see comments
         net_present_cost = None
         annualized_payment_to_third_party_us_dollars = None
+        developer_free_cashflow = None
+        # get cumulative cashflow for developer
         if third_party:
-            # get cumulative cashflow for developer
-            discounted_cashflow = [v/((1+financials['owner_discount_pct'])**yr) for yr, v in enumerate(free_cashflow_before_income)]
-            net_present_cost = sum(discounted_cashflow) * -1
-            capital_recovery_factor = (financials['owner_discount_pct'] * (1+financials['owner_discount_pct'])**years) / \
+            developer_free_cashflow = copy.deepcopy(free_cashflow)
+            discounted_developer_cashflow = [v/((1+financials['owner_discount_pct'])**yr) for yr, v in enumerate(developer_free_cashflow)]
+            net_present_cost = sum(discounted_developer_cashflow) * -1
+            if financials['owner_discount_pct'] != 0:
+                capital_recovery_factor = (financials['owner_discount_pct'] * (1+financials['owner_discount_pct'])**years) / \
                                         ((1+financials['owner_discount_pct'])**years - 1) / (1 - tax_pct)
+            else:
+                capital_recovery_factor = (1/years) / (1 - tax_pct)
             annualized_payment_to_third_party_us_dollars = net_present_cost * capital_recovery_factor
-            annual_income_from_host = -1 * sum(discounted_cashflow) * capital_recovery_factor * (1-tax_pct)
-            free_cashflow = copy.deepcopy(free_cashflow_before_income)
-            free_cashflow[1:] += annual_income_from_host
-            irr = np.irr(free_cashflow)
-            cumulative_cashflow =  np.cumsum(free_cashflow)
+            annual_income_from_host = -1 * sum(discounted_developer_cashflow) * capital_recovery_factor * (1-tax_pct)
+            developer_free_cashflow[1:] += annual_income_from_host
+            irr = np.irr(developer_free_cashflow)
+            cumulative_cashflow =  np.cumsum(developer_free_cashflow)
+            net_free_cashflow = developer_free_cashflow
+            developer_free_cashflow = [round(i,2) for i in developer_free_cashflow]
+            electricity_bill_bau_series_bau = np.array([-1 * electric_tariff['year_one_bill_bau_us_dollars'] * \
+                                    (1+financials['escalation_pct'])**yr for yr in range(1, years+1)])
+            export_credit_bau_series_bau = np.array([electric_tariff['total_export_benefit_bau_us_dollars'] * \
+                                    (1+financials['escalation_pct'])**yr for yr in range(1, years+1)])
+            electricity_bill_series = np.array([-1 * electric_tariff['year_one_bill_us_dollars'] * \
+                                    (1+financials['escalation_pct'])**yr for yr in range(1, years+1)])
+            export_credit_series = np.array([electric_tariff['total_export_benefit_us_dollars'] * \
+                                    (1+financials['escalation_pct'])**yr for yr in range(1, years+1)])
+            annual_income_from_host_series = [-1 * annualized_payment_to_third_party_us_dollars for _ in range(years)]
+            existing_genertor_fuel_cost_series = np.array([-1 * generator['existing_gen_year_one_fuel_cost_us_dollars'] * \
+                                    (1+financials['om_cost_escalation_pct'])**yr for yr in range(1, years+1)])
+            genertor_fuel_cost_series = np.array([-1 * generator['year_one_fuel_cost_us_dollars'] * \
+                                    (1+financials['om_cost_escalation_pct'])**yr for yr in range(1, years+1)])
+            net_energy_costs = -electricity_bill_bau_series_bau - export_credit_bau_series_bau + electricity_bill_series + \
+                                export_credit_series + annual_income_from_host_series - existing_genertor_fuel_cost_series + \
+                                genertor_fuel_cost_series
+            if financials['owner_tax_pct'] > 0:
+                deductable_net_energy_costs = copy.deepcopy(net_energy_costs) 
+            else:
+                deductable_net_energy_costs = np.array([0]*years)
+                
+            offtaker_free_cashflow = [round(i,2) for i in [0] + list(electricity_bill_series + export_credit_series + genertor_fuel_cost_series + annual_income_from_host_series)]
+            offtaker_discounted_cashflow = None
+            offtaker_free_cashflow_bau = [round(i,2) for i in [0] + list(electricity_bill_bau_series_bau + export_credit_bau_series_bau + existing_genertor_fuel_cost_series)]
+            offtaker_discounted_cashflow_bau = None
         else:
-            # get cumulative cashflow for host by comparing to BAU cashflow
+            # get cumulative cashflow for offtaker
             electricity_bill_bau_series_bau = np.array([-1 * electric_tariff['year_one_bill_bau_us_dollars'] * \
                                     (1+financials['escalation_pct'])**yr for yr in range(1, years+1)])
             export_credit_bau_series_bau = np.array([electric_tariff['total_export_benefit_bau_us_dollars'] * \
@@ -502,31 +533,36 @@ def calculate_proforma_metrics(data):
             else:
                 deductable_operating_expenses_series_bau = np.array([0]*years)
             operating_expenses_after_tax_bau = (total_operating_expenses_bau - deductable_operating_expenses_series_bau) + (deductable_operating_expenses_series_bau * (1 - financials['offtaker_tax_pct']))
-            free_cashflow_before_income_bau = operating_expenses_after_tax_bau + total_cash_incentives_bau
-            free_cashflow_before_income_bau = np.append([0], free_cashflow_before_income_bau)
+            free_cashflow_bau = operating_expenses_after_tax_bau + total_cash_incentives_bau
+            free_cashflow_bau = np.append([0], free_cashflow_bau)
+            offtaker_free_cashflow = list([round(i,2) for i in free_cashflow])
+            offtaker_discounted_cashflow = [round(v/((1+financials['offtaker_discount_pct'])**yr),2) for yr, v in enumerate(offtaker_free_cashflow)]
+            offtaker_free_cashflow_bau = list([round(i,2) for i in free_cashflow_bau])
+            offtaker_discounted_cashflow_bau = [round(v/((1+financials['offtaker_discount_pct'])**yr),2) for yr, v in enumerate(free_cashflow_bau)]
             # difference optimal and BAU
-            free_cashflow =  free_cashflow_before_income - free_cashflow_before_income_bau
-            irr = np.irr(free_cashflow)
-            cumulative_cashflow =  np.cumsum(free_cashflow)
-
-        #when the cumulative cashflow goes positive, scale the amount by the free cashflow to
-        #approximate a partial year
-        if cumulative_cashflow[-1] < 0:
+            net_free_cashflow =  free_cashflow - free_cashflow_bau                                          
+            irr = np.irr(net_free_cashflow)
+            cumulative_cashflow =  np.cumsum(net_free_cashflow)
+        #At this point we have the cumulative_cashflow for the developer or offtaker so the payback calculation is the same
+        if cumulative_cashflow[-1] < 0: #case where the system does not pay itself back in the analysis period
             return None, None, round(net_present_cost,4) if net_present_cost is not None else None, \
-               round(annualized_payment_to_third_party_us_dollars,4) if annualized_payment_to_third_party_us_dollars is not None else None
-
+               round(annualized_payment_to_third_party_us_dollars,4) if annualized_payment_to_third_party_us_dollars is not None else None, \
+               offtaker_free_cashflow, offtaker_free_cashflow_bau, offtaker_discounted_cashflow, offtaker_discounted_cashflow_bau, \
+               developer_free_cashflow
         simple_payback_years = 0
         for i in range(1, years+1):
             # add years where the cumulative cashflow is negative
             if cumulative_cashflow[i] < 0:
                 simple_payback_years += 1
             # fractionally add years where the cumulative cashflow became positive
-            elif (cumulative_cashflow[i-1] < 0) and (cumulative_cashflow[i] > 0):
-                simple_payback_years += -(cumulative_cashflow[i-1]/free_cashflow[i])
+            elif (cumulative_cashflow[i-1] < 0) and (cumulative_cashflow[i] > 0): 
+                simple_payback_years += -(cumulative_cashflow[i-1]/net_free_cashflow[i])
             # skip years where cumulative cashflow is positive and the previous year's is too
 
         return round(simple_payback_years,4), round(irr,4), round(net_present_cost,4) if net_present_cost is not None else None, \
-               round(annualized_payment_to_third_party_us_dollars,4) if annualized_payment_to_third_party_us_dollars is not None else None
+               round(annualized_payment_to_third_party_us_dollars,4) if annualized_payment_to_third_party_us_dollars is not None else None, \
+               offtaker_free_cashflow, offtaker_free_cashflow_bau, offtaker_discounted_cashflow, offtaker_discounted_cashflow_bau, \
+               developer_free_cashflow
 
 
 @shared_task(bind=True, base=ProcessResultsTask, ignore_result=True)
@@ -1296,13 +1332,27 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
         data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
 
         #simple payback needs all data to be computed so running that calculation here
-        simple_payback, irr, net_present_cost, annualized_payment_to_third_party_us_dollars = \
+        simple_payback, irr, net_present_cost, annualized_payment_to_third_party_us_dollars, \
+        offtaker_annual_free_cashflow_series_us_dollars, offtaker_annual_free_cashflow_series_bau_us_dollars, \
+        offtaker_discounted_annual_free_cashflow_series_us_dollars, offtaker_discounted_annual_free_cashflow_series_bau_us_dollars,\
+        developer_annual_free_cashflow_series_us_dollars = \
             calculate_proforma_metrics(data)
         data['outputs']['Scenario']['Site']['Financial']['simple_payback_years'] = simple_payback
         data['outputs']['Scenario']['Site']['Financial']['irr_pct'] = irr if not np.isnan(irr or np.nan) else None
         data['outputs']['Scenario']['Site']['Financial']['net_present_cost_us_dollars'] = net_present_cost
         data['outputs']['Scenario']['Site']['Financial']['annualized_payment_to_third_party_us_dollars'] = \
             annualized_payment_to_third_party_us_dollars
+        data['outputs']['Scenario']['Site']['Financial']['developer_annual_free_cashflow_series_us_dollars'] = \
+            developer_annual_free_cashflow_series_us_dollars
+        data['outputs']['Scenario']['Site']['Financial']['offtaker_annual_free_cashflow_series_us_dollars'] = \
+            offtaker_annual_free_cashflow_series_us_dollars
+        data['outputs']['Scenario']['Site']['Financial']['offtaker_annual_free_cashflow_series_bau_us_dollars'] = \
+            offtaker_annual_free_cashflow_series_bau_us_dollars
+        data['outputs']['Scenario']['Site']['Financial']['offtaker_discounted_annual_free_cashflow_series_us_dollars'] = \
+            offtaker_discounted_annual_free_cashflow_series_us_dollars
+        data['outputs']['Scenario']['Site']['Financial']['offtaker_discounted_annual_free_cashflow_series_bau_us_dollars'] = \
+            offtaker_discounted_annual_free_cashflow_series_bau_us_dollars
+
         data = EmissionsCalculator.add_to_data(data)
 
         pv_watts_station_check = data['outputs']['Scenario']['Site']['PV'][0].get('station_distance_km') or 0

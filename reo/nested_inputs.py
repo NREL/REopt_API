@@ -1276,7 +1276,6 @@ nested_input_definitions = {
       "CHP": {
         "prime_mover": {
           "type": "str",
-          "restrict_to": ['recip_engine', 'micro_turbine', 'combustion_turbine', 'fuel_cell'],
           "description": "CHP prime mover type (recip_engine, micro_turbine, combustion_turbine, fuel_cell)"
         },
         "size_class": {
@@ -1311,7 +1310,7 @@ nested_input_definitions = {
         "tech_size_for_cost_curve": {
           "type": ["float", "list_of_float"],
           "min": 0.0,
-          "max": 1.0e5,
+          "max": 1.0e10,
           "description": "Size of CHP systems corresponding to installed cost input points"
         },
         "om_cost_us_dollars_per_kw": {
@@ -1384,6 +1383,10 @@ nested_input_definitions = {
           "min": 0.0,
           "max": 1.0,
           "description": "Derate slope as a percent/fraction of rated power per degree F"
+        },
+        "chp_unavailability_hourly": {
+          "type": "list_of_float",
+          "description": "CHP unavailability for scheduled and unschedules maintenance; it is an hourly list (8760) of 1.0 for unavailable and 0.0 for available. Default unavailability profiles are used based on the prime_mover input to represent approximately 3-8 percent unavailability"
         },
         "macrs_option_years": {
           "type": "int",

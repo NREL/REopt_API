@@ -53,6 +53,10 @@ class ColdTest(ResourceTestCaseMixin, TestCase):
 
         # Call API, get results in "d" dictionary
         nested_data = json.load(open(self.test_post, 'rb'))
+        
+        # Add no unavailability for CPH
+        nested_data["Scenario"]["Site"]["CHP"]["chp_unavailability_hourly"] = [0.0] * 8760
+
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)

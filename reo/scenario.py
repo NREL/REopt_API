@@ -317,6 +317,8 @@ def setup_scenario(self, run_uuid, data, raw_post):
                       existing_boiler_production_type_steam_or_hw=steam_or_hw,
                       oa_temp_degF=inputs_dict['Site']['outdoor_air_temp_degF'],
                       site_elevation_ft=inputs_dict['Site']['elevation_ft'],
+                      outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
+                      outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
                       time_steps_per_hour=inputs_dict.get('time_steps_per_hour'), **inputs_dict['Site']['CHP'])
 
         # Absorption chiller

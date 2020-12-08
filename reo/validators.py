@@ -38,10 +38,10 @@ import copy
 from reo.src.urdb_rate import Rate
 import re
 import uuid
-import pickle
 from reo.src.techs import Generator, Boiler, CHP, AbsorptionChiller
 from reo.nested_inputs import max_big_number
 from reo.src.emissions_calculator import EmissionsCalculator
+from reo.utilities import generate_year_profile_hourly
 
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'r'))]
@@ -997,27 +997,49 @@ class ValidateNestedInput:
                 prime_mover = real_values.get('prime_mover')
                 size_class = real_values.get('size_class')
                 if prime_mover is not None:
-                    if size_class is not None:
-                        if (size_class >= 0) and (size_class < n_classes[prime_mover]):
+                    if prime_mover not in prime_mover_defaults_all.keys():
+                        self.input_data_errors.append(
+                                'prime_mover not in valid options of ' + str(list(prime_mover_defaults_all.keys())))
+                    else:  # Only do further checks on CHP if the prime_mover is a valid input
+                        if size_class is not None:
+                            if (size_class >= 0) and (size_class < n_classes[prime_mover]):
+                                prime_mover_defaults = {param: prime_mover_defaults_all[prime_mover][param][size_class]
+                                                for param in prime_mover_defaults_all[prime_mover].keys()}
+                            else:
+                                self.input_data_errors.append(
+                                    'The size class input is outside the valid range for ' + str(prime_mover))
+                        else:
+                            size_class = CHP.default_chp_size_class[prime_mover]
                             prime_mover_defaults = {param: prime_mover_defaults_all[prime_mover][param][size_class]
-                                            for param in prime_mover_defaults_all[prime_mover].keys()}
+                                                for param in prime_mover_defaults_all[prime_mover].keys()}
+                        # create an updated attribute set to check invalid combinations of input data later
+                        prime_mover_defaults.update({"size_class": size_class})
+                        updated_set = copy.deepcopy(prime_mover_defaults)
+                        for param, value in prime_mover_defaults.items():
+                            if real_values.get(param) is None:
+                                self.update_attribute_value(object_name_path, number, param, value)
+                            else:
+                                updated_set[param] = real_values.get(param)
+                        # Establish a CHP unavailability profile consistent with the appropriate year calendar
+                        if real_values.get("chp_unavailability_hourly") is None:
+                            # TODO put in "prime_mover" instead of hard-coded "recip_engine" for path (after adding other prime_mover unavailability periods)
+                            chp_unavailability_path = os.path.join('input_files', 'CHP', 'recip_engine_unavailability_periods.csv')
+                            chp_unavailability_periods = pd.read_csv(chp_unavailability_path)
+                            if self.input_dict['Scenario']['Site']['LoadProfile'].get("doe_reference_name") is not None:
+                                year = 2017  # If using DOE building, load matches with 2017 calendar
+                            elif self.input_dict['Scenario']['Site']['LoadProfile'].get("year") is None:
+                                year = 2019 # Default year is 2019
+                            else: 
+                                year = self.input_dict['Scenario']['Site']['LoadProfile'].get("year")
+                            chp_unavailability_hourly_list = generate_year_profile_hourly(year, chp_unavailability_periods)
+                            self.update_attribute_value(object_name_path, number, "chp_unavailability_hourly", chp_unavailability_hourly_list)
                         else:
-                            self.input_data_errors.append(
-                                'The size class input is outside the valid range for ' + str(prime_mover))
-                    else:
-                        size_class = CHP.default_chp_size_class[prime_mover]
-                        prime_mover_defaults = {param: prime_mover_defaults_all[prime_mover][param][size_class]
-                                            for param in prime_mover_defaults_all[prime_mover].keys()}
-                    # create an updated attribute set to check invalid combinations of input data later
-                    prime_mover_defaults.update({"size_class": size_class})
-                    updated_set = copy.deepcopy(prime_mover_defaults)
-                    for param, value in prime_mover_defaults.items():
-                        if real_values.get(param) is None:
-                            self.update_attribute_value(object_name_path, number, param, value)
-                        else:
-                            updated_set[param] = real_values.get(param)
+                            if min(real_values.get("chp_unavailability_hourly")) < 0 or max(real_values.get("chp_unavailability_hourly")) > 1.0:
+                                self.input_data_errors.append('All values for CHP unavailability must be between 0.0 and 1.0')
+                            self.validate_8760(real_values.get("chp_unavailability_hourly"),
+                                                "CHP", "chp_unavailability_hourly", self.input_dict['Scenario']['time_steps_per_hour'])
 
-                    self.chp_checks(updated_set, object_name_path, number)
+                        self.chp_checks(updated_set, object_name_path, number)
 
                 # otherwise, check if the user intended to run CHP and supplied sufficient info
                 else:
@@ -1051,7 +1073,16 @@ class ValidateNestedInput:
                         filtered_values = {k: real_values.get(k) for k in required_keys}
                         for k,v in filtered_values.items():
                             if v is None:
-                                self.input_data_errors.append('CHP is missing a value for the {} parameter'.format(k))
+                                self.input_data_errors.append('No prime_mover was input so all cost and performance parameters must be input. \
+                                    CHP is missing a value for the {} parameter'.format(k))
+
+                        if real_values.get("chp_unavailability_hourly") is None:
+                            self.input_data_errors.append('Must input an 8760 profile for CHP unavailability')
+                        else:
+                            if min(real_values.get("chp_unavailability_hourly")) < 0 or max(real_values.get("chp_unavailability_hourly")) > 1.0:
+                                self.input_data_errors.append('All values for CHP unavailability must be between 0.0 and 1.0')
+                            self.validate_8760(real_values.get("chp_unavailability_hourly"),
+                                                "CHP", "chp_unavailability_hourly", self.input_dict['Scenario']['time_steps_per_hour'])
 
                         self.chp_checks(filtered_values, object_name_path, number)
 
@@ -1444,9 +1475,9 @@ class ValidateNestedInput:
             # this logic is assumed in calculating after incentive capex costs
             if real_values.get("third_party_ownership") is False:
                 self.update_attribute_value(object_name_path, number, 'owner_discount_pct', real_values.get("offtaker_discount_pct"))
-                self.defaults_inserted.append(["Financial", 'owner_discount_pct'])
+                self.defaults_inserted.append(['owner_discount_pct',object_name_path])
                 self.update_attribute_value(object_name_path, number, 'owner_tax_pct', real_values.get("offtaker_tax_pct"))
-                self.defaults_inserted.append(["Financial", 'owner_tax_pct'])
+                self.defaults_inserted.append(['owner_tax_pct', object_name_path])
 
 
     def check_min_max_restrictions(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
