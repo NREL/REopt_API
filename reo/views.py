@@ -598,7 +598,7 @@ def chp_defaults(request):
             if year is not None:
                 year = int(year)
                 # TODO put in "prime_mover" instead of hard-coded "recip_engine" for path (after adding other prime_mover unavailability periods)
-                chp_unavailability_path = os.path.join('input_files', 'CHP', 'recip_engine_unavailability_periods.csv')
+                chp_unavailability_path = os.path.join('input_files', 'CHP', prime_mover+'_unavailability_periods.csv')
                 chp_unavailability_periods = pd.read_csv(chp_unavailability_path)
                 chp_unavailability_hourly_list = generate_year_profile_hourly(year, chp_unavailability_periods)
             else:
