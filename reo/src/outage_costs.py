@@ -58,6 +58,7 @@ def calc_avoided_outage_costs(data, present_worth_factor, run_uuid):
     site_outputs = data['outputs']['Scenario']['Site']
     pvs = site_outputs['PV']
     wind = site_outputs['Wind']
+    chp_kw = site_outputs["CHP"]["size_kw"]
 
     load_profile = site_inputs['LoadProfile']
     batt_roundtrip_efficiency = site_inputs['Storage']['internal_efficiency_pct'] \
@@ -76,12 +77,8 @@ def calc_avoided_outage_costs(data, present_worth_factor, run_uuid):
      
     Note: "generator_only_runs_during_grid_outage" is set to true by default
     """
-
-
     generator_in = site_inputs['Generator']
     generator_out = site_outputs['Generator']
-
-  # Generator is not allowed to run during normal time
 
     if generator_in["generator_only_runs_during_grid_outage"]:
 
@@ -90,7 +87,7 @@ def calc_avoided_outage_costs(data, present_worth_factor, run_uuid):
             diesel_kw_for_case = generator_in.get('existing_kw')
 
         elif load_profile.get('outage_start_hour') is not None and load_profile.get('outage_end_hour') is not None:
-    # handles resilience scenarion where output will have existing_kw embedded
+            # handles resilience scenario where output will have existing_kw embedded
             diesel_kw_for_case = generator_out.get('size_kw')
 
     # works for financial scenario when the generator is allowed to run
@@ -98,8 +95,6 @@ def calc_avoided_outage_costs(data, present_worth_factor, run_uuid):
     else:
         diesel_kw_for_case = generator_out.get('size_kw')
 
-
-    
     pv_production = []
     for p in pvs:
         add_prod = p.get('year_one_power_production_series_kw') or []
@@ -135,8 +130,8 @@ def calc_avoided_outage_costs(data, present_worth_factor, run_uuid):
         fuel_available=generator_in['fuel_avail_gal'],
         b=generator_in['fuel_intercept_gal_per_hr'],
         m=generator_in['fuel_slope_gal_per_kwh'],
-        diesel_min_turndown=generator_in['min_turn_down_pct'],
         celery_eager=celery_eager,
+        chp_kw=chp_kw
     )
 
     avg_crit_ld = sum(critical_load) / len(critical_load)

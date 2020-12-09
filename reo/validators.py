@@ -1475,9 +1475,9 @@ class ValidateNestedInput:
             # this logic is assumed in calculating after incentive capex costs
             if real_values.get("third_party_ownership") is False:
                 self.update_attribute_value(object_name_path, number, 'owner_discount_pct', real_values.get("offtaker_discount_pct"))
-                self.defaults_inserted.append(["Financial", 'owner_discount_pct'])
+                self.defaults_inserted.append(['owner_discount_pct',object_name_path])
                 self.update_attribute_value(object_name_path, number, 'owner_tax_pct', real_values.get("offtaker_tax_pct"))
-                self.defaults_inserted.append(["Financial", 'owner_tax_pct'])
+                self.defaults_inserted.append(['owner_tax_pct', object_name_path])
 
 
     def check_min_max_restrictions(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
