@@ -266,7 +266,6 @@ def run_outage_sim(run_uuid, with_tech=True, bau=False):
             fuel_available=gen.fuel_avail_gal,
             b=gen.fuel_intercept_gal_per_hr,
             m=gen.fuel_slope_gal_per_kwh,
-            diesel_min_turndown=gen.min_turn_down_pct,
             celery_eager=celery_eager,
             chp_kw=chp.size_kw or 0,
         )
@@ -289,7 +288,6 @@ def run_outage_sim(run_uuid, with_tech=True, bau=False):
             fuel_available=gen.fuel_avail_gal,
             b=gen.fuel_intercept_gal_per_hr,
             m=gen.fuel_slope_gal_per_kwh,
-            diesel_min_turndown=gen.min_turn_down_pct,
             chp_kw=chp.size_kw or 0,
         )
         results.update({key + '_bau': val for key, val in bau_results.items()})

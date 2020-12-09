@@ -35,7 +35,7 @@ from time import sleep
 
 
 @shared_task
-def simulate_outage(init_time_step, diesel_kw, fuel_available, b, m, diesel_min_turndown, batt_kwh, batt_kw,
+def simulate_outage(init_time_step, diesel_kw, fuel_available, b, m, batt_kwh, batt_kw,
                     batt_roundtrip_efficiency, n_timesteps, n_steps_per_hour, batt_soc_kwh, crit_load, chp_kw):
     """
     Determine how long the critical load can be met with gas generator and energy storage.
@@ -45,7 +45,6 @@ def simulate_outage(init_time_step, diesel_kw, fuel_available, b, m, diesel_min_
     :param fuel_available: float, gallons
     :param b: float, diesel fuel burn rate intercept coefficient (y = m*x + b)  [gal/hr]
     :param m: float, diesel fuel burn rate slope (y = m*x + b)  [gal/kWh]
-    :param diesel_min_turndown:
     :param batt_kwh: float, battery capacity
     :param batt_kw: float, battery inverter capacity (AC rating)
     :param batt_roundtrip_efficiency:
@@ -67,19 +66,11 @@ def simulate_outage(init_time_step, diesel_kw, fuel_available, b, m, diesel_min_
                     -load_kw / n_steps_per_hour * batt_roundtrip_efficiency,  # excess energy
                 )
         else:  # check if we can meet load with generator then storage
-            fuel_needed = (m * max(load_kw, diesel_min_turndown * diesel_kw) + b) / n_steps_per_hour
+            fuel_needed = (m * load_kw + b) / n_steps_per_hour
             # (gal/kWh * kW + gal/hr) * hr = gal
-            # TODO: do we want to enforce diesel_min_turndown? (Used to not b/c we assume it is an emergency so it doesn't matter)
 
             if load_kw <= diesel_kw and fuel_needed <= fuel_available:  # diesel can meet load
                 fuel_available -= fuel_needed
-                if load_kw < diesel_min_turndown * diesel_kw:  # extra generation goes to battery
-                    if batt_soc_kwh < batt_kwh:  # charge battery if there's room in the battery
-                        batt_soc_kwh += min(
-                            batt_kwh - batt_soc_kwh,     # room available
-                            batt_kw / n_steps_per_hour * batt_roundtrip_efficiency,  # inverter capacity
-                            (diesel_min_turndown * diesel_kw - load_kw) / n_steps_per_hour * batt_roundtrip_efficiency  # excess energy
-                        )
                 load_kw = 0
             else:  # diesel can meet part or no load
 
@@ -116,7 +107,7 @@ def simulate_outage(init_time_step, diesel_kw, fuel_available, b, m, diesel_min_
 
 
 def simulate_outages(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=[], init_soc=0, critical_loads_kw=[], wind_kw_ac_hourly=None,
-                     batt_roundtrip_efficiency=0.829, diesel_kw=0, fuel_available=0, b=0, m=0, diesel_min_turndown=0.3,
+                     batt_roundtrip_efficiency=0.829, diesel_kw=0, fuel_available=0, b=0, m=0,
                      celery_eager=True, chp_kw=0
                      ):
     """
@@ -131,7 +122,6 @@ def simulate_outages(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=[], init_soc=0, crit
     :param fuel_available: float, gallons of diesel fuel available
     :param b: float, diesel fuel burn rate intercept coefficient (y = m*x + b*rated_capacity)  [gal/kwh/kw]
     :param m: float, diesel fuel burn rate slope (y = m*x + b*rated_capacity)  [gal/kWh]
-    :param diesel_min_turndown: minimum generator turndown in fraction of generator capacity (0 to 1)
     :return: dict,
         {
             "resilience_by_timestep": r,
@@ -178,7 +168,6 @@ def simulate_outages(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=[], init_soc=0, crit
             diesel_kw=diesel_kw,
             fuel_available=fuel_available,
             b=b, m=m,
-            diesel_min_turndown=diesel_min_turndown,
             batt_kwh=batt_kwh,
             batt_kw=batt_kw,
             batt_roundtrip_efficiency=batt_roundtrip_efficiency,
@@ -202,7 +191,6 @@ def simulate_outages(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=[], init_soc=0, crit
                 diesel_kw=diesel_kw,
                 fuel_available=fuel_available,
                 b=b, m=m,
-                diesel_min_turndown=diesel_min_turndown,
                 batt_kwh=batt_kwh,
                 batt_kw=batt_kw,
                 batt_roundtrip_efficiency=batt_roundtrip_efficiency,

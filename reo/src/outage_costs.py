@@ -130,7 +130,6 @@ def calc_avoided_outage_costs(data, present_worth_factor, run_uuid):
         fuel_available=generator_in['fuel_avail_gal'],
         b=generator_in['fuel_intercept_gal_per_hr'],
         m=generator_in['fuel_slope_gal_per_kwh'],
-        diesel_min_turndown=generator_in['min_turn_down_pct'],
         celery_eager=celery_eager,
         chp_kw=chp_kw
     )
