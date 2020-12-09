@@ -38,7 +38,7 @@ from reo.exceptions import REoptError, UnexpectedError
 from reo.models import ModelManager, PVModel, LoadProfileModel, ScenarioModel, LoadProfileBoilerFuelModel, \
     LoadProfileChillerElectricModel, ElectricChillerModel, BoilerModel, FinancialModel, WindModel, \
     AbsorptionChillerModel
-from reo.src.outage_costs import calc_avoided_outage_costs
+# from reo.src.outage_costs import calc_avoided_outage_costs  # not used b/c requires outage sim, which can take a long time
 from reo.src.profiler import Profiler
 from reo.src.emissions_calculator import EmissionsCalculator
 from reo.utilities import annuity
