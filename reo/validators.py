@@ -246,7 +246,7 @@ class URDB_RateValidator:
 
         return valid
 
-    def validCompleteHours(self, schedule_name,expected_counts):
+    def validCompleteHours(self, schedule_name, expected_counts):
         # check that each array in a schedule contains the correct number of entries
         # return Boolean if any errors found
 
@@ -254,10 +254,10 @@ class URDB_RateValidator:
             valid = True
             schedule = getattr(self,schedule_name)
 
-            def recursive_search(item,level=0, entry=0):
+            def recursive_search(item, level=0, entry=0):
                 if type(item) == list:
-                    if len(item) != expected_counts[level]:
-                        msg = 'Entry {} {}{} does not contain {} entries'.format(entry,'in sublevel ' + str(level)+ ' ' if level>0 else '', schedule_name, expected_counts[level])
+                    if len(item)%expected_counts[level] != 0:
+                        msg = 'Entry {} {}{} does not contain a number of entries divisible by {}'.format(entry, 'in sublevel ' + str(level)+ ' ' if level>0 else '', schedule_name, expected_counts[level])
                         self.errors.append(msg)
                         valid = False
                     for ii,subitem in enumerate(item):
@@ -1138,6 +1138,16 @@ class ValidateNestedInput:
                     self.update_attribute_value(object_name_path, number,  'urdb_response', rate.urdb_dict)
                     electric_tariff['urdb_response'] = rate.urdb_dict
                     self.validate_urdb_response()
+
+            if electric_tariff['urdb_response'] is not None:
+                if len(electric_tariff['urdb_response'].get('energyweekdayschedule',[[]])[0]) > 24:
+                    energy_rate_resolution = int(len(electric_tariff['urdb_response'].get('energyweekdayschedule',[[]])[0]) / 24)
+                    if energy_rate_resolution > self.input_dict['Scenario']['time_steps_per_hour']:
+                        self.input_data_errors.append( \
+                            "The URDB Rate provided has been determined to have a resolution of {urdb_ts} timesteps per hour, but the Scenario time_steps_per_hour is set to {scenario_ts}."
+                            " Please choose a valid Scenario time_steps_per_hour less than or equal to {scenario_ts}, or consolidate the rate's energyweekdayschedule, energyweekendschedule, demandweekdayschedule, and demandweekendchedule parameters.".format(
+                                scenario_ts = int(self.input_dict['Scenario']['time_steps_per_hour']),
+                                urdb_ts = energy_rate_resolution))
 
             if electric_tariff['add_blended_rates_to_urdb_rate']:
                 monthly_energy = electric_tariff.get('blended_monthly_rates_us_dollars_per_kwh', True)
