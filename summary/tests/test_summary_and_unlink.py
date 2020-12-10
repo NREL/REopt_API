@@ -50,7 +50,6 @@ class SummaryResourceTest(ResourceTestCaseMixin, TestCase):
     def test_summary_and_unlink(self):
         self.test_run_uuid = self.send_valid_nested_post(self.test_user_uuid)
         summary_response = self.get_summary()
-        print(summary_response.content)
         self.assertTrue(self.test_run_uuid in str(summary_response.content))
         self.unlink_record()
         self.unlink_messages()
