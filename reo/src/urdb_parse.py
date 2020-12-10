@@ -341,37 +341,40 @@ class UrdbParse:
                     else:
                         is_weekday = False
 
+                    energy_ts_per_hour = len(current_rate.energyweekdayschedule)/24
+                    simulation_time_steps_per_rate_timestep = int(self.time_steps_per_hour / energy_ts_per_hour)
                     for hour in range(0, 24):
-                        if is_weekday:
-                            period = current_rate.energyweekdayschedule[month][hour]
-                        else:
-                            period = current_rate.energyweekendschedule[month][hour]
+                        for ts in range(energy_ts_per_hour):
+                            if is_weekday:
+                                period = current_rate.energyweekdayschedule[month][ts]
+                            else:
+                                period = current_rate.energyweekendschedule[month][ts]
 
-                        # workaround for cases where there are different numbers of tiers in periods
-                        n_tiers_in_period = len(current_rate.energyratestructure[period])
+                            # workaround for cases where there are different numbers of tiers in periods
+                            n_tiers_in_period = len(current_rate.energyratestructure[period])
 
-                        if n_tiers_in_period == 1:
-                            tier_use = 0  # use the first and only tier in the period
-                        elif tier > n_tiers_in_period-1:  # 'tier' is indexed on zero
-                            tier_use = n_tiers_in_period-1  # use last tier in current period, which has less tiers than the maximum tiers for any period
-                        else:
-                            tier_use = tier
+                            if n_tiers_in_period == 1:
+                                tier_use = 0  # use the first and only tier in the period
+                            elif tier > n_tiers_in_period-1:  # 'tier' is indexed on zero
+                                tier_use = n_tiers_in_period-1  # use last tier in current period, which has less tiers than the maximum tiers for any period
+                            else:
+                                tier_use = tier
 
-                        if average_rates:
-                            rate = rate_average
-                        else:
-                            rate = float(current_rate.energyratestructure[period][tier_use].get('rate') or 0)
+                            if average_rates:
+                                rate = rate_average
+                            else:
+                                rate = float(current_rate.energyratestructure[period][tier_use].get('rate') or 0)
 
-                        adj = float(current_rate.energyratestructure[period][tier_use].get('adj') or 0)
-                        total_rate = rate + adj
+                            adj = float(current_rate.energyratestructure[period][tier_use].get('adj') or 0)
+                            total_rate = rate + adj
 
-                        for step in range(0, self.time_steps_per_hour):
-                            if self.add_tou_energy_rates_to_urdb_rate:
-                                idx = hour_of_year  # len(self.custom_tou_energy_rates) == 8760:
-                                if len(self.custom_tou_energy_rates) == 35040:
-                                    idx = hour_of_year * 4 + step
-                                total_rate = rate + adj + self.custom_tou_energy_rates[idx]
-                            self.energy_costs.append(total_rate)
+                            for step in range(0, simulation_time_steps_per_rate_timestep):
+                                if self.add_tou_energy_rates_to_urdb_rate:
+                                    idx = hour_of_year  # len(self.custom_tou_energy_rates) == 8760:
+                                    if len(self.custom_tou_energy_rates) == 35040:
+                                        idx = hour_of_year * 4 + step
+                                    total_rate = rate + adj + self.custom_tou_energy_rates[idx]
+                                self.energy_costs.append(total_rate)
                         hour_of_year += 1
 
     def prepare_techs_and_loads(self, techs):
@@ -673,19 +676,24 @@ class UrdbParse:
 
         hour_of_year = start_hour
         step_of_year = start_step
+        demand_ts_per_hour = len(current_rate.demandweekdayschedule)/24
+        simulation_time_steps_per_rate_timestep = int(self.time_steps_per_hour / demand_ts_per_hour)
+        
         for day in range(0, self.days_in_month[month]):
-
             if calendar.weekday(self.year, month + 1, day + 1) < 5:
                 is_weekday = True
             else:
                 is_weekday = False
 
             for hour in range(0, 24):
-                for step in range(0, self.time_steps_per_hour):
-                    if is_weekday and current_rate.demandweekdayschedule[month][hour] == period:
-                        step_array.append(step_of_year)
-                    elif not is_weekday and current_rate.demandweekendschedule[month][hour] == period:
-                        step_array.append(step_of_year)
-                    step_of_year += 1
+                demand_ts = hour * demand_ts_per_hour
+                for ts in range(demand_ts_per_hour):
+                    for step in range(0, simulation_time_steps_per_rate_timestep):
+                        if is_weekday and current_rate.demandweekdayschedule[month][demand_ts] == period:
+                            step_array.append(step_of_year)
+                        elif not is_weekday and current_rate.demandweekendschedule[month][demand_ts] == period:
+                            step_array.append(step_of_year)
+                        step_of_year += 1
+                    demand_ts += 1
                 hour_of_year += 1
         return step_array
