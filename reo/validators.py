@@ -379,8 +379,6 @@ class ValidateNestedInput:
 
 
     # EXAMPLE 1 - BASIC POST
-
-
     # {
     #     "Scenario": {
     #         "Site": {
@@ -409,7 +407,6 @@ class ValidateNestedInput:
     #             }
     #         }
     #     }
-
     def __init__(self, input_dict):
         self.list_or_dict_objects = ['PV']
         self.nested_input_definitions = nested_input_definitions
@@ -422,7 +419,8 @@ class ValidateNestedInput:
         self.defaults_inserted = []
         self.input_dict = dict()
         if type(input_dict) is not dict:
-            self.input_data_errors.append("POST must contain a valid JSON formatted accoring to format described in https://developer.nrel.gov/docs/energy-optimization/reopt-v1/")
+            self.input_data_errors.append(("POST must contain a valid JSON formatted accoring to format described in "
+                                           "https://developer.nrel.gov/docs/energy-optimization/reopt-v1/"))
         else:        
             self.input_dict['Scenario'] = input_dict.get('Scenario') or {}
             for k,v in input_dict.items():
@@ -1013,9 +1011,27 @@ class ValidateNestedInput:
 
         if object_name_path[-1] == "LoadProfile":
             if self.isValid:
+
+                if real_values.get('outage_start_time_step') is not None and real_values.get('outage_end_time_step') is not None:
+                    if real_values.get('outage_start_time_step') >= real_values.get('outage_end_time_step'):
+                        self.input_data_errors.append('LoadProfile outage_start_time_step must be less than outage_end_time_step.')
+                    if self.input_dict['Scenario']['time_steps_per_hour'] == 1 and real_values.get('outage_end_time_step') > 8760:
+                        self.input_data_errors.append('outage_end_time_step must be <= 8760 when time_steps_per_hour = 1')
+                    if self.input_dict['Scenario']['time_steps_per_hour'] == 2 and real_values.get('outage_end_time_step') > 17520:
+                        self.input_data_errors.append('outage_end_time_step must be <= 17520 when time_steps_per_hour = 2')
+                    # case of 'time_steps_per_hour' == 4 and outage_end_time_step > 35040 handled by "max" value
+
                 if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
-                    if real_values.get('outage_start_hour') == real_values.get('outage_end_hour'):
-                        self.input_data_errors.append('LoadProfile outage_start_hour and outage_end_hour cannot be the same')
+                    if real_values.get('outage_start_hour') >= real_values.get('outage_end_hour'):
+                        self.input_data_errors.append('LoadProfile outage_start_hour must be less than outage_end_hour.')
+                    self.warnings.append(("outage_start_hour and outage_end_hour will be deprecated soon in favor of "
+                                          "outage_start_time_step and outage_end_time_step"))
+                    # the following preserves the original behavior
+                    self.update_attribute_value(object_name_path, number, 'outage_start_time_step',
+                                                real_values.get('outage_start_hour') + 1)
+                    self.update_attribute_value(object_name_path, number, 'outage_end_time_step',
+                                                real_values.get('outage_end_hour') + 1)
+
                 if type(real_values.get('percent_share')) in [float, int]:
                     if real_values.get('percent_share') == 100:
                         real_values['percent_share'] = [100]

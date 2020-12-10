@@ -45,8 +45,8 @@ class TestHybridLoadProfile(ResourceTestCaseMixin, TestCase):
                         "critical_loads_kw": [],
                         "loads_kw_is_net": True,
                         "critical_loads_kw_is_net": False,
-                        "outage_start_hour": None,
-                        "outage_end_hour": None,
+                        "outage_start_time_step": None,
+                        "outage_end_time_step": None,
                         "critical_load_pct": 0.5,
                         "outage_is_major_event": True
                     },
