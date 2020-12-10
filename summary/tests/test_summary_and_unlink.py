@@ -83,18 +83,18 @@ class SummaryResourceTest(ResourceTestCaseMixin, TestCase):
         return self.api_client.post(self.reopt_base_job_url, format='json', data=data)
 
     def send_valid_nested_post(self,user_uuid):
-        nested_data = {'Scenario':{
-                        'Site': {
-                            'latitude':-31.9505,
-                            'longitude':115.8605,
-                            'ElectricTariff':
+        nested_data = {"Scenario": {
+                        "Site": {
+                            "latitude": -31.9505,
+                            "longitude": 115.8605,
+                            "ElectricTariff":
                                 {"blended_annual_rates_us_dollars_per_kwh": 0.10,
                                  "blended_annual_demand_charges_us_dollars_per_kw": 0},
-                            'LoadProfile': {'doe_reference_name': 'Hospital',
-                                            'annual_kwh':100},
-                            'Wind': {'max_kw':0},
-                            'PV': {'max_kw': 0},
-                            'Storage': {'max_kw': 0}
+                            "LoadProfile": {"doe_reference_name": "Hospital",
+                                            "annual_kwh": 100},
+                            "Wind": {"max_kw": 0},
+                            "PV": {"max_kw": 0},
+                            "Storage": {"max_kw": 0}
                             }
                         }}
         nested_data['Scenario']['user_uuid'] = user_uuid

@@ -986,10 +986,10 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             data['outputs']['Scenario']['Site']['PV'] = data['outputs']['Scenario']['Site']['PV'][0]
 
         #Preserving Backwards Compatability
-        data['inputs']['Scenario']['Site']['LoadProfile']['outage_start_hour'] = data['inputs']['Scenario']['Site']['LoadProfile']['outage_start_time_step']
+        data['inputs']['Scenario']['Site']['LoadProfile']['outage_start_hour'] = data['inputs']['Scenario']['Site']['LoadProfile'].get('outage_start_time_step')
         if data['inputs']['Scenario']['Site']['LoadProfile']['outage_start_hour'] is not None:
             data['inputs']['Scenario']['Site']['LoadProfile']['outage_start_hour'] -= 1
-        data['inputs']['Scenario']['Site']['LoadProfile']['outage_end_hour'] = data['inputs']['Scenario']['Site']['LoadProfile']['outage_end_time_step']
+        data['inputs']['Scenario']['Site']['LoadProfile']['outage_end_hour'] = data['inputs']['Scenario']['Site']['LoadProfile'].get('outage_end_time_step')
         if data['inputs']['Scenario']['Site']['LoadProfile']['outage_end_hour'] is not None:
             data['inputs']['Scenario']['Site']['LoadProfile']['outage_end_hour'] -= 1
         data["messages"]["warnings"]["Deprecations"] = [
