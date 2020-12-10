@@ -344,11 +344,12 @@ class UrdbParse:
                     energy_ts_per_hour = len(current_rate.energyweekdayschedule)/24
                     simulation_time_steps_per_rate_timestep = int(self.time_steps_per_hour / energy_ts_per_hour)
                     for hour in range(0, 24):
+                        energy_ts = hour * energy_ts_per_hour
                         for ts in range(energy_ts_per_hour):
                             if is_weekday:
-                                period = current_rate.energyweekdayschedule[month][ts]
+                                period = current_rate.energyweekdayschedule[month][energy_ts]
                             else:
-                                period = current_rate.energyweekendschedule[month][ts]
+                                period = current_rate.energyweekendschedule[month][energy_ts]
 
                             # workaround for cases where there are different numbers of tiers in periods
                             n_tiers_in_period = len(current_rate.energyratestructure[period])
@@ -375,6 +376,7 @@ class UrdbParse:
                                         idx = hour_of_year * 4 + step
                                     total_rate = rate + adj + self.custom_tou_energy_rates[idx]
                                 self.energy_costs.append(total_rate)
+                            energy_ts += 1
                         hour_of_year += 1
 
     def prepare_techs_and_loads(self, techs):
@@ -669,6 +671,9 @@ class UrdbParse:
         step_array = []
         start_step = 1
         start_hour = 1
+        
+        demand_ts_per_hour = len(current_rate.demandweekdayschedule)/24
+        simulation_time_steps_per_rate_timestep = int(self.time_steps_per_hour / demand_ts_per_hour)
 
         if month > 0:
             start_hour = self.last_hour_in_month[month - 1] + 1
@@ -676,8 +681,6 @@ class UrdbParse:
 
         hour_of_year = start_hour
         step_of_year = start_step
-        demand_ts_per_hour = len(current_rate.demandweekdayschedule)/24
-        simulation_time_steps_per_rate_timestep = int(self.time_steps_per_hour / demand_ts_per_hour)
         
         for day in range(0, self.days_in_month[month]):
             if calendar.weekday(self.year, month + 1, day + 1) < 5:
@@ -694,6 +697,6 @@ class UrdbParse:
                         elif not is_weekday and current_rate.demandweekendschedule[month][demand_ts] == period:
                             step_array.append(step_of_year)
                         step_of_year += 1
-                    demand_ts += 1
+                        demand_ts += 1
                 hour_of_year += 1
         return step_array
