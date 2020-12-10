@@ -341,8 +341,8 @@ class UrdbParse:
                     else:
                         is_weekday = False
 
-                    energy_ts_per_hour = len(current_rate.energyweekdayschedule)/24
-                    simulation_time_steps_per_rate_timestep = int(self.time_steps_per_hour / energy_ts_per_hour)
+                    energy_ts_per_hour = int(len(current_rate.energyweekdayschedule[0])/24)
+                    simulation_time_steps_per_rate_time_step = int(self.time_steps_per_hour / energy_ts_per_hour)
                     for hour in range(0, 24):
                         energy_ts = hour * energy_ts_per_hour
                         for ts in range(energy_ts_per_hour):
@@ -369,7 +369,7 @@ class UrdbParse:
                             adj = float(current_rate.energyratestructure[period][tier_use].get('adj') or 0)
                             total_rate = rate + adj
 
-                            for step in range(0, simulation_time_steps_per_rate_timestep):
+                            for step in range(0, simulation_time_steps_per_rate_time_step):
                                 if self.add_tou_energy_rates_to_urdb_rate:
                                     idx = hour_of_year  # len(self.custom_tou_energy_rates) == 8760:
                                     if len(self.custom_tou_energy_rates) == 35040:
@@ -672,8 +672,8 @@ class UrdbParse:
         start_step = 1
         start_hour = 1
         
-        demand_ts_per_hour = len(current_rate.demandweekdayschedule)/24
-        simulation_time_steps_per_rate_timestep = int(self.time_steps_per_hour / demand_ts_per_hour)
+        demand_ts_per_hour = int(len(current_rate.demandweekdayschedule[0] or 0)/24)
+        simulation_time_steps_per_rate_time_step = int(self.time_steps_per_hour / demand_ts_per_hour)
 
         if month > 0:
             start_hour = self.last_hour_in_month[month - 1] + 1
@@ -691,7 +691,7 @@ class UrdbParse:
             for hour in range(0, 24):
                 demand_ts = hour * demand_ts_per_hour
                 for ts in range(demand_ts_per_hour):
-                    for step in range(0, simulation_time_steps_per_rate_timestep):
+                    for step in range(0, simulation_time_steps_per_rate_time_step):
                         if is_weekday and current_rate.demandweekdayschedule[month][demand_ts] == period:
                             step_array.append(step_of_year)
                         elif not is_weekday and current_rate.demandweekendschedule[month][demand_ts] == period:

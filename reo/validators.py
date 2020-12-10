@@ -831,20 +831,21 @@ class ValidateNestedInput:
         :param input_isDict: bool, indicates if the object input came in as a dict or list
         :return: None
         """
-        if real_values is not None:
-            location = self.object_name_string(object_name_path) 
-            if not input_isDict:
-                location += '[{}]'.format(number)
-            if object_name_path[-1] in ['PV','Storage','Generator','Wind']:
-                if real_values.get('min_kw') > real_values.get('max_kw'):
-                    self.input_data_errors.append(
-                        'min_kw (%s) in %s is larger than the max_kw value (%s)' % ( real_values.get('min_kw'),location , real_values.get('max_kw'))
-                        )
-            if object_name_path[-1] in ['Storage']:
-                if real_values.get('min_kwh') > real_values.get('max_kwh'):
-                    self.input_data_errors.append(
-                        'min_kwh (%s) in %s is larger than the max_kwh value (%s)' % ( real_values.get('min_kwh'), self.object_name_string(object_name_path), real_values.get('max_kwh'))
-                        )
+        if self.isValid:
+            if real_values is not None:
+                location = self.object_name_string(object_name_path) 
+                if not input_isDict:
+                    location += '[{}]'.format(number)
+                if object_name_path[-1] in ['PV','Storage','Generator','Wind']:
+                    if real_values.get('min_kw') > real_values.get('max_kw'):
+                        self.input_data_errors.append(
+                            'min_kw (%s) in %s is larger than the max_kw value (%s)' % ( real_values.get('min_kw'),location , real_values.get('max_kw'))
+                            )
+                if object_name_path[-1] in ['Storage']:
+                    if real_values.get('min_kwh') > real_values.get('max_kwh'):
+                        self.input_data_errors.append(
+                            'min_kwh (%s) in %s is larger than the max_kwh value (%s)' % ( real_values.get('min_kwh'), self.object_name_string(object_name_path), real_values.get('max_kwh'))
+                            )
 
     def check_for_nans(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
         """
@@ -1139,7 +1140,7 @@ class ValidateNestedInput:
                     electric_tariff['urdb_response'] = rate.urdb_dict
                     self.validate_urdb_response()
 
-            if electric_tariff['urdb_response'] is not None:
+            if electric_tariff.get('urdb_response') is not None and len(self.urdb_errors)==0:
                 if len(electric_tariff['urdb_response'].get('energyweekdayschedule',[[]])[0]) > 24:
                     energy_rate_resolution = int(len(electric_tariff['urdb_response'].get('energyweekdayschedule',[[]])[0]) / 24)
                     if energy_rate_resolution > self.input_dict['Scenario']['time_steps_per_hour']:
@@ -1614,6 +1615,9 @@ class ValidateNestedInput:
                     self.urdb_errors += rate_checker.errors
             except:
                 self.urdb_errors.append('Error parsing urdb rate in %s ' % (["Scenario", "Site", "ElectricTariff"]))
+        else:
+            self.urdb_errors.append('Invalid URDB response: %s'.format(str(urdb_response)))
+
 
     def validate_8760(self, attr, obj_name, attr_name, time_steps_per_hour, number=1, input_isDict=None):
         """
