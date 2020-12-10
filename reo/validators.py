@@ -433,9 +433,10 @@ class ValidateNestedInput:
         if self.isValid:
             self.recursively_check_input_dict(self.nested_input_definitions, self.remove_invalid_keys)
             self.recursively_check_input_dict(self.nested_input_definitions, self.remove_nones)
-            self.recursively_check_input_dict(self.nested_input_definitions, self.check_for_nans)            
+            self.recursively_check_input_dict(self.nested_input_definitions, self.check_for_nans)
             self.recursively_check_input_dict(self.nested_input_definitions, self.convert_data_types)
             self.recursively_check_input_dict(self.nested_input_definitions, self.fillin_defaults)
+            self.recursively_check_input_dict(self.nested_input_definitions, self.check_constraint_ranges)
             self.recursively_check_input_dict(self.nested_input_definitions, self.check_min_max_restrictions)
             self.recursively_check_input_dict(self.nested_input_definitions, self.check_required_attributes)
             self.recursively_check_input_dict(self.nested_input_definitions, self.check_special_cases)
@@ -813,6 +814,37 @@ class ValidateNestedInput:
                             self.input_as_none.append([name, object_name_path[-1]])
                         if input_isDict == False:
                             self.input_as_none.append([name, object_name_path[-1] + ' (number {})'.format(number)])
+
+    
+    def check_constraint_ranges(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
+        """
+        comparison_function for recursively_check_input_dict.
+        flag any inputs where the min/max constraint ranges don't make sense
+        :param object_name_path: list of str, location of an object in self.input_dict being validated,
+            eg. ["Scenario", "Site", "PV"]
+        :param template_values: reference dictionary for checking real_values, for example
+            {'latitude':{'type':'float',...}...}, which comes from nested_input_definitions
+        :param real_values: dict, the attributes corresponding to the object at object_name_path within the
+            input_dict to check and/or modify. For example, with a object_name_path of ["Scenario", "Site", "PV"]
+                the real_values would look like: {'latitude': 39.345678, 'longitude': -90.3, ... }
+        :param number: int, order of the dict in the list
+        :param input_isDict: bool, indicates if the object input came in as a dict or list
+        :return: None
+        """
+        if real_values is not None:
+            location = self.object_name_string(object_name_path) 
+            if not input_isDict:
+                location += '[{}]'.format(number)
+            if object_name_path[-1] in ['PV','Storage','Generator','Wind']:
+                if real_values.get('min_kw') > real_values.get('max_kw'):
+                    self.input_data_errors.append(
+                        'min_kw (%s) in %s is larger than the max_kw value (%s)' % ( real_values.get('min_kw'),location , real_values.get('max_kw'))
+                        )
+            if object_name_path[-1] in ['Storage']:
+                if real_values.get('min_kwh') > real_values.get('max_kwh'):
+                    self.input_data_errors.append(
+                        'min_kwh (%s) in %s is larger than the max_kwh value (%s)' % ( real_values.get('min_kwh'), self.object_name_string(object_name_path), real_values.get('max_kwh'))
+                        )
 
     def check_for_nans(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
         """
@@ -1459,7 +1491,8 @@ class ValidateNestedInput:
                     if input_isDict or input_isDict is None:
                         self.defaults_inserted.append([template_key, object_name_path])
                     if input_isDict is False:
-                        object_name_path[-1] = object_name_path[-1] + ' (number {})'.format(number)
+                        if not object_name_path[-1].endswith(' (number {})'.format(number)):
+                            object_name_path[-1] = object_name_path[-1] + ' (number {})'.format(number)
                         self.defaults_inserted.append([template_key, object_name_path])
             if self.isSingularKey(template_key):
                 if template_key not in real_values.keys():
@@ -1467,7 +1500,8 @@ class ValidateNestedInput:
                     if input_isDict or input_isDict is None:
                         self.defaults_inserted.append([template_key, object_name_path])
                     if input_isDict is False:
-                        object_name_path[-1] = object_name_path[-1] + ' (number {})'.format(number)
+                        if not object_name_path[-1].endswith(' (number {})'.format(number)):
+                            object_name_path[-1] = object_name_path[-1] + ' (number {})'.format(number)
                         self.defaults_inserted.append([template_key, object_name_path])
 
     def check_required_attributes(self, object_name_path, template_values=None, real_values=None,  number=1, input_isDict=None):
