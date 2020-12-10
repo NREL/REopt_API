@@ -117,6 +117,11 @@ nested_output_definitions = {
                   "type": int,
                   "description": "Number of hours the existing system can sustain with resilience check",
                   "units": "hours"
+                },
+                "bau_sustained_time_steps": {
+                  "type": int,
+                  "description": "Number of time steps the existing system can sustain the critical load",
+                  "units": "time steps"
                 }
               },
 

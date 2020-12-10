@@ -30,10 +30,7 @@
 import json
 import os
 from tastypie.test import ResourceTestCaseMixin
-from reo.nested_to_flat_output import nested_to_flat
 from django.test import TestCase
-from reo.models import ModelManager
-from reo.utilities import check_common_outputs
 
 
 class OutageSimTests(ResourceTestCaseMixin, TestCase):

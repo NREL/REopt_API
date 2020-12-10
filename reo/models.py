@@ -199,8 +199,8 @@ class LoadProfileModel(models.Model):
     critical_loads_kw = ArrayField(models.FloatField(blank=True), default=list)
     loads_kw_is_net = models.BooleanField(default=True)
     critical_loads_kw_is_net = models.BooleanField(default=False)
-    outage_start_hour = models.IntegerField(null=True, blank=True)
-    outage_end_hour = models.IntegerField(null=True, blank=True)
+    outage_start_time_step = models.IntegerField(null=True, blank=True)
+    outage_end_time_step = models.IntegerField(null=True, blank=True)
     critical_load_pct = models.FloatField()
     outage_is_major_event = models.BooleanField(default=True)
 
@@ -209,6 +209,7 @@ class LoadProfileModel(models.Model):
     critical_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=list)
     annual_calculated_kwh = models.FloatField(null=True, blank=True)
     sustain_hours = models.IntegerField(null=True, blank=True)
+    bau_sustained_time_steps = models.IntegerField(null=True, blank=True)
     resilience_check_flag = models.BooleanField(default=False)
 
     @classmethod
