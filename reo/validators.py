@@ -996,22 +996,19 @@ class ValidateNestedInput:
                 # fill in prime mover specific defaults
                 prime_mover = real_values.get('prime_mover')
                 size_class = real_values.get('size_class')
+                hw_or_steam = self.input_dict['Scenario']['Site']['Boiler'].get('existing_boiler_production_type_steam_or_hw')
                 if prime_mover is not None:
                     if prime_mover not in prime_mover_defaults_all.keys():
                         self.input_data_errors.append(
                                 'prime_mover not in valid options of ' + str(list(prime_mover_defaults_all.keys())))
                     else:  # Only do further checks on CHP if the prime_mover is a valid input
                         if size_class is not None:
-                            if (size_class >= 0) and (size_class < n_classes[prime_mover]):
-                                prime_mover_defaults = {param: prime_mover_defaults_all[prime_mover][param][size_class]
-                                                for param in prime_mover_defaults_all[prime_mover].keys()}
-                            else:
+                            if (size_class < 0) or (size_class >= n_classes[prime_mover]):
                                 self.input_data_errors.append(
                                     'The size class input is outside the valid range for ' + str(prime_mover))
                         else:
                             size_class = CHP.default_chp_size_class[prime_mover]
-                            prime_mover_defaults = {param: prime_mover_defaults_all[prime_mover][param][size_class]
-                                                for param in prime_mover_defaults_all[prime_mover].keys()}
+                        prime_mover_defaults = CHP.get_chp_defaults(prime_mover, hw_or_steam, size_class)
                         # create an updated attribute set to check invalid combinations of input data later
                         prime_mover_defaults.update({"size_class": size_class})
                         updated_set = copy.deepcopy(prime_mover_defaults)
