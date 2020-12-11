@@ -198,7 +198,6 @@ class TestDemandRatchets(ResourceTestCaseMixin, TestCase):
                 "utility_ibi_pct": 0.0,
                 "state_ibi_max_us_dollars": 10000000000.0,
                 "wind_direction_degrees": None,
-                "size_class": "",
                 "state_rebate_us_dollars_per_kw": 0.0,
                 "macrs_option_years": 5,
                 "state_rebate_max_us_dollars": 10000000000.0,
