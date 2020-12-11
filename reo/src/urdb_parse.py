@@ -668,6 +668,7 @@ class UrdbParse:
         return range(hours[month], hours[month + 1])
 
     def get_tou_steps(self, current_rate, month, period):
+        
         step_array = []
         start_step = 1
         start_hour = 1
@@ -697,6 +698,7 @@ class UrdbParse:
                         elif not is_weekday and current_rate.demandweekendschedule[month][demand_ts] == period:
                             step_array.append(step_of_year)
                         step_of_year += 1
-                        demand_ts += 1
+                    demand_ts += 1
                 hour_of_year += 1
         return step_array
+        
