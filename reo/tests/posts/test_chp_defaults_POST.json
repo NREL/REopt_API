@@ -1,0 +1,98 @@
+{
+  "Scenario": {
+    "Site": {
+      "latitude": 37.78,
+      "longitude": -122.45,
+      "address": "",
+      "land_acres": null,
+      "roof_squarefeet": null,
+      "elevation_ft": 700.0,
+      "Financial": {
+        "om_cost_escalation_pct": 0.025,
+        "escalation_pct": 0.023,
+        "boiler_fuel_escalation_pct": 0.034,
+        "chp_fuel_escalation_pct": 0.034,
+        "offtaker_tax_pct": 0.26,
+        "offtaker_discount_pct": 0.083,
+        "third_party_ownership": false,
+        "owner_tax_pct": 0.26,
+        "owner_discount_pct": 0.083,
+        "analysis_years": 25,
+        "value_of_lost_load_us_dollars_per_kwh": 100.0,
+        "microgrid_upgrade_cost_pct": 0.3
+      },
+      "LoadProfile": {
+        "doe_reference_name": "Hospital",
+        "percent_share": [100.0],
+        "year": 2017
+      },
+      "LoadProfileBoilerFuel": {
+        "doe_reference_name": "Hospital"
+      },
+      "ElectricTariff": {
+        "urdb_utility_name": "Pacific Gas & Electric Co",
+        "urdb_rate_name": "E-20 Maximum demand of (1000 KW or more) (Secondary)",
+        "net_metering_limit_kw": 0.0,
+        "interconnection_limit_kw": 100000000.0,
+        "urdb_label": "5e1676e95457a3f87673e3b0",
+        "chp_standby_rate_us_dollars_per_kw_per_month": 0.0,
+        "chp_does_not_reduce_demand_charges": false
+      },
+      "FuelTariff": {
+        "existing_boiler_fuel_type": "natural_gas",
+        "boiler_fuel_blended_annual_rates_us_dollars_per_mmbtu": 10.0,
+        "chp_fuel_type": "natural_gas",
+        "chp_fuel_blended_annual_rates_us_dollars_per_mmbtu": 10.0
+      },
+      "CHP": {
+        "prime_mover": "recip_engine",
+        "min_kw": 100.0,
+        "max_kw": 800.0,
+        "min_allowable_kw": 15.0,
+        "installed_cost_us_dollars_per_kw": 2416.7,
+        "om_cost_us_dollars_per_kw": 149.8,
+        "om_cost_us_dollars_per_kwh": 0.0,
+        "om_cost_us_dollars_per_hr_per_kw_rated": 0.0,
+        "elec_effic_full_load": 0.3573,
+        "elec_effic_half_load": 0.3216,
+        "min_turn_down_pct": 0.5,
+        "thermal_effic_full_load": 0.4418,
+        "thermal_effic_half_load": 0.4664,
+        "use_default_derate": true,
+        "max_derate_factor": 1.0,
+        "derate_start_temp_degF": 95.0,
+        "derate_slope_pct_per_degF": 0.008,
+        "macrs_option_years": 0,
+        "macrs_bonus_pct": 0.0,
+        "macrs_itc_reduction": 0.0,
+        "federal_itc_pct": 0.0,
+        "state_ibi_pct": 0.0,
+        "state_ibi_max_us_dollars": 0.0,
+        "utility_ibi_pct": 0.0,
+        "utility_ibi_max_us_dollars": 0.0,
+        "federal_rebate_us_dollars_per_kw": 0.0,
+        "state_rebate_us_dollars_per_kw": 0.0,
+        "state_rebate_max_us_dollars": 0.0,
+        "utility_rebate_us_dollars_per_kw": 0.0,
+        "utility_rebate_max_us_dollars": 0.0,
+        "pbi_us_dollars_per_kwh": 0.0,
+        "pbi_max_us_dollars": 0.0,
+        "pbi_years": 0.0,
+        "pbi_system_max_kw": 0.0,
+        "emissions_factor_lb_CO2_per_mmbtu": 116.9
+      },
+      "Boiler": {
+        "min_mmbtu_per_hr": 0.0,
+        "max_mmbtu_per_hr": 1000000000.0,
+        "existing_boiler_production_type_steam_or_hw": "hot_water",
+        "boiler_efficiency": 0.8,
+        "installed_cost_us_dollars_per_mmbtu_per_hr": 0.0,
+        "emissions_factor_lb_CO2_per_mmbtu": 116.9
+      }
+    },
+    "user_uuid": null,
+    "description": "",
+    "time_steps_per_hour": 1,
+    "webtool_uuid": null
+  }
+}
