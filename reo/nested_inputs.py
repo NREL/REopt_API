@@ -407,7 +407,7 @@ nested_input_definitions = {
       "Wind": {
         "size_class": {
           "type": "str",
-          "restrict_to": "['residential', 'commercial', 'medium', 'large']",
+          "restrict_to": ['residential', 'commercial', 'medium', 'large'],
           "description": "Turbine size-class. One of [residential, commercial, medium, large]"
         },
         "wind_meters_per_sec": {
@@ -809,7 +809,7 @@ nested_input_definitions = {
         },
         "location": {
           "type": "str",
-          "restrict_to": "['roof', 'ground', 'both']",
+          "restrict_to": ['roof', 'ground', 'both'],
           "default": 'both',
           "description": "Where PV can be deployed. One of [roof, ground, both] with default as both"
         },
