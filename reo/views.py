@@ -33,7 +33,6 @@ import sys
 import traceback as tb
 import uuid
 import copy
-import pickle
 from django.http import JsonResponse
 from reo.src.load_profile import BuiltInProfile, LoadProfile
 from reo.src.load_profile_boiler_fuel import LoadProfileBoilerFuel
@@ -558,14 +557,25 @@ def chp_defaults(request):
         prime_mover = request.GET.get('prime_mover')
         avg_boiler_fuel_load_mmbtu_per_hr = request.GET.get('avg_boiler_fuel_load_mmbtu_per_hr')
         size_class = request.GET.get('size_class')
+        hw_or_steam = request.GET.get('existing_boiler_production_type_steam_or_hw')
         year = request.GET.get('year')
         if prime_mover is not None:
+            # Get hot_water or steam to get index for CHP thermal efficiency and boiler efficiency
+            if hw_or_steam is None:  # Use default hw_or_steam based on prime_mover
+                hw_or_steam = Boiler.boiler_type_by_chp_prime_mover_defaults[prime_mover]
+            if hw_or_steam == "hot_water":
+                hw_or_steam_index = 0
+            elif hw_or_steam == "steam":
+                hw_or_steam_index = 1
+            else:
+                raise ValueError("Invalid argument for existing_boiler_production_type_steam_or_hw; must be 'hot_water' or 'steam'")
+            
             # Calculate heuristic CHP size based on average thermal load, using the default size class efficiency data
             if avg_boiler_fuel_load_mmbtu_per_hr is not None:
                 avg_boiler_fuel_load_mmbtu_per_hr = float(avg_boiler_fuel_load_mmbtu_per_hr)
-                boiler_effic = 0.8
-                therm_effic = prime_mover_defaults_all[prime_mover]['thermal_effic_full_load'][CHP.default_chp_size_class[prime_mover]]
+                therm_effic = prime_mover_defaults_all[prime_mover]['thermal_effic_full_load'][hw_or_steam_index][CHP.default_chp_size_class[prime_mover]]
                 elec_effic = prime_mover_defaults_all[prime_mover]['elec_effic_full_load'][CHP.default_chp_size_class[prime_mover]]
+                boiler_effic = Boiler.boiler_efficiency_defaults[hw_or_steam]
                 avg_heating_thermal_load_mmbtu_per_hr = avg_boiler_fuel_load_mmbtu_per_hr * boiler_effic
                 chp_fuel_rate_mmbtu_per_hr = avg_heating_thermal_load_mmbtu_per_hr / therm_effic
                 chp_elec_size_heuristic_kw = chp_fuel_rate_mmbtu_per_hr * elec_effic * 1.0E6 / 3412.0
@@ -593,8 +603,9 @@ def chp_defaults(request):
                             size_class = sc
             else:
                 size_class = CHP.default_chp_size_class[prime_mover]
-            prime_mover_defaults = {param: prime_mover_defaults_all[prime_mover][param][size_class]
-                                    for param in prime_mover_defaults_all[prime_mover].keys()}
+            
+            prime_mover_defaults = CHP.get_chp_defaults(prime_mover, hw_or_steam, size_class)
+
             if year is not None:
                 year = int(year)
                 # TODO put in "prime_mover" instead of hard-coded "recip_engine" for path (after adding other prime_mover unavailability periods)
@@ -609,6 +620,7 @@ def chp_defaults(request):
         response = JsonResponse(
             {"prime_mover": prime_mover,
              "size_class": size_class,
+             "hw_or_steam": hw_or_steam_index,
              "default_inputs": prime_mover_defaults,
              "chp_size_based_on_avg_heating_load_kw": chp_elec_size_heuristic_kw,
              "size_class_bounds": CHP.class_bounds,
