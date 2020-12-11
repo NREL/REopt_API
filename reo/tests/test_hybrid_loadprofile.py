@@ -62,7 +62,6 @@ class TestHybridLoadProfile(ResourceTestCaseMixin, TestCase):
                         "urdb_label": ""
                     },
                     "Wind": {
-                        "size_class": "",
                         "wind_meters_per_sec": None,
                         "wind_direction_degrees": None,
                         "temperature_celsius": None,
