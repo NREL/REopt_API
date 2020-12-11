@@ -59,8 +59,6 @@ class CriticalLoadBAUTests(ResourceTestCaseMixin, TestCase):
         nested_data = json.load(open(test_post, 'rb'))
 
         resp = self.get_response(data=nested_data)
-        from IPython import embed
-        embed()
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
