@@ -130,8 +130,8 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         generator_to_load = d['outputs']['Scenario']['Site']['Generator']['year_one_to_load_series_kw']
         storage_to_load = d['outputs']['Scenario']['Site']['Storage']['year_one_to_load_series_kw']
         pv_to_load = d['outputs']['Scenario']['Site']['PV']['year_one_to_load_series_kw']
-        outage_start = d['inputs']['Scenario']['Site']['LoadProfile']['outage_start_time_step']
-        outage_end = d['inputs']['Scenario']['Site']['LoadProfile']['outage_end_time_step']
+        outage_start = d['inputs']['Scenario']['Site']['LoadProfile']['outage_start_hour']
+        outage_end = d['inputs']['Scenario']['Site']['LoadProfile']['outage_end_hour']
 
         list_to_load = [generator_to_load, storage_to_load, pv_to_load]
         tech_to_load = self.outage_tech_to_load(list_to_load, outage_start, outage_end)

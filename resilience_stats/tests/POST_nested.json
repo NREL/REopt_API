@@ -1,0 +1,310 @@
+{
+  "Scenario": {
+    "webtool_uuid": null,
+    "description": "",
+    "timeout_seconds": 295,
+    "Site": {
+      "PV": {
+        "pbi_years": 1.0,
+        "macrs_bonus_pct": 0.0,
+        "max_kw": 1000000000.0,
+        "pbi_max_us_dollars": 1000000000.0,
+        "radius": 0.0,
+        "state_ibi_pct": 0.0,
+        "state_rebate_us_dollars_per_kw": 0.0,
+        "installed_cost_us_dollars_per_kw": 2000.0,
+        "utility_ibi_max_us_dollars": 10000000000.0,
+        "tilt": 34.5794343,
+        "degradation_pct": 0.005,
+        "gcr": 0.4,
+        "pbi_system_max_kw": 1000000000.0,
+        "utility_ibi_pct": 0.0,
+        "state_ibi_max_us_dollars": 10000000000.0,
+        "utility_rebate_max_us_dollars": 10000000000.0,
+        "macrs_option_years": 5,
+        "state_rebate_max_us_dollars": 10000000000.0,
+        "dc_ac_ratio": 1.1,
+        "federal_itc_pct": 0.3,
+        "existing_kw": 0.0,
+        "module_type": 1,
+        "array_type": 1,
+        "pbi_us_dollars_per_kwh": 0.0,
+        "om_cost_us_dollars_per_kw": 16.0,
+        "utility_rebate_us_dollars_per_kw": 0.0,
+        "min_kw": 0.0,
+        "losses": 0.14,
+        "macrs_itc_reduction": 0.5,
+        "federal_rebate_us_dollars_per_kw": 0.0,
+        "inv_eff": 0.96,
+        "azimuth": 180.0
+      },
+      "Generator": {
+        "pbi_years": 0.0,
+        "macrs_bonus_pct": 0.0,
+        "om_cost_us_dollars_per_kwh": 0.01,
+        "max_kw": 1000000000.0,
+        "pbi_max_us_dollars": 0.0,
+        "state_ibi_pct": 0.0,
+        "fuel_intercept_gal_per_hr": 0.0125,
+        "generator_only_runs_during_grid_outage": true,
+        "utility_rebate_max_us_dollars": 0.0,
+        "installed_cost_us_dollars_per_kw": 600.0,
+        "utility_ibi_max_us_dollars": 0.0,
+        "fuel_avail_gal": 1000000000.0,
+        "min_turn_down_pct": 0.0,
+        "pbi_system_max_kw": 0.0,
+        "utility_ibi_pct": 0.0,
+        "state_ibi_max_us_dollars": 0.0,
+        "diesel_fuel_cost_us_dollars_per_gallon": 3.0,
+        "fuel_slope_gal_per_kwh": 0.068,
+        "state_rebate_us_dollars_per_kw": 0.0,
+        "macrs_option_years": 0,
+        "state_rebate_max_us_dollars": 0.0,
+        "federal_itc_pct": 0.0,
+        "pbi_us_dollars_per_kwh": 0.0,
+        "existing_kw": 0.0,
+        "om_cost_us_dollars_per_kw": 10.0,
+        "utility_rebate_us_dollars_per_kw": 0.0,
+        "min_kw": 0.0,
+        "macrs_itc_reduction": 0.0,
+        "federal_rebate_us_dollars_per_kw": 0.0,
+        "generator_sells_energy_back_to_grid": false
+      },
+      "LoadProfile": {
+        "critical_loads_kw_is_net": false,
+        "year": 2017,
+        "loads_kw_is_net": true,
+        "outage_start_hour": null,
+        "outage_end_hour": null,
+        "monthly_totals_kwh": [],
+        "critical_load_pct": 0.5,
+        "loads_kw": [],
+        "outage_is_major_event": true,
+        "critical_loads_kw": [],
+        "doe_reference_name": "RetailStore",
+        "annual_kwh": 10000000.0
+      },
+      "address": "",
+      "Storage": {
+        "max_kwh": 1000000.0,
+        "rectifier_efficiency_pct": 0.96,
+        "total_itc_pct": 0.0,
+        "min_kw": 0.0,
+        "max_kw": 1000000.0,
+        "replace_cost_us_dollars_per_kw": 460.0,
+        "replace_cost_us_dollars_per_kwh": 230.0,
+        "min_kwh": 0.0,
+        "installed_cost_us_dollars_per_kw": 1000.0,
+        "total_rebate_us_dollars_per_kw": 0,
+        "installed_cost_us_dollars_per_kwh": 500.0,
+        "inverter_efficiency_pct": 0.96,
+        "battery_replacement_year": 10,
+        "canGridCharge": true,
+        "macrs_bonus_pct": 0.0,
+        "macrs_itc_reduction": 0.5,
+        "macrs_option_years": 5,
+        "internal_efficiency_pct": 0.975,
+        "soc_min_pct": 0.2,
+        "soc_init_pct": 0.5,
+        "inverter_replacement_year": 10
+      },
+      "land_acres": 10.0,
+      "ElectricTariff": {
+        "add_blended_rates_to_urdb_rate": false,
+        "wholesale_rate_us_dollars_per_kwh": 0.0,
+        "net_metering_limit_kw": 0.0,
+        "interconnection_limit_kw": 100000000.0,
+        "urdb_utility_name": "Southern California Edison Co",
+        "urdb_label": "",
+        "wholesale_rate_above_site_load_us_dollars_per_kwh": 0.0,
+        "urdb_rate_name": "Time of Use, General Service, Demand Metered, Option B: GS-2 TOU B, Single Phase",
+        "urdb_response": {
+          "sector": "Commercial",
+          "peakkwcapacitymax": 200,
+          "utility": "Southern California Edison Co",
+          "peakkwcapacityhistory": 12,
+          "energyratestructure": [
+            [{
+              "rate": 0.0712,
+              "unit": "kWh"
+            }],
+            [{
+              "rate": 0.09368,
+              "unit": "kWh"
+            }],
+            [{
+              "rate": 0.066,
+              "unit": "kWh"
+            }],
+            [{
+              "rate": 0.08888,
+              "unit": "kWh"
+            }],
+            [{
+              "rate": 0.1355,
+              "unit": "kWh"
+            }]
+          ],
+          "energyweekendschedule": [
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+            [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+            [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+            [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+          ],
+          "demandweekendschedule": [
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+          ],
+          "demandrateunit": "kW",
+          "flatdemandstructure": [
+            [{
+              "rate": 13.2
+            }]
+          ],
+          "startdate": 1433116800,
+          "phasewiring": "Single Phase",
+          "source": "http://www.sce.com/NR/sc3/tm2/pdf/ce30-12.pdf",
+          "label": "55fc81d7682bea28da64f9ae",
+          "flatdemandunit": "kW",
+          "eiaid": 17609,
+          "voltagecategory": "Primary",
+          "revisions": [1433408708, 1433409358, 1433516188, 1441198316, 1441199318, 1441199417, 1441199824, 1441199996, 1454521683],
+          "demandweekdayschedule": [
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+          ],
+          "voltageminimum": 2000,
+          "description": "- Energy tiered charge = generation charge + delivery charge\\r\\n\\r\\n- Time of day demand charges (generation-based) are to be added to the monthly demand charge(Delivery based).",
+          "energyattrs": [{
+            "Voltage Discount (2KV-<50KV)": "$-0.00106/Kwh"
+          }, {
+            "Voltage Discount (>50 KV<220 KV)": "$-0.00238/Kwh"
+          }, {
+            "Voltage Discount at 220 KV": "$-0.0024/Kwh"
+          }, {
+            "California Climate credit": "$-0.00669/kwh"
+          }],
+          "energyweekdayschedule": [
+            [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+            [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2],
+            [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2],
+            [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2],
+            [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2],
+            [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0]
+          ],
+          "flatdemandmonths": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          "approved": true,
+          "fixedmonthlycharge": 259.2,
+          "enddate": 1451520000,
+          "name": "Time of Use, General Service, Demand Metered, Option B: GS-2 TOU B, Single Phase",
+          "country": "USA",
+          "uri": "http://en.openei.org/apps/IURDB/rate/view/55fc81d7682bea28da64f9ae",
+          "voltagemaximum": 50000,
+          "peakkwcapacitymin": 20,
+          "demandattrs": [{
+            "Facilties Voltage Discount (2KV-<50KV)": "$-0.18/KW"
+          }, {
+            "Facilties Voltage Discount >50 kV-<220kV": "$-5.78/KW"
+          }, {
+            "Facilties Voltage Discount >220 kV": "$-9.96/KW"
+          }, {
+            "Time Voltage Discount (2KV-<50KV)": "$-0.70/KW"
+          }, {
+            "Time Voltage Discount >50 kV-<220kV": "$-1.93/KW"
+          }, {
+            "Time Voltage Discount >220 kV": "$-1.95/KW"
+          }],
+          "demandratestructure": [
+            [{
+              "rate": 0
+            }],
+            [{
+              "rate": 5.3
+            }],
+            [{
+              "rate": 18.11
+            }]
+          ]
+        },
+        "blended_annual_demand_charges_us_dollars_per_kw": 0.0,
+        "blended_annual_rates_us_dollars_per_kwh": 0.0
+      },
+      "longitude": -118.1164613,
+      "roof_squarefeet": 5000.0,
+      "latitude": 34.5794343,
+      "Financial": {
+        "escalation_pct": 0.026,
+        "offtaker_discount_pct": 0.081,
+        "value_of_lost_load_us_dollars_per_kwh": 100.0,
+        "analysis_years": 20,
+        "microgrid_upgrade_cost_pct": 0.3,
+        "offtaker_tax_pct": 0.26,
+        "om_cost_escalation_pct": 0.025
+      },
+      "Wind": {
+        "pbi_years": 1.0,
+        "macrs_bonus_pct": 0.0,
+        "max_kw": 0.0,
+        "pbi_max_us_dollars": 1000000000.0,
+        "wind_meters_per_sec": null,
+        "state_ibi_pct": 0.0,
+        "utility_rebate_max_us_dollars": 10000000000.0,
+        "installed_cost_us_dollars_per_kw": 3013.0,
+        "utility_ibi_max_us_dollars": 10000000000.0,
+        "pressure_atmospheres": null,
+        "pbi_system_max_kw": 1000000000.0,
+        "utility_ibi_pct": 0.0,
+        "state_ibi_max_us_dollars": 10000000000.0,
+        "wind_direction_degrees": null,
+        "size_class": "",
+        "state_rebate_us_dollars_per_kw": 0.0,
+        "macrs_option_years": 5,
+        "state_rebate_max_us_dollars": 10000000000.0,
+        "federal_itc_pct": 0.3,
+        "temperature_celsius": null,
+        "pbi_us_dollars_per_kwh": 0.0,
+        "om_cost_us_dollars_per_kw": 35.0,
+        "utility_rebate_us_dollars_per_kw": 0.0,
+        "min_kw": 0.0,
+        "macrs_itc_reduction": 0.5,
+        "federal_rebate_us_dollars_per_kw": 0.0
+      }
+    },
+    "time_steps_per_hour": 1,
+    "user_uuid": null
+  }
+}

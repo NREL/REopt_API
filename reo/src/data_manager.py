@@ -104,7 +104,7 @@ class DataManager:
         self.LoadProfile["year_one_electric_load_series_kw"] = load.load_list
         self.LoadProfile["critical_load_series_kw"] = load.critical_load_series_kw
         self.LoadProfile["resilience_check_flag"] = load.resilience_check_flag
-        self.LoadProfile["bau_sustained_time_steps"] = load.bau_sustained_time_steps
+        self.LoadProfile["sustain_hours"] = load.sustain_hours
         self.LoadProfile["annual_kwh"] = load.annual_kwh
         self.load = load
 

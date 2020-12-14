@@ -20,7 +20,7 @@ spec:
       containers:
         - name: {{ .Chart.Name }}-redis
           image: redis:6.0.8-alpine
-          args: ["sh", "-c", "redis-server --requirepass $$REDIS_PASSWORD --save 900 1 --save 300 10 --save 60 10000 --appendonly yes --maxmemory 1024mb --maxmemory-policy volatile-lru"]
+          args: ["sh", "-c", "redis-server --requirepass $$REDIS_PASSWORD --save 900 1 --save 300 10 --save 60 10000 --appendonly yes --maxmemory 512mb --maxmemory-policy volatile-lru"]
           volumeMounts:
             - name: {{ .Chart.Name }}-redis-data-volume
               mountPath: /data
