@@ -112,7 +112,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
         # Flexible load inputs
         rc = RC(dfm=dfm, **inputs_dict['Site']['RC'])
         if inputs_dict['Site']['RC']['use_flexloads_model']:
-            flex_tech_ac = FlexTechAC(dfm=dfm, **inputs_dict['Site']['FlexTechAC'])
+            flex_tech_ac = FlexTechAC(dfm=dfm, outdoor_air_temp_degF=inputs_dict['Site']['outdoor_air_temp_degF'], **inputs_dict['Site']['FlexTechAC'])
             flex_tech_hp = FlexTechHP(dfm=dfm, **inputs_dict['Site']['FlexTechHP'])
 
         site = Site(dfm=dfm, **inputs_dict["Site"])

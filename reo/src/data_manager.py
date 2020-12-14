@@ -135,6 +135,7 @@ class DataManager:
         self.ac = flex_tech_ac
         if self.ac.existing_kw > 0:
             self.rc.use_flexloads_model_bau = True
+            self.ac.use_crankcase_bau = self.ac.use_crankcase
             if 'ac' not in self.bau_techs:
                 self.bau_techs.append('ac')
             if 'hp' not in self.bau_techs:
@@ -1373,7 +1374,11 @@ class DataManager:
             'SpaceNode': self.rc.space_node,
             'TempLowerBound': self.rc.temperature_lower_bound,
             'TempUpperBound': self.rc.temperature_upper_bound,
-            'OperatingPenalty': elec_penalty
+            'OperatingPenalty': elec_penalty,
+            'UseCrankcase': self.ac.use_crankcase,
+            'CrankcasePower': self.ac.crankcase_power_kw,
+            'CrankCaseTempLimit': self.ac.crankcase_temp_limit_degF,
+            'OutdoorAirTemp': self.ac.outdoor_air_temp_degF
         }
 
         self.reopt_inputs_bau = {
@@ -1513,5 +1518,9 @@ class DataManager:
             'SpaceNode': self.rc.space_node,
             'TempLowerBound': self.rc.temperature_lower_bound,
             'TempUpperBound': self.rc.temperature_upper_bound,
-            'OperatingPenalty': elec_penalty_bau
+            'OperatingPenalty': elec_penalty_bau,
+            'UseCrankcase': self.ac.use_crankcase_bau,
+            'CrankcasePower': self.ac.crankcase_power_kw,
+            'CrankCaseTempLimit': self.ac.crankcase_temp_limit_degF,
+            'OutdoorAirTemp': self.ac.outdoor_air_temp_degF
         }

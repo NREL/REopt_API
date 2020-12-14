@@ -982,6 +982,11 @@ nested_output_definitions = {
                   "type": list_of_float,
                   "description": "Year one AC power consumption time series",
                   "units": "kW"
+                },
+                "year_one_crankcase_power_consumption_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one AC crankcase consumption time series",
+                  "units": "kW"
                 }
               },
               "FlexTechHP": {
