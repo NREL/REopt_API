@@ -34,6 +34,7 @@ function add_continuous_variables(m, p)
 		dvElectricChillerDemand[p.TimeStep] >= 0  #X^{ec}_h: Electrical power consumption by electric chiller in time step h
 		dvOMByHourBySizeCHP[p.Tech, p.TimeStep] >= 0
 		dvTemperatures[p.TempNodes, p.TimeStep] #>= 0
+		dvCrankcaseConsumption[p.TimeStep] >= 0
     end
 end
 
@@ -48,6 +49,8 @@ function add_integer_variables(m, p)
 		binDemandTier[p.Ratchets, p.DemandBin], Bin  # 1 If tier e has allocated demand during ratchet r; 0 otherwise
         binDemandMonthsTier[p.Month, p.DemandMonthsBin], Bin # 1 If tier n has allocated demand during month m; 0 otherwise
 		binEnergyTier[p.Month, p.PricingTier], Bin    #  Z^{ut}_{mu} 1 If demand tier $u$ is active in month m; 0 otherwise (NEW)
+		binCrankcase[p.TimeStep], Bin
+		binC[p.TimeStep], Bin
     end
 end
 
@@ -335,13 +338,22 @@ end
 function add_binTechIsOnInTS_constraints(m, p)
 	### Section 3: Switch Constraints
 	#Constraint (3a): Technology must be on for nonnegative output (fuel-burning only)
-	@constraint(m, ProduceIfOnCon[t in p.FuelBurningTechs, ts in p.TimeStep],
+	@constraint(m, ProduceIfOnCon[t in [p.FuelBurningTechs; p.FlexTechs], ts in p.TimeStep],
 		m[:dvRatedProduction][t,ts] <= m[:NewMaxSize][t] * m[:binTechIsOnInTS][t,ts]
 	)
 	#Constraint (3b): Technologies that are turned on must not be turned down
 	@constraint(m, MinTurndownCon[t in p.FuelBurningTechs, ts in p.TimeStep],
 		p.MinTurndown[t] * m[:dvSize][t] - m[:dvRatedProduction][t,ts] <= m[:NewMaxSize][t] * (1-m[:binTechIsOnInTS][t,ts])
 	)
+
+	if p.UseCrankcase
+		@constraint(m, [ts in p.TimeStep],
+			m[:binTechIsOnInTS]["AC",ts] => {p.ProductionFactor["AC", ts] * m[:dvRatedProduction]["AC",ts] * p.OperatingPenalty["AC",ts] >= p.CrankcasePower + 0.001}
+		)
+		@constraint(m, [ts in p.TimeStep],
+			!m[:binTechIsOnInTS]["AC",ts] => {p.ProductionFactor["AC", ts] * m[:dvRatedProduction]["AC",ts] * p.OperatingPenalty["AC",ts] <= p.CrankcasePower}
+		)
+	end
 end
 
 
@@ -600,7 +612,7 @@ function add_load_balance_constraints(m, p)
 			sum(m[:dvProductionToGrid][t,u,ts] for u in p.SalesTiersByTech[t]) for t in p.ElectricTechs) +
 		sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers) + m[:dvGridToStorage][ts] +
 		 sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
-		p.ElecLoad[ts] + m[:ElecPenalty][ts]
+		p.ElecLoad[ts] + m[:ElecPenalty][ts] + m[:dvCrankcaseConsumption][ts]
 	)
 
 	##Constraint (8b): Electrical Load Balancing without Grid
@@ -610,7 +622,7 @@ function add_load_balance_constraints(m, p)
 		sum( sum(m[:dvProductionToStorage][b,t,ts] for b in p.ElecStorage) +
 			sum(m[:dvProductionToGrid][t,u,ts] for u in p.CurtailmentTiers) for t in p.ElectricTechs) +
 		    sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
-		p.ElecLoad[ts] + m[:ElecPenalty][ts]
+		p.ElecLoad[ts] + m[:ElecPenalty][ts] + m[:dvCrankcaseConsumption][ts]
 	)
 end
 
@@ -861,6 +873,15 @@ function add_flex_load_constraints(m, p)
 	@constraint(m, [ts in p.TimeStep],
         m[:dvTemperatures][p.SpaceNode, ts] <= p.TempUpperBound
     )
+
+	if p.UseCrankcase
+		@constraint(m, [ts in p.TimeStep],
+			100 * (1 - m[:binCrankcase][ts]) >= p.CrankCaseTempLimit - p.OutdoorAirTemp[ts]
+    	)
+		@constraint(m, [ts in p.TimeStep],
+			100 * m[:binCrankcase][ts] + m[:dvCrankcaseConsumption][ts] >= (1 - m[:binTechIsOnInTS]["AC",ts]) * p.CrankcasePower
+    	)
+	end
 
 end
 
@@ -1212,6 +1233,7 @@ function add_null_flex_load_results(m, p, r::Dict)
 	r["hp_size_kw"] = 0.0
 	r["hp_production_series"] = []
 	r["hp_consumption_series"] = []
+	r["crankcase_consumption_series"] = []
 	nothing
 end
 
@@ -1534,6 +1556,9 @@ function add_flex_load_results(m, p, r::Dict)
 				sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] * p.OperatingPenalty[t,ts] for t in ["HP"])
 				)
 	r["hp_consumption_series"] = round.(value.(HPConsumption), digits=4)
+	@expression(m, CrankcaseConsumption[ts in p.TimeStep], m[:dvCrankcaseConsumption][ts])
+# 	@expression(m, CrankcaseConsumption[ts in p.TimeStep], m[:binTechIsOnInTS]["AC",ts])
+	r["crankcase_consumption_series"] = round.(value.(CrankcaseConsumption), digits=4)
 	nothing
 end
 

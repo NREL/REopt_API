@@ -237,6 +237,10 @@ Base.@kwdef struct Parameter
 	TempLowerBound::Float64
 	TempUpperBound::Float64
 	OperatingPenalty::AxisArray
+	UseCrankcase::Bool
+    CrankcasePower::Float64
+    CrankCaseTempLimit::Float64
+    OutdoorAirTemp::Array{Float64,1}
 end
 
 
@@ -261,7 +265,8 @@ function Parameter(d::Dict)
 		"TechsByFuelType",
 		"FuelCost",
 		"SHR",
-		"InitTemperatures"
+		"InitTemperatures",
+		"OutdoorAirTemp"
      )
 	for x in ["Tech","FuelType","CHPTechs","FlexTechs"]
 		if typeof(d[x]) === Array{Any, 1}  # came from Python as empty array

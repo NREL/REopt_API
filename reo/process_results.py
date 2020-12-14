@@ -1205,6 +1205,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_power_production_series_kw"] = self.results_dict.get("ac_production_series")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_power_consumption_series_kw"] = self.results_dict.get("ac_consumption_series")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_crankcase_power_consumption_series_kw"] = self.results_dict.get("crankcase_consumption_series")
                 elif name == "FlexTechHP":
                     self.nested_outputs["Scenario"]["Site"][name][
                         "size_kw"] = self.results_dict.get("hp_size_kw")

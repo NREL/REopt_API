@@ -1888,6 +1888,21 @@ nested_input_definitions = {
           "type": "list_of_float",
           "default": [],
           "description": "User-defined operating penalty in kW. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+        },
+        "use_crankcase": {
+          "type": "bool",
+          "default": False,
+          "description": "Toggle to turn on crankcase modeling."
+        },
+        "crankcase_power_kw": {
+          "type": "float",
+          "default": 0.02,
+          "description": "Constant power requirement of the crankcase when it is on in kW."
+        },
+        "crankcase_temp_limit_degF": {
+          "type": "float",
+          "default": 55.0,
+          "description": "Crankcase turns on if outdoor temperature in degrees F falls below this level."
         }
       },
       "FlexTechHP": {
