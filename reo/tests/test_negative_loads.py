@@ -38,8 +38,8 @@ class TestNegativeNetLoad(ResourceTestCaseMixin, TestCase):
         del self.post['Scenario']['Site']['LoadProfile']['annual_kwh']
         del self.post['Scenario']['Site']['LoadProfile']['year']
         del self.post['Scenario']['Site']['LoadProfile']['monthly_totals_kwh']
-        del self.post['Scenario']['Site']['LoadProfile']['outage_start_time_step']
-        del self.post['Scenario']['Site']['LoadProfile']['outage_end_time_step']
+        del self.post['Scenario']['Site']['LoadProfile']['outage_start_hour']
+        del self.post['Scenario']['Site']['LoadProfile']['outage_end_hour']
         del self.post['Scenario']['Site']['LoadProfile']['critical_load_pct']
         del self.post['Scenario']['Site']['LoadProfile']['critical_loads_kw']
 

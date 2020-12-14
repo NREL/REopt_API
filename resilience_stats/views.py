@@ -245,7 +245,7 @@ def run_outage_sim(run_uuid, with_tech=True, bau=False):
         However, if the outage simulator does get more complicated (say with CHP) we should revisit using celery to run
         the inner loops in parallel.
         try:
-            if load_profile['outage_end_time_step'] - load_profile['outage_start_time_step'] > 1000:
+            if load_profile['outage_end_hour'] - load_profile['outage_start_hour'] > 1000:
                 celery_eager = False
         except KeyError:
             pass  # in case no outage has been defined

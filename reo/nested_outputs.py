@@ -127,11 +127,6 @@ nested_output_definitions = {
                   "type": int,
                   "description": "Number of hours the existing system can sustain with resilience check",
                   "units": "hours"
-                },
-                "bau_sustained_time_steps": {
-                  "type": int,
-                  "description": "Number of time steps the existing system can sustain the critical load",
-                  "units": "time steps"
                 }
               },
 
@@ -272,32 +267,7 @@ nested_output_definitions = {
                   "type": float,
                   "description": ("The annualized amount the host will pay to the third-party owner over the life of the project."),
                   "units": "$"
-                 },
-                 "offtaker_annual_free_cashflow_series_us_dollars": {
-                  "type": float,
-                  "description": ("Annual free cashflow for the host in the optimal case for all analysis years, including year 0. Future years have not been discounted to account for the time value of money."),
-                  "units": "$"
-                 },
-                 "offtaker_discounted_annual_free_cashflow_series_us_dollars": {
-                  "type": float,
-                  "description": ("Annual discounted free cashflow for the host in the optimal case for all analysis years, including year 0. Future years have been discounted to account for the time value of money."),
-                  "units": "$"
-                 },
-                 "offtaker_annual_free_cashflow_series_bau_us_dollars": {
-                  "type": float,
-                  "description": ("Annual free cashflow for the host in the business-as-usual case for all analysis years, including year 0. Future years have not been discounted to account for the time value of money. Only calcualted in the non-third-party case."),
-                  "units": "$"
-                 },
-                 "offtaker_discounted_annual_free_cashflow_series_bau_us_dollars": {
-                  "type": float,
-                  "description": ("Annual discounted free cashflow for the host in the business-as-usual case for all analysis years, including year 0. Future years have been discounted to account for the time value of money. Only calcualted in the non-third-party case."),
-                  "units": "$"
-                 },
-                 "developer_annual_free_cashflow_series_bau_us_dollars": {
-                  "type": float,
-                  "description": ("Annual free cashflow for the developer in the business-as-usual third party case for all analysis years, including year 0. Future years have not been discounted to account for the time value of money. Only calcualted in the third-party case."),
-                  "units": "$"
-                 },
+                 }
               },
 
               "PV": {

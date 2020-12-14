@@ -277,7 +277,7 @@ class URDB_RateValidator:
             self.errors.append('Missing valid entry for {}.'.format(name))
             return False
         return True
-
+    
     def isNotEmptyList(self, name):
         if type(getattr(self,name)) != list:
             self.errors.append('Expecting a list for {}.'.format(name))
@@ -289,7 +289,7 @@ class URDB_RateValidator:
             self.errors.append('List for {} contains null value(s).'.format(name))
             return False
         return True
-
+    
     def validRate(self, rate):
         # check that each  tier in rate structure array has a rate attribute, and that all rates except one contain a 'max' attribute
         # return Boolean if any errors found
@@ -380,6 +380,8 @@ class ValidateNestedInput:
 
 
     # EXAMPLE 1 - BASIC POST
+
+
     # {
     #     "Scenario": {
     #         "Site": {
@@ -433,9 +435,8 @@ class ValidateNestedInput:
         self.emission_warning = []
         self.input_dict = dict()
         if type(input_dict) is not dict:
-            self.input_data_errors.append(("POST must contain a valid JSON formatted accoring to format described in "
-                                           "https://developer.nrel.gov/docs/energy-optimization/reopt-v1/"))
-        else:
+            self.input_data_errors.append("POST must contain a valid JSON formatted accoring to format described in https://developer.nrel.gov/docs/energy-optimization/reopt-v1/")
+        else:        
             self.input_dict['Scenario'] = input_dict.get('Scenario') or {}
             for k,v in input_dict.items():
                 if k != 'Scenario':
@@ -445,7 +446,6 @@ class ValidateNestedInput:
         if self.isValid:
             self.recursively_check_input_dict(self.nested_input_definitions, self.remove_invalid_keys)
             self.recursively_check_input_dict(self.nested_input_definitions, self.remove_nones)
-            self.recursively_check_input_dict(self.nested_input_definitions, self.check_for_nans)
             self.recursively_check_input_dict(self.nested_input_definitions, self.convert_data_types)
             self.recursively_check_input_dict(self.nested_input_definitions, self.fillin_defaults)
             self.recursively_check_input_dict(self.nested_input_definitions, self.check_min_max_restrictions)
@@ -826,32 +826,6 @@ class ValidateNestedInput:
                         if input_isDict == False:
                             self.input_as_none.append([name, object_name_path[-1] + ' (number {})'.format(number)])
 
-    def check_for_nans(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
-        """
-        comparison_function for recursively_check_input_dict.
-        flag any inputs that have been parameterized as NaN and do not let the optimization continue.
-        this step is important to prevent exceptions in later optimization and post-processings steps.
-        :param object_name_path: list of str, location of an object in self.input_dict being validated,
-            eg. ["Scenario", "Site", "PV"]
-        :param template_values: reference dictionary for checking real_values, for example
-            {'latitude':{'type':'float',...}...}, which comes from nested_input_definitions
-        :param real_values: dict, the attributes corresponding to the object at object_name_path within the
-            input_dict to check and/or modify. For example, with a object_name_path of ["Scenario", "Site", "PV"]
-                the real_values would look like: {'latitude': 39.345678, 'longitude': -90.3, ... }
-        :param number: int, order of the dict in the list
-        :param input_isDict: bool, indicates if the object input came in as a dict or list
-        :return: None
-        """
-        if real_values is not None:
-            rv = copy.deepcopy(real_values)
-            for name, value in rv.items():
-                if self.isAttribute(name):
-                    if type(value) == float:
-                        if np.isnan(value):
-                            self.input_data_errors.append(
-                                'NaN is not a valid input for %s in %s' % (name, self.object_name_string(object_name_path))
-                                )
-
     def remove_invalid_keys(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
         """
         comparison_function for recursively_check_input_dict.
@@ -922,7 +896,7 @@ class ValidateNestedInput:
                     if real_values.get("prod_factor_series_kw"):
                         self.validate_8760(real_values.get("prod_factor_series_kw"),
                                                             "PV", "prod_factor_series_kw", self.input_dict['Scenario']['time_steps_per_hour'])
-
+    
         if object_name_path[-1] == "Wind":
             if any((isinstance(real_values['max_kw'], x) for x in [float, int])):
                 if real_values['max_kw'] > 0:
@@ -1088,14 +1062,14 @@ class ValidateNestedInput:
 
         if object_name_path[-1] == "Generator":
             if self.isValid:
-
+                
                 fuel_conversion_per_gal = {
                     'diesel_oil': 22.51
                 }
 
                 if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_CO2_per_gal') is None:
                     self.update_attribute_value(object_name_path, number, 'emissions_factor_lb_CO2_per_gal', fuel_conversion_per_gal.get('diesel_oil'))
-
+                
                 if (real_values["max_kw"] > 0 or real_values["existing_kw"] > 0):
                     # then replace zeros in default burn rate and slope, and set min/max kw values appropriately for
                     # REopt (which need to be in place before data is saved and passed on to celery tasks)
@@ -1108,27 +1082,9 @@ class ValidateNestedInput:
 
         if object_name_path[-1] == "LoadProfile":
             if self.isValid:
-
-                if real_values.get('outage_start_time_step') is not None and real_values.get('outage_end_time_step') is not None:
-                    if real_values.get('outage_start_time_step') >= real_values.get('outage_end_time_step'):
-                        self.input_data_errors.append('LoadProfile outage_start_time_step must be less than outage_end_time_step.')
-                    if self.input_dict['Scenario']['time_steps_per_hour'] == 1 and real_values.get('outage_end_time_step') > 8760:
-                        self.input_data_errors.append('outage_end_time_step must be <= 8760 when time_steps_per_hour = 1')
-                    if self.input_dict['Scenario']['time_steps_per_hour'] == 2 and real_values.get('outage_end_time_step') > 17520:
-                        self.input_data_errors.append('outage_end_time_step must be <= 17520 when time_steps_per_hour = 2')
-                    # case of 'time_steps_per_hour' == 4 and outage_end_time_step > 35040 handled by "max" value
-
                 if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
-                    if real_values.get('outage_start_hour') >= real_values.get('outage_end_hour'):
-                        self.input_data_errors.append('LoadProfile outage_start_hour must be less than outage_end_hour.')
-                    self.warnings.append(("outage_start_hour and outage_end_hour will be deprecated soon in favor of "
-                                          "outage_start_time_step and outage_end_time_step"))
-                    # the following preserves the original behavior
-                    self.update_attribute_value(object_name_path, number, 'outage_start_time_step',
-                                                real_values.get('outage_start_hour') + 1)
-                    self.update_attribute_value(object_name_path, number, 'outage_end_time_step',
-                                                real_values.get('outage_end_hour') + 1)
-
+                    if real_values.get('outage_start_hour') == real_values.get('outage_end_hour'):
+                        self.input_data_errors.append('LoadProfile outage_start_hour and outage_end_hour cannot be the same')
                 if type(real_values.get('percent_share')) in [float, int]:
                     if real_values.get('percent_share') == 100:
                         real_values['percent_share'] = [100]
@@ -1188,7 +1144,7 @@ class ValidateNestedInput:
             elif (len(electric_tariff.get('emissions_factor_series_lb_CO2_per_kwh') or []) == 0):
                 if (self.input_dict['Scenario']['Site'].get('latitude') is not None) and \
                     (self.input_dict['Scenario']['Site'].get('longitude') is not None):
-                    ec = EmissionsCalculator(   latitude=self.input_dict['Scenario']['Site']['latitude'],
+                    ec = EmissionsCalculator(   latitude=self.input_dict['Scenario']['Site']['latitude'], 
                                                     longitude=self.input_dict['Scenario']['Site']['longitude'],
                                                     time_steps_per_hour = self.input_dict['Scenario']['time_steps_per_hour'])
                     emissions_series = None
@@ -1198,21 +1154,21 @@ class ValidateNestedInput:
                     except AttributeError as e:
                         # Emissions warning is a specific type of warning that we check for and display to the users when it occurs
                         # since at this point the emissions are not required to do a run it simply
-                        # tells the user why we could not get an emission series and results in emissions not being
+                        # tells the user why we could not get an emission series and results in emissions not being 
                         # calculated, but does not prevent the run from optimizing
                         self.emission_warning = str(e.args[0])
 
                     if emissions_series is not None:
-                        self.update_attribute_value(object_name_path, number, 'emissions_factor_series_lb_CO2_per_kwh',
+                        self.update_attribute_value(object_name_path, number, 'emissions_factor_series_lb_CO2_per_kwh', 
                             emissions_series)
-                        self.update_attribute_value(object_name_path, number, 'emissions_region',
+                        self.update_attribute_value(object_name_path, number, 'emissions_region', 
                             emissions_region)
             else:
-                self.validate_8760(electric_tariff['emissions_factor_series_lb_CO2_per_kwh'],
-                    "ElectricTariff",
-                    'emissions_factor_series_lb_CO2_per_kwh',
+                self.validate_8760(electric_tariff['emissions_factor_series_lb_CO2_per_kwh'], 
+                    "ElectricTariff", 
+                    'emissions_factor_series_lb_CO2_per_kwh', 
                     self.input_dict['Scenario']['time_steps_per_hour'])
-
+ 
 
             if electric_tariff.get('urdb_response') is not None:
                 self.validate_urdb_response()
@@ -1485,16 +1441,6 @@ class ValidateNestedInput:
                             self.update_attribute_value(object_name_path, number,
                                                         'chiller_cop',
                                                         absorption_chiller_cop_defaults[hw_or_steam])
-
-
-        if object_name_path[-1] == "Financial":
-            # Making sure discount and tax rates are correct when saved to the database later in non-third party cases,
-            # this logic is assumed in calculating after incentive capex costs
-            if real_values.get("third_party_ownership") is False:
-                self.update_attribute_value(object_name_path, number, 'owner_discount_pct', real_values.get("offtaker_discount_pct"))
-                self.defaults_inserted.append(['owner_discount_pct',object_name_path])
-                self.update_attribute_value(object_name_path, number, 'owner_tax_pct', real_values.get("offtaker_tax_pct"))
-                self.defaults_inserted.append(['owner_tax_pct', object_name_path])
 
 
     def check_min_max_restrictions(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
@@ -2013,3 +1959,4 @@ class ValidateNestedInput:
                     'The sizes corresponding to installed cost are not in ascending order')
         else:
             self.update_attribute_value(object_name_path, number, 'tech_size_for_cost_curve', [])
+
