@@ -76,11 +76,11 @@ class Tech(object):
 
 class Util(Tech):
 
-    def __init__(self, dfm, outage_start_hour=None, outage_end_hour=None):
+    def __init__(self, dfm, outage_start_time_step=None, outage_end_time_step=None):
         super(Util, self).__init__(max_kw=12000000)
 
-        self.outage_start_hour = outage_start_hour
-        self.outage_end_hour = outage_end_hour
+        self.outage_start_time_step = outage_start_time_step
+        self.outage_end_time_step = outage_end_time_step
         self.loads_served = ['retail', 'storage']
         self.derate = 0.0
         self.n_timesteps = dfm.n_timesteps
@@ -92,8 +92,10 @@ class Util(Tech):
 
         grid_prod_factor = [1.0 for _ in range(self.n_timesteps)]
 
-        if self.outage_start_hour is not None and self.outage_end_hour is not None:  # "turn off" grid resource
-            grid_prod_factor[self.outage_start_hour:self.outage_end_hour] = [0]*(self.outage_end_hour - self.outage_start_hour)
+        if self.outage_start_time_step is not None and self.outage_end_time_step is not None:  # "turn off" grid resource
+            # minus 1 in next line accounts for Python's zero-indexing
+            grid_prod_factor[self.outage_start_time_step - 1:self.outage_end_time_step - 1] = \
+                [0] * (self.outage_end_time_step - self.outage_start_time_step)
 
         return grid_prod_factor
 
@@ -229,7 +231,7 @@ class Wind(Tech):
 class Generator(Tech):
 
     def __init__(self, dfm, run_uuid, min_kw, max_kw, existing_kw, fuel_slope_gal_per_kwh, fuel_intercept_gal_per_hr,
-                 fuel_avail_gal, min_turn_down_pct, outage_start_hour=None, outage_end_hour=None, time_steps_per_hour=1,
+                 fuel_avail_gal, min_turn_down_pct, outage_start_time_step=None, outage_end_time_step=None, time_steps_per_hour=1,
                  fuel_avail_before_outage_pct=1, emissions_factor_lb_CO2_per_gal=None, **kwargs):
         super(Generator, self).__init__(min_kw=min_kw, max_kw=max_kw, **kwargs)
         """
@@ -244,8 +246,8 @@ class Generator(Tech):
         self.fuel_avail = fuel_avail_gal
         self.min_turn_down = min_turn_down_pct
         self.reopt_class = 'GENERATOR'
-        self.outage_start_hour = outage_start_hour
-        self.outage_end_hour = outage_end_hour
+        self.outage_start_time_step = outage_start_time_step
+        self.outage_end_time_step = outage_end_time_step
         self.time_steps_per_hour = time_steps_per_hour
         self.generator_only_runs_during_grid_outage = kwargs['generator_only_runs_during_grid_outage']
         self.fuel_avail_before_outage_pct = fuel_avail_before_outage_pct
@@ -269,13 +271,13 @@ class Generator(Tech):
 
     @property
     def prod_factor(self):
-        gen_prod_factor = [0.0 for _ in range(8760*self.time_steps_per_hour)]
+        gen_prod_factor = [0.0 for _ in range(8760 * self.time_steps_per_hour)]
 
         if self.generator_only_runs_during_grid_outage:
-            if self.outage_start_hour is not None and self.outage_end_hour is not None:
-                gen_prod_factor[self.outage_start_hour:self.outage_end_hour] \
-                    = [1]*(self.outage_end_hour - self.outage_start_hour)
-
+            if self.outage_start_time_step is not None and self.outage_end_time_step is not None:
+                # minus 1 in next line accounts for Python's zero-indexing
+                gen_prod_factor[self.outage_start_time_step - 1:self.outage_end_time_step - 1] \
+                    = [1] * (self.outage_end_time_step - self.outage_start_time_step)
         else:
             gen_prod_factor = [1] * len(gen_prod_factor)
 

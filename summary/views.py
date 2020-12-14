@@ -194,7 +194,7 @@ def summary(request, user_uuid):
         #saving time by only calling each table once
         messages = MessageModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','message_type','message')
         sites = SiteModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','address')
-        loads = LoadProfileModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','outage_start_hour','loads_kw','doe_reference_name')
+        loads = LoadProfileModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','outage_start_time_step','loads_kw','doe_reference_name')
         batts = StorageModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw','size_kwh')
         pvs = PVModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw')
         winds = WindModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw')
@@ -263,7 +263,7 @@ def summary(request, user_uuid):
                 results['description'] = scenario.description
 
                 # Focus
-                if load['outage_start_hour']:
+                if load['outage_start_time_step'] is not None:
                     results['focus'] = "Resilience"
                 else:
                     results['focus'] = "Financial"

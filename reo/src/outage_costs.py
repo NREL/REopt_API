@@ -85,11 +85,11 @@ def calc_avoided_outage_costs(data, present_worth_factor, run_uuid):
 
     if generator_in["generator_only_runs_during_grid_outage"]:
 
-        if load_profile.get('outage_start_hour') is None and load_profile.get('outage_end_hour') is None:
+        if load_profile.get('outage_start_time_step') is None and load_profile.get('outage_end_time_step') is None:
             # handles financial scenario where there will only be non-zero input kw
             diesel_kw_for_case = generator_in.get('existing_kw')
 
-        elif load_profile.get('outage_start_hour') is not None and load_profile.get('outage_end_hour') is not None:
+        elif load_profile.get('outage_start_time_step') is not None and load_profile.get('outage_end_time_step') is not None:
     # handles resilience scenarion where output will have existing_kw embedded
             diesel_kw_for_case = generator_out.get('size_kw')
 
@@ -118,7 +118,7 @@ def calc_avoided_outage_costs(data, present_worth_factor, run_uuid):
     However, if the outage simulator does get more complicated (say with CHP) we should revisit using celery to run
     the inner loops in parallel.
     try:
-        if load_profile['outage_end_hour'] - load_profile['outage_start_hour'] > 1000:
+        if load_profile['outage_end_time_step'] - load_profile['outage_start_time_step'] > 1000:
             celery_eager = False
     except KeyError:
         pass  # in case no outage has been defined
