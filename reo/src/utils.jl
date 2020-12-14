@@ -57,7 +57,7 @@ Base.@kwdef struct Parameter
 	 TimeStepRatchetsMonth::Array{Array{Int64,1},1}   #  H_m: Time steps in month m
 	 TimeStepRatchets::Array{Array{Int64,1},1}   #  H_r: Time steps in ratchet r
      TimeStepsWithGrid::Array{Int64,1}  # H_g: Time steps with grid connection
-     TimeStepsWithoutGrid::Array{Int64,1}	 # H \setminus H_g: Time steps without grid connection 
+     TimeStepsWithoutGrid::Array{Int64,1}	 # H \setminus H_g: Time steps without grid connection
 	 DemandLookbackMonths::Array{Any,1}   # M^{lb}: fixed Look back months considered for peak pricing
 	 DemandLookbackRange::Int   # number of Look back months considered for peak pricing
 	 SegByTechSubdivision::AxisArray # S_{kt}: System size segments from segmentation k applied to technology t
@@ -77,7 +77,7 @@ Base.@kwdef struct Parameter
 	 TechToNMILMapping::AxisArray  # Defines set T_v: Technologies that may be access net-metering regime v
 
 	 ###  Scaling Parameters ###
-	 TimeStepScaling::Float64  # \Delta: Time step scaling [h]
+	 TimeStepScaling::Float64  # \Delta: Time step scaling [h], eg. 30 minute resolution -> TimeStepScaling = 0.5
 
 	 ###  Parameters for Costs and their Functional Forms ###
      AnnualMinCharge::Float64    # c^{amc}: Utility annual minimum charge
