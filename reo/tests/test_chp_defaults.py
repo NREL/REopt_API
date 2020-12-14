@@ -10,7 +10,7 @@ class TestCHPDefaults(SimpleTestCase):
     Make sure reo.validators is consistent with the chp_defaults view which is what the Webtool shows users.
     CHP cost and performance depends on 1) CHP.prime_mover, 2) CHP.size_class, 3) Boiler.existing_boiler_production_type_steam_or_hw
     
-    Chiller defaults - maybe make this a separate test class and file, but some dependencies on CHP
+    Chiller defaults (Later, TBD) - maybe make this a separate test class and file, but some dependencies on CHP
     Make sure that ElectricChiller and AbsorptionChiller defaults and dependencies are handled correctly
     AbsorptionChiller.chiller_cop depends on Boiler.existing_boiler_production_type_steam_or_hw and peak and
     the peak cooling capacity of the site (installed_cost also depends on peak capacity)
@@ -18,7 +18,7 @@ class TestCHPDefaults(SimpleTestCase):
 
     """
 
-    # chp_post = {
+    # CHP_post = {
     #     "prime_mover": "recip_engine",
     #     "min_kw": 100.0,
     #     "max_kw": 800.0,
@@ -55,13 +55,19 @@ class TestCHPDefaults(SimpleTestCase):
     #     "pbi_system_max_kw": 0.0,
     #     "emissions_factor_lb_CO2_per_mmbtu": 116.9
     #   }
+    # Boiler_post = {
+    #     "min_mmbtu_per_hr": 0.0,
+    #     "max_mmbtu_per_hr": 1000000000.0,
+    #     "existing_boiler_production_type_steam_or_hw": "hot_water",
+    #     "boiler_efficiency": 0.8
+    #   }
 
     def setUp(self):
         super(TestCHPDefaults, self).setUp()
-        self.reopt_base = '/v1/chp_defaults/'
+        self.views_chp_defaults_base = '/v1/chp_defaults/'
 
-    def get_response(self, params_dict):
-        response = self.client.get(self.reopt_base, data=params_dict)
+    def get_chp_defaults_response(self, params_dict):
+        response = self.client.get(self.views_chp_defaults_base, data=params_dict)
         return response
     
     @staticmethod
@@ -75,6 +81,6 @@ class TestCHPDefaults(SimpleTestCase):
                         "existing_boiler_production_type_steam_or_hw": "hot_water",
                         "year": 2017}
         
-        resp = self.get_response(params_dict=test_params_dict)
+        resp = self.get_chp_defaults_response(params_dict=test_params_dict)
         r = json.loads(resp.content)
         dummy = 3
