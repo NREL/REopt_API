@@ -851,7 +851,11 @@ class ValidateNestedInput:
                 if object_name_path[-1] in ['LoadProfile']:
                     if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
                         if real_values.get('outage_start_hour') >= real_values.get('outage_end_hour'):
-                            self.input_data_errors.append('LoadProfile outage_end_hour must be larger than outage_end_hour cannot be the same')
+                            self.input_data_errors.append('LoadProfile outage_end_hour must be larger than outage_end_hour and these inputs cannot be equal')
+
+                    if real_values.get('outage_start_time_step') is not None and real_values.get('outage_start_time_step') is not None:
+                        if real_values.get('outage_start_time_step') >= real_values.get('outage_start_time_step'):
+                            self.input_data_errors.append('LoadProfile outage_end_time_step must be larger than outage_start_time_step and these inputs cannot be equal')
 
     def check_for_nans(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
         """
