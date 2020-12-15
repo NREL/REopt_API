@@ -86,7 +86,7 @@ class DataManager:
         self.LoadProfile["year_one_electric_load_series_kw"] = load.load_list
         self.LoadProfile["critical_load_series_kw"] = load.critical_load_series_kw
         self.LoadProfile["resilience_check_flag"] = load.resilience_check_flag
-        self.LoadProfile["sustain_hours"] = load.sustain_hours
+        self.LoadProfile["bau_sustained_time_steps"] = load.bau_sustained_time_steps
         self.LoadProfile["annual_kwh"] = load.annual_kwh
         self.LoadProfile["loads_kw"] = load.load_list
         self.load = load
@@ -194,7 +194,6 @@ class DataManager:
         for tech in techs:
 
             if eval('self.' + tech) is not None:
-
 
                 if tech not in ['generator']:
 
@@ -639,7 +638,6 @@ class DataManager:
 
         return tech_class_min_size, techs_in_class
 
-
     def _get_REopt_tech_max_sizes_min_turn_down(self, techs, bau=False):
         max_sizes = list()
         min_turn_down = list()
@@ -745,7 +743,6 @@ class DataManager:
                 time_steps_without_grid.append(i+1)
         return time_steps_with_grid, time_steps_without_grid
 
-
     def _get_fuel_burning_tech_params(self, techs):
         """
         In the Julia model we have:
@@ -770,6 +767,85 @@ class DataManager:
             fuel_burn_rate.append(self.generator.fuel_slope)
             fuel_burn_intercept.append(self.generator.fuel_intercept)
         return fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type, fuel_burn_rate, fuel_burn_intercept
+
+    def _get_export_curtailment_params(self, techs, export_rates, net_metering_limit_kw):
+        """
+        :param techs: list of string
+        :param export_rates: list of lists from UrdbParse, rates in order of the export tiers:
+            1. Net metering [NEM]
+            2. Wholesale [WHL]
+            3. Excess beyond site load [EXC]
+        :returns
+            rates_by_tech: list of lists
+            techs_by_export_tier: dict with valid export_tiers as keys, lists of tech strings as values
+            export_tiers: list of string
+            techs_cannot_curtail: list of string
+            filtered_export_rates: list of lists
+        """
+        rates_by_tech = list()  # ExportTiersByTech, list of lists, becomes indexed on techs in julia
+        export_tiers = list()
+        techs_by_export_tier = dict()
+        techs_cannot_curtail = list()
+        filtered_export_rates = list()
+
+        if len(techs) > 0:
+            net_metering = False
+            any_can_net_meter = False
+            for tech in techs:  # have to do these for loops because `any` changes the scope and can't access `self`
+                if eval('self.' + tech.lower() + '.can_net_meter'):
+                    any_can_net_meter = True
+                    break
+            if any_can_net_meter and net_metering_limit_kw > 0:
+                net_metering = True
+                filtered_export_rates.append(export_rates[0])
+                export_tiers.append("NEM")
+                techs_by_export_tier["NEM"] = list()
+
+            wholesale_exporting = False
+            any_can_wholesale = False
+            for tech in techs:
+                if eval('self.' + tech.lower() + '.can_wholesale'):
+                    any_can_wholesale = True
+                    break
+            if any_can_wholesale and sum(export_rates[1]) != 0:
+                wholesale_exporting = True
+                filtered_export_rates.append(export_rates[1])
+                export_tiers.append("WHL")
+                techs_by_export_tier["WHL"] = list()
+
+            exporting_beyond_site_load = False
+            any_can_export_beyond_site_load = False
+            for tech in techs:
+                if eval('self.' + tech.lower() + '.can_export_beyond_site_load'):
+                    any_can_export_beyond_site_load = True
+                    break
+            if any_can_export_beyond_site_load and sum(export_rates[2]) != 0:
+                exporting_beyond_site_load = True
+                filtered_export_rates.append(export_rates[2])
+                export_tiers.append("EXC")
+                techs_by_export_tier["EXC"] = list()
+
+            for tech in techs:
+                rates = list()
+                if not tech.lower().endswith('nm') and net_metering:
+                    # these techs can access NEM and curtailment rates, and are limited to the net_metering_limit_kw
+                    if eval('self.' + tech.lower() + '.can_net_meter'):
+                        rates.append("NEM")
+                        techs_by_export_tier["NEM"].append(tech.upper())
+                else:
+                    # techs that end with 'nm' are the option to install capacity beyond the net metering capacity limit
+                    # these techs can access wholesale and curtailment rates
+                    if eval('self.' + tech.lower() + '.can_wholesale') and wholesale_exporting:
+                        rates.append("WHL")
+                        techs_by_export_tier["WHL"].append(tech.upper())
+                if eval('self.' + tech.lower() + '.can_export_beyond_site_load') and exporting_beyond_site_load:
+                    rates.append("EXC")
+                    techs_by_export_tier["EXC"].append(tech.upper())
+                rates_by_tech.append(rates)
+                if not eval('self.' + tech.lower() + '.can_curtail'):
+                    techs_cannot_curtail.append(tech.upper())
+
+        return rates_by_tech, techs_by_export_tier, export_tiers, techs_cannot_curtail, filtered_export_rates
 
     def finalize(self):
         """
@@ -804,8 +880,6 @@ class DataManager:
 
         cap_cost_slope, cap_cost_x, cap_cost_yint, n_segments = self._get_REopt_cost_curve(self.available_techs)
         cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau, n_segments_bau = self._get_REopt_cost_curve(self.bau_techs)
-        n_segments_list = [x for x in range(n_segments)]
-        n_segments_list_bau = [x for x in range(n_segments_bau)]
 
         sf = self.site.financial
         StorageCostPerKW = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kw,  # use full cost as basis
@@ -840,15 +914,14 @@ class DataManager:
             NMILLimits = []
         else:
             NMILLimits = [self.elec_tariff.net_metering_limit_kw, self.elec_tariff.interconnection_limit_kw,
-                      self.elec_tariff.interconnection_limit_kw * 10]
+                          self.elec_tariff.interconnection_limit_kw * 10]
         if len(NMIL_regime_bau) == 0:
             NMILLimits_bau = []
         else:
             NMILLimits_bau = [self.elec_tariff.net_metering_limit_kw, self.elec_tariff.interconnection_limit_kw,
-                      self.elec_tariff.interconnection_limit_kw * 10]
+                              self.elec_tariff.interconnection_limit_kw * 10]
         self.year_one_energy_cost_series_us_dollars_per_kwh = parser.energy_rates_summary
         self.year_one_demand_cost_series_us_dollars_per_kw = parser.demand_rates_summary
-
 
         subdivisions = ['CapCost']
 
@@ -902,30 +975,15 @@ class DataManager:
         
         electric_techs = [t for t in reopt_techs if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR")]
         electric_techs_bau = [t for t in reopt_techs_bau if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR")]
-        
-        if len(reopt_techs) > 0:
-            non_storage_sales_tiers = [1, 2]
-            storage_sales_tiers = [3]
-            curtailment_tiers = [3]
-            max_grid_sales = self.load.annual_kwh
-        else:
-            non_storage_sales_tiers = []
-            storage_sales_tiers = []
-            curtailment_tiers = []
-            max_grid_sales = 0
-            
-        if len(reopt_techs_bau) > 0:
-            non_storage_sales_tiers_bau = [1, 2]
-            storage_sales_tiers_bau = [3]
-            curtailment_tiers_bau = [3]
-            max_grid_sales_bau = self.load.annual_kwh
-        else:
-            non_storage_sales_tiers_bau = []
-            storage_sales_tiers_bau = []
-            curtailment_tiers_bau = []
-            max_grid_sales_bau = 0
 
         time_steps_with_grid, time_steps_without_grid = self._get_time_steps_with_grid()
+
+        rates_by_tech, techs_by_export_tier, export_tiers, techs_cannot_curtail, export_rates = \
+            self._get_export_curtailment_params(reopt_techs, tariff_args.grid_export_rates,
+                                                self.elec_tariff.net_metering_limit_kw)
+        rates_by_tech_bau, techs_by_export_tier_bau, export_tiers_bau, techs_cannot_curtail_bau, export_rates_bau = \
+            self._get_export_curtailment_params(reopt_techs_bau, tariff_args.grid_export_rates_bau,
+                                                self.elec_tariff.net_metering_limit_kw)
         
         self.reopt_inputs = {
             'Tech': reopt_techs,
@@ -973,7 +1031,7 @@ class DataManager:
             'TimeStepRatchetsMonth': tariff_args.demand_ratchets_monthly,
             'TimeStepCount': self.n_timesteps,
             'TimeStepScaling': 8760.0 / self.n_timesteps,
-            'AnnualElecLoad': self.load.annual_kwh,
+            'AnnualElecLoadkWh': self.load.annual_kwh,
             'StorageMinChargePcent': self.storage.soc_min_pct,
             'InitSOC': self.storage.soc_init_pct,
             'NMILLimits': NMILLimits,
@@ -982,10 +1040,9 @@ class DataManager:
             # new parameters for reformulation
             'FuelCost': fuel_costs,
             'ElecRate': tariff_args.energy_costs,
-            'GridExportRates': tariff_args.grid_export_rates, # seems like the wrong size
+            'GridExportRates': export_rates,
             'FuelBurnSlope': fuel_burn_rate,
             'FuelBurnYInt': fuel_burn_intercept,
-            'MaxGridSales': max_grid_sales,
             'ProductionIncentiveRate': production_incentive_rate,
             'ProductionFactor': production_factor,
             'ElecLoad': self.load.load_list,
@@ -1014,17 +1071,19 @@ class DataManager:
             'ElectricTechs': electric_techs,
             'FuelBurningTechs': fb_techs,
             'TechsNoTurndown': techs_no_turndown,
-            'SalesTierCount': tariff_args.num_sales_tiers,
-            'StorageSalesTiers': storage_sales_tiers,
-            'NonStorageSalesTiers': non_storage_sales_tiers,
+            'ExportTiers': export_tiers,
             'TimeStepsWithGrid': time_steps_with_grid,
             'TimeStepsWithoutGrid': time_steps_without_grid,
-            'SalesTiersByTech': tariff_args.rates_by_tech,
-            'TechsBySalesTier': tariff_args.techs_by_rate,
-            'CurtailmentTiers': curtailment_tiers,
+            'ExportTiersByTech': rates_by_tech,
+            'TechsByExportTier': [techs_by_export_tier[k] for k in export_tiers],
+            'ExportTiersBeyondSiteLoad': ["EXC"],
             'ElectricDerate': electric_derate,
-            'TechsByNMILRegime': TechsByNMILRegime
+            'TechsByNMILRegime': TechsByNMILRegime,
+            'TechsCannotCurtail': techs_cannot_curtail
             }
+        ## Uncomment the following and run a scenario to get an updated modelinputs.json for creating Julia system image
+        # import json
+        # json.dump(self.reopt_inputs, open("modelinputs.json", "w"))
 
         self.reopt_inputs_bau = {
             'Tech': reopt_techs_bau,
@@ -1070,7 +1129,7 @@ class DataManager:
             'TimeStepRatchetsMonth': tariff_args.demand_ratchets_monthly,
             'TimeStepCount': self.n_timesteps,
             'TimeStepScaling': 8760.0 / self.n_timesteps,
-            'AnnualElecLoad': self.load.annual_kwh,
+            'AnnualElecLoadkWh': self.load.annual_kwh,
             'StorageMinChargePcent': self.storage.soc_min_pct,
             'InitSOC': self.storage.soc_init_pct,
             'NMILLimits': NMILLimits_bau,
@@ -1080,10 +1139,9 @@ class DataManager:
             'StorageCostPerKWH': StorageCostPerKWH,
             'FuelCost': fuel_costs_bau,
             'ElecRate': tariff_args.energy_costs_bau,
-            'GridExportRates': tariff_args.grid_export_rates_bau,
+            'GridExportRates': export_rates_bau,
             'FuelBurnSlope': fuel_burn_rate_bau,
             'FuelBurnYInt': fuel_burn_intercept_bau,
-            'MaxGridSales': max_grid_sales_bau,
             'ProductionIncentiveRate': production_incentive_rate_bau,
             'ProductionFactor': production_factor_bau,
             'ElecLoad': self.load.bau_load_list,
@@ -1111,14 +1169,13 @@ class DataManager:
             'ElectricTechs': electric_techs_bau,
             'FuelBurningTechs': fb_techs_bau,
             'TechsNoTurndown': techs_no_turndown_bau,
-            'SalesTierCount': tariff_args.num_sales_tiers_bau,
-            'StorageSalesTiers': storage_sales_tiers_bau,
-            'NonStorageSalesTiers': non_storage_sales_tiers_bau,
+            'ExportTiers': export_tiers_bau,
             'TimeStepsWithGrid': time_steps_with_grid,
             'TimeStepsWithoutGrid': time_steps_without_grid,
-            'SalesTiersByTech': tariff_args.rates_by_tech_bau,
-            'TechsBySalesTier': tariff_args.techs_by_rate_bau,
-            'CurtailmentTiers': curtailment_tiers_bau,
+            'ExportTiersByTech': rates_by_tech_bau,
+            'TechsByExportTier': [techs_by_export_tier_bau[k] for k in export_tiers_bau],
+            'ExportTiersBeyondSiteLoad':  ["EXC"],
             'ElectricDerate': electric_derate_bau,
-            'TechsByNMILRegime': TechsByNMILRegime_bau
+            'TechsByNMILRegime': TechsByNMILRegime_bau,
+            'TechsCannotCurtail': techs_cannot_curtail_bau
         }

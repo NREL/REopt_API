@@ -8836,10 +8836,10 @@
           0.0,
           0.0
         ],
-        "outage_end_hour": null,
+        "outage_end_time_step": null,
         "monthly_totals_kwh": [],
         "year": 2018,
-        "outage_start_hour": null,
+        "outage_start_time_step": null,
         "outage_is_major_event": true,
         "critical_loads_kw": [],
         "annual_kwh": null
