@@ -248,6 +248,10 @@ class URDB_RateValidator:
 
     def validCompleteHours(self, schedule_name, expected_counts):
         # check that each array in a schedule contains the correct number of entries
+        # :param schedule_name: str - name of URDB rate schedule param (i.e. demandweekdayschedule, energyweekendschedule )
+        # :param expected_counts: list - list of expected list lengths at each level in a nested list of lists starting with the top level,
+        #                                actual lengths of lists can be even divisible by the expected length to account for
+        #                                finer rate resolutions (URDB is 1hr normally, but we accept custom 30-min, 15-min, 10min...)
         # return Boolean if any errors found
 
         if hasattr(self,schedule_name):
@@ -436,7 +440,7 @@ class ValidateNestedInput:
             self.recursively_check_input_dict(self.nested_input_definitions, self.check_for_nans)
             self.recursively_check_input_dict(self.nested_input_definitions, self.convert_data_types)
             self.recursively_check_input_dict(self.nested_input_definitions, self.fillin_defaults)
-            self.recursively_check_input_dict(self.nested_input_definitions, self.check_constraint_ranges)
+            self.recursively_check_input_dict(self.nested_input_definitions, self.check_min_less_than_max)
             self.recursively_check_input_dict(self.nested_input_definitions, self.check_min_max_restrictions)
             self.recursively_check_input_dict(self.nested_input_definitions, self.check_required_attributes)
             self.recursively_check_input_dict(self.nested_input_definitions, self.check_special_cases)
@@ -816,7 +820,7 @@ class ValidateNestedInput:
                             self.input_as_none.append([name, object_name_path[-1] + ' (number {})'.format(number)])
 
     
-    def check_constraint_ranges(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
+    def check_min_less_than_max(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
         """
         comparison_function for recursively_check_input_dict.
         flag any inputs where the min/max constraint ranges don't make sense
@@ -846,6 +850,10 @@ class ValidateNestedInput:
                         self.input_data_errors.append(
                             'min_kwh (%s) in %s is larger than the max_kwh value (%s)' % ( real_values.get('min_kwh'), self.object_name_string(object_name_path), real_values.get('max_kwh'))
                             )
+                if object_name_path[-1] in ['LoadProfile']:
+                    if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
+                        if real_values.get('outage_start_hour') >= real_values.get('outage_end_hour'):
+                            self.input_data_errors.append('LoadProfile outage_end_hour must be larger than outage_end_hour cannot be the same')
 
     def check_for_nans(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
         """
@@ -1046,9 +1054,6 @@ class ValidateNestedInput:
 
         if object_name_path[-1] == "LoadProfile":
             if self.isValid:
-                if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
-                    if real_values.get('outage_start_hour') == real_values.get('outage_end_hour'):
-                        self.input_data_errors.append('LoadProfile outage_start_hour and outage_end_hour cannot be the same')
                 if type(real_values.get('percent_share')) in [float, int]:
                     if real_values.get('percent_share') == 100:
                         real_values['percent_share'] = [100]
@@ -1141,6 +1146,10 @@ class ValidateNestedInput:
                     self.validate_urdb_response()
 
             if electric_tariff.get('urdb_response') is not None and len(self.urdb_errors)==0:
+                #We allow custom URDB formatted rates at resolutions finer than 1 hour, so we are checking to see if the
+                #energy rate resolution is finer than the simulation time resolution
+                #Currently, we do not support consolidating energy rates to match the simulation 
+                #so we flag this potential error here
                 if len(electric_tariff['urdb_response'].get('energyweekdayschedule',[[]])[0]) > 24:
                     energy_rate_resolution = int(len(electric_tariff['urdb_response'].get('energyweekdayschedule',[[]])[0]) / 24)
                     if energy_rate_resolution > self.input_dict['Scenario']['time_steps_per_hour']:
