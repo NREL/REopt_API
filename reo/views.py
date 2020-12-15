@@ -709,6 +709,8 @@ def chiller_defaults(request):
                         absorp_chiller_opex = defaults_sizes[size - 1][2] + slope_opex * \
                                               (max_cooling_load_tons - defaults_sizes[size - 1][0])
 
+        absorp_chiller_elec_cop = 14.1
+        
         response = JsonResponse(
             {"PeakCoolingLoadTons": max_cooling_load_tons,
                 "ElectricChiller": {
@@ -717,6 +719,7 @@ def chiller_defaults(request):
                 },
             "AbsorptionChiller": {
                 "chiller_cop": absorp_chiller_cop,
+                "chiller_elec_cop": absorp_chiller_elec_cop,
                 "installed_cost_us_dollars_per_ton": absorp_chiller_capex,
                 "om_cost_us_dollars_per_ton": absorp_chiller_opex
                 }
