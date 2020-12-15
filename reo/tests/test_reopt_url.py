@@ -144,7 +144,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         response = self.get_response(data)
         err_msg = str(json.loads(response.content)['messages']['input_errors'])
 
-        self.assertTrue("outage_end_hour must be larger than outage_end_hour cannot be the same" in err_msg)
+        self.assertTrue("LoadProfile outage_end_time_step must be larger than outage_start_time_step and these inputs cannot be equal" in err_msg)
 
     def test_valid_data_ranges(self):
 
