@@ -947,6 +947,16 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Year one chiller thermal production",
                   "units": "TonHr"
+                },
+                "year_one_absorp_chl_electric_consumption_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of absorption chiller thermal consumption",
+                  "units": "kW"
+                },
+                "year_one_absorp_chl_electric_consumption_kwh": {
+                  "type": float,
+                  "description": "Year one chiller electric consumption (cooling tower heat rejection fans/pumps)",
+                  "units": "kWh"
                 }
               },
 
