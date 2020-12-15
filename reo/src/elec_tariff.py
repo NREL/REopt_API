@@ -68,10 +68,6 @@ class ElecTariff(object):
         self.add_tou_energy_rates_to_urdb_rate = add_tou_energy_rates_to_urdb_rate
         self.override_urdb_rate_with_tou_energy_rates = False
 
-        self.net_metering = False
-        if net_metering_limit_kw > 0:
-            self.net_metering = True
-
         if urdb_response is not None:
             log.info("Parsing URDB rate")
             if self.tou_energy_rates is not None and self.add_tou_energy_rates_to_urdb_rate is False:

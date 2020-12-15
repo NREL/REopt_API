@@ -322,7 +322,10 @@ class PVModel(models.Model):
     pv_number = models.IntegerField(default=1, null=True, blank=True)
     pv_name = models.TextField(null=True, blank=True, default='')
     location = models.TextField(null=True, blank=True, default='both')
-    prod_factor_series_kw = ArrayField(models.FloatField(blank=True), default=list)
+    can_net_meter = models.BooleanField(null=True)
+    can_wholesale = models.BooleanField(null=True)
+    can_export_beyond_site_load = models.BooleanField(null=True)
+    can_curtail = models.BooleanField(null=True)
 
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)
@@ -380,6 +383,10 @@ class WindModel(models.Model):
     pbi_years = models.FloatField()
     pbi_system_max_kw = models.FloatField()
     prod_factor_series_kw = ArrayField(models.FloatField(blank=True), default=list)
+    can_net_meter = models.BooleanField(null=True)
+    can_wholesale = models.BooleanField(null=True)
+    can_export_beyond_site_load = models.BooleanField(null=True)
+    can_curtail = models.BooleanField(null=True)
 
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)
@@ -476,6 +483,10 @@ class GeneratorModel(models.Model):
     pbi_years = models.FloatField(null=True, blank=True)
     pbi_system_max_kw = models.FloatField(null=True, blank=True)
     emissions_factor_lb_CO2_per_gal = models.FloatField(null=True, blank=True)
+    can_net_meter = models.BooleanField(null=True)
+    can_wholesale = models.BooleanField(null=True)
+    can_export_beyond_site_load = models.BooleanField(null=True)
+    can_curtail = models.BooleanField(null=True)
 
     # Outputs
     fuel_used_gal = models.FloatField(null=True, blank=True)

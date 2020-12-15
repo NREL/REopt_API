@@ -27,7 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-from numpy import npv
+from numpy import npv, ndarray
 from math import log10
 from reo.models import ErrorModel
 
@@ -247,3 +247,10 @@ def check_common_outputs(Test, d_calculated, d_expected):
             )
         else:
             raise e
+
+
+def scrub_numpy_arrays_from_dict(d):
+    for k, v in d.items():
+        if isinstance(v, ndarray):
+            d[k] = v.tolist()
+    return d

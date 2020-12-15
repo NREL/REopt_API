@@ -985,10 +985,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
         if len(data['outputs']['Scenario']['Site']['PV']) == 1:
             data['outputs']['Scenario']['Site']['PV'] = data['outputs']['Scenario']['Site']['PV'][0]
 
-        
-        profiler.profileEnd()
-        data['outputs']["Scenario"]["Profile"]["parse_run_outputs_seconds"] = profiler.getDuration()
-
         #Preserving Backwards Compatability
         data['inputs']['Scenario']['Site']['LoadProfile']['outage_start_hour'] = data['inputs']['Scenario']['Site']['LoadProfile'].get('outage_start_time_step')
         if data['inputs']['Scenario']['Site']['LoadProfile']['outage_start_hour'] is not None:
@@ -1000,6 +996,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "The sustain_hours output will be deprecated soon in favor of bau_sustained_time_steps.",
             "outage_start_hour and outage_end_hour will be deprecated soon in favor of outage_start_time_step and outage_end_time_step",
         ]
+        profiler.profileEnd()
+        data['outputs']["Scenario"]["Profile"]["parse_run_outputs_seconds"] = profiler.getDuration()
 
         if saveToDB:
             ModelManager.update(data, run_uuid=self.run_uuid)
