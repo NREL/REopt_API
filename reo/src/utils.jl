@@ -77,7 +77,7 @@ Base.@kwdef struct Parameter
 	 TechToNMILMapping::AxisArray  # Defines set T_v: Technologies that may be access net-metering regime v 
 	 
 	 ###  Scaling Parameters ###
-	 TimeStepScaling::Float64  # \Delta: Time step scaling [h]
+	 TimeStepScaling::Float64  # \Delta: Time step scaling [h], eg. 30 minute resolution -> TimeStepScaling = 0.5
 	 
 	 ###  Parameters for Costs and their Functional Forms ###
      AnnualMinCharge::Float64    # c^{amc}: Utility annual minimum charge
@@ -88,7 +88,7 @@ Base.@kwdef struct Parameter
 	 OMperUnitSize::AxisArray # c^{om}_{t}: Operation and maintenance cost of technology t per unit of system size [$/kW]
      OMcostPerUnitProd::AxisArray
      
-	 GridExportRates::Array{Float64, 2}  # c^{e}_{uh}: Export rate for energy in energy pricing tier u in time step h   (NEW)
+	 GridExportRates::AxisArray  # c^{e}_{uh}: Export rate for energy in energy pricing tier u in time step h   (NEW)
 	 CapCostSlope::AxisArray   # c^{cm}_{ts}: Slope of capital cost curve for technology t in segment s 
      CapCostYInt::AxisArray  # c^{cb}_{ts}: Y-Intercept of capital cost curve for technology t in segment s 
      CapCostX::AxisArray    # X-value of inflection point (will be changed)
@@ -103,7 +103,6 @@ Base.@kwdef struct Parameter
      DemandLookbackPercent::Float64    # \delta^{lp}: Demand Lookback proportion [fraction]
      MaxDemandInTier::Array{Float64,1}  # \delta^{t}_{e}: Maximum power demand in ratchet e
      MaxDemandMonthsInTier::Array{Float64,1}   # \delta^{mt}_{n}: Maximum monthly power demand in tier n
-	 MaxGridSales::Array{<:Real, 1}   # \delta^{gs}_{u}: Maximum allowable energy sales in tier u in math; equal to sum of LoadProfile["1R",ts] on set TimeStep for tier 1 (analogous "1W") and unlimited for "1X"
      MaxUsageInTier::Array{Float64,1}   # \delta^{tu}_{u}: Maximum monthly energy demand in tier u
 	 
 	 
@@ -166,7 +165,7 @@ Base.@kwdef struct Parameter
 	 ### Not used or used for calculation of other parameters ###
 	 two_party_factor::Float64
      analysis_years::Int64     # Used to calculate present worth factors maybe?
-     AnnualElecLoad::Float64   # Not used anymore (can just sum LoadProfile["1R",h] for all h in TimeStep
+     AnnualElecLoadkWh::Float64
      CapCostSegCount::Int64    # Size of set S 
      FuelBinCount::Int64       # Size of set F  
      DemandBinCount ::Int64    # Size of set E
@@ -181,12 +180,11 @@ Base.@kwdef struct Parameter
 	 ElectricDerate::AxisArray
 
      # New Sets
-     SalesTiers::UnitRange
-     StorageSalesTiers::Array{Int, 1}
-     NonStorageSalesTiers::Array{Int, 1}
-	 SalesTiersByTech::AxisArray
-	 TechsBySalesTier::AxisArray
-	 CurtailmentTiers::Array{Int, 1}
+     ExportTiers::Array{String,1}
+	 ExportTiersByTech::AxisArray
+	 TechsByExportTier::AxisArray
+     ExportTiersBeyondSiteLoad::Array{String, 1}
+     TechsCannotCurtail::Array{String, 1}
 
     # Feature Additions
      TechToLocation::AxisArray
@@ -208,8 +206,8 @@ function Parameter(d::Dict)
         "LevelizationFactor",
         "NMILLimits",
         "TechClassMinSize",
-		"TechsBySalesTier",
-		"SalesTiersByTech",
+		"TechsByExportTier",
+		"ExportTiersByTech",
 		"NMILRegime",
 		"TechsByNMILRegime"
      )
@@ -233,7 +231,6 @@ function Parameter(d::Dict)
     d[:DemandMonthsBin] = 1:d["DemandMonthsBinCount"]
     d[:TimeStep] = 1:d["TimeStepCount"]
     d[:TimeStepBat] = 0:d["TimeStepCount"]
-	d[:SalesTiers] = 1:d["SalesTierCount"]
     n_location = length(d["MaxSizesLocation"])
     d[:Location] = 1:n_location
 
@@ -268,7 +265,12 @@ function Parameter(d::Dict)
     d["StorageCostPerKWH"] = AxisArray([d["StorageCostPerKWH"]], d["Storage"])
     d["FuelCost"] = AxisArray(d["FuelCost"], d["FuelType"])
     d["ElecRate"] = transpose(reshape(d["ElecRate"], d["TimeStepCount"], d["PricingTierCount"]))
-    d["GridExportRates"] = transpose(reshape(d["GridExportRates"], d["TimeStepCount"], d["SalesTierCount"]))
+
+    if !isempty(d["GridExportRates"])
+        d["GridExportRates"] = AxisArray(d["GridExportRates"], d["ExportTiers"], d[:TimeStep])
+    else
+        d["GridExportRates"] = AxisArray([])
+    end
     d["FuelBurnSlope"] = AxisArray(d["FuelBurnSlope"], d["FuelBurningTechs"])
     d["FuelBurnYInt"] = AxisArray(d["FuelBurnYInt"], d["FuelBurningTechs"])
     d["ProductionFactor"] = vector_to_axisarray(d["ProductionFactor"], d["Tech"], d[:TimeStep])
@@ -285,7 +287,6 @@ function Parameter(d::Dict)
     d["SegmentMinSize"] = AxisArray(seg_min_size_array, d["Tech"], d["Subdivision"], d[:Seg])
     d["SegmentMaxSize"] = AxisArray(seg_max_size_array, d["Tech"], d["Subdivision"], d[:Seg])
 	d["ElectricDerate"] = vector_to_axisarray(d["ElectricDerate"], d["Tech"], d[:TimeStep])
-    d["MaxGridSales"] = [d["MaxGridSales"]]
 
     # Indexed Sets
     if isempty(d["FuelType"])
@@ -294,12 +295,13 @@ function Parameter(d::Dict)
     d["SegByTechSubdivision"] = vector_to_axisarray(d["SegByTechSubdivision"], d["Subdivision"], d["Tech"])
     d["TechsByFuelType"] = AxisArray(d["TechsByFuelType"], d["FuelType"])
     d["TechsInClass"] = AxisArray(d["TechsInClass"], d["TechClass"])
-	d["SalesTiersByTech"] = AxisArray(d["SalesTiersByTech"], d["Tech"])
-	d["TechsBySalesTier"] = AxisArray(d["TechsBySalesTier"], d[:SalesTiers])
-	d["TechsByNMILRegime"] = AxisArray(d["TechsByNMILRegime"], d["NMILRegime"])
+    d["ExportTiersByTech"] = AxisArray(d["ExportTiersByTech"], d["Tech"])
+	d["TechsByExportTier"] = AxisArray(d["TechsByExportTier"], d["ExportTiers"])
+    d["TechsByNMILRegime"] = AxisArray(d["TechsByNMILRegime"], d["NMILRegime"])
 
     d = string_dictkeys_tosymbols(d)
     d = filter_dict_to_match_struct_field_names(d, Parameter)
+
     param = Parameter(;d...)
 end
 

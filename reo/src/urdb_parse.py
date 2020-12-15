@@ -27,8 +27,6 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-import os
-import operator
 import calendar
 import numpy
 import logging
@@ -167,7 +165,6 @@ class UrdbParse:
         self.time_steps_per_hour = elec_tariff.time_steps_per_hour
         self.ts_per_year = 8760 * self.time_steps_per_hour
         self.zero_array = [0.0] * self.ts_per_year
-        self.net_metering = elec_tariff.net_metering
         self.wholesale_rate = elec_tariff.wholesale_rate
         self.excess_rate = elec_tariff.wholesale_rate_above_site_load
         self.max_demand_rate = 0.0
@@ -178,9 +175,6 @@ class UrdbParse:
         self.custom_tou_energy_rates = elec_tariff.tou_energy_rates
         self.add_tou_energy_rates_to_urdb_rate = elec_tariff.add_tou_energy_rates_to_urdb_rate
         self.override_urdb_rate_with_tou_energy_rates = elec_tariff.override_urdb_rate_with_tou_energy_rates
-
-        log.info("URDB parse with year: " + str(self.year) + " net_metering: " + str(self.net_metering))
-
         self.energy_rates_summary = []
         self.demand_rates_summary = []
         self.energy_costs = []
@@ -218,16 +212,10 @@ class UrdbParse:
 
         self.reopt_args.energy_costs, \
         self.reopt_args.grid_export_rates, \
-        self.reopt_args.rates_by_tech,   \
-        self.reopt_args.techs_by_rate,   \
-        self.reopt_args.num_sales_tiers  \
         = self.prepare_techs_and_loads(self.techs)
 
         self.reopt_args.energy_costs_bau, \
         self.reopt_args.grid_export_rates_bau, \
-        self.reopt_args.rates_by_tech_bau,   \
-        self.reopt_args.techs_by_rate_bau,   \
-        self.reopt_args.num_sales_tiers_bau  \
         = self.prepare_techs_and_loads(self.bau_techs)
         
         return self.reopt_args
@@ -413,45 +401,13 @@ class UrdbParse:
         else:
             negative_excess_rate_costs = [-1.0 * x for x in self.excess_rate]
 
-        if sum(negative_wholesale_rate_costs) == 0:
-            # no export to grid benefit, so force excess energy into curtailment
-            negative_wholesale_rate_costs = [1000.0 for x in self.wholesale_rate]
-
         grid_export_rates = list()
-        rates_by_tech = list()  # SalesTiersByTech, list of lists, becomes indexed on techs in julia
-        num_sales_tiers = 0
-        techs_by_rate = []  # TechsBySalesTier, list of lists, with inner lists containing strings for techs
-                            # corresponding to rate tiers (outer index)
-        """
-        Sales tiers:
-        1. NEM
-        2. Wholesale
-        3. Curtailment
-        TODO is it an issue that techs cannot take advantave of both NEM and Wholsale rates? 
-            Do users expect this behavior?
-        """
-        if len(techs) > 0:
-            num_sales_tiers = 3
-            techs_by_rate = [list(), list(), list()]
-            grid_export_rates = operator.add(grid_export_rates, negative_energy_costs)
-            grid_export_rates = operator.add(grid_export_rates, negative_wholesale_rate_costs)
-            grid_export_rates = operator.add(grid_export_rates, negative_excess_rate_costs)
+        if len(techs) > 0:  # TODO eliminate hard-coded 3 "sales tiers" (really export tiers)
+            grid_export_rates.append(negative_energy_costs)
+            grid_export_rates.append(negative_wholesale_rate_costs)
+            grid_export_rates.append(negative_excess_rate_costs)
 
-            for tech in techs:
-                if self.net_metering and not tech.lower().endswith('nm'):
-                    # techs that end with 'nm' are the option to install capacity beyond the net metering capacity limit
-                    # these techs can access NEM and curtailment rates
-                    rates_by_tech.append([1, 3])  # 1, 3 correspond to the 0, 2 entries in techs_by_rate
-                    techs_by_rate[0].append(tech.upper())
-                    techs_by_rate[2].append(tech.upper())
-                else:
-                    # these techs can access wholesale and curtailment rates
-                    rates_by_tech.append([2, 3])  # 2, 3 correspond to the 1, 2 entries in techs_by_rate
-                    techs_by_rate[1].append(tech.upper())
-                    techs_by_rate[2].append(tech.upper())
-
-        return energy_costs, grid_export_rates, \
-                rates_by_tech, techs_by_rate, num_sales_tiers
+        return energy_costs, grid_export_rates
 
     def prepare_demand_periods(self, current_rate):
 
