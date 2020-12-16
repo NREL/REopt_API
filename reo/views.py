@@ -57,6 +57,7 @@ from reo.utilities import generate_year_profile_hourly
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'r'))]
 
+kw_per_ton = 3.5168545
 
 def make_error_resp(msg):
         resp = dict()
@@ -667,10 +668,10 @@ def chiller_defaults(request):
             raise ValueError("Missing required max_elec_chiller_elec_load query parameter.")
         else:
             max_chiller_thermal_capacity = float(max_elec_chiller_elec_load) * \
-                                            elec_chiller_cop_defaults['convert_elec_to_thermal'] / 3.51685 * \
+                                            elec_chiller_cop_defaults['convert_elec_to_thermal'] / kw_per_ton * \
                                             float(max_cooling_factor)
             max_cooling_load_tons = float(max_elec_chiller_elec_load) * \
-                                            elec_chiller_cop_defaults['convert_elec_to_thermal'] / 3.51685
+                                            elec_chiller_cop_defaults['convert_elec_to_thermal'] / kw_per_ton
 
             # Electric chiller COP
             if max_chiller_thermal_capacity < 100.0:
