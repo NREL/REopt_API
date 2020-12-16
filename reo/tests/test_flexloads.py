@@ -12224,7 +12224,6 @@ class TestFlexLoads(ResourceTestCaseMixin, TestCase):
                         "b_matrix": b_matrix,
                         "u_inputs": u_inputs,
                         "init_temperatures": init_temperatures,
-                        "shr": shr,
                         "n_temp_nodes": n_temp_nodes,
                         "n_input_nodes": n_input_nodes,
                         "injection_node": injection_node_number,
@@ -12239,7 +12238,8 @@ class TestFlexLoads(ResourceTestCaseMixin, TestCase):
                         "installed_cost_us_dollars_per_kw": 150,
                         "om_cost_us_dollars_per_kw": 60,
                         "prod_factor_series_kw": ac_prodfactor,
-                        "operating_penalty_kw": ac_penalty
+                        "operating_penalty_kw": ac_penalty,
+                        "shr": shr
                     },
                     "FlexTechHP": {
                         "existing_kw": 0,
@@ -12276,15 +12276,15 @@ class TestFlexLoads(ResourceTestCaseMixin, TestCase):
 
         response = self.get_response(self.post)
 
-        print('PV size: ', response['outputs']['Scenario']['Site']['PV']['size_kw'])
-        print('Gen size: ', response['outputs']['Scenario']['Site']['Generator']['size_kw'])
-        print('Indoor temps: ', response['outputs']['Scenario']['Site']['RC']['temperatures_degree_C'])
+        # print('PV size: ', response['outputs']['Scenario']['Site']['PV']['size_kw'])
+        # print('Gen size: ', response['outputs']['Scenario']['Site']['Generator']['size_kw'])
+        # print('Indoor temps: ', response['outputs']['Scenario']['Site']['RC']['temperatures_degree_C'])
         print('AC size: ', response['outputs']['Scenario']['Site']['FlexTechAC']['size_kw'])
-        print('AC production: ', response['outputs']['Scenario']['Site']['FlexTechAC']['year_one_power_production_series_kw'])
-        print('AC consumption: ',response['outputs']['Scenario']['Site']['FlexTechAC']['year_one_power_consumption_series_kw'])
+        # print('AC production: ', response['outputs']['Scenario']['Site']['FlexTechAC']['year_one_power_production_series_kw'])
+        # print('AC consumption: ',response['outputs']['Scenario']['Site']['FlexTechAC']['year_one_power_consumption_series_kw'])
         print('HP size: ', response['outputs']['Scenario']['Site']['FlexTechHP']['size_kw'])
-        print('HP production: ', response['outputs']['Scenario']['Site']['FlexTechHP']['year_one_power_production_series_kw'])
-        print('HP consumption: ', response['outputs']['Scenario']['Site']['FlexTechHP']['year_one_power_consumption_series_kw'])
+        # print('HP production: ', response['outputs']['Scenario']['Site']['FlexTechHP']['year_one_power_production_series_kw'])
+        # print('HP consumption: ', response['outputs']['Scenario']['Site']['FlexTechHP']['year_one_power_consumption_series_kw'])
 
         ac_out = response['outputs']['Scenario']['Site']['FlexTechAC']
         messages = response['messages']
