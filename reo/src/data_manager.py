@@ -1163,6 +1163,7 @@ class DataManager:
         crankcase_power_kw = 0 if self.ac is None else self.ac.crankcase_power_kw
         crankcase_temp_limit_degF = 0 if self.ac is None else self.ac.crankcase_temp_limit_degF
         outdoor_air_temp_degF =[] if self.ac is None else self.ac.outdoor_air_temp_degF
+        shr = [] if self.ac is None else self.ac.shr
 
         if len(reopt_techs) > 0:
             non_storage_sales_tiers = [1, 2]
@@ -1372,7 +1373,7 @@ class DataManager:
             'AMatrix': a_matrix,
             'BMatrix': b_matrix,
             'UInputs': u_inputs,
-            'SHR': self.rc.shr,
+            'SHR': shr,
             'InitTemperatures': self.rc.init_temperatures,
             'TempNodesCount': n_temp_nodes,
             'InputNodesCount': n_input_nodes,
@@ -1516,7 +1517,7 @@ class DataManager:
             'AMatrix': a_matrix_bau,
             'BMatrix': b_matrix_bau,
             'UInputs': u_inputs_bau,
-            'SHR': self.rc.shr,
+            'SHR': shr,
             'InitTemperatures': self.rc.init_temperatures,
             'TempNodesCount': n_temp_nodes_bau,
             'InputNodesCount': n_input_nodes_bau,

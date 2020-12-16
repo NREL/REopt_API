@@ -1803,11 +1803,6 @@ nested_input_definitions = {
           "default": [],
           "description": "Initial temperatures at each temperature node"
         },
-        "shr": {
-          "type": "list_of_float",
-          "default": [],
-          "description": "Time-varying SHR"
-        },
         "n_temp_nodes": {
           "type": "int",
           "default": 1,
@@ -1888,6 +1883,11 @@ nested_input_definitions = {
           "type": "list_of_float",
           "default": [],
           "description": "User-defined operating penalty in kW. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+        },
+        "shr": {
+          "type": "list_of_float",
+          "default": [],
+          "description": "Time-varying SHR"
         },
         "use_crankcase": {
           "type": "bool",
