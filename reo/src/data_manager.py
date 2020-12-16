@@ -1158,6 +1158,12 @@ class DataManager:
         flex_techs = [t for t in reopt_techs if t.startswith("AC") or t.startswith("HP")]
         flex_techs_bau = [t for t in reopt_techs_bau if t.startswith("AC") or t.startswith("HP")]
 
+        use_crankcase = False if self.ac is None else self.ac.use_crankcase
+        use_crankcase_bau = False if self.ac is None else self.ac.use_crankcase_bau
+        crankcase_power_kw = 0 if self.ac is None else self.ac.crankcase_power_kw
+        crankcase_temp_limit_degF = 0 if self.ac is None else self.ac.crankcase_temp_limit_degF
+        outdoor_air_temp_degF =[] if self.ac is None else self.ac.outdoor_air_temp_degF
+
         if len(reopt_techs) > 0:
             non_storage_sales_tiers = [1, 2]
             storage_sales_tiers = [3]
@@ -1375,10 +1381,10 @@ class DataManager:
             'TempLowerBound': self.rc.temperature_lower_bound,
             'TempUpperBound': self.rc.temperature_upper_bound,
             'OperatingPenalty': elec_penalty,
-            'UseCrankcase': self.ac.use_crankcase,
-            'CrankcasePower': self.ac.crankcase_power_kw,
-            'CrankCaseTempLimit': self.ac.crankcase_temp_limit_degF,
-            'OutdoorAirTemp': self.ac.outdoor_air_temp_degF
+            'UseCrankcase': use_crankcase,
+            'CrankcasePower': crankcase_power_kw,
+            'CrankCaseTempLimit': crankcase_temp_limit_degF,
+            'OutdoorAirTemp': outdoor_air_temp_degF
         }
 
         self.reopt_inputs_bau = {
@@ -1519,8 +1525,8 @@ class DataManager:
             'TempLowerBound': self.rc.temperature_lower_bound,
             'TempUpperBound': self.rc.temperature_upper_bound,
             'OperatingPenalty': elec_penalty_bau,
-            'UseCrankcase': self.ac.use_crankcase_bau,
-            'CrankcasePower': self.ac.crankcase_power_kw,
-            'CrankCaseTempLimit': self.ac.crankcase_temp_limit_degF,
-            'OutdoorAirTemp': self.ac.outdoor_air_temp_degF
+            'UseCrankcase': use_crankcase_bau,
+            'CrankcasePower': crankcase_power_kw,
+            'CrankCaseTempLimit': crankcase_temp_limit_degF,
+            'OutdoorAirTemp': outdoor_air_temp_degF
         }
