@@ -1166,6 +1166,7 @@ class DataManager:
         boiler_efficiency = self.boiler.boiler_efficiency if self.boiler != None else 1.0
         elec_chiller_cop = self.elecchl.chiller_cop if self.elecchl != None else 1.0
         absorp_chiller_cop = self.absorpchl.chiller_cop if self.absorpchl != None else 1.0
+        absorp_chiller_elec_cop = self.absorpchl.chiller_elec_cop if self.absorpchl != None else 1.0
 
         # Fuel burning parameters and other CHP-specific parameters
         fuel_params = FuelParams(big_number=big_number, elec_tariff=self.elec_tariff, fuel_tariff=self.fuel_tariff,
@@ -1298,6 +1299,7 @@ class DataManager:
             'BoilerEfficiency': boiler_efficiency,
             'ElectricChillerCOP': elec_chiller_cop,
             'AbsorptionChillerCOP': absorp_chiller_cop,
+            'AbsorptionChillerElecCOP': absorp_chiller_elec_cop,
             'CHPThermalProdSlope': chp_thermal_prod_slope,
             'CHPThermalProdIntercept': chp_thermal_prod_intercept,
             'FuelBurnYIntRate': chp_fuel_burn_intercept,
@@ -1423,6 +1425,7 @@ class DataManager:
             'BoilerEfficiency': boiler_efficiency,
             'ElectricChillerCOP': elec_chiller_cop,
             'AbsorptionChillerCOP': absorp_chiller_cop,
+            'AbsorptionChillerElecCOP': absorp_chiller_elec_cop,
             'CHPThermalProdSlope': chp_thermal_prod_slope_bau,
             'CHPThermalProdIntercept': chp_thermal_prod_intercept_bau,
             'FuelBurnYIntRate': chp_fuel_burn_intercept_bau,
