@@ -31,7 +31,7 @@ from .nested_inputs import nested_input_definitions, list_of_float
 
 
 def list_of_string(inpt):
-    return ["str"(i) for i in inpt]
+    return [str(i) for i in inpt]
 
 nested_output_definitions = {
 
