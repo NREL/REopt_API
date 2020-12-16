@@ -28,7 +28,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## develop (unreleased) 2020-12-08
+## develop (unreleased)
 ### Major Updates
 ##### Added
 - `reo`: new inputs **outage_start_time_step** and **outage_end_time_step** to replace deprecated **outage_start_hour** and **outage_end_hour**. The latter are used as time step indices in the code, so for sub-hourly problems they do not have hourly units. For now **outage_start_hour** and **outage_end_hour** are kept in place to preserve backwards-compatibility. Also note that the new inputs are not zero-indexed.
