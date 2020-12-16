@@ -709,7 +709,7 @@ def chiller_defaults(request):
                         absorp_chiller_opex = defaults_sizes[size - 1][2] + slope_opex * \
                                               (max_cooling_load_tons - defaults_sizes[size - 1][0])
 
-        absorp_chiller_elec_cop = 14.1
+        absorp_chiller_elec_cop = nested_input_definitions["Scenario"]["Site"]["AbsorptionChiller"]["chiller_elec_cop"]["default"]
         
         response = JsonResponse(
             {"PeakCoolingLoadTons": max_cooling_load_tons,

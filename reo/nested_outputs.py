@@ -950,7 +950,7 @@ nested_output_definitions = {
                 },
                 "year_one_absorp_chl_electric_consumption_series_kw": {
                   "type": list_of_float,
-                  "description": "Year one hourly time series of absorption chiller thermal consumption",
+                  "description": "Year one hourly time series of absorption chiller electric consumption",
                   "units": "kW"
                 },
                 "year_one_absorp_chl_electric_consumption_kwh": {
