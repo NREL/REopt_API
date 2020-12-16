@@ -390,8 +390,8 @@ class BuiltInProfile(object):
         self.doe_reference_name = doe_reference_name
         self.nearest_city = None
         self.year = year or 2017
-        self.annual_energy = annual_energy if annual_energy is not None else (
-            sum(monthly_totals_energy) if monthly_totals_energy is not None else self.default_annual_energy)
+        self.annual_energy = annual_energy if annual_energy not in [None, []] else (
+            sum(monthly_totals_energy) if monthly_totals_energy not in [None, []] else self.default_annual_energy)
         self.annual_kwh = self.annual_energy
 
     @property
