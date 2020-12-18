@@ -507,13 +507,13 @@ def generator_efficiency(request):
     From Navigant report / dieselfuelsupply.com, fitting a curve to the partial to full load points:
 
         CAPACITY RANGE      m [gal/kW]  b [gal]
-        0 < C <= 40 kW	    0.068	    0.0125
-        40 < C <= 80 kW	    0.066	    0.0142
-        80 < C <= 150 kW	0.0644	    0.0095
-        150 < C <= 250 kW	0.0648	    0.0067
-        250 < C <= 750 kW	0.0656	    0.0048
-        750 < C <= 1500 kW	0.0657	    0.0043
-        1500 < C  kW	    0.0657	    0.004
+        0 < C <= 40 kW      0.068       0.0125
+        40 < C <= 80 kW     0.066       0.0142
+        80 < C <= 150 kW    0.0644      0.0095
+        150 < C <= 250 kW   0.0648      0.0067
+        250 < C <= 750 kW   0.0656      0.0048
+        750 < C <= 1500 kW  0.0657      0.0043
+        1500 < C  kW        0.0657      0.004
     """
     try:
         generator_kw = float(request.GET['generator_kw'])  # need float to convert unicode

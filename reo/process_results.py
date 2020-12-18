@@ -36,14 +36,14 @@ import logging
 from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
 from reo.models import ModelManager, PVModel, LoadProfileModel, ScenarioModel, LoadProfileBoilerFuelModel, \
-    LoadProfileChillerElectricModel, ElectricChillerModel, BoilerModel, FinancialModel, WindModel, \
+    LoadProfileChillerThermalModel, ElectricChillerModel, BoilerModel, FinancialModel, WindModel, \
     AbsorptionChillerModel
 # from reo.src.outage_costs import calc_avoided_outage_costs  # not used b/c requires outage sim, which can take a long time
 from reo.src.profiler import Profiler
 from reo.src.emissions_calculator import EmissionsCalculator
 from reo.utilities import annuity
 from reo.nested_inputs import macrs_five_year, macrs_seven_year
-
+from reo.utilities import TONHOUR_TO_KWHTH
 log = logging.getLogger(__name__)
 
 
@@ -909,25 +909,32 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             financials = FinancialModel.objects.filter(run_uuid=meta['run_uuid']).first() #getting financial inputs for wind and pv lcoe calculations
             for name, d in nested_output_definitions["outputs"]["Scenario"]["Site"].items():
                 if name == "LoadProfile":
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_electric_load_series_kw"] = self.dm["LoadProfile"].get("year_one_electric_load_series_kw")
-                    self.nested_outputs["Scenario"]["Site"][name]["critical_load_series_kw"] = self.dm["LoadProfile"].get("critical_load_series_kw")
-                    self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_kwh"] = self.dm["LoadProfile"].get("annual_kwh")
-                    self.nested_outputs["Scenario"]["Site"][name]["resilience_check_flag"] = self.dm["LoadProfile"].get("resilience_check_flag")
-                    self.nested_outputs["Scenario"]["Site"][name]["sustain_hours"] = self.dm["LoadProfile"].get("sustain_hours")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_electric_load_series_kw"] = \
+                        self.dm["LoadProfile"].get("year_one_electric_load_series_kw")
+                    self.nested_outputs["Scenario"]["Site"][name]["critical_load_series_kw"] = \
+                            self.dm["LoadProfile"].get("critical_load_series_kw")
+                    self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_kwh"] = \
+                        self.dm["LoadProfile"].get("annual_kwh")
+                    self.nested_outputs["Scenario"]["Site"][name]["resilience_check_flag"] = \
+                        self.dm["LoadProfile"].get("resilience_check_flag")
+                    self.nested_outputs["Scenario"]["Site"][name]["sustain_hours"] = \
+                        self.dm["LoadProfile"].get("sustain_hours")
                 elif name == "LoadProfileBoilerFuel":
-                    lpbf = LoadProfileBoilerFuelModel.objects.filter(run_uuid=meta['run_uuid'])
-                    if len(lpbf) > 0:
-                        lpbf = lpbf[0]
-                        self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_boiler_fuel_load_mmbtu_bau"] = lpbf.annual_calculated_boiler_fuel_load_mmbtu_bau
-                        self.nested_outputs["Scenario"]["Site"][name]["year_one_boiler_fuel_load_series_mmbtu_per_hr"] = self.dm["LoadProfile"].get("year_one_boiler_fuel_load_series_mmbtu_per_hr")
-                        self.nested_outputs["Scenario"]["Site"][name]["year_one_boiler_thermal_load_series_mmbtu_per_hr"] = [x * self.dm.get("boiler_efficiency", 0) for x in self.dm["LoadProfile"].get("year_one_boiler_fuel_load_series_mmbtu_per_hr")]
-                elif name == "LoadProfileChillerElectric":
-                    lpce = LoadProfileChillerElectricModel.objects.filter(run_uuid=meta['run_uuid'])
-                    if len(lpce) > 0:
-                        lpce = lpce[0]
-                        self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_kwh_bau"] = lpce.annual_calculated_kwh_bau
-                        self.nested_outputs["Scenario"]["Site"][name]["year_one_chiller_electric_load_series_kw"] = self.dm["LoadProfile"].get("year_one_chiller_electric_load_series_kw")
-                        self.nested_outputs["Scenario"]["Site"][name]["year_one_chiller_thermal_load_series_ton"] = [x * self.dm.get("elecchl_cop", 0) / 3.5168545 for x in self.dm["LoadProfile"].get("year_one_chiller_electric_load_series_kw")]
+                    self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_boiler_fuel_load_mmbtu_bau"] = \
+                        self.dm["LoadProfile"].get("annual_heating_mmbtu")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_boiler_fuel_load_series_mmbtu_per_hr"] = \
+                        self.dm["LoadProfile"].get("year_one_boiler_fuel_load_series_mmbtu_per_hr")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_boiler_thermal_load_series_mmbtu_per_hr"] = \
+                        [x * self.dm.get("boiler_efficiency", 0) \
+                        for x in self.dm["LoadProfile"].get("year_one_boiler_fuel_load_series_mmbtu_per_hr")]
+                elif name == "LoadProfileChillerThermal":
+                    self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_kwh_bau"] = \
+                        self.dm["LoadProfile"].get("annual_cooling_kwh")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_chiller_electric_load_series_kw"] = \
+                        self.dm["LoadProfile"].get("year_one_chiller_electric_load_series_kw")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_chiller_thermal_load_series_ton"] = \
+                        [x * self.dm.get("elecchl_cop", 0) / TONHOUR_TO_KWHTH \
+                        for x in self.dm["LoadProfile"].get("year_one_chiller_electric_load_series_kw")]
                 elif name == "Financial":
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_us_dollars"] = self.results_dict.get("lcc")
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_bau_us_dollars"] = self.results_dict.get(

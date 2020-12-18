@@ -37,7 +37,7 @@ from reo.src.elec_tariff import ElecTariff
 from reo.src.load_profile import LoadProfile
 from reo.src.fuel_tariff import FuelTariff
 from reo.src.load_profile_boiler_fuel import LoadProfileBoilerFuel
-from reo.src.load_profile_chiller_electric import LoadProfileChillerElectric
+from reo.src.load_profile_chiller_electric import LoadProfileChillerThermal
 from reo.src.profiler import Profiler
 from reo.src.site import Site
 from reo.src.storage import Storage, HotTES, ColdTES
@@ -184,19 +184,16 @@ def setup_scenario(self, run_uuid, data, raw_post):
             tmp['loads_kw'] = lp.load_list
             ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
         else:
-            lp = LoadProfile(dfm=dfm,
-                             user_profile=inputs_dict['Site']['LoadProfile'].get('loads_kw'),
-                             latitude=inputs_dict['Site'].get('latitude'),
-                             longitude=inputs_dict['Site'].get('longitude'),
-                             pvs=pvs,
-                             analysis_years=site.financial.analysis_years,
-                             time_steps_per_hour=inputs_dict['time_steps_per_hour'],
-                             fuel_avail_before_outage=0,
-                             gen_existing_kw=0,
-                             gen_min_turn_down=0,
-                             fuel_slope=0,
-                             fuel_intercept=0,
-                             **inputs_dict['Site']['LoadProfile'])
+            lp = LoadProfile(dfm=dfm,user_profile=inputs_dict['Site']['LoadProfile'].get('loads_kw'),
+                            latitude=inputs_dict['Site'].get('latitude'),
+                            longitude=inputs_dict['Site'].get('longitude'),
+                            pvs=pvs,analysis_years=site.financial.analysis_years,
+                            time_steps_per_hour=inputs_dict['time_steps_per_hour'],
+                            fuel_avail_before_outage=0,
+                            en_existing_kw=0,
+                            gen_min_turn_down=0,
+                            fuel_slope=0,fuel_intercept=0,
+                            **inputs_dict['Site']['LoadProfile'])
             tmp = dict()
             tmp['annual_calculated_kwh'] = lp.annual_kwh
             tmp['resilience_check_flag'] = lp.resilience_check_flag
@@ -255,27 +252,37 @@ def setup_scenario(self, run_uuid, data, raw_post):
         else:
             boiler = None
 
-        # Load Profile Chiller Electric
-        lpce = LoadProfileChillerElectric(dfm=dfm, lp=lp,
-            time_steps_per_hour=inputs_dict['time_steps_per_hour'],
-            latitude=inputs_dict['Site']['latitude'],
-            longitude=inputs_dict['Site']['longitude'],
-            nearest_city=lp.nearest_city or lpbf.nearest_city,
-            year=lp.year,
-            **inputs_dict['Site']['LoadProfileChillerElectric']
-            )
+        # Load Profile Chiller Electric        
+        lpct = LoadProfileChillerThermal(dfm=dfm, total_electric_load_list=lp.unmodified_load_list, 
+                                            time_steps_per_hour=inputs_dict['time_steps_per_hour'],
+                                            latitude=inputs_dict['Site']['latitude'], 
+                                            longitude=inputs_dict['Site']['longitude'], 
+                                            nearest_city=lp.nearest_city or lpbf.nearest_city, 
+                                            year=lp.year, max_thermal_factor_on_peak_load=
+                                            inputs_dict['Site']['ElectricChiller']['max_thermal_factor_on_peak_load'],
+                                            **inputs_dict['Site']['LoadProfileChillerThermal'])
+        lpct_annual_kwh = (lpct.annual_kwhth / lpct.cop)
+        if lp.annual_kwh < lpct_annual_kwh:
+            message = ("Total LoadProfileChillerThermal electric load in kWh ({}) cannot be more than "
+                        "total LoadProfile load in kWh({}). Note you may consider adjusting your "
+                        "LoadProfileChillerThermal cop or ElectricChiller max_thermal_factor_on_peak_load "
+                        "if you provided inputs in units of cooling tons.").format(lpct_annual_kwh, lp.annual_kwh)
+            log.error("Scenario.py raising error: " + message)
+            lpct_error = LoadProfileError(task=self.name, run_uuid=run_uuid, user_uuid=inputs_dict.get('user_uuid'), message=message)
+            lpct_error.save_to_db()
+            raise lpct_error
+ 
         # Option 1, retrieve annual load from calculations here and add to database
         tmp = dict()
-        tmp['annual_calculated_kwh_bau'] = lpce.annual_kwh
-        tmp['year_one_chiller_electric_load_series_kw_bau'] = lpce.load_list
-        ModelManager.updateModel('LoadProfileChillerElectricModel', tmp, run_uuid)
+        tmp['cop'] = lpct.cop
+        tmp['annual_calculated_kwh_bau'] = lpct_annual_kwh
+        tmp['year_one_chiller_electric_load_series_kw_bau'] = [i/lpct.cop for i in lpct.load_list]
+        ModelManager.updateModel('LoadProfileChillerThermalModel', tmp, run_uuid)
 
         # Electric chiller which supplies the bau electric chiller load, if there is an electric chiller load
-        if lpce.annual_kwh > 0.0:
-            elecchl = ElectricChiller(dfm=dfm, chiller_electric_series_bau=lpce.load_list,
-                                      **inputs_dict['Site']['ElectricChiller'])
+        if lpct.annual_kwhth > 0.0:
+            elecchl = ElectricChiller(dfm=dfm, lpct=lpct, **inputs_dict['Site']['ElectricChiller'])
             tmp = dict()
-            tmp['chiller_cop'] = elecchl.chiller_cop
             tmp['max_kw'] = elecchl.max_kw
             ModelManager.updateModel('ElectricChillerModel', tmp, run_uuid)
         else:
@@ -323,6 +330,8 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         # Absorption chiller
         if inputs_dict["Site"]["AbsorptionChiller"]["max_ton"] > 0:
+            if 'chiller_cop' not in inputs_dict['Site']['AbsorptionChiller'].keys():
+                inputs_dict['Site']['AbsorptionChiller']['chiller_cop'] = lpct.cop
             absorpchl = AbsorptionChiller(dfm=dfm, max_cooling_load_tons=elecchl.max_cooling_load_tons,
                                           hw_or_steam=boiler.existing_boiler_production_type_steam_or_hw,
                                           chp_prime_mover=chp.prime_mover,
@@ -347,7 +356,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
         # delete python objects, which are not serializable
 
         for k in ['storage', 'hot_tes', 'cold_tes', 'site', 'elec_tariff', 'fuel_tariff', 'pvs', 'pvnms',
-				'load', 'util', 'heating_load', 'cooling_load'] + dfm.available_techs:
+                'load', 'util', 'heating_load', 'cooling_load'] + dfm.available_techs:
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
 
