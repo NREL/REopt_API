@@ -1143,11 +1143,10 @@ class ValidateNestedInput:
                                                 'percent_share')
                     self.update_attribute_value(object_name_path, number, 'percent_share', real_values['percent_share'])
                 if real_values.get('doe_reference_name') is not None:
-                    if (len(real_values.get('doe_reference_name')) > 1) and (len(real_values.get('percent_share')) > 1):
-                        if len(real_values.get('doe_reference_name')) != len(real_values.get('percent_share',[])):
-                            self.input_data_errors.append((
-                                'The length of doe_reference_name and percent_share lists should be equal'
-                                ' for constructing hybrid LoadProfile'))
+                    if len(real_values.get('doe_reference_name')) != len(real_values.get('percent_share',[])):
+                        self.input_data_errors.append((
+                            'The length of doe_reference_name and percent_share lists should be equal'
+                            ' for constructing hybrid LoadProfile'))
                 if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
                     if real_values.get('outage_start_hour') == real_values.get('outage_end_hour'):
                         self.input_data_errors.append('LoadProfile outage_start_hour and outage_end_hour cannot be the same')
@@ -1332,11 +1331,10 @@ class ValidateNestedInput:
                                                 'percent_share')
                     self.update_attribute_value(object_name_path, number, 'percent_share', real_values['percent_share'])
                 if real_values.get('doe_reference_name') is not None:
-                    if (len(real_values.get('doe_reference_name')) > 1) and (len(real_values.get('percent_share')) > 1):
-                        if len(real_values.get('doe_reference_name')) != len(real_values.get('percent_share',[])):
-                            self.input_data_errors.append((
-                                'The length of doe_reference_name and percent_share lists should be equal'
-                                ' for constructing hybrid LoadProfileChillerThermal'))
+                    if len(real_values.get('doe_reference_name')) != len(real_values.get('percent_share',[])):
+                        self.input_data_errors.append((
+                            'The length of doe_reference_name and percent_share lists should be equal'
+                            ' for constructing hybrid LoadProfileChillerThermal'))
                 # Validate a user supplied energy series
                 if not no_values_given and \
                     ( (real_values.get('loads_fraction') not in [None,[]]) or \
@@ -1386,11 +1384,10 @@ class ValidateNestedInput:
                                             'percent_share')
                 self.update_attribute_value(object_name_path, number, 'percent_share', real_values['percent_share'])
             if real_values.get('doe_reference_name') is not None:
-                if (len(real_values.get('doe_reference_name')) > 1) and (len(real_values.get('percent_share')) > 1):
-                    if len(real_values.get('doe_reference_name')) != len(real_values.get('percent_share',[])):
-                        self.input_data_errors.append((
-                            'The length of doe_reference_name and percent_share lists should be equal'
-                            ' for constructing hybrid LoadProfileBoilerFuel'))
+                if len(real_values.get('doe_reference_name')) != len(real_values.get('percent_share',[])):
+                    self.input_data_errors.append((
+                        'The length of doe_reference_name and percent_share lists should be equal'
+                        ' for constructing hybrid LoadProfileBoilerFuel'))
             # Validate a user supplied energy series
             if not no_values_given and real_values.get('loads_mmbtu_per_hour') not in [None, []]:
                 self.validate_8760(real_values.get('loads_mmbtu_per_hour'), "LoadProfileBoilerFuel",
