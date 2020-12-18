@@ -28,9 +28,14 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
 def nested_to_flat(nested_output):
-    
-    base = {
+    """
+    Convenience function for comparing two results dictionary.
+    Used in many built-in tests (before passing both dicts to check_common_outputs).
 
+    Arguments:
+        nested_output: dict, API response
+    """
+    base = {
         'run_uuid': nested_output['Scenario']['run_uuid'],
         'api_version': nested_output['Scenario']['api_version'],
         'status': nested_output['Scenario']['status'],
@@ -116,7 +121,6 @@ def nested_to_flat(nested_output):
                 'existing_gen_total_fuel_cost_us_dollars'],
        })
     return base
-
 
 def nested_to_flat_chp(nested_output):
     base = {

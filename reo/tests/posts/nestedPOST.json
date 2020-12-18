@@ -58,8 +58,8 @@
           1200,
           1200
         ],
-        "outage_start_hour": 10,
-        "outage_end_hour": 500,
+        "outage_start_time_step": 11,
+        "outage_end_time_step": 501,
         "critical_load_pct": 0.5,
         "critical_loads_kw": [
           1.37,
