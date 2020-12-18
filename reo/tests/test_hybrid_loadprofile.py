@@ -37,8 +37,7 @@ class TestHybridLoadProfile(ResourceTestCaseMixin, TestCase):
                         "doe_reference_name":["RetailStore","LargeOffice",
                                                "MediumOffice","SmallOffice",
                                                "Warehouse"],
-                        "annual_kwh":[486188.0, 6642784.0, 846742.0,
-                                       86655.0, 182085.0],
+                        "annual_kwh": 500000.0,
                         "year": 2017,
                         "monthly_totals_kwh": [],
                         "loads_kw": [],
@@ -198,8 +197,6 @@ class TestHybridLoadProfile(ResourceTestCaseMixin, TestCase):
 
         resultant_hybrid_annual_kwh = lp["annual_calculated_kwh"]
 
-        manually_calculated_hybrid_annual_kwh = (0.2*486188.0) + (0.2*6642784) + (0.2*846742) + (0.2*86655) + (0.2*182085)
-
 # this comparison of the 'resultant_load_profile' and 'manually_calculated_load_profile' is possible because there is no existing-pv in this case. If existing-pv is present, then the resultant_hybrid_annual_kwh would be different when net native load is calculated by subtracting existing-pv's output.
 
-        self.assertAlmostEquals(resultant_hybrid_annual_kwh, manually_calculated_hybrid_annual_kwh, places=2)
+        self.assertAlmostEquals(resultant_hybrid_annual_kwh, 500000x s, places=2)
