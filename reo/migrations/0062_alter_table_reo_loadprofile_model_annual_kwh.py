@@ -11,14 +11,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-
                      migrations.RunSQL(
-                         "ALTER TABLE reo_loadprofilemodel ALTER COLUMN annual_kwh TYPE real USING annual_kwh::real;"),
-                     migrations.RunSQL(
-                         "ALTER TABLE reo_loadprofilemodel ALTER COLUMN annual_kwh DROP DEFAULT, ALTER COLUMN annual_kwh TYPE real[] USING array[annual_kwh], ALTER COLUMN annual_kwh SET DEFAULT '{}'"),
-                     migrations.RunSQL(
-                         "ALTER TABLE reo_loadprofilemodel RENAME COLUMN doe_reference_name to doe_reference_name_old;"),
-                     migrations.RunSQL("ALTER TABLE reo_loadprofilemodel ADD COLUMN doe_reference_name text[];"),
+                         "ALTER TABLE reo_loadprofilemodel RENAME COLUMN annual_kwh to annual_kwh_old;"),
+                     migrations.RunSQL("ALTER TABLE reo_loadprofilemodel ADD COLUMN annual_kwh double precision;"),
                      migrations.RunSQL(
                          "UPDATE reo_loadprofilemodel SET doe_reference_name=ARRAY[doe_reference_name_old];"),
                      migrations.RunSQL("ALTER TABLE reo_loadprofilemodel DROP COLUMN doe_reference_name_old;"),

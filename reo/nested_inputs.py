@@ -285,7 +285,7 @@ nested_input_definitions = {
           "description": "Simulated load profile from DOE <a href='https: //energy.gov/eere/buildings/commercial-reference-buildings' target='blank'>Commercial Reference Buildings</a>"
         },
         "annual_kwh": {
-          "type": ["float", "list_of_float"],
+          "type": "float",
           "min": 1.0,
           "max": max_big_number,
           "replacement_sets": load_profile_possible_sets,
@@ -368,7 +368,7 @@ nested_input_definitions = {
           "description": "Building type to use in selecting a simulated load profile from DOE <a href='https: //energy.gov/eere/buildings/commercial-reference-buildings' target='blank'>Commercial Reference Buildings</a>. By default, the doe_reference_name of the LoadProfile is used."
         },
         "annual_mmbtu": {
-          "type": ["float", "list_of_float"],
+          "type": "float",
           "min": 0.0,
           "max": max_big_number,
           "description": "Annual electric chiller electric consumption, in mmbtu, used to scale simulated default boiler load profile for the site's climate zone",
@@ -402,7 +402,7 @@ nested_input_definitions = {
           "description": "Typical electric chiller load for all hours in one year."
         },
         "annual_tonhour": {
-          "type": ["float", "list_of_float"],
+          "type": "float",
           "min": 0.0,
           "max": max_big_number,
           "description": "Annual electric chiller energy consumption, in ton-hours, used to scale simulated default electric chiller load profile for the site's climate zone",
