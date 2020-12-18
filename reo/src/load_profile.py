@@ -503,7 +503,7 @@ class LoadProfile(BuiltInProfile):
             it is determined as either "loads_kw" or built-in profile times the "critical_load_pct".
     """
 
-    def __init__(self, dfm, user_profile=None, pvs=None, critical_loads_kw=None, critical_load_pct=None,
+    def __init__(self, dfm=None, user_profile=None, pvs=None, critical_loads_kw=None, critical_load_pct=None,
                  outage_start_time_step=None, outage_end_time_step=None, loads_kw_is_net=True, critical_loads_kw_is_net=False,
                  analysis_years=1, time_steps_per_hour=1, gen_existing_kw=0, gen_min_turn_down=0,
                  fuel_avail_before_outage=0, fuel_slope=1, fuel_intercept=0, **kwargs):
