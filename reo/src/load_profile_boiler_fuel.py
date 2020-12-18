@@ -5,78 +5,70 @@ import copy
 import numpy as np
 
 
-class LoadProfileBoilerFuel(object):
+class LoadProfileBoilerFuel(BuiltInProfile):
     """
-    Contains information relevant to construct a thermal load,
-    Presently just takes 8760, so not much to do
+    Boiler Load Profiles based on CRB defined load shapes or user-defined input
     """
     with open(os.path.join(BuiltInProfile.library_path, 'reference_heating_mmbtu.json'), 'r') as f:
         annual_loads = json.loads(f.read())
 
     builtin_profile_prefix = "Heating8760_norm_"
     
-    def __init__(self, dfm=None, latitude = None, longitude = None, time_steps_per_hour = None, loads_mmbtu_per_hour = [], doe_reference_name = None, nearest_city = None, year = None, percent_share_list = None, **kwargs):
-        self.time_steps_per_hour = time_steps_per_hour
-        self.nearest_city = nearest_city
-        self.doe_reference_name = doe_reference_name
-        if loads_mmbtu_per_hour:
-            self.load_list = loads_mmbtu_per_hour
+    def __init__(self, dfm=None, latitude = None, longitude = None, nearest_city = None, time_steps_per_hour = None, 
+                    year = None, **kwargs):
+        """
+        :param dfm: (object) data_manager to which this load object will be added
+        :param latitude: (float) site latitude
+        :param longitude: (float) site longitude
+        :param nearest_city: (str) site nearest_city
+        :param time_steps_per_hour: (int) simulation time resolution
+        :param year: (int) electric LoadProfile year
+        :param kwargs: (dict) Chiller specific inputs as defined in reo/nested_inputs
+        """
+        
+        if kwargs.get('loads_mmbtu_per_hour') is not None: 
+            self.load_list = kwargs['loads_mmbtu_per_hour']
             self.annual_mmbtu = sum(self.load_list)
 
         else:  # building type and (annual_mmbtu OR monthly_mmbtu) defined by user
-
-            if len(doe_reference_name) == 1:
-                if len(kwargs.get('annual_mmbtu') or []) == 1:
-                    kwargs['annual_mmbtu'] = kwargs['annual_mmbtu'][0]
-                boiler_profile = BuiltInProfile(
-                    self.annual_loads,
-                    self.builtin_profile_prefix,
-                    latitude=latitude,
-                    longitude=longitude,
-                    doe_reference_name=doe_reference_name[0],
-                    nearest_city=nearest_city,
-                    year=year,
-                    annual_energy=kwargs.get('annual_mmbtu'),
-                    monthly_totals_energy=kwargs.get('monthly_mmbtu'),
-                    **kwargs)                
+            doe_reference_name = kwargs['doe_reference_name']
+            combine_loadlist = []
+            for i in range(len(doe_reference_name)):
+                # Monthly loads can only be used to scale a non-hybrid profile
+                kwargs['monthly_totals_energy'] = kwargs.get("monthly_mmbtu")
+                if len(doe_reference_name)>1:
+                    kwargs['monthly_totals_energy'] = None
+                # We only scale by percent share if a raw annual tonhour value has not been provided
                 
-                if time_steps_per_hour > 1:
-                    self.load_list = np.concatenate([float(x)/time_steps_per_hour for x in boiler_profile.built_in_profile])
+                kwargs['annual_energy'] = None
+                # We only scale by percent share if a raw annual tonhour value has not been provided
+                if len(kwargs.get("annual_mmbtu",[])) > 0:
+                    kwargs['annual_energy'] = kwargs.get("annual_mmbtu",[])[i]
+                    percent_share = 100
                 else:
-                    self.load_list = boiler_profile.built_in_profile
-            
-            else:
-                self.annual_mmbtu_list = kwargs.get("annual_mmbtu")
-                self.percent_share_list = percent_share_list
-                combine_loadlist = []
-                for i in range(len(doe_reference_name)):
-                    
-                    annual_energy = None
-                    if self.annual_mmbtu_list not in [None, []]:
-                        annual_energy = self.annual_mmbtu_list[i]
-
-                    boiler_profile = BuiltInProfile(
-                        self.annual_loads,
-                        self.builtin_profile_prefix,
-                        latitude=latitude,
-                        longitude=longitude,
-                        doe_reference_name=doe_reference_name[i],
-                        nearest_city=nearest_city,
-                        year=year,
-                        annual_energy=annual_energy)
-                    
-                    percent_share = self.percent_share_list[i]
-                    
-                    if time_steps_per_hour > 1:
-                        self.load_list = np.concatenate([[x] * time_steps_per_hour for x in boiler_profile.built_in_profile])
-                    else:
-                        self.load_list = boiler_profile.built_in_profile
-
-                    # appending the weighted load at every timestep, for making hybrid loadlist
-                    combine_loadlist.append(list(np.array(boiler_profile) * (percent_share/100.0)))
-
-                hybrid_loadlist = list(np.sum(np.array(combine_loadlist), 0))
-                self.load_list = copy.copy(hybrid_loadlist)
+                    percent_share = kwargs.get("percent_share")[i]
+                kwargs['annual_loads'] = self.annual_loads
+                kwargs['builtin_profile_prefix'] = self.builtin_profile_prefix
+                kwargs['latitude'] = latitude
+                kwargs['longitude'] = longitude
+                kwargs['doe_reference_name'] = doe_reference_name[i]
+                kwargs['nearest_city'] = nearest_city
+                kwargs['time_steps_per_hour'] = time_steps_per_hour
+                kwargs['year'] = year
+                super(LoadProfileBoilerFuel, self).__init__(**kwargs)
+                if time_steps_per_hour > 1:
+                    partial_load_list = np.concatenate([[x] * time_steps_per_hour \
+                                                            for x in self.built_in_profile])
+                else:
+                    partial_load_list = self.built_in_profile
+                # appending the weighted load at every timestep, for making hybrid loadlist
+                # checks to see if we can save a multiplication step if possible to save time
+                if percent_share != 100.0:
+                    combine_loadlist.append(list(np.array(partial_load_list) * (percent_share/100.0)))
+                else:
+                    combine_loadlist.append(list(partial_load_list))
+            hybrid_loadlist = list(np.sum(np.array(combine_loadlist), 0))
+            self.load_list = copy.copy(hybrid_loadlist)
             self.annual_mmbtu = sum(self.load_list)
 
         if dfm is not None:

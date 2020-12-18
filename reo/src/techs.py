@@ -32,6 +32,7 @@ from reo.src.pvwatts import PVWatts
 from reo.src.wind import WindSAMSDK
 from reo.src.incentives import Incentives, IncentivesNoProdBased
 from reo.models import ModelManager
+from reo.utilities import TONHOUR_TO_KWHTH
 
 
 class Tech(object):
@@ -1060,42 +1061,25 @@ class Boiler(Tech):
 
 class ElectricChiller(Tech):
 
-    electric_chiller_cop_defaults = {"convert_elec_to_thermal": 4.55,
-                                        "less_than_100_tons": 4.40,
-                                        "greater_than_100_tons": 4.69}
-
-    def __init__(self, dfm, chiller_electric_series_bau, **kwargs):
+    def __init__(self, dfm, lpct, **kwargs):
         super(ElectricChiller, self).__init__(**kwargs)
-
         self.loads_served = ['retail', 'tes']
         self.is_cool = True
         self.reopt_class = 'ELECCHL'
         self.min_kw = kwargs.get('min_kw')
         self.max_kw = kwargs.get('max_kw')
-        self.max_thermal_factor_on_peak_load = kwargs.get('max_thermal_factor_on_peak_load')
-        self.chiller_cop = kwargs.get('chiller_cop')
-        self.installed_cost_us_dollars_per_kw = kwargs.get('installed_cost_us_dollars_per_kw')
+        self.max_thermal_factor_on_peak_load = kwargs['max_thermal_factor_on_peak_load']
+        self.installed_cost_us_dollars_per_kw = kwargs['installed_cost_us_dollars_per_kw']
         self.derate = 0
         self.n_timesteps = dfm.n_timesteps
+        self.chiller_cop = lpct.cop
 
-        # Update COP (if not user-entered) based on estimated max chiller load
-        if self.chiller_cop is None:
-            self.max_cooling_load_tons = max(chiller_electric_series_bau) / 3.51685 * \
-                                    ElectricChiller.electric_chiller_cop_defaults["convert_elec_to_thermal"]
-            self.max_chiller_thermal_capacity_tons = self.max_cooling_load_tons * \
-                                                self.max_thermal_factor_on_peak_load
-            if self.max_chiller_thermal_capacity_tons < 100.0:
-                self.chiller_cop = ElectricChiller.electric_chiller_cop_defaults["less_than_100_tons"]
-            else:
-                self.chiller_cop = ElectricChiller.electric_chiller_cop_defaults["greater_than_100_tons"]
-        else:
-            self.max_cooling_load_tons = max(chiller_electric_series_bau) * self.chiller_cop / 3.51685
-            self.max_chiller_thermal_capacity_tons = self.max_cooling_load_tons * \
-                                                     self.max_thermal_factor_on_peak_load
+        self.max_cooling_load_tons = max(lpct.load_list) / TONHOUR_TO_KWHTH
+        self.max_chiller_thermal_capacity_tons = self.max_cooling_load_tons * self.max_thermal_factor_on_peak_load
 
         # Unless max_kw is a user-input, set the max_kw with the cooling load and factor
         if self.max_kw is None:
-            self.max_kw = self.max_chiller_thermal_capacity_tons * 3.51685
+            self.max_kw = self.max_chiller_thermal_capacity_tons * TONHOUR_TO_KWHTH
 
         dfm.add_electric_chiller(self)
 
@@ -1118,19 +1102,19 @@ class AbsorptionChiller(Tech):
     absorption_chiller_cost_defaults = {"hot_water": [(50, 6000.0, 42.0), (440, 2250.0, 14.0), (1320, 2000.0, 7.0)],
                                         "steam": [(330, 3300.0, 21.0), (1000, 2000.0, 7.0)]}
 
-    def __init__(self, dfm, max_cooling_load_tons, hw_or_steam, chp_prime_mover, **kwargs):
+    def __init__(self, dfm, max_cooling_load_tons, hw_or_steam, chp_prime_mover, chiller_cop, **kwargs):
         super(AbsorptionChiller, self).__init__(**kwargs)
 
         self.loads_served = ['retail', 'tes']
         self.is_cool = True
         self.reopt_class = 'ABSORPCHL'
-        self.chiller_cop = kwargs.get('chiller_cop')
+        self.chiller_cop = chiller_cop
         self.derate = 0
         self.n_timesteps = dfm.n_timesteps
 
         # Convert a size-based inputs from ton to kwt
-        self.min_kw = kwargs.get('min_ton') * 3.51685
-        self.max_kw = kwargs.get('max_ton') * 3.51685
+        self.min_kw = kwargs.get('min_ton') * TONHOUR_TO_KWHTH
+        self.max_kw = kwargs.get('max_ton') * TONHOUR_TO_KWHTH
         self.installed_cost_us_dollars_per_ton = kwargs.get('installed_cost_us_dollars_per_ton')
         self.om_cost_us_dollars_per_ton = kwargs.get('om_cost_us_dollars_per_ton')
         self.max_cooling_load_tons = max_cooling_load_tons
@@ -1149,8 +1133,8 @@ class AbsorptionChiller(Tech):
         elif self.om_cost_us_dollars_per_ton is None:
             self.om_cost_us_dollars_per_ton = om_cost_per_ton_per_yr_calc
 
-        self.installed_cost_us_dollars_per_kw = self.installed_cost_us_dollars_per_ton / 3.51685
-        self.om_cost_us_dollars_per_kw = self.om_cost_us_dollars_per_ton / 3.51685
+        self.installed_cost_us_dollars_per_kw = self.installed_cost_us_dollars_per_ton / TONHOUR_TO_KWHTH
+        self.om_cost_us_dollars_per_kw = self.om_cost_us_dollars_per_ton / TONHOUR_TO_KWHTH
 
         self.incentives = IncentivesNoProdBased(**kwargs)
 

@@ -32,6 +32,7 @@ from reo.src.urdb_parse import UrdbParse
 from reo.src.fuel_params import FuelParams
 from reo.utilities import annuity, degradation_factor, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
     insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, annuity_escalation
+import numpy as np
 max_incentive = 1.0e10
 
 big_number = 1.0e10
@@ -111,8 +112,8 @@ class DataManager:
         self.heating_load = load
 
     def add_load_chiller_electric(self, load):
-        self.LoadProfile["year_one_chiller_electric_load_series_kw"] = load.load_list
-        self.LoadProfile["annual_cooling_kwh"] = load.annual_kwh
+        self.LoadProfile["year_one_chiller_electric_load_series_kw"] = list(np.array(load.load_list) / load.cop)
+        self.LoadProfile["annual_cooling_kwh"] = load.annual_kwhth / load.cop
         self.cooling_load = load
 
     def add_boiler(self, boiler):
@@ -1239,23 +1240,23 @@ class DataManager:
             'TechToNMILMapping': TechToNMILMapping,
             'CapCostSegCount': n_segments,
             # new parameters for reformulation
-	        'FuelCost': fuel_costs,
-	        'ElecRate': tariff_args.energy_costs,
-	        'GridExportRates': tariff_args.grid_export_rates, # seems like the wrong size
-	        'FuelBurnSlope': fuel_burn_slope,
-	        'FuelBurnYInt': fuel_burn_intercept,
-	        'MaxGridSales': max_grid_sales,
-	        'ProductionIncentiveRate': production_incentive_rate,
-	        'ProductionFactor': production_factor,
-	        'ElecLoad': non_cooling_electric_load,
-	        'FuelLimit': fuel_limit,
-	        'ChargeEfficiency': charge_efficiency, # Do we need this indexed on tech?
-	        'GridChargeEfficiency': grid_charge_efficiency,
-	        'DischargeEfficiency': discharge_efficiency,
-	        'StorageMinSizeEnergy': storage_min_energy,
-	        'StorageMaxSizeEnergy': storage_max_energy,
-	        'StorageMinSizePower': storage_min_power,
-	        'StorageMaxSizePower': storage_max_power,
+            'FuelCost': fuel_costs,
+            'ElecRate': tariff_args.energy_costs,
+            'GridExportRates': tariff_args.grid_export_rates, # seems like the wrong size
+            'FuelBurnSlope': fuel_burn_slope,
+            'FuelBurnYInt': fuel_burn_intercept,
+            'MaxGridSales': max_grid_sales,
+            'ProductionIncentiveRate': production_incentive_rate,
+            'ProductionFactor': production_factor,
+            'ElecLoad': non_cooling_electric_load,
+            'FuelLimit': fuel_limit,
+            'ChargeEfficiency': charge_efficiency, # Do we need this indexed on tech?
+            'GridChargeEfficiency': grid_charge_efficiency,
+            'DischargeEfficiency': discharge_efficiency,
+            'StorageMinSizeEnergy': storage_min_energy,
+            'StorageMaxSizeEnergy': storage_max_energy,
+            'StorageMinSizePower': storage_min_power,
+            'StorageMaxSizePower': storage_max_power,
             'StorageMinSOC': [self.storage.soc_min_pct, self.hot_tes.soc_min_pct, self.cold_tes.soc_min_pct],
             'StorageInitSOC': [self.storage.soc_init_pct, self.hot_tes.soc_init_pct, self.cold_tes.soc_init_pct],
             'StorageCanGridCharge': self.storage.canGridCharge,
@@ -1364,25 +1365,25 @@ class DataManager:
             'TechToNMILMapping': TechToNMILMapping_bau,
             'CapCostSegCount': n_segments_bau,
             # new parameters for reformulation
-	        'FuelCost': fuel_costs_bau,
-	        'ElecRate': tariff_args.energy_costs_bau,
-	        'GridExportRates': tariff_args.grid_export_rates_bau,
-	        'FuelBurnSlope': fuel_burn_slope_bau,
-	        'FuelBurnYInt': fuel_burn_intercept_bau,
-	        'MaxGridSales': max_grid_sales_bau,
-	        'ProductionIncentiveRate': production_incentive_rate_bau,
-	        'ProductionFactor': production_factor_bau,
-	        'ElecLoad': non_cooling_electric_load_bau,
-	        'FuelLimit': fuel_limit_bau,
-	        'ChargeEfficiency': charge_efficiency_bau,
-	        'GridChargeEfficiency': grid_charge_efficiency,
-	        'DischargeEfficiency': discharge_efficiency_bau,
-	        'StorageMinSizeEnergy': [0.0 for _ in storage_techs],
-	        'StorageMaxSizeEnergy': [0.0 for _ in storage_techs],
-	        'StorageMinSizePower': [0.0 for _ in storage_techs],
-	        'StorageMaxSizePower': [0.0 for _ in storage_techs],
-	        'StorageMinSOC': [0.0 for _ in storage_techs],
-	        'StorageInitSOC': [0.0 for _ in storage_techs],
+            'FuelCost': fuel_costs_bau,
+            'ElecRate': tariff_args.energy_costs_bau,
+            'GridExportRates': tariff_args.grid_export_rates_bau,
+            'FuelBurnSlope': fuel_burn_slope_bau,
+            'FuelBurnYInt': fuel_burn_intercept_bau,
+            'MaxGridSales': max_grid_sales_bau,
+            'ProductionIncentiveRate': production_incentive_rate_bau,
+            'ProductionFactor': production_factor_bau,
+            'ElecLoad': non_cooling_electric_load_bau,
+            'FuelLimit': fuel_limit_bau,
+            'ChargeEfficiency': charge_efficiency_bau,
+            'GridChargeEfficiency': grid_charge_efficiency,
+            'DischargeEfficiency': discharge_efficiency_bau,
+            'StorageMinSizeEnergy': [0.0 for _ in storage_techs],
+            'StorageMaxSizeEnergy': [0.0 for _ in storage_techs],
+            'StorageMinSizePower': [0.0 for _ in storage_techs],
+            'StorageMaxSizePower': [0.0 for _ in storage_techs],
+            'StorageMinSOC': [0.0 for _ in storage_techs],
+            'StorageInitSOC': [0.0 for _ in storage_techs],
             'StorageCanGridCharge': self.storage.canGridCharge,
             'SegmentMinSize': segment_min_size_bau,
             'SegmentMaxSize': segment_max_size_bau,
