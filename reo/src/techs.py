@@ -925,8 +925,8 @@ class CHP(Tech):
                               "combustion_turbine": 0,
                               "fuel_cell": 0}
 
-    def __init__(self, dfm, run_uuid, existing_boiler_production_type_steam_or_hw, oa_temp_degF, site_elevation_ft, outage_start_hour=None, outage_end_hour=None,
-                 time_steps_per_hour=1, **kwargs):
+    def __init__(self, dfm, run_uuid, existing_boiler_production_type_steam_or_hw, oa_temp_degF, site_elevation_ft,
+                 outage_start_time_step=None, outage_end_time_step=None, time_steps_per_hour=1, **kwargs):
         super(CHP, self).__init__()
 
         self.prime_mover = kwargs.get('prime_mover')
@@ -936,7 +936,6 @@ class CHP(Tech):
         self.is_chp = True
         self.time_steps_per_hour = time_steps_per_hour
         self.derate = 1  # Need to rectify this legacy derate, maybe remove this and replace if no needed (NM/IL?)
-        self.loads_served = ['retail', 'wholesale', 'export', 'storage', 'boiler', 'tes']
         self.incentives = Incentives(**kwargs)
 
         # All of these attributes are assigned based on defaults in validators.py or they should all be in the inputs
@@ -958,8 +957,8 @@ class CHP(Tech):
         self.derate_start_temp_degF = kwargs['derate_start_temp_degF']
         self.derate_slope_pct_per_degF = kwargs['derate_slope_pct_per_degF']
         self.chp_unavailability_hourly = kwargs['chp_unavailability_hourly']
-        self.outage_start_hour = outage_start_hour
-        self.outage_end_hour = outage_end_hour
+        self.outage_start_time_step = outage_start_time_step
+        self.outage_end_time_step = outage_end_time_step
 
         self.fuel_burn_slope, self.fuel_burn_intercept, self.thermal_prod_slope, self.thermal_prod_intercept = \
             self.convert_performance_params(self.elec_effic_full_load, self.elec_effic_half_load,
@@ -979,8 +978,8 @@ class CHP(Tech):
         chp_thermal_prod_factor = [1.0 - self.chp_unavailability_hourly[i] for i in range(8760) for _ in range(self.time_steps_per_hour)]
 
         # Ignore unavailability in timestep if it intersects with an outage interval
-        if self.outage_start_hour and self.outage_end_hour:
-            for i in range(self.outage_start_hour * self.time_steps_per_hour, self.outage_end_hour * self.time_steps_per_hour):
+        if self.outage_start_time_step and self.outage_end_time_step:
+            for i in range(self.outage_start_time_step, self.outage_end_time_step):
               chp_elec_prod_factor[i] = 1.0
               chp_thermal_prod_factor[i] = 1.0
 
@@ -1023,7 +1022,6 @@ class Boiler(Tech):
     def __init__(self, dfm, boiler_fuel_series_bau, **kwargs):
         super(Boiler, self).__init__(**kwargs)
 
-        self.loads_served = ['boiler', 'tes']
         self.is_hot = True
         self.reopt_class = 'BOILER'  # Not sure why UTIL tech is not assigned to the UTIL class
         self.min_mmbtu_per_hr = kwargs.get('min_mmbtu_per_hr')

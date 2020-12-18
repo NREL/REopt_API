@@ -1175,8 +1175,8 @@ class DataManager:
         techs_no_turndown = [t for t in reopt_techs if t.startswith("PV") or t.startswith("WIND")]
         techs_no_turndown_bau = [t for t in reopt_techs_bau if t.startswith("PV") or t.startswith("WIND")]
         
-        electric_techs = [t for t in reopt_techs if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR")]
-        electric_techs_bau = [t for t in reopt_techs_bau if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR")]
+        electric_techs = [t for t in reopt_techs if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR") or t.startswith("CHP")]
+        electric_techs_bau = [t for t in reopt_techs_bau if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR") or t.startswith("CHP")]
 
         time_steps_with_grid, time_steps_without_grid = self._get_time_steps_with_grid()
 
@@ -1196,8 +1196,8 @@ class DataManager:
             cooling_load = self.cooling_load.load_list
             # Zero out cooling load for outage hours
             if time_steps_without_grid not in [None, []]:
-                for outage_hour in time_steps_without_grid:
-                    cooling_load[outage_hour-1] = 0.0
+                for outage_time_step in time_steps_without_grid:
+                    cooling_load[outage_time_step-1] = 0.0
         else:
             cooling_load = [0.0 for _ in self.load.load_list]
 
@@ -1309,17 +1309,17 @@ class DataManager:
             'FuelBurnYInt': fuel_burn_intercept,
             'ProductionIncentiveRate': production_incentive_rate,
             'ProductionFactor': production_factor,
-            'ElecLoad': self.load.load_list,
+            'ElecLoad': non_cooling_electric_load,
             'FuelLimit': fuel_limit,
-            'ChargeEfficiency': charge_efficiency, # Do we need this indexed on tech?
+            'ChargeEfficiency': charge_efficiency,  # Do we need this indexed on tech?
             'GridChargeEfficiency': grid_charge_efficiency,
             'DischargeEfficiency': discharge_efficiency,
-            'StorageMinSizeEnergy': self.storage.min_kwh,
-            'StorageMaxSizeEnergy': self.storage.max_kwh,
-            'StorageMinSizePower': self.storage.min_kw,
-            'StorageMaxSizePower': self.storage.max_kw,
-            'StorageMinSOC': self.storage.soc_min_pct,
-            'StorageInitSOC': self.storage.soc_init_pct,
+            'StorageMinSizeEnergy': storage_min_energy,
+            'StorageMaxSizeEnergy': storage_max_energy,
+            'StorageMinSizePower': storage_min_power,
+            'StorageMaxSizePower': storage_max_power,
+            'StorageMinSOC': [self.storage.soc_min_pct, self.hot_tes.soc_min_pct, self.cold_tes.soc_min_pct],
+            'StorageInitSOC': [self.storage.soc_init_pct, self.hot_tes.soc_init_pct, self.cold_tes.soc_init_pct],
             'StorageCanGridCharge': self.storage.canGridCharge,
             'SegmentMinSize': segment_min_size,
             'SegmentMaxSize': segment_max_size,
