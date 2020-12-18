@@ -37,6 +37,7 @@ import pickle
 from django.http import JsonResponse
 from reo.src.load_profile import BuiltInProfile, LoadProfile
 from reo.src.load_profile_boiler_fuel import LoadProfileBoilerFuel
+from reo.src.load_profile_chiller_thermal import LoadProfileChillerThermal
 from reo.models import URDBError
 from reo.nested_inputs import nested_input_definitions
 from reo.api import UUIDFilter
@@ -274,14 +275,16 @@ def simulated_load(request):
             percent_share_list = []
             while 'doe_reference_name[{}]'.format(idx) in request.GET.keys():
                 doe_reference_name.append(request.GET['doe_reference_name[{}]'.format(idx)])
-                if 'percent_share[{}]'.format(idx) not in request.GET.keys():
-                    raise ValueError("The number of percent_share entries does not match that of the number of doe_reference_name entries")
-                percent_share_list.append(float(request.GET['percent_share[{}]'.format(idx)]))
+                if 'percent_share[{}]'.format(idx) in request.GET.keys():
+                    percent_share_list.append(float(request.GET['percent_share[{}]'.format(idx)]))
                 idx += 1
         else:
             doe_reference_name = None
 
         if doe_reference_name is not None:
+            if len(percent_share_list) != len(doe_reference_name):
+                raise ValueError("The number of percent_share entries does not match that of the number of doe_reference_name entries")
+
             for drn in doe_reference_name:
                 if drn not in BuiltInProfile.default_buildings:
                     raise ValueError("Invalid doe_reference_name - {}. Select from the following: {}"
@@ -304,24 +307,12 @@ def simulated_load(request):
             #Annual loads
             if 'annual_kwh' in request.GET.keys():
                 annual_kwh = [float(request.GET.get('annual_kwh'))]
-            elif 'annual_kwh[0]' in request.GET.keys():
-                idx = 0
-                annual_kwh = []
-                while 'annual_kwh[{}]'.format(idx) in request.GET.keys():
-                    annual_kwh.append(float(request.GET['annual_kwh[{}]'.format(idx)]))
-                    idx += 1
             else:
                 annual_kwh = None
 
-            if annual_kwh is not None:
-                if len(annual_kwh) != len(doe_reference_name):
-                    raise ValueError("The number of annual_kwh entries does not match that of the number of doe_reference_name entries")
-
             #Monthly loads
             monthly_totals_kwh = None
-            if 'monthly_totals_kwh' in request.GET.keys():
-                monthly_totals_kwh = [float(request.GET.get('monthly_totals_kwh'))]
-            elif 'monthly_totals_kwh[0]' in request.GET.keys():
+            if 'monthly_totals_kwh[0]' in request.GET.keys():
                 monthly_totals_kwh  = [request.GET.get('monthly_totals_kwh[{}]'.format(i)) for i in range(12)]
                 if None in monthly_totals_kwh:
                     bad_index = monthly_totals_kwh.index(None)
@@ -352,22 +343,15 @@ def simulated_load(request):
             #Annual loads
             if 'annual_mmbtu' in request.GET.keys():
                 annual_mmbtu = [float(request.GET.get('annual_mmbtu'))]
-            elif 'annual_mmbtu[0]' in request.GET.keys():
-                idx = 0
-                annual_mmbtu = []
-                while 'annual_mmbtu[{}]'.format(idx) in request.GET.keys():
-                    annual_mmbtu.append(float(request.GET['annual_mmbtu[{}]'.format(idx)]))
-                    idx += 1
             else:
                 annual_mmbtu = None
-
-            if annual_mmbtu is not None:
-                if len(annual_mmbtu) != len(doe_reference_name):
-                    raise ValueError("The number of annual_mmbtu entries does not match that of the number of doe_reference_name entries")
+                if len(percent_share_list) != len(doe_reference_name):
+                    raise ValueError("The number of percent_share entries does not match that of the number of doe_reference_name entries")
 
             #Monthly loads
             if 'monthly_mmbtu' in request.GET.keys():
-                monthly_mmbtu = [float(request.GET.get('monthly_mmbtu'))]
+                string_array = request.GET.get('monthly_mmbtu')
+                monthly_mmbtu = [float(v) for v in string_array.strip('[]').split(',')]
             elif 'monthly_mmbtu[0]' in request.GET.keys():
                 monthly_mmbtu  = [request.GET.get('monthly_mmbtu[{}]'.format(i)) for i in range(12)]
                 if None in monthly_mmbtu:
@@ -379,7 +363,7 @@ def simulated_load(request):
 
             b = LoadProfileBoilerFuel(dfm=None, latitude=latitude, longitude=longitude, doe_reference_name=doe_reference_name,
                            annual_mmbtu=annual_mmbtu, monthly_mmbtu=monthly_mmbtu, time_steps_per_hour=1,
-                           percent_share_list=percent_share_list)
+                           percent_share=percent_share_list)
 
             lp = b.load_list
 
@@ -395,13 +379,10 @@ def simulated_load(request):
             return response
 
         if load_type == "cooling":
-
+            
             if request.GET.get('annual_fraction') is not None:  # annual_kwh is optional. if not provided, then DOE reference value is used.
-
                 annual_fraction = float(request.GET['annual_fraction'])
-
                 lp = [annual_fraction]*8760
-
                 response = JsonResponse(
                     {'loads_fraction': [round(ld, 3) for ld in lp],
                      'annual_fraction': round(sum(lp) / len(lp), 3),
@@ -410,23 +391,18 @@ def simulated_load(request):
                      'max_fraction': round(max(lp), 3),
                      }
                     )
-
                 return response
 
             if (request.GET.get('monthly_fraction') is not None) or (request.GET.get('monthly_fraction[0]') is not None):  # annual_kwh is optional. if not provided, then DOE reference value is used.
-
                 if 'monthly_fraction' in request.GET.keys():
                     string_array = request.GET.get('monthly_fraction')
                     monthly_fraction = [float(v) for v in string_array.strip('[]').split(',')]
-
                 elif 'monthly_fraction[0]' in request.GET.keys():
                     monthly_fraction  = [request.GET.get('monthly_fraction[{}]'.format(i)) for i in range(12)]
                     if None in monthly_fraction:
                         bad_index = monthly_fraction.index(None)
                         raise ValueError("monthly_fraction must contain a value for each month. {} is null".format('monthly_fraction[{}]'.format(bad_index)))
                     monthly_fraction = [float(i) for i in monthly_fraction]
-
-
                 days_in_month = {   0:31,
                                     1:28,
                                     2:31,
@@ -442,7 +418,6 @@ def simulated_load(request):
                 lp = []
                 for i in range(12):
                     lp += [monthly_fraction[i]] * days_in_month[i] *24
-
                 response = JsonResponse(
                     {'loads_fraction': [round(ld, 3) for ld in lp],
                      'annual_fraction': round(sum(lp) / len(lp), 3),
@@ -451,41 +426,51 @@ def simulated_load(request):
                      'max_fraction': round(max(lp), 3),
                      }
                     )
-
                 return response
-
 
             if doe_reference_name is not None:
-                if len(doe_reference_name) > 1:
-                    raise ValueError("Cooling load series does not support hybrid load profiles")
+                #Annual loads
+                if 'annual_tonhour' in request.GET.keys():
+                    annual_tonhour = [float(request.GET.get('annual_tonhour'))]
+                else:
+                    annual_tonhour = None
 
-                doe_reference_name = doe_reference_name[0]
+                #Monthly loads
+                if 'monthly_tonhour' in request.GET.keys():
+                    string_array = request.GET.get('monthly_tonhour')
+                    monthly_tonhour = [float(v) for v in string_array.strip('[]').split(',')]
+                elif 'monthly_tonhour[0]' in request.GET.keys():
+                    monthly_tonhour  = [request.GET.get('monthly_tonhour[{}]'.format(i)) for i in range(12)]
+                    if None in monthly_tonhour:
+                        bad_index = monthly_tonhour.index(None)
+                        raise ValueError("monthly_tonhour must contain a value for each month. {} is null".format('monthly_tonhour[{}]'.format(bad_index)))
+                    monthly_tonhour = [float(i) for i in monthly_tonhour]
+                else:
+                    monthly_tonhour = None
 
-                b = BuiltInProfile(
-                        {},
-                        "Cooling8760_fraction_",
-                        latitude = latitude,
-                        longitude = longitude,
-                        doe_reference_name = doe_reference_name,
-                        annual_energy = 1,
-                        monthly_totals_energy = None)
+                if 'max_thermal_factor_on_peak_load' in request.GET.keys():
+                    max_thermal_factor_on_peak_load = float(request.GET.get('max_thermal_factor_on_peak_load'))
+                else:
+                    max_thermal_factor_on_peak_load = nested_input_definitions['Scenario']['Site']['ElectricChiller']['max_thermal_factor_on_peak_load']['default']
+                
+                c = LoadProfileChillerThermal(dfm=None, latitude=latitude, longitude=longitude, doe_reference_name=doe_reference_name,
+                               annual_tonhour=annual_tonhour, monthly_tonhour=monthly_tonhour, time_steps_per_hour=1, annual_fraction=None,
+                               monthly_fraction=None, percent_share=percent_share_list, max_thermal_factor_on_peak_load=max_thermal_factor_on_peak_load)
 
-
-                lp = b.built_in_profile
+                lp = c.load_list
 
                 response = JsonResponse(
-                    {'loads_fraction': [round(ld, 3) for ld in lp],
-                     'annual_fraction': round(sum(lp) / len(lp), 3),
-                     'min_fraction': round(min(lp), 3),
-                     'mean_fraction': round(sum(lp) / len(lp), 3),
-                     'max_fraction': round(max(lp), 3),
+                    {'loads_kw': [round(ld/c.cop, 3) for ld in lp],
+                     'annual_kwh': round(c.annual_kwhth/c.cop,3),
+                     'cop': c.cop,
+                     'min_kw': round(min(lp)/c.cop, 3),
+                     'mean_kw': round((sum(lp)/len(lp))/c.cop, 3),
+                     'max_kw': round(max(lp)/c.cop, 3),
                      }
                     )
-
                 return response
-
             else:
-                raise ValueError("Please supply an annual_fraction, monthly_fraction series or doe_reference_name")
+                raise ValueError("Please supply an annual_tonhour, monthly_tonhour, annual_fraction, monthly_fraction series or doe_reference_name")
 
     except KeyError as e:
         return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)

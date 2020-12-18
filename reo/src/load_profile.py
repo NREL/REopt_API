@@ -573,7 +573,7 @@ class LoadProfile(BuiltInProfile):
         self.year = kwargs.get('year')
         # "pop"ing the following two values to replace them before calling BuiltInProfile (super class)
         doe_reference_name_list = kwargs.pop("doe_reference_name", [])
-        self.annual_kwh_list = kwargs.pop("annual_kwh", [])
+        self.annual_kwh = kwargs.pop("annual_kwh", None)
 
         if user_profile:
             self.load_list = user_profile
@@ -592,8 +592,8 @@ class LoadProfile(BuiltInProfile):
                 combine_loadlist = []
                 for i in range(len(doe_reference_name_list)):
                     kwargs["doe_reference_name"] = doe_reference_name_list[i]
-                    if len(self.annual_kwh_list or []) > 0:
-                        kwargs["annual_energy"] = self.annual_kwh_list[i]
+                    if self.annual_kwh is not None:
+                        kwargs["annual_energy"] = self.annual_kwh
                         percent_share = 100
                     else:
                         percent_share = kwargs.get("percent_share")[i]

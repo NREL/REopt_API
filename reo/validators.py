@@ -948,11 +948,11 @@ class ValidateNestedInput:
 
                             avg_load_kw = 0
                             if self.input_dict['Scenario']['Site']['LoadProfile'].get('annual_kwh') is not None:
-                                annual_kwh_list = self.input_dict['Scenario']['Site']['LoadProfile'].get('annual_kwh')
+                                annual_kwh = self.input_dict['Scenario']['Site']['LoadProfile'].get('annual_kwh')
                                 percent_share_list = self.input_dict['Scenario']['Site']['LoadProfile'].get('percent_share')
                                 # Find weighted avg for hybrid load profile
                                 avg_load_kw = sum(
-                                    [annual_kwh_list[i] * percent_share_list[i] / 100 for i in range(len(annual_kwh_list))]) / 8760
+                                    [annual_kwh * percent_share_list[i] / 100 for i in range(len(annual_kwh_list))]) / 8760
 
                             elif self.input_dict['Scenario']['Site']['LoadProfile'].get('annual_kwh') is None and self.input_dict['Scenario']['Site']['LoadProfile'].get('doe_reference_name') is not None:
                                 from reo.src.load_profile import LoadProfile
@@ -968,7 +968,7 @@ class ValidateNestedInput:
                                                        **self.input_dict['Scenario']['Site']['LoadProfile']
                                                        )
                                     default_annual_kwh_list.append(b.annual_kwh)
-                                avg_load_kw = sum([default_annual_kwh_list[i] * percent_share_list[i] / 100 for i in range(len(default_annual_kwh_list))]) / 8760
+                                avg_load_kw = sum([sum(default_annual_kwh_list) * percent_share_list[i] / 100 for i in range(len(default_annual_kwh_list))]) / 8760
                                 # resetting the doe_reference_name key to its original list
                                 # form for further processing in loadprofile.py file
                                 self.input_dict['Scenario']['Site']['LoadProfile'][
@@ -1126,10 +1126,6 @@ class ValidateNestedInput:
                     if type(real_values['doe_reference_name']) is not list:
                         self.update_attribute_value(object_name_path, number, 'doe_reference_name', [real_values['doe_reference_name']])
                         real_values['doe_reference_name'] = [real_values['doe_reference_name']]
-                if real_values.get('annual_kwh') is not None:
-                    if type(real_values['annual_kwh']) is not list:
-                        self.update_attribute_value(object_name_path, number, 'annual_kwh', [real_values['annual_kwh']])
-                        real_values['annual_kwh'] = [real_values['annual_kwh']]
                 if type(real_values.get('percent_share')) in [float, int]:
                     if real_values.get('percent_share') == 100:
                         real_values['percent_share'] = [100]
@@ -1137,10 +1133,6 @@ class ValidateNestedInput:
                     else:
                         self.input_data_errors.append(
                             'The percent_share input for a LoadProfile must be be 100 or a list of numbers that sums to 100.')
-                if (len(real_values.get('annual_kwh',[])) > 1) and (len(real_values.get('percent_share',[])) > 1):
-                    self.general_warnings.append(
-                        ('LoadProfile percent_share list will be ignored since a list of '
-                        'annual_kwh values was provided.'))
                 if len(real_values.get('percent_share',[])) > 0:
                     percent_share_sum = sum(real_values['percent_share'])
                     if percent_share_sum != 100.0:
@@ -1151,22 +1143,10 @@ class ValidateNestedInput:
                                                 'percent_share')
                     self.update_attribute_value(object_name_path, number, 'percent_share', real_values['percent_share'])
                 if real_values.get('doe_reference_name') is not None:
-                    if (len(real_values.get('doe_reference_name',[])) > 1) and (len(real_values.get('annual_kwh',[])) == 1):
-                        if len(real_values.get('percent_share',[])) > 1:
-                            real_values['annual_kwh'] = [real_values['annual_kwh'][0] for _ in range(len(real_values['doe_reference_name']))]
-                            self.update_attribute_value(object_name_path, number, 'annual_kwh', [real_values['annual_kwh']])
-                        else:
-                            real_values['percent_share'] = [float(i)/len(len(real_values['doe_reference_name'])) for _ in range(len(real_values['doe_reference_name']))]
-                            self.update_attribute_value(object_name_path, number, 'percent_share', [real_values['annual_kwh']])
                     if (len(real_values.get('doe_reference_name')) > 1) and (len(real_values.get('percent_share')) > 1):
                         if len(real_values.get('doe_reference_name')) != len(real_values.get('percent_share',[])):
                             self.input_data_errors.append((
                                 'The length of doe_reference_name and percent_share lists should be equal'
-                                ' for constructing hybrid LoadProfile'))
-                    if real_values.get('annual_kwh') is not None:
-                        if len(real_values.get('doe_reference_name')) != len(real_values.get('annual_kwh',[])):
-                            self.input_data_errors.append((
-                                'The length of doe_reference_name and annual_kwh lists should be equal'
                                 ' for constructing hybrid LoadProfile'))
                 if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
                     if real_values.get('outage_start_hour') == real_values.get('outage_end_hour'):
@@ -1335,10 +1315,6 @@ class ValidateNestedInput:
                     if type(real_values['doe_reference_name']) is not list:
                         self.update_attribute_value(object_name_path, number, 'doe_reference_name', [real_values['doe_reference_name']])
                         real_values['doe_reference_name'] = [real_values['doe_reference_name']]
-                if real_values.get('annual_tonhour') is not None:
-                    if type(real_values['annual_tonhour']) is not list:
-                        self.update_attribute_value(object_name_path, number, 'annual_tonhour', [real_values['annual_tonhour']])
-                        real_values['annual_tonhour'] = [real_values['annual_tonhour']]
                 if type(real_values.get('percent_share')) in [float, int]:
                     if real_values.get('percent_share') == 100:
                         real_values['percent_share'] = [100]
@@ -1346,10 +1322,6 @@ class ValidateNestedInput:
                     else:
                         self.input_data_errors.append(
                             'The percent_share input for a LoadProfileChillerThermal must be be 100 or a list of numbers that sums to 100.')
-                if (len(real_values.get('annual_tonhour',[])) > 1) and (len(real_values.get('percent_share',[])) > 1):
-                    self.general_warnings.append(
-                        ('LoadProfileChillerThermal percent_share list will be ignored since a list of '
-                        'annual_tonhour values was provided.'))
                 if len(real_values.get('percent_share',[])) > 0:
                     percent_share_sum = sum(real_values['percent_share'])
                     if percent_share_sum != 100.0:
@@ -1360,22 +1332,10 @@ class ValidateNestedInput:
                                                 'percent_share')
                     self.update_attribute_value(object_name_path, number, 'percent_share', real_values['percent_share'])
                 if real_values.get('doe_reference_name') is not None:
-                    if (len(real_values.get('doe_reference_name',[])) > 1) and (len(real_values.get('annual_tonhour',[])) == 1):
-                        if len(real_values.get('percent_share',[])) > 1:
-                            real_values['annual_tonhour'] = [real_values['annual_tonhour'][0] for _ in range(len(real_values['doe_reference_name']))]
-                            self.update_attribute_value(object_name_path, number, 'annual_tonhour', [real_values['annual_tonhour']])
-                        else:
-                            real_values['percent_share'] = [float(i)/len(len(real_values['doe_reference_name'])) for _ in range(len(real_values['doe_reference_name']))]
-                            self.update_attribute_value(object_name_path, number, 'percent_share', [real_values['annual_tonhour']])
                     if (len(real_values.get('doe_reference_name')) > 1) and (len(real_values.get('percent_share')) > 1):
                         if len(real_values.get('doe_reference_name')) != len(real_values.get('percent_share',[])):
                             self.input_data_errors.append((
                                 'The length of doe_reference_name and percent_share lists should be equal'
-                                ' for constructing hybrid LoadProfileChillerThermal'))
-                    if real_values.get('annual_tonhour') is not None:
-                        if len(real_values.get('doe_reference_name')) != len(real_values.get('annual_tonhour',[])):
-                            self.input_data_errors.append((
-                                'The length of doe_reference_name and annual_tonhour lists should be equal'
                                 ' for constructing hybrid LoadProfileChillerThermal'))
                 # Validate a user supplied energy series
                 if not no_values_given and \
@@ -1409,10 +1369,6 @@ class ValidateNestedInput:
                     if type(real_values['doe_reference_name']) is not list:
                         self.update_attribute_value(object_name_path, number, 'doe_reference_name', [real_values['doe_reference_name']])
                         real_values['doe_reference_name'] = [real_values['doe_reference_name']]
-            if real_values.get('annual_mmbtu') is not None:
-                if type(real_values['annual_mmbtu']) is not list:
-                    self.update_attribute_value(object_name_path, number, 'annual_mmbtu', [real_values['annual_mmbtu']])
-                    real_values['annual_mmbtu'] = [real_values['annual_mmbtu']]
             if type(real_values.get('percent_share')) in [float, int]:
                 if real_values.get('percent_share') == 100:
                     real_values['percent_share'] = [100]
@@ -1420,10 +1376,6 @@ class ValidateNestedInput:
                 else:
                     self.input_data_errors.append(
                         'The percent_share input for a LoadProfileBoilerFuel must be be 100 or a list of numbers that sums to 100.')
-            if (len(real_values.get('annual_tonhour',[])) > 1) and (len(real_values.get('percent_share',[])) > 1):
-                self.general_warnings.append(
-                    ('LoadProfileBoilerFuel percent_share list will be ignored since a list of '
-                    'annual_mmbtu values was provided.'))
             if len(real_values.get('percent_share',[])) > 0:
                 percent_share_sum = sum(real_values['percent_share'])
                 if percent_share_sum != 100.0:
@@ -1434,22 +1386,10 @@ class ValidateNestedInput:
                                             'percent_share')
                 self.update_attribute_value(object_name_path, number, 'percent_share', real_values['percent_share'])
             if real_values.get('doe_reference_name') is not None:
-                if (len(real_values.get('doe_reference_name',[])) > 1) and (len(real_values.get('annual_mmbtu',[])) == 1):
-                    if len(real_values.get('percent_share',[])) > 1:
-                        real_values['annual_mmbtu'] = [real_values['annual_mmbtu'][0] for _ in range(len(real_values['doe_reference_name']))]
-                        self.update_attribute_value(object_name_path, number, 'annual_mmbtu', [real_values['annual_mmbtu']])
-                    else:
-                        real_values['percent_share'] = [float(i)/len(len(real_values['doe_reference_name'])) for _ in range(len(real_values['doe_reference_name']))]
-                        self.update_attribute_value(object_name_path, number, 'percent_share', [real_values['annual_mmbtu']])
                 if (len(real_values.get('doe_reference_name')) > 1) and (len(real_values.get('percent_share')) > 1):
                     if len(real_values.get('doe_reference_name')) != len(real_values.get('percent_share',[])):
                         self.input_data_errors.append((
                             'The length of doe_reference_name and percent_share lists should be equal'
-                            ' for constructing hybrid LoadProfileBoilerFuel'))
-                if real_values.get('annual_mmbtu') is not None:
-                    if len(real_values.get('doe_reference_name')) != len(real_values.get('annual_mmbtu',[])):
-                        self.input_data_errors.append((
-                            'The length of doe_reference_name and annual_mmbtu lists should be equal'
                             ' for constructing hybrid LoadProfileBoilerFuel'))
             # Validate a user supplied energy series
             if not no_values_given and real_values.get('loads_mmbtu_per_hour') not in [None, []]:

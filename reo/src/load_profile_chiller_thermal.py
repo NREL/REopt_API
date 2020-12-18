@@ -55,8 +55,8 @@ class LoadProfileChillerThermal(BuiltInProfile):
                 
                 kwargs['annual_energy'] = None
                 # Annual loads are used in place of percent shares if provided
-                if len(kwargs.get("annual_tonhour",[])) > 0:
-                    kwargs['annual_energy'] = kwargs.get("annual_tonhour",[])[i]
+                if len(kwargs.get("annual_tonhour") or None) is not None:
+                    kwargs['annual_energy'] = kwargs["annual_tonhour"]
                     percent_share = 100
                 else:
                     percent_share = kwargs.get("percent_share")[i]

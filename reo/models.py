@@ -206,7 +206,7 @@ class LoadProfileModel(models.Model):
     # Inputs
     run_uuid = models.UUIDField(unique=True)
     doe_reference_name = ArrayField(models.TextField(null=True, blank=True), default=list)
-    annual_kwh = ArrayField(models.FloatField(null=True, blank=True), default=list)
+    annual_kwh = models.FloatField(null=True, blank=True)
     percent_share = ArrayField(models.FloatField(null=True, blank=True), default=list)
     year = models.IntegerField(default=2018)
     monthly_totals_kwh = ArrayField(models.FloatField(blank=True), default=list)
@@ -237,7 +237,7 @@ class LoadProfileModel(models.Model):
 class LoadProfileBoilerFuelModel(models.Model):
     # Inputs
     run_uuid = models.UUIDField(unique=True)
-    annual_mmbtu = ArrayField(models.FloatField(null=True, blank=True), default=list)
+    annual_mmbtu = models.FloatField(null=True, blank=True)
     monthly_mmbtu = ArrayField(models.FloatField(blank=True), default=list)
     loads_mmbtu_per_hour = ArrayField(models.FloatField(blank=True), default=list)
     doe_reference_name = ArrayField(models.TextField(null=True, blank=True), default=list)
@@ -261,7 +261,7 @@ class LoadProfileChillerThermalModel(models.Model):
     # Inputs
     run_uuid = models.UUIDField(unique=True)
     loads_ton = ArrayField(models.FloatField(blank=True), default=list)
-    annual_tonhour = ArrayField(models.FloatField(blank=True), default=list)
+    annual_tonhour = models.FloatField(null=True, blank=True)
     monthly_tonhour = ArrayField(models.FloatField(blank=True), default=list)
     annual_fraction = models.FloatField(null=True, blank=True)
     monthly_fraction = ArrayField(models.FloatField(blank=True), default=list)
