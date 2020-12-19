@@ -526,11 +526,6 @@ nested_input_definitions = {
           "default": False,
           "description": "Boolean indicator if CHP does not reduce demand charges"
         },
-        "chp_allowed_to_export": {
-          "type": "bool",
-          "default": False,
-          "description": "Boolean indicator if CHP is allowed to export electric power to the grid"
-        },
       },
 
       "FuelTariff": {
@@ -1577,6 +1572,26 @@ nested_input_definitions = {
         "emissions_factor_lb_CO2_per_mmbtu": {
           "type": "float",
           "description": "Average carbon dioxide emissions factor"
+        },
+        "can_net_meter": {
+          "type": "bool",
+          "default": False,
+          "description": "True/False for if technology has option to participate in net metering agreement with utility. Note that a technology can only participate in either net metering or wholesale rates (not both)."
+        },
+        "can_wholesale": {
+          "type": "bool",
+          "default": False,
+          "description": "True/False for if technology has option to export energy that is compensated at the wholesale_rate_us_dollars_per_kwh. Note that a technology can only participate in either net metering or wholesale rates (not both)."
+        },
+        "can_export_beyond_site_load": {
+          "type": "bool",
+          "default": False,
+          "description": "True/False for if technology can export energy beyond the annual site load (and be compensated for that energy at the wholesale_rate_above_site_load_us_dollars_per_kwh)."
+        },
+        "can_curtail": {
+          "type": "bool",
+          "default": False,
+          "description": "True/False for if technology can curtail energy produced."
         }
       },
 
