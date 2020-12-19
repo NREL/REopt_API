@@ -179,7 +179,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
             tmp = dict()
             tmp['annual_calculated_kwh'] = lp.annual_kwh
             tmp['resilience_check_flag'] = lp.resilience_check_flag
-            tmp['sustain_hours'] = lp.sustain_hours
             tmp['loads_kw'] = lp.load_list
             ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
         else:
@@ -199,7 +198,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
             tmp = dict()
             tmp['annual_calculated_kwh'] = lp.annual_kwh
             tmp['resilience_check_flag'] = lp.resilience_check_flag
-            tmp['sustain_hours'] = lp.sustain_hours
             tmp['loads_kw'] = lp.load_list
             ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
 
