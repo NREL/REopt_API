@@ -268,13 +268,13 @@ function add_fuel_constraints(m, p)
 	# Constraint (1b): Fuel burn for non-CHP Constraints
 	if !isempty(p.TechsInClass["GENERATOR"])
 		@constraint(m, FuelBurnCon[t in p.TechsInClass["GENERATOR"], ts in p.TimeStep],
-			m[:dvFuelUsage][t,ts]  == p.TimeStepScaling * (
-				p.FuelBurnSlope[t] * p.ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts] +
-				p.FuelBurnYInt[t] * m[:binTechIsOnInTS][t,ts]
-		)
+                    m[:dvFuelUsage][t,ts]  == p.TimeStepScaling * (
+                        p.FuelBurnSlope[t] * p.ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts] +
+                        p.FuelBurnYInt[t] * m[:binTechIsOnInTS][t,ts] )
+		            )
 		m[:TotalGeneratorFuelCharges] = @expression(m, p.pwf_fuel["GENERATOR"] *
 				sum(p.FuelCost["DIESEL",ts] * m[:dvFuelUsage]["GENERATOR",ts] for ts in p.TimeStep)
-		)
+		        )
 	end
 
 	if !isempty(p.CHPTechs)
@@ -649,17 +649,6 @@ function add_prod_grid_constraints(m, p)
 	  		if !(u in p.ExportTiersBeyondSiteLoad))) <= p.AnnualElecLoadkWh
 	)
 
-	##Grid sales forced to zero if Tech is not in TechsBySalesTier[u]
-	for ts in p.TimeStep
-		for u in p.SalesTiers
-			for t in p.Tech
-				if !(t in p.TechsBySalesTier[u])
-					fix(m[:dvProductionToGrid][t, u, ts], 0.0, force=true)
-				end
-			end
-		end
-	end
-
 	# Cannot export power while importing from Grid
 	@constraint(m, NoGridPurchasesBinary[ts in p.TimeStep],
 		sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) + m[:dvGridToStorage][ts] -
@@ -667,9 +656,8 @@ function add_prod_grid_constraints(m, p)
 	)
 
 	@constraint(m, ExportOnlyAfterSiteLoadMetCon[ts in p.TimeStep],
-		sum(sum(m[:dvProductionToGrid][t,u,ts] for t in p.Tech, u in p.SalesTiers if !(u in p.CurtailmentTiers)) +
-			sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers)) -
-			m[:binNoGridPurchases][ts] * 1.0E9 <= 0
+		sum(sum(m[:dvProductionToGrid][t,u,ts] for t in p.Tech, u in p.ExportTiers) -
+			m[:binNoGridPurchases][ts] * 1.0E9) <= 0
 	)
 end
 
@@ -750,7 +738,7 @@ function add_monthly_demand_charge_constraints(m, p)
 				sum( m[:dvGridPurchase][u, ts] for u in p.PricingTier ) +
 				 sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] for t in p.CHPTechs) -
 				 sum(m[:dvProductionToStorage][t,ts] for t in p.CHPTechs) -
-				 sum(sum(m[:dvProductionToGrid][t,u,ts] for u in p.SalesTiersByTech[t]) for t in p.CHPTechs)
+				 sum(sum(m[:dvProductionToGrid][t,u,ts] for u in p.ExportTiersByTech[t]) for t in p.CHPTechs)
 		)
 	else
 		@constraint(m, [mth in p.Month, ts in p.TimeStepRatchetsMonth[mth]],
@@ -1386,9 +1374,9 @@ function add_chp_results(m, p, r::Dict)
 	r["year_one_chp_thermal_energy_produced"] = round(value(Year1CHPThermalProd), digits=3)
 	@expression(m, CHPElecProdTotal[ts in p.TimeStep],
 		sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] for t in p.CHPTechs))
-	r["chp_electric_production_series"] = round.(value.(CHPElecProdTotal))
+	r["chp_electric_production_series"] = round.(value.(CHPElecProdTotal), digits=3)
 	@expression(m, CHPtoGrid[ts in p.TimeStep], sum(m[:dvProductionToGrid][t,u,ts]
-			for t in p.CHPTechs, u in p.SalesTiersByTech[t]))
+			for t in p.CHPTechs, u in p.ExportTiersByTech[t]))
 	r["chp_to_grid_series"] = round.(value.(CHPtoGrid), digits=3)
 	@expression(m, CHPtoBatt[ts in p.TimeStep],
 		sum(m[:dvProductionToStorage]["Elec",t,ts] for t in p.CHPTechs))

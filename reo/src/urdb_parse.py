@@ -181,7 +181,6 @@ class UrdbParse:
         self.custom_tou_energy_rates = elec_tariff.tou_energy_rates
         self.add_tou_energy_rates_to_urdb_rate = elec_tariff.add_tou_energy_rates_to_urdb_rate
         self.override_urdb_rate_with_tou_energy_rates = elec_tariff.override_urdb_rate_with_tou_energy_rates
-        self.chp_allowed_to_export = elec_tariff.chp_allowed_to_export
         self.generator = generator
 
         self.energy_rates_summary = []
@@ -420,7 +419,11 @@ class UrdbParse:
             grid_export_rates.append(negative_wholesale_rate_costs)
             grid_export_rates.append(negative_excess_rate_costs)
 
-        return energy_costs, grid_export_rates
+        # CHP-specific parameters
+        chp_standby_rate = self.chp_standby_rate_us_dollars_per_kw_per_month
+        chp_does_not_reduce_demand_charges = self.chp_does_not_reduce_demand_charges
+        
+        return energy_costs, grid_export_rates, chp_standby_rate, chp_does_not_reduce_demand_charges
 
     def prepare_demand_periods(self, current_rate):
 
