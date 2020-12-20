@@ -979,9 +979,10 @@ class CHP(Tech):
 
         # Ignore unavailability in timestep if it intersects with an outage interval
         if self.outage_start_time_step and self.outage_end_time_step:
-            for i in range(self.outage_start_time_step, self.outage_end_time_step):
-              chp_elec_prod_factor[i] = 1.0
-              chp_thermal_prod_factor[i] = 1.0
+            chp_elec_prod_factor[self.outage_start_time_step - 1:self.outage_end_time_step - 1] = \
+                [1.0] * (self.outage_end_time_step - self.outage_start_time_step)
+            chp_thermal_prod_factor[self.outage_start_time_step - 1:self.outage_end_time_step - 1] = \
+                [1.0] * (self.outage_end_time_step - self.outage_start_time_step)
 
         return chp_elec_prod_factor, chp_thermal_prod_factor
 
