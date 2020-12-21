@@ -268,7 +268,7 @@ class LoadProfileChillerThermalModel(models.Model):
     loads_fraction = ArrayField(models.FloatField(blank=True), default=list)
     doe_reference_name = ArrayField(models.TextField(null=True, blank=True), default=list)
     percent_share = ArrayField(models.FloatField(null=True, blank=True), default=list)
-    cop = models.FloatField(null=True, blank=True)
+    chiller_cop = models.FloatField(null=True, blank=True)
 
     # Outputs
     annual_calculated_kwh_bau = models.FloatField(blank=True, default=0, null=True)

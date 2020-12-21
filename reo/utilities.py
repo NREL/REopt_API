@@ -284,5 +284,5 @@ def generate_year_profile_hourly(year, relative_periods_df):
     return year_profile_hourly_list
 
 #conversion factor for ton-hours to kilowatt-hours thermal
-TONHOUR_TO_KWHTH = 3.51685
+TONHOUR_TO_KWHT = 3.51685
 

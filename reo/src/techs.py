@@ -32,7 +32,7 @@ from reo.src.pvwatts import PVWatts
 from reo.src.wind import WindSAMSDK
 from reo.src.incentives import Incentives, IncentivesNoProdBased
 from reo.models import ModelManager
-from reo.utilities import TONHOUR_TO_KWHTH
+from reo.utilities import TONHOUR_TO_KWHT
 
 
 class Tech(object):
@@ -1072,14 +1072,14 @@ class ElectricChiller(Tech):
         self.installed_cost_us_dollars_per_kw = kwargs['installed_cost_us_dollars_per_kw']
         self.derate = 0
         self.n_timesteps = dfm.n_timesteps
-        self.chiller_cop = lpct.cop
+        self.chiller_cop = lpct.chiller_cop
 
-        self.max_cooling_load_tons = max(lpct.load_list) / TONHOUR_TO_KWHTH
+        self.max_cooling_load_tons = max(lpct.load_list) / TONHOUR_TO_KWHT
         self.max_chiller_thermal_capacity_tons = self.max_cooling_load_tons * self.max_thermal_factor_on_peak_load
 
         # Unless max_kw is a user-input, set the max_kw with the cooling load and factor
         if self.max_kw is None:
-            self.max_kw = self.max_chiller_thermal_capacity_tons * TONHOUR_TO_KWHTH
+            self.max_kw = self.max_chiller_thermal_capacity_tons * TONHOUR_TO_KWHT
 
         dfm.add_electric_chiller(self)
 
@@ -1113,8 +1113,8 @@ class AbsorptionChiller(Tech):
         self.n_timesteps = dfm.n_timesteps
 
         # Convert a size-based inputs from ton to kwt
-        self.min_kw = kwargs.get('min_ton') * TONHOUR_TO_KWHTH
-        self.max_kw = kwargs.get('max_ton') * TONHOUR_TO_KWHTH
+        self.min_kw = kwargs.get('min_ton') * TONHOUR_TO_KWHT
+        self.max_kw = kwargs.get('max_ton') * TONHOUR_TO_KWHT
         self.installed_cost_us_dollars_per_ton = kwargs.get('installed_cost_us_dollars_per_ton')
         self.om_cost_us_dollars_per_ton = kwargs.get('om_cost_us_dollars_per_ton')
         self.max_cooling_load_tons = max_cooling_load_tons
@@ -1133,8 +1133,8 @@ class AbsorptionChiller(Tech):
         elif self.om_cost_us_dollars_per_ton is None:
             self.om_cost_us_dollars_per_ton = om_cost_per_ton_per_yr_calc
 
-        self.installed_cost_us_dollars_per_kw = self.installed_cost_us_dollars_per_ton / TONHOUR_TO_KWHTH
-        self.om_cost_us_dollars_per_kw = self.om_cost_us_dollars_per_ton / TONHOUR_TO_KWHTH
+        self.installed_cost_us_dollars_per_kw = self.installed_cost_us_dollars_per_ton / TONHOUR_TO_KWHT
+        self.om_cost_us_dollars_per_kw = self.om_cost_us_dollars_per_ton / TONHOUR_TO_KWHT
 
         self.incentives = IncentivesNoProdBased(**kwargs)
 

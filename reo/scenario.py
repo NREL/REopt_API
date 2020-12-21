@@ -261,11 +261,11 @@ def setup_scenario(self, run_uuid, data, raw_post):
                                             year=lp.year, max_thermal_factor_on_peak_load=
                                             inputs_dict['Site']['ElectricChiller']['max_thermal_factor_on_peak_load'],
                                             **inputs_dict['Site']['LoadProfileChillerThermal'])
-        lpct_annual_kwh = (lpct.annual_kwhth / lpct.cop)
-        if lp.annual_kwh < lpct_annual_kwh:
-            message = ("Total LoadProfileChillerThermal electric load in kWh ({}) cannot be more than "
-                        "total LoadProfile load in kWh ({}). Note you may consider adjusting your "
-                        "LoadProfileChillerThermal cop or ElectricChiller max_thermal_factor_on_peak_load "
+        chiller_elec_greater_than_total_elec = sum([1 if lpct.load_list[i]/lpct.chiller_cop > lp.load_list[i] else 0 for i in range(len(lp.load_list))])
+        if chiller_elec_greater_than_total_elec > 0:
+            message = ("LoadProfileChillerThermal electric load in kW ({}) cannot be more than "
+                        "total LoadProfile load in kW ({}). Note you may consider adjusting your "
+                        "LoadProfileChillerThermal chiller_cop or check the chiller load input versus the total electric load "
                         "if you provided inputs in units of cooling tons.").format(lpct_annual_kwh, lp.annual_kwh)
             log.error("Scenario.py raising error: " + message)
             lpct_error = LoadProfileError(task=self.name, run_uuid=run_uuid, user_uuid=inputs_dict.get('user_uuid'), message=message)
@@ -274,13 +274,13 @@ def setup_scenario(self, run_uuid, data, raw_post):
  
         # Option 1, retrieve annual load from calculations here and add to database
         tmp = dict()
-        tmp['cop'] = lpct.cop
+        tmp['chiller_cop'] = lpct.chiller_cop
         tmp['annual_calculated_kwh_bau'] = lpct_annual_kwh
-        tmp['year_one_chiller_electric_load_series_kw_bau'] = [i/lpct.cop for i in lpct.load_list]
+        tmp['year_one_chiller_electric_load_series_kw_bau'] = [i/lpct.chiller_cop for i in lpct.load_list]
         ModelManager.updateModel('LoadProfileChillerThermalModel', tmp, run_uuid)
 
         # Electric chiller which supplies the bau electric chiller load, if there is an electric chiller load
-        if lpct.annual_kwhth > 0.0:
+        if lpct.annual_kwht > 0.0:
             elecchl = ElectricChiller(dfm=dfm, lpct=lpct, **inputs_dict['Site']['ElectricChiller'])
             tmp = dict()
             tmp['max_kw'] = elecchl.max_kw
@@ -330,8 +330,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         # Absorption chiller
         if inputs_dict["Site"]["AbsorptionChiller"]["max_ton"] > 0:
-            if 'chiller_cop' not in inputs_dict['Site']['AbsorptionChiller'].keys():
-                inputs_dict['Site']['AbsorptionChiller']['chiller_cop'] = lpct.cop
             absorpchl = AbsorptionChiller(dfm=dfm, max_cooling_load_tons=elecchl.max_cooling_load_tons,
                                           hw_or_steam=boiler.existing_boiler_production_type_steam_or_hw,
                                           chp_prime_mover=chp.prime_mover,
