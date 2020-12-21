@@ -61,12 +61,25 @@ class LoadProfileBoilerFuel(BuiltInProfile):
                                                             for x in self.built_in_profile])
                 else:
                     partial_load_list = self.built_in_profile
-                # appending the weighted load at every timestep, for making hybrid loadlist
-                # checks to see if we can save a multiplication step if possible to save time
-                if percent_share != 100.0:
-                    combine_loadlist.append(list(np.array(partial_load_list) * (percent_share/100.0)))
-                else:
-                    combine_loadlist.append(list(partial_load_list))
+            
+            # In the case where the user supplies a list of doe_reference_names and percent shares
+            # for consistency we want to act as if we had scaled the partial load to the total site 
+            # load which was unknown at the start of the loop above. This scalar makes it such that
+            # when the percent shares are later applied that the total site load will be the sum
+            # of the default annual loads for this location
+            if (len(doe_reference_name) > 1) and kwargs['annual_energy'] is None:
+                total_site_load = sum([sum(l) for l in combine_loadlist])
+                for i, load in enumerate(combine_loadlist):
+                    actual_percent_of_site_load = sum(load)/total_site_load
+                    scalar = 1.0 / actual_percent_of_site_load
+                    combine_loadlist[i] = list(np.array(load)* scalar)
+            
+            #Apply the percent share of annual load to each partial load
+            if (len(doe_reference_name) > 1):
+                for i, load in enumerate(combine_loadlist):
+                    combine_loadlist[i] = list(np.array(load) * (kwargs.get("percent_share")[i]/100.0))
+
+            # Aggregate total hybrid load
             hybrid_loadlist = list(np.sum(np.array(combine_loadlist), 0))
             self.load_list = copy.copy(hybrid_loadlist)
             self.annual_mmbtu = sum(self.load_list)
