@@ -24,9 +24,6 @@
       } ,
       "LoadProfile": {
         "doe_reference_name": "Hospital" ,
-        "percent_share": [
-          100.0
-        ] ,
         "year": 2017 ,
         "loads_kw_is_net": true ,
         "critical_loads_kw_is_net": false ,
@@ -34,12 +31,11 @@
         "outage_is_major_event": true
       } ,
       "LoadProfileBoilerFuel": {
-        "doe_reference_name": "Hospital" ,
-        "annual_mmbtu": null
+        "doe_reference_name": "Hospital"
       } ,
       "LoadProfileChillerElectric": {
         "doe_reference_name": "Hospital" ,
-        "annual_fraction": null
+        "chiller_cop": 3.4
       } ,
       "ElectricTariff": {
         "urdb_utility_name": "Pacific Gas & Electric Co" ,
@@ -1659,7 +1655,6 @@
       "ElectricChiller": {
         "min_kw": 0.0 ,
         "max_kw": 1000000000.0 ,
-        "chiller_cop": 3.4 ,
         "installed_cost_us_dollars_per_kw": 0.0
       } ,
       "AbsorptionChiller": {

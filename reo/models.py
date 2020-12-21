@@ -698,6 +698,7 @@ class AbsorptionChillerModel(models.Model):
     run_uuid = models.UUIDField(unique=True)
     min_ton = models.FloatField(default=0)
     max_ton = models.FloatField(null=True, blank=True)
+    chiller_cop = models.FloatField(null=True, blank=True)
     installed_cost_us_dollars_per_ton = models.FloatField(null=True, blank=True, )
     om_cost_us_dollars_per_ton = models.FloatField(null=True, blank=True, )
     macrs_option_years = models.IntegerField(null=True, blank=True)
