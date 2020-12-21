@@ -1450,7 +1450,10 @@ class ValidateNestedInput:
                             self.update_attribute_value(object_name_path, number,
                                                         'chiller_cop',
                                                         absorption_chiller_cop_defaults[hw_or_steam])
-
+                        else:
+                            self.update_attribute_value(object_name_path, number,
+                                                        'chiller_cop',
+                                                        absorption_chiller_cop_defaults["hot_water"])
 
         if object_name_path[-1] == "Financial":
             # Making sure discount and tax rates are correct when saved to the database later in non-third party cases, 

@@ -437,7 +437,7 @@ nested_input_definitions = {
             "max": 100.0,
            "description": "Percentage share of the types of building for creating hybrid simulated building and campus profiles."
           },
-        "cop": {
+        "chiller_cop": {
           "type": "float",
           "min:": 0.0,
           "max:": 20.0,

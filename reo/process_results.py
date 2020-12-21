@@ -43,7 +43,7 @@ from reo.src.profiler import Profiler
 from reo.src.emissions_calculator import EmissionsCalculator
 from reo.utilities import annuity
 from reo.nested_inputs import macrs_five_year, macrs_seven_year
-from reo.utilities import TONHOUR_TO_KWHTH
+from reo.utilities import TONHOUR_TO_KWHT
 log = logging.getLogger(__name__)
 
 

@@ -4,7 +4,7 @@ import json
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from reo.utilities import TONHOUR_TO_KWHTH
+from reo.utilities import TONHOUR_TO_KWHT
 
 
 class LoadProfileChillerThermal(BuiltInProfile):
@@ -22,7 +22,7 @@ class LoadProfileChillerThermal(BuiltInProfile):
                                             "greater_than_100_tons": 4.69}
     
     def __init__(self, dfm=None, total_electric_load_list=[], latitude=None, longitude=None, nearest_city=None,
-                        time_steps_per_hour=None, year=None, cop=None, max_thermal_factor_on_peak_load=None, **kwargs):
+                        time_steps_per_hour=None, year=None, chiller_cop=None, max_thermal_factor_on_peak_load=None, **kwargs):
         """
         :param dfm: (object) data_manager to which this load object will be added
         :param total_electric_load_list: (array) electric LoadProfile object resulting from parsed inputs
@@ -31,17 +31,17 @@ class LoadProfileChillerThermal(BuiltInProfile):
         :param nearest_city: (str) site nearest_city
         :param time_steps_per_hour: (int) simulation time resolution
         :param year: (int) electric LoadProfile year
-        :param cop: (float or int) Coefficient of Performance for Chiller
+        :param chiller_cop: (float or int) Coefficient of Performance for Chiller
         :param max_thermal_factor_on_peak_load: (float or int) maximum thermal factor on peak load for the Chiller
         :param kwargs: (dict) Chiller specific inputs as defined in reo/nested_inputs
         """
         
-        # Default electric_load_list to None, used later to see if we need to covert kWh to kWhth
+        # Default electric_load_list to None, used later to see if we need to covert kWh to kWht
         electric_load_list = None
         
         # Use highest resultion/quality input first
         if kwargs.get('loads_ton') is not None:
-            self.load_list = [i*TONHOUR_TO_KWHTH for i in kwargs['loads_ton']]
+            self.load_list = [i*TONHOUR_TO_KWHT for i in kwargs['loads_ton']]
         
         # DOE Reference building profile are used if there is a reference name provided
         elif kwargs.get('doe_reference_name'):
@@ -93,8 +93,8 @@ class LoadProfileChillerThermal(BuiltInProfile):
 
             # Aggregate total hybrid load
             hybrid_loadlist = list(np.sum(np.array(combine_loadlist), 0))
-            #load_list is always expected to be in units of kWth
-            self.load_list = [i*TONHOUR_TO_KWHTH for i in hybrid_loadlist]
+            #load_list is always expected to be in units of kWt
+            self.load_list = [i*TONHOUR_TO_KWHT for i in hybrid_loadlist]
         
         # If no doe_reference_name or loads_ton provided, scale by a fraction of electric load
         elif kwargs.get('loads_fraction') is not None:
@@ -109,24 +109,24 @@ class LoadProfileChillerThermal(BuiltInProfile):
             electric_load_list = [kwargs['annual_fraction'] * kw for kw in total_electric_load_list]
         
         #Calculate COP based on kwth load or kw load (if not user-entered) 
-        self.cop = kwargs.get('cop')
+        self.chiller_cop = kwargs.get('chiller_cop')
         # Update COP based on estimated max chiller load
-        if self.cop is None:
+        if self.chiller_cop is None:
             if electric_load_list is None:
-                max_cooling_load_tons = np.array(self.load_list).max() / TONHOUR_TO_KWHTH
+                max_cooling_load_tons = np.array(self.load_list).max() / TONHOUR_TO_KWHT
             else:
-                max_cooling_load_tons = max(electric_load_list) / TONHOUR_TO_KWHTH * \
+                max_cooling_load_tons = max(electric_load_list) / TONHOUR_TO_KWHT * \
                                     self.electric_chiller_cop_defaults["convert_elec_to_thermal"]
             estimated_max_chiller_thermal_capacity_tons = max_cooling_load_tons * max_thermal_factor_on_peak_load
             if estimated_max_chiller_thermal_capacity_tons < 100.0:
-                self.cop = self.electric_chiller_cop_defaults["less_than_100_tons"]
+                self.chiller_cop = self.electric_chiller_cop_defaults["less_than_100_tons"]
             else:
-                self.cop = self.electric_chiller_cop_defaults["greater_than_100_tons"]
+                self.chiller_cop = self.electric_chiller_cop_defaults["greater_than_100_tons"]
         
         # load_list is always expected to be in units of kWth
         if electric_load_list is not None:
-            self.load_list = [i*self.cop for i in electric_load_list]
+            self.load_list = [i*self.chiller_cop for i in electric_load_list]
         
-        self.annual_kwhth = sum(self.load_list)
+        self.annual_kwht = sum(self.load_list)
         if dfm is not None:
             dfm.add_load_chiller_electric(self)
