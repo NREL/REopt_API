@@ -337,15 +337,29 @@ nested_input_definitions = {
           "type": "int",
           "min": 0,
           "max": 8759,
-          "depends_on":["outage_end_hour"],
+          "depends_on": ["outage_end_hour"],
           "description": "Hour of year that grid outage starts. Must be less than outage_end."
         },
         "outage_end_hour": {
           "type": "int",
           "min": 0,
           "max": 8759,
-          "depends_on":["outage_start_hour"],
+          "depends_on": ["outage_start_hour"],
           "description": "Hour of year that grid outage ends. Must be greater than outage_start."
+        },
+        "outage_start_time_step": {
+          "type": "int",
+          "min": 1,
+          "max": 35040,
+          "depends_on": ["outage_end_time_step"],
+          "description": "Time step that grid outage starts. Must be less than outage_end."
+        },
+        "outage_end_time_step": {
+          "type": "int",
+          "min": 1,
+          "max": 35040,
+          "depends_on": ["outage_start_time_step"],
+          "description": "Time step that grid outage ends. Must be greater than outage_start."
         },
         "critical_load_pct": {
           "type": "float",
@@ -503,7 +517,7 @@ nested_input_definitions = {
           "min": 0.0,
           "max": 1.0e9,
           "default": 0.0,
-          "description": "System size above which net metering is not allowed"
+          "description": "Upper limit on the total capacity of technologies that can participate in net metering agreement."
         },
         "interconnection_limit_kw": {
           "type": "float",
@@ -550,11 +564,6 @@ nested_input_definitions = {
           "default": False,
           "description": "Boolean indicator if CHP does not reduce demand charges"
         },
-        "chp_allowed_to_export": {
-          "type": "bool",
-          "default": False,
-          "description": "Boolean indicator if CHP is allowed to export electric power to the grid"
-        },
       },
 
       "FuelTariff": {
@@ -595,7 +604,7 @@ nested_input_definitions = {
       "Wind": {
         "size_class": {
           "type": "str",
-          "restrict_to": "['residential', 'commercial', 'medium', 'large']",
+          "restrict_to": ['residential', 'commercial', 'medium', 'large', None],
           "description": "Turbine size-class. One of [residential, commercial, medium, large]"
         },
         "wind_meters_per_sec": {
@@ -763,6 +772,26 @@ nested_input_definitions = {
         "prod_factor_series_kw": {
           "type": "list_of_float",
           "description": "Optional user-defined production factors. Entries have units of kWh/kW, representing the energy (kWh) output of a 1 kW system in each time step. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+        },
+        "can_net_meter": {
+          "type": "bool",
+          "default": True,
+          "description": "True/False for if technology has option to participate in net metering agreement with utility. Note that a technology can only participate in either net metering or wholesale rates (not both)."
+        },
+        "can_wholesale": {
+          "type": "bool",
+          "default": True,
+          "description": "True/False for if technology has option to export energy that is compensated at the wholesale_rate_us_dollars_per_kwh. Note that a technology can only participate in either net metering or wholesale rates (not both)."
+        },
+        "can_export_beyond_site_load": {
+          "type": "bool",
+          "default": True,
+          "description": "True/False for if technology can export energy beyond the annual site load (and be compensated for that energy at the wholesale_rate_above_site_load_us_dollars_per_kwh)."
+        },
+        "can_curtail": {
+          "type": "bool",
+          "default": True,
+          "description": "True/False for if technology can curtail energy produced."
         }
       },
 
@@ -991,21 +1020,36 @@ nested_input_definitions = {
           "default": 0.537,
           "description": "PV system tilt"
         },
-        "prod_factor_series_kw": {
-          "type": "list_of_float",
-          "description": "Optional user-defined production factors. Entries have units of kWh/kW, representing the energy (kWh) output of a 1 kW system in each time step. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
-        },
         "location": {
           "type": "str",
-          "restrict_to": "['roof', 'ground', 'both']",
+          "restrict_to": ['roof', 'ground', 'both'],
           "default": 'both',
           "description": "Where PV can be deployed. One of [roof, ground, both] with default as both"
         },
         "prod_factor_series_kw": {
           "type": "list_of_float",
           "description": "Optional user-defined production factors. Entries have units of kWh/kW, representing the energy (kWh) output of a 1 kW system in each time step. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+        },
+        "can_net_meter": {
+          "type": "bool",
+          "default": True,
+          "description": "True/False for if technology has option to participate in net metering agreement with utility. Note that a technology can only participate in either net metering or wholesale rates (not both)."
+        },
+        "can_wholesale": {
+          "type": "bool",
+          "default": True,
+          "description": "True/False for if technology has option to export energy that is compensated at the wholesale_rate_us_dollars_per_kwh. Note that a technology can only participate in either net metering or wholesale rates (not both)."
+        },
+        "can_export_beyond_site_load": {
+          "type": "bool",
+          "default": True,
+          "description": "True/False for if technology can export energy beyond the annual site load (and be compensated for that energy at the wholesale_rate_above_site_load_us_dollars_per_kwh)."
+        },
+        "can_curtail": {
+          "type": "bool",
+          "default": True,
+          "description": "True/False for if technology can curtail energy produced."
         }
-
       },
 
       "Storage": {
@@ -1308,9 +1352,28 @@ nested_input_definitions = {
         "emissions_factor_lb_CO2_per_gal": {
           "type": "float",
           "description": "Pounds of carbon dioxide emitted per gallon of fuel burned"
-         }
+        },
+        "can_net_meter": {
+          "type": "bool",
+          "default": False,
+          "description": "True/False for if technology has option to participate in net metering agreement with utility. Note that a technology can only participate in either net metering or wholesale rates (not both)."
+        },
+        "can_wholesale": {
+          "type": "bool",
+          "default": False,
+          "description": "True/False for if technology has option to export energy that is compensated at the wholesale_rate_us_dollars_per_kwh. Note that a technology can only participate in either net metering or wholesale rates (not both)."
+        },
+        "can_export_beyond_site_load": {
+          "type": "bool",
+          "default": False,
+          "description": "True/False for if technology can export energy beyond the annual site load (and be compensated for that energy at the wholesale_rate_above_site_load_us_dollars_per_kwh)."
+        },
+        "can_curtail": {
+          "type": "bool",
+          "default": False,
+          "description": "True/False for if technology can curtail energy produced."
+        }
       },
-
       "CHP": {
         "prime_mover": {
           "type": "str",
@@ -1547,6 +1610,26 @@ nested_input_definitions = {
         "emissions_factor_lb_CO2_per_mmbtu": {
           "type": "float",
           "description": "Average carbon dioxide emissions factor"
+        },
+        "can_net_meter": {
+          "type": "bool",
+          "default": False,
+          "description": "True/False for if technology has option to participate in net metering agreement with utility. Note that a technology can only participate in either net metering or wholesale rates (not both)."
+        },
+        "can_wholesale": {
+          "type": "bool",
+          "default": False,
+          "description": "True/False for if technology has option to export energy that is compensated at the wholesale_rate_us_dollars_per_kwh. Note that a technology can only participate in either net metering or wholesale rates (not both)."
+        },
+        "can_export_beyond_site_load": {
+          "type": "bool",
+          "default": False,
+          "description": "True/False for if technology can export energy beyond the annual site load (and be compensated for that energy at the wholesale_rate_above_site_load_us_dollars_per_kwh)."
+        },
+        "can_curtail": {
+          "type": "bool",
+          "default": False,
+          "description": "True/False for if technology can curtail energy produced."
         }
       },
 
