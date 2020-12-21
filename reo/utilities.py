@@ -27,7 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-from numpy import npv
+from numpy import npv, ndarray
 from math import log10
 from reo.models import ErrorModel
 import pandas as pd
@@ -211,8 +211,8 @@ def check_common_outputs(Test, d_calculated, d_expected):
                 tolerance = 2 * Test.REopt_tol
 
             if key in c and key in e:
-                if (not isinstance(e[key], list) and isinstance(e[key], list)) or \
-                        (isinstance(e[key], list) and not isinstance(e[key], list)):
+                if (not isinstance(e[key], list) and isinstance(c[key], list)) or \
+                        (isinstance(e[key], list) and not isinstance(c[key], list)):
                     Test.fail('Key: {0} expected type: {1} actual type {2}'.format(key, str(type(e[key])), str(type(c[key]))))
                 elif e[key] == 0:
                     Test.assertEqual(c[key], e[key], 'Key: {0} expected: {1} actual {2}'.format(key, str(e[key]), str(c[key])))
@@ -255,7 +255,7 @@ def check_common_outputs(Test, d_calculated, d_expected):
 
 def generate_year_profile_hourly(year, relative_periods_df):
     '''
-    This function creates a year-specific 8760 profile with 1.0 for timesteps which are defined in the relative_periods_df based on 
+    This function creates a year-specific 8760 profile with 1.0 for timesteps which are defined in the relative_periods_df based on
         generalized (non-year specific) datetime metrics. All other values are 0.0. This functions uses numpy, pandas, datetime, and calendar packages/libraries.
 
     :param year: year for applying relative_periods changes based on year and leap years (cut off 12/31/year)
@@ -282,3 +282,10 @@ def generate_year_profile_hourly(year, relative_periods_df):
         year_profile_hourly_list = list(year_profile_hourly_series)
 
     return year_profile_hourly_list
+
+
+def scrub_numpy_arrays_from_dict(d):
+    for k, v in d.items():
+        if isinstance(v, ndarray):
+            d[k] = v.tolist()
+    return d

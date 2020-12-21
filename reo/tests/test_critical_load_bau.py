@@ -49,8 +49,8 @@ class CriticalLoadBAUTests(ResourceTestCaseMixin, TestCase):
     def test_critical_load_bau_can_sustain_outage(self):
         """
         Test scenario with
-        - outage_start_hour: 16
-        - outage_end_hour: 20
+        - outage_start_time_step: 17
+        - outage_end_time_step: 21
         - existing diesel generator 20 kW
         - existing PV 3 kW
         - available fuel 50 gallons
@@ -70,7 +70,7 @@ class CriticalLoadBAUTests(ResourceTestCaseMixin, TestCase):
         c['load_bau'] = load_bau[:100]
         c['status'] = d['outputs']['Scenario']['status']
         c['resilience_check_flag'] = d['outputs']['Scenario']['Site']['LoadProfile']['resilience_check_flag']
-        c['sustain_hours'] = d['outputs']['Scenario']['Site']['LoadProfile']['sustain_hours']
+        c['bau_sustained_time_steps'] = d['outputs']['Scenario']['Site']['LoadProfile']['bau_sustained_time_steps']
 
         load_bau_expected = [19.5635, 18.9651, 20.3557, 19.0925, 20.2735, 19.0383, 20.3317, 13.6065, 9.20435, 7.3294,
                              7.14286, 5.62887, 5.20491, 4.40816, 4.21774, 4.21774, 2.13005, 6.20206, 8.43682, 8.63245,
@@ -89,7 +89,7 @@ class CriticalLoadBAUTests(ResourceTestCaseMixin, TestCase):
         d_expected['total_energy_cost_bau'] = 53967.58
         d_expected['year_one_energy_cost_bau'] = 7434.65
         d_expected['resilience_check_flag'] = True
-        d_expected['sustain_hours'] = 4
+        d_expected['bau_sustained_time_steps'] = 4
 
         try:
             check_common_outputs(self, c, d_expected)
