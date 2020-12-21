@@ -604,12 +604,27 @@ class LoadProfile(BuiltInProfile):
                         load_list = [val for val in self.built_in_profile for _ in range(self.time_steps_per_hour)]
                     else:
                         load_list = self.built_in_profile 
-                    # appending the weighted load at every timestep, for making hybrid loadlist
-                    if percent_share != 100.0:
-                        combine_loadlist.append(list(np.array(load_list) * (percent_share/100.0)))  # list of lists
-                    else:
-                        combine_loadlist.append(load_list)  # list of lists
-                self.unmodified_load_list = list(np.sum(np.array(combine_loadlist), axis=0))
+                    combine_loadlist.append(load_list)
+
+                # In the case where the user supplies a list of doe_reference_names and percent shares
+                # for consistency we want to act as if we had scaled the partial load to the total site 
+                # load which was unknown at the start of the loop above. This scalar makes it such that
+                # when the percent shares are later applied that the total site load will be the sum
+                # of the default annual loads for this location
+                if (len(doe_reference_name_list) > 1) and self.annual_kwh is None:
+                    total_site_load = sum([sum(l) for l in combine_loadlist])
+                    for i, load in enumerate(combine_loadlist):
+                        actual_percent_of_site_load = sum(load)/total_site_load
+                        scalar = 1.0 / actual_percent_of_site_load
+                        combine_loadlist[i] = list(np.array(load)* scalar)
+                
+                # Apply the percent share of annual load to each partial load
+                if (len(doe_reference_name_list) > 1):
+                    for i,load in enumerate(combine_loadlist):
+                        combine_loadlist[i] = (np.array(load) * (kwargs.get("percent_share")[i]/100.0)).tolist()
+                
+                # Aggregate total hybrid load
+                self.unmodified_load_list = (np.sum(np.array(combine_loadlist), axis=0)).tolist()
 
         if loads_kw_is_net:
             self.load_list, existing_pv_kw_list = self._account_for_existing_pv(pvs, analysis_years)

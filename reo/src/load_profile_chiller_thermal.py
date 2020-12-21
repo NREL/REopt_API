@@ -45,7 +45,7 @@ class LoadProfileChillerThermal(BuiltInProfile):
         
         # DOE Reference building profile are used if there is a reference name provided
         elif kwargs.get('doe_reference_name'):
-            doe_reference_name = kwargs.get('doe_reference_name')
+            doe_reference_name = kwargs.get('doe_reference_name') or []
             combine_loadlist = []
             for i in range(len(doe_reference_name)):
                 # Monthly loads can only be used to scale a non-hybrid profile
@@ -57,9 +57,7 @@ class LoadProfileChillerThermal(BuiltInProfile):
                 # Annual loads are used in place of percent shares if provided
                 if (kwargs.get("annual_tonhour") or None) is not None:
                     kwargs['annual_energy'] = kwargs["annual_tonhour"]
-                    percent_share = 100
-                else:
-                    percent_share = kwargs.get("percent_share")[i]
+                
                 kwargs['annual_loads'] = self.annual_loads
                 kwargs['builtin_profile_prefix'] = self.builtin_profile_prefix
                 kwargs['latitude'] = latitude
@@ -74,12 +72,26 @@ class LoadProfileChillerThermal(BuiltInProfile):
                                                             for x in self.built_in_profile])
                 else:
                     partial_load_list = self.built_in_profile
-                # appending the weighted load at every timestep, for making hybrid loadlist
-                # checks to see if we can save a multiplication step if possible to save time
-                if percent_share != 100.0:
-                    combine_loadlist.append(list(np.array(partial_load_list) * (percent_share/100.0)))
-                else:
-                    combine_loadlist.append(list(partial_load_list))
+                combine_loadlist.append(list(partial_load_list))
+
+            # In the case where the user supplies a list of doe_reference_names and percent shares
+            # for consistency we want to act as if we had scaled the partial load to the total site 
+            # load which was unknown at the start of the loop above. This scalar makes it such that
+            # when the percent shares are later applied that the total site load will be the sum
+            # of the default annual loads for this location
+            if (len(doe_reference_name) > 1) and kwargs['annual_energy'] is None:
+                total_site_load = sum([sum(l) for l in combine_loadlist])
+                for i, load in enumerate(combine_loadlist):
+                    actual_percent_of_site_load = sum(load)/total_site_load
+                    scalar = 1.0 / actual_percent_of_site_load
+                    combine_loadlist[i] = list(np.array(load)* scalar)
+            
+            #Apply the percent share of annual load to each partial load
+            if (len(doe_reference_name) > 1):
+                for i, load in enumerate(combine_loadlist):
+                    combine_loadlist[i] = list(np.array(load) * (kwargs.get("percent_share")[i]/100.0))
+
+            # Aggregate total hybrid load
             hybrid_loadlist = list(np.sum(np.array(combine_loadlist), 0))
             #load_list is always expected to be in units of kWth
             self.load_list = [i*TONHOUR_TO_KWHTH for i in hybrid_loadlist]

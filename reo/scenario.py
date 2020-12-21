@@ -264,7 +264,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
         lpct_annual_kwh = (lpct.annual_kwhth / lpct.cop)
         if lp.annual_kwh < lpct_annual_kwh:
             message = ("Total LoadProfileChillerThermal electric load in kWh ({}) cannot be more than "
-                        "total LoadProfile load in kWh({}). Note you may consider adjusting your "
+                        "total LoadProfile load in kWh ({}). Note you may consider adjusting your "
                         "LoadProfileChillerThermal cop or ElectricChiller max_thermal_factor_on_peak_load "
                         "if you provided inputs in units of cooling tons.").format(lpct_annual_kwh, lp.annual_kwh)
             log.error("Scenario.py raising error: " + message)
