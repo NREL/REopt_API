@@ -144,24 +144,23 @@ def setup_scenario(self, run_uuid, data, raw_post):
                        )
         
         if inputs_dict["Site"]["Generator"]["generator_only_runs_during_grid_outage"]:
-            if inputs_dict['Site']['LoadProfile'].get('outage_start_hour') is not None and inputs_dict['Site']['LoadProfile'].get('outage_end_hour') is not None:
+            if inputs_dict['Site']['LoadProfile'].get('outage_start_time_step') is not None and \
+                    inputs_dict['Site']['LoadProfile'].get('outage_end_time_step') is not None:
 
                 if inputs_dict["Site"]["Generator"]["max_kw"] > 0 or inputs_dict["Site"]["Generator"]["existing_kw"] > 0:
                     gen = Generator(dfm=dfm, run_uuid=run_uuid,
-                            outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
-                            outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
+                            outage_start_time_step=inputs_dict['Site']['LoadProfile'].get("outage_start_time_step"),
+                            outage_end_time_step=inputs_dict['Site']['LoadProfile'].get("outage_end_time_step"),
                             time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
                             **inputs_dict["Site"]["Generator"])
-
 
         elif not inputs_dict["Site"]["Generator"]["generator_only_runs_during_grid_outage"]:
             if inputs_dict["Site"]["Generator"]["max_kw"] > 0 or inputs_dict["Site"]["Generator"]["existing_kw"] > 0:
                 gen = Generator(dfm=dfm, run_uuid=run_uuid,
-                            outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
-                            outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
+                            outage_start_time_step=inputs_dict['Site']['LoadProfile'].get("outage_start_time_step"),
+                            outage_end_time_step=inputs_dict['Site']['LoadProfile'].get("outage_end_time_step"),
                             time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
                             **inputs_dict["Site"]["Generator"])
-
 
         if 'gen' in locals():
             lp = LoadProfile(dfm=dfm,
@@ -180,7 +179,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
             tmp = dict()
             tmp['annual_calculated_kwh'] = lp.annual_kwh
             tmp['resilience_check_flag'] = lp.resilience_check_flag
-            tmp['sustain_hours'] = lp.sustain_hours
             tmp['loads_kw'] = lp.load_list
             ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
         else:
@@ -197,7 +195,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
             tmp = dict()
             tmp['annual_calculated_kwh'] = lp.annual_kwh
             tmp['resilience_check_flag'] = lp.resilience_check_flag
-            tmp['sustain_hours'] = lp.sustain_hours
             tmp['loads_kw'] = lp.load_list
             ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
 
@@ -324,8 +321,8 @@ def setup_scenario(self, run_uuid, data, raw_post):
                       existing_boiler_production_type_steam_or_hw=steam_or_hw,
                       oa_temp_degF=inputs_dict['Site']['outdoor_air_temp_degF'],
                       site_elevation_ft=inputs_dict['Site']['elevation_ft'],
-                      outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
-                      outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
+                      outage_start_time_step=inputs_dict['Site']['LoadProfile'].get("outage_start_time_step"),
+                      outage_end_time_step=inputs_dict['Site']['LoadProfile'].get("outage_end_time_step"),
                       time_steps_per_hour=inputs_dict.get('time_steps_per_hour'), **inputs_dict['Site']['CHP'])
 
         # Absorption chiller
@@ -340,8 +337,8 @@ def setup_scenario(self, run_uuid, data, raw_post):
             ModelManager.updateModel('AbsorptionChillerModel', tmp, run_uuid)
 
         util = Util(dfm=dfm,
-                    outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
-                    outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
+                    outage_start_time_step=inputs_dict['Site']['LoadProfile'].get("outage_start_time_step"),
+                    outage_end_time_step=inputs_dict['Site']['LoadProfile'].get("outage_end_time_step"),
                     )
 
         # Assign decomposition subproblem optimization parameters - only used if decomposition is selected

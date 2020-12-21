@@ -27,8 +27,8 @@
         "year": 2017,
         "loads_kw_is_net": true,
         "critical_loads_kw_is_net": false,
-        "outage_start_hour": null,
-        "outage_end_hour": null,
+        "outage_start_time_step": null,
+        "outage_end_time_step": null,
         "critical_load_pct": 0.5,
         "outage_is_major_event": true
       },

@@ -625,8 +625,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             Convenience (and legacy) class for handling REopt results
             :param results_dict: flat dict of results from reopt.jl
             :param results_dict_bau: flat dict of results from reopt.jl for bau case
-            :param instance of DataManager class
-            :param dict, data['inputs']['Scenario']['Site']
+            :param dm: instance of DataManager class
+            :param inputs: dict, data['inputs']['Scenario']['Site']
             """
             self.dm = dm
             self.inputs = inputs
@@ -909,16 +909,13 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             financials = FinancialModel.objects.filter(run_uuid=meta['run_uuid']).first() #getting financial inputs for wind and pv lcoe calculations
             for name, d in nested_output_definitions["outputs"]["Scenario"]["Site"].items():
                 if name == "LoadProfile":
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_electric_load_series_kw"] = \
-                        self.dm["LoadProfile"].get("year_one_electric_load_series_kw")
-                    self.nested_outputs["Scenario"]["Site"][name]["critical_load_series_kw"] = \
-                            self.dm["LoadProfile"].get("critical_load_series_kw")
-                    self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_kwh"] = \
-                        self.dm["LoadProfile"].get("annual_kwh")
-                    self.nested_outputs["Scenario"]["Site"][name]["resilience_check_flag"] = \
-                        self.dm["LoadProfile"].get("resilience_check_flag")
-                    self.nested_outputs["Scenario"]["Site"][name]["sustain_hours"] = \
-                        self.dm["LoadProfile"].get("sustain_hours")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_electric_load_series_kw"] = self.dm["LoadProfile"].get("year_one_electric_load_series_kw")
+                    self.nested_outputs["Scenario"]["Site"][name]["critical_load_series_kw"] = self.dm["LoadProfile"].get("critical_load_series_kw")
+                    self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_kwh"] = self.dm["LoadProfile"].get("annual_kwh")
+                    self.nested_outputs["Scenario"]["Site"][name]["resilience_check_flag"] = self.dm["LoadProfile"].get("resilience_check_flag")
+                    self.nested_outputs["Scenario"]["Site"][name]["sustain_hours"] = int(self.dm["LoadProfile"].get("bau_sustained_time_steps") / (len(self.dm["LoadProfile"].get("year_one_electric_load_series_kw"))/8760))
+                    self.nested_outputs["Scenario"]["Site"][name]["bau_sustained_time_steps"] = self.dm["LoadProfile"].get("bau_sustained_time_steps")
+                    self.nested_outputs["Scenario"]["Site"][name]['loads_kw'] = self.dm["LoadProfile"].get("loads_kw")
                 elif name == "LoadProfileBoilerFuel":
                     self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_boiler_fuel_load_mmbtu_bau"] = \
                         self.dm["LoadProfile"].get("annual_heating_mmbtu")
@@ -1339,6 +1336,17 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
         if len(data['outputs']['Scenario']['Site']['PV']) == 1:
             data['outputs']['Scenario']['Site']['PV'] = data['outputs']['Scenario']['Site']['PV'][0]
 
+        #Preserving Backwards Compatability
+        data['inputs']['Scenario']['Site']['LoadProfile']['outage_start_hour'] = data['inputs']['Scenario']['Site']['LoadProfile'].get('outage_start_time_step')
+        if data['inputs']['Scenario']['Site']['LoadProfile']['outage_start_hour'] is not None:
+            data['inputs']['Scenario']['Site']['LoadProfile']['outage_start_hour'] -= 1
+        data['inputs']['Scenario']['Site']['LoadProfile']['outage_end_hour'] = data['inputs']['Scenario']['Site']['LoadProfile'].get('outage_end_time_step')
+        if data['inputs']['Scenario']['Site']['LoadProfile']['outage_end_hour'] is not None:
+            data['inputs']['Scenario']['Site']['LoadProfile']['outage_end_hour'] -= 1
+        data["messages"]["warnings"]["Deprecations"] = [
+            "The sustain_hours output will be deprecated soon in favor of bau_sustained_time_steps.",
+            "outage_start_hour and outage_end_hour will be deprecated soon in favor of outage_start_time_step and outage_end_time_step",
+        ]
         profiler.profileEnd()
         data['outputs']["Scenario"]["Profile"]["parse_run_outputs_seconds"] = profiler.getDuration()
 
