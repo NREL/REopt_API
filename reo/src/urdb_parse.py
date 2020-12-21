@@ -27,8 +27,6 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-import os
-import operator
 import calendar
 import numpy
 import logging
@@ -171,7 +169,6 @@ class UrdbParse:
         self.time_steps_per_hour = elec_tariff.time_steps_per_hour
         self.ts_per_year = 8760 * self.time_steps_per_hour
         self.zero_array = [0.0] * self.ts_per_year
-        self.net_metering = elec_tariff.net_metering
         self.wholesale_rate = elec_tariff.wholesale_rate
         self.excess_rate = elec_tariff.wholesale_rate_above_site_load
         self.max_demand_rate = 0.0
@@ -184,10 +181,7 @@ class UrdbParse:
         self.custom_tou_energy_rates = elec_tariff.tou_energy_rates
         self.add_tou_energy_rates_to_urdb_rate = elec_tariff.add_tou_energy_rates_to_urdb_rate
         self.override_urdb_rate_with_tou_energy_rates = elec_tariff.override_urdb_rate_with_tou_energy_rates
-        self.chp_allowed_to_export = elec_tariff.chp_allowed_to_export
         self.generator = generator
-
-        log.info("URDB parse with year: " + str(self.year) + " net_metering: " + str(self.net_metering))
 
         self.energy_rates_summary = []
         self.demand_rates_summary = []
@@ -226,19 +220,15 @@ class UrdbParse:
 
         self.reopt_args.energy_costs, \
         self.reopt_args.grid_export_rates, \
-        self.reopt_args.rates_by_tech,   \
-        self.reopt_args.techs_by_rate,   \
-        self.reopt_args.num_sales_tiers, \
         self.reopt_args.chp_standby_rate_us_dollars_per_kw_per_month, \
-        self.reopt_args.chp_does_not_reduce_demand_charges = self.prepare_techs_and_loads(self.techs)
+        self.reopt_args.chp_does_not_reduce_demand_charges, \
+        = self.prepare_techs_and_loads(self.techs)
 
         self.reopt_args.energy_costs_bau, \
         self.reopt_args.grid_export_rates_bau, \
-        self.reopt_args.rates_by_tech_bau,   \
-        self.reopt_args.techs_by_rate_bau,   \
-        self.reopt_args.num_sales_tiers_bau, \
         self.reopt_args.chp_standby_rate_us_dollars_per_kw_per_month_bau, \
-        self.reopt_args.chp_does_not_reduce_demand_charges_bau = self.prepare_techs_and_loads(self.bau_techs)
+        self.reopt_args.chp_does_not_reduce_demand_charges_bau, \
+        = self.prepare_techs_and_loads(self.bau_techs)
         
         return self.reopt_args
 
@@ -351,37 +341,42 @@ class UrdbParse:
                     else:
                         is_weekday = False
 
+                    energy_ts_per_hour = int(len(current_rate.energyweekdayschedule[0])/24)
+                    simulation_time_steps_per_rate_time_step = int(self.time_steps_per_hour / energy_ts_per_hour)
                     for hour in range(0, 24):
-                        if is_weekday:
-                            period = current_rate.energyweekdayschedule[month][hour]
-                        else:
-                            period = current_rate.energyweekendschedule[month][hour]
+                        energy_ts = hour * energy_ts_per_hour
+                        for ts in range(energy_ts_per_hour):
+                            if is_weekday:
+                                period = current_rate.energyweekdayschedule[month][energy_ts]
+                            else:
+                                period = current_rate.energyweekendschedule[month][energy_ts]
 
-                        # workaround for cases where there are different numbers of tiers in periods
-                        n_tiers_in_period = len(current_rate.energyratestructure[period])
+                            # workaround for cases where there are different numbers of tiers in periods
+                            n_tiers_in_period = len(current_rate.energyratestructure[period])
 
-                        if n_tiers_in_period == 1:
-                            tier_use = 0  # use the first and only tier in the period
-                        elif tier > n_tiers_in_period-1:  # 'tier' is indexed on zero
-                            tier_use = n_tiers_in_period-1  # use last tier in current period, which has less tiers than the maximum tiers for any period
-                        else:
-                            tier_use = tier
+                            if n_tiers_in_period == 1:
+                                tier_use = 0  # use the first and only tier in the period
+                            elif tier > n_tiers_in_period-1:  # 'tier' is indexed on zero
+                                tier_use = n_tiers_in_period-1  # use last tier in current period, which has less tiers than the maximum tiers for any period
+                            else:
+                                tier_use = tier
 
-                        if average_rates:
-                            rate = rate_average
-                        else:
-                            rate = float(current_rate.energyratestructure[period][tier_use].get('rate') or 0)
+                            if average_rates:
+                                rate = rate_average
+                            else:
+                                rate = float(current_rate.energyratestructure[period][tier_use].get('rate') or 0)
 
-                        adj = float(current_rate.energyratestructure[period][tier_use].get('adj') or 0)
-                        total_rate = rate + adj
+                            adj = float(current_rate.energyratestructure[period][tier_use].get('adj') or 0)
+                            total_rate = rate + adj
 
-                        for step in range(0, self.time_steps_per_hour):
-                            if self.add_tou_energy_rates_to_urdb_rate:
-                                idx = hour_of_year  # len(self.custom_tou_energy_rates) == 8760:
-                                if len(self.custom_tou_energy_rates) == 35040:
-                                    idx = hour_of_year * 4 + step
-                                total_rate = rate + adj + self.custom_tou_energy_rates[idx]
-                            self.energy_costs.append(total_rate)
+                            for step in range(0, simulation_time_steps_per_rate_time_step):
+                                if self.add_tou_energy_rates_to_urdb_rate:
+                                    idx = hour_of_year  # len(self.custom_tou_energy_rates) == 8760:
+                                    if len(self.custom_tou_energy_rates) == 35040:
+                                        idx = hour_of_year * 4 + step
+                                    total_rate = rate + adj + self.custom_tou_energy_rates[idx]
+                                self.energy_costs.append(total_rate)
+                            energy_ts += 1
                         hour_of_year += 1
 
     def prepare_techs_and_loads(self, techs):
@@ -418,64 +413,17 @@ class UrdbParse:
         else:
             negative_excess_rate_costs = [-1.0 * x for x in self.excess_rate]
 
-        if sum(negative_wholesale_rate_costs) == 0:
-            # no export to grid benefit, so force excess energy into curtailment
-            negative_wholesale_rate_costs = [1000.0 for x in self.wholesale_rate]
-
-        # ExportRate is the value of exporting a Tech to the grid under a certain Load bin
-        # If there is net metering and no wholesale rate, appears to be zeros for all but 'PV' at '1W'
         grid_export_rates = list()
-        rates_by_tech = list()  # SalesTiersByTech, list of lists, becomes indexed on techs in julia
-        num_sales_tiers = 0
-        techs_by_rate = []  # TechsBySalesTier, list of lists, with inner lists containing strings for techs
-                            # corresponding to rate tiers (outer index)
-        """
-        Sales tiers:
-        1. NEM
-        2. Wholesale
-        3. Curtailment
-        TODO is it an issue that techs cannot take advantave of both NEM and Wholsale rates? 
-            Do users expect this behavior?
-        """
-        if len(techs) > 0:
-            num_sales_tiers = 3
-            techs_by_rate = [list(), list(), list()]
-            grid_export_rates = operator.add(grid_export_rates, negative_energy_costs)
-            grid_export_rates = operator.add(grid_export_rates, negative_wholesale_rate_costs)
-            grid_export_rates = operator.add(grid_export_rates, negative_excess_rate_costs)
-
-            for tech in techs:
-                if tech.lower() in ["chp", "generator"]:  # Don't allow CHP or generator to write to Curtailment Tier (also no option for NM currently)
-                    if tech.lower() == "chp" and self.chp_allowed_to_export:
-                        rates_by_tech.append([2])  # 2 corresponds to the 1 entry in techs_by_rate
-                        techs_by_rate[1].append(tech.upper())
-                    elif tech.lower() == "generator" and self.generator.generator_sells_energy_back_to_grid:
-                        rates_by_tech.append([2])  # 2 corresponds to the 1 entry in techs_by_rate
-                        techs_by_rate[1].append(tech.upper())
-                    else:
-                        rates_by_tech.append([])
-                elif tech.lower() in ["boiler", "elecchl", "absorpchl"]:
-                        # Only assigning a SalesTier (Curtail) to these techs to avoid a 0-dimension on TechsBySalesTier
-                        rates_by_tech.append([3])
-                        techs_by_rate[2].append(tech.upper())
-                elif self.net_metering and not tech.lower().endswith('nm'):
-                    # techs that end with 'nm' are the option to install capacity beyond the net metering capacity limit
-                    # these techs can access NEM and curtailment rates
-                    rates_by_tech.append([1, 3])  # 1, 3 correspond to the 0, 2 entries in techs_by_rate
-                    techs_by_rate[0].append(tech.upper())
-                    techs_by_rate[2].append(tech.upper())
-                else:
-                    # these techs can access wholesale and curtailment rates
-                    rates_by_tech.append([2, 3])  # 2, 3 correspond to the 1, 2 entries in techs_by_rate
-                    techs_by_rate[1].append(tech.upper())
-                    techs_by_rate[2].append(tech.upper())
+        if len(techs) > 0:  # TODO eliminate hard-coded 3 "sales tiers" (really export tiers)
+            grid_export_rates.append(negative_energy_costs)
+            grid_export_rates.append(negative_wholesale_rate_costs)
+            grid_export_rates.append(negative_excess_rate_costs)
 
         # CHP-specific parameters
         chp_standby_rate = self.chp_standby_rate_us_dollars_per_kw_per_month
         chp_does_not_reduce_demand_charges = self.chp_does_not_reduce_demand_charges
-
-        return energy_costs, grid_export_rates, rates_by_tech, techs_by_rate, num_sales_tiers, \
-                chp_standby_rate, chp_does_not_reduce_demand_charges
+        
+        return energy_costs, grid_export_rates, chp_standby_rate, chp_does_not_reduce_demand_charges
 
     def prepare_demand_periods(self, current_rate):
 
@@ -692,9 +640,13 @@ class UrdbParse:
         return range(hours[month], hours[month + 1])
 
     def get_tou_steps(self, current_rate, month, period):
+
         step_array = []
         start_step = 1
         start_hour = 1
+
+        demand_ts_per_hour = int(len(current_rate.demandweekdayschedule[0] or 0)/24)
+        simulation_time_steps_per_rate_time_step = int(self.time_steps_per_hour / demand_ts_per_hour)
 
         if month > 0:
             start_hour = self.last_hour_in_month[month - 1] + 1
@@ -702,19 +654,22 @@ class UrdbParse:
 
         hour_of_year = start_hour
         step_of_year = start_step
-        for day in range(0, self.days_in_month[month]):
 
+        for day in range(0, self.days_in_month[month]):
             if calendar.weekday(self.year, month + 1, day + 1) < 5:
                 is_weekday = True
             else:
                 is_weekday = False
 
             for hour in range(0, 24):
-                for step in range(0, self.time_steps_per_hour):
-                    if is_weekday and current_rate.demandweekdayschedule[month][hour] == period:
-                        step_array.append(step_of_year)
-                    elif not is_weekday and current_rate.demandweekendschedule[month][hour] == period:
-                        step_array.append(step_of_year)
-                    step_of_year += 1
+                demand_ts = hour * demand_ts_per_hour
+                for ts in range(demand_ts_per_hour):
+                    for step in range(0, simulation_time_steps_per_rate_time_step):
+                        if is_weekday and current_rate.demandweekdayschedule[month][demand_ts] == period:
+                            step_array.append(step_of_year)
+                        elif not is_weekday and current_rate.demandweekendschedule[month][demand_ts] == period:
+                            step_array.append(step_of_year)
+                        step_of_year += 1
+                    demand_ts += 1
                 hour_of_year += 1
         return step_array
