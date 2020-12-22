@@ -61,7 +61,7 @@ class LoadProfileBoilerFuel(BuiltInProfile):
                                                             for x in self.built_in_profile])
                 else:
                     partial_load_list = self.built_in_profile
-            
+                combine_loadlist.append(partial_load_list)
             # In the case where the user supplies a list of doe_reference_names and percent shares
             # for consistency we want to act as if we had scaled the partial load to the total site 
             # load which was unknown at the start of the loop above. This scalar makes it such that
@@ -78,6 +78,7 @@ class LoadProfileBoilerFuel(BuiltInProfile):
             if (len(doe_reference_name) > 1):
                 for i, load in enumerate(combine_loadlist):
                     combine_loadlist[i] = list(np.array(load) * (kwargs.get("percent_share")[i]/100.0))
+
 
             # Aggregate total hybrid load
             hybrid_loadlist = list(np.sum(np.array(combine_loadlist), 0))
