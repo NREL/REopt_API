@@ -235,6 +235,7 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['year_one_scope1_emissions_bau_lb_CO2'], 0.0,places=1)
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['year_one_nonscope_emissions_bau_lb_CO2'],0.0, places=1)
 
+    '''
     def test_noexportcredit_minER(self):
         """
         Test scenario with
@@ -528,7 +529,7 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_scope2_emissions_bau_lb_CO2'],127811.53, places=1)
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['year_one_scope1_emissions_bau_lb_CO2'], 0.0,places=1)
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['year_one_nonscope_emissions_bau_lb_CO2'],0.0, places=1)
-
+    '''
     # ADD NET METERING
 
     def test_yesexportcredit_minandmaxRE_NObatt_addNEM(self):
@@ -635,6 +636,7 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['year_one_scope1_emissions_bau_lb_CO2'], 0.0,places=1)
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['year_one_nonscope_emissions_bau_lb_CO2'],-98.22, places=1)
 
+    '''
     def test_yesexportcredit_minandmaxER_NObatt_addNEM(self):
 
         nested_data = json.load(open(self.test_post, 'rb'))
@@ -739,6 +741,6 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['year_one_scope1_emissions_bau_lb_CO2'], 0.0,places=1)
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['year_one_nonscope_emissions_bau_lb_CO2'],-98.22, places=1)
         
-
+    '''
 
 
