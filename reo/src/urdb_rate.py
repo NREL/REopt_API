@@ -167,10 +167,3 @@ class Rate(object):
         else:
             log.info('Could not find {} in URDB'.format(self.rate))
             return None
-
-    # @staticmethod
-    # def add_rate_to_cache(rate, cache):
-    #
-    #     cache[rate['label']] = rate
-    #     with open(cache_file, 'wb') as f:
-    #         json.dump(cache, f)

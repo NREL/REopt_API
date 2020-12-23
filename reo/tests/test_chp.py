@@ -23,7 +23,7 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
 
         return self.api_client.post(self.reopt_base, format='json', data=data)
 
-    #@skip("CHP test")
+    @skip("CHP decomposition test")
     def test_chp_sizing_decomposition_7pct(self):
         """
         Validation to ensure that:
@@ -69,7 +69,6 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
             print("Error message: {}".format(d['messages'].get('error')))
             raise
 
-    #@skip("CHP test")
     def test_chp_sizing_monolith_1pct(self):
         """
         Validation to ensure that:
@@ -113,7 +112,6 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
             print("Error message: {}".format(d['messages'].get('error')))
             raise
 
-    #@skip("CHP test")
     def test_cost_curve(self):
         """
         Validation to ensure that:
@@ -198,16 +196,16 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         nested_data["Scenario"]["optimality_tolerance_techs"] = 0.01
         # Specify the CHP.min_turn_down_pct which is NOT used during an outage
         nested_data["Scenario"]["Site"]["CHP"]["min_turn_down_pct"] = 0.5
-        # Specify outage period
-        outage_start = 14
-        nested_data["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = outage_start
+        # Specify outage period; outage timesteps are 1-indexed
+        outage_start = 15
+        nested_data["Scenario"]["Site"]["LoadProfile"]["outage_start_time_step"] = outage_start
         outage_duration = 24 * 2
         outage_end = outage_start + outage_duration
-        nested_data["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"] = outage_end
+        nested_data["Scenario"]["Site"]["LoadProfile"]["outage_end_time_step"] = outage_end
         nested_data["Scenario"]["Site"]["LoadProfile"]["critical_load_pct"] = 0.25
 
-        # Add unavailability periods that intersect (ignored) and don't intersect with outage period
-        unavailability = [0.0 if (i < outage_start or i > outage_end) else 0.0 for i in range(8760)]
+        # Add unavailability periods that intersect (ignored) and don't intersect with outage period; unavailability is 0-indexed
+        unavailability = [0.0 if (i < outage_start - 1 or i >= outage_end - 1) else 1.0 for i in range(8760)]
         unavail_start = outage_end + 2  # Start effective unavailability 2 hrs after the outage ends which forces CHP production to zero
         unavail_duration = 24
         unavail_end = unavail_start + unavail_duration
@@ -228,9 +226,9 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
 
         # The values compared to the expected values
         #self.assertTrue(all(chp_to_load[i] == tot_elec_load[i] for i in range(outage_start, outage_end)))
-        self.assertAlmostEqual(sum(chp_to_load[outage_start:outage_end]),sum(tot_elec_load[outage_start:outage_end]), places=1)
+        self.assertAlmostEqual(sum(chp_to_load[outage_start-1:outage_end-1]),sum(tot_elec_load[outage_start-1:outage_end-1]), places=1)
         self.assertEqual(sum(chp_export), 0.0)
         self.assertAlmostEqual(sum(chp_total_elec_prod), sum(chp_to_load), delta=1.0E-5*sum(chp_total_elec_prod))
-        self.assertEqual(sum(cooling_elec_load[outage_start:outage_end]), 0.0)
+        self.assertEqual(sum(cooling_elec_load[outage_start-1:outage_end-1]), 0.0)
         self.assertEqual(sum(chp_total_elec_prod[unavail_start:unavail_end]), 0.0)
 

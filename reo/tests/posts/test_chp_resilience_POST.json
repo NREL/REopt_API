@@ -45,8 +45,7 @@
         "wholesale_rate_us_dollars_per_kwh": 0.15 ,
         "urdb_label": "5e1676e95457a3f87673e3b0" ,
         "chp_standby_rate_us_dollars_per_kw_per_month": 0.0 ,
-        "chp_does_not_reduce_demand_charges": false ,
-        "chp_allowed_to_export": false
+        "chp_does_not_reduce_demand_charges": false
       } ,
       "FuelTariff": {
         "existing_boiler_fuel_type": "natural_gas" ,

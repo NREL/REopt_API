@@ -247,18 +247,22 @@ class URDB_RateValidator:
 
         return valid
 
-    def validCompleteHours(self, schedule_name,expected_counts):
+    def validCompleteHours(self, schedule_name, expected_counts):
         # check that each array in a schedule contains the correct number of entries
+        # :param schedule_name: str - name of URDB rate schedule param (i.e. demandweekdayschedule, energyweekendschedule )
+        # :param expected_counts: list - list of expected list lengths at each level in a nested list of lists starting with the top level,
+        #                                actual lengths of lists can be even divisible by the expected length to account for
+        #                                finer rate resolutions (URDB is 1hr normally, but we accept custom 30-min, 15-min, 10min...)
         # return Boolean if any errors found
 
         if hasattr(self,schedule_name):
             valid = True
             schedule = getattr(self,schedule_name)
 
-            def recursive_search(item,level=0, entry=0):
+            def recursive_search(item, level=0, entry=0):
                 if type(item) == list:
-                    if len(item) != expected_counts[level]:
-                        msg = 'Entry {} {}{} does not contain {} entries'.format(entry,'in sublevel ' + str(level)+ ' ' if level>0 else '', schedule_name, expected_counts[level])
+                    if len(item)%expected_counts[level] != 0:
+                        msg = 'Entry {} {}{} does not contain a number of entries divisible by {}'.format(entry, 'in sublevel ' + str(level)+ ' ' if level>0 else '', schedule_name, expected_counts[level])
                         self.errors.append(msg)
                         valid = False
                     for ii,subitem in enumerate(item):
@@ -380,8 +384,6 @@ class ValidateNestedInput:
 
 
     # EXAMPLE 1 - BASIC POST
-
-
     # {
     #     "Scenario": {
     #         "Site": {
@@ -435,7 +437,8 @@ class ValidateNestedInput:
         self.emission_warning = []
         self.input_dict = dict()
         if type(input_dict) is not dict:
-            self.input_data_errors.append("POST must contain a valid JSON formatted accoring to format described in https://developer.nrel.gov/docs/energy-optimization/reopt-v1/")
+            self.input_data_errors.append(("POST must contain a valid JSON formatted accoring to format described in "
+                                           "https://developer.nrel.gov/docs/energy-optimization/reopt-v1/"))
         else:        
             self.input_dict['Scenario'] = input_dict.get('Scenario') or {}
             for k,v in input_dict.items():
@@ -446,8 +449,10 @@ class ValidateNestedInput:
         if self.isValid:
             self.recursively_check_input_dict(self.nested_input_definitions, self.remove_invalid_keys)
             self.recursively_check_input_dict(self.nested_input_definitions, self.remove_nones)
+            self.recursively_check_input_dict(self.nested_input_definitions, self.check_for_nans)
             self.recursively_check_input_dict(self.nested_input_definitions, self.convert_data_types)
             self.recursively_check_input_dict(self.nested_input_definitions, self.fillin_defaults)
+            self.recursively_check_input_dict(self.nested_input_definitions, self.check_min_less_than_max)
             self.recursively_check_input_dict(self.nested_input_definitions, self.check_min_max_restrictions)
             self.recursively_check_input_dict(self.nested_input_definitions, self.check_required_attributes)
             self.recursively_check_input_dict(self.nested_input_definitions, self.check_special_cases)
@@ -826,6 +831,72 @@ class ValidateNestedInput:
                         if input_isDict == False:
                             self.input_as_none.append([name, object_name_path[-1] + ' (number {})'.format(number)])
 
+
+    def check_min_less_than_max(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
+        """
+        comparison_function for recursively_check_input_dict.
+        flag any inputs where the min/max constraint ranges don't make sense
+        :param object_name_path: list of str, location of an object in self.input_dict being validated,
+            eg. ["Scenario", "Site", "PV"]
+        :param template_values: reference dictionary for checking real_values, for example
+            {'latitude':{'type':'float',...}...}, which comes from nested_input_definitions
+        :param real_values: dict, the attributes corresponding to the object at object_name_path within the
+            input_dict to check and/or modify. For example, with a object_name_path of ["Scenario", "Site", "PV"]
+                the real_values would look like: {'latitude': 39.345678, 'longitude': -90.3, ... }
+        :param number: int, order of the dict in the list
+        :param input_isDict: bool, indicates if the object input came in as a dict or list
+        :return: None
+        """
+        if self.isValid:
+            if real_values is not None:
+                location = self.object_name_string(object_name_path)
+                if not input_isDict:
+                    location += '[{}]'.format(number)
+                if object_name_path[-1] in ['PV','Storage','Generator','Wind']:
+                    if real_values.get('min_kw') > real_values.get('max_kw'):
+                        self.input_data_errors.append(
+                            'min_kw (%s) in %s is larger than the max_kw value (%s)' % ( real_values.get('min_kw'),location , real_values.get('max_kw'))
+                            )
+                if object_name_path[-1] in ['Storage']:
+                    if real_values.get('min_kwh') > real_values.get('max_kwh'):
+                        self.input_data_errors.append(
+                            'min_kwh (%s) in %s is larger than the max_kwh value (%s)' % ( real_values.get('min_kwh'), self.object_name_string(object_name_path), real_values.get('max_kwh'))
+                            )
+                if object_name_path[-1] in ['LoadProfile']:
+                    if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
+                        if real_values.get('outage_start_hour') >= real_values.get('outage_end_hour'):
+                            self.input_data_errors.append('LoadProfile outage_end_hour must be larger than outage_end_hour and these inputs cannot be equal')
+
+                    if real_values.get('outage_start_time_step') is not None and real_values.get('outage_end_time_step') is not None:
+                        if real_values.get('outage_start_time_step') >= real_values.get('outage_end_time_step'):
+                            self.input_data_errors.append('LoadProfile outage_end_time_step must be larger than outage_start_time_step and these inputs cannot be equal')
+
+    def check_for_nans(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
+        """
+        comparison_function for recursively_check_input_dict.
+        flag any inputs that have been parameterized as NaN and do not let the optimization continue.
+        this step is important to prevent exceptions in later optimization and post-processings steps.
+        :param object_name_path: list of str, location of an object in self.input_dict being validated,
+            eg. ["Scenario", "Site", "PV"]
+        :param template_values: reference dictionary for checking real_values, for example
+            {'latitude':{'type':'float',...}...}, which comes from nested_input_definitions
+        :param real_values: dict, the attributes corresponding to the object at object_name_path within the
+            input_dict to check and/or modify. For example, with a object_name_path of ["Scenario", "Site", "PV"]
+                the real_values would look like: {'latitude': 39.345678, 'longitude': -90.3, ... }
+        :param number: int, order of the dict in the list
+        :param input_isDict: bool, indicates if the object input came in as a dict or list
+        :return: None
+        """
+        if real_values is not None:
+            rv = copy.deepcopy(real_values)
+            for name, value in rv.items():
+                if self.isAttribute(name):
+                    if type(value) == float:
+                        if np.isnan(value):
+                            self.input_data_errors.append(
+                                'NaN is not a valid input for %s in %s' % (name, self.object_name_string(object_name_path))
+                                )
+
     def remove_invalid_keys(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
         """
         comparison_function for recursively_check_input_dict.
@@ -1029,7 +1100,7 @@ class ValidateNestedInput:
                                 year = 2017  # If using DOE building, load matches with 2017 calendar
                             elif self.input_dict['Scenario']['Site']['LoadProfile'].get("year") is None:
                                 year = 2019 # Default year is 2019
-                            else: 
+                            else:
                                 year = self.input_dict['Scenario']['Site']['LoadProfile'].get("year")
                             chp_unavailability_hourly_list = generate_year_profile_hourly(year, chp_unavailability_periods)
                             self.update_attribute_value(object_name_path, number, "chp_unavailability_hourly", chp_unavailability_hourly_list)
@@ -1093,7 +1164,7 @@ class ValidateNestedInput:
 
         if object_name_path[-1] == "Generator":
             if self.isValid:
-                
+
                 if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_CO2_per_gal') is None:
                     self.update_attribute_value(object_name_path, number, 'emissions_factor_lb_CO2_per_gal', self.fuel_conversion_per_gal.get('diesel_oil'))
                 
@@ -1109,9 +1180,24 @@ class ValidateNestedInput:
 
         if object_name_path[-1] == "LoadProfile":
             if self.isValid:
+                if real_values.get('outage_start_time_step') is not None and real_values.get('outage_end_time_step') is not None:
+                    if real_values.get('outage_start_time_step') >= real_values.get('outage_end_time_step'):
+                        self.input_data_errors.append('LoadProfile outage_start_time_step must be less than outage_end_time_step.')
+                    if self.input_dict['Scenario']['time_steps_per_hour'] == 1 and real_values.get('outage_end_time_step') > 8760:
+                        self.input_data_errors.append('outage_end_time_step must be <= 8760 when time_steps_per_hour = 1')
+                    if self.input_dict['Scenario']['time_steps_per_hour'] == 2 and real_values.get('outage_end_time_step') > 17520:
+                        self.input_data_errors.append('outage_end_time_step must be <= 17520 when time_steps_per_hour = 2')
+                    # case of 'time_steps_per_hour' == 4 and outage_end_time_step > 35040 handled by "max" value
+
                 if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
-                    if real_values.get('outage_start_hour') == real_values.get('outage_end_hour'):
-                        self.input_data_errors.append('LoadProfile outage_start_hour and outage_end_hour cannot be the same')
+                    self.warnings.append(("outage_start_hour and outage_end_hour will be deprecated soon in favor of "
+                                          "outage_start_time_step and outage_end_time_step"))
+                    # the following preserves the original behavior
+                    self.update_attribute_value(object_name_path, number, 'outage_start_time_step',
+                                                real_values.get('outage_start_hour') + 1)
+                    self.update_attribute_value(object_name_path, number, 'outage_end_time_step',
+                                                real_values.get('outage_end_hour') + 1)
+
                 if type(real_values.get('percent_share')) in [float, int]:
                     if real_values.get('percent_share') == 100:
                         real_values['percent_share'] = [100]
@@ -1224,6 +1310,20 @@ class ValidateNestedInput:
                     self.update_attribute_value(object_name_path, number,  'urdb_response', rate.urdb_dict)
                     electric_tariff['urdb_response'] = rate.urdb_dict
                     self.validate_urdb_response()
+
+            if electric_tariff.get('urdb_response') is not None and len(self.urdb_errors)==0:
+                #We allow custom URDB formatted rates at resolutions finer than 1 hour, so we are checking to see if the
+                #energy rate resolution is finer than the simulation time resolution
+                #Currently, we do not support consolidating energy rates to match the simulation
+                #so we flag this potential error here
+                if len(electric_tariff['urdb_response'].get('energyweekdayschedule',[[]])[0]) > 24:
+                    energy_rate_resolution = int(len(electric_tariff['urdb_response'].get('energyweekdayschedule',[[]])[0]) / 24)
+                    if energy_rate_resolution > self.input_dict['Scenario']['time_steps_per_hour']:
+                        self.input_data_errors.append( \
+                            "The URDB Rate provided has been determined to have a resolution of {urdb_ts} timesteps per hour, but the Scenario time_steps_per_hour is set to {scenario_ts}."
+                            " Please choose a valid Scenario time_steps_per_hour less than or equal to {scenario_ts}, or consolidate the rate's energyweekdayschedule, energyweekendschedule, demandweekdayschedule, and demandweekendchedule parameters.".format(
+                                scenario_ts = int(self.input_dict['Scenario']['time_steps_per_hour']),
+                                urdb_ts = energy_rate_resolution))
 
             if electric_tariff['add_blended_rates_to_urdb_rate']:
                 monthly_energy = electric_tariff.get('blended_monthly_rates_us_dollars_per_kwh', True)
@@ -1748,7 +1848,8 @@ class ValidateNestedInput:
                     if input_isDict or input_isDict is None:
                         self.defaults_inserted.append([template_key, object_name_path])
                     if input_isDict is False:
-                        object_name_path[-1] = object_name_path[-1] + ' (number {})'.format(number)
+                        if not object_name_path[-1].endswith(' (number {})'.format(number)):
+                            object_name_path[-1] = object_name_path[-1] + ' (number {})'.format(number)
                         self.defaults_inserted.append([template_key, object_name_path])
             if self.isSingularKey(template_key):
                 if template_key not in real_values.keys():
@@ -1756,7 +1857,8 @@ class ValidateNestedInput:
                     if input_isDict or input_isDict is None:
                         self.defaults_inserted.append([template_key, object_name_path])
                     if input_isDict is False:
-                        object_name_path[-1] = object_name_path[-1] + ' (number {})'.format(number)
+                        if not object_name_path[-1].endswith(' (number {})'.format(number)):
+                            object_name_path[-1] = object_name_path[-1] + ' (number {})'.format(number)
                         self.defaults_inserted.append([template_key, object_name_path])
 
     def check_required_attributes(self, object_name_path, template_values=None, real_values=None, number=1,
@@ -1864,6 +1966,9 @@ class ValidateNestedInput:
                     self.urdb_errors += rate_checker.errors
             except:
                 self.urdb_errors.append('Error parsing urdb rate in %s ' % (["Scenario", "Site", "ElectricTariff"]))
+        else:
+            self.urdb_errors.append('Invalid URDB response: %s'.format(str(urdb_response)))
+
 
     def validate_8760(self, attr, obj_name, attr_name, time_steps_per_hour, number=1, input_isDict=None):
         """
