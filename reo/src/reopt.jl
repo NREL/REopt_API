@@ -132,7 +132,7 @@ function add_export_expressions(m, p)  # TODO handle empty export tiers (and exp
 			)
 			m[:ExportedElecNUCLEAR] = @expression(m,
 			p.TimeStepScaling * sum(m[:dvProductionToGrid][t,u,ts]
-				for t in p.NuclearTechs, u in p.SalesTiersByTech[t], ts in p.TimeStep)
+				for t in p.NuclearTechs, u in p.ExportTiersByTech[t], ts in p.TimeStep)
 			)
 			m[:ExportBenefitYr1] = @expression(m,
 				p.TimeStepScaling * sum(
@@ -1549,7 +1549,7 @@ function add_nuclear_results(m, p, r::Dict)
 	r["NUCLEARtoBatt"] = round.(value.(NUCLEARtoBatt), digits=3)
 
 	@expression(m, NUCLEARtoGrid[ts in p.TimeStep],
-		sum(m[:dvProductionToGrid][t,u,ts] for t in p.NuclearTechs, u in p.SalesTiersByTech[t]))
+		sum(m[:dvProductionToGrid][t,u,ts] for t in p.NuclearTechs, u in p.ExportTiersByTech[t]))
 	r["NUCLEARtoGrid"] = round.(value.(NUCLEARtoGrid), digits=3)
 
 	@expression(m, NUCLEARtoLoad[ts in p.TimeStep],

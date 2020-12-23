@@ -869,6 +869,10 @@ class NuclearModel(models.Model):
     pbi_max_us_dollars = models.FloatField(null=True, blank=True)
     pbi_years = models.FloatField(null=True, blank=True)
     pbi_system_max_kw = models.FloatField(null=True, blank=True)
+    can_net_meter = models.BooleanField(null=True)
+    can_wholesale = models.BooleanField(null=True)
+    can_export_beyond_site_load = models.BooleanField(null=True)
+    can_curtail = models.BooleanField(null=True)
 
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)

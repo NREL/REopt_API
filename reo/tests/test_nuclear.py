@@ -72,7 +72,7 @@ class NuclearTests(ResourceTestCaseMixin, TestCase):
         d = ModelManager.make_response(run_uuid=run_uuid)
 
         # The values compared to the expected values may change if optimization parameters were changed
-        d_expected = dict()
+#        d_expected = dict()
         #d_expected['lcc'] = 13476072.0
         #d_expected['npv'] = 1231748.579
 
