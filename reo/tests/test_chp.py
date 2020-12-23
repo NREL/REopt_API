@@ -222,7 +222,7 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         chp_total_elec_prod = d['outputs']['Scenario']['Site']['CHP']['year_one_electric_production_series_kw']
         chp_to_load = d['outputs']['Scenario']['Site']['CHP']['year_one_to_load_series_kw']
         chp_export = d['outputs']['Scenario']['Site']['CHP']['year_one_to_grid_series_kw']
-        cooling_elec_load = d['outputs']['Scenario']['Site']['LoadProfileChillerElectric']['year_one_chiller_electric_load_series_kw']
+        cooling_elec_load = d['outputs']['Scenario']['Site']['LoadProfileChillerThermal']['year_one_chiller_electric_load_series_kw']
 
         # The values compared to the expected values
         #self.assertTrue(all(chp_to_load[i] == tot_elec_load[i] for i in range(outage_start, outage_end)))

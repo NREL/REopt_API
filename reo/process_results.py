@@ -930,7 +930,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_chiller_electric_load_series_kw"] = \
                         self.dm["LoadProfile"].get("year_one_chiller_electric_load_series_kw")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_chiller_thermal_load_series_ton"] = \
-                        [x * self.dm.get("elecchl_cop", 0) / TONHOUR_TO_KWHTH \
+                        [x * self.dm.get("elecchl_cop", 0) / TONHOUR_TO_KWHT \
                         for x in self.dm["LoadProfile"].get("year_one_chiller_electric_load_series_kw")]
                 elif name == "Financial":
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_us_dollars"] = self.results_dict.get("lcc")

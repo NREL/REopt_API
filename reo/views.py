@@ -51,7 +51,7 @@ from reo.src.emissions_calculator import EmissionsCalculator
 from django.http import HttpResponse
 from django.template import  loader
 import pandas as pd
-from reo.utilities import generate_year_profile_hourly
+from reo.utilities import generate_year_profile_hourly, TONHOUR_TO_KWHT
 
 
 # loading the labels of hard problems - doing it here so loading happens once on startup
@@ -98,33 +98,104 @@ def invalid_urdb(request):
     except Exception as e:
         return JsonResponse({"Error": "Unexpected error in invalid_urdb endpoint: {}".format(e.args[0])}, status=500)
 
-
-def annual_kwh(request):
-
+def annual_mmbtu(request):
     try:
         latitude = float(request.GET['latitude'])  # need float to convert unicode
         longitude = float(request.GET['longitude'])
-        doe_reference_name = request.GET['doe_reference_name']
-
-        if doe_reference_name not in BuiltInProfile.default_buildings:
-            raise ValueError("Invalid doe_reference_name. Select from the following: {}"
-                             .format(BuiltInProfile.default_buildings))
-
+        
         if latitude > 90 or latitude < -90:
             raise ValueError("latitude out of acceptable range (-90 <= latitude <= 90)")
 
         if longitude > 180 or longitude < -180:
             raise ValueError("longitude out of acceptable range (-180 <= longitude <= 180)")
 
-        uuidFilter = UUIDFilter('no_id')
-        log.addFilter(uuidFilter)
-        b = BuiltInProfile(latitude=latitude, longitude=longitude, doe_reference_name=doe_reference_name)
+        if 'doe_reference_name' in request.GET.keys():
+            doe_reference_name = [request.GET.get('doe_reference_name')]
+            percent_share_list = [100.0]
+        elif 'doe_reference_name[0]' in request.GET.keys():
+            idx = 0
+            doe_reference_name = []
+            percent_share_list = []
+            while 'doe_reference_name[{}]'.format(idx) in request.GET.keys():
+                doe_reference_name.append(request.GET['doe_reference_name[{}]'.format(idx)])
+                if 'percent_share[{}]'.format(idx) in request.GET.keys():
+                    percent_share_list.append(float(request.GET['percent_share[{}]'.format(idx)]))
+                idx += 1
+        else:
+            doe_reference_name = None
 
-        response = JsonResponse(
+        if doe_reference_name is not None:
+            for name in doe_reference_name:
+                if name not in BuiltInProfile.default_buildings:
+                    raise ValueError("Invalid doe_reference_name {}. Select from the following: {}"
+                             .format(name, BuiltInProfile.default_buildings))
+            uuidFilter = UUIDFilter('no_id')
+            log.addFilter(uuidFilter)
+            b = LoadProfileBoilerFuel(dfm=None, latitude=latitude, longitude=longitude, percent_share=percent_share_list,
+                                      doe_reference_name=doe_reference_name, time_steps_per_hour=1)
+            response = JsonResponse(
+                {'annual_mmbtu': b.annual_mmbtu,
+                 'city': b.nearest_city},
+            )
+            return response
+        else:
+            return JsonResponse({"Error": "Missing doe_reference_name input"}, status=500)
+    except KeyError as e:
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected Error. Please contact reopt@nrel.gov."}, status=500)
+
+def annual_kwh(request):
+
+    try:
+        latitude = float(request.GET['latitude'])  # need float to convert unicode
+        longitude = float(request.GET['longitude'])
+        
+        if latitude > 90 or latitude < -90:
+            raise ValueError("latitude out of acceptable range (-90 <= latitude <= 90)")
+
+        if longitude > 180 or longitude < -180:
+            raise ValueError("longitude out of acceptable range (-180 <= longitude <= 180)")
+
+        if 'doe_reference_name' in request.GET.keys():
+            doe_reference_name = [request.GET.get('doe_reference_name')]
+            percent_share_list = [100.0]
+        elif 'doe_reference_name[0]' in request.GET.keys():
+            idx = 0
+            doe_reference_name = []
+            percent_share_list = []
+            while 'doe_reference_name[{}]'.format(idx) in request.GET.keys():
+                doe_reference_name.append(request.GET['doe_reference_name[{}]'.format(idx)])
+                if 'percent_share[{}]'.format(idx) in request.GET.keys():
+                    percent_share_list.append(float(request.GET['percent_share[{}]'.format(idx)]))
+                idx += 1
+        else:
+            doe_reference_name = None
+
+        if doe_reference_name is not None:
+            for name in doe_reference_name:
+                if name not in BuiltInProfile.default_buildings:
+                    raise ValueError("Invalid doe_reference_name {}. Select from the following: {}"
+                             .format(name, BuiltInProfile.default_buildings))
+            uuidFilter = UUIDFilter('no_id')
+            log.addFilter(uuidFilter)
+            b = LoadProfile(latitude=latitude, longitude=longitude, percent_share=percent_share_list,
+                    doe_reference_name=doe_reference_name, critical_load_pct=0.5)
+            response = JsonResponse(
             {'annual_kwh': b.annual_kwh,
              'city': b.city},
-        )
-        return response
+            )
+            return response
+        else:
+            return JsonResponse({"Error": "Missing doe_reference_name input"}, status=500)
 
     except KeyError as e:
         return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
@@ -139,49 +210,6 @@ def annual_kwh(request):
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in annual_kwh endpoint. Check log for more."}, status=500)
-
-
-
-def annual_mmbtu(request):
-    try:
-        latitude = float(request.GET['latitude'])  # need float to convert unicode
-        longitude = float(request.GET['longitude'])
-        doe_reference_name = request.GET['doe_reference_name']
-
-        if doe_reference_name not in BuiltInProfile.default_buildings:
-            raise ValueError("Invalid doe_reference_name. Select from the following: {}"
-                             .format(BuiltInProfile.default_buildings))
-
-        if latitude > 90 or latitude < -90:
-            raise ValueError("latitude out of acceptable range (-90 <= latitude <= 90)")
-
-        if longitude > 180 or longitude < -180:
-            raise ValueError("longitude out of acceptable range (-180 <= longitude <= 180)")
-
-        uuidFilter = UUIDFilter('no_id')
-        log.addFilter(uuidFilter)
-
-        b = LoadProfileBoilerFuel(dfm=None, latitude=latitude, longitude=longitude,
-                                  doe_reference_name=[doe_reference_name], time_steps_per_hour=1)
-
-        response = JsonResponse(
-            {'annual_mmbtu': b.annual_mmbtu,
-             'city': b.nearest_city},
-        )
-        return response
-    except KeyError as e:
-        return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
-
-    except ValueError as e:
-        return JsonResponse({"Error": str(e.args[0])}, status=500)
-
-    except Exception:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
-                                                                            tb.format_tb(exc_traceback))
-        log.debug(debug_msg)
-        return JsonResponse({"Error": "Unexpected Error. Please contact reopt@nrel.gov."}, status=500)
-
 
 def remove(request, run_uuid):
     try:
@@ -448,6 +476,8 @@ def simulated_load(request):
                 else:
                     monthly_tonhour = None
 
+                chiller_cop = request.GET.get('chiller_cop')
+
                 if 'max_thermal_factor_on_peak_load' in request.GET.keys():
                     max_thermal_factor_on_peak_load = float(request.GET.get('max_thermal_factor_on_peak_load'))
                 else:
@@ -455,7 +485,8 @@ def simulated_load(request):
                 
                 c = LoadProfileChillerThermal(dfm=None, latitude=latitude, longitude=longitude, doe_reference_name=doe_reference_name,
                                annual_tonhour=annual_tonhour, monthly_tonhour=monthly_tonhour, time_steps_per_hour=1, annual_fraction=None,
-                               monthly_fraction=None, percent_share=percent_share_list, max_thermal_factor_on_peak_load=max_thermal_factor_on_peak_load)
+                               monthly_fraction=None, percent_share=percent_share_list, max_thermal_factor_on_peak_load=max_thermal_factor_on_peak_load,
+                               chiller_cop=chiller_cop)
 
                 lp = c.load_list
 
@@ -605,8 +636,10 @@ def chp_defaults(request):
     except ValueError as e:
         return JsonResponse({"Error": str(e.args[0])}, status=500)
 
-    except Exception:
+    except KeyError as e:
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
 
+    except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
                                                                             tb.format_tb(exc_traceback))
@@ -614,17 +647,59 @@ def chp_defaults(request):
         return JsonResponse({"Error": "Unexpected error in chp_defaults endpoint. Check log for more."}, status=500)
 
 
-def chiller_defaults(request):
+def loadprofile_chillerthermal_defaults(request):
     """
     This provides the following default parameters for electric and absorption chiller:
-        1. COP of electric chiller (ElectricChiller.chiller_cop) based on peak cooling thermal load
-        2. COP of absorption chiller (AbsorptionChiller.chiller_cop) based on hot_water_or_steam input or prime_mover
-            CapEx (AbsorptionChiller.installed_cost_us_dollars_per_ton) and
+        . COP of electric chiller (ElectricChiller.chiller_cop) based on peak cooling thermal load
+        
+    Required inputs:
+        1. max_kw - max electric chiller load in kW
+
+    Optional inputs:
+        1. Max cooling capacity (ElectricChiller.max_thermal_factor_on_peak_load) as a ratio of peak cooling load
+            a. If not entered, assume 1.25
+    """
+    
+    try:
+        max_kw = float(request.GET['max_kw'])
+
+        if 'max_thermal_factor_on_peak_load' in request.GET.keys():
+            max_thermal_factor_on_peak_load = float(request.GET.get('max_thermal_factor_on_peak_load'))
+        else:
+            max_thermal_factor_on_peak_load = \
+                nested_input_definitions['Scenario']['Site']['ElectricChiller']['max_thermal_factor_on_peak_load']['default']
+        
+        cop = LoadProfileChillerThermal.get_default_cop(max_thermal_factor_on_peak_load=max_thermal_factor_on_peak_load, max_kw = max_kw)
+        response = JsonResponse(
+            {   "chiller_cop": cop,
+                "TONHOUR_TO_KWHT": TONHOUR_TO_KWHT
+            }
+        )
+        return response
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
+    
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected error in loadprofile_chillerthermal_defaults endpoint. Check log for more."}, status=500)
+
+def chiller_defaults(request):
+    """
+    This provides the following default parameters for the absorption chiller:
+        1. COP of absorption chiller (AbsorptionChiller.chiller_cop) based on hot_water_or_steam input or prime_mover
+        2. CapEx (AbsorptionChiller.installed_cost_us_dollars_per_ton) and
                 OpEx (AbsorptionChiller.om_cost_us_dollars_per_ton) of absorption chiller based on peak cooling thermal
                 load
 
     Required inputs:
-        1. max_elec_chiller_elec_load
+        1. max_cooling_load_tons
 
     Optional inputs:
         1. hot_water_or_steam (Boiler.existing_boiler_production_type_steam_or_hw)
@@ -633,36 +708,19 @@ def chiller_defaults(request):
             a. If hot_water_or_steam is provided, this is not used
             b. If hot_water_or_steam is NOT provided and prime_mover is, this will refer to
                 boiler_type_by_chp_pm_defaults
-        3. Max cooling capacity (ElectricChiller.max_thermal_factor_on_peak_load) as a ratio of peak cooling load
-            a. If not entered, assume 1.25
-
     """
-    elec_chiller_cop_defaults = copy.deepcopy(ElectricChiller.electric_chiller_cop_defaults)
     absorp_chiller_cost_defaults_all = copy.deepcopy(AbsorptionChiller.absorption_chiller_cost_defaults)
     absorp_chiller_cop_defaults = copy.deepcopy(AbsorptionChiller.absorption_chiller_cop_defaults)
     boiler_type_by_chp_pm_defaults = copy.deepcopy(Boiler.boiler_type_by_chp_prime_mover_defaults)
 
     try:
-        max_elec_chiller_elec_load = request.GET.get('max_elec_chiller_elec_load')
+        max_cooling_load_tons = request.GET.get('max_cooling_load_tons')
         hot_water_or_steam = request.GET.get('hot_water_or_steam')
         prime_mover = request.GET.get('prime_mover')
-        max_cooling_factor = request.GET.get('max_cooling_factor', 1.25)
 
-        if max_elec_chiller_elec_load is None:
-            raise ValueError("Missing required max_elec_chiller_elec_load query parameter.")
+        if max_cooling_load_tons is None:
+            raise ValueError("Missing required max_cooling_load_tons query parameter.")
         else:
-            max_chiller_thermal_capacity = float(max_elec_chiller_elec_load) * \
-                                            elec_chiller_cop_defaults['convert_elec_to_thermal'] / 3.51685 * \
-                                            float(max_cooling_factor)
-            max_cooling_load_tons = float(max_elec_chiller_elec_load) * \
-                                            elec_chiller_cop_defaults['convert_elec_to_thermal'] / 3.51685
-
-            # Electric chiller COP
-            if max_chiller_thermal_capacity < 100.0:
-                elec_chiller_cop = elec_chiller_cop_defaults["less_than_100_tons"]
-            else:
-                elec_chiller_cop = elec_chiller_cop_defaults["greater_than_100_tons"]
-
             # Absorption chiller costs
             if hot_water_or_steam is not None:
                 defaults_sizes = absorp_chiller_cost_defaults_all[hot_water_or_steam]
@@ -693,28 +751,20 @@ def chiller_defaults(request):
                                                (max_cooling_load_tons - defaults_sizes[size - 1][0])
                         absorp_chiller_opex = defaults_sizes[size - 1][2] + slope_opex * \
                                               (max_cooling_load_tons - defaults_sizes[size - 1][0])
-
         response = JsonResponse(
-            {"PeakCoolingLoadTons": max_cooling_load_tons,
-                "ElectricChiller": {
-                 "MaxCapacityTons": max_chiller_thermal_capacity,
-                 "chiller_cop": elec_chiller_cop
-                },
-            "AbsorptionChiller": {
+            { "AbsorptionChiller": {
                 "chiller_cop": absorp_chiller_cop,
                 "installed_cost_us_dollars_per_ton": absorp_chiller_capex,
                 "om_cost_us_dollars_per_ton": absorp_chiller_opex
                 }
             }
         )
-
         return response
 
     except ValueError as e:
         return JsonResponse({"Error": str(e.args[0])}, status=500)
 
     except Exception:
-
         exc_type, exc_value, exc_traceback = sys.exc_info()
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
                                                                             tb.format_tb(exc_traceback))

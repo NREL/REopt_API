@@ -291,4 +291,3 @@ def scrub_numpy_arrays_from_dict(d):
 
 #conversion factor for ton-hours to kilowatt-hours thermal
 TONHOUR_TO_KWHT = 3.51685
-

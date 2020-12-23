@@ -1023,7 +1023,7 @@ class ValidateNestedInput:
                                 percent_share_list = self.input_dict['Scenario']['Site']['LoadProfile'].get('percent_share')
                                 # Find weighted avg for hybrid load profile
                                 avg_load_kw = sum(
-                                    [annual_kwh * percent_share_list[i] / 100 for i in range(len(annual_kwh_list))]) / 8760
+                                    [annual_kwh * pct / 100 for pct in percent_share_list]) / 8760
 
                             elif self.input_dict['Scenario']['Site']['LoadProfile'].get('annual_kwh') is None and self.input_dict['Scenario']['Site']['LoadProfile'].get('doe_reference_name') is not None:
                                 from reo.src.load_profile import LoadProfile

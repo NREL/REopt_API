@@ -74,6 +74,7 @@ urlpatterns = [
     url(r'^v1/annual_mmbtu/?$', views.annual_mmbtu, name='annual_mmbtu'),
     url(r'^v1/chp_defaults/?$', views.chp_defaults, name='chp_defaults'),
     url(r'^v1/chiller_defaults/?$', views.chiller_defaults, name='chiller_defaults'),
+    url(r'^v1/loadprofile_chillerthermal_defaults/?$', views.loadprofile_chillerthermal_defaults, name='loadprofile_chillerthermal_defaults'),
     url(r'', include(v1_api.urls), name='job'),
     url(r'', include(v1_api.urls), name='outagesimjob'),
     url(r'(.*)', page_not_found, name='404'),
