@@ -42,20 +42,17 @@ c_number = c_float  # must be c_double or c_float depending on how defined in ss
 class PySSC:
 
     def __init__(self):
-
         if sys.platform == 'win32' or sys.platform == 'cygwin':
-            if 8 * struct.calcsize("P") == 64:
-                self.pdll = CDLL("ssc.dll")
-            else:
-                self.pdll = CDLL("ssc.dll")
+            # nlaws 201201 Windows is no longer supported (by celery) but is cygwin supported?
+            self.pdll = CDLL("ssc.dll")
         elif sys.platform == 'darwin':
+            # NOTE: the path of this file must be in DYLD_LIBRARY_PATH
             self.pdll = CDLL("ssc.dylib")
-        elif sys.platform == 'linux2':
-            self.pdll = CDLL('ssc.so')  # instead of relative path, require user to have on LD_LIBRARY_PATH
-        elif sys.platform == 'linux':
-            self.pdll = CDLL('ssc.so')  # instead of relative path, require user to have on LD_LIBRARY_PATH
+        elif sys.platform == 'linux2' or sys.platform == 'linux':
+            # NOTE: the path of this file must be in LD_LIBRARY_PATH
+            self.pdll = CDLL('ssc.so')
         else:
-            print("Platform not supported ", sys.platform)
+            print("Platform of type {} not supported for wind analyses.".format(sys.platform))
 
     INVALID = 0
     STRING = 1

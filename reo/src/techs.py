@@ -46,8 +46,6 @@ class Tech(object):
         self.max_kw = max_kw
         self.installed_cost_us_dollars_per_kw = installed_cost_us_dollars_per_kw
         self.om_cost_us_dollars_per_kw = om_cost_us_dollars_per_kw
-
-        self.loads_served = ['retail', 'wholesale', 'export', 'storage', 'boiler', 'tes']
         self.nmil_regime = None
         self.reopt_class = ""
         self.derate = 1.0
@@ -57,7 +55,10 @@ class Tech(object):
         self.derate = 1
         self.acres_per_kw = None  # for land constraints
         self.kw_per_square_foot = None  # for roof constraints
-
+        self.can_net_meter = kwargs.get("can_net_meter", False)
+        self.can_wholesale = kwargs.get("can_wholesale", False)
+        self.can_export_beyond_site_load = kwargs.get("can_export_beyond_site_load", False)
+        self.can_curtail = kwargs.get("can_curtail", False)
         self.kwargs = kwargs
 
     @property
@@ -68,20 +69,14 @@ class Tech(object):
         """
         return None
 
-    def can_serve(self, load):
-        if load in self.loads_served:
-            return True
-        return False
-
 
 class Util(Tech):
 
-    def __init__(self, dfm, outage_start_hour=None, outage_end_hour=None):
+    def __init__(self, dfm, outage_start_time_step=None, outage_end_time_step=None):
         super(Util, self).__init__(max_kw=12000000)
 
-        self.outage_start_hour = outage_start_hour
-        self.outage_end_hour = outage_end_hour
-        self.loads_served = ['retail', 'storage']
+        self.outage_start_time_step = outage_start_time_step
+        self.outage_end_time_step = outage_end_time_step
         self.derate = 0.0
         self.n_timesteps = dfm.n_timesteps
 
@@ -92,8 +87,10 @@ class Util(Tech):
 
         grid_prod_factor = [1.0 for _ in range(self.n_timesteps)]
 
-        if self.outage_start_hour is not None and self.outage_end_hour is not None:  # "turn off" grid resource
-            grid_prod_factor[self.outage_start_hour:self.outage_end_hour] = [0]*(self.outage_end_hour - self.outage_start_hour)
+        if self.outage_start_time_step is not None and self.outage_end_time_step is not None:  # "turn off" grid resource
+            # minus 1 in next line accounts for Python's zero-indexing
+            grid_prod_factor[self.outage_start_time_step - 1:self.outage_end_time_step - 1] = \
+                [0] * (self.outage_end_time_step - self.outage_start_time_step)
 
         return grid_prod_factor
 
@@ -107,7 +104,9 @@ class PV(Tech):
         4: 0
     }
 
-    def __init__(self, dfm, degradation_pct, time_steps_per_hour=1, acres_per_kw=6e-3, kw_per_square_foot=0.01, existing_kw=0.0, tilt=0.537, azimuth=180, pv_number=1, location='both', prod_factor_series_kw=None, **kwargs):
+    def __init__(self, dfm, degradation_pct, time_steps_per_hour=1, acres_per_kw=6e-3, kw_per_square_foot=0.01,
+                 existing_kw=0.0, tilt=0.537, azimuth=180, pv_number=1, location='both', prod_factor_series_kw=None,
+                 **kwargs):
         super(PV, self).__init__(**kwargs)
 
         self.degradation_pct = degradation_pct
@@ -229,7 +228,7 @@ class Wind(Tech):
 class Generator(Tech):
 
     def __init__(self, dfm, run_uuid, min_kw, max_kw, existing_kw, fuel_slope_gal_per_kwh, fuel_intercept_gal_per_hr,
-                 fuel_avail_gal, min_turn_down_pct, outage_start_hour=None, outage_end_hour=None, time_steps_per_hour=1,
+                 fuel_avail_gal, min_turn_down_pct, outage_start_time_step=None, outage_end_time_step=None, time_steps_per_hour=1,
                  fuel_avail_before_outage_pct=1, emissions_factor_lb_CO2_per_gal=None, **kwargs):
         super(Generator, self).__init__(min_kw=min_kw, max_kw=max_kw, **kwargs)
         """
@@ -238,21 +237,19 @@ class Generator(Tech):
         
         Note that default burn rate, slope, and min/max sizes are handled in ValidateNestedInput.
         """
-
         self.fuel_slope = fuel_slope_gal_per_kwh
         self.fuel_intercept = fuel_intercept_gal_per_hr
         self.fuel_avail = fuel_avail_gal
         self.min_turn_down = min_turn_down_pct
         self.reopt_class = 'GENERATOR'
-        self.outage_start_hour = outage_start_hour
-        self.outage_end_hour = outage_end_hour
+        self.outage_start_time_step = outage_start_time_step
+        self.outage_end_time_step = outage_end_time_step
         self.time_steps_per_hour = time_steps_per_hour
         self.generator_only_runs_during_grid_outage = kwargs['generator_only_runs_during_grid_outage']
         self.fuel_avail_before_outage_pct = fuel_avail_before_outage_pct
         self.generator_sells_energy_back_to_grid = kwargs['generator_sells_energy_back_to_grid']
         self.diesel_fuel_cost_us_dollars_per_gallon = kwargs['diesel_fuel_cost_us_dollars_per_gallon']
         self.derate = 0.0
-        self.loads_served = ['retail', 'storage']
         self.incentives = Incentives(**kwargs)
         if max_kw < min_kw:
             min_kw = max_kw
@@ -261,21 +258,17 @@ class Generator(Tech):
         self.existing_kw = existing_kw
         self.emissions_factor_lb_CO2_per_gal = emissions_factor_lb_CO2_per_gal
 
-        # no net-metering for gen so it can only sell in "wholesale" bin (and not "export" bin)
-        if self.generator_sells_energy_back_to_grid:
-            self.loads_served.append('wholesale')
-
         dfm.add_generator(self)
 
     @property
     def prod_factor(self):
-        gen_prod_factor = [0.0 for _ in range(8760*self.time_steps_per_hour)]
+        gen_prod_factor = [0.0 for _ in range(8760 * self.time_steps_per_hour)]
 
         if self.generator_only_runs_during_grid_outage:
-            if self.outage_start_hour is not None and self.outage_end_hour is not None:
-                gen_prod_factor[self.outage_start_hour:self.outage_end_hour] \
-                    = [1]*(self.outage_end_hour - self.outage_start_hour)
-
+            if self.outage_start_time_step is not None and self.outage_end_time_step is not None:
+                # minus 1 in next line accounts for Python's zero-indexing
+                gen_prod_factor[self.outage_start_time_step - 1:self.outage_end_time_step - 1] \
+                    = [1] * (self.outage_end_time_step - self.outage_start_time_step)
         else:
             gen_prod_factor = [1] * len(gen_prod_factor)
 
@@ -932,8 +925,8 @@ class CHP(Tech):
                               "combustion_turbine": 0,
                               "fuel_cell": 0}
 
-    def __init__(self, dfm, run_uuid, existing_boiler_production_type_steam_or_hw, oa_temp_degF, site_elevation_ft, outage_start_hour=None, outage_end_hour=None,
-                 time_steps_per_hour=1, **kwargs):
+    def __init__(self, dfm, run_uuid, existing_boiler_production_type_steam_or_hw, oa_temp_degF, site_elevation_ft,
+                 outage_start_time_step=None, outage_end_time_step=None, time_steps_per_hour=1, **kwargs):
         super(CHP, self).__init__()
 
         self.prime_mover = kwargs.get('prime_mover')
@@ -943,7 +936,6 @@ class CHP(Tech):
         self.is_chp = True
         self.time_steps_per_hour = time_steps_per_hour
         self.derate = 1  # Need to rectify this legacy derate, maybe remove this and replace if no needed (NM/IL?)
-        self.loads_served = ['retail', 'wholesale', 'export', 'storage', 'boiler', 'tes']
         self.incentives = Incentives(**kwargs)
 
         # All of these attributes are assigned based on defaults in validators.py or they should all be in the inputs
@@ -965,8 +957,8 @@ class CHP(Tech):
         self.derate_start_temp_degF = kwargs['derate_start_temp_degF']
         self.derate_slope_pct_per_degF = kwargs['derate_slope_pct_per_degF']
         self.chp_unavailability_hourly = kwargs['chp_unavailability_hourly']
-        self.outage_start_hour = outage_start_hour
-        self.outage_end_hour = outage_end_hour
+        self.outage_start_time_step = outage_start_time_step
+        self.outage_end_time_step = outage_end_time_step
 
         self.fuel_burn_slope, self.fuel_burn_intercept, self.thermal_prod_slope, self.thermal_prod_intercept = \
             self.convert_performance_params(self.elec_effic_full_load, self.elec_effic_half_load,
@@ -986,10 +978,11 @@ class CHP(Tech):
         chp_thermal_prod_factor = [1.0 - self.chp_unavailability_hourly[i] for i in range(8760) for _ in range(self.time_steps_per_hour)]
 
         # Ignore unavailability in timestep if it intersects with an outage interval
-        if self.outage_start_hour and self.outage_end_hour:
-            for i in range(self.outage_start_hour * self.time_steps_per_hour, self.outage_end_hour * self.time_steps_per_hour):
-              chp_elec_prod_factor[i] = 1.0
-              chp_thermal_prod_factor[i] = 1.0
+        if self.outage_start_time_step and self.outage_end_time_step:
+            chp_elec_prod_factor[self.outage_start_time_step - 1:self.outage_end_time_step - 1] = \
+                [1.0] * (self.outage_end_time_step - self.outage_start_time_step)
+            chp_thermal_prod_factor[self.outage_start_time_step - 1:self.outage_end_time_step - 1] = \
+                [1.0] * (self.outage_end_time_step - self.outage_start_time_step)
 
         return chp_elec_prod_factor, chp_thermal_prod_factor
 
@@ -1030,7 +1023,6 @@ class Boiler(Tech):
     def __init__(self, dfm, boiler_fuel_series_bau, **kwargs):
         super(Boiler, self).__init__(**kwargs)
 
-        self.loads_served = ['boiler', 'tes']
         self.is_hot = True
         self.reopt_class = 'BOILER'  # Not sure why UTIL tech is not assigned to the UTIL class
         self.min_mmbtu_per_hr = kwargs.get('min_mmbtu_per_hr')
