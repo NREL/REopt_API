@@ -491,12 +491,12 @@ def simulated_load(request):
                 lp = c.load_list
 
                 response = JsonResponse(
-                    {'loads_kw': [round(ld/c.cop, 3) for ld in lp],
-                     'annual_kwh': round(c.annual_kwhth/c.cop,3),
+                    {'loads_ton': [round(ld/TONHOUR_TO_KWHT, 3) for ld in lp],
+                     'annual_tonhour': round(c.annual_kwhth/TONHOUR_TO_KWHT,3),
                      'cop': c.cop,
-                     'min_kw': round(min(lp)/c.cop, 3),
-                     'mean_kw': round((sum(lp)/len(lp))/c.cop, 3),
-                     'max_kw': round(max(lp)/c.cop, 3),
+                     'min_ton': round(min(lp)/TONHOUR_TO_KWHT, 3),
+                     'mean_ton': round((sum(lp)/len(lp))/TONHOUR_TO_KWHT, 3),
+                     'max_ton': round(max(lp)/TONHOUR_TO_KWHT, 3),
                      }
                     )
                 return response
