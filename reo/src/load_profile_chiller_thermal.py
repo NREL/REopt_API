@@ -152,4 +152,4 @@ class LoadProfileChillerThermal(BuiltInProfile):
             self.load_list = [i*self.chiller_cop for i in electric_load_list]
         self.annual_kwht = sum(self.load_list)
         if dfm is not None:
-            dfm.add_load_chiller_electric(self)
+            dfm.add_load_chiller_thermal(self)

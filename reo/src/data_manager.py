@@ -111,7 +111,7 @@ class DataManager:
         self.LoadProfile["annual_heating_mmbtu"] = load.annual_mmbtu
         self.heating_load = load
 
-    def add_load_chiller_electric(self, load):
+    def add_load_chiller_thermal(self, load):
         self.LoadProfile["year_one_chiller_electric_load_series_kw"] = list(np.array(load.load_list) / load.chiller_cop)
         self.LoadProfile["annual_cooling_kwh"] = load.annual_kwht / load.chiller_cop
         self.cooling_load = load
