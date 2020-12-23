@@ -68,4 +68,4 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             'longitude': city.lng,
         })
 
-        assert "Invalid doe_reference_name. Select from the following" in str(response.content)
+        assert "Invalid doe_reference_name {}. Select from the following".format(bldg[:-1]) in str(response.content)

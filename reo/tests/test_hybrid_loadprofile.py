@@ -198,4 +198,4 @@ class TestHybridLoadProfile(ResourceTestCaseMixin, TestCase):
 
 # this comparison of the 'resultant_load_profile' and 'manually_calculated_load_profile' is possible because there is no existing-pv in this case. If existing-pv is present, then the resultant_hybrid_annual_kwh would be different when net native load is calculated by subtracting existing-pv's output.
 
-        self.assertAlmostEquals(resultant_hybrid_annual_kwh, 500000x s, places=2)
+        self.assertAlmostEquals(resultant_hybrid_annual_kwh, 500000, places=2)

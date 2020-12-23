@@ -391,40 +391,6 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         for x, y in zip(resp1['probs_of_surviving'], resp2['probs_of_surviving']):
             self.assertAlmostEquals(x, y, places=1)
 
-    def test_resil_endpoint(self):
-        post = json.load(open(os.path.join('resilience_stats', 'tests', 'POST_nested.json'), 'r'))
-        r = self.api_client.post('/v1/job/', format='json', data=post)
-        reopt_resp = json.loads(r.content)
-        run_uuid = reopt_resp['run_uuid']
-
-        resp = self.api_client.post('/v1/outagesimjob/', format='json', data={"run_uuid": run_uuid, "bau": True})
-        self.assertEqual(resp.status_code, 201)
-        resp = self.api_client.get('/v1/job/<run_uuid>/resilience_stats/'.replace("<run_uuid>", run_uuid))
-        resp_dict = json.loads(resp.content)['outage_sim_results']
-
-        # NOTE: probabilities are sensitive to the SOC series,
-        #   which can change while keeping the same optimal LCC
-        expected_probs = [0.4046, 0.2341, 0.1978, 0.1611, 0.1249, 0.0916, 0.0605, 0.0345, 0.0156, 0.007, 0.0033, 0.001]
-
-        for idx, p in enumerate(resp_dict["probs_of_surviving"]):
-            self.assertAlmostEqual(p, expected_probs[idx], places=2)
-        self.assertEqual(resp_dict["resilience_hours_avg"], 1.34)
-        self.assertEqual(resp_dict["outage_durations"], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
-        self.assertEqual(resp_dict["resilience_hours_min"], 0)
-        self.assertEqual(resp_dict["resilience_hours_max"], 12)
-        self.assertFalse("resilience_hours_max_bau" in resp_dict)
-
-        """
-        financial_check returns true if the financial scenario system capacities are greater than or equal to the
-        resilience scenario system capacities
-        """
-        resp = self.api_client.get(
-            '/v1/financial_check/?financial_uuid={0}&resilience_uuid={0}'.format(run_uuid),
-            format='json')
-        self.assertEqual(resp.status_code, 200)
-        results = json.loads(resp.content)
-        self.assertTrue(results["survives_specified_outage"])
-
     def test_outage_sim_chp(self):
         expected = {
             'resilience_hours_min': 0,

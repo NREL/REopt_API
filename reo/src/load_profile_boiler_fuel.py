@@ -26,6 +26,12 @@ class LoadProfileBoilerFuel(BuiltInProfile):
         :param kwargs: (dict) Chiller specific inputs as defined in reo/nested_inputs
         """
         
+        self.nearest_city = nearest_city
+        self.latitude = latitude
+        self.longitude = longitude
+        self.time_steps_per_hour = time_steps_per_hour
+        self.year = year
+        
         if kwargs.get('loads_mmbtu_per_hour') is not None: 
             self.load_list = kwargs['loads_mmbtu_per_hour']
             self.annual_mmbtu = sum(self.load_list)

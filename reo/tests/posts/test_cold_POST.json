@@ -33,7 +33,7 @@
       "LoadProfileBoilerFuel": {
         "doe_reference_name": "Hospital"
       } ,
-      "LoadProfileChillerElectric": {
+      "LoadProfileChillerThermal": {
         "doe_reference_name": "Hospital" ,
         "chiller_cop": 3.4
       } ,
