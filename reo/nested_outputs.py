@@ -246,13 +246,13 @@ nested_output_definitions = {
                   "units": "$"
                 },
                 "total_opex_costs_us_dollars": {
-                  "type": float,
-                  "description": "Total operations and maintenance cost over anlaysis period",
+                  "type": "float",
+                  "description": "Total operations and maintenance cost over analysis period.",
                   "units": "$"
                 },
                 "year_one_opex_costs_us_dollars": {
-                  "type": float,
-                  "description": "Total operations and maintenance cost over anlaysis period",
+                  "type": "float",
+                  "description": "Year one operations and maintenance cost.",
                   "units": "$"
                 },
                 "simple_payback_years": {
@@ -789,6 +789,7 @@ nested_output_definitions = {
                   "units": "lb CO2"
                 }
               },
+
               "CHP": {
                 "size_kw": {
                   "type": float,
