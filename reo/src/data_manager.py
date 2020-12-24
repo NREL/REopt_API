@@ -910,6 +910,7 @@ class DataManager:
         self.year_one_energy_cost_series_us_dollars_per_kwh = parser.energy_rates_summary
         self.year_one_demand_cost_series_us_dollars_per_kw = parser.demand_rates_summary
 
+        '''
         if self.site.renewable_generation_min_pct is None:
             renewable_generation_min_pct = []
         else:
@@ -930,6 +931,16 @@ class DataManager:
         renewable_generation_max_pct_bau = []
         emissions_reduction_min_pct_bau = []
         emissions_reduction_max_pct_bau = []
+        '''
+
+        renewable_generation_min_pct = self.site.renewable_generation_min_pct
+        renewable_generation_max_pct = self.site.renewable_generation_max_pct
+        emissions_reduction_min_pct = self.site.emissions_reduction_min_pct
+        emissions_reduction_max_pct = self.site.emissions_reduction_max_pct
+        renewable_generation_min_pct_bau = None
+        renewable_generation_max_pct_bau = None
+        emissions_reduction_min_pct_bau = None
+        emissions_reduction_max_pct_bau = None
 
         subdivisions = ['CapCost']
 

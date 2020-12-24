@@ -199,10 +199,10 @@ Base.@kwdef struct Parameter
     # Annual RE & emissions parameters
     REAccountingMethod::Int64
     EmissionsAccountingMethod::Int64
-    MinAnnualPercentRE::Array{Float64,1}
-    MaxAnnualPercentRE::Array{Float64,1}
-    MinPercentEmissionsReduction::Array{Float64,1}
-    MaxPercentEmissionsReduction::Array{Float64,1}
+    MinAnnualPercentRE::Union{Float64,Nothing} #Array{Float64,1}
+    MaxAnnualPercentRE::Union{Float64,Nothing} #Array{Float64,1}
+    MinPercentEmissionsReduction::Union{Float64,Nothing} #Array{Float64,1}
+    MaxPercentEmissionsReduction::Union{Float64,Nothing} #Array{Float64,1}
     BAUYr1Emissions::Float64
     GridEmissionsFactor::Array{Float64,1}
     TechEmissionsFactors::AxisArray

@@ -756,7 +756,7 @@ function add_cost_function(m, p)
 		0.0001*m[:MinChargeAdder] is added back into LCC when writing to results.  =#
 end
 
-function add_re_calcs(m,p)
+function add_re_calcs_and_constraints(m,p)
 	# Only PV and Wind generation count as RE (CHP does not)
 	if p.REAccountingMethod == 1 # yes RE "credit" for exported RE
 		m[:AnnualREkWh] = @expression(m,
@@ -771,19 +771,16 @@ function add_re_calcs(m,p)
 	 		- sum(m[:dvProductionToGrid][t,u,ts] for t in p.RETechs, u in p.SalesTiersByTech[t], ts in p.TimeStep if !(u in p.CurtailmentTiers))) # minus exported RE. 
 	 	# if battery ends up being able to discharge to grid, need to make sure only RE that is being consumed onsite are counted so battery doesn't become a back door for RE to grid. 
 	end
-end
-
-function add_re_constraints(m,p)
 	## Annual renewable electricity targets
-	if !isempty(p.MinAnnualPercentRE)
-	 	@constraint(m, MinRECon, m[:AnnualREkWh] >= p.MinAnnualPercentRE[1]*(sum(p.ElecLoad[ts] for ts in p.TimeStep)))
+	if !isnothing(p.MinAnnualPercentRE)
+		@constraint(m, MinRECon, m[:AnnualREkWh] >= p.MinAnnualPercentRE[1]*(sum(p.ElecLoad[ts] for ts in p.TimeStep)))
 	end
-	if !isempty(p.MaxAnnualPercentRE) 
+	if !isnothing(p.MaxAnnualPercentRE) 
 		@constraint(m, MaxRECon, m[:AnnualREkWh] <= p.MaxAnnualPercentRE[1]*(sum(p.ElecLoad[ts] for ts in p.TimeStep)))
 	end
 end
 
-function add_emissions_calcs(m,p)
+function add_emissions_calcs_and_constraints(m,p)
 	### Year 1 Emissions Profile and Reduction Targets	
 	m[:EmissionsYr1_Scope1_Profile_LbsCO2e], m[:EmissionsYr1_Scope1_LbsCO2e] = 
 		calc_yr1_scope1_emissions(m,p; tech_array = p.Tech)
@@ -795,6 +792,12 @@ function add_emissions_calcs(m,p)
 		m[:EmissionsYr1_Total_LbsCO2e] = m[:EmissionsYr1_Scope1_LbsCO2e] + m[:EmissionsYr1_Scope2_LbsCO2e]
 	elseif p.EmissionsAccountingMethod == 1 # yes emissions "credit" for non-scope exports
 		m[:EmissionsYr1_Total_LbsCO2e] = m[:EmissionsYr1_Scope1_LbsCO2e] + m[:EmissionsYr1_Scope2_LbsCO2e] + m[:EmissionsYr1_NonScope_LbsCO2e]
+	end
+	if !isnothing(p.MinPercentEmissionsReduction)
+		@constraint(m, MinEmissionsReductionCon, m[:EmissionsYr1_Total_LbsCO2e] <= (1-p.MinPercentEmissionsReduction)*p.BAUYr1Emissions)
+	end
+	if !isnothing(p.MaxPercentEmissionsReduction)
+		@constraint(m, MaxEmissionsReductionCon, m[:EmissionsYr1_Total_LbsCO2e] >= (1-p.MaxPercentEmissionsReduction)*p.BAUYr1Emissions)
 	end
 end
 
@@ -821,15 +824,6 @@ function calc_yr1_nonscope_emissions(m,p; tech_array=p.ElectricTechs)
 		# when CHP is added, need to incorporate exported steam/heat here too (if they can export), and separate out elec export not just p.ElectricTechs.
 	yr1_nonscope_emissions_lbsCO2e = sum(yr1_nonscope_emissions_timeseries_lbsCO2e)
 		return yr1_nonscope_emissions_timeseries_lbsCO2e, yr1_nonscope_emissions_lbsCO2e
-end
-
-function add_emissions_constraints(m,p)
-	if !isempty(p.MinPercentEmissionsReduction)
-		@constraint(m, MinEmissionsReductionCon, m[:EmissionsYr1_Total_LbsCO2e] <= (1-p.MinPercentEmissionsReduction[1])*p.BAUYr1Emissions)
-	end
-	if !isempty(p.MaxPercentEmissionsReduction)
-		@constraint(m, MaxEmissionsReductionCon, m[:EmissionsYr1_Total_LbsCO2e] >= (1-p.MaxPercentEmissionsReduction[1])*p.BAUYr1Emissions)
-	end
 end
 
 
@@ -945,14 +939,8 @@ function reopt_run(m, p::Parameter)
 	add_cost_expressions(m, p)
 	add_export_expressions(m, p)
 	add_util_fixed_and_min_charges(m, p)
-	if !isempty([p.MinAnnualPercentRE,p.MaxAnnualPercentRE])
-		add_re_calcs(m,p)
-		add_re_constraints(m,p)
-	end
-	if !isempty([p.MinPercentEmissionsReduction,p.MaxPercentEmissionsReduction])
-		add_emissions_calcs(m,p)
-		add_emissions_constraints(m,p)
-	end
+	add_re_calcs_and_constraints(m,p)
+	add_emissions_calcs_and_constraints(m,p)
 	add_cost_function(m, p)
 
     if Obj == 1
@@ -996,12 +984,6 @@ end
 
 
 function reopt_results(m, p, r::Dict)
-	if isempty([p.MinAnnualPercentRE,p.MaxAnnualPercentRE])
-		add_re_calcs(m,p)
-	end
-	if isempty([p.MinPercentEmissionsReduction,p.MaxPercentEmissionsReduction])
-		add_emissions_calcs(m,p)
-	end
 	add_site_results(m, p, r)
 	add_storage_results(m, p, r)
 	add_pv_results(m, p, r)
