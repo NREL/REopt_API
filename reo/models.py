@@ -184,6 +184,7 @@ class FinancialModel(models.Model):
     initial_capital_costs_after_incentives = models.FloatField(null=True, blank=True)
     total_opex_costs_us_dollars = models.FloatField(null=True, blank=True)
     year_one_opex_costs_us_dollars = models.FloatField(null=True, blank=True)
+    year_one_opex_costs_before_tax_us_dollars = models.FloatField(null=True, blank=True)
     simple_payback_years = models.FloatField(null=True, blank=True)
     irr_pct = models.FloatField(null=True, blank=True)
     net_present_cost_us_dollars = models.FloatField(null=True, blank=True)
