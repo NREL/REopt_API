@@ -73,7 +73,7 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
     def get_response(self, data):
         return self.api_client.post(self.reopt_base, format='json', data=data)
     
-    # For the initial four tests below,
+    # For the initial eight tests below,
     # due to the curtailment formulation, 
     # the model is choosing to curtail unless there is credit (net metering or wholesale rates) given for exports
     def test_yesexportcredit_minRE(self):
@@ -111,9 +111,9 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_generation_kwh'], 90000.0,places=0)
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_lb_CO2'], 14957.57, places=0)
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_reduction_pct'], 0.88, places=2)
-        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_scope1_emissions_lb_CO2'], 0.0, places=1)
-        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_scope2_emissions_lb_CO2'], 14957.57, places=1)
-        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_nonscope_emissions_lb_CO2'], 0,places=1) 
+        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_scope1_emissions_lb_CO2'], 0.0, places=0)
+        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_scope2_emissions_lb_CO2'], 14957.57, places=0)
+        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_nonscope_emissions_lb_CO2'], 0,places=0) 
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_scope2_emissions_lb_CO2'], 14957.57,places=0)
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['year_one_scope1_emissions_lb_CO2'], 0.0,places=0)
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['year_one_nonscope_emissions_lb_CO2'],0.0, places=0) 
@@ -222,21 +222,21 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_scope1_emissions_lb_CO2'], 0.0, places=0)
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_scope2_emissions_lb_CO2'], 14940.32, places=0)
         self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_nonscope_emissions_lb_CO2'], 0,places=0) 
-        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_scope2_emissions_lb_CO2'], 14940.32,places=1)
-        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['year_one_scope1_emissions_lb_CO2'], 0.0,places=1)
-        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['year_one_nonscope_emissions_lb_CO2'],0.0, places=1) 
-        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Wind']['year_one_scope1_emissions_lb_CO2'], 0.0,places=1) 
-        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Wind']['year_one_nonscope_emissions_lb_CO2'],0.0, places=1) 
+        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_scope2_emissions_lb_CO2'], 14940.32,places=0)
+        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['year_one_scope1_emissions_lb_CO2'], 0.0,places=0)
+        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['year_one_nonscope_emissions_lb_CO2'],0.0, places=0) 
+        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Wind']['year_one_scope1_emissions_lb_CO2'], 0.0,places=0) 
+        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Wind']['year_one_nonscope_emissions_lb_CO2'],0.0, places=0) 
         # Year 1 Site RE / emissions - BAU case
-        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_generation_bau_pct'], 0.14,places=1)
-        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_generation_bau_kwh'], 13542.62,places=1)
-        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_CO2'], 127811.53,places=1)
-        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_scope1_emissions_bau_lb_CO2'], 0.0,places=1)
-        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_scope2_emissions_bau_lb_CO2'], 127811.53,places=1)
-        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_nonscope_emissions_bau_lb_CO2'], 0.0,places=1)
-        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_scope2_emissions_bau_lb_CO2'],127811.53, places=1)
-        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['year_one_scope1_emissions_bau_lb_CO2'], 0.0,places=1)
-        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['year_one_nonscope_emissions_bau_lb_CO2'],0.0, places=1)
+        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_generation_bau_pct'], 0.14,places=2)
+        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_generation_bau_kwh'], 13542.62,places=0)
+        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_CO2'], 127811.53,places=0)
+        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_scope1_emissions_bau_lb_CO2'], 0.0,places=0)
+        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_scope2_emissions_bau_lb_CO2'], 127811.53,places=0)
+        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_nonscope_emissions_bau_lb_CO2'], 0.0,places=0)
+        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_scope2_emissions_bau_lb_CO2'],127811.53, places=0)
+        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['year_one_scope1_emissions_bau_lb_CO2'], 0.0,places=0)
+        self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['year_one_nonscope_emissions_bau_lb_CO2'],0.0, places=0)
 
     def test_noexportcredit_minER(self):
         """
