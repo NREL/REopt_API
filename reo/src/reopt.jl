@@ -268,13 +268,13 @@ function add_fuel_constraints(m, p)
 	# Constraint (1b): Fuel burn for non-CHP Constraints
 	if !isempty(p.TechsInClass["GENERATOR"])
 		@constraint(m, FuelBurnCon[t in p.TechsInClass["GENERATOR"], ts in p.TimeStep],
-                    m[:dvFuelUsage][t,ts]  == p.TimeStepScaling * (
-                        p.FuelBurnSlope[t] * p.ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts] +
-                        p.FuelBurnYInt[t] * m[:binTechIsOnInTS][t,ts] )
-		            )
+			m[:dvFuelUsage][t,ts]  == p.TimeStepScaling * (
+				p.FuelBurnSlope[t] * p.ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts] +
+				p.FuelBurnYInt[t] * m[:binTechIsOnInTS][t,ts] )
+		)
 		m[:TotalGeneratorFuelCharges] = @expression(m, p.pwf_fuel["GENERATOR"] *
-				sum(p.FuelCost["DIESEL",ts] * m[:dvFuelUsage]["GENERATOR",ts] for ts in p.TimeStep)
-		        )
+			sum(p.FuelCost["DIESEL",ts] * m[:dvFuelUsage]["GENERATOR",ts] for ts in p.TimeStep)
+		)
 	end
 
 	if !isempty(p.CHPTechs)
@@ -295,6 +295,7 @@ function add_fuel_constraints(m, p)
 		@constraint(m, BoilerFuelBurnCon[t in p.BoilerTechs, ts in p.TimeStep],
 					m[:dvFuelUsage][t,ts]  ==  p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts] / p.BoilerEfficiency
 					)
+				p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts] / p.BoilerEfficiency
 	end
 
 	m[:TotalFuelCharges] = @expression(m, p.TimeStepScaling * sum( p.pwf_fuel[t] * p.FuelCost[f,ts] *
