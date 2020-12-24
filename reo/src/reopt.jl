@@ -82,7 +82,7 @@ function add_cost_expressions(m, p)
 		sum( p.OMperUnitSize[t] * m[:dvSize][t] for t in p.Tech )
 	)
     if !isempty(p.FuelBurningTechs)
-		m[:TotalPerUnitProdOMCosts] = @expression(m, p.two_party_factor * p.pwf_om *
+		m[:TotalPerUnitProdOMCosts] = @expression(m, p.two_party_factor * p.pwf_om * p.TimeStepScaling * 
 			sum( p.OMcostPerUnitProd[t] * m[:dvRatedProduction][t,ts] for t in p.FuelBurningTechs, ts in p.TimeStep )
 		)
     else
