@@ -1134,15 +1134,20 @@ class AbsorptionChiller(Tech):
 
     @property
     def prod_factor(self):
-
-        # Chiller ProdFactor is where we can account for increased/decreased thermal capacity based on OA temps
-        # Note chiller_cop is explicitly accounted for instead of being embedded in the prod_factor
+        """
+        Chiller ProdFactor is where we can account for increased/decreased thermal capacity based on OA temps (but don't currently)
+        :return: prod_factor
+        """
         chiller_prod_factor = [1.0 for _ in range(self.n_timesteps)]
 
         return chiller_prod_factor
 
     @staticmethod
     def get_absorp_chiller_costs(max_cooling_load_tons, hw_or_steam, chp_prime_mover):
+        """
+        Pass max_cooling_load_tons, hw_or_steam, and/or CHP.prime_mover to get absorption chiller installed and O&M costs. 
+        :return: absorp_chiller_capex, absorp_chiller_opex
+        """
         if hw_or_steam is not None:
             defaults_sizes = AbsorptionChiller.absorption_chiller_cost_defaults[hw_or_steam]
         elif chp_prime_mover is not None:
@@ -1172,3 +1177,17 @@ class AbsorptionChiller(Tech):
 
         return absorp_chiller_capex, absorp_chiller_opex
 
+    @staticmethod
+    def get_absorp_chiller_cop(hot_water_or_steam=None, chp_prime_mover=None):
+        """
+        Pass hot_water_or_steam or chp_prime_mover to get absorption chiller COP. If none is passed, assume hot_water
+        :return: chiller_cop
+        """
+        if hot_water_or_steam is not None:
+            absorp_chiller_cop = AbsorptionChiller.absorption_chiller_cop_defaults[hot_water_or_steam]
+        elif chp_prime_mover is not None:
+            absorp_chiller_cop = AbsorptionChiller.absorption_chiller_cop_defaults[Boiler.boiler_type_by_chp_prime_mover_defaults[chp_prime_mover]]
+        else:  # If hot_water_or_steam and CHP prime_mover are not provided, use hot_water defaults
+            absorp_chiller_cop = AbsorptionChiller.absorption_chiller_cop_defaults["hot_water"]
+        
+        return absorp_chiller_cop
