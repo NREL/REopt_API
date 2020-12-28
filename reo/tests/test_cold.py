@@ -78,10 +78,18 @@ class ColdTest(ResourceTestCaseMixin, TestCase):
         cooling_total_prod_from_techs = cooling_ton_hr_to_load_tech_total + cooling_ton_hr_to_tes_total
         cooling_load_plus_tes_losses = cooling_thermal_load_ton_hr_total + cooling_extra_from_tes_losses
 
+        # Absorption Chiller electric consumption addition
+        absorpchl_total_cooling_produced_series_ton = [cooling_absorpchl_tons_to_load_series[i] + cooling_absorpchl_tons_to_tes_series[i] for i in range(8760)] 
+        absorpchl_total_cooling_produced_ton_hour = sum(absorpchl_total_cooling_produced_series_ton)
+        absorpchl_electric_consumption_series_kw = d['outputs']['Scenario']['Site']['AbsorptionChiller']['year_one_absorp_chl_electric_consumption_series_kw']
+        absorpchl_electric_consumption_total_kwh = d['outputs']['Scenario']['Site']['AbsorptionChiller']['year_one_absorp_chl_electric_consumption_kwh']
+        absorpchl_cop_elec = d['inputs']['Scenario']['Site']['AbsorptionChiller']['chiller_elec_cop']
+
         # Check if sum of electric and absorption chillers equals cooling thermal total
         #self.assertAlmostEqual(cooling_elecchl_electric_consumption_calculated, cooling_electric_load_total, delta=5.0)
         self.assertGreater(0.97, tes_effic_with_decay)
         self.assertAlmostEqual(cooling_total_prod_from_techs, cooling_load_plus_tes_losses, delta=5.0)
+        self.assertAlmostEqual(absorpchl_total_cooling_produced_ton_hour * 3.5168545 / absorpchl_cop_elec, absorpchl_electric_consumption_total_kwh, places=1)
 
         # Heating outputs
         boiler_fuel_consumption_calculated = d['outputs']['Scenario']['Site']['Boiler']['year_one_boiler_fuel_consumption_mmbtu']
