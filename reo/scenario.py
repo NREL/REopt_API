@@ -332,8 +332,8 @@ def setup_scenario(self, run_uuid, data, raw_post):
                       time_steps_per_hour=inputs_dict.get('time_steps_per_hour'), **inputs_dict['Site']['CHP'])
 
         # Absorption chiller
-        if inputs_dict["Site"]["AbsorptionChiller"]["max_ton"] > 0:
-            absorpchl = AbsorptionChiller(dfm=dfm, max_cooling_load_tons=lpct.max_cooling_load_tons,
+        if inputs_dict["Site"]["AbsorptionChiller"]["max_ton"] > 0 and lpct.annual_kwht > 0.0:
+            absorpchl = AbsorptionChiller(dfm=dfm, max_cooling_load_tons=elecchl.max_cooling_load_tons,
                                           hw_or_steam=boiler.existing_boiler_production_type_steam_or_hw,
                                           chp_prime_mover=chp.prime_mover,
                                           **inputs_dict['Site']['AbsorptionChiller'])
