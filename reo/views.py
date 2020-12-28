@@ -493,7 +493,7 @@ def simulated_load(request):
                 response = JsonResponse(
                     {'loads_ton': [round(ld/TONHOUR_TO_KWHT, 3) for ld in lp],
                      'annual_tonhour': round(c.annual_kwhth/TONHOUR_TO_KWHT,3),
-                     'cop': c.cop,
+                     'chiller_cop': c.cop,
                      'min_ton': round(min(lp)/TONHOUR_TO_KWHT, 3),
                      'mean_ton': round((sum(lp)/len(lp))/TONHOUR_TO_KWHT, 3),
                      'max_ton': round(max(lp)/TONHOUR_TO_KWHT, 3),
@@ -647,17 +647,17 @@ def chp_defaults(request):
         return JsonResponse({"Error": "Unexpected error in chp_defaults endpoint. Check log for more."}, status=500)
 
 
-def loadprofile_chillerthermal_defaults(request):
+def loadprofile_chillerthermal_chiller_cop(request):
     """
-    This provides the following default parameters for electric and absorption chiller:
-        . COP of electric chiller (ElectricChiller.chiller_cop) based on peak cooling thermal load
+    This provides the following default parameters for electric chiller:
+        1. COP of electric chiller (LoadProfileChillerThermal.chiller_cop) based on peak cooling thermal load
         
     Required inputs:
-        1. max_kw - max electric chiller load in kW
+        1. max_kw - max electric chiller electric load in kW
 
     Optional inputs:
         1. Max cooling capacity (ElectricChiller.max_thermal_factor_on_peak_load) as a ratio of peak cooling load
-            a. If not entered, assume 1.25
+            a. If not entered, assume default (1.25)
     """
     
     try:
@@ -688,9 +688,9 @@ def loadprofile_chillerthermal_defaults(request):
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
-        return JsonResponse({"Error": "Unexpected error in loadprofile_chillerthermal_defaults endpoint. Check log for more."}, status=500)
+        return JsonResponse({"Error": "Unexpected error in loadprofile_chillerthermal_chiller_cop endpoint. Check log for more."}, status=500)
 
-def chiller_defaults(request):
+def absorption_chiller_defaults(request):
     """
     This provides the following default parameters for the absorption chiller:
         1. COP of absorption chiller (AbsorptionChiller.chiller_cop) based on hot_water_or_steam input or prime_mover
@@ -707,12 +707,8 @@ def chiller_defaults(request):
         2. prime_mover (CHP.prime_mover)
             a. If hot_water_or_steam is provided, this is not used
             b. If hot_water_or_steam is NOT provided and prime_mover is, this will refer to
-                boiler_type_by_chp_pm_defaults
+                Boiler.boiler_type_by_chp_prime_mover_defaults
     """
-    absorp_chiller_cost_defaults_all = copy.deepcopy(AbsorptionChiller.absorption_chiller_cost_defaults)
-    absorp_chiller_cop_defaults = copy.deepcopy(AbsorptionChiller.absorption_chiller_cop_defaults)
-    boiler_type_by_chp_pm_defaults = copy.deepcopy(Boiler.boiler_type_by_chp_prime_mover_defaults)
-
     try:
         max_cooling_load_tons = request.GET.get('max_cooling_load_tons')
         hot_water_or_steam = request.GET.get('hot_water_or_steam')
@@ -721,36 +717,17 @@ def chiller_defaults(request):
         if max_cooling_load_tons is None:
             raise ValueError("Missing required max_cooling_load_tons query parameter.")
         else:
+            # Absorption chiller COP
+            absorp_chiller_cop = AbsorptionChiller.get_absorp_chiller_cop(hot_water_or_steam=hot_water_or_steam, 
+                                                                            chp_prime_mover=prime_mover)
+            
             # Absorption chiller costs
-            if hot_water_or_steam is not None:
-                defaults_sizes = absorp_chiller_cost_defaults_all[hot_water_or_steam]
-                absorp_chiller_cop = absorp_chiller_cop_defaults[hot_water_or_steam]
-            elif prime_mover is not None:
-                defaults_sizes = absorp_chiller_cost_defaults_all[boiler_type_by_chp_pm_defaults[prime_mover]]
-                absorp_chiller_cop = absorp_chiller_cop_defaults[boiler_type_by_chp_pm_defaults[prime_mover]]
-            else:
-                # If hot_water_or_steam and CHP prime_mover are not provided, use hot_water defaults
-                defaults_sizes = absorp_chiller_cost_defaults_all["hot_water"]
-                absorp_chiller_cop = absorp_chiller_cop_defaults["hot_water"]
-
-            if max_cooling_load_tons <= defaults_sizes[0][0]:
-                absorp_chiller_capex = defaults_sizes[0][1]
-                absorp_chiller_opex = defaults_sizes[0][2]
-            elif max_cooling_load_tons >= defaults_sizes[-1][0]:
-                absorp_chiller_capex = defaults_sizes[-1][1]
-                absorp_chiller_opex = defaults_sizes[-1][2]
-            else:
-                for size in range(1, len(defaults_sizes)):
-                    if max_cooling_load_tons > defaults_sizes[size - 1][0] and \
-                            max_cooling_load_tons <= defaults_sizes[size][0]:
-                        slope_capex = (defaults_sizes[size][1] - defaults_sizes[size - 1][1]) / \
-                                      (defaults_sizes[size][0] - defaults_sizes[size - 1][0])
-                        slope_opex = (defaults_sizes[size][2] - defaults_sizes[size - 1][2]) / \
-                                     (defaults_sizes[size][0] - defaults_sizes[size - 1][0])
-                        absorp_chiller_capex = defaults_sizes[size - 1][1] + slope_capex * \
-                                               (max_cooling_load_tons - defaults_sizes[size - 1][0])
-                        absorp_chiller_opex = defaults_sizes[size - 1][2] + slope_opex * \
-                                              (max_cooling_load_tons - defaults_sizes[size - 1][0])
+            max_cooling_load_tons = float(max_cooling_load_tons)
+            absorp_chiller_capex, \
+            absorp_chiller_opex = \
+            AbsorptionChiller.get_absorp_chiller_costs(max_cooling_load_tons, 
+                                                        hw_or_steam=hot_water_or_steam, 
+                                                        chp_prime_mover=prime_mover)
         response = JsonResponse(
             { "AbsorptionChiller": {
                 "chiller_cop": absorp_chiller_cop,
@@ -769,4 +746,4 @@ def chiller_defaults(request):
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
-        return JsonResponse({"Error": "Unexpected error in chiller_defaults endpoint. Check log for more."}, status=500)
+        return JsonResponse({"Error": "Unexpected error in absorption_chiller_defaults endpoint. Check log for more."}, status=500)

@@ -1535,24 +1535,12 @@ class ValidateNestedInput:
         if object_name_path[-1] == "AbsorptionChiller":
                 if self.isValid:
                     # Set default absorption chiller cost and performance based on boiler type or chp prime mover
-                    absorption_chiller_cop_defaults = copy.deepcopy(AbsorptionChiller.absorption_chiller_cop_defaults)
-                    boiler_type_by_chp_pm_defaults = copy.deepcopy(Boiler.boiler_type_by_chp_prime_mover_defaults)
-                    chp_prime_mover = self.input_dict['Scenario']['Site']['CHP'].get("prime_mover")
                     hw_or_steam_user_input = self.input_dict['Scenario']['Site']['Boiler'].get('existing_boiler_production_type_steam_or_hw')
+                    chp_prime_mover = self.input_dict['Scenario']['Site']['CHP'].get("prime_mover")
                     if real_values.get('chiller_cop') is None:
-                        if hw_or_steam_user_input is not None:
-                            self.update_attribute_value(object_name_path, number,
-                                                        'chiller_cop',
-                                                        absorption_chiller_cop_defaults[hw_or_steam_user_input])
-                        elif chp_prime_mover is not None:
-                            hw_or_steam = boiler_type_by_chp_pm_defaults[chp_prime_mover]
-                            self.update_attribute_value(object_name_path, number,
-                                                        'chiller_cop',
-                                                        absorption_chiller_cop_defaults[hw_or_steam])
-                        else:
-                            self.update_attribute_value(object_name_path, number,
-                                                        'chiller_cop',
-                                                        absorption_chiller_cop_defaults["hot_water"])
+                        absorp_chiller_cop = AbsorptionChiller.get_absorp_chiller_cop(hot_water_or_steam=hw_or_steam_user_input, 
+                                                                                        chp_prime_mover=chp_prime_mover)
+                        self.update_attribute_value(object_name_path, number, 'chiller_cop', absorp_chiller_cop)
 
         if object_name_path[-1] == "Financial":
             # Making sure discount and tax rates are correct when saved to the database later in non-third party cases, 
