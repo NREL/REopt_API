@@ -61663,6 +61663,7 @@
     "BoilerEfficiency": 1.0 ,
     "ElectricChillerCOP": 1.0 ,
     "AbsorptionChillerCOP": 1.0 ,
+    "AbsorptionChillerElecCOP": 1.0,
     "CHPThermalProdSlope": [] ,
     "CHPThermalProdIntercept": [] ,
     "FuelBurnYIntRate": [] ,

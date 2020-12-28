@@ -601,7 +601,8 @@ function add_load_balance_constraints(m, p)
 				 m[:dvProductionToCurtail][t,ts]
 		    for t in p.ElectricTechs) +
 			m[:dvGridToStorage][ts] +
-			sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
+            sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
+            sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers )/ p.AbsorptionChillerElecCOP +
 			p.ElecLoad[ts]
 		)
 	else
@@ -613,7 +614,8 @@ function add_load_balance_constraints(m, p)
 				m[:dvProductionToCurtail][t,ts]
 			for t in p.ElectricTechs) +
 			m[:dvGridToStorage][ts] +
-			sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
+            sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
+            sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers )/ p.AbsorptionChillerElecCOP +
 			p.ElecLoad[ts]
 		)
 	end
@@ -625,7 +627,8 @@ function add_load_balance_constraints(m, p)
 		sum( sum(m[:dvProductionToStorage][b,t,ts] for b in p.ElecStorage) + 
 			 m[:dvProductionToCurtail][t,ts]
 		for t in p.ElectricTechs) +
-		sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
+        sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
+        sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers )/ p.AbsorptionChillerElecCOP +
 		p.ElecLoad[ts]
 	)
 end
@@ -1477,7 +1480,14 @@ function add_absorption_chiller_results(m, p, r::Dict)
 		p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts]
 			for t in p.AbsorptionChillers, ts in p.TimeStep))
 	r["year_one_absorp_chiller_thermal_prod_kwh"] = round(value(Year1ABSORPCHLThermalProd), digits=3)
-	nothing
+    @expression(m, ABSORPCHLElectricConsumptionSeries[ts in p.TimeStep],
+        sum(m[:dvThermalProduction][t,ts] / p.AbsorptionChillerElecCOP for t in p.AbsorptionChillers))
+    r["absorption_chiller_electric_consumption_series"] = round.(value.(ABSORPCHLElectricConsumptionSeries), digits=3)
+    @expression(m, Year1ABSORPCHLElectricConsumption,
+        p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts] / p.AbsorptionChillerElecCOP 
+            for t in p.AbsorptionChillers, ts in p.TimeStep))
+    r["year_one_absorp_chiller_electric_consumption_kwh"] = round(value(Year1ABSORPCHLElectricConsumption), digits=3)
+    nothing
 end
 
 function add_hot_tes_results(m, p, r::Dict)

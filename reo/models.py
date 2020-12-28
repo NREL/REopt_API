@@ -695,6 +695,7 @@ class AbsorptionChillerModel(models.Model):
     min_ton = models.FloatField(default=0)
     max_ton = models.FloatField(null=True, blank=True)
     chiller_cop = models.FloatField(null=True, blank=True)
+    chiller_elec_cop = models.FloatField(null=True, blank=True)
     installed_cost_us_dollars_per_ton = models.FloatField(null=True, blank=True, )
     om_cost_us_dollars_per_ton = models.FloatField(null=True, blank=True, )
     macrs_option_years = models.IntegerField(null=True, blank=True)
@@ -721,6 +722,8 @@ class AbsorptionChillerModel(models.Model):
                                                                 blank=True), null=True, blank=True)
     year_one_absorp_chl_thermal_consumption_mmbtu = models.FloatField(null=True, blank=True)
     year_one_absorp_chl_thermal_production_tonhr = models.FloatField(null=True, blank=True)
+    year_one_absorp_chl_electric_consumption_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_absorp_chl_electric_consumption_kwh = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):

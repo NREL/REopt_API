@@ -1769,6 +1769,14 @@ nested_input_definitions = {
           "description": "Absorption chiller system coefficient of performance - conversion of hot thermal power input "
                          "to usable cooling thermal energy output"
         },
+        "chiller_elec_cop": {
+          "type": "float",
+          "min:": 0.0,
+          "max:": 100.0,
+          "default": 14.1,
+          "description": "Absorption chiller electric consumption CoP from cooling tower heat rejection - conversion of electric power input "
+                         "to usable cooling thermal energy output"
+        },
         "installed_cost_us_dollars_per_ton": {
           "type": "float", "min": 0.0, "max": 2.0e4,
           "description": "Thermal power-based cost of absorption chiller (3.5 to 1 ton to kwt)"

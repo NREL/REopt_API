@@ -1,0 +1,5 @@
+,Month,Start Week of Month,Start Day of Week,Start Hour,Duration
+0,2,2,0,0,2 days 12:00:00
+1,4,2,4,0,3 days 00:00:00
+2,8,2,0,0,2 days 12:00:00
+3,10,2,4,0,3 days 00:00:00

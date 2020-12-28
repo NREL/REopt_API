@@ -273,7 +273,7 @@ def generate_year_profile_hourly(year, relative_periods_df):
     for i in range(len(relative_periods_df)):
         start_month = relative_periods_df["Month"][i]
         start_week = relative_periods_df["Start Week of Month"][i]
-        start_weekday = relative_periods_df["Start Day of Week"][i]
+        start_weekday = relative_periods_df["Start Day of Week"][i]  # Monday is 0, Sunday is 6
         day_of_month = calendar.Calendar().monthdayscalendar(year=year,month=start_month)[start_week][start_weekday]
         hour_of_day = relative_periods_df["Start Hour"][i]
         start_datetime = datetime.datetime(year=year, month=start_month, day=day_of_month, hour=hour_of_day)
