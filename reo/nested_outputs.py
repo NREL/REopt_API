@@ -252,7 +252,12 @@ nested_output_definitions = {
                 },
                 "year_one_opex_costs_us_dollars": {
                   "type": "float",
-                  "description": "Year one operations and maintenance cost.",
+                  "description": "Year one operations and maintenance cost after tax.",
+                  "units": "$"
+                },
+                "year_one_opex_costs_before_tax_us_dollars": {
+                  "type": "float",
+                  "description": "Year one operations and maintenance cost before tax.",
                   "units": "$"
                 },
                 "simple_payback_years": {
