@@ -1112,6 +1112,7 @@ class AbsorptionChiller(Tech):
         self.max_cooling_load_tons = max_cooling_load_tons
         self.hw_or_steam = hw_or_steam
         self.chp_prime_mover = chp_prime_mover
+        self.chiller_elec_cop = kwargs.get('chiller_elec_cop')
 
         # Calc default CapEx and OpEx costs, and use if the user did not enter a value
         installed_cost_per_ton_calc, om_cost_per_ton_per_yr_calc = self.get_absorp_chiller_costs(

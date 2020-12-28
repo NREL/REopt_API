@@ -58,6 +58,7 @@ from reo.utilities import generate_year_profile_hourly, TONHOUR_TO_KWHT
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'r'))]
 
+kw_per_ton = 3.5168545
 
 def make_error_resp(msg):
         resp = dict()
@@ -614,7 +615,7 @@ def chp_defaults(request):
             if year is not None:
                 year = int(year)
                 # TODO put in "prime_mover" instead of hard-coded "recip_engine" for path (after adding other prime_mover unavailability periods)
-                chp_unavailability_path = os.path.join('input_files', 'CHP', 'recip_engine_unavailability_periods.csv')
+                chp_unavailability_path = os.path.join('input_files', 'CHP', prime_mover+'_unavailability_periods.csv')
                 chp_unavailability_periods = pd.read_csv(chp_unavailability_path)
                 chp_unavailability_hourly_list = generate_year_profile_hourly(year, chp_unavailability_periods)
             else:
@@ -720,7 +721,8 @@ def absorption_chiller_defaults(request):
             # Absorption chiller COP
             absorp_chiller_cop = AbsorptionChiller.get_absorp_chiller_cop(hot_water_or_steam=hot_water_or_steam, 
                                                                             chp_prime_mover=prime_mover)
-            
+            absorp_chiller_elec_cop = nested_input_definitions["Scenario"]["Site"]["AbsorptionChiller"]["chiller_elec_cop"]["default"]
+
             # Absorption chiller costs
             max_cooling_load_tons = float(max_cooling_load_tons)
             absorp_chiller_capex, \
@@ -728,9 +730,11 @@ def absorption_chiller_defaults(request):
             AbsorptionChiller.get_absorp_chiller_costs(max_cooling_load_tons, 
                                                         hw_or_steam=hot_water_or_steam, 
                                                         chp_prime_mover=prime_mover)
+
         response = JsonResponse(
             { "AbsorptionChiller": {
                 "chiller_cop": absorp_chiller_cop,
+                "chiller_elec_cop": absorp_chiller_elec_cop,
                 "installed_cost_us_dollars_per_ton": absorp_chiller_capex,
                 "om_cost_us_dollars_per_ton": absorp_chiller_opex
                 }
