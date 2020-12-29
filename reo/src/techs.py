@@ -1193,7 +1193,7 @@ class AbsorptionChiller(Tech):
 class Nuclear(Tech):
 
     def __init__(self, dfm, time_steps_per_hour=1, **kwargs):
-        super(Nuclear, self).__init__()
+        super(Nuclear, self).__init__(**kwargs)
         """
         A modification of the generator class that is designed to size nuclear components either SMR or
         traditional nuclear applications.
