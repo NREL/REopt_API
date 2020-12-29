@@ -30,7 +30,7 @@
 import numpy as np
 import pandas as pd
 from .urdb_logger import log_urdb_errors
-from .nested_inputs import nested_input_definitions, list_of_float, list_of_str
+from .nested_inputs import nested_input_definitions, list_of_float, list_of_str, list_of_int
 #Note: list_of_float is actually needed
 import os
 import csv
@@ -749,10 +749,11 @@ class ValidateNestedInput:
                 if validation_attribute == 'restrict_to':
                     bad_val = "OOPS"
                 if validation_attribute == 'type':
-                    if type(attribute) != list and 'list_of_float' != attribute:
+                    if (type(attribute) != list) and ('list_of_float' != attribute) and ('list_of_int' != attribute):
                         if any(isinstance(good_val, x) for x in [float, int, dict, bool]):
                             bad_val = "OOPS"
-                    elif 'list_of_float' in attribute or 'list_of_float' == attribute:
+                    elif ('list_of_float' in attribute) or ('list_of_int' in attribute) \
+                        or (attribute in ['list_of_int','list_of_float']):
                         if isinstance(good_val, list):
                             bad_val = "OOPS"
 
@@ -1226,11 +1227,13 @@ class ValidateNestedInput:
                     self.input_data_errors.append((
                         'add_blended_rates_to_urdb_rate is set to "true" yet missing valid entries for the '
                         'following inputs: {}').format(', '.join(missing_keys)))
+            
+            ts_per_hour = self.input_dict['Scenario'].get('time_steps_per_hour') or \
+                                    self.nested_input_definitions['Scenario']['time_steps_per_hour']['default']
+            
             for key_name in ['wholesale_rate_us_dollars_per_kwh',
                                 'wholesale_rate_above_site_load_us_dollars_per_kwh']:
                 if type(electric_tariff.get(key_name)) == list:
-                    ts_per_hour = self.input_dict['Scenario'].get('time_steps_per_hour') or \
-                                    self.nested_input_definitions['Scenario']['time_steps_per_hour']['default']
                     if len(electric_tariff.get(key_name)) == 1:
                         self.update_attribute_value(object_name_path, number, key_name,
                                                     electric_tariff.get(key_name) * 8760 * ts_per_hour)
@@ -1239,6 +1242,11 @@ class ValidateNestedInput:
                                             attr_name=key_name,
                                             time_steps_per_hour=ts_per_hour, number=number,
                                             input_isDict=input_isDict)
+            
+            if electric_tariff.get('coincident_peak_load_active_timesteps') is not None:
+                self.validate_timestep_series(electric_tariff.get('coincident_peak_load_active_timesteps'), 
+                    "ElectricTariff", 'coincident_peak_load_active_timesteps', 
+                    ts_per_hour, number=number, input_isDict=input_isDict)
 
         if object_name_path[-1] == "LoadProfile":
             for lp in ['critical_loads_kw', 'loads_kw']:
@@ -1289,7 +1297,7 @@ class ValidateNestedInput:
                 if self.isAttribute(name):
                     data_validators = template_values[name]
 
-                    if "list_of_float" in data_validators['type'] and isinstance(value, list):
+                    if ("list_of_float" in data_validators['type'] or "list_of_int" in data_validators['type']) and isinstance(value, list):
                         if data_validators.get('min') is not None:
                             if any([v < data_validators['min'] for v in value]):
                                 if input_isDict or input_isDict is None:
@@ -1382,45 +1390,51 @@ class ValidateNestedInput:
                 if self.isAttribute(name):
                     make_array = False
                     attribute_type = template_values[name]['type']  # attribute_type's include list_of_float
-                    if isinstance(attribute_type, list) and \
-                            all([x in attribute_type for x in ['float', 'list_of_float']]):
-                        if isinstance(value, list):
-                            try:
-                                series = pd.Series(value)
-                                if series.isnull().values.any():
-                                    raise NotImplementedError
-                                new_value = list_of_float(value)
-                            except ValueError:
-                                if input_isDict or input_isDict is None:
-                                    self.input_data_errors.append(
-                                        'Could not convert %s (%s) in %s to list of floats' % (name, value,
-                                                            self.object_name_string(object_name_path))
-                                    )
-                                if input_isDict is False:
-                                    self.input_data_errors.append(
-                                        'Could not convert %s (%s) in %s (number %s) to list of floats' % (name, value,
-                                                            self.object_name_string(object_name_path), number)
-                                    )
-                                continue  # both continue statements should be in a finally clause, ...
-                            except NotImplementedError:
-                                if input_isDict or input_isDict is None:
-                                    self.input_data_errors.append(
-                                        '%s in %s contains at least one NaN value.' % (name,
-                                        self.object_name_string(object_name_path))
-                                    )
-                                if input_isDict is False:
-                                    self.input_data_errors.append(
-                                        '%s in %s (number %s) contains at least one NaN value.' % (name,
-                                        self.object_name_string(object_name_path), number)
-                                    )
-                                continue  # both continue statements should be in a finally clause, ...
+                    if isinstance(attribute_type, list):
+                        list_eval_function_name = None
+                        if all([x in attribute_type for x in ['float', 'list_of_float']]):
+                            list_eval_function_name = 'list_of_float'
+                        if all([x in attribute_type for x in ['int', 'list_of_int']]):
+                            list_eval_function_name = 'list_of_int'
+                        if list_eval_function_name is not None:
+                            if isinstance(value, list):
+                                try:
+                                    series = pd.Series(value)
+                                    if series.isnull().values.any():
+                                        raise NotImplementedError
+                                    new_value = eval(list_eval_function_name)(value)
+                                except ValueError:
+                                    if input_isDict or input_isDict is None:
+                                        self.input_data_errors.append(
+                                            'Could not convert %s (%s) in %s to %ss' % (name, value,
+                                                                self.object_name_string(object_name_path), 
+                                                                list_eval_function_name.replace('_',' '))
+                                        )
+                                    if input_isDict is False:
+                                        self.input_data_errors.append(
+                                            'Could not convert %s (%s) in %s (number %s) to %ss' % (name, value,
+                                                                self.object_name_string(object_name_path), number, 
+                                                                list_eval_function_name.replace('_',' '))
+                                        )
+                                    continue  # both continue statements should be in a finally clause, ...
+                                except NotImplementedError:
+                                    if input_isDict or input_isDict is None:
+                                        self.input_data_errors.append(
+                                            '%s in %s contains at least one NaN value.' % (name,
+                                            self.object_name_string(object_name_path))
+                                        )
+                                    if input_isDict is False:
+                                        self.input_data_errors.append(
+                                            '%s in %s (number %s) contains at least one NaN value.' % (name,
+                                            self.object_name_string(object_name_path), number)
+                                        )
+                                    continue  # both continue statements should be in a finally clause, ...
+                                else:
+                                    self.update_attribute_value(object_name_path, number, name, new_value)
+                                    continue  # ... but python 2.7  does not support continue in finally clauses
                             else:
-                                self.update_attribute_value(object_name_path, number, name, new_value)
-                                continue  # ... but python 2.7  does not support continue in finally clauses
-                        else:
-                            attribute_type = 'float'
-                            make_array = True
-
+                                attribute_type = list_eval_function_name.split('_')[-1]
+                                make_array = True
 
                     if isinstance(attribute_type, list) and \
                             all([x in attribute_type for x in ['str', 'list_of_str']]):
@@ -1647,7 +1661,19 @@ class ValidateNestedInput:
         else:
             self.urdb_errors.append('Invalid URDB response: %s'.format(str(urdb_response)))
 
-
+    def validate_timestep_series(self, series, obj_name, attr_name, time_steps_per_hour, number=1, input_isDict=None):
+        max_timesteps = 8760*time_steps_per_hour
+        for ts in series:
+            if ts < 1 or ts > 8760*time_steps_per_hour or ts%1>0:
+                self.input_data_errors.append((
+                    "At least one invalid timestep value ({}) for {}. Timesteps must be integer values between 1 and {} inclusive".format(
+                    ts, attr_name,max_timesteps )))
+                if input_isDict is False:
+                    self.input_data_errors[-1] = self.input_data_errors[-1].replace(
+                        '. Timesteps', ' in {} {}. Timesteps'.format(obj_name, number))
+                break
+        return 
+    
     def validate_8760(self, attr, obj_name, attr_name, time_steps_per_hour, number=1, input_isDict=None):
         """
         This method is for the case that a user uploads a time-series that has either 30 minute or 15 minute

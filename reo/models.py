@@ -237,9 +237,11 @@ class ElectricTariffModel(models.Model):
     urdb_response = PickledObjectField(null=True, editable=True)
     add_blended_rates_to_urdb_rate = models.BooleanField(null=False)
     add_tou_energy_rates_to_urdb_rate = models.BooleanField(null=False, default=False)
-    tou_energy_rates_us_dollars_per_kwh =ArrayField(models.FloatField(blank=True), default=list)
+    tou_energy_rates_us_dollars_per_kwh = ArrayField(models.FloatField(blank=True), default=list)
     emissions_factor_series_lb_CO2_per_kwh = ArrayField(models.FloatField(blank=True), default=list)
     emissions_region = models.TextField(null=True, blank=True)
+    coincident_peak_load_active_timesteps = ArrayField(models.FloatField(blank=True), default=list)
+    coincident_peak_load_charge_us_dollars_per_kw = models.FloatField(null=True)
 
     # Ouptuts
     year_one_energy_cost_us_dollars = models.FloatField(null=True, blank=True)
