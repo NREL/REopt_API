@@ -80,6 +80,15 @@ def list_of_float(input):
 def list_of_str(input):
   return [str(i) for i in input]
 
+def list_of_int(input):
+  result = []
+  for i in input:
+    if i%1>0:
+      raise Exception('Not all values in the list_of_int input are whole numbers')
+    result.append(int(i))
+
+  return 
+
 
 nested_input_definitions = {
 
@@ -401,7 +410,19 @@ nested_input_definitions = {
           "type": "list_of_float",
           "description": "Carbon Dioxide emissions factor over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples).",
           "default":[]
-        }
+        },
+        "coincident_peak_load_active_timesteps": {
+          "type": "list_of_int",
+          "depends_on": ["coincident_peak_load_charge_us_dollars_per_kw"],
+          "description": "The optional coincident_peak_load_charge_us_dollars_per_kw will apply at the max grid-purchased power during these timesteps. Note timesteps are indexed to a base of 1 not 0."
+        },
+        "coincident_peak_load_charge_us_dollars_per_kw": {
+          "type": "float",
+          "min":0,
+          "max": max_big_number,
+          "depends_on":["coincident_peak_load_active_timesteps"],
+          "description": "Optional coincident peak demand charge that is applied to the max load during the timesteps specified in coincident_peak_load_active_timesteps"
+        },
       },
 
       "Wind": {

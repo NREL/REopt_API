@@ -1079,7 +1079,9 @@ class DataManager:
             'ExportTiersBeyondSiteLoad': ["EXC"],
             'ElectricDerate': electric_derate,
             'TechsByNMILRegime': TechsByNMILRegime,
-            'TechsCannotCurtail': techs_cannot_curtail
+            'TechsCannotCurtail': techs_cannot_curtail,
+            'CoincidentPeakLoadTimesteps': self.elec_tariff.coincident_peak_load_active_timesteps,
+            'CoincidentPeakRate': self.elec_tariff.coincident_peak_load_charge_us_dollars_per_kw
             }
         ## Uncomment the following and run a scenario to get an updated modelinputs.json for creating Julia system image
         # import json
@@ -1177,5 +1179,7 @@ class DataManager:
             'ExportTiersBeyondSiteLoad':  ["EXC"],
             'ElectricDerate': electric_derate_bau,
             'TechsByNMILRegime': TechsByNMILRegime_bau,
-            'TechsCannotCurtail': techs_cannot_curtail_bau
+            'TechsCannotCurtail': techs_cannot_curtail_bau,
+            'CoincidentPeakLoadTimesteps': self.elec_tariff.coincident_peak_load_active_timesteps,
+            'CoincidentPeakRate': self.elec_tariff.coincident_peak_load_charge_us_dollars_per_kw
         }

@@ -41,6 +41,7 @@ class ElecTariff(object):
                  urdb_response=None, add_blended_rates_to_urdb_rate=None, blended_annual_rates_us_dollars_per_kwh=None,
                  blended_annual_demand_charges_us_dollars_per_kw=None, add_tou_energy_rates_to_urdb_rate=None,
                  tou_energy_rates_us_dollars_per_kwh=None, emissions_factor_series_lb_CO2_per_kwh=None,
+                 coincident_peak_load_active_timesteps=None, coincident_peak_load_charge_us_dollars_per_kw=None,
                   **kwargs):
         """
         Electricity Tariff object for creating inputs to REopt
@@ -67,6 +68,8 @@ class ElecTariff(object):
         self.tou_energy_rates = tou_energy_rates_us_dollars_per_kwh
         self.add_tou_energy_rates_to_urdb_rate = add_tou_energy_rates_to_urdb_rate
         self.override_urdb_rate_with_tou_energy_rates = False
+        self.coincident_peak_load_active_timesteps = coincident_peak_load_active_timesteps
+        self.coincident_peak_load_charge_us_dollars_per_kw = coincident_peak_load_charge_us_dollars_per_kw
 
         if urdb_response is not None:
             log.info("Parsing URDB rate")
