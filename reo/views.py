@@ -58,8 +58,6 @@ from reo.utilities import generate_year_profile_hourly, TONHOUR_TO_KWHT
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'r'))]
 
-kw_per_ton = 3.5168545
-
 def make_error_resp(msg):
         resp = dict()
         resp['messages'] = {'error': msg}
