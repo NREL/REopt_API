@@ -662,7 +662,16 @@ def loadprofile_chillerthermal_chiller_cop(request):
     """
     
     try:
-        max_kw = float(request.GET['max_kw'])
+        max_kw = request.GET.get('max_kw')
+        max_ton = request.GET.get('max_ton')
+        if max_kw and max_ton:
+            raise ValueError("Supplied both max_kw (electric) and max_ton (thermal), but should only supply one of them")
+        elif max_kw:
+            max_kw = float(max_kw)
+        elif max_ton:
+            max_ton = float(max_ton)
+        else:
+            raise ValueError("Missing either max_kw (electric) or max_ton (thermal) parameter")
 
         if 'max_thermal_factor_on_peak_load' in request.GET.keys():
             max_thermal_factor_on_peak_load = float(request.GET.get('max_thermal_factor_on_peak_load'))
@@ -670,7 +679,7 @@ def loadprofile_chillerthermal_chiller_cop(request):
             max_thermal_factor_on_peak_load = \
                 nested_input_definitions['Scenario']['Site']['ElectricChiller']['max_thermal_factor_on_peak_load']['default']
         
-        cop = LoadProfileChillerThermal.get_default_cop(max_thermal_factor_on_peak_load=max_thermal_factor_on_peak_load, max_kw = max_kw)
+        cop = LoadProfileChillerThermal.get_default_cop(max_thermal_factor_on_peak_load=max_thermal_factor_on_peak_load, max_kw=max_kw, max_ton=max_ton)
         response = JsonResponse(
             {   "chiller_cop": cop,
                 "TONHOUR_TO_KWHT": TONHOUR_TO_KWHT

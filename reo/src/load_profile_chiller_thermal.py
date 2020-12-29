@@ -21,16 +21,16 @@ class LoadProfileChillerThermal(BuiltInProfile):
                                             "less_than_100_tons": 4.40,
                                             "greater_than_100_tons": 4.69}
     @staticmethod
-    def get_default_cop(max_thermal_factor_on_peak_load, max_kw=None, max_kwt=None, max_tons=None):
-        if max_tons is not None:
-            max_cooling_load_tons = max_tons
+    def get_default_cop(max_thermal_factor_on_peak_load, max_kw=None, max_kwt=None, max_ton=None):
+        if max_ton is not None:
+            max_cooling_load_tons = max_ton
         elif max_kwt is not None:
             max_cooling_load_tons = max_kwt / TONHOUR_TO_KWHT
         elif max_kw is not None:
             max_cooling_load_tons = max_kw / TONHOUR_TO_KWHT * \
                                 LoadProfileChillerThermal.electric_chiller_cop_defaults["convert_elec_to_thermal"]
         else:
-            raise Exception("Please supply a max_tons, max_kwt or max_kw value")
+            raise Exception("Please supply a max_ton, max_kwt or max_kw value")
         estimated_max_chiller_thermal_capacity_tons = max_cooling_load_tons * max_thermal_factor_on_peak_load
         if estimated_max_chiller_thermal_capacity_tons < 100.0:
             return LoadProfileChillerThermal.electric_chiller_cop_defaults["less_than_100_tons"]
