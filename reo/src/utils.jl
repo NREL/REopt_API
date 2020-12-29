@@ -207,7 +207,8 @@ Base.@kwdef struct Parameter
 	CoolingLoad::Array{Float64,1}
 	BoilerEfficiency::Float64
 	ElectricChillerCOP::Float64
-	AbsorptionChillerCOP::Float64
+    AbsorptionChillerCOP::Float64
+    AbsorptionChillerElecCOP::Float64
 	CHPThermalProdSlope::AxisArray
 	CHPThermalProdIntercept::AxisArray
 	FuelBurnYIntRate::AxisArray

@@ -1094,7 +1094,7 @@ class ValidateNestedInput:
                         # Establish a CHP unavailability profile consistent with the appropriate year calendar
                         if real_values.get("chp_unavailability_hourly") is None:
                             # TODO put in "prime_mover" instead of hard-coded "recip_engine" for path (after adding other prime_mover unavailability periods)
-                            chp_unavailability_path = os.path.join('input_files', 'CHP', 'recip_engine_unavailability_periods.csv')
+                            chp_unavailability_path = os.path.join('input_files', 'CHP', prime_mover+'_unavailability_periods.csv')
                             chp_unavailability_periods = pd.read_csv(chp_unavailability_path)
                             if self.input_dict['Scenario']['Site']['LoadProfile'].get("doe_reference_name") is not None:
                                 year = 2017  # If using DOE building, load matches with 2017 calendar
