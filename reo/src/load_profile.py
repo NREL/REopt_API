@@ -433,22 +433,23 @@ class BuiltInProfile(object):
             gdf = gdf[gdf.geometry.intersects(g.Point(self.longitude, self.latitude))]
             if not gdf.empty:
                 self.nearest_city = gdf.city.values[0].replace(' ', '')
-
             if self.nearest_city is None:
+                cities_to_search = self.default_cities
+            else:
+                climate_zone = [c for c in self.default_cities if c.name==self.nearest_city][0].zoneid                
+                cities_to_search = [c for c in self.default_cities if c.zoneid ==climate_zone]
+            if len(cities_to_search) > 1:
                 # else use old geometric approach, never fails...but isn't necessarily correct
                 log.info("Using geometrically nearest city to lat/lng.")
                 min_distance = None
-
-                for i, c in enumerate(self.default_cities):
+                for i, c in enumerate(cities_to_search):
                     distance = math.sqrt((self.latitude - c.lat) ** 2 + (self.longitude - c.lng) ** 2)
-
                     if i == 0:
                         min_distance = distance
                         self.nearest_city = c.name
                     elif distance < min_distance:
                         min_distance = distance
                         self.nearest_city = c.name
-
         return self.nearest_city
 
     @property
