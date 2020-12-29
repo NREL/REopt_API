@@ -13,7 +13,7 @@ from reo.src.wind import WindSAMSDK, combine_wind_files
 import pandas as pd
 import numpy as np
 from unittest import skip
-
+from reo.utilities import TONHOUR_TO_KWHT
 
 class ColdTest(ResourceTestCaseMixin, TestCase):
     REopt_tol = 1e-2
