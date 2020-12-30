@@ -1579,11 +1579,11 @@ class ValidateNestedInput:
                             if any([v < data_validators['min'] for v in value]):
                                 if input_isDict or input_isDict is None:
                                     self.input_data_errors.append(
-                                        'At least one value in %s (from %s) exceeds allowable min of %s' % (
+                                        'At least one value in %s (from %s) is less than the allowable min of %s' % (
                                             name, self.object_name_string(object_name_path), data_validators['min']))
                                 if input_isDict is False:
                                     self.input_data_errors.append(
-                                        'At least one value in %s (from %s number %s) exceeds allowable min of %s' % (
+                                        'At least one value in %s (from %s number %s) is less than the allowable min %s' % (
                                             name, self.object_name_string(object_name_path), number, data_validators['min']))
 
                         if data_validators.get('max') is not None:
