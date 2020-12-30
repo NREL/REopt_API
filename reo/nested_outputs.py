@@ -166,7 +166,7 @@ nested_output_definitions = {
                 }
               },
 
-              "LoadProfileChillerElectric": {
+              "LoadProfileChillerThermal": {
                 "year_one_chiller_electric_load_series_kw": {
                   "type": list_of_float,
                   "description": "Year one hourly time series of chiller electric load",

@@ -283,9 +283,11 @@ def generate_year_profile_hourly(year, relative_periods_df):
 
     return year_profile_hourly_list
 
-
 def scrub_numpy_arrays_from_dict(d):
     for k, v in d.items():
         if isinstance(v, ndarray):
             d[k] = v.tolist()
     return d
+
+#conversion factor for ton-hours to kilowatt-hours thermal
+TONHOUR_TO_KWHT = 3.51685
