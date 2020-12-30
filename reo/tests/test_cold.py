@@ -13,7 +13,7 @@ from reo.src.wind import WindSAMSDK, combine_wind_files
 import pandas as pd
 import numpy as np
 from unittest import skip
-
+from reo.utilities import TONHOUR_TO_KWHT
 
 class ColdTest(ResourceTestCaseMixin, TestCase):
     REopt_tol = 1e-2
@@ -45,7 +45,7 @@ class ColdTest(ResourceTestCaseMixin, TestCase):
         # Original non cooling and cooling electric loads, and conversion to cooling thermal load
         total_electric_load_total = 7752810.3175
         cooling_electric_load_total = 1427328.0614
-        cooling_thermal_load_ton_hr_total = cooling_electric_load_total * 3.4 / 3.51685
+        cooling_thermal_load_ton_hr_total = cooling_electric_load_total * 3.4 / TONHOUR_TO_KWHT
 
         # Original boiler fuel and thermal loads
         boiler_fuel_consumption_expected = 12241.814
@@ -89,7 +89,7 @@ class ColdTest(ResourceTestCaseMixin, TestCase):
         #self.assertAlmostEqual(cooling_elecchl_electric_consumption_calculated, cooling_electric_load_total, delta=5.0)
         self.assertGreater(0.97, tes_effic_with_decay)
         self.assertAlmostEqual(cooling_total_prod_from_techs, cooling_load_plus_tes_losses, delta=5.0)
-        self.assertAlmostEqual(absorpchl_total_cooling_produced_ton_hour * 3.5168545 / absorpchl_cop_elec, absorpchl_electric_consumption_total_kwh, places=1)
+        self.assertAlmostEqual(absorpchl_total_cooling_produced_ton_hour * TONHOUR_TO_KWHT / absorpchl_cop_elec, absorpchl_electric_consumption_total_kwh, places=1)
 
         # Heating outputs
         boiler_fuel_consumption_calculated = d['outputs']['Scenario']['Site']['Boiler']['year_one_boiler_fuel_consumption_mmbtu']

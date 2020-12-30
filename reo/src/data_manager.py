@@ -32,6 +32,7 @@ from reo.src.urdb_parse import UrdbParse
 from reo.src.fuel_params import FuelParams
 from reo.utilities import annuity, degradation_factor, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
     insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, annuity_escalation
+import numpy as np
 max_incentive = 1.0e10
 
 big_number = 1.0e10
@@ -110,9 +111,9 @@ class DataManager:
         self.LoadProfile["annual_heating_mmbtu"] = load.annual_mmbtu
         self.heating_load = load
 
-    def add_load_chiller_electric(self, load):
-        self.LoadProfile["year_one_chiller_electric_load_series_kw"] = load.load_list
-        self.LoadProfile["annual_cooling_kwh"] = load.annual_kwh
+    def add_load_chiller_thermal(self, load):
+        self.LoadProfile["year_one_chiller_electric_load_series_kw"] = list(np.array(load.load_list) / load.chiller_cop)
+        self.LoadProfile["annual_cooling_kwh"] = load.annual_kwht / load.chiller_cop
         self.cooling_load = load
 
     def add_boiler(self, boiler):
@@ -1174,7 +1175,7 @@ class DataManager:
 
         techs_no_turndown = [t for t in reopt_techs if t.startswith("PV") or t.startswith("WIND")]
         techs_no_turndown_bau = [t for t in reopt_techs_bau if t.startswith("PV") or t.startswith("WIND")]
-        
+
         electric_techs = [t for t in reopt_techs if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR") or t.startswith("CHP")]
         electric_techs_bau = [t for t in reopt_techs_bau if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR") or t.startswith("CHP")]
 
