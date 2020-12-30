@@ -80,6 +80,13 @@ def list_of_float(input):
 def list_of_str(input):
   return [str(i) for i in input]
 
+def list_of_int(input):
+  result = []
+  for i in input:
+    if i%1>0:
+      raise Exception('Not all values in the list_of_int input are whole numbers')
+    result.append(int(i))
+  return 
 
 nested_input_definitions = {
 
