@@ -30,7 +30,7 @@
 import numpy as np
 import pandas as pd
 from .urdb_logger import log_urdb_errors
-from .nested_inputs import nested_input_definitions, list_of_float, list_of_str
+from .nested_inputs import nested_input_definitions, list_of_float, list_of_str, list_of_int
 #Note: list_of_float is actually needed
 import os
 import csv
@@ -776,10 +776,11 @@ class ValidateNestedInput:
                 if validation_attribute == 'restrict_to':
                     bad_val = "OOPS"
                 if validation_attribute == 'type':
-                    if type(attribute) != list and 'list_of_float' != attribute:
+                    if (type(attribute) != list) and ('list_of_float' != attribute) and ('list_of_int' != attribute):
                         if any(isinstance(good_val, x) for x in [float, int, dict, bool]):
                             bad_val = "OOPS"
-                    elif 'list_of_float' in attribute or 'list_of_float' == attribute:
+                    elif ('list_of_float' in attribute) or ('list_of_int' in attribute) \
+                        or (attribute in ['list_of_int','list_of_float']):
                         if isinstance(good_val, list):
                             bad_val = "OOPS"
 
@@ -1573,34 +1574,29 @@ class ValidateNestedInput:
                 if self.isAttribute(name):
                     data_validators = template_values[name]
 
-                    if "list_of_float" in data_validators['type'] and isinstance(value, list):
-                        if None in value:
-                            self.input_data_errors.append(
-                                'At least one value in %s (from %s) is null' % (
-                                    name, self.object_name_string(object_name_path), data_validators['min']))
-                        else:
-                            if data_validators.get('min') is not None:
-                                if any([v < data_validators['min'] for v in value]):
-                                    if input_isDict or input_isDict is None:
-                                        self.input_data_errors.append(
-                                            'At least one value in %s (from %s) is less than the allowable min of %s' % (
-                                                name, self.object_name_string(object_name_path), data_validators['min']))
-                                    if input_isDict is False:
-                                        self.input_data_errors.append(
-                                            'At least one value in %s (from %s number %s) is less than the allowable min of %s' % (
-                                                name, self.object_name_string(object_name_path), number, data_validators['min']))
+                    if ("list_of_float" in data_validators['type'] or "list_of_int" in data_validators['type']) and isinstance(value, list):
+                        if data_validators.get('min') is not None:
+                            if any([v < data_validators['min'] for v in value]):
+                                if input_isDict or input_isDict is None:
+                                    self.input_data_errors.append(
+                                        'At least one value in %s (from %s) exceeds allowable min of %s' % (
+                                            name, self.object_name_string(object_name_path), data_validators['min']))
+                                if input_isDict is False:
+                                    self.input_data_errors.append(
+                                        'At least one value in %s (from %s number %s) exceeds allowable min of %s' % (
+                                            name, self.object_name_string(object_name_path), number, data_validators['min']))
 
-                            if data_validators.get('max') is not None:
-                                if any([v > data_validators['max'] for v in value]):
-                                    if input_isDict or input_isDict is None:
-                                        self.input_data_errors.append(
-                                            'At least one value in %s (from %s) exceeds allowable max of %s' % (
-                                                name, self.object_name_string(object_name_path), data_validators['max']))
-                                    if input_isDict is False:
-                                        self.input_data_errors.append(
-                                            'At least one value in %s (from %s number %s) exceeds allowable max of %s' % (
-                                                name, self.object_name_string(object_name_path), number, data_validators['max']))
-                            continue
+                        if data_validators.get('max') is not None:
+                            if any([v > data_validators['max'] for v in value]):
+                                if input_isDict or input_isDict is None:
+                                    self.input_data_errors.append(
+                                        'At least one value in %s (from %s) exceeds allowable max of %s' % (
+                                            name, self.object_name_string(object_name_path), data_validators['max']))
+                                if input_isDict is False:
+                                    self.input_data_errors.append(
+                                        'At least one value in %s (from %s number %s) exceeds allowable max of %s' % (
+                                            name, self.object_name_string(object_name_path), number, data_validators['max']))
+                        continue
                     elif "list_of_str" in data_validators['type'] and isinstance(value, list):
                         data_type = list
                     elif isinstance(data_validators['type'], list) and 'float' in data_validators['type']:
@@ -1671,45 +1667,51 @@ class ValidateNestedInput:
                 if self.isAttribute(name):
                     make_array = False
                     attribute_type = template_values[name]['type']  # attribute_type's include list_of_float
-                    if isinstance(attribute_type, list) and \
-                            all([x in attribute_type for x in ['float', 'list_of_float']]):
-                        if isinstance(value, list):
-                            try:
-                                series = pd.Series(value)
-                                if series.isnull().values.any():
-                                    raise NotImplementedError
-                                new_value = list_of_float(value)
-                            except ValueError:
-                                if input_isDict or input_isDict is None:
-                                    self.input_data_errors.append(
-                                        'Could not convert %s (%s) in %s to list of floats' % (name, value,
-                                                            self.object_name_string(object_name_path))
-                                    )
-                                if input_isDict is False:
-                                    self.input_data_errors.append(
-                                        'Could not convert %s (%s) in %s (number %s) to list of floats' % (name, value,
-                                                            self.object_name_string(object_name_path), number)
-                                    )
-                                continue  # both continue statements should be in a finally clause, ...
-                            except NotImplementedError:
-                                if input_isDict or input_isDict is None:
-                                    self.input_data_errors.append(
-                                        '%s in %s contains at least one NaN value.' % (name,
-                                        self.object_name_string(object_name_path))
-                                    )
-                                if input_isDict is False:
-                                    self.input_data_errors.append(
-                                        '%s in %s (number %s) contains at least one NaN value.' % (name,
-                                        self.object_name_string(object_name_path), number)
-                                    )
-                                continue  # both continue statements should be in a finally clause, ...
+                    if isinstance(attribute_type, list):
+                        list_eval_function_name = None
+                        if all([x in attribute_type for x in ['float', 'list_of_float']]):
+                            list_eval_function_name = 'list_of_float'
+                        if all([x in attribute_type for x in ['int', 'list_of_int']]):
+                            list_eval_function_name = 'list_of_int'
+                        if list_eval_function_name is not None:
+                            if isinstance(value, list):
+                                try:
+                                    series = pd.Series(value)
+                                    if series.isnull().values.any():
+                                        raise NotImplementedError
+                                    new_value = eval(list_eval_function_name)(value)
+                                except ValueError:
+                                    if input_isDict or input_isDict is None:
+                                        self.input_data_errors.append(
+                                            'Could not convert %s (%s) in %s to %ss' % (name, value,
+                                                                self.object_name_string(object_name_path), 
+                                                                list_eval_function_name.replace('_',' '))
+                                        )
+                                    if input_isDict is False:
+                                        self.input_data_errors.append(
+                                            'Could not convert %s (%s) in %s (number %s) to %ss' % (name, value,
+                                                                self.object_name_string(object_name_path), number, 
+                                                                list_eval_function_name.replace('_',' '))
+                                        )
+                                    continue  # both continue statements should be in a finally clause, ...
+                                except NotImplementedError:
+                                    if input_isDict or input_isDict is None:
+                                        self.input_data_errors.append(
+                                            '%s in %s contains at least one NaN value.' % (name,
+                                            self.object_name_string(object_name_path))
+                                        )
+                                    if input_isDict is False:
+                                        self.input_data_errors.append(
+                                            '%s in %s (number %s) contains at least one NaN value.' % (name,
+                                            self.object_name_string(object_name_path), number)
+                                        )
+                                    continue  # both continue statements should be in a finally clause, ...
+                                else:
+                                    self.update_attribute_value(object_name_path, number, name, new_value)
+                                    continue  # ... but python 2.7  does not support continue in finally clauses
                             else:
-                                self.update_attribute_value(object_name_path, number, name, new_value)
-                                continue  # ... but python 2.7  does not support continue in finally clauses
-                        else:
-                            attribute_type = 'float'
-                            make_array = True
-
+                                attribute_type = list_eval_function_name.split('_')[-1]
+                                make_array = True
 
                     if isinstance(attribute_type, list) and \
                             all([x in attribute_type for x in ['str', 'list_of_str']]):
