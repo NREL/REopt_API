@@ -484,6 +484,16 @@ nested_output_definitions = {
                   "description": "Business as usual total utility minimum charge adder",
                   "units": "$"
                 },
+                "total_demand_response_bau_us_dollars": {
+                  "type": "float",
+                  "description": "Business as usual demand response revenue over the lifecycle",
+                  "units": "$"
+                },
+                "total_demand_response_us_dollars": {
+                  "type": "float",
+                  "description": "Demand response revenue over the lifecycle",
+                  "units": "$"
+                },
                 "year_one_bill_us_dollars": {
                   "type": "float",
                   "description": "Optimal year one total utility bill",

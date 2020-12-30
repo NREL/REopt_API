@@ -240,7 +240,8 @@ class ElectricTariffModel(models.Model):
     tou_energy_rates_us_dollars_per_kwh =ArrayField(models.FloatField(blank=True), default=list)
     emissions_factor_series_lb_CO2_per_kwh = ArrayField(models.FloatField(blank=True), default=list)
     emissions_region = models.TextField(null=True, blank=True)
-
+    day_ahead_pricing = models.ArrayField(models.FloatField(blank=True), default=list)
+    lookback_days = models.IntegerField(null=True, blank=True)
     # Ouptuts
     year_one_energy_cost_us_dollars = models.FloatField(null=True, blank=True)
     year_one_demand_cost_us_dollars = models.FloatField(null=True, blank=True)
@@ -260,6 +261,8 @@ class ElectricTariffModel(models.Model):
     total_export_benefit_us_dollars = models.FloatField(null=True, blank=True)
     total_export_benefit_bau_us_dollars = models.FloatField(null=True, blank=True)
     total_min_charge_adder_bau_us_dollars = models.FloatField(null=True, blank=True)
+    total_demand_response_us_dollars = models.FloatField(null=True, blank=True)
+    total_demand_response_bau_us_dollars = models.FloatField(null=True, blank=True)
     year_one_bill_us_dollars = models.FloatField(null=True, blank=True)
     year_one_bill_bau_us_dollars = models.FloatField(null=True, blank=True)
     year_one_export_benefit_us_dollars = models.FloatField(null=True, blank=True)
