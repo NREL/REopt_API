@@ -62,7 +62,6 @@ class ColdTest(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
-
         # Cooling outputs
         cooling_elecchl_electric_consumption_calculated = d['outputs']['Scenario']['Site']['ElectricChiller']['year_one_electric_chiller_electric_consumption_kwh']
         cooling_elecchl_tons_to_load_series = d['outputs']['Scenario']['Site']['ElectricChiller']['year_one_electric_chiller_thermal_to_load_series_ton']

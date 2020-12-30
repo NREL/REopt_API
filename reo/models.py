@@ -706,16 +706,6 @@ class AbsorptionChillerModel(models.Model):
     macrs_option_years = models.IntegerField(null=True, blank=True)
     macrs_bonus_pct = models.FloatField(null=True, blank=True)
     macrs_itc_reduction = models.FloatField(null=True, blank=True)
-    federal_itc_pct = models.FloatField(null=True, blank=True)
-    state_ibi_pct = models.FloatField(null=True, blank=True)
-    state_ibi_max_us_dollars = models.FloatField(null=True, blank=True)
-    utility_ibi_pct = models.FloatField(null=True, blank=True)
-    utility_ibi_max_us_dollars = models.FloatField(null=True, blank=True)
-    federal_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
-    state_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
-    state_rebate_max_us_dollars = models.FloatField(null=True, blank=True)
-    utility_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
-    utility_rebate_max_us_dollars = models.FloatField(null=True, blank=True)
 
     # Outputs
     size_ton = models.FloatField(null=True, blank=True)
