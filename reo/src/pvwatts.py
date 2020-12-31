@@ -36,6 +36,7 @@ import requests
 import json
 import keys
 import logging
+from reo.exceptions import PVWattsDownloadError
 log = logging.getLogger(__name__)
 
 
@@ -84,7 +85,6 @@ class PVWatts:
         self.verify = verify  # used for testing
         self.response = None
         self.response = self.data  # store response so don't hit API multiple times
-
         if self.tilt is None:
             if self.latitude < 0: # if the site is in the southern hemisphere, and no tilt has been specified, then set the tilt to the positive latitude value and change the azimuth to zero
                 self.tilt = self.latitude * -1
@@ -109,7 +109,15 @@ class PVWatts:
             resp = requests.get(self.url, verify=self.verify)
             if not resp.ok:
                 # check for international location
-                data = json.loads(resp.text)
+                try:
+                  data = json.loads(resp.text)
+                except:
+                  message = ("Error parsing PVWatts response. "
+                              "Status code: {}. Text: {}".format(resp.status_code, resp.text))
+                  log.error("pvwatts.py raising error: " + message)
+                  pvwatts_error = PVWattsDownloadError(task="pv_watts.py", message=message)
+                  raise pvwatts_error
+                
                 intl_warning = "This location appears to be outside the US"
                 
                 if (intl_warning in s for s in data.get("warnings",[])):
@@ -118,11 +126,20 @@ class PVWatts:
                     resp = requests.get(self.url, verify=self.verify)
 
             if not resp.ok:
-                log.error("PVWatts status code {}. {}".format(resp.status_code, resp.content))
-                raise Exception("PVWatts status code {}. {}".format(resp.status_code, resp.content))
+                message = "PVWatts status code {}. {}".format(resp.status_code, resp.content)
+                log.error("pvwatts.py raising error: " + message)
+                pvwatts_error = PVWattsDownloadError(task="pv_watts.py", message=message)
+                raise pvwatts_error
 
             log.info("PVWatts API query successful.")
-            data = json.loads(resp.text)
+            try:
+              data = json.loads(resp.text)
+            except:
+              message = ("Error parsing PVWatts response. "
+                              "Status code: {}. Text: {}".format(resp.status_code, resp.text))
+              log.error("pvwatts.py raising error: " + message)
+              pvwatts_error = PVWattsDownloadError(task="pv_watts.py", message=message)
+              raise pvwatts_error
             self.response = data
 
         return self.response
