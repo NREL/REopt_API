@@ -29,6 +29,7 @@ function add_continuous_variables(m, p)
 		#dvThermalProduction[p.Tech, p.TimeStep]  #X^{tp}_{th}: Thermal production by technology t in time step h
 		#dvAbsorptionChillerDemand[p.TimeStep]  #X^{ac}_h: Thermal power consumption by absorption chiller in time step h
 		#dvElectricChillerDemand[p.TimeStep]  #X^{ec}_h: Electrical power consumption by electric chiller in time step h
+		dvLookbackBaseline[p.TimeStep] >=0
 	end
 	if !isempty(p.ExportTiers)
 		@variable(m, dvProductionToGrid[p.Tech, p.ExportTiers, p.TimeStep] >= 0)  # X^{ptg}_{tuh}: Exports from electrical production to the grid by technology t in demand tier u during time step h [kW]   (NEW)
@@ -84,7 +85,6 @@ function add_cost_expressions(m, p)
         m[:TotalPerUnitProdOMCosts] = @expression(m, 0.0)
 	end
 end
-
 
 function add_export_expressions(m, p)  # TODO handle empty export tiers (and export rates, etc.)
 
@@ -742,6 +742,27 @@ function add_tou_demand_charge_constraints(m, p)
 
 end
 
+function add_resource_adequacy(m, p)
+	##New RA Constraint: Lookback baseline equal to average of 10hrs in lookback set
+	for r in p.Ratchets
+		for ts in p.TimeStepRatchets[r]
+			if ts in p.MustOfferHours
+				@constraint(m,
+					m[:dvLookbackBaseline][ts] >= 
+					(sum(m[:dvGridPurchase][u, lbts] for u in p.PricingTier, lbts in p.LookBackSets[ts]))/p.LookBackHours
+				)
+			end
+		end
+	end
+	# Average capacity over hours in day
+	for day in p.days
+		m[:DailyRA][day] = @expression(m, sum((m[:dvLookbackBaseline][ts] - sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier)), for ts in DayTimeSteps[day] if ts in p.MustOfferHours)/p.MOOhoursperday)
+	end
+	# Then take min of days in month
+	@constraint(m, [mth in p.Month, day in DaysInMonth[mth]],
+		m[:dvMonthlyRA][mth] <= m[:DailyRA][day] 
+	)
+end
 
 function add_util_fixed_and_min_charges(m, p)
     m[:TotalFixedCharges] = p.pwf_e * p.FixedMonthlyCharge * 12
@@ -761,6 +782,8 @@ function add_util_fixed_and_min_charges(m, p)
 		@constraint(m, MinChargeAddCon, m[:MinChargeAdder] == 0)
 	end
 end
+
+
 
 
 function add_cost_function(m, p)
@@ -899,6 +922,7 @@ function reopt_run(m, p::Parameter)
 	add_cost_expressions(m, p)
 	add_export_expressions(m, p)
 	add_util_fixed_and_min_charges(m, p)
+	add_resource_adequacy(m, p)
 	
 	add_cost_function(m, p)
 

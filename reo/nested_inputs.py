@@ -402,19 +402,19 @@ nested_input_definitions = {
           "description": "Carbon Dioxide emissions factor over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples).",
           "default":[]
         },
-        "event_days": {
-          "type": "list_of_int"
-          "min": 0,
-          "max": 1,
+        "day_ahead_pricing": {
+          "type": "list_of_float",
+          "min": -1000,
+          "max": 10000,
           "default": [],
-          "description": "List of days that are (1) or are not (0) event days for demand response"
-        }
+          "description": "8760 of cleared day-ahead pricing (must be same year as the load year)"
+        },
         "lookback_days": {
-          "type": "int"
+          "type": "int",
           "min": 0,
           "max": 100,
           "default": 10,
-          "description": "How many lookback days is the baseline calculated over"
+          "description": "Number of lookback days the baseline calculated over"
         }
       },
 
