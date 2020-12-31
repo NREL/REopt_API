@@ -240,8 +240,8 @@ class ElectricTariffModel(models.Model):
     tou_energy_rates_us_dollars_per_kwh = ArrayField(models.FloatField(blank=True), default=list)
     emissions_factor_series_lb_CO2_per_kwh = ArrayField(models.FloatField(blank=True), default=list)
     emissions_region = models.TextField(null=True, blank=True)
-    coincident_peak_load_active_timesteps = ArrayField(models.FloatField(blank=True), default=list)
-    coincident_peak_load_charge_us_dollars_per_kw = models.FloatField(null=True)
+    coincident_peak_load_active_timesteps = ArrayField(ArrayField(models.FloatField(blank=True), default=list),default=list)
+    coincident_peak_load_charge_us_dollars_per_kw = ArrayField(models.FloatField(null=True), default=list)
 
     # Ouptuts
     year_one_energy_cost_us_dollars = models.FloatField(null=True, blank=True)
