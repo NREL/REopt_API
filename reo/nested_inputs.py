@@ -1492,9 +1492,11 @@ nested_input_definitions = {
           "max": 1.0,
           "description": "Derate slope as a percent/fraction of rated power per degree F"
         },
-        "chp_unavailability_hourly": {
-          "type": "list_of_float",
-          "description": "CHP unavailability for scheduled and unschedules maintenance; it is an hourly list (8760) of 1.0 for unavailable and 0.0 for available. Default unavailability profiles are used based on the prime_mover input to represent approximately 3-8 percent unavailability"
+        "chp_unavailability_periods": {
+          "type": "list_of_dict",
+          "description": "CHP unavailability periods for scheduled and unscheduled maintenance, list of dictionaries with keys of "
+                            "['month', 'start_week_of_month', 'start_day_of_week', 'start_hour', 'duration_hours'] "
+                            "all values are one-indexed and start_day_of_week uses 1 for Monday, 7 for Sunday"
         },
         "macrs_option_years": {
           "type": "int",
