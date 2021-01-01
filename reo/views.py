@@ -51,7 +51,8 @@ from reo.src.emissions_calculator import EmissionsCalculator
 from django.http import HttpResponse
 from django.template import  loader
 import pandas as pd
-from reo.utilities import generate_year_profile_hourly, TONHOUR_TO_KWHT
+from reo.utilities import generate_year_profile_hourly, TONHOUR_TO_KWHT, convert_dataframe_to_list_of_dict, get_weekday_weekend_total_hours_by_month
+from reo.validators import ValidateNestedInput
 
 
 # loading the labels of hard problems - doing it here so loading happens once on startup
@@ -574,6 +575,7 @@ def chp_defaults(request):
         avg_boiler_fuel_load_mmbtu_per_hr = request.GET.get('avg_boiler_fuel_load_mmbtu_per_hr')
         size_class = request.GET.get('size_class')
         year = request.GET.get('year')
+        chp_unavailability_periods = request.GET.get('chp_unavailability_periods')
         if prime_mover is not None:
             # Calculate heuristic CHP size based on average thermal load, using the default size class efficiency data
             if avg_boiler_fuel_load_mmbtu_per_hr is not None:
@@ -610,14 +612,6 @@ def chp_defaults(request):
                 size_class = CHP.default_chp_size_class[prime_mover]
             prime_mover_defaults = {param: prime_mover_defaults_all[prime_mover][param][size_class]
                                     for param in prime_mover_defaults_all[prime_mover].keys()}
-            if year is not None:
-                year = int(year)
-                # TODO put in "prime_mover" instead of hard-coded "recip_engine" for path (after adding other prime_mover unavailability periods)
-                chp_unavailability_path = os.path.join('input_files', 'CHP', prime_mover+'_unavailability_periods.csv')
-                chp_unavailability_periods = pd.read_csv(chp_unavailability_path)
-                chp_unavailability_hourly_list = generate_year_profile_hourly(year, chp_unavailability_periods)
-            else:
-                chp_unavailability_hourly_list = []
         else:
             raise ValueError("Missing prime_mover type query parameter.")
 
@@ -626,8 +620,7 @@ def chp_defaults(request):
              "size_class": size_class,
              "default_inputs": prime_mover_defaults,
              "chp_size_based_on_avg_heating_load_kw": chp_elec_size_heuristic_kw,
-             "size_class_bounds": CHP.class_bounds,
-             "chp_unavailability_hourly": chp_unavailability_hourly_list
+             "size_class_bounds": CHP.class_bounds
              }
         )
         return response
@@ -758,3 +751,55 @@ def absorption_chiller_defaults(request):
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in absorption_chiller_defaults endpoint. Check log for more."}, status=500)
+
+def schedule_stats(request):
+    """
+    Get a summary of a yearly profile by calculating the weekday, weekend, and total hours by month (e.g. for chp_unavailability_periods viewing in the UI)
+    :param year: required input year for establishing the calendar
+    :param chp_prime_mover: required if chp_unavailability_periods is not provided, otherwise not required or used
+    :param chp_unavailability_periods: optional list of 0's and 1's for tallying the metrics above; typically created using the generate_year_profile_hourly function
+    :return weekday_weekend_total_hours_by_month: nested dictionary with 12 keys (one for each month) each being a dictionary of weekday_hours, weekend_hours, and total_hours
+    """
+    try:
+        year = int(request.POST.get('year'))
+        chp_prime_mover = request.POST.get('chp_prime_mover')
+        chp_unavailability_periods = request.POST.getlist('chp_unavailability_periods')
+        # Convert list of string-wrapped dictionaries back to dictionaries
+        chp_unavailability_periods = [eval(chp_unavailability_periods[period]) for period in range(len(chp_unavailability_periods))]
+        
+        if chp_unavailability_periods is None and chp_prime_mover is not None:  # Use default chp_unavailability_periods which is dependent on CHP.prime_mover
+            chp_unavailability_path = os.path.join('input_files', 'CHP', chp_prime_mover+'_unavailability_periods.csv')
+            chp_unavailability_periods_df = pd.read_csv(chp_unavailability_path)
+            chp_unavailability_periods = convert_dataframe_to_list_of_dict(chp_unavailability_periods_df)
+            chp_unavailability_hourly_list = generate_year_profile_hourly(year, chp_unavailability_periods)
+            weekday_weekend_total_hours_by_month = get_weekday_weekend_total_hours_by_month(year, chp_unavailability_hourly_list)
+        elif chp_unavailability_periods is not None:  # Use chp_unavailability_periods and ignore CHP.prime_mover, if input
+            errors_chp_unavailability_periods = ValidateNestedInput.validate_chp_unavailability_periods(chp_unavailability_periods)
+            if errors_chp_unavailability_periods == []:
+                chp_unavailability_hourly_list = generate_year_profile_hourly(year, chp_unavailability_periods)
+                weekday_weekend_total_hours_by_month = get_weekday_weekend_total_hours_by_month(year, chp_unavailability_hourly_list)
+            for error in errors_chp_unavailability_periods:
+                raise ValueError(error)
+        else:
+            ValueError("Must provide chp_prime_mover for default chp_unavailability_periods if not providing chp_unavailability_periods")
+
+        response = JsonResponse(
+            {
+                "chp_unavailability_periods": chp_unavailability_periods,
+                "weekday_weekend_total_hours_by_month": weekday_weekend_total_hours_by_month
+            }
+        )
+        return response
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected error in schedule_stats endpoint. Check log for more."}, status=500)
