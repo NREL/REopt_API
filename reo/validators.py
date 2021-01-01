@@ -41,7 +41,7 @@ import uuid
 from reo.src.techs import Generator, Boiler, CHP, AbsorptionChiller
 from reo.nested_inputs import max_big_number
 from reo.src.emissions_calculator import EmissionsCalculator
-from reo.utilities import generate_year_profile_hourly
+from reo.utilities import convert_dataframe_to_list_of_dict
 
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'r'))]
@@ -1105,26 +1105,25 @@ class ValidateNestedInput:
                                 self.update_attribute_value(object_name_path, number, param, value)
                             else:
                                 updated_set[param] = real_values.get(param)
-                        # Establish a CHP unavailability profile consistent with the appropriate year calendar
-                        if real_values.get("chp_unavailability_hourly") is None:
-                            # TODO put in "prime_mover" instead of hard-coded "recip_engine" for path (after adding other prime_mover unavailability periods)
+                        # Provide default chp_unavailability periods if none is given, if prime_mover is provided
+                        if real_values.get("chp_unavailability_periods") is None:
                             chp_unavailability_path = os.path.join('input_files', 'CHP', prime_mover+'_unavailability_periods.csv')
-                            chp_unavailability_periods = pd.read_csv(chp_unavailability_path)
+                            chp_unavailability_periods_df = pd.read_csv(chp_unavailability_path)
                             if self.input_dict['Scenario']['Site']['LoadProfile'].get("doe_reference_name") is not None:
                                 year = 2017  # If using DOE building, load matches with 2017 calendar
                             elif self.input_dict['Scenario']['Site']['LoadProfile'].get("year") is None:
-                                year = 2019 # Default year is 2019
+                                year = self.nested_input_definitions['Scenario']['Site']['LoadProfile']["year"]["default"]
                             else:
                                 year = self.input_dict['Scenario']['Site']['LoadProfile'].get("year")
-                            chp_unavailability_hourly_list = generate_year_profile_hourly(year, chp_unavailability_periods)
-                            self.update_attribute_value(object_name_path, number, "chp_unavailability_hourly", chp_unavailability_hourly_list)
+                            chp_unavailability_periods = convert_dataframe_to_list_of_dict(chp_unavailability_periods_df)
+                            self.update_attribute_value(object_name_path, number, "chp_unavailability_periods", chp_unavailability_periods)
                         else:
-                            if min(real_values.get("chp_unavailability_hourly")) < 0 or max(real_values.get("chp_unavailability_hourly")) > 1.0:
-                                self.input_data_errors.append('All values for CHP unavailability must be between 0.0 and 1.0')
-                            self.validate_8760(real_values.get("chp_unavailability_hourly"),
-                                                "CHP", "chp_unavailability_hourly", self.input_dict['Scenario']['time_steps_per_hour'])
+                            chp_unavailability_periods = real_values.get("chp_unavailability_periods")
+                        
+                        # Do same validation on chp_unavailability periods whether using the default or user-entered
+                        self.input_data_errors += validate_chp_unavailability_periods(chp_unavailability_periods)
 
-                        self.chp_checks(updated_set, object_name_path, number)
+                        self.validate_chp_inputs(updated_set, object_name_path, number)
 
                 # otherwise, check if the user intended to run CHP and supplied sufficient info
                 else:
@@ -1161,15 +1160,12 @@ class ValidateNestedInput:
                                 self.input_data_errors.append('No prime_mover was input so all cost and performance parameters must be input. \
                                     CHP is missing a value for the {} parameter'.format(k))
 
-                        if real_values.get("chp_unavailability_hourly") is None:
-                            self.input_data_errors.append('Must input an 8760 profile for CHP unavailability')
+                        if real_values.get("chp_unavailability_periods") is None:
+                            self.input_data_errors.append('Must provide an input for chp_unavailability_periods since not providing prime_mover')
                         else:
-                            if min(real_values.get("chp_unavailability_hourly")) < 0 or max(real_values.get("chp_unavailability_hourly")) > 1.0:
-                                self.input_data_errors.append('All values for CHP unavailability must be between 0.0 and 1.0')
-                            self.validate_8760(real_values.get("chp_unavailability_hourly"),
-                                                "CHP", "chp_unavailability_hourly", self.input_dict['Scenario']['time_steps_per_hour'])
+                            self.input_data_errors += validate_chp_unavailability_periods(chp_unavailability_periods)
 
-                        self.chp_checks(filtered_values, object_name_path, number)
+                        self.validate_chp_inputs(filtered_values, object_name_path, number)
 
                     # otherwise assume user did not want to run CHP and set it's max_kw to 0 to deactivate it
                     else:
@@ -2046,7 +2042,7 @@ class ValidateNestedInput:
         except:
             self.input_data_errors.append(err_msg)
 
-    def chp_checks(self, params, object_name_path, number):
+    def validate_chp_inputs(self, params, object_name_path, number):
         # Check that electric and thermal efficiency inputs don't sum to greater than 1
         if params['elec_effic_full_load'] + params['thermal_effic_full_load'] > 1:
             self.input_data_errors.append(
@@ -2076,3 +2072,30 @@ class ValidateNestedInput:
         else:
             self.update_attribute_value(object_name_path, number, 'tech_size_for_cost_curve', [])
 
+    def validate_chp_unavailability_periods(chp_unavailability_periods):
+        """
+        Validate chp_unavailability_periods and return the list of errors to append to self.input_data_errors
+        Returning a list of errors instead of directly appending to self.input_data_errors so we can reuse in views.py
+        """
+        chp_unavailability_periods_input_data_errors = []
+        valid_keys = ['month', 'start_week_of_month', 'start_day_of_week', 'start_hour', 'duration_hours']
+        valid_month = [month for month in range(1,13)]
+        valid_start_week_of_month = [2, 3, 4]
+        valid_start_day_of_week = [1, 2, 3, 4, 5, 6, 7]
+        valid_start_hour = [hour for hour in range(1,25)]
+        for period in range(len(chp_unavailability_periods)):
+            if isinstance(chp_unavailability_periods[period],dict):
+                for key, value in chp_unavailability_periods[period].items():
+                    if key not in valid_keys:
+                        chp_unavailability_periods_input_data_errors.append('The input {} is not a valid chp_unavailability_period heading/key'.format(key))
+                    else:
+                        if key != "duration_hours":
+                            if int(value) not in eval("valid_" + key):
+                                chp_unavailability_periods_input_data_errors.append('{} value of {} is outside of the accepted list of {} ' 
+                                                                ' chp_unavailability_period entry'.format(key, value, eval("valid_" + key)))
+                    if type(value) != int:
+                        chp_unavailability_periods_input_data_errors.append('Non-integer value found for a {} chp_unavailability_period entry'.format(key))
+            else:
+                chp_unavailability_periods_input_data_errors.append('The {} period is not in the required json/dictionary data structure'.format(period))
+        
+        return chp_unavailability_periods_input_data_errors
