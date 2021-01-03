@@ -34,6 +34,7 @@ import traceback as tb
 import uuid
 import copy
 import pickle
+import json
 from django.http import JsonResponse
 from reo.src.load_profile import BuiltInProfile, LoadProfile
 from reo.src.load_profile_boiler_fuel import LoadProfileBoilerFuel
@@ -757,23 +758,35 @@ def schedule_stats(request):
     Get a summary of a yearly profile by calculating the weekday, weekend, and total hours by month (e.g. for chp_unavailability_periods viewing in the UI)
     :param year: required input year for establishing the calendar
     :param chp_prime_mover: required if chp_unavailability_periods is not provided, otherwise not required or used
-    :param chp_unavailability_periods: optional list of 0's and 1's for tallying the metrics above; typically created using the generate_year_profile_hourly function
+    :param chp_unavailability_periods: list of dictionaries, one dict per unavailability period (as defined in nested_inputs.py)
     :return weekday_weekend_total_hours_by_month: nested dictionary with 12 keys (one for each month) each being a dictionary of weekday_hours, weekend_hours, and total_hours
     """
     try:
-        year = int(request.POST.get('year'))
-        chp_prime_mover = request.POST.get('chp_prime_mover')
-        chp_unavailability_periods = request.POST.getlist('chp_unavailability_periods')
-        # Convert list of string-wrapped dictionaries back to dictionaries
-        chp_unavailability_periods = [eval(chp_unavailability_periods[period]) for period in range(len(chp_unavailability_periods))]
-        
+        from celery.contrib import rdb
+        #rdb.set_trace()
+        if request.method == "GET":
+            if not (request.GET["year"] and request.GET["chp_prime_mover"]):
+                ValueError("A GET request method is only applicable for getting the default stats using year and chp_prime_mover as query params")
+            year = int(request.GET["year"])
+            chp_prime_mover = request.GET["chp_prime_mover"]
+            chp_unavailability_periods = None
+        elif request.method == "POST":
+            request_dict = json.loads(request.body)
+            year = int(request_dict.get('year'))
+            chp_prime_mover = request_dict.get('chp_prime_mover')
+            # TODO understand the difference between test django's client.post for testing and external post/get methods
+            # When testing, I was able to use request.POST.get("xyz") and also used "getlist" for list but also had to convert the string-wrapped list to a list
+            # When posting using Postman, the request.POST QueryDict was empty, so instead I had to json.loads(request.body) to get the dict data
+            chp_unavailability_periods = request_dict.get('chp_unavailability_periods')
         if chp_unavailability_periods is None and chp_prime_mover is not None:  # Use default chp_unavailability_periods which is dependent on CHP.prime_mover
+            used_default = True
             chp_unavailability_path = os.path.join('input_files', 'CHP', chp_prime_mover+'_unavailability_periods.csv')
             chp_unavailability_periods_df = pd.read_csv(chp_unavailability_path)
             chp_unavailability_periods = convert_dataframe_to_list_of_dict(chp_unavailability_periods_df)
             chp_unavailability_hourly_list = generate_year_profile_hourly(year, chp_unavailability_periods)
             weekday_weekend_total_hours_by_month = get_weekday_weekend_total_hours_by_month(year, chp_unavailability_hourly_list)
         elif chp_unavailability_periods is not None:  # Use chp_unavailability_periods and ignore CHP.prime_mover, if input
+            used_default = False
             errors_chp_unavailability_periods = ValidateNestedInput.validate_chp_unavailability_periods(chp_unavailability_periods)
             if errors_chp_unavailability_periods == []:
                 chp_unavailability_hourly_list = generate_year_profile_hourly(year, chp_unavailability_periods)
@@ -785,6 +798,7 @@ def schedule_stats(request):
 
         response = JsonResponse(
             {
+                "providing_default_chp_unavailability_periods": used_default,
                 "chp_unavailability_periods": chp_unavailability_periods,
                 "weekday_weekend_total_hours_by_month": weekday_weekend_total_hours_by_month
             }
