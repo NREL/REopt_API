@@ -257,6 +257,12 @@ def setup_scenario(self, run_uuid, data, raw_post):
         if isinstance(e, LoadProfileError):
             raise e
 
+        if isinstance(e, PVWattsDownloadError):
+            e.run_uuid = run_uuid
+            e.user_uuid = self.data['inputs']['Scenario'].get('user_uuid')
+            e.save_to_db()
+            raise e
+
         if hasattr(e, 'args'):
             if len(e.args) > 0:
                 if e.args[0] == 'Unable to download wind data':
