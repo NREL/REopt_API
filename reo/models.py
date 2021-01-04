@@ -705,7 +705,6 @@ class AbsorptionChillerModel(models.Model):
     om_cost_us_dollars_per_ton = models.FloatField(null=True, blank=True, )
     macrs_option_years = models.IntegerField(null=True, blank=True)
     macrs_bonus_pct = models.FloatField(null=True, blank=True)
-    macrs_itc_reduction = models.FloatField(null=True, blank=True)
 
     # Outputs
     size_ton = models.FloatField(null=True, blank=True)
