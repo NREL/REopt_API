@@ -32,7 +32,7 @@ from reo.src.pvwatts import PVWatts
 from reo.src.wind import WindSAMSDK
 from reo.src.incentives import Incentives, IncentivesNoProdBased
 from reo.models import ModelManager
-from reo.utilities import TONHOUR_TO_KWHT
+from reo.utilities import TONHOUR_TO_KWHT, generate_year_profile_hourly
 
 
 class Tech(object):
@@ -927,7 +927,7 @@ class CHP(Tech):
                               "fuel_cell": 0}
 
     def __init__(self, dfm, run_uuid, existing_boiler_production_type_steam_or_hw, oa_temp_degF, site_elevation_ft,
-                 outage_start_time_step=None, outage_end_time_step=None, time_steps_per_hour=1, **kwargs):
+                 outage_start_time_step=None, outage_end_time_step=None, time_steps_per_hour=1, year=None, **kwargs):
         super(CHP, self).__init__()
 
         self.prime_mover = kwargs.get('prime_mover')
@@ -957,9 +957,10 @@ class CHP(Tech):
         self.max_derate_factor = kwargs['max_derate_factor']
         self.derate_start_temp_degF = kwargs['derate_start_temp_degF']
         self.derate_slope_pct_per_degF = kwargs['derate_slope_pct_per_degF']
-        self.chp_unavailability_hourly = kwargs['chp_unavailability_hourly']
+        self.chp_unavailability_periods = kwargs['chp_unavailability_periods']
         self.outage_start_time_step = outage_start_time_step
         self.outage_end_time_step = outage_end_time_step
+        self.year = year
 
         self.fuel_burn_slope, self.fuel_burn_intercept, self.thermal_prod_slope, self.thermal_prod_intercept = \
             self.convert_performance_params(self.elec_effic_full_load, self.elec_effic_half_load,
@@ -974,9 +975,11 @@ class CHP(Tech):
 
     @property
     def prod_factor(self):
-        chp_elec_prod_factor = [1.0 - self.chp_unavailability_hourly[i] for i in range(8760) for _ in range(self.time_steps_per_hour)]
+        self.chp_unavailability_hourly_list, self.errors_list = generate_year_profile_hourly(self.year, self.chp_unavailability_periods)
+        
+        chp_elec_prod_factor = [1.0 - self.chp_unavailability_hourly_list[i] for i in range(8760) for _ in range(self.time_steps_per_hour)]
         # Note, we are handling boiler efficiency explicitly so not embedding that into chp thermal prod factor
-        chp_thermal_prod_factor = [1.0 - self.chp_unavailability_hourly[i] for i in range(8760) for _ in range(self.time_steps_per_hour)]
+        chp_thermal_prod_factor = [1.0 - self.chp_unavailability_hourly_list[i] for i in range(8760) for _ in range(self.time_steps_per_hour)]
 
         # Ignore unavailability in timestep if it intersects with an outage interval
         if self.outage_start_time_step and self.outage_end_time_step:
