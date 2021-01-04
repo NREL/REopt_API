@@ -40,7 +40,7 @@ from tastypie.serializers import Serializer
 from tastypie.validation import Validation
 
 from reo.exceptions import SaveToDatabase
-from reo.models import ScenarioModel, FinancialModel, MessageModel
+from reo.models import ScenarioModel, FinancialModel
 from resilience_stats.models import ResilienceModel
 from resilience_stats.validators import validate_run_uuid
 from resilience_stats.views import run_outage_sim
