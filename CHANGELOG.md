@@ -40,6 +40,7 @@ Classify the change according to the following categories:
     - reduces the problem size in many cases since the previous model always included all three `SalesTiers` in every scenario and the new model only includes `ExportTiers` with non-zero compensation when there are Technologies that can participate
 
 ##### Changed
+- `resilience_stats`: Calculate **avoided_outage_costs_us_dollars** from the `outagesimjob` endpoint
 ##### Fixed
 ##### Deprecated
 - `reo`: **LoadProfile** **outage_start_hour** and **outage_end_hour** in favor of **outage_start_time_step** and **outage_end_time_step**
@@ -48,7 +49,7 @@ Classify the change according to the following categories:
 ##### Removed
 
 ### Patches
-
+- `reo`: Catch `PVWattsDownloadError` when a bad response is received
 - `reo`: **fuel_used_gal** output for **Generator** was incorrect for scenarios with **time_steps_per_hour** not equal to 1
 
 
