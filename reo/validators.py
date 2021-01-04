@@ -516,6 +516,11 @@ class ValidateNestedInput:
         if bool(self.emission_warning):
             output["Emissons Warning"] = {"error":self.emission_warning}
 
+        output["Deprecations"] = [
+            "The sustain_hours output will be deprecated soon in favor of bau_sustained_time_steps.",
+            "outage_start_hour and outage_end_hour will be deprecated soon in favor of outage_start_time_step and outage_end_time_step",
+            "Avoided outage costs will be deprecated soon from the /results endpoint, but retained at the /resilience_stats endpoint"
+        ]
         return output
 
     def isSingularKey(self, k):
