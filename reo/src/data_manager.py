@@ -1199,12 +1199,15 @@ class DataManager:
             if time_steps_without_grid not in [None, []]:
                 for outage_time_step in time_steps_without_grid:
                     cooling_load[outage_time_step-1] = 0.0
+                self.LoadProfile["year_one_chiller_electric_load_series_kw"] = cooling_load
+                self.LoadProfile["annual_cooling_kwh"] = sum([cooling_load[i] / self.elecchl_cop for i in range(len(cooling_load))])
         else:
             cooling_load = [0.0 for _ in self.load.load_list]
 
         # Create non-cooling electric load which is ElecLoad in the reopt.jl model
-        non_cooling_electric_load = [self.load.load_list[ts] - cooling_load[ts] for ts in range(len(self.load.load_list))]
-        non_cooling_electric_load_bau = [self.load.bau_load_list[ts] - cooling_load[ts] for ts in range(len(self.load.bau_load_list))]
+        # cooling_load is thermal, so convert to electric and subtract from total electric load to get non_cooling
+        non_cooling_electric_load = [self.load.load_list[ts] - cooling_load[ts] / self.cooling_load.chiller_cop for ts in range(len(self.load.load_list))]
+        non_cooling_electric_load_bau = [self.load.bau_load_list[ts] for ts in range(len(self.load.bau_load_list))]
 
         sf = self.site.financial
 
