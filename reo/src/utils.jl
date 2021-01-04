@@ -233,6 +233,7 @@ function Parameter(d::Dict)
     d[:TimeStepBat] = 0:d["TimeStepCount"]
     n_location = length(d["MaxSizesLocation"])
     d[:Location] = 1:n_location
+    d[:CPPeriod] = 1:d["CoincidentPeakPeriodCount"]
 
     # the following array manipulation may have to adapt once length(d["Subdivision"]) > 1
     seg_min_size_array = reshape(transpose(reshape(d["SegmentMinSize"], length(d[:Seg]), length(d["Tech"]))), 
