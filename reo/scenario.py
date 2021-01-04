@@ -329,7 +329,9 @@ def setup_scenario(self, run_uuid, data, raw_post):
                       site_elevation_ft=inputs_dict['Site']['elevation_ft'],
                       outage_start_time_step=inputs_dict['Site']['LoadProfile'].get("outage_start_time_step"),
                       outage_end_time_step=inputs_dict['Site']['LoadProfile'].get("outage_end_time_step"),
-                      time_steps_per_hour=inputs_dict.get('time_steps_per_hour'), **inputs_dict['Site']['CHP'])
+                      time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
+                      year=lp.year,
+                      **inputs_dict['Site']['CHP'])
 
         # Absorption chiller
         if inputs_dict["Site"]["AbsorptionChiller"]["max_ton"] > 0 and lpct.annual_kwht > 0.0:
