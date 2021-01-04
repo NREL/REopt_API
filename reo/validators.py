@@ -1118,10 +1118,11 @@ class ValidateNestedInput:
                             chp_unavailability_periods = convert_dataframe_to_list_of_dict(chp_unavailability_periods_df)
                             self.update_attribute_value(object_name_path, number, "chp_unavailability_periods", chp_unavailability_periods)
                         else:
+                            year = 2017  # DOE CRB load matches with 2017 calendar which is the basis of the default
                             chp_unavailability_periods = real_values.get("chp_unavailability_periods")
                         
                         # Do same validation on chp_unavailability periods whether using the default or user-entered
-                        self.input_data_errors += validate_chp_unavailability_periods(year, chp_unavailability_periods)
+                        self.input_data_errors += ValidateNestedInput.validate_chp_unavailability_periods(year, chp_unavailability_periods)
 
                         self.validate_chp_inputs(updated_set, object_name_path, number)
 
@@ -1163,7 +1164,7 @@ class ValidateNestedInput:
                         if real_values.get("chp_unavailability_periods") is None:
                             self.input_data_errors.append('Must provide an input for chp_unavailability_periods since not providing prime_mover')
                         else:
-                            self.input_data_errors += validate_chp_unavailability_periods(year, chp_unavailability_periods)
+                            self.input_data_errors += ValidateNestedInput.validate_chp_unavailability_periods(year, chp_unavailability_periods)
 
                         self.validate_chp_inputs(filtered_values, object_name_path, number)
 
