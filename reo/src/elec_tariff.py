@@ -79,6 +79,11 @@ class ElecTariff(object):
                     urdb_response, blended_monthly_rates_us_dollars_per_kwh,
                     blended_monthly_demand_charges_us_dollars_per_kw)
 
+        # elif self.tou_energy_rates is not None:  # TODO
+            # the 8760/17520/35040 energy rate list does not play nice with the URDB structure, which is relied on for
+            # creating reopt inputs in urdb_parse.py (see self.make_urdb_rate for the monthly and annual blended rates.)
+            # can we by-pass URDB rate here using the REoptArgs class from urdb_parse ?
+
         elif blended_monthly_rates_us_dollars_per_kwh is not None \
                 and blended_monthly_demand_charges_us_dollars_per_kw is not None:
             self.add_tou_energy_rates_to_urdb_rate = False
