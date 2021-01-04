@@ -30,7 +30,7 @@
 import numpy as np
 import pandas as pd
 from .urdb_logger import log_urdb_errors
-from .nested_inputs import nested_input_definitions, list_of_float, list_of_str, list_of_int
+from .nested_inputs import nested_input_definitions, list_of_float, list_of_str, list_of_int, list_of_dict
 #Note: list_of_float is actually needed
 import os
 import csv
@@ -1593,39 +1593,27 @@ class ValidateNestedInput:
                                         'At least one value in %s (from %s number %s) exceeds allowable max of %s' % (
                                             name, self.object_name_string(object_name_path), number, data_validators['max']))
                         continue
-                    elif "list_of_str" in data_validators['type'] and isinstance(value, list):
-                        data_type = list
-                    elif isinstance(data_validators['type'], list) and 'float' in data_validators['type']:
-                        data_type = float
-                    elif isinstance(data_validators['type'], list) and 'str' in data_validators['type']:
-                        data_type = str
-                    else:
-                        data_type = eval(data_validators['type'])
 
-                    try:  # to convert input value to restricted type
-                        value = data_type(value)
-                        if data_type in [float, int]:
-                            if data_validators.get('min') is not None:
-                                if value < data_validators['min']:
-                                    if input_isDict==True or input_isDict==None:
-                                        self.input_data_errors.append('%s value (%s) in %s is less than the allowable min %s' % (
-                                        name, value, self.object_name_string(object_name_path), data_validators['min']))
-                                    if input_isDict==False:
-                                        self.input_data_errors.append('%s value (%s) in %s (number %s) is less than the allowable min %s' % (
-                                        name, value, self.object_name_string(object_name_path), number, data_validators['min']))
+                    
+                    if value in [float, int]:
+                        if data_validators.get('min') is not None:
+                            if value < data_validators['min']:
+                                if input_isDict==True or input_isDict==None:
+                                    self.input_data_errors.append('%s value (%s) in %s is less than the allowable min %s' % (
+                                    name, value, self.object_name_string(object_name_path), data_validators['min']))
+                                if input_isDict==False:
+                                    self.input_data_errors.append('%s value (%s) in %s (number %s) is less than the allowable min %s' % (
+                                    name, value, self.object_name_string(object_name_path), number, data_validators['min']))
 
-                            if data_validators.get('max') is not None:
-                                if value > data_validators['max']:
-                                    if input_isDict==True or input_isDict==None:
-                                        self.input_data_errors.append('%s value (%s) in %s exceeds allowable max %s' % (
-                                        name, value, self.object_name_string(object_name_path), data_validators['max']))
-                                    if input_isDict==False:
-                                        self.input_data_errors.append('%s value (%s) in %s (number %s) exceeds allowable max %s' % (
-                                        name, value, self.object_name_string(object_name_path), number, data_validators['max']))
-                    except:
-                        self.input_data_errors.append('Could not check min/max on %s (%s) in %s' % (
-                        name, value, self.object_name_string(object_name_path)))
-
+                        if data_validators.get('max') is not None:
+                            if value > data_validators['max']:
+                                if input_isDict==True or input_isDict==None:
+                                    self.input_data_errors.append('%s value (%s) in %s exceeds allowable max %s' % (
+                                    name, value, self.object_name_string(object_name_path), data_validators['max']))
+                                if input_isDict==False:
+                                    self.input_data_errors.append('%s value (%s) in %s (number %s) exceeds allowable max %s' % (
+                                    name, value, self.object_name_string(object_name_path), number, data_validators['max']))
+                    
                     if data_validators.get('restrict_to') is not None:
                         # Handle both cases: 1. val is of 'type' 2. List('type')
                         # Approach: Convert case 1 into case 2
@@ -1669,6 +1657,10 @@ class ValidateNestedInput:
                             list_eval_function_name = 'list_of_float'
                         if all([x in attribute_type for x in ['int', 'list_of_int']]):
                             list_eval_function_name = 'list_of_int'
+                        if all([x in attribute_type for x in ['str', 'list_of_str']]):
+                            list_eval_function_name = 'list_of_str'
+                        if all([x in attribute_type for x in ['dict', 'list_of_dict']]):
+                            list_eval_function_name = 'list_of_dict'
                         if list_eval_function_name is not None:
                             if isinstance(value, list):
                                 try:
@@ -1708,51 +1700,6 @@ class ValidateNestedInput:
                             else:
                                 attribute_type = list_eval_function_name.split('_')[-1]
                                 make_array = True
-
-                    if isinstance(attribute_type, list) and \
-                            all([x in attribute_type for x in ['str', 'list_of_str']]):
-                        if isinstance(value, list):
-                            try:
-                                series = pd.Series(value)
-                                if series.isnull().values.any():
-                                    raise NotImplementedError
-
-                                new_value = list_of_str(value)
-                            except ValueError:
-                                if input_isDict or input_isDict is None:
-                                    self.input_data_errors.append(
-                                        'Could not convert %s (%s) in %s to list of strings' % (name, value,
-                                                                                                self.object_name_string(
-                                                                                                    object_name_path))
-                                    )
-                                if input_isDict is False:
-                                    self.input_data_errors.append(
-                                        'Could not convert %s (%s) in %s (number %s) to list of strings' % (
-                                        name, value,
-                                        self.object_name_string(object_name_path), number)
-                                    )
-                                continue  # both continue statements should be in a finally clause, ...
-                            except NotImplementedError:
-                                if input_isDict or input_isDict is None:
-                                    self.input_data_errors.append(
-                                        '%s in %s contains at least one NaN value.' % (name,
-                                                                                        self.object_name_string(
-                                                                                            object_name_path))
-                                    )
-                                if input_isDict is False:
-                                    self.input_data_errors.append(
-                                        '%s in %s (number %s) contains at least one NaN value.' % (name,
-                                                                                                    self.object_name_string(
-                                                                                                        object_name_path),
-                                                                                                    number)
-                                    )
-                                continue  # both continue statements should be in a finally clause, ...
-                            else:
-                                self.update_attribute_value(object_name_path, number, name, new_value)
-                                continue  # ... but python 2.7  does not support continue in finally clauses
-                        else:
-                            attribute_type = 'str'
-                            make_array = True
 
                     attribute_type = eval(attribute_type)  # convert string to python type
                     try:  # to convert input value to type defined in nested_input_definitions
