@@ -41,7 +41,7 @@ import uuid
 from reo.src.techs import Generator, Boiler, CHP, AbsorptionChiller
 from reo.nested_inputs import max_big_number
 from reo.src.emissions_calculator import EmissionsCalculator
-from reo.utilities import convert_dataframe_to_list_of_dict
+from reo.utilities import convert_dataframe_to_list_of_dict, generate_year_profile_hourly
 
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'r'))]
@@ -1121,7 +1121,7 @@ class ValidateNestedInput:
                             chp_unavailability_periods = real_values.get("chp_unavailability_periods")
                         
                         # Do same validation on chp_unavailability periods whether using the default or user-entered
-                        self.input_data_errors += validate_chp_unavailability_periods(chp_unavailability_periods)
+                        self.input_data_errors += validate_chp_unavailability_periods(year, chp_unavailability_periods)
 
                         self.validate_chp_inputs(updated_set, object_name_path, number)
 
@@ -1163,7 +1163,7 @@ class ValidateNestedInput:
                         if real_values.get("chp_unavailability_periods") is None:
                             self.input_data_errors.append('Must provide an input for chp_unavailability_periods since not providing prime_mover')
                         else:
-                            self.input_data_errors += validate_chp_unavailability_periods(chp_unavailability_periods)
+                            self.input_data_errors += validate_chp_unavailability_periods(year, chp_unavailability_periods)
 
                         self.validate_chp_inputs(filtered_values, object_name_path, number)
 
@@ -2072,30 +2072,34 @@ class ValidateNestedInput:
         else:
             self.update_attribute_value(object_name_path, number, 'tech_size_for_cost_curve', [])
 
-    def validate_chp_unavailability_periods(chp_unavailability_periods):
+    def validate_chp_unavailability_periods(year, chp_unavailability_periods):
         """
         Validate chp_unavailability_periods and return the list of errors to append to self.input_data_errors
         Returning a list of errors instead of directly appending to self.input_data_errors so we can reuse in views.py
         """
         chp_unavailability_periods_input_data_errors = []
         valid_keys = ['month', 'start_week_of_month', 'start_day_of_week', 'start_hour', 'duration_hours']
-        valid_month = [month for month in range(1,13)]
-        valid_start_week_of_month = [2, 3, 4]
-        valid_start_day_of_week = [1, 2, 3, 4, 5, 6, 7]
-        valid_start_hour = [hour for hour in range(1,25)]
         for period in range(len(chp_unavailability_periods)):
-            if isinstance(chp_unavailability_periods[period],dict):
+            if isinstance(chp_unavailability_periods[period], dict):
                 for key, value in chp_unavailability_periods[period].items():
                     if key not in valid_keys:
-                        chp_unavailability_periods_input_data_errors.append('The input {} is not a valid chp_unavailability_period heading/key'.format(key))
+                        chp_unavailability_periods_input_data_errors.append('The input {} is not a valid chp_unavailability_period heading/key, found in period {}'.format(key, period+1))
                     else:
-                        if key != "duration_hours":
-                            if int(value) not in eval("valid_" + key):
-                                chp_unavailability_periods_input_data_errors.append('{} value of {} is outside of the accepted list of {} ' 
-                                                                ' chp_unavailability_period entry'.format(key, value, eval("valid_" + key)))
-                    if type(value) != int:
-                        chp_unavailability_periods_input_data_errors.append('Non-integer value found for a {} chp_unavailability_period entry'.format(key))
+                        #from celery.contrib import rdb; rdb.set_trace() 
+                        if key != "duration_hours" and value == 0:  # All values except duration_hours should be 1 or greater (calendar attributes are one-indexed)
+                            chp_unavailability_periods_input_data_errors.append('Zero-value found (not allowed) for {} in period {}'.format(key, period+1))
+                        if (key != "duration_hours" and value % int(value) > 0) or (key == "duration_hours" and value != 0 and value % int(value) > 0):  # Function converts value to integer, so as long as there's no remainder to this we accept e.g. 5.0 (float) and convert to 5 (int)
+                            chp_unavailability_periods_input_data_errors.append('Non-integer value {} with fractional remainder found for {} in period {}'.format(value, key, period+1))
+                        if value < 0:
+                            chp_unavailability_periods_input_data_errors.append('Negative value of {} found for {} in period {}'.format(value, key, period+1))
             else:
-                chp_unavailability_periods_input_data_errors.append('The {} period is not in the required json/dictionary data structure'.format(period))
+                chp_unavailability_periods_input_data_errors.append('The {} period is not in the required json/dictionary data structure'.format(period+1))
+        # Handle specific calendar-related bad inputs within the generate_year_profile_hourly function in the errors_list output
+        if chp_unavailability_periods_input_data_errors == []:
+            try:
+                year_profile_hourly_list, errors_list = generate_year_profile_hourly(year, chp_unavailability_periods)
+                chp_unavailability_periods_input_data_errors += errors_list
+            except:
+                chp_unavailability_periods_input_data_errors.append('Unexpected error in period {} of chp_unavailability_periods.'.format(period+1))
         
         return chp_unavailability_periods_input_data_errors

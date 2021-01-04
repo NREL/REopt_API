@@ -762,8 +762,6 @@ def schedule_stats(request):
     :return weekday_weekend_total_hours_by_month: nested dictionary with 12 keys (one for each month) each being a dictionary of weekday_hours, weekend_hours, and total_hours
     """
     try:
-        from celery.contrib import rdb
-        #rdb.set_trace()
         if request.method == "GET":
             if not (request.GET["year"] and request.GET["chp_prime_mover"]):
                 ValueError("A GET request method is only applicable for getting the default stats using year and chp_prime_mover as query params")
@@ -774,22 +772,20 @@ def schedule_stats(request):
             request_dict = json.loads(request.body)
             year = int(request_dict.get('year'))
             chp_prime_mover = request_dict.get('chp_prime_mover')
-            # TODO understand the difference between test django's client.post for testing and external post/get methods
-            # When testing, I was able to use request.POST.get("xyz") and also used "getlist" for list but also had to convert the string-wrapped list to a list
-            # When posting using Postman, the request.POST QueryDict was empty, so instead I had to json.loads(request.body) to get the dict data
             chp_unavailability_periods = request_dict.get('chp_unavailability_periods')
+        
         if chp_unavailability_periods is None and chp_prime_mover is not None:  # Use default chp_unavailability_periods which is dependent on CHP.prime_mover
             used_default = True
             chp_unavailability_path = os.path.join('input_files', 'CHP', chp_prime_mover+'_unavailability_periods.csv')
             chp_unavailability_periods_df = pd.read_csv(chp_unavailability_path)
             chp_unavailability_periods = convert_dataframe_to_list_of_dict(chp_unavailability_periods_df)
-            chp_unavailability_hourly_list = generate_year_profile_hourly(year, chp_unavailability_periods)
+            chp_unavailability_hourly_list, errors_list = generate_year_profile_hourly(year, chp_unavailability_periods)
             weekday_weekend_total_hours_by_month = get_weekday_weekend_total_hours_by_month(year, chp_unavailability_hourly_list)
         elif chp_unavailability_periods is not None:  # Use chp_unavailability_periods and ignore CHP.prime_mover, if input
             used_default = False
-            errors_chp_unavailability_periods = ValidateNestedInput.validate_chp_unavailability_periods(chp_unavailability_periods)
+            errors_chp_unavailability_periods = ValidateNestedInput.validate_chp_unavailability_periods(year, chp_unavailability_periods)
             if errors_chp_unavailability_periods == []:
-                chp_unavailability_hourly_list = generate_year_profile_hourly(year, chp_unavailability_periods)
+                chp_unavailability_hourly_list, errors_list = generate_year_profile_hourly(year, chp_unavailability_periods)
                 weekday_weekend_total_hours_by_month = get_weekday_weekend_total_hours_by_month(year, chp_unavailability_hourly_list)
             for error in errors_chp_unavailability_periods:
                 raise ValueError(error)
