@@ -40,7 +40,7 @@ from tastypie.serializers import Serializer
 from tastypie.validation import Validation
 
 from reo.exceptions import SaveToDatabase
-from reo.models import ScenarioModel
+from reo.models import ScenarioModel, FinancialModel, MessageModel
 from resilience_stats.models import ResilienceModel
 from resilience_stats.validators import validate_run_uuid
 from resilience_stats.views import run_outage_sim
@@ -131,6 +131,25 @@ def run_outage_sim_task(scenariomodel_id, run_uuid, bau):
 
     try:
         ResilienceModel.objects.filter(scenariomodel_id=scenariomodel_id).update(**results)
+        results = {'avoided_outage_costs_us_dollars': results['avoided_outage_costs_us_dollars']}
+        FinancialModel.objects.filter(run_uuid=run_uuid).update(**results)
+        deprecation_message = ("'Saving avoided outage costs within the Financial model, accessed from the /results endpoint,"
+                                " will be deprecated soon. Avoided outage costs then will only be accessible from the /resilience_stats endpoint.'")
+
+        m = MessageModel.objects.filter(run_uuid=run_uuid)
+        if len(m) == 0:
+            MessageModel.create(run_uuid=run_uuid, message=deprecation_message, message_type="warnings")
+        else:
+            m = m[0]
+            if  m.message in [None,'']:
+                m.message = 'Deprecations:['  + deprecation_message + ']'
+            else:
+                if "Deprecations': [" in m.message:
+                    m.message = m.message.replace("Deprecations': [", "Deprecations': [{} ".format(deprecation_message))
+                else:
+                    m.message += "'Deprecations': [{} ".format(deprecation_message)
+            m.save()
+        
     except SaveToDatabase as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         err = SaveToDatabase(exc_type, exc_value.args[0], exc_traceback, task='resilience_model', run_uuid=run_uuid)
