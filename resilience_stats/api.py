@@ -132,25 +132,7 @@ def run_outage_sim_task(scenariomodel_id, run_uuid, bau):
     try:
         ResilienceModel.objects.filter(scenariomodel_id=scenariomodel_id).update(**results)
         results = {'avoided_outage_costs_us_dollars': results['avoided_outage_costs_us_dollars']}
-        FinancialModel.objects.filter(run_uuid=run_uuid).update(**results)
-        deprecation_message = ("'Saving avoided outage costs within the Financial model, accessed from the /results endpoint,"
-                                " will be deprecated soon. Avoided outage costs then will only be accessible from the /resilience_stats endpoint.'")
-
-        m = MessageModel.objects.filter(run_uuid=run_uuid)
-        full_message = 'Deprecations:['  + deprecation_message + ']'
-        if len(m) == 0:
-            MessageModel.create(run_uuid=run_uuid, message=full_message, message_type="warnings")
-        else:
-            m = m[0]
-            if  m.message in [None,'']:
-                m.message = full_message
-            else:
-                if "Deprecations': [" in m.message:
-                    m.message = m.message.replace("Deprecations': [", "Deprecations': [{} ".format(deprecation_message))
-                else:
-                    m.message += ", " + full_message
-            m.save()
-        
+        FinancialModel.objects.filter(run_uuid=run_uuid).update(**results)        
     except SaveToDatabase as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         err = SaveToDatabase(exc_type, exc_value.args[0], exc_traceback, task='resilience_model', run_uuid=run_uuid)
