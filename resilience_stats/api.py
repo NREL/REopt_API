@@ -138,7 +138,7 @@ def run_outage_sim_task(scenariomodel_id, run_uuid, bau):
 
         m = MessageModel.objects.filter(run_uuid=run_uuid)
         if len(m) == 0:
-            MessageModel.create(run_uuid=run_uuid, message=deprecation_message, message_type="warnings")
+            MessageModel.create(run_uuid=run_uuid, message="'Deprecations': [{} ".format(deprecation_message), message_type="warnings")
         else:
             m = m[0]
             if  m.message in [None,'']:
