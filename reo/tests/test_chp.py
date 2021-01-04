@@ -230,8 +230,8 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         # The values compared to the expected values
         #self.assertTrue(all(chp_to_load[i] == tot_elec_load[i] for i in range(outage_start, outage_end)))
         self.assertAlmostEqual(sum(chp_to_load[outage_start-1:outage_end-1]),sum(tot_elec_load[outage_start-1:outage_end-1]), places=1)
-        self.assertEqual(sum(chp_export), 0.0)
+        self.assertEqual(sum(chp_export), 0.0)  # Resulting in "None" instead of zero - likely because ExportTiers is empty
         self.assertAlmostEqual(sum(chp_total_elec_prod), sum(chp_to_load), delta=1.0E-5*sum(chp_total_elec_prod))
-        self.assertEqual(sum(cooling_elec_load[outage_start-1:outage_end-1]), 0.0)
-        self.assertEqual(sum(chp_total_elec_prod[unavail_2_start:unavail_2_end]), 0.0)
+        self.assertEqual(sum(cooling_elec_load[outage_start-1:outage_end-1]), 0.0)  # Cooling load is zero for all hours
+        self.assertEqual(sum(chp_total_elec_prod[unavail_2_start-1:unavail_2_end-1]), 0.0)
 
