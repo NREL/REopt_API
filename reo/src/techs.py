@@ -1129,6 +1129,7 @@ class AbsorptionChiller(Tech):
         self.installed_cost_us_dollars_per_kw = self.installed_cost_us_dollars_per_ton / TONHOUR_TO_KWHT
         self.om_cost_us_dollars_per_kw = self.om_cost_us_dollars_per_ton / TONHOUR_TO_KWHT
 
+        kwargs['macrs_itc_reduction'] = None
         self.incentives = IncentivesNoProdBased(**kwargs)
 
         dfm.add_absorption_chiller(self)

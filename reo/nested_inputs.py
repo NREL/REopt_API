@@ -1835,13 +1835,6 @@ nested_input_definitions = {
           "max": 1.0,
           "default": 0.0,
           "description": "Percent of upfront project costs to depreciate under MACRS"
-        },
-        "macrs_itc_reduction": {
-          "type": "float",
-          "min": 0.0,
-          "max": 1.0,
-          "default": 0.0,
-          "description": "Percent of the full ITC that depreciable basis is reduced by"
         }
       }
     }
