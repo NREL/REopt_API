@@ -387,6 +387,11 @@ class BuiltInProfile(object):
                          'Supermarket',
                          'Warehouse',
                          'FlatLoad',
+                         'FlatLoad_24_5',
+                         'FlatLoad_16_7',
+                         'FlatLoad_16_5',
+                         'FlatLoad_8_7',
+                         'FlatLoad_8_5'
                          ]
 
     def __init__(self, annual_loads=default_annual_electric_loads, builtin_profile_prefix="Load8760_norm_",
