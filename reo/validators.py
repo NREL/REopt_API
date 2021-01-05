@@ -39,7 +39,6 @@ from reo.src.urdb_rate import Rate
 import re
 import uuid
 from reo.src.techs import Generator
-from reo.nested_inputs import max_big_number
 from reo.src.emissions_calculator import EmissionsCalculator
 
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
@@ -423,7 +422,7 @@ class ValidateNestedInput:
         self.defaults_inserted = []
         self.input_dict = dict()
         if type(input_dict) is not dict:
-            self.input_data_errors.append(("POST must contain a valid JSON formatted accoring to format described in "
+            self.input_data_errors.append(("POST must contain a valid JSON formatted according to format described in "
                                            "https://developer.nrel.gov/docs/energy-optimization/reopt-v1/"))
         else:        
             self.input_dict['Scenario'] = input_dict.get('Scenario') or {}
@@ -448,6 +447,10 @@ class ValidateNestedInput:
             if type(self.input_dict['Scenario']['Site']['PV']) == dict:
                 self.input_dict['Scenario']['Site']['PV']['pv_number'] = 1
                 self.input_dict['Scenario']['Site']['PV'] = [self.input_dict['Scenario']['Site']['PV']]
+
+            # the following inputs are deprecated and should not be saved to the database
+            del self.input_dict["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"]
+            del self.input_dict["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"]
 
     @property
     def isValid(self):
