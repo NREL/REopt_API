@@ -335,7 +335,7 @@ def simulated_load(request):
         if load_type == "electric":
             #Annual loads
             if 'annual_kwh' in request.GET.keys():
-                annual_kwh = [float(request.GET.get('annual_kwh'))]
+                annual_kwh = float(request.GET.get('annual_kwh'))
             else:
                 annual_kwh = None
 
