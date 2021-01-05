@@ -1193,7 +1193,7 @@ class DataManager:
             heating_load = self.heating_load.load_list
         else:
             heating_load = [0.0 for _ in self.load.load_list]
-        if self.cooling_load != None:
+        if sum(self.cooling_load.load_list) > 0.0:
             cooling_load = self.cooling_load.load_list
             # Zero out cooling load for outage hours
             if time_steps_without_grid not in [None, []]:
