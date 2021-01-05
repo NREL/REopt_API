@@ -449,8 +449,8 @@ class ValidateNestedInput:
                 self.input_dict['Scenario']['Site']['PV'] = [self.input_dict['Scenario']['Site']['PV']]
 
             # the following inputs are deprecated and should not be saved to the database
-            del self.input_dict["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"]
-            del self.input_dict["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"]
+            self.input_dict["Scenario"]["Site"]["LoadProfile"].pop("outage_start_hour", None)
+            self.input_dict["Scenario"]["Site"]["LoadProfile"].pop("outage_end_hour", None)
 
     @property
     def isValid(self):
