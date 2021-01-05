@@ -1207,7 +1207,7 @@ class DataManager:
         # Create non-cooling electric load which is ElecLoad in the reopt.jl model
         # cooling_load is thermal, so convert to electric and subtract from total electric load to get non_cooling
         non_cooling_electric_load = [self.load.load_list[ts] - cooling_load[ts] / self.cooling_load.chiller_cop for ts in range(len(self.load.load_list))]
-        non_cooling_electric_load_bau = [self.load.bau_load_list[ts] for ts in range(len(self.load.bau_load_list))]
+        non_cooling_electric_load_bau = [self.load.bau_load_list[ts] - cooling_load[ts] / self.cooling_load.chiller_cop for ts in range(len(self.load.bau_load_list))]
 
         sf = self.site.financial
 
