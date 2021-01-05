@@ -992,10 +992,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
         data['inputs']['Scenario']['Site']['LoadProfile']['outage_end_hour'] = data['inputs']['Scenario']['Site']['LoadProfile'].get('outage_end_time_step')
         if data['inputs']['Scenario']['Site']['LoadProfile']['outage_end_hour'] is not None:
             data['inputs']['Scenario']['Site']['LoadProfile']['outage_end_hour'] -= 1
-        data["messages"]["warnings"]["Deprecations"] = [
-            "The sustain_hours output will be deprecated soon in favor of bau_sustained_time_steps.",
-            "outage_start_hour and outage_end_hour will be deprecated soon in favor of outage_start_time_step and outage_end_time_step",
-        ]
         profiler.profileEnd()
         data['outputs']["Scenario"]["Profile"]["parse_run_outputs_seconds"] = profiler.getDuration()
 
