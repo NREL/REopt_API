@@ -131,7 +131,7 @@ def calculate_proforma_metrics(data):
         total_pbi_bau = np.array([0.0 for _ in range(years)])
         total_depreciation = np.array([0.0 for _ in range(years)])
         total_ibi_and_cbi = 0
-
+        
         #calculate PV capital costs, o+m costs, incentives, and depreciation
         for pv in pvs:
             new_kw = (pv.get('size_kw') or 0) - (pv.get('existing_kw') or 0)
@@ -156,7 +156,6 @@ def calculate_proforma_metrics(data):
             ibi = utility_ibi + state_ibi
             cbi = utility_cbi + federal_cbi + state_cbi
             total_ibi_and_cbi += (ibi + cbi)
-
             pbi_series = np.array([])
             pbi_series_bau = np.array([])
             existing_energy_bau = (pv.get('year_one_energy_produced_bau_kwh') or 0) if third_party else 0
@@ -313,6 +312,7 @@ def calculate_proforma_metrics(data):
                 elif chp_size > size_list[-1]:
                     capital_costs = chp_size * cost_list[-1]
                 else:
+                    capital_costs = 0
                     for s in range(1, len(size_list)):
                         if (chp_size > size_list[s-1]) and (chp_size <= size_list[s]):
                             slope = (cost_list[s] * size_list[s] - cost_list[s-1] * size_list[s-1]) / \
@@ -543,6 +543,7 @@ def calculate_proforma_metrics(data):
             net_free_cashflow =  free_cashflow - free_cashflow_bau                                          
             irr = np.irr(net_free_cashflow)
             cumulative_cashflow =  np.cumsum(net_free_cashflow)
+
         #At this point we have the cumulative_cashflow for the developer or offtaker so the payback calculation is the same
         if cumulative_cashflow[-1] < 0: #case where the system does not pay itself back in the analysis period
             return None, None, round(net_present_cost,4) if net_present_cost is not None else None, \
