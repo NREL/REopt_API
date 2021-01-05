@@ -131,7 +131,7 @@ def calculate_proforma_metrics(data):
         total_pbi_bau = np.array([0.0 for _ in range(years)])
         total_depreciation = np.array([0.0 for _ in range(years)])
         total_ibi_and_cbi = 0
-
+        
         #calculate PV capital costs, o+m costs, incentives, and depreciation
         for pv in pvs:
             new_kw = (pv.get('size_kw') or 0) - (pv.get('existing_kw') or 0)
@@ -156,7 +156,6 @@ def calculate_proforma_metrics(data):
             ibi = utility_ibi + state_ibi
             cbi = utility_cbi + federal_cbi + state_cbi
             total_ibi_and_cbi += (ibi + cbi)
-
             pbi_series = np.array([])
             pbi_series_bau = np.array([])
             existing_energy_bau = (pv.get('year_one_energy_produced_bau_kwh') or 0) if third_party else 0
@@ -313,6 +312,7 @@ def calculate_proforma_metrics(data):
                 elif chp_size > size_list[-1]:
                     capital_costs = chp_size * cost_list[-1]
                 else:
+                    capital_costs = 0
                     for s in range(1, len(size_list)):
                         if (chp_size > size_list[s-1]) and (chp_size <= size_list[s]):
                             slope = (cost_list[s] * size_list[s] - cost_list[s-1] * size_list[s-1]) / \
@@ -371,14 +371,18 @@ def calculate_proforma_metrics(data):
             capital_costs = total_kw * absorption_chiller['installed_cost_us_dollars_per_ton']
             annual_om = -1 * total_kw * absorption_chiller['om_cost_us_dollars_per_ton']
             om_series += np.array([annual_om * (1+financials['om_cost_escalation_pct'])**yr for yr in range(1, years+1)])
-            utility_ibi = min(capital_costs * absorption_chiller['utility_ibi_pct'], absorption_chiller['utility_ibi_max_us_dollars'])
-            utility_cbi = min(total_kw * absorption_chiller['utility_rebate_us_dollars_per_kw'], absorption_chiller['utility_rebate_max_us_dollars'])
-            state_ibi = min((capital_costs - utility_ibi - utility_cbi) * absorption_chiller['state_ibi_pct'], absorption_chiller['state_ibi_max_us_dollars'])
-            state_cbi = min(total_kw * absorption_chiller['state_rebate_us_dollars_per_kw'], absorption_chiller['state_rebate_max_us_dollars'])
-            federal_cbi = total_kw * absorption_chiller['federal_rebate_us_dollars_per_kw']
-            ibi = utility_ibi + state_ibi
-            cbi = utility_cbi + federal_cbi + state_cbi
-            total_ibi_and_cbi += (ibi + cbi)
+            # utility_ibi = min(capital_costs * absorption_chiller['utility_ibi_pct'], absorption_chiller['utility_ibi_max_us_dollars'])
+            # utility_cbi = min(total_kw * absorption_chiller['utility_rebate_us_dollars_per_kw'], absorption_chiller['utility_rebate_max_us_dollars'])
+            # state_ibi = min((capital_costs - utility_ibi - utility_cbi) * absorption_chiller['state_ibi_pct'], absorption_chiller['state_ibi_max_us_dollars'])
+            # state_cbi = min(total_kw * absorption_chiller['state_rebate_us_dollars_per_kw'], absorption_chiller['state_rebate_max_us_dollars'])
+            # federal_cbi = total_kw * absorption_chiller['federal_rebate_us_dollars_per_kw']
+            # ibi = utility_ibi + state_ibi
+            # cbi = utility_cbi + federal_cbi + state_cbi
+            # total_ibi_and_cbi += (ibi + cbi)
+            # Complex incentives have been removed for Absorption Chiller
+            ibi = 0
+            cbi = 0
+            total_ibi_and_cbi = 0
 
             # Depreciation
             if absorption_chiller['macrs_option_years'] in [5,7]:
@@ -388,10 +392,15 @@ def calculate_proforma_metrics(data):
                     schedule = macrs_seven_year
                 else:
                     schedule = []
-                federal_itc_basis = capital_costs - state_ibi - utility_ibi - state_cbi - utility_cbi - federal_cbi
-                federal_itc_amount = absorption_chiller['federal_itc_pct']*federal_itc_basis
-                federal_itc += federal_itc_amount
-                macrs_bonus_basis = federal_itc_basis - (federal_itc_basis * absorption_chiller['federal_itc_pct'] * absorption_chiller['macrs_itc_reduction'])
+                # Complex incentives have been removed for Absorption Chiller
+                #federal_itc_basis = capital_costs - state_ibi - utility_ibi - state_cbi - utility_cbi - federal_cbi
+                #federal_itc_amount = absorption_chiller['federal_itc_pct']*federal_itc_basis
+                #federal_itc += federal_itc_amount
+                
+                # Complex incentives have been removed for Absorption Chiller
+                #macrs_bonus_basis = federal_itc_basis - (federal_itc_basis * absorption_chiller['federal_itc_pct'] * absorption_chiller['macrs_itc_reduction'])
+                macrs_bonus_basis = capital_costs
+
                 macrs_basis = macrs_bonus_basis * (1 - absorption_chiller['macrs_bonus_pct'])
                 depreciation_schedule = np.array([0.0 for _ in range(years)])
                 for i,r in enumerate(schedule):
@@ -543,6 +552,7 @@ def calculate_proforma_metrics(data):
             net_free_cashflow =  free_cashflow - free_cashflow_bau                                          
             irr = np.irr(net_free_cashflow)
             cumulative_cashflow =  np.cumsum(net_free_cashflow)
+
         #At this point we have the cumulative_cashflow for the developer or offtaker so the payback calculation is the same
         if cumulative_cashflow[-1] < 0: #case where the system does not pay itself back in the analysis period
             return None, None, round(net_present_cost,4) if net_present_cost is not None else None, \
