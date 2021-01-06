@@ -372,7 +372,7 @@ def simulated_load(request):
 
             #Annual loads
             if 'annual_mmbtu' in request.GET.keys():
-                annual_mmbtu = [float(request.GET.get('annual_mmbtu'))]
+                annual_mmbtu = float(request.GET.get('annual_mmbtu'))
             else:
                 annual_mmbtu = None
                 if len(percent_share_list) != len(doe_reference_name):
@@ -461,7 +461,7 @@ def simulated_load(request):
             if doe_reference_name is not None:
                 #Annual loads
                 if 'annual_tonhour' in request.GET.keys():
-                    annual_tonhour = [float(request.GET.get('annual_tonhour'))]
+                    annual_tonhour = float(request.GET.get('annual_tonhour'))
                 else:
                     annual_tonhour = None
 
