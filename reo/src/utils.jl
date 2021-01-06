@@ -178,6 +178,8 @@ Base.@kwdef struct Parameter
      PricingTierCount::Int64    # Size of set U
 	 TempNodesCount::Int64
 	 InputNodesCount::Int64
+	 TempNodesCountWH::Int64
+	 InputNodesCountWH::Int64
 
      # new parameters for reformulation
      StorageCostPerKW::AxisArray
@@ -237,10 +239,24 @@ Base.@kwdef struct Parameter
 	TempLowerBound::Float64
 	TempUpperBound::Float64
 	OperatingPenalty::AxisArray
+	MaxElecPenalty::Array{Float64,1}
 	UseCrankcase::Bool
     CrankcasePower::Float64
     CrankCaseTempLimit::Float64
     OutdoorAirTemp::Array{Float64,1}
+
+	#Water heater model
+	UseWaterHeaterModel::Bool
+	TempNodesWH::UnitRange{Int64}
+	InputNodesWH::UnitRange{Int64}
+    AMatrixWH::Array{Float64,2}
+    BMatrixWH::Array{Float64,2}
+    UInputsWH::Array{Float64,2}
+    InitTemperaturesWH::Array{Float64,1}
+    InjectionNodeWH::Int64
+    WaterNode::Int64
+    TempLowerBoundWH::Float64
+    TempUpperBoundWH::Float64
 end
 
 
@@ -266,7 +282,8 @@ function Parameter(d::Dict)
 		"FuelCost",
 		"SHR",
 		"InitTemperatures",
-		"OutdoorAirTemp"
+		"OutdoorAirTemp",
+		"InitTemperaturesWH",
      )
 	for x in ["Tech","FuelType","CHPTechs","FlexTechs"]
 		if typeof(d[x]) === Array{Any, 1}  # came from Python as empty array
@@ -296,6 +313,8 @@ function Parameter(d::Dict)
 	#Flex loads
 	d[:TempNodes] = 1:d["TempNodesCount"]
 	d[:InputNodes] = 1:d["InputNodesCount"]
+	d[:TempNodesWH] = 1:d["TempNodesCountWH"]
+	d[:InputNodesWH] = 1:d["InputNodesCountWH"]
 
     # the following array manipulation may have to adapt once length(d["Subdivision"]) > 1
     seg_min_size_array = reshape(transpose(reshape(d["SegmentMinSize"], length(d[:Seg]), length(d["Tech"]))),
@@ -361,7 +380,10 @@ function Parameter(d::Dict)
 	d["AMatrix"] = reshape(d["AMatrix"],d["TempNodesCount"],d["TempNodesCount"])
 	d["BMatrix"] = reshape(d["BMatrix"],d["TempNodesCount"],d["InputNodesCount"])
 	d["UInputs"] = transpose(reshape(d["UInputs"],d["TimeStepCount"],d["InputNodesCount"]))
-	d["OperatingPenalty"] = vector_to_axisarray(d["OperatingPenalty"],d["Tech"], d[:TimeStep])
+	d["OperatingPenalty"] = vector_to_axisarray(d["OperatingPenalty"],d["Tech"],d[:TimeStep])
+	d["AMatrixWH"] = reshape(d["AMatrixWH"],d["TempNodesCountWH"],d["TempNodesCountWH"])
+	d["BMatrixWH"] = reshape(d["BMatrixWH"],d["TempNodesCountWH"],d["InputNodesCountWH"])
+	d["UInputsWH"] = transpose(reshape(d["UInputsWH"],d["TimeStepCount"],d["InputNodesCountWH"]))
 
     # Indexed Sets
     if isempty(d["FuelType"])

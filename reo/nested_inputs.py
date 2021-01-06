@@ -1944,12 +1944,81 @@ nested_input_definitions = {
         "prod_factor_series_kw": {
           "type": "list_of_float",
           "default": [],
-          "description": "User-defined production factors. Entries have units of kWh/kW, representing the energy (kWh) output of a 1 kW system in each time step. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+          "description": "User-defined production factors. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
         },
         "operating_penalty_kw": {
           "type": "list_of_float",
           "default": [],
-          "description": "User-defined operating penalty in kW. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+          "description": "User-defined operating penalty. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+        }
+      },
+      "FlexTechWH": {
+        "use_wh_model": {
+          "type": "bool",
+          "default": False,
+          "description": "Toggle to turn on water heater modeling."
+        },
+        "a_matrix": {
+          "type": "list_of_float",
+          "default": [0.0],
+          "description": "Water heater A matrix"
+        },
+        "b_matrix": {
+          "type": "list_of_float",
+          "default": [0.0],
+          "description": "Water heater B matrix"
+        },
+        "u_inputs": {
+          "type": "list_of_float",
+          "default": [0.0],
+          "description": "Water heater U inputs"
+        },
+        "init_temperatures_degC": {
+          "type": "list_of_float",
+          "default": [],
+          "description": "Initial temperatures of the water heater RC model in degree Celsius"
+        },
+        "n_temp_nodes": {
+          "type": "int",
+          "default": 1,
+          "description": "Number of temperature nodes"
+        },
+        "n_input_nodes": {
+          "type": "int",
+          "default": 1,
+          "description": "Number of input nodes"
+        },
+        "injection_node": {
+          "type": "int",
+          "default": 1,
+          "description": "Injection node number"
+        },
+        "water_node": {
+          "type": "int",
+          "default": 1,
+          "description": "Hot water node number"
+        },
+        "temperature_lower_bound_degC": {
+          "type": "float", "min": -1000.0, "max": 1000.0, "default": 10.0,
+          "description": "Minimum allowable tank temperature in degree Celsius"
+        },
+        "temperature_upper_bound_degC": {
+          "type": "float", "min": -1000.0, "max": 10000.0, "default": 60.0,
+          "description": "Maximum allowable tank temperature in degree Celsius"
+        },
+        "installed_cost_us_dollars_per_kw": {
+          "type": "float", "min": 0.0, "max": 1000.0, "default": 0.0,
+          "description": "Installed cost of the hot water tank in USD/gallon"
+        },
+        "prod_factor_series_kw": {
+          "type": "list_of_float",
+          "default": [1.0]*8760,
+          "description": "User-defined production factors. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+        },
+        "operating_penalty_kw": {
+          "type": "list_of_float",
+          "default": [1.0]*8760,
+          "description": "User-defined operating penalty. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
         }
       }
 

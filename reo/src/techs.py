@@ -1252,3 +1252,33 @@ class FlexTechHP(Tech):
             print('No input HP production factors')  # TODO
         else:
             return self.prod_factor_series_kw
+
+class FlexTechWH(Tech):
+
+    def __init__(self, dfm, **kwargs):
+        super(FlexTechWH, self).__init__(**kwargs)
+
+        self.reopt_class = 'WH'
+        self.loads_served = ['retail']
+        self.use_wh_model = kwargs.get('use_wh_model')
+        self.a_matrix = kwargs.get('a_matrix')
+        self.b_matrix = kwargs.get('b_matrix')
+        self.u_inputs = kwargs.get('u_inputs')
+        self.init_temperatures_degC = kwargs.get('init_temperatures_degC')
+        self.n_temp_nodes = kwargs.get('n_temp_nodes')
+        self.n_input_nodes = kwargs.get('n_input_nodes')
+        self.injection_node = kwargs.get('injection_node')
+        self.water_node = kwargs.get('water_node')
+        self.temperature_lower_bound_degC = kwargs.get('temperature_lower_bound_degC')
+        self.temperature_upper_bound_degC = kwargs.get('temperature_upper_bound_degC')
+        self.prod_factor_series_kw = kwargs.get('prod_factor_series_kw')
+        self.operating_penalty_kw = kwargs.get('operating_penalty_kw')
+
+        dfm.add_flex_tech_wh(self)
+
+    @property
+    def prod_factor(self):
+        if self.prod_factor_series_kw is None:
+            self.prod_factor_series_kw = [1.0 for _ in range(8760)]
+        else:
+            return self.prod_factor_series_kw

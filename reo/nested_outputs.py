@@ -1005,8 +1005,30 @@ nested_output_definitions = {
                   "description": "Year one HP power consumption time series",
                   "units": "kW"
                 }
+              },
+              "FlexTechWH": {
+                "size_kw": {
+                  "type": float,
+                  "description": "Water heater size",
+                  "units": "kW"
+                },
+                "year_one_power_production_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one water heater power production time series",
+                  "units": "kW"
+                },
+                "year_one_power_consumption_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one water heater power consumption time series",
+                  "units": "kW"
+                },
+                "year_one_temperature_series_degC": {
+                  "type": list_of_float,
+                  "description": "Hot water tank temperature series",
+                  "units": "Celcius"
+                }
               }
-          }
+            }
         }
       },
 
