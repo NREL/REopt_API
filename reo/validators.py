@@ -1595,8 +1595,7 @@ class ValidateNestedInput:
                                             name, self.object_name_string(object_name_path), number, data_validators['max']))
                         continue
 
-                    
-                    if value in [float, int]:
+                    if type(value) in [float, int]:
                         if data_validators.get('min') is not None:
                             if value < data_validators['min']:
                                 if input_isDict==True or input_isDict==None:
