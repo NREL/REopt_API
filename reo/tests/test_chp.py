@@ -6,9 +6,8 @@ from reo.nested_to_flat_output import nested_to_flat_chp
 from unittest import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
 from unittest import skip
 from reo.models import ModelManager
-from reo.utilities import check_common_outputs, generate_year_profile_hourly
+from reo.utilities import check_common_outputs
 import numpy as np
-import pandas as pd
 
 class CHPTest(ResourceTestCaseMixin, TestCase):
     REopt_tol = 1e-2
@@ -232,6 +231,6 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(sum(chp_to_load[outage_start-1:outage_end-1]),sum(tot_elec_load[outage_start-1:outage_end-1]), places=1)
         self.assertEqual(sum(chp_export), 0.0)  # Resulting in "None" instead of zero - likely because ExportTiers is empty
         self.assertAlmostEqual(sum(chp_total_elec_prod), sum(chp_to_load), delta=1.0E-5*sum(chp_total_elec_prod))
-        self.assertEqual(sum(cooling_elec_load[outage_start-1:outage_end-1]), 0.0)  # Cooling load is zero for all hours
+        self.assertEqual(sum(cooling_elec_load[outage_start-1:outage_end-1]), 0.0) 
         self.assertEqual(sum(chp_total_elec_prod[unavail_2_start-1:unavail_2_end-1]), 0.0)
 

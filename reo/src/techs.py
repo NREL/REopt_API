@@ -975,7 +975,7 @@ class CHP(Tech):
 
     @property
     def prod_factor(self):
-        self.chp_unavailability_hourly_list, self.errors_list = generate_year_profile_hourly(self.year, self.chp_unavailability_periods)
+        self.chp_unavailability_hourly_list, self.start_day_of_month_list, self.errors_list = generate_year_profile_hourly(self.year, self.chp_unavailability_periods)
         
         chp_elec_prod_factor = [1.0 - self.chp_unavailability_hourly_list[i] for i in range(8760) for _ in range(self.time_steps_per_hour)]
         # Note, we are handling boiler efficiency explicitly so not embedding that into chp thermal prod factor
