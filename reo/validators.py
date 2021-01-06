@@ -1115,7 +1115,7 @@ class ValidateNestedInput:
                                 year = self.nested_input_definitions['Scenario']['Site']['LoadProfile']["year"]["default"]
                             else:
                                 year = self.input_dict['Scenario']['Site']['LoadProfile'].get("year")
-                            chp_unavailability_periods = convert_dataframe_to_list_of_dict(chp_unavailability_periods_df)
+                            chp_unavailability_periods = chp_unavailability_periods_df.to_dict('records')
                             self.update_attribute_value(object_name_path, number, "chp_unavailability_periods", chp_unavailability_periods)
                         else:
                             year = 2017  # DOE CRB load matches with 2017 calendar which is the basis of the default
