@@ -77,7 +77,6 @@ class RunJumpModelTask(Task):
         self.request.callback = None
         self.request.chord = None  # this seems to stop the infinite chord_unlock call
 
-
 @shared_task(bind=True, base=RunJumpModelTask)
 def run_jump_model(self, dfm, data, run_uuid, bau=False):
     profiler = Profiler()
@@ -99,7 +98,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
     logger.info("Running JuMP model ...")
     try:
         if os.path.isfile(julia_img_file):
-            # TODO: clean up this try/except block 
+            # TODO: clean up this try/except block
             logger.info("Found Julia image file {}.".format(julia_img_file))
             t_start = time.time()
             api = LibJulia.load()

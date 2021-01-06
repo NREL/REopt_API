@@ -41,7 +41,7 @@ from reo.src.load_profile_chiller_electric import LoadProfileChillerElectric
 from reo.src.profiler import Profiler
 from reo.src.site import Site
 from reo.src.storage import Storage, HotTES, ColdTES
-from reo.src.techs import PV, Util, Wind, Generator, CHP, Boiler, ElectricChiller, AbsorptionChiller, RC, FlexTechAC, FlexTechHP
+from reo.src.techs import PV, Util, Wind, Generator, CHP, Boiler, ElectricChiller, AbsorptionChiller, RC, FlexTechAC, FlexTechHP, FlexTechWH
 from celery import shared_task, Task
 from reo.models import ModelManager
 from reo.exceptions import REoptError, UnexpectedError, LoadProfileError, WindDownloadError, PVWattsDownloadError
@@ -114,6 +114,9 @@ def setup_scenario(self, run_uuid, data, raw_post):
         if inputs_dict['Site']['RC']['use_flexloads_model']:
             flex_tech_ac = FlexTechAC(dfm=dfm, outdoor_air_temp_degF=inputs_dict['Site']['outdoor_air_temp_degF'], **inputs_dict['Site']['FlexTechAC'])
             flex_tech_hp = FlexTechHP(dfm=dfm, **inputs_dict['Site']['FlexTechHP'])
+
+        if inputs_dict["Site"]["FlexTechWH"]["use_wh_model"]:
+            flex_tech_wh = FlexTechWH(dfm=dfm, **inputs_dict['Site']['FlexTechWH'])
 
         site = Site(dfm=dfm, **inputs_dict["Site"])
         pvs = []
@@ -351,7 +354,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
         # delete python objects, which are not serializable
 
         for k in ['storage', 'hot_tes', 'cold_tes', 'site', 'elec_tariff', 'fuel_tariff', 'pvs', 'pvnms', 'load',
-                  'util', 'heating_load', 'cooling_load', 'rc', 'flex_tech_ac', 'flex_tech_hp'] + dfm.available_techs:
+                  'util', 'heating_load', 'cooling_load', 'rc', 'flex_tech_ac', 'flex_tech_hp', 'flex_tech_wh'] + dfm.available_techs:
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
 

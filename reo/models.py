@@ -274,7 +274,6 @@ class LoadProfileChillerElectricModel(models.Model):
 
         return obj
 
-
 class ElectricTariffModel(models.Model):
 
     #Inputs
@@ -893,6 +892,38 @@ class FlexTechHPModel(models.Model):
 
         return obj
 
+class FlexTechWHModel(models.Model):
+    # Inputs
+    run_uuid = models.UUIDField(unique=True)
+    use_wh_model = models.BooleanField(default=False)
+    a_matrix = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    b_matrix = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    u_inputs = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    init_temperatures_degC = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    n_temp_nodes = models.IntegerField(null=True, blank=True)
+    n_input_nodes = models.IntegerField(null=True, blank=True)
+    injection_node = models.IntegerField(null=True, blank=True)
+    water_node = models.IntegerField(null=True, blank=True)
+    temperature_lower_bound_degC = models.FloatField(null=True, blank=True)
+    temperature_upper_bound_degC = models.FloatField(null=True, blank=True)
+    installed_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+    prod_factor_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    operating_penalty_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+
+    # Output
+    size_kw = models.FloatField(null=True, blank=True)
+    year_one_power_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_power_consumption_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_temperature_series_degC = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+
+    @classmethod
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
+        obj.save()
+
+        return obj
+
+
 class MessageModel(models.Model):
     """
     For Example:
@@ -966,6 +997,7 @@ class ModelManager(object):
         self.rcM = None
         self.flex_tech_acM = None
         self.flex_tech_hpM = None
+        self.flex_tech_whM = None
         self.profileM = None
         self.messagesM = None
 
@@ -1020,6 +1052,8 @@ class ModelManager(object):
                                            **attribute_inputs(d['Site']['FlexTechAC']))
         self.flex_tech_hpM = FlexTechHPModel.create(run_uuid=self.scenarioM.run_uuid,
                                            **attribute_inputs(d['Site']['FlexTechHP']))
+        self.flex_tech_whM = FlexTechWHModel.create(run_uuid=self.scenarioM.run_uuid,
+                                           **attribute_inputs(d['Site']['FlexTechWH']))
         for message_type, message in data['messages'].items():
             MessageModel.create(run_uuid=self.scenarioM.run_uuid, message_type=message_type, message=message)
 
@@ -1060,6 +1094,7 @@ class ModelManager(object):
         RCModel.objects.filter(run_uuid=run_uuid).delete()
         FlexTechACModel.objects.filter(run_uuid=run_uuid).delete()
         FlexTechHPModel.objects.filter(run_uuid=run_uuid).delete()
+        FlexTechWHModel.objects.filter(run_uuid=run_uuid).delete()
         MessageModel.objects.filter(run_uuid=run_uuid).delete()
         ErrorModel.objects.filter(run_uuid=run_uuid).delete()
 
@@ -1100,6 +1135,7 @@ class ModelManager(object):
         RCModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['RC']))
         FlexTechACModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['FlexTechAC']))
         FlexTechHPModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['FlexTechHP']))
+        FlexTechWHModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['FlexTechWH']))
 
         for message_type, message in data['messages'].items():
             if len(MessageModel.objects.filter(run_uuid=run_uuid, message=message)) > 0:
@@ -1201,7 +1237,7 @@ class ModelManager(object):
         # add try/except for get fail / bad run_uuid
         site_keys = ['PV', 'Storage', 'Financial', 'LoadProfile', 'LoadProfileBoilerFuel', 'LoadProfileChillerElectric',
                      'ElectricTariff', 'FuelTariff', 'Generator', 'Wind', 'CHP', 'Boiler', 'ElectricChiller',
-                     'AbsorptionChiller', 'HotTES', 'ColdTES', 'RC', 'FlexTechAC', 'FlexTechHP']
+                     'AbsorptionChiller', 'HotTES', 'ColdTES', 'RC', 'FlexTechAC', 'FlexTechHP', 'FlexTechWH']
 
         resp = dict()
         resp['outputs'] = dict()
@@ -1266,6 +1302,8 @@ class ModelManager(object):
             model_to_dict(FlexTechACModel.objects.get(run_uuid=run_uuid)))
         resp['outputs']['Scenario']['Site']['FlexTechHP'] = remove_ids(
             model_to_dict(FlexTechHPModel.objects.get(run_uuid=run_uuid)))
+        resp['outputs']['Scenario']['Site']['FlexTechWH'] = remove_ids(
+            model_to_dict(FlexTechWHModel.objects.get(run_uuid=run_uuid)))
         profile_data = ProfileModel.objects.filter(run_uuid=run_uuid)
 
         if len(profile_data) > 0:
