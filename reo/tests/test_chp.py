@@ -6,9 +6,8 @@ from reo.nested_to_flat_output import nested_to_flat_chp
 from unittest import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
 from unittest import skip
 from reo.models import ModelManager
-from reo.utilities import check_common_outputs, generate_year_profile_hourly
+from reo.utilities import check_common_outputs
 import numpy as np
-import pandas as pd
 
 class CHPTest(ResourceTestCaseMixin, TestCase):
     REopt_tol = 1e-2

@@ -2029,19 +2029,22 @@ class ValidateNestedInput:
         valid_keys = ['month', 'start_week_of_month', 'start_day_of_week', 'start_hour', 'duration_hours']
         for period in range(len(chp_unavailability_periods)):
             if isinstance(chp_unavailability_periods[period], dict):
+                all_keys_supplied_check = valid_keys.copy()
                 for key, value in chp_unavailability_periods[period].items():
                     if key not in valid_keys:
                         chp_unavailability_periods_input_data_errors.append('The input {} is not a valid chp_unavailability_period heading/key, found in period {}'.format(key, period+1))
                     else:
-                        #from celery.contrib import rdb; rdb.set_trace() 
+                        all_keys_supplied_check.remove(key) 
                         if key != "duration_hours" and value == 0:  # All values except duration_hours should be 1 or greater (calendar attributes are one-indexed)
-                            chp_unavailability_periods_input_data_errors.append('Zero-value found (not allowed) for {} in period {}'.format(key, period+1))
-                        if (key != "duration_hours" and value % int(value) > 0) or (key == "duration_hours" and value != 0 and value % int(value) > 0):  # Function converts value to integer, so as long as there's no remainder to this we accept e.g. 5.0 (float) and convert to 5 (int)
-                            chp_unavailability_periods_input_data_errors.append('Non-integer value {} with fractional remainder found for {} in period {}'.format(value, key, period+1))
-                        if value < 0:
-                            chp_unavailability_periods_input_data_errors.append('Negative value of {} found for {} in period {}'.format(value, key, period+1))
+                            chp_unavailability_periods_input_data_errors.append('Zero-value found (not allowed) for {} in period {}.'.format(key, period+1))
+                        elif (key != "duration_hours" and value % int(value) > 0) or (key == "duration_hours" and value != 0 and value % int(value) > 0):  # Function converts value to integer, so as long as there's no remainder to this we accept e.g. 5.0 (float) and convert to 5 (int)
+                            chp_unavailability_periods_input_data_errors.append('Non-integer value {} with fractional remainder found for {} in period {}.'.format(value, key, period+1))
+                        elif value < 0:
+                            chp_unavailability_periods_input_data_errors.append('Negative value of {} found for {} in period {}.'.format(value, key, period+1))
+                if all_keys_supplied_check != []:
+                    chp_unavailability_periods_input_data_errors += ['Missing heading/key {} in period {}.'.format(key, period) for key in all_keys_supplied_check]
             else:
-                chp_unavailability_periods_input_data_errors.append('The {} period is not in the required json/dictionary data structure'.format(period+1))
+                chp_unavailability_periods_input_data_errors.append('The {} period is not in the required json/dictionary data structure.'.format(period+1))
         # Handle specific calendar-related bad inputs within the generate_year_profile_hourly function in the errors_list output
         if chp_unavailability_periods_input_data_errors == []:
             try:

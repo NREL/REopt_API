@@ -295,7 +295,7 @@ def generate_year_profile_hourly(year, consecutive_periods):
             else:
                 start_datetime = datetime.datetime(year=year, month=start_month, day=start_day_of_month, hour=start_hour)
                 if start_datetime + datetime.timedelta(hours=duration_hours-1) > dt_profile[-1]:
-                    raise DurationOverflowsYearError("The start day/time and duration_hours exceeds the end of the year. Please specify two separate unavailability periods: one for the beginning of the year and one for up to the end of the year")
+                    raise DurationOverflowsYearError("The start day/time and duration_hours exceeds the end of the year. Please specify two separate unavailability periods: one for the beginning of the year and one for up to the end of the year.")
                 else:
                     year_profile_hourly_series[start_datetime:start_datetime + datetime.timedelta(hours=duration_hours-1)] = 1.0
             
