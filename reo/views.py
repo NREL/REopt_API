@@ -778,8 +778,6 @@ def schedule_stats(request):
         if chp_unavailability_periods is not None:  # Use chp_unavailability_periods and ignore CHP.prime_mover, if input
             used_default = False
             errors_chp_unavailability_periods = ValidateNestedInput.validate_chp_unavailability_periods(year, chp_unavailability_periods)
-            for error in errors_chp_unavailability_periods:
-                raise ValueError(error)
         elif chp_unavailability_periods is None and chp_prime_mover is not None:  # Use default chp_unavailability_periods which is dependent on CHP.prime_mover
             used_default = True
             errors_chp_unavailability_periods = []  # Don't need to check for errors in defaults, used as conditional below so need to define
@@ -798,7 +796,8 @@ def schedule_stats(request):
                 end_datetime = start_datetime + timedelta(hours=period['duration_hours'])
                 formatted_datetime_periods.append({"start_datetime": start_datetime.strftime("%Y-%m-%dT%H"), 
                                                     "end_datetime": end_datetime.strftime("%Y-%m-%dT%H")})
-        # TODO then address Ted's PR review comments
+        else:
+            raise ValueError(" ".join(errors_chp_unavailability_periods))
 
         response = JsonResponse(
             {
