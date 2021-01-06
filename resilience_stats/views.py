@@ -303,12 +303,13 @@ def run_outage_sim(run_uuid, with_tech=True, bau=False):
         present_worth_factor = annuity(financial.analysis_years, financial.escalation_pct,
                                        financial.offtaker_discount_pct)
     
-    avoided_outage_costs_us_dollars = round( results['resilience_hours_avg'] * \
+    if 'resilience_hours_avg' in results.keys():
+        avoided_outage_costs_us_dollars = round( results['resilience_hours_avg'] * \
                                             financial.value_of_lost_load_us_dollars_per_kwh * \
                                             avg_critical_load * \
                                             present_worth_factor, 2)
-    
+        results.update({"avoided_outage_costs_us_dollars": avoided_outage_costs_us_dollars})
     results.update({"present_worth_factor": present_worth_factor,
                     "avg_critical_load": avg_critical_load,
-                    "avoided_outage_costs_us_dollars": avoided_outage_costs_us_dollars})
+                    })
     return results
