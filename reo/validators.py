@@ -41,7 +41,7 @@ import uuid
 from reo.src.techs import Generator, Boiler, CHP, AbsorptionChiller
 from reo.nested_inputs import max_big_number
 from reo.src.emissions_calculator import EmissionsCalculator
-from reo.utilities import convert_dataframe_to_list_of_dict, generate_year_profile_hourly
+from reo.utilities import generate_year_profile_hourly
 
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'r'))]
@@ -2045,7 +2045,7 @@ class ValidateNestedInput:
         # Handle specific calendar-related bad inputs within the generate_year_profile_hourly function in the errors_list output
         if chp_unavailability_periods_input_data_errors == []:
             try:
-                year_profile_hourly_list, errors_list = generate_year_profile_hourly(year, chp_unavailability_periods)
+                year_profile_hourly_list, start_day_of_month_list, errors_list = generate_year_profile_hourly(year, chp_unavailability_periods)
                 chp_unavailability_periods_input_data_errors += errors_list
             except:
                 chp_unavailability_periods_input_data_errors.append('Unexpected error in period {} of chp_unavailability_periods.'.format(period+1))

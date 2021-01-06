@@ -52,8 +52,9 @@ from reo.src.emissions_calculator import EmissionsCalculator
 from django.http import HttpResponse
 from django.template import  loader
 import pandas as pd
-from reo.utilities import generate_year_profile_hourly, TONHOUR_TO_KWHT, convert_dataframe_to_list_of_dict, get_weekday_weekend_total_hours_by_month
+from reo.utilities import generate_year_profile_hourly, TONHOUR_TO_KWHT, get_weekday_weekend_total_hours_by_month
 from reo.validators import ValidateNestedInput
+from datetime import datetime, timedelta
 
 
 # loading the labels of hard problems - doing it here so loading happens once on startup
@@ -565,9 +566,8 @@ def chp_defaults(request):
         2. Prime mover and average heating load
     If both size class and average heating load are given, the size class will be used.
     Boiler efficiency is assumed and may not be consistent with actual input value.
-
-    The year input is required for getting the chp_unavailability_hourly series output, otherwise it will return [] for that.
     """
+
     prime_mover_defaults_all = copy.deepcopy(CHP.prime_mover_defaults_all)
     n_classes = {pm: len(CHP.class_bounds[pm]) for pm in CHP.class_bounds.keys()}
 
@@ -759,7 +759,8 @@ def schedule_stats(request):
     :param year: required input year for establishing the calendar
     :param chp_prime_mover: required if chp_unavailability_periods is not provided, otherwise not required or used
     :param chp_unavailability_periods: list of dictionaries, one dict per unavailability period (as defined in nested_inputs.py)
-    :return weekday_weekend_total_hours_by_month: nested dictionary with 12 keys (one for each month) each being a dictionary of weekday_hours, weekend_hours, and total_hours
+    :return formatted_datetime_periods: start and end dates of each period, formatted to ISO 8601 as YYYY-MM-DDThh
+    :return weekday_weekend_total_hours_by_month: nested dictionary with 12 keys (one for each month) each being a dictionary of weekday_hours, weekend_hours, and total_hours 
     """
     try:
         if request.method == "GET":
@@ -774,28 +775,35 @@ def schedule_stats(request):
             chp_prime_mover = request_dict.get('chp_prime_mover')
             chp_unavailability_periods = request_dict.get('chp_unavailability_periods')
         
-        if chp_unavailability_periods is None and chp_prime_mover is not None:  # Use default chp_unavailability_periods which is dependent on CHP.prime_mover
-            used_default = True
-            chp_unavailability_path = os.path.join('input_files', 'CHP', chp_prime_mover+'_unavailability_periods.csv')
-            chp_unavailability_periods_df = pd.read_csv(chp_unavailability_path)
-            chp_unavailability_periods = convert_dataframe_to_list_of_dict(chp_unavailability_periods_df)
-            chp_unavailability_hourly_list, errors_list = generate_year_profile_hourly(year, chp_unavailability_periods)
-            weekday_weekend_total_hours_by_month = get_weekday_weekend_total_hours_by_month(year, chp_unavailability_hourly_list)
-        elif chp_unavailability_periods is not None:  # Use chp_unavailability_periods and ignore CHP.prime_mover, if input
+        if chp_unavailability_periods is not None:  # Use chp_unavailability_periods and ignore CHP.prime_mover, if input
             used_default = False
             errors_chp_unavailability_periods = ValidateNestedInput.validate_chp_unavailability_periods(year, chp_unavailability_periods)
-            if errors_chp_unavailability_periods == []:
-                chp_unavailability_hourly_list, errors_list = generate_year_profile_hourly(year, chp_unavailability_periods)
-                weekday_weekend_total_hours_by_month = get_weekday_weekend_total_hours_by_month(year, chp_unavailability_hourly_list)
             for error in errors_chp_unavailability_periods:
                 raise ValueError(error)
+        elif chp_unavailability_periods is None and chp_prime_mover is not None:  # Use default chp_unavailability_periods which is dependent on CHP.prime_mover
+            used_default = True
+            errors_chp_unavailability_periods = []  # Don't need to check for errors in defaults, used as conditional below so need to define
+            chp_unavailability_path = os.path.join('input_files', 'CHP', chp_prime_mover+'_unavailability_periods.csv')
+            chp_unavailability_periods_df = pd.read_csv(chp_unavailability_path)
+            chp_unavailability_periods = chp_unavailability_periods_df.to_dict('records')
         else:
             ValueError("Must provide chp_prime_mover for default chp_unavailability_periods if not providing chp_unavailability_periods")
+        
+        if errors_chp_unavailability_periods == []:
+            chp_unavailability_hourly_list, start_day_of_month_list, errors_list = generate_year_profile_hourly(year, chp_unavailability_periods)
+            weekday_weekend_total_hours_by_month = get_weekday_weekend_total_hours_by_month(year, chp_unavailability_hourly_list)
+            formatted_datetime_periods = []
+            for i, period in enumerate(chp_unavailability_periods):
+                start_datetime = datetime(year=year, month=period['month'], day=start_day_of_month_list[i], hour=period['start_hour']-1)
+                end_datetime = start_datetime + timedelta(hours=period['duration_hours'])
+                formatted_datetime_periods.append({"start_datetime": start_datetime.strftime("%Y-%m-%dT%H"), 
+                                                    "end_datetime": end_datetime.strftime("%Y-%m-%dT%H")})
+        # TODO then address Ted's PR review comments
 
         response = JsonResponse(
             {
                 "providing_default_chp_unavailability_periods": used_default,
-                "chp_unavailability_periods": chp_unavailability_periods,
+                "formatted_datetime_periods": formatted_datetime_periods,
                 "weekday_weekend_total_hours_by_month": weekday_weekend_total_hours_by_month
             }
         )
