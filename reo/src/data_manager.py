@@ -1199,7 +1199,7 @@ class DataManager:
             if time_steps_without_grid not in [None, []]:
                 for outage_time_step in time_steps_without_grid:
                     cooling_load[outage_time_step-1] = 0.0
-                self.LoadProfile["year_one_chiller_electric_load_series_kw"] = cooling_load
+                    self.LoadProfile["year_one_chiller_electric_load_series_kw"][outage_time_step-1] = 0.0
                 self.LoadProfile["annual_cooling_kwh"] = sum(cooling_load) / self.elecchl_cop * self.steplength
         else:
             cooling_load = [0.0 for _ in self.load.load_list]
