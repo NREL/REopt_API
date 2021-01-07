@@ -49,6 +49,8 @@ Classify the change according to the following categories:
 ##### Removed
 
 ### Patches
+- `resilience_stats`: Catch BAU cases and do not calculate avoided outage costs
+- `summary`: Catch jobs that errored out and do not parse results
 - `reo`: Catch `PVWattsDownloadError` when a bad response is received
 - `reo`: **fuel_used_gal** output for **Generator** was incorrect for scenarios with **time_steps_per_hour** not equal to 1
 
