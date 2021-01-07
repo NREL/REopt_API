@@ -30,7 +30,7 @@
 import numpy as np
 import pandas as pd
 from .urdb_logger import log_urdb_errors
-from .nested_inputs import nested_input_definitions, list_of_float, list_of_str, list_of_int
+from .nested_inputs import nested_input_definitions, list_of_float, list_of_str, list_of_int, list_of_dict
 #Note: list_of_float is actually needed
 import os
 import csv
@@ -1105,26 +1105,26 @@ class ValidateNestedInput:
                                 self.update_attribute_value(object_name_path, number, param, value)
                             else:
                                 updated_set[param] = real_values.get(param)
-                        # Establish a CHP unavailability profile consistent with the appropriate year calendar
-                        if real_values.get("chp_unavailability_hourly") is None:
-                            # TODO put in "prime_mover" instead of hard-coded "recip_engine" for path (after adding other prime_mover unavailability periods)
+                        # Provide default chp_unavailability periods if none is given, if prime_mover is provided
+                        if real_values.get("chp_unavailability_periods") is None:
                             chp_unavailability_path = os.path.join('input_files', 'CHP', prime_mover+'_unavailability_periods.csv')
-                            chp_unavailability_periods = pd.read_csv(chp_unavailability_path)
+                            chp_unavailability_periods_df = pd.read_csv(chp_unavailability_path)
                             if self.input_dict['Scenario']['Site']['LoadProfile'].get("doe_reference_name") is not None:
                                 year = 2017  # If using DOE building, load matches with 2017 calendar
                             elif self.input_dict['Scenario']['Site']['LoadProfile'].get("year") is None:
-                                year = 2019 # Default year is 2019
+                                year = self.nested_input_definitions['Scenario']['Site']['LoadProfile']["year"]["default"]
                             else:
                                 year = self.input_dict['Scenario']['Site']['LoadProfile'].get("year")
-                            chp_unavailability_hourly_list = generate_year_profile_hourly(year, chp_unavailability_periods)
-                            self.update_attribute_value(object_name_path, number, "chp_unavailability_hourly", chp_unavailability_hourly_list)
+                            chp_unavailability_periods = chp_unavailability_periods_df.to_dict('records')
+                            self.update_attribute_value(object_name_path, number, "chp_unavailability_periods", chp_unavailability_periods)
                         else:
-                            if min(real_values.get("chp_unavailability_hourly")) < 0 or max(real_values.get("chp_unavailability_hourly")) > 1.0:
-                                self.input_data_errors.append('All values for CHP unavailability must be between 0.0 and 1.0')
-                            self.validate_8760(real_values.get("chp_unavailability_hourly"),
-                                                "CHP", "chp_unavailability_hourly", self.input_dict['Scenario']['time_steps_per_hour'])
+                            year = 2017  # DOE CRB load matches with 2017 calendar which is the basis of the default
+                            chp_unavailability_periods = real_values.get("chp_unavailability_periods")
+                        
+                        # Do same validation on chp_unavailability periods whether using the default or user-entered
+                        self.input_data_errors += ValidateNestedInput.validate_chp_unavailability_periods(year, chp_unavailability_periods)
 
-                        self.chp_checks(updated_set, object_name_path, number)
+                        self.validate_chp_inputs(updated_set, object_name_path, number)
 
                 # otherwise, check if the user intended to run CHP and supplied sufficient info
                 else:
@@ -1161,15 +1161,12 @@ class ValidateNestedInput:
                                 self.input_data_errors.append('No prime_mover was input so all cost and performance parameters must be input. \
                                     CHP is missing a value for the {} parameter'.format(k))
 
-                        if real_values.get("chp_unavailability_hourly") is None:
-                            self.input_data_errors.append('Must input an 8760 profile for CHP unavailability')
+                        if real_values.get("chp_unavailability_periods") is None:
+                            self.input_data_errors.append('Must provide an input for chp_unavailability_periods since not providing prime_mover')
                         else:
-                            if min(real_values.get("chp_unavailability_hourly")) < 0 or max(real_values.get("chp_unavailability_hourly")) > 1.0:
-                                self.input_data_errors.append('All values for CHP unavailability must be between 0.0 and 1.0')
-                            self.validate_8760(real_values.get("chp_unavailability_hourly"),
-                                                "CHP", "chp_unavailability_hourly", self.input_dict['Scenario']['time_steps_per_hour'])
+                            self.input_data_errors += ValidateNestedInput.validate_chp_unavailability_periods(year, chp_unavailability_periods)
 
-                        self.chp_checks(filtered_values, object_name_path, number)
+                        self.validate_chp_inputs(filtered_values, object_name_path, number)
 
                     # otherwise assume user did not want to run CHP and set it's max_kw to 0 to deactivate it
                     else:
@@ -1597,39 +1594,26 @@ class ValidateNestedInput:
                                         'At least one value in %s (from %s number %s) exceeds allowable max of %s' % (
                                             name, self.object_name_string(object_name_path), number, data_validators['max']))
                         continue
-                    elif "list_of_str" in data_validators['type'] and isinstance(value, list):
-                        data_type = list
-                    elif isinstance(data_validators['type'], list) and 'float' in data_validators['type']:
-                        data_type = float
-                    elif isinstance(data_validators['type'], list) and 'str' in data_validators['type']:
-                        data_type = str
-                    else:
-                        data_type = eval(data_validators['type'])
 
-                    try:  # to convert input value to restricted type
-                        value = data_type(value)
-                        if data_type in [float, int]:
-                            if data_validators.get('min') is not None:
-                                if value < data_validators['min']:
-                                    if input_isDict==True or input_isDict==None:
-                                        self.input_data_errors.append('%s value (%s) in %s is less than the allowable min %s' % (
-                                        name, value, self.object_name_string(object_name_path), data_validators['min']))
-                                    if input_isDict==False:
-                                        self.input_data_errors.append('%s value (%s) in %s (number %s) is less than the allowable min %s' % (
-                                        name, value, self.object_name_string(object_name_path), number, data_validators['min']))
+                    if type(value) in [float, int]:
+                        if data_validators.get('min') is not None:
+                            if value < data_validators['min']:
+                                if input_isDict==True or input_isDict==None:
+                                    self.input_data_errors.append('%s value (%s) in %s is less than the allowable min %s' % (
+                                    name, value, self.object_name_string(object_name_path), data_validators['min']))
+                                if input_isDict==False:
+                                    self.input_data_errors.append('%s value (%s) in %s (number %s) is less than the allowable min %s' % (
+                                    name, value, self.object_name_string(object_name_path), number, data_validators['min']))
 
-                            if data_validators.get('max') is not None:
-                                if value > data_validators['max']:
-                                    if input_isDict==True or input_isDict==None:
-                                        self.input_data_errors.append('%s value (%s) in %s exceeds allowable max %s' % (
-                                        name, value, self.object_name_string(object_name_path), data_validators['max']))
-                                    if input_isDict==False:
-                                        self.input_data_errors.append('%s value (%s) in %s (number %s) exceeds allowable max %s' % (
-                                        name, value, self.object_name_string(object_name_path), number, data_validators['max']))
-                    except:
-                        self.input_data_errors.append('Could not check min/max on %s (%s) in %s' % (
-                        name, value, self.object_name_string(object_name_path)))
-
+                        if data_validators.get('max') is not None:
+                            if value > data_validators['max']:
+                                if input_isDict==True or input_isDict==None:
+                                    self.input_data_errors.append('%s value (%s) in %s exceeds allowable max %s' % (
+                                    name, value, self.object_name_string(object_name_path), data_validators['max']))
+                                if input_isDict==False:
+                                    self.input_data_errors.append('%s value (%s) in %s (number %s) exceeds allowable max %s' % (
+                                    name, value, self.object_name_string(object_name_path), number, data_validators['max']))
+                    
                     if data_validators.get('restrict_to') is not None:
                         # Handle both cases: 1. val is of 'type' 2. List('type')
                         # Approach: Convert case 1 into case 2
@@ -1673,6 +1657,10 @@ class ValidateNestedInput:
                             list_eval_function_name = 'list_of_float'
                         if all([x in attribute_type for x in ['int', 'list_of_int']]):
                             list_eval_function_name = 'list_of_int'
+                        if all([x in attribute_type for x in ['str', 'list_of_str']]):
+                            list_eval_function_name = 'list_of_str'
+                        if all([x in attribute_type for x in ['dict', 'list_of_dict']]):
+                            list_eval_function_name = 'list_of_dict'
                         if list_eval_function_name is not None:
                             if isinstance(value, list):
                                 try:
@@ -1712,51 +1700,6 @@ class ValidateNestedInput:
                             else:
                                 attribute_type = list_eval_function_name.split('_')[-1]
                                 make_array = True
-
-                    if isinstance(attribute_type, list) and \
-                            all([x in attribute_type for x in ['str', 'list_of_str']]):
-                        if isinstance(value, list):
-                            try:
-                                series = pd.Series(value)
-                                if series.isnull().values.any():
-                                    raise NotImplementedError
-
-                                new_value = list_of_str(value)
-                            except ValueError:
-                                if input_isDict or input_isDict is None:
-                                    self.input_data_errors.append(
-                                        'Could not convert %s (%s) in %s to list of strings' % (name, value,
-                                                                                                self.object_name_string(
-                                                                                                    object_name_path))
-                                    )
-                                if input_isDict is False:
-                                    self.input_data_errors.append(
-                                        'Could not convert %s (%s) in %s (number %s) to list of strings' % (
-                                        name, value,
-                                        self.object_name_string(object_name_path), number)
-                                    )
-                                continue  # both continue statements should be in a finally clause, ...
-                            except NotImplementedError:
-                                if input_isDict or input_isDict is None:
-                                    self.input_data_errors.append(
-                                        '%s in %s contains at least one NaN value.' % (name,
-                                                                                        self.object_name_string(
-                                                                                            object_name_path))
-                                    )
-                                if input_isDict is False:
-                                    self.input_data_errors.append(
-                                        '%s in %s (number %s) contains at least one NaN value.' % (name,
-                                                                                                    self.object_name_string(
-                                                                                                        object_name_path),
-                                                                                                    number)
-                                    )
-                                continue  # both continue statements should be in a finally clause, ...
-                            else:
-                                self.update_attribute_value(object_name_path, number, name, new_value)
-                                continue  # ... but python 2.7  does not support continue in finally clauses
-                        else:
-                            attribute_type = 'str'
-                            make_array = True
 
                     attribute_type = eval(attribute_type)  # convert string to python type
                     try:  # to convert input value to type defined in nested_input_definitions
@@ -2046,7 +1989,7 @@ class ValidateNestedInput:
         except:
             self.input_data_errors.append(err_msg)
 
-    def chp_checks(self, params, object_name_path, number):
+    def validate_chp_inputs(self, params, object_name_path, number):
         # Check that electric and thermal efficiency inputs don't sum to greater than 1
         if params['elec_effic_full_load'] + params['thermal_effic_full_load'] > 1:
             self.input_data_errors.append(
@@ -2076,3 +2019,37 @@ class ValidateNestedInput:
         else:
             self.update_attribute_value(object_name_path, number, 'tech_size_for_cost_curve', [])
 
+    def validate_chp_unavailability_periods(year, chp_unavailability_periods):
+        """
+        Validate chp_unavailability_periods and return the list of errors to append to self.input_data_errors
+        Returning a list of errors instead of directly appending to self.input_data_errors so we can reuse in views.py
+        """
+        chp_unavailability_periods_input_data_errors = []
+        valid_keys = ['month', 'start_week_of_month', 'start_day_of_week', 'start_hour', 'duration_hours']
+        for period in range(len(chp_unavailability_periods)):
+            if isinstance(chp_unavailability_periods[period], dict):
+                all_keys_supplied_check = valid_keys.copy()
+                for key, value in chp_unavailability_periods[period].items():
+                    if key not in valid_keys:
+                        chp_unavailability_periods_input_data_errors.append('The input {} is not a valid chp_unavailability_period heading/key, found in period {}'.format(key, period+1))
+                    else:
+                        all_keys_supplied_check.remove(key) 
+                        if key != "duration_hours" and value == 0:  # All values except duration_hours should be 1 or greater (calendar attributes are one-indexed)
+                            chp_unavailability_periods_input_data_errors.append('Zero-value found (not allowed) for {} in period {}.'.format(key, period+1))
+                        elif (key != "duration_hours" and value % int(value) > 0) or (key == "duration_hours" and value != 0 and value % int(value) > 0):  # Function converts value to integer, so as long as there's no remainder to this we accept e.g. 5.0 (float) and convert to 5 (int)
+                            chp_unavailability_periods_input_data_errors.append('Non-integer value {} with fractional remainder found for {} in period {}.'.format(value, key, period+1))
+                        elif value < 0:
+                            chp_unavailability_periods_input_data_errors.append('Negative value of {} found for {} in period {}.'.format(value, key, period+1))
+                if all_keys_supplied_check != []:
+                    chp_unavailability_periods_input_data_errors += ['Missing heading/key {} in period {}.'.format(key, period) for key in all_keys_supplied_check]
+            else:
+                chp_unavailability_periods_input_data_errors.append('The {} period is not in the required json/dictionary data structure.'.format(period+1))
+        # Handle specific calendar-related bad inputs within the generate_year_profile_hourly function in the errors_list output
+        if chp_unavailability_periods_input_data_errors == []:
+            try:
+                year_profile_hourly_list, start_day_of_month_list, errors_list = generate_year_profile_hourly(year, chp_unavailability_periods)
+                chp_unavailability_periods_input_data_errors += errors_list
+            except:
+                chp_unavailability_periods_input_data_errors.append('Unexpected error in period {} of chp_unavailability_periods.'.format(period+1))
+        
+        return chp_unavailability_periods_input_data_errors
