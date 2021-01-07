@@ -216,7 +216,25 @@ def summary(request, user_uuid):
             return [{}]
 
         for scenario in scenarios:
-            results = dict()
+            results = dict({
+                'focus': None,
+                'address': None,
+                'urdb_rate_name': None,
+                'doe_reference_name': None,
+                'npv_us_dollars': None,
+                'net_capital_costs': None,
+                'net_capital_costs_plus_om_us_dollars': None,
+                'net_om_us_dollars_bau': None,
+                'resilience_hours_min': None,
+                'resilience_hours_max': None,
+                'resilience_hours_avg': None,
+                'year_one_savings_us_dollars': None,
+                'pv_kw': None,
+                'wind_kw': None,
+                'gen_kw': None,
+                'batt_kw': None,
+                'batt_kwh': None,
+            })
             results['status'] = scenario.status
             results['run_uuid'] = str(scenario.run_uuid)
             results['created'] = scenario.created
@@ -232,7 +250,6 @@ def summary(request, user_uuid):
                     results['messages'][message.get('message_type') or "type"] = message.get('message') or ""
 
             if results['status'].lower() != "optimal":
-                # TODO do we need to add empty values for 'focus' etc. to the dictionary?
                 json_response['scenarios'].append(results)
                 continue
             
@@ -284,7 +301,6 @@ def summary(request, user_uuid):
                 #Other Financials
                 results['net_capital_costs_plus_om_us_dollars'] = financial.get('net_capital_costs_plus_om_us_dollars')
                 results['net_om_us_dollars_bau'] = financial.get('net_om_us_dollars_bau')
-                results['net_capital_costs'] = financial.get('net_capital_costs')
 
                 # Year 1 Savings
                 year_one_costs = sum(filter(None, [
@@ -302,19 +318,13 @@ def summary(request, user_uuid):
                     tariff.get('year_one_min_charge_adder_bau_us_dollars') or 0,
                     tariff.get('year_one_bill_bau_us_dollars') or 0
                     ]))
-                #Resilience Stats
-                results['resilience_hours_min'] = resilience.get('resilience_hours_min') 
-                results['resilience_hours_max'] = resilience.get('resilience_hours_max') 
-                results['resilience_hours_avg'] = resilience.get('resilience_hours_avg') 
-
-                if results.get('resilience_hours_max') is None:
-                    results['resilience_hours_max'] = 'not evaluated'
-                if results.get('resilience_hours_min') is None:
-                    results['resilience_hours_min'] = 'not evaluated'
-                if results.get('resilience_hours_avg') is None:
-                    results['resilience_hours_avg'] = 'not evaluated'
                 
                 results['year_one_savings_us_dollars'] = year_one_costs_bau - year_one_costs
+
+                #Resilience Stats
+                results['resilience_hours_min'] = resilience.get('resilience_hours_min', 'not evaluated')
+                results['resilience_hours_max'] = resilience.get('resilience_hours_max', 'not evaluated')
+                results['resilience_hours_avg'] = resilience.get('resilience_hours_avg', 'not evaluated')
 
                 # PV Size
                 if pv is not None:
