@@ -12,7 +12,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         super(EntryResourceTest, self).setUp()
         self.annual_kwh_url = "/v1/annual_kwh/"
         self.annual_mmbtu_url = "/v1/annual_mmbtu/"
-        self.default_building_types = [i for i in BuiltInProfile.default_buildings if i.lower() !='flatload']
+        self.default_building_types = [i for i in BuiltInProfile.default_buildings if i[0:8].lower() != 'flatload']
 
     def test_annual_kwh_random_choice(self):
         """
@@ -68,4 +68,4 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             'longitude': city.lng,
         })
 
-        assert "Invalid doe_reference_name. Select from the following" in str(response.content)
+        assert "Invalid doe_reference_name {}. Select from the following".format(bldg[:-1]) in str(response.content)

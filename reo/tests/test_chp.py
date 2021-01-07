@@ -7,7 +7,6 @@ from unittest import TestCase  # have to use unittest.TestCase to get tests to s
 from unittest import skip
 from reo.models import ModelManager
 from reo.utilities import check_common_outputs
-from reo.validators import ValidateNestedInput
 import numpy as np
 
 class CHPTest(ResourceTestCaseMixin, TestCase):
@@ -42,7 +41,7 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         nested_data["Scenario"]["use_decomposition_model"] = True
         nested_data["Scenario"]["optimality_tolerance_decomp_subproblem"] = 0.03
         nested_data["Scenario"]["timeout_decomp_subproblem_seconds"] = 120
-        nested_data["Scenario"]["Site"]["CHP"]["chp_unavailability_hourly"] = [0.0] * 8760
+
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
@@ -84,7 +83,6 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         nested_data["Scenario"]["timeout_seconds"] = 420
         nested_data["Scenario"]["optimality_tolerance_bau"] = 0.001
         nested_data["Scenario"]["optimality_tolerance_techs"] = 0.01
-        nested_data["Scenario"]["Site"]["CHP"]["chp_unavailability_hourly"] = [0.0] * 8760
 
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
@@ -140,7 +138,6 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         nested_data["Scenario"]["Site"]["CHP"]["macrs_option_years"] = 0
         nested_data["Scenario"]["Site"]["CHP"]["macrs_bonus_pct"] = 0
         nested_data["Scenario"]["Site"]["CHP"]["macrs_itc_reduction"] = 0.0
-        nested_data["Scenario"]["Site"]["CHP"]["chp_unavailability_hourly"] = [0.0] * 8760
 
         # init_capex = 600 * 2700 + (800 - 600) * slope, where
         # slope = (1140 * 2370 - 600 * 2700) / (1140 - 600)
@@ -194,24 +191,29 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         nested_data["Scenario"]["timeout_seconds"] = 420
         nested_data["Scenario"]["optimality_tolerance_bau"] = 0.001
         nested_data["Scenario"]["optimality_tolerance_techs"] = 0.01
+        
+        # Add unavailability periods that 1) intersect (ignored) and 2) don't intersect with outage period
+        nested_data["Scenario"]["Site"]["CHP"]["chp_unavailability_periods"] = [{"month": 1, "start_week_of_month": 2,
+                                                                                "start_day_of_week": 1, "start_hour": 1,
+                                                                                "duration_hours": 8},
+                                                                                {"month": 1, "start_week_of_month": 2,
+                                                                                "start_day_of_week": 3,"start_hour": 9,
+                                                                                "duration_hours": 8}
+                                                                                ]
+        unavail_1_start = 24 + 1  # Manually doing the math from the unavailability defined above
+        unavail_1_end = unavail_1_start + 8
+        unavail_2_start = 24*3 + 9
+        unavail_2_end = unavail_2_start + 8
+        
         # Specify the CHP.min_turn_down_pct which is NOT used during an outage
         nested_data["Scenario"]["Site"]["CHP"]["min_turn_down_pct"] = 0.5
         # Specify outage period; outage timesteps are 1-indexed
-        outage_start = 15
+        outage_start = unavail_1_start
         nested_data["Scenario"]["Site"]["LoadProfile"]["outage_start_time_step"] = outage_start
-        outage_duration = 24 * 2
-        outage_end = outage_start + outage_duration
+        outage_end = unavail_1_end
         nested_data["Scenario"]["Site"]["LoadProfile"]["outage_end_time_step"] = outage_end
         nested_data["Scenario"]["Site"]["LoadProfile"]["critical_load_pct"] = 0.25
 
-        # Add unavailability periods that intersect (ignored) and don't intersect with outage period; unavailability is 0-indexed
-        unavailability = [0.0 if (i < outage_start - 1 or i >= outage_end - 1) else 1.0 for i in range(8760)]
-        unavail_start = outage_end + 2  # Start effective unavailability 2 hrs after the outage ends which forces CHP production to zero
-        unavail_duration = 24
-        unavail_end = unavail_start + unavail_duration
-        unavailability = [unavailability[i] if (i < unavail_start or i >= unavail_end) else 1.0 for i in range(8760)]
-        nested_data["Scenario"]["Site"]["CHP"]["chp_unavailability_hourly"] = unavailability
-    
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
@@ -222,13 +224,13 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         chp_total_elec_prod = d['outputs']['Scenario']['Site']['CHP']['year_one_electric_production_series_kw']
         chp_to_load = d['outputs']['Scenario']['Site']['CHP']['year_one_to_load_series_kw']
         chp_export = d['outputs']['Scenario']['Site']['CHP']['year_one_to_grid_series_kw']
-        cooling_elec_load = d['outputs']['Scenario']['Site']['LoadProfileChillerElectric']['year_one_chiller_electric_load_series_kw']
+        cooling_elec_load = d['outputs']['Scenario']['Site']['LoadProfileChillerThermal']['year_one_chiller_electric_load_series_kw']
 
         # The values compared to the expected values
         #self.assertTrue(all(chp_to_load[i] == tot_elec_load[i] for i in range(outage_start, outage_end)))
         self.assertAlmostEqual(sum(chp_to_load[outage_start-1:outage_end-1]),sum(tot_elec_load[outage_start-1:outage_end-1]), places=1)
-        self.assertEqual(sum(chp_export), 0.0)
+        self.assertEqual(sum(chp_export), 0.0)  # Resulting in "None" instead of zero - likely because ExportTiers is empty
         self.assertAlmostEqual(sum(chp_total_elec_prod), sum(chp_to_load), delta=1.0E-5*sum(chp_total_elec_prod))
-        self.assertEqual(sum(cooling_elec_load[outage_start-1:outage_end-1]), 0.0)
-        self.assertEqual(sum(chp_total_elec_prod[unavail_start:unavail_end]), 0.0)
+        self.assertEqual(sum(cooling_elec_load[outage_start-1:outage_end-1]), 0.0) 
+        self.assertEqual(sum(chp_total_elec_prod[unavail_2_start-1:unavail_2_end-1]), 0.0)
 

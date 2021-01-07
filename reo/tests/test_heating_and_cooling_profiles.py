@@ -54,7 +54,7 @@ post = {"Scenario": {
         "replace_cost_us_dollars_per_kwh": 230,
         "macrs_option_years": 0,
     },
-    "LoadProfileChillerElectric": {
+    "LoadProfileChillerThermal": {
         "doe_reference_name": "LargeOffice",
     },
     "ElectricChiller": {
@@ -103,11 +103,11 @@ class HeatingCoolingTest(ResourceTestCaseMixin, TestCase):
         d = ModelManager.make_response(run_uuid=run_uuid)
         self.assertEqual(round(d['outputs']['Scenario']['Site']['LoadProfileBoilerFuel']['annual_calculated_boiler_fuel_load_mmbtu_bau'],-1), 2840)
         self.assertEqual(round(sum(d['outputs']['Scenario']['Site']['LoadProfileBoilerFuel']['year_one_boiler_fuel_load_series_mmbtu_per_hr_bau']),-1),2840)
-        self.assertEqual(round(d['outputs']['Scenario']['Site']['LoadProfileChillerElectric']['annual_calculated_kwh_bau'],-1),320540)
-        self.assertEqual(round(sum(d['outputs']['Scenario']['Site']['LoadProfileChillerElectric']['year_one_chiller_electric_load_series_kw_bau']),-1), 320540)
+        self.assertEqual(round(d['outputs']['Scenario']['Site']['LoadProfileChillerThermal']['annual_calculated_kwh_bau'],-1),297490)
+        self.assertEqual(round(sum(d['outputs']['Scenario']['Site']['LoadProfileChillerThermal']['year_one_chiller_electric_load_series_kw_bau']),-1), 297490)
 
         post['Scenario']['Site']['LoadProfileBoilerFuel']['doe_reference_name'] = None
-        post['Scenario']['Site']['LoadProfileChillerElectric']['doe_reference_name'] = None        
+        post['Scenario']['Site']['LoadProfileChillerThermal']['doe_reference_name'] = None        
         resp = self.get_response(data=post)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
@@ -115,11 +115,11 @@ class HeatingCoolingTest(ResourceTestCaseMixin, TestCase):
         d = ModelManager.make_response(run_uuid=run_uuid)
         self.assertEqual(round(d['outputs']['Scenario']['Site']['LoadProfileBoilerFuel']['annual_calculated_boiler_fuel_load_mmbtu_bau'],-1), 0)
         self.assertEqual(round(sum(d['outputs']['Scenario']['Site']['LoadProfileBoilerFuel']['year_one_boiler_fuel_load_series_mmbtu_per_hr_bau']),-1),0)
-        self.assertEqual(round(d['outputs']['Scenario']['Site']['LoadProfileChillerElectric']['annual_calculated_kwh_bau'],-1),0)
-        self.assertEqual(round(sum(d['outputs']['Scenario']['Site']['LoadProfileChillerElectric']['year_one_chiller_electric_load_series_kw_bau']),-1), 0)
+        self.assertEqual(round(d['outputs']['Scenario']['Site']['LoadProfileChillerThermal']['annual_calculated_kwh_bau'],-1),0)
+        self.assertEqual(round(sum(d['outputs']['Scenario']['Site']['LoadProfileChillerThermal']['year_one_chiller_electric_load_series_kw_bau']),-1), 0)
 
         post['Scenario']['Site']['LoadProfileBoilerFuel']['annual_mmbtu'] = 1000
-        post['Scenario']['Site']['LoadProfileChillerElectric']['annual_fraction'] = 0.5
+        post['Scenario']['Site']['LoadProfileChillerThermal']['annual_fraction'] = 0.5
         resp = self.get_response(data=post)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
@@ -127,13 +127,13 @@ class HeatingCoolingTest(ResourceTestCaseMixin, TestCase):
         d = ModelManager.make_response(run_uuid=run_uuid)
         self.assertEqual(round(d['outputs']['Scenario']['Site']['LoadProfileBoilerFuel']['annual_calculated_boiler_fuel_load_mmbtu_bau'],-1), 1000)
         self.assertEqual(round(sum(d['outputs']['Scenario']['Site']['LoadProfileBoilerFuel']['year_one_boiler_fuel_load_series_mmbtu_per_hr_bau']),-1),1000)
-        self.assertEqual(round(d['outputs']['Scenario']['Site']['LoadProfileChillerElectric']['annual_calculated_kwh_bau'],-1), round(d['outputs']['Scenario']['Site']['LoadProfile']['annual_calculated_kwh'],-1)* 0.5)
-        self.assertEqual(round(sum(d['outputs']['Scenario']['Site']['LoadProfileChillerElectric']['year_one_chiller_electric_load_series_kw_bau']),-1), 3876410)
+        self.assertEqual(round(d['outputs']['Scenario']['Site']['LoadProfileChillerThermal']['annual_calculated_kwh_bau'],-1), round(d['outputs']['Scenario']['Site']['LoadProfile']['annual_calculated_kwh'],-1)* 0.5)
+        self.assertEqual(round(sum(d['outputs']['Scenario']['Site']['LoadProfileChillerThermal']['year_one_chiller_electric_load_series_kw_bau']),-1), 3876410)
 
         post['Scenario']['Site']['LoadProfileBoilerFuel']['annual_mmbtu'] = None
-        post['Scenario']['Site']['LoadProfileChillerElectric']['annual_fraction'] = None
+        post['Scenario']['Site']['LoadProfileChillerThermal']['annual_fraction'] = None
         post['Scenario']['Site']['LoadProfileBoilerFuel']['monthly_mmbtu'] = [1000]*12
-        post['Scenario']['Site']['LoadProfileChillerElectric']['monthly_fraction'] = [0.1] * 12
+        post['Scenario']['Site']['LoadProfileChillerThermal']['monthly_fraction'] = [0.1] * 12
         resp = self.get_response(data=post)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
@@ -141,15 +141,15 @@ class HeatingCoolingTest(ResourceTestCaseMixin, TestCase):
         d = ModelManager.make_response(run_uuid=run_uuid)
         self.assertEqual(round(d['outputs']['Scenario']['Site']['LoadProfileBoilerFuel']['annual_calculated_boiler_fuel_load_mmbtu_bau'],-1), 12000)
         self.assertEqual(round(sum(d['outputs']['Scenario']['Site']['LoadProfileBoilerFuel']['year_one_boiler_fuel_load_series_mmbtu_per_hr_bau']),-1), 12000)
-        self.assertEqual(round(d['outputs']['Scenario']['Site']['LoadProfileChillerElectric']['annual_calculated_kwh_bau'] - (d['outputs']['Scenario']['Site']['LoadProfile']['annual_calculated_kwh']* 0.1),-1),0)
-        self.assertEqual(round(sum(d['outputs']['Scenario']['Site']['LoadProfileChillerElectric']['year_one_chiller_electric_load_series_kw_bau']),-1), 775280)
+        self.assertEqual(round(d['outputs']['Scenario']['Site']['LoadProfileChillerThermal']['annual_calculated_kwh_bau'] - (d['outputs']['Scenario']['Site']['LoadProfile']['annual_calculated_kwh']* 0.1),-1),0)
+        self.assertEqual(round(sum(d['outputs']['Scenario']['Site']['LoadProfileChillerThermal']['year_one_chiller_electric_load_series_kw_bau']),-1), 775280)
 
         post['Scenario']['Site']['LoadProfileBoilerFuel']['annual_calculated_boiler_fuel_load_mmbtu_bau'] = None
-        post['Scenario']['Site']['LoadProfileChillerElectric']['annual_fraction'] = None
+        post['Scenario']['Site']['LoadProfileChillerThermal']['annual_fraction'] = None
         post['Scenario']['Site']['LoadProfileBoilerFuel']['monthly_totals_kwh'] = None
-        post['Scenario']['Site']['LoadProfileChillerElectric']['monthly_fraction'] = None
+        post['Scenario']['Site']['LoadProfileChillerThermal']['monthly_fraction'] = None
         post['Scenario']['Site']['LoadProfileBoilerFuel']['loads_mmbtu_per_hour'] = [1]*8760
-        post['Scenario']['Site']['LoadProfileChillerElectric']['loads_fraction'] = [0.01]*8760
+        post['Scenario']['Site']['LoadProfileChillerThermal']['loads_fraction'] = [0.01]*8760
         resp = self.get_response(data=post)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
@@ -157,5 +157,5 @@ class HeatingCoolingTest(ResourceTestCaseMixin, TestCase):
         d = ModelManager.make_response(run_uuid=run_uuid)
         self.assertEqual(round(d['outputs']['Scenario']['Site']['LoadProfileBoilerFuel']['annual_calculated_boiler_fuel_load_mmbtu_bau'],-1), 8760)
         self.assertEqual(round(sum(d['outputs']['Scenario']['Site']['LoadProfileBoilerFuel']['year_one_boiler_fuel_load_series_mmbtu_per_hr_bau']),-1),8760)
-        self.assertEqual(round(d['outputs']['Scenario']['Site']['LoadProfileChillerElectric']['annual_calculated_kwh_bau'] - (d['outputs']['Scenario']['Site']['LoadProfile']['annual_calculated_kwh']* 0.01),-1),0)
-        self.assertEqual(round(sum(d['outputs']['Scenario']['Site']['LoadProfileChillerElectric']['year_one_chiller_electric_load_series_kw_bau']),-1), 77530.0)
+        self.assertEqual(round(d['outputs']['Scenario']['Site']['LoadProfileChillerThermal']['annual_calculated_kwh_bau'] - (d['outputs']['Scenario']['Site']['LoadProfile']['annual_calculated_kwh']* 0.01),-1),0)
+        self.assertEqual(round(sum(d['outputs']['Scenario']['Site']['LoadProfileChillerThermal']['year_one_chiller_electric_load_series_kw_bau']),-1), 77530.0)

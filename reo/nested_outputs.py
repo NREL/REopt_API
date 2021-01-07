@@ -166,7 +166,7 @@ nested_output_definitions = {
                 }
               },
 
-              "LoadProfileChillerElectric": {
+              "LoadProfileChillerThermal": {
                 "year_one_chiller_electric_load_series_kw": {
                   "type": list_of_float,
                   "description": "Year one hourly time series of chiller electric load",
@@ -246,13 +246,18 @@ nested_output_definitions = {
                   "units": "$"
                 },
                 "total_opex_costs_us_dollars": {
-                  "type": float,
-                  "description": "Total operations and maintenance cost over anlaysis period",
+                  "type": "float",
+                  "description": "Total operations and maintenance cost over analysis period.",
                   "units": "$"
                 },
                 "year_one_opex_costs_us_dollars": {
-                  "type": float,
-                  "description": "Total operations and maintenance cost over anlaysis period",
+                  "type": "float",
+                  "description": "Year one operations and maintenance cost after tax.",
+                  "units": "$"
+                },
+                "year_one_opex_costs_before_tax_us_dollars": {
+                  "type": "float",
+                  "description": "Year one operations and maintenance cost before tax.",
                   "units": "$"
                 },
                 "simple_payback_years": {
@@ -789,6 +794,7 @@ nested_output_definitions = {
                   "units": "lb CO2"
                 }
               },
+
               "CHP": {
                 "size_kw": {
                   "type": float,
@@ -958,6 +964,16 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Year one chiller thermal production",
                   "units": "TonHr"
+                },
+                "year_one_absorp_chl_electric_consumption_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of absorption chiller electric consumption",
+                  "units": "kW"
+                },
+                "year_one_absorp_chl_electric_consumption_kwh": {
+                  "type": float,
+                  "description": "Year one chiller electric consumption (cooling tower heat rejection fans/pumps)",
+                  "units": "kWh"
                 }
               },
 
