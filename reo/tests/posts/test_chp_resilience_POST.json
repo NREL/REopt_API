@@ -34,7 +34,7 @@
       "LoadProfileBoilerFuel": {
         "doe_reference_name": "Hospital"
       } ,
-      "LoadProfileChillerElectric": {
+      "LoadProfileChillerThermal": {
         "doe_reference_name": "Hospital"
       } ,
       "ElectricTariff": {

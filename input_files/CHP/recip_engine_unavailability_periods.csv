@@ -1,10 +1,10 @@
-,Month,Start Week of Month,Start Day of Week,Start Hour,Duration
-0,1,2,5,0,2 days 00:00:00
-1,2,2,0,0,2 days 00:00:00
-2,3,2,5,0,2 days 00:00:00
-3,5,2,5,0,2 days 00:00:00
-4,6,2,0,0,2 days 00:00:00
-5,7,2,5,0,2 days 00:00:00
-6,9,2,5,0,2 days 00:00:00
-7,10,2,0,0,2 days 00:00:00
-8,11,2,5,0,2 days 00:00:00
+month,start_week_of_month,start_day_of_week,start_hour,duration_hours
+1,2,6,1,48
+2,2,1,1,48
+3,2,6,1,48
+5,2,6,1,48
+6,2,1,1,48
+7,2,6,1,48
+9,2,6,1,48
+10,2,1,1,48
+11,2,6,1,48

@@ -661,7 +661,7 @@ class CHPModel(models.Model):
     max_derate_factor = models.FloatField(null=True, blank=True)
     derate_start_temp_degF = models.FloatField(null=True, blank=True)
     derate_slope_pct_per_degF = models.FloatField(null=True, blank=True)
-    chp_unavailability_hourly = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    chp_unavailability_periods = ArrayField(PickledObjectField(null=True, editable=True), default=list, null=True)
     can_net_meter = models.BooleanField(null=True)
     can_wholesale = models.BooleanField(null=True)
     can_export_beyond_site_load = models.BooleanField(null=True)

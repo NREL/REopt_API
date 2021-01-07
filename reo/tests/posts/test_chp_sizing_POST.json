@@ -97,7 +97,16 @@
         "pbi_max_us_dollars": 0.0,
         "pbi_years": 0.0,
         "pbi_system_max_kw": 0.0,
-        "emissions_factor_lb_CO2_per_mmbtu": 116.9
+        "emissions_factor_lb_CO2_per_mmbtu": 116.9,
+        "chp_unavailability_periods": [
+            {
+                "month": 1,
+                "start_week_of_month": 2,
+                "start_day_of_week": 6,
+                "start_hour": 1,
+                "duration_hours": 0
+            }
+        ]
       },
       "Boiler": {
         "min_mmbtu_per_hr": 0.0,
