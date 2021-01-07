@@ -1030,7 +1030,7 @@ function reopt_run(m, p::Parameter)
     if Obj == 1
 		@objective(m, Min, m[:REcosts])
 	elseif Obj == 2  # Keep SOC high
-		@objective(m, Min, m[:REcosts] - sum(m[:dvStorageSOC]["Elec",ts] for ts in p.TimeStep)/8760.)
+		@objective(m, Min, m[:REcosts] - sum(m[:dvStorageSOC]["Elec",ts] for ts in p.TimeStep)/p.TimeStepCount)
 	end
 
 	results["julia_reopt_constriants_seconds"] = time() - t_start
