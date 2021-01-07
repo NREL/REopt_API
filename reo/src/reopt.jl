@@ -348,6 +348,7 @@ end
 function add_storage_size_constraints(m, p)
 	# Constraint (4a): Reconcile initial state of charge for storage systems
 	@constraint(m, InitStorageCon[b in p.Storage], m[:dvStorageSOC][b,0] == p.StorageInitSOC[b] * m[:dvStorageCapEnergy][b])
+	@constraint(m, EndStorageCon[b in p.Storage], m[:dvStorageSOC][b,p.TimeStepCount] == p.StorageInitSOC[b] * m[:dvStorageCapEnergy][b])
 	# Constraint (4b)-1: Lower bound on Storage Energy Capacity
 	@constraint(m, StorageEnergyLBCon[b in p.Storage], m[:dvStorageCapEnergy][b] >= p.StorageMinSizeEnergy[b])
 	# Constraint (4b)-2: Upper bound on Storage Energy Capacity
