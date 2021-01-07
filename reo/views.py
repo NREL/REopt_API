@@ -804,8 +804,8 @@ def schedule_stats(request):
             for i, period in enumerate(chp_unavailability_periods):
                 start_datetime = datetime(year=year, month=period['month'], day=start_day_of_month_list[i], hour=period['start_hour']-1)
                 end_datetime = start_datetime + timedelta(hours=period['duration_hours'])
-                formatted_datetime_periods.append({"start_datetime": start_datetime.strftime("%Y-%m-%dT%H"),
-                                                    "end_datetime": end_datetime.strftime("%Y-%m-%dT%H")})
+                formatted_datetime_periods.append({"start_datetime": start_datetime.strftime("%Y-%m-%dT%H:%M:%S"), 
+                                                    "end_datetime": end_datetime.strftime("%Y-%m-%dT%H:%M:%S")})
         else:
             raise ValueError(" ".join(errors_chp_unavailability_periods))
 
