@@ -28,7 +28,13 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## develop (unreleased)
+## develop
+### Major Updates
+### Minor Updates
+### Patches
+
+
+## v1.2.0 - 2021-01-04
 ### Major Updates
 ### Minor Updates
 ##### Added
