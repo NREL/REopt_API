@@ -32,6 +32,7 @@ from reo.src.urdb_parse import UrdbParse
 from reo.src.fuel_params import FuelParams
 from reo.utilities import annuity, degradation_factor, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
     insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, annuity_escalation
+import numpy as np
 max_incentive = 1.0e10
 
 big_number = 1.0e10
@@ -110,9 +111,9 @@ class DataManager:
         self.LoadProfile["annual_heating_mmbtu"] = load.annual_mmbtu
         self.heating_load = load
 
-    def add_load_chiller_electric(self, load):
-        self.LoadProfile["year_one_chiller_electric_load_series_kw"] = load.load_list
-        self.LoadProfile["annual_cooling_kwh"] = load.annual_kwh
+    def add_load_chiller_thermal(self, load):
+        self.LoadProfile["year_one_chiller_electric_load_series_kw"] = list(np.array(load.load_list) / load.chiller_cop)
+        self.LoadProfile["annual_cooling_kwh"] = load.annual_kwht / load.chiller_cop
         self.cooling_load = load
 
     def add_boiler(self, boiler):
@@ -302,7 +303,7 @@ class DataManager:
 
         for tech in techs:
 
-            if eval('self.' + tech) is not None and tech not in ['util', 'boiler', 'elecchl']:
+            if eval('self.' + tech) is not None and tech not in ['util', 'boiler', 'elecchl','absorpchl']:
 
                 existing_kw = 0.0
                 if hasattr(eval('self.' + tech), 'existing_kw'):
@@ -595,7 +596,7 @@ class DataManager:
                 n_segments_list.append(n_segments)
 
             # [az] Not sure if we need this or not, first line is updated from DatFileManager and the rest may have been removed in this version
-            elif eval('self.' + tech) is not None and tech in ['util', 'boiler', 'elecchl']:
+            elif eval('self.' + tech) is not None and tech in ['util', 'boiler', 'elecchl','absorpchl']:
 
                 cap_cost_slope.append(0.0)
                 cap_cost_yint.append(0.0)
@@ -1174,7 +1175,7 @@ class DataManager:
 
         techs_no_turndown = [t for t in reopt_techs if t.startswith("PV") or t.startswith("WIND")]
         techs_no_turndown_bau = [t for t in reopt_techs_bau if t.startswith("PV") or t.startswith("WIND")]
-        
+
         electric_techs = [t for t in reopt_techs if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR") or t.startswith("CHP")]
         electric_techs_bau = [t for t in reopt_techs_bau if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR") or t.startswith("CHP")]
 
@@ -1192,18 +1193,21 @@ class DataManager:
             heating_load = self.heating_load.load_list
         else:
             heating_load = [0.0 for _ in self.load.load_list]
-        if self.cooling_load != None:
+        if self.LoadProfile["annual_cooling_kwh"] > 0.0:
             cooling_load = self.cooling_load.load_list
             # Zero out cooling load for outage hours
             if time_steps_without_grid not in [None, []]:
                 for outage_time_step in time_steps_without_grid:
                     cooling_load[outage_time_step-1] = 0.0
+                    self.LoadProfile["year_one_chiller_electric_load_series_kw"][outage_time_step-1] = 0.0
+                self.LoadProfile["annual_cooling_kwh"] = sum(cooling_load) / self.elecchl_cop * self.steplength
         else:
             cooling_load = [0.0 for _ in self.load.load_list]
 
         # Create non-cooling electric load which is ElecLoad in the reopt.jl model
-        non_cooling_electric_load = [self.load.load_list[ts] - cooling_load[ts] for ts in range(len(self.load.load_list))]
-        non_cooling_electric_load_bau = [self.load.bau_load_list[ts] - cooling_load[ts] for ts in range(len(self.load.bau_load_list))]
+        # cooling_load is thermal, so convert to electric and subtract from total electric load to get non_cooling
+        non_cooling_electric_load = [self.load.load_list[ts] - cooling_load[ts] / self.cooling_load.chiller_cop for ts in range(len(self.load.load_list))]
+        non_cooling_electric_load_bau = [self.load.bau_load_list[ts] - cooling_load[ts] / self.cooling_load.chiller_cop for ts in range(len(self.load.bau_load_list))]
 
         sf = self.site.financial
 
@@ -1229,6 +1233,7 @@ class DataManager:
         boiler_efficiency = self.boiler.boiler_efficiency if self.boiler != None else 1.0
         elec_chiller_cop = self.elecchl.chiller_cop if self.elecchl != None else 1.0
         absorp_chiller_cop = self.absorpchl.chiller_cop if self.absorpchl != None else 1.0
+        absorp_chiller_elec_cop = self.absorpchl.chiller_elec_cop if self.absorpchl != None else 1.0
 
         # Fuel burning parameters and other CHP-specific parameters
         fuel_params = FuelParams(big_number=big_number, elec_tariff=self.elec_tariff, fuel_tariff=self.fuel_tariff,
@@ -1360,6 +1365,7 @@ class DataManager:
             'BoilerEfficiency': boiler_efficiency,
             'ElectricChillerCOP': elec_chiller_cop,
             'AbsorptionChillerCOP': absorp_chiller_cop,
+            'AbsorptionChillerElecCOP': absorp_chiller_elec_cop,
             'CHPThermalProdSlope': chp_thermal_prod_slope,
             'CHPThermalProdIntercept': chp_thermal_prod_intercept,
             'FuelBurnYIntRate': chp_fuel_burn_intercept,
@@ -1487,6 +1493,7 @@ class DataManager:
             'BoilerEfficiency': boiler_efficiency,
             'ElectricChillerCOP': elec_chiller_cop,
             'AbsorptionChillerCOP': absorp_chiller_cop,
+            'AbsorptionChillerElecCOP': absorp_chiller_elec_cop,
             'CHPThermalProdSlope': chp_thermal_prod_slope_bau,
             'CHPThermalProdIntercept': chp_thermal_prod_intercept_bau,
             'FuelBurnYIntRate': chp_fuel_burn_intercept_bau,
