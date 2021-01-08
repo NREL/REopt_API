@@ -560,75 +560,95 @@ def generator_efficiency(request):
 
 def chp_defaults(request):
     """
-    This provides the default input values for CHP based the following:
-        1. Prime mover and size class
-        2. Prime mover and average heating load
-    If both size class and average heating load are given, the size class will be used.
-    Boiler efficiency is assumed and may not be consistent with actual input value.
+    Depending on the set of inputs, different sets of outputs are determine in addition to all CHP cost and performance parameter defaults:
+        1. Inputs: existing_boiler_production_type_steam_or_hw and avg_boiler_fuel_load_mmbtu_per_hr
+           Outputs: prime_mover, size_class, chp_size_based_on_avg_heating_load_kw
+        2. Inputs: prime_mover and avg_boiler_fuel_load_mmbtu_per_hr
+           Outputs: size_class
+        3. Inputs: prime_mover and size_class
+           Outputs: (uses default existing_boiler_production_type_steam_or_hw based on prime_mover to get default params)
+        4. Inputs: prime_mover
+           Outputs: (uses default size_class and existing_boiler_production_type_steam_or_hw based on prime_mover to get default params)
+    
+    The main purpose of this endpoint is to communicate the following table of dependency of CHP defaults versus 
+        existing_boiler_production_type_steam_or_hw and avg_boiler_fuel_load_mmbtu_per_hr:
+    If hot_water and <= 5 MWe chp_size_based_on_avg_heating_load_kw --> prime_mover = recip_engine of size_class X
+    If hot_water and > 5 MWe chp_size_based_on_avg_heating_load_kw --> prime_mover = combustion_turbine of size_class X
+    If steam and <= 2 MWe chp_size_based_on_avg_heating_load_kw --> prime_mover = recip_engine of size_class X
+    If steam and > 2 MWe chp_size_based_on_avg_heating_load_kw --> prime_mover = combustion_turbine of size_class X
+
+    Boiler efficiency is assumed for calculating chp_size_based_on_avg_heating_load_kw and may not be consistent with actual input value.
     """
 
     prime_mover_defaults_all = copy.deepcopy(CHP.prime_mover_defaults_all)
     n_classes = {pm: len(CHP.class_bounds[pm]) for pm in CHP.class_bounds.keys()}
 
     try:
-        prime_mover = request.GET.get('prime_mover')
-        avg_boiler_fuel_load_mmbtu_per_hr = request.GET.get('avg_boiler_fuel_load_mmbtu_per_hr')
-        size_class = request.GET.get('size_class')
         hw_or_steam = request.GET.get('existing_boiler_production_type_steam_or_hw')
-        year = request.GET.get('year')
-        chp_unavailability_periods = request.GET.get('chp_unavailability_periods')
-        if prime_mover is not None:
-            # Get hot_water or steam to get index for CHP thermal efficiency and boiler efficiency
+        avg_boiler_fuel_load_mmbtu_per_hr = request.GET.get('avg_boiler_fuel_load_mmbtu_per_hr')
+        prime_mover = request.GET.get('prime_mover')
+        size_class = request.GET.get('size_class')
+
+        if prime_mover is not None:  # Options 2, 3, or 4
             if hw_or_steam is None:  # Use default hw_or_steam based on prime_mover
                 hw_or_steam = Boiler.boiler_type_by_chp_prime_mover_defaults[prime_mover]
-            if hw_or_steam == "hot_water":
-                hw_or_steam_index = 0
-            elif hw_or_steam == "steam":
-                hw_or_steam_index = 1
-            else:
+        elif hw_or_steam is not None and avg_boiler_fuel_load_mmbtu_per_hr is not None:  # Option 1, determine prime_mover based on inputs
+            if hw_or_steam not in ["hot_water", "steam"]:  # Validate user-entered hw_or_steam 
                 raise ValueError("Invalid argument for existing_boiler_production_type_steam_or_hw; must be 'hot_water' or 'steam'")
-
-            # Calculate heuristic CHP size based on average thermal load, using the default size class efficiency data
-            if avg_boiler_fuel_load_mmbtu_per_hr is not None:
-                avg_boiler_fuel_load_mmbtu_per_hr = float(avg_boiler_fuel_load_mmbtu_per_hr)
-                therm_effic = prime_mover_defaults_all[prime_mover]['thermal_effic_full_load'][hw_or_steam_index][CHP.default_chp_size_class[prime_mover]]
-                elec_effic = prime_mover_defaults_all[prime_mover]['elec_effic_full_load'][CHP.default_chp_size_class[prime_mover]]
-                boiler_effic = Boiler.boiler_efficiency_defaults[hw_or_steam]
-                avg_heating_thermal_load_mmbtu_per_hr = avg_boiler_fuel_load_mmbtu_per_hr * boiler_effic
-                chp_fuel_rate_mmbtu_per_hr = avg_heating_thermal_load_mmbtu_per_hr / therm_effic
-                chp_elec_size_heuristic_kw = chp_fuel_rate_mmbtu_per_hr * elec_effic * 1.0E6 / 3412.0
-            else:
-                chp_elec_size_heuristic_kw = None
-            # If size class is specified use that and ignore heuristic CHP sizing for determining size class
-            if size_class is not None:
-                size_class = int(size_class)
-                if (size_class < 0) or (size_class >= n_classes[prime_mover]):
-                    raise ValueError('The size class input is outside the valid range for ' + str(prime_mover))
-            # If size class is not specified, heuristic sizing based on avg thermal load and size class 0 efficiencies
-            elif avg_boiler_fuel_load_mmbtu_per_hr is not None and size_class is None:
-                # With heuristic size, find the suggested size class
-                if chp_elec_size_heuristic_kw < CHP.class_bounds[prime_mover][1][1]:
-                    # If smaller than the upper bound of the smallest class, assign the smallest class
-                    size_class = 1
-                elif chp_elec_size_heuristic_kw >= CHP.class_bounds[prime_mover][n_classes[prime_mover] - 1][0]:
-                    # If larger than or equal to the lower bound of the largest class, assign the largest class
-                    size_class = n_classes[prime_mover] - 1  # Size classes are zero-indexed
-                else:
-                    # For middle size classes
-                    for sc in range(2, n_classes[prime_mover] - 1):
-                        if (chp_elec_size_heuristic_kw >= CHP.class_bounds[prime_mover][sc][0]) and \
-                                (chp_elec_size_heuristic_kw < CHP.class_bounds[prime_mover][sc][1]):
-                            size_class = sc
-            else:
-                size_class = CHP.default_chp_size_class[prime_mover]
-            prime_mover_defaults = CHP.get_chp_defaults(prime_mover, hw_or_steam, size_class)
         else:
-            raise ValueError("Missing prime_mover type query parameter.")
+            ValueError("Must provide either existing_boiler_production_type_steam_or_hw or prime_mover")
+
+        # Need to numerically index thermal efficiency default on hot_water (0) or steam (1)
+        hw_or_steam_index_dict = {"hot_water": 0, "steam": 1}
+        hw_or_steam_index = hw_or_steam_index_dict[hw_or_steam]
+
+        # Calculate heuristic CHP size based on average thermal load, using the default size class efficiency data
+        avg_boiler_fuel_load_under_recip_over_ct = {"hot_water": 27.0, "steam": 10.0}  # [MMBtu/hr] Based on external calcs for size versus production by prime_mover type
+        if avg_boiler_fuel_load_mmbtu_per_hr is not None:
+            avg_boiler_fuel_load_mmbtu_per_hr = float(avg_boiler_fuel_load_mmbtu_per_hr)
+            if prime_mover is None:
+                if avg_boiler_fuel_load_mmbtu_per_hr <= avg_boiler_fuel_load_under_recip_over_ct[hw_or_steam]:
+                    prime_mover = "recip_engine"  # Must make an initial guess at prime_mover to use those thermal and electric efficiency params to convert to size
+                else:
+                    prime_mover = "combustion_turbine"
+            therm_effic = prime_mover_defaults_all[prime_mover]['thermal_effic_full_load'][hw_or_steam_index][CHP.default_chp_size_class[prime_mover]]
+            elec_effic = prime_mover_defaults_all[prime_mover]['elec_effic_full_load'][CHP.default_chp_size_class[prime_mover]]
+            boiler_effic = Boiler.boiler_efficiency_defaults[hw_or_steam]
+            avg_heating_thermal_load_mmbtu_per_hr = avg_boiler_fuel_load_mmbtu_per_hr * boiler_effic
+            chp_fuel_rate_mmbtu_per_hr = avg_heating_thermal_load_mmbtu_per_hr / therm_effic
+            chp_elec_size_heuristic_kw = chp_fuel_rate_mmbtu_per_hr * elec_effic * 1.0E6 / 3412.0
+        else:
+            chp_elec_size_heuristic_kw = None
+        
+        # If size class is specified use that and ignore heuristic CHP sizing for determining size class
+        if size_class is not None:
+            size_class = int(size_class)
+            if (size_class < 0) or (size_class >= n_classes[prime_mover]):
+                raise ValueError('The size class input is outside the valid range for ' + str(prime_mover))
+        # If size class is not specified, heuristic sizing based on avg thermal load and size class 0 efficiencies
+        elif chp_elec_size_heuristic_kw is not None and size_class is None:
+            # With heuristic size, find the suggested size class
+            if chp_elec_size_heuristic_kw < CHP.class_bounds[prime_mover][1][1]:
+                # If smaller than the upper bound of the smallest class, assign the smallest class
+                size_class = 1
+            elif chp_elec_size_heuristic_kw >= CHP.class_bounds[prime_mover][n_classes[prime_mover] - 1][0]:
+                # If larger than or equal to the lower bound of the largest class, assign the largest class
+                size_class = n_classes[prime_mover] - 1  # Size classes are zero-indexed
+            else:
+                # For middle size classes
+                for sc in range(2, n_classes[prime_mover] - 1):
+                    if (chp_elec_size_heuristic_kw >= CHP.class_bounds[prime_mover][sc][0]) and \
+                            (chp_elec_size_heuristic_kw < CHP.class_bounds[prime_mover][sc][1]):
+                        size_class = sc
+        else:
+            size_class = CHP.default_chp_size_class[prime_mover]
+        
+        prime_mover_defaults = CHP.get_chp_defaults(prime_mover, hw_or_steam, size_class)
 
         response = JsonResponse(
             {"prime_mover": prime_mover,
              "size_class": size_class,
-             "hw_or_steam": hw_or_steam_index,
+             "hw_or_steam": hw_or_steam,
              "default_inputs": prime_mover_defaults,
              "chp_size_based_on_avg_heating_load_kw": chp_elec_size_heuristic_kw,
              "size_class_bounds": CHP.class_bounds
