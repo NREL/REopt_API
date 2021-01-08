@@ -192,6 +192,7 @@ Base.@kwdef struct Parameter
      TechToLocation::AxisArray
      MaxSizesLocation::Array{Float64, 1}
      Location::UnitRange
+	 AddSOCIncentive::Int64
 
 	# Added for CHP
 	HotTES::Array{String,1}

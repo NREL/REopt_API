@@ -933,7 +933,6 @@ function reopt_run(m, p::Parameter)
 
 	t_start = time()
 	results = Dict{String, Any}()
-    Obj = 1  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
 
 	## Big-M adjustments; these need not be replaced in the parameter object.
 	add_bigM_adjustments(m, p)
@@ -1027,9 +1026,9 @@ function reopt_run(m, p::Parameter)
 
 	add_cost_function(m, p)
 
-    if Obj == 1
+    if !(p.AddSOCIncentive)
 		@objective(m, Min, m[:REcosts])
-	elseif Obj == 2  # Keep SOC high
+	else
 		@objective(m, Min, m[:REcosts] - sum(m[:dvStorageSOC]["Elec",ts] for ts in p.TimeStep)/p.TimeStepCount)
 	end
 
