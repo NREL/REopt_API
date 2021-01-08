@@ -803,7 +803,8 @@ def schedule_stats(request):
             {
                 "providing_default_chp_unavailability_periods": used_default,
                 "formatted_datetime_periods": formatted_datetime_periods,
-                "weekday_weekend_total_hours_by_month": weekday_weekend_total_hours_by_month
+                "weekday_weekend_total_hours_by_month": weekday_weekend_total_hours_by_month,
+                "chp_unavailability_periods": chp_unavailability_periods
             }
         )
         return response
