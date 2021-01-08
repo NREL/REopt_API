@@ -227,8 +227,8 @@ class LoadProfileModel(models.Model):
     critical_loads_kw = ArrayField(models.FloatField(blank=True), default=list)
     loads_kw_is_net = models.BooleanField(default=True)
     critical_loads_kw_is_net = models.BooleanField(default=False)
-    outage_start_hour = models.IntegerField(null=True, blank=True)
-    outage_end_hour = models.IntegerField(null=True, blank=True)
+    outage_start_time_step = models.IntegerField(null=True, blank=True)
+    outage_end_time_step = models.IntegerField(null=True, blank=True)
     critical_load_pct = models.FloatField()
     outage_is_major_event = models.BooleanField(default=True)
 
@@ -237,6 +237,7 @@ class LoadProfileModel(models.Model):
     critical_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=list)
     annual_calculated_kwh = models.FloatField(null=True, blank=True)
     sustain_hours = models.IntegerField(null=True, blank=True)
+    bau_sustained_time_steps = models.IntegerField(null=True, blank=True)
     resilience_check_flag = models.BooleanField(default=False)
 
     @classmethod
@@ -350,7 +351,10 @@ class PVModel(models.Model):
     pv_number = models.IntegerField(default=1, null=True, blank=True)
     pv_name = models.TextField(null=True, blank=True, default='')
     location = models.TextField(null=True, blank=True, default='both')
-    prod_factor_series_kw = ArrayField(models.FloatField(blank=True), default=list)
+    can_net_meter = models.BooleanField(null=True)
+    can_wholesale = models.BooleanField(null=True)
+    can_export_beyond_site_load = models.BooleanField(null=True)
+    can_curtail = models.BooleanField(null=True)
 
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)
@@ -416,6 +420,10 @@ class WindModel(models.Model):
     pbi_years = models.FloatField()
     pbi_system_max_kw = models.FloatField()
     prod_factor_series_kw = ArrayField(models.FloatField(blank=True), default=list)
+    can_net_meter = models.BooleanField(null=True)
+    can_wholesale = models.BooleanField(null=True)
+    can_export_beyond_site_load = models.BooleanField(null=True)
+    can_curtail = models.BooleanField(null=True)
 
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)
@@ -520,6 +528,10 @@ class GeneratorModel(models.Model):
     pbi_years = models.FloatField(null=True, blank=True)
     pbi_system_max_kw = models.FloatField(null=True, blank=True)
     emissions_factor_lb_CO2_per_gal = models.FloatField(null=True, blank=True)
+    can_net_meter = models.BooleanField(null=True)
+    can_wholesale = models.BooleanField(null=True)
+    can_export_beyond_site_load = models.BooleanField(null=True)
+    can_curtail = models.BooleanField(null=True)
 
     # Outputs
     fuel_used_gal = models.FloatField(null=True, blank=True)
@@ -872,5 +884,14 @@ class ModelManager(object):
 
         if resp['inputs']['Scenario']['Site']['LoadProfile'].get('doe_reference_name') == '':
             del resp['inputs']['Scenario']['Site']['LoadProfile']['doe_reference_name']
+        
+        #Preserving Backwards Compatability
+        resp['inputs']['Scenario']['Site']['LoadProfile']['outage_start_hour'] = resp['inputs']['Scenario']['Site']['LoadProfile'].get('outage_start_time_step')
+        if resp['inputs']['Scenario']['Site']['LoadProfile']['outage_start_hour'] is not None:
+            resp['inputs']['Scenario']['Site']['LoadProfile']['outage_start_hour'] -= 1
+        resp['inputs']['Scenario']['Site']['LoadProfile']['outage_end_hour'] = resp['inputs']['Scenario']['Site']['LoadProfile'].get('outage_end_time_step')
+        if resp['inputs']['Scenario']['Site']['LoadProfile']['outage_end_hour'] is not None:
+            resp['inputs']['Scenario']['Site']['LoadProfile']['outage_end_hour'] -= 1
+
 
         return resp

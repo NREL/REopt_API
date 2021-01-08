@@ -80,6 +80,13 @@ def list_of_float(input):
 def list_of_str(input):
   return [str(i) for i in input]
 
+def list_of_int(input):
+  result = []
+  for i in input:
+    if i%1>0:
+      raise Exception('Not all values in the list_of_int input are whole numbers')
+    result.append(int(i))
+  return result
 
 nested_input_definitions = {
 
@@ -306,15 +313,29 @@ nested_input_definitions = {
           "type": "int",
           "min": 0,
           "max": 8759,
-          "depends_on":["outage_end_hour"],
+          "depends_on": ["outage_end_hour"],
           "description": "Hour of year that grid outage starts. Must be less than outage_end."
         },
         "outage_end_hour": {
           "type": "int",
           "min": 0,
           "max": 8759,
-          "depends_on":["outage_start_hour"],
+          "depends_on": ["outage_start_hour"],
           "description": "Hour of year that grid outage ends. Must be greater than outage_start."
+        },
+        "outage_start_time_step": {
+          "type": "int",
+          "min": 1,
+          "max": 35040,
+          "depends_on": ["outage_end_time_step"],
+          "description": "Time step that grid outage starts. Must be less than outage_end."
+        },
+        "outage_end_time_step": {
+          "type": "int",
+          "min": 1,
+          "max": 35040,
+          "depends_on": ["outage_start_time_step"],
+          "description": "Time step that grid outage ends. Must be greater than outage_start."
         },
         "critical_load_pct": {
           "type": "float",
@@ -387,7 +408,7 @@ nested_input_definitions = {
           "min": 0.0,
           "max": 1.0e9,
           "default": 0.0,
-          "description": "System size above which net metering is not allowed"
+          "description": "Upper limit on the total capacity of technologies that can participate in net metering agreement."
         },
         "interconnection_limit_kw": {
           "type": "float",
@@ -428,7 +449,7 @@ nested_input_definitions = {
       "Wind": {
         "size_class": {
           "type": "str",
-          "restrict_to": "['residential', 'commercial', 'medium', 'large']",
+          "restrict_to": ['residential', 'commercial', 'medium', 'large', None],
           "description": "Turbine size-class. One of [residential, commercial, medium, large]"
         },
         "wind_meters_per_sec": {
@@ -596,6 +617,26 @@ nested_input_definitions = {
         "prod_factor_series_kw": {
           "type": "list_of_float",
           "description": "Optional user-defined production factors. Entries have units of kWh/kW, representing the energy (kWh) output of a 1 kW system in each time step. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+        },
+        "can_net_meter": {
+          "type": "bool",
+          "default": True,
+          "description": "True/False for if technology has option to participate in net metering agreement with utility. Note that a technology can only participate in either net metering or wholesale rates (not both)."
+        },
+        "can_wholesale": {
+          "type": "bool",
+          "default": True,
+          "description": "True/False for if technology has option to export energy that is compensated at the wholesale_rate_us_dollars_per_kwh. Note that a technology can only participate in either net metering or wholesale rates (not both)."
+        },
+        "can_export_beyond_site_load": {
+          "type": "bool",
+          "default": True,
+          "description": "True/False for if technology can export energy beyond the annual site load (and be compensated for that energy at the wholesale_rate_above_site_load_us_dollars_per_kwh)."
+        },
+        "can_curtail": {
+          "type": "bool",
+          "default": True,
+          "description": "True/False for if technology can curtail energy produced."
         }
       },
 
@@ -824,21 +865,36 @@ nested_input_definitions = {
           "default": 0.537,
           "description": "PV system tilt"
         },
-        "prod_factor_series_kw": {
-          "type": "list_of_float",
-          "description": "Optional user-defined production factors. Entries have units of kWh/kW, representing the energy (kWh) output of a 1 kW system in each time step. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
-        },
         "location": {
           "type": "str",
-          "restrict_to": "['roof', 'ground', 'both']",
+          "restrict_to": ['roof', 'ground', 'both'],
           "default": 'both',
           "description": "Where PV can be deployed. One of [roof, ground, both] with default as both"
         },
         "prod_factor_series_kw": {
           "type": "list_of_float",
           "description": "Optional user-defined production factors. Entries have units of kWh/kW, representing the energy (kWh) output of a 1 kW system in each time step. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+        },
+        "can_net_meter": {
+          "type": "bool",
+          "default": True,
+          "description": "True/False for if technology has option to participate in net metering agreement with utility. Note that a technology can only participate in either net metering or wholesale rates (not both)."
+        },
+        "can_wholesale": {
+          "type": "bool",
+          "default": True,
+          "description": "True/False for if technology has option to export energy that is compensated at the wholesale_rate_us_dollars_per_kwh. Note that a technology can only participate in either net metering or wholesale rates (not both)."
+        },
+        "can_export_beyond_site_load": {
+          "type": "bool",
+          "default": True,
+          "description": "True/False for if technology can export energy beyond the annual site load (and be compensated for that energy at the wholesale_rate_above_site_load_us_dollars_per_kwh)."
+        },
+        "can_curtail": {
+          "type": "bool",
+          "default": True,
+          "description": "True/False for if technology can curtail energy produced."
         }
-
       },
 
       "Storage": {
@@ -1138,182 +1194,31 @@ nested_input_definitions = {
           "default": 0.0,
           "description": "Maximum system size for which production-based incentives apply"
         },
-         "emissions_factor_lb_CO2_per_gal": {
+        "emissions_factor_lb_CO2_per_gal": {
           "type": "float",
           "description": "Pounds of carbon dioxide emitted per gallon of fuel burned"
-         }
+        },
+        "can_net_meter": {
+          "type": "bool",
+          "default": False,
+          "description": "True/False for if technology has option to participate in net metering agreement with utility. Note that a technology can only participate in either net metering or wholesale rates (not both)."
+        },
+        "can_wholesale": {
+          "type": "bool",
+          "default": False,
+          "description": "True/False for if technology has option to export energy that is compensated at the wholesale_rate_us_dollars_per_kwh. Note that a technology can only participate in either net metering or wholesale rates (not both)."
+        },
+        "can_export_beyond_site_load": {
+          "type": "bool",
+          "default": False,
+          "description": "True/False for if technology can export energy beyond the annual site load (and be compensated for that energy at the wholesale_rate_above_site_load_us_dollars_per_kwh)."
+        },
+        "can_curtail": {
+          "type": "bool",
+          "default": False,
+          "description": "True/False for if technology can curtail energy produced."
+        }
       }
     }
   }
 }
-
-
-def flat_to_nested(i):
-
-    return {
-        "Scenario": {
-            "timeout_seconds": i.get("timeout"),
-            "user_uuid": i.get("user_uuid"),
-            "description": i.get("description"),
-            "time_steps_per_hour": i.get("time_steps_per_hour"),
-
-
-            "Site": {
-                "latitude": i.get("latitude"),
-                "longitude": i.get("longitude"),
-                "address": i.get("address"),
-                "land_acres": i.get("land_area"),
-                "roof_squarefeet": i.get("roof_area"),
-
-                "Financial": {
-                                "om_cost_escalation_pct": i.get("om_cost_growth_rate"),
-                                "escalation_pct": i.get("rate_escalation"),
-                                "owner_tax_pct": i.get("owner_tax_rate"),
-                                "offtaker_tax_pct": i.get("offtaker_tax_rate"),
-                                "owner_discount_pct": i.get("owner_discount_rate"),
-                                "offtaker_discount_pct": i.get("offtaker_discount_rate"),
-                                "analysis_years": i.get("analysis_period"),
-             },
-
-                "LoadProfile":
-                    {
-                        "doe_reference_name": i.get("load_profile_name"),
-                        "annual_kwh": i.get("load_size"),
-                        "year": i.get("load_year"),
-                        "monthly_totals_kwh": i.get("load_monthly_kwh"),
-                        "loads_kw": i.get("load_8760_kw"),
-                        "outage_start_hour": i.get("outage_start"),
-                        "outage_end_hour": i.get("outage_end"),
-                        "critical_load_pct": i.get("crit_load_factor"),
-                 },
-
-                "ElectricTariff":
-                    {
-                        "urdb_utility_name": i.get("utility_name"),
-                        "urdb_rate_name": i.get("rate_name"),
-                        "urdb_response": i.get("urdb_rate"),
-                        "blended_monthly_rates_us_dollars_per_kwh": i.get("blended_utility_rate"),
-                        "blended_monthly_demand_charges_us_dollars_per_kw": i.get("demand_charge"),
-                        "blended_annual_rates_us_dollars_per_kwh": i.get("blended_utility_rate")[0],
-                        "blended_annual_rates_us_dollars_per_kw": i.get("demand_charge")[0],
-                        "net_metering_limit_kw": i.get("net_metering_limit"),
-                        "wholesale_rate_us_dollars_per_kwh": i.get("wholesale_rate"),
-                        "interconnection_limit_kw": i.get("interconnection_limit"),
-                 },
-
-                "PV":
-                    {
-                        "min_kw": i.get("pv_kw_min"),
-                        "max_kw": i.get("pv_kw_max"),
-                        "installed_cost_us_dollars_per_kw": i.get("pv_cost"),
-                        "om_cost_us_dollars_per_kw": i.get("pv_om"),
-                        "degradation_pct": i.get("pv_degradation_rate"),
-                        "azimuth": i.get("azimuth"),
-                        "losses": i.get("losses"),
-                        "array_type": i.get("array_type"),
-                        "module_type": i.get("module_type"),
-                        "gcr": i.get("gcr"),
-                        "dc_ac_ratio": i.get("dc_ac_ratio"),
-                        "inv_eff": i.get("inv_eff"),
-                        "radius": i.get("radius"),
-                        "tilt": i.get("tilt"),
-                        "macrs_option_years": i.get("pv_macrs_schedule"),
-                        "macrs_bonus_pct": i.get("pv_macrs_bonus_fraction"),
-                        "macrs_itc_reduction": i.get("pv_macrs_itc_reduction"),
-                        "federal_itc_pct": i.get("pv_itc_federal"),
-                        "state_ibi_pct": i.get("pv_ibi_state"),
-                        "state_ibi_max_us_dollars": i.get("pv_ibi_state_max"),
-                        "utility_ibi_pct": i.get("pv_ibi_utility"),
-                        "utility_ibi_max_us_dollars": i.get("pv_ibi_utility_max"),
-                        "federal_rebate_us_dollars_per_kw": i.get("pv_rebate_federal"),
-                        "state_rebate_us_dollars_per_kw": i.get("pv_rebate_state"),
-                        "state_rebate_max_us_dollars": i.get("pv_rebate_state_max"),
-                        "utility_rebate_us_dollars_per_kw": i.get("pv_rebate_utility"),
-                        "utility_rebate_max_us_dollars":i.get("pv_rebate_utility_max"),
-                        "pbi_us_dollars_per_kwh": i.get("pv_pbi"),
-                        "pbi_max_us_dollars": i.get("pv_pbi_max"),
-                        "pbi_years": i.get("pv_pbi_years"),
-                        "pbi_system_max_kw": i.get("pv_pbi_system_max"),
-                 },
-
-                "Wind":
-                    {
-                        "min_kw": i.get("wind_kw_min"),
-                        "max_kw": i.get("wind_kw_max"),
-                        "installed_cost_us_dollars_per_kw": i.get("wind_cost"),
-                        "om_cost_us_dollars_per_kw": i.get("wind_om"),
-                        "macrs_option_years": i.get("wind_macrs_schedule"),
-                        "macrs_bonus_pct": i.get("wind_macrs_bonus_fraction"),
-                        "macrs_itc_reduction": i.get("wind_macrs_itc_reduction"),
-                        "federal_itc_pct": i.get("wind_itc_federal"),
-                        "state_ibi_pct": i.get("wind_ibi_state"),
-                        "state_ibi_max_us_dollars": i.get("wind_ibi_state_max"),
-                        "utility_ibi_pct": i.get("wind_ibi_utility"),
-                        "utility_ibi_max_us_dollars": i.get("wind_ibi_utility_max"),
-                        "federal_rebate_us_dollars_per_kw": i.get("wind_rebate_federal"),
-                        "state_rebate_us_dollars_per_kw": i.get("wind_rebate_state"),
-                        "state_rebate_max_us_dollars": i.get("wind_rebate_state_max"),
-                        "utility_rebate_us_dollars_per_kw": i.get("wind_rebate_utility"),
-                        "utility_rebate_max_us_dollars": i.get("wind_rebate_utility_max"),
-                        "pbi_us_dollars_per_kwh": i.get("wind_pbi"),
-                        "pbi_max_us_dollars": i.get("wind_pbi_max"),
-                        "pbi_years": i.get("wind_pbi_years"),
-                        "pbi_system_max_kw": i.get("wind_pbi_system_max"),
-                 },
-
-              "Generator":
-                {
-                  "min_kw": i.get("gen_kw_min"),
-                  "max_kw": i.get("gen_kw_max"),
-                  "existing_kw": i.get("gen_existing_kw"),
-                  "installed_cost_us_dollars_per_kw": i.get("gen_cost"),
-                  "om_cost_us_dollars_per_kw": i.get("gen_om_kw"),
-                  "om_cost_us_dollars_per_kwh": i.get("gen_om_kwh"),
-                  "generator_only_runs_during_grid_outage": i.get("gen_during_grid_outage"),
-                  "generator_sells_energy_back_to_grid": i.get("gen_sells_energy_to_grid"),
-                  "macrs_option_years": i.get("gen_macrs_schedule"),
-                  "macrs_bonus_pct": i.get("gen_macrs_bonus_fraction"),
-                  "macrs_itc_reduction": i.get("gen_macrs_itc_reduction"),
-                  "federal_itc_pct": i.get("gen_itc_federal"),
-                  "state_ibi_pct": i.get("gen_ibi_state"),
-                  "state_ibi_max_us_dollars": i.get("gen_ibi_state_max"),
-                  "utility_ibi_pct": i.get("gen_ibi_utility"),
-                  "utility_ibi_max_us_dollars": i.get("gen_ibi_utility_max"),
-                  "federal_rebate_us_dollars_per_kw": i.get("gen_rebate_federal"),
-                  "state_rebate_us_dollars_per_kw": i.get("gen_rebate_state"),
-                  "state_rebate_max_us_dollars": i.get("gen_rebate_state_max"),
-                  "utility_rebate_us_dollars_per_kw": i.get("gen_rebate_utility"),
-                  "utility_rebate_max_us_dollars": i.get("gen_rebate_utility_max"),
-                  "pbi_us_dollars_per_kwh": i.get("gen_pbi"),
-                  "pbi_max_us_dollars": i.get("gen_pbi_max"),
-                  "pbi_years": i.get("gen_pbi_years"),
-                  "pbi_system_max_kw": i.get("gen_pbi_system_max"),
-                },
-
-                "Storage":
-                    {
-                    "min_kw": i.get("batt_kw_min"),
-                    "max_kw": i.get("batt_kw_max"),
-                    "min_kwh": i.get("batt_kwh_min"),
-                    "max_kwh": i.get("batt_kwh_max"),
-                    "internal_efficiency_pct": i.get("batt_efficiency"),
-                    "inverter_efficiency_pct": i.get("batt_inverter_efficiency"),
-                    "rectifier_efficiency_pct": i.get("batt_rectifier_efficiency"),
-                    "soc_min_pct": i.get("batt_soc_min"),
-                    "soc_init_pct": i.get("batt_soc_init"),
-                    "canGridCharge": i.get("batt_can_gridcharge"),
-                    "installed_cost_us_dollars_per_kw": i.get("batt_cost_kw"),
-                    "installed_cost_us_dollars_per_kwh": i.get("batt_cost_kwh"),
-                    "replace_cost_us_dollars_per_kw": i.get("batt_replacement_cost_kw"),
-                    "replace_cost_us_dollars_per_kwh": i.get("batt_replacement_cost_kwh"),
-                    "inverter_replacement_year": i.get("batt_replacement_year_kw"),
-                    "battery_replacement_year": i.get("batt_replacement_year_kwh"),
-                    "macrs_option_years": i.get("batt_macrs_schedule"),
-                    "macrs_bonus_pct": i.get("batt_macrs_bonus_fraction"),
-                    "macrs_itc_reduction": i.get("batt_macrs_itc_reduction"),
-                    "total_itc_pct":  i.get("batt_itc_total"),
-                    "total_rebate_us_dollars_per_kw": i.get("batt_rebate_total"),
-             },
-         },
-     },
- }

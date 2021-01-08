@@ -461,8 +461,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             Convenience (and legacy) class for handling REopt results
             :param results_dict: flat dict of results from reopt.jl
             :param results_dict_bau: flat dict of results from reopt.jl for bau case
-            :param instance of DataManager class
-            :param dict, data['inputs']['Scenario']['Site']
+            :param dm: instance of DataManager class
+            :param inputs: dict, data['inputs']['Scenario']['Site']
             """
             self.dm = dm
             self.inputs = inputs
@@ -722,7 +722,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["critical_load_series_kw"] = self.dm["LoadProfile"].get("critical_load_series_kw")
                     self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_kwh"] = self.dm["LoadProfile"].get("annual_kwh")
                     self.nested_outputs["Scenario"]["Site"][name]["resilience_check_flag"] = self.dm["LoadProfile"].get("resilience_check_flag")
-                    self.nested_outputs["Scenario"]["Site"][name]["sustain_hours"] = self.dm["LoadProfile"].get("sustain_hours")
+                    self.nested_outputs["Scenario"]["Site"][name]["sustain_hours"] = int(self.dm["LoadProfile"].get("bau_sustained_time_steps") / (len(self.dm["LoadProfile"].get("year_one_electric_load_series_kw"))/8760))
+                    self.nested_outputs["Scenario"]["Site"][name]["bau_sustained_time_steps"] = self.dm["LoadProfile"].get("bau_sustained_time_steps")
                     self.nested_outputs["Scenario"]["Site"][name]['loads_kw'] = self.dm["LoadProfile"].get("loads_kw")
                 elif name == "Financial":
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_us_dollars"] = self.results_dict.get("lcc")
@@ -1051,7 +1052,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             else:
                 data['messages']["PVWatts Warning"] = pv_warning
 
-        # Calculate avoided outage costs
+        # Calculate avoided outage costs moved to resilience stats
         #calc_avoided_outage_costs(data, present_worth_factor=dfm_list[0]['pwf_e'], run_uuid=self.run_uuid)
 
         if len(data['outputs']['Scenario']['Site']['PV']) == 1:
