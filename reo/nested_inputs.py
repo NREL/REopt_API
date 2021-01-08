@@ -1645,6 +1645,12 @@ nested_input_definitions = {
           "type": "bool",
           "default": False,
           "description": "True/False for if technology can curtail energy produced."
+        },
+        "cooling_thermal_factor": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "description": "Knockdown factor on absorption chiller COP based on the CHP prime_mover not being able to produce as high of temp/pressure hot water/steam"
         }
       },
 
