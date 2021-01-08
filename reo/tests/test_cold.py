@@ -54,7 +54,7 @@ class ColdTest(ResourceTestCaseMixin, TestCase):
         # Call API, get results in "d" dictionary
         nested_data = json.load(open(self.test_post, 'rb'))
         
-        # Add no unavailability for CPH
+        # Add no unavailability for CHP
         nested_data["Scenario"]["Site"]["CHP"]["chp_unavailability_hourly"] = [0.0] * 8760
 
         resp = self.get_response(data=nested_data)
@@ -86,7 +86,7 @@ class ColdTest(ResourceTestCaseMixin, TestCase):
 
         # Check if sum of electric and absorption chillers equals cooling thermal total
         #self.assertAlmostEqual(cooling_elecchl_electric_consumption_calculated, cooling_electric_load_total, delta=5.0)
-        self.assertGreater(0.97, tes_effic_with_decay)
+        self.assertGreater(1.0, tes_effic_with_decay)
         self.assertAlmostEqual(cooling_total_prod_from_techs, cooling_load_plus_tes_losses, delta=5.0)
         self.assertAlmostEqual(absorpchl_total_cooling_produced_ton_hour * TONHOUR_TO_KWHT / absorpchl_cop_elec, absorpchl_electric_consumption_total_kwh, places=1)
 
@@ -110,5 +110,11 @@ class ColdTest(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(boiler_fuel_consumption_calculated, new_boiler_fuel_expected, delta=8.0)
         self.assertAlmostEqual(total_thermal_mmbtu_calculated, new_total_thermal_expected, delta=8.0)
 
+        # Test CHP.cooling_thermal_factor = 0.8, AbsorptionChiller.chiller_cop = 0.7 (from test_cold_POST.json)
+        absorpchl_heat_in_kwh = d['outputs']['Scenario']['Site']['AbsorptionChiller']['year_one_absorp_chl_thermal_consumption_mmbtu'] * 1.0E6 / 3412.0
+        absorpchl_cool_out_kwh = d['outputs']['Scenario']['Site']['AbsorptionChiller']['year_one_absorp_chl_thermal_production_tonhr'] * TONHOUR_TO_KWHT
+        absorpchl_cop = absorpchl_cool_out_kwh / absorpchl_heat_in_kwh
+
+        self.assertAlmostEqual(absorpchl_cop, 0.8*0.7, places=3)
 
 
