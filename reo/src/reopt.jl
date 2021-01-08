@@ -228,12 +228,6 @@ function add_bigM_adjustments(m, p)
 			m[:NewMaxSize][t] = p.MaxSize[t]
 		end
 	end
-	for t in p.CHPTechs
-		m[:NewMaxSize][t] = maximum([p.ElecLoad[ts] for ts in p.TimeStep])
-		if (m[:NewMaxSize][t] > p.MaxSize[t])
-			m[:NewMaxSize][t] = p.MaxSize[t]
-		end
-	end
 
 	# NewMaxSizeByHour is designed to scale the right-hand side of the constraint limiting rated production in each hour to the production factor; in most cases this is unaffected unless the production factor is zero, in which case the right-hand side is set to zero.
 	#for t in p.ElectricTechs
