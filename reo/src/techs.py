@@ -310,8 +310,8 @@ class Generator(Tech):
 
 class CHP(Tech):
     """
-    Includes calcs for converting user-input electric efficiency and thermal recovery fraction to coefficients
-    useable for JuMP (e.g. fuel burn rate in MMBtu/hr/kW_rated (y-intercept)
+    Default cost and performance parameters based on prime_mover, size_class, and Boiler.existing_boiler_production_type_steam_or_hw are stored here
+    validators.py and view.py uses these Class attributes to load in and communicate these defaults into the API and UI, respectively
 
     """
     # Default data, created from input_files.CHP.chp_input_defaults_processing, copied from chp_default_data.json
@@ -361,7 +361,9 @@ class CHP(Tech):
         self.max_derate_factor = kwargs['max_derate_factor']
         self.derate_start_temp_degF = kwargs['derate_start_temp_degF']
         self.derate_slope_pct_per_degF = kwargs['derate_slope_pct_per_degF']
+        self.derate_slope_pct_per_degF = kwargs['derate_slope_pct_per_degF']
         self.chp_unavailability_periods = kwargs['chp_unavailability_periods']
+        self.cooling_thermal_factor = kwargs['cooling_thermal_factor']
         self.outage_start_time_step = outage_start_time_step
         self.outage_end_time_step = outage_end_time_step
         self.year = year
@@ -428,16 +430,14 @@ class CHP(Tech):
         """
 
         # Thermal efficiency has an extra dimension for hot_water (0) or steam (1) index
+        hw_or_steam_index_dict = {"hot_water": 0, "steam": 1}
         if hw_or_steam is None:  # Use default hw_or_steam based on prime_mover
             hw_or_steam = Boiler.boiler_type_by_chp_prime_mover_defaults[prime_mover]
-        if hw_or_steam == "hot_water":
-            hw_or_steam_index = 0
-        elif hw_or_steam == "steam":
-            hw_or_steam_index = 1
+        hw_or_steam_index = hw_or_steam_index_dict[hw_or_steam]
 
         # Default to average parameter values across all size classes (size_class = 0) if None is input
         if size_class is None:
-            size_class = 0
+            size_class = CHP.default_chp_size_class[prime_mover]
 
         # Get default CHP parameters based on prime_mover, hw_or_steam, and size_class
         prime_mover_defaults_all = copy.deepcopy(CHP.prime_mover_defaults_all)
