@@ -1,2 +1,2 @@
-,Month,Start Week of Month,Start Day of Week,Start Hour,Duration
-0,1,2,0,0,0 days 00:00:00
+month,start_week_of_month,start_day_of_week,start_hour,duration_hours
+1,2,1,1,0
