@@ -106,7 +106,8 @@
                 "start_hour": 1,
                 "duration_hours": 0
             }
-        ]
+        ],
+        "cooling_thermal_factor": 1.0
       },
       "Boiler": {
         "min_mmbtu_per_hr": 0.0,
