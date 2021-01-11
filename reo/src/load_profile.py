@@ -71,7 +71,7 @@ default_annual_electric_loads = {
         "smalloffice": 95801,
         "supermarket": 2001224,
         "midriseapartment": 332312,
-        "fullservicerestaurant": 372350,
+        "fullservicerest": 372350,
         "outpatient": 1782941,
         "fastfoodrest": 208062,
         "smallhotel": 818012,
