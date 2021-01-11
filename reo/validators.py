@@ -1252,7 +1252,11 @@ class ValidateNestedInput:
                             if self.isValid:
                                 if min(real_values.get(lp)) < 0:
                                     self.input_data_errors.append("{} must contain loads greater than or equal to zero.".format(lp))
-
+                if real_values.get('doe_reference_name') is not None:
+                    real_values['year'] = 2017
+                    # Use 2017 b/c it is most recent year that starts on a Sunday and all reference profiles start on
+                    # Sunday
+        
         if object_name_path[-1] == "ElectricTariff":
             electric_tariff = real_values
             if type(electric_tariff.get('emissions_factor_series_lb_CO2_per_kwh')) == float:
