@@ -91,7 +91,7 @@ def list_of_int(input):
     if i%1>0:
       raise Exception('Not all values in the list_of_int input are whole numbers')
     result.append(int(i))
-  return
+  return result
 
 def list_of_dict(input):
   result = []

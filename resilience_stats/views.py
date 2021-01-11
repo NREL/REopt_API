@@ -292,12 +292,6 @@ def run_outage_sim(run_uuid, with_tech=True, bau=False):
         )
         results.update({key + '_bau': val for key, val in bau_results.items()})
 
-    """ add avg_crit_ld and pwf to results so that avoided outage cost can be determined as:
-            avoided_outage_costs_us_dollars = resilience_hours_avg * 
-                                              value_of_lost_load_us_dollars_per_kwh * 
-                                              avg_crit_ld *
-                                              present_worth_factor 
-    """
     avg_critical_load = round(sum(load_profile.critical_load_series_kw) /
                               len(load_profile.critical_load_series_kw), 5)
 
@@ -307,7 +301,14 @@ def run_outage_sim(run_uuid, with_tech=True, bau=False):
     else:
         present_worth_factor = annuity(financial.analysis_years, financial.escalation_pct,
                                        financial.offtaker_discount_pct)
-
+    
+    if 'resilience_hours_avg' in results.keys():
+        avoided_outage_costs_us_dollars = round( results['resilience_hours_avg'] * \
+                                            financial.value_of_lost_load_us_dollars_per_kwh * \
+                                            avg_critical_load * \
+                                            present_worth_factor, 2)
+        results.update({"avoided_outage_costs_us_dollars": avoided_outage_costs_us_dollars})
     results.update({"present_worth_factor": present_worth_factor,
-                    "avg_critical_load": avg_critical_load})
+                    "avg_critical_load": avg_critical_load,
+                    })
     return results
