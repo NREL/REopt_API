@@ -31,6 +31,16 @@ Classify the change according to the following categories:
 ## develop
 ### Major Updates
 ### Minor Updates
+- `reo`, `*.jl`: New load **LoadProfileBoilerFuel** (heating load)
+- `reo`, `*.jl`: New Tech **Boiler** (serves heating load, BAU tech if heating load is input)
+- `reo`, `*.jl`: New **Site**-level input **FuelTariff** (cost structure for **Boiler** and **CHP** fuel)
+- `reo`, `*.jl`: New load **LoadProfileChillerThermal** (cooling load, but this is a subset of the total electric load)
+- `reo`, `*.jl`: New Tech **ElectricChiller** (serves cooling load, BAU tech if cooling load is input)
+- `reo`, `*.jl`: New Tech **CHP** (combined heat and power, serves electric and heating loads or thermal-input technologies/storage)
+- `reo`, `*.jl`: New Tech **AbsorptionChiller** (serves cooling, needs hot thermal input)
+- `reo`, `*.jl`: New Storage **HotTES**  (hot water thermal energy storage tank - stores hot thermal/heating load)
+- `reo`, `*.jl`: New Storage **ColdTES** (chilled water thermal energy storage tank - stores cold thermal/cooling load)
+- `reo`: New views added to `views.py`: "/annual_mmbtu", "/chp_defaults", "/loadprofile_chillerthermal_chiller_cop", "/absorption_chiller_defaults", "/schedule_stats"
 ### Patches
 
 
