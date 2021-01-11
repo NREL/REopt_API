@@ -39,7 +39,6 @@ from reo.src.urdb_rate import Rate
 import re
 import uuid
 from reo.src.techs import Generator, Boiler, CHP, AbsorptionChiller
-from reo.nested_inputs import max_big_number
 from reo.src.emissions_calculator import EmissionsCalculator
 from reo.utilities import generate_year_profile_hourly
 
@@ -438,7 +437,7 @@ class ValidateNestedInput:
         self.general_warnings = []
         self.input_dict = dict()
         if type(input_dict) is not dict:
-            self.input_data_errors.append(("POST must contain a valid JSON formatted accoring to format described in "
+            self.input_data_errors.append(("POST must contain a valid JSON formatted according to format described in "
                                            "https://developer.nrel.gov/docs/energy-optimization/reopt-v1/"))
         else:        
             self.input_dict['Scenario'] = input_dict.get('Scenario') or {}
@@ -463,6 +462,10 @@ class ValidateNestedInput:
             if type(self.input_dict['Scenario']['Site']['PV']) == dict:
                 self.input_dict['Scenario']['Site']['PV']['pv_number'] = 1
                 self.input_dict['Scenario']['Site']['PV'] = [self.input_dict['Scenario']['Site']['PV']]
+
+            # the following inputs are deprecated and should not be saved to the database
+            self.input_dict["Scenario"]["Site"]["LoadProfile"].pop("outage_start_hour", None)
+            self.input_dict["Scenario"]["Site"]["LoadProfile"].pop("outage_end_hour", None)
 
     @property
     def isValid(self):
@@ -533,6 +536,12 @@ class ValidateNestedInput:
 
         if bool(self.general_warnings):
             output["Other Warnings"] = ';'.join(self.general_warnings)
+
+        output["Deprecations"] = [
+            "The sustain_hours output will be deprecated soon in favor of bau_sustained_time_steps.",
+            "outage_start_hour and outage_end_hour will be deprecated soon in favor of outage_start_time_step and outage_end_time_step",
+            "Avoided outage costs will be deprecated soon from the /results endpoint, but retained at the /resilience_stats endpoint"
+        ]
         return output
 
     def isSingularKey(self, k):
@@ -1117,7 +1126,7 @@ class ValidateNestedInput:
                         else:
                             year = 2017  # DOE CRB load matches with 2017 calendar which is the basis of the default
                             chp_unavailability_periods = real_values.get("chp_unavailability_periods")
-                        
+
                         # Do same validation on chp_unavailability periods whether using the default or user-entered
                         self.input_data_errors += ValidateNestedInput.validate_chp_unavailability_periods(year, chp_unavailability_periods)
 
@@ -1198,8 +1207,6 @@ class ValidateNestedInput:
                     # case of 'time_steps_per_hour' == 4 and outage_end_time_step > 35040 handled by "max" value
 
                 if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
-                    self.warnings.append(("outage_start_hour and outage_end_hour will be deprecated soon in favor of "
-                                          "outage_start_time_step and outage_end_time_step"))
                     # the following preserves the original behavior
                     self.update_attribute_value(object_name_path, number, 'outage_start_time_step',
                                                 real_values.get('outage_start_hour') + 1)
@@ -1533,7 +1540,7 @@ class ValidateNestedInput:
                     hw_or_steam_user_input = self.input_dict['Scenario']['Site']['Boiler'].get('existing_boiler_production_type_steam_or_hw')
                     chp_prime_mover = self.input_dict['Scenario']['Site']['CHP'].get("prime_mover")
                     if real_values.get('chiller_cop') is None:
-                        absorp_chiller_cop = AbsorptionChiller.get_absorp_chiller_cop(hot_water_or_steam=hw_or_steam_user_input, 
+                        absorp_chiller_cop = AbsorptionChiller.get_absorp_chiller_cop(hot_water_or_steam=hw_or_steam_user_input,
                                                                                         chp_prime_mover=chp_prime_mover)
                         self.update_attribute_value(object_name_path, number, 'chiller_cop', absorp_chiller_cop)
 
@@ -1610,7 +1617,7 @@ class ValidateNestedInput:
                                 if input_isDict==False:
                                     self.input_data_errors.append('%s value (%s) in %s (number %s) exceeds allowable max %s' % (
                                     name, value, self.object_name_string(object_name_path), number, data_validators['max']))
-                    
+
                     if data_validators.get('restrict_to') is not None:
                         # Handle both cases: 1. val is of 'type' 2. List('type')
                         # Approach: Convert case 1 into case 2
@@ -2030,7 +2037,7 @@ class ValidateNestedInput:
                     if key not in valid_keys:
                         chp_unavailability_periods_input_data_errors.append('The input {} is not a valid chp_unavailability_period heading/key, found in period {}'.format(key, period+1))
                     else:
-                        all_keys_supplied_check.remove(key) 
+                        all_keys_supplied_check.remove(key)
                         if key != "duration_hours" and value == 0:  # All values except duration_hours should be 1 or greater (calendar attributes are one-indexed)
                             chp_unavailability_periods_input_data_errors.append('Zero-value found (not allowed) for {} in period {}.'.format(key, period+1))
                         elif (key != "duration_hours" and value % int(value) > 0) or (key == "duration_hours" and value != 0 and value % int(value) > 0):  # Function converts value to integer, so as long as there's no remainder to this we accept e.g. 5.0 (float) and convert to 5 (int)
@@ -2048,5 +2055,5 @@ class ValidateNestedInput:
                 chp_unavailability_periods_input_data_errors += errors_list
             except:
                 chp_unavailability_periods_input_data_errors.append('Unexpected error in period {} of chp_unavailability_periods.'.format(period+1))
-        
+
         return chp_unavailability_periods_input_data_errors
