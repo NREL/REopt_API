@@ -361,7 +361,6 @@ class CHP(Tech):
         self.max_derate_factor = kwargs['max_derate_factor']
         self.derate_start_temp_degF = kwargs['derate_start_temp_degF']
         self.derate_slope_pct_per_degF = kwargs['derate_slope_pct_per_degF']
-        self.derate_slope_pct_per_degF = kwargs['derate_slope_pct_per_degF']
         self.chp_unavailability_periods = kwargs['chp_unavailability_periods']
         self.cooling_thermal_factor = kwargs['cooling_thermal_factor']
         self.outage_start_time_step = outage_start_time_step
