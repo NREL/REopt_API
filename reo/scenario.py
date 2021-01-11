@@ -296,7 +296,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
                                  **inputs_dict['Site']['FuelTariff'])
 
         elec_tariff = ElecTariff(dfm=dfm, run_id=run_uuid,
-                                 load_year=inputs_dict['Site']['LoadProfile']['year'],
+                                 load_year=lp.year,
                                  time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
                                  **inputs_dict['Site']['ElectricTariff'])
 

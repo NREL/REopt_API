@@ -395,7 +395,7 @@ class BuiltInProfile(object):
                          ]
 
     def __init__(self, annual_loads=default_annual_electric_loads, builtin_profile_prefix="Load8760_norm_",
-                 latitude=None, longitude=None, doe_reference_name='', annual_energy=None, year=None,
+                 latitude=None, longitude=None, doe_reference_name='', annual_energy=None,
                  monthly_totals_energy=None, **kwargs):
         """
         :param latitude: float
@@ -414,7 +414,7 @@ class BuiltInProfile(object):
         self.monthly_energy = monthly_totals_energy
         self.doe_reference_name = doe_reference_name
         self.nearest_city = None
-        self.year = year or 2017
+        self.year = 2017
         self.annual_energy = annual_energy if annual_energy else (
             sum(monthly_totals_energy) if monthly_totals_energy else self.default_annual_energy)
         self.annual_kwh = self.annual_energy
