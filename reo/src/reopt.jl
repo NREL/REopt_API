@@ -1051,7 +1051,7 @@ function reopt_run(m, p::Parameter)
     #############  		Outputs    									 #############
     ##############################################################################
 	try
-		results["lcc"] = round(m[:REcosts] + 0.0001*value(m[:MinChargeAdder]))
+		results["lcc"] = round(value(m[:REcosts]) + 0.0001*value(m[:MinChargeAdder]))
 		results["lower_bound"] = round(JuMP.objective_bound(m))
 		results["optimality_gap"] = JuMP.relative_gap(m)
 	catch
