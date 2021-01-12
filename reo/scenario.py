@@ -258,8 +258,8 @@ def setup_scenario(self, run_uuid, data, raw_post):
                                             year=lp.year, max_thermal_factor_on_peak_load=
                                             inputs_dict['Site']['ElectricChiller']['max_thermal_factor_on_peak_load'],
                                             **inputs_dict['Site']['LoadProfileChillerThermal'])
-        chiller_elec_greater_than_total_elec = sum([1 if lpct.load_list[i]/lpct.chiller_cop > lp.load_list[i] else 0 for i in range(len(lp.load_list))])
-        if chiller_elec_greater_than_total_elec > 0:
+        chiller_elec_greater_than_total_elec = [1 if lpct.load_list[i]/lpct.chiller_cop > lp.load_list[i] else 0 for i in range(len(lp.load_list))]
+        if sum(chiller_elec_greater_than_total_elec) > 0:
             timestep = None
             for idx, v in enumerate(chiller_elec_greater_than_total_elec):
                 if v==1:
