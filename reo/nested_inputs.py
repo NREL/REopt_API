@@ -163,7 +163,7 @@ nested_input_definitions = {
     "add_soc_incentive": {
       "type": "bool",
       "default": True,
-      "description": "Adds a small incentive for battery state of charge (e.g., to dispatch for resilience) if true, and removes the incentive (e.g., to dispatch for peak-shaving) otherwise"
+      "description": "If True, then a small incentive to keep the battery's state of charge high is added to the objective of the optimization."
     },
 
     "Site": {
