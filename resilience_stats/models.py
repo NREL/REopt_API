@@ -65,6 +65,7 @@ class ResilienceModel(models.Model):
     probs_of_surviving_by_month_bau = ArrayField(ArrayField(models.FloatField(null=True), null=True), null=True)
     probs_of_surviving_by_hour_of_the_day_bau = ArrayField(ArrayField(models.FloatField(null=True), null=True),
                                                            null=True)
+    avoided_outage_costs_us_dollars = models.FloatField(null=True, blank=True)
     present_worth_factor = models.FloatField(null=True)
     avg_critical_load = models.FloatField(null=True)
 

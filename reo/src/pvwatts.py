@@ -27,16 +27,39 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-#!/user/bin/python
-# ==============================================================================
-#  Description: download pvwatts solar resource for given lat/lon
-#       and produce 'ProdFactor' for Mosel
-# ==============================================================================
 import requests
 import json
 import keys
 import logging
+from reo.exceptions import PVWattsDownloadError
 log = logging.getLogger(__name__)
+
+
+def check_pvwatts_response_data(resp):
+    """
+    If we can load the response data then return it,
+    else raise an exception
+    :param resp: requests.get result
+    :return: dict of resp.text
+    """
+    try:
+        data = json.loads(resp.text)
+    except:
+        message = ("Error parsing PVWatts response. "
+                   "Status code: {}. Text: {}".format(resp.status_code, resp.text))
+        raise_pvwatts_exception(message)
+    return data
+
+
+def raise_pvwatts_exception(message):
+    """
+    Raise PVWattsDownloadError
+    :param message: str
+    :return: None
+    """
+    log.error("pvwatts.py raising error: " + message)
+    pvwatts_error = PVWattsDownloadError(task="pvwatts.py", message=message)
+    raise pvwatts_error
 
 
 class PVWatts:
@@ -84,7 +107,6 @@ class PVWatts:
         self.verify = verify  # used for testing
         self.response = None
         self.response = self.data  # store response so don't hit API multiple times
-
         if self.tilt is None:
             if self.latitude < 0: # if the site is in the southern hemisphere, and no tilt has been specified, then set the tilt to the positive latitude value and change the azimuth to zero
                 self.tilt = self.latitude * -1
@@ -104,27 +126,23 @@ class PVWatts:
 
     @property
     def data(self):
-
         if self.response is None:
             resp = requests.get(self.url, verify=self.verify)
+
             if not resp.ok:
-                # check for international location
-                data = json.loads(resp.text)
-                intl_warning = "This location appears to be outside the US"
-                
-                if (intl_warning in s for s in data.get("warnings",[])):
+                data = check_pvwatts_response_data(resp)
+                # if not ok b/c outside of the US, try again with larger search radius in "intl" dataset
+                if ("This location appears to be outside the US" in s for s in data.get("warnings", [])):
                     self.dataset = "intl"
-                    self.radius = self.radius * 2 # bump up search radius, since there aren't many sites
+                    self.radius = self.radius * 2  # bump up search radius, since there aren't many sites
                     resp = requests.get(self.url, verify=self.verify)
-
-            if not resp.ok:
-                log.error("PVWatts status code {}. {}".format(resp.status_code, resp.content))
-                raise Exception("PVWatts status code {}. {}".format(resp.status_code, resp.content))
-
+                    if not resp.ok:  # did not get data for international location either (or other problem)
+                        raise_pvwatts_exception("PVWatts status code {}. {}".format(resp.status_code, resp.content))
+                else:
+                    raise_pvwatts_exception("PVWatts status code {}. {}".format(resp.status_code, resp.content))
             log.info("PVWatts API query successful.")
-            data = json.loads(resp.text)
+            data = check_pvwatts_response_data(resp)
             self.response = data
-
         return self.response
 
     @property

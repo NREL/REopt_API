@@ -188,8 +188,8 @@ def summary(request, user_uuid):
             response = JsonResponse({"Error": "No scenarios found for user '{}'".format(user_uuid)}, content_type='application/json', status=404)
             return response
         
-        scenario_run_uuids =  [s.run_uuid for s in scenarios]
-        scenario_run_ids =  [s.id for s in scenarios]
+        scenario_run_uuids = [s.run_uuid for s in scenarios]
+        scenario_run_ids = [s.id for s in scenarios]
 
         #saving time by only calling each table once
         messages = MessageModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','message_type','message')
@@ -222,12 +222,43 @@ def summary(request, user_uuid):
             return [{}]
 
         for scenario in scenarios:
-            results = {}
-            
+            results = dict({
+                'focus': None,
+                'address': None,
+                'urdb_rate_name': None,
+                'doe_reference_name': None,
+                'npv_us_dollars': None,
+                'net_capital_costs': None,
+                'net_capital_costs_plus_om_us_dollars': None,
+                'net_om_us_dollars_bau': None,
+                'resilience_hours_min': None,
+                'resilience_hours_max': None,
+                'resilience_hours_avg': None,
+                'year_one_savings_us_dollars': None,
+                'pv_kw': None,
+                'wind_kw': None,
+                'gen_kw': None,
+                'batt_kw': None,
+                'batt_kwh': None,
+            })
+            results['status'] = scenario.status
+            results['run_uuid'] = str(scenario.run_uuid)
+            results['created'] = scenario.created
+            results['description'] = scenario.description
+
+            # Messages
             message_set = get_scenario_data(messages, scenario.run_uuid)
             if not type(message_set) == list:
                 message_set = [message_set]
-            
+            results['messages'] = {}
+            for message in message_set:
+                if len(message.keys()) > 0:
+                    results['messages'][message.get('message_type') or "type"] = message.get('message') or ""
+
+            if results['status'].lower() != "optimal":
+                json_response['scenarios'].append(results)
+                continue
+
             site = get_scenario_data(sites, scenario.run_uuid)[0]
             load = get_scenario_data(loads, scenario.run_uuid)[0]
             batt = get_scenario_data(batts, scenario.run_uuid)[0]
@@ -241,29 +272,11 @@ def summary(request, user_uuid):
             hottes = get_scenario_data(hottess, scenario.run_uuid)[0]
             coldtes = get_scenario_data(coldtess, scenario.run_uuid)[0]
             absorpchl = get_scenario_data(absorpchls, scenario.run_uuid)[0]
-            
-            # Messages
-            results['messages'] = {}
-            for message in message_set:
-                if len(message.keys()) > 0:
-                    results['messages'][message.get('message_type') or "type"] = message.get('message') or ""
-            
-            # Run ID
-            results['run_uuid'] = str(scenario.run_uuid)
-
-            # Status
-            results['status'] = scenario.status
-
-            # Date
-            results['created'] = scenario.created
 
             if site:
 
-                # Description
-                results['description'] = scenario.description
-
                 # Focus
-                if load['outage_start_time_step'] is not None:
+                if load.get('outage_start_time_step') is not None:
                     results['focus'] = "Resilience"
                 else:
                     results['focus'] = "Financial"
@@ -278,7 +291,7 @@ def summary(request, user_uuid):
                     results['urdb_rate_name'] = "Custom"
 
                 # Load Profile
-                if load['loads_kw']:
+                if load.get('loads_kw'):
                     results['doe_reference_name'] = "Custom"
                 else:
                     results['doe_reference_name'] = load.get('doe_reference_name')
@@ -298,7 +311,6 @@ def summary(request, user_uuid):
                 #Other Financials
                 results['net_capital_costs_plus_om_us_dollars'] = financial.get('net_capital_costs_plus_om_us_dollars')
                 results['net_om_us_dollars_bau'] = financial.get('net_om_us_dollars_bau')
-                results['net_capital_costs'] = financial.get('net_capital_costs')
 
                 # Year 1 Savings
                 year_one_costs = sum(filter(None, [
@@ -316,19 +328,13 @@ def summary(request, user_uuid):
                     tariff.get('year_one_min_charge_adder_bau_us_dollars') or 0,
                     tariff.get('year_one_bill_bau_us_dollars') or 0
                     ]))
-                #Resilience Stats
-                results['resilience_hours_min'] = resilience.get('resilience_hours_min') 
-                results['resilience_hours_max'] = resilience.get('resilience_hours_max') 
-                results['resilience_hours_avg'] = resilience.get('resilience_hours_avg') 
-
-                if results['resilience_hours_max'] is None:
-                    results['resilience_hours_max'] = 'not evaluated'
-                if results['resilience_hours_min'] is None:
-                    results['resilience_hours_min'] = 'not evaluated'
-                if results['resilience_hours_avg'] is None:
-                    results['resilience_hours_avg'] = 'not evaluated'
                 
                 results['year_one_savings_us_dollars'] = year_one_costs_bau - year_one_costs
+
+                #Resilience Stats
+                results['resilience_hours_min'] = resilience.get('resilience_hours_min', 'not evaluated')
+                results['resilience_hours_max'] = resilience.get('resilience_hours_max', 'not evaluated')
+                results['resilience_hours_avg'] = resilience.get('resilience_hours_avg', 'not evaluated')
 
                 # PV Size
                 if pv is not None:
@@ -376,7 +382,7 @@ def summary(request, user_uuid):
                     else:
                         results['chp_kw'] = 'not evaluated'
                 else:
-                    results['chp_kw'] = 'not evaluated'                    
+                    results['chp_kw'] = 'not evaluated'
 
                 # HotTES Size
                 if hottes is not None:
@@ -392,18 +398,18 @@ def summary(request, user_uuid):
                     if coldtes.get('max_gal') or -1 > 0:
                         results['coldtes_gal'] = coldtes.get('size_gal')
                     else:
-                        results['coldtes_gal'] = 'not evaluated' 
+                        results['coldtes_gal'] = 'not evaluated'
                 else:
-                    results['coldtes_gal'] = 'not evaluated' 
+                    results['coldtes_gal'] = 'not evaluated'
 
                 # Absoprtion Chiller Size
                 if absorpchl is not None:
                     if absorpchl.get('max_ton') or -1 > 0:
                         results['absorpchl_ton'] = absorpchl.get('size_ton')
                     else:
-                        results['absorpchl_ton'] = 'not evaluated' 
+                        results['absorpchl_ton'] = 'not evaluated'
                 else:
-                    results['absorpchl_ton'] = 'not evaluated' 
+                    results['absorpchl_ton'] = 'not evaluated'
 
             json_response['scenarios'].append(results)
         response = JsonResponse(json_response, status=200)
