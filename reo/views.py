@@ -291,6 +291,16 @@ def emissions_profile(request):
 
 def simulated_load(request):
     try:
+        valid_keys = ["doe_reference_name","latitude","longitude","load_type","percent_share","annual_kwh",
+                        "monthly_totals_kwh","annual_mmbtu","annual_fraction","annual_tonhour","monthly_tonhour",
+                        "monthly_mmbtu","monthly_fraction","max_thermal_factor_on_peak_load","chiller_cop"]
+        for key in request.GET.keys():
+            k = key
+            if "[" in key:
+                k = key.split('[')[0]
+            if k not in valid_keys:
+                raise ValueError("{} is not a valid input parameter".format(key))
+
         latitude = float(request.GET['latitude'])  # need float to convert unicode
         longitude = float(request.GET['longitude'])
         load_type = request.GET.get('load_type')
@@ -333,6 +343,12 @@ def simulated_load(request):
                              " If load_type is not specified, 'electric' is assumed.")
 
         if load_type == "electric":
+            for key in request.GET.keys():
+                if ('_mmbtu' in key) or ('_ton' in key) or ('_fraction' in key):
+                    raise ValueError("Invalid key {} for load_type=electric".format(key))
+            if doe_reference_name is None:
+                raise ValueError("Please supply a doe_reference_name and optionally scaling parameters (annual_kwh or monthly_totals_kwh).")
+
             #Annual loads
             if 'annual_kwh' in request.GET.keys():
                 annual_kwh = float(request.GET.get('annual_kwh'))
@@ -368,6 +384,12 @@ def simulated_load(request):
             return response
 
         if load_type == "heating":
+            for key in request.GET.keys():
+                if ('_kw' in key) or ('_ton' in key) or ('_fraction' in key):
+                    raise ValueError("Invalid key {} for load_type=heating".format(key))
+            
+            if doe_reference_name is None:
+                raise ValueError("Please supply a doe_reference_name and optional scaling parameters (annual_mmbtu or monthly_mmbtu).")
 
             #Annual loads
             if 'annual_mmbtu' in request.GET.keys():
@@ -408,6 +430,9 @@ def simulated_load(request):
             return response
 
         if load_type == "cooling":
+            for key in request.GET.keys():
+                if ('_kw' in key) or ('_mmbtu' in key):
+                    raise ValueError("Invalid key {} for load_type=heating".format(key))
 
             if request.GET.get('annual_fraction') is not None:  # annual_kwh is optional. if not provided, then DOE reference value is used.
                 annual_fraction = float(request.GET['annual_fraction'])
@@ -463,7 +488,6 @@ def simulated_load(request):
                     annual_tonhour = float(request.GET.get('annual_tonhour'))
                 else:
                     annual_tonhour = None
-
                 #Monthly loads
                 if 'monthly_tonhour' in request.GET.keys():
                     string_array = request.GET.get('monthly_tonhour')
@@ -502,13 +526,13 @@ def simulated_load(request):
                     )
                 return response
             else:
-                raise ValueError("Please supply an annual_tonhour, monthly_tonhour, annual_fraction, monthly_fraction series or doe_reference_name")
+                raise ValueError("Please supply a doe_reference_name and optional scaling parameters (annual_tonhour or monthly_tonhour), or annual_fraction, or monthly_fraction.")
 
     except KeyError as e:
-        return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=400)
 
     except ValueError as e:
-        return JsonResponse({"Error": str(e.args[0])}, status=500)
+        return JsonResponse({"Error": str(e.args[0])}, status=400)
 
     except Exception:
 
