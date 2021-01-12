@@ -1051,7 +1051,12 @@ function reopt_run(m, p::Parameter)
     #############  		Outputs    									 #############
     ##############################################################################
 	try
-		results["lcc"] = round(m[:REcosts] + 0.0001*value(m[:MinChargeAdder])
+		if (p.AddSOCIncentive == 1)
+			results["lcc"] = round(JuMP.objective_value(m)+ 0.0001*value(m[:MinChargeAdder])+
+				sum(value(m[:dvStorageSOC]["Elec",ts]) for ts in p.TimeStep)/p.TimeStepCount)
+		else
+			results["lcc"] = round(JuMP.objective_value(m)+ 0.0001*value(m[:MinChargeAdder]))
+		end
 		results["lower_bound"] = round(JuMP.objective_bound(m))
 		results["optimality_gap"] = JuMP.relative_gap(m)
 	catch
