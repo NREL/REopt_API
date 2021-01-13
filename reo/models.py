@@ -667,6 +667,7 @@ class CHPModel(models.Model):
     can_wholesale = models.BooleanField(null=True)
     can_export_beyond_site_load = models.BooleanField(null=True)
     can_curtail = models.BooleanField(null=True)
+    cooling_thermal_factor = models.FloatField(null=True, blank=True)
 
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)

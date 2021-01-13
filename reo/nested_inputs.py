@@ -1650,6 +1650,12 @@ nested_input_definitions = {
           "type": "bool",
           "default": False,
           "description": "True/False for if technology can curtail energy produced."
+        },
+        "cooling_thermal_factor": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "description": "Knockdown factor on absorption chiller COP based on the CHP prime_mover not being able to produce as high of temp/pressure hot water/steam"
         }
       },
 
@@ -1663,7 +1669,7 @@ nested_input_definitions = {
           "description": "Maximum TES volume (energy) size constraint for optimization. Set to zero to disable storage"
         },
         "internal_efficiency_pct": {
-          "type": "float", "min": 0.0, "max": 1.0, "default": 0.97,
+          "type": "float", "min": 0.0, "max": 1.0, "default": 1.00,
           "description": "Thermal losses due to mixing from thermal power entering or leaving tank"
         },
         "soc_min_pct": {
@@ -1679,8 +1685,8 @@ nested_input_definitions = {
           "description": "Thermal energy-based cost of TES (e.g. volume of the tank)"
         },
         "thermal_decay_rate_fraction": {
-          "type": "float", "min": 0.0, "max": 0.1, "default": 0.004,
-          "description": "Thermal loss rate as a fraction of stored energy, per hour (frac*energy/hr = kw_thermal)"
+          "type": "float", "min": 0.0, "max": 0.1, "default": 0.0004,
+          "description": "Thermal loss (gain) rate as a fraction of energy storage capacity, per hour (frac*energy_capacity/hr = kw_thermal)"
         },
         "om_cost_us_dollars_per_gal": {
          "type": "float", "min": 0.0, "max": 1000.0, "default": 0.0,
@@ -1711,7 +1717,7 @@ nested_input_definitions = {
           "description": "Maximum TES volume (energy) size constraint for optimization. Set to zero to disable storage"
         },
         "internal_efficiency_pct": {
-          "type": "float", "min": 0.0, "max": 1.0, "default": 0.97,
+          "type": "float", "min": 0.0, "max": 1.0, "default": 1.00,
           "description": "Thermal losses due to mixing from thermal power entering or leaving tank"
         },
         "soc_min_pct": {
@@ -1727,8 +1733,8 @@ nested_input_definitions = {
           "description": "Thermal energy-based cost of TES (e.g. volume of the tank)"
         },
         "thermal_decay_rate_fraction": {
-          "type": "float", "min": 0.0, "max": 0.1, "default": 0.004,
-          "description": "Thermal loss rate as a fraction of stored energy, per hour (frac*energy/hr = kw_thermal)"
+          "type": "float", "min": 0.0, "max": 0.1, "default": 0.0004,
+          "description": "Thermal loss rate as a fraction of energy storage capacity, per hour (frac*energy_capacity/hr = kw_thermal)"
         },
         "om_cost_us_dollars_per_gal": {
           "type": "float", "min": 0.0, "max": 1000.0, "default": 0.0,
