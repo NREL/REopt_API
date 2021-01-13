@@ -71,7 +71,6 @@ urlpatterns = [
     url(r'^v1/generator_efficiency/?$', views.generator_efficiency, name='generator_efficiency'),
     url(r'^v1/emissions_profile/?$', views.emissions_profile, name='emissions_profile'),
     url(r'^errors/(?P<page_uuid>.*)', views.errors, name='errors'),
-    url(r'^v1/annual_mmbtu/?$', views.annual_mmbtu, name='annual_mmbtu'),
     url(r'^v1/chp_defaults/?$', views.chp_defaults, name='chp_defaults'),
     url(r'^v1/loadprofile_chillerthermal_chiller_cop/?$', views.loadprofile_chillerthermal_chiller_cop, name='loadprofile_chillerthermal_chiller_cop'),
     url(r'^v1/absorption_chiller_defaults/?$', views.absorption_chiller_defaults, name='absorption_chiller_defaults'),
