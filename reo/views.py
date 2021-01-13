@@ -99,60 +99,6 @@ def invalid_urdb(request):
     except Exception as e:
         return JsonResponse({"Error": "Unexpected error in invalid_urdb endpoint: {}".format(e.args[0])}, status=500)
 
-def annual_mmbtu(request):
-    try:
-        latitude = float(request.GET['latitude'])  # need float to convert unicode
-        longitude = float(request.GET['longitude'])
-
-        if latitude > 90 or latitude < -90:
-            raise ValueError("latitude out of acceptable range (-90 <= latitude <= 90)")
-
-        if longitude > 180 or longitude < -180:
-            raise ValueError("longitude out of acceptable range (-180 <= longitude <= 180)")
-
-        if 'doe_reference_name' in request.GET.keys():
-            doe_reference_name = [request.GET.get('doe_reference_name')]
-            percent_share_list = [100.0]
-        elif 'doe_reference_name[0]' in request.GET.keys():
-            idx = 0
-            doe_reference_name = []
-            percent_share_list = []
-            while 'doe_reference_name[{}]'.format(idx) in request.GET.keys():
-                doe_reference_name.append(request.GET['doe_reference_name[{}]'.format(idx)])
-                if 'percent_share[{}]'.format(idx) in request.GET.keys():
-                    percent_share_list.append(float(request.GET['percent_share[{}]'.format(idx)]))
-                idx += 1
-        else:
-            doe_reference_name = None
-
-        if doe_reference_name is not None:
-            for name in doe_reference_name:
-                if name not in BuiltInProfile.default_buildings:
-                    raise ValueError("Invalid doe_reference_name {}. Select from the following: {}"
-                             .format(name, BuiltInProfile.default_buildings))
-            uuidFilter = UUIDFilter('no_id')
-            log.addFilter(uuidFilter)
-            b = LoadProfileBoilerFuel(dfm=None, latitude=latitude, longitude=longitude, percent_share=percent_share_list,
-                                      doe_reference_name=doe_reference_name, time_steps_per_hour=1)
-            response = JsonResponse(
-                {'annual_mmbtu': b.annual_mmbtu,
-                 'city': b.nearest_city},
-            )
-            return response
-        else:
-            return JsonResponse({"Error": "Missing doe_reference_name input"}, status=500)
-    except KeyError as e:
-        return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
-
-    except ValueError as e:
-        return JsonResponse({"Error": str(e.args[0])}, status=500)
-
-    except Exception:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
-                                                                            tb.format_tb(exc_traceback))
-        log.debug(debug_msg)
-        return JsonResponse({"Error": "Unexpected Error. Please contact reopt@nrel.gov."}, status=500)
 
 def annual_kwh(request):
 
@@ -291,6 +237,16 @@ def emissions_profile(request):
 
 def simulated_load(request):
     try:
+        valid_keys = ["doe_reference_name","latitude","longitude","load_type","percent_share","annual_kwh",
+                        "monthly_totals_kwh","annual_mmbtu","annual_fraction","annual_tonhour","monthly_tonhour",
+                        "monthly_mmbtu","monthly_fraction","max_thermal_factor_on_peak_load","chiller_cop"]
+        for key in request.GET.keys():
+            k = key
+            if "[" in key:
+                k = key.split('[')[0]
+            if k not in valid_keys:
+                raise ValueError("{} is not a valid input parameter".format(key))
+
         latitude = float(request.GET['latitude'])  # need float to convert unicode
         longitude = float(request.GET['longitude'])
         load_type = request.GET.get('load_type')
@@ -333,6 +289,12 @@ def simulated_load(request):
                              " If load_type is not specified, 'electric' is assumed.")
 
         if load_type == "electric":
+            for key in request.GET.keys():
+                if ('_mmbtu' in key) or ('_ton' in key) or ('_fraction' in key):
+                    raise ValueError("Invalid key {} for load_type=electric".format(key))
+            if doe_reference_name is None:
+                raise ValueError("Please supply a doe_reference_name and optionally scaling parameters (annual_kwh or monthly_totals_kwh).")
+
             #Annual loads
             if 'annual_kwh' in request.GET.keys():
                 annual_kwh = float(request.GET.get('annual_kwh'))
@@ -368,6 +330,12 @@ def simulated_load(request):
             return response
 
         if load_type == "heating":
+            for key in request.GET.keys():
+                if ('_kw' in key) or ('_ton' in key) or ('_fraction' in key):
+                    raise ValueError("Invalid key {} for load_type=heating".format(key))
+            
+            if doe_reference_name is None:
+                raise ValueError("Please supply a doe_reference_name and optional scaling parameters (annual_mmbtu or monthly_mmbtu).")
 
             #Annual loads
             if 'annual_mmbtu' in request.GET.keys():
@@ -408,6 +376,9 @@ def simulated_load(request):
             return response
 
         if load_type == "cooling":
+            for key in request.GET.keys():
+                if ('_kw' in key) or ('_mmbtu' in key):
+                    raise ValueError("Invalid key {} for load_type=heating".format(key))
 
             if request.GET.get('annual_fraction') is not None:  # annual_kwh is optional. if not provided, then DOE reference value is used.
                 annual_fraction = float(request.GET['annual_fraction'])
@@ -463,7 +434,6 @@ def simulated_load(request):
                     annual_tonhour = float(request.GET.get('annual_tonhour'))
                 else:
                     annual_tonhour = None
-
                 #Monthly loads
                 if 'monthly_tonhour' in request.GET.keys():
                     string_array = request.GET.get('monthly_tonhour')
@@ -502,13 +472,13 @@ def simulated_load(request):
                     )
                 return response
             else:
-                raise ValueError("Please supply an annual_tonhour, monthly_tonhour, annual_fraction, monthly_fraction series or doe_reference_name")
+                raise ValueError("Please supply a doe_reference_name and optional scaling parameters (annual_tonhour or monthly_tonhour), or annual_fraction, or monthly_fraction.")
 
     except KeyError as e:
-        return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=400)
 
     except ValueError as e:
-        return JsonResponse({"Error": str(e.args[0])}, status=500)
+        return JsonResponse({"Error": str(e.args[0])}, status=400)
 
     except Exception:
 

@@ -3,6 +3,8 @@ FROM nlaws/pyjul
 ENV APP_ENV=local
 ENV SRC_DIR=/opt/reopt/reo/src
 
+# Add remote debugging capability
+RUN apt-get update && apt-get install telnet
 
 # Install Xpress solver
 ENV XPRESSDIR=/opt/xpressmp
@@ -35,8 +37,5 @@ COPY . /opt/reopt
 WORKDIR /opt/reopt
 EXPOSE 8000
 RUN ["pip", "install", "-r", "requirements.txt"]
+RUN pip install pdbpp  # for remote debugging
 ENTRYPOINT ["/bin/bash", "-c"]
-
-# Add remote debugging capability
-RUN apt-get update && apt-get install telnet
-RUN pip install pdbpp

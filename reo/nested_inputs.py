@@ -321,7 +321,7 @@ nested_input_definitions = {
           "type": "int",
           "min": 1,
           "max": 9999,
-          "default": 2019,
+          "default": 2020,
           "description": "Year of Custom Load Profile. If a custom load profile is uploaded via the loads_kw parameter, it is important that this year correlates with the load profile so that weekdays/weekends are determined correctly for the utility rate tariff. If a DOE Reference Building profile (aka 'simulated' profile) is used, the year is set to 2017 since the DOE profiles start on a Sunday."
         },
         "monthly_totals_kwh": {
