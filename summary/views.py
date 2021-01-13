@@ -263,7 +263,7 @@ def summary(request, user_uuid):
                 if site:
 
                     # Focus
-                    if load.get('outage_start_time_step') is not None:
+                    if load and load.get('outage_start_time_step') is not None:
                         results['focus'] = "Resilience"
                     else:
                         results['focus'] = "Financial"
