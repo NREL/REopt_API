@@ -99,60 +99,6 @@ def invalid_urdb(request):
     except Exception as e:
         return JsonResponse({"Error": "Unexpected error in invalid_urdb endpoint: {}".format(e.args[0])}, status=500)
 
-def annual_mmbtu(request):
-    try:
-        latitude = float(request.GET['latitude'])  # need float to convert unicode
-        longitude = float(request.GET['longitude'])
-
-        if latitude > 90 or latitude < -90:
-            raise ValueError("latitude out of acceptable range (-90 <= latitude <= 90)")
-
-        if longitude > 180 or longitude < -180:
-            raise ValueError("longitude out of acceptable range (-180 <= longitude <= 180)")
-
-        if 'doe_reference_name' in request.GET.keys():
-            doe_reference_name = [request.GET.get('doe_reference_name')]
-            percent_share_list = [100.0]
-        elif 'doe_reference_name[0]' in request.GET.keys():
-            idx = 0
-            doe_reference_name = []
-            percent_share_list = []
-            while 'doe_reference_name[{}]'.format(idx) in request.GET.keys():
-                doe_reference_name.append(request.GET['doe_reference_name[{}]'.format(idx)])
-                if 'percent_share[{}]'.format(idx) in request.GET.keys():
-                    percent_share_list.append(float(request.GET['percent_share[{}]'.format(idx)]))
-                idx += 1
-        else:
-            doe_reference_name = None
-
-        if doe_reference_name is not None:
-            for name in doe_reference_name:
-                if name not in BuiltInProfile.default_buildings:
-                    raise ValueError("Invalid doe_reference_name {}. Select from the following: {}"
-                             .format(name, BuiltInProfile.default_buildings))
-            uuidFilter = UUIDFilter('no_id')
-            log.addFilter(uuidFilter)
-            b = LoadProfileBoilerFuel(dfm=None, latitude=latitude, longitude=longitude, percent_share=percent_share_list,
-                                      doe_reference_name=doe_reference_name, time_steps_per_hour=1)
-            response = JsonResponse(
-                {'annual_mmbtu': b.annual_mmbtu,
-                 'city': b.nearest_city},
-            )
-            return response
-        else:
-            return JsonResponse({"Error": "Missing doe_reference_name input"}, status=500)
-    except KeyError as e:
-        return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
-
-    except ValueError as e:
-        return JsonResponse({"Error": str(e.args[0])}, status=500)
-
-    except Exception:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
-                                                                            tb.format_tb(exc_traceback))
-        log.debug(debug_msg)
-        return JsonResponse({"Error": "Unexpected Error. Please contact reopt@nrel.gov."}, status=500)
 
 def annual_kwh(request):
 
