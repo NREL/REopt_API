@@ -1232,7 +1232,13 @@ class DataManager:
 
         boiler_efficiency = self.boiler.boiler_efficiency if self.boiler != None else 1.0
         elec_chiller_cop = self.elecchl.chiller_cop if self.elecchl != None else 1.0
-        absorp_chiller_cop = self.absorpchl.chiller_cop if self.absorpchl != None else 1.0
+        
+        if self.chp is not None:
+            cooling_thermal_factor = self.chp.cooling_thermal_factor
+        else:
+            cooling_thermal_factor = 1.0
+
+        absorp_chiller_cop = self.absorpchl.chiller_cop * cooling_thermal_factor if self.absorpchl != None else 1.0
         absorp_chiller_elec_cop = self.absorpchl.chiller_elec_cop if self.absorpchl != None else 1.0
 
         # Fuel burning parameters and other CHP-specific parameters

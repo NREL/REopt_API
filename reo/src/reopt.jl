@@ -228,12 +228,6 @@ function add_bigM_adjustments(m, p)
 			m[:NewMaxSize][t] = p.MaxSize[t]
 		end
 	end
-	for t in p.CHPTechs
-		m[:NewMaxSize][t] = maximum([p.ElecLoad[ts] for ts in p.TimeStep])
-		if (m[:NewMaxSize][t] > p.MaxSize[t])
-			m[:NewMaxSize][t] = p.MaxSize[t]
-		end
-	end
 
 	# NewMaxSizeByHour is designed to scale the right-hand side of the constraint limiting rated production in each hour to the production factor; in most cases this is unaffected unless the production factor is zero, in which case the right-hand side is set to zero.
 	#for t in p.ElectricTechs
@@ -423,7 +417,7 @@ function add_storage_op_constraints(m, p)
     	        m[:dvStorageSOC][b,ts] == m[:dvStorageSOC][b,ts-1] + p.TimeStepScaling * (
 					sum(p.ChargeEfficiency[t,b] * m[:dvProductionToStorage][b,t,ts] for t in p.HeatingTechs) -
 					m[:dvDischargeFromStorage][b,ts]/p.DischargeEfficiency[b] -
-					p.StorageDecayRate[b] * m[:dvStorageSOC][b,ts]
+					p.StorageDecayRate[b] * m[:dvStorageCapEnergy][b]
 					)
 				)
 
@@ -432,7 +426,7 @@ function add_storage_op_constraints(m, p)
     	        m[:dvStorageSOC][b,ts] == m[:dvStorageSOC][b,ts-1] + p.TimeStepScaling * (
 					sum(p.ChargeEfficiency[t,b] * m[:dvProductionToStorage][b,t,ts] for t in p.CoolingTechs) -
 					m[:dvDischargeFromStorage][b,ts]/p.DischargeEfficiency[b] -
-					p.StorageDecayRate[b] * m[:dvStorageSOC][b,ts]
+					p.StorageDecayRate[b] * m[:dvStorageCapEnergy][b]
 					)
 				)
 
