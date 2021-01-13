@@ -148,7 +148,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
                     inputs_dict['Site']['LoadProfile'].get('outage_end_time_step') is not None:
 
                 if inputs_dict["Site"]["Generator"]["max_kw"] > 0 or inputs_dict["Site"]["Generator"]["existing_kw"] > 0:
-                    gen = Generator(dfm=dfm, run_uuid=run_uuid,
+                    gen = Generator(dfm=dfm,
                             outage_start_time_step=inputs_dict['Site']['LoadProfile'].get("outage_start_time_step"),
                             outage_end_time_step=inputs_dict['Site']['LoadProfile'].get("outage_end_time_step"),
                             time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
@@ -156,7 +156,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         elif not inputs_dict["Site"]["Generator"]["generator_only_runs_during_grid_outage"]:
             if inputs_dict["Site"]["Generator"]["max_kw"] > 0 or inputs_dict["Site"]["Generator"]["existing_kw"] > 0:
-                gen = Generator(dfm=dfm, run_uuid=run_uuid,
+                gen = Generator(dfm=dfm,
                             outage_start_time_step=inputs_dict['Site']['LoadProfile'].get("outage_start_time_step"),
                             outage_end_time_step=inputs_dict['Site']['LoadProfile'].get("outage_end_time_step"),
                             time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
@@ -172,7 +172,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
                              time_steps_per_hour=inputs_dict['time_steps_per_hour'],
                              fuel_avail_before_outage=gen.fuel_avail * gen.fuel_avail_before_outage_pct,
                              gen_existing_kw=gen.existing_kw,
-                             gen_min_turn_down=gen.min_turn_down,
+                             gen_min_turn_down=gen.min_turn_down_pct,
                              fuel_slope=gen.fuel_slope,
                              fuel_intercept=gen.fuel_intercept,
                              **inputs_dict['Site']['LoadProfile'])
