@@ -1117,8 +1117,6 @@ class ValidateNestedInput:
                             chp_unavailability_periods_df = pd.read_csv(chp_unavailability_path)
                             if self.input_dict['Scenario']['Site']['LoadProfile'].get("doe_reference_name") is not None:
                                 year = 2017  # If using DOE building, load matches with 2017 calendar
-                            elif self.input_dict['Scenario']['Site']['LoadProfile'].get("year") is None:
-                                year = self.nested_input_definitions['Scenario']['Site']['LoadProfile']["year"]["default"]
                             else:
                                 year = self.input_dict['Scenario']['Site']['LoadProfile'].get("year")
                             chp_unavailability_periods = chp_unavailability_periods_df.to_dict('records')
@@ -1253,7 +1251,7 @@ class ValidateNestedInput:
                     real_values['year'] = 2017
                     # Use 2017 b/c it is most recent year that starts on a Sunday and all reference profiles start on
                     # Sunday
-        
+
         if object_name_path[-1] == "ElectricTariff":
             electric_tariff = real_values
             if type(electric_tariff.get('emissions_factor_series_lb_CO2_per_kwh')) == float:
