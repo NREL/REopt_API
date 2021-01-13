@@ -272,10 +272,7 @@ def summary(request, user_uuid):
                     results['address'] = site.get('address')
 
                     # Utility Tariff
-                    if tariff['urdb_rate_name']:
-                        results['urdb_rate_name'] = tariff.get('urdb_rate_name')
-                    else:
-                        results['urdb_rate_name'] = "Custom"
+                    results['urdb_rate_name'] = tariff.get('urdb_rate_name', "Custom")
 
                     # Load Profile
                     if load.get('loads_kw'):
