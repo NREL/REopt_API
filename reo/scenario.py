@@ -227,11 +227,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
             year=lp.year,
             **inputs_dict['Site']['LoadProfileBoilerFuel']
             )
-        # Option 1, retrieve annual load from calculations here and add to database
-        tmp = dict()
-        tmp['annual_calculated_boiler_fuel_load_mmbtu_bau'] = lpbf.annual_mmbtu
-        tmp['year_one_boiler_fuel_load_series_mmbtu_per_hr_bau'] = lpbf.load_list
-        ModelManager.updateModel('LoadProfileBoilerFuelModel', tmp, run_uuid)
 
         # Boiler which supplies the bau boiler fuel load, if there is a boiler fuel load
         if lpbf.annual_mmbtu > 0.0:
