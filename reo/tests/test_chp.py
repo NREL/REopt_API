@@ -1,5 +1,4 @@
 import json
-import copy
 import os
 from tastypie.test import ResourceTestCaseMixin
 from reo.nested_to_flat_output import nested_to_flat_chp
