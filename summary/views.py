@@ -347,7 +347,7 @@ def summary(request, user_uuid):
 
                 # Wind Size
                 if wind is not None:
-                    if wind.get('max_kw') or -1 > 0:
+                    if (wind.get('max_kw') or -1) > 0:
                         results['wind_kw'] = wind.get('size_kw')
                     else:
                         results['wind_kw'] = 'not evaluated'
@@ -356,7 +356,7 @@ def summary(request, user_uuid):
 
                 # Generator Size
                 if gen is not None:
-                    if gen.get('max_kw') or -1 > 0:
+                    if (gen.get('max_kw') or -1) > 0:
                         results['gen_kw'] = gen.get('size_kw')
                     else:
                         results['gen_kw'] = 'not evaluated'
@@ -365,7 +365,7 @@ def summary(request, user_uuid):
 
                 # Battery Size
                 if batt is not None:
-                    if batt.get('max_kw') or -1 > 0:
+                    if (batt.get('max_kw') or -1) > 0:
                         results['batt_kw'] = batt.get('size_kw')
                         results['batt_kwh'] = batt.get('size_kwh')
                     else:
@@ -377,7 +377,7 @@ def summary(request, user_uuid):
 
                 # CHP Size
                 if chp is not None:
-                    if chp.get('max_kw') or -1 > 0:
+                    if (chp.get('max_kw') or -1) > 0:
                         results['chp_kw'] = chp.get('size_kw')
                     else:
                         results['chp_kw'] = 'not evaluated'
@@ -386,7 +386,7 @@ def summary(request, user_uuid):
 
                 # HotTES Size
                 if hottes is not None:
-                    if hottes.get('max_gal') or -1 > 0:
+                    if (hottes.get('max_gal') or -1) > 0:
                         results['hottes_gal'] = hottes.get('size_gal')
                     else:
                         results['hottes_gal'] = 'not evaluated'
@@ -395,7 +395,7 @@ def summary(request, user_uuid):
 
                 # ColdTES Size
                 if coldtes is not None:
-                    if coldtes.get('max_gal') or -1 > 0:
+                    if (coldtes.get('max_gal') or -1) > 0:
                         results['coldtes_gal'] = coldtes.get('size_gal')
                     else:
                         results['coldtes_gal'] = 'not evaluated'
@@ -404,7 +404,7 @@ def summary(request, user_uuid):
 
                 # Absoprtion Chiller Size
                 if absorpchl is not None:
-                    if absorpchl.get('max_ton') or -1 > 0:
+                    if (absorpchl.get('max_ton') or -1) > 0:
                         results['absorpchl_ton'] = absorpchl.get('size_ton')
                     else:
                         results['absorpchl_ton'] = 'not evaluated'
