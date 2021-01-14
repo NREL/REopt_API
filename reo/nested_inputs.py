@@ -563,7 +563,7 @@ nested_input_definitions = {
         },
         "emissions_factor_series_lb_CO2_per_kwh": {
           "type": ["list_of_float", "float"],
-          "description": "Carbon Dioxide emissions factor over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples).",
+          "description": "Carbon Dioxide emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.",
         },
         "chp_standby_rate_us_dollars_per_kw_per_month": {
           "type": "float",
