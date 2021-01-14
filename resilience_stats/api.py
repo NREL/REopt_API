@@ -32,7 +32,7 @@ import sys
 
 from celery import shared_task
 from django.core.exceptions import ValidationError
-from django.http import JsonResponse, HttpResponse
+from django.http import HttpResponse
 from tastypie.authorization import ReadOnlyAuthorization
 from tastypie.bundle import Bundle
 from tastypie.exceptions import ImmediateHttpResponse
