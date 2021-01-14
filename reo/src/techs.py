@@ -31,7 +31,6 @@ from reo.src.data_manager import big_number
 from reo.src.pvwatts import PVWatts
 from reo.src.wind import WindSAMSDK
 from reo.src.incentives import Incentives, IncentivesNoProdBased
-from reo.models import ModelManager
 from reo.utilities import TONHOUR_TO_KWHT, generate_year_profile_hourly
 import os
 import json
