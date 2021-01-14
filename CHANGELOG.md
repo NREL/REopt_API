@@ -32,6 +32,7 @@ Classify the change according to the following categories:
 ### Major Updates
 ### Minor Updates
 ### Patches
+ - `summary`: Address failing cases in user `summary` endpoint due to missing load profile data
 
 
 ## v1.2.0 - 2021-01-04
