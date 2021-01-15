@@ -3,6 +3,7 @@
     "webtool_uuid": null,
     "description": "",
     "timeout_seconds": 295,
+    "add_soc_incentive": false,
     "Site": {
       "PV": {
         "pbi_years": 1.0,
