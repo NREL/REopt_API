@@ -78,6 +78,7 @@ class DataManager:
         self.reopt_inputs_bau = None
         self.optimality_tolerance_decomp_subproblem = None
         self.timeout_decomp_subproblem_seconds = None
+        self.add_soc_incentive = None
 
         # following attributes used to pass data to process_results.py
         self.LoadProfile = {}
@@ -1380,7 +1381,8 @@ class DataManager:
             'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month,
             'StorageDecayRate': storage_decay_rate,
             'DecompOptTol': self.optimality_tolerance_decomp_subproblem,
-            'DecompTimeOut': self.timeout_decomp_subproblem_seconds
+            'DecompTimeOut': self.timeout_decomp_subproblem_seconds,
+            'AddSOCIncentive': self.add_soc_incentive
             }
         ## Uncomment the following and run a scenario to get an updated modelinputs.json for creating Julia system image
         # import json
@@ -1508,5 +1510,6 @@ class DataManager:
             'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month,
             'StorageDecayRate': storage_decay_rate,
             'DecompOptTol': self.optimality_tolerance_decomp_subproblem,
-            'DecompTimeOut': self.timeout_decomp_subproblem_seconds
+            'DecompTimeOut': self.timeout_decomp_subproblem_seconds,
+            'AddSOCIncentive': self.add_soc_incentive
         }

@@ -121,6 +121,7 @@ class ScenarioModel(models.Model):
     use_decomposition_model = models.BooleanField(null=True, blank=True)
     optimality_tolerance_decomp_subproblem = models.FloatField(null=True, blank=True)
     timeout_decomp_subproblem_seconds = models.IntegerField(null=True, blank=True)
+    add_soc_incentive = models.BooleanField(null=True, blank=True)
 
     lower_bound = models.FloatField(null=True, blank=True)
     optimality_gap = models.FloatField(null=True, blank=True)
