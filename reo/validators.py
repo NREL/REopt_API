@@ -1091,6 +1091,11 @@ class ValidateNestedInput:
                 prime_mover = real_values.get('prime_mover')
                 size_class = real_values.get('size_class')
                 hw_or_steam = self.input_dict['Scenario']['Site']['Boiler'].get('existing_boiler_production_type_steam_or_hw')
+                # Assign "year" for chp_unavailability_periods
+                if self.input_dict['Scenario']['Site']['LoadProfile'].get("doe_reference_name") is not None:
+                    year = 2017  # If using DOE building, load matches with 2017 calendar
+                else:
+                    year = self.input_dict['Scenario']['Site']['LoadProfile'].get("year")
                 if prime_mover is not None:
                     if prime_mover not in prime_mover_defaults_all.keys():
                         self.input_data_errors.append(
@@ -1115,14 +1120,9 @@ class ValidateNestedInput:
                         if real_values.get("chp_unavailability_periods") is None:
                             chp_unavailability_path = os.path.join('input_files', 'CHP', prime_mover+'_unavailability_periods.csv')
                             chp_unavailability_periods_df = pd.read_csv(chp_unavailability_path)
-                            if self.input_dict['Scenario']['Site']['LoadProfile'].get("doe_reference_name") is not None:
-                                year = 2017  # If using DOE building, load matches with 2017 calendar
-                            else:
-                                year = self.input_dict['Scenario']['Site']['LoadProfile'].get("year")
                             chp_unavailability_periods = chp_unavailability_periods_df.to_dict('records')
                             self.update_attribute_value(object_name_path, number, "chp_unavailability_periods", chp_unavailability_periods)
                         else:
-                            year = 2017  # DOE CRB load matches with 2017 calendar which is the basis of the default
                             chp_unavailability_periods = real_values.get("chp_unavailability_periods")
 
                         # Do same validation on chp_unavailability periods whether using the default or user-entered
@@ -1168,7 +1168,7 @@ class ValidateNestedInput:
                         if real_values.get("chp_unavailability_periods") is None:
                             self.input_data_errors.append('Must provide an input for chp_unavailability_periods since not providing prime_mover')
                         else:
-                            self.input_data_errors += ValidateNestedInput.validate_chp_unavailability_periods(year, chp_unavailability_periods)
+                            self.input_data_errors += ValidateNestedInput.validate_chp_unavailability_periods(year, real_values.get("chp_unavailability_periods"))
 
                         self.validate_chp_inputs(filtered_values, object_name_path, number)
 
