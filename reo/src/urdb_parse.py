@@ -162,7 +162,7 @@ class UrdbParse:
     """
     days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
-    def __init__(self, big_number, elec_tariff, techs, bau_techs, generator=None):
+    def __init__(self, big_number, elec_tariff, techs, bau_techs):
 
         self.urdb_rate = elec_tariff.urdb_response
         self.year = elec_tariff.load_year
@@ -181,7 +181,6 @@ class UrdbParse:
         self.custom_tou_energy_rates = elec_tariff.tou_energy_rates
         self.add_tou_energy_rates_to_urdb_rate = elec_tariff.add_tou_energy_rates_to_urdb_rate
         self.override_urdb_rate_with_tou_energy_rates = elec_tariff.override_urdb_rate_with_tou_energy_rates
-        self.generator = generator
 
         self.energy_rates_summary = []
         self.demand_rates_summary = []

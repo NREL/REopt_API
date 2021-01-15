@@ -600,9 +600,6 @@ class LoadProfile(BuiltInProfile):
                     kwargs["doe_reference_name"] = doe_reference_name_list[i]
                     if self.annual_kwh is not None:
                         kwargs["annual_energy"] = self.annual_kwh
-                        percent_share = 100
-                    else:
-                        percent_share = kwargs.get("percent_share")[i]
                     if len(doe_reference_name_list[i])>1:
                         kwargs['monthly_totals_energy'] = kwargs.get('monthly_totals_kwh')
                     super(LoadProfile, self).__init__(**kwargs)

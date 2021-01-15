@@ -31,7 +31,6 @@ from reo.src.data_manager import big_number
 from reo.src.pvwatts import PVWatts
 from reo.src.wind import WindSAMSDK
 from reo.src.incentives import Incentives, IncentivesNoProdBased
-from reo.models import ModelManager
 from reo.utilities import TONHOUR_TO_KWHT, generate_year_profile_hourly
 import os
 import json
@@ -231,7 +230,7 @@ class Wind(Tech):
 
 class Generator(Tech):
 
-    def __init__(self, dfm, run_uuid, min_kw, max_kw, existing_kw, fuel_slope_gal_per_kwh, fuel_intercept_gal_per_hr,
+    def __init__(self, dfm, min_kw, max_kw, existing_kw, fuel_slope_gal_per_kwh, fuel_intercept_gal_per_hr,
                  fuel_avail_gal, min_turn_down_pct, outage_start_time_step=None, outage_end_time_step=None, time_steps_per_hour=1,
                  fuel_avail_before_outage_pct=1, emissions_factor_lb_CO2_per_gal=None, **kwargs):
         super(Generator, self).__init__(min_kw=min_kw, max_kw=max_kw, **kwargs)
@@ -244,7 +243,7 @@ class Generator(Tech):
         self.fuel_slope = fuel_slope_gal_per_kwh
         self.fuel_intercept = fuel_intercept_gal_per_hr
         self.fuel_avail = fuel_avail_gal
-        self.min_turn_down = min_turn_down_pct
+        self.min_turn_down_pct = min_turn_down_pct
         self.reopt_class = 'GENERATOR'
         self.outage_start_time_step = outage_start_time_step
         self.outage_end_time_step = outage_end_time_step

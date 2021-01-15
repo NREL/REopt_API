@@ -148,7 +148,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
                     inputs_dict['Site']['LoadProfile'].get('outage_end_time_step') is not None:
 
                 if inputs_dict["Site"]["Generator"]["max_kw"] > 0 or inputs_dict["Site"]["Generator"]["existing_kw"] > 0:
-                    gen = Generator(dfm=dfm, run_uuid=run_uuid,
+                    gen = Generator(dfm=dfm,
                             outage_start_time_step=inputs_dict['Site']['LoadProfile'].get("outage_start_time_step"),
                             outage_end_time_step=inputs_dict['Site']['LoadProfile'].get("outage_end_time_step"),
                             time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
@@ -156,7 +156,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         elif not inputs_dict["Site"]["Generator"]["generator_only_runs_during_grid_outage"]:
             if inputs_dict["Site"]["Generator"]["max_kw"] > 0 or inputs_dict["Site"]["Generator"]["existing_kw"] > 0:
-                gen = Generator(dfm=dfm, run_uuid=run_uuid,
+                gen = Generator(dfm=dfm,
                             outage_start_time_step=inputs_dict['Site']['LoadProfile'].get("outage_start_time_step"),
                             outage_end_time_step=inputs_dict['Site']['LoadProfile'].get("outage_end_time_step"),
                             time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
@@ -170,33 +170,26 @@ def setup_scenario(self, run_uuid, data, raw_post):
                              pvs=pvs,
                              analysis_years=site.financial.analysis_years,
                              time_steps_per_hour=inputs_dict['time_steps_per_hour'],
-                             fuel_avail_before_outage=gen.fuel_avail*gen.fuel_avail_before_outage_pct,
+                             fuel_avail_before_outage=gen.fuel_avail * gen.fuel_avail_before_outage_pct,
                              gen_existing_kw=gen.existing_kw,
-                             gen_min_turn_down=gen.min_turn_down,
+                             gen_min_turn_down=gen.min_turn_down_pct,
                              fuel_slope=gen.fuel_slope,
                              fuel_intercept=gen.fuel_intercept,
                              **inputs_dict['Site']['LoadProfile'])
-            tmp = dict()
-            tmp['annual_calculated_kwh'] = lp.annual_kwh
-            tmp['resilience_check_flag'] = lp.resilience_check_flag
-            tmp['loads_kw'] = lp.load_list
-            ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
         else:
-            lp = LoadProfile(dfm=dfm,user_profile=inputs_dict['Site']['LoadProfile'].get('loads_kw'),
-                            latitude=inputs_dict['Site'].get('latitude'),
-                            longitude=inputs_dict['Site'].get('longitude'),
-                            pvs=pvs,analysis_years=site.financial.analysis_years,
-                            time_steps_per_hour=inputs_dict['time_steps_per_hour'],
-                            fuel_avail_before_outage=0,
-                            en_existing_kw=0,
-                            gen_min_turn_down=0,
-                            fuel_slope=0,fuel_intercept=0,
-                            **inputs_dict['Site']['LoadProfile'])
-            tmp = dict()
-            tmp['annual_calculated_kwh'] = lp.annual_kwh
-            tmp['resilience_check_flag'] = lp.resilience_check_flag
-            tmp['loads_kw'] = lp.load_list
-            ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
+            lp = LoadProfile(dfm=dfm,
+                             user_profile=inputs_dict['Site']['LoadProfile'].get('loads_kw'),
+                             latitude=inputs_dict['Site'].get('latitude'),
+                             longitude=inputs_dict['Site'].get('longitude'),
+                             pvs=pvs,
+                             analysis_years=site.financial.analysis_years,
+                             time_steps_per_hour=inputs_dict['time_steps_per_hour'],
+                             fuel_avail_before_outage=0,
+                             gen_existing_kw=0,
+                             gen_min_turn_down=0,
+                             fuel_slope=0,
+                             fuel_intercept=0,
+                             **inputs_dict['Site']['LoadProfile'])
 
         # Checks that the load being sent to optimization does not contatin negative values. We check the loads against
         # a variable tolerance (contingent on PV size since this tech has its existing dispatch added to the loads) and
@@ -234,11 +227,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
             year=lp.year,
             **inputs_dict['Site']['LoadProfileBoilerFuel']
             )
-        # Option 1, retrieve annual load from calculations here and add to database
-        tmp = dict()
-        tmp['annual_calculated_boiler_fuel_load_mmbtu_bau'] = lpbf.annual_mmbtu
-        tmp['year_one_boiler_fuel_load_series_mmbtu_per_hr_bau'] = lpbf.load_list
-        ModelManager.updateModel('LoadProfileBoilerFuelModel', tmp, run_uuid)
 
         # Boiler which supplies the bau boiler fuel load, if there is a boiler fuel load
         if lpbf.annual_mmbtu > 0.0:
