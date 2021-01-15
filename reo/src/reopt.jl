@@ -926,7 +926,6 @@ function reopt_run(m, p::Parameter)
 
 	t_start = time()
 	results = Dict{String, Any}()
-    Obj = 1  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
 
 	## Big-M adjustments; these need not be replaced in the parameter object.
 	add_bigM_adjustments(m, p)
@@ -1020,10 +1019,10 @@ function reopt_run(m, p::Parameter)
 
 	add_cost_function(m, p)
 
-    if Obj == 1
+    if !(p.AddSOCIncentive == 1)
 		@objective(m, Min, m[:REcosts])
-	elseif Obj == 2  # Keep SOC high
-		@objective(m, Min, m[:REcosts] - sum(m[:dvStorageSOC]["Elec",ts] for ts in p.TimeStep)/8760.)
+	else
+		@objective(m, Min, m[:REcosts] - sum(m[:dvStorageSOC]["Elec",ts] for ts in p.TimeStep)/p.TimeStepCount)
 	end
 
 	results["julia_reopt_constriants_seconds"] = time() - t_start
@@ -1046,7 +1045,7 @@ function reopt_run(m, p::Parameter)
     #############  		Outputs    									 #############
     ##############################################################################
 	try
-		results["lcc"] = round(JuMP.objective_value(m)+ 0.0001*value(m[:MinChargeAdder]))
+		results["lcc"] = round(value(m[:REcosts]) + 0.0001*value(m[:MinChargeAdder]))
 		results["lower_bound"] = round(JuMP.objective_bound(m))
 		results["optimality_gap"] = JuMP.relative_gap(m)
 	catch

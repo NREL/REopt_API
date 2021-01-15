@@ -160,6 +160,11 @@ nested_input_definitions = {
       "default": 120,
       "description": "The number of seconds allowed before the decomposition subproblem optimization times out"
     },
+    "add_soc_incentive": {
+      "type": "bool",
+      "default": True,
+      "description": "If True, then a small incentive to keep the battery's state of charge high is added to the objective of the optimization."
+    },
 
     "Site": {
       "latitude": {
