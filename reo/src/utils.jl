@@ -51,9 +51,6 @@ Base.@kwdef struct Parameter
 
 	 ###  Subsets and Indexed Sets  ####
 	 ElecStorage::Array{String,1}  # B^{e} \subset B: Electrical energy storage systems
-	 #HotTES::Array{String,1}  # B^{h} \subset B: Hot thermal energy storage systems (IGNORE)
-	 #ColdTES::Array{String,1}  # B^{c} \subset B: Cold thermal energy storage systems (IGNORE)
-	 #ThermalStorage::Array{String,1}  # B^{th} \subset B: Thermal energy storage systems (IGNORE)
 	 TimeStepRatchetsMonth::Array{Array{Int64,1},1}   #  H_m: Time steps in month m
 	 TimeStepRatchets::Array{Array{Int64,1},1}   #  H_r: Time steps in ratchet r
      TimeStepsWithGrid::Array{Int64,1}  # H_g: Time steps with grid connection
@@ -64,13 +61,8 @@ Base.@kwdef struct Parameter
 	 TechsInClass::AxisArray # T_c \subset T: Technologies that are in class c
 	 TechsByFuelType::AxisArray # T_f \subset T: Technologies that burn fuel type f
 	 TechsByNMILRegime::AxisArray # T_v \subset T: Technologies that may acess net-meterng regime v
-	 #AbsorptionChillers::Array{String,1}  # T^{ac} \subset T: Absorption Chillers (IGNORE)
-	 #CHPTechs::Array{String,1}  # T^{CHP} \subset T: CHP technologies (IGNORE)
-	 #CoolingTechs::Array{String,1}  # T^{cl} \subset T: Cooling technologies (IGNORE)
 	 ElectricTechs::Array{String,1}  # T^{e} \subset T: Electricity-producing technologies
-	 #ElectricChillers::Array{String,1}  # T^{ec} \subset T: Electric chillers  (IGNORE)
 	 FuelBurningTechs::Array{String,1}  # T^{f} \subset T: Fuel-burning technologies
-	 #HeatingTechs::Array{String,1}  # T^{ht} \subset T: Heating technologies (IGNORE)
 	 TechsNoTurndown::Array{String,1}  # T^{ac} \subset T: Technologies that cannot turn down, i.e., PV and wind
 
 	 ###  Parameters and Tables supporting Indexed Sets ###
@@ -99,8 +91,6 @@ Base.@kwdef struct Parameter
 
 	 ###  Demand Parameters ###
 	 ElecLoad::Array{Float64,1}  # \delta^{d}_{h}: Electrical load in time step h   [kW]
-	 # HeatingLoad::Array{Float64,1}  # \delta^{bo}_{h}: Heating load in time step h   [MMBTU/hr]
-	 # CoolingLoad::Array{Float64,1}  # \delta^{c}_{h}: Cooling load in time step h   [kW]
      DemandLookbackPercent::Float64    # \delta^{lp}: Demand Lookback proportion [fraction]
      MaxDemandInTier::Array{Float64,1}  # \delta^{t}_{e}: Maximum power demand in ratchet e
      MaxDemandMonthsInTier::Array{Float64,1}   # \delta^{mt}_{n}: Maximum monthly power demand in tier n
@@ -115,10 +105,6 @@ Base.@kwdef struct Parameter
 
 	 ###  Technology-specific Time-series Factor Parameters ###
 	 ProductionFactor::AxisArray    #f^{p}_{th}  Production factor of technology t and time step h  [unitless]  (NEW)
-     #CHPThermalProdSlope # f^{fa}_{th}: Fuel burn ambient correction factor of technology t at time step h [unitless]
-	 # f^{ha}_{th}: Hot water ambient correction factor of technology t at time step h [unitless]
-	 # f^{ht}_{th}: Hot water thermal grade correction factor t correction factor of technology t at time step h [unitless]
-	 # f^{ed}_{th}: Fuel burn ambient correction factor of technology t at time step h [unitless]
 
 	 ###  Technology-specific Factor Parameters ###
 	 TurbineDerate::AxisArray  # f^{d}_{t}: Derate factor for turbine technologyt [unitless]
@@ -144,10 +130,6 @@ Base.@kwdef struct Parameter
 	 ChargeEfficiency::AxisArray  # \eta^{esi}_{bt}: Efficiency of charging storage system b using technology t  [fraction] (NEW)
 	 GridChargeEfficiency::Float64   # \eta^{esig}: Efficiency of charging electrical storage using grid power [fraction] (NEW)
      DischargeEfficiency::AxisArray  # \eta^{eso}_{b}: Efficiency of discharging storage system b [fraction] (NEW)
-	 #BoilerEfficiency \eta^{bo}: Boiler efficiency [fraction]
-	 # \eta^{ecop}: Electric chiller efficiency [fraction]
-	 # \eta^{acop}: Absorption chiller efficiency [fraction]
-
 
 	 ###  Storage Parameters ###   # \ubar{w}^{bkW}_{b}: Minimum power capacity of storage system b (needs to be indexed on b )
      StorageMinChargePcent::Float64     #  \ubar{w}^{mcp}_{b}: Minimum state of charge of storage system b

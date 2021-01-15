@@ -248,7 +248,6 @@ class LoadProfileBoilerFuelModel(models.Model):
 
     # Outputs
     annual_calculated_boiler_fuel_load_mmbtu_bau = models.FloatField(null=True, blank=True, )
-    year_one_boiler_fuel_load_series_mmbtu_per_hr_bau = ArrayField(models.FloatField(null=True, blank=True), default=list)
     year_one_boiler_fuel_load_series_mmbtu_per_hr = ArrayField(models.FloatField(null=True, blank=True), default=list)
     year_one_boiler_thermal_load_series_mmbtu_per_hr = ArrayField(models.FloatField(null=True, blank=True), default=list)
 

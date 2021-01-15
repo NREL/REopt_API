@@ -153,11 +153,6 @@ nested_output_definitions = {
                   "description": "Year one hourly time series of boiler thermal load",
                   "units": "mmbtu_per_hr"
                 },
-                "year_one_boiler_fuel_load_series_mmbtu_per_hr_bau": {
-                  "type": list_of_float,
-                  "description": "Year one hourly time series of boiler fuel load in business-as-usual case.",
-                  "units": "mmbtu_per_hr"
-                },
                 "annual_calculated_boiler_fuel_load_mmbtu_bau": {
                   "type": float,
                   "description": "Annual boiler fuel consumption calculated by summing up 8760 boiler fuel "

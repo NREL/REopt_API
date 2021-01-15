@@ -261,7 +261,7 @@ class DataManager:
 
             if eval('self.' + tech) is not None:
 
-                if tech not in ['util', 'generator', 'boiler', 'elecchl', 'absorpchl']:
+                if tech not in ['generator', 'boiler', 'elecchl', 'absorpchl']:
 
                     # prod incentives don't need escalation
                     if tech.startswith("pv"):  # PV has degradation
@@ -304,7 +304,7 @@ class DataManager:
 
         for tech in techs:
 
-            if eval('self.' + tech) is not None and tech not in ['util', 'boiler', 'elecchl','absorpchl']:
+            if eval('self.' + tech) is not None and tech not in ['boiler', 'elecchl', 'absorpchl']:
 
                 existing_kw = 0.0
                 if hasattr(eval('self.' + tech), 'existing_kw'):
@@ -597,7 +597,7 @@ class DataManager:
                 n_segments_list.append(n_segments)
 
             # [az] Not sure if we need this or not, first line is updated from DatFileManager and the rest may have been removed in this version
-            elif eval('self.' + tech) is not None and tech in ['util', 'boiler', 'elecchl','absorpchl']:
+            elif eval('self.' + tech) is not None and tech in ['boiler', 'elecchl', 'absorpchl']:
 
                 cap_cost_slope.append(0.0)
                 cap_cost_yint.append(0.0)
@@ -1111,8 +1111,8 @@ class DataManager:
             storage_max_energy, storage_decay_rate = self._get_REopt_storage_techs_and_params()
 
         parser = UrdbParse(big_number=big_number, elec_tariff=self.elec_tariff,
-                          techs=get_techs_not_none(self.available_techs, self),
-                           bau_techs=get_techs_not_none(self.bau_techs, self), generator=eval('self.generator'))
+                           techs=get_techs_not_none(self.available_techs, self),
+                           bau_techs=get_techs_not_none(self.bau_techs, self))
         tariff_args = parser.parse_rate(self.elec_tariff.utility_name, self.elec_tariff.rate_name)
         TechToNMILMapping, TechsByNMILRegime, NMIL_regime = self._get_REopt_techToNMILMapping(self.available_techs)
         TechToNMILMapping_bau, TechsByNMILRegime_bau, NMIL_regime_bau = self._get_REopt_techToNMILMapping(self.bau_techs)
