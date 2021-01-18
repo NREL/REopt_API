@@ -1037,6 +1037,9 @@ class DataManager:
             'NMILLimits': NMILLimits,
             'TechToNMILMapping': TechToNMILMapping,
             'CapCostSegCount': n_segments,
+            'CoincidentPeakLoadTimeSteps': self.elec_tariff.coincident_peak_load_active_timesteps,
+            'CoincidentPeakRates': self.elec_tariff.coincident_peak_load_charge_us_dollars_per_kw,
+            'CoincidentPeakPeriodCount': self.elec_tariff.coincident_peak_num_periods,
             # new parameters for reformulation
             'FuelCost': fuel_costs,
             'ElecRate': tariff_args.energy_costs,
@@ -1079,9 +1082,7 @@ class DataManager:
             'ExportTiersBeyondSiteLoad': ["EXC"],
             'ElectricDerate': electric_derate,
             'TechsByNMILRegime': TechsByNMILRegime,
-            'TechsCannotCurtail': techs_cannot_curtail,
-            'CoincidentPeakLoadTimesteps': self.elec_tariff.coincident_peak_load_active_timesteps,
-            'CoincidentPeakRate': self.elec_tariff.coincident_peak_load_charge_us_dollars_per_kw
+            'TechsCannotCurtail': techs_cannot_curtail
             }
         ## Uncomment the following and run a scenario to get an updated modelinputs.json for creating Julia system image
         # import json
@@ -1137,6 +1138,9 @@ class DataManager:
             'NMILLimits': NMILLimits_bau,
             'TechToNMILMapping': TechToNMILMapping_bau,
             'CapCostSegCount': n_segments_bau,
+            'CoincidentPeakLoadTimeSteps': self.elec_tariff.coincident_peak_load_active_timesteps,
+            'CoincidentPeakRates': self.elec_tariff.coincident_peak_load_charge_us_dollars_per_kw,
+            'CoincidentPeakPeriodCount': self.elec_tariff.coincident_peak_num_periods,
             'StorageCostPerKW': StorageCostPerKW,
             'StorageCostPerKWH': StorageCostPerKWH,
             'FuelCost': fuel_costs_bau,
@@ -1179,7 +1183,5 @@ class DataManager:
             'ExportTiersBeyondSiteLoad':  ["EXC"],
             'ElectricDerate': electric_derate_bau,
             'TechsByNMILRegime': TechsByNMILRegime_bau,
-            'TechsCannotCurtail': techs_cannot_curtail_bau,
-            'CoincidentPeakLoadTimesteps': self.elec_tariff.coincident_peak_load_active_timesteps,
-            'CoincidentPeakRate': self.elec_tariff.coincident_peak_load_charge_us_dollars_per_kw
+            'TechsCannotCurtail': techs_cannot_curtail_bau
         }

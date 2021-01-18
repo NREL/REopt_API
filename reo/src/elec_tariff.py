@@ -58,6 +58,8 @@ class ElecTariff(object):
         :param add_blended_rates_to_urdb_rate: bool
         :param blended_annual_rates_us_dollars_per_kwh: float
         :param blended_annual_demand_charges_us_dollars_per_kw: float
+        :param coincident_peak_load_active_timesteps: list of float or list of list of float
+        :param coincident_peak_load_charge_us_dollars_per_kw: float or list of float
         :param kwargs:  not used
         """
         self.run_id = run_id
@@ -68,8 +70,18 @@ class ElecTariff(object):
         self.tou_energy_rates = tou_energy_rates_us_dollars_per_kwh
         self.add_tou_energy_rates_to_urdb_rate = add_tou_energy_rates_to_urdb_rate
         self.override_urdb_rate_with_tou_energy_rates = False
-        self.coincident_peak_load_active_timesteps = coincident_peak_load_active_timesteps
-        self.coincident_peak_load_charge_us_dollars_per_kw = coincident_peak_load_charge_us_dollars_per_kw
+
+        if coincident_peak_load_charge_us_dollars_per_kw is not None \
+                and coincident_peak_load_active_timesteps is not None:
+            self.coincident_peak_num_periods = len(coincident_peak_load_charge_us_dollars_per_kw)
+            self.coincident_peak_load_charge_us_dollars_per_kw = coincident_peak_load_charge_us_dollars_per_kw
+            self.coincident_peak_load_active_timesteps = []
+            for period in range(self.coincident_peak_num_periods):
+                self.coincident_peak_load_active_timesteps.append(list(filter(None, coincident_peak_load_active_timesteps[period])))
+        else:
+            self.coincident_peak_num_periods = 0
+            self.coincident_peak_load_charge_us_dollars_per_kw = []
+            self.coincident_peak_load_active_timesteps = []
 
         if urdb_response is not None:
             log.info("Parsing URDB rate")

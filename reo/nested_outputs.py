@@ -550,6 +550,26 @@ nested_output_definitions = {
                   "type": "int",
                   "description": "Total equivalent pounds of carbon dioxide emitted from BAU utility electricity use in the first year. Calculated by default from hourly emissions estimates except in AK and HI.",
                   "units": "lb CO2"
+                },
+                "year_one_coincident_peak_cost_us_dollars": {
+                  "type": "float",
+                  "description": "Optimal year one coincident peak charges",
+                  "units": "$"
+                },
+                "year_one_coincident_peak_cost_bau_us_dollars": {
+                  "type": "float",
+                  "description": "Business as usual year one coincident peak charges",
+                  "units": "$"
+                },
+                "total_coincident_peak_cost_us_dollars": {
+                  "type": "float",
+                  "description": "Optimal lifecycle coincident peak charges",
+                  "units": "$"
+                },
+                "total_coincident_peak_cost_bau_us_dollars": {
+                  "type": "float",
+                  "description": "Business as usual lifecycle coincident peak charges",
+                  "units": "$"
                 }
               },
 
