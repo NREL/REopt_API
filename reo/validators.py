@@ -1255,7 +1255,7 @@ class ValidateNestedInput:
                     self.validate_timestep_series(series, 
                     "ElectricTariff", 'coincident_peak_load_active_timesteps', 
                     ts_per_hour, number=number, input_isDict=input_isDict)
-                if len(electric_tariff.get('coincident_peak_load_active_timesteps')) != electric_tariff.get('coincident_peak_load_charge_us_dollars_per_kw'):
+                if len(electric_tariff.get('coincident_peak_load_active_timesteps')) != len(electric_tariff.get('coincident_peak_load_charge_us_dollars_per_kw')):
                     self.input_data_errors.append(( "The number of rates in coincident_peak_load_charge_us_dollars_per_kw must"
                                                     " match the number of timestep sets in coincident_peak_load_active_timesteps"))
 
@@ -1424,7 +1424,7 @@ class ValidateNestedInput:
                             self.object_name_string(object_name_path), number)
                         )
             else:
-                self.update_attribute_value(object_name_path, number, name, s)
+                self.update_attribute_value(object_name_path, number, name, new_value)
                 return new_value
 
         if real_values is not None:
@@ -1669,7 +1669,7 @@ class ValidateNestedInput:
     def validate_timestep_series(self, series, obj_name, attr_name, time_steps_per_hour, number=1, input_isDict=None):
         max_timesteps = 8760*time_steps_per_hour
         for ts in series:
-            if ts < 1 or ts > 8760*time_steps_per_hour or ts%1>0:
+            if ts is not None and (ts < 1 or ts > max_timesteps or ts%1>0):
                 self.input_data_errors.append((
                     "At least one invalid timestep value ({}) for {}. Timesteps must be integer values between 1 and {} inclusive".format(
                     ts, attr_name,max_timesteps )))

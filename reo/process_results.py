@@ -417,6 +417,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "year_one_demand_cost",
             "year_one_fixed_cost",
             "year_one_min_charge_adder",
+            "year_one_coincident_peak_cost",
             "year_one_bill",
             "year_one_utility_kwh",
             "year_one_export_benefit",
@@ -424,6 +425,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "total_demand_cost",
             "total_fixed_cost",
             "total_min_charge_adder",
+            "total_coincident_peak_cost",
             "total_export_benefit",
             "net_capital_costs_plus_om",
             "gen_net_fixed_om_costs",
@@ -793,9 +795,9 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_min_charge_adder_us_dollars"] = self.results_dict.get("year_one_min_charge_adder")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_energy_cost_bau_us_dollars"] = self.results_dict.get("year_one_energy_cost_bau")
+                        "year_one_coincident_peak_cost_us_dollars"] = self.results_dict.get("year_one_coincident_peak_cost")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_energy_cost_us_dollars"] = self.results_dict.get("year_one_energy_cost")
+                        "year_one_energy_cost_bau_us_dollars"] = self.results_dict.get("year_one_energy_cost_bau")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_demand_cost_bau_us_dollars"] = self.results_dict.get("year_one_demand_cost_bau")
                     self.nested_outputs["Scenario"]["Site"][name][
@@ -803,6 +805,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_min_charge_adder_bau_us_dollars"] = self.results_dict.get(
                         "year_one_min_charge_adder_bau")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_coincident_peak_cost_bau_us_dollars"] = self.results_dict.get("year_one_coincident_peak_cost_bau")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "total_energy_cost_us_dollars"] = self.results_dict.get("total_energy_cost")
                     self.nested_outputs["Scenario"]["Site"][name][
@@ -812,6 +816,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "total_min_charge_adder_us_dollars"] = self.results_dict.get("total_min_charge_adder")
                     self.nested_outputs["Scenario"]["Site"][name][
+                        "total_coincident_peak_cost_us_dollars"] = self.results_dict.get("total_coincident_peak_cost")
+                    self.nested_outputs["Scenario"]["Site"][name][
                         "total_energy_cost_bau_us_dollars"] = self.results_dict.get("total_energy_cost_bau")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "total_demand_cost_bau_us_dollars"] = self.results_dict.get("total_demand_cost_bau")
@@ -819,6 +825,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "total_fixed_cost_bau_us_dollars"] = self.results_dict.get("total_fixed_cost_bau")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "total_min_charge_adder_bau_us_dollars"] = self.results_dict.get("total_min_charge_adder_bau")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "total_coincident_peak_cost_bau_us_dollars"] = self.results_dict.get("total_coincident_peak_cost_bau")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_bill_us_dollars"] = self.results_dict.get(
                         "year_one_bill")
                     self.nested_outputs["Scenario"]["Site"][name][

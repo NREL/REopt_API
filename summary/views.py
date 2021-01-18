@@ -198,7 +198,7 @@ def summary(request, user_uuid):
         winds = WindModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw')
         gens = GeneratorModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid', 'max_kw', 'size_kw')
         financials = FinancialModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','npv_us_dollars','net_capital_costs','lcc_us_dollars','lcc_bau_us_dollars','net_capital_costs_plus_om_us_dollars', 'net_capital_costs','net_om_us_dollars_bau')
-        tariffs = ElectricTariffModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','urdb_rate_name','year_one_energy_cost_us_dollars','year_one_demand_cost_us_dollars','year_one_fixed_cost_us_dollars','year_one_min_charge_adder_us_dollars','year_one_bill_us_dollars','year_one_energy_cost_bau_us_dollars','year_one_demand_cost_bau_us_dollars','year_one_fixed_cost_bau_us_dollars','year_one_min_charge_adder_bau_us_dollars','year_one_bill_bau_us_dollars')
+        tariffs = ElectricTariffModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','urdb_rate_name','year_one_energy_cost_us_dollars','year_one_demand_cost_us_dollars','year_one_fixed_cost_us_dollars','year_one_min_charge_adder_us_dollars','year_one_coincident_peak_cost_us_dollars','year_one_bill_us_dollars','year_one_energy_cost_bau_us_dollars','year_one_demand_cost_bau_us_dollars','year_one_fixed_cost_bau_us_dollars','year_one_min_charge_adder_bau_us_dollars','year_one_coincident_peak_cost_bau_us_dollars','year_one_bill_bau_us_dollars')
         resiliences = ResilienceModel.objects.filter(scenariomodel_id__in=scenario_run_ids).values('scenariomodel_id','resilience_hours_avg','resilience_hours_max','resilience_hours_min')
 
         def get_scenario_data(data, run_uuid):
@@ -296,6 +296,7 @@ def summary(request, user_uuid):
                     tariff.get('year_one_demand_cost_us_dollars') or 0,
                     tariff.get('year_one_fixed_cost_us_dollars') or 0,
                     tariff.get('year_one_min_charge_adder_us_dollars') or 0,
+                    tariff.get('year_one_coincident_peak_cost_us_dollars') or 0,
                     tariff.get('year_one_bill_us_dollars') or 0
                     ]))
                 
@@ -304,6 +305,7 @@ def summary(request, user_uuid):
                     tariff.get('year_one_demand_cost_bau_us_dollars') or 0,
                     tariff.get('year_one_fixed_cost_bau_us_dollars') or 0,
                     tariff.get('year_one_min_charge_adder_bau_us_dollars') or 0,
+                    tariff.get('year_one_coincident_peak_cost_bau_us_dollars') or 0,
                     tariff.get('year_one_bill_bau_us_dollars') or 0
                     ]))
                 #Resilience Stats

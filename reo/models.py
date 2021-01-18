@@ -275,7 +275,10 @@ class ElectricTariffModel(models.Model):
     year_one_energy_supplied_kwh_bau = models.FloatField(null=True, blank=True)
     year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
     year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
-
+    year_one_coincident_peak_cost_us_dollars = models.FloatField(null=True, blank=True)
+    year_one_coincident_peak_cost_bau_us_dollars = models.FloatField(null=True, blank=True)
+    total_coincident_peak_cost_us_dollars = models.FloatField(null=True, blank=True)
+    total_coincident_peak_cost_bau_us_dollars = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
