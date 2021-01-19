@@ -90,7 +90,7 @@ pipeline {
               }
 
               steps {
-                withKubeConfig([credentialsId: "kubeconfig-nrel-test"]) {
+                withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod"]) {
                   tadaWithWerfNamespaces(rancherProject: "reopt-api-stage", primaryBranch: "master", dbBaseName: "reopt_api_staging", baseDomain: "${STAGING_BASE_DOMAIN}") {
                     withCredentials([string(credentialsId: "reopt-api-werf-secret-key", variable: "WERF_SECRET_KEY")]) {
                       sh """
@@ -119,7 +119,7 @@ pipeline {
               }
 
               steps {
-                withKubeConfig([credentialsId: "kubeconfig-nrel-prod"]) {
+                withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod"]) {
                   tadaWithWerfNamespaces(rancherProject: "reopt-api-prod", primaryBranch: "master") {
                     withCredentials([string(credentialsId: "reopt-api-werf-secret-key", variable: "WERF_SECRET_KEY")]) {
                       sh """

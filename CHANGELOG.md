@@ -62,6 +62,7 @@ Classify the change according to the following categories:
 - `reo`: New endpoint `/schedule_stats`
     - Endpoint for getting default **CHP.chp_unavailability_periods** and summary metrics of the unavailability profile
 ### Patches
+ - `summary`: Address failing cases in user `summary` endpoint due to missing load profile data
 
 
 ## v1.2.0 - 2021-01-04
