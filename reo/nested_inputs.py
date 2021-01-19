@@ -1405,19 +1405,19 @@ nested_input_definitions = {
         "min_kw": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0e9,
+          "max": max_big_number,
           "description": "Minimum CHP size (based on electric) constraint for optimization"
         },
         "max_kw": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0e9,
+          "max": max_big_number,
           "description": "Maximum CHP size (based on electric) constraint for optimization. Set to zero to disable CHP"
         },
         "min_allowable_kw": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0e9,
+          "max": max_big_number,
           "description": "Minimum CHP size (based on electric) that still allows the model to choose zero (e.g. no CHP system)"
         },
         "installed_cost_us_dollars_per_kw": {
@@ -1547,7 +1547,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e10,
-          "default": 1.0e9,
+          "default": max_incentive,
           "description": "Maximum rebate allowed under state investment based incentives"
         },
         "utility_ibi_pct": {
@@ -1561,7 +1561,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e10,
-          "default": 1.0e9,
+          "default": max_incentive,
           "description": "Maximum rebate allowed under utility investment based incentives"
         },
         "federal_rebate_us_dollars_per_kw": {
@@ -1582,7 +1582,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e10,
-          "default": 1.0e9,
+          "default": max_incentive,
           "description": "Maximum rebate allowed under state rebates"
         },
         "utility_rebate_us_dollars_per_kw": {
@@ -1596,7 +1596,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e10,
-          "default": 1.0e9,
+          "default": max_incentive,
           "description": "Maximum rebate allowed under utility rebates"
         },
         "pbi_us_dollars_per_kwh": {
@@ -1609,8 +1609,8 @@ nested_input_definitions = {
         "pbi_max_us_dollars": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0e9,
-          "default": 1.0e9,
+          "max": 1.0e10,
+          "default": max_incentive,
           "description": "Maximum rebate allowed under utility production-based incentives"
         },
         "pbi_years": {
