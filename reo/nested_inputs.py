@@ -895,6 +895,10 @@ nested_input_definitions = {
             "type": "float", "min": 0.0, "max": 1.0, "default": 0.2,
             "description": "Minimum allowable battery state of charge"
           },
+          "soc_max_pct": {
+            "type": "float", "min": 0.0, "max": 1.0, "default": 1.0,
+            "description": "Maximum allowable battery state of charge"
+          },
           "soc_init_pct": {
             "type": "float", "min": 0.0, "max": 1.0, "default": 0.5,
             "description": "Battery state of charge at first hour of optimization"

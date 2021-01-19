@@ -65,7 +65,7 @@ class Storage(object):
 
     def __init__(self, dfm, min_kw, max_kw, min_kwh, max_kwh,
                  internal_efficiency_pct, inverter_efficiency_pct, rectifier_efficiency_pct,
-                 soc_min_pct, soc_init_pct, canGridCharge,
+                 soc_min_pct, soc_max_pct, soc_init_pct, canGridCharge,
                  installed_cost_us_dollars_per_kw, installed_cost_us_dollars_per_kwh,
                  replace_cost_us_dollars_per_kw, replace_cost_us_dollars_per_kwh,
                  inverter_replacement_year, battery_replacement_year,
@@ -82,6 +82,7 @@ class Storage(object):
         self.roundtrip_efficiency = internal_efficiency_pct * inverter_efficiency_pct * rectifier_efficiency_pct
 
         self.soc_min_pct = soc_min_pct
+        self.soc_max_pct = soc_max_pct
         self.soc_init_pct = soc_init_pct
         self.canGridCharge = canGridCharge
 

@@ -419,6 +419,7 @@ class StorageModel(models.Model):
     inverter_efficiency_pct = models.FloatField()
     rectifier_efficiency_pct = models.FloatField()
     soc_min_pct = models.FloatField()
+    soc_max_pct = models.FloatField(null=True, blank=True)
     soc_init_pct = models.FloatField()
     canGridCharge = models.BooleanField()
     installed_cost_us_dollars_per_kw = models.FloatField()

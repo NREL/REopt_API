@@ -850,21 +850,37 @@ class ValidateNestedInput:
                 if object_name_path[-1] in ['PV','Storage','Generator','Wind']:
                     if real_values.get('min_kw') > real_values.get('max_kw'):
                         self.input_data_errors.append(
-                            'min_kw (%s) in %s is larger than the max_kw value (%s)' % ( real_values.get('min_kw'),location , real_values.get('max_kw'))
+                            'min_kw (%s) in %s is larger than the max_kw value (%s)' % ( 
+                                real_values.get('min_kw'),location , real_values.get('max_kw'))
                             )
                 if object_name_path[-1] in ['Storage']:
                     if real_values.get('min_kwh') > real_values.get('max_kwh'):
                         self.input_data_errors.append(
-                            'min_kwh (%s) in %s is larger than the max_kwh value (%s)' % ( real_values.get('min_kwh'), self.object_name_string(object_name_path), real_values.get('max_kwh'))
+                            'min_kwh (%s) in %s is larger than the max_kwh value (%s)' % ( 
+                                real_values.get('min_kwh'), self.object_name_string(object_name_path), 
+                                real_values.get('max_kwh'))
                             )
-                if object_name_path[-1] in ['LoadProfile']:
-                    if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
-                        if real_values.get('outage_start_hour') >= real_values.get('outage_end_hour'):
-                            self.input_data_errors.append('LoadProfile outage_end_hour must be larger than outage_end_hour and these inputs cannot be equal')
+                    if real_values.get('soc_min_pct') > real_values.get('soc_max_pct'):
+                        self.input_data_errors.append(
+                            'soc_min_pct (%s) in %s is larger than the soc_max_pct value (%s)' % ( 
+                                real_values.get('soc_min_pct'), self.object_name_string(object_name_path), 
+                                real_values.get('soc_max_pct'))
+                            )
 
-                    if real_values.get('outage_start_time_step') is not None and real_values.get('outage_end_time_step') is not None:
+                if object_name_path[-1] in ['LoadProfile']:
+                    if real_values.get('outage_start_hour') is not None and \
+                        real_values.get('outage_end_hour') is not None:
+                        if real_values.get('outage_start_hour') >= real_values.get('outage_end_hour'):
+                            self.input_data_errors.append((
+                                'LoadProfile outage_end_hour must be larger than outage_end_hour and'
+                                ' these inputs cannot be equal'))
+
+                    if real_values.get('outage_start_time_step') is not None and \
+                        real_values.get('outage_end_time_step') is not None:
                         if real_values.get('outage_start_time_step') >= real_values.get('outage_end_time_step'):
-                            self.input_data_errors.append('LoadProfile outage_end_time_step must be larger than outage_start_time_step and these inputs cannot be equal')
+                            self.input_data_errors.append((
+                                'LoadProfile outage_end_time_step must be larger than outage_start_time_step'
+                                ' and these inputs cannot be equal'))
 
     def check_for_nans(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
         """
