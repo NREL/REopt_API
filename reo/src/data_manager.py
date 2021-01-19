@@ -599,7 +599,7 @@ class DataManager:
                 n_segments_max = max(n_segments, n_segments_max)
                 n_segments_list.append(n_segments)
 
-            # [az] Not sure if we need this or not, first line is updated from DatFileManager and the rest may have been removed in this version
+            # Append 0's to non-costed technologies
             elif eval('self.' + tech) is not None and tech in ['boiler', 'elecchl']:
 
                 cap_cost_slope.append(0.0)
