@@ -1879,31 +1879,31 @@ nested_input_definitions = {
           "default": [],
           "description": "User-defined production factors. Entries have units of kWh/kW, representing the energy (kWh) output of a 1 kW system in each time step. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
         },
-        "operating_penalty_kw": {
+        "cop": {
           "type": "list_of_float",
           "default": [],
-          "description": "User-defined operating penalty in kW. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+          "description": "AC COP. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
         },
         "shr": {
           "type": "list_of_float",
           "default": [],
           "description": "Time-varying SHR"
-        },
-        "use_crankcase": {
-          "type": "bool",
-          "default": False,
-          "description": "Toggle to turn on crankcase modeling."
-        },
-        "crankcase_power_kw": {
-          "type": "float",
-          "default": 0.02,
-          "description": "Constant power requirement of the crankcase when it is on in kW."
-        },
-        "crankcase_temp_limit_degF": {
-          "type": "float",
-          "default": 55.0,
-          "description": "Crankcase turns on if outdoor temperature in degrees F falls below this level."
         }
+        # "use_crankcase": {
+        #   "type": "bool",
+        #   "default": False,
+        #   "description": "Toggle to turn on crankcase modeling."
+        # },
+        # "crankcase_power_kw": {
+        #   "type": "float",
+        #   "default": 0.02,
+        #   "description": "Constant power requirement of the crankcase when it is on in kW."
+        # },
+        # "crankcase_temp_limit_degF": {
+        #   "type": "float",
+        #   "default": 55.0,
+        #   "description": "Crankcase turns on if outdoor temperature in degrees F falls below this level."
+        # }
       },
       "FlexTechHP": {
         "existing_kw": {
@@ -1946,18 +1946,13 @@ nested_input_definitions = {
           "default": [],
           "description": "User-defined production factors. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
         },
-        "operating_penalty_kw": {
+        "cop": {
           "type": "list_of_float",
           "default": [],
-          "description": "User-defined operating penalty. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+          "description": "HP COP. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
         }
       },
-      "FlexTechWH": {
-        "use_wh_model": {
-          "type": "bool",
-          "default": False,
-          "description": "Toggle to turn on water heater modeling."
-        },
+      "HotWaterTank": {
         "a_matrix": {
           "type": "list_of_float",
           "default": [0.0],
@@ -1999,26 +1994,56 @@ nested_input_definitions = {
           "description": "Hot water node number"
         },
         "temperature_lower_bound_degC": {
-          "type": "float", "min": -1000.0, "max": 1000.0, "default": 10.0,
+          "type": "float", "min": 0.0, "max": 50.0, "default": 10.0,
           "description": "Minimum allowable tank temperature in degree Celsius"
         },
         "temperature_upper_bound_degC": {
-          "type": "float", "min": -1000.0, "max": 10000.0, "default": 60.0,
+          "type": "float", "min": 0.0, "max": 100.0, "default": 60.0,
           "description": "Maximum allowable tank temperature in degree Celsius"
         },
         "installed_cost_us_dollars_per_kw": {
-          "type": "float", "min": 0.0, "max": 1000.0, "default": 0.0,
+          "type": "float", "min": 0.0, "max": 500.0, "default": 0.0,
           "description": "Installed cost of the hot water tank in USD/gallon"
+        },
+        "comfort_temp_limit_degC": {
+          "type": "float", "min": 0.0, "max": 60.0, "default": 0.0,
+          "description": "Comfort costs are incurred if tank temperature drops below this limit in degree Celsius"
+        }
+      },
+      "FlexTechERWH": {
+        "size_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 0.0,
+          "description": "ERWH size"
+        },
+        "installed_cost_us_dollars_per_kw": {
+          "type": "float", "min": 0.0, "max": 1000.0, "default": 0.0,
+          "description": "Installed cost of the ERWH in USD/gallon"
+        }
+      },
+      "FlexTechHPWH": {
+        "size_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 0.0,
+          "description": "HPWH size"
+        },
+        "installed_cost_us_dollars_per_kw": {
+          "type": "float", "min": 0.0, "max": 1000.0, "default": 0.0,
+          "description": "Installed cost of the HPWH in USD/gallon"
         },
         "prod_factor_series_kw": {
           "type": "list_of_float",
-          "default": [1.0]*8760,
+          "default": [1.0] * 8760,
           "description": "User-defined production factors. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
         },
-        "operating_penalty_kw": {
+        "cop": {
           "type": "list_of_float",
-          "default": [1.0]*8760,
-          "description": "User-defined operating penalty. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+          "default": [1.0] * 8760,
+          "description": "HPWH COP. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
         }
       }
 

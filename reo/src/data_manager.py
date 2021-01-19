@@ -76,7 +76,9 @@ class DataManager:
         self.rc = None
         self.ac = None
         self.hp = None
-        self.wh = None
+        self.hot_water_tank = None
+        self.wher = None
+        self.whhp = None
         self.reopt_inputs = None
         self.reopt_inputs_bau = None
         self.optimality_tolerance_decomp_subproblem = None
@@ -88,9 +90,9 @@ class DataManager:
         self.year_one_demand_cost_series_us_dollars_per_kw = []
 
         self.available_techs = ['pv1', 'pv1nm', 'wind', 'windnm', 'generator', 'chp', 'boiler',
-                                'elecchl', 'absorpchl', 'ac', 'hp', 'wh']  # order is critical for REopt! Note these are passed to reopt.jl as uppercase
+                                'elecchl', 'absorpchl', 'ac', 'hp', 'wher', 'whhp']  # order is critical for REopt! Note these are passed to reopt.jl as uppercase
         self.available_tech_classes = ['PV1', 'WIND', 'GENERATOR', 'CHP', 'BOILER',
-                                       'ELECCHL', 'ABSORPCHL', 'AC', 'HP', 'WH']  # this is a REopt 'class', not a python class
+                                       'ELECCHL', 'ABSORPCHL', 'AC', 'HP', 'WHER', 'WHHP']  # this is a REopt 'class', not a python class
         self.bau_techs = []
         self.NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
         self.fuel_burning_techs = ['GENERATOR', 'CHP']
@@ -136,7 +138,7 @@ class DataManager:
         self.ac = flex_tech_ac
         if self.ac.existing_kw > 0:
             self.rc.use_flexloads_model_bau = True
-            self.ac.use_crankcase_bau = self.ac.use_crankcase
+            # self.ac.use_crankcase_bau = self.ac.use_crankcase
             if 'ac' not in self.bau_techs:
                 self.bau_techs.append('ac')
             if 'hp' not in self.bau_techs:
@@ -151,9 +153,16 @@ class DataManager:
             if 'ac' not in self.bau_techs:
                 self.bau_techs.append('ac')
 
-    def add_flex_tech_wh(self, flex_tech_wh):
-        self.wh = flex_tech_wh
-        self.bau_techs.append('wh')
+    def add_hot_water_tank(self, hot_water_tank):
+        self.hot_water_tank = hot_water_tank
+
+    def add_flex_tech_erwh(self, flex_tech_erwh):
+        self.wher = flex_tech_erwh
+        self.bau_techs.append('wher')
+
+    def add_flex_tech_hpwh(self, flex_tech_hpwh):
+        self.whhp = flex_tech_hpwh
+        self.bau_techs.append('whhp')
 
     def add_pv(self, pv):
         junk = pv.prod_factor  # avoids redundant PVWatts call for pvnm
@@ -289,7 +298,7 @@ class DataManager:
 
             if eval('self.' + tech) is not None:
 
-                if tech not in ['util', 'generator', 'boiler', 'elecchl', 'absorpchl', 'ac', 'hp', 'wh']:
+                if tech not in ['util', 'generator', 'boiler', 'elecchl', 'absorpchl', 'ac', 'hp', 'wher', 'whhp']:
 
                     # prod incentives don't need escalation
                     if tech.startswith("pv"):  # PV has degradation
@@ -345,7 +354,7 @@ class DataManager:
                 for region in regions[:-1]:
                     tech_incentives[region] = dict()
 
-                    if tech not in ['generator', 'ac', 'hp', 'wh']:
+                    if tech not in ['generator', 'ac', 'hp', 'wher', 'whhp']:
 
                         if region == 'federal' or region == 'total':
                             tech_incentives[region]['%'] = eval('self.' + tech + '.incentives.' + region + '.itc')
@@ -556,7 +565,7 @@ class DataManager:
                 updated_cap_cost_slope = list()
                 updated_y_intercept = list()
 
-                if tech not in ['ac', 'hp', 'wh']:
+                if tech not in ['ac', 'hp', 'wher', 'whhp']:
 
                     for s in range(n_segments):
 
@@ -1016,28 +1025,30 @@ class DataManager:
             storage_min_power, storage_max_power, storage_min_energy, \
             storage_max_energy, storage_decay_rate
 
-    def _get_REopt_elecPenalty(self, techs):
+    def _get_FlexTechsCOP(self, techs):
 
-        elec_penalty = list()
+        cop = list()
         max_elec_penalty = list()
 
         for tech in techs:
-            single_tech_penalty = list()
+            single_tech_op = list()
             if eval('self.' + tech) is not None:
-                if tech in ['ac', 'hp', 'wh']:
-                    for op in eval('self.' + tech + '.operating_penalty_kw'):
-                        elec_penalty.append(float(op))
-                        single_tech_penalty.append(float(op))
+                if tech in ['wher']:
+                    cop.extend([1.0] * self.n_timesteps)
+                    single_tech_op.extend([1.0] * self.n_timesteps)
+                elif tech in ['ac', 'hp', 'whhp']:
+                    for val in eval('self.' + tech + '.cop'):
+                        cop.append(float(val))
+                        single_tech_op.append(1/float(val))
                 else:
-                    elec_penalty.extend([0.0] * self.n_timesteps)
-                    single_tech_penalty.extend([0.0] * self.n_timesteps)
-                max_elec_penalty.append(single_tech_penalty)
+                    pass
+                max_elec_penalty.append(single_tech_op)
 
-        if len(max_elec_penalty) > 0:
+        if len([sum(i) for i in zip(*max_elec_penalty)]) > 0:
             max_elec_penalty = [sum(i)*1000 for i in zip(*max_elec_penalty)]
         else:
             max_elec_penalty = [0.0] * self.n_timesteps
-        return elec_penalty, max_elec_penalty
+        return cop, max_elec_penalty
 
     def _get_RC_inputs(self, use_flexloads_model):
 
@@ -1047,12 +1058,12 @@ class DataManager:
             return [0.0], [0.0], [0.0]*self.n_timesteps, 1, 1
 
     def _get_WH_inputs(self):
-        if self.wh == None:
-            return False, [0.0], [0.0], [0.0] * self.n_timesteps, [0.0], 1, 1, 1, 1, 0.0, 0.0
+        if self.wher == None and self.whhp == None:
+            return False, [0.0], [0.0], [0.0] * self.n_timesteps, [0.0], 1, 1, 1, 1, 0.0, 0.0, 0.0
         else:
-            return True, self.wh.a_matrix, self.wh.b_matrix, self.wh.u_inputs, self.wh.init_temperatures_degC, \
-                   self.wh.n_temp_nodes, self.wh.n_input_nodes, self.wh.injection_node, self.wh.water_node, \
-                   self.wh.temperature_lower_bound_degC, self.wh.temperature_upper_bound_degC
+            return True, self.hot_water_tank.a_matrix, self.hot_water_tank.b_matrix, self.hot_water_tank.u_inputs, self.hot_water_tank.init_temperatures_degC, \
+                   self.hot_water_tank.n_temp_nodes, self.hot_water_tank.n_input_nodes, self.hot_water_tank.injection_node, self.hot_water_tank.water_node, \
+                   self.hot_water_tank.temperature_lower_bound_degC, self.hot_water_tank.temperature_upper_bound_degC, self.hot_water_tank.comfort_temp_limit_degC
 
     def finalize(self):
         """
@@ -1067,15 +1078,15 @@ class DataManager:
         tech_class_min_size, techs_in_class = self._get_REopt_tech_classes(self.available_techs, False)
         tech_class_min_size_bau, techs_in_class_bau = self._get_REopt_tech_classes(self.bau_techs, True)
 
-        elec_penalty, max_elec_penalty = self._get_REopt_elecPenalty(self.available_techs)
-        elec_penalty_bau, max_elec_penalty_bau = self._get_REopt_elecPenalty(self.bau_techs)
+        flex_techs_cop, max_elec_penalty = self._get_FlexTechsCOP(self.available_techs)
+        flex_techs_cop_bau, max_elec_penalty_bau = self._get_FlexTechsCOP(self.bau_techs)
 
         a_matrix, b_matrix, u_inputs, n_temp_nodes, n_input_nodes = self._get_RC_inputs(self.rc.use_flexloads_model)
         a_matrix_bau, b_matrix_bau, u_inputs_bau, n_temp_nodes_bau, n_input_nodes_bau = self._get_RC_inputs(
             self.rc.use_flexloads_model_bau)
 
         use_wh_model, a_matrix_wh, b_matrix_wh, u_inputs_wh, init_temperatures_degC_wh, n_temp_nodes_wh, n_input_nodes_wh, \
-        injection_node_wh, water_node, temperature_lower_bound_degC, temperature_upper_bound_degC = self._get_WH_inputs()
+        injection_node_wh, water_node, temperature_lower_bound_degC, temperature_upper_bound_degC, comfort_temp_limit_degC = self._get_WH_inputs()
 
         tech_to_location, derate, om_cost_us_dollars_per_kw, \
             om_cost_us_dollars_per_kwh, om_cost_us_dollars_per_hr_per_kw_rated, production_factor, \
@@ -1180,14 +1191,17 @@ class DataManager:
         electric_techs = [t for t in reopt_techs if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR") or t.startswith("CHP")]
         electric_techs_bau = [t for t in reopt_techs_bau if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR") or t.startswith("CHP")]
 
-        flex_techs = [t for t in reopt_techs if t.startswith("AC") or t.startswith("HP") or t.startswith("WH")]
-        flex_techs_bau = [t for t in reopt_techs_bau if t.startswith("AC") or t.startswith("HP") or t.startswith("WH")]
+        flex_techs = [t for t in reopt_techs if t.startswith("AC") or t.startswith("HP") or t.startswith("WHER") or t.startswith("WHHP")]
+        flex_techs_bau = [t for t in reopt_techs_bau if t.startswith("AC") or t.startswith("HP") or t.startswith("WHER") or t.startswith("WHHP")]
 
-        use_crankcase = False if self.ac is None else self.ac.use_crankcase
-        use_crankcase_bau = False if self.ac is None else self.ac.use_crankcase_bau
-        crankcase_power_kw = 0 if self.ac is None else self.ac.crankcase_power_kw
-        crankcase_temp_limit_degF = 0 if self.ac is None else self.ac.crankcase_temp_limit_degF
-        outdoor_air_temp_degF =[] if self.ac is None else self.ac.outdoor_air_temp_degF
+        wh_techs = [t for t in reopt_techs if t.startswith("WHER") or t.startswith("WHHP")]
+        wh_techs_bau = [t for t in reopt_techs_bau if t.startswith("WHER") or t.startswith("WHHP")]
+
+        # use_crankcase = False if self.ac is None else self.ac.use_crankcase
+        # use_crankcase_bau = False if self.ac is None else self.ac.use_crankcase_bau
+        # crankcase_power_kw = 0 if self.ac is None else self.ac.crankcase_power_kw
+        # crankcase_temp_limit_degF = 0 if self.ac is None else self.ac.crankcase_temp_limit_degF
+        # outdoor_air_temp_degF =[] if self.ac is None else self.ac.outdoor_air_temp_degF
         shr = [] if self.ac is None else self.ac.shr
 
         if len(reopt_techs) > 0:
@@ -1406,12 +1420,12 @@ class DataManager:
             'SpaceNode': self.rc.space_node,
             'TempLowerBound': self.rc.temperature_lower_bound,
             'TempUpperBound': self.rc.temperature_upper_bound,
-            'OperatingPenalty': elec_penalty,
+            'FlexTechsCOP': flex_techs_cop,
             'MaxElecPenalty': max_elec_penalty,
-            'UseCrankcase': use_crankcase,
-            'CrankcasePower': crankcase_power_kw,
-            'CrankCaseTempLimit': crankcase_temp_limit_degF,
-            'OutdoorAirTemp': outdoor_air_temp_degF,
+            # 'UseCrankcase': use_crankcase,
+            # 'CrankcasePower': crankcase_power_kw,
+            # 'CrankCaseTempLimit': crankcase_temp_limit_degF,
+            # 'OutdoorAirTemp': outdoor_air_temp_degF,
             # Water heater
             'UseWaterHeaterModel': use_wh_model,
             'AMatrixWH': a_matrix_wh,
@@ -1423,7 +1437,9 @@ class DataManager:
             'InjectionNodeWH': injection_node_wh,
             'WaterNode': water_node,
             'TempLowerBoundWH': temperature_lower_bound_degC,
-            'TempUpperBoundWH': temperature_upper_bound_degC
+            'TempUpperBoundWH': temperature_upper_bound_degC,
+            'ComfortTempLimit': comfort_temp_limit_degC,
+            'WaterHeaterTechs': wh_techs
         }
 
         self.reopt_inputs_bau = {
@@ -1563,12 +1579,12 @@ class DataManager:
             'SpaceNode': self.rc.space_node,
             'TempLowerBound': self.rc.temperature_lower_bound,
             'TempUpperBound': self.rc.temperature_upper_bound,
-            'OperatingPenalty': elec_penalty_bau,
+            'FlexTechsCOP': flex_techs_cop_bau,
             'MaxElecPenalty': max_elec_penalty_bau,
-            'UseCrankcase': use_crankcase_bau,
-            'CrankcasePower': crankcase_power_kw,
-            'CrankCaseTempLimit': crankcase_temp_limit_degF,
-            'OutdoorAirTemp': outdoor_air_temp_degF,
+            # 'UseCrankcase': use_crankcase_bau,
+            # 'CrankcasePower': crankcase_power_kw,
+            # 'CrankCaseTempLimit': crankcase_temp_limit_degF,
+            # 'OutdoorAirTemp': outdoor_air_temp_degF,
             # Water heater
             'UseWaterHeaterModel': use_wh_model,
             'AMatrixWH': a_matrix_wh,
@@ -1580,5 +1596,7 @@ class DataManager:
             'InjectionNodeWH': injection_node_wh,
             'WaterNode': water_node,
             'TempLowerBoundWH': temperature_lower_bound_degC,
-            'TempUpperBoundWH': temperature_upper_bound_degC
+            'TempUpperBoundWH': temperature_upper_bound_degC,
+            'ComfortTempLimit': comfort_temp_limit_degC,
+            'WaterHeaterTechs': wh_techs_bau
         }

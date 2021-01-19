@@ -1217,13 +1217,13 @@ class FlexTechAC(Tech):
         self.loads_served = ['retail']
         self.existing_kw = kwargs.get('existing_kw')
         self.prod_factor_series_kw = kwargs.get('prod_factor_series_kw')
-        self.operating_penalty_kw = kwargs.get('operating_penalty_kw')
+        self.cop = kwargs.get('cop')
         self.shr = kwargs.get('shr')
-        self.use_crankcase = kwargs.get('use_crankcase')
-        self.crankcase_power_kw = kwargs.get('crankcase_power_kw')
-        self.crankcase_temp_limit_degF = kwargs.get('crankcase_temp_limit_degF')
-        self.outdoor_air_temp_degF = outdoor_air_temp_degF
-        self.use_crankcase_bau = False
+        # self.use_crankcase = kwargs.get('use_crankcase')
+        # self.crankcase_power_kw = kwargs.get('crankcase_power_kw')
+        # self.crankcase_temp_limit_degF = kwargs.get('crankcase_temp_limit_degF')
+        # self.outdoor_air_temp_degF = outdoor_air_temp_degF
+        # self.use_crankcase_bau = False
         dfm.add_flex_tech_ac(self)
 
     @property
@@ -1242,7 +1242,7 @@ class FlexTechHP(Tech):
         self.loads_served = ['retail']
         self.existing_kw = kwargs.get('existing_kw')
         self.prod_factor_series_kw = kwargs.get('prod_factor_series_kw')
-        self.operating_penalty_kw = kwargs.get('operating_penalty_kw')
+        self.cop = kwargs.get('cop')
 
         dfm.add_flex_tech_hp(self)
 
@@ -1253,28 +1253,37 @@ class FlexTechHP(Tech):
         else:
             return self.prod_factor_series_kw
 
-class FlexTechWH(Tech):
+class FlexTechERWH(Tech):
 
     def __init__(self, dfm, **kwargs):
-        super(FlexTechWH, self).__init__(**kwargs)
+        super(FlexTechERWH, self).__init__(**kwargs)
 
-        self.reopt_class = 'WH'
+        self.reopt_class = 'WHER'
         self.loads_served = ['retail']
-        self.use_wh_model = kwargs.get('use_wh_model')
-        self.a_matrix = kwargs.get('a_matrix')
-        self.b_matrix = kwargs.get('b_matrix')
-        self.u_inputs = kwargs.get('u_inputs')
-        self.init_temperatures_degC = kwargs.get('init_temperatures_degC')
-        self.n_temp_nodes = kwargs.get('n_temp_nodes')
-        self.n_input_nodes = kwargs.get('n_input_nodes')
-        self.injection_node = kwargs.get('injection_node')
-        self.water_node = kwargs.get('water_node')
-        self.temperature_lower_bound_degC = kwargs.get('temperature_lower_bound_degC')
-        self.temperature_upper_bound_degC = kwargs.get('temperature_upper_bound_degC')
-        self.prod_factor_series_kw = kwargs.get('prod_factor_series_kw')
-        self.operating_penalty_kw = kwargs.get('operating_penalty_kw')
+        self.min_kw = kwargs.get('size_kw')
+        self.max_kw = kwargs.get('size_kw')
+        dfm.add_flex_tech_erwh(self)
 
-        dfm.add_flex_tech_wh(self)
+    @property
+    def prod_factor(self):
+
+        erwh_prod_factor = [1.0 for _ in range(8760)]
+
+        return erwh_prod_factor
+
+class FlexTechHPWH(Tech):
+
+    def __init__(self, dfm, **kwargs):
+        super(FlexTechHPWH, self).__init__(**kwargs)
+
+        self.reopt_class = 'WHHP'
+        self.loads_served = ['retail']
+        self.min_kw = kwargs.get('size_kw')
+        self.max_kw = kwargs.get('size_kw')
+        self.prod_factor_series_kw = kwargs.get('prod_factor_series_kw')
+        self.cop = kwargs.get('cop')
+
+        dfm.add_flex_tech_hpwh(self)
 
     @property
     def prod_factor(self):

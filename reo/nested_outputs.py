@@ -982,12 +982,12 @@ nested_output_definitions = {
                   "type": list_of_float,
                   "description": "Year one AC power consumption time series",
                   "units": "kW"
-                },
-                "year_one_crankcase_power_consumption_series_kw": {
-                  "type": list_of_float,
-                  "description": "Year one AC crankcase consumption time series",
-                  "units": "kW"
                 }
+                # "year_one_crankcase_power_consumption_series_kw": {
+                #   "type": list_of_float,
+                #   "description": "Year one AC crankcase consumption time series",
+                #   "units": "kW"
+                # }
               },
               "FlexTechHP": {
                 "size_kw": {
@@ -1006,26 +1006,50 @@ nested_output_definitions = {
                   "units": "kW"
                 }
               },
-              "FlexTechWH": {
-                "size_kw": {
-                  "type": float,
-                  "description": "Water heater size",
-                  "units": "kW"
-                },
-                "year_one_power_production_series_kw": {
-                  "type": list_of_float,
-                  "description": "Year one water heater power production time series",
-                  "units": "kW"
-                },
-                "year_one_power_consumption_series_kw": {
-                  "type": list_of_float,
-                  "description": "Year one water heater power consumption time series",
-                  "units": "kW"
-                },
+              "HotWaterTank": {
                 "year_one_temperature_series_degC": {
                   "type": list_of_float,
                   "description": "Hot water tank temperature series",
                   "units": "Celcius"
+                },
+                "comfort_penalty_degC": {
+                  "type": list_of_float,
+                  "description": "WH comfort penalty",
+                  "units": "degrees"
+                }
+              },
+              "FlexTechERWH": {
+                "year_one_power_production_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one ERWH power production time series",
+                  "units": "kW"
+                },
+                "year_one_power_consumption_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one ERWH power consumption time series",
+                  "units": "kW"
+                },
+                "fraction_on": {
+                  "type": list_of_float,
+                  "description": "Fraction of each hour the ERWH is on for",
+                  "units": "-"
+                }
+              },
+              "FlexTechHPWH": {
+                "year_one_power_production_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one HPWH power production time series",
+                  "units": "kW"
+                },
+                "year_one_power_consumption_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one HPWH power consumption time series",
+                  "units": "kW"
+                },
+                "fraction_on": {
+                  "type": list_of_float,
+                  "description": "Fraction of each hour the ERWH is on for",
+                  "units": "-"
                 }
               }
             }
