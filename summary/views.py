@@ -235,15 +235,15 @@ def summary(request, user_uuid):
                 'resilience_hours_max': None,
                 'resilience_hours_avg': None,
                 'year_one_savings_us_dollars': None,
-                'pv_kw': None,
-                'wind_kw': None,
-                'gen_kw': None,
-                'batt_kw': None,
-                'batt_kwh': None,
-                'chp_kw': None,
-                'hottes_gal': None,
-                'coldtes_gal': None,
-                'absorpchl_ton': None,
+                'pv_kw': 'not evaluated',
+                'wind_kw': 'not evaluated',
+                'gen_kw': 'not evaluated',
+                'batt_kw': 'not evaluated',
+                'batt_kwh': 'not evaluated',
+                'chp_kw': 'not evaluated',
+                'hottes_gal': 'not evaluated',
+                'coldtes_gal': 'not evaluated',
+                'absorpchl_ton': 'not evaluated',
             })
             results['status'] = scenario.status
             results['run_uuid'] = str(scenario.run_uuid)
@@ -327,75 +327,41 @@ def summary(request, user_uuid):
                     if pv is not None:
                         if pv['max_kw'] > 0:
                             results['pv_kw'] = pv.get('size_kw')
-                        else:
-                            results['pv_kw'] = 'not evaluated'
-                    else:
-                        results['pv_kw'] = 'not evaluated'
 
                     # Wind Size
                     if wind is not None:
                         if wind.get('max_kw') or -1 > 0:
                             results['wind_kw'] = wind.get('size_kw')
-                        else:
-                            results['wind_kw'] = 'not evaluated'
-                    else:
-                        results['wind_kw'] = 'not evaluated'
 
                     # Generator Size
                     if gen is not None:
                         if gen.get('max_kw') or -1 > 0:
                             results['gen_kw'] = gen.get('size_kw')
-                        else:
-                            results['gen_kw'] = 'not evaluated'
-                    else:
-                        results['gen_kw'] = 'not evaluated'
 
                     # Battery Size
                     if batt is not None:
                         if batt.get('max_kw') or -1 > 0:
                             results['batt_kw'] = batt.get('size_kw')
                             results['batt_kwh'] = batt.get('size_kwh')
-                        else:
-                            results['batt_kw'] = 'not evaluated'
-                            results['batt_kwh'] = 'not evaluated'
-                    else:
-                        results['batt_kw'] = 'not evaluated'
-                        results['batt_kwh'] = 'not evaluated'
                         
                     if chp is not None:
                         if (chp.get('max_kw') or -1) > 0:
                             results['chp_kw'] = chp.get('size_kw')
-                        else:
-                            results['chp_kw'] = 'not evaluated'
-                    else:
-                        results['chp_kw'] = 'not evaluated'
 
                     # HotTES Size
                     if hottes is not None:
                         if (hottes.get('max_gal') or -1) > 0:
                             results['hottes_gal'] = hottes.get('size_gal')
-                        else:
-                            results['hottes_gal'] = 'not evaluated'
-                    else:
-                        results['hottes_gal'] = 'not evaluated'
 
                     # ColdTES Size
                     if coldtes is not None:
                         if (coldtes.get('max_gal') or -1) > 0:
                             results['coldtes_gal'] = coldtes.get('size_gal')
-                        else:
-                            results['coldtes_gal'] = 'not evaluated'
-                    else:
-                        results['coldtes_gal'] = 'not evaluated'
 
                     # Absoprtion Chiller Size
                     if absorpchl is not None:
                         if (absorpchl.get('max_ton') or -1) > 0:
                             results['absorpchl_ton'] = absorpchl.get('size_ton')
-                        else:
-                            results['absorpchl_ton'] = 'not evaluated'
-                    else:
-                        results['absorpchl_ton'] = 'not evaluated'
             except:
                 json_response['scenarios'].append(results)
                 continue
