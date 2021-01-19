@@ -226,6 +226,7 @@ Base.@kwdef struct Parameter
 
 	#Added for flexible loads
 	FlexTechs::Array{String,1}
+	WaterHeaterTechs::Array{String,1}
 	UseFlexLoadsModel::Bool
 	AMatrix::Array{Float64,2}
 	BMatrix::Array{Float64,2}
@@ -238,12 +239,12 @@ Base.@kwdef struct Parameter
 	SpaceNode::Int64
 	TempLowerBound::Float64
 	TempUpperBound::Float64
-	OperatingPenalty::AxisArray
+	FlexTechsCOP::AxisArray
 	MaxElecPenalty::Array{Float64,1}
-	UseCrankcase::Bool
-    CrankcasePower::Float64
-    CrankCaseTempLimit::Float64
-    OutdoorAirTemp::Array{Float64,1}
+# 	UseCrankcase::Bool
+#     CrankcasePower::Float64
+#     CrankCaseTempLimit::Float64
+#     OutdoorAirTemp::Array{Float64,1}
 
 	#Water heater model
 	UseWaterHeaterModel::Bool
@@ -257,6 +258,7 @@ Base.@kwdef struct Parameter
     WaterNode::Int64
     TempLowerBoundWH::Float64
     TempUpperBoundWH::Float64
+	ComfortTempLimit::Float64
 end
 
 
@@ -282,10 +284,9 @@ function Parameter(d::Dict)
 		"FuelCost",
 		"SHR",
 		"InitTemperatures",
-		"OutdoorAirTemp",
 		"InitTemperaturesWH",
      )
-	for x in ["Tech","FuelType","CHPTechs","FlexTechs"]
+	for x in ["Tech","FuelType","CHPTechs","FlexTechs","WaterHeaterTechs"]
 		if typeof(d[x]) === Array{Any, 1}  # came from Python as empty array
 			d[x] = convert(Array{String, 1}, d[x])
 		end
@@ -380,7 +381,7 @@ function Parameter(d::Dict)
 	d["AMatrix"] = reshape(d["AMatrix"],d["TempNodesCount"],d["TempNodesCount"])
 	d["BMatrix"] = reshape(d["BMatrix"],d["TempNodesCount"],d["InputNodesCount"])
 	d["UInputs"] = transpose(reshape(d["UInputs"],d["TimeStepCount"],d["InputNodesCount"]))
-	d["OperatingPenalty"] = vector_to_axisarray(d["OperatingPenalty"],d["Tech"],d[:TimeStep])
+	d["FlexTechsCOP"] = vector_to_axisarray(d["FlexTechsCOP"],d["FlexTechs"],d[:TimeStep])
 	d["AMatrixWH"] = reshape(d["AMatrixWH"],d["TempNodesCountWH"],d["TempNodesCountWH"])
 	d["BMatrixWH"] = reshape(d["BMatrixWH"],d["TempNodesCountWH"],d["InputNodesCountWH"])
 	d["UInputsWH"] = transpose(reshape(d["UInputsWH"],d["TimeStepCount"],d["InputNodesCountWH"]))

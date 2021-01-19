@@ -34,8 +34,10 @@ function add_continuous_variables(m, p)
 		dvElectricChillerDemand[p.TimeStep] >= 0  #X^{ec}_h: Electrical power consumption by electric chiller in time step h
 		dvOMByHourBySizeCHP[p.Tech, p.TimeStep] >= 0
 		dvTemperatures[p.TempNodes, p.TimeStep] #>= 0
-		dvCrankcaseConsumption[p.TimeStep] >= 0
+# 		dvCrankcaseConsumption[p.TimeStep] >= 0
 		dvTemperaturesWH[p.TempNodesWH, p.TimeStep] #>= 0
+		dvWHFractions[p.WaterHeaterTechs, p.TimeStep] >= 0
+		dvWHComfortCost[p.TimeStep] >= 0
     end
 end
 
@@ -50,8 +52,8 @@ function add_integer_variables(m, p)
 		binDemandTier[p.Ratchets, p.DemandBin], Bin  # 1 If tier e has allocated demand during ratchet r; 0 otherwise
         binDemandMonthsTier[p.Month, p.DemandMonthsBin], Bin # 1 If tier n has allocated demand during month m; 0 otherwise
 		binEnergyTier[p.Month, p.PricingTier], Bin    #  Z^{ut}_{mu} 1 If demand tier $u$ is active in month m; 0 otherwise (NEW)
-		binCrankcase[p.TimeStep], Bin
-		binC[p.TimeStep], Bin
+# 		binCrankcase[p.TimeStep], Bin
+		binComfort[p.TimeStep], Bin
     end
 end
 
@@ -99,6 +101,13 @@ function add_cost_expressions(m, p)
 		m[:TotalCHPStandbyCharges] = @expression(m, 0.0)
 		m[:TotalHourlyCHPOpExCosts] = @expression(m, 0.0)
 	end
+	if !isempty(p.WaterHeaterTechs)
+		m[:TotalWHComfortCost] = @expression(m,
+			sum(m[:dvWHComfortCost][ts] for ts in p.TimeStep))
+	else
+		m[:TotalWHComfortCost] = @expression(m, 0.0)
+	end
+
 end
 
 
@@ -166,7 +175,7 @@ function add_bigM_adjustments(m, p)
 			else
 				m[:NewMaxDemandMonthsInTier][mth,n] = minimum([p.MaxDemandMonthsInTier[n],
 					added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] + p.MaxElecPenalty[ts]
-					for ts in p.TimeStepRatchetsMonth[mth]])   ])
+					for ts in p.TimeStepRatchetsMonth[mth]]) ])
 			end
 		end
 	end
@@ -234,8 +243,6 @@ function add_bigM_adjustments(m, p)
 	end
 
 	for t in p.FlexTechs
-		print(t)
-		print(p.MaxSize[t])
 		m[:NewMaxSize][t] = p.MaxSize[t] #maximum([p.ElecLoad[ts] for ts in p.TimeStep])
 # 		if (m[:NewMaxSize][t] > p.MaxSize[t])
 # 			m[:NewMaxSize][t] = p.MaxSize[t]
@@ -348,14 +355,14 @@ function add_binTechIsOnInTS_constraints(m, p)
 		p.MinTurndown[t] * m[:dvSize][t] - m[:dvRatedProduction][t,ts] <= m[:NewMaxSize][t] * (1-m[:binTechIsOnInTS][t,ts])
 	)
 
-	if p.UseCrankcase
-		@constraint(m, [ts in p.TimeStep],
-			m[:binTechIsOnInTS]["AC",ts] => {p.ProductionFactor["AC", ts] * m[:dvRatedProduction]["AC",ts] * p.OperatingPenalty["AC",ts] >= p.CrankcasePower + 0.001}
-		)
-		@constraint(m, [ts in p.TimeStep],
-			!m[:binTechIsOnInTS]["AC",ts] => {p.ProductionFactor["AC", ts] * m[:dvRatedProduction]["AC",ts] * p.OperatingPenalty["AC",ts] <= p.CrankcasePower}
-		)
-	end
+# 	if p.UseCrankcase
+# 		@constraint(m, [ts in p.TimeStep],
+# 			m[:binTechIsOnInTS]["AC",ts] => {p.ProductionFactor["AC", ts] * m[:dvRatedProduction]["AC",ts] * p.OperatingPenalty["AC",ts] >= p.CrankcasePower + 0.001}
+# 		)
+# 		@constraint(m, [ts in p.TimeStep],
+# 			!m[:binTechIsOnInTS]["AC",ts] => {p.ProductionFactor["AC", ts] * m[:dvRatedProduction]["AC",ts] * p.OperatingPenalty["AC",ts] <= p.CrankcasePower}
+# 		)
+# 	end
 end
 
 
@@ -542,7 +549,7 @@ function add_tech_size_constraints(m, p)
 		sum( m[:binSingleBasicTech][t,c] for t in p.TechsInClass[c] ) <= 1
 		)
 	##Constraint (7c): Minimum size for each tech class
-	@constraint(m, TechClassMinSizeCon[c in p.TechClass],
+	@constraint(m, TechClassMinSiMinSizeCon[c in p.TechClass],
 				sum( m[:dvSize][t] for t in p.TechsInClass[c] ) >= p.TechClassMinSize[c]
 			)
 
@@ -604,7 +611,8 @@ end
 function add_load_balance_constraints(m, p)
 
 	m[:ElecPenalty] = @expression(m, [ts in p.TimeStep],
- 		sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] * p.OperatingPenalty[t,ts] for t in p.Tech))
+		sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] for t in p.FlexTechs not in p.WaterHeaterTechs) +
+		sum(p.ProductionFactor[t, ts] * m[:dvWHFractions][t,ts] * p.MaxSize[t] for t in p.WaterHeaterTechs))
 
 	@constraint(m, ElecLoadBalanceCon[ts in p.TimeStepsWithGrid],
 		sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] for t in p.ElectricTechs) +
@@ -614,7 +622,7 @@ function add_load_balance_constraints(m, p)
 			sum(m[:dvProductionToGrid][t,u,ts] for u in p.SalesTiersByTech[t]) for t in p.ElectricTechs) +
 		sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers) + m[:dvGridToStorage][ts] +
 		 sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
-		p.ElecLoad[ts] + m[:ElecPenalty][ts] + m[:dvCrankcaseConsumption][ts]
+		p.ElecLoad[ts] + m[:ElecPenalty][ts] #+ m[:dvCrankcaseConsumption][ts]
 	)
 
 	##Constraint (8b): Electrical Load Balancing without Grid
@@ -624,7 +632,7 @@ function add_load_balance_constraints(m, p)
 		sum( sum(m[:dvProductionToStorage][b,t,ts] for b in p.ElecStorage) +
 			sum(m[:dvProductionToGrid][t,u,ts] for u in p.CurtailmentTiers) for t in p.ElectricTechs) +
 		    sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
-		p.ElecLoad[ts] + m[:ElecPenalty][ts] + m[:dvCrankcaseConsumption][ts]
+		p.ElecLoad[ts] + m[:ElecPenalty][ts] #+ m[:dvCrankcaseConsumption][ts]
 	)
 end
 
@@ -862,8 +870,8 @@ function add_flex_load_constraints(m, p)
      @constraint(m, [tn in p.TempNodes, ts in UnitRange(2:length(p.TimeStep))],
 	 	m[:dvTemperatures][tn, ts] == sum(m[:dvTemperatures][u, ts-1] * p.AMatrix[tn, u] for u in p.TempNodes) +
  		sum(p.UInputs[i, ts-1] * p.BMatrix[tn, i] for i in [1:p.InjectionNode-1; p.InjectionNode+1:p.InputNodesCount]) +
-		(p.UInputs[p.InjectionNode,ts-1] - p.ProductionFactor["AC", ts-1] * m[:dvRatedProduction]["AC",ts-1] * 1000 * p.SHR[ts-1] +
- 		p.ProductionFactor["HP", ts-1] * m[:dvRatedProduction]["HP",ts-1] * 1000) * p.BMatrix[tn, p.InjectionNode]
+		(p.UInputs[p.InjectionNode,ts-1] - p.ProductionFactor["AC", ts-1] * m[:dvRatedProduction]["AC",ts-1] * p.FlexTechsCOP["AC", ts-1] * 1000 * p.SHR[ts-1] +
+ 		p.ProductionFactor["HP", ts-1] * m[:dvRatedProduction]["HP",ts-1] * p.FlexTechsCOP["HP", ts-1] * 1000) * p.BMatrix[tn, p.InjectionNode]
      )
 	#initialize state space
 	@constraint(m, [n in p.TempNodes],
@@ -875,32 +883,23 @@ function add_flex_load_constraints(m, p)
 	@constraint(m, [ts in p.TimeStep],
         m[:dvTemperatures][p.SpaceNode, ts] <= p.TempUpperBound
     )
-
-	if p.UseCrankcase
-		@constraint(m, [ts in p.TimeStep],
-			100 * (1 - m[:binCrankcase][ts]) >= p.CrankCaseTempLimit - p.OutdoorAirTemp[ts]
-    	)
-		@constraint(m, [ts in p.TimeStep],
-			100 * m[:binCrankcase][ts] + m[:dvCrankcaseConsumption][ts] >= (1 - m[:binTechIsOnInTS]["AC",ts]) * p.CrankcasePower
-    	)
-	end
-
+# 	if p.UseCrankcase
+# 		@constraint(m, [ts in p.TimeStep],
+# 			100 * (1 - m[:binCrankcase][ts]) >= p.CrankCaseTempLimit - p.OutdoorAirTemp[ts]
+#     	)
+# 		@constraint(m, [ts in p.TimeStep],
+# 			100 * m[:binCrankcase][ts] + m[:dvCrankcaseConsumption][ts] >= (1 - m[:binTechIsOnInTS]["AC",ts]) * p.CrankcasePower
+#     	)
+# 	end
 end
 
 
 function add_water_heater_constraints(m, p)
-
-# 	m[:dvRatedProduction]["WH",3] == 1
-#   	@constraint(m, [ts in UnitRange(2:10)],
-#   	 	 m[:dvRatedProduction]["WH",ts] == 1
-#       )
-
-
 	@constraint(m, [tn in p.TempNodesWH, ts in UnitRange(2:length(p.TimeStep))],
  	 	m[:dvTemperaturesWH][tn, ts] == sum(m[:dvTemperaturesWH][u, ts-1] * p.AMatrixWH[tn, u] for u in p.TempNodesWH) +
   		sum(p.UInputsWH[i, ts-1] * p.BMatrixWH[tn, i] for i in [1:p.InjectionNodeWH-1; p.InjectionNodeWH+1:p.InputNodesCountWH]) +
- 		(p.UInputsWH[p.InjectionNodeWH,ts-1] + p.ProductionFactor["WH", ts-1] * m[:dvRatedProduction]["WH",ts-1] * 1000) *
- 		p.BMatrixWH[tn, p.InjectionNodeWH]
+ 		(p.UInputsWH[p.InjectionNodeWH,ts-1] + sum(p.ProductionFactor[t, ts-1] * p.MaxSize[t] * m[:dvWHFractions][t,ts-1] *
+		p.FlexTechsCOP[t,ts-1] for t in p.WaterHeaterTechs) * 1000) * p.BMatrixWH[tn, p.InjectionNodeWH]
     )
 	#initialize state space
 	@constraint(m, [n in p.TempNodesWH],
@@ -911,6 +910,15 @@ function add_water_heater_constraints(m, p)
     )
 	@constraint(m, [ts in p.TimeStep],
         m[:dvTemperaturesWH][p.WaterNode, ts] <= p.TempUpperBoundWH
+    )
+	@constraint(m, [ts in p.TimeStep],
+        sum(m[:dvWHFractions][t, ts] for t in p.WaterHeaterTechs) <= 1
+    )
+	@constraint(m, [ts in p.TimeStep],
+		100 * (1 - m[:binComfort][ts]) >= p.ComfortTempLimit - m[:dvTemperaturesWH][p.WaterNode, ts]
+	)
+	@constraint(m, [ts in p.TimeStep],
+		100 * m[:binComfort][ts] + m[:dvWHComfortCost][ts] >= p.ComfortTempLimit - m[:dvTemperaturesWH][p.WaterNode, ts]
     )
 
 end
@@ -938,7 +946,10 @@ function add_cost_function(m, p)
         m[:TotalFuelCharges] * m[:r_tax_fraction_offtaker] -
 
         # Subtract Incentives, which are taxable
-		m[:TotalProductionIncentive] * m[:r_tax_fraction_owner]
+		m[:TotalProductionIncentive] * m[:r_tax_fraction_owner] +
+
+		# WH comfort Cost
+		m[:TotalWHComfortCost]
 	)
     #= Note: 0.9999*m[:MinChargeAdder] in Obj b/c when m[:TotalMinCharge] > (TotalEnergyCharges + m[:TotalDemandCharges] + TotalExportBenefit + m[:TotalFixedCharges])
 		it is arbitrary where the min charge ends up (eg. could be in m[:TotalDemandCharges] or m[:MinChargeAdder]).
@@ -1107,7 +1118,7 @@ function reopt_run(m, p::Parameter)
     #############  		Outputs    									 #############
     ##############################################################################
 	try
-		results["lcc"] = round(JuMP.objective_value(m)+ 0.0001*value(m[:MinChargeAdder]))
+		results["lcc"] = round(JuMP.objective_value(m) - value(m[:TotalWHComfortCost]) + 0.0001*value(m[:MinChargeAdder]))
 		results["lower_bound"] = round(JuMP.objective_bound(m))
 		results["optimality_gap"] = JuMP.relative_gap(m)
 	catch
@@ -1273,15 +1284,17 @@ function add_null_flex_load_results(m, p, r::Dict)
 	r["hp_size_kw"] = 0.0
 	r["hp_production_series"] = []
 	r["hp_consumption_series"] = []
-	r["crankcase_consumption_series"] = []
+# 	r["crankcase_consumption_series"] = []
 	nothing
 end
 
 function add_null_water_heater_results(m, p, r::Dict)
 	r["water_temperatures"] = []
-	r["wh_size_kw"] = 0.0
-	r["wh_production_series"] = []
-	r["wh_consumption_series"] = []
+	r["wh_comfort_penalty"] = []
+	r["erwh_production_series"] = []
+	r["erwh_consumption_series"] = []
+	r["hpwh_production_series"] = []
+	r["hpwh_consumption_series"] = []
 	nothing
 end
 
@@ -1588,40 +1601,84 @@ function add_flex_load_results(m, p, r::Dict)
 	r["indoor_temperatures"] = round.(value.(IndoorTemperatures), digits=4)
 	r["ac_size_kw"] = round(value(m[:dvSize]["AC"]), digits=4)
 	@expression(m, ACProduction[ts in p.TimeStep],
-				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] for t in ["AC"])
+				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.FlexTechsCOP[t,ts]  * p.LevelizationFactor[t] for t in ["AC"])
 				)
 	r["ac_production_series"] = round.(value.(ACProduction), digits=4)
 	@expression(m, ACConsumption[ts in p.TimeStep],
-	 			sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] * p.OperatingPenalty[t,ts] for t in ["AC"])
+	 			sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] for t in ["AC"])
+# 				sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] * p.OperatingPenalty[t,ts] for t in ["AC"])
 				)
 	r["ac_consumption_series"] = round.(value.(ACConsumption), digits=4)
 	r["hp_size_kw"] = round(value(m[:dvSize]["HP"]), digits=4)
 	@expression(m, HPProduction[ts in p.TimeStep],
-				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] for t in ["HP"])
+				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.FlexTechsCOP[t,ts]  * p.LevelizationFactor[t] for t in ["HP"])
 				)
 	r["hp_production_series"] = round.(value.(HPProduction), digits=4)
 	@expression(m, HPConsumption[ts in p.TimeStep],
-				sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] * p.OperatingPenalty[t,ts] for t in ["HP"])
+				sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] for t in ["HP"])
+# 				sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] * p.OperatingPenalty[t,ts] for t in ["HP"])
 				)
 	r["hp_consumption_series"] = round.(value.(HPConsumption), digits=4)
-	@expression(m, CrankcaseConsumption[ts in p.TimeStep], m[:dvCrankcaseConsumption][ts])
-# 	@expression(m, CrankcaseConsumption[ts in p.TimeStep], m[:binTechIsOnInTS]["AC",ts])
-	r["crankcase_consumption_series"] = round.(value.(CrankcaseConsumption), digits=4)
+# 	@expression(m, CrankcaseConsumption[ts in p.TimeStep], m[:dvCrankcaseConsumption][ts])
+# 	r["crankcase_consumption_series"] = round.(value.(CrankcaseConsumption), digits=4)
 	nothing
 end
 
 function add_water_heater_results(m, p, r::Dict)
 	@expression(m, WaterTemperatures[ts in p.TimeStep], m[:dvTemperaturesWH][p.WaterNode, ts])
 	r["water_temperatures"] = round.(value.(WaterTemperatures), digits=4)
-	r["wh_size_kw"] = round(value(m[:dvSize]["WH"]), digits=4)
-	@expression(m, WHProduction[ts in p.TimeStep],
-			sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] for t in ["WH"])
-			)
-	r["wh_production_series"] = round.(value.(WHProduction), digits=4)
-	@expression(m, WHConsumption[ts in p.TimeStep],
-			sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] * p.OperatingPenalty[t,ts] for t in ["WH"])
-			)
-	r["wh_consumption_series"] = round.(value.(WHConsumption), digits=4)
+	@expression(m, WHComfortPenalty[ts in p.TimeStep], m[:dvWHComfortCost][ts])
+	r["wh_comfort_penalty"] = round.(value.(WHComfortPenalty), digits=4)
+	if "WHER" in p.WaterHeaterTechs
+# 		r["erwh_size_kw"] = round(value(m[:dvSize]["WHER"]), digits=4)
+# 		@expression(m, WHERProduction[ts in p.TimeStep],
+# 				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] for t in ["WHER"])
+# 				)
+# 		r["erwh_production_series"] = round.(value.(WHERProduction), digits=4)
+# 		@expression(m, WHERConsumption[ts in p.TimeStep],
+# 				sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] * p.OperatingPenalty[t,ts] for t in ["WHER"])
+# 				)
+# 		r["erwh_consumption_series"] = round.(value.(WHERConsumption), digits=4)
+		@expression(m, WHERProduction[ts in p.TimeStep],
+				sum(m[:dvWHFractions][t, ts] * p.ProductionFactor[t, ts] * p.MaxSize[t] * p.FlexTechsCOP[t,ts] * p.LevelizationFactor[t] for t in ["WHER"])
+				)
+		r["erwh_production_series"] = round.(value.(WHERProduction), digits=4)
+		@expression(m, WHERConsumption[ts in p.TimeStep],
+				sum(p.ProductionFactor[t, ts] * m[:dvWHFractions][t,ts] * p.MaxSize[t] for t in ["WHER"])
+				)
+		r["erwh_consumption_series"] = round.(value.(WHERConsumption), digits=4)
+		@expression(m, WHERFractionOn[ts in p.TimeStep], m[:dvWHFractions]["WHER", ts])
+		r["erwh_fraction_on"] = round.(value.(WHERFractionOn), digits=4)
+	else
+		r["erwh_production_series"] = []
+		r["erwh_consumption_series"] = []
+		r["erwh_fraction_on"] = []
+	end
+	if "WHHP" in p.WaterHeaterTechs
+# 		r["hpwh_size_kw"] = round(value(m[:dvSize]["WHHP"]), digits=4)
+# 		@expression(m, WHHPProduction[ts in p.TimeStep],
+# 				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] for t in ["WHHP"])
+# 				)
+# 		r["hpwh_production_series"] = round.(value.(WHHPProduction), digits=4)
+# 		@expression(m, WHHPConsumption[ts in p.TimeStep],
+# 				sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] * p.OperatingPenalty[t,ts] for t in ["WHHP"])
+# 				)
+# 		r["hpwh_consumption_series"] = round.(value.(WHHPConsumption), digits=4)
+		@expression(m, WHHPProduction[ts in p.TimeStep],
+				sum(m[:dvWHFractions][t, ts] * p.ProductionFactor[t, ts] * p.MaxSize[t] * p.FlexTechsCOP[t,ts] * p.LevelizationFactor[t] for t in ["WHHP"])
+				)
+		r["hpwh_production_series"] = round.(value.(WHHPProduction), digits=4)
+		@expression(m, WHHPConsumption[ts in p.TimeStep],
+				sum(p.ProductionFactor[t, ts] * m[:dvWHFractions][t,ts] * p.MaxSize[t] for t in ["WHHP"])
+				)
+		r["hpwh_consumption_series"] = round.(value.(WHHPConsumption), digits=4)
+		@expression(m, WHHPFractionOn[ts in p.TimeStep], m[:dvWHFractions]["WHHP", ts])
+		r["hpwh_fraction_on"] = round.(value.(WHHPFractionOn), digits=4)
+	else
+		r["hpwh_production_series"] = []
+		r["hpwh_consumption_series"] = []
+		r["hpwh_fraction_on"] = []
+	end
 	nothing
 end
 

@@ -161,16 +161,15 @@ class ColdTES(object):
         dfm.add_cold_tes(self)
 
 
-# class HotWaterTank(object):
-#     """
-#     REopt class for hot water tank storage.
-#     All default values in kwargs set by validator using nested_input_definitions.
-#     """
-#
-#     def __init__(self, dfm, **kwargs):
-#
-#         # Assign all items in kwargs explicitly to the class
-#         for key, value in kwargs.items():
-#             setattr(self, key, value)
-#         self.use_wh_model = False
-#         dfm.add_hot_water_tank(self)
+class HotWaterTank(object):
+    """
+    REopt class for hot water tank storage.
+    All default values in kwargs set by validator using nested_input_definitions.
+    """
+
+    def __init__(self, dfm, **kwargs):
+
+        # Assign all items in kwargs explicitly to the class
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        dfm.add_hot_water_tank(self)

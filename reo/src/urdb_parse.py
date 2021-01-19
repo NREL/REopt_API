@@ -443,7 +443,7 @@ class UrdbParse:
             grid_export_rates = operator.add(grid_export_rates, negative_excess_rate_costs)
 
             for tech in techs:
-                if tech.lower() in ['ac','hp','wh']:
+                if tech.lower() in ['ac','hp','wher','whhp']:
                     rates_by_tech.append([3])  # 3 correspond to the 2nd entry in techs_by_rate
                     techs_by_rate[2].append(tech.upper())
                 elif self.net_metering and not tech.lower().endswith('nm'):

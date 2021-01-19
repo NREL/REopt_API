@@ -849,17 +849,17 @@ class FlexTechACModel(models.Model):
     installed_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True)
     om_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True)
     prod_factor_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    operating_penalty_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    cop = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     shr = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    use_crankcase = models.BooleanField(default=False)
-    crankcase_power_kw = models.FloatField(null=True, blank=True, default=0.02)
-    crankcase_temp_limit_degF = models.FloatField(null=True, blank=True, default=55.0)
+    # use_crankcase = models.BooleanField(default=False)
+    # crankcase_power_kw = models.FloatField(null=True, blank=True, default=0.02)
+    # crankcase_temp_limit_degF = models.FloatField(null=True, blank=True, default=55.0)
 
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)
     year_one_power_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_power_consumption_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    year_one_crankcase_power_consumption_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    # year_one_crankcase_power_consumption_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -878,7 +878,7 @@ class FlexTechHPModel(models.Model):
     installed_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True)
     om_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True)
     prod_factor_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    operating_penalty_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    cop = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
 
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)
@@ -892,10 +892,10 @@ class FlexTechHPModel(models.Model):
 
         return obj
 
-class FlexTechWHModel(models.Model):
+
+class HotWaterTankModel(models.Model):
     # Inputs
     run_uuid = models.UUIDField(unique=True)
-    use_wh_model = models.BooleanField(default=False)
     a_matrix = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     b_matrix = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     u_inputs = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
@@ -907,14 +907,11 @@ class FlexTechWHModel(models.Model):
     temperature_lower_bound_degC = models.FloatField(null=True, blank=True)
     temperature_upper_bound_degC = models.FloatField(null=True, blank=True)
     installed_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True)
-    prod_factor_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    operating_penalty_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    comfort_temp_limit_degC = models.FloatField(null=True, blank=True)
 
     # Output
-    size_kw = models.FloatField(null=True, blank=True)
-    year_one_power_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    year_one_power_consumption_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_temperature_series_degC = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    comfort_penalty_degC = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -923,6 +920,45 @@ class FlexTechWHModel(models.Model):
 
         return obj
 
+
+class FlexTechERWHModel(models.Model):
+    # Inputs
+    run_uuid = models.UUIDField(unique=True)
+    size_kw = models.FloatField(null=True, blank=True, default=0)
+    installed_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+
+    # Output
+    year_one_power_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_power_consumption_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    fraction_on = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+
+    @classmethod
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
+        obj.save()
+
+        return obj
+
+
+class FlexTechHPWHModel(models.Model):
+    # Inputs
+    run_uuid = models.UUIDField(unique=True)
+    size_kw = models.FloatField(null=True, blank=True, default=0)
+    installed_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+    prod_factor_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    cop = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+
+    # Output
+    year_one_power_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_power_consumption_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    fraction_on = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+
+    @classmethod
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
+        obj.save()
+
+        return obj
 
 class MessageModel(models.Model):
     """
@@ -997,7 +1033,9 @@ class ModelManager(object):
         self.rcM = None
         self.flex_tech_acM = None
         self.flex_tech_hpM = None
-        self.flex_tech_whM = None
+        self.hot_water_tankM = None
+        self.flex_tech_erwhM = None
+        self.flex_tech_hpwhM = None
         self.profileM = None
         self.messagesM = None
 
@@ -1052,8 +1090,12 @@ class ModelManager(object):
                                            **attribute_inputs(d['Site']['FlexTechAC']))
         self.flex_tech_hpM = FlexTechHPModel.create(run_uuid=self.scenarioM.run_uuid,
                                            **attribute_inputs(d['Site']['FlexTechHP']))
-        self.flex_tech_whM = FlexTechWHModel.create(run_uuid=self.scenarioM.run_uuid,
-                                           **attribute_inputs(d['Site']['FlexTechWH']))
+        self.hot_water_tankM = HotWaterTankModel.create(run_uuid=self.scenarioM.run_uuid,
+                                           **attribute_inputs(d['Site']['HotWaterTank']))
+        self.flex_tech_erwhM = FlexTechERWHModel.create(run_uuid=self.scenarioM.run_uuid,
+                                           **attribute_inputs(d['Site']['FlexTechERWH']))
+        self.flex_tech_hpwhM = FlexTechHPWHModel.create(run_uuid=self.scenarioM.run_uuid,
+                                           **attribute_inputs(d['Site']['FlexTechHPWH']))
         for message_type, message in data['messages'].items():
             MessageModel.create(run_uuid=self.scenarioM.run_uuid, message_type=message_type, message=message)
 
@@ -1094,7 +1136,9 @@ class ModelManager(object):
         RCModel.objects.filter(run_uuid=run_uuid).delete()
         FlexTechACModel.objects.filter(run_uuid=run_uuid).delete()
         FlexTechHPModel.objects.filter(run_uuid=run_uuid).delete()
-        FlexTechWHModel.objects.filter(run_uuid=run_uuid).delete()
+        HotWaterTankModel.objects.filter(run_uuid=run_uuid).delete()
+        FlexTechERWHModel.objects.filter(run_uuid=run_uuid).delete()
+        FlexTechHPWHModel.objects.filter(run_uuid=run_uuid).delete()
         MessageModel.objects.filter(run_uuid=run_uuid).delete()
         ErrorModel.objects.filter(run_uuid=run_uuid).delete()
 
@@ -1135,7 +1179,9 @@ class ModelManager(object):
         RCModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['RC']))
         FlexTechACModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['FlexTechAC']))
         FlexTechHPModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['FlexTechHP']))
-        FlexTechWHModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['FlexTechWH']))
+        HotWaterTankModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['HotWaterTank']))
+        FlexTechERWHModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['FlexTechERWH']))
+        FlexTechHPWHModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['FlexTechHPWH']))
 
         for message_type, message in data['messages'].items():
             if len(MessageModel.objects.filter(run_uuid=run_uuid, message=message)) > 0:
@@ -1237,7 +1283,8 @@ class ModelManager(object):
         # add try/except for get fail / bad run_uuid
         site_keys = ['PV', 'Storage', 'Financial', 'LoadProfile', 'LoadProfileBoilerFuel', 'LoadProfileChillerElectric',
                      'ElectricTariff', 'FuelTariff', 'Generator', 'Wind', 'CHP', 'Boiler', 'ElectricChiller',
-                     'AbsorptionChiller', 'HotTES', 'ColdTES', 'RC', 'FlexTechAC', 'FlexTechHP', 'FlexTechWH']
+                     'AbsorptionChiller', 'HotTES', 'ColdTES', 'RC', 'FlexTechAC', 'FlexTechHP', 'HotWaterTank',
+                     'FlexTechERWH', 'FlexTechHPWH']
 
         resp = dict()
         resp['outputs'] = dict()
@@ -1302,8 +1349,12 @@ class ModelManager(object):
             model_to_dict(FlexTechACModel.objects.get(run_uuid=run_uuid)))
         resp['outputs']['Scenario']['Site']['FlexTechHP'] = remove_ids(
             model_to_dict(FlexTechHPModel.objects.get(run_uuid=run_uuid)))
-        resp['outputs']['Scenario']['Site']['FlexTechWH'] = remove_ids(
-            model_to_dict(FlexTechWHModel.objects.get(run_uuid=run_uuid)))
+        resp['outputs']['Scenario']['Site']['HotWaterTank'] = remove_ids(
+            model_to_dict(HotWaterTankModel.objects.get(run_uuid=run_uuid)))
+        resp['outputs']['Scenario']['Site']['FlexTechERWH'] = remove_ids(
+            model_to_dict(FlexTechERWHModel.objects.get(run_uuid=run_uuid)))
+        resp['outputs']['Scenario']['Site']['FlexTechHPWH'] = remove_ids(
+            model_to_dict(FlexTechHPWHModel.objects.get(run_uuid=run_uuid)))
         profile_data = ProfileModel.objects.filter(run_uuid=run_uuid)
 
         if len(profile_data) > 0:
