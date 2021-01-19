@@ -5,6 +5,9 @@ include("utils.jl")
 
 
 function add_continuous_variables(m, p)
+	#RA event index
+	event_index_by_month = [1:length(event_starts) for event_starts in p.ra_event_start_times]
+	#
     @variables m begin
 	    dvSize[p.Tech] >= 0     #X^{\sigma}_{t}: System Size of Technology t [kW]   (NEW)
     	dvSystemSizeSegment[p.Tech, p.Subdivision, p.Seg] >= 0   #X^{\sigma s}_{tks}: System size of technology t allocated to segmentation k, segment s [kW]  (NEW)
@@ -33,13 +36,8 @@ function add_continuous_variables(m, p)
 
 
 		#Set RA variables 
-		event_months = 1:length(p.ra_event_start_times)
-		hours_from_event_start = 0:(p.MOOhoursperday-1)
-		event_index_by_month = [1:length(event_starts) for event_starts in p.ra_event_start_times]
-
-		#Variables to be moved to other section as needed
-		@variable(m, dvHourlyReductionRA[mth in event_months, i in event_index_by_month[mth], h in hours_from_event_start])
-		@variable(m, dvMonthlyRA[event_months] >= 0)
+		dvHourlyReductionRA[mth in 1:length(p.ra_event_start_times), i in event_index_by_month[mth], h in 0:(p.MOOhoursperday-1)]
+		dvMonthlyRA[1:length(p.ra_event_start_times)] >= 0
 		##
 
 	end
