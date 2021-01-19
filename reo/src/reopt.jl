@@ -30,6 +30,18 @@ function add_continuous_variables(m, p)
 		#dvAbsorptionChillerDemand[p.TimeStep]  #X^{ac}_h: Thermal power consumption by absorption chiller in time step h
 		#dvElectricChillerDemand[p.TimeStep]  #X^{ec}_h: Electrical power consumption by electric chiller in time step h
 		dvLookbackBaseline[p.TimeStep] >=0
+
+
+		#Set RA variables 
+		event_months = 1:length(p.ra_event_start_times)
+		hours_from_event_start = 0:(p.MOOhoursperday-1)
+		event_index_by_month = [1:length(event_starts) for event_starts in p.ra_event_start_times]
+
+		#Variables to be moved to other section as needed
+		@variable(m, dvHourlyReductionRA[mth in event_months, i in event_index_by_month[mth], h in hours_from_event_start])
+		@variable(m, dvMonthlyRA[event_months] >= 0)
+		##
+
 	end
 	if !isempty(p.ExportTiers)
 		@variable(m, dvProductionToGrid[p.Tech, p.ExportTiers, p.TimeStep] >= 0)  # X^{ptg}_{tuh}: Exports from electrical production to the grid by technology t in demand tier u during time step h [kW]   (NEW)
@@ -742,27 +754,64 @@ function add_tou_demand_charge_constraints(m, p)
 
 end
 
+
+#____________________________________________________________________________________________________________
+#Function to add RA value calculations
 function add_resource_adequacy(m, p)
-	##New RA Constraint: Lookback baseline equal to average of 10hrs in lookback set
-	for r in p.Ratchets
-		for ts in p.TimeStepRatchets[r]
-			if ts in p.MustOfferHours
-				@constraint(m,
-					m[:dvLookbackBaseline][ts] >= 
-					(sum(m[:dvGridPurchase][u, lbts] for u in p.PricingTier, lbts in p.LookBackSets[ts]))/p.LookBackHours
-				)
-			end
-		end
-	end
-	# Average capacity over hours in day
-	for day in p.days
-		m[:DailyRA][day] = @expression(m, sum((m[:dvLookbackBaseline][ts] - sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier)), for ts in DayTimeSteps[day] if ts in p.MustOfferHours)/p.MOOhoursperday)
-	end
-	# Then take min of days in month
-	@constraint(m, [mth in p.Month, day in DaysInMonth[mth]],
-		m[:dvMonthlyRA][mth] <= m[:DailyRA][day] 
-	)
+    #hour load reductiosn are indexed by month, event start, and event hour
+
+    #Setup set indicies
+    event_months = 1:length(p.ra_event_start_times)
+    hours_from_event_start = 0:(p.MOOhoursperday-1)
+    event_index_by_month = [1:length(event_starts) for event_starts in p.ra_event_start_times]
+
+    #Constraints are hourly reductions are equal to the baseline load - event hour load
+    @constraint(m, [mth in event_months, i in event_index_by_month[mth], h in hours_from_event_start], m[:dvHourlyReductionRA][mth, i, h] == calculate_hour_reduction(mth, i, h))
+    #monthly RA is constrained to be the minimum of day average reductions
+    @constraint(m, [mth in event_months, i in event_index_by_month[mth]], m[:dvMonthlyRA][mth] <= calculate_average_daily_reduction(mth, i))
 end
+
+#Helper functions for add_resource_adequacy
+function grid_purchases(ts)
+    #sum across price tiers
+    return sum(m[:dvGridPurchase][u, ts] for u in p.PricingTier)
+end
+
+function calculate_hour_reduction(month, event_index, hours_from_start)
+    baseline_loads = [grid_purchases(lbst + hours_from_start) for lbst in p.ra_lookback_periods[month][event_index]]
+    #Mean of baseline loads minus event load
+    return (sum(baseline_loads)/length(baseline_loads)) - grid_purchases(p.ra_event_start_times[month][event_index] + hours_from_start)
+end
+
+function calculate_average_daily_reduction(month, event_index)
+    #Take average across event hours
+    return sum([m[:dvHourlyReductionRA][month, event_index, h] for h in 0:(p.MOOhoursperday-1)])/p.MOOhoursperday
+end
+
+#Saved old RA code just in case
+# function add_resource_adequacy(m, p)
+# 	##New RA Constraint: Lookback baseline equal to average of 10hrs in lookback set
+# 	for r in p.Ratchets
+# 		for ts in p.TimeStepRatchets[r]
+# 			if ts in p.MustOfferHours
+# 				@constraint(m,
+# 					m[:dvLookbackBaseline][ts] >= 
+# 					(sum(m[:dvGridPurchase][u, lbts] for u in p.PricingTier, lbts in p.LookBackSets[ts]))/p.LookBackHours
+# 				)
+# 			end
+# 		end
+# 	end
+# 	# Average capacity over hours in day
+# 	for day in p.days
+# 		m[:DailyRA][day] = @expression(m, sum((m[:dvLookbackBaseline][ts] - sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier)), for ts in DayTimeSteps[day] if ts in p.MustOfferHours)/p.MOOhoursperday)
+# 	end
+# 	# Then take min of days in month
+# 	@constraint(m, [mth in p.Month, day in DaysInMonth[mth]],
+# 		m[:dvMonthlyRA][mth] <= m[:DailyRA][day] 
+# 	)
+# end
+#____________________________________________________________________________________________________________
+
 
 function add_util_fixed_and_min_charges(m, p)
     m[:TotalFixedCharges] = p.pwf_e * p.FixedMonthlyCharge * 12
