@@ -304,7 +304,7 @@ class DataManager:
 
         for tech in techs:
 
-            if eval('self.' + tech) is not None and tech not in ['boiler', 'elecchl', 'absorpchl']:
+            if eval('self.' + tech) is not None and tech not in ['boiler', 'elecchl']:
 
                 existing_kw = 0.0
                 if hasattr(eval('self.' + tech), 'existing_kw'):
@@ -317,7 +317,7 @@ class DataManager:
                 for region in regions[:-1]:
                     tech_incentives[region] = dict()
 
-                    if tech not in ['generator']:
+                    if tech not in ['generator', 'absorpchl']:
 
                         if region == 'federal' or region == 'total':
                             tech_incentives[region]['%'] = eval('self.' + tech + '.incentives.' + region + '.itc')
@@ -335,7 +335,7 @@ class DataManager:
                         if tech_incentives[region]['rebate_max'] == max_incentive:
                             tech_incentives[region]['rebate_max'] = 0.0
 
-                    else:  # for generator there are no incentives
+                    else:  # for generator and absorption chiller, there are no incentives
                         tech_incentives[region]['%'] = 0.0
                         tech_incentives[region]['%_max'] = 0.0
                         tech_incentives[region]['rebate'] = 0.0
@@ -534,6 +534,9 @@ class DataManager:
                         # Remove federal incentives for ITC basis and tax benefit calculations
                         itc = eval('self.' + tech + '.incentives.federal.itc')
                         rebate_federal = eval('self.' + tech + '.incentives.federal.rebate')
+                        if itc is None or rebate_federal is None:
+                            itc = 0.0
+                            rebate_federal = 0.0
                         itc_unit_basis = (tmp_cap_cost_slope[s] + rebate_federal) / (1 - itc)
 
                     sf = self.site.financial
@@ -597,7 +600,7 @@ class DataManager:
                 n_segments_list.append(n_segments)
 
             # [az] Not sure if we need this or not, first line is updated from DatFileManager and the rest may have been removed in this version
-            elif eval('self.' + tech) is not None and tech in ['boiler', 'elecchl', 'absorpchl']:
+            elif eval('self.' + tech) is not None and tech in ['boiler', 'elecchl']:
 
                 cap_cost_slope.append(0.0)
                 cap_cost_yint.append(0.0)
