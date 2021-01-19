@@ -406,19 +406,16 @@ nested_input_definitions = {
           "type": "list_of_float",
           "min": -1000,
           "max": 10000,
-          "default": [],
           "description": "8760 of pricing for energy portion of RA (must be same year as the load year)"
         },
         "ra_demand_pricing_us_dollars_per_kw": {
           "type": "list_of_float",
-          "default": [],
           "description": "Array (length of 12) of monthly value for RA provision based on $/kW"
         },
         "ra_event_day_flags_boolean": {
           "type": "list_of_int",
           "min": 0,
           "max": 1,
-          "default": [],
           "description": "8760 of 1/0's flagging whether an hour is in an event day (must be same year as the load year)"
         },
         "ra_lookback_days": {

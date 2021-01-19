@@ -34,6 +34,7 @@ import logging
 log = logging.getLogger(__name__)
 from reo.src.data_manager import DataManager
 from reo.src.elec_tariff import ElecTariff
+from reo.src.resource_adequacy import ResourceAdequacy
 from reo.src.load_profile import LoadProfile
 from reo.src.profiler import Profiler
 from reo.src.site import Site
@@ -213,6 +214,11 @@ def setup_scenario(self, run_uuid, data, raw_post):
                                  load_year=inputs_dict['Site']['LoadProfile']['year'],
                                  time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
                                  **inputs_dict['Site']['ElectricTariff'])
+        
+        if inputs_dict['Site']['ElectricTariff'].get('ra_event_day_flags_boolean') is not None:
+            resource_adequacy = ResourceAdequacy(dfm=dfm, run_id=run_uuid,
+                                load_year=inputs_dict['Site']['LoadProfile']['year'],
+                                 **inputs_dict['Site']['ElectricTariff']))
 
         if inputs_dict["Site"]["Wind"]["max_kw"] > 0:
             wind = Wind(dfm=dfm, inputs_path=inputs_path, 
