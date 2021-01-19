@@ -218,7 +218,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
         if inputs_dict['Site']['ElectricTariff'].get('ra_event_day_flags_boolean') is not None:
             resource_adequacy = ResourceAdequacy(dfm=dfm, run_id=run_uuid,
                                 load_year=inputs_dict['Site']['LoadProfile']['year'],
-                                 **inputs_dict['Site']['ElectricTariff']))
+                                 **inputs_dict['Site']['ElectricTariff'])
 
         if inputs_dict["Site"]["Wind"]["max_kw"] > 0:
             wind = Wind(dfm=dfm, inputs_path=inputs_path, 
