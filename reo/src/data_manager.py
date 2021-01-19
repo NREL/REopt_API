@@ -62,6 +62,7 @@ class DataManager:
         self.storage = None
         self.site = None
         self.elec_tariff = None
+        self.resource_adequacy = None
         self.load = None
         self.reopt_inputs = None
         self.reopt_inputs_bau = None
@@ -148,6 +149,9 @@ class DataManager:
 
     def add_elec_tariff(self, elec_tariff):
         self.elec_tariff = elec_tariff
+
+    def add_resource_adequacy(self, resource_adequacy):
+        self.resource_adequacy = resource_adequacy
 
     def _get_REopt_pwfs(self, techs):
         sf = self.site.financial
