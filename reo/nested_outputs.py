@@ -235,17 +235,17 @@ nested_output_definitions = {
                   "description": "Net replacement costs for all technologies, in future value, excluding incentives.",
                   "units": "$"
                 },
-                "total_opex_costs_us_dollars": {
+                "total_om_costs_us_dollars": {
                   "type": "float",
                   "description": "Total operations and maintenance cost over analysis period.",
                   "units": "$"
                 },
-                "year_one_opex_costs_us_dollars": {
+                "year_one_om_costs_us_dollars": {
                   "type": "float",
                   "description": "Year one operations and maintenance cost after tax.",
                   "units": "$"
                 },
-                "year_one_opex_costs_before_tax_us_dollars": {
+                "year_one_om_costs_before_tax_us_dollars": {
                   "type": "float",
                   "description": "Year one operations and maintenance cost before tax.",
                   "units": "$"

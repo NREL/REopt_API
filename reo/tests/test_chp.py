@@ -87,7 +87,7 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         d_expected['chp_year_one_thermal_energy_produced_mmbtu'] = 9759.82
         d_expected['boiler_total_fuel_cost_us_dollars'] = 4555.27
         d_expected['chp_total_fuel_cost_us_dollars'] = 3721693.94
-        d_expected['total_opex_costs'] = 811596.0
+        d_expected['total_om_costs'] = 811596.0
 
         try:
             check_common_outputs(self, c, d_expected)
@@ -129,7 +129,7 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         d_expected['chp_year_one_thermal_energy_produced_mmbtu'] = 9739.972
         d_expected['boiler_total_fuel_cost_us_dollars'] = 7211.964
         d_expected['chp_total_fuel_cost_us_dollars'] = 3271904.872
-        d_expected['total_opex_costs'] = 686311.0
+        d_expected['total_om_costs'] = 686311.0
 
         try:
             check_common_outputs(self, c, d_expected)

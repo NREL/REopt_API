@@ -91,11 +91,11 @@ function add_cost_expressions(m, p)
 	if !isempty(p.CHPTechs)
 		m[:TotalCHPStandbyCharges] = @expression(m, p.pwf_e * p.CHPStandbyCharge * 12 *
 			sum(m[:dvSize][t] for t in p.CHPTechs))
-		m[:TotalHourlyCHPOpExCosts] = @expression(m, p.two_party_factor * p.pwf_om * p.TimeStepScaling *
+		m[:TotalHourlyCHPOMCosts] = @expression(m, p.two_party_factor * p.pwf_om * p.TimeStepScaling *
 			sum(m[:dvOMByHourBySizeCHP][t, ts] for t in p.CHPTechs, ts in p.TimeStep))
 	else
 		m[:TotalCHPStandbyCharges] = @expression(m, 0.0)
-		m[:TotalHourlyCHPOpExCosts] = @expression(m, 0.0)
+		m[:TotalHourlyCHPOMCosts] = @expression(m, 0.0)
 	end
 end
 
@@ -846,7 +846,7 @@ function add_util_fixed_and_min_charges(m, p)
 	end
 end
 
-function add_chp_hourly_opex_charges(m, p)
+function add_chp_hourly_om_charges(m, p)
 	#Constraint CHP-hourly-om-a: om per hour, per time step >= per_unit_size_cost * size for when on, >= zero when off
 	@constraint(m, CHPHourlyOMBySizeA[t in p.CHPTechs, ts in p.TimeStep],
 					p.OMcostPerUnitHourPerSize[t] * m[:dvSize][t] -
@@ -875,7 +875,7 @@ function add_cost_function(m, p)
 		m[:TotalPerUnitSizeOMCosts] * m[:r_tax_fraction_owner] +
 
         ## Variable O&M, tax deductible for owner
-		(m[:TotalPerUnitProdOMCosts] + m[:TotalHourlyCHPOpExCosts]) * m[:r_tax_fraction_owner] +
+		(m[:TotalPerUnitProdOMCosts] + m[:TotalHourlyCHPOMCosts]) * m[:r_tax_fraction_owner] +
 
 		# Utility Bill, tax deductible for offtaker
 		(m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] + m[:TotalExportBenefit] + m[:TotalFixedCharges] + 0.999*m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker] +
@@ -1014,7 +1014,7 @@ function reopt_run(m, p::Parameter)
 	add_util_fixed_and_min_charges(m, p)
 
 	if !isempty(p.CHPTechs)
-		add_chp_hourly_opex_charges(m, p)
+		add_chp_hourly_om_charges(m, p)
 	end
 
 	add_cost_function(m, p)
@@ -1507,12 +1507,12 @@ end
 
 function add_util_results(m, p, r::Dict)
     net_capital_costs_plus_om = value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]) +
-                                value(m[:TotalPerUnitSizeOMCosts] + m[:TotalPerUnitProdOMCosts] + m[:TotalHourlyCHPOpExCosts]) * m[:r_tax_fraction_owner] +
+                                value(m[:TotalPerUnitSizeOMCosts] + m[:TotalPerUnitProdOMCosts] + m[:TotalHourlyCHPOMCosts]) * m[:r_tax_fraction_owner] +
                                 value(m[:TotalFuelCharges]) * m[:r_tax_fraction_offtaker]
 
-	total_opex_costs_after_tax = value(m[:TotalPerUnitSizeOMCosts] + m[:TotalPerUnitProdOMCosts] + m[:TotalHourlyCHPOpExCosts]) * m[:r_tax_fraction_owner]
+	total_om_costs_after_tax = value(m[:TotalPerUnitSizeOMCosts] + m[:TotalPerUnitProdOMCosts] + m[:TotalHourlyCHPOMCosts]) * m[:r_tax_fraction_owner]
 
-	year_one_opex_costs_after_tax = total_opex_costs_after_tax / (p.pwf_om * p.two_party_factor)
+	year_one_om_costs_after_tax = total_om_costs_after_tax / (p.pwf_om * p.two_party_factor)
 
     push!(r, Dict(
         "year_one_utility_kwh" => round(value(m[:Year1UtilityEnergy]), digits=2),
@@ -1535,9 +1535,9 @@ function add_util_results(m, p, r::Dict)
         "average_annual_energy_curtailed_wind" => round(value(m[:CurtailedElecWIND]), digits=0),
         "average_annual_energy_exported_gen" => round(value(m[:ExportedElecGEN]), digits=0),
         "net_capital_costs" => round(value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]), digits=2),
-        "total_opex_costs_after_tax" => round(total_opex_costs_after_tax, digits=0),
-        "year_one_opex_costs_after_tax" => round(year_one_opex_costs_after_tax, digits=0),
-        "year_one_opex_costs_before_tax" => round(year_one_opex_costs_after_tax / m[:r_tax_fraction_owner], digits=0)
+        "total_om_costs_after_tax" => round(total_om_costs_after_tax, digits=0),
+        "year_one_om_costs_after_tax" => round(year_one_om_costs_after_tax, digits=0),
+        "year_one_om_costs_before_tax" => round(year_one_om_costs_after_tax / m[:r_tax_fraction_owner], digits=0)
     )...)
 
     @expression(m, GridToLoad[ts in p.TimeStep],
