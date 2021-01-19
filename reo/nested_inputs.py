@@ -402,17 +402,29 @@ nested_input_definitions = {
           "description": "Carbon Dioxide emissions factor over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples).",
           "default":[]
         },
-        "day_ahead_pricing": {
+        "ra_energy_pricing_us_dollars_per_kwh": {
           "type": "list_of_float",
           "min": -1000,
           "max": 10000,
           "default": [],
-          "description": "8760 of cleared day-ahead pricing (must be same year as the load year)"
+          "description": "8760 of pricing for energy portion of RA (must be same year as the load year)"
         },
-        "lookback_days": {
+        "ra_demand_pricing_us_dollars_per_kw": {
+          "type": "list_of_float",
+          "default": [],
+          "description": "Array (length of 12) of monthly value for RA provision based on $/kW"
+        },
+        "ra_event_day_flags_boolean": {
+          "type": "list_of_int",
+          "min": 0,
+          "max": 1,
+          "default": [],
+          "description": "8760 of 1/0's flagging whether an hour is in an event day (must be same year as the load year)"
+        },
+        "ra_lookback_days": {
           "type": "int",
           "min": 0,
-          "max": 100,
+          "max": 30,
           "default": 10,
           "description": "Number of lookback days the baseline calculated over"
         }

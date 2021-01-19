@@ -240,8 +240,11 @@ class ElectricTariffModel(models.Model):
     tou_energy_rates_us_dollars_per_kwh =ArrayField(models.FloatField(blank=True), default=list)
     emissions_factor_series_lb_CO2_per_kwh = ArrayField(models.FloatField(blank=True), default=list)
     emissions_region = models.TextField(null=True, blank=True)
-    day_ahead_pricing = ArrayField(models.FloatField(blank=True), default=list)
-    lookback_days = models.IntegerField(null=True, blank=True)
+    ra_energy_pricing_us_dollars_per_kwh = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    ra_demand_pricing_us_dollars_per_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    ra_event_day_flags_boolean = ArrayField(models.IntegerField(null=True, blank=True), null=True, blank=True)
+    ra_lookback_days = models.IntegerField(null=True, blank=True)
+
     # Ouptuts
     year_one_energy_cost_us_dollars = models.FloatField(null=True, blank=True)
     year_one_demand_cost_us_dollars = models.FloatField(null=True, blank=True)
