@@ -988,7 +988,13 @@ class DataManager:
         rates_by_tech_bau, techs_by_export_tier_bau, export_tiers_bau, techs_cannot_curtail_bau, export_rates_bau = \
             self._get_export_curtailment_params(reopt_techs_bau, tariff_args.grid_export_rates_bau,
                                                 self.elec_tariff.net_metering_limit_kw)
-        
+        if self.resource_adequacy is not None:
+            ra_event_start_times = self.resource_adequacy.ra_event_start_times
+            ra_lookback_periods = self.resource_adequacy.ra_lookback_periods
+        else:
+            ra_event_start_times = {1:[]}
+            ra_lookback_periods = {1:[]}
+
         self.reopt_inputs = {
             'Tech': reopt_techs,
             'TechToLocation': tech_to_location,
@@ -1083,7 +1089,9 @@ class DataManager:
             'ExportTiersBeyondSiteLoad': ["EXC"],
             'ElectricDerate': electric_derate,
             'TechsByNMILRegime': TechsByNMILRegime,
-            'TechsCannotCurtail': techs_cannot_curtail
+            'TechsCannotCurtail': techs_cannot_curtail,
+            'RaEventStartTimes': ra_event_start_times,
+            'RaLookbackPeriods': ra_lookback_periods
             }
         ## Uncomment the following and run a scenario to get an updated modelinputs.json for creating Julia system image
         # import json
@@ -1181,5 +1189,7 @@ class DataManager:
             'ExportTiersBeyondSiteLoad':  ["EXC"],
             'ElectricDerate': electric_derate_bau,
             'TechsByNMILRegime': TechsByNMILRegime_bau,
-            'TechsCannotCurtail': techs_cannot_curtail_bau
+            'TechsCannotCurtail': techs_cannot_curtail_bau,
+            'RaEventStartTimes': {1:[]},
+            'RaLookbackPeriods': {1:[]}
         }

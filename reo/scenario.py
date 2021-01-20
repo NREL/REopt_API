@@ -246,7 +246,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
         dfm_dict = vars(dfm)  # serialize for celery
 
         # delete python objects, which are not serializable
-        for k in ['storage', 'site', 'elec_tariff', 'pvs', 'pvnms', 'load', 'util'] + dfm.available_techs:
+        for k in ['storage', 'site', 'elec_tariff', 'pvs', 'pvnms', 'load', 'util', 'resource_adequacy'] + dfm.available_techs:
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
 

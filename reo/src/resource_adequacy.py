@@ -65,19 +65,17 @@ class ResourceAdequacy(object):
         df_event_days['day_of_week'] = df_event_days.index.dayofweek
         df_event_days['ts'] = np.arange(df_event_days.shape[0])
 
-        ra_event_start_times = list()
-        ra_lookback_periods = list()
+        ra_event_start_times = dict()
+        ra_lookback_periods = dict()
 
         month_number = 0
-        month_indexer = -1
         for i in range(len(df_event_days.index)):
-            if df_event_days.event_day.values[i]==True:
+            if df_event_days.event_day.values[i]==1:
                 if month_number != df_event_days.index[i].month:
-                    ra_event_start_times.append([])
-                    ra_lookback_periods.append([])
                     month_number = df_event_days.index[i].month
-                    month_indexer += 1
-                ra_event_start_times[month_indexer].append(i)
+                    ra_event_start_times[month_number] = []
+                    ra_lookback_periods[month_number] = []
+                ra_event_start_times[month_number].append(i)
                 
                 day = 0
                 daysused = 0
@@ -92,6 +90,6 @@ class ResourceAdequacy(object):
                             look_back_hours.append(df_event_days.ts.values[8760 + i-day*24])
                             daysused += 1
                     day += 1
-                ra_lookback_periods[month_indexer].append(look_back_hours)
+                ra_lookback_periods[month_number].append(look_back_hours)
        
         return ra_event_start_times, ra_lookback_periods
