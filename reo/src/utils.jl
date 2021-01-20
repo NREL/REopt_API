@@ -30,7 +30,6 @@ function filter_dict_to_match_struct_field_names(d::Dict, s::DataType)
     return d2
 end
 
-
 Base.@kwdef struct Parameter
 	 ###  Sets  ###
 	 Storage::Array{String,1}      # Set B in math; new; B = "Elec","HotThermal","ColdThermal"
@@ -190,6 +189,10 @@ Base.@kwdef struct Parameter
      TechToLocation::AxisArray
      MaxSizesLocation::Array{Float64, 1}
      Location::UnitRange
+
+     # RA Additions
+     RaEventStartTimes::Dict{Symbol, <:Array{}} # Dict of lists, with each nested list containing the event start hours for that monthly
+     RaLookbackPeriods::Dict{Symbol, <:Array{}} # Dict of lists, with each nested list containing lists of lookback hours for the associated timestep in RaEventStartTimes
 end
 
 
