@@ -30,7 +30,9 @@
 import sys
 import json
 from django.http import JsonResponse
-from reo.models import ScenarioModel, SiteModel, LoadProfileModel, PVModel, StorageModel, WindModel, GeneratorModel, FinancialModel, ElectricTariffModel, MessageModel
+from reo.models import ScenarioModel, SiteModel, LoadProfileModel, PVModel, StorageModel, \
+    WindModel, GeneratorModel, FinancialModel, ElectricTariffModel, \
+    MessageModel, AbsorptionChillerModel, ColdTESModel, HotTESModel, CHPModel
 from reo.exceptions import UnexpectedError
 from reo.models import ModelManager
 from resilience_stats.models import ResilienceModel
@@ -198,8 +200,12 @@ def summary(request, user_uuid):
         winds = WindModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw')
         gens = GeneratorModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid', 'max_kw', 'size_kw')
         financials = FinancialModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','npv_us_dollars','net_capital_costs','lcc_us_dollars','lcc_bau_us_dollars','net_capital_costs_plus_om_us_dollars', 'net_capital_costs','net_om_us_dollars_bau')
-        tariffs = ElectricTariffModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','urdb_rate_name','year_one_energy_cost_us_dollars','year_one_demand_cost_us_dollars','year_one_fixed_cost_us_dollars','year_one_min_charge_adder_us_dollars','year_one_bill_us_dollars','year_one_energy_cost_bau_us_dollars','year_one_demand_cost_bau_us_dollars','year_one_fixed_cost_bau_us_dollars','year_one_min_charge_adder_bau_us_dollars','year_one_bill_bau_us_dollars')
+        tariffs = ElectricTariffModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid', 'urdb_rate_name', 'year_one_bill_us_dollars', 'year_one_bill_bau_us_dollars')
         resiliences = ResilienceModel.objects.filter(scenariomodel_id__in=scenario_run_ids).values('scenariomodel_id','resilience_hours_avg','resilience_hours_max','resilience_hours_min')
+        chps = CHPModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw')
+        hottess = HotTESModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_gal','size_gal')
+        coldtess = ColdTESModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_gal','size_gal')
+        absorpchls = AbsorptionChillerModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_ton','size_ton')
 
         def get_scenario_data(data, run_uuid):
             if type(data)==dict:
@@ -229,11 +235,15 @@ def summary(request, user_uuid):
                 'resilience_hours_max': None,
                 'resilience_hours_avg': None,
                 'year_one_savings_us_dollars': None,
-                'pv_kw': None,
-                'wind_kw': None,
-                'gen_kw': None,
-                'batt_kw': None,
-                'batt_kwh': None,
+                'pv_kw': 'not evaluated',
+                'wind_kw': 'not evaluated',
+                'gen_kw': 'not evaluated',
+                'batt_kw': 'not evaluated',
+                'batt_kwh': 'not evaluated',
+                'chp_kw': 'not evaluated',
+                'hottes_gal': 'not evaluated',
+                'coldtes_gal': 'not evaluated',
+                'absorpchl_ton': 'not evaluated',
             })
             results['status'] = scenario.status
             results['run_uuid'] = str(scenario.run_uuid)
@@ -259,6 +269,10 @@ def summary(request, user_uuid):
                 financial = get_scenario_data(financials, scenario.run_uuid)[0]
                 tariff = get_scenario_data(tariffs, scenario.run_uuid)[0]
                 resilience = get_scenario_data(resiliences, scenario.id)[0]
+                chp = get_scenario_data(chps, scenario.run_uuid)[0]
+                hottes = get_scenario_data(hottess, scenario.run_uuid)[0]
+                coldtes = get_scenario_data(coldtess, scenario.run_uuid)[0]
+                absorpchl = get_scenario_data(absorpchls, scenario.run_uuid)[0]
 
                 if site:
 
@@ -298,21 +312,9 @@ def summary(request, user_uuid):
                     results['net_om_us_dollars_bau'] = financial.get('net_om_us_dollars_bau')
 
                     # Year 1 Savings
-                    year_one_costs = sum(filter(None, [
-                        tariff.get('year_one_energy_cost_us_dollars') or 0,
-                        tariff.get('year_one_demand_cost_us_dollars') or 0,
-                        tariff.get('year_one_fixed_cost_us_dollars') or 0,
-                        tariff.get('year_one_min_charge_adder_us_dollars') or 0,
-                        tariff.get('year_one_bill_us_dollars') or 0
-                        ]))
+                    year_one_costs = tariff.get('year_one_bill_us_dollars') or 0
 
-                    year_one_costs_bau = sum(filter(None, [
-                        tariff.get('year_one_energy_cost_bau_us_dollars') or 0,
-                        tariff.get('year_one_demand_cost_bau_us_dollars') or 0,
-                        tariff.get('year_one_fixed_cost_bau_us_dollars') or 0,
-                        tariff.get('year_one_min_charge_adder_bau_us_dollars') or 0,
-                        tariff.get('year_one_bill_bau_us_dollars') or 0
-                        ]))
+                    year_one_costs_bau = tariff.get('year_one_bill_bau_us_dollars') or 0
 
                     results['year_one_savings_us_dollars'] = year_one_costs_bau - year_one_costs
 
@@ -325,40 +327,41 @@ def summary(request, user_uuid):
                     if pv is not None:
                         if pv['max_kw'] > 0:
                             results['pv_kw'] = pv.get('size_kw')
-                        else:
-                            results['pv_kw'] = 'not evaluated'
-                    else:
-                        results['pv_kw'] = 'not evaluated'
 
                     # Wind Size
                     if wind is not None:
                         if wind.get('max_kw') or -1 > 0:
                             results['wind_kw'] = wind.get('size_kw')
-                        else:
-                            results['wind_kw'] = 'not evaluated'
-                    else:
-                        results['wind_kw'] = 'not evaluated'
 
                     # Generator Size
                     if gen is not None:
                         if gen.get('max_kw') or -1 > 0:
                             results['gen_kw'] = gen.get('size_kw')
-                        else:
-                            results['gen_kw'] = 'not evaluated'
-                    else:
-                        results['gen_kw'] = 'not evaluated'
 
                     # Battery Size
                     if batt is not None:
                         if batt.get('max_kw') or -1 > 0:
                             results['batt_kw'] = batt.get('size_kw')
                             results['batt_kwh'] = batt.get('size_kwh')
-                        else:
-                            results['batt_kw'] = 'not evaluated'
-                            results['batt_kwh'] = 'not evaluated'
-                    else:
-                        results['batt_kw'] = 'not evaluated'
-                        results['batt_kwh'] = 'not evaluated'
+                        
+                    if chp is not None:
+                        if (chp.get('max_kw') or -1) > 0:
+                            results['chp_kw'] = chp.get('size_kw')
+
+                    # HotTES Size
+                    if hottes is not None:
+                        if (hottes.get('max_gal') or -1) > 0:
+                            results['hottes_gal'] = hottes.get('size_gal')
+
+                    # ColdTES Size
+                    if coldtes is not None:
+                        if (coldtes.get('max_gal') or -1) > 0:
+                            results['coldtes_gal'] = coldtes.get('size_gal')
+
+                    # Absoprtion Chiller Size
+                    if absorpchl is not None:
+                        if (absorpchl.get('max_ton') or -1) > 0:
+                            results['absorpchl_ton'] = absorpchl.get('size_ton')
             except:
                 json_response['scenarios'].append(results)
                 continue
