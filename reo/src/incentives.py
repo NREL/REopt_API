@@ -103,3 +103,32 @@ class Incentives(object):
             self.macrs_itc_reduction = 0
 
         self.production_based = ProductionBasedIncentive(**kwargs)
+
+class IncentivesNoProdBased(object):
+    """
+    high level incentives object for attaching to production technologies and storage
+    """
+
+    def __init__(self, macrs_option_years, macrs_bonus_pct, macrs_itc_reduction, **kwargs):
+
+        self.federal = IncentiveProvider('federal', **kwargs)
+        self.state = IncentiveProvider('state', **kwargs)
+        self.utility = IncentiveProvider('utility', **kwargs)
+
+        self.macrs_bonus_pct = macrs_bonus_pct
+        self.macrs_itc_reduction = macrs_itc_reduction
+
+        if macrs_option_years == 5:
+            self.macrs_schedule = macrs_five_year
+        elif macrs_option_years == 7:
+            self.macrs_schedule = macrs_seven_year
+        elif macrs_option_years == 0:
+            self.macrs_bonus_pct = 0
+            self.macrs_itc_reduction = 0
+            self.macrs_schedule = [0]
+        else:
+            raise ValueError("macrs_option_years must be 0, 5 or 7.")
+
+        # Modify MACRs reduction if no itc
+        if self.federal.itc == 0:
+            self.macrs_itc_reduction = 0

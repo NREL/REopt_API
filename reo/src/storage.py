@@ -95,3 +95,67 @@ class Storage(object):
         self.incentives = StorageIncentives(**kwargs)
 
         dfm.add_storage(self)
+
+
+class TESIncentives(object):
+
+    def __init__(self, macrs_option_years, macrs_bonus_pct):
+
+        self.macrs_bonus_pct = macrs_bonus_pct
+
+        if macrs_option_years == 5:
+            self.macrs_schedule = macrs_five_year
+        elif macrs_option_years == 7:
+            self.macrs_schedule = macrs_seven_year
+        elif macrs_option_years == 0:
+            self.macrs_bonus_pct = 0
+            self.macrs_schedule = [0]
+        else:
+            raise ValueError("macrs_option_years must be 0, 5 or 7.")
+
+class HotTES(object):
+    """
+    REopt class for hot thermal energy storage (TES).
+    All default values in kwargs set by validator using nested_input_definitions.
+    """
+
+    def __init__(self, dfm, **kwargs):
+
+        # Assign all items in kwargs explicitly to the class
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+        # Convert units based on gal to kWht (kWh "thermal)
+        # Conversion assumes a delta-T in the tank of 20F
+        self.min_mmbtu = self.min_gal * 0.000163
+        self.max_mmbtu = self.max_gal * 0.000163
+        self.installed_cost_us_dollars_per_mmbtu = self.installed_cost_us_dollars_per_gal / 0.000163
+        self.om_cost_us_dollars_per_mmbtu = self.om_cost_us_dollars_per_gal / 0.000163
+
+        self.incentives = TESIncentives(self.macrs_option_years, self.macrs_bonus_pct)
+
+        dfm.add_hot_tes(self)
+
+
+class ColdTES(object):
+    """
+    REopt class for cold thermal energy storage (TES).
+    All default values in kwargs set by validator using nested_input_definitions.
+    """
+
+    def __init__(self, dfm, **kwargs):
+
+        # Assign all items in kwargs explicitly to the class
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+        # Convert units based on gal to kWht (kWh "thermal)
+        # Conversion assumes a delta-T in the tank of 12F
+        self.min_kwht = self.min_gal * 0.0287
+        self.max_kwht = self.max_gal * 0.0287
+        self.installed_cost_us_dollars_per_kwht = self.installed_cost_us_dollars_per_gal / 0.0287
+        self.om_cost_us_dollars_per_kwht = self.om_cost_us_dollars_per_gal / 0.0287
+
+        self.incentives = TESIncentives(self.macrs_option_years, self.macrs_bonus_pct)
+
+        dfm.add_cold_tes(self)

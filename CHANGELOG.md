@@ -31,6 +31,36 @@ Classify the change according to the following categories:
 ## develop
 ### Major Updates
 ### Minor Updates
+- `reo`, `*.jl`: New load **LoadProfileBoilerFuel**
+    - Heating load of the site, as defined by boiler fuel consumption
+- `reo`, `*.jl`: New Tech **Boiler**
+    - BAU Tech which serves heating load. It consumes fuel and produces hot thermal energy.
+- `reo`: New **Site**-level input **FuelTariff**
+    - Cost structure for fuel consumed by **Boiler** and **CHP** Techs. Currently allows fixed annual or monthly values for fuel cost.
+- `reo`, `*.jl`: New load **LoadProfileChillerThermal**
+    - Cooling load of the site, as defined by a thermal load produced by the BAU **ElectricChiller** or a fraction of total electric load.
+    - This is treated as a subset of the total electric load (**LoadProfile**)
+- `reo`, `*.jl`: New Tech **ElectricChiller**
+    - BAU Tech which serves cooling load. It consumes electricity and produces chilled water to meet the cooling load or charge **ColdTES**.
+- `reo`, `*.jl`: New Tech **CHP**
+    - Combined heat and power (CHP) Tech which serves electric and heating loads. Its hot thermal production can also supply **AbsorptionChiller** or charge the **HotTES**.
+- `reo`, `*.jl`: New Tech **AbsorptionChiller**
+    - Cooling technology which serves cooling load with a hot thermal input. It can also charge **ColdTES**.
+- `reo`, `*.jl`: New Storage **HotTES**
+    - Storage model representing a hot water thermal energy storage tank. It can store hot thermal energy produced by **CHP** (or **Boiler**, but not typically).
+- `reo`, `*.jl`: New Storage **ColdTES**
+    - Storage model representing a chilled water thermal energy storage tank. It can store cold thermal energy produced by **ElectricChiller** or **AbsorptionChiller**.
+- `reo`: Changed `/simulated_load` endpoint to add optional **load_type** query param for **cooling** and **heating**
+    - Use **load_type** = "heating" with **annual_mmbtu** or **monthly_mmbtu** for heating load
+    - Use **load_type** = "cooling" with **annual_tonhour** or **monthly_tonhour** for cooling load 
+- `reo`: New endpoint `/chp_defaults`
+    - Endpoint for the default **prime_mover**, **size_class**, and default cost and performance parameters for **CHP**
+- `reo`: New endpoint `/loadprofile_chillerthermal_chiller_cop`
+    - Endpoint for the default **LoadProfileChillerThermal.chiller_cop** based on peak cooling load
+- `reo`: New endpoint `/absorption_chiller_defaults`
+    - Endpoint for the default **AbsorptionChiller** cost and performance parameters based on thermal type ("hot_water" or "steam") and peak cooling load
+- `reo`: New endpoint `/schedule_stats`
+    - Endpoint for getting default **CHP.chp_unavailability_periods** and summary metrics of the unavailability profile
 ### Patches
  - `summary`: Address failing cases in user `summary` endpoint due to missing load profile data
 
