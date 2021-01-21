@@ -105,7 +105,6 @@ class DataManager:
         self.LoadProfile["resilience_check_flag"] = load.resilience_check_flag
         self.LoadProfile["bau_sustained_time_steps"] = load.bau_sustained_time_steps
         self.LoadProfile["annual_kwh"] = load.annual_kwh
-        self.LoadProfile["loads_kw"] = load.load_list
         self.load = load
 
     def add_load_boiler_fuel(self, load):
