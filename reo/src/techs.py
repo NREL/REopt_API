@@ -331,7 +331,7 @@ class CHP(Tech):
 
     def __init__(self, dfm, run_uuid, existing_boiler_production_type_steam_or_hw, oa_temp_degF, site_elevation_ft,
                  outage_start_time_step=None, outage_end_time_step=None, time_steps_per_hour=1, year=None, **kwargs):
-        super(CHP, self).__init__()
+        super(CHP, self).__init__(**kwargs)
 
         self.prime_mover = kwargs.get('prime_mover')
         self.size_class = kwargs.get('size_class')
