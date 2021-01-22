@@ -50,13 +50,18 @@ default_buildings = ['FastFoodRest',
                      'StripMall',
                      'Supermarket',
                      'Warehouse',
-                     'FlatLoad'
+                     'FlatLoad',
+                     'FlatLoad_24_5',
+                     'FlatLoad_16_7',
+                     'FlatLoad_16_5',
+                     'FlatLoad_8_7',
+                     'FlatLoad_8_5'
                      ]
 
 macrs_five_year = [0.2, 0.32, 0.192, 0.1152, 0.1152, 0.0576]  # IRS pub 946
 macrs_seven_year = [0.1429, 0.2449, 0.1749, 0.1249, 0.0893, 0.0892, 0.0893, 0.0446]
 
-#the user needs to supply valid data for all the attributes in at least on of these sets for load_profile_possible_sets and electric_tariff_possible_sets
+#the user needs to supply valid data for all the attributes in at least one of these sets for load_profile_possible_sets and electric_tariff_possible_sets
 load_profile_possible_sets = [["loads_kw"],
             ["doe_reference_name", "monthly_totals_kwh"],
             ["annual_kwh", "doe_reference_name"],
@@ -88,6 +93,12 @@ def list_of_int(input):
     result.append(int(i))
   return result
 
+def list_of_dict(input):
+  result = []
+  for i in input:
+    result.append(dict(i))
+  return result
+
 nested_input_definitions = {
 
   "Scenario": {
@@ -115,6 +126,44 @@ nested_input_definitions = {
     "webtool_uuid": {
       "type": "str",
       "description": "The unique ID of a scenario created by the REopt Lite Webtool. Note that this ID can be shared by several REopt Lite API Scenarios (for example when users select a 'Resilience' analysis more than one REopt API Scenario is created)."
+    },
+  "optimality_tolerance_bau": {
+      "type": "float",
+      "min": 1.0e-5,
+      "max": 10.0,
+      "default": 0.001,
+      "description": "The threshold for the difference between the solution's objective value and the best possible value at which the solver terminates"
+    },
+  "optimality_tolerance_techs": {
+      "type": "float",
+      "min": 1.0e-5,
+      "max": 10.0,
+      "default": 0.001,
+      "description": "The threshold for the difference between the solution's objective value and the best possible value at which the solver terminates"
+    },
+  "use_decomposition_model": {
+      "type": "bool",
+      "default": False,
+      "description": "Toggle to use the decomposition model/algorithm"
+    },
+  "optimality_tolerance_decomp_subproblem": {
+      "type": "float",
+      "min": 1.0e-5,
+      "max": 10.0,
+      "default": 0.02,
+      "description": "The threshold for the difference between the decomposition subproblem solution's objective value and the best possible value at which the solver terminates"
+    },
+    "timeout_decomp_subproblem_seconds": {
+      "type": "int",
+      "min": 1,
+      "max": 10000,
+      "default": 120,
+      "description": "The number of seconds allowed before the decomposition subproblem optimization times out"
+    },
+    "add_soc_incentive": {
+      "type": "bool",
+      "default": True,
+      "description": "If True, then a small incentive to keep the battery's state of charge high is added to the objective of the optimization."
     },
 
     "Site": {
@@ -148,6 +197,18 @@ nested_input_definitions = {
         "max": 1.0e9,
         "description": "Area of roof in square feet available for PV siting"
       },
+      "outdoor_air_temp_degF": {
+        "type": "list_of_float",
+        "default": [],
+        "description": "Hourly outdoor air temperature (dry-bulb)."
+      },
+      "elevation_ft": {
+        "type": "float",
+        "min": 0.0,
+        "max": 15000.0,
+        "default": 0.0,
+        "description": "Site elevation (above sea sevel), units of feet"
+      },
 
       "Financial": {
         "om_cost_escalation_pct": {
@@ -163,6 +224,20 @@ nested_input_definitions = {
           "max": 1.0,
           "default": 0.023,
           "description": "Annual nominal utility electricity cost escalation rate"
+        },
+        "boiler_fuel_escalation_pct": {
+          "type": "float",
+          "min": -1.0,
+          "max": 1.0,
+          "default": 0.034,
+          "description": "Annual nominal boiler fuel cost escalation rate"
+        },
+        "chp_fuel_escalation_pct": {
+          "type": "float",
+          "min": -1,
+          "max": 1,
+          "default": 0.034,
+          "description": "Annual nominal chp fuel cost escalation rate"
         },
         "offtaker_tax_pct": {
           "type": "float",
@@ -192,8 +267,8 @@ nested_input_definitions = {
         },
         "owner_discount_pct": {
           "type": "float",
-          "min": 0,
-          "max": 1,
+          "min": 0.0,
+          "max": 1.0,
           "default": 0.083,
           "description": "Nominal generation owner discount rate. Used for two party financing model. In two party ownership model the offtaker does not own the generator(s)."
         },
@@ -228,32 +303,34 @@ nested_input_definitions = {
           "description": "Simulated load profile from DOE <a href='https: //energy.gov/eere/buildings/commercial-reference-buildings' target='blank'>Commercial Reference Buildings</a>"
         },
         "annual_kwh": {
-          "type": ["float", "list_of_float"],
+          "type": "float",
           "min": 1.0,
-          "max": 1.0e12,
+          "max": max_big_number,
           "replacement_sets": load_profile_possible_sets,
           "depends_on": ["doe_reference_name"],
-          "description": "Annual energy consumption used to scale simulated building load profile, if <b><small>monthly_totals_kwh</b></small> is not provided."
+          "description": "Annual site energy consumption from electricity, in kWh, used to scale simulated default building load profile for the site's climate zone"
         },
         "percent_share": {
-                 "type": ["float", "list_of_float"],
-                  "min": 1.0,
-                  "max": 100.0,
-                  "default": 100.0,
-                 "description": "Percentage share of the types of building for creating hybrid simulated building and campus profiles."
+          "type": ["float", "list_of_float"],
+          "min": 1.0,
+          "max": 100.0,
+          "default": 100.0,
+          "description": "Percentage share of the types of building for creating hybrid simulated building and campus profiles."
         },
         "year": {
           "type": "int",
           "min": 1,
           "max": 9999,
-          "default": 2019,
+          "default": 2020,
           "description": "Year of Custom Load Profile. If a custom load profile is uploaded via the loads_kw parameter, it is important that this year correlates with the load profile so that weekdays/weekends are determined correctly for the utility rate tariff. If a DOE Reference Building profile (aka 'simulated' profile) is used, the year is set to 2017 since the DOE profiles start on a Sunday."
         },
         "monthly_totals_kwh": {
           "type": "list_of_float",
+          "min": 0.0,
+          "max": max_big_number,
           "replacement_sets": load_profile_possible_sets,
           "depends_on": ["doe_reference_name"],
-          "description": "Array (length of 12) of total monthly energy consumption used to scale simulated building load profile."
+          "description": "Monthly site energy consumption from electricity series (an array 12 entries long), in kWh, used to scale simulated default building load profile for the site's climate zone"
         },
         "loads_kw": {
           "type": "list_of_float",
@@ -313,7 +390,92 @@ nested_input_definitions = {
           "type": "bool",
           "default": True,
           "description": "Boolean value for if outage is a major event, which affects the avoided_outage_costs_us_dollars. If True, the avoided outage costs are calculated for a single outage occurring in the first year of the analysis_years. If False, the outage event is assumed to be an average outage event that occurs every year of the analysis period. In the latter case, the avoided outage costs for one year are escalated and discounted using the escalation_pct and offtaker_discount_pct to account for an annually recurring outage. (Average outage durations for certain utility service areas can be estimated using statistics reported on EIA form 861.)"
-        }
+        },
+      },
+
+      "LoadProfileBoilerFuel": {
+        "doe_reference_name": {
+          "type": ["str", "list_of_str"],
+          "restrict_to": default_buildings,
+          "description": "Building type to use in selecting a simulated load profile from DOE <a href='https: //energy.gov/eere/buildings/commercial-reference-buildings' target='blank'>Commercial Reference Buildings</a>. By default, the doe_reference_name of the LoadProfile is used."
+        },
+        "annual_mmbtu": {
+          "type": "float",
+          "min": 0.0,
+          "max": max_big_number,
+          "description": "Annual electric chiller electric consumption, in mmbtu, used to scale simulated default boiler load profile for the site's climate zone",
+        },
+        "monthly_mmbtu": {
+         "type": "list_of_float",
+         "min": 0.0,
+         "max": max_big_number,
+         "description": "Monthly boiler energy consumption series (an array 12 entries long), in mmbtu, used to scale simulated default electric boiler load profile for the site's climate zone"
+        },
+        "loads_mmbtu_per_hour": {
+          "type": "list_of_float",
+          "description": "Typical boiler fuel load for all hours in one year."
+        },
+        "percent_share": {
+         "type": ["float", "list_of_float"],
+          "min": 1.0,
+          "max": 100.0,
+         "description": "Percentage share of the types of building for creating hybrid simulated building and campus profiles."
+        },
+      },
+
+      "LoadProfileChillerThermal": {
+        "doe_reference_name": {
+          "type": ["str", "list_of_str"],
+          "restrict_to": default_buildings,
+          "description": "Building type to use in selecting a simulated load profile from DOE <a href='https: //energy.gov/eere/buildings/commercial-reference-buildings' target='blank'>Commercial Reference Buildings</a>. By default, the doe_reference_name of the LoadProfile is used."
+        },
+        "loads_ton": {
+          "type": "list_of_float",
+          "description": "Typical electric chiller load for all hours in one year."
+        },
+        "annual_tonhour": {
+          "type": "float",
+          "min": 0.0,
+          "max": max_big_number,
+          "description": "Annual electric chiller energy consumption, in ton-hours, used to scale simulated default electric chiller load profile for the site's climate zone",
+        },
+        "monthly_tonhour": {
+         "type": "list_of_float",
+         "min": 0.0,
+          "max": max_big_number,
+         "description": "Monthly electric chiller energy consumption series (an array 12 entries long), in ton-hours, used to scale simulated default electric chiller load profile for the site's climate zone"
+        },
+        "annual_fraction": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "description": "Annual electric chiller energy consumption scalar (i.e. fraction of total electric load, used to scale simulated default electric chiller load profile for the site's climate zone",
+        },
+        "monthly_fraction": {
+         "type": "list_of_float",
+         "min": 0.0,
+          "max": max_big_number,
+         "description": "Monthly electric chiller energy consumption scalar series (i.e. 12 fractions of total electric load by month), used to scale simulated default electric chiller load profile for the site's climate zone."
+        },
+        "loads_fraction": {
+          "type": "list_of_float",
+          "min": 0.0,
+          "max": max_big_number,
+          "description": "Typical electric chiller load proporion of electric load series (unit is a percent) for all time steps in one year."
+        },
+        "percent_share": {
+           "type": ["float", "list_of_float"],
+            "min": 1.0,
+            "max": 100.0,
+           "description": "Percentage share of the types of building for creating hybrid simulated building and campus profiles."
+          },
+        "chiller_cop": {
+          "type": "float",
+          "min:": 0.0,
+          "max:": 20.0,
+          "description": "Existing electric chiller system coefficient of performance - conversion of electricity to "
+                         "usable cooling thermal energy"
+        },
       },
 
       "ElectricTariff": {
@@ -404,10 +566,56 @@ nested_input_definitions = {
           "replacement_sets": electric_tariff_possible_sets,
           "description": "Label attribute of utility rate structure from <a href='https: //openei.org/services/doc/rest/util_rates/?version=3' target='blank'>Utility Rate Database API</a>"
         },
-         "emissions_factor_series_lb_CO2_per_kwh": {
+        "emissions_factor_series_lb_CO2_per_kwh": {
+          "type": ["list_of_float", "float"],
+          "description": "Carbon Dioxide emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.",
+        },
+        "chp_standby_rate_us_dollars_per_kw_per_month": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1000.0,
+          "default": 0.0,
+          "description": "Standby rate charged to CHP based on CHP electric power size"
+        },
+        "chp_does_not_reduce_demand_charges": {
+          "type": "bool",
+          "default": False,
+          "description": "Boolean indicator if CHP does not reduce demand charges"
+        },
+      },
+
+      "FuelTariff": {
+        "existing_boiler_fuel_type": {
+          "type": "str",
+          "default": 'natural_gas',
+          "restrict_to": ["natural_gas", "landfill_bio_gas", "propane", "diesel_oil"],
+          "description": "Boiler fuel type one of (natural_gas, landfill_bio_gas, propane, diesel_oil)"
+        },
+        "boiler_fuel_blended_annual_rates_us_dollars_per_mmbtu": {
+          "type": "float",
+          "default": 0.0,
+          "description": "Single/scalar blended fuel rate for the entire year"
+        },
+        "boiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu": {
           "type": "list_of_float",
-          "description": "Carbon Dioxide emissions factor over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples).",
-          "default":[]
+          "default": [0.0]*12,
+          "description": "Array (length of 12) of blended fuel rates (total monthly energy in mmbtu divided by monthly cost in $)"
+        },
+        "chp_fuel_type": {
+          "type": "str",
+          "default": 'natural_gas',
+          "restrict_to": ["natural_gas", "landfill_bio_gas", "propane", "diesel_oil"],
+          "description": "Boiler fuel type (natural_gas, landfill_bio_gas, propane, diesel_oil)"
+        },
+        "chp_fuel_blended_annual_rates_us_dollars_per_mmbtu": {
+          "type": "float",
+          "default": 0.0,
+          "description": "Single/scalar blended fuel rate for the entire year"
+        },
+        "chp_fuel_blended_monthly_rates_us_dollars_per_mmbtu": {
+          "type": "list_of_float",
+          "default": [0.0] * 12,
+          "description": "Array (length of 12) of blended fuel rates (total monthly energy in mmbtu divided by monthly cost in $)"
         }
       },
 
@@ -744,9 +952,9 @@ nested_input_definitions = {
         },
         "pbi_max_us_dollars": {
           "type": "float",
-          "min": 0,
-          "max": 1e9,
-          "default": 1e9,
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 1.0e9,
           "description": "Maximum annual value in present terms of production-based incentives"
         },
         "pbi_years": {
@@ -1182,6 +1390,470 @@ nested_input_definitions = {
           "type": "bool",
           "default": False,
           "description": "True/False for if technology can curtail energy produced."
+        }
+      },
+      "CHP": {
+        "prime_mover": {
+          "type": "str",
+          "description": "CHP prime mover type (recip_engine, micro_turbine, combustion_turbine, fuel_cell)"
+        },
+        "size_class": {
+          "type": "int",
+          "restrict_to": [0, 1, 2, 3, 4, 5, 6],
+          "description": "CHP size class for using appropriate default inputs"
+        },
+        "min_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": max_big_number,
+          "description": "Minimum CHP size (based on electric) constraint for optimization"
+        },
+        "max_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": max_big_number,
+          "description": "Maximum CHP size (based on electric) constraint for optimization. Set to zero to disable CHP"
+        },
+        "min_allowable_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": max_big_number,
+          "description": "Minimum CHP size (based on electric) that still allows the model to choose zero (e.g. no CHP system)"
+        },
+        "installed_cost_us_dollars_per_kw": {
+          "type": ["float", "list_of_float"],
+          "min": 0.0,
+          "max": 1.0e5,
+          "description": "Installed CHP system cost in $/kW (based on rated electric power)"
+        },
+        "tech_size_for_cost_curve": {
+          "type": ["float", "list_of_float"],
+          "min": 0.0,
+          "max": 1.0e10,
+          "description": "Size of CHP systems corresponding to installed cost input points"
+        },
+        "om_cost_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e4,
+          "description": "Annual CHP fixed operations and maintenance costs in $/kw-yr"
+        },
+        "om_cost_us_dollars_per_kwh": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e3,
+          "description": "CHP non-fuel variable operations and maintenance costs in $/kwh"
+        },
+        "om_cost_us_dollars_per_hr_per_kw_rated": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "description": "CHP non-fuel variable operations and maintenance costs in $/hr/kw_rated"
+        },
+        "elec_effic_full_load": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "description": "Electric efficiency of CHP prime-mover at full-load, HHV-basis"
+        },
+        "elec_effic_half_load": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "description": "Electric efficiency of CHP prime-mover at half-load, HHV-basis"
+        },
+        "min_turn_down_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "description": "Minimum CHP electric loading in percent of capacity (size_kw)."
+        },
+        "thermal_effic_full_load": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "description": "CHP fraction of fuel energy converted to hot-thermal energy at full electric load"
+        },
+        "thermal_effic_half_load": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "description": "CHP fraction of fuel energy converted to hot-thermal energy at half electric load"
+        },
+        "use_default_derate": {
+          "type": "bool",
+          "default": True,
+          "description": "Boolean indicator if CHP derates per the default parameters, otherwise no derate is modeled"
+        },
+        "max_derate_factor": {
+          "type": "float",
+          "min": 0.1,
+          "max": 1.5,
+          "description": "Maximum derate factor; the y-axis value of the 'flat' part of the derate curve, on the left"
+        },
+        "derate_start_temp_degF": {
+          "type": "float",
+          "min": 0.0,
+          "max": 150.0,
+          "description": "The outdoor air temperature at which the power starts to derate, units of degrees F"
+        },
+        "derate_slope_pct_per_degF": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "description": "Derate slope as a percent/fraction of rated power per degree F"
+        },
+        "chp_unavailability_periods": {
+          "type": "list_of_dict",
+          "description": "CHP unavailability periods for scheduled and unscheduled maintenance, list of dictionaries with keys of "
+                            "['month', 'start_week_of_month', 'start_day_of_week', 'start_hour', 'duration_hours'] "
+                            "all values are one-indexed and start_day_of_week uses 1 for Monday, 7 for Sunday"
+        },
+        "macrs_option_years": {
+          "type": "int",
+          "restrict_to": macrs_schedules,
+          "default": 5,
+          "description": "MACRS schedule for financial analysis. Set to zero to disable"
+        },
+        "macrs_bonus_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 1.0,
+          "description": "Percent of upfront project costs to depreciate under MACRS"
+        },
+        "macrs_itc_reduction": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.5,
+          "description": "Percent of the full ITC that depreciable basis is reduced by"
+        },
+        "federal_itc_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.1,
+          "description": "Percent federal capital cost incentive"
+        },
+        "state_ibi_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "description": "Percent of upfront project costs to discount under state investment based incentives"
+        },
+        "state_ibi_max_us_dollars": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e10,
+          "default": max_incentive,
+          "description": "Maximum rebate allowed under state investment based incentives"
+        },
+        "utility_ibi_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "description": "Percent of upfront project costs to discount under utility investment based incentives"
+        },
+        "utility_ibi_max_us_dollars": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e10,
+          "default": max_incentive,
+          "description": "Maximum rebate allowed under utility investment based incentives"
+        },
+        "federal_rebate_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 0.0,
+          "description": "Federal rebate based on installed capacity"
+        },
+        "state_rebate_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 0.0,
+          "description": "State rebates based on installed capacity"
+        },
+        "state_rebate_max_us_dollars": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e10,
+          "default": max_incentive,
+          "description": "Maximum rebate allowed under state rebates"
+        },
+        "utility_rebate_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 0.0,
+          "description": "Utility rebates based on installed capacity"
+        },
+        "utility_rebate_max_us_dollars": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e10,
+          "default": max_incentive,
+          "description": "Maximum rebate allowed under utility rebates"
+        },
+        "pbi_us_dollars_per_kwh": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 0.0,
+          "description": "Production-based incentive value"
+        },
+        "pbi_max_us_dollars": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e10,
+          "default": max_incentive,
+          "description": "Maximum rebate allowed under utility production-based incentives"
+        },
+        "pbi_years": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 1.0,
+          "description": "Duration of production-based incentives from installation date"
+        },
+        "pbi_system_max_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 1.0e9,
+          "description": "Maximum system size for which production-based incentives apply"
+        },
+        "emissions_factor_lb_CO2_per_mmbtu": {
+          "type": "float",
+          "description": "Average carbon dioxide emissions factor"
+        },
+        "can_net_meter": {
+          "type": "bool",
+          "default": False,
+          "description": "True/False for if technology has option to participate in net metering agreement with utility. Note that a technology can only participate in either net metering or wholesale rates (not both)."
+        },
+        "can_wholesale": {
+          "type": "bool",
+          "default": False,
+          "description": "True/False for if technology has option to export energy that is compensated at the wholesale_rate_us_dollars_per_kwh. Note that a technology can only participate in either net metering or wholesale rates (not both)."
+        },
+        "can_export_beyond_site_load": {
+          "type": "bool",
+          "default": False,
+          "description": "True/False for if technology can export energy beyond the annual site load (and be compensated for that energy at the wholesale_rate_above_site_load_us_dollars_per_kwh)."
+        },
+        "can_curtail": {
+          "type": "bool",
+          "default": False,
+          "description": "True/False for if technology can curtail energy produced."
+        },
+        "cooling_thermal_factor": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "description": "Knockdown factor on absorption chiller COP based on the CHP prime_mover not being able to produce as high of temp/pressure hot water/steam"
+        }
+      },
+
+      "ColdTES": {
+        "min_gal": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "description": "Minimum TES volume (energy) size constraint for optimization"
+        },
+        "max_gal": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "description": "Maximum TES volume (energy) size constraint for optimization. Set to zero to disable storage"
+        },
+        "internal_efficiency_pct": {
+          "type": "float", "min": 0.0, "max": 1.0, "default": 1.00,
+          "description": "Thermal losses due to mixing from thermal power entering or leaving tank"
+        },
+        "soc_min_pct": {
+          "type": "float", "min": 0.0, "max": 1.0, "default": 0.1,
+          "description": "Minimum allowable TES thermal state of charge"
+        },
+        "soc_init_pct": {
+          "type": "float", "min": 0.0, "max": 1.0, "default": 0.5,
+          "description": "TES thermal state of charge at first hour of optimization"
+        },
+        "installed_cost_us_dollars_per_gal": {
+          "type": "float", "min": 0.0, "max": 1000.0, "default": 1.50,
+          "description": "Thermal energy-based cost of TES (e.g. volume of the tank)"
+        },
+        "thermal_decay_rate_fraction": {
+          "type": "float", "min": 0.0, "max": 0.1, "default": 0.0004,
+          "description": "Thermal loss (gain) rate as a fraction of energy storage capacity, per hour (frac*energy_capacity/hr = kw_thermal)"
+        },
+        "om_cost_us_dollars_per_gal": {
+         "type": "float", "min": 0.0, "max": 1000.0, "default": 0.0,
+         "description": "Yearly fixed O&M cost dependent on storage energy size"
+        },
+        "macrs_option_years": {
+          "type": "int",
+          "restrict_to": macrs_schedules,
+          "default": 0,
+          "description": "MACRS schedule for financial analysis. Set to zero to disable"
+        },
+        "macrs_bonus_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "description": "Percent of upfront project costs to depreciate under MACRS"
+        },
+      },
+
+      "HotTES": {
+        "min_gal": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "description": "Minimum TES volume (energy) size constraint for optimization"
+        },
+        "max_gal": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "description": "Maximum TES volume (energy) size constraint for optimization. Set to zero to disable storage"
+        },
+        "internal_efficiency_pct": {
+          "type": "float", "min": 0.0, "max": 1.0, "default": 1.00,
+          "description": "Thermal losses due to mixing from thermal power entering or leaving tank"
+        },
+        "soc_min_pct": {
+          "type": "float", "min": 0.0, "max": 1.0, "default": 0.1,
+          "description": "Minimum allowable TES thermal state of charge"
+        },
+        "soc_init_pct": {
+          "type": "float", "min": 0.0, "max": 1.0, "default": 0.5,
+          "description": "TES thermal state of charge at first hour of optimization"
+        },
+        "installed_cost_us_dollars_per_gal": {
+          "type": "float", "min": 0.0, "max": 1000.0, "default": 1.50,
+          "description": "Thermal energy-based cost of TES (e.g. volume of the tank)"
+        },
+        "thermal_decay_rate_fraction": {
+          "type": "float", "min": 0.0, "max": 0.1, "default": 0.0004,
+          "description": "Thermal loss rate as a fraction of energy storage capacity, per hour (frac*energy_capacity/hr = kw_thermal)"
+        },
+        "om_cost_us_dollars_per_gal": {
+          "type": "float", "min": 0.0, "max": 1000.0, "default": 0.0,
+          "description": "Yearly fixed O&M cost dependent on storage energy size"
+        },
+        "macrs_option_years": {
+          "type": "int",
+          "restrict_to": macrs_schedules,
+          "default": 0,
+          "description": "MACRS schedule for financial analysis. Set to zero to disable"
+        },
+        "macrs_bonus_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "description": "Percent of upfront project costs to depreciate under MACRS"
+        },
+      },
+
+      "Boiler": {
+        "min_mmbtu_per_hr": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "description": "Minimum thermal power size - keep to 0 as we are not sizing this"
+        },
+        "max_mmbtu_per_hr": {
+          "type": "float", "min": 0.0, "max": 1.0e9,
+          "description": "Maximum thermal power size - arbitrary large number to exceed max boiler load input"
+        },
+        "max_thermal_factor_on_peak_load": {
+          "type": "float", "min": 1.0, "max": 5.0, "default": 1.25,
+          "description": "Factor on peak thermal LOAD which the boiler can supply"
+        },
+        "existing_boiler_production_type_steam_or_hw": {
+          "type": "str",
+          "description": "Boiler production type (hot_water, steam)",
+          "restrict_to": ["hot_water", "steam"],
+          "description": "Boiler thermal production type, hot water or steam"
+        },
+        "boiler_efficiency": {
+          "type": "float",
+          "min:": 0.0,
+          "max:": 1.0,
+          "description": "Existing boiler system efficiency - conversion of fuel to usable heating thermal energy. "
+                         "Default value depends on existing_boiler_production_steam_or_hw input"
+        },
+        "installed_cost_us_dollars_per_mmbtu_per_hr": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "description": "Thermal power-based cost - set to zero because we are not costing this"
+        },
+        "emissions_factor_lb_CO2_per_mmbtu": {
+          "type": "float",
+          "description": "Pounds of carbon dioxide emitted per gallon of fuel burned"
+        }
+      },
+
+      "ElectricChiller": {
+        "min_kw": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "description": "Minimum electric power size - keep to 0 as we are not sizing this"
+        },
+        "max_kw": {
+          "type": "float", "min": 0.0, "max": 1.0e9,
+          "description": "Maximum electric power size - arbitrary large number to exceed max chiller load input"
+        },
+        "max_thermal_factor_on_peak_load": {
+          "type": "float", "min": 1.0, "max": 5.0, "default": 1.25,
+          "description": "Factor on peak thermal LOAD which the electric chiller can supply"
+        },
+        "installed_cost_us_dollars_per_kw": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "description": "Electric power-based cost - set to zero because we are not costing this"
+        }
+      },
+
+      "AbsorptionChiller": {
+        "min_ton": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "description": "Minimum thermal power size constraint for optimization"
+        },
+        "max_ton": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "description": "Maximum thermal power size constraint for optimization. Set to zero to disable absorption chl"
+        },
+        "chiller_cop": {
+          "type": "float",
+          "min:": 0.0,
+          "max:": 20.0,
+          "description": "Absorption chiller system coefficient of performance - conversion of hot thermal power input "
+                         "to usable cooling thermal energy output"
+        },
+        "chiller_elec_cop": {
+          "type": "float",
+          "min:": 0.0,
+          "max:": 100.0,
+          "default": 14.1,
+          "description": "Absorption chiller electric consumption CoP from cooling tower heat rejection - conversion of electric power input "
+                         "to usable cooling thermal energy output"
+        },
+        "installed_cost_us_dollars_per_ton": {
+          "type": "float", "min": 0.0, "max": 2.0e4,
+          "description": "Thermal power-based cost of absorption chiller (3.5 to 1 ton to kwt)"
+        },
+        "om_cost_us_dollars_per_ton": {
+          "type": "float", "min": 0.0, "max": 1000.0,
+          "description": "Yearly fixed O&M cost on a thermal power (ton) basis"
+        },
+        "macrs_option_years": {
+          "type": "int",
+          "restrict_to": macrs_schedules,
+          "default": 0,
+          "description": "MACRS schedule for financial analysis. Set to zero to disable"
+        },
+        "macrs_bonus_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "description": "Percent of upfront project costs to depreciate under MACRS"
         }
       }
     }

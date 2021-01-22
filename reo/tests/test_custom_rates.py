@@ -232,7 +232,7 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
     def test_time_of_export_rate(self):
         """
         add a time-of-export rate that is greater than retail rate for the month of January,
-        check to see if PV is exported for whole month of January.
+        check to make sure that PV does NOT export unless the site load is met first for the month of January.
         """
         post = copy.deepcopy(self.post)
         jan_rate = post["Scenario"]["Site"]["ElectricTariff"]["blended_monthly_rates_us_dollars_per_kwh"][0]
@@ -242,10 +242,10 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
         post["Scenario"]["Site"]["ElectricTariff"]["blended_monthly_demand_charges_us_dollars_per_kw"] = [0]*12
         response = self.get_response(post)
         pv_out = ClassAttributes(response['outputs']['Scenario']['Site']['PV'])
-        financial = ClassAttributes(response['outputs']['Scenario']['Site']['Financial'])
-        self.assertTrue(all(x == 0 for x in pv_out.year_one_to_load_series_kw[:744]))
-        self.assertEqual(pv_out.size_kw, 70.2846)
-        self.assertAlmostEqual(financial.lcc_us_dollars, 431483, -1)
+        pv_to_grid = pv_out.year_one_to_grid_series_kw[:31*24]
+        elec_tariff_out = ClassAttributes(response['outputs']['Scenario']['Site']['ElectricTariff'])
+        grid_to_load = elec_tariff_out.year_one_to_load_series_kw[:31*24]
+        self.assertTrue(all(x == 0 for i, x in enumerate(grid_to_load) if pv_to_grid[i] > 0))
 
     def test_time_of_use_energy_rate(self):
         """
