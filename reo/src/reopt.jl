@@ -759,6 +759,11 @@ function add_resource_adequacy(m, p)
     #monthly RA is constrained to be the minimum of day average reductions
     @constraint(m, [mth in keys(p.RaEventStartTimes), i in 1:length(p.RaEventStartTimes[mth])], 
 		m[:dvMonthlyRA][mth] <= calculate_average_daily_reduction(m, p, mth, i))
+    #RA demand reduction value is the sum of ra_demand_pricing * the reductions
+    m[:TotalRaDrValue] = @expression(m, p.pwf_e * sum( p.RaMonthlyPrice[mth] * m[:dvMonthlyRA][mth] for mth in keys(p.RaEventStartTimes)))
+    #RA energy value is the price in the given hour times the hourly reduction in that hour.
+    m[:TotalRaEnergyValue] = @expression(m, p.pwf_e * sum(p.RaEnergyPrice[p.RaEventStartTimes[mth][i] + h]*m[:dvHourlyReductionRA][mth, i, h] for mth in keys(p.RaEventStartTimes), i in 1:length(p.RaEventStartTimes[mth]), h in 0:p.RaMooHours-1))
+    m[:TotalRaValue] = @expression(m, m[:TotalRaDrValue] + m[:TotalRaEnergyValue])
 end
 
 function calculate_hour_reduction(m, p, month, event_index, hours_from_start)
@@ -811,7 +816,10 @@ function add_cost_function(m, p)
         m[:TotalGenFuelCharges] * m[:r_tax_fraction_offtaker] -
                 
         # Subtract Incentives, which are taxable
-		m[:TotalProductionIncentive] * m[:r_tax_fraction_owner]
+		m[:TotalProductionIncentive] * m[:r_tax_fraction_owner] -
+
+		#Subtract RA benefits, which are taxable
+		m[:TotalRaValue] * m[:r_tax_fraction_owner]
 	)
     #= Note: 0.9999*m[:MinChargeAdder] in Obj b/c when m[:TotalMinCharge] > (TotalEnergyCharges + m[:TotalDemandCharges] + TotalExportBenefit + m[:TotalFixedCharges])
 		it is arbitrary where the min charge ends up (eg. could be in m[:TotalDemandCharges] or m[:MinChargeAdder]).
