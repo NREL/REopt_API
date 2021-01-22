@@ -413,7 +413,7 @@ nested_input_definitions = {
           "description": "Array (length of 12) of monthly value for RA provision based on $/kW"
         },
         "ra_event_day_flags_boolean": {
-          "type": "list_of_int",
+          "type": "list_of_float", #TODO change to list_of_int when that's implemented in validators
           "min": 0,
           "max": 1,
           "description": "8760 of 1/0's flagging whether an hour is in an event day (must be same year as the load year)"

@@ -30,13 +30,15 @@
 import re
 import copy
 import logging
+import pandas as pd
+import numpy as np
 log = logging.getLogger(__name__)
 
 
 class ResourceAdequacy(object):
 
-    def __init__(self, dfm, run_id, ra_energy_pricing_us_dollars_per_kwh, ra_demand_pricing_us_dollars_per_kw,
-                 ra_event_day_flags_boolean, ra_lookback_days, load_year, **kwargs):
+    def __init__(self, dfm, run_id, load_year, ra_energy_pricing_us_dollars_per_kwh=None, ra_demand_pricing_us_dollars_per_kw=None,
+                 ra_event_day_flags_boolean=None, ra_lookback_days=None, **kwargs):
         """
         Re object for creating inputs to REopt
         :param dfm: Object, DataManager
@@ -53,6 +55,7 @@ class ResourceAdequacy(object):
         self.ra_demand_pricing = ra_demand_pricing_us_dollars_per_kw
         self.ra_event_day_flags = ra_event_day_flags_boolean
         self.ra_lookback_days = ra_lookback_days
+        self.ra_moo_hours = 4 #must offer obligation window length
         self.load_year = load_year
         self.ra_event_start_times, self.ra_lookback_periods = self.calculate_event_start_and_lookback()
 
