@@ -1467,9 +1467,9 @@ class ValidateNestedInput:
                                             self.input_dict['Scenario']['Site']['LoadProfile'].get(
                                                 'doe_reference_name'))
             if real_values.get('doe_reference_name') is not None:
-                    if type(real_values['doe_reference_name']) is not list:
-                        self.update_attribute_value(object_name_path, number, 'doe_reference_name', [real_values['doe_reference_name']])
-                        real_values['doe_reference_name'] = [real_values['doe_reference_name']]
+                if type(real_values['doe_reference_name']) is not list:
+                    self.update_attribute_value(object_name_path, number, 'doe_reference_name', [real_values['doe_reference_name']])
+                    real_values['doe_reference_name'] = [real_values['doe_reference_name']]
             if type(real_values.get('percent_share')) in [float, int]:
                 if real_values.get('percent_share') == 100:
                     real_values['percent_share'] = [100]

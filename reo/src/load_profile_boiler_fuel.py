@@ -44,11 +44,9 @@ class LoadProfileBoilerFuel(BuiltInProfile):
                 kwargs['monthly_totals_energy'] = kwargs.get("monthly_mmbtu")
                 if len(doe_reference_name)>1:
                     kwargs['monthly_totals_energy'] = None
-                # We only scale by percent share if a raw annual tonhour value has not been provided
-                
                 kwargs['annual_energy'] = None
-                # We only scale by percent share if a raw annual tonhour value has not been provided
-                if (kwargs.get("annual_mmbtu") or None) is not None:
+                # We only scale by percent share if a raw annual mmbtu value has not been provided
+                if kwargs.get("annual_mmbtu") is not None:
                     kwargs['annual_energy'] = kwargs["annual_mmbtu"]
                     percent_share = 100
                 else:
