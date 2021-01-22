@@ -74,6 +74,9 @@ class REoptArgs:
         self.annual_min_charge = 0
         self.min_monthly_charge = 0
 
+        self.chp_standby_rate_us_dollars_per_kw_per_month = 0
+        self.chp_does_not_reduce_demand_charges = 0
+
 
 class RateData:
 
@@ -160,6 +163,7 @@ class UrdbParse:
     days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
     def __init__(self, big_number, elec_tariff, techs, bau_techs):
+
         self.urdb_rate = elec_tariff.urdb_response
         self.year = elec_tariff.load_year
         self.time_steps_per_hour = elec_tariff.time_steps_per_hour
@@ -172,9 +176,12 @@ class UrdbParse:
         self.reopt_args = REoptArgs(big_number)
         self.techs = techs
         self.bau_techs = bau_techs
+        self.chp_standby_rate_us_dollars_per_kw_per_month = elec_tariff.chp_standby_rate_us_dollars_per_kw_per_month
+        self.chp_does_not_reduce_demand_charges = elec_tariff.chp_does_not_reduce_demand_charges
         self.custom_tou_energy_rates = elec_tariff.tou_energy_rates
         self.add_tou_energy_rates_to_urdb_rate = elec_tariff.add_tou_energy_rates_to_urdb_rate
         self.override_urdb_rate_with_tou_energy_rates = elec_tariff.override_urdb_rate_with_tou_energy_rates
+
         self.energy_rates_summary = []
         self.demand_rates_summary = []
         self.energy_costs = []
@@ -212,10 +219,14 @@ class UrdbParse:
 
         self.reopt_args.energy_costs, \
         self.reopt_args.grid_export_rates, \
+        self.reopt_args.chp_standby_rate_us_dollars_per_kw_per_month, \
+        self.reopt_args.chp_does_not_reduce_demand_charges, \
         = self.prepare_techs_and_loads(self.techs)
 
         self.reopt_args.energy_costs_bau, \
         self.reopt_args.grid_export_rates_bau, \
+        self.reopt_args.chp_standby_rate_us_dollars_per_kw_per_month_bau, \
+        self.reopt_args.chp_does_not_reduce_demand_charges_bau, \
         = self.prepare_techs_and_loads(self.bau_techs)
         
         return self.reopt_args
@@ -407,7 +418,11 @@ class UrdbParse:
             grid_export_rates.append(negative_wholesale_rate_costs)
             grid_export_rates.append(negative_excess_rate_costs)
 
-        return energy_costs, grid_export_rates
+        # CHP-specific parameters
+        chp_standby_rate = self.chp_standby_rate_us_dollars_per_kw_per_month
+        chp_does_not_reduce_demand_charges = self.chp_does_not_reduce_demand_charges
+        
+        return energy_costs, grid_export_rates, chp_standby_rate, chp_does_not_reduce_demand_charges
 
     def prepare_demand_periods(self, current_rate):
 
@@ -432,16 +447,16 @@ class UrdbParse:
     def prepare_demand_lookback(self, current_rate):
         """
         URDB lookback fields:
-            lookbackMonths	
+            lookbackMonths
             Type: array
-            Array of 12 booleans, true or false, indicating months in which lookbackPercent applies. 
+            Array of 12 booleans, true or false, indicating months in which lookbackPercent applies.
                 If any of these is true, lookbackRange should be zero.
-            
-            lookbackPercent	
+
+            lookbackPercent
             Type: decimal
             Lookback percentage. Applies to either lookbackMonths with value=1, or a lookbackRange.
-            
-            lookbackRange	
+
+            lookbackRange
             Type: integer
             Number of months for which lookbackPercent applies. If not 0, lookbackMonths values should all be 0.
         """
@@ -578,7 +593,7 @@ class UrdbParse:
                         tou_adj = float(tier.get('adj') or 0)
 
                         demand_rates.append(tou_rate + tou_adj)
-                        
+
                         for step in time_steps:
                             self.demand_rates_summary[step] += tou_rate + tou_adj
 
@@ -590,19 +605,19 @@ class UrdbParse:
         if not isinstance(current_rate.fixedchargefirstmeter, list):      #URDB v7
             if current_rate.fixedchargeunits == '$/month': # first try $/month, then check if $/day exists, as of 1/28/2020 there were only $/day and $month entries in the URDB
                 self.reopt_args.fixed_monthly_charge = current_rate.fixedchargefirstmeter 
-            if current_rate.fixedchargeunits == '$/day': 
+            if current_rate.fixedchargeunits == '$/day':
                 self.reopt_args.fixed_monthly_charge = current_rate.fixedchargefirstmeter*30.4375 # scalar intended to approximate annual charges over 12 month period, derived from 365.25/12
         else:                                                           #URDB v3, preserve backwards compatability
-            if not isinstance(current_rate.fixedmonthlycharge, list):     
+            if not isinstance(current_rate.fixedmonthlycharge, list):
                 self.reopt_args.fixed_monthly_charge = current_rate.fixedmonthlycharge
 
         if current_rate.mincharge  != []:                               #URDB v7
-            if current_rate.minchargeunits == '$/month': 
+            if current_rate.minchargeunits == '$/month':
                 self.reopt_args.min_monthly_charge = current_rate.mincharge # first try $/month, then check if $/day or $/year exists, as of 1/28/2020 these were the only unit types in the urdb
-            if current_rate.minchargeunits == '$/day': 
+            if current_rate.minchargeunits == '$/day':
                 self.reopt_args.fixed_monthly_charge = current_rate.mincharge*30.4375 # scalar intended to approximate annual charges over 12 month period, derived from 365.25/12
-            if current_rate.minchargeunits == '$/year': 
-                self.reopt_args.annual_min_charge = current_rate.mincharge 
+            if current_rate.minchargeunits == '$/year':
+                self.reopt_args.annual_min_charge = current_rate.mincharge
         else:                                                           #URDB v3, preserve backwards compatability
             if not isinstance(current_rate.annualmincharge, list):
                 self.reopt_args.annual_min_charge = current_rate.annualmincharge
@@ -624,11 +639,11 @@ class UrdbParse:
         return range(hours[month], hours[month + 1])
 
     def get_tou_steps(self, current_rate, month, period):
-        
+
         step_array = []
         start_step = 1
         start_hour = 1
-        
+
         demand_ts_per_hour = int(len(current_rate.demandweekdayschedule[0] or 0)/24)
         simulation_time_steps_per_rate_time_step = int(self.time_steps_per_hour / demand_ts_per_hour)
 
@@ -638,7 +653,7 @@ class UrdbParse:
 
         hour_of_year = start_hour
         step_of_year = start_step
-        
+
         for day in range(0, self.days_in_month[month]):
             if calendar.weekday(self.year, month + 1, day + 1) < 5:
                 is_weekday = True
@@ -657,4 +672,3 @@ class UrdbParse:
                     demand_ts += 1
                 hour_of_year += 1
         return step_array
-        

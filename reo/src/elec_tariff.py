@@ -40,7 +40,7 @@ class ElecTariff(object):
                  blended_monthly_rates_us_dollars_per_kwh=None, blended_monthly_demand_charges_us_dollars_per_kw=None,
                  urdb_response=None, add_blended_rates_to_urdb_rate=None, blended_annual_rates_us_dollars_per_kwh=None,
                  blended_annual_demand_charges_us_dollars_per_kw=None, add_tou_energy_rates_to_urdb_rate=None,
-                 tou_energy_rates_us_dollars_per_kwh=None, emissions_factor_series_lb_CO2_per_kwh=None,
+                 tou_energy_rates_us_dollars_per_kwh=None, emissions_factor_series_lb_CO2_per_kwh=None, chp_allowed_to_export=None,
                   **kwargs):
         """
         Electricity Tariff object for creating inputs to REopt
@@ -101,6 +101,15 @@ class ElecTariff(object):
         self.net_metering_limit_kw = net_metering_limit_kw
         self.interconnection_limit_kw = interconnection_limit_kw
         self.emissions_factor_series_lb_CO2_per_kwh = emissions_factor_series_lb_CO2_per_kwh
+
+        # Standby charges for CHP
+        self.chp_standby_rate_us_dollars_per_kw_per_month = kwargs['chp_standby_rate_us_dollars_per_kw_per_month']
+        if kwargs.get('chp_does_not_reduce_demand_charges') in [None, False]:
+            self.chp_does_not_reduce_demand_charges = 0
+        else:
+            self.chp_does_not_reduce_demand_charges = 1
+        
+        self.chp_allowed_to_export = chp_allowed_to_export
 
         dfm.add_elec_tariff(self)
 

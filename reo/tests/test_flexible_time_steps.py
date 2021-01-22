@@ -69,7 +69,6 @@ fts_post_2 = {"Scenario":
                             "pbi_us_dollars_per_kwh": 0.0,
                             "module_type": 0,
                             "array_type": 0,
-                            "existing_kw": 0.0,
                             "om_cost_us_dollars_per_kw": 16.0,
                             "utility_rebate_us_dollars_per_kw": 0.0,
                             "min_kw": 0.0,
