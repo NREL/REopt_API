@@ -195,6 +195,8 @@ Base.@kwdef struct Parameter
      RaLookbackPeriods::Dict # Dict of lists, with each nested list containing lists of lookback hours for the associated timestep in RaEventStartTimes
      RaMooHours:: Int64
      RaLookbackDays:: Int64
+     RaMonthlyPrice::Dict
+     RaEnergyPrice::Array{Float64, 1}
 end
 
 
