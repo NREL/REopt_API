@@ -235,6 +235,11 @@ nested_output_definitions = {
                   "description": "Net replacement costs for all technologies, in future value, excluding incentives.",
                   "units": "$"
                 },
+                "om_and_replacement_present_cost_after_tax_us_dollars": {
+                  "type": "float",
+                  "description": "Net O&M and replacement costs in present value, after-tax.",
+                  "units": "$"
+                },
                 "total_om_costs_us_dollars": {
                   "type": "float",
                   "description": "Total operations and maintenance cost over analysis period.",
