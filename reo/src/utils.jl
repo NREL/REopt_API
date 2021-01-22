@@ -190,9 +190,11 @@ Base.@kwdef struct Parameter
      MaxSizesLocation::Array{Float64, 1}
      Location::UnitRange
 
-     # RA Additions
-     RaEventStartTimes::Dict{Symbol, <:Array{}} # Dict of lists, with each nested list containing the event start hours for that monthly
-     RaLookbackPeriods::Dict{Symbol, <:Array{}} # Dict of lists, with each nested list containing lists of lookback hours for the associated timestep in RaEventStartTimes
+    # RA Additions
+     RaEventStartTimes::Dict # Dict of lists, with each nested list containing the event start hours for that monthly
+     RaLookbackPeriods::Dict # Dict of lists, with each nested list containing lists of lookback hours for the associated timestep in RaEventStartTimes
+     RaMooHours:: Int64
+     RaLookbackDays:: Int64
 end
 
 
@@ -304,7 +306,7 @@ function Parameter(d::Dict)
 
     d = string_dictkeys_tosymbols(d)
     d = filter_dict_to_match_struct_field_names(d, Parameter)
-
+    
     param = Parameter(;d...)
 end
 

@@ -36,11 +36,11 @@ function add_continuous_variables(m, p)
 	if !isempty(p.ExportTiers)
 		@variable(m, dvProductionToGrid[p.Tech, p.ExportTiers, p.TimeStep] >= 0)  # X^{ptg}_{tuh}: Exports from electrical production to the grid by technology t in demand tier u during time step h [kW]   (NEW)
 	end
-	if !isempty(p.RaEventStartTimes)
+	if p.RaLookbackDays != 0
 		event_index_by_month = [1:length(event_starts) for event_starts in p.RaEventStartTimes]
 		#Set RA variables 
-		@variable(m,dvHourlyReductionRA[mth in 1:length(p.RaEventStartTimes), i in event_index_by_month[mth], h in 0:(p.MOOhoursperday-1)] >= 0)
-		@variable(m,dvMonthlyRA[1:length(p.RaEventStartTimes)] >= 0)
+		@variable(m,dvHourlyReductionRA[mth in keys(p.RaEventStartTimes), i in event_index_by_month[mth], h in 0:3] >= 0)
+		@variable(m,dvMonthlyRA[keys(p.RaEventStartTimes)] >= 0)
 	end
 end
 
@@ -755,32 +755,24 @@ end
 #Function to add RA value calculations
 function add_resource_adequacy(m, p)
     #hour load reductiosn are indexed by month, event start, and event hour
-
     #Setup set indicies
-    hours_from_event_start = 0:(p.MOOhoursperday-1)
     event_index_by_month = [1:length(event_starts) for event_starts in p.RaEventStartTimes]
 
     #Constraints are hourly reductions are equal to the baseline load - event hour load
-    @constraint(m, [mth in keys(p.RaEventStartTimes), i in event_index_by_month[mth], h in hours_from_event_start], m[:dvHourlyReductionRA][mth, i, h] == calculate_hour_reduction(mth, i, h))
+    @constraint(m, [mth in keys(p.RaEventStartTimes), i in event_index_by_month[mth], h in 0:p.RaMooHours-1], m[:dvHourlyReductionRA][mth, i, h] == calculate_hour_reduction(mth, i, h))
     #monthly RA is constrained to be the minimum of day average reductions
     @constraint(m, [mth in keys(p.RaEventStartTimes), i in event_index_by_month[mth]], m[:dvMonthlyRA][mth] <= calculate_average_daily_reduction(mth, i))
 end
 
-#Helper functions for add_resource_adequacy
-function grid_purchases(ts)
-    #sum across price tiers
-    return sum(m[:dvGridPurchase][u, ts] for u in p.PricingTier)
-end
-
-function calculate_hour_reduction(month, event_index, hours_from_start)
-    baseline_loads = [grid_purchases(lbst + hours_from_start) for lbst in p.RaLookbackPeriods[month][event_index]]
+function calculate_hour_reduction(m, p, month, event_index, hours_from_start)
+    baseline_loads = sum(m[:dvGridPurchase][u, lbts + hours_from_start] for u in p.PricingTier, lbts in p.RaLookbackPeriods[month][event_index])/p.RaLookbackDays
     #Mean of baseline loads minus event load
-    return (sum(baseline_loads)/length(baseline_loads)) - grid_purchases(p.RaEventStartTimes[month][event_index] + hours_from_start)
+    return baseline_loads - sum(m[:dvGridPurchase][u, p.RaEventStartTimes[month][event_index] + hours_from_start] for u in p.PricingTier)
 end
 
-function calculate_average_daily_reduction(month, event_index)
+function calculate_average_daily_reduction(m, p, month, event_index)
     #Take average across event hours
-    return sum([m[:dvHourlyReductionRA][month, event_index, h] for h in 0:(p.MOOhoursperday-1)])/p.MOOhoursperday
+    return sum([m[:dvHourlyReductionRA][month, event_index, h] for h in 0:p.RaMooHours-1])/p.RaMooHours
 end
 
 #Saved old RA code just in case
@@ -798,7 +790,7 @@ end
 # 	end
 # 	# Average capacity over hours in day
 # 	for day in p.days
-# 		m[:DailyRA][day] = @expression(m, sum((m[:dvLookbackBaseline][ts] - sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier)), for ts in DayTimeSteps[day] if ts in p.MustOfferHours)/p.MOOhoursperday)
+# 		m[:DailyRA][day] = @expression(m, sum((m[:dvLookbackBaseline][ts] - sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier)), for ts in DayTimeSteps[day] if ts in p.MustOfferHours)/4)
 # 	end
 # 	# Then take min of days in month
 # 	@constraint(m, [mth in p.Month, day in DaysInMonth[mth]],
@@ -873,8 +865,6 @@ end
 function reopt(reo_model, model_inputs::Dict)
 
 	t_start = time()
-    @info typeof(model_inputs["RaEventStartTimes"])
-	@info typeof(model_inputs["RaLookbackPeriods"])
 	p = Parameter(model_inputs)
 	t = time() - t_start
 
@@ -968,7 +958,7 @@ function reopt_run(m, p::Parameter)
 	add_cost_expressions(m, p)
 	add_export_expressions(m, p)
 	add_util_fixed_and_min_charges(m, p)
-	if !isempty(p.RaEventStartTimes)
+	if p.RaLookbackDays != 0
 		add_resource_adequacy(m, p)
 	end
 	add_cost_function(m, p)

@@ -991,10 +991,15 @@ class DataManager:
         if self.resource_adequacy is not None:
             ra_event_start_times = self.resource_adequacy.ra_event_start_times
             ra_lookback_periods = self.resource_adequacy.ra_lookback_periods
+            ra_moo_hours = self.resource_adequacy.ra_moo_hours
+            ra_lookback_days = self.resource_adequacy.ra_lookback_days
+        
         else:
             ra_event_start_times = {1:[]}
             ra_lookback_periods = {1:[]}
-
+            ra_moo_hours = 0
+            ra_lookback_days = 0
+            
         self.reopt_inputs = {
             'Tech': reopt_techs,
             'TechToLocation': tech_to_location,
@@ -1091,7 +1096,9 @@ class DataManager:
             'TechsByNMILRegime': TechsByNMILRegime,
             'TechsCannotCurtail': techs_cannot_curtail,
             'RaEventStartTimes': ra_event_start_times,
-            'RaLookbackPeriods': ra_lookback_periods
+            'RaLookbackPeriods': ra_lookback_periods,
+            'RaMooHours': ra_moo_hours,
+            'RaLookbackDays': ra_lookback_days
             }
         ## Uncomment the following and run a scenario to get an updated modelinputs.json for creating Julia system image
         # import json
@@ -1191,5 +1198,7 @@ class DataManager:
             'TechsByNMILRegime': TechsByNMILRegime_bau,
             'TechsCannotCurtail': techs_cannot_curtail_bau,
             'RaEventStartTimes': {1:[]},
-            'RaLookbackPeriods': {1:[]}
+            'RaLookbackPeriods': {1:[]},
+            'RaMooHours': 0,
+            'RaLookbackDays': 0
         }
