@@ -37,9 +37,9 @@ function add_continuous_variables(m, p)
 		@variable(m, dvProductionToGrid[p.Tech, p.ExportTiers, p.TimeStep] >= 0)  # X^{ptg}_{tuh}: Exports from electrical production to the grid by technology t in demand tier u during time step h [kW]   (NEW)
 	end
 	if p.RaLookbackDays != 0
-		event_index_by_month = [1:length(event_starts) for event_starts in p.RaEventStartTimes]
+		#event_index_by_month = [1:length(event_starts) for event_starts in p.RaEventStartTimes]
 		#Set RA variables 
-		@variable(m,dvHourlyReductionRA[mth in keys(p.RaEventStartTimes), i in event_index_by_month[mth], h in 0:3] >= 0)
+		@variable(m,dvHourlyReductionRA[mth in keys(p.RaEventStartTimes), i in 1:length(p.RaEventStartTimes[mth]), h in 0:p.RaMooHours-1] >= 0)
 		@variable(m,dvMonthlyRA[keys(p.RaEventStartTimes)] >= 0)
 	end
 end
@@ -756,12 +756,12 @@ end
 function add_resource_adequacy(m, p)
     #hour load reductiosn are indexed by month, event start, and event hour
     #Setup set indicies
-    event_index_by_month = [1:length(event_starts) for event_starts in p.RaEventStartTimes]
+    #event_index_by_month = [1:length(event_starts) for event_starts in p.RaEventStartTimes]
 
     #Constraints are hourly reductions are equal to the baseline load - event hour load
-    @constraint(m, [mth in keys(p.RaEventStartTimes), i in event_index_by_month[mth], h in 0:p.RaMooHours-1], m[:dvHourlyReductionRA][mth, i, h] == calculate_hour_reduction(mth, i, h))
+    @constraint(m, [mth in keys(p.RaEventStartTimes), i in 1:length(p.RaEventStartTimes[mth]), h in 0:p.RaMooHours-1], m[:dvHourlyReductionRA][mth, i, h] == calculate_hour_reduction(m, p, mth, i, h))
     #monthly RA is constrained to be the minimum of day average reductions
-    @constraint(m, [mth in keys(p.RaEventStartTimes), i in event_index_by_month[mth]], m[:dvMonthlyRA][mth] <= calculate_average_daily_reduction(mth, i))
+    @constraint(m, [mth in keys(p.RaEventStartTimes), i in 1:length(p.RaEventStartTimes[mth])], m[:dvMonthlyRA][mth] <= calculate_average_daily_reduction(m, p, mth, i))
 end
 
 function calculate_hour_reduction(m, p, month, event_index, hours_from_start)
