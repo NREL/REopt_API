@@ -31,6 +31,7 @@ Classify the change according to the following categories:
 ## develop
 ### Major Updates
 ### Minor Updates
+- `reo`: New output **om_and_replacement_present_cost_after_tax_us_dollars**
 - `reo`, `*.jl`: New load **LoadProfileBoilerFuel**
     - Heating load of the site, as defined by boiler fuel consumption
 - `reo`, `*.jl`: New Tech **Boiler**
