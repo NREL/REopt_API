@@ -39,8 +39,8 @@ function add_continuous_variables(m, p)
 	if p.RaLookbackDays != 0
 		#event_index_by_month = [1:length(event_starts) for event_starts in p.RaEventStartTimes]
 		#Set RA variables 
-		@variable(m,dvHourlyReductionRA[mth in keys(p.RaEventStartTimes), i in 1:length(p.RaEventStartTimes[mth]), h in 0:p.RaMooHours-1] >= 0)
-		@variable(m,dvMonthlyRA[keys(p.RaEventStartTimes)] >= 0)
+		@variable(m,dvHourlyReductionRA[mth in keys(p.RaEventStartTimes), i in 1:length(p.RaEventStartTimes[mth]), h in 0:p.RaMooHours-1])
+		@variable(m,dvMonthlyRA[keys(p.RaEventStartTimes)])
 	end
 end
 
@@ -750,55 +750,28 @@ function add_tou_demand_charge_constraints(m, p)
 
 end
 
-
-#____________________________________________________________________________________________________________
 #Function to add RA value calculations
 function add_resource_adequacy(m, p)
-    #hour load reductiosn are indexed by month, event start, and event hour
-    #Setup set indicies
-    #event_index_by_month = [1:length(event_starts) for event_starts in p.RaEventStartTimes]
-
+    #hour load reductiosn are indexed by month, event start, and event hourly
     #Constraints are hourly reductions are equal to the baseline load - event hour load
-    @constraint(m, [mth in keys(p.RaEventStartTimes), i in 1:length(p.RaEventStartTimes[mth]), h in 0:p.RaMooHours-1], m[:dvHourlyReductionRA][mth, i, h] == calculate_hour_reduction(m, p, mth, i, h))
+    @constraint(m, [mth in keys(p.RaEventStartTimes), i in 1:length(p.RaEventStartTimes[mth]), h in 0:p.RaMooHours-1], 
+		m[:dvHourlyReductionRA][mth, i, h] <= calculate_hour_reduction(m, p, mth, i, h))
     #monthly RA is constrained to be the minimum of day average reductions
-    @constraint(m, [mth in keys(p.RaEventStartTimes), i in 1:length(p.RaEventStartTimes[mth])], m[:dvMonthlyRA][mth] <= calculate_average_daily_reduction(m, p, mth, i))
+    @constraint(m, [mth in keys(p.RaEventStartTimes), i in 1:length(p.RaEventStartTimes[mth])], 
+		m[:dvMonthlyRA][mth] <= calculate_average_daily_reduction(m, p, mth, i))
 end
 
 function calculate_hour_reduction(m, p, month, event_index, hours_from_start)
-    baseline_loads = sum(m[:dvGridPurchase][u, lbts + hours_from_start] for u in p.PricingTier, lbts in p.RaLookbackPeriods[month][event_index])/p.RaLookbackDays
-    #Mean of baseline loads minus event load
-    return baseline_loads - sum(m[:dvGridPurchase][u, p.RaEventStartTimes[month][event_index] + hours_from_start] for u in p.PricingTier)
+	lbst_list = convert(Array{Int64, 1}, p.RaLookbackPeriods[month][event_index,:])
+	baseline_loads = sum(m[:dvGridPurchase][u, lbts + hours_from_start] for u in p.PricingTier, lbts in lbst_list)/p.RaLookbackDays
+	#baseline loads minus event load
+    return (baseline_loads - sum(m[:dvGridPurchase][u, p.RaEventStartTimes[month][event_index] + hours_from_start] for u in p.PricingTier))
 end
 
 function calculate_average_daily_reduction(m, p, month, event_index)
     #Take average across event hours
     return sum([m[:dvHourlyReductionRA][month, event_index, h] for h in 0:p.RaMooHours-1])/p.RaMooHours
 end
-
-#Saved old RA code just in case
-# function add_resource_adequacy(m, p)
-# 	##New RA Constraint: Lookback baseline equal to average of 10hrs in lookback set
-# 	for r in p.Ratchets
-# 		for ts in p.TimeStepRatchets[r]
-# 			if ts in p.MustOfferHours
-# 				@constraint(m,
-# 					m[:dvLookbackBaseline][ts] >= 
-# 					(sum(m[:dvGridPurchase][u, lbts] for u in p.PricingTier, lbts in p.LookBackSets[ts]))/p.LookBackHours
-# 				)
-# 			end
-# 		end
-# 	end
-# 	# Average capacity over hours in day
-# 	for day in p.days
-# 		m[:DailyRA][day] = @expression(m, sum((m[:dvLookbackBaseline][ts] - sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier)), for ts in DayTimeSteps[day] if ts in p.MustOfferHours)/4)
-# 	end
-# 	# Then take min of days in month
-# 	@constraint(m, [mth in p.Month, day in DaysInMonth[mth]],
-# 		m[:dvMonthlyRA][mth] <= m[:DailyRA][day] 
-# 	)
-# end
-#____________________________________________________________________________________________________________
-
 
 function add_util_fixed_and_min_charges(m, p)
     m[:TotalFixedCharges] = p.pwf_e * p.FixedMonthlyCharge * 12
@@ -818,8 +791,6 @@ function add_util_fixed_and_min_charges(m, p)
 		@constraint(m, MinChargeAddCon, m[:MinChargeAdder] == 0)
 	end
 end
-
-
 
 
 function add_cost_function(m, p)
@@ -958,6 +929,7 @@ function reopt_run(m, p::Parameter)
 	add_cost_expressions(m, p)
 	add_export_expressions(m, p)
 	add_util_fixed_and_min_charges(m, p)
+
 	if p.RaLookbackDays != 0
 		add_resource_adequacy(m, p)
 	end
@@ -973,7 +945,7 @@ function reopt_run(m, p::Parameter)
 	t_start = time()
 
 	optimize!(m)
-
+	
 	results["julia_reopt_optimize_seconds"] = time() - t_start
 	t_start = time()
 
@@ -981,6 +953,8 @@ function reopt_run(m, p::Parameter)
 		results["status"] = "timed-out"
     elseif termination_status(m) == MOI.OPTIMAL
         results["status"] = "optimal"
+	elseif termination_status(m) == MOI.INFEASIBLE
+		results["status"] = "infeasible"
     else
 		results["status"] = "not optimal"
     end
@@ -996,9 +970,10 @@ function reopt_run(m, p::Parameter)
 	end
 
 	add_yearone_expressions(m, p)
-
+	
 	results = reopt_results(m, p, results)
 	results["julia_reopt_postprocess_seconds"] = time() - t_start
+	
 	return results
 end
 
