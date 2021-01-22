@@ -45,12 +45,17 @@ logging.disable(logging.CRITICAL)
 
 event_day_flags = [0.0]*8760
 event_day_flags[5000] = 1.0
+event_day_flags[5050] = 1.0
 
 ra_post = {"Scenario": {"Site": {
                 "longitude": -105.2348,
                 "latitude": 39.91065,
                 "PV": {
                     "max_kw": 1000
+                },
+                "Storage": {
+                    "max_kwh": 1000000.0,
+                    "max_kw": 10000.0
                 },
                 "LoadProfile": {
                     "doe_reference_name": "MidriseApartment",
