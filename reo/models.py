@@ -182,6 +182,7 @@ class FinancialModel(models.Model):
     net_om_us_dollars_bau = models.FloatField(null=True, blank=True)
     initial_capital_costs = models.FloatField(null=True, blank=True)
     replacement_costs = models.FloatField(null=True, blank=True)
+    om_and_replacement_present_cost_after_tax_us_dollars = models.FloatField(null=True, blank=True)
     initial_capital_costs_after_incentives = models.FloatField(null=True, blank=True)
     total_om_costs_us_dollars = models.FloatField(null=True, blank=True)
     year_one_om_costs_us_dollars = models.FloatField(null=True, blank=True)
