@@ -572,7 +572,7 @@ def chp_defaults(request):
         hw_or_steam_index = hw_or_steam_index_dict[hw_or_steam]
 
         # Calculate heuristic CHP size based on average thermal load, using the default size class efficiency data
-        avg_boiler_fuel_load_under_recip_over_ct = {"hot_water": 27.0, "steam": 10.0}  # [MMBtu/hr] Based on external calcs for size versus production by prime_mover type
+        avg_boiler_fuel_load_under_recip_over_ct = {"hot_water": 27.0, "steam": 7.0}  # [MMBtu/hr] Based on external calcs for size versus production by prime_mover type
         if avg_boiler_fuel_load_mmbtu_per_hr is not None:
             avg_boiler_fuel_load_mmbtu_per_hr = float(avg_boiler_fuel_load_mmbtu_per_hr)
             if prime_mover is None:
@@ -580,8 +580,12 @@ def chp_defaults(request):
                     prime_mover = "recip_engine"  # Must make an initial guess at prime_mover to use those thermal and electric efficiency params to convert to size
                 else:
                     prime_mover = "combustion_turbine"
-            therm_effic = prime_mover_defaults_all[prime_mover]['thermal_effic_full_load'][hw_or_steam_index][CHP.default_chp_size_class[prime_mover]]
-            elec_effic = prime_mover_defaults_all[prime_mover]['elec_effic_full_load'][CHP.default_chp_size_class[prime_mover]]
+            if size_class is None:
+                size_class_calc = CHP.default_chp_size_class[prime_mover]
+            else:
+                size_class_calc = int(size_class)
+            therm_effic = prime_mover_defaults_all[prime_mover]['thermal_effic_full_load'][hw_or_steam_index][size_class_calc]
+            elec_effic = prime_mover_defaults_all[prime_mover]['elec_effic_full_load'][size_class_calc]
             boiler_effic = Boiler.boiler_efficiency_defaults[hw_or_steam]
             avg_heating_thermal_load_mmbtu_per_hr = avg_boiler_fuel_load_mmbtu_per_hr * boiler_effic
             chp_fuel_rate_mmbtu_per_hr = avg_heating_thermal_load_mmbtu_per_hr / therm_effic
