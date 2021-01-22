@@ -38,7 +38,7 @@ from reo.exceptions import REoptError, UnexpectedError
 from reo.models import ModelManager, PVModel, FinancialModel, WindModel, AbsorptionChillerModel
 from reo.src.profiler import Profiler
 from reo.src.emissions_calculator import EmissionsCalculator
-from reo.utilities import annuity
+from reo.utilities import annuity, setup_capital_cost_incentive
 from reo.nested_inputs import macrs_five_year, macrs_seven_year
 from reo.utilities import TONHOUR_TO_KWHT
 log = logging.getLogger(__name__)
@@ -81,7 +81,6 @@ def calculate_proforma_metrics(data):
         :param data: dict a complete response from the REopt API for a successfully completed job
         :return: float, the simple payback of the system, if the system recuperates its costs
         """
-
         #Sort out the inputs and outputs by model so that all needed data is in consolidated locations
         time_steps_per_hour = data['inputs']['Scenario']['time_steps_per_hour']
         electric_tariff = copy.deepcopy(data['outputs']['Scenario']['Site']['ElectricTariff'])
@@ -695,13 +694,21 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             self.nested_outputs = self.setup_nested()
 
         @property
-        def replacement_costs(self):
-            replacement_costs = 0
-            replacement_costs += self.inputs["Storage"]["replace_cost_us_dollars_per_kw"] * \
+        def replacement_costs_future_and_present(self):
+            future_cost_inverter = self.inputs["Storage"]["replace_cost_us_dollars_per_kw"] * \
                                  self.nested_outputs["Scenario"]["Site"]["Storage"]["size_kw"]
-            replacement_costs += self.inputs["Storage"]["replace_cost_us_dollars_per_kwh"] * \
+            future_cost_storage = self.inputs["Storage"]["replace_cost_us_dollars_per_kwh"] * \
                                  self.nested_outputs["Scenario"]["Site"]["Storage"]["size_kwh"]
-            return round(replacement_costs, 2)
+            future_cost = future_cost_inverter + future_cost_storage
+
+            tax_rate = self.inputs["Financial"]["owner_tax_pct"]
+            discount_rate = self.inputs["Financial"]["owner_discount_pct"]
+            present_cost = 0
+            present_cost += future_cost_inverter * (1 - tax_rate) / ((1 + discount_rate) **
+                                                                    self.inputs["Storage"]["inverter_replacement_year"])
+            present_cost += future_cost_storage * (1 - tax_rate) / ((1 + discount_rate) **
+                                                                    self.inputs["Storage"]["battery_replacement_year"])
+            return round(future_cost, 2), round(present_cost, 2)
 
         @property
         def upfront_capex(self):
@@ -1256,8 +1263,11 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         self.nested_outputs["Scenario"]["Site"][name]["year_one_cold_tes_soc_series_pct"] = None
 
             # outputs that depend on multiple object results:
+            future_replacement_cost, present_replacement_cost = self.replacement_costs_future_and_present
             self.nested_outputs["Scenario"]["Site"]["Financial"]["initial_capital_costs"] = self.upfront_capex
-            self.nested_outputs["Scenario"]["Site"]["Financial"]["replacement_costs"] = self.replacement_costs
+            self.nested_outputs["Scenario"]["Site"]["Financial"]["replacement_costs"] = future_replacement_cost
+            self.nested_outputs["Scenario"]["Site"]["Financial"]["om_and_replacement_present_cost_after_tax_us_dollars"] = \
+                present_replacement_cost + self.results_dict.get("total_om_costs_after_tax", 0)
             self.nested_outputs["Scenario"]["Site"]["Financial"]["initial_capital_costs_after_incentives"] = \
                 self.upfront_capex_after_incentives
 
