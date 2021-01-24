@@ -1669,7 +1669,7 @@ nested_input_definitions = {
           "description": "Maximum TES volume (energy) size constraint for optimization. Set to zero to disable storage"
         },
         "internal_efficiency_pct": {
-          "type": "float", "min": 0.0, "max": 1.0, "default": 1.00,
+          "type": "float", "min": 0.0, "max": 1.0, "default": 0.999999,
           "description": "Thermal losses due to mixing from thermal power entering or leaving tank"
         },
         "soc_min_pct": {
@@ -1717,7 +1717,7 @@ nested_input_definitions = {
           "description": "Maximum TES volume (energy) size constraint for optimization. Set to zero to disable storage"
         },
         "internal_efficiency_pct": {
-          "type": "float", "min": 0.0, "max": 1.0, "default": 1.00,
+          "type": "float", "min": 0.0, "max": 1.0, "default": 0.999999,
           "description": "Thermal losses due to mixing from thermal power entering or leaving tank"
         },
         "soc_min_pct": {
