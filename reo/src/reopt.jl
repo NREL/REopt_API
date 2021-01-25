@@ -794,14 +794,14 @@ function add_re_calcs_and_constraints(m,p)
 		m[:AnnualREkWh] = @expression(m,
 			sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] for t in p.RETechs, ts in p.TimeStep) #total RE generation
 			- sum(m[:dvProductionToStorage][b,t,ts]*(1-p.ChargeEfficiency[t,b]*p.DischargeEfficiency[b]) for t in p.RETechs, b in p.ElecStorage, ts in p.TimeStep) #minus battery efficiency losses.
-	 		- sum(m[:dvProductionToGrid][t,u,ts] for t in p.RETechs, u in p.SalesTiersByTech[t], ts in p.TimeStep if u in p.CurtailmentTiers)) # minus curtailment. confirm CHP curtailment. 
+			- sum(m[:dvProductionToCurtail][t,ts] for t in p.RETechs, ts in p.TimeStep)) # minus curtailment. confirm CHP curtailment. 
 	elseif p.REAccountingMethod == 0 # no RE "credit" for exported RE
 	 	m[:AnnualREkWh] = @expression(m, 
 	 		sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] for t in p.RETechs, ts in p.TimeStep) #total RE generation
 	 		- sum(m[:dvProductionToStorage][b,t,ts]*(1-p.ChargeEfficiency[t,b]*p.DischargeEfficiency[b]) for t in p.RETechs, b in p.ElecStorage, ts in p.TimeStep) #minus battery efficiency losses.
-	 		- sum(m[:dvProductionToGrid][t,u,ts] for t in p.RETechs, u in p.SalesTiersByTech[t], ts in p.TimeStep if u in p.CurtailmentTiers) # minus curtailment. confirm CHP curtailment. 
-	 		- sum(m[:dvProductionToGrid][t,u,ts] for t in p.RETechs, u in p.SalesTiersByTech[t], ts in p.TimeStep if !(u in p.CurtailmentTiers))) # minus exported RE. 
-	 	# if battery ends up being able to discharge to grid, need to make sure only RE that is being consumed onsite are counted so battery doesn't become a back door for RE to grid. 
+			- sum(m[:dvProductionToCurtail][t,ts] for t in p.RETechs, ts in p.TimeStep) # minus curtailment. confirm CHP curtailment.  
+			- sum(m[:dvProductionToGrid][t,u,ts] for t in p.RETechs, u in p.ExportTiers, ts in p.TimeStep)) # minus exported RE. 
+		# if battery ends up being able to discharge to grid, need to make sure only RE that is being consumed onsite are counted so battery doesn't become a back door for RE to grid. 
 	end
 	## Annual renewable electricity targets
 	if !isnothing(p.MinAnnualPercentRE)
@@ -846,7 +846,7 @@ function calc_yr1_nonscope_emissions(m,p; tech_array=p.ElectricTechs)
 	# Non-Scope potential "credits" for additional displaced emissions (energy exports, become Scope 2 emissions for another organization)
 	yr1_nonscope_emissions_lbsCO2e = @expression(m, 
 		-1*sum(m[:dvProductionToGrid][t,u,ts]  * (p.GridEmissionsFactor[ts] - p.TechEmissionsFactors[t]) 
-		for t in tech_array, ts in p.TimeStep, u in p.SalesTiersByTech[t] if !(u in p.CurtailmentTiers)))
+		for t in tech_array, ts in p.TimeStep, u in p.ExportTiers))
 		# if battery ends up being able to discharge to grid, need to incorporate here- might require complex tracking of what's charging battery  
 		# when CHP is added, need to incorporate exported steam/heat here too (if they can export), and separate out elec export not just p.ElectricTechs.
 	return yr1_nonscope_emissions_lbsCO2e
