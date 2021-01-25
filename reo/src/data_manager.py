@@ -81,6 +81,7 @@ class DataManager:
         self.run_id = run_id
         self.user_id = user_id
         self.n_timesteps = n_timesteps
+        self.timestep_scaling = 8760.0 / self.n_timesteps
         self.pwf_e = 0  # used in results.py -> outage_costs.py to escalate & discount avoided outage costs
 
     def add_load(self, load):
@@ -763,7 +764,7 @@ class DataManager:
         total_emissions = 0 
         
         ## Grid emissions - bau load list is non-net so must remove exising PV to get to the load served by the grid
-        grid_to_load = np.array(self.load.bau_load_list) 
+        grid_to_load_kw = np.array(self.load.bau_load_list) 
 
         years = self.site.financial.analysis_years
         for pv in self.pvs:
@@ -776,17 +777,20 @@ class DataManager:
             multiplying the pv.prod_factor by the levelization_factor we are modeling the average pv production.
             """
             levelization_factor = round(degradation_factor(years, pv.degradation_pct), 5)
-            grid_to_load -= np.array([pv.existing_kw * x * levelization_factor for x in pv.prod_factor])
+            grid_to_load_kw -= np.array([pv.existing_kw * x * levelization_factor for x in pv.prod_factor])
         
-        #Ensure that existing PV cannot export during an outage, but can 
+        #Ensure that existing PV cannot export/get emissions reductions credits during an outage 
         for i in range((self.load.outage_start_time_step or 1) -1, (self.load.outage_end_time_step or 1) -1):
-            if grid_to_load[i] < 0:
-                grid_to_load[i] = 0
+            if grid_to_load_kw[i] < 0:
+                grid_to_load_kw[i] = 0
 
+        #If no net emissions accounting, no credit for RE grid exports:
         if self.site.emissions_reduction_accounting_method == 0:
-            grid_to_load = np.array([i if i > 0 else 0 for i in grid_to_load])
+            grid_to_load_kw = np.array([i if i > 0 else 0 for i in grid_to_load_kw])
 
-        grid_emissions = sum(np.array(self.elec_tariff.emissions_factor_series_lb_CO2_per_kwh) * grid_to_load)
+        # Might need to add additional logic to match reopt.jl curtailment approach
+
+        grid_emissions = self.timestep_scaling*sum(np.array(self.elec_tariff.emissions_factor_series_lb_CO2_per_kwh) * grid_to_load_kw)
         total_emissions += grid_emissions
 
         ## Generator emissions
@@ -985,29 +989,6 @@ class DataManager:
         self.year_one_energy_cost_series_us_dollars_per_kwh = parser.energy_rates_summary
         self.year_one_demand_cost_series_us_dollars_per_kw = parser.demand_rates_summary
 
-        '''
-        if self.site.renewable_generation_min_pct is None:
-            renewable_generation_min_pct = []
-        else:
-            renewable_generation_min_pct = [self.site.renewable_generation_min_pct]
-        if self.site.renewable_generation_max_pct is None:
-            renewable_generation_max_pct = []
-        else:
-            renewable_generation_max_pct = [self.site.renewable_generation_max_pct]
-        if self.site.emissions_reduction_min_pct is None:
-            emissions_reduction_min_pct = []
-        else:
-            emissions_reduction_min_pct = [self.site.emissions_reduction_min_pct]
-        if self.site.emissions_reduction_max_pct is None:
-            emissions_reduction_max_pct = []
-        else:
-            emissions_reduction_max_pct = [self.site.emissions_reduction_max_pct]
-        renewable_generation_min_pct_bau = []
-        renewable_generation_max_pct_bau = []
-        emissions_reduction_min_pct_bau = []
-        emissions_reduction_max_pct_bau = []
-        '''
-
         renewable_generation_min_pct = self.site.renewable_generation_min_pct
         renewable_generation_max_pct = self.site.renewable_generation_max_pct
         emissions_reduction_min_pct = self.site.emissions_reduction_min_pct
@@ -1149,7 +1130,7 @@ class DataManager:
             'DemandLookbackPercent': tariff_args.demand_lookback_percent,
             'TimeStepRatchetsMonth': tariff_args.demand_ratchets_monthly,
             'TimeStepCount': self.n_timesteps,
-            'TimeStepScaling': 8760.0 / self.n_timesteps,
+            'TimeStepScaling': self.timestep_scaling,
             'AnnualElecLoadkWh': self.load.annual_kwh,
             'StorageMinChargePcent': self.storage.soc_min_pct,
             'InitSOC': self.storage.soc_init_pct,
@@ -1258,7 +1239,7 @@ class DataManager:
             'DemandLookbackPercent': tariff_args.demand_lookback_percent,
             'TimeStepRatchetsMonth': tariff_args.demand_ratchets_monthly,
             'TimeStepCount': self.n_timesteps,
-            'TimeStepScaling': 8760.0 / self.n_timesteps,
+            'TimeStepScaling': self.timestep_scaling,
             'AnnualElecLoadkWh': self.load.annual_kwh,
             'StorageMinChargePcent': self.storage.soc_min_pct,
             'InitSOC': self.storage.soc_init_pct,

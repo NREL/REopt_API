@@ -791,24 +791,24 @@ end
 function add_re_calcs_and_constraints(m,p)
 	# Only PV and Wind generation count as RE (CHP does not)
 	if p.REAccountingMethod == 1 # yes RE "credit" for exported RE
-		m[:AnnualREkWh] = @expression(m,
-			sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] for t in p.RETechs, ts in p.TimeStep) #total RE generation
+		m[:AnnualREkWh] = @expression(m,p.TimeStepScaling*
+			(sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] for t in p.RETechs, ts in p.TimeStep) #total RE generation
 			- sum(m[:dvProductionToStorage][b,t,ts]*(1-p.ChargeEfficiency[t,b]*p.DischargeEfficiency[b]) for t in p.RETechs, b in p.ElecStorage, ts in p.TimeStep) #minus battery efficiency losses.
-			- sum(m[:dvProductionToCurtail][t,ts] for t in p.RETechs, ts in p.TimeStep)) # minus curtailment. confirm CHP curtailment. 
+			- sum(m[:dvProductionToCurtail][t,ts] for t in p.RETechs, ts in p.TimeStep))) # minus curtailment. confirm CHP curtailment. 
 	elseif p.REAccountingMethod == 0 # no RE "credit" for exported RE
-	 	m[:AnnualREkWh] = @expression(m, 
-	 		sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] for t in p.RETechs, ts in p.TimeStep) #total RE generation
+	 	m[:AnnualREkWh] = @expression(m,p.TimeStepScaling*
+	 		(sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] for t in p.RETechs, ts in p.TimeStep) #total RE generation
 	 		- sum(m[:dvProductionToStorage][b,t,ts]*(1-p.ChargeEfficiency[t,b]*p.DischargeEfficiency[b]) for t in p.RETechs, b in p.ElecStorage, ts in p.TimeStep) #minus battery efficiency losses.
 			- sum(m[:dvProductionToCurtail][t,ts] for t in p.RETechs, ts in p.TimeStep) # minus curtailment. confirm CHP curtailment.  
-			- sum(m[:dvProductionToGrid][t,u,ts] for t in p.RETechs, u in p.ExportTiers, ts in p.TimeStep)) # minus exported RE. 
+			- sum(m[:dvProductionToGrid][t,u,ts] for t in p.RETechs, u in p.ExportTiers, ts in p.TimeStep))) # minus exported RE. 
 		# if battery ends up being able to discharge to grid, need to make sure only RE that is being consumed onsite are counted so battery doesn't become a back door for RE to grid. 
 	end
 	## Annual renewable electricity targets
 	if !isnothing(p.MinAnnualPercentRE)
-		@constraint(m, MinRECon, m[:AnnualREkWh] >= p.MinAnnualPercentRE[1]*(sum(p.ElecLoad[ts] for ts in p.TimeStep)))
+		@constraint(m, MinRECon, m[:AnnualREkWh] >= p.MinAnnualPercentRE[1]*p.TimeStepScaling*(sum(p.ElecLoad[ts] for ts in p.TimeStep)))
 	end
 	if !isnothing(p.MaxAnnualPercentRE) 
-		@constraint(m, MaxRECon, m[:AnnualREkWh] <= p.MaxAnnualPercentRE[1]*(sum(p.ElecLoad[ts] for ts in p.TimeStep)))
+		@constraint(m, MaxRECon, m[:AnnualREkWh] <= p.MaxAnnualPercentRE[1]*p.TimeStepScaling*(sum(p.ElecLoad[ts] for ts in p.TimeStep)))
 	end
 end
 
@@ -832,19 +832,19 @@ end
 
 function calc_yr1_scope1_emissions(m,p; tech_array=p.Tech)
 	# Scope 1: Direct emissions from onsite generation 
-	yr1_scope1_emissions_lbsCO2e = @expression(m,  
+	yr1_scope1_emissions_lbsCO2e = @expression(m,p.TimeStepScaling* 
 		sum(m[:dvFuelUsage][t,ts]*p.TechEmissionsFactors[t] for t in tech_array, ts in p.TimeStep))
 	return yr1_scope1_emissions_lbsCO2e
 end
 function calc_yr1_scope2_emissions(m,p)
 	# Scope 2: Indirect emissions from grid purchases
-	yr1_scope2_emissions_lbsCO2e = @expression(m,
+	yr1_scope2_emissions_lbsCO2e = @expression(m,p.TimeStepScaling*
 		sum(m[:dvGridPurchase][u,ts]*p.GridEmissionsFactor[ts] for ts in p.TimeStep, u in p.PricingTier))
 	return yr1_scope2_emissions_lbsCO2e
 end
 function calc_yr1_nonscope_emissions(m,p; tech_array=p.ElectricTechs)
 	# Non-Scope potential "credits" for additional displaced emissions (energy exports, become Scope 2 emissions for another organization)
-	yr1_nonscope_emissions_lbsCO2e = @expression(m, 
+	yr1_nonscope_emissions_lbsCO2e = @expression(m,p.TimeStepScaling*
 		-1*sum(m[:dvProductionToGrid][t,u,ts]  * (p.GridEmissionsFactor[ts] - p.TechEmissionsFactors[t]) 
 		for t in tech_array, ts in p.TimeStep, u in p.ExportTiers))
 		# if battery ends up being able to discharge to grid, need to incorporate here- might require complex tracking of what's charging battery  
