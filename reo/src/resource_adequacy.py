@@ -52,12 +52,16 @@ class ResourceAdequacy(object):
         """
         self.run_id = run_id
         self.ra_energy_pricing = ra_energy_pricing_us_dollars_per_kwh
-        self.ra_demand_pricing = ra_demand_pricing_us_dollars_per_kw
         self.ra_event_day_flags = ra_event_day_flags_boolean
         self.ra_lookback_days = ra_lookback_days
         self.ra_moo_hours = 4 #must offer obligation window length
         self.load_year = load_year
+        #calc event starts and lookback timesteps
         self.ra_event_start_times, self.ra_lookback_periods = self.calculate_event_start_and_lookback()
+        #reindex the list based on months that events occur in
+        self.ra_demand_pricing = dict()
+        for key in self.ra_event_start_times.keys():
+            self.ra_demand_pricing[key] = ra_demand_pricing_us_dollars_per_kw[key-1]
 
         dfm.add_resource_adequacy(self)
 

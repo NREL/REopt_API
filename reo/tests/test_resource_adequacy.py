@@ -46,6 +46,7 @@ logging.disable(logging.CRITICAL)
 event_day_flags = [0.0]*8760
 event_day_flags[5000] = 1.0
 event_day_flags[5050] = 1.0
+energy_pricing = [0.21]*8760
 
 ra_post = {"Scenario": {"Site": {
                 "longitude": -105.2348,
@@ -66,7 +67,8 @@ ra_post = {"Scenario": {"Site": {
                     "blended_monthly_demand_charges_us_dollars_per_kw": [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0],
                     "blended_monthly_rates_us_dollars_per_kwh": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2],
                     "ra_event_day_flags_boolean": event_day_flags,
-                    "ra_demand_pricing_us_dollars_per_kw": [18.0]
+                    "ra_demand_pricing_us_dollars_per_kw": [0, 0, 0, 0, 0, 0, 18, 18, 0, 0, 0, 0],
+                    "ra_energy_pricing_us_dollars_per_kwh": energy_pricing
                 },
                 "Financial": {
                     "third_party_ownership": False,
