@@ -41,6 +41,8 @@ function add_continuous_variables(m, p)
 		#Set RA variables 
 		@variable(m,dvHourlyReductionRA[mth in keys(p.RaEventStartTimes), i in 1:length(p.RaEventStartTimes[mth]), h in 0:p.RaMooHours-1])
 		@variable(m,dvMonthlyRA[keys(p.RaEventStartTimes)])
+		#Value of RA for each month
+		@variable(m, dvMonthlyRaValue[keys(p.RaEventStartTimes)])
 	end
 end
 
@@ -55,6 +57,12 @@ function add_integer_variables(m, p)
 		binDemandTier[p.Ratchets, p.DemandBin], Bin  # 1 If tier e has allocated demand during ratchet r; 0 otherwise
         binDemandMonthsTier[p.Month, p.DemandMonthsBin], Bin # 1 If tier n has allocated demand during month m; 0 otherwise
 		binEnergyTier[p.Month, p.PricingTier], Bin    #  Z^{ut}_{mu} 1 If demand tier $u$ is active in month m; 0 otherwise (NEW)
+    	
+    	#Add binary for participating in each month
+    	if p.RaLookbackDays != 0
+    		binRaParticipate[mth in keys(p.RaEventStartTimes)], Bin
+    	end
+
     end
 end
 
@@ -202,6 +210,12 @@ function add_bigM_adjustments(m, p)
 		end
 	end
 	
+	#Adds monthly Big M for RA
+	if p.RaLookbackDays != 0
+		#Monthly upper bound on RA payments
+		m[:MaxMonthlyRa] = [p.pwf_e * (p.RaMonthlyPrice[mth] + (p.RaMooHours * length(p.RaEventStartTimes[mth])) * maximum(p.RaEnergyPrice[ts] for ts in p.TimeStepRatchetsMonth[mth])) * maximum(p.ElecLoad[ts] for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month]
+	end
+
 	# NewMaxSize generates a new maximum size that is equal to the largest monthly load of the year.  This is intended to be a reasonable upper bound on size that would never be exceeeded, but is sufficiently small to replace much larger big-M values placed as a default.
 	TempHeatingTechs = [] #temporarily replace p.HeatingTechs which is undefined
 	TempCoolingTechs = [] #temporarily replace p.CoolingTechs which is undefined
@@ -760,10 +774,21 @@ function add_resource_adequacy(m, p)
     @constraint(m, [mth in keys(p.RaEventStartTimes), i in 1:length(p.RaEventStartTimes[mth])], 
 		m[:dvMonthlyRA][mth] <= calculate_average_daily_reduction(m, p, mth, i))
     #RA demand reduction value is the sum of ra_demand_pricing * the reductions
-    m[:TotalRaDrValue] = @expression(m, p.pwf_e * sum( p.RaMonthlyPrice[mth] * m[:dvMonthlyRA][mth] for mth in keys(p.RaEventStartTimes)))
+
+	#Calculate monthly values if RA is acitve   
+    m[:MonthlyRaDr] = @expression(m, [mth = keys(p.RaEventStartTimes)], p.pwf_e * p.RaMonthlyPrice[mth] * m[:dvMonthlyRA][mth] )
+    m[:MonthlyRaEnergy] = @expression(m, [mth = keys(p.RaEventStartTimes)], p.pwf_e * p.RaEnergyPrice[p.RaEventStartTimes[mth][i] + h]*m[:dvHourlyReductionRA][mth, i, h] for i in 1:length(p.RaEventStartTimes[mth]), h in 0:p.RaMooHours-1))
+
+	#The bin part removes the constraint if the value would be constrained to be negative
+	@constraint(m, [mth in keys(p.RaEventStartTimes)], m[:dvMonthlyRaValue][mth] <= m[:MonthlyRaDr][mth] + m[:MonthlyRaEnergy][mth] + (1 -  m[:binRaParticipate[mth]]) * m[:MaxMonthlyRa])
+	#Constrains to 0 if did not participate
+	@constraint(m, [mth in keys(p.RaEventStartTimes)], m[:dvMonthlyRaValue][mth] <= m[:binRaParticipate[mth]] * m[:MaxMonthlyRa])
+
+    # m[:TotalRaDrValue] = @expression(m, p.pwf_e * sum( p.RaMonthlyPrice[mth] * m[:dvMonthlyRA][mth] for mth in keys(p.RaEventStartTimes)))
     #RA energy value is the price in the given hour times the hourly reduction in that hour.
-    m[:TotalRaEnergyValue] = @expression(m, p.pwf_e * sum(p.RaEnergyPrice[p.RaEventStartTimes[mth][i] + h]*m[:dvHourlyReductionRA][mth, i, h] for mth in keys(p.RaEventStartTimes), i in 1:length(p.RaEventStartTimes[mth]), h in 0:p.RaMooHours-1))
-    m[:TotalRaValue] = @expression(m, m[:TotalRaDrValue] + m[:TotalRaEnergyValue])
+    # m[:TotalRaEnergyValue] = @expression(m, p.pwf_e * sum(p.RaEnergyPrice[p.RaEventStartTimes[mth][i] + h]*m[:dvHourlyReductionRA][mth, i, h] for mth in keys(p.RaEventStartTimes), i in 1:length(p.RaEventStartTimes[mth]), h in 0:p.RaMooHours-1))
+    # m[:TotalRaValue] = @expression(m, m[:TotalRaDrValue] + m[:TotalRaEnergyValue])
+    m[:TotalRaValue] = @expression(m, sum(m[:dvMonthlyRaValue]))
 end
 
 function calculate_hour_reduction(m, p, month, event_index, hours_from_start)
