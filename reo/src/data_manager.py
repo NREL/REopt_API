@@ -993,13 +993,16 @@ class DataManager:
             ra_lookback_periods = self.resource_adequacy.ra_lookback_periods
             ra_moo_hours = self.resource_adequacy.ra_moo_hours
             ra_lookback_days = self.resource_adequacy.ra_lookback_days
-        
+            ra_demand_pricing = self.resource_adequacy.ra_demand_pricing
+            ra_energy_pricing = self.resource_adequacy.ra_energy_pricing
         else:
             ra_event_start_times = {1:[]}
             ra_lookback_periods = {1:[]}
             ra_moo_hours = 0
             ra_lookback_days = 0
-            
+            ra_demand_pricing = {1:0}
+            ra_energy_pricing = []
+
         self.reopt_inputs = {
             'Tech': reopt_techs,
             'TechToLocation': tech_to_location,
@@ -1098,7 +1101,9 @@ class DataManager:
             'RaEventStartTimes': ra_event_start_times,
             'RaLookbackPeriods': ra_lookback_periods,
             'RaMooHours': ra_moo_hours,
-            'RaLookbackDays': ra_lookback_days
+            'RaLookbackDays': ra_lookback_days,
+            'RaMonthlyPrice': ra_demand_pricing,
+            'RaEnergyPrice': ra_energy_pricing
             }
         ## Uncomment the following and run a scenario to get an updated modelinputs.json for creating Julia system image
         # import json
@@ -1200,5 +1205,7 @@ class DataManager:
             'RaEventStartTimes': {1:[]},
             'RaLookbackPeriods': {1:[]},
             'RaMooHours': 0,
-            'RaLookbackDays': 0
+            'RaLookbackDays': 0,
+            'RaMonthlyPrice': {1:0},
+            'RaEnergyPrice': []
         }
