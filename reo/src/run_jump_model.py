@@ -143,6 +143,30 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
                                          float(data["inputs"]["Scenario"]["optimality_tolerance_techs"]))
             time_dict["pyjulia_make_model_seconds"] = time.time() - t_start
 
+        elif os.environ.get("SOLVER") == "cplex":
+            t_start = time.time()
+            Pkg.activate("./julia_envs/CPLEX/")
+            time_dict["pyjulia_activate_seconds"] = time.time() - t_start
+
+            try:
+                t_start = time.time()
+                Main.include("reo/src/reopt_cplex_model.jl")
+                time_dict["pyjulia_include_model_seconds"] = time.time() - t_start
+
+            except ImportError:
+                # should only need to instantiate once
+                Pkg.instantiate()
+                Main.include("reo/src/reopt_cplex_model.jl")
+
+            t_start = time.time()
+            if bau:
+                model = Main.reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]),
+                                         float(data["inputs"]["Scenario"]["optimality_tolerance_bau"]))
+            else:
+                model = Main.reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]),
+                                         float(data["inputs"]["Scenario"]["optimality_tolerance_techs"]))
+            time_dict["pyjulia_make_model_seconds"] = time.time() - t_start
+
         elif os.environ.get("SOLVER") == "cbc":
             t_start = time.time()
             Pkg.activate("./julia_envs/Cbc/")
