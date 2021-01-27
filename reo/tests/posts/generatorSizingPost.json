@@ -3,11 +3,14 @@
     "webtool_uuid": null,
     "description": "",
     "timeout_seconds": 295,
+    "optimality_tolerance_bau": 1.0e-4,
+	"optimality_tolerance_techs": 1.0e-4,
+	"add_soc_incentive": false,
     "Site": {
       "PV": {
         "pbi_years": 1.0,
         "macrs_bonus_pct": 0.4,
-        "max_kw": 10000000000.0,
+        "max_kw": 100000000.0,
         "pbi_max_us_dollars": 1000000000.0,
         "radius": 0.0,
         "state_ibi_pct": 0.0,

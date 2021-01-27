@@ -1,5 +1,6 @@
 {"Scenario": { 
-            "Site": {
+			"add_soc_incentive": false,
+			"Site": {
                 "latitude": 41.140240,
                 "longitude": -104.818802,
 				

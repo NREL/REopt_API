@@ -27,17 +27,15 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-import json
 import sys
 import uuid
 from typing import Dict, Union
-
 from django.forms.models import model_to_dict
 from django.http import JsonResponse, HttpRequest
-
 from reo.exceptions import UnexpectedError
 from reo.models import ModelManager
-from reo.models import ScenarioModel, PVModel, StorageModel, LoadProfileModel, GeneratorModel, FinancialModel, WindModel
+from reo.models import ScenarioModel, PVModel, StorageModel, LoadProfileModel, GeneratorModel, FinancialModel, \
+    WindModel, CHPModel
 from reo.utilities import annuity
 from resilience_stats.models import ResilienceModel
 from resilience_stats.outage_simulator_LF import simulate_outages
@@ -231,6 +229,7 @@ def run_outage_sim(run_uuid, with_tech=True, bau=False):
     pvs = PVModel.objects.filter(run_uuid=run_uuid)
     financial = FinancialModel.objects.filter(run_uuid=run_uuid).first()
     wind = WindModel.objects.filter(run_uuid=run_uuid).first()
+    chp = CHPModel.objects.filter(run_uuid=run_uuid).first()
 
     batt_roundtrip_efficiency = batt.internal_efficiency_pct \
                                 * batt.inverter_efficiency_pct \
@@ -267,8 +266,8 @@ def run_outage_sim(run_uuid, with_tech=True, bau=False):
             fuel_available=gen.fuel_avail_gal,
             b=gen.fuel_intercept_gal_per_hr,
             m=gen.fuel_slope_gal_per_kwh,
-            diesel_min_turndown=gen.min_turn_down_pct,
-            celery_eager=celery_eager
+            celery_eager=celery_eager,
+            chp_kw=chp.size_kw or 0,
         )
         results.update(tech_results)
 
@@ -289,16 +288,10 @@ def run_outage_sim(run_uuid, with_tech=True, bau=False):
             fuel_available=gen.fuel_avail_gal,
             b=gen.fuel_intercept_gal_per_hr,
             m=gen.fuel_slope_gal_per_kwh,
-            diesel_min_turndown=gen.min_turn_down_pct
+            chp_kw=chp.size_kw or 0,
         )
         results.update({key + '_bau': val for key, val in bau_results.items()})
 
-    """ add avg_crit_ld and pwf to results so that avoided outage cost can be determined as:
-            avoided_outage_costs_us_dollars = resilience_hours_avg * 
-                                              value_of_lost_load_us_dollars_per_kwh * 
-                                              avg_crit_ld *
-                                              present_worth_factor 
-    """
     avg_critical_load = round(sum(load_profile.critical_load_series_kw) /
                               len(load_profile.critical_load_series_kw), 5)
 
@@ -308,7 +301,14 @@ def run_outage_sim(run_uuid, with_tech=True, bau=False):
     else:
         present_worth_factor = annuity(financial.analysis_years, financial.escalation_pct,
                                        financial.offtaker_discount_pct)
-
+    
+    if 'resilience_hours_avg' in results.keys():
+        avoided_outage_costs_us_dollars = round( results['resilience_hours_avg'] * \
+                                            financial.value_of_lost_load_us_dollars_per_kwh * \
+                                            avg_critical_load * \
+                                            present_worth_factor, 2)
+        results.update({"avoided_outage_costs_us_dollars": avoided_outage_costs_us_dollars})
     results.update({"present_worth_factor": present_worth_factor,
-                    "avg_critical_load": avg_critical_load})
+                    "avg_critical_load": avg_critical_load,
+                    })
     return results
