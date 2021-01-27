@@ -4,7 +4,7 @@ properties([
   parameters([
     choice(
       name: "PARAM_STAGE",
-      choices: "internal_c110p\ndevelopment\nstaging\nproduction",
+      choices: "development\nstaging\nproduction",
       description: "Where do you want to deploy to?"
     ),
 
@@ -31,7 +31,6 @@ pipeline {
   }
 
   environment {
-    C110P_URL = credentials("reopt-api-c110p-url")
     DEV_URL = credentials("reopt-api-dev-url")
     STAGE_URL = credentials("reopt-api-stage-url")
     STAGE1_URL = credentials("reopt-api1-stage-url")
