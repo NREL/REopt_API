@@ -672,7 +672,7 @@ class ValidateNestedInput:
                                                             real_values or {},
                                                             object_name_path=object_name_path + [template_k])
 
-                    # if at the end of validation we are left with a list containing one dict, convert the entry fot the object back to
+                    # if at the end of validation we are left with a list containing one dict, convert the entry for the object back to
                     # a dict from a list
                     if len(real_values_list) == 1:
                         nested_dictionary_to_check[template_k] = real_values_list[0]
@@ -1246,6 +1246,23 @@ class ValidateNestedInput:
                                             attr_name=key_name,
                                             time_steps_per_hour=ts_per_hour, number=number,
                                             input_isDict=input_isDict)
+            
+            for key_name in ['contract_quantities_series_kwh', 'contract_rates_series_us_dollars_per_kwh', 'real_time_market_rates_series_us_dollars_per_kwh']:
+                if electric_tariff.get(key_name) is not None:
+                    self.validate_8760(attr=electric_tariff.get(key_name),
+                                    obj_name=object_name_path[-1],
+                                    attr_name=key_name,
+                                    time_steps_per_hour=ts_per_hour, number=number,
+                                    input_isDict=input_isDict)
+            if any([electric_tariff.get('contract_quantities_series_kwh') is None, \
+                electric_tariff.get('contract_rates_series_us_dollars_per_kwh') is None, \
+                electric_tariff.get('real_time_market_rates_series_us_dollars_per_kwh') is None]) and not \
+                all([electric_tariff.get('contract_quantities_series_kwh') is None, \
+                electric_tariff.get('contract_rates_series_us_dollars_per_kwh') is None, \
+                electric_tariff.get('real_time_market_rates_series_us_dollars_per_kwh') is None]):
+                self.input_data_errors.append(( "Either all or none of contract_quantities_series_kwh, "
+                                                "contract_rates_series_us_dollars_per_kwh, "
+                                                "and real_time_market_rates_series_us_dollars_per_kwh must be specified"))
 
         if object_name_path[-1] == "LoadProfile":
             for lp in ['critical_loads_kw', 'loads_kw']:

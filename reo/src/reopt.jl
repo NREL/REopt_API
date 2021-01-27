@@ -642,7 +642,8 @@ function add_energy_price_constraints(m, p)
 		m[:binEnergyTier][mth, u] * m[:NewMaxUsageInTier][mth,u-1] - sum( m[:dvGridPurchase][u-1, ts] for ts in p.TimeStepRatchetsMonth[mth] ) <= 0
 	)
 	m[:TotalEnergyChargesUtil] = @expression(m, p.pwf_e * p.TimeStepScaling * 
-		sum( p.ElecRate[u,ts] * m[:dvGridPurchase][u,ts] for ts in p.TimeStep, u in p.PricingTier)
+		sum( p.ElecRate[u,ts] * m[:dvGridPurchase][u,ts] for ts in p.TimeStep, u in p.PricingTier) +
+		m[:TotalContractCharges] + m[:TotalContractExcessDeficitCharges] 
 	)
 end
 
@@ -742,6 +743,13 @@ function add_tou_demand_charge_constraints(m, p)
 
 end
 
+function add_contract_quantity_expressions(m, p)
+	### Expressions related to tariff with contract quantities (developed for Lineage Mira Loma site because of its Calpine contract)
+	m[:TotalContractCharges] = @expression(m, p.pwf_e * p.TimeStepScaling * 
+			sum( p.ContractQuantities[ts] * p.ContractRates[ts] for ts in p.TimeStep) )
+	m[:TotalContractExcessDeficitCharges] = @expression(m, p.pwf_e *  p.TimeStepScaling * 
+			sum( ( sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) - p.ContractQuantities[ts] ) * p.RTMRates[ts] for ts in p.TimeStep ) )
+end
 
 function add_util_fixed_and_min_charges(m, p)
     m[:TotalFixedCharges] = p.pwf_e * p.FixedMonthlyCharge * 12
@@ -881,7 +889,15 @@ function reopt_run(m, p::Parameter)
 	if !isempty(p.TechsCannotCurtail)
 		add_curtail_constraint(m, p)
 	end
-	
+
+	### Extra energy cost expressions for tariff w/ contract quantities (developed to model a Calpine contract)
+	if !isempty(p.ContractQuantities)
+		add_contract_quantity_expressions(m, p)
+	else
+		m[:TotalContractCharges] = 0
+		m[:TotalContractExcessDeficitCharges] = 0
+	end
+
 	### Constraint set (10): Electrical Energy Pricing tiers
 	add_energy_price_constraints(m, p)
 
@@ -1154,6 +1170,8 @@ function add_util_results(m, p, r::Dict)
 						 "total_fixed_cost" => round(m[:TotalFixedCharges] * m[:r_tax_fraction_offtaker], digits=2),
 						 "total_export_benefit" => round(value(m[:TotalExportBenefit]) * m[:r_tax_fraction_offtaker], digits=2),
 						 "total_min_charge_adder" => round(value(m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker], digits=2),
+						 "total_contract_energy_cost" => round(value(m[:TotalContractCharges]) * m[:r_tax_fraction_offtaker], digits=2),
+						 "total_contract_excess_deficit_energy_cost" => round(value(m[:TotalContractExcessDeficitCharges]) * m[:r_tax_fraction_offtaker], digits=2),
 						 "net_capital_costs_plus_om" => round(net_capital_costs_plus_om, digits=0),
 						 "average_annual_energy_exported_wind" => round(value(m[:ExportedElecWIND]), digits=0),
 						 "average_annual_energy_curtailed_wind" => round(value(m[:CurtailedElecWIND]), digits=0),

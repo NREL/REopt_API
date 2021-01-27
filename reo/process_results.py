@@ -425,6 +425,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "total_fixed_cost",
             "total_min_charge_adder",
             "total_export_benefit",
+            "total_contract_energy_cost",
+	        "total_contract_excess_deficit_energy_cost",
             "net_capital_costs_plus_om",
             "gen_net_fixed_om_costs",
             "gen_net_variable_om_costs",
@@ -847,6 +849,14 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_energy_supplied_kwh"] = self.results_dict.get("year_one_utility_kwh")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_energy_supplied_kwh_bau"] = self.results_dict.get("year_one_utility_kwh_bau")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "total_contract_energy_cost_us_dollars"] = self.results_dict.get("total_contract_energy_cost")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "total_contract_excess_deficit_energy_cost_us_dollars"] = self.results_dict.get("total_contract_excess_deficit_energy_cost")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "total_contract_energy_cost_bau_us_dollars"] = self.results_dict.get("total_contract_energy_cost_bau")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "total_contract_excess_deficit_energy_cost_bau_us_dollars"] = self.results_dict.get("total_contract_excess_deficit_energy_cost_bau")
                 elif name == "Generator":
                     self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("generator_kw", 0)
                     self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal"] = self.results_dict.get(

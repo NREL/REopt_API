@@ -95,7 +95,11 @@ Base.@kwdef struct Parameter
 	 #For the replacement of CapCostX, see new parameters SegmentLB and SegmentUB in section "System size and fuel limit parameters"
 	 DemandRates::Array{Float64, 2}  # c^{r}_{re}: Cost per unit peak demand in tier e during ratchet r
 	 DemandRatesMonth::Array{Float64, 2}   # c^{rm}_{mn}: Cost per unit peak demand in tier n during month m
-	 
+     
+     ContractQuantities::Array{Float64, 1}  #   \delta^{con}_{h}: Total contract quanity during time step h
+     ContractRates::Array{Float64, 1}  #   c^{con}_{h}: Contract price (blend of fixed and day ahead prices, weighted based on hedges) during time step h
+     RTMRates::Array{Float64, 1}  #   c^{rtm}_{h}: Real time market price to charge excess/deficit from contract quantity during time step h
+
 	 ###  Demand Parameters ###
 	 ElecLoad::Array{Float64,1}  # \delta^{d}_{h}: Electrical load in time step h   [kW]
 	 # HeatingLoad::Array{Float64,1}  # \delta^{bo}_{h}: Heating load in time step h   [MMBTU/hr]

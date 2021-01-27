@@ -545,6 +545,26 @@ nested_output_definitions = {
                   "type": "int",
                   "description": "Total equivalent pounds of carbon dioxide emitted from BAU utility electricity use in the first year. Calculated by default from hourly emissions estimates except in AK and HI.",
                   "units": "lb CO2"
+                },
+                "total_contract_energy_cost_us_dollars": {
+                  "type": "float",
+                  "description": "Optimal contract component of energy charges",
+                  "units": "$"
+                },
+                "total_contract_energy_cost_bau_us_dollars": {
+                  "type": "float",
+                  "description": "Business as usual contract component of energy charges",
+                  "units": "$"
+                },
+                "total_contract_excess_deficit_energy_cost_us_dollars": {
+                  "type": "float",
+                  "description": "Optimal excess/deficit component of energy charges",
+                  "units": "$"
+                },
+                "total_contract_excess_deficit_energy_cost_bau_us_dollars": {
+                  "type": "float",
+                  "description": "Business as usual excess/deficit component of energy charges",
+                  "units": "$"
                 }
               },
 

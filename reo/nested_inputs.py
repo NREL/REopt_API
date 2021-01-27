@@ -404,10 +404,27 @@ nested_input_definitions = {
           "replacement_sets": electric_tariff_possible_sets,
           "description": "Label attribute of utility rate structure from <a href='https: //openei.org/services/doc/rest/util_rates/?version=3' target='blank'>Utility Rate Database API</a>"
         },
-         "emissions_factor_series_lb_CO2_per_kwh": {
+        "emissions_factor_series_lb_CO2_per_kwh": {
           "type": "list_of_float",
           "description": "Carbon Dioxide emissions factor over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples).",
           "default":[]
+        },
+        "contract_quantities_series_kwh": {
+          "type": "list_of_float",
+          "min": 0,
+          "max": max_big_number,
+          "depends_on":["contract_rates_series_us_dollars_per_kwh","real_time_market_rates_series_us_dollars_per_kwh"],
+          "description": "Optional contract quantities. Charged at contract_rates_series_us_dollars_per_kwh and difference from actual load charged at real_time_market_rates_series_us_dollars_per_kwh."
+        },
+        "contract_rates_series_us_dollars_per_kwh": {
+          "type": "list_of_float",
+          "depends_on":["contract_quantities_series_kwh","real_time_market_rates_series_us_dollars_per_kwh"],
+          "description": "Optional contract prices at which to charge contract_quantities_series_kwh."
+        },
+        "real_time_market_rates_series_us_dollars_per_kwh": {
+          "type": "list_of_float",
+          "depends_on":["contract_rates_series_us_dollars_per_kwh","contract_quantities_series_kwh"],
+          "description": "Optional RTM prices at which to charge difference between actual load and contract_quantities_series_kwh."
         }
       },
 

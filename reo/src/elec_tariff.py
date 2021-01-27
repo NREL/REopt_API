@@ -41,6 +41,7 @@ class ElecTariff(object):
                  urdb_response=None, add_blended_rates_to_urdb_rate=None, blended_annual_rates_us_dollars_per_kwh=None,
                  blended_annual_demand_charges_us_dollars_per_kw=None, add_tou_energy_rates_to_urdb_rate=None,
                  tou_energy_rates_us_dollars_per_kwh=None, emissions_factor_series_lb_CO2_per_kwh=None,
+                 contract_quantities_series_kwh=None, contract_rates_series_us_dollars_per_kwh=None, real_time_market_rates_series_us_dollars_per_kwh=None,
                   **kwargs):
         """
         Electricity Tariff object for creating inputs to REopt
@@ -57,6 +58,9 @@ class ElecTariff(object):
         :param add_blended_rates_to_urdb_rate: bool
         :param blended_annual_rates_us_dollars_per_kwh: float
         :param blended_annual_demand_charges_us_dollars_per_kw: float
+        :param contract_quantities_series_kwh: list_of_float
+        :param contract_rates_series_us_dollars_per_kwh: list_of_float
+        :param real_time_market_rates_series_us_dollars_per_kwh: list_of_float
         :param kwargs:  not used
         """
         self.run_id = run_id
@@ -67,6 +71,17 @@ class ElecTariff(object):
         self.tou_energy_rates = tou_energy_rates_us_dollars_per_kwh
         self.add_tou_energy_rates_to_urdb_rate = add_tou_energy_rates_to_urdb_rate
         self.override_urdb_rate_with_tou_energy_rates = False
+
+        if contract_quantities_series_kwh is not None and \
+            contract_rates_series_us_dollars_per_kwh is not None and \
+            real_time_market_rates_series_us_dollars_per_kwh is not None:
+            self.contract_quantities_series_kwh = contract_quantities_series_kwh
+            self.contract_rates_series_us_dollars_per_kwh = contract_rates_series_us_dollars_per_kwh
+            self.real_time_market_rates_series_us_dollars_per_kwh = real_time_market_rates_series_us_dollars_per_kwh
+        else:
+            self.contract_quantities_series_kwh = []
+            self.contract_rates_series_us_dollars_per_kwh = []
+            self.real_time_market_rates_series_us_dollars_per_kwh = []
 
         if urdb_response is not None:
             log.info("Parsing URDB rate")
