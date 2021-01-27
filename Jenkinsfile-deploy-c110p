@@ -28,6 +28,7 @@ pipeline {
   environment {
     C110P_URL = credentials("reopt-api-c110p-url")
     XPRESSDIR = "/opt/xpressmp"
+    PARAM_STAGE = "internal_c110p"
   }
 
   stages {
@@ -40,12 +41,11 @@ pipeline {
     stage("deploy") {
       steps {
         script {
-          currentBuild.description = "c110p deploy, Branch: $PARAM_BRANCH"
+          currentBuild.description = "Stage: $PARAM_STAGE Branch: $PARAM_BRANCH"
 
           sh "bundle install"
           sshagent(credentials: ["jenkins-ssh"]) {
-              sh "bundle exec cap ${PARAM_STAGE} deploy --trace BRANCH=${PARAM_BRANCH} DEBUG_DEPLOY=true"
-            }
+            sh "bundle exec cap ${PARAM_STAGE} deploy --trace BRANCH=${PARAM_BRANCH} DEBUG_DEPLOY=true"
           }
         }
       }
