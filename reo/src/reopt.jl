@@ -57,13 +57,11 @@ function add_integer_variables(m, p)
 		binDemandTier[p.Ratchets, p.DemandBin], Bin  # 1 If tier e has allocated demand during ratchet r; 0 otherwise
         binDemandMonthsTier[p.Month, p.DemandMonthsBin], Bin # 1 If tier n has allocated demand during month m; 0 otherwise
 		binEnergyTier[p.Month, p.PricingTier], Bin    #  Z^{ut}_{mu} 1 If demand tier $u$ is active in month m; 0 otherwise (NEW)
-    	
-    	#Add binary for participating in each month
-    	if p.RaLookbackDays != 0
-    		binRaParticipate[mth in keys(p.RaEventStartTimes)], Bin
-    	end
-
     end
+	#Add binary for participating in each month
+	if p.RaLookbackDays != 0
+		@variable(m,binRaParticipate[keys(p.RaEventStartTimes)], Bin)
+	end
 end
 
 
@@ -213,7 +211,7 @@ function add_bigM_adjustments(m, p)
 	#Adds monthly Big M for RA
 	if p.RaLookbackDays != 0
 		#Monthly upper bound on RA payments
-		m[:MaxMonthlyRa] = [p.pwf_e * (p.RaMonthlyPrice[mth] + (p.RaMooHours * length(p.RaEventStartTimes[mth])) * maximum(p.RaEnergyPrice[ts] for ts in p.TimeStepRatchetsMonth[mth])) * maximum(p.ElecLoad[ts] for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month]
+		m[:MaxMonthlyRa] = 1000000 #[p.pwf_e * (p.RaMonthlyPrice[mth] + (p.RaMooHours * length(p.RaEventStartTimes[mth])) * maximum(p.RaEnergyPrice[ts] for ts in p.TimeStepRatchetsMonth[mth])) * maximum(p.ElecLoad[ts] for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month]
 	end
 
 	# NewMaxSize generates a new maximum size that is equal to the largest monthly load of the year.  This is intended to be a reasonable upper bound on size that would never be exceeeded, but is sufficiently small to replace much larger big-M values placed as a default.
@@ -766,28 +764,28 @@ end
 
 #Function to add RA value calculations
 function add_resource_adequacy(m, p)
-    #hour load reductiosn are indexed by month, event start, and event hourly
-    #Constraints are hourly reductions are equal to the baseline load - event hour load
+
+    #Constraints are hourly reductions are equal to the baseline load - event hour load (reductions are indexed by month, event start, and event hourly)
     @constraint(m, [mth in keys(p.RaEventStartTimes), i in 1:length(p.RaEventStartTimes[mth]), h in 0:p.RaMooHours-1], 
 		m[:dvHourlyReductionRA][mth, i, h] <= calculate_hour_reduction(m, p, mth, i, h))
     #monthly RA is constrained to be the minimum of day average reductions
     @constraint(m, [mth in keys(p.RaEventStartTimes), i in 1:length(p.RaEventStartTimes[mth])], 
 		m[:dvMonthlyRA][mth] <= calculate_average_daily_reduction(m, p, mth, i))
-    #RA demand reduction value is the sum of ra_demand_pricing * the reductions
 
 	#Calculate monthly values if RA is acitve   
-    m[:MonthlyRaDr] = @expression(m, [mth = keys(p.RaEventStartTimes)], p.pwf_e * p.RaMonthlyPrice[mth] * m[:dvMonthlyRA][mth] )
-    m[:MonthlyRaEnergy] = @expression(m, [mth = keys(p.RaEventStartTimes)], p.pwf_e * p.RaEnergyPrice[p.RaEventStartTimes[mth][i] + h]*m[:dvHourlyReductionRA][mth, i, h] for i in 1:length(p.RaEventStartTimes[mth]), h in 0:p.RaMooHours-1))
+    MonthlyRaDr = @expression(m, [mth in keys(p.RaEventStartTimes)], 
+		p.pwf_e * p.RaMonthlyPrice[mth] * m[:dvMonthlyRA][mth])
+    
+	MonthlyRaEnergy = @expression(m, [mth in keys(p.RaEventStartTimes)], 
+		p.pwf_e * sum(p.RaEnergyPrice[p.RaEventStartTimes[mth][i] + h]*m[:dvHourlyReductionRA][mth, i, h] for i in 1:length(p.RaEventStartTimes[mth]), h in 0:p.RaMooHours-1))
 
 	#The bin part removes the constraint if the value would be constrained to be negative
-	@constraint(m, [mth in keys(p.RaEventStartTimes)], m[:dvMonthlyRaValue][mth] <= m[:MonthlyRaDr][mth] + m[:MonthlyRaEnergy][mth] + (1 -  m[:binRaParticipate[mth]]) * m[:MaxMonthlyRa])
+	@constraint(m, [mth in keys(p.RaEventStartTimes)], 
+		m[:dvMonthlyRaValue][mth] <= MonthlyRaDr[mth] + MonthlyRaEnergy[mth] + (1 - m[:binRaParticipate][mth]) * m[:MaxMonthlyRa])
 	#Constrains to 0 if did not participate
-	@constraint(m, [mth in keys(p.RaEventStartTimes)], m[:dvMonthlyRaValue][mth] <= m[:binRaParticipate[mth]] * m[:MaxMonthlyRa])
-
-    # m[:TotalRaDrValue] = @expression(m, p.pwf_e * sum( p.RaMonthlyPrice[mth] * m[:dvMonthlyRA][mth] for mth in keys(p.RaEventStartTimes)))
-    #RA energy value is the price in the given hour times the hourly reduction in that hour.
-    # m[:TotalRaEnergyValue] = @expression(m, p.pwf_e * sum(p.RaEnergyPrice[p.RaEventStartTimes[mth][i] + h]*m[:dvHourlyReductionRA][mth, i, h] for mth in keys(p.RaEventStartTimes), i in 1:length(p.RaEventStartTimes[mth]), h in 0:p.RaMooHours-1))
-    # m[:TotalRaValue] = @expression(m, m[:TotalRaDrValue] + m[:TotalRaEnergyValue])
+	@constraint(m, [mth in keys(p.RaEventStartTimes)], 
+		m[:dvMonthlyRaValue][mth] <= m[:binRaParticipate][mth] * m[:MaxMonthlyRa])
+	@info value(m[:binRaParticipate][7])
     m[:TotalRaValue] = @expression(m, sum(m[:dvMonthlyRaValue]))
 end
 
@@ -965,6 +963,8 @@ function reopt_run(m, p::Parameter)
 
 	if p.RaLookbackDays != 0
 		add_resource_adequacy(m, p)
+	else
+		m[:TotalRaValue] = 0
 	end
 	add_cost_function(m, p)
 

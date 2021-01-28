@@ -55,8 +55,8 @@ ra_post = {"Scenario": {"Site": {
                     "max_kw": 1000
                 },
                 "Storage": {
-                    "max_kwh": 1000000.0,
-                    "max_kw": 10000.0
+                    "max_kwh": 0.0,
+                    "max_kw": 0.0
                 },
                 "LoadProfile": {
                     "doe_reference_name": "MidriseApartment",
