@@ -150,6 +150,6 @@ class LoadProfileChillerThermal(BuiltInProfile):
         # load_list is always expected to be in units of kWth
         if electric_load_list is not None:            
             self.load_list = [i*self.chiller_cop for i in electric_load_list]
-        self.annual_kwht = sum(self.load_list)
+        self.annual_kwht = round(sum(self.load_list),0)
         if dfm is not None:
             dfm.add_load_chiller_thermal(self)
