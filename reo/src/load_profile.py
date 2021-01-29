@@ -746,8 +746,8 @@ class LoadProfile(BuiltInProfile):
         # resilience_check_flag: True if existing diesel can sustain critical load during outage
         self.resilience_check_flag = resilience_check_flag
         self.bau_sustained_time_steps = bau_sustained_time_steps
-        self.annual_kwh = sum(self.load_list)
-        self.bau_annual_kwh = sum(self.bau_load_list)
+        self.annual_kwh = int(round(sum(self.load_list),0))
+        self.bau_annual_kwh = int(round(sum(self.bau_load_list),0))
         self.loads_kw_is_net = loads_kw_is_net
         self.critical_loads_kw_is_net = critical_loads_kw_is_net
         self.critical_load_series_kw = critical_loads_kw
