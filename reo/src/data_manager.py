@@ -81,6 +81,9 @@ class DataManager:
         self.add_soc_incentive = None
 
         # following attributes used to pass data to process_results.py
+        # If we serialize the python classes then we could pass the objects between Celery tasks
+        # (which we could do by making a custom serializer, but have not yet).
+        # For now we just put the values that we need in dicts that get passed between the tasks.
         self.LoadProfile = {}
         self.year_one_energy_cost_series_us_dollars_per_kwh = []
         self.year_one_demand_cost_series_us_dollars_per_kw = []
@@ -914,39 +917,45 @@ class DataManager:
 
         # Obtain storage costs and params
         sf = self.site.financial
-        StorageCostPerKW = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kw,  # use full cost as basis
-                                                        self.storage.replace_cost_us_dollars_per_kw,
-                                                        self.storage.inverter_replacement_year,
-                                                        sf.owner_discount_pct,
-                                                        sf.owner_tax_pct,
-                                                        self.storage.incentives.itc_pct,
-                                                        self.storage.incentives.macrs_schedule,
-                                                        self.storage.incentives.macrs_bonus_pct,
-                                                        self.storage.incentives.macrs_itc_reduction)
+        StorageCostPerKW = setup_capital_cost_incentive(
+            self.storage.installed_cost_us_dollars_per_kw,  # use full cost as basis
+            self.storage.replace_cost_us_dollars_per_kw,
+            self.storage.inverter_replacement_year,
+            sf.owner_discount_pct,
+            sf.owner_tax_pct,
+            self.storage.incentives.itc_pct,
+            self.storage.incentives.macrs_schedule,
+            self.storage.incentives.macrs_bonus_pct,
+            self.storage.incentives.macrs_itc_reduction
+        )
         StorageCostPerKW -= self.storage.incentives.rebate
-        StorageCostPerKWH = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kwh,  # there are no cash incentives for kwh
-                                                         self.storage.replace_cost_us_dollars_per_kwh,
-                                                         self.storage.battery_replacement_year,
-                                                         sf.owner_discount_pct,
-                                                         sf.owner_tax_pct,
-                                                         self.storage.incentives.itc_pct,
-                                                         self.storage.incentives.macrs_schedule,
-                                                         self.storage.incentives.macrs_bonus_pct,
-                                                         self.storage.incentives.macrs_itc_reduction)
+        StorageCostPerKWH = setup_capital_cost_incentive(
+            self.storage.installed_cost_us_dollars_per_kwh,  # there are no cash incentives for kwh
+            self.storage.replace_cost_us_dollars_per_kwh,
+            self.storage.battery_replacement_year,
+            sf.owner_discount_pct,
+            sf.owner_tax_pct,
+            self.storage.incentives.itc_pct,
+            self.storage.incentives.macrs_schedule,
+            self.storage.incentives.macrs_bonus_pct,
+            self.storage.incentives.macrs_itc_reduction
+        )
         StorageCostPerKWH -= self.storage.incentives.rebate_kwh
 
         storage_power_cost.append(StorageCostPerKW)
         storage_energy_cost.append(StorageCostPerKWH)
-        if self.hot_tes != None:
-            HotTESCostPerMMBTU = setup_capital_cost_incentive(self.hot_tes.installed_cost_us_dollars_per_mmbtu,  # use full cost as basis
-                                                        0,
-                                                        0,
-                                                        sf.owner_discount_pct,
-                                                        sf.owner_tax_pct,
-                                                        0,
-                                                        self.hot_tes.incentives.macrs_schedule,
-                                                        self.hot_tes.incentives.macrs_bonus_pct,
-                                                        0)
+        if self.hot_tes is not None:
+            HotTESCostPerMMBTU = setup_capital_cost_incentive(
+                self.hot_tes.installed_cost_us_dollars_per_mmbtu,  # use full cost as basis
+                0,
+                0,
+                sf.owner_discount_pct,
+                sf.owner_tax_pct,
+                0,
+                self.hot_tes.incentives.macrs_schedule,
+                self.hot_tes.incentives.macrs_bonus_pct,
+                0
+            )
             storage_techs.append('HotTES')
             storage_power_cost.append(0.0)
             storage_energy_cost.append(HotTESCostPerMMBTU)
@@ -957,9 +966,7 @@ class DataManager:
             storage_max_energy.append(self.hot_tes.max_mmbtu)
             storage_decay_rate.append(self.hot_tes.thermal_decay_rate_fraction)
 
-
-
-        if self.cold_tes != None:
+        if self.cold_tes is not None:
             ColdTESCostPerKWHT = setup_capital_cost_incentive(self.cold_tes.installed_cost_us_dollars_per_kwht,  # use full cost as basis
                                                         0,
                                                         0,
@@ -980,8 +987,8 @@ class DataManager:
             storage_decay_rate.append(self.cold_tes.thermal_decay_rate_fraction)
 
         thermal_storage_techs = storage_techs[1:]
-        hot_tes_techs = [] if self.hot_tes == None else ['HotTES']
-        cold_tes_techs = [] if self.cold_tes == None else ['ColdTES']
+        hot_tes_techs = [] if self.hot_tes is None else ['HotTES']
+        cold_tes_techs = [] if self.cold_tes is None else ['ColdTES']
 
         return storage_techs, thermal_storage_techs, hot_tes_techs, \
             cold_tes_techs, storage_power_cost, storage_energy_cost, \
