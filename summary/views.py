@@ -194,14 +194,41 @@ def summary(request, user_uuid):
         #saving time by only calling each table once
         messages = MessageModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','message_type','message')
         sites = SiteModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','address')
-        loads = LoadProfileModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','outage_start_time_step','loads_kw','doe_reference_name')
+        loads = LoadProfileModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','outage_start_time_step',
+                                                                                        'loads_kw','doe_reference_name')
         batts = StorageModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw','size_kwh')
         pvs = PVModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw')
         winds = WindModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw')
         gens = GeneratorModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid', 'max_kw', 'size_kw')
-        financials = FinancialModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','npv_us_dollars','net_capital_costs','lcc_us_dollars','lcc_bau_us_dollars','net_capital_costs_plus_om_us_dollars', 'net_capital_costs','net_om_us_dollars_bau')
-        tariffs = ElectricTariffModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid', 'urdb_rate_name', 'year_one_bill_us_dollars', 'year_one_bill_bau_us_dollars')
-        resiliences = ResilienceModel.objects.filter(scenariomodel_id__in=scenario_run_ids).values('scenariomodel_id','resilience_hours_avg','resilience_hours_max','resilience_hours_min')
+        financials = FinancialModel.objects.filter(run_uuid__in=scenario_run_uuids).values(
+                                                                            'run_uuid',
+                                                                            'npv_us_dollars',
+                                                                            'net_capital_costs',
+                                                                            'lcc_us_dollars',
+                                                                            'lcc_bau_us_dollars',
+                                                                            'net_capital_costs_plus_om_us_dollars',
+                                                                            'net_capital_costs',
+                                                                            'net_om_us_dollars_bau')
+        tariffs = ElectricTariffModel.objects.filter(run_uuid__in=scenario_run_uuids).values(
+                                                                            'run_uuid',
+                                                                            'urdb_rate_name',
+                                                                            'year_one_energy_cost_us_dollars',
+                                                                            'year_one_demand_cost_us_dollars',
+                                                                            'year_one_fixed_cost_us_dollars',
+                                                                            'year_one_min_charge_adder_us_dollars',
+                                                                            'year_one_coincident_peak_cost_us_dollars',
+                                                                            'year_one_bill_us_dollars',
+                                                                            'year_one_energy_cost_bau_us_dollars',
+                                                                            'year_one_demand_cost_bau_us_dollars',
+                                                                            'year_one_fixed_cost_bau_us_dollars',
+                                                                            'year_one_min_charge_adder_bau_us_dollars',
+                                                                            'year_one_coincident_peak_cost_bau_us_dollars',
+                                                                            'year_one_bill_bau_us_dollars')
+        resiliences = ResilienceModel.objects.filter(scenariomodel_id__in=scenario_run_ids).values(
+                                                                            'scenariomodel_id',
+                                                                            'resilience_hours_avg',
+                                                                            'resilience_hours_max',
+                                                                            'resilience_hours_min')
         chps = CHPModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw')
         hottess = HotTESModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_gal','size_gal')
         coldtess = ColdTESModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_gal','size_gal')
@@ -282,18 +309,26 @@ def summary(request, user_uuid):
                             results['focus'] = "Resilience"
                         else:
                             results['focus'] = "Financial"
+                        
+                        if load.get('loads_kw') is not None:
+                            results['doe_reference_name'] = "Custom"
+                        else:
+                            results['doe_reference_name'] = load.get('doe_reference_name')
+
+                    # Address
+                    results['address'] = site.get('address')
+
+                    # Description
+                    results['description'] = scenario.description
 
                     # Address
                     results['address'] = site.get('address')
 
                     # Utility Tariff
-                    results['urdb_rate_name'] = tariff.get('urdb_rate_name', "Custom")
-
-                    # Load Profile
-                    if load.get('loads_kw'):
-                        results['doe_reference_name'] = "Custom"
+                    if tariff.get('urdb_rate_name') is not None:
+                        results['urdb_rate_name'] = tariff.get('urdb_rate_name')
                     else:
-                        results['doe_reference_name'] = load.get('doe_reference_name')
+                        results['urdb_rate_name'] = "Custom"
 
                     # NPV
                     results['npv_us_dollars'] = financial.get('npv_us_dollars')
@@ -310,18 +345,33 @@ def summary(request, user_uuid):
                     #Other Financials
                     results['net_capital_costs_plus_om_us_dollars'] = financial.get('net_capital_costs_plus_om_us_dollars')
                     results['net_om_us_dollars_bau'] = financial.get('net_om_us_dollars_bau')
+                    results['net_capital_costs'] = financial.get('net_capital_costs')
 
                     # Year 1 Savings
-                    year_one_costs = tariff.get('year_one_bill_us_dollars') or 0
-
-                    year_one_costs_bau = tariff.get('year_one_bill_bau_us_dollars') or 0
-
-                    results['year_one_savings_us_dollars'] = year_one_costs_bau - year_one_costs
+                    year_one_costs = sum(filter(None, [
+                        tariff.get('year_one_energy_cost_us_dollars') or 0,
+                        tariff.get('year_one_demand_cost_us_dollars') or 0,
+                        tariff.get('year_one_fixed_cost_us_dollars') or 0,
+                        tariff.get('year_one_min_charge_adder_us_dollars') or 0,
+                        tariff.get('year_one_coincident_peak_cost_us_dollars') or 0,
+                        tariff.get('year_one_bill_us_dollars') or 0
+                        ]))
+                    
+                    year_one_costs_bau = sum(filter(None, [
+                        tariff.get('year_one_energy_cost_bau_us_dollars') or 0,
+                        tariff.get('year_one_demand_cost_bau_us_dollars') or 0,
+                        tariff.get('year_one_fixed_cost_bau_us_dollars') or 0,
+                        tariff.get('year_one_min_charge_adder_bau_us_dollars') or 0,
+                        tariff.get('year_one_coincident_peak_cost_bau_us_dollars') or 0,
+                        tariff.get('year_one_bill_bau_us_dollars') or 0
+                        ]))
 
                     #Resilience Stats
                     results['resilience_hours_min'] = resilience.get('resilience_hours_min', 'not evaluated')
                     results['resilience_hours_max'] = resilience.get('resilience_hours_max', 'not evaluated')
                     results['resilience_hours_avg'] = resilience.get('resilience_hours_avg', 'not evaluated')
+                    
+                    results['year_one_savings_us_dollars'] = year_one_costs_bau - year_one_costs
 
                     # PV Size
                     if pv is not None:
@@ -343,7 +393,7 @@ def summary(request, user_uuid):
                         if batt.get('max_kw') or -1 > 0:
                             results['batt_kw'] = batt.get('size_kw')
                             results['batt_kwh'] = batt.get('size_kwh')
-                        
+
                     if chp is not None:
                         if (chp.get('max_kw') or -1) > 0:
                             results['chp_kw'] = chp.get('size_kw')
