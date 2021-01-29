@@ -28,7 +28,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## develop
+## v1.3.0 - 2021-01-28
 ### Major Updates
 ### Minor Updates
 - `reo`: New output **om_and_replacement_present_cost_after_tax_us_dollars**
