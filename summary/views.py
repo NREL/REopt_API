@@ -392,28 +392,16 @@ def summary(request, user_uuid):
                     if pv is not None:
                         if pv['max_kw'] > 0:
                             results['pv_kw'] = pv.get('size_kw')
-                        else:
-                            results['pv_kw'] = 'not evaluated'
-                    else:
-                        results['pv_kw'] = 'not evaluated'
 
                     # Wind Size
                     if wind is not None:
                         if wind.get('max_kw') or -1 > 0:
                             results['wind_kw'] = wind.get('size_kw')
-                        else:
-                            results['wind_kw'] = 'not evaluated'
-                    else:
-                        results['wind_kw'] = 'not evaluated'
 
                     # Generator Size
                     if gen is not None:
                         if gen.get('max_kw') or -1 > 0:
                             results['gen_kw'] = gen.get('size_kw')
-                        else:
-                            results['gen_kw'] = 'not evaluated'
-                    else:
-                        results['gen_kw'] = 'not evaluated'
 
                     # Battery Size
                     if batt is not None:
