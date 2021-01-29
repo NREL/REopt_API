@@ -258,7 +258,9 @@ Base.@kwdef struct Parameter
     WaterNode::Int64
     TempLowerBoundWH::Float64
     TempUpperBoundWH::Float64
-	ComfortTempLimit::Float64
+	ComfortTempLimitWH::Float64
+	ComfortTempLimitHP::Float64
+	ComfortTempLimitAC::Float64
 end
 
 

@@ -1825,17 +1825,25 @@ nested_input_definitions = {
         },
         "temperature_lower_bound": {
           "type": "float",
-          "min": 0.0,
+          "min": -50.0,
           "max": 40.0,
-          "default": 19.5,
+          "default": 0.0,
           "description": "Minimum allowable indoor air temperature"
         },
         "temperature_upper_bound": {
           "type": "float",
           "min": 0.0,
           "max": 40.0,
-          "default": 23.5,
+          "default": 40.0,
           "description": "Maximum allowable indoor air temperature"
+        },
+        "comfort_temp_lower_bound_degC": {
+          "type": "float", "min": -50.0, "max": 40.0, "default": 0.0,
+          "description": "Comfort costs are incurred if indoor temperature drops below this limit in degree Celsius"
+        },
+        "comfort_temp_upper_bound_degC": {
+          "type": "float", "min": 0.0, "max": 40.0, "default": 40.0,
+          "description": "Comfort costs are incurred if indoor temperature rises above this limit in degree Celsius"
         }
       },
       "FlexTechAC": {
@@ -1994,7 +2002,7 @@ nested_input_definitions = {
           "description": "Hot water node number"
         },
         "temperature_lower_bound_degC": {
-          "type": "float", "min": 0.0, "max": 50.0, "default": 10.0,
+          "type": "float", "min": -30.0, "max": 50.0, "default": 10.0,
           "description": "Minimum allowable tank temperature in degree Celsius"
         },
         "temperature_upper_bound_degC": {

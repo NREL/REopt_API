@@ -965,6 +965,11 @@ nested_output_definitions = {
                   "type": list_of_float,
                   "description": "Hourly time series of indoor temperature",
                   "units": "Celsius"
+                },
+                "comfort_penalty_degC": {
+                  "type": list_of_float,
+                  "description": "HVAC comfort penalty",
+                  "units": "degrees"
                 }
               },
               "FlexTechAC": {

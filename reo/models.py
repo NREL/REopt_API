@@ -828,9 +828,12 @@ class RCModel(models.Model):
     space_node = models.IntegerField(null=True, blank=True)
     temperature_lower_bound = models.FloatField(null=True, blank=True)
     temperature_upper_bound = models.FloatField(null=True, blank=True)
+    comfort_temp_lower_bound_degC = models.FloatField(null=True, blank=True)
+    comfort_temp_upper_bound_degC = models.FloatField(null=True, blank=True)
 
     # Outputs
     temperatures_degree_C = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    comfort_penalty_degC = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
