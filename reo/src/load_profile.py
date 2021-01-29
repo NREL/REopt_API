@@ -417,7 +417,7 @@ class BuiltInProfile(object):
         self.year = 2017
         self.annual_energy = annual_energy if annual_energy is not None else (
             sum(monthly_totals_energy) if monthly_totals_energy else self.default_annual_energy)
-        self.annual_kwh = self.annual_energy
+        self.annual_kwh = round(self.annual_energy,0)
         
 
     @property
