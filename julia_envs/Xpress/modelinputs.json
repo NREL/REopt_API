@@ -123132,5 +123132,5 @@
   "AddSOCIncentive": false,
   "CoincidentPeakPeriodCount":1,
   "CoincidentPeakRates":[1.0],
-  "CoincidentPeakLoadTimeSteps":[[1]]
+  "CoincidentPeakLoadTimeSteps":[1]
 }
