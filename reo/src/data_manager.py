@@ -1323,6 +1323,9 @@ class DataManager:
             'NMILLimits': NMILLimits,
             'TechToNMILMapping': TechToNMILMapping,
             'CapCostSegCount': n_segments,
+            'CoincidentPeakLoadTimeSteps': self.elec_tariff.coincident_peak_load_active_timesteps,
+            'CoincidentPeakRates': self.elec_tariff.coincident_peak_load_charge_us_dollars_per_kw,
+            'CoincidentPeakPeriodCount': self.elec_tariff.coincident_peak_num_periods,
             # new parameters for reformulation
             'FuelCost': fuel_costs,
             'ElecRate': tariff_args.energy_costs,
@@ -1452,6 +1455,9 @@ class DataManager:
             'NMILLimits': NMILLimits_bau,
             'TechToNMILMapping': TechToNMILMapping_bau,
             'CapCostSegCount': n_segments_bau,
+            'CoincidentPeakLoadTimeSteps': self.elec_tariff.coincident_peak_load_active_timesteps,
+            'CoincidentPeakRates': self.elec_tariff.coincident_peak_load_charge_us_dollars_per_kw,
+            'CoincidentPeakPeriodCount': self.elec_tariff.coincident_peak_num_periods,
             # new parameters for reformulation
 	        'FuelCost': fuel_costs_bau,
 	        'ElecRate': tariff_args.energy_costs_bau,

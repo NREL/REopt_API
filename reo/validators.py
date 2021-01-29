@@ -30,7 +30,7 @@
 import numpy as np
 import pandas as pd
 from .urdb_logger import log_urdb_errors
-from .nested_inputs import nested_input_definitions, list_of_float, list_of_str, list_of_int, list_of_dict
+from .nested_inputs import nested_input_definitions, list_of_float, list_of_str, list_of_int, list_of_list, list_of_dict
 #Note: list_of_float is actually needed
 import os
 import csv
@@ -45,6 +45,13 @@ from reo.utilities import generate_year_profile_hourly
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'r'))]
 
+
+def convert_bool(value):
+    if value in [True, 1]:
+        return True
+    if value in [False, 0]:
+        return False
+    raise Exception('{} is not a bool'.format(value))
 
 class URDB_RateValidator:
 
@@ -788,8 +795,8 @@ class ValidateNestedInput:
                     if (type(attribute) != list) and ('list_of_float' != attribute) and ('list_of_int' != attribute):
                         if any(isinstance(good_val, x) for x in [float, int, dict, bool]):
                             bad_val = "OOPS"
-                    elif ('list_of_float' in attribute) or ('list_of_int' in attribute) \
-                        or (attribute in ['list_of_int','list_of_float']):
+                    elif ('list_of_float' in attribute) or ('list_of_int' in attribute) or ('list_of_list' in attribute)\
+                        or (attribute in ['list_of_int','list_of_float','list_of_list']):
                         if isinstance(good_val, list):
                             bad_val = "OOPS"
 
@@ -1377,11 +1384,13 @@ class ValidateNestedInput:
                     self.input_data_errors.append((
                         'add_blended_rates_to_urdb_rate is set to "true" yet missing valid entries for the '
                         'following inputs: {}').format(', '.join(missing_keys)))
+            
+            ts_per_hour = self.input_dict['Scenario'].get('time_steps_per_hour') or \
+                                    self.nested_input_definitions['Scenario']['time_steps_per_hour']['default']
+            
             for key_name in ['wholesale_rate_us_dollars_per_kwh',
                                 'wholesale_rate_above_site_load_us_dollars_per_kwh']:
                 if type(electric_tariff.get(key_name)) == list:
-                    ts_per_hour = self.input_dict['Scenario'].get('time_steps_per_hour') or \
-                                    self.nested_input_definitions['Scenario']['time_steps_per_hour']['default']
                     if len(electric_tariff.get(key_name)) == 1:
                         self.update_attribute_value(object_name_path, number, key_name,
                                                     electric_tariff.get(key_name) * 8760 * ts_per_hour)
@@ -1390,6 +1399,25 @@ class ValidateNestedInput:
                                             attr_name=key_name,
                                             time_steps_per_hour=ts_per_hour, number=number,
                                             input_isDict=input_isDict)
+            
+            if self.isValid:
+                if electric_tariff.get('coincident_peak_load_active_timesteps') is not None:
+                    for series in electric_tariff.get('coincident_peak_load_active_timesteps'):
+                        self.validate_timestep_series(series, 
+                        "ElectricTariff", 'coincident_peak_load_active_timesteps', 
+                        ts_per_hour, number=number, input_isDict=input_isDict)
+                    if len(electric_tariff.get('coincident_peak_load_active_timesteps')) != len(electric_tariff.get('coincident_peak_load_charge_us_dollars_per_kw')):
+                        self.input_data_errors.append(( "The number of rates in coincident_peak_load_charge_us_dollars_per_kw must"
+                                                        " match the number of timestep sets in coincident_peak_load_active_timesteps"))
+                    if self.isValid:
+                        #All coincident_peak_load_active_timesteps lists must be the same length
+                        max_entries = max([len(i) for i in electric_tariff['coincident_peak_load_active_timesteps']])
+                        for idx, entry in enumerate(electric_tariff['coincident_peak_load_active_timesteps']):
+                            if len(entry) < max_entries:
+                                electric_tariff['coincident_peak_load_active_timesteps'][idx] += [None for _ in range(max_entries - len(entry))]
+                        real_values['coincident_peak_load_active_timesteps'] = electric_tariff['coincident_peak_load_active_timesteps']
+                        self.update_attribute_value(object_name_path, number, 'coincident_peak_load_active_timesteps',
+                                                    electric_tariff['coincident_peak_load_active_timesteps'])
 
         if object_name_path[-1] == "LoadProfileChillerThermal":
             if self.isValid:
@@ -1576,32 +1604,33 @@ class ValidateNestedInput:
             for name, value in real_values.items():
                 if self.isAttribute(name):
                     data_validators = template_values[name]
-
                     if ("list_of_float" in data_validators['type'] or "list_of_int" in data_validators['type']) and isinstance(value, list):
+                        if 'list_of_list' not in data_validators['type']:
+                            value = [value]
                         if data_validators.get('min') is not None:
-                            if any([v < data_validators['min'] for v in value]):
-                                if input_isDict or input_isDict is None:
-                                    self.input_data_errors.append(
-                                        'At least one value in %s (from %s) is less than the allowable min of %s' % (
-                                            name, self.object_name_string(object_name_path), data_validators['min']))
-                                if input_isDict is False:
-                                    self.input_data_errors.append(
-                                        'At least one value in %s (from %s number %s) is less than the allowable min %s' % (
-                                            name, self.object_name_string(object_name_path), number, data_validators['min']))
-
+                            for value_set in value:
+                                if any([v < data_validators['min'] for v in value_set]):
+                                    if input_isDict or input_isDict is None:
+                                        self.input_data_errors.append(
+                                            'At least one value in %s (from %s) is less than the allowable min of %s' % (
+                                                name, self.object_name_string(object_name_path), data_validators['min']))
+                                    if input_isDict is False:
+                                        self.input_data_errors.append(
+                                            'At least one value in %s (from %s number %s) is less than the allowable min %s' % (
+                                                name, self.object_name_string(object_name_path), number, data_validators['min']))
                         if data_validators.get('max') is not None:
-                            if any([v > data_validators['max'] for v in value]):
-                                if input_isDict or input_isDict is None:
-                                    self.input_data_errors.append(
-                                        'At least one value in %s (from %s) exceeds allowable max of %s' % (
-                                            name, self.object_name_string(object_name_path), data_validators['max']))
-                                if input_isDict is False:
-                                    self.input_data_errors.append(
-                                        'At least one value in %s (from %s number %s) exceeds allowable max of %s' % (
-                                            name, self.object_name_string(object_name_path), number, data_validators['max']))
-                        continue
-
-                    if type(value) in [float, int]:
+                            for value_set in value:
+                                if any([v > data_validators['max'] for v in value_set]):
+                                    if input_isDict or input_isDict is None:
+                                        self.input_data_errors.append(
+                                            'At least one value in %s (from %s) exceeds allowable max of %s' % (
+                                                name, self.object_name_string(object_name_path), data_validators['max']))
+                                    if input_isDict is False:
+                                        self.input_data_errors.append(
+                                            'At least one value in %s (from %s number %s) exceeds allowable max of %s' % (
+                                                name, self.object_name_string(object_name_path), number, data_validators['max']))
+                    
+                    if type(value) in [int, float]:
                         if data_validators.get('min') is not None:
                             if value < data_validators['min']:
                                 if input_isDict==True or input_isDict==None:
@@ -1652,12 +1681,54 @@ class ValidateNestedInput:
         :param input_isDict: bool, indicates if the object input came in as a dict or list
         :return: None
         """
+
+        def test_conversion(conversion_function, conversion_function_name, name, value, object_name_path, number, input_isDict, record_errors=True):
+            try:
+                series = pd.Series(value)
+                if series.isnull().values.any():
+                    raise NotImplementedError
+                new_value = conversion_function(value)
+            except ValueError:
+                if record_errors:
+                    if input_isDict or input_isDict is None:
+                        self.input_data_errors.append(
+                            'Could not convert %s (%s) in %s to %ss' % (name, value,
+                                                self.object_name_string(object_name_path), 
+                                                conversion_function_name)
+                        )
+                    if input_isDict is False:
+                        self.input_data_errors.append(
+                            'Could not convert %s (%s) in %s (number %s) to %ss' % (name, value,
+                                                self.object_name_string(object_name_path), number, 
+                                                conversion_function_name)
+                        )
+            except NotImplementedError:
+                if record_errors:
+                    if input_isDict or input_isDict is None:
+                        self.input_data_errors.append(
+                            '%s in %s contains at least one NaN value.' % (name,
+                            self.object_name_string(object_name_path))
+                        )
+                    if input_isDict is False:
+                        self.input_data_errors.append(
+                            '%s in %s (number %s) contains at least one NaN value.' % (name,
+                            self.object_name_string(object_name_path), number)
+                        )
+            else:
+                self.update_attribute_value(object_name_path, number, name, new_value)
+                return new_value
+
         if real_values is not None:
             for name, value in real_values.items():
                 if self.isAttribute(name):
                     make_array = False
+                    make_array_of_array = False
                     attribute_type = template_values[name]['type']  # attribute_type's include list_of_float
+                    new_value = None
                     if isinstance(attribute_type, list):
+                        # These checks are for cases where the user can supply a simple data type (i.e. string)
+                        # or a list of this type (ie. list of string), by convention if both are allowed we will convert to the list form
+                        # for simplicity of handlings the data throughout the API workflow
                         list_eval_function_name = None
                         if all([x in attribute_type for x in ['float', 'list_of_float']]):
                             list_eval_function_name = 'list_of_float'
@@ -1668,71 +1739,74 @@ class ValidateNestedInput:
                         if all([x in attribute_type for x in ['dict', 'list_of_dict']]):
                             list_eval_function_name = 'list_of_dict'
                         if list_eval_function_name is not None:
-                            if isinstance(value, list):
-                                try:
-                                    series = pd.Series(value)
-                                    if series.isnull().values.any():
-                                        raise NotImplementedError
-                                    new_value = eval(list_eval_function_name)(value)
-                                except ValueError:
-                                    if input_isDict or input_isDict is None:
-                                        self.input_data_errors.append(
-                                            'Could not convert %s (%s) in %s to %ss' % (name, value,
-                                                                self.object_name_string(object_name_path), 
-                                                                list_eval_function_name.replace('_',' '))
-                                        )
-                                    if input_isDict is False:
-                                        self.input_data_errors.append(
-                                            'Could not convert %s (%s) in %s (number %s) to %ss' % (name, value,
-                                                                self.object_name_string(object_name_path), number, 
-                                                                list_eval_function_name.replace('_',' '))
-                                        )
-                                    continue  # both continue statements should be in a finally clause, ...
-                                except NotImplementedError:
-                                    if input_isDict or input_isDict is None:
-                                        self.input_data_errors.append(
-                                            '%s in %s contains at least one NaN value.' % (name,
-                                            self.object_name_string(object_name_path))
-                                        )
-                                    if input_isDict is False:
-                                        self.input_data_errors.append(
-                                            '%s in %s (number %s) contains at least one NaN value.' % (name,
-                                            self.object_name_string(object_name_path), number)
-                                        )
-                                    continue  # both continue statements should be in a finally clause, ...
+                            if 'list_of_list' not in attribute_type:
+                                if isinstance(value, list):
+                                    try:
+                                        new_value = test_conversion(eval(list_eval_function_name), list_eval_function_name.replace('_',' '), name, value, object_name_path, number, input_isDict)
+                                    except:
+                                        pass
                                 else:
-                                    self.update_attribute_value(object_name_path, number, name, new_value)
-                                    continue  # ... but python 2.7  does not support continue in finally clauses
+                                    attribute_type = list_eval_function_name.split('_')[-1]
+                                    make_array = True                        
                             else:
-                                attribute_type = list_eval_function_name.split('_')[-1]
-                                make_array = True
+                                # List of list is more complex to check since it can go along with and of the previously listed list_of_ types
+                                # We see if the data is a list of lists first,
+                                # otherwise we check to see if if is a valid alternate data type (i.e. 'list_of_int')
+                                # Finally if it is a valid alternate type we set it to be converted to a list at the end
+                                # otherwise we flag an error
+                                try:
+                                    new_value = test_conversion(list_of_list, "list of list", name, value, object_name_path, number, input_isDict, record_errors=False)
+                                except:
+                                    isValidAlternative = False
+                                    for alternate_data_type in attribute_type:
+                                        try:
+                                            new_value = eval(alternate_data_type)(value)
+                                            attribute_type = alternate_data_type
+                                            make_array = True
+                                            # In case where the data is not at least a list (i.e. int), make it a list
+                                            # so it will later be made into a list of lists
+                                            if not isinstance(new_value, list):
+                                                make_array_of_array = True
+                                                new_value = new_value
+                                                self.update_attribute_value(object_name_path, number, name, new_value)
+                                            isValidAlternative = True
+                                            break
+                                        except:
+                                            pass
+                                    if isValidAlternative == False:
+                                        if input_isDict or input_isDict is None:
+                                            self.input_data_errors.append('Could not convert %s (%s) in %s to one of %s' % (
+                                            name, value, self.object_name_string(object_name_path),
+                                            ",".join(attribute_type)))
+                                        if input_isDict is False:
+                                            self.input_data_errors.append('Could not convert %s (%s) in %s (number %s) to one of %s' % (
+                                            name, value, self.object_name_string(object_name_path), number,
+                                            ",".join(attribute_type)))
 
-                    attribute_type = eval(attribute_type)  # convert string to python type
-                    try:  # to convert input value to type defined in nested_input_definitions
-                        new_value = attribute_type(value)
-                    except:  # if fails for any reason record that the conversion failed
-                        if input_isDict or input_isDict is None:
-                            self.input_data_errors.append('Could not convert %s (%s) in %s to %s' % (name, value,
-                                        self.object_name_string(object_name_path), str(attribute_type).split(' ')[1]))
-                        if input_isDict is False:
-                            self.input_data_errors.append('Could not convert %s (%s) in %s (number %s) to %s' % (name, value,
-                                        self.object_name_string(object_name_path), number , str(attribute_type).split(' ')[1]))
-                    else:
-                        if not isinstance(new_value, bool):
-                            if make_array:
-                                new_value = [new_value]
-                            self.update_attribute_value(object_name_path, number, name, new_value)
+                    if not isinstance(attribute_type, list) and new_value is None:
+                        if attribute_type =='bool':
+                            attribute_type = convert_bool
+
                         else:
-                            if value not in [True, False, 1, 0]:
-                                if input_isDict or input_isDict is None:
-                                    self.input_data_errors.append('Could not convert %s (%s) in %s to %s' % (
-                                    name, value, self.object_name_string(object_name_path),
-                                    str(attribute_type).split(' ')[1]))
-                                if input_isDict is False:
-                                    self.input_data_errors.append('Could not convert %s (%s) in %s (number %s) to %s' % (
-                                    name, value, self.object_name_string(object_name_path), number,
-                                    str(attribute_type).split(' ')[1]))
+                            attribute_type = eval(attribute_type)  # convert string to python type
+                        try:  # to convert input value to type defined in nested_input_definitions
+                            new_value = attribute_type(value)
+                        except:  # if fails for any reason record that the conversion failed
+                            if input_isDict or input_isDict is None:
+                                self.input_data_errors.append('Could not convert %s (%s) in %s to %s' % (name, value,
+                                            self.object_name_string(object_name_path), str(attribute_type).split(' ')[1]))
+                            if input_isDict is False:
+                                self.input_data_errors.append('Could not convert %s (%s) in %s (number %s) to %s' % (name, value,
+                                            self.object_name_string(object_name_path), number , str(attribute_type).split(' ')[1]))
 
+                    # For simplicity in the rest of the code, convert to a list if necessary
+                    if make_array and new_value is not None:
+                        new_value = [new_value]
+                        if make_array_of_array:
+                            new_value = [new_value]
+                    if new_value is not None:
+                        self.update_attribute_value(object_name_path, number, name, new_value)
+                    
 
     def fillin_defaults(self, object_name_path, template_values=None, real_values=None,  number=1, input_isDict=None):
         """
@@ -1892,7 +1966,19 @@ class ValidateNestedInput:
         else:
             self.urdb_errors.append('Invalid URDB response: %s'.format(str(urdb_response)))
 
-
+    def validate_timestep_series(self, series, obj_name, attr_name, time_steps_per_hour, number=1, input_isDict=None):
+        max_timesteps = 8760*time_steps_per_hour
+        for ts in series:
+            if ts is not None and (ts < 1 or ts > max_timesteps or ts%1>0):
+                self.input_data_errors.append((
+                    "At least one invalid timestep value ({}) for {}. Timesteps must be integer values between 1 and {} inclusive".format(
+                    ts, attr_name,max_timesteps )))
+                if input_isDict is False:
+                    self.input_data_errors[-1] = self.input_data_errors[-1].replace(
+                        '. Timesteps', ' in {} {}. Timesteps'.format(obj_name, number))
+                break
+        return 
+    
     def validate_8760(self, attr, obj_name, attr_name, time_steps_per_hour, number=1, input_isDict=None):
         """
         This method is for the case that a user uploads a time-series that has either 30 minute or 15 minute
