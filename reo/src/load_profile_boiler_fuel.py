@@ -87,7 +87,7 @@ class LoadProfileBoilerFuel(BuiltInProfile):
             # Aggregate total hybrid load
             hybrid_loadlist = list(np.sum(np.array(combine_loadlist), 0))
             self.load_list = copy.copy(hybrid_loadlist)
-            self.annual_mmbtu = round(sum(self.load_list),0)
+            self.annual_mmbtu = int(round(sum(self.load_list),0))
 
         if dfm is not None:
             dfm.add_load_boiler_fuel(self)
