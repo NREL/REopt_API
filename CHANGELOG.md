@@ -28,6 +28,20 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v1.4.0 - 2021-01-29
+### Major Updates
+### Minor Updates
+## Added
+`reo`/`reopt.jl`: Coincident peak rates and expected time steps can be specified. There can be a single rate and list of time steps. Or there can be multiple CP periods in a year with different rates, and then a set of time steps is specified for each rate. Peak demand occurring during each set of CP time steps is charged at the corresponding CP rate.
+
+`reo`: Add a new **ElectricTariff** inputs and outputs: 
+ - **coincident_peak_load_active_timesteps**
+ - **coincident_peak_load_charge_us_dollars_per_kw**
+ - **year_one_coincident_peak_cost_us_dollars**
+ - **year_one_coincident_peak_cost_bau_us_dollars**
+ - **total_coincident_peak_cost_us_dollars**
+ - **total_coincident_peak_cost_bau_us_dollars**
+
 ## v1.3.0 - 2021-01-28
 ### Major Updates
 ### Minor Updates

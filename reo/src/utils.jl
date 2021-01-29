@@ -48,6 +48,7 @@ Base.@kwdef struct Parameter
 	 FuelBin::UnitRange{Int64}	   # To be removed
 	 PricingTier::UnitRange{Int64}  # Set U: Pricing Tiers (proposed revision) #new
 	 NMILRegime::Array{String,1}	# Set V: Net-metering Regimes
+     CPPeriod::UnitRange{Int64}     # Set P: Coincident Peak Periods
 
 	 ###  Subsets and Indexed Sets  ####
 	 ElecStorage::Array{String,1}  # B^{e} \subset B: Electrical energy storage systems
@@ -64,7 +65,8 @@ Base.@kwdef struct Parameter
 	 ElectricTechs::Array{String,1}  # T^{e} \subset T: Electricity-producing technologies
 	 FuelBurningTechs::Array{String,1}  # T^{f} \subset T: Fuel-burning technologies
 	 TechsNoTurndown::Array{String,1}  # T^{ac} \subset T: Technologies that cannot turn down, i.e., PV and wind
-
+     CoincidentPeakLoadTimeSteps::AxisArray # H^{cp}_m: Coincident peak time steps in month m
+     
 	 ###  Parameters and Tables supporting Indexed Sets ###
 	 TechToNMILMapping::AxisArray  # Defines set T_v: Technologies that may be access net-metering regime v
 
@@ -88,15 +90,15 @@ Base.@kwdef struct Parameter
 	 #For the replacement of CapCostX, see new parameters SegmentLB and SegmentUB in section "System size and fuel limit parameters"
 	 DemandRates::Array{Float64, 2}  # c^{r}_{re}: Cost per unit peak demand in tier e during ratchet r
 	 DemandRatesMonth::Array{Float64, 2}   # c^{rm}_{mn}: Cost per unit peak demand in tier n during month m
-
+     CoincidentPeakRates::AxisArray   # c^{cp}_p: Cost per unit peak demand during coincident peak hours of CP period p
+     
 	 ###  Demand Parameters ###
 	 ElecLoad::Array{Float64,1}  # \delta^{d}_{h}: Electrical load in time step h   [kW]
      DemandLookbackPercent::Float64    # \delta^{lp}: Demand Lookback proportion [fraction]
      MaxDemandInTier::Array{Float64,1}  # \delta^{t}_{e}: Maximum power demand in ratchet e
      MaxDemandMonthsInTier::Array{Float64,1}   # \delta^{mt}_{n}: Maximum monthly power demand in tier n
      MaxUsageInTier::Array{Float64,1}   # \delta^{tu}_{u}: Maximum monthly energy demand in tier u
-
-
+	 
 	 ###  Incentive Parameters ###
 	 NMILLimits::AxisArray   # i^{n}_{v}: Net metering and interconnect limits in net metering regime v [kW]
      MaxProdIncent::AxisArray      # \bar{i}_t: Upper incentive limit for technology t [$]
@@ -249,6 +251,7 @@ function Parameter(d::Dict)
     d[:TimeStepBat] = 0:d["TimeStepCount"]
     n_location = length(d["MaxSizesLocation"])
     d[:Location] = 1:n_location
+    d[:CPPeriod] = 1:d["CoincidentPeakPeriodCount"]
 
     # the following array manipulation may have to adapt once length(d["Subdivision"]) > 1
     seg_min_size_array = reshape(transpose(reshape(d["SegmentMinSize"], length(d[:Seg]), length(d["Tech"]))),
@@ -275,7 +278,14 @@ function Parameter(d::Dict)
     d["NMILLimits"] = AxisArray(d["NMILLimits"], d["NMILRegime"])
     d["TechToNMILMapping"] = vector_to_axisarray(d["TechToNMILMapping"], d["Tech"], d["NMILRegime"])
     d["OMcostPerUnitProd"] = AxisArray(d["OMcostPerUnitProd"], d["Tech"])
-	d["OMcostPerUnitHourPerSize"] = AxisArray(d["OMcostPerUnitHourPerSize"], d["Tech"])
+    d["OMcostPerUnitHourPerSize"] = AxisArray(d["OMcostPerUnitHourPerSize"], d["Tech"])
+    if !isempty(d["CoincidentPeakLoadTimeSteps"])
+        d["CoincidentPeakRates"] = AxisArray(d["CoincidentPeakRates"], d[:CPPeriod])
+        d["CoincidentPeakLoadTimeSteps"] = AxisArray(d["CoincidentPeakLoadTimeSteps"], d[:CPPeriod], 1:size(d["CoincidentPeakLoadTimeSteps"],2))
+    else
+        d["CoincidentPeakRates"] = AxisArray([])
+        d["CoincidentPeakLoadTimeSteps"] = AxisArray([])
+    end
 
     # Reformulation additions
     d["StorageCostPerKW"] = AxisArray(d["StorageCostPerKW"], d["Storage"])

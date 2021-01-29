@@ -22,7 +22,8 @@ function add_continuous_variables(m, p)
 		dvPeakDemandE[p.Ratchets, p.DemandBin] >= 0  # X^{de}_{re}:  Peak electrical power demand allocated to tier e during ratchet r [kW]
 		dvPeakDemandEMonth[p.Month, p.DemandMonthsBin] >= 0  #  X^{dn}_{mn}: Peak electrical power demand allocated to tier n during month m [kW]
 		dvPeakDemandELookback[p.Month] >= 0  # X^{lp}: Peak electric demand look back [kW]
-        MinChargeAdder >= 0   #to be removed
+		dvPeakDemandCP[p.CPPeriod] >= 0 # X^{cp}_p: Peak electric demand during expected coincident peak hours of CP period p [kW]
+		MinChargeAdder >= 0   #to be removed
 		#UtilityMinChargeAdder[p.Month] >= 0   #X^{mc}_m: Annual utility minimum charge adder in month m [\$]
 		#CHP and Fuel-burning variables
 		dvFuelUsage[p.Tech, p.TimeStep] >= 0  # Fuel burned by technology t in time step h
@@ -824,6 +825,13 @@ function add_tou_demand_charge_constraints(m, p)
 	end
 end
 
+function add_coincident_peak_charge_constraints(m, p)
+	## Constraint (14a): in each coincident peak period, charged CP demand is the max of demand in all CP timesteps
+	@constraint(m, [prd in p.CPPeriod, ts in p.CoincidentPeakLoadTimeSteps[prd,:][p.CoincidentPeakLoadTimeSteps[prd,:].!=nothing]],
+		m[:dvPeakDemandCP][prd] >= sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier)
+	)
+	m[:TotalCPCharges] = @expression(m, p.pwf_e * sum( p.CoincidentPeakRates[prd] * m[:dvPeakDemandCP][prd] for prd in p.CPPeriod) )
+end
 
 function add_util_fixed_and_min_charges(m, p)
 
@@ -837,8 +845,8 @@ function add_util_fixed_and_min_charges(m, p)
     end
 
 	if m[:TotalMinCharge] >= 1e-2
-        @constraint(m, MinChargeAddCon, m[:MinChargeAdder] >= m[:TotalMinCharge] - (
-			m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] + m[:TotalExportBenefit] + m[:TotalFixedCharges])
+        @constraint(m, MinChargeAddCon, m[:MinChargeAdder] >= m[:TotalMinCharge] - ( 
+			m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] + m[:TotalCPCharges] + m[:TotalExportBenefit] + m[:TotalFixedCharges])
 		)
 	else
 		@constraint(m, MinChargeAddCon, m[:MinChargeAdder] == 0)
@@ -878,8 +886,8 @@ function add_cost_function(m, p)
 		(m[:TotalPerUnitProdOMCosts] + m[:TotalHourlyCHPOMCosts]) * m[:r_tax_fraction_owner] +
 
 		# Utility Bill, tax deductible for offtaker
-		(m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] + m[:TotalExportBenefit] + m[:TotalFixedCharges] + 0.999*m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker] +
-
+		(m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] + m[:TotalCPCharges] + m[:TotalExportBenefit] + m[:TotalFixedCharges] + 0.999*m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker] +
+        
 		# CHP Standby Charges
 		m[:TotalCHPStandbyCharges] * m[:r_tax_fraction_offtaker] +
 
@@ -902,11 +910,12 @@ function add_yearone_expressions(m, p)
     m[:Year1EnergyCost] = m[:TotalEnergyChargesUtil] / p.pwf_e
     m[:Year1DemandCost] = m[:TotalDemandCharges] / p.pwf_e
     m[:Year1DemandTOUCost] = m[:DemandTOUCharges] / p.pwf_e
-    m[:Year1DemandFlatCost] = m[:DemandFlatCharges] / p.pwf_e
+	m[:Year1DemandFlatCost] = m[:DemandFlatCharges] / p.pwf_e
+	m[:Year1CPCost] = m[:TotalCPCharges] / p.pwf_e
     m[:Year1FixedCharges] = m[:TotalFixedCharges] / p.pwf_e
     m[:Year1MinCharges] = m[:MinChargeAdder] / p.pwf_e
+    m[:Year1Bill] = m[:Year1EnergyCost] + m[:Year1DemandCost] + m[:Year1CPCost] + m[:Year1FixedCharges] + m[:Year1MinCharges]
 	m[:Year1CHPStandbyCharges] = m[:TotalCHPStandbyCharges] / p.pwf_e
-    m[:Year1Bill] = m[:Year1EnergyCost] + m[:Year1DemandCost] + m[:Year1FixedCharges] + m[:Year1MinCharges]
 end
 
 
@@ -1006,7 +1015,14 @@ function reopt_run(m, p::Parameter)
 	else
 		m[:DemandTOUCharges] = 0
 	end
-    m[:TotalDemandCharges] = @expression(m, m[:DemandTOUCharges] + m[:DemandFlatCharges])
+	m[:TotalDemandCharges] = @expression(m, m[:DemandTOUCharges] + m[:DemandFlatCharges])
+	
+	### Constraint set (14): Coincident Peak Charges
+	if !isempty(p.CoincidentPeakRates)
+		add_coincident_peak_charge_constraints(m, p)
+	else
+		m[:TotalCPCharges] = 0
+	end
 
 	add_parameters(m, p)
 	add_cost_expressions(m, p)
@@ -1516,32 +1532,37 @@ function add_util_results(m, p, r::Dict)
                                    + m[:TotalHourlyCHPOMCosts]) * m[:r_tax_fraction_owner]
 
 	year_one_om_costs_after_tax = total_om_costs_after_tax / (p.pwf_om * p.two_party_factor)
+	
+    net_capital_costs_plus_om = value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]) +
+                                value(m[:TotalPerUnitSizeOMCosts] + m[:TotalPerUnitProdOMCosts]) * m[:r_tax_fraction_owner] +
+                                value(m[:TotalFuelCharges]) * m[:r_tax_fraction_offtaker]
 
-    push!(r, Dict(
-        "year_one_utility_kwh" => round(value(m[:Year1UtilityEnergy]), digits=2),
-        "year_one_energy_cost" => round(value(m[:Year1EnergyCost]), digits=2),
-        "year_one_demand_cost" => round(value(m[:Year1DemandCost]), digits=2),
-        "year_one_demand_tou_cost" => round(value(m[:Year1DemandTOUCost]), digits=2),
-        "year_one_demand_flat_cost" => round(value(m[:Year1DemandFlatCost]), digits=2),
-        "year_one_export_benefit" => round(value(m[:ExportBenefitYr1]), digits=0),
-        "year_one_fixed_cost" => round(m[:Year1FixedCharges], digits=0),
-        "year_one_min_charge_adder" => round(value(m[:Year1MinCharges]), digits=2),
-        "year_one_bill" => round(value(m[:Year1Bill]), digits=2),
-        "year_one_payments_to_third_party_owner" => round(value(m[:TotalDemandCharges]) / p.pwf_e, digits=0),
-        "total_energy_cost" => round(value(m[:TotalEnergyChargesUtil]) * m[:r_tax_fraction_offtaker], digits=2),
-        "total_demand_cost" => round(value(m[:TotalDemandCharges]) * m[:r_tax_fraction_offtaker], digits=2),
-        "total_fixed_cost" => round(m[:TotalFixedCharges] * m[:r_tax_fraction_offtaker], digits=2),
-        "total_export_benefit" => round(value(m[:TotalExportBenefit]) * m[:r_tax_fraction_offtaker], digits=2),
-        "total_min_charge_adder" => round(value(m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker], digits=2),
-        "net_capital_costs_plus_om" => round(net_capital_costs_plus_om, digits=0),
-        "average_annual_energy_exported_wind" => round(value(m[:ExportedElecWIND]), digits=0),
-        "average_annual_energy_curtailed_wind" => round(value(m[:CurtailedElecWIND]), digits=0),
-        "average_annual_energy_exported_gen" => round(value(m[:ExportedElecGEN]), digits=0),
-        "net_capital_costs" => round(value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]), digits=2),
-        "total_om_costs_after_tax" => round(total_om_costs_after_tax, digits=0),
-        "year_one_om_costs_after_tax" => round(year_one_om_costs_after_tax, digits=0),
-        "year_one_om_costs_before_tax" => round(year_one_om_costs_after_tax / m[:r_tax_fraction_owner], digits=0)
-    )...)
+    push!(r, Dict("year_one_utility_kwh" => round(value(m[:Year1UtilityEnergy]), digits=2),
+						"year_one_energy_cost" => round(value(m[:Year1EnergyCost]), digits=2),
+						"year_one_demand_cost" => round(value(m[:Year1DemandCost]), digits=2),
+						"year_one_demand_tou_cost" => round(value(m[:Year1DemandTOUCost]), digits=2),
+						"year_one_demand_flat_cost" => round(value(m[:Year1DemandFlatCost]), digits=2),
+						"year_one_coincident_peak_cost" => round(value(m[:Year1CPCost]), digits=2),
+						"year_one_export_benefit" => round(value(m[:ExportBenefitYr1]), digits=0),
+						"year_one_fixed_cost" => round(m[:Year1FixedCharges], digits=0),
+						"year_one_min_charge_adder" => round(value(m[:Year1MinCharges]), digits=2),
+						"year_one_bill" => round(value(m[:Year1Bill]), digits=2),
+						"year_one_payments_to_third_party_owner" => round(value(m[:TotalDemandCharges]) / p.pwf_e, digits=0),
+						"total_energy_cost" => round(value(m[:TotalEnergyChargesUtil]) * m[:r_tax_fraction_offtaker], digits=2),
+						"total_demand_cost" => round(value(m[:TotalDemandCharges]) * m[:r_tax_fraction_offtaker], digits=2),
+						"total_coincident_peak_cost" => round(value(m[:TotalCPCharges]) * m[:r_tax_fraction_offtaker], digits=2),
+						"total_fixed_cost" => round(m[:TotalFixedCharges] * m[:r_tax_fraction_offtaker], digits=2),
+						"total_export_benefit" => round(value(m[:TotalExportBenefit]) * m[:r_tax_fraction_offtaker], digits=2),
+						"total_min_charge_adder" => round(value(m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker], digits=2),
+						"net_capital_costs_plus_om" => round(net_capital_costs_plus_om, digits=0),
+						"average_annual_energy_exported_wind" => round(value(m[:ExportedElecWIND]), digits=0),
+						"average_annual_energy_curtailed_wind" => round(value(m[:CurtailedElecWIND]), digits=0),
+                        "average_annual_energy_exported_gen" => round(value(m[:ExportedElecGEN]), digits=0),
+						"net_capital_costs" => round(value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]), digits=2),
+						"total_om_costs_after_tax" => round(total_om_costs_after_tax, digits=0),
+						"year_one_om_costs_after_tax" => round(year_one_om_costs_after_tax, digits=0),
+						"year_one_om_costs_before_tax" => round(year_one_om_costs_after_tax / m[:r_tax_fraction_owner], digits=0)
+					)...)
 
     @expression(m, GridToLoad[ts in p.TimeStep],
                 sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) - m[:dvGridToStorage][ts] )

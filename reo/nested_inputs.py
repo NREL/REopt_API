@@ -85,6 +85,9 @@ def list_of_float(input):
 def list_of_str(input):
   return [str(i) for i in input]
 
+def list_of_list(input):
+  return [list(i) for i in input]
+
 def list_of_int(input):
   result = []
   for i in input:
@@ -581,6 +584,18 @@ nested_input_definitions = {
           "type": "bool",
           "default": False,
           "description": "Boolean indicator if CHP does not reduce demand charges"
+        },
+        "coincident_peak_load_active_timesteps": {
+          "type": ["int", "list_of_int", "list_of_list"],
+          "depends_on": ["coincident_peak_load_charge_us_dollars_per_kw"],
+          "description": "The optional coincident_peak_load_charge_us_dollars_per_kw will apply at the max grid-purchased power during these timesteps. Note timesteps are indexed to a base of 1 not 0."
+        },
+        "coincident_peak_load_charge_us_dollars_per_kw": {
+          "type": ["float", "list_of_float"],
+          "min": 0,
+          "max": max_big_number,
+          "depends_on":["coincident_peak_load_active_timesteps"],
+          "description": "Optional coincident peak demand charge that is applied to the max load during the timesteps specified in coincident_peak_load_active_timesteps"
         },
       },
 
