@@ -309,35 +309,26 @@ def summary(request, user_uuid):
                             results['focus'] = "Resilience"
                         else:
                             results['focus'] = "Financial"
+                        
+                        if load.get('loads_kw') is not None:
+                            results['doe_reference_name'] = "Custom"
+                        else:
+                            results['doe_reference_name'] = load.get('doe_reference_name')
 
                     # Address
                     results['address'] = site.get('address')
 
-
-
                     # Description
                     results['description'] = scenario.description
-
-                    # Focus
-                    if load['outage_start_time_step'] is not None:
-                        results['focus'] = "Resilience"
-                    else:
-                        results['focus'] = "Financial"
 
                     # Address
                     results['address'] = site.get('address')
 
                     # Utility Tariff
-                    if tariff['urdb_rate_name']:
+                    if tariff.get('urdb_rate_name') is not None:
                         results['urdb_rate_name'] = tariff.get('urdb_rate_name')
                     else:
                         results['urdb_rate_name'] = "Custom"
-
-                    # Load Profile
-                    if load['loads_kw']:
-                        results['doe_reference_name'] = "Custom"
-                    else:
-                        results['doe_reference_name'] = load.get('doe_reference_name')
 
                     # NPV
                     results['npv_us_dollars'] = financial.get('npv_us_dollars')
@@ -374,17 +365,11 @@ def summary(request, user_uuid):
                         tariff.get('year_one_coincident_peak_cost_bau_us_dollars') or 0,
                         tariff.get('year_one_bill_bau_us_dollars') or 0
                         ]))
-                    #Resilience Stats
-                    results['resilience_hours_min'] = resilience.get('resilience_hours_min') 
-                    results['resilience_hours_max'] = resilience.get('resilience_hours_max') 
-                    results['resilience_hours_avg'] = resilience.get('resilience_hours_avg') 
 
-                    if results['resilience_hours_max'] is None:
-                        results['resilience_hours_max'] = 'not evaluated'
-                    if results['resilience_hours_min'] is None:
-                        results['resilience_hours_min'] = 'not evaluated'
-                    if results['resilience_hours_avg'] is None:
-                        results['resilience_hours_avg'] = 'not evaluated'
+                    #Resilience Stats
+                    results['resilience_hours_min'] = resilience.get('resilience_hours_min', 'not evaluated')
+                    results['resilience_hours_max'] = resilience.get('resilience_hours_max', 'not evaluated')
+                    results['resilience_hours_avg'] = resilience.get('resilience_hours_avg', 'not evaluated')
                     
                     results['year_one_savings_us_dollars'] = year_one_costs_bau - year_one_costs
 
@@ -408,76 +393,46 @@ def summary(request, user_uuid):
                         if batt.get('max_kw') or -1 > 0:
                             results['batt_kw'] = batt.get('size_kw')
                             results['batt_kwh'] = batt.get('size_kwh')
-                        else:
-                            results['doe_reference_name'] = load.get('doe_reference_name')
 
-                        # NPV
-                        results['npv_us_dollars'] = financial.get('npv_us_dollars')
+                    # PV Size
+                    if pv is not None:
+                        if pv['max_kw'] > 0:
+                            results['pv_kw'] = pv.get('size_kw')
 
-                        # DG System Cost
-                        results['net_capital_costs'] = financial.get('net_capital_costs')
+                    # Wind Size
+                    if wind is not None:
+                        if wind.get('max_kw') or -1 > 0:
+                            results['wind_kw'] = wind.get('size_kw')
 
-                        # Lifecycle Costs
-                        results['lcc_us_dollars'] = financial.get('lcc_us_dollars')
+                    # Generator Size
+                    if gen is not None:
+                        if gen.get('max_kw') or -1 > 0:
+                            results['gen_kw'] = gen.get('size_kw')
 
-                         # Lifecycle Costs BAU
-                        results['lcc_bau_us_dollars'] = financial.get('lcc_bau_us_dollars')
+                    # Battery Size
+                    if batt is not None:
+                        if batt.get('max_kw') or -1 > 0:
+                            results['batt_kw'] = batt.get('size_kw')
+                            results['batt_kwh'] = batt.get('size_kwh')
 
-                        #Other Financials
-                        results['net_capital_costs_plus_om_us_dollars'] = financial.get('net_capital_costs_plus_om_us_dollars')
-                        results['net_om_us_dollars_bau'] = financial.get('net_om_us_dollars_bau')
+                    if chp is not None:
+                        if (chp.get('max_kw') or -1) > 0:
+                            results['chp_kw'] = chp.get('size_kw')
 
-                        # Year 1 Savings
-                        year_one_costs = tariff.get('year_one_bill_us_dollars') or 0
+                    # HotTES Size
+                    if hottes is not None:
+                        if (hottes.get('max_gal') or -1) > 0:
+                            results['hottes_gal'] = hottes.get('size_gal')
 
-                        year_one_costs_bau = tariff.get('year_one_bill_bau_us_dollars') or 0
+                    # ColdTES Size
+                    if coldtes is not None:
+                        if (coldtes.get('max_gal') or -1) > 0:
+                            results['coldtes_gal'] = coldtes.get('size_gal')
 
-                        results['year_one_savings_us_dollars'] = year_one_costs_bau - year_one_costs
-
-                        #Resilience Stats
-                        results['resilience_hours_min'] = resilience.get('resilience_hours_min', 'not evaluated')
-                        results['resilience_hours_max'] = resilience.get('resilience_hours_max', 'not evaluated')
-                        results['resilience_hours_avg'] = resilience.get('resilience_hours_avg', 'not evaluated')
-
-                        # PV Size
-                        if pv is not None:
-                            if pv['max_kw'] > 0:
-                                results['pv_kw'] = pv.get('size_kw')
-
-                        # Wind Size
-                        if wind is not None:
-                            if wind.get('max_kw') or -1 > 0:
-                                results['wind_kw'] = wind.get('size_kw')
-
-                        # Generator Size
-                        if gen is not None:
-                            if gen.get('max_kw') or -1 > 0:
-                                results['gen_kw'] = gen.get('size_kw')
-
-                        # Battery Size
-                        if batt is not None:
-                            if batt.get('max_kw') or -1 > 0:
-                                results['batt_kw'] = batt.get('size_kw')
-                                results['batt_kwh'] = batt.get('size_kwh')
-                            
-                        if chp is not None:
-                            if (chp.get('max_kw') or -1) > 0:
-                                results['chp_kw'] = chp.get('size_kw')
-
-                        # HotTES Size
-                        if hottes is not None:
-                            if (hottes.get('max_gal') or -1) > 0:
-                                results['hottes_gal'] = hottes.get('size_gal')
-
-                        # ColdTES Size
-                        if coldtes is not None:
-                            if (coldtes.get('max_gal') or -1) > 0:
-                                results['coldtes_gal'] = coldtes.get('size_gal')
-
-                        # Absoprtion Chiller Size
-                        if absorpchl is not None:
-                            if (absorpchl.get('max_ton') or -1) > 0:
-                                results['absorpchl_ton'] = absorpchl.get('size_ton')
+                    # Absoprtion Chiller Size
+                    if absorpchl is not None:
+                        if (absorpchl.get('max_ton') or -1) > 0:
+                            results['absorpchl_ton'] = absorpchl.get('size_ton')
             except:
                 json_response['scenarios'].append(results)
                 continue
