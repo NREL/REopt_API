@@ -394,27 +394,6 @@ def summary(request, user_uuid):
                             results['batt_kw'] = batt.get('size_kw')
                             results['batt_kwh'] = batt.get('size_kwh')
 
-                    # PV Size
-                    if pv is not None:
-                        if pv['max_kw'] > 0:
-                            results['pv_kw'] = pv.get('size_kw')
-
-                    # Wind Size
-                    if wind is not None:
-                        if wind.get('max_kw') or -1 > 0:
-                            results['wind_kw'] = wind.get('size_kw')
-
-                    # Generator Size
-                    if gen is not None:
-                        if gen.get('max_kw') or -1 > 0:
-                            results['gen_kw'] = gen.get('size_kw')
-
-                    # Battery Size
-                    if batt is not None:
-                        if batt.get('max_kw') or -1 > 0:
-                            results['batt_kw'] = batt.get('size_kw')
-                            results['batt_kwh'] = batt.get('size_kwh')
-
                     if chp is not None:
                         if (chp.get('max_kw') or -1) > 0:
                             results['chp_kw'] = chp.get('size_kw')
