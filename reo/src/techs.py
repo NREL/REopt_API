@@ -1204,6 +1204,8 @@ class RC():
         self.space_node = kwargs.get('space_node')
         self.temperature_lower_bound = kwargs.get('temperature_lower_bound')
         self.temperature_upper_bound = kwargs.get('temperature_upper_bound')
+        self.comfort_temp_lower_bound_degC = kwargs.get('comfort_temp_lower_bound_degC')
+        self.comfort_temp_upper_bound_degC = kwargs.get('comfort_temp_upper_bound_degC')
 
         dfm.add_rc(self)
 

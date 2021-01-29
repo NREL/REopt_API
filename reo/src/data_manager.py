@@ -1042,10 +1042,11 @@ class DataManager:
                         single_tech_op.append(1/float(val))
                 else:
                     pass
-                max_elec_penalty.append(single_tech_op)
+                if len(single_tech_op)>0:
+                    max_elec_penalty.append(single_tech_op)
 
         if len([sum(i) for i in zip(*max_elec_penalty)]) > 0:
-            max_elec_penalty = [sum(i)*1000 for i in zip(*max_elec_penalty)]
+            max_elec_penalty = [sum(i)*100 for i in zip(*max_elec_penalty)]
         else:
             max_elec_penalty = [0.0] * self.n_timesteps
         return cop, max_elec_penalty
@@ -1420,6 +1421,8 @@ class DataManager:
             'SpaceNode': self.rc.space_node,
             'TempLowerBound': self.rc.temperature_lower_bound,
             'TempUpperBound': self.rc.temperature_upper_bound,
+            'ComfortTempLimitHP': self.rc.comfort_temp_lower_bound_degC,
+            'ComfortTempLimitAC': self.rc.comfort_temp_upper_bound_degC,
             'FlexTechsCOP': flex_techs_cop,
             'MaxElecPenalty': max_elec_penalty,
             # 'UseCrankcase': use_crankcase,
@@ -1438,7 +1441,7 @@ class DataManager:
             'WaterNode': water_node,
             'TempLowerBoundWH': temperature_lower_bound_degC,
             'TempUpperBoundWH': temperature_upper_bound_degC,
-            'ComfortTempLimit': comfort_temp_limit_degC,
+            'ComfortTempLimitWH': comfort_temp_limit_degC,
             'WaterHeaterTechs': wh_techs
         }
 
@@ -1579,6 +1582,8 @@ class DataManager:
             'SpaceNode': self.rc.space_node,
             'TempLowerBound': self.rc.temperature_lower_bound,
             'TempUpperBound': self.rc.temperature_upper_bound,
+            'ComfortTempLimitHP': self.rc.comfort_temp_lower_bound_degC,
+            'ComfortTempLimitAC': self.rc.comfort_temp_upper_bound_degC,
             'FlexTechsCOP': flex_techs_cop_bau,
             'MaxElecPenalty': max_elec_penalty_bau,
             # 'UseCrankcase': use_crankcase_bau,
@@ -1597,6 +1602,6 @@ class DataManager:
             'WaterNode': water_node,
             'TempLowerBoundWH': temperature_lower_bound_degC,
             'TempUpperBoundWH': temperature_upper_bound_degC,
-            'ComfortTempLimit': comfort_temp_limit_degC,
+            'ComfortTempLimitWH': comfort_temp_limit_degC,
             'WaterHeaterTechs': wh_techs_bau
         }

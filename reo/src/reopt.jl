@@ -38,6 +38,7 @@ function add_continuous_variables(m, p)
 		dvTemperaturesWH[p.TempNodesWH, p.TimeStep] #>= 0
 		dvWHFractions[p.WaterHeaterTechs, p.TimeStep] >= 0
 		dvWHComfortCost[p.TimeStep] >= 0
+		dvHVACComfortCost[p.TimeStep] >= 0
     end
 end
 
@@ -53,7 +54,6 @@ function add_integer_variables(m, p)
         binDemandMonthsTier[p.Month, p.DemandMonthsBin], Bin # 1 If tier n has allocated demand during month m; 0 otherwise
 		binEnergyTier[p.Month, p.PricingTier], Bin    #  Z^{ut}_{mu} 1 If demand tier $u$ is active in month m; 0 otherwise (NEW)
 # 		binCrankcase[p.TimeStep], Bin
-		binComfort[p.TimeStep], Bin
     end
 end
 
@@ -107,7 +107,12 @@ function add_cost_expressions(m, p)
 	else
 		m[:TotalWHComfortCost] = @expression(m, 0.0)
 	end
-
+	if ("AC" in p.FlexTechs || "HP" in p.FlexTechs)
+		m[:TotalHVACComfortCost] = @expression(m,
+			sum(m[:dvHVACComfortCost][ts] for ts in p.TimeStep))
+	else
+		m[:TotalHVACComfortCost] = @expression(m, 0.0)
+	end
 end
 
 
@@ -883,6 +888,13 @@ function add_flex_load_constraints(m, p)
 	@constraint(m, [ts in p.TimeStep],
         m[:dvTemperatures][p.SpaceNode, ts] <= p.TempUpperBound
     )
+	# HVAC comfort constraints
+	@constraint(m, [ts in p.TimeStep],
+		m[:dvHVACComfortCost][ts] >= p.ComfortTempLimitHP - m[:dvTemperatures][p.SpaceNode, ts]
+	)
+	@constraint(m, [ts in p.TimeStep],
+		m[:dvHVACComfortCost][ts] >= m[:dvTemperatures][p.SpaceNode, ts] - p.ComfortTempLimitAC
+    )
 # 	if p.UseCrankcase
 # 		@constraint(m, [ts in p.TimeStep],
 # 			100 * (1 - m[:binCrankcase][ts]) >= p.CrankCaseTempLimit - p.OutdoorAirTemp[ts]
@@ -915,10 +927,7 @@ function add_water_heater_constraints(m, p)
         sum(m[:dvWHFractions][t, ts] for t in p.WaterHeaterTechs) <= 1
     )
 	@constraint(m, [ts in p.TimeStep],
-		100 * (1 - m[:binComfort][ts]) >= p.ComfortTempLimit - m[:dvTemperaturesWH][p.WaterNode, ts]
-	)
-	@constraint(m, [ts in p.TimeStep],
-		100 * m[:binComfort][ts] + m[:dvWHComfortCost][ts] >= p.ComfortTempLimit - m[:dvTemperaturesWH][p.WaterNode, ts]
+		m[:dvWHComfortCost][ts] >= p.ComfortTempLimitWH - m[:dvTemperaturesWH][p.WaterNode, ts]
     )
 
 end
@@ -948,8 +957,8 @@ function add_cost_function(m, p)
         # Subtract Incentives, which are taxable
 		m[:TotalProductionIncentive] * m[:r_tax_fraction_owner] +
 
-		# WH comfort Cost
-		m[:TotalWHComfortCost]
+		# Comfort Costs
+		m[:TotalWHComfortCost] + m[:TotalHVACComfortCost]
 	)
     #= Note: 0.9999*m[:MinChargeAdder] in Obj b/c when m[:TotalMinCharge] > (TotalEnergyCharges + m[:TotalDemandCharges] + TotalExportBenefit + m[:TotalFixedCharges])
 		it is arbitrary where the min charge ends up (eg. could be in m[:TotalDemandCharges] or m[:MinChargeAdder]).
@@ -1118,7 +1127,8 @@ function reopt_run(m, p::Parameter)
     #############  		Outputs    									 #############
     ##############################################################################
 	try
-		results["lcc"] = round(JuMP.objective_value(m) - value(m[:TotalWHComfortCost]) + 0.0001*value(m[:MinChargeAdder]))
+		results["lcc"] = round(JuMP.objective_value(m) - value(m[:TotalWHComfortCost]) -
+							   value(m[:TotalHVACComfortCost]) + 0.0001*value(m[:MinChargeAdder]))
 		results["lower_bound"] = round(JuMP.objective_bound(m))
 		results["optimality_gap"] = JuMP.relative_gap(m)
 	catch
@@ -1284,6 +1294,7 @@ function add_null_flex_load_results(m, p, r::Dict)
 	r["hp_size_kw"] = 0.0
 	r["hp_production_series"] = []
 	r["hp_consumption_series"] = []
+	r["hvac_comfort_penalty"] = []
 # 	r["crankcase_consumption_series"] = []
 	nothing
 end
@@ -1619,6 +1630,8 @@ function add_flex_load_results(m, p, r::Dict)
 # 				sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] * p.OperatingPenalty[t,ts] for t in ["HP"])
 				)
 	r["hp_consumption_series"] = round.(value.(HPConsumption), digits=4)
+	@expression(m, HVACComfortPenalty[ts in p.TimeStep], m[:dvHVACComfortCost][ts])
+	r["hvac_comfort_penalty"] = round.(value.(HVACComfortPenalty), digits=4)
 # 	@expression(m, CrankcaseConsumption[ts in p.TimeStep], m[:dvCrankcaseConsumption][ts])
 # 	r["crankcase_consumption_series"] = round.(value.(CrankcaseConsumption), digits=4)
 	nothing

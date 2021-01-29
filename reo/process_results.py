@@ -1197,6 +1197,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 elif name == "RC":
                     self.nested_outputs["Scenario"]["Site"][name]["temperatures_degree_C"] = self.results_dict.get(
                         "indoor_temperatures")
+                    self.nested_outputs["Scenario"]["Site"][name]["comfort_penalty_degC"] = self.results_dict.get(
+                        "hvac_comfort_penalty")
                 elif name == "FlexTechAC":
                     self.nested_outputs["Scenario"]["Site"][name][
                         "size_kw"] = self.results_dict.get("ac_size_kw")
