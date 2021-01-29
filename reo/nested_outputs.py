@@ -623,6 +623,25 @@ nested_output_definitions = {
                   "description": "Total equivalent pounds of carbon dioxide emitted from BAU utility electricity use in the first year. Calculated by default from hourly emissions estimates except in AK and HI.",
                   "units": "lb CO2"
                 },
+                "year_one_coincident_peak_cost_us_dollars": {
+                  "type": "float",
+                  "description": "Optimal year one coincident peak charges",
+                  "units": "$"
+                },
+                "year_one_coincident_peak_cost_bau_us_dollars": {
+                  "type": "float",
+                  "description": "Business as usual year one coincident peak charges",
+                  "units": "$"
+                },
+                "total_coincident_peak_cost_us_dollars": {
+                  "type": "float",
+                  "description": "Optimal lifecycle coincident peak charges",
+                  "units": "$"
+                },
+                "total_coincident_peak_cost_bau_us_dollars": {
+                  "type": "float",
+                  "description": "Business as usual lifecycle coincident peak charges",
+                },
                 "year_one_chp_standby_cost_us_dollars": {
                   "type": float,
                   "description": "Year 1 standby charge cost incurred by CHP",
@@ -636,7 +655,7 @@ nested_output_definitions = {
                 "emissions_region": {
                   "type": "str",
                   "description": "Description of region for emissions_factor_series_lb_CO2_per_kwh. Filled by default with the EPA AVERT region of the site."
-                }
+                },
               },
 
               "FuelTariff": {

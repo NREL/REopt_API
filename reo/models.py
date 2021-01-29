@@ -312,14 +312,15 @@ class ElectricTariffModel(models.Model):
     wholesale_rate_above_site_load_us_dollars_per_kwh = ArrayField(
             models.FloatField(null=True, blank=True, default=list))
     urdb_response = PickledObjectField(null=True, editable=True)
-    add_blended_rates_to_urdb_rate = models.BooleanField(null=False)
-    emissions_factor_series_lb_CO2_per_kwh = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True)
+    add_blended_rates_to_urdb_rate = models.BooleanField(null=True, blank=True)
+    add_tou_energy_rates_to_urdb_rate = models.BooleanField(null=True, blank=True)
+    tou_energy_rates_us_dollars_per_kwh = ArrayField(models.FloatField(null=True, blank=True), null=True, default=list)
+    emissions_factor_series_lb_CO2_per_kwh = ArrayField(models.FloatField(null=True, blank=True), null=True, default=list)
     chp_standby_rate_us_dollars_per_kw_per_month = models.FloatField(blank=True, null=True)
     chp_does_not_reduce_demand_charges = models.BooleanField(null=True, blank=True)
-    add_tou_energy_rates_to_urdb_rate = models.BooleanField(null=True, blank=True)
-    tou_energy_rates_us_dollars_per_kwh =ArrayField(models.FloatField(null=True, blank=True), default=list, null=True)
-    emissions_factor_series_lb_CO2_per_kwh = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True)
     emissions_region = models.TextField(null=True, blank=True)
+    coincident_peak_load_active_timesteps = ArrayField(ArrayField(models.FloatField(null=True, blank=True), null=True, default=list), null=True, default=list)
+    coincident_peak_load_charge_us_dollars_per_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, default=list)
 
     # Ouptuts
     year_one_energy_cost_us_dollars = models.FloatField(null=True, blank=True)
@@ -353,9 +354,12 @@ class ElectricTariffModel(models.Model):
     year_one_energy_supplied_kwh_bau = models.FloatField(null=True, blank=True)
     year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
     year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
+    year_one_coincident_peak_cost_us_dollars = models.FloatField(null=True, blank=True)
+    year_one_coincident_peak_cost_bau_us_dollars = models.FloatField(null=True, blank=True)
+    total_coincident_peak_cost_us_dollars = models.FloatField(null=True, blank=True)
+    total_coincident_peak_cost_bau_us_dollars = models.FloatField(null=True, blank=True)
     year_one_chp_standby_cost_us_dollars = models.FloatField(null=True, blank=True)
     total_chp_standby_cost_us_dollars = models.FloatField(null=True, blank=True)
-    year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
