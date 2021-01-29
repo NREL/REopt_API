@@ -28,7 +28,6 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-
 ## v1.4.0 - 2021-01-29
 ### Major Updates
 ### Minor Updates
@@ -42,7 +41,6 @@ Classify the change according to the following categories:
  - **year_one_coincident_peak_cost_bau_us_dollars**
  - **total_coincident_peak_cost_us_dollars**
  - **total_coincident_peak_cost_bau_us_dollars**
-
 
 ## v1.3.0 - 2021-01-28
 ### Major Updates
