@@ -75,7 +75,7 @@ class LoadProfileChillerThermal(BuiltInProfile):
                 
                 kwargs['annual_energy'] = None
                 # Annual loads are used in place of percent shares if provided
-                if (kwargs.get("annual_tonhour") or None) is not None:
+                if kwargs.get("annual_tonhour") is not None:
                     kwargs['annual_energy'] = kwargs["annual_tonhour"]
                 
                 kwargs['annual_loads'] = self.annual_loads
@@ -150,6 +150,6 @@ class LoadProfileChillerThermal(BuiltInProfile):
         # load_list is always expected to be in units of kWth
         if electric_load_list is not None:            
             self.load_list = [i*self.chiller_cop for i in electric_load_list]
-        self.annual_kwht = sum(self.load_list)
+        self.annual_kwht = round(sum(self.load_list),0)
         if dfm is not None:
             dfm.add_load_chiller_thermal(self)
