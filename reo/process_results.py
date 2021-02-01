@@ -773,7 +773,17 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                             wind_model.installed_cost_us_dollars_per_kw
                         data['inputs']['Scenario']["Site"]["Wind"]["federal_itc_pct"] = wind_model.federal_itc_pct
                     else:
-                        self.nested_outputs["Scenario"]["Site"][name]['lcoe_us_dollars_per_kwh'] = None
+                        self.nested_outputs["Scenario"]["Site"][name]['lcoe_us_dollars_per_kwh'] = None                
+                #_________________________________________________________________________________________
+                #Added Resource Adequacy Outputs
+                elif name == "Resource_Adequacy":
+                    self.nested_outputs["Scenario"]["Site"][name]["monthly_ra_reduction"] = self.results_dict.get("monthly_ra_reduction", 0)
+                    self.nested_outputs["Scenario"]["Site"][name]["monthly_ra_energy"] = self.results_dict.get("monthly_ra_energy")
+                    self.nested_outputs["Scenario"]["Site"][name]["monthly_ra_dr"] = self.results_dict.get("monthly_ra_dr")
+                    self.nested_outputs["Scenario"]["Site"][name]["monthly_ra_value"] = self.results_dict.get("monthly_ra_value")
+                    self.nested_outputs["Scenario"]["Site"][name]["event_hours"] = self.results_dict.get("event_hours")
+                    self.nested_outputs["Scenario"]["Site"][name]["hourly_reductions"] = self.results_dict.get("hourly_reductions")
+                #_________________________________________________________________________________________
                 elif name == "Storage":
                     self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("batt_kw", 0)
                     self.nested_outputs["Scenario"]["Site"][name]["size_kwh"] = self.results_dict.get("batt_kwh", 0)

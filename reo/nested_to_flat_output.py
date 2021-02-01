@@ -101,6 +101,19 @@ def nested_to_flat(nested_output):
             'year_one_wind_to_load_series': nested_output['Scenario']['Site']['Wind']['year_one_to_load_series_kw'],
             'year_one_wind_to_grid_series': nested_output['Scenario']['Site']['Wind']['year_one_to_grid_series_kw']
        })
+    #_______________________________________________________________________________________________________________
+    #Updated for Resource Adequacy
+    if nested_output['Scenario']['Site'].get('Resource_Adequacy') is not None:
+        base.update({
+            'monthly_ra_reduction':nested_output['Scenario']['Site']['Resource_Adequacy']['monthly_ra_reduction'],
+            'monthly_ra_energy':nested_output['Scenario']['Site']['Resource_Adequacy']['monthly_ra_energy'],
+            'monthly_ra_dr': nested_output['Scenario']['Site']['Resource_Adequacy']['monthly_ra_dr'],
+            'monthly_ra_value': nested_output['Scenario']['Site']['Resource_Adequacy']['monthly_ra_value'],
+            'event_hours': nested_output['Scenario']['Site']['Resource_Adequacy']['event_hours'],
+            'hourly_reductions': nested_output['Scenario']['Site']['Resource_Adequacy']['hourly_reductions']
+       })
+        # "monthly_ra_reduction", "monthly_ra_energy","monthly_ra_dr","monthly_ra_value", "event_hours", "hourly_reductions"
+    #________________________________________________________________________________________________________________
     if nested_output['Scenario']['Site'].get('Generator') is not None:
         base.update({
             'gen_kw':nested_output['Scenario']['Site']['Generator']['size_kw'],
