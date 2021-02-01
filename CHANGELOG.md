@@ -30,7 +30,7 @@ Classify the change according to the following categories:
     
 ## v1.4.1 - 2021-01-29
 ### Patch
-Fixes database query error the occurs when getting production runs created prior to v1.4.0    
+`reo`: Fixes database query error the occurs when getting production runs created prior to v1.4.0    
 
 ## v1.4.0 - 2021-01-29
 ### Major Updates
