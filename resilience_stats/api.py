@@ -32,7 +32,7 @@ import sys
 
 from celery import shared_task
 from django.core.exceptions import ValidationError
-from django.http import JsonResponse, HttpResponse
+from django.http import HttpResponse
 from tastypie.authorization import ReadOnlyAuthorization
 from tastypie.bundle import Bundle
 from tastypie.exceptions import ImmediateHttpResponse
@@ -41,7 +41,7 @@ from tastypie.serializers import Serializer
 from tastypie.validation import Validation
 
 from reo.exceptions import SaveToDatabase
-from reo.models import ScenarioModel
+from reo.models import ScenarioModel, FinancialModel
 from resilience_stats.models import ResilienceModel
 from resilience_stats.validators import validate_run_uuid
 from resilience_stats.views import run_outage_sim
@@ -132,6 +132,8 @@ def run_outage_sim_task(scenariomodel_id, run_uuid, bau):
 
     try:
         ResilienceModel.objects.filter(scenariomodel_id=scenariomodel_id).update(**results)
+        results = {'avoided_outage_costs_us_dollars': results['avoided_outage_costs_us_dollars']}
+        FinancialModel.objects.filter(run_uuid=run_uuid).update(**results)        
     except SaveToDatabase as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         err = SaveToDatabase(exc_type, exc_value.args[0], exc_traceback, task='resilience_model', run_uuid=run_uuid)

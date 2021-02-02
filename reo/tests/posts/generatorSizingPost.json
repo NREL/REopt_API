@@ -5,6 +5,7 @@
     "timeout_seconds": 295,
     "optimality_tolerance_bau": 1.0e-4,
 	"optimality_tolerance_techs": 1.0e-4,
+	"add_soc_incentive": false,
     "Site": {
       "PV": {
         "pbi_years": 1.0,

@@ -28,7 +28,13 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
 def nested_to_flat(nested_output):
-    
+    """
+    Convenience function for comparing two results dictionary.
+    Used in many built-in tests (before passing both dicts to check_common_outputs).
+
+    Arguments:
+        nested_output: dict, API response
+    """
     base = {
 
         'run_uuid': nested_output['Scenario']['run_uuid'],
@@ -36,7 +42,7 @@ def nested_to_flat(nested_output):
         'status': nested_output['Scenario']['status'],
 
         'year_one_electric_load_series': nested_output['Scenario']['Site']['LoadProfile']['year_one_electric_load_series_kw'],
-        
+
         'lcc': nested_output['Scenario']['Site']['Financial']['lcc_us_dollars'],
         'lcc_bau': nested_output['Scenario']['Site']['Financial']['lcc_bau_us_dollars'],
         'npv': nested_output['Scenario']['Site']['Financial']['npv_us_dollars'],
@@ -53,7 +59,7 @@ def nested_to_flat(nested_output):
         'year_one_pv_to_load_series': nested_output['Scenario']['Site']['PV']['year_one_to_load_series_kw'],
         'year_one_pv_to_grid_series': nested_output['Scenario']['Site']['PV']['year_one_to_grid_series_kw'],
         'existing_pv_om_cost_us_dollars': nested_output['Scenario']['Site']['PV']['existing_pv_om_cost_us_dollars'],
-        
+
         'batt_kw': nested_output['Scenario']['Site']['Storage']['size_kw'],
         'batt_kwh': nested_output['Scenario']['Site']['Storage']['size_kwh'],
         'year_one_battery_to_load_series': nested_output['Scenario']['Site']['Storage']['year_one_to_load_series_kw'],
@@ -85,7 +91,11 @@ def nested_to_flat(nested_output):
         'year_one_demand_cost_series': nested_output['Scenario']['Site']['ElectricTariff']['year_one_demand_cost_series_us_dollars_per_kw'],
         'year_one_utility_kwh': nested_output['Scenario']['Site']['ElectricTariff']['year_one_energy_supplied_kwh'],
         'year_one_payments_to_third_party_owner': None,
-        'total_payments_to_third_party_owner': None
+        'total_payments_to_third_party_owner': None,
+        'year_one_coincident_peak_cost': nested_output['Scenario']['Site']['ElectricTariff']['year_one_coincident_peak_cost_us_dollars'],
+        'year_one_coincident_peak_cost_bau': nested_output['Scenario']['Site']['ElectricTariff']['year_one_coincident_peak_cost_bau_us_dollars'],
+        'total_coincident_peak_cost': nested_output['Scenario']['Site']['ElectricTariff']['total_coincident_peak_cost_us_dollars'],
+        'total_coincident_peak_cost_bau': nested_output['Scenario']['Site']['ElectricTariff']['total_coincident_peak_cost_bau_us_dollars']
     }
     if nested_output['Scenario']['Site'].get('Wind') is not None:
         base.update({
@@ -116,7 +126,6 @@ def nested_to_flat(nested_output):
                 'existing_gen_total_fuel_cost_us_dollars'],
        })
     return base
-
 
 def nested_to_flat_chp(nested_output):
     base = {
@@ -178,10 +187,10 @@ def nested_to_flat_chp(nested_output):
         'year_one_utility_kwh': nested_output['Scenario']['Site']['ElectricTariff']['year_one_energy_supplied_kwh'],
         'year_one_payments_to_third_party_owner': None,
         'total_payments_to_third_party_owner': None,
-        'total_opex_costs': nested_output['Scenario']['Site']['Financial'][
-            'total_opex_costs_us_dollars'],
-        'year_one_opex_costs': nested_output['Scenario']['Site']['Financial'][
-            'year_one_opex_costs_us_dollars']
+        'total_om_costs': nested_output['Scenario']['Site']['Financial'][
+            'total_om_costs_us_dollars'],
+        'year_one_om_costs': nested_output['Scenario']['Site']['Financial'][
+            'year_one_om_costs_us_dollars']
     }
     if nested_output['Scenario']['Site'].get('PV') is not None:
         base.update({

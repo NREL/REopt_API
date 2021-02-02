@@ -1,6 +1,7 @@
 {
   "Scenario": {
     "description": null,
+	"add_soc_incentive": false,
     "Site": {
       "address": "Palmdale CA",
       "latitude": 34.5794343,

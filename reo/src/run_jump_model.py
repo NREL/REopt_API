@@ -31,16 +31,17 @@ import julia
 import sys
 import traceback
 import os
+import time
+import platform
+import copy
+import numpy
 from celery import shared_task, Task, group
 from reo.exceptions import REoptError, OptimizationTimeout, UnexpectedError, NotOptimal, REoptFailedToStartError
 from reo.models import ModelManager
 from reo.src.profiler import Profiler
 from celery.utils.log import get_task_logger
 from julia.api import LibJulia
-import time
-import platform
-import copy
-import numpy
+from reo.utilities import scrub_numpy_arrays_from_dict
 # julia.install()  # needs to be run if it is the first time you are using julia package
 logger = get_task_logger(__name__)
 
@@ -191,12 +192,13 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
             results = run_decomposed_model(data, model, reopt_inputs)
             time_dict["pyjulia_run_reopt_seconds"] = time.time() - t_start
 
+        results = scrub_numpy_arrays_from_dict(results)
         results.update(time_dict)
 
     except Exception as e:
         if isinstance(e, REoptFailedToStartError):
             raise e
-        elif "DimensionMismatch" in e.args[0]:  # bug in Xpress.jl and/or JuMP that mishandles timeouts
+        elif "DimensionMismatch" in e.args[0]:  # JuMP may mishandle a timeout when no feasible solution is returned
             msg = "Optimization exceeded timeout: {} seconds.".format(data["inputs"]["Scenario"]["timeout_seconds"])
             logger.info(msg)
             raise OptimizationTimeout(task=name, message=msg, run_uuid=self.run_uuid, user_uuid=self.user_uuid)
@@ -218,8 +220,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
             msg = "Optimization exceeded timeout: {} seconds.".format(data["inputs"]["Scenario"]["timeout_seconds"])
             logger.info(msg)
             raise OptimizationTimeout(task=name, message=msg, run_uuid=self.run_uuid, user_uuid=self.user_uuid)
-
-        if status.strip().lower() != 'optimal':
+        elif status.strip().lower() != 'optimal':
             logger.error("REopt status not optimal. Raising NotOptimal Exception.")
             raise NotOptimal(task=name, run_uuid=self.run_uuid, status=status.strip(), user_uuid=self.user_uuid)
 
@@ -322,7 +323,7 @@ def solve_subproblems(models, reopt_param, results_dicts, update):
     # Note: with task decorator removed, can't call this as a group
     #r = group(solve_subproblem(x) for x in inputs)()
     #r.forget()
-    
+
     results_dicts = {}
     for i in range(1, 13):
         results_dicts[i] = inputs[i-1]["r"]

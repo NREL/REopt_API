@@ -3,6 +3,7 @@
     "webtool_uuid": null,
     "description": "",
     "timeout_seconds": 295,
+    "add_soc_incentive": false,
     "Site": {
       "PV": {
         "pbi_years": 1.0,
@@ -290,7 +291,6 @@
         "utility_ibi_pct": 0.0,
         "state_ibi_max_us_dollars": 10000000000.0,
         "wind_direction_degrees": null,
-        "size_class": "",
         "state_rebate_us_dollars_per_kw": 0.0,
         "macrs_option_years": 5,
         "state_rebate_max_us_dollars": 10000000000.0,

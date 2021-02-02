@@ -1,5 +1,6 @@
 {
   "Scenario": {
+	"add_soc_incentive": false,
     "Site": {
       "latitude": 37.78,
       "longitude": -122.45,
@@ -27,8 +28,8 @@
         "year": 2017,
         "loads_kw_is_net": true,
         "critical_loads_kw_is_net": false,
-        "outage_start_hour": null,
-        "outage_end_hour": null,
+        "outage_start_time_step": null,
+        "outage_end_time_step": null,
         "critical_load_pct": 0.5,
         "outage_is_major_event": true
       },
@@ -97,7 +98,17 @@
         "pbi_max_us_dollars": 0.0,
         "pbi_years": 0.0,
         "pbi_system_max_kw": 0.0,
-        "emissions_factor_lb_CO2_per_mmbtu": 116.9
+        "emissions_factor_lb_CO2_per_mmbtu": 116.9,
+        "chp_unavailability_periods": [
+            {
+                "month": 1,
+                "start_week_of_month": 2,
+                "start_day_of_week": 6,
+                "start_hour": 1,
+                "duration_hours": 0
+            }
+        ],
+        "cooling_thermal_factor": 1.0
       },
       "Boiler": {
         "min_mmbtu_per_hr": 0.0,

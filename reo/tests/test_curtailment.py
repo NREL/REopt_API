@@ -63,9 +63,9 @@ class WindTests(ResourceTestCaseMixin, TestCase):
             test_post = json.load(fp)
         d_expected = dict()
         d_expected['lcc'] = 5908025
-        d_expected['npv'] = -4961719
-        d_expected['average_annual_energy_curtailed_pv'] = 1101466
-        d_expected['average_annual_energy_curtailed_wind'] = 2828117
+        d_expected['npv'] = -4961719  # negative due to outage
+        d_expected['average_annual_energy_curtailed_pv'] = 1180094
+        d_expected['average_annual_energy_curtailed_wind'] = 2749637
         d_expected['total_pv_export'] = 0
         d_expected['total_wind_export'] = 0
         resp = self.get_response(data=test_post)

@@ -572,27 +572,27 @@ def generate_proforma(scenariomodel, output_file_path):
         # Calculate capital cost from cost curve list
         cost_list = chp.installed_cost_us_dollars_per_kw or []
         size_list = chp.tech_size_for_cost_curve or []
-        
+        # CHP size object defined below, but use the chp_size_kw_cell to preserve spreadsheet referencing
         chp_size = total_kw
         if len(cost_list) > 1:
-            if chp_size <= size_list[1]:
-                chp_installed_cost_us_dollars = "= {} + ({} * {})".format(chp.installed_cost_us_dollars_per_kw[0], chp_size_kw_cell, chp.installed_cost_us_dollars_per_kw[1])
+            if chp_size <= size_list[0]:
+                chp_installed_cost_us_dollars = "= {} * {}".format(chp_size_kw_cell, cost_list[0])
             elif chp_size > size_list[-1]:
-                chp_installed_cost_us_dollars = "= ({} * {})".format(chp_size_kw_cell, chp.installed_cost_us_dollars_per_kw[-1])
+                chp_installed_cost_us_dollars = "= {} * {}".format(chp_size_kw_cell, cost_list[-1])
             else:
-                chp_installed_cost_us_dollars_terms = []
-                for s in range(1, len(size_list)-1):
-                    if (chp_size > size_list[s]) and (chp_size <= size_list[s+1]):
-                        chp_installed_cost_us_dollars_terms.append( "({}*{}) + (({}-{})*{})".format(
-                            chp.installed_cost_us_dollars_per_kw[s],
-                            chp.tech_size_for_cost_curve[s],
+                for s in range(1, len(size_list)):
+                    if (chp_size > size_list[s-1]) and (chp_size <= size_list[s]):
+                        slope = (cost_list[s] * size_list[s] - cost_list[s-1] * size_list[s-1]) / \
+                                    (size_list[s] - size_list[s-1])
+                        chp_installed_cost_us_dollars = "= {} * {} + ({} - {}) * {}".format(
+                            cost_list[s-1],
+                            size_list[s-1],
                             chp_size_kw_cell,
-                            chp.tech_size_for_cost_curve[s],
-                            chp.installed_cost_us_dollars_per_kw[s+1]
-                            ))
-                chp_installed_cost_us_dollars = "=({})".format('+'.join(chp_installed_cost_us_dollars_terms)) 
+                            size_list[s-1],
+                            slope
+                            ) 
         else:
-            chp_installed_cost_us_dollars = "= {} * {}".format(chp.installed_cost_us_dollars_per_kw[0], chp_size_kw_cell)
+            chp_installed_cost_us_dollars = "= {} * {}".format(chp_size_kw_cell, cost_list[0])
     else:
         chp_installed_cost_us_dollars = 0
 

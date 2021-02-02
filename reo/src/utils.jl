@@ -48,36 +48,30 @@ Base.@kwdef struct Parameter
 	 FuelBin::UnitRange{Int64}	   # To be removed
 	 PricingTier::UnitRange{Int64}  # Set U: Pricing Tiers (proposed revision) #new
 	 NMILRegime::Array{String,1}	# Set V: Net-metering Regimes
+     CPPeriod::UnitRange{Int64}     # Set P: Coincident Peak Periods
 
 	 ###  Subsets and Indexed Sets  ####
 	 ElecStorage::Array{String,1}  # B^{e} \subset B: Electrical energy storage systems
-	 #HotTES::Array{String,1}  # B^{h} \subset B: Hot thermal energy storage systems (IGNORE)
-	 #ColdTES::Array{String,1}  # B^{c} \subset B: Cold thermal energy storage systems (IGNORE)
-	 #ThermalStorage::Array{String,1}  # B^{th} \subset B: Thermal energy storage systems (IGNORE)
 	 TimeStepRatchetsMonth::Array{Array{Int64,1},1}   #  H_m: Time steps in month m
 	 TimeStepRatchets::Array{Array{Int64,1},1}   #  H_r: Time steps in ratchet r
      TimeStepsWithGrid::Array{Int64,1}  # H_g: Time steps with grid connection
-     TimeStepsWithoutGrid::Array{Int64,1}	 # H \setminus H_g: Time steps without grid connection 
+     TimeStepsWithoutGrid::Array{Int64,1}	 # H \setminus H_g: Time steps without grid connection
 	 DemandLookbackMonths::Array{Any,1}   # M^{lb}: fixed Look back months considered for peak pricing
 	 DemandLookbackRange::Int   # number of Look back months considered for peak pricing
 	 SegByTechSubdivision::AxisArray # S_{kt}: System size segments from segmentation k applied to technology t
 	 TechsInClass::AxisArray # T_c \subset T: Technologies that are in class c
 	 TechsByFuelType::AxisArray # T_f \subset T: Technologies that burn fuel type f
 	 TechsByNMILRegime::AxisArray # T_v \subset T: Technologies that may acess net-meterng regime v
-	 #AbsorptionChillers::Array{String,1}  # T^{ac} \subset T: Absorption Chillers (IGNORE)
-	 #CHPTechs::Array{String,1}  # T^{CHP} \subset T: CHP technologies (IGNORE)
-	 #CoolingTechs::Array{String,1}  # T^{cl} \subset T: Cooling technologies (IGNORE)
 	 ElectricTechs::Array{String,1}  # T^{e} \subset T: Electricity-producing technologies
-	 #ElectricChillers::Array{String,1}  # T^{ec} \subset T: Electric chillers  (IGNORE)
 	 FuelBurningTechs::Array{String,1}  # T^{f} \subset T: Fuel-burning technologies
-	 #HeatingTechs::Array{String,1}  # T^{ht} \subset T: Heating technologies (IGNORE)
 	 TechsNoTurndown::Array{String,1}  # T^{ac} \subset T: Technologies that cannot turn down, i.e., PV and wind
+     CoincidentPeakLoadTimeSteps::AxisArray # H^{cp}_m: Coincident peak time steps in month m
 
 	 ###  Parameters and Tables supporting Indexed Sets ###
 	 TechToNMILMapping::AxisArray  # Defines set T_v: Technologies that may be access net-metering regime v
 
 	 ###  Scaling Parameters ###
-	 TimeStepScaling::Float64  # \Delta: Time step scaling [h]
+	 TimeStepScaling::Float64  # \Delta: Time step scaling [h], eg. 30 minute resolution -> TimeStepScaling = 0.5
 
 	 ###  Parameters for Costs and their Functional Forms ###
      AnnualMinCharge::Float64    # c^{amc}: Utility annual minimum charge
@@ -89,24 +83,21 @@ Base.@kwdef struct Parameter
      OMcostPerUnitProd::AxisArray
 	 OMcostPerUnitHourPerSize::AxisArray
 
-	 GridExportRates::Array{Float64, 2}  # c^{e}_{uh}: Export rate for energy in energy pricing tier u in time step h   (NEW)
+	 GridExportRates::AxisArray  # c^{e}_{uh}: Export rate for energy in energy pricing tier u in time step h   (NEW)
 	 CapCostSlope::AxisArray   # c^{cm}_{ts}: Slope of capital cost curve for technology t in segment s
      CapCostYInt::AxisArray  # c^{cb}_{ts}: Y-Intercept of capital cost curve for technology t in segment s
      CapCostX::AxisArray    # X-value of inflection point (will be changed)
 	 #For the replacement of CapCostX, see new parameters SegmentLB and SegmentUB in section "System size and fuel limit parameters"
 	 DemandRates::Array{Float64, 2}  # c^{r}_{re}: Cost per unit peak demand in tier e during ratchet r
 	 DemandRatesMonth::Array{Float64, 2}   # c^{rm}_{mn}: Cost per unit peak demand in tier n during month m
+     CoincidentPeakRates::AxisArray   # c^{cp}_p: Cost per unit peak demand during coincident peak hours of CP period p
 
 	 ###  Demand Parameters ###
 	 ElecLoad::Array{Float64,1}  # \delta^{d}_{h}: Electrical load in time step h   [kW]
-	 # HeatingLoad::Array{Float64,1}  # \delta^{bo}_{h}: Heating load in time step h   [MMBTU/hr]
-	 # CoolingLoad::Array{Float64,1}  # \delta^{c}_{h}: Cooling load in time step h   [kW]
      DemandLookbackPercent::Float64    # \delta^{lp}: Demand Lookback proportion [fraction]
      MaxDemandInTier::Array{Float64,1}  # \delta^{t}_{e}: Maximum power demand in ratchet e
      MaxDemandMonthsInTier::Array{Float64,1}   # \delta^{mt}_{n}: Maximum monthly power demand in tier n
-	 MaxGridSales::Array{<:Real, 1}   # \delta^{gs}_{u}: Maximum allowable energy sales in tier u in math; equal to sum of LoadProfile["1R",ts] on set TimeStep for tier 1 (analogous "1W") and unlimited for "1X"
      MaxUsageInTier::Array{Float64,1}   # \delta^{tu}_{u}: Maximum monthly energy demand in tier u
-
 
 	 ###  Incentive Parameters ###
 	 NMILLimits::AxisArray   # i^{n}_{v}: Net metering and interconnect limits in net metering regime v [kW]
@@ -116,10 +107,6 @@ Base.@kwdef struct Parameter
 
 	 ###  Technology-specific Time-series Factor Parameters ###
 	 ProductionFactor::AxisArray    #f^{p}_{th}  Production factor of technology t and time step h  [unitless]  (NEW)
-     #CHPThermalProdSlope # f^{fa}_{th}: Fuel burn ambient correction factor of technology t at time step h [unitless]
-	 # f^{ha}_{th}: Hot water ambient correction factor of technology t at time step h [unitless]
-	 # f^{ht}_{th}: Hot water thermal grade correction factor t correction factor of technology t at time step h [unitless]
-	 # f^{ed}_{th}: Fuel burn ambient correction factor of technology t at time step h [unitless]
 
 	 ###  Technology-specific Factor Parameters ###
 	 TurbineDerate::AxisArray  # f^{d}_{t}: Derate factor for turbine technologyt [unitless]
@@ -145,10 +132,6 @@ Base.@kwdef struct Parameter
 	 ChargeEfficiency::AxisArray  # \eta^{esi}_{bt}: Efficiency of charging storage system b using technology t  [fraction] (NEW)
 	 GridChargeEfficiency::Float64   # \eta^{esig}: Efficiency of charging electrical storage using grid power [fraction] (NEW)
      DischargeEfficiency::AxisArray  # \eta^{eso}_{b}: Efficiency of discharging storage system b [fraction] (NEW)
-	 #BoilerEfficiency \eta^{bo}: Boiler efficiency [fraction]
-	 # \eta^{ecop}: Electric chiller efficiency [fraction]
-	 # \eta^{acop}: Absorption chiller efficiency [fraction]
-
 
 	 ###  Storage Parameters ###   # \ubar{w}^{bkW}_{b}: Minimum power capacity of storage system b (needs to be indexed on b )
      StorageMinChargePcent::Float64     #  \ubar{w}^{mcp}_{b}: Minimum state of charge of storage system b
@@ -168,7 +151,7 @@ Base.@kwdef struct Parameter
 	 ### Not used or used for calculation of other parameters ###
 	 two_party_factor::Float64
      analysis_years::Int64     # Used to calculate present worth factors maybe?
-     AnnualElecLoad::Float64   # Not used anymore (can just sum LoadProfile["1R",h] for all h in TimeStep
+     AnnualElecLoadkWh::Float64
      CapCostSegCount::Int64    # Size of set S
      FuelBinCount::Int64       # Size of set F
      DemandBinCount ::Int64    # Size of set E
@@ -187,17 +170,17 @@ Base.@kwdef struct Parameter
 	 ElectricDerate::AxisArray
 
      # New Sets
-     SalesTiers::UnitRange
-     StorageSalesTiers::Array{Int, 1}
-     NonStorageSalesTiers::Array{Int, 1}
-	 SalesTiersByTech::AxisArray
-	 TechsBySalesTier::AxisArray
-	 CurtailmentTiers::Array{Int, 1}
+     ExportTiers::Array{String,1}
+	 ExportTiersByTech::AxisArray
+	 TechsByExportTier::AxisArray
+     ExportTiersBeyondSiteLoad::Array{String, 1}
+     TechsCannotCurtail::Array{String, 1}
 
     # Feature Additions
      TechToLocation::AxisArray
      MaxSizesLocation::Array{Float64, 1}
      Location::UnitRange
+	 AddSOCIncentive::Int64
 
 	# Added for CHP
 	HotTES::Array{String,1}
@@ -213,7 +196,8 @@ Base.@kwdef struct Parameter
 	CoolingLoad::Array{Float64,1}
 	BoilerEfficiency::Float64
 	ElectricChillerCOP::Float64
-	AbsorptionChillerCOP::Float64
+    AbsorptionChillerCOP::Float64
+    AbsorptionChillerElecCOP::Float64
 	CHPThermalProdSlope::AxisArray
 	CHPThermalProdIntercept::AxisArray
 	FuelBurnYIntRate::AxisArray
@@ -278,8 +262,8 @@ function Parameter(d::Dict)
         "LevelizationFactor",
         "NMILLimits",
         "TechClassMinSize",
-		"TechsBySalesTier",
-		"SalesTiersByTech",
+		"TechsByExportTier",
+		"ExportTiersByTech",
 		"NMILRegime",
 		"TechsByNMILRegime",
 		"TechsByFuelType",
@@ -310,14 +294,16 @@ function Parameter(d::Dict)
     d[:DemandMonthsBin] = 1:d["DemandMonthsBinCount"]
     d[:TimeStep] = 1:d["TimeStepCount"]
     d[:TimeStepBat] = 0:d["TimeStepCount"]
-	d[:SalesTiers] = 1:d["SalesTierCount"]
     n_location = length(d["MaxSizesLocation"])
     d[:Location] = 1:n_location
-	#Flex loads
+    d[:CPPeriod] = 1:d["CoincidentPeakPeriodCount"]
+
+    #Flex loads
 	d[:TempNodes] = 1:d["TempNodesCount"]
 	d[:InputNodes] = 1:d["InputNodesCount"]
 	d[:TempNodesWH] = 1:d["TempNodesCountWH"]
 	d[:InputNodesWH] = 1:d["InputNodesCountWH"]
+
 
     # the following array manipulation may have to adapt once length(d["Subdivision"]) > 1
     seg_min_size_array = reshape(transpose(reshape(d["SegmentMinSize"], length(d[:Seg]), length(d["Tech"]))),
@@ -344,14 +330,26 @@ function Parameter(d::Dict)
     d["NMILLimits"] = AxisArray(d["NMILLimits"], d["NMILRegime"])
     d["TechToNMILMapping"] = vector_to_axisarray(d["TechToNMILMapping"], d["Tech"], d["NMILRegime"])
     d["OMcostPerUnitProd"] = AxisArray(d["OMcostPerUnitProd"], d["Tech"])
-	d["OMcostPerUnitHourPerSize"] = AxisArray(d["OMcostPerUnitHourPerSize"], d["Tech"])
+    d["OMcostPerUnitHourPerSize"] = AxisArray(d["OMcostPerUnitHourPerSize"], d["Tech"])
+    if !isempty(d["CoincidentPeakLoadTimeSteps"])
+        d["CoincidentPeakRates"] = AxisArray(d["CoincidentPeakRates"], d[:CPPeriod])
+        d["CoincidentPeakLoadTimeSteps"] = AxisArray(d["CoincidentPeakLoadTimeSteps"], d[:CPPeriod], 1:size(d["CoincidentPeakLoadTimeSteps"],2))
+    else
+        d["CoincidentPeakRates"] = AxisArray([])
+        d["CoincidentPeakLoadTimeSteps"] = AxisArray([])
+    end
 
     # Reformulation additions
     d["StorageCostPerKW"] = AxisArray(d["StorageCostPerKW"], d["Storage"])
     d["StorageCostPerKWH"] = AxisArray(d["StorageCostPerKWH"], d["Storage"])
 	d["FuelCost"] = vector_to_axisarray(d["FuelCost"], d["FuelType"], d[:TimeStep])
     d["ElecRate"] = transpose(reshape(d["ElecRate"], d["TimeStepCount"], d["PricingTierCount"]))
-    d["GridExportRates"] = transpose(reshape(d["GridExportRates"], d["TimeStepCount"], d["SalesTierCount"]))
+
+    if !isempty(d["GridExportRates"])
+        d["GridExportRates"] = AxisArray(d["GridExportRates"], d["ExportTiers"], d[:TimeStep])
+    else
+        d["GridExportRates"] = AxisArray([])
+    end
     d["FuelBurnSlope"] = AxisArray(d["FuelBurnSlope"], d["FuelBurningTechs"])
     d["FuelBurnYInt"] = AxisArray(d["FuelBurnYInt"], d["FuelBurningTechs"])
     d["ProductionFactor"] = vector_to_axisarray(d["ProductionFactor"], d["Tech"], d[:TimeStep])
@@ -369,7 +367,6 @@ function Parameter(d::Dict)
     d["SegmentMinSize"] = AxisArray(seg_min_size_array, d["Tech"], d["Subdivision"], d[:Seg])
     d["SegmentMaxSize"] = AxisArray(seg_max_size_array, d["Tech"], d["Subdivision"], d[:Seg])
 	d["ElectricDerate"] = vector_to_axisarray(d["ElectricDerate"], d["Tech"], d[:TimeStep])
-    d["MaxGridSales"] = [d["MaxGridSales"]]
 
 	# CHP Additions
 	d["CHPThermalProdSlope"] = AxisArray(d["CHPThermalProdSlope"],d["CHPTechs"])
@@ -395,12 +392,13 @@ function Parameter(d::Dict)
     d["SegByTechSubdivision"] = vector_to_axisarray(d["SegByTechSubdivision"], d["Subdivision"], d["Tech"])
     d["TechsByFuelType"] = AxisArray(d["TechsByFuelType"], d["FuelType"])
     d["TechsInClass"] = AxisArray(d["TechsInClass"], d["TechClass"])
-	d["SalesTiersByTech"] = AxisArray(d["SalesTiersByTech"], d["Tech"])
-	d["TechsBySalesTier"] = AxisArray(d["TechsBySalesTier"], d[:SalesTiers])
-	d["TechsByNMILRegime"] = AxisArray(d["TechsByNMILRegime"], d["NMILRegime"])
+    d["ExportTiersByTech"] = AxisArray(d["ExportTiersByTech"], d["Tech"])
+	d["TechsByExportTier"] = AxisArray(d["TechsByExportTier"], d["ExportTiers"])
+    d["TechsByNMILRegime"] = AxisArray(d["TechsByNMILRegime"], d["NMILRegime"])
 
     d = string_dictkeys_tosymbols(d)
     d = filter_dict_to_match_struct_field_names(d, Parameter)
+
     param = Parameter(;d...)
 end
 

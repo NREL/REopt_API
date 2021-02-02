@@ -8,6 +8,7 @@ keys.py
 input_files/*
 !input_files/**/
 !input_files/LoadProfiles/**/
+!input_files/CHP/
 .DS_Store
 urdb_rate_errors/
 outage_sizing/
@@ -109,8 +110,6 @@ static/files/*
 
 all_data*
 =======
-# CHP results processing
-results_processing/*
 
 # Math Forumlation Latex
 docs/formulation/*aux
@@ -121,8 +120,8 @@ julia_envs/**/**.so
 julia_envs/**/**.dylib
 julia_envs/**/**.dll
 
-/.werf_secret_key
-
 # Customized docker files
 docker-compose.xpressOS.yml
 Dockerfile.xpressOS.pyjul
+
+/.werf_secret_key

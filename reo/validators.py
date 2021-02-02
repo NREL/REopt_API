@@ -30,7 +30,7 @@
 import numpy as np
 import pandas as pd
 from .urdb_logger import log_urdb_errors
-from .nested_inputs import nested_input_definitions, list_of_float, list_of_str
+from .nested_inputs import nested_input_definitions, list_of_float, list_of_str, list_of_int, list_of_list, list_of_dict
 #Note: list_of_float is actually needed
 import os
 import csv
@@ -38,14 +38,20 @@ import copy
 from reo.src.urdb_rate import Rate
 import re
 import uuid
-import pickle
 from reo.src.techs import Generator, Boiler, CHP, AbsorptionChiller
-from reo.nested_inputs import max_big_number
 from reo.src.emissions_calculator import EmissionsCalculator
+from reo.utilities import generate_year_profile_hourly
 
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'r'))]
 
+
+def convert_bool(value):
+    if value in [True, 1]:
+        return True
+    if value in [False, 0]:
+        return False
+    raise Exception('{} is not a bool'.format(value))
 
 class URDB_RateValidator:
 
@@ -247,18 +253,22 @@ class URDB_RateValidator:
 
         return valid
 
-    def validCompleteHours(self, schedule_name,expected_counts):
+    def validCompleteHours(self, schedule_name, expected_counts):
         # check that each array in a schedule contains the correct number of entries
+        # :param schedule_name: str - name of URDB rate schedule param (i.e. demandweekdayschedule, energyweekendschedule )
+        # :param expected_counts: list - list of expected list lengths at each level in a nested list of lists starting with the top level,
+        #                                actual lengths of lists can be even divisible by the expected length to account for
+        #                                finer rate resolutions (URDB is 1hr normally, but we accept custom 30-min, 15-min, 10min...)
         # return Boolean if any errors found
 
         if hasattr(self,schedule_name):
             valid = True
             schedule = getattr(self,schedule_name)
 
-            def recursive_search(item,level=0, entry=0):
+            def recursive_search(item, level=0, entry=0):
                 if type(item) == list:
-                    if len(item) != expected_counts[level]:
-                        msg = 'Entry {} {}{} does not contain {} entries'.format(entry,'in sublevel ' + str(level)+ ' ' if level>0 else '', schedule_name, expected_counts[level])
+                    if len(item)%expected_counts[level] != 0:
+                        msg = 'Entry {} {}{} does not contain a number of entries divisible by {}'.format(entry, 'in sublevel ' + str(level)+ ' ' if level>0 else '', schedule_name, expected_counts[level])
                         self.errors.append(msg)
                         valid = False
                     for ii,subitem in enumerate(item):
@@ -277,7 +287,7 @@ class URDB_RateValidator:
             self.errors.append('Missing valid entry for {}.'.format(name))
             return False
         return True
-    
+
     def isNotEmptyList(self, name):
         if type(getattr(self,name)) != list:
             self.errors.append('Expecting a list for {}.'.format(name))
@@ -289,7 +299,7 @@ class URDB_RateValidator:
             self.errors.append('List for {} contains null value(s).'.format(name))
             return False
         return True
-    
+
     def validRate(self, rate):
         # check that each  tier in rate structure array has a rate attribute, and that all rates except one contain a 'max' attribute
         # return Boolean if any errors found
@@ -433,10 +443,12 @@ class ValidateNestedInput:
         self.emission_warning = []
         self.defaults_inserted = []
         self.emission_warning = []
+        self.general_warnings = []
         self.input_dict = dict()
         if type(input_dict) is not dict:
-            self.input_data_errors.append("POST must contain a valid JSON formatted accoring to format described in https://developer.nrel.gov/docs/energy-optimization/reopt-v1/")
-        else:        
+            self.input_data_errors.append(("POST must contain a valid JSON formatted according to format described in "
+                                           "https://developer.nrel.gov/docs/energy-optimization/reopt-v1/"))
+        else:
             self.input_dict['Scenario'] = input_dict.get('Scenario') or {}
             for k,v in input_dict.items():
                 if k != 'Scenario':
@@ -446,8 +458,10 @@ class ValidateNestedInput:
         if self.isValid:
             self.recursively_check_input_dict(self.nested_input_definitions, self.remove_invalid_keys)
             self.recursively_check_input_dict(self.nested_input_definitions, self.remove_nones)
+            self.recursively_check_input_dict(self.nested_input_definitions, self.check_for_nans)
             self.recursively_check_input_dict(self.nested_input_definitions, self.convert_data_types)
             self.recursively_check_input_dict(self.nested_input_definitions, self.fillin_defaults)
+            self.recursively_check_input_dict(self.nested_input_definitions, self.check_min_less_than_max)
             self.recursively_check_input_dict(self.nested_input_definitions, self.check_min_max_restrictions)
             self.recursively_check_input_dict(self.nested_input_definitions, self.check_required_attributes)
             self.recursively_check_input_dict(self.nested_input_definitions, self.check_special_cases)
@@ -457,6 +471,10 @@ class ValidateNestedInput:
             if type(self.input_dict['Scenario']['Site']['PV']) == dict:
                 self.input_dict['Scenario']['Site']['PV']['pv_number'] = 1
                 self.input_dict['Scenario']['Site']['PV'] = [self.input_dict['Scenario']['Site']['PV']]
+
+            # the following inputs are deprecated and should not be saved to the database
+            self.input_dict["Scenario"]["Site"]["LoadProfile"].pop("outage_start_hour", None)
+            self.input_dict["Scenario"]["Site"]["LoadProfile"].pop("outage_end_hour", None)
 
     @property
     def isValid(self):
@@ -525,6 +543,14 @@ class ValidateNestedInput:
         if bool(self.emission_warning):
             output["Emissions Warning"] = {"error":self.emission_warning}
 
+        if bool(self.general_warnings):
+            output["Other Warnings"] = ';'.join(self.general_warnings)
+
+        output["Deprecations"] = [
+            "The sustain_hours output will be deprecated soon in favor of bau_sustained_time_steps.",
+            "outage_start_hour and outage_end_hour will be deprecated soon in favor of outage_start_time_step and outage_end_time_step",
+            "Avoided outage costs will be deprecated soon from the /results endpoint, but retained at the /resilience_stats endpoint"
+        ]
         return output
 
     def isSingularKey(self, k):
@@ -747,21 +773,32 @@ class ValidateNestedInput:
             attribute = definition.get(validation_attribute)
             if attribute is not None:
                 bad_val = None
+                make_array = False
+                if isinstance(good_val, list):
+                    make_array = True
+                if isinstance(definition['type'], list):
+                    if ('list_of_str' in definition['type']) or \
+                        ('list_of_float' in definition['type']):
+                        make_array = True
+                if ('list_of_str' == definition['type']) or \
+                        ('list_of_float' == definition['type']):
+                        make_array = True
                 if validation_attribute == 'min':
                     bad_val = attribute - 1
-                    if isinstance(good_val, list):
+                    if make_array:
                         bad_val= [bad_val]
                 if validation_attribute == 'max':
                     bad_val = attribute + 1
-                    if isinstance(good_val, list):
+                    if make_array:
                         bad_val = [bad_val]
                 if validation_attribute == 'restrict_to':
                     bad_val = "OOPS"
                 if validation_attribute == 'type':
-                    if type(attribute) != list and 'list_of_float' != attribute:
+                    if (type(attribute) != list) and ('list_of_float' != attribute) and ('list_of_int' != attribute):
                         if any(isinstance(good_val, x) for x in [float, int, dict, bool]):
                             bad_val = "OOPS"
-                    elif 'list_of_float' in attribute or 'list_of_float' == attribute:
+                    elif ('list_of_float' in attribute) or ('list_of_int' in attribute) or ('list_of_list' in attribute)\
+                        or (attribute in ['list_of_int','list_of_float','list_of_list']):
                         if isinstance(good_val, list):
                             bad_val = "OOPS"
 
@@ -825,6 +862,72 @@ class ValidateNestedInput:
                             self.input_as_none.append([name, object_name_path[-1]])
                         if input_isDict == False:
                             self.input_as_none.append([name, object_name_path[-1] + ' (number {})'.format(number)])
+
+
+    def check_min_less_than_max(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
+        """
+        comparison_function for recursively_check_input_dict.
+        flag any inputs where the min/max constraint ranges don't make sense
+        :param object_name_path: list of str, location of an object in self.input_dict being validated,
+            eg. ["Scenario", "Site", "PV"]
+        :param template_values: reference dictionary for checking real_values, for example
+            {'latitude':{'type':'float',...}...}, which comes from nested_input_definitions
+        :param real_values: dict, the attributes corresponding to the object at object_name_path within the
+            input_dict to check and/or modify. For example, with a object_name_path of ["Scenario", "Site", "PV"]
+                the real_values would look like: {'latitude': 39.345678, 'longitude': -90.3, ... }
+        :param number: int, order of the dict in the list
+        :param input_isDict: bool, indicates if the object input came in as a dict or list
+        :return: None
+        """
+        if self.isValid:
+            if real_values is not None:
+                location = self.object_name_string(object_name_path)
+                if not input_isDict:
+                    location += '[{}]'.format(number)
+                if object_name_path[-1] in ['PV','Storage','Generator','Wind']:
+                    if real_values.get('min_kw') > real_values.get('max_kw'):
+                        self.input_data_errors.append(
+                            'min_kw (%s) in %s is larger than the max_kw value (%s)' % ( real_values.get('min_kw'),location , real_values.get('max_kw'))
+                            )
+                if object_name_path[-1] in ['Storage']:
+                    if real_values.get('min_kwh') > real_values.get('max_kwh'):
+                        self.input_data_errors.append(
+                            'min_kwh (%s) in %s is larger than the max_kwh value (%s)' % ( real_values.get('min_kwh'), self.object_name_string(object_name_path), real_values.get('max_kwh'))
+                            )
+                if object_name_path[-1] in ['LoadProfile']:
+                    if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
+                        if real_values.get('outage_start_hour') >= real_values.get('outage_end_hour'):
+                            self.input_data_errors.append('LoadProfile outage_end_hour must be larger than outage_end_hour and these inputs cannot be equal')
+
+                    if real_values.get('outage_start_time_step') is not None and real_values.get('outage_end_time_step') is not None:
+                        if real_values.get('outage_start_time_step') >= real_values.get('outage_end_time_step'):
+                            self.input_data_errors.append('LoadProfile outage_end_time_step must be larger than outage_start_time_step and these inputs cannot be equal')
+
+    def check_for_nans(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
+        """
+        comparison_function for recursively_check_input_dict.
+        flag any inputs that have been parameterized as NaN and do not let the optimization continue.
+        this step is important to prevent exceptions in later optimization and post-processings steps.
+        :param object_name_path: list of str, location of an object in self.input_dict being validated,
+            eg. ["Scenario", "Site", "PV"]
+        :param template_values: reference dictionary for checking real_values, for example
+            {'latitude':{'type':'float',...}...}, which comes from nested_input_definitions
+        :param real_values: dict, the attributes corresponding to the object at object_name_path within the
+            input_dict to check and/or modify. For example, with a object_name_path of ["Scenario", "Site", "PV"]
+                the real_values would look like: {'latitude': 39.345678, 'longitude': -90.3, ... }
+        :param number: int, order of the dict in the list
+        :param input_isDict: bool, indicates if the object input came in as a dict or list
+        :return: None
+        """
+        if real_values is not None:
+            rv = copy.deepcopy(real_values)
+            for name, value in rv.items():
+                if self.isAttribute(name):
+                    if type(value) == float:
+                        if np.isnan(value):
+                            self.input_data_errors.append(
+                                'NaN is not a valid input for %s in %s' % (name, self.object_name_string(object_name_path))
+                                )
 
     def remove_invalid_keys(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
         """
@@ -896,7 +999,7 @@ class ValidateNestedInput:
                     if real_values.get("prod_factor_series_kw"):
                         self.validate_8760(real_values.get("prod_factor_series_kw"),
                                                             "PV", "prod_factor_series_kw", self.input_dict['Scenario']['time_steps_per_hour'])
-    
+
         if object_name_path[-1] == "Wind":
             if any((isinstance(real_values['max_kw'], x) for x in [float, int])):
                 if real_values['max_kw'] > 0:
@@ -935,11 +1038,11 @@ class ValidateNestedInput:
 
                             avg_load_kw = 0
                             if self.input_dict['Scenario']['Site']['LoadProfile'].get('annual_kwh') is not None:
-                                annual_kwh_list = self.input_dict['Scenario']['Site']['LoadProfile'].get('annual_kwh')
+                                annual_kwh = self.input_dict['Scenario']['Site']['LoadProfile'].get('annual_kwh')
                                 percent_share_list = self.input_dict['Scenario']['Site']['LoadProfile'].get('percent_share')
                                 # Find weighted avg for hybrid load profile
                                 avg_load_kw = sum(
-                                    [annual_kwh_list[i] * percent_share_list[i] / 100 for i in range(len(annual_kwh_list))]) / 8760
+                                    [annual_kwh * pct / 100 for pct in percent_share_list]) / 8760
 
                             elif self.input_dict['Scenario']['Site']['LoadProfile'].get('annual_kwh') is None and self.input_dict['Scenario']['Site']['LoadProfile'].get('doe_reference_name') is not None:
                                 from reo.src.load_profile import LoadProfile
@@ -955,7 +1058,7 @@ class ValidateNestedInput:
                                                        **self.input_dict['Scenario']['Site']['LoadProfile']
                                                        )
                                     default_annual_kwh_list.append(b.annual_kwh)
-                                avg_load_kw = sum([default_annual_kwh_list[i] * percent_share_list[i] / 100 for i in range(len(default_annual_kwh_list))]) / 8760
+                                avg_load_kw = sum([sum(default_annual_kwh_list) * percent_share_list[i] / 100 for i in range(len(default_annual_kwh_list))]) / 8760
                                 # resetting the doe_reference_name key to its original list
                                 # form for further processing in loadprofile.py file
                                 self.input_dict['Scenario']['Site']['LoadProfile'][
@@ -996,28 +1099,45 @@ class ValidateNestedInput:
                 # fill in prime mover specific defaults
                 prime_mover = real_values.get('prime_mover')
                 size_class = real_values.get('size_class')
+                hw_or_steam = self.input_dict['Scenario']['Site']['Boiler'].get('existing_boiler_production_type_steam_or_hw')
+                # Assign "year" for chp_unavailability_periods
+                if self.input_dict['Scenario']['Site']['LoadProfile'].get("doe_reference_name") is not None:
+                    year = 2017  # If using DOE building, load matches with 2017 calendar
+                else:
+                    year = self.input_dict['Scenario']['Site']['LoadProfile'].get("year")
                 if prime_mover is not None:
-                    if size_class is not None:
-                        if (size_class >= 0) and (size_class < n_classes[prime_mover]):
-                            prime_mover_defaults = {param: prime_mover_defaults_all[prime_mover][param][size_class]
-                                            for param in prime_mover_defaults_all[prime_mover].keys()}
+                    if prime_mover not in prime_mover_defaults_all.keys():
+                        self.input_data_errors.append(
+                                'prime_mover not in valid options of ' + str(list(prime_mover_defaults_all.keys())))
+                    else:  # Only do further checks on CHP if the prime_mover is a valid input
+                        if size_class is not None:
+                            if (size_class < 0) or (size_class >= n_classes[prime_mover]):
+                                self.input_data_errors.append(
+                                    'The size class input is outside the valid range for ' + str(prime_mover))
                         else:
-                            self.input_data_errors.append(
-                                'The size class input is outside the valid range for ' + str(prime_mover))
-                    else:
-                        size_class = CHP.default_chp_size_class[prime_mover]
-                        prime_mover_defaults = {param: prime_mover_defaults_all[prime_mover][param][size_class]
-                                            for param in prime_mover_defaults_all[prime_mover].keys()}
-                    # create an updated attribute set to check invalid combinations of input data later
-                    prime_mover_defaults.update({"size_class": size_class})
-                    updated_set = copy.deepcopy(prime_mover_defaults)
-                    for param, value in prime_mover_defaults.items():
-                        if real_values.get(param) is None:
-                            self.update_attribute_value(object_name_path, number, param, value)
+                            size_class = CHP.default_chp_size_class[prime_mover]
+                        prime_mover_defaults = CHP.get_chp_defaults(prime_mover, hw_or_steam, size_class)
+                        # create an updated attribute set to check invalid combinations of input data later
+                        prime_mover_defaults.update({"size_class": size_class})
+                        updated_set = copy.deepcopy(prime_mover_defaults)
+                        for param, value in prime_mover_defaults.items():
+                            if real_values.get(param) is None:
+                                self.update_attribute_value(object_name_path, number, param, value)
+                            else:
+                                updated_set[param] = real_values.get(param)
+                        # Provide default chp_unavailability periods if none is given, if prime_mover is provided
+                        if real_values.get("chp_unavailability_periods") is None:
+                            chp_unavailability_path = os.path.join('input_files', 'CHP', prime_mover+'_unavailability_periods.csv')
+                            chp_unavailability_periods_df = pd.read_csv(chp_unavailability_path)
+                            chp_unavailability_periods = chp_unavailability_periods_df.to_dict('records')
+                            self.update_attribute_value(object_name_path, number, "chp_unavailability_periods", chp_unavailability_periods)
                         else:
-                            updated_set[param] = real_values.get(param)
+                            chp_unavailability_periods = real_values.get("chp_unavailability_periods")
 
-                    self.chp_checks(updated_set, object_name_path, number)
+                        # Do same validation on chp_unavailability periods whether using the default or user-entered
+                        self.input_data_errors += ValidateNestedInput.validate_chp_unavailability_periods(year, chp_unavailability_periods)
+
+                        self.validate_chp_inputs(updated_set, object_name_path, number)
 
                 # otherwise, check if the user intended to run CHP and supplied sufficient info
                 else:
@@ -1051,9 +1171,15 @@ class ValidateNestedInput:
                         filtered_values = {k: real_values.get(k) for k in required_keys}
                         for k,v in filtered_values.items():
                             if v is None:
-                                self.input_data_errors.append('CHP is missing a value for the {} parameter'.format(k))
+                                self.input_data_errors.append('No prime_mover was input so all cost and performance parameters must be input. \
+                                    CHP is missing a value for the {} parameter'.format(k))
 
-                        self.chp_checks(filtered_values, object_name_path, number)
+                        if real_values.get("chp_unavailability_periods") is None:
+                            self.input_data_errors.append('Must provide an input for chp_unavailability_periods since not providing prime_mover')
+                        else:
+                            self.input_data_errors += ValidateNestedInput.validate_chp_unavailability_periods(year, real_values.get("chp_unavailability_periods"))
+
+                        self.validate_chp_inputs(filtered_values, object_name_path, number)
 
                     # otherwise assume user did not want to run CHP and set it's max_kw to 0 to deactivate it
                     else:
@@ -1062,14 +1188,10 @@ class ValidateNestedInput:
 
         if object_name_path[-1] == "Generator":
             if self.isValid:
-                
-                fuel_conversion_per_gal = {
-                    'diesel_oil': 22.51
-                }
 
                 if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_CO2_per_gal') is None:
-                    self.update_attribute_value(object_name_path, number, 'emissions_factor_lb_CO2_per_gal', fuel_conversion_per_gal.get('diesel_oil'))
-                
+                    self.update_attribute_value(object_name_path, number, 'emissions_factor_lb_CO2_per_gal', self.fuel_conversion_per_gal.get('diesel_oil'))
+
                 if (real_values["max_kw"] > 0 or real_values["existing_kw"] > 0):
                     # then replace zeros in default burn rate and slope, and set min/max kw values appropriately for
                     # REopt (which need to be in place before data is saved and passed on to celery tasks)
@@ -1082,16 +1204,46 @@ class ValidateNestedInput:
 
         if object_name_path[-1] == "LoadProfile":
             if self.isValid:
+                if real_values.get('outage_start_time_step') is not None and real_values.get('outage_end_time_step') is not None:
+                    if real_values.get('outage_start_time_step') >= real_values.get('outage_end_time_step'):
+                        self.input_data_errors.append('LoadProfile outage_start_time_step must be less than outage_end_time_step.')
+                    if self.input_dict['Scenario']['time_steps_per_hour'] == 1 and real_values.get('outage_end_time_step') > 8760:
+                        self.input_data_errors.append('outage_end_time_step must be <= 8760 when time_steps_per_hour = 1')
+                    if self.input_dict['Scenario']['time_steps_per_hour'] == 2 and real_values.get('outage_end_time_step') > 17520:
+                        self.input_data_errors.append('outage_end_time_step must be <= 17520 when time_steps_per_hour = 2')
+                    # case of 'time_steps_per_hour' == 4 and outage_end_time_step > 35040 handled by "max" value
+
                 if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
-                    if real_values.get('outage_start_hour') == real_values.get('outage_end_hour'):
-                        self.input_data_errors.append('LoadProfile outage_start_hour and outage_end_hour cannot be the same')
+                    # the following preserves the original behavior
+                    self.update_attribute_value(object_name_path, number, 'outage_start_time_step',
+                                                real_values.get('outage_start_hour') + 1)
+                    self.update_attribute_value(object_name_path, number, 'outage_end_time_step',
+                                                real_values.get('outage_end_hour') + 1)
+
                 if type(real_values.get('percent_share')) in [float, int]:
                     if real_values.get('percent_share') == 100:
                         real_values['percent_share'] = [100]
                         self.update_attribute_value(object_name_path, number, 'percent_share', [100.0])
                     else:
                         self.input_data_errors.append(
-                        'The percent_share input for a load profile must be be 100 or a list of numbers that sums to 100.')
+                            'The percent_share input for a LoadProfile must be be 100 or a list of numbers that sums to 100.')
+                if len(real_values.get('percent_share',[])) > 0:
+                    percent_share_sum = sum(real_values['percent_share'])
+                    if percent_share_sum != 100.0:
+                        self.input_data_errors.append(
+                        'The sum of elements of percent share list for hybrid LoadProfile should be 100.')
+                if real_values.get('percent_share') is None:
+                    real_values['percent_share'] = self.input_dict['Scenario']['Site']['LoadProfile'].get(
+                                                'percent_share')
+                    self.update_attribute_value(object_name_path, number, 'percent_share', real_values['percent_share'])
+                if real_values.get('doe_reference_name') is not None:
+                    if len(real_values.get('doe_reference_name')) != len(real_values.get('percent_share',[])):
+                        self.input_data_errors.append((
+                            'The length of doe_reference_name and percent_share lists should be equal'
+                            ' for constructing hybrid LoadProfile'))
+                if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
+                    if real_values.get('outage_start_hour') == real_values.get('outage_end_hour'):
+                        self.input_data_errors.append('LoadProfile outage_start_hour and outage_end_hour cannot be the same')
                 for lp in ['critical_loads_kw', 'loads_kw']:
                     if real_values.get(lp) not in [None, []]:
                         self.validate_8760(real_values.get(lp), "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'],
@@ -1104,35 +1256,10 @@ class ValidateNestedInput:
                             if self.isValid:
                                 if min(real_values.get(lp)) < 0:
                                     self.input_data_errors.append("{} must contain loads greater than or equal to zero.".format(lp))
-
-                if len(real_values.get('percent_share')) > 0:
-                    percent_share_sum = sum(real_values['percent_share'])
-                    if percent_share_sum != 100.0:
-                        self.input_data_errors.append(
-                        'The sum of elements of percent share list for hybrid load profile should be 100.')
-
-                if real_values.get('annual_kwh') is not None:
-                    if type(real_values['annual_kwh']) is not list:
-                        self.update_attribute_value(object_name_path, number, 'annual_kwh', [real_values['annual_kwh']])
-                        real_values['annual_kwh'] = [real_values['annual_kwh']]
-
                 if real_values.get('doe_reference_name') is not None:
                     real_values['year'] = 2017
-                    self.update_attribute_value(object_name_path, number, 'year', 2017)
                     # Use 2017 b/c it is most recent year that starts on a Sunday and all reference profiles start on
                     # Sunday
-                    if type(real_values['doe_reference_name']) is not list:
-                        self.update_attribute_value(object_name_path, number, 'doe_reference_name',[real_values['doe_reference_name']])
-                        real_values['doe_reference_name'] = [real_values['doe_reference_name']]
-
-                    if len(real_values.get('doe_reference_name')) > 1:
-                        if len(real_values.get('doe_reference_name')) != len(real_values.get('percent_share')):
-                            self.input_data_errors.append(
-                            'The length of doe_reference_name and percent_share lists should be equal for constructing hybrid load profile')
-
-                if real_values.get('annual_kwh') is not None:
-                    if len(real_values.get('doe_reference_name')) != len(real_values.get('annual_kwh')):
-                        self.input_data_errors.append('The length of doe_reference_name and annual_kwh lists should be equal for constructing hybrid load profile')
 
         if object_name_path[-1] == "ElectricTariff":
             electric_tariff = real_values
@@ -1144,7 +1271,7 @@ class ValidateNestedInput:
             elif (len(electric_tariff.get('emissions_factor_series_lb_CO2_per_kwh') or []) == 0):
                 if (self.input_dict['Scenario']['Site'].get('latitude') is not None) and \
                     (self.input_dict['Scenario']['Site'].get('longitude') is not None):
-                    ec = EmissionsCalculator(   latitude=self.input_dict['Scenario']['Site']['latitude'], 
+                    ec = EmissionsCalculator(   latitude=self.input_dict['Scenario']['Site']['latitude'],
                                                     longitude=self.input_dict['Scenario']['Site']['longitude'],
                                                     time_steps_per_hour = self.input_dict['Scenario']['time_steps_per_hour'])
                     emissions_series = None
@@ -1154,21 +1281,21 @@ class ValidateNestedInput:
                     except AttributeError as e:
                         # Emissions warning is a specific type of warning that we check for and display to the users when it occurs
                         # since at this point the emissions are not required to do a run it simply
-                        # tells the user why we could not get an emission series and results in emissions not being 
+                        # tells the user why we could not get an emission series and results in emissions not being
                         # calculated, but does not prevent the run from optimizing
                         self.emission_warning = str(e.args[0])
 
                     if emissions_series is not None:
-                        self.update_attribute_value(object_name_path, number, 'emissions_factor_series_lb_CO2_per_kwh', 
+                        self.update_attribute_value(object_name_path, number, 'emissions_factor_series_lb_CO2_per_kwh',
                             emissions_series)
-                        self.update_attribute_value(object_name_path, number, 'emissions_region', 
+                        self.update_attribute_value(object_name_path, number, 'emissions_region',
                             emissions_region)
             else:
-                self.validate_8760(electric_tariff['emissions_factor_series_lb_CO2_per_kwh'], 
-                    "ElectricTariff", 
-                    'emissions_factor_series_lb_CO2_per_kwh', 
+                self.validate_8760(electric_tariff['emissions_factor_series_lb_CO2_per_kwh'],
+                    "ElectricTariff",
+                    'emissions_factor_series_lb_CO2_per_kwh',
                     self.input_dict['Scenario']['time_steps_per_hour'])
- 
+
 
             if electric_tariff.get('urdb_response') is not None:
                 self.validate_urdb_response()
@@ -1197,6 +1324,20 @@ class ValidateNestedInput:
                     self.update_attribute_value(object_name_path, number,  'urdb_response', rate.urdb_dict)
                     electric_tariff['urdb_response'] = rate.urdb_dict
                     self.validate_urdb_response()
+
+            if electric_tariff.get('urdb_response') is not None and len(self.urdb_errors)==0:
+                #We allow custom URDB formatted rates at resolutions finer than 1 hour, so we are checking to see if the
+                #energy rate resolution is finer than the simulation time resolution
+                #Currently, we do not support consolidating energy rates to match the simulation
+                #so we flag this potential error here
+                if len(electric_tariff['urdb_response'].get('energyweekdayschedule',[[]])[0]) > 24:
+                    energy_rate_resolution = int(len(electric_tariff['urdb_response'].get('energyweekdayschedule',[[]])[0]) / 24)
+                    if energy_rate_resolution > self.input_dict['Scenario']['time_steps_per_hour']:
+                        self.input_data_errors.append( \
+                            "The URDB Rate provided has been determined to have a resolution of {urdb_ts} timesteps per hour, but the Scenario time_steps_per_hour is set to {scenario_ts}."
+                            " Please choose a valid Scenario time_steps_per_hour less than or equal to {scenario_ts}, or consolidate the rate's energyweekdayschedule, energyweekendschedule, demandweekdayschedule, and demandweekendchedule parameters.".format(
+                                scenario_ts = int(self.input_dict['Scenario']['time_steps_per_hour']),
+                                urdb_ts = energy_rate_resolution))
 
             if electric_tariff['add_blended_rates_to_urdb_rate']:
                 monthly_energy = electric_tariff.get('blended_monthly_rates_us_dollars_per_kwh', True)
@@ -1245,11 +1386,13 @@ class ValidateNestedInput:
                     self.input_data_errors.append((
                         'add_blended_rates_to_urdb_rate is set to "true" yet missing valid entries for the '
                         'following inputs: {}').format(', '.join(missing_keys)))
+
+            ts_per_hour = self.input_dict['Scenario'].get('time_steps_per_hour') or \
+                                    self.nested_input_definitions['Scenario']['time_steps_per_hour']['default']
+
             for key_name in ['wholesale_rate_us_dollars_per_kwh',
                                 'wholesale_rate_above_site_load_us_dollars_per_kwh']:
                 if type(electric_tariff.get(key_name)) == list:
-                    ts_per_hour = self.input_dict['Scenario'].get('time_steps_per_hour') or \
-                                    self.nested_input_definitions['Scenario']['time_steps_per_hour']['default']
                     if len(electric_tariff.get(key_name)) == 1:
                         self.update_attribute_value(object_name_path, number, key_name,
                                                     electric_tariff.get(key_name) * 8760 * ts_per_hour)
@@ -1259,7 +1402,26 @@ class ValidateNestedInput:
                                             time_steps_per_hour=ts_per_hour, number=number,
                                             input_isDict=input_isDict)
 
-        if object_name_path[-1] == "LoadProfileChillerElectric":
+            if self.isValid:
+                if electric_tariff.get('coincident_peak_load_active_timesteps') is not None:
+                    for series in electric_tariff.get('coincident_peak_load_active_timesteps'):
+                        self.validate_timestep_series(series,
+                        "ElectricTariff", 'coincident_peak_load_active_timesteps',
+                        ts_per_hour, number=number, input_isDict=input_isDict)
+                    if len(electric_tariff.get('coincident_peak_load_active_timesteps')) != len(electric_tariff.get('coincident_peak_load_charge_us_dollars_per_kw')):
+                        self.input_data_errors.append(( "The number of rates in coincident_peak_load_charge_us_dollars_per_kw must"
+                                                        " match the number of timestep sets in coincident_peak_load_active_timesteps"))
+                    if self.isValid:
+                        #All coincident_peak_load_active_timesteps lists must be the same length
+                        max_entries = max([len(i) for i in electric_tariff['coincident_peak_load_active_timesteps']])
+                        for idx, entry in enumerate(electric_tariff['coincident_peak_load_active_timesteps']):
+                            if len(entry) < max_entries:
+                                electric_tariff['coincident_peak_load_active_timesteps'][idx] += [None for _ in range(max_entries - len(entry))]
+                        real_values['coincident_peak_load_active_timesteps'] = electric_tariff['coincident_peak_load_active_timesteps']
+                        self.update_attribute_value(object_name_path, number, 'coincident_peak_load_active_timesteps',
+                                                    electric_tariff['coincident_peak_load_active_timesteps'])
+
+        if object_name_path[-1] == "LoadProfileChillerThermal":
             if self.isValid:
                 # If an empty dictionary comes in - assume no load by default
                 no_values_given = True
@@ -1268,60 +1430,56 @@ class ValidateNestedInput:
                         no_values_given = False
 
                 if no_values_given:
-                    self.update_attribute_value(object_name_path, number, 'loads_fraction', list(np.concatenate(
+                    self.update_attribute_value(object_name_path, number, 'loads_ton', list(np.concatenate(
                         [[0] * self.input_dict['Scenario']['time_steps_per_hour'] for _ in range(8760)]).astype(list)))
-                    self.defaults_inserted.append(['loads_fraction', object_name_path])
+                    self.defaults_inserted.append(['loads_ton', object_name_path])
 
-                # If a dictionary comes in with vaues and no doe reference name then use the electric load profile building type by default
-                if not no_values_given and real_values.get('doe_reference_name') is None:
+                # If a dictionary comes in with values to scale a profile
+                # and no doe reference name then use the electric load profile building type by default
+                if (not no_values_given) and ((not real_values.get('annual_tonhour') is None) or \
+                    (not real_values.get('monthly_tonhour') is None)) and (real_values.get('doe_reference_name') is None):
                     self.update_attribute_value(object_name_path, number, 'doe_reference_name',
                                                 self.input_dict['Scenario']['Site']['LoadProfile'].get(
                                                     'doe_reference_name'))
                     real_values['doe_reference_name'] = self.input_dict['Scenario']['Site']['LoadProfile'].get(
                                                     'doe_reference_name')
-
+                if real_values.get('doe_reference_name') is not None:
+                    if type(real_values['doe_reference_name']) is not list:
+                        self.update_attribute_value(object_name_path, number, 'doe_reference_name', [real_values['doe_reference_name']])
+                        real_values['doe_reference_name'] = [real_values['doe_reference_name']]
                 if type(real_values.get('percent_share')) in [float, int]:
                     if real_values.get('percent_share') == 100:
                         real_values['percent_share'] = [100]
                         self.update_attribute_value(object_name_path, number, 'percent_share', [100.0])
                     else:
                         self.input_data_errors.append(
-                        'The percent_share input for a load profile must be be 100 or a list of numbers that sums to 100.')
-                if type(real_values.get('percent_share')) in [list]:
-                    if len(real_values.get('percent_share')) > 0:
-                        percent_share_sum = sum(real_values['percent_share'])
-                        if percent_share_sum != 100.0:
-                            self.input_data_errors.append(
-                            'The sum of elements of percent share list for hybrid chiller electric load profile should be 100.')
+                            'The percent_share input for a LoadProfileChillerThermal must be be 100 or a list of numbers that sums to 100.')
+                if len(real_values.get('percent_share',[])) > 0:
+                    percent_share_sum = sum(real_values['percent_share'])
+                    if percent_share_sum != 100.0:
+                        self.input_data_errors.append(
+                        'The sum of elements of percent share list for hybrid LoadProfileChillerThermal should be 100.')
                 if real_values.get('percent_share') is None:
                     real_values['percent_share'] = self.input_dict['Scenario']['Site']['LoadProfile'].get(
                                                 'percent_share')
                     self.update_attribute_value(object_name_path, number, 'percent_share', real_values['percent_share'])
-
                 if real_values.get('doe_reference_name') is not None:
-                    if type(real_values['doe_reference_name']) is not list:
-                        self.update_attribute_value(object_name_path, number, 'doe_reference_name', [real_values['doe_reference_name']])
-                        real_values['doe_reference_name'] = [real_values['doe_reference_name']]
-                    if len(real_values.get('doe_reference_name')) > 1:
-                        if len(real_values.get('doe_reference_name')) != len(real_values.get('percent_share')):
-                            self.input_data_errors.append('The length of doe_reference_name and percent_share lists should be equal for constructing hybrid chiller electric load profile')
-
+                    if len(real_values.get('doe_reference_name')) != len(real_values.get('percent_share',[])):
+                        self.input_data_errors.append((
+                            'The length of doe_reference_name and percent_share lists should be equal'
+                            ' for constructing hybrid LoadProfileChillerThermal'))
                 # Validate a user supplied energy series
-                if not no_values_given and real_values.get('loads_fraction') not in [None, []]:
-                    self.validate_8760(real_values.get('loads_fraction'), "LoadProfileChillerElectric",
+                if not no_values_given and \
+                    ( (real_values.get('loads_fraction') not in [None,[]]) or \
+                      (real_values.get('loads_ton') not in [None,[]]) ) :
+                    if len(real_values.get('loads_fraction',[])) > len(real_values.get('loads_ton',[])):
+                        load_series_name = 'loads_fraction'
+                        self.validate_8760(real_values.get('loads_fraction'), "LoadProfileChillerThermal",
                                        'loads_fraction', self.input_dict['Scenario']['time_steps_per_hour'])
-
-                    for input_name in ['loads_fraction', 'monthly_fraction']:
-                        list_to_check = real_values.get(input_name)
-                        if list_to_check is not None:
-                            if min(list_to_check) < 0:
-                                self.input_data_errors.append(
-                                    "LoadProfileChillerElectric {} parameter represents a fraction of the site load and cannot contain values less than 0.".format(
-                                        list_to_check))
-                            if max(list_to_check) > 1:
-                                self.input_data_errors.append(
-                                    "LoadProfileChillerElectric {} parameter represents a fraction of the site load and cannot contain values greater than 1.".format(
-                                        list_to_check))
+                    else:
+                        load_series_name = 'loads_ton'
+                        self.validate_8760(real_values.get('loads_ton'), "LoadProfileChillerThermal",
+                                       'loads_ton', self.input_dict['Scenario']['time_steps_per_hour'])
 
         if object_name_path[-1] == "LoadProfileBoilerFuel":
             # If an empty dictionary comes in - assume no load by default
@@ -1329,72 +1487,56 @@ class ValidateNestedInput:
             for k, v in real_values.items():
                 if v not in [None, []] and v != template_values[k].get('default'):
                     no_values_given = False
-
             if no_values_given:
                 self.update_attribute_value(object_name_path, number, 'loads_mmbtu_per_hour', list(np.concatenate(
                     [[0] * self.input_dict['Scenario']['time_steps_per_hour'] for _ in range(8760)]).astype(list)))
                 self.defaults_inserted.append(['loads_mmbtu_per_hour', object_name_path])
-
             # If a dictionary comes in with vaues and no doe reference name then use the electric load profile building type by default
             if not no_values_given and real_values.get('doe_reference_name') is None:
                 self.update_attribute_value(object_name_path, number, 'doe_reference_name',
                                             self.input_dict['Scenario']['Site']['LoadProfile'].get(
                                                 'doe_reference_name'))
-
+            if real_values.get('doe_reference_name') is not None:
+                if type(real_values['doe_reference_name']) is not list:
+                    self.update_attribute_value(object_name_path, number, 'doe_reference_name', [real_values['doe_reference_name']])
+                    real_values['doe_reference_name'] = [real_values['doe_reference_name']]
             if type(real_values.get('percent_share')) in [float, int]:
                 if real_values.get('percent_share') == 100:
                     real_values['percent_share'] = [100]
                     self.update_attribute_value(object_name_path, number, 'percent_share', [100.0])
                 else:
                     self.input_data_errors.append(
-                    'The percent_share input for a load profile must be be 100 or a list of numbers that sums to 100.')
-            if type(real_values.get('percent_share')) in [list]:
-                if len(real_values.get('percent_share')) > 0:
-                    percent_share_sum = sum(real_values['percent_share'])
-                    if percent_share_sum != 100.0:
-                        self.input_data_errors.append(
-                        'The sum of elements of percent share list for hybrid boiler fuel load profile should be 100.')
+                        'The percent_share input for a LoadProfileBoilerFuel must be be 100 or a list of numbers that sums to 100.')
+            if len(real_values.get('percent_share',[])) > 0:
+                percent_share_sum = sum(real_values['percent_share'])
+                if percent_share_sum != 100.0:
+                    self.input_data_errors.append(
+                    'The sum of elements of percent share list for hybrid boiler load profile should be 100.')
             if real_values.get('percent_share') is None:
                 real_values['percent_share'] = self.input_dict['Scenario']['Site']['LoadProfile'].get(
                                             'percent_share')
                 self.update_attribute_value(object_name_path, number, 'percent_share', real_values['percent_share'])
-
+            if real_values.get('doe_reference_name') is not None:
+                if len(real_values.get('doe_reference_name')) != len(real_values.get('percent_share',[])):
+                    self.input_data_errors.append((
+                        'The length of doe_reference_name and percent_share lists should be equal'
+                        ' for constructing hybrid LoadProfileBoilerFuel'))
             # Validate a user supplied energy series
             if not no_values_given and real_values.get('loads_mmbtu_per_hour') not in [None, []]:
                 self.validate_8760(real_values.get('loads_mmbtu_per_hour'), "LoadProfileBoilerFuel",
                                    'loads_mmbtu_per_hour', self.input_dict['Scenario']['time_steps_per_hour'])
 
-            if real_values.get('annual_mmbtu') is not None:
-                if type(real_values['annual_mmbtu']) is not list:
-                    self.update_attribute_value(object_name_path, number, 'annual_mmbtu', [real_values['annual_mmbtu']])
-                    real_values['annual_mmbtu'] = [real_values['annual_mmbtu']]
-
-            if real_values.get('doe_reference_name') is not None:
-                if type(real_values['doe_reference_name']) is not list:
-                    self.update_attribute_value(object_name_path, number, 'doe_reference_name', [real_values['doe_reference_name']])
-                    real_values['doe_reference_name'] = [real_values['doe_reference_name']]
-                if len(real_values.get('doe_reference_name')) > 1:
-                    if len(real_values.get('doe_reference_name')) != len(real_values.get('percent_share')):
-                        self.input_data_errors.append('The length of doe_reference_name and percent_share lists should be equal for constructing hybrid boiler fuel load profile')
-                    if real_values.get('annual_kwh') is not None:
-                        if len(real_values.get('doe_reference_name')) != len(real_values.get('annual_kwh')):
-                            self.input_data_errors.append(
-                                'The length of doe_reference_name and annual_kwh lists should be equal for constructing hybrid boiler fuel load profile')
-
         if object_name_path[-1] == "FuelTariff":
-
             if self.input_dict['Scenario']['Site']['CHP'].get('emissions_factor_lb_CO2_per_mmbtu') is None:
                 chp_fuel = real_values.get('chp_fuel_type')
                 self.update_attribute_value(object_name_path[:-1] + ['CHP'], number,
                                             'emissions_factor_lb_CO2_per_mmbtu',
                                             self.fuel_conversion_per_mmbtu.get(chp_fuel))
-
             if self.input_dict['Scenario']['Site']['Boiler'].get('emissions_factor_lb_CO2_per_mmbtu') is None:
                 boiler_fuel = real_values.get('existing_boiler_fuel_type')
                 self.update_attribute_value(object_name_path[:-1] + ['Boiler'], number,
                                             'emissions_factor_lb_CO2_per_mmbtu',
                                             self.fuel_conversion_per_mmbtu.get(boiler_fuel))
-
             if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_CO2_per_gal') is None:
                     self.update_attribute_value(object_name_path[:-1] + ['Generator'],  number, \
                         'emissions_factor_lb_CO2_per_gal', self.fuel_conversion_per_gal.get('diesel_oil'))
@@ -1427,21 +1569,12 @@ class ValidateNestedInput:
         if object_name_path[-1] == "AbsorptionChiller":
                 if self.isValid:
                     # Set default absorption chiller cost and performance based on boiler type or chp prime mover
-                    absorption_chiller_cop_defaults = copy.deepcopy(AbsorptionChiller.absorption_chiller_cop_defaults)
-                    boiler_type_by_chp_pm_defaults = copy.deepcopy(Boiler.boiler_type_by_chp_prime_mover_defaults)
-                    chp_prime_mover = self.input_dict['Scenario']['Site']['CHP'].get("prime_mover")
                     hw_or_steam_user_input = self.input_dict['Scenario']['Site']['Boiler'].get('existing_boiler_production_type_steam_or_hw')
+                    chp_prime_mover = self.input_dict['Scenario']['Site']['CHP'].get("prime_mover")
                     if real_values.get('chiller_cop') is None:
-                        if hw_or_steam_user_input is not None:
-                            self.update_attribute_value(object_name_path, number,
-                                                        'chiller_cop',
-                                                        absorption_chiller_cop_defaults[hw_or_steam_user_input])
-                        elif chp_prime_mover is not None:
-                            hw_or_steam = boiler_type_by_chp_pm_defaults[chp_prime_mover]
-                            self.update_attribute_value(object_name_path, number,
-                                                        'chiller_cop',
-                                                        absorption_chiller_cop_defaults[hw_or_steam])
-
+                        absorp_chiller_cop = AbsorptionChiller.get_absorp_chiller_cop(hot_water_or_steam=hw_or_steam_user_input,
+                                                                                        chp_prime_mover=chp_prime_mover)
+                        self.update_attribute_value(object_name_path, number, 'chiller_cop', absorp_chiller_cop)
 
     def check_min_max_restrictions(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
         """
@@ -1463,26 +1596,23 @@ class ValidateNestedInput:
             for name, value in real_values.items():
                 if self.isAttribute(name):
                     data_validators = template_values[name]
-
-                    if "list_of_float" in data_validators['type'] and isinstance(value, list):
-                        if None in value:
-                            self.input_data_errors.append(
-                                'At least one value in %s (from %s) is null' % (
-                                    name, self.object_name_string(object_name_path), data_validators['min']))
-                        else:
-                            if data_validators.get('min') is not None:
-                                if any([v < data_validators['min'] for v in value]):
+                    if ("list_of_float" in data_validators['type'] or "list_of_int" in data_validators['type']) and isinstance(value, list):
+                        if 'list_of_list' not in data_validators['type']:
+                            value = [value]
+                        if data_validators.get('min') is not None:
+                            for value_set in value:
+                                if any([v < data_validators['min'] for v in value_set]):
                                     if input_isDict or input_isDict is None:
                                         self.input_data_errors.append(
-                                            'At least one value in %s (from %s) exceeds allowable min of %s' % (
+                                            'At least one value in %s (from %s) is less than the allowable min of %s' % (
                                                 name, self.object_name_string(object_name_path), data_validators['min']))
                                     if input_isDict is False:
                                         self.input_data_errors.append(
-                                            'At least one value in %s (from %s number %s) exceeds allowable min of %s' % (
+                                            'At least one value in %s (from %s number %s) is less than the allowable min %s' % (
                                                 name, self.object_name_string(object_name_path), number, data_validators['min']))
-
-                            if data_validators.get('max') is not None:
-                                if any([v > data_validators['max'] for v in value]):
+                        if data_validators.get('max') is not None:
+                            for value_set in value:
+                                if any([v > data_validators['max'] for v in value_set]):
                                     if input_isDict or input_isDict is None:
                                         self.input_data_errors.append(
                                             'At least one value in %s (from %s) exceeds allowable max of %s' % (
@@ -1491,39 +1621,25 @@ class ValidateNestedInput:
                                         self.input_data_errors.append(
                                             'At least one value in %s (from %s number %s) exceeds allowable max of %s' % (
                                                 name, self.object_name_string(object_name_path), number, data_validators['max']))
-                            continue
-                    elif "list_of_str" in data_validators['type'] and isinstance(value, list):
-                        data_type = list
-                    elif isinstance(data_validators['type'], list) and 'float' in data_validators['type']:
-                        data_type = float
-                    elif isinstance(data_validators['type'], list) and 'str' in data_validators['type']:
-                        data_type = str
-                    else:
-                        data_type = eval(data_validators['type'])
 
-                    try:  # to convert input value to restricted type
-                        value = data_type(value)
-                        if data_type in [float, int]:
-                            if data_validators.get('min') is not None:
-                                if value < data_validators['min']:
-                                    if input_isDict==True or input_isDict==None:
-                                        self.input_data_errors.append('%s value (%s) in %s exceeds allowable min %s' % (
-                                        name, value, self.object_name_string(object_name_path), data_validators['min']))
-                                    if input_isDict==False:
-                                        self.input_data_errors.append('%s value (%s) in %s (number %s) exceeds allowable min %s' % (
-                                        name, value, self.object_name_string(object_name_path), number, data_validators['min']))
+                    if type(value) in [int, float]:
+                        if data_validators.get('min') is not None:
+                            if value < data_validators['min']:
+                                if input_isDict==True or input_isDict==None:
+                                    self.input_data_errors.append('%s value (%s) in %s is less than the allowable min %s' % (
+                                    name, value, self.object_name_string(object_name_path), data_validators['min']))
+                                if input_isDict==False:
+                                    self.input_data_errors.append('%s value (%s) in %s (number %s) is less than the allowable min %s' % (
+                                    name, value, self.object_name_string(object_name_path), number, data_validators['min']))
 
-                            if data_validators.get('max') is not None:
-                                if value > data_validators['max']:
-                                    if input_isDict==True or input_isDict==None:
-                                        self.input_data_errors.append('%s value (%s) in %s exceeds allowable max %s' % (
-                                        name, value, self.object_name_string(object_name_path), data_validators['max']))
-                                    if input_isDict==False:
-                                        self.input_data_errors.append('%s value (%s) in %s (number %s) exceeds allowable max %s' % (
-                                        name, value, self.object_name_string(object_name_path), number, data_validators['max']))
-                    except:
-                        self.input_data_errors.append('Could not check min/max on %s (%s) in %s' % (
-                        name, value, self.object_name_string(object_name_path)))
+                        if data_validators.get('max') is not None:
+                            if value > data_validators['max']:
+                                if input_isDict==True or input_isDict==None:
+                                    self.input_data_errors.append('%s value (%s) in %s exceeds allowable max %s' % (
+                                    name, value, self.object_name_string(object_name_path), data_validators['max']))
+                                if input_isDict==False:
+                                    self.input_data_errors.append('%s value (%s) in %s (number %s) exceeds allowable max %s' % (
+                                    name, value, self.object_name_string(object_name_path), number, data_validators['max']))
 
                     if data_validators.get('restrict_to') is not None:
                         # Handle both cases: 1. val is of 'type' 2. List('type')
@@ -1557,121 +1673,131 @@ class ValidateNestedInput:
         :param input_isDict: bool, indicates if the object input came in as a dict or list
         :return: None
         """
+
+        def test_conversion(conversion_function, conversion_function_name, name, value, object_name_path, number, input_isDict, record_errors=True):
+            try:
+                series = pd.Series(value)
+                if series.isnull().values.any():
+                    raise NotImplementedError
+                new_value = conversion_function(value)
+            except ValueError:
+                if record_errors:
+                    if input_isDict or input_isDict is None:
+                        self.input_data_errors.append(
+                            'Could not convert %s (%s) in %s to %ss' % (name, value,
+                                                self.object_name_string(object_name_path),
+                                                conversion_function_name)
+                        )
+                    if input_isDict is False:
+                        self.input_data_errors.append(
+                            'Could not convert %s (%s) in %s (number %s) to %ss' % (name, value,
+                                                self.object_name_string(object_name_path), number,
+                                                conversion_function_name)
+                        )
+            except NotImplementedError:
+                if record_errors:
+                    if input_isDict or input_isDict is None:
+                        self.input_data_errors.append(
+                            '%s in %s contains at least one NaN value.' % (name,
+                            self.object_name_string(object_name_path))
+                        )
+                    if input_isDict is False:
+                        self.input_data_errors.append(
+                            '%s in %s (number %s) contains at least one NaN value.' % (name,
+                            self.object_name_string(object_name_path), number)
+                        )
+            else:
+                self.update_attribute_value(object_name_path, number, name, new_value)
+                return new_value
+
         if real_values is not None:
             for name, value in real_values.items():
                 if self.isAttribute(name):
                     make_array = False
+                    make_array_of_array = False
                     attribute_type = template_values[name]['type']  # attribute_type's include list_of_float
-                    if isinstance(attribute_type, list) and \
-                            all([x in attribute_type for x in ['float', 'list_of_float']]):
-                        if isinstance(value, list):
-                            try:
-                                series = pd.Series(value)
-                                if series.isnull().values.any():
-                                    raise NotImplementedError
-                                new_value = list_of_float(value)
-                            except ValueError:
-                                if input_isDict or input_isDict is None:
-                                    self.input_data_errors.append(
-                                        'Could not convert %s (%s) in %s to list of floats' % (name, value,
-                                                            self.object_name_string(object_name_path))
-                                    )
-                                if input_isDict is False:
-                                    self.input_data_errors.append(
-                                        'Could not convert %s (%s) in %s (number %s) to list of floats' % (name, value,
-                                                            self.object_name_string(object_name_path), number)
-                                    )
-                                continue  # both continue statements should be in a finally clause, ...
-                            except NotImplementedError:
-                                if input_isDict or input_isDict is None:
-                                    self.input_data_errors.append(
-                                        '%s in %s contains at least one NaN value.' % (name,
-                                        self.object_name_string(object_name_path))
-                                    )
-                                if input_isDict is False:
-                                    self.input_data_errors.append(
-                                        '%s in %s (number %s) contains at least one NaN value.' % (name,
-                                        self.object_name_string(object_name_path), number)
-                                    )
-                                continue  # both continue statements should be in a finally clause, ...
+                    new_value = None
+                    if isinstance(attribute_type, list):
+                        # These checks are for cases where the user can supply a simple data type (i.e. string)
+                        # or a list of this type (ie. list of string), by convention if both are allowed we will convert to the list form
+                        # for simplicity of handlings the data throughout the API workflow
+                        list_eval_function_name = None
+                        if all([x in attribute_type for x in ['float', 'list_of_float']]):
+                            list_eval_function_name = 'list_of_float'
+                        if all([x in attribute_type for x in ['int', 'list_of_int']]):
+                            list_eval_function_name = 'list_of_int'
+                        if all([x in attribute_type for x in ['str', 'list_of_str']]):
+                            list_eval_function_name = 'list_of_str'
+                        if all([x in attribute_type for x in ['dict', 'list_of_dict']]):
+                            list_eval_function_name = 'list_of_dict'
+                        if list_eval_function_name is not None:
+                            if 'list_of_list' not in attribute_type:
+                                if isinstance(value, list):
+                                    try:
+                                        new_value = test_conversion(eval(list_eval_function_name), list_eval_function_name.replace('_',' '), name, value, object_name_path, number, input_isDict)
+                                    except:
+                                        pass
+                                else:
+                                    attribute_type = list_eval_function_name.split('_')[-1]
+                                    make_array = True
                             else:
-                                self.update_attribute_value(object_name_path, number, name, new_value)
-                                continue  # ... but python 2.7  does not support continue in finally clauses
+                                # List of list is more complex to check since it can go along with and of the previously listed list_of_ types
+                                # We see if the data is a list of lists first,
+                                # otherwise we check to see if if is a valid alternate data type (i.e. 'list_of_int')
+                                # Finally if it is a valid alternate type we set it to be converted to a list at the end
+                                # otherwise we flag an error
+                                try:
+                                    new_value = test_conversion(list_of_list, "list of list", name, value, object_name_path, number, input_isDict, record_errors=False)
+                                except:
+                                    isValidAlternative = False
+                                    for alternate_data_type in attribute_type:
+                                        try:
+                                            new_value = eval(alternate_data_type)(value)
+                                            attribute_type = alternate_data_type
+                                            make_array = True
+                                            # In case where the data is not at least a list (i.e. int), make it a list
+                                            # so it will later be made into a list of lists
+                                            if not isinstance(new_value, list):
+                                                make_array_of_array = True
+                                                new_value = new_value
+                                                self.update_attribute_value(object_name_path, number, name, new_value)
+                                            isValidAlternative = True
+                                            break
+                                        except:
+                                            pass
+                                    if isValidAlternative == False:
+                                        if input_isDict or input_isDict is None:
+                                            self.input_data_errors.append('Could not convert %s (%s) in %s to one of %s' % (
+                                            name, value, self.object_name_string(object_name_path),
+                                            ",".join(attribute_type)))
+                                        if input_isDict is False:
+                                            self.input_data_errors.append('Could not convert %s (%s) in %s (number %s) to one of %s' % (
+                                            name, value, self.object_name_string(object_name_path), number,
+                                            ",".join(attribute_type)))
+
+                    if not isinstance(attribute_type, list) and new_value is None:
+                        if attribute_type =='bool':
+                            attribute_type = convert_bool
+
                         else:
-                            attribute_type = 'float'
-                            make_array = True
+                            attribute_type = eval(attribute_type)  # convert string to python type
+                        try:  # to convert input value to type defined in nested_input_definitions
+                            new_value = attribute_type(value)
+                        except:  # if fails for any reason record that the conversion failed
+                            if input_isDict or input_isDict is None:
+                                self.input_data_errors.append('Could not convert %s (%s) in %s to %s' % (name, value,
+                                            self.object_name_string(object_name_path), str(attribute_type).split(' ')[1]))
+                            if input_isDict is False:
+                                self.input_data_errors.append('Could not convert %s (%s) in %s (number %s) to %s' % (name, value,
+                                            self.object_name_string(object_name_path), number , str(attribute_type).split(' ')[1]))
 
-
-                    if isinstance(attribute_type, list) and \
-                            all([x in attribute_type for x in ['str', 'list_of_str']]):
-                        if isinstance(value, list):
-                            try:
-                                series = pd.Series(value)
-                                if series.isnull().values.any():
-                                    raise NotImplementedError
-
-                                new_value = list_of_str(value)
-                            except ValueError:
-                                if input_isDict or input_isDict is None:
-                                    self.input_data_errors.append(
-                                        'Could not convert %s (%s) in %s to list of strings' % (name, value,
-                                                                                                self.object_name_string(
-                                                                                                    object_name_path))
-                                    )
-                                if input_isDict is False:
-                                    self.input_data_errors.append(
-                                        'Could not convert %s (%s) in %s (number %s) to list of strings' % (
-                                        name, value,
-                                        self.object_name_string(object_name_path), number)
-                                    )
-                                continue  # both continue statements should be in a finally clause, ...
-                            except NotImplementedError:
-                                if input_isDict or input_isDict is None:
-                                    self.input_data_errors.append(
-                                        '%s in %s contains at least one NaN value.' % (name,
-                                                                                        self.object_name_string(
-                                                                                            object_name_path))
-                                    )
-                                if input_isDict is False:
-                                    self.input_data_errors.append(
-                                        '%s in %s (number %s) contains at least one NaN value.' % (name,
-                                                                                                    self.object_name_string(
-                                                                                                        object_name_path),
-                                                                                                    number)
-                                    )
-                                continue  # both continue statements should be in a finally clause, ...
-                            else:
-                                self.update_attribute_value(object_name_path, number, name, new_value)
-                                continue  # ... but python 2.7  does not support continue in finally clauses
-                        else:
-                            attribute_type = 'str'
-                            make_array = True
-
-                    attribute_type = eval(attribute_type)  # convert string to python type
-                    try:  # to convert input value to type defined in nested_input_definitions
-                        new_value = attribute_type(value)
-                    except:  # if fails for any reason record that the conversion failed
-                        if input_isDict or input_isDict is None:
-                            self.input_data_errors.append('Could not convert %s (%s) in %s to %s' % (name, value,
-                                        self.object_name_string(object_name_path), str(attribute_type).split(' ')[1]))
-                        if input_isDict is False:
-                            self.input_data_errors.append('Could not convert %s (%s) in %s (number %s) to %s' % (name, value,
-                                        self.object_name_string(object_name_path), number , str(attribute_type).split(' ')[1]))
-                    else:
-                        if not isinstance(new_value, bool):
-                            if make_array:
-                                new_value = [new_value]
-                            self.update_attribute_value(object_name_path, number, name, new_value)
-                        else:
-                            if value not in [True, False, 1, 0]:
-                                if input_isDict or input_isDict is None:
-                                    self.input_data_errors.append('Could not convert %s (%s) in %s to %s' % (
-                                    name, value, self.object_name_string(object_name_path),
-                                    str(attribute_type).split(' ')[1]))
-                                if input_isDict is False:
-                                    self.input_data_errors.append('Could not convert %s (%s) in %s (number %s) to %s' % (
-                                    name, value, self.object_name_string(object_name_path), number,
-                                    str(attribute_type).split(' ')[1]))
+                    # For simplicity in the rest of the code, convert to a list if necessary
+                    if make_array and new_value is not None:
+                        new_value = [new_value]
+                        if make_array_of_array:
+                            new_value = [new_value]
+                    if new_value is not None:
+                        self.update_attribute_value(object_name_path, number, name, new_value)
 
 
     def fillin_defaults(self, object_name_path, template_values=None, real_values=None,  number=1, input_isDict=None):
@@ -1711,7 +1837,8 @@ class ValidateNestedInput:
                     if input_isDict or input_isDict is None:
                         self.defaults_inserted.append([template_key, object_name_path])
                     if input_isDict is False:
-                        object_name_path[-1] = object_name_path[-1] + ' (number {})'.format(number)
+                        if not object_name_path[-1].endswith(' (number {})'.format(number)):
+                            object_name_path[-1] = object_name_path[-1] + ' (number {})'.format(number)
                         self.defaults_inserted.append([template_key, object_name_path])
             if self.isSingularKey(template_key):
                 if template_key not in real_values.keys():
@@ -1719,7 +1846,8 @@ class ValidateNestedInput:
                     if input_isDict or input_isDict is None:
                         self.defaults_inserted.append([template_key, object_name_path])
                     if input_isDict is False:
-                        object_name_path[-1] = object_name_path[-1] + ' (number {})'.format(number)
+                        if not object_name_path[-1].endswith(' (number {})'.format(number)):
+                            object_name_path[-1] = object_name_path[-1] + ' (number {})'.format(number)
                         self.defaults_inserted.append([template_key, object_name_path])
 
     def check_required_attributes(self, object_name_path, template_values=None, real_values=None, number=1,
@@ -1827,6 +1955,21 @@ class ValidateNestedInput:
                     self.urdb_errors += rate_checker.errors
             except:
                 self.urdb_errors.append('Error parsing urdb rate in %s ' % (["Scenario", "Site", "ElectricTariff"]))
+        else:
+            self.urdb_errors.append('Invalid URDB response: %s'.format(str(urdb_response)))
+
+    def validate_timestep_series(self, series, obj_name, attr_name, time_steps_per_hour, number=1, input_isDict=None):
+        max_timesteps = 8760*time_steps_per_hour
+        for ts in series:
+            if ts is not None and (ts < 1 or ts > max_timesteps or ts%1>0):
+                self.input_data_errors.append((
+                    "At least one invalid timestep value ({}) for {}. Timesteps must be integer values between 1 and {} inclusive".format(
+                    ts, attr_name,max_timesteps )))
+                if input_isDict is False:
+                    self.input_data_errors[-1] = self.input_data_errors[-1].replace(
+                        '. Timesteps', ' in {} {}. Timesteps'.format(obj_name, number))
+                break
+        return
 
     def validate_8760(self, attr, obj_name, attr_name, time_steps_per_hour, number=1, input_isDict=None):
         """
@@ -1930,7 +2073,7 @@ class ValidateNestedInput:
         except:
             self.input_data_errors.append(err_msg)
 
-    def chp_checks(self, params, object_name_path, number):
+    def validate_chp_inputs(self, params, object_name_path, number):
         # Check that electric and thermal efficiency inputs don't sum to greater than 1
         if params['elec_effic_full_load'] + params['thermal_effic_full_load'] > 1:
             self.input_data_errors.append(
@@ -1960,3 +2103,37 @@ class ValidateNestedInput:
         else:
             self.update_attribute_value(object_name_path, number, 'tech_size_for_cost_curve', [])
 
+    def validate_chp_unavailability_periods(year, chp_unavailability_periods):
+        """
+        Validate chp_unavailability_periods and return the list of errors to append to self.input_data_errors
+        Returning a list of errors instead of directly appending to self.input_data_errors so we can reuse in views.py
+        """
+        chp_unavailability_periods_input_data_errors = []
+        valid_keys = ['month', 'start_week_of_month', 'start_day_of_week', 'start_hour', 'duration_hours']
+        for period in range(len(chp_unavailability_periods)):
+            if isinstance(chp_unavailability_periods[period], dict):
+                all_keys_supplied_check = valid_keys.copy()
+                for key, value in chp_unavailability_periods[period].items():
+                    if key not in valid_keys:
+                        chp_unavailability_periods_input_data_errors.append('The input {} is not a valid chp_unavailability_period heading/key, found in period {}'.format(key, period+1))
+                    else:
+                        all_keys_supplied_check.remove(key)
+                        if key != "duration_hours" and value == 0:  # All values except duration_hours should be 1 or greater (calendar attributes are one-indexed)
+                            chp_unavailability_periods_input_data_errors.append('Zero-value found (not allowed) for {} in period {}.'.format(key, period+1))
+                        elif (key != "duration_hours" and value % int(value) > 0) or (key == "duration_hours" and value != 0 and value % int(value) > 0):  # Function converts value to integer, so as long as there's no remainder to this we accept e.g. 5.0 (float) and convert to 5 (int)
+                            chp_unavailability_periods_input_data_errors.append('Non-integer value {} with fractional remainder found for {} in period {}.'.format(value, key, period+1))
+                        elif value < 0:
+                            chp_unavailability_periods_input_data_errors.append('Negative value of {} found for {} in period {}.'.format(value, key, period+1))
+                if all_keys_supplied_check != []:
+                    chp_unavailability_periods_input_data_errors += ['Missing heading/key {} in period {}.'.format(key, period) for key in all_keys_supplied_check]
+            else:
+                chp_unavailability_periods_input_data_errors.append('The {} period is not in the required json/dictionary data structure.'.format(period+1))
+        # Handle specific calendar-related bad inputs within the generate_year_profile_hourly function in the errors_list output
+        if chp_unavailability_periods_input_data_errors == []:
+            try:
+                year_profile_hourly_list, start_day_of_month_list, errors_list = generate_year_profile_hourly(year, chp_unavailability_periods)
+                chp_unavailability_periods_input_data_errors += errors_list
+            except:
+                chp_unavailability_periods_input_data_errors.append('Unexpected error in period {} of chp_unavailability_periods.'.format(period+1))
+
+        return chp_unavailability_periods_input_data_errors

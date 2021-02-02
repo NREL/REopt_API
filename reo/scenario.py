@@ -37,7 +37,7 @@ from reo.src.elec_tariff import ElecTariff
 from reo.src.load_profile import LoadProfile
 from reo.src.fuel_tariff import FuelTariff
 from reo.src.load_profile_boiler_fuel import LoadProfileBoilerFuel
-from reo.src.load_profile_chiller_electric import LoadProfileChillerElectric
+from reo.src.load_profile_chiller_thermal import LoadProfileChillerThermal
 from reo.src.profiler import Profiler
 from reo.src.site import Site
 from reo.src.storage import Storage, HotTES, ColdTES, HotWaterTank
@@ -114,7 +114,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
         # Flexible load inputs
         rc = RC(dfm=dfm, **inputs_dict['Site']['RC'])
         if inputs_dict['Site']['RC']['use_flexloads_model']:
-            flex_tech_ac = FlexTechAC(dfm=dfm, outdoor_air_temp_degF=inputs_dict['Site']['outdoor_air_temp_degF'], **inputs_dict['Site']['FlexTechAC'])
+            flex_tech_ac = FlexTechAC(dfm=dfm, **inputs_dict['Site']['FlexTechAC'])
             flex_tech_hp = FlexTechHP(dfm=dfm, **inputs_dict['Site']['FlexTechHP'])
 
         if inputs_dict["Site"]["FlexTechERWH"]["size_kw"] > 0:
@@ -152,27 +152,27 @@ def setup_scenario(self, run_uuid, data, raw_post):
             return pv
 
         for pv_dict in inputs_dict["Site"]["PV"]:
-            pvs.append(setup_pv(pv_dict, latitude=inputs_dict['Site'].get('latitude'), 
-                                longitude=inputs_dict['Site'].get('longitude'), 
+            pvs.append(setup_pv(pv_dict, latitude=inputs_dict['Site'].get('latitude'),
+                                longitude=inputs_dict['Site'].get('longitude'),
                                 time_steps_per_hour=inputs_dict['time_steps_per_hour'])
                        )
-        
+
         if inputs_dict["Site"]["Generator"]["generator_only_runs_during_grid_outage"]:
             if inputs_dict['Site']['LoadProfile'].get('outage_start_hour') is not None and inputs_dict['Site']['LoadProfile'].get('outage_end_hour') is not None:
 
                 if inputs_dict["Site"]["Generator"]["max_kw"] > 0 or inputs_dict["Site"]["Generator"]["existing_kw"] > 0:
-                    gen = Generator(dfm=dfm, run_uuid=run_uuid,
-                            outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
-                            outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
+                    gen = Generator(dfm=dfm,
+                            outage_start_time_step=inputs_dict['Site']['LoadProfile'].get("outage_start_time_step"),
+                            outage_end_time_step=inputs_dict['Site']['LoadProfile'].get("outage_end_time_step"),
                             time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
                             **inputs_dict["Site"]["Generator"])
 
 
         elif not inputs_dict["Site"]["Generator"]["generator_only_runs_during_grid_outage"]:
             if inputs_dict["Site"]["Generator"]["max_kw"] > 0 or inputs_dict["Site"]["Generator"]["existing_kw"] > 0:
-                gen = Generator(dfm=dfm, run_uuid=run_uuid,
-                            outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
-                            outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
+                gen = Generator(dfm=dfm,
+                            outage_start_time_step=inputs_dict['Site']['LoadProfile'].get("outage_start_time_step"),
+                            outage_end_time_step=inputs_dict['Site']['LoadProfile'].get("outage_end_time_step"),
                             time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
                             **inputs_dict["Site"]["Generator"])
 
@@ -185,18 +185,12 @@ def setup_scenario(self, run_uuid, data, raw_post):
                              pvs=pvs,
                              analysis_years=site.financial.analysis_years,
                              time_steps_per_hour=inputs_dict['time_steps_per_hour'],
-                             fuel_avail_before_outage=gen.fuel_avail*gen.fuel_avail_before_outage_pct,
+                             fuel_avail_before_outage=gen.fuel_avail * gen.fuel_avail_before_outage_pct,
                              gen_existing_kw=gen.existing_kw,
-                             gen_min_turn_down=gen.min_turn_down,
+                             gen_min_turn_down=gen.min_turn_down_pct,
                              fuel_slope=gen.fuel_slope,
                              fuel_intercept=gen.fuel_intercept,
                              **inputs_dict['Site']['LoadProfile'])
-            tmp = dict()
-            tmp['annual_calculated_kwh'] = lp.annual_kwh
-            tmp['resilience_check_flag'] = lp.resilience_check_flag
-            tmp['sustain_hours'] = lp.sustain_hours
-            tmp['loads_kw'] = lp.load_list
-            ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
         else:
             lp = LoadProfile(dfm=dfm,
                              user_profile=inputs_dict['Site']['LoadProfile'].get('loads_kw'),
@@ -211,26 +205,20 @@ def setup_scenario(self, run_uuid, data, raw_post):
                              fuel_slope=0,
                              fuel_intercept=0,
                              **inputs_dict['Site']['LoadProfile'])
-            tmp = dict()
-            tmp['annual_calculated_kwh'] = lp.annual_kwh
-            tmp['resilience_check_flag'] = lp.resilience_check_flag
-            tmp['sustain_hours'] = lp.sustain_hours
-            tmp['loads_kw'] = lp.load_list
-            ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
 
         # Checks that the load being sent to optimization does not contatin negative values. We check the loads against
         # a variable tolerance (contingent on PV size since this tech has its existing dispatch added to the loads) and
         # correct loads falling between the threshold and zero.
 
         #Default tolerance +
-        negative_load_tolerance = -0.1 
+        negative_load_tolerance = -0.1
         # If there is existing PV update the default tolerance based on capacity
-        if pvs is not None: 
+        if pvs is not None:
             existing_pv_kw = 0
             for pv in pvs:
                 if getattr(pv,'existing_kw',0) > 0:
                     existing_pv_kw += pv.existing_kw
-            
+
             negative_load_tolerance = min(negative_load_tolerance, existing_pv_kw * -0.005) #kw
 
         # If values in the load profile fall below the tolerance, raise an exception
@@ -241,7 +229,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
             lp_error = LoadProfileError(task=self.name, run_uuid=run_uuid, user_uuid=inputs_dict.get('user_uuid'), message=message)
             lp_error.save_to_db()
             raise lp_error
- 
+
         # Correct load profile values that fall between the tolerance and 0
         lp.load_list = [0 if ((x > negative_load_tolerance) and (x < 0)) else x for x in lp.load_list]
 
@@ -254,11 +242,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
             year=lp.year,
             **inputs_dict['Site']['LoadProfileBoilerFuel']
             )
-        # Option 1, retrieve annual load from calculations here and add to database
-        tmp = dict()
-        tmp['annual_calculated_boiler_fuel_load_mmbtu_bau'] = lpbf.annual_mmbtu
-        tmp['year_one_boiler_fuel_load_series_mmbtu_per_hr_bau'] = lpbf.load_list
-        ModelManager.updateModel('LoadProfileBoilerFuelModel', tmp, run_uuid)
 
         # Boiler which supplies the bau boiler fuel load, if there is a boiler fuel load
         if lpbf.annual_mmbtu > 0.0:
@@ -270,26 +253,42 @@ def setup_scenario(self, run_uuid, data, raw_post):
             boiler = None
 
         # Load Profile Chiller Electric
-        lpce = LoadProfileChillerElectric(dfm=dfm, lp=lp,
-            time_steps_per_hour=inputs_dict['time_steps_per_hour'],
-            latitude=inputs_dict['Site']['latitude'],
-            longitude=inputs_dict['Site']['longitude'],
-            nearest_city=lp.nearest_city or lpbf.nearest_city,
-            year=lp.year,
-            **inputs_dict['Site']['LoadProfileChillerElectric']
-            )
+        lpct = LoadProfileChillerThermal(dfm=dfm, total_electric_load_list=lp.unmodified_load_list,
+                                            time_steps_per_hour=inputs_dict['time_steps_per_hour'],
+                                            latitude=inputs_dict['Site']['latitude'],
+                                            longitude=inputs_dict['Site']['longitude'],
+                                            nearest_city=lp.nearest_city or lpbf.nearest_city,
+                                            year=lp.year, max_thermal_factor_on_peak_load=
+                                            inputs_dict['Site']['ElectricChiller']['max_thermal_factor_on_peak_load'],
+                                            **inputs_dict['Site']['LoadProfileChillerThermal'])
+        chiller_elec_greater_than_total_elec = [1 if lpct.load_list[i]/lpct.chiller_cop > lp.load_list[i] else 0 for i in range(len(lp.load_list))]
+        if sum(chiller_elec_greater_than_total_elec) > 0:
+            timestep = None
+            for idx, v in enumerate(chiller_elec_greater_than_total_elec):
+                if v==1:
+                    timestep = idx
+                    break
+            message = ("LoadProfileChillerThermal electric load in kW cannot be more than "
+                        "total LoadProfile load in kW. At timestep {} the LoadProfileChillerThermal load is {} kW and "
+                        "the LoadProfile load is {} kW. Note you may consider adjusting your "
+                        "LoadProfileChillerThermal chiller_cop or check the chiller load input versus the total electric load "
+                        "if you provided inputs in units of cooling tons.").format(timestep, lpct.load_list[timestep]/lpct.chiller_cop, lp.load_list[timestep])
+            log.error("Scenario.py raising error: " + message)
+            lpct_error = LoadProfileError(task=self.name, run_uuid=run_uuid, user_uuid=inputs_dict.get('user_uuid'), message=message)
+            lpct_error.save_to_db()
+            raise lpct_error
+
         # Option 1, retrieve annual load from calculations here and add to database
         tmp = dict()
-        tmp['annual_calculated_kwh_bau'] = lpce.annual_kwh
-        tmp['year_one_chiller_electric_load_series_kw_bau'] = lpce.load_list
-        ModelManager.updateModel('LoadProfileChillerElectricModel', tmp, run_uuid)
+        tmp['chiller_cop'] = lpct.chiller_cop
+        tmp['annual_calculated_kwh_bau'] = lpct.annual_kwht/lpct.chiller_cop
+        tmp['year_one_chiller_electric_load_series_kw_bau'] = [i/lpct.chiller_cop for i in lpct.load_list]
+        ModelManager.updateModel('LoadProfileChillerThermalModel', tmp, run_uuid)
 
         # Electric chiller which supplies the bau electric chiller load, if there is an electric chiller load
-        if lpce.annual_kwh > 0.0:
-            elecchl = ElectricChiller(dfm=dfm, chiller_electric_series_bau=lpce.load_list,
-                                      **inputs_dict['Site']['ElectricChiller'])
+        if lpct.annual_kwht > 0.0:
+            elecchl = ElectricChiller(dfm=dfm, lpct=lpct, **inputs_dict['Site']['ElectricChiller'])
             tmp = dict()
-            tmp['chiller_cop'] = elecchl.chiller_cop
             tmp['max_kw'] = elecchl.max_kw
             ModelManager.updateModel('ElectricChillerModel', tmp, run_uuid)
         else:
@@ -300,16 +299,16 @@ def setup_scenario(self, run_uuid, data, raw_post):
                                  **inputs_dict['Site']['FuelTariff'])
 
         elec_tariff = ElecTariff(dfm=dfm, run_id=run_uuid,
-                                 load_year=inputs_dict['Site']['LoadProfile']['year'],
+                                 load_year=lp.year,
                                  time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
                                  **inputs_dict['Site']['ElectricTariff'])
 
         if inputs_dict["Site"]["Wind"]["max_kw"] > 0:
-            wind = Wind(dfm=dfm, inputs_path=inputs_path, 
+            wind = Wind(dfm=dfm, inputs_path=inputs_path,
                         latitude=inputs_dict['Site'].get('latitude'),
                         longitude=inputs_dict['Site'].get('longitude'),
                         time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
-                        run_uuid=run_uuid, 
+                        run_uuid=run_uuid,
                         **inputs_dict["Site"]["Wind"])
 
             # must propogate these changes back to database for proforma
@@ -331,10 +330,14 @@ def setup_scenario(self, run_uuid, data, raw_post):
                       existing_boiler_production_type_steam_or_hw=steam_or_hw,
                       oa_temp_degF=inputs_dict['Site']['outdoor_air_temp_degF'],
                       site_elevation_ft=inputs_dict['Site']['elevation_ft'],
-                      time_steps_per_hour=inputs_dict.get('time_steps_per_hour'), **inputs_dict['Site']['CHP'])
+                      outage_start_time_step=inputs_dict['Site']['LoadProfile'].get("outage_start_time_step"),
+                      outage_end_time_step=inputs_dict['Site']['LoadProfile'].get("outage_end_time_step"),
+                      time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
+                      year=lp.year,
+                      **inputs_dict['Site']['CHP'])
 
         # Absorption chiller
-        if inputs_dict["Site"]["AbsorptionChiller"]["max_ton"] > 0:
+        if inputs_dict["Site"]["AbsorptionChiller"]["max_ton"] > 0 and lpct.annual_kwht > 0.0:
             absorpchl = AbsorptionChiller(dfm=dfm, max_cooling_load_tons=elecchl.max_cooling_load_tons,
                                           hw_or_steam=boiler.existing_boiler_production_type_steam_or_hw,
                                           chp_prime_mover=chp.prime_mover,
@@ -352,6 +355,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
         # Assign decomposition subproblem optimization parameters - only used if decomposition is selected
         dfm.optimality_tolerance_decomp_subproblem = inputs_dict['optimality_tolerance_decomp_subproblem']
         dfm.timeout_decomp_subproblem_seconds = inputs_dict['timeout_decomp_subproblem_seconds']
+        dfm.add_soc_incentive = inputs_dict['add_soc_incentive']
 
         dfm.finalize()
         dfm_dict = vars(dfm)  # serialize for celery
@@ -375,6 +379,12 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
     except Exception as e:
         if isinstance(e, LoadProfileError):
+            raise e
+
+        if isinstance(e, PVWattsDownloadError):
+            e.run_uuid = run_uuid
+            e.user_uuid = self.data['inputs']['Scenario'].get('user_uuid')
+            e.save_to_db()
             raise e
 
         if hasattr(e, 'args'):

@@ -14,7 +14,7 @@ from shapely.ops import transform
 
 class EmissionsCalculator:
 
-    def __init__(self, latitude=None, longitude=None, timesteps_per_hour=1,  **kwargs):
+    def __init__(self, latitude=None, longitude=None, **kwargs):
         """
         :param latitude: float
         :param longitude: float
@@ -28,8 +28,7 @@ class EmissionsCalculator:
         self._emmissions_profile = None
         self._transmission_and_distribution_losses = None
         self.meters_to_region = None
-        self.timesteps_per_hour = timesteps_per_hour
-        
+        self.time_steps_per_hour = kwargs.get('time_steps_per_hour') or 1
         proj102008 = pyproj.Proj("+proj=aea +lat_1=20 +lat_2=60 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs")
         self.project4326_to_102008 = partial(pyproj.transform,pyproj.Proj(init='epsg:4326'),proj102008)
     
@@ -41,16 +40,15 @@ class EmissionsCalculator:
         cannot_calc_bau_total_emissions = False
         missing_emissions = []
 
-        time_steps_per_hour = data['inputs']['Scenario']['time_steps_per_hour']
         
         data['outputs']['Scenario']['Site']['year_one_emissions_lb_C02'] = 0
         data['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_C02'] = 0
 
         hourly_emissions = np.array(data['inputs']['Scenario']['Site']['ElectricTariff'].get('emissions_factor_series_lb_CO2_per_kwh') or [])
         from_utility_series = np.array(data['outputs']['Scenario']['Site']['ElectricTariff'].get('year_one_to_load_series_kw') \
-            or [0 for _ in range(8760 *time_steps_per_hour)]) + \
+            or [0 for _ in range(8760 *self.time_steps_per_hour)]) + \
             np.array(data['outputs']['Scenario']['Site']['ElectricTariff'].get('year_one_to_battery_series_kw') or \
-            [0 for _ in range(8760 * time_steps_per_hour)]) 
+            [0 for _ in range(8760 * self.time_steps_per_hour)]) 
 
         if hourly_emissions.shape[0] > 0:
             data['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_lb_C02'] = \
@@ -228,8 +226,8 @@ class EmissionsCalculator:
             df = pd.read_csv(os.path.join(self.library_path,'AVERT_hourly_emissions.csv'))
             if self.region_abbr in df.columns:
                 self._emmissions_profile = list(df[self.region_abbr].round(3).values)
-                if self.timesteps_per_hour > 1:
-                    self._emmissions_profile = list(np.concatenate([[i] * self.timesteps_per_hour for i in self._emmissions_profile]))
+                if self.time_steps_per_hour > 1:
+                    self._emmissions_profile = list(np.concatenate([[i] * self.time_steps_per_hour for i in self._emmissions_profile]))
             else:
                 raise AttributeError("Emissions error. Cannnot find hourly emmissions for region {} ({},{}) \
                     ".format(self.region, self.latitude,self.longitude))
