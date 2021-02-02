@@ -115,7 +115,6 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
     def test_valid_data_types(self):
 
         validator = ValidateNestedInput(self.complete_valid_nestedpost)
-
         for attribute, test_data in validator.test_data('type'):
             if attribute not in ["doe_reference_name", "percent_share"]:
                 response = self.get_response(test_data)
@@ -137,20 +136,22 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         response = self.get_response(data)
         err_msg = str(json.loads(response.content)['messages']['input_errors'])
         self.assertTrue("Missing Required for Scenario>Site>LoadProfile: (outage_start_hour)" in err_msg)
-        
+
 
         data['Scenario']['Site']['LoadProfile']['outage_start_hour'] = 0
         data['Scenario']['Site']['LoadProfile']['outage_end_hour'] = 0
         response = self.get_response(data)
         err_msg = str(json.loads(response.content)['messages']['input_errors'])
-        self.assertTrue("LoadProfile outage_start_hour and outage_end_hour cannot be the same" in err_msg)
+
+        self.assertTrue("LoadProfile outage_end_time_step must be larger than outage_start_time_step and these inputs cannot be equal" in err_msg)
 
     def test_valid_data_ranges(self):
+
 
         input = ValidateNestedInput(self.complete_valid_nestedpost)
 
         for attribute, test_data in input.test_data('min'):
-            text = "exceeds allowable min"
+            text = "is less than the allowable min"
             response = self.get_response(test_data)
             err_msg = str(json.loads(response.content)['messages']['input_errors'])
             self.assertTrue(text in err_msg, "'{}' not found in '{}'".format(text, err_msg))
@@ -166,6 +167,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             response = self.get_response(test_data)
             err_msg = str(json.loads(response.content)['messages']['input_errors'])
             self.assertTrue(text in err_msg, "'{}' not found in '{}'".format(text, err_msg))
+
 
     def test_urdb_rate(self):
 
@@ -338,7 +340,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
         nested_data = {"Scenario": {"webtool_uuid": None, "description": "", "timeout_seconds": 295, "Site": {"PV": {"pbi_years": 1.0, "macrs_bonus_pct": 0.4, "max_kw": 1000000000.0, "pbi_max_us_dollars": 1000000000.0, "radius": 0.0, "state_ibi_pct": 0.0, "utility_rebate_max_us_dollars": 10000000000.0, "installed_cost_us_dollars_per_kw": 2000.0, "utility_ibi_max_us_dollars": 10000000000.0, "tilt": 34.5794343, "federal_rebate_us_dollars_per_kw": 0.0, "gcr": 0.4, "pbi_system_max_kw": 1000000000.0, "utility_ibi_pct": 0.0, "state_ibi_max_us_dollars": 10000000000.0, "state_rebate_us_dollars_per_kw": 0.0, "macrs_option_years": 5, "state_rebate_max_us_dollars": 10000000000.0, "dc_ac_ratio": 1.1, "federal_itc_pct": 0.3, "pbi_us_dollars_per_kwh": 0.0, "module_type": 1, "array_type": 1, "existing_kw": 0.0, "om_cost_us_dollars_per_kw": 16.0, "utility_rebate_us_dollars_per_kw": 0.0, "min_kw": 0.0, "losses": 0.14, "macrs_itc_reduction": 0.5, "degradation_pct": 0.005, "inv_eff": 0.96, "azimuth": 180.0}, "Generator": {"pbi_years": 0.0, "macrs_bonus_pct": 0.0, "om_cost_us_dollars_per_kwh": 0.01, "max_kw": 0.0, "pbi_max_us_dollars": 0.0, "state_ibi_pct": 0.0, "fuel_intercept_gal_per_hr": 0.0, "generator_only_runs_during_grid_outage": True, "state_rebate_us_dollars_per_kw": 0.0, "installed_cost_us_dollars_per_kw": 600.0, "utility_ibi_max_us_dollars": 0.0, "fuel_avail_gal": 1000000000.0, "min_turn_down_pct": 0.0, "pbi_system_max_kw": 0.0, "utility_ibi_pct": 0.0, "state_ibi_max_us_dollars": 0.0, "diesel_fuel_cost_us_dollars_per_gallon": 3.0, "fuel_slope_gal_per_kwh": 0.0, "utility_rebate_max_us_dollars": 0.0, "macrs_option_years": 0, "state_rebate_max_us_dollars": 0.0, "federal_itc_pct": 0.0, "existing_kw": 0.0, "pbi_us_dollars_per_kwh": 0.0, "om_cost_us_dollars_per_kw": 10.0, "utility_rebate_us_dollars_per_kw": 0.0, "min_kw": 0.0, "macrs_itc_reduction": 0.0, "federal_rebate_us_dollars_per_kw": 0.0, "generator_sells_energy_back_to_grid": False}, "LoadProfile": {"critical_loads_kw_is_net": False, "critical_load_pct": 1.0, "loads_kw_is_net": True, "loads_kw": [], "outage_end_hour": None, "monthly_totals_kwh": [100, 200, 250, 300, 350, 350, 400, 400, 350, 250, 250, 200], "year": 2017, "outage_start_hour": None, "outage_is_major_event": True, "critical_loads_kw": [], "doe_reference_name": "RetailStore"}, "roof_squarefeet": 5000.0, "Storage": {"max_kwh": 1000000.0, "rectifier_efficiency_pct": 0.96, "total_itc_pct": 0.0, "min_kw": 0.0, "max_kw": 1000000.0, "replace_cost_us_dollars_per_kw": 460.0, "replace_cost_us_dollars_per_kwh": 230.0, "min_kwh": 0.0, "installed_cost_us_dollars_per_kw": 1000.0, "total_rebate_us_dollars_per_kw": 0, "installed_cost_us_dollars_per_kwh": 500.0, "inverter_efficiency_pct": 0.96, "macrs_itc_reduction": 0.5, "canGridCharge": True, "macrs_bonus_pct": 0.4, "battery_replacement_year": 10, "macrs_option_years": 5, "internal_efficiency_pct": 0.975, "soc_min_pct": 0.2, "soc_init_pct": 0.5, "inverter_replacement_year": 10}, "land_acres": 1.0, "ElectricTariff": {"add_blended_rates_to_urdb_rate": False, "wholesale_rate_us_dollars_per_kwh": 0.0, "net_metering_limit_kw": 0.0, "interconnection_limit_kw": 100000000.0, "blended_monthly_demand_charges_us_dollars_per_kw": [10.00, 10.00, 10.00, 10.00, 10.00, 10.00, 10.00, 10.00, 10.00, 10.00, 10.00, 10.00], "blended_annual_demand_charges_us_dollars_per_kw": 0.0, "blended_annual_rates_us_dollars_per_kwh": 0.0, "blended_monthly_rates_us_dollars_per_kwh": [i*2 for i in [0.05066, 0.05066, 0.05066, 0.05066, 0.05066, 0.05066, 0.05066, 0.05066, 0.05066, 0.05066, 0.05066, 0.05066]]}, "longitude": -118.1164613, "address": "", "latitude": 34.5794343, "Financial": {"escalation_pct": 0.026, "offtaker_discount_pct": 0.081, "value_of_lost_load_us_dollars_per_kwh": 100.0, "analysis_years": 20, "microgrid_upgrade_cost_pct": 0.3, "offtaker_tax_pct": 0.4, "om_cost_escalation_pct": 0.025}, "Wind": {"pbi_years": 1.0, "macrs_bonus_pct": 0.0, "max_kw": 0.0, "pbi_max_us_dollars": 1000000000.0, "wind_meters_per_sec": None, "state_ibi_pct": 0.0, "state_rebate_us_dollars_per_kw": 0.0, "installed_cost_us_dollars_per_kw": 3013.0, "utility_ibi_max_us_dollars": 10000000000.0, "pressure_atmospheres": None, "pbi_system_max_kw": 1000000000.0, "utility_ibi_pct": 0.0, "state_ibi_max_us_dollars": 10000000000.0, "wind_direction_degrees": None, "size_class": "", "utility_rebate_max_us_dollars": 10000000000.0, "macrs_option_years": 5, "state_rebate_max_us_dollars": 10000000000.0, "federal_itc_pct": 0.3, "temperature_celsius": None, "pbi_us_dollars_per_kwh": 0.0, "om_cost_us_dollars_per_kw": 35.0, "utility_rebate_us_dollars_per_kw": 0.0, "min_kw": 0.0, "macrs_itc_reduction": 0.5, "federal_rebate_us_dollars_per_kw": 0.0}}, "time_steps_per_hour": 1, "user_uuid": None}}
         resp = self.get_response(data=nested_data)
-        
+
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')

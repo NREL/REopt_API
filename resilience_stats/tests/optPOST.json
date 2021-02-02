@@ -3,6 +3,7 @@
     "timeout_seconds": 290,
     "user_uuid": null,
     "time_steps_per_hour": 1,
+    "add_soc_incentive": false,
     "Site": {
       "latitude": 37,
       "longitude": -100.0,

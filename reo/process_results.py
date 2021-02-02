@@ -35,15 +35,13 @@ from reo.nested_outputs import nested_output_definitions
 import logging
 from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
-from reo.models import ModelManager, PVModel, LoadProfileModel, ScenarioModel, LoadProfileBoilerFuelModel, \
-    LoadProfileChillerElectricModel, ElectricChillerModel, BoilerModel, FinancialModel, WindModel, \
-    AbsorptionChillerModel
-from reo.src.outage_costs import calc_avoided_outage_costs
+from reo.models import ModelManager, PVModel, FinancialModel, WindModel, AbsorptionChillerModel
 from reo.src.profiler import Profiler
 from reo.src.emissions_calculator import EmissionsCalculator
 from reo.utilities import annuity
 from reo.nested_inputs import macrs_five_year, macrs_seven_year
-
+from reo.utilities import TONHOUR_TO_KWHT
+from reo.src.proforma_metrics import calculate_proforma_metrics
 log = logging.getLogger(__name__)
 
 
@@ -77,456 +75,6 @@ class ProcessResultsTask(Task):
         self.request.chord = None  # this seems to stop the infinite chord_unlock call
 
 
-def calculate_proforma_metrics(data):
-        """
-        Recreates the ProForma spreadsheet calculations to get the simple payback period, irr, net present cost (3rd
-        party case), and payment to third party (3rd party case)
-        :param data: dict a complete response from the REopt API for a successfully completed job
-        :return: float, the simple payback of the system, if the system recuperates its costs
-        """
-
-        #Sort out the inputs and outputs by model so that all needed data is in consolidated locations
-        time_steps_per_hour = data['inputs']['Scenario']['time_steps_per_hour']
-        electric_tariff = copy.deepcopy(data['outputs']['Scenario']['Site']['ElectricTariff'])
-        electric_tariff.update(data['inputs']['Scenario']['Site']['ElectricTariff'])
-        financials =  copy.deepcopy(data['outputs']['Scenario']['Site']['Financial'])
-        financials.update(data['inputs']['Scenario']['Site']['Financial'])
-        pvs =  copy.deepcopy(data['outputs']['Scenario']['Site']['PV'])
-        if type(pvs) == dict:
-           pvs = [pvs]
-        in_pvs = copy.deepcopy(data['inputs']['Scenario']['Site']['PV'])
-        if type(data['inputs']['Scenario']['Site']['PV']) == dict:
-            in_pvs = [in_pvs]
-        for i, pv in enumerate(in_pvs):
-            pvs[i].update(pv)
-        wind =  copy.deepcopy(data['outputs']['Scenario']['Site']['Wind'])
-        wind.update(data['inputs']['Scenario']['Site']['Wind'])
-        storage =  copy.deepcopy(data['outputs']['Scenario']['Site']['Storage'])
-        storage.update(data['inputs']['Scenario']['Site']['Storage'])
-        generator =  copy.deepcopy(data['outputs']['Scenario']['Site']['Generator'])
-        generator.update(data['inputs']['Scenario']['Site']['Generator'])
-        years = financials['analysis_years']
-        third_party = financials['third_party_ownership']
-
-        chp = copy.deepcopy(data['outputs']['Scenario']['Site']['CHP'])
-        chp.update(data['inputs']['Scenario']['Site']['CHP'])
-        absorption_chiller = copy.deepcopy(data['outputs']['Scenario']['Site']['AbsorptionChiller'])
-        absorp_chl = AbsorptionChillerModel.objects.filter(run_uuid=data['outputs']['Scenario']['run_uuid'])[0]
-        absorption_chiller.update(data['inputs']['Scenario']['Site']['AbsorptionChiller'])
-        # Need to update two cost input attributes which are calculated in techs.py and updated in scenario.py
-        absorption_chiller.update({"installed_cost_us_dollars_per_ton": absorp_chl.installed_cost_us_dollars_per_ton,
-                                   "om_cost_us_dollars_per_ton": absorp_chl.om_cost_us_dollars_per_ton})
-        hot_tes = copy.deepcopy(data['outputs']['Scenario']['Site']['HotTES'])
-        hot_tes.update(data['inputs']['Scenario']['Site']['HotTES'])
-        cold_tes = copy.deepcopy(data['outputs']['Scenario']['Site']['ColdTES'])
-        cold_tes.update(data['inputs']['Scenario']['Site']['ColdTES'])
-        fuel_tariff = copy.deepcopy(data['outputs']['Scenario']['Site']['FuelTariff'])
-        fuel_tariff.update(data['inputs']['Scenario']['Site']['FuelTariff'])
-
-        #Create placeholder variables to store summed totals across all relevant techs
-        federal_itc = 0
-        om_series = np.array([0.0 for _ in range(years)])
-        om_series_bau = np.array([0.0 for _ in range(years)])
-        total_pbi = np.array([0.0 for _ in range(years)])
-        total_pbi_bau = np.array([0.0 for _ in range(years)])
-        total_depreciation = np.array([0.0 for _ in range(years)])
-        total_ibi_and_cbi = 0
-
-        #calculate PV capital costs, o+m costs, incentives, and depreciation
-        for pv in pvs:
-            new_kw = (pv.get('size_kw') or 0) - (pv.get('existing_kw') or 0)
-            total_kw = pv.get('size_kw') or 0
-            existing_kw = pv.get('existing_kw') or 0
-            #existing PV is considered free
-            capital_costs = new_kw * pv['installed_cost_us_dollars_per_kw']
-            #assume owner is responsible for both new and existing PV maintenance in optimal case
-            if third_party:
-                annual_om = -1 * new_kw * pv['om_cost_us_dollars_per_kw']
-            else:
-                annual_om = -1 * total_kw * pv['om_cost_us_dollars_per_kw']
-            annual_om_bau = -1 * existing_kw * pv['om_cost_us_dollars_per_kw']
-            om_series += np.array([annual_om * (1+financials['om_cost_escalation_pct'])**yr for yr in range(1, years+1)])
-            om_series_bau += np.array([annual_om_bau * (1+financials['om_cost_escalation_pct'])**yr for yr in range(1, years+1)])
-            #incentive calculations, in the spreadsheet utility incentives are applied first
-            utility_ibi = min(capital_costs * pv['utility_ibi_pct'], pv['utility_ibi_max_us_dollars'])
-            utility_cbi = min(new_kw * pv['utility_rebate_us_dollars_per_kw'], pv['utility_rebate_max_us_dollars'])
-            state_ibi = min((capital_costs - utility_ibi - utility_cbi) * pv['state_ibi_pct'], pv['state_ibi_max_us_dollars'])
-            state_cbi = min(new_kw * pv['state_rebate_us_dollars_per_kw'], pv['state_rebate_max_us_dollars'])
-            federal_cbi = new_kw * pv['federal_rebate_us_dollars_per_kw']
-            ibi = utility_ibi + state_ibi
-            cbi = utility_cbi + federal_cbi + state_cbi
-            total_ibi_and_cbi += (ibi + cbi)
-
-            pbi_series = np.array([])
-            pbi_series_bau = np.array([])
-            existing_energy_bau = (pv.get('year_one_energy_produced_bau_kwh') or 0) if third_party else 0
-            # Production-based incentives
-            for yr in range(years):
-                if yr < pv['pbi_years']:
-                    degredation_pct = (1- (pv['degradation_pct']))**yr
-                    base_pbi = min(pv['pbi_us_dollars_per_kwh'] * ((pv['year_one_energy_produced_kwh'] or 0) - existing_energy_bau) *\
-                         degredation_pct,  pv['pbi_max_us_dollars'] * degredation_pct )
-                    base_pbi_bau = min(pv['pbi_us_dollars_per_kwh'] * (pv.get('year_one_energy_produced_bau_kwh') or 0) *\
-                         degredation_pct,  pv['pbi_max_us_dollars'] * degredation_pct )
-                    pbi_series = np.append(pbi_series, base_pbi)
-                    pbi_series_bau = np.append(pbi_series_bau, base_pbi_bau)
-                else:
-                    pbi_series = np.append(pbi_series, 0.0)
-                    pbi_series_bau = np.append(pbi_series_bau, 0.0)
-            total_pbi += pbi_series
-            total_pbi_bau += pbi_series_bau
-            # Depreciation
-            if pv['macrs_option_years'] in [5,7]:
-                if pv['macrs_option_years'] == 5:
-                    schedule = macrs_five_year
-                elif pv['macrs_option_years'] == 7:
-                    schedule = macrs_seven_year
-                else:
-                    schedule = []
-                federal_itc_basis = capital_costs - state_ibi - utility_ibi - state_cbi - utility_cbi - federal_cbi
-                federal_itc_amount = pv['federal_itc_pct'] * federal_itc_basis
-                federal_itc += federal_itc_amount
-                macrs_bonus_basis = federal_itc_basis - (federal_itc_basis * pv['federal_itc_pct'] * pv['macrs_itc_reduction'])
-                macrs_basis = macrs_bonus_basis * (1 - pv['macrs_bonus_pct'])
-                depreciation_schedule = np.array([0.0 for _ in range(years)])
-                for i,r in enumerate(schedule):
-                    if i < len(depreciation_schedule):
-                        depreciation_schedule[i] = macrs_basis * r
-                depreciation_schedule[0] += (pv['macrs_bonus_pct'] * macrs_bonus_basis)
-                total_depreciation += depreciation_schedule
-
-        #calculate Wind capital costs, o+m costs, incentives, and depreciation
-        if (wind['size_kw'] or 0) > 0:
-            total_kw = wind.get('size_kw') or 0
-            capital_costs = total_kw * wind['installed_cost_us_dollars_per_kw']
-            annual_om = -1 * total_kw * wind['om_cost_us_dollars_per_kw']
-            om_series += np.array([annual_om * (1+financials['om_cost_escalation_pct'])**yr for yr in range(1, years+1)])
-            utility_ibi = min(capital_costs * wind['utility_ibi_pct'], wind['utility_ibi_max_us_dollars'])
-            utility_cbi = min(total_kw * wind['utility_rebate_us_dollars_per_kw'], wind['utility_rebate_max_us_dollars'])
-            state_ibi = min((capital_costs - utility_ibi - utility_cbi) * wind['state_ibi_pct'], wind['state_ibi_max_us_dollars'])
-            state_cbi = min(total_kw * wind['state_rebate_us_dollars_per_kw'], wind['state_rebate_max_us_dollars'])
-            federal_cbi = total_kw * wind['federal_rebate_us_dollars_per_kw']
-            ibi = utility_ibi + state_ibi
-            cbi = utility_cbi + federal_cbi + state_cbi
-            total_ibi_and_cbi += (ibi + cbi)
-            # Production-based incentives
-            pbi_series = np.array([])
-            for yr in range(years):
-                if yr < wind['pbi_years']:
-                    base_pbi = min(wind['pbi_us_dollars_per_kwh'] * (wind['year_one_energy_produced_kwh'] or 0), \
-                      wind['pbi_max_us_dollars'])
-                    pbi_series = np.append(pbi_series, base_pbi)
-                else:
-                    pbi_series = np.append(pbi_series, 0.0)
-            total_pbi += pbi_series
-            # Depreciation
-            if wind['macrs_option_years'] in [5,7]:
-                if wind['macrs_option_years'] == 5:
-                    schedule = macrs_five_year
-                elif wind['macrs_option_years'] == 7:
-                    schedule = macrs_seven_year
-                else:
-                    schedule = []
-                federal_itc_basis = capital_costs - state_ibi - utility_ibi - state_cbi - utility_cbi - federal_cbi
-                federal_itc_amount = wind['federal_itc_pct']*federal_itc_basis
-                federal_itc += federal_itc_amount
-                macrs_bonus_basis = federal_itc_basis - (federal_itc_basis * wind['federal_itc_pct'] * wind['macrs_itc_reduction'])
-                macrs_basis = macrs_bonus_basis * (1 - wind['macrs_bonus_pct'])
-                depreciation_schedule = np.array([0.0 for _ in range(years)])
-                for i,r in enumerate(schedule):
-                    if i < len(depreciation_schedule):
-                        depreciation_schedule[i] = macrs_basis * r
-                depreciation_schedule[0] += (wind['macrs_bonus_pct'] * macrs_bonus_basis)
-                total_depreciation += depreciation_schedule
-
-        #calculate Storage capital costs, o+m costs, incentives, and depreciation
-        if (storage['size_kw'] or 0) > 0:
-            total_kw = storage.get('size_kw') or 0
-            total_kwh = storage.get('size_kwh') or 0
-            capital_costs = (total_kw * storage['installed_cost_us_dollars_per_kw']) + (total_kwh * storage['installed_cost_us_dollars_per_kwh'])
-            battery_replacement_year = int(storage['battery_replacement_year'])
-            battery_replacement_cost = -1 * ((total_kw * storage['replace_cost_us_dollars_per_kw']) + (total_kwh * storage['replace_cost_us_dollars_per_kwh']))
-            om_series += np.array([0 if yr != battery_replacement_year else battery_replacement_cost for yr in range(1, years+1)])
-
-            #storage only has cbi in the API
-            cbi = (total_kw * storage['total_rebate_us_dollars_per_kw']) + (total_kwh * (storage.get('total_rebate_us_dollars_per_kw') or 0))
-            total_ibi_and_cbi += (cbi)
-            # Depreciation
-            if storage['macrs_option_years'] in [5,7]:
-                if storage['macrs_option_years'] == 5:
-                    schedule = macrs_five_year
-                elif storage['macrs_option_years'] == 7:
-                    schedule = macrs_seven_year
-                else:
-                    schedule = []
-                federal_itc_basis = capital_costs - cbi
-                federal_itc_amount = storage['total_itc_pct']*federal_itc_basis
-                federal_itc += federal_itc_amount
-                macrs_bonus_basis = federal_itc_basis - (federal_itc_basis * storage['total_itc_pct'] * storage['macrs_itc_reduction'])
-                macrs_basis = macrs_bonus_basis * (1 - storage['macrs_bonus_pct'])
-                depreciation_schedule = np.array([0.0 for _ in range(years)])
-                for i,r in enumerate(schedule):
-                    if i < len(depreciation_schedule):
-                        depreciation_schedule[i] = macrs_basis * r
-                depreciation_schedule[0] += (storage['macrs_bonus_pct'] * macrs_bonus_basis)
-                total_depreciation += depreciation_schedule
-
-        #calculate Generator capital costs, o+m costs, incentives, and depreciation
-        if (generator['size_kw'] or 0) > 0:
-            total_kw = generator.get('size_kw') or 0
-            new_kw = (generator.get('size_kw') or 0) - (generator.get('existing_kw') or 0)
-            existing_kw = generator.get('existing_kw') or 0
-
-            # In the two party case the developer does not include the fuel cost in their costs
-            # It is assumed that the offtaker will pay for this at a rate that is not marked up
-            # to cover developer profits
-            if not third_party:
-                annual_om = -1 * ((total_kw * generator['om_cost_us_dollars_per_kw']) + \
-                    (generator['year_one_variable_om_cost_us_dollars']) +
-                    (generator['year_one_fuel_cost_us_dollars']))
-
-                annual_om_bau = -1 * ((existing_kw * generator['om_cost_us_dollars_per_kw']) + \
-                    (generator['existing_gen_year_one_variable_om_cost_us_dollars']) +
-                    (generator['existing_gen_year_one_fuel_cost_us_dollars']))
-            else:
-                annual_om = -1 * ((total_kw * generator['om_cost_us_dollars_per_kw']) + \
-                    (generator['year_one_variable_om_cost_us_dollars']))
-
-                annual_om_bau = -1 * ((existing_kw * generator['om_cost_us_dollars_per_kw']) + \
-                    (generator['existing_gen_year_one_variable_om_cost_us_dollars']))
-
-            om_series += np.array([annual_om * (1+financials['om_cost_escalation_pct'])**yr for yr in range(1, years+1)])
-            om_series_bau += np.array([annual_om_bau * (1+financials['om_cost_escalation_pct'])**yr for yr in range(1, years+1)])
-
-        #calculate CHP capital costs, o+m costs, incentives, and depreciation
-        if (chp['size_kw'] or 0) > 0:
-            total_kw = chp.get('size_kw') or 0
-            total_kwh = chp.get('year_one_electric_energy_produced_kwh') or 0
-            total_runtime = sum(np.array(chp.get('year_one_electric_production_series_kw') or []) > 0) / float(time_steps_per_hour)
-            # Calculate capital cost from cost curve list
-            cost_list = chp.get("installed_cost_us_dollars_per_kw") or []
-            size_list = chp.get("tech_size_for_cost_curve") or []
-            chp_size = total_kw
-            if len(cost_list) > 1:
-                if chp_size <= size_list[1]:
-                    capital_costs = cost_list[0] + chp_size * cost_list[1]
-                elif chp_size > size_list[-1]:
-                    capital_costs = chp_size * cost_list[-1]
-                else:
-                    for s in range(1, len(size_list)-1):
-                        if (chp_size > size_list[s]) and (chp_size <= size_list[s+1]):
-                            capital_costs += cost_list[s] * size_list[s] + (chp_size - size_list[s]) * cost_list[s+1]
-            else:
-                capital_costs = (cost_list[0] or 0) * (chp_size or 0)
-            annual_om = (-1 * total_kw * chp['om_cost_us_dollars_per_kw']) + \
-                (-1 * total_kwh * chp['om_cost_us_dollars_per_kwh']) + \
-                (-1 * total_runtime * total_kw * chp['om_cost_us_dollars_per_hr_per_kw_rated'])
-            om_series += np.array([annual_om * (1+financials['om_cost_escalation_pct'])**yr for yr in range(1, years+1)])
-            if not third_party:
-                om_series += np.array([-1 * (fuel_tariff.get("year_one_chp_fuel_cost_us_dollars") or 0) * (1+financials['chp_fuel_escalation_pct'])**yr for yr in range(1, years+1)])
-                om_series += np.array([-1 * (fuel_tariff.get("year_one_boiler_fuel_cost_us_dollars") or 0) * (1+financials['boiler_fuel_escalation_pct'])**yr for yr in range(1, years+1)])
-                om_series_bau += np.array([-1 * (fuel_tariff.get("year_one_boiler_fuel_cost_bau_us_dollars") or 0) * (1+financials['boiler_fuel_escalation_pct'])**yr for yr in range(1, years+1)])
-            utility_ibi = min(capital_costs * chp['utility_ibi_pct'], chp['utility_ibi_max_us_dollars'])
-            utility_cbi = min(total_kw * chp['utility_rebate_us_dollars_per_kw'], chp['utility_rebate_max_us_dollars'])
-            state_ibi = min((capital_costs - utility_ibi - utility_cbi) * chp['state_ibi_pct'], chp['state_ibi_max_us_dollars'])
-            state_cbi = min(total_kw * chp['state_rebate_us_dollars_per_kw'], chp['state_rebate_max_us_dollars'])
-            federal_cbi = total_kw * chp['federal_rebate_us_dollars_per_kw']
-            ibi = utility_ibi + state_ibi
-            cbi = utility_cbi + federal_cbi + state_cbi
-            total_ibi_and_cbi += (ibi + cbi)
-            # Production-based incentives
-            pbi_series = np.array([])
-            for yr in range(years):
-                if yr < chp['pbi_years']:
-                    base_pbi = min(chp['pbi_us_dollars_per_kwh'] * (total_kwh or 0), \
-                      chp['pbi_max_us_dollars'])
-                    pbi_series = np.append(pbi_series, base_pbi)
-                else:
-                    pbi_series = np.append(pbi_series, 0.0)
-            total_pbi += pbi_series
-            # Depreciation
-            if chp['macrs_option_years'] in [5,7]:
-                if chp['macrs_option_years'] == 5:
-                    schedule = macrs_five_year
-                elif chp['macrs_option_years'] == 7:
-                    schedule = macrs_seven_year
-                else:
-                    schedule = []
-                federal_itc_basis = capital_costs - state_ibi - utility_ibi - state_cbi - utility_cbi - federal_cbi
-                federal_itc_amount = chp['federal_itc_pct']*federal_itc_basis
-                federal_itc += federal_itc_amount
-                macrs_bonus_basis = federal_itc_basis - (federal_itc_basis * chp['federal_itc_pct'] * chp['macrs_itc_reduction'])
-                macrs_basis = macrs_bonus_basis * (1 - chp['macrs_bonus_pct'])
-                depreciation_schedule = np.array([0.0 for _ in range(years)])
-                for i,r in enumerate(schedule):
-                    depreciation_schedule[i] = macrs_basis * r
-                depreciation_schedule[0] += (chp['macrs_bonus_pct'] * macrs_bonus_basis)
-                total_depreciation += depreciation_schedule
-
-        #calculate Wind capital costs, o+m costs, incentives, and depreciation
-        if (absorption_chiller['size_ton'] or 0) > 0:
-            total_kw = absorption_chiller.get('size_ton') or 0
-            capital_costs = total_kw * absorption_chiller['installed_cost_us_dollars_per_ton']
-            annual_om = -1 * total_kw * absorption_chiller['om_cost_us_dollars_per_ton']
-            om_series += np.array([annual_om * (1+financials['om_cost_escalation_pct'])**yr for yr in range(1, years+1)])
-            utility_ibi = min(capital_costs * absorption_chiller['utility_ibi_pct'], absorption_chiller['utility_ibi_max_us_dollars'])
-            utility_cbi = min(total_kw * absorption_chiller['utility_rebate_us_dollars_per_kw'], absorption_chiller['utility_rebate_max_us_dollars'])
-            state_ibi = min((capital_costs - utility_ibi - utility_cbi) * absorption_chiller['state_ibi_pct'], absorption_chiller['state_ibi_max_us_dollars'])
-            state_cbi = min(total_kw * absorption_chiller['state_rebate_us_dollars_per_kw'], absorption_chiller['state_rebate_max_us_dollars'])
-            federal_cbi = total_kw * absorption_chiller['federal_rebate_us_dollars_per_kw']
-            ibi = utility_ibi + state_ibi
-            cbi = utility_cbi + federal_cbi + state_cbi
-            total_ibi_and_cbi += (ibi + cbi)
-
-            # Depreciation
-            if absorption_chiller['macrs_option_years'] in [5,7]:
-                if absorption_chiller['macrs_option_years'] == 5:
-                    schedule = macrs_five_year
-                elif absorption_chiller['macrs_option_years'] == 7:
-                    schedule = macrs_seven_year
-                else:
-                    schedule = []
-                federal_itc_basis = capital_costs - state_ibi - utility_ibi - state_cbi - utility_cbi - federal_cbi
-                federal_itc_amount = absorption_chiller['federal_itc_pct']*federal_itc_basis
-                federal_itc += federal_itc_amount
-                macrs_bonus_basis = federal_itc_basis - (federal_itc_basis * absorption_chiller['federal_itc_pct'] * absorption_chiller['macrs_itc_reduction'])
-                macrs_basis = macrs_bonus_basis * (1 - absorption_chiller['macrs_bonus_pct'])
-                depreciation_schedule = np.array([0.0 for _ in range(years)])
-                for i,r in enumerate(schedule):
-                    depreciation_schedule[i] = macrs_basis * r
-                depreciation_schedule[0] += (absorption_chiller['macrs_bonus_pct'] * macrs_bonus_basis)
-                total_depreciation += depreciation_schedule
-
-        #calculate Wind capital costs, o+m costs, incentives, and depreciation
-        if (hot_tes['size_gal'] or 0) > 0:
-            total_gal = hot_tes.get('size_gal')
-            capital_costs = total_gal * hot_tes['installed_cost_us_dollars_per_gal']
-            annual_om = -1 * total_gal * hot_tes['om_cost_us_dollars_per_gal']
-            om_series += np.array([annual_om * (1+financials['om_cost_escalation_pct'])**yr for yr in range(1, years+1)])
-            # Depreciation
-            if hot_tes['macrs_option_years'] in [5,7]:
-                if hot_tes['macrs_option_years'] == 5:
-                    schedule = macrs_five_year
-                elif hot_tes['macrs_option_years'] == 7:
-                    schedule = macrs_seven_year
-                else:
-                    schedule = []
-                macrs_bonus_basis = capital_costs
-                macrs_basis = macrs_bonus_basis * (1 - hot_tes['macrs_bonus_pct'])
-                depreciation_schedule = np.array([0.0 for _ in range(years)])
-                for i,r in enumerate(schedule):
-                    depreciation_schedule[i] = macrs_basis * r
-                depreciation_schedule[0] += (hot_tes['macrs_bonus_pct'] * macrs_bonus_basis)
-                total_depreciation += depreciation_schedule
-
-        #calculate Wind capital costs, o+m costs, incentives, and depreciation
-        if (cold_tes['size_gal'] or 0) > 0:
-            total_gal = cold_tes.get('size_gal')
-            capital_costs = total_gal * cold_tes['installed_cost_us_dollars_per_gal']
-            annual_om = -1 * total_gal * cold_tes['om_cost_us_dollars_per_gal']
-            om_series += np.array([annual_om * (1+financials['om_cost_escalation_pct'])**yr for yr in range(1, years+1)])
-            # Depreciation
-            if cold_tes['macrs_option_years'] in [5,7]:
-                if cold_tes['macrs_option_years'] == 5:
-                    schedule = macrs_five_year
-                elif cold_tes['macrs_option_years'] == 7:
-                    schedule = macrs_seven_year
-                else:
-                    schedule = []
-                macrs_bonus_basis = capital_costs
-                macrs_basis = macrs_bonus_basis * (1 - cold_tes['macrs_bonus_pct'])
-                depreciation_schedule = np.array([0.0 for _ in range(years)])
-                for i,r in enumerate(schedule):
-                    depreciation_schedule[i] = macrs_basis * r
-                depreciation_schedule[0] += (cold_tes['macrs_bonus_pct'] * macrs_bonus_basis)
-                total_depreciation += depreciation_schedule
-
-        #Optimal Case calculations
-        electricity_bill_series = np.array([-1 * electric_tariff['year_one_bill_us_dollars'] * \
-                                (1+financials['escalation_pct'])**yr for yr in range(1, years+1)])
-        export_credit_series = np.array([-1 * electric_tariff['year_one_export_benefit_us_dollars'] * \
-                                (1+financials['escalation_pct'])**yr for yr in range(1, years+1)])
-
-        # In the two party case the electricity and export credits are incurred by the offtaker not the developer
-        if third_party:
-            total_operating_expenses = om_series
-        else:
-            total_operating_expenses = electricity_bill_series + export_credit_series + om_series
-
-        # Set tax rate based off ownership type
-        if third_party:
-            tax_pct = financials['owner_tax_pct']
-        else:
-            tax_pct = financials['offtaker_tax_pct']
-
-        # Apply taxes to operating expenses
-        if tax_pct  > 0:
-            deductable_operating_expenses_series = copy.deepcopy(total_operating_expenses)
-        else:
-            deductable_operating_expenses_series = np.array([0]*years)
-
-
-        operating_expenses_after_tax = (total_operating_expenses - deductable_operating_expenses_series) + (deductable_operating_expenses_series * (1 - tax_pct))
-
-        total_cash_incentives = total_pbi * (1 - tax_pct)
-        total_depreciation = total_depreciation * tax_pct
-        free_cashflow_before_income = total_depreciation + total_cash_incentives + operating_expenses_after_tax
-        free_cashflow_before_income[0] += federal_itc
-        free_cashflow_before_income = np.append([(-1 * financials['initial_capital_costs']) + total_ibi_and_cbi], free_cashflow_before_income)
-        net_present_cost = None
-        annualized_payment_to_third_party_us_dollars = None
-        if third_party:
-            # get cumulative cashflow for developer
-            discounted_cashflow = [v/((1+financials['owner_discount_pct'])**yr) for yr, v in enumerate(free_cashflow_before_income)]
-            net_present_cost = sum(discounted_cashflow) * -1
-            capital_recovery_factor = (financials['owner_discount_pct'] * (1+financials['owner_discount_pct'])**years) / \
-                                        ((1+financials['owner_discount_pct'])**years - 1) / (1 - tax_pct)
-            annualized_payment_to_third_party_us_dollars = net_present_cost * capital_recovery_factor
-            annual_income_from_host = -1 * sum(discounted_cashflow) * capital_recovery_factor * (1-tax_pct)
-            free_cashflow = copy.deepcopy(free_cashflow_before_income)
-            free_cashflow[1:] += annual_income_from_host
-            irr = np.irr(free_cashflow)
-            cumulative_cashflow =  np.cumsum(free_cashflow)
-        else:
-            # get cumulative cashflow for host by comparing to BAU cashflow
-            electricity_bill_bau_series_bau = np.array([-1 * electric_tariff['year_one_bill_bau_us_dollars'] * \
-                                    (1+financials['escalation_pct'])**yr for yr in range(1, years+1)])
-            export_credit_bau_series_bau = np.array([electric_tariff['total_export_benefit_bau_us_dollars'] * \
-                                    (1+financials['escalation_pct'])**yr for yr in range(1, years+1)])
-            total_operating_expenses_bau = electricity_bill_bau_series_bau + export_credit_bau_series_bau + om_series_bau
-            total_cash_incentives_bau = total_pbi_bau * (1 - financials['offtaker_tax_pct'])
-            if financials['offtaker_tax_pct'] > 0:
-                deductable_operating_expenses_series_bau = copy.deepcopy(total_operating_expenses_bau)
-            else:
-                deductable_operating_expenses_series_bau = np.array([0]*years)
-            operating_expenses_after_tax_bau = (total_operating_expenses_bau - deductable_operating_expenses_series_bau) + (deductable_operating_expenses_series_bau * (1 - financials['offtaker_tax_pct']))
-            free_cashflow_before_income_bau = operating_expenses_after_tax_bau + total_cash_incentives_bau
-            free_cashflow_before_income_bau = np.append([0], free_cashflow_before_income_bau)
-            # difference optimal and BAU
-            free_cashflow =  free_cashflow_before_income - free_cashflow_before_income_bau
-            irr = np.irr(free_cashflow)
-            cumulative_cashflow =  np.cumsum(free_cashflow)
-
-        #when the cumulative cashflow goes positive, scale the amount by the free cashflow to
-        #approximate a partial year
-        if cumulative_cashflow[-1] < 0:
-            return None, None, round(net_present_cost,4) if net_present_cost is not None else None, \
-               round(annualized_payment_to_third_party_us_dollars,4) if annualized_payment_to_third_party_us_dollars is not None else None
-
-        simple_payback_years = 0
-        for i in range(1, years+1):
-            # add years where the cumulative cashflow is negative
-            if cumulative_cashflow[i] < 0:
-                simple_payback_years += 1
-            # fractionally add years where the cumulative cashflow became positive
-            elif (cumulative_cashflow[i-1] < 0) and (cumulative_cashflow[i] > 0):
-                simple_payback_years += -(cumulative_cashflow[i-1]/free_cashflow[i])
-            # skip years where cumulative cashflow is positive and the previous year's is too
-
-        return round(simple_payback_years,4), round(irr,4), round(net_present_cost,4) if net_present_cost is not None else None, \
-               round(annualized_payment_to_third_party_us_dollars,4) if annualized_payment_to_third_party_us_dollars is not None else None
-
-
 @shared_task(bind=True, base=ProcessResultsTask, ignore_result=True)
 def process_results(self, dfm_list, data, meta, saveToDB=True):
     """
@@ -550,6 +98,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "year_one_demand_cost",
             "year_one_fixed_cost",
             "year_one_min_charge_adder",
+            "year_one_coincident_peak_cost",
             "year_one_bill",
             "year_one_utility_kwh",
             "year_one_export_benefit",
@@ -558,6 +107,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "total_demand_cost",
             "total_fixed_cost",
             "total_min_charge_adder",
+            "total_coincident_peak_cost",
             "total_export_benefit",
             "net_capital_costs_plus_om",
             "gen_net_fixed_om_costs",
@@ -650,13 +200,21 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             self.nested_outputs = self.setup_nested()
 
         @property
-        def replacement_costs(self):
-            replacement_costs = 0
-            replacement_costs += self.inputs["Storage"]["replace_cost_us_dollars_per_kw"] * \
+        def replacement_costs_future_and_present(self):
+            future_cost_inverter = self.inputs["Storage"]["replace_cost_us_dollars_per_kw"] * \
                                  self.nested_outputs["Scenario"]["Site"]["Storage"]["size_kw"]
-            replacement_costs += self.inputs["Storage"]["replace_cost_us_dollars_per_kwh"] * \
+            future_cost_storage = self.inputs["Storage"]["replace_cost_us_dollars_per_kwh"] * \
                                  self.nested_outputs["Scenario"]["Site"]["Storage"]["size_kwh"]
-            return round(replacement_costs, 2)
+            future_cost = future_cost_inverter + future_cost_storage
+
+            tax_rate = self.inputs["Financial"]["owner_tax_pct"]
+            discount_rate = self.inputs["Financial"]["owner_discount_pct"]
+            present_cost = 0
+            present_cost += future_cost_inverter * (1 - tax_rate) / ((1 + discount_rate) **
+                                                                    self.inputs["Storage"]["inverter_replacement_year"])
+            present_cost += future_cost_storage * (1 - tax_rate) / ((1 + discount_rate) **
+                                                                    self.inputs["Storage"]["battery_replacement_year"])
+            return round(future_cost, 2), round(present_cost, 2)
 
         @property
         def upfront_capex(self):
@@ -677,16 +235,16 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 size_list = self.inputs[tech].get("tech_size_for_cost_curve") or []
                 chp_size = self.nested_outputs["Scenario"]["Site"][tech].get("size_kw")
                 if len(cost_list) > 1:
-                    if chp_size <= size_list[1]:
-                        upfront_capex += cost_list[0] + chp_size * cost_list[1]
+                    if chp_size <= size_list[0]:
+                        upfront_capex += chp_size * cost_list[0]  # Currently not handling non-zero cost ($) for 0 kW size input
                     elif chp_size > size_list[-1]:
                         upfront_capex += chp_size * cost_list[-1]
                     else:
-                        for s in range(1, len(size_list)-1):
-                            if (chp_size > size_list[s]) and (chp_size <= size_list[s+1]):
-                                slope = (cost_list[s+1] * size_list[s+1] - cost_list[s] * size_list[s]) / \
-                                        (size_list[s+1] - size_list[s])
-                                upfront_capex += cost_list[s] * size_list[s] + (chp_size - size_list[s]) * slope
+                        for s in range(1, len(size_list)):
+                            if (chp_size > size_list[s-1]) and (chp_size <= size_list[s]):
+                                slope = (cost_list[s] * size_list[s] - cost_list[s-1] * size_list[s-1]) / \
+                                        (size_list[s] - size_list[s-1])
+                                upfront_capex += cost_list[s-1] * size_list[s-1] + (chp_size - size_list[s-1]) * slope
                 elif len(cost_list) == 1:
                     upfront_capex += (cost_list[0] or 0) * (chp_size or 0)
 
@@ -875,17 +433,25 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["critical_load_series_kw"] = self.dm["LoadProfile"].get("critical_load_series_kw")
                     self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_kwh"] = self.dm["LoadProfile"].get("annual_kwh")
                     self.nested_outputs["Scenario"]["Site"][name]["resilience_check_flag"] = self.dm["LoadProfile"].get("resilience_check_flag")
-                    self.nested_outputs["Scenario"]["Site"][name]["sustain_hours"] = self.dm["LoadProfile"].get("sustain_hours")
+                    self.nested_outputs["Scenario"]["Site"][name]["sustain_hours"] = int(self.dm["LoadProfile"].get("bau_sustained_time_steps") / (len(self.dm["LoadProfile"].get("year_one_electric_load_series_kw"))/8760))
+                    self.nested_outputs["Scenario"]["Site"][name]["bau_sustained_time_steps"] = self.dm["LoadProfile"].get("bau_sustained_time_steps")
+                    self.nested_outputs["Scenario"]["Site"][name]['loads_kw'] = self.dm["LoadProfile"].get("year_one_electric_load_series_kw")
                 elif name == "LoadProfileBoilerFuel":
-                    lpbf = LoadProfileBoilerFuelModel.objects.filter(run_uuid=meta['run_uuid'])[0]
-                    self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_boiler_fuel_load_mmbtu_bau"] = lpbf.annual_calculated_boiler_fuel_load_mmbtu_bau
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_boiler_fuel_load_series_mmbtu_per_hr"] = self.dm["LoadProfile"].get("year_one_boiler_fuel_load_series_mmbtu_per_hr")
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_boiler_thermal_load_series_mmbtu_per_hr"] = [x * self.dm.get("boiler_efficiency", 0) for x in self.dm["LoadProfile"].get("year_one_boiler_fuel_load_series_mmbtu_per_hr")]
-                elif name == "LoadProfileChillerElectric":
-                    lpce = LoadProfileChillerElectricModel.objects.filter(run_uuid=meta['run_uuid'])[0]
-                    self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_kwh_bau"] = lpce.annual_calculated_kwh_bau
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_chiller_electric_load_series_kw"] = self.dm["LoadProfile"].get("year_one_chiller_electric_load_series_kw")
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_chiller_thermal_load_series_ton"] = [x * self.dm.get("elecchl_cop", 0) / 3.5168545 for x in self.dm["LoadProfile"].get("year_one_chiller_electric_load_series_kw")]
+                    self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_boiler_fuel_load_mmbtu_bau"] = \
+                        self.dm["LoadProfile"].get("annual_heating_mmbtu")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_boiler_fuel_load_series_mmbtu_per_hr"] = \
+                        self.dm["LoadProfile"].get("year_one_boiler_fuel_load_series_mmbtu_per_hr")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_boiler_thermal_load_series_mmbtu_per_hr"] = \
+                        [x * self.dm.get("boiler_efficiency", 0) \
+                        for x in self.dm["LoadProfile"].get("year_one_boiler_fuel_load_series_mmbtu_per_hr")]
+                elif name == "LoadProfileChillerThermal":
+                    self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_kwh_bau"] = \
+                        self.dm["LoadProfile"].get("annual_cooling_kwh")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_chiller_electric_load_series_kw"] = \
+                        self.dm["LoadProfile"].get("year_one_chiller_electric_load_series_kw")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_chiller_thermal_load_series_ton"] = \
+                        [x * self.dm.get("elecchl_cop", 0) / TONHOUR_TO_KWHT \
+                        for x in self.dm["LoadProfile"].get("year_one_chiller_electric_load_series_kw")]
                 elif name == "Financial":
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_us_dollars"] = self.results_dict.get("lcc")
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_bau_us_dollars"] = self.results_dict.get(
@@ -899,10 +465,12 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "net_capital_costs")
                     self.nested_outputs["Scenario"]["Site"][name]["microgrid_upgrade_cost_us_dollars"] = \
                         self.results_dict.get("net_capital_costs") * financials.microgrid_upgrade_cost_pct
-                    self.nested_outputs["Scenario"]["Site"][name]["total_opex_costs_us_dollars"] = self.results_dict.get(
-                        "total_opex_costs")
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_opex_costs_us_dollars"] = self.results_dict.get(
-                        "year_one_opex_costs")
+                    self.nested_outputs["Scenario"]["Site"][name]["total_om_costs_us_dollars"] = self.results_dict.get(
+                        "total_om_costs_after_tax")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_om_costs_us_dollars"] = self.results_dict.get(
+                        "year_one_om_costs_after_tax")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_om_costs_before_tax_us_dollars"] = \
+                        self.results_dict.get("year_one_om_costs_before_tax")
                 elif name == "PV":
                     pv_models = list(PVModel.objects.filter(run_uuid=meta['run_uuid']).order_by('pv_number'))
                     template_pv = copy.deepcopy(self.nested_outputs['Scenario']["Site"][name])
@@ -991,9 +559,9 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_min_charge_adder_us_dollars"] = self.results_dict.get("year_one_min_charge_adder")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_energy_cost_bau_us_dollars"] = self.results_dict.get("year_one_energy_cost_bau")
+                        "year_one_coincident_peak_cost_us_dollars"] = self.results_dict.get("year_one_coincident_peak_cost")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_energy_cost_us_dollars"] = self.results_dict.get("year_one_energy_cost")
+                        "year_one_energy_cost_bau_us_dollars"] = self.results_dict.get("year_one_energy_cost_bau")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_demand_cost_bau_us_dollars"] = self.results_dict.get("year_one_demand_cost_bau")
                     self.nested_outputs["Scenario"]["Site"][name][
@@ -1001,6 +569,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_min_charge_adder_bau_us_dollars"] = self.results_dict.get(
                         "year_one_min_charge_adder_bau")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_coincident_peak_cost_bau_us_dollars"] = self.results_dict.get("year_one_coincident_peak_cost_bau")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "total_energy_cost_us_dollars"] = self.results_dict.get("total_energy_cost")
                     self.nested_outputs["Scenario"]["Site"][name][
@@ -1010,6 +580,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "total_min_charge_adder_us_dollars"] = self.results_dict.get("total_min_charge_adder")
                     self.nested_outputs["Scenario"]["Site"][name][
+                        "total_coincident_peak_cost_us_dollars"] = self.results_dict.get("total_coincident_peak_cost")
+                    self.nested_outputs["Scenario"]["Site"][name][
                         "total_energy_cost_bau_us_dollars"] = self.results_dict.get("total_energy_cost_bau")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "total_demand_cost_bau_us_dollars"] = self.results_dict.get("total_demand_cost_bau")
@@ -1017,6 +589,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "total_fixed_cost_bau_us_dollars"] = self.results_dict.get("total_fixed_cost_bau")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "total_min_charge_adder_bau_us_dollars"] = self.results_dict.get("total_min_charge_adder_bau")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "total_coincident_peak_cost_bau_us_dollars"] = self.results_dict.get("total_coincident_peak_cost_bau")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_bill_us_dollars"] = self.results_dict.get(
                         "year_one_bill")
                     self.nested_outputs["Scenario"]["Site"][name][
@@ -1154,28 +728,32 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_boiler_thermal_production_mmbtu"] = self.results_dict.get("year_one_boiler_thermal_production_mmbtu")
                 elif name == "ElectricChiller":
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_electric_chiller_thermal_to_load_series_ton"] = [x / 3.51685 for x in self.results_dict.get("electric_chiller_to_load_series")]
+                        "year_one_electric_chiller_thermal_to_load_series_ton"] = [x / TONHOUR_TO_KWHT for x in self.results_dict.get("electric_chiller_to_load_series")]
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_electric_chiller_thermal_to_tes_series_ton"] =  [x / 3.51685 for x in self.results_dict.get("electric_chiller_to_tes_series")]
+                        "year_one_electric_chiller_thermal_to_tes_series_ton"] =  [x / TONHOUR_TO_KWHT for x in self.results_dict.get("electric_chiller_to_tes_series")]
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_electric_chiller_electric_consumption_series_kw"] = self.results_dict.get("electric_chiller_consumption_series")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_electric_chiller_electric_consumption_kwh"] = self.results_dict.get("year_one_electric_chiller_electric_kwh")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_electric_chiller_thermal_production_tonhr"] = self.results_dict.get("year_one_electric_chiller_thermal_kwh") / 3.51685
+                        "year_one_electric_chiller_thermal_production_tonhr"] = self.results_dict.get("year_one_electric_chiller_thermal_kwh") / TONHOUR_TO_KWHT
                 elif name == "AbsorptionChiller":
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "size_ton"] = self.results_dict.get("absorpchl_kw") / 3.51685
+                        "size_ton"] = self.results_dict.get("absorpchl_kw") / TONHOUR_TO_KWHT
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_absorp_chl_thermal_to_load_series_ton"] = [x / 3.51685 for x in self.results_dict.get("absorption_chiller_to_load_series")]
+                        "year_one_absorp_chl_thermal_to_load_series_ton"] = [x / TONHOUR_TO_KWHT for x in self.results_dict.get("absorption_chiller_to_load_series")]
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_absorp_chl_thermal_to_tes_series_ton"] = [x / 3.51685 for x in self.results_dict.get("absorption_chiller_to_tes_series")]
+                        "year_one_absorp_chl_thermal_to_tes_series_ton"] = [x / TONHOUR_TO_KWHT for x in self.results_dict.get("absorption_chiller_to_tes_series")]
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_absorp_chl_thermal_consumption_series_mmbtu_per_hr"] = self.results_dict.get("absorption_chiller_consumption_series")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_absorp_chl_thermal_consumption_mmbtu"] = self.results_dict.get("year_one_absorp_chiller_thermal_consumption_mmbtu")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_absorp_chl_thermal_production_tonhr"] = self.results_dict.get("year_one_absorp_chiller_thermal_prod_kwh") / 3.51685
+                        "year_one_absorp_chl_thermal_production_tonhr"] = self.results_dict.get("year_one_absorp_chiller_thermal_prod_kwh") / TONHOUR_TO_KWHT
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_absorp_chl_electric_consumption_series_kw"] = self.results_dict.get("absorption_chiller_electric_consumption_series")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_absorp_chl_electric_consumption_kwh"] = self.results_dict.get("year_one_absorp_chiller_electric_consumption_kwh")
                 elif name == "HotTES":
                     self.nested_outputs["Scenario"]["Site"][name][
                         "size_gal"] = self.results_dict.get("hot_tes_size_mmbtu",0) / 0.000163
@@ -1189,7 +767,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "size_gal"] = self.results_dict.get("cold_tes_size_kwht",0) / 0.0287
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_thermal_from_cold_tes_series_ton"] = [x/3.51685 for x in self.results_dict.get("cold_tes_thermal_production_series")]
+                        "year_one_thermal_from_cold_tes_series_ton"] = [x/TONHOUR_TO_KWHT for x in self.results_dict.get("cold_tes_thermal_production_series")]
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_cold_tes_soc_series_pct"] = self.results_dict.get("cold_tes_pct_soc_series")
                     if np.isnan(sum(self.results_dict.get("cold_tes_pct_soc_series") or [np.nan])):
@@ -1236,8 +814,11 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "fraction_on"] = self.results_dict.get("hpwh_fraction_on")
 
             # outputs that depend on multiple object results:
+            future_replacement_cost, present_replacement_cost = self.replacement_costs_future_and_present
             self.nested_outputs["Scenario"]["Site"]["Financial"]["initial_capital_costs"] = self.upfront_capex
-            self.nested_outputs["Scenario"]["Site"]["Financial"]["replacement_costs"] = self.replacement_costs
+            self.nested_outputs["Scenario"]["Site"]["Financial"]["replacement_costs"] = future_replacement_cost
+            self.nested_outputs["Scenario"]["Site"]["Financial"]["om_and_replacement_present_cost_after_tax_us_dollars"] = \
+                present_replacement_cost + self.results_dict.get("total_om_costs_after_tax", 0)
             self.nested_outputs["Scenario"]["Site"]["Financial"]["initial_capital_costs_after_incentives"] = \
                 self.upfront_capex_after_incentives
 
@@ -1286,13 +867,27 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
         data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
 
         #simple payback needs all data to be computed so running that calculation here
-        simple_payback, irr, net_present_cost, annualized_payment_to_third_party_us_dollars = \
+        simple_payback, irr, net_present_cost, annualized_payment_to_third_party_us_dollars, \
+        offtaker_annual_free_cashflow_series_us_dollars, offtaker_annual_free_cashflow_series_bau_us_dollars, \
+        offtaker_discounted_annual_free_cashflow_series_us_dollars, offtaker_discounted_annual_free_cashflow_series_bau_us_dollars,\
+        developer_annual_free_cashflow_series_us_dollars = \
             calculate_proforma_metrics(data)
         data['outputs']['Scenario']['Site']['Financial']['simple_payback_years'] = simple_payback
         data['outputs']['Scenario']['Site']['Financial']['irr_pct'] = irr if not np.isnan(irr or np.nan) else None
         data['outputs']['Scenario']['Site']['Financial']['net_present_cost_us_dollars'] = net_present_cost
         data['outputs']['Scenario']['Site']['Financial']['annualized_payment_to_third_party_us_dollars'] = \
             annualized_payment_to_third_party_us_dollars
+        data['outputs']['Scenario']['Site']['Financial']['developer_annual_free_cashflow_series_us_dollars'] = \
+            developer_annual_free_cashflow_series_us_dollars
+        data['outputs']['Scenario']['Site']['Financial']['offtaker_annual_free_cashflow_series_us_dollars'] = \
+            offtaker_annual_free_cashflow_series_us_dollars
+        data['outputs']['Scenario']['Site']['Financial']['offtaker_annual_free_cashflow_series_bau_us_dollars'] = \
+            offtaker_annual_free_cashflow_series_bau_us_dollars
+        data['outputs']['Scenario']['Site']['Financial']['offtaker_discounted_annual_free_cashflow_series_us_dollars'] = \
+            offtaker_discounted_annual_free_cashflow_series_us_dollars
+        data['outputs']['Scenario']['Site']['Financial']['offtaker_discounted_annual_free_cashflow_series_bau_us_dollars'] = \
+            offtaker_discounted_annual_free_cashflow_series_bau_us_dollars
+
         data = EmissionsCalculator.add_to_data(data)
 
         pv_watts_station_check = data['outputs']['Scenario']['Site']['PV'][0].get('station_distance_km') or 0
@@ -1308,7 +903,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             else:
                 data['messages']["PVWatts Warning"] = pv_warning
 
-        # Calculate avoided outage costs
+        # Calculate avoided outage costs moved to resilience stats
         #calc_avoided_outage_costs(data, present_worth_factor=dfm_list[0]['pwf_e'], run_uuid=self.run_uuid)
 
         data = EmissionsCalculator.add_to_data(data)

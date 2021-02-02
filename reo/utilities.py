@@ -27,30 +27,13 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-from numpy import npv
+from numpy import npv, ndarray
 from math import log10
 from reo.models import ErrorModel
-
-
-class API_Error:
-    def __init__(self, e):
-        # e is a caught Exception
-        self.errors = {}
-        if len(e.args) == 2:
-            # arg 1 - filename where exception was thrown
-            # arg 2 - custom error message
-            error_type, messages = e
-        else:
-            # error was not thrown intentionally
-            error_type, messages = 'Exception', e.args
-            if hasattr(e, 'traceback'):
-                self.errors["Traceback"] = e.traceback
-
-        self.errors[error_type] = messages
-
-    @property
-    def response(self):
-        return self.errors
+import pandas as pd
+import numpy as np
+import calendar
+import datetime
 
 
 def slope(x1, y1, x2, y2):
@@ -248,3 +231,102 @@ def check_common_outputs(Test, d_calculated, d_expected):
             )
         else:
             raise e
+
+def generate_year_profile_hourly(year, consecutive_periods):
+    """
+    This function creates a year-specific 8760 profile with 1.0 for timesteps which are defined in the relative_periods based on
+        generalized (non-year specific) datetime metrics. All other values are 0.0. This functions uses numpy, pandas, datetime, and calendar packages/libraries.
+
+    :param year: year for applying consecutive_periods changes based on year and leap years (cut off 12/31/year)
+    :param consecutive_periods: either list of dictionaries where each dict defines a period (keys = "month", "start_week_of_month", "start_day_of_week", "start_hour", "duration_hours"; length N periods)
+        OR can be a Pandas DataFrame with columns equivalent to the dict keys in which case it gets converted to list_of_dict. All of the value types are integers.
+    :return year_profile_hourly_list: 8760 profile with 1.0 for timesteps defined in consecutive_periods, else 0.0.
+    :return start_day_of_month_list: list of start_day_of_month which is calculated in this function
+    :return errors_list: used in validators.py - errors related to the input consecutive_periods and the year's calendar
+    """
+    errors_list = []
+    # Create datetime series of the year, remove last day of the year if leap year
+    if calendar.isleap(year):
+        end_date = "12/31/"+str(year)
+    else:
+        end_date = "1/1/"+str(year+1)
+    dt_profile = pd.date_range(start='1/1/'+str(year), end=end_date, freq="1H", closed="left")
+    year_profile_hourly_series = pd.Series(np.zeros(8760), index=dt_profile)
+    
+    # Check if the consecutive_periods is a list_of_dict or other (must be Pandas DataFrame), and if other, convert to list_of_dict
+    if not isinstance(consecutive_periods, list):
+        consecutive_periods = consecutive_periods.to_dict('records')
+
+    day_of_week_name = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    start_day_of_month_list = []
+    for i in range(len(consecutive_periods)):
+        start_month = int(consecutive_periods[i]["month"])  # One-indexed both user input and Calendar package
+        start_week_of_month = int(consecutive_periods[i]["start_week_of_month"] - 1)  # One-indexed for user, but zero-index for Calendar
+        start_day_of_week = int(consecutive_periods[i]["start_day_of_week"] - 1)  # Monday - Sunday is 1 - 7 for user, 0 - 6 for Calendar
+        start_hour = int(consecutive_periods[i]["start_hour"] - 1)  # One-indexed for user, datetime hour is zero-index
+        duration_hours = int(consecutive_periods[i]["duration_hours"])
+        error_start_text = "Error in chp_unavailability_period {}. ".format(i+1)
+        try:
+            start_day_of_month = calendar.Calendar().monthdayscalendar(year=year,month=start_month)[start_week_of_month][start_day_of_week]  # One-indexed
+            start_day_of_month_list.append(start_day_of_month)
+            if start_day_of_month == 0:  # This may happen if there is no day_of_week in the 1st, 5th or 6th week of the month
+                raise DayOfWeekError("There is no start_day_of_week {} ({}) in week {} of month {} in the year {}. Remember, Monday is treated as the first day of the week.".format(start_day_of_week+1, day_of_week_name[start_day_of_week], start_week_of_month+1, start_month, year))
+            else:
+                start_datetime = datetime.datetime(year=year, month=start_month, day=start_day_of_month, hour=start_hour)
+                if start_datetime + datetime.timedelta(hours=duration_hours-1) > dt_profile[-1]:
+                    raise DurationOverflowsYearError("The start day/time and duration_hours exceeds the end of the year. Please specify two separate unavailability periods: one for the beginning of the year and one for up to the end of the year.")
+                else:
+                    year_profile_hourly_series[start_datetime:start_datetime + datetime.timedelta(hours=duration_hours-1)] = 1.0
+            
+        except DayOfWeekError as e:
+            errors_list.append(error_start_text + str(e.args[0]))
+        except DurationOverflowsYearError as e:
+            errors_list.append(error_start_text + str(e.args[0]))
+        except:
+            errors_list.append(error_start_text + "Invalid set for month {} (1-12), start_week_of_month {} (1-4, possible 5 and 6), start_day_of_week {} (1-7), and start_hour_of_day {} (1-24) for the year {}.".format(start_month, start_week_of_month+1, start_day_of_week+1, start_hour+1, year))
+
+    if errors_list == []:
+        year_profile_hourly_list = list(year_profile_hourly_series)
+    else:
+        year_profile_hourly_list = []   
+    
+    return year_profile_hourly_list, start_day_of_month_list, errors_list
+
+class DayOfWeekError(Exception):
+    pass
+
+class DurationOverflowsYearError(Exception):
+    pass
+
+def get_weekday_weekend_total_hours_by_month(year, year_profile_hourly_list):
+    """
+    Get a summary of a yearly profile by calculating the weekday, weekend, and total hours by month (e.g. for chp_unavailability_periods viewing in the UI)
+    :param year for establishing the calendar
+    :param year_profile_hourly_list: list of 0's and 1's for tallying the metrics above; typically created using the generate_year_profile_hourly function
+    :return weekday_weekend_total_hours_by_month: nested dictionary with 12 keys (one for each month) each being a dictionary of weekday_hours, weekend_hours, and total_hours
+    """
+        # Create datetime series of the year, remove last day of the year if leap year
+    if calendar.isleap(year):
+        end_date = "12/31/"+str(year)
+    else:
+        end_date = "1/1/"+str(year+1)
+    dt_profile = pd.date_range(start='1/1/'+str(year), end=end_date, freq="1H", closed="left")
+    year_profile_hourly_series = pd.Series(year_profile_hourly_list, index=dt_profile)
+    unavail_hours = year_profile_hourly_series[year_profile_hourly_series == 1]
+    weekday_weekend_total_hours_by_month = {m:{} for m in range(1,13)}
+    for m in range(1,13):
+        unavail_hours_month = unavail_hours[unavail_hours.index.month==m]
+        weekday_weekend_total_hours_by_month[m]["weekends"] = int(sum(unavail_hours_month[(unavail_hours_month.index.dayofweek==5) | (unavail_hours_month.index.dayofweek==6)]))
+        weekday_weekend_total_hours_by_month[m]["weekdays"] = int(sum(unavail_hours_month) - weekday_weekend_total_hours_by_month[m]["weekends"])
+        weekday_weekend_total_hours_by_month[m]["total"] = int(weekday_weekend_total_hours_by_month[m]["weekdays"] + weekday_weekend_total_hours_by_month[m]["weekends"])
+
+    return weekday_weekend_total_hours_by_month
+
+def scrub_numpy_arrays_from_dict(d):
+    for k, v in d.items():
+        if isinstance(v, ndarray):
+            d[k] = v.tolist()
+    return d
+
+#conversion factor for ton-hours to kilowatt-hours thermal
+TONHOUR_TO_KWHT = 3.51685

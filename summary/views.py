@@ -91,7 +91,7 @@ def unlink(request, user_uuid, run_uuid):
     Retrieve a summary of scenarios for given user_uuid
     :param request:
     :param user_uuid:
-    :return 
+    :return
         True, bool
     """
     content = {'user_uuid':user_uuid, 'run_uuid':run_uuid}
@@ -112,7 +112,7 @@ def unlink(request, user_uuid, run_uuid):
                 return JsonResponse({"Error": str(err.message)}, status=400)
 
     try:
-        
+
         if not ScenarioModel.objects.filter(user_uuid=user_uuid).exists():
             return JsonResponse({"Error":"User {} does not exist".format(user_uuid)}, status=400)
 
@@ -187,21 +187,48 @@ def summary(request, user_uuid):
         if len(scenarios) == 0:
             response = JsonResponse({"Error": "No scenarios found for user '{}'".format(user_uuid)}, content_type='application/json', status=404)
             return response
-        
-        scenario_run_uuids =  [s.run_uuid for s in scenarios]
-        scenario_run_ids =  [s.id for s in scenarios]
+
+        scenario_run_uuids = [s.run_uuid for s in scenarios]
+        scenario_run_ids = [s.id for s in scenarios]
 
         #saving time by only calling each table once
         messages = MessageModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','message_type','message')
         sites = SiteModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','address')
-        loads = LoadProfileModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','outage_start_hour','loads_kw','doe_reference_name')
+        loads = LoadProfileModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','outage_start_time_step',
+                                                                                        'loads_kw','doe_reference_name')
         batts = StorageModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw','size_kwh')
         pvs = PVModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw')
         winds = WindModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw')
         gens = GeneratorModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid', 'max_kw', 'size_kw')
-        financials = FinancialModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','npv_us_dollars','net_capital_costs','lcc_us_dollars','lcc_bau_us_dollars','net_capital_costs_plus_om_us_dollars', 'net_capital_costs','net_om_us_dollars_bau')
-        tariffs = ElectricTariffModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','urdb_rate_name','year_one_energy_cost_us_dollars','year_one_demand_cost_us_dollars','year_one_fixed_cost_us_dollars','year_one_min_charge_adder_us_dollars','year_one_bill_us_dollars','year_one_energy_cost_bau_us_dollars','year_one_demand_cost_bau_us_dollars','year_one_fixed_cost_bau_us_dollars','year_one_min_charge_adder_bau_us_dollars','year_one_bill_bau_us_dollars')
-        resiliences = ResilienceModel.objects.filter(scenariomodel_id__in=scenario_run_ids).values('scenariomodel_id','resilience_hours_avg','resilience_hours_max','resilience_hours_min')
+        financials = FinancialModel.objects.filter(run_uuid__in=scenario_run_uuids).values(
+                                                                            'run_uuid',
+                                                                            'npv_us_dollars',
+                                                                            'net_capital_costs',
+                                                                            'lcc_us_dollars',
+                                                                            'lcc_bau_us_dollars',
+                                                                            'net_capital_costs_plus_om_us_dollars',
+                                                                            'net_capital_costs',
+                                                                            'net_om_us_dollars_bau')
+        tariffs = ElectricTariffModel.objects.filter(run_uuid__in=scenario_run_uuids).values(
+                                                                            'run_uuid',
+                                                                            'urdb_rate_name',
+                                                                            'year_one_energy_cost_us_dollars',
+                                                                            'year_one_demand_cost_us_dollars',
+                                                                            'year_one_fixed_cost_us_dollars',
+                                                                            'year_one_min_charge_adder_us_dollars',
+                                                                            'year_one_coincident_peak_cost_us_dollars',
+                                                                            'year_one_bill_us_dollars',
+                                                                            'year_one_energy_cost_bau_us_dollars',
+                                                                            'year_one_demand_cost_bau_us_dollars',
+                                                                            'year_one_fixed_cost_bau_us_dollars',
+                                                                            'year_one_min_charge_adder_bau_us_dollars',
+                                                                            'year_one_coincident_peak_cost_bau_us_dollars',
+                                                                            'year_one_bill_bau_us_dollars')
+        resiliences = ResilienceModel.objects.filter(scenariomodel_id__in=scenario_run_ids).values(
+                                                                            'scenariomodel_id',
+                                                                            'resilience_hours_avg',
+                                                                            'resilience_hours_max',
+                                                                            'resilience_hours_min')
         chps = CHPModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw')
         hottess = HotTESModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_gal','size_gal')
         coldtess = ColdTESModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_gal','size_gal')
@@ -222,190 +249,175 @@ def summary(request, user_uuid):
             return [{}]
 
         for scenario in scenarios:
-            results = {}
-            
+            results = dict({
+                'focus': None,
+                'address': None,
+                'urdb_rate_name': None,
+                'doe_reference_name': None,
+                'npv_us_dollars': None,
+                'net_capital_costs': None,
+                'net_capital_costs_plus_om_us_dollars': None,
+                'net_om_us_dollars_bau': None,
+                'resilience_hours_min': None,
+                'resilience_hours_max': None,
+                'resilience_hours_avg': None,
+                'year_one_savings_us_dollars': None,
+                'pv_kw': 'not evaluated',
+                'wind_kw': 'not evaluated',
+                'gen_kw': 'not evaluated',
+                'batt_kw': 'not evaluated',
+                'batt_kwh': 'not evaluated',
+                'chp_kw': 'not evaluated',
+                'hottes_gal': 'not evaluated',
+                'coldtes_gal': 'not evaluated',
+                'absorpchl_ton': 'not evaluated',
+            })
+            results['status'] = scenario.status
+            results['run_uuid'] = str(scenario.run_uuid)
+            results['created'] = scenario.created
+            results['description'] = scenario.description
+
+            # Messages
             message_set = get_scenario_data(messages, scenario.run_uuid)
             if not type(message_set) == list:
                 message_set = [message_set]
-            
-            site = get_scenario_data(sites, scenario.run_uuid)[0]
-            load = get_scenario_data(loads, scenario.run_uuid)[0]
-            batt = get_scenario_data(batts, scenario.run_uuid)[0]
-            pv = get_scenario_data(pvs, scenario.run_uuid)[0]
-            wind = get_scenario_data(winds, scenario.run_uuid)[0]
-            gen = get_scenario_data(gens, scenario.run_uuid)[0]
-            financial = get_scenario_data(financials, scenario.run_uuid)[0]
-            tariff = get_scenario_data(tariffs, scenario.run_uuid)[0]
-            resilience = get_scenario_data(resiliences, scenario.id)[0]
-            chp = get_scenario_data(chps, scenario.run_uuid)[0]
-            hottes = get_scenario_data(hottess, scenario.run_uuid)[0]
-            coldtes = get_scenario_data(coldtess, scenario.run_uuid)[0]
-            absorpchl = get_scenario_data(absorpchls, scenario.run_uuid)[0]
-            
-            # Messages
             results['messages'] = {}
             for message in message_set:
                 if len(message.keys()) > 0:
                     results['messages'][message.get('message_type') or "type"] = message.get('message') or ""
-            
-            # Run ID
-            results['run_uuid'] = str(scenario.run_uuid)
 
-            # Status
-            results['status'] = scenario.status
+            try:
+                site = get_scenario_data(sites, scenario.run_uuid)[0]
+                load = get_scenario_data(loads, scenario.run_uuid)[0]
+                batt = get_scenario_data(batts, scenario.run_uuid)[0]
+                pv = get_scenario_data(pvs, scenario.run_uuid)[0]
+                wind = get_scenario_data(winds, scenario.run_uuid)[0]
+                gen = get_scenario_data(gens, scenario.run_uuid)[0]
+                financial = get_scenario_data(financials, scenario.run_uuid)[0]
+                tariff = get_scenario_data(tariffs, scenario.run_uuid)[0]
+                resilience = get_scenario_data(resiliences, scenario.id)[0]
+                chp = get_scenario_data(chps, scenario.run_uuid)[0]
+                hottes = get_scenario_data(hottess, scenario.run_uuid)[0]
+                coldtes = get_scenario_data(coldtess, scenario.run_uuid)[0]
+                absorpchl = get_scenario_data(absorpchls, scenario.run_uuid)[0]
 
-            # Date
-            results['created'] = scenario.created
+                if site:
 
-            if site:
+                    # Focus
+                    if load:
+                        if load.get('outage_start_time_step') is not None:
+                            results['focus'] = "Resilience"
+                        else:
+                            results['focus'] = "Financial"
 
-                # Description
-                results['description'] = scenario.description
+                        if load.get('loads_kw') is not None:
+                            results['doe_reference_name'] = "Custom"
+                        else:
+                            results['doe_reference_name'] = load.get('doe_reference_name')
 
-                # Focus
-                if load['outage_start_hour']:
-                    results['focus'] = "Resilience"
-                else:
-                    results['focus'] = "Financial"
+                    # Address
+                    results['address'] = site.get('address')
 
-                # Address
-                results['address'] = site.get('address')
+                    # Description
+                    results['description'] = scenario.description
 
-                # Utility Tariff
-                if tariff['urdb_rate_name']:
-                    results['urdb_rate_name'] = tariff.get('urdb_rate_name')
-                else:
-                    results['urdb_rate_name'] = "Custom"
+                    # Address
+                    results['address'] = site.get('address')
 
-                # Load Profile
-                if load['loads_kw']:
-                    results['doe_reference_name'] = "Custom"
-                else:
-                    results['doe_reference_name'] = load.get('doe_reference_name')
-
-                # NPV
-                results['npv_us_dollars'] = financial.get('npv_us_dollars')
-
-                # DG System Cost
-                results['net_capital_costs'] = financial.get('net_capital_costs')
-
-                # Lifecycle Costs
-                results['lcc_us_dollars'] = financial.get('lcc_us_dollars')
-
-                 # Lifecycle Costs BAU
-                results['lcc_bau_us_dollars'] = financial.get('lcc_bau_us_dollars')
-
-                #Other Financials
-                results['net_capital_costs_plus_om_us_dollars'] = financial.get('net_capital_costs_plus_om_us_dollars')
-                results['net_om_us_dollars_bau'] = financial.get('net_om_us_dollars_bau')
-                results['net_capital_costs'] = financial.get('net_capital_costs')
-
-                # Year 1 Savings
-                year_one_costs = sum(filter(None, [
-                    tariff.get('year_one_energy_cost_us_dollars') or 0,
-                    tariff.get('year_one_demand_cost_us_dollars') or 0,
-                    tariff.get('year_one_fixed_cost_us_dollars') or 0,
-                    tariff.get('year_one_min_charge_adder_us_dollars') or 0,
-                    tariff.get('year_one_bill_us_dollars') or 0
-                    ]))
-                
-                year_one_costs_bau = sum(filter(None, [
-                    tariff.get('year_one_energy_cost_bau_us_dollars') or 0,
-                    tariff.get('year_one_demand_cost_bau_us_dollars') or 0,
-                    tariff.get('year_one_fixed_cost_bau_us_dollars') or 0,
-                    tariff.get('year_one_min_charge_adder_bau_us_dollars') or 0,
-                    tariff.get('year_one_bill_bau_us_dollars') or 0
-                    ]))
-                #Resilience Stats
-                results['resilience_hours_min'] = resilience.get('resilience_hours_min') 
-                results['resilience_hours_max'] = resilience.get('resilience_hours_max') 
-                results['resilience_hours_avg'] = resilience.get('resilience_hours_avg') 
-
-                if results['resilience_hours_max'] is None:
-                    results['resilience_hours_max'] = 'not evaluated'
-                if results['resilience_hours_min'] is None:
-                    results['resilience_hours_min'] = 'not evaluated'
-                if results['resilience_hours_avg'] is None:
-                    results['resilience_hours_avg'] = 'not evaluated'
-                
-                results['year_one_savings_us_dollars'] = year_one_costs_bau - year_one_costs
-
-                # PV Size
-                if pv is not None:
-                    if pv['max_kw'] > 0:
-                        results['pv_kw'] = pv.get('size_kw')
+                    # Utility Tariff
+                    if tariff.get('urdb_rate_name') is not None:
+                        results['urdb_rate_name'] = tariff.get('urdb_rate_name')
                     else:
-                        results['pv_kw'] = 'not evaluated'
-                else:
-                    results['pv_kw'] = 'not evaluated'
+                        results['urdb_rate_name'] = "Custom"
 
-                # Wind Size
-                if wind is not None:
-                    if wind.get('max_kw') or -1 > 0:
-                        results['wind_kw'] = wind.get('size_kw')
-                    else:
-                        results['wind_kw'] = 'not evaluated'
-                else:
-                    results['wind_kw'] = 'not evaluated'
+                    # NPV
+                    results['npv_us_dollars'] = financial.get('npv_us_dollars')
 
-                # Generator Size
-                if gen is not None:
-                    if gen.get('max_kw') or -1 > 0:
-                        results['gen_kw'] = gen.get('size_kw')
-                    else:
-                        results['gen_kw'] = 'not evaluated'
-                else:
-                    results['gen_kw'] = 'not evaluated'
+                    # DG System Cost
+                    results['net_capital_costs'] = financial.get('net_capital_costs')
 
-                # Battery Size
-                if batt is not None:
-                    if batt.get('max_kw') or -1 > 0:
-                        results['batt_kw'] = batt.get('size_kw')
-                        results['batt_kwh'] = batt.get('size_kwh')
-                    else:
-                        results['batt_kw'] = 'not evaluated'
-                        results['batt_kwh'] = 'not evaluated'
-                else:
-                    results['batt_kw'] = 'not evaluated'
-                    results['batt_kwh'] = 'not evaluated'
+                    # Lifecycle Costs
+                    results['lcc_us_dollars'] = financial.get('lcc_us_dollars')
 
-                # CHP Size
-                if chp is not None:
-                    if chp.get('max_kw') or -1 > 0:
-                        results['chp_kw'] = chp.get('size_kw')
-                    else:
-                        results['chp_kw'] = 'not evaluated'
-                else:
-                    results['chp_kw'] = 'not evaluated'                    
+                     # Lifecycle Costs BAU
+                    results['lcc_bau_us_dollars'] = financial.get('lcc_bau_us_dollars')
 
-                # HotTES Size
-                if hottes is not None:
-                    if hottes.get('max_gal') or -1 > 0:
-                        results['hottes_gal'] = hottes.get('size_gal')
-                    else:
-                        results['hottes_gal'] = 'not evaluated'
-                else:
-                    results['hottes_gal'] = 'not evaluated'
+                    #Other Financials
+                    results['net_capital_costs_plus_om_us_dollars'] = financial.get('net_capital_costs_plus_om_us_dollars')
+                    results['net_om_us_dollars_bau'] = financial.get('net_om_us_dollars_bau')
+                    results['net_capital_costs'] = financial.get('net_capital_costs')
 
-                # ColdTES Size
-                if coldtes is not None:
-                    if coldtes.get('max_gal') or -1 > 0:
-                        results['coldtes_gal'] = coldtes.get('size_gal')
-                    else:
-                        results['coldtes_gal'] = 'not evaluated' 
-                else:
-                    results['coldtes_gal'] = 'not evaluated' 
+                    # Year 1 Savings
+                    year_one_costs = sum(filter(None, [
+                        tariff.get('year_one_energy_cost_us_dollars') or 0,
+                        tariff.get('year_one_demand_cost_us_dollars') or 0,
+                        tariff.get('year_one_fixed_cost_us_dollars') or 0,
+                        tariff.get('year_one_min_charge_adder_us_dollars') or 0,
+                        tariff.get('year_one_coincident_peak_cost_us_dollars') or 0,
+                        tariff.get('year_one_bill_us_dollars') or 0
+                        ]))
 
-                # Absoprtion Chiller Size
-                if absorpchl is not None:
-                    if absorpchl.get('max_ton') or -1 > 0:
-                        results['absorpchl_ton'] = absorpchl.get('size_ton')
-                    else:
-                        results['absorpchl_ton'] = 'not evaluated' 
-                else:
-                    results['absorpchl_ton'] = 'not evaluated' 
+                    year_one_costs_bau = sum(filter(None, [
+                        tariff.get('year_one_energy_cost_bau_us_dollars') or 0,
+                        tariff.get('year_one_demand_cost_bau_us_dollars') or 0,
+                        tariff.get('year_one_fixed_cost_bau_us_dollars') or 0,
+                        tariff.get('year_one_min_charge_adder_bau_us_dollars') or 0,
+                        tariff.get('year_one_coincident_peak_cost_bau_us_dollars') or 0,
+                        tariff.get('year_one_bill_bau_us_dollars') or 0
+                        ]))
 
-            json_response['scenarios'].append(results)
+                    #Resilience Stats
+                    results['resilience_hours_min'] = resilience.get('resilience_hours_min', 'not evaluated')
+                    results['resilience_hours_max'] = resilience.get('resilience_hours_max', 'not evaluated')
+                    results['resilience_hours_avg'] = resilience.get('resilience_hours_avg', 'not evaluated')
+
+                    results['year_one_savings_us_dollars'] = year_one_costs_bau - year_one_costs
+
+                    # PV Size
+                    if pv is not None:
+                        if pv['max_kw'] > 0:
+                            results['pv_kw'] = pv.get('size_kw')
+
+                    # Wind Size
+                    if wind is not None:
+                        if wind.get('max_kw') or -1 > 0:
+                            results['wind_kw'] = wind.get('size_kw')
+
+                    # Generator Size
+                    if gen is not None:
+                        if gen.get('max_kw') or -1 > 0:
+                            results['gen_kw'] = gen.get('size_kw')
+
+                    # Battery Size
+                    if batt is not None:
+                        if batt.get('max_kw') or -1 > 0:
+                            results['batt_kw'] = batt.get('size_kw')
+                            results['batt_kwh'] = batt.get('size_kwh')
+
+                    if chp is not None:
+                        if (chp.get('max_kw') or -1) > 0:
+                            results['chp_kw'] = chp.get('size_kw')
+
+                    # HotTES Size
+                    if hottes is not None:
+                        if (hottes.get('max_gal') or -1) > 0:
+                            results['hottes_gal'] = hottes.get('size_gal')
+
+                    # ColdTES Size
+                    if coldtes is not None:
+                        if (coldtes.get('max_gal') or -1) > 0:
+                            results['coldtes_gal'] = coldtes.get('size_gal')
+
+                    # Absoprtion Chiller Size
+                    if absorpchl is not None:
+                        if (absorpchl.get('max_ton') or -1) > 0:
+                            results['absorpchl_ton'] = absorpchl.get('size_ton')
+            except:
+                json_response['scenarios'].append(results)
+                continue
+            else:
+                json_response['scenarios'].append(results)
+
         response = JsonResponse(json_response, status=200)
         return response
 

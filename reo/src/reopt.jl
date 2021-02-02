@@ -10,8 +10,7 @@ function add_continuous_variables(m, p)
     	dvSystemSizeSegment[p.Tech, p.Subdivision, p.Seg] >= 0   #X^{\sigma s}_{tks}: System size of technology t allocated to segmentation k, segment s [kW]  (NEW)
 		dvGridPurchase[p.PricingTier, p.TimeStep] >= 0   # X^{g}_{uh}: Power from grid dispatched to meet electrical load in demand tier u during time step h [kW]  (NEW)
 	    dvRatedProduction[p.Tech, p.TimeStep] >= 0   #X^{rp}_{th}: Rated production of technology t during time step h [kW]  (NEW)
-	    dvProductionToGrid[p.Tech, p.SalesTiers, p.TimeStep] >= 0  # X^{ptg}_{tuh}: Exports from electrical production to the grid by technology t in demand tier u during time step h [kW]   (NEW)
-	    dvStorageToGrid[p.StorageSalesTiers, p.TimeStep] >= 0  # X^{stg}_{uh}: Exports from electrical storage to the grid in demand tier u during time step h [kW]  (NEW)
+		dvProductionToCurtail[p.Tech, p.TimeStep] >= 0
 		dvProductionToStorage[p.Storage, p.Tech, p.TimeStep] >= 0  # X^{ptg}_{bth}: Power from technology t used to charge storage system b during time step h [kW]  (NEW)
 	    dvProductionToWaste[p.CHPTechs, p.TimeStep] >= 0  #X^{ptw}_{th}: Thermal production by CHP technology t sent to waste in time step h
 		dvDischargeFromStorage[p.Storage, p.TimeStep] >= 0 # X^{pts}_{bh}: Power discharged from storage system b during time step h [kW]  (NEW)
@@ -23,7 +22,8 @@ function add_continuous_variables(m, p)
 		dvPeakDemandE[p.Ratchets, p.DemandBin] >= 0  # X^{de}_{re}:  Peak electrical power demand allocated to tier e during ratchet r [kW]
 		dvPeakDemandEMonth[p.Month, p.DemandMonthsBin] >= 0  #  X^{dn}_{mn}: Peak electrical power demand allocated to tier n during month m [kW]
 		dvPeakDemandELookback[p.Month] >= 0  # X^{lp}: Peak electric demand look back [kW]
-        MinChargeAdder >= 0   #to be removed
+		dvPeakDemandCP[p.CPPeriod] >= 0 # X^{cp}_p: Peak electric demand during expected coincident peak hours of CP period p [kW]
+		MinChargeAdder >= 0   #to be removed
 		#UtilityMinChargeAdder[p.Month] >= 0   #X^{mc}_m: Annual utility minimum charge adder in month m [\$]
 		#CHP and Fuel-burning variables
 		dvFuelUsage[p.Tech, p.TimeStep] >= 0  # Fuel burned by technology t in time step h
@@ -40,6 +40,9 @@ function add_continuous_variables(m, p)
 		dvWHComfortCost[p.TimeStep] >= 0
 		dvHVACComfortCost[p.TimeStep] >= 0
     end
+	if !isempty(p.ExportTiers)
+		@variable(m, dvProductionToGrid[p.Tech, p.ExportTiers, p.TimeStep] >= 0)  # X^{ptg}_{tuh}: Exports from electrical production to the grid by technology t in demand tier u during time step h [kW]   (NEW)
+	end
 end
 
 
@@ -53,7 +56,7 @@ function add_integer_variables(m, p)
 		binDemandTier[p.Ratchets, p.DemandBin], Bin  # 1 If tier e has allocated demand during ratchet r; 0 otherwise
         binDemandMonthsTier[p.Month, p.DemandMonthsBin], Bin # 1 If tier n has allocated demand during month m; 0 otherwise
 		binEnergyTier[p.Month, p.PricingTier], Bin    #  Z^{ut}_{mu} 1 If demand tier $u$ is active in month m; 0 otherwise (NEW)
-# 		binCrankcase[p.TimeStep], Bin
+		binNoGridPurchases[p.TimeStep], Bin  # Binary for the condition where the site load is met by on-site resources so no grid purchases
     end
 end
 
@@ -86,7 +89,7 @@ function add_cost_expressions(m, p)
 		sum( p.OMperUnitSize[t] * m[:dvSize][t] for t in p.Tech )
 	)
     if !isempty(p.FuelBurningTechs)
-		m[:TotalPerUnitProdOMCosts] = @expression(m, p.two_party_factor * p.pwf_om *
+		m[:TotalPerUnitProdOMCosts] = @expression(m, p.two_party_factor * p.pwf_om * p.TimeStepScaling *
 			sum( p.OMcostPerUnitProd[t] * m[:dvRatedProduction][t,ts] for t in p.FuelBurningTechs, ts in p.TimeStep )
 		)
     else
@@ -95,11 +98,11 @@ function add_cost_expressions(m, p)
 	if !isempty(p.CHPTechs)
 		m[:TotalCHPStandbyCharges] = @expression(m, p.pwf_e * p.CHPStandbyCharge * 12 *
 			sum(m[:dvSize][t] for t in p.CHPTechs))
-		m[:TotalHourlyCHPOpExCosts] = @expression(m, p.two_party_factor * p.pwf_om *
+		m[:TotalHourlyCHPOMCosts] = @expression(m, p.two_party_factor * p.pwf_om * p.TimeStepScaling *
 			sum(m[:dvOMByHourBySizeCHP][t, ts] for t in p.CHPTechs, ts in p.TimeStep))
 	else
 		m[:TotalCHPStandbyCharges] = @expression(m, 0.0)
-		m[:TotalHourlyCHPOpExCosts] = @expression(m, 0.0)
+		m[:TotalHourlyCHPOMCosts] = @expression(m, 0.0)
 	end
 	if !isempty(p.WaterHeaterTechs)
 		m[:TotalWHComfortCost] = @expression(m,
@@ -116,40 +119,43 @@ function add_cost_expressions(m, p)
 end
 
 
-function add_export_expressions(m, p)
+function add_export_expressions(m, p)  # TODO handle empty export tiers (and export rates, etc.)
+
+	m[:TotalExportBenefit] = 0
+	m[:CurtailedElecWIND] = 0
+	m[:ExportedElecWIND] = 0
+	m[:ExportedElecGEN] = 0
+	m[:ExportBenefitYr1] = 0
+
 	if !isempty(p.Tech)
-		# NOTE: LevelizationFactor is baked into m[:dvProductionToGrid]
-		m[:TotalExportBenefit] = @expression(m, p.pwf_e * p.TimeStepScaling * sum(
-			sum(p.GridExportRates[u,ts] * m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers)
-			+ sum(p.GridExportRates[u,ts] * m[:dvProductionToGrid][t,u,ts]
-				  for u in p.SalesTiers, t in p.TechsBySalesTier[u]
-			) for ts in p.TimeStep )
-		)
+
 		m[:CurtailedElecWIND] = @expression(m,
-			p.TimeStepScaling * sum(m[:dvProductionToGrid][t,u,ts]
-				for t in m[:WindTechs], u in p.CurtailmentTiers, ts in p.TimeStep)
+			p.TimeStepScaling * sum(m[:dvProductionToCurtail][t, ts]
+				for t in m[:WindTechs], ts in p.TimeStep)
 		)
-		m[:ExportedElecWIND] = @expression(m,
-			p.TimeStepScaling * sum(m[:dvProductionToGrid][t,u,ts]
-				for t in m[:WindTechs], u in p.SalesTiersByTech[t], ts in p.TimeStep) - m[:CurtailedElecWIND]
-		)
-		m[:ExportedElecGEN] = @expression(m,
-			p.TimeStepScaling * sum(m[:dvProductionToGrid][t,u,ts]
-				for t in m[:GeneratorTechs], u in p.SalesTiersByTech[t], ts in p.TimeStep)
-		)
-		m[:ExportBenefitYr1] = @expression(m,
-			p.TimeStepScaling * sum(
-			sum( p.GridExportRates[u,ts] * m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers)
-			+ sum( p.GridExportRates[u,ts] * m[:dvProductionToGrid][t,u,ts]
-				for u in p.SalesTiers, t in p.TechsBySalesTier[u])
-			for ts in p.TimeStep )
-		)
-	else
-		m[:TotalExportBenefit] = 0
-		m[:CurtailedElecWIND] = 0
-		m[:ExportedElecWIND] = 0
-		m[:ExportedElecGEN] = 0
-		m[:ExportBenefitYr1] = 0
+
+		if !isempty(p.ExportTiers)
+			m[:TotalExportBenefit] = @expression(m, p.pwf_e * p.TimeStepScaling * sum(
+				+ sum(p.GridExportRates[u,ts] * m[:dvProductionToGrid][t,u,ts]
+					for u in p.ExportTiers, t in p.TechsByExportTier[u]
+				) for ts in p.TimeStep )
+			)  # NOTE: LevelizationFactor is baked into m[:dvProductionToGrid]
+
+			m[:ExportedElecWIND] = @expression(m,
+				p.TimeStepScaling * sum(m[:dvProductionToGrid][t,u,ts]
+					for t in m[:WindTechs], u in p.ExportTiersByTech[t], ts in p.TimeStep)
+			)
+			m[:ExportedElecGEN] = @expression(m,
+				p.TimeStepScaling * sum(m[:dvProductionToGrid][t,u,ts]
+				for t in m[:GeneratorTechs], u in p.ExportTiersByTech[t], ts in p.TimeStep)
+			)
+			m[:ExportBenefitYr1] = @expression(m,
+				p.TimeStepScaling * sum(
+				+ sum( p.GridExportRates[u,ts] * m[:dvProductionToGrid][t,u,ts]
+					for u in p.ExportTiers, t in p.TechsByExportTier[u])
+				for ts in p.TimeStep )
+			)
+		end
 	end
 end
 
@@ -173,14 +179,14 @@ function add_bigM_adjustments(m, p)
 		for mth in p.Month
 			if n > 1
 				m[:NewMaxDemandMonthsInTier][mth,n] = minimum([p.MaxDemandMonthsInTier[n],
-					added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] + p.MaxElecPenalty[ts]
+					added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP + p.MaxElecPenalty[ts]
 					for ts in p.TimeStepRatchetsMonth[mth]])  -
 					sum(m[:NewMaxDemandMonthsInTier][mth,np] for np in 1:(n-1)) ]
 				)
 			else
 				m[:NewMaxDemandMonthsInTier][mth,n] = minimum([p.MaxDemandMonthsInTier[n],
-					added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] + p.MaxElecPenalty[ts]
-					for ts in p.TimeStepRatchetsMonth[mth]]) ])
+					added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP + p.MaxElecPenalty[ts]
+					for ts in p.TimeStepRatchetsMonth[mth]])   ])
 			end
 		end
 	end
@@ -190,13 +196,13 @@ function add_bigM_adjustments(m, p)
 		for r in p.Ratchets
 			if e > 1
 				m[:NewMaxDemandInTier][r,e] = minimum([p.MaxDemandInTier[e],
-				added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] + p.MaxElecPenalty[ts]
+				added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP + p.MaxElecPenalty[ts]
 					for ts in p.TimeStep])  -
 				sum(m[:NewMaxDemandInTier][r,ep] for ep in 1:(e-1))
 				])
 			else
 				m[:NewMaxDemandInTier][r,e] = minimum([p.MaxDemandInTier[e],
-				added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] + p.MaxElecPenalty[ts]
+				added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP + p.MaxElecPenalty[ts]
 					for ts in p.TimeStep])
 				])
 			end
@@ -208,12 +214,12 @@ function add_bigM_adjustments(m, p)
 		for mth in p.Month
 			if u > 1
 				m[:NewMaxUsageInTier][mth,u] = minimum([p.MaxUsageInTier[u],
-					added_energy + 2*sum(p.ElecLoad[ts] + p.CoolingLoad[ts] + p.MaxElecPenalty[ts]
+					added_energy + 2*sum(p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP + p.MaxElecPenalty[ts]
 					for ts in p.TimeStepRatchetsMonth[mth]) - sum(m[:NewMaxUsageInTier][mth,up] for up in 1:(u-1))
 				])
 			else
 				m[:NewMaxUsageInTier][mth,u] = minimum([p.MaxUsageInTier[u],
-					added_energy + 2*sum(p.ElecLoad[ts] + p.CoolingLoad[ts] + p.MaxElecPenalty[ts]
+					added_energy + 2*sum(p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP + p.MaxElecPenalty[ts]
 					for ts in p.TimeStepRatchetsMonth[mth])
 				])
 			end
@@ -223,25 +229,19 @@ function add_bigM_adjustments(m, p)
 	# NewMaxSize generates a new maximum size that is equal to the largest monthly load of the year.  This is intended to be a reasonable upper bound on size that would never be exceeeded, but is sufficienctly small to replace much larger big-M values placed as a default.
 
 	for t in p.HeatingTechs
-		m[:NewMaxSize][t] = maximum([sum(p.HeatingLoad[ts] for ts in p.TimeStepRatchetsMonth[m]) for m in p.Month])
+		m[:NewMaxSize][t] = maximum([sum(p.HeatingLoad[ts] for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month])
 		if (m[:NewMaxSize][t] > p.MaxSize[t])
 			m[:NewMaxSize][t] = p.MaxSize[t]
 		end
 	end
 	for t in p.CoolingTechs
-		m[:NewMaxSize][t] = maximum([sum(p.CoolingLoad[ts] for ts in p.TimeStepRatchetsMonth[m]) for m in p.Month])
+		m[:NewMaxSize][t] = maximum([sum(p.CoolingLoad[ts] for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month])
 		if (m[:NewMaxSize][t] > p.MaxSize[t])
 			m[:NewMaxSize][t] = p.MaxSize[t]
 		end
 	end
 	for t in p.ElectricTechs
-		m[:NewMaxSize][t] = maximum([sum((p.ElecLoad[ts] + p.MaxElecPenalty[ts]) for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month])
-		if (m[:NewMaxSize][t] > p.MaxSize[t])
-			m[:NewMaxSize][t] = p.MaxSize[t]
-		end
-	end
-	for t in p.CHPTechs
-		m[:NewMaxSize][t] = maximum([(p.ElecLoad[ts] + p.MaxElecPenalty[ts]) for ts in p.TimeStep])
+		m[:NewMaxSize][t] = maximum([sum(p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP + p.MaxElecPenalty[ts]) for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month])
 		if (m[:NewMaxSize][t] > p.MaxSize[t])
 			m[:NewMaxSize][t] = p.MaxSize[t]
 		end
@@ -272,9 +272,6 @@ function add_no_grid_constraints(m, p)
 		for u in p.PricingTier
 			fix(m[:dvGridPurchase][u,ts], 0.0, force=true)
 		end
-		#for u in p.StorageSalesTiers  #don't allow curtailment of storage either
-		#	fix(m[:dvStorageToGrid][u,ts], 0.0, force=true)
-		#end
 	end
 end
 
@@ -290,20 +287,23 @@ function add_fuel_constraints(m, p)
 	# Constraint (1b): Fuel burn for non-CHP Constraints
 	if !isempty(p.TechsInClass["GENERATOR"])
 		@constraint(m, FuelBurnCon[t in p.TechsInClass["GENERATOR"], ts in p.TimeStep],
-			m[:dvFuelUsage][t,ts]  == (p.FuelBurnSlope[t] * p.ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts]) +
-				(p.FuelBurnYInt[t] * m[:binTechIsOnInTS][t,ts])
+			m[:dvFuelUsage][t,ts]  == p.TimeStepScaling * (
+				p.FuelBurnSlope[t] * p.ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts] +
+				p.FuelBurnYInt[t] * m[:binTechIsOnInTS][t,ts] )
 		)
-		m[:TotalGeneratorFuelCharges] = @expression(m, p.pwf_fuel["GENERATOR"] * p.TimeStepScaling
-				* sum(p.FuelCost["DIESEL",ts] * m[:dvFuelUsage]["GENERATOR",ts] for ts in p.TimeStep)
+		m[:TotalGeneratorFuelCharges] = @expression(m, p.pwf_fuel["GENERATOR"] *
+			sum(p.FuelCost["DIESEL",ts] * m[:dvFuelUsage]["GENERATOR",ts] for ts in p.TimeStep)
 		)
 	end
 
 	if !isempty(p.CHPTechs)
 		#Constraint (1c): Total Fuel burn for CHP
 		@constraint(m, CHPFuelBurnCon[t in p.CHPTechs, ts in p.TimeStep],
-					m[:dvFuelUsage][t,ts]  == m[:dvFuelBurnYIntercept][t,ts] +
-						p.ProductionFactor[t,ts] * p.FuelBurnSlope[t] * m[:dvRatedProduction][t,ts]
-					)
+			m[:dvFuelUsage][t,ts]  == p.TimeStepScaling * (
+				m[:dvFuelBurnYIntercept][t,ts] +
+				p.ProductionFactor[t,ts] * p.FuelBurnSlope[t] * m[:dvRatedProduction][t,ts]
+			)
+		)
 
 		#Constraint (1d): Y-intercept fuel burn for CHP
 		@constraint(m, CHPFuelBurnYIntCon[t in p.CHPTechs, ts in p.TimeStep],
@@ -314,11 +314,13 @@ function add_fuel_constraints(m, p)
 	if !isempty(p.BoilerTechs)
 		#Constraint (1e): Total Fuel burn for Boiler
 		@constraint(m, BoilerFuelBurnCon[t in p.BoilerTechs, ts in p.TimeStep],
-					m[:dvFuelUsage][t,ts]  ==  p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts] / p.BoilerEfficiency
-					)
+			m[:dvFuelUsage][t,ts]  ==  p.TimeStepScaling * (
+				p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts] / p.BoilerEfficiency
+			)
+		)
 	end
 
-	m[:TotalFuelCharges] = @expression(m, p.TimeStepScaling * sum( p.pwf_fuel[t] * p.FuelCost[f,ts] *
+	m[:TotalFuelCharges] = @expression(m, sum( p.pwf_fuel[t] * p.FuelCost[f,ts] *
 		sum(m[:dvFuelUsage][t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep)
 		for f in p.FuelType)
 	)
@@ -355,8 +357,8 @@ function add_binTechIsOnInTS_constraints(m, p)
 	@constraint(m, ProduceIfOnCon[t in [p.FuelBurningTechs; p.FlexTechs], ts in p.TimeStep],
 		m[:dvRatedProduction][t,ts] <= m[:NewMaxSize][t] * m[:binTechIsOnInTS][t,ts]
 	)
-	#Constraint (3b): Technologies that are turned on must not be turned down
-	@constraint(m, MinTurndownCon[t in p.FuelBurningTechs, ts in p.TimeStep],
+	#Constraint (3b): Technologies that are turned on must not be turned down below minimum, except during outage
+	@constraint(m, MinTurndownCon[t in p.FuelBurningTechs, ts in p.TimeStepsWithGrid],
 		p.MinTurndown[t] * m[:dvSize][t] - m[:dvRatedProduction][t,ts] <= m[:NewMaxSize][t] * (1-m[:binTechIsOnInTS][t,ts])
 	)
 
@@ -388,13 +390,23 @@ end
 function add_storage_op_constraints(m, p)
 	### Battery Operations
 	# Constraint (4d): Electrical production sent to storage or grid must be less than technology's rated production
-	@constraint(m, ElecTechProductionFlowCon[b in p.ElecStorage, t in p.ElectricTechs, ts in p.TimeStepsWithGrid],
-		m[:dvProductionToStorage][b,t,ts] + sum(m[:dvProductionToGrid][t,u,ts] for u in p.SalesTiersByTech[t]) <=
-		p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts]
-	)
+	if !isempty(p.ExportTiers)
+		@constraint(m, ElecTechProductionFlowCon[t in p.ElectricTechs, ts in p.TimeStepsWithGrid],
+			sum(m[:dvProductionToStorage][b,t,ts] for b in p.ElecStorage)
+		  + sum(m[:dvProductionToGrid][t,u,ts] for u in p.ExportTiersByTech[t])
+		  + m[:dvProductionToCurtail][t,ts]
+		 <= p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts]
+		)
+	else
+		@constraint(m, ElecTechProductionFlowCon[t in p.ElectricTechs, ts in p.TimeStepsWithGrid],
+			sum(m[:dvProductionToStorage][b,t,ts] for b in p.ElecStorage)
+		  + m[:dvProductionToCurtail][t,ts]
+		 <= p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts]
+		)
+	end
 	# Constraint (4e): Electrical production sent to storage or grid must be less than technology's rated production - no grid
-	@constraint(m, ElecTechProductionFlowNoGridCon[b in p.ElecStorage, t in p.ElectricTechs, ts in p.TimeStepsWithoutGrid],
-		m[:dvProductionToStorage][b,t,ts] + sum(m[:dvProductionToGrid][t,u,ts] for u in p.CurtailmentTiers)  <=
+	@constraint(m, ElecTechProductionFlowNoGridCon[t in p.ElectricTechs, ts in p.TimeStepsWithoutGrid],
+		sum(m[:dvProductionToStorage][b,t,ts] for b in p.ElecStorage) + m[:dvProductionToCurtail][t, ts]  <=
 		p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts]
 	)
 	# Constraint (4f)-1: (Hot) Thermal production sent to storage or grid must be less than technology's rated production
@@ -429,7 +441,8 @@ function add_storage_op_constraints(m, p)
 	# Constraint (4i): Reconcile state-of-charge for electrical storage - no grid
 	@constraint(m, ElecStorageInventoryConNoGrid[b in p.ElecStorage, ts in p.TimeStepsWithoutGrid],
 		m[:dvStorageSOC][b,ts] == m[:dvStorageSOC][b,ts-1] + p.TimeStepScaling * (
-			sum(p.ChargeEfficiency[t,b] * m[:dvProductionToStorage][b,t,ts] for t in p.ElectricTechs) - m[:dvDischargeFromStorage][b,ts]/p.DischargeEfficiency[b]
+			sum(p.ChargeEfficiency[t,b] * m[:dvProductionToStorage][b,t,ts] for t in p.ElectricTechs)
+			- m[:dvDischargeFromStorage][b,ts] / p.DischargeEfficiency[b]
 		)
 	)
 
@@ -438,7 +451,7 @@ function add_storage_op_constraints(m, p)
     	        m[:dvStorageSOC][b,ts] == m[:dvStorageSOC][b,ts-1] + p.TimeStepScaling * (
 					sum(p.ChargeEfficiency[t,b] * m[:dvProductionToStorage][b,t,ts] for t in p.HeatingTechs) -
 					m[:dvDischargeFromStorage][b,ts]/p.DischargeEfficiency[b] -
-					p.StorageDecayRate[b] * m[:dvStorageSOC][b,ts]
+					p.StorageDecayRate[b] * m[:dvStorageCapEnergy][b]
 					)
 				)
 
@@ -447,7 +460,7 @@ function add_storage_op_constraints(m, p)
     	        m[:dvStorageSOC][b,ts] == m[:dvStorageSOC][b,ts-1] + p.TimeStepScaling * (
 					sum(p.ChargeEfficiency[t,b] * m[:dvProductionToStorage][b,t,ts] for t in p.CoolingTechs) -
 					m[:dvDischargeFromStorage][b,ts]/p.DischargeEfficiency[b] -
-					p.StorageDecayRate[b] * m[:dvStorageSOC][b,ts]
+					p.StorageDecayRate[b] * m[:dvStorageCapEnergy][b]
 					)
 				)
 
@@ -497,7 +510,7 @@ function add_thermal_load_constraints(m, p)
 		@constraint(m, ColdThermalLoadCon[ts in p.TimeStep],
 				sum(p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts] for t in p.CoolingTechs) +
 				sum(m[:dvDischargeFromStorage][b,ts] for b in p.ColdTES) ==
-				p.CoolingLoad[ts] * p.ElectricChillerCOP +
+				p.CoolingLoad[ts] +
 				sum(m[:dvProductionToStorage][b,t,ts] for b in p.ColdTES, t in p.CoolingTechs)
 		)
 	end
@@ -565,10 +578,10 @@ function add_tech_size_constraints(m, p)
 
 	##Constraint (7e): Derate factor limits production variable (separate from ProductionFactor)
     for ts in p.TimeStep
-		@constraint(m, [t in p.Tech; !(t in p.TechsNoTurndown)],
-			m[:dvRatedProduction][t,ts]  <= p.ElectricDerate[t,ts] * m[:dvSize][t]
-		)
-	end
+        @constraint(m, [t in p.Tech; !(t in p.TechsNoTurndown)],
+            m[:dvRatedProduction][t,ts]  <= p.ElectricDerate[t,ts] * m[:dvSize][t]
+        )
+    end
 
 	##Constraint (7_heating_prod_size): Production limit based on size for boiler
 	if !isempty(p.BoilerTechs)
@@ -614,29 +627,48 @@ end
 
 
 function add_load_balance_constraints(m, p)
+    m[:ElecPenalty] = @expression(m, [ts in p.TimeStep],
+        sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] for t in p.FlexTechs not in p.WaterHeaterTechs) +
+        sum(p.ProductionFactor[t, ts] * m[:dvWHFractions][t,ts] * p.MaxSize[t] for t in p.WaterHeaterTechs))
 
-	m[:ElecPenalty] = @expression(m, [ts in p.TimeStep],
-		sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] for t in p.FlexTechs not in p.WaterHeaterTechs) +
-		sum(p.ProductionFactor[t, ts] * m[:dvWHFractions][t,ts] * p.MaxSize[t] for t in p.WaterHeaterTechs))
-
-	@constraint(m, ElecLoadBalanceCon[ts in p.TimeStepsWithGrid],
-		sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] for t in p.ElectricTechs) +
-		sum( m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage ) +
-		sum( m[:dvGridPurchase][u,ts] for u in p.PricingTier ) ==
-		sum( sum(m[:dvProductionToStorage][b,t,ts] for b in p.ElecStorage) +
-			sum(m[:dvProductionToGrid][t,u,ts] for u in p.SalesTiersByTech[t]) for t in p.ElectricTechs) +
-		sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers) + m[:dvGridToStorage][ts] +
-		 sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
-		p.ElecLoad[ts] + m[:ElecPenalty][ts] #+ m[:dvCrankcaseConsumption][ts]
-	)
+	if !isempty(p.ExportTiers)
+		@constraint(m, ElecLoadBalanceCon[ts in p.TimeStepsWithGrid],
+			sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] for t in p.ElectricTechs) +
+			sum( m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage ) +
+			sum( m[:dvGridPurchase][u,ts] for u in p.PricingTier ) ==
+			sum( sum(m[:dvProductionToStorage][b,t,ts] for b in p.ElecStorage) +
+				 sum(m[:dvProductionToGrid][t,u,ts] for u in p.ExportTiersByTech[t]) +
+				 m[:dvProductionToCurtail][t,ts]
+		    for t in p.ElectricTechs) +
+			m[:dvGridToStorage][ts] +
+            sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
+            sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers )/ p.AbsorptionChillerElecCOP +
+			p.ElecLoad[ts] + m[:ElecPenalty][ts]
+		)
+	else
+		@constraint(m, ElecLoadBalanceCon[ts in p.TimeStepsWithGrid],
+			sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] for t in p.ElectricTechs) +
+			sum( m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage ) +
+			sum( m[:dvGridPurchase][u,ts] for u in p.PricingTier ) ==
+			sum( sum(m[:dvProductionToStorage][b,t,ts] for b in p.ElecStorage) +
+				m[:dvProductionToCurtail][t,ts]
+			for t in p.ElectricTechs) +
+			m[:dvGridToStorage][ts] +
+            sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
+            sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers )/ p.AbsorptionChillerElecCOP +
+			p.ElecLoad[ts] + m[:ElecPenalty][ts]
+		)
+	end
 
 	##Constraint (8b): Electrical Load Balancing without Grid
 	@constraint(m, ElecLoadBalanceNoGridCon[ts in p.TimeStepsWithoutGrid],
 		sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] for t in p.ElectricTechs) +
 		sum( m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage )  ==
 		sum( sum(m[:dvProductionToStorage][b,t,ts] for b in p.ElecStorage) +
-			sum(m[:dvProductionToGrid][t,u,ts] for u in p.CurtailmentTiers) for t in p.ElectricTechs) +
-		    sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
+			 m[:dvProductionToCurtail][t,ts]
+		for t in p.ElectricTechs) +
+        sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
+        sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers )/ p.AbsorptionChillerElecCOP +
 		p.ElecLoad[ts] + m[:ElecPenalty][ts] #+ m[:dvCrankcaseConsumption][ts]
 	)
 end
@@ -647,27 +679,41 @@ function add_storage_grid_constraints(m, p)
 	@constraint(m, GridToStorageCon[ts in p.TimeStepsWithGrid],
 		sum( m[:dvGridPurchase][u,ts] for u in p.PricingTier)  >= m[:dvGridToStorage][ts]
 	)
-
-	##Constraint (8d): Storage-to-grid no greater than discharge from Storage
-	@constraint(m, StorageToGridCon[ts in p.TimeStepsWithGrid],
-		sum( m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage)  >= sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers)
-	)
 end
 
 
 function add_prod_grid_constraints(m, p)
 	##Constraint (8e): Production-to-grid no greater than production
 	@constraint(m, ProductionToGridCon[t in p.Tech, ts in p.TimeStepsWithGrid],
-	 p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] >= sum(m[:dvProductionToGrid][t,u,ts] for u in p.SalesTiersByTech[t])
+		p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] >=
+	  	sum(m[:dvProductionToGrid][t,u,ts] for u in p.ExportTiersByTech[t]) + m[:dvProductionToCurtail][t,ts]
 	)
 
-	##Constraint (8f): Total sales to grid no greater than annual allocation - storage tiers
+	##Constraint (8f): Total sales to grid no greater than annual allocation, excluding storage tiers
 	@constraint(m,  AnnualGridSalesLimitCon,
 	 p.TimeStepScaling * (
-		sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers, ts in p.TimeStepsWithGrid if !(u in p.CurtailmentTiers)) +
-		sum(m[:dvProductionToGrid][t,u,ts] for u in p.SalesTiers, t in p.TechsBySalesTier[u], ts in p.TimeStepsWithGrid if !(u in p.CurtailmentTiers))) <=
-		p.MaxGridSales[1] + sum(m[:ElecPenalty][ts] for ts in p.TimeStep)
+	  	sum( m[:dvProductionToGrid][t,u,ts] for u in p.ExportTiers, t in p.TechsByExportTier[u], ts in p.TimeStepsWithGrid
+	  		if !(u in p.ExportTiersBeyondSiteLoad))) <= p.AnnualElecLoadkWh + sum(m[:ElecPenalty][ts] for ts in p.TimeStep)
 	)
+
+	# Cannot export power while importing from Grid
+	@constraint(m, NoGridPurchasesBinary[ts in p.TimeStep],
+		sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) + m[:dvGridToStorage][ts] -
+		(1 - m[:binNoGridPurchases][ts]) * 1.0E9 <= 0
+	)
+
+	@constraint(m, ExportOnlyAfterSiteLoadMetCon[ts in p.TimeStep],
+		sum(sum(m[:dvProductionToGrid][t,u,ts] for t in p.Tech, u in p.ExportTiers) -
+			m[:binNoGridPurchases][ts] * 1.0E9) <= 0
+	)
+end
+
+
+function add_curtail_constraint(m, p)
+	# NOTE: not allowing DER to curtail during an outage can lead to an infeasible problem
+	for t in p.TechsCannotCurtail, ts in p.TimeStep
+		fix(m[:dvProductionToCurtail][t, ts], 0.0, force=true)
+	end
 end
 
 
@@ -684,11 +730,8 @@ end
 
 
 function add_nem_constraint(m, p)
-	# NEM is SalesTier 1
-	# dvStorageToGrid is always fixed at 0.0, remove it?
 	@constraint(m, GridSalesLimit,
-		p.TimeStepScaling * sum(m[:dvProductionToGrid][t,1,ts] for t in p.TechsBySalesTier[1], ts in p.TimeStep)  +
-		sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers, ts in p.TimeStep)
+		p.TimeStepScaling * sum(m[:dvProductionToGrid][t, "NEM", ts] for t in p.TechsByExportTier["NEM"], ts in p.TimeStep)
 		<= p.TimeStepScaling * sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier, ts in p.TimeStep)
 	)
 end
@@ -696,11 +739,9 @@ end
 
 function add_no_grid_export_constraint(m, p)
 	for ts in p.TimeStepsWithoutGrid
-		for u in p.SalesTiers
-			if !(u in p.CurtailmentTiers)
-				for t in p.TechsBySalesTier[u]
-					fix(m[:dvProductionToGrid][t, u, ts], 0.0, force=true)
-				end
+		for u in p.ExportTiers
+			for t in p.TechsByExportTier[u]
+				fix(m[:dvProductionToGrid][t, u, ts], 0.0, force=true)
 			end
 		end
 	end
@@ -744,7 +785,7 @@ function add_monthly_demand_charge_constraints(m, p)
 				sum( m[:dvGridPurchase][u, ts] for u in p.PricingTier ) +
 				 sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] for t in p.CHPTechs) -
 				 sum(m[:dvProductionToStorage][t,ts] for t in p.CHPTechs) -
-				 sum(sum(m[:dvProductionToGrid][t,u,ts] for u in p.SalesTiersByTech[t]) for t in p.CHPTechs)
+				 sum(sum(m[:dvProductionToGrid][t,u,ts] for u in p.ExportTiersByTech[t]) for t in p.CHPTechs)
 		)
 	else
 		@constraint(m, [mth in p.Month, ts in p.TimeStepRatchetsMonth[mth]],
@@ -829,6 +870,13 @@ function add_tou_demand_charge_constraints(m, p)
 	end
 end
 
+function add_coincident_peak_charge_constraints(m, p)
+	## Constraint (14a): in each coincident peak period, charged CP demand is the max of demand in all CP timesteps
+	@constraint(m, [prd in p.CPPeriod, ts in p.CoincidentPeakLoadTimeSteps[prd,:][p.CoincidentPeakLoadTimeSteps[prd,:].!=nothing]],
+		m[:dvPeakDemandCP][prd] >= sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier)
+	)
+	m[:TotalCPCharges] = @expression(m, p.pwf_e * sum( p.CoincidentPeakRates[prd] * m[:dvPeakDemandCP][prd] for prd in p.CPPeriod) )
+end
 
 function add_util_fixed_and_min_charges(m, p)
 
@@ -843,7 +891,7 @@ function add_util_fixed_and_min_charges(m, p)
 
 	if m[:TotalMinCharge] >= 1e-2
         @constraint(m, MinChargeAddCon, m[:MinChargeAdder] >= m[:TotalMinCharge] - (
-			m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] + m[:TotalExportBenefit] + m[:TotalFixedCharges])
+			m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] + m[:TotalCPCharges] + m[:TotalExportBenefit] + m[:TotalFixedCharges])
 		)
 	else
 		@constraint(m, MinChargeAddCon, m[:MinChargeAdder] == 0)
@@ -851,7 +899,7 @@ function add_util_fixed_and_min_charges(m, p)
 	end
 end
 
-function add_chp_hourly_opex_charges(m, p)
+function add_chp_hourly_om_charges(m, p)
 	#Constraint CHP-hourly-om-a: om per hour, per time step >= per_unit_size_cost * size for when on, >= zero when off
 	@constraint(m, CHPHourlyOMBySizeA[t in p.CHPTechs, ts in p.TimeStep],
 					p.OMcostPerUnitHourPerSize[t] * m[:dvSize][t] -
@@ -943,10 +991,10 @@ function add_cost_function(m, p)
 		m[:TotalPerUnitSizeOMCosts] * m[:r_tax_fraction_owner] +
 
         ## Variable O&M, tax deductible for owner
-		(m[:TotalPerUnitProdOMCosts] + m[:TotalHourlyCHPOpExCosts]) * m[:r_tax_fraction_owner] +
+		(m[:TotalPerUnitProdOMCosts] + m[:TotalHourlyCHPOMCosts]) * m[:r_tax_fraction_owner] +
 
 		# Utility Bill, tax deductible for offtaker
-		(m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] + m[:TotalExportBenefit] + m[:TotalFixedCharges] + 0.999*m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker] +
+		(m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] + m[:TotalCPCharges] + m[:TotalExportBenefit] + m[:TotalFixedCharges] + 0.999*m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker] +
 
 		# CHP Standby Charges
 		m[:TotalCHPStandbyCharges] * m[:r_tax_fraction_offtaker] +
@@ -973,11 +1021,12 @@ function add_yearone_expressions(m, p)
     m[:Year1EnergyCost] = m[:TotalEnergyChargesUtil] / p.pwf_e
     m[:Year1DemandCost] = m[:TotalDemandCharges] / p.pwf_e
     m[:Year1DemandTOUCost] = m[:DemandTOUCharges] / p.pwf_e
-    m[:Year1DemandFlatCost] = m[:DemandFlatCharges] / p.pwf_e
+	m[:Year1DemandFlatCost] = m[:DemandFlatCharges] / p.pwf_e
+	m[:Year1CPCost] = m[:TotalCPCharges] / p.pwf_e
     m[:Year1FixedCharges] = m[:TotalFixedCharges] / p.pwf_e
     m[:Year1MinCharges] = m[:MinChargeAdder] / p.pwf_e
+    m[:Year1Bill] = m[:Year1EnergyCost] + m[:Year1DemandCost] + m[:Year1CPCost] + m[:Year1FixedCharges] + m[:Year1MinCharges]
 	m[:Year1CHPStandbyCharges] = m[:TotalCHPStandbyCharges] / p.pwf_e
-    m[:Year1Bill] = m[:Year1EnergyCost] + m[:Year1DemandCost] + m[:Year1FixedCharges] + m[:Year1MinCharges]
 end
 
 
@@ -997,7 +1046,6 @@ function reopt_run(m, p::Parameter)
 
 	t_start = time()
 	results = Dict{String, Any}()
-    Obj = 1  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
 
 		## Big-M adjustments; these need not be replaced in the parameter object.
 	add_bigM_adjustments(m, p)
@@ -1013,16 +1061,10 @@ function reopt_run(m, p::Parameter)
 	#############  		Constraints									 #############
 	##############################################################################
 
-	## Temporary workaround for outages TimeStepsWithoutGrid
 	if !isempty(p.TimeStepsWithoutGrid)
 		add_no_grid_constraints(m, p)
-		add_no_grid_export_constraint(m, p)
-	end
-
-	#don't allow curtailment or sales of stroage
-	for ts in p.TimeStep
-		for u in p.StorageSalesTiers
-			fix(m[:dvStorageToGrid][u,ts], 0.0, force=true)
+		if !isempty(p.ExportTiers)
+			add_no_grid_export_constraint(m, p)
 		end
 	end
 
@@ -1054,7 +1096,7 @@ function reopt_run(m, p::Parameter)
 	add_load_balance_constraints(m, p)
 
 	add_storage_grid_constraints(m, p)
-	if !isempty(p.SalesTiers)
+	if !isempty(p.ExportTiers)
 		add_prod_grid_constraints(m, p)
 	end
 	## End constraint (8)
@@ -1064,10 +1106,14 @@ function reopt_run(m, p::Parameter)
 		add_NMIL_constraints(m, p)
 	end
 	##Constraint (9c): Net metering only -- can't sell more than you purchase
-	if !isempty(p.SalesTiers)
+	if "NEM" in p.ExportTiers
 		add_nem_constraint(m, p)
 	end
 	###End constraint set (9)
+
+	if !isempty(p.TechsCannotCurtail)
+		add_curtail_constraint(m, p)
+	end
 
 	### Constraint set (10): Electrical Energy Pricing tiers
 	add_energy_price_constraints(m, p)
@@ -1080,7 +1126,14 @@ function reopt_run(m, p::Parameter)
 	else
 		m[:DemandTOUCharges] = 0
 	end
-    m[:TotalDemandCharges] = @expression(m, m[:DemandTOUCharges] + m[:DemandFlatCharges])
+	m[:TotalDemandCharges] = @expression(m, m[:DemandTOUCharges] + m[:DemandFlatCharges])
+
+	### Constraint set (14): Coincident Peak Charges
+	if !isempty(p.CoincidentPeakRates)
+		add_coincident_peak_charge_constraints(m, p)
+	else
+		m[:TotalCPCharges] = 0
+	end
 
 	add_parameters(m, p)
 	add_cost_expressions(m, p)
@@ -1088,7 +1141,7 @@ function reopt_run(m, p::Parameter)
 	add_util_fixed_and_min_charges(m, p)
 
 	if !isempty(p.CHPTechs)
-		add_chp_hourly_opex_charges(m, p)
+		add_chp_hourly_om_charges(m, p)
 	end
 
 	if p.UseFlexLoadsModel
@@ -1101,10 +1154,10 @@ function reopt_run(m, p::Parameter)
 
 	add_cost_function(m, p)
 
-    if Obj == 1
+    if !(p.AddSOCIncentive == 1)
 		@objective(m, Min, m[:REcosts])
-	elseif Obj == 2  # Keep SOC high
-		@objective(m, Min, m[:REcosts] - sum(m[:dvStorageSOC]["Elec",ts] for ts in p.TimeStep)/8760.)
+	else
+		@objective(m, Min, m[:REcosts] - sum(m[:dvStorageSOC]["Elec",ts] for ts in p.TimeStep)/p.TimeStepCount)
 	end
 
 	results["julia_reopt_constriants_seconds"] = time() - t_start
@@ -1127,7 +1180,7 @@ function reopt_run(m, p::Parameter)
     #############  		Outputs    									 #############
     ##############################################################################
 	try
-		results["lcc"] = round(JuMP.objective_value(m) - value(m[:TotalWHComfortCost]) -
+		results["lcc"] = round(value(m[:REcosts]) - value(m[:TotalWHComfortCost]) -
 							   value(m[:TotalHVACComfortCost]) + 0.0001*value(m[:MinChargeAdder]))
 		results["lower_bound"] = round(JuMP.objective_bound(m))
 		results["optimality_gap"] = JuMP.relative_gap(m)
@@ -1325,9 +1378,7 @@ function add_storage_results(m, p, r::Dict)
 	@expression(m, ElecFromBatt[ts in p.TimeStep],
 		sum(m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage))
 	r["ElecFromBatt"] = round.(value.(ElecFromBatt), digits=3)
-	@expression(m, ElecFromBattExport[ts in p.TimeStep],
-		sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers))
-	r["ElecFromBattExport"] = round.(value.(ElecFromBattExport), digits=3)
+	r["ElecFromBattExport"] = zeros(length(p.TimeStep))
 	nothing
 end
 
@@ -1353,14 +1404,17 @@ function add_generator_results(m, p, r::Dict)
 				sum(m[:dvProductionToStorage]["Elec",t,ts] for t in m[:GeneratorTechs]))
 	r["GENERATORtoBatt"] = round.(value.(GENERATORtoBatt), digits=3)
 
-	@expression(m, GENERATORtoGrid[ts in p.TimeStep],
-				sum(m[:dvProductionToGrid][t,u,ts] for t in m[:GeneratorTechs], u in p.SalesTiersByTech[t]))
-	r["GENERATORtoGrid"] = round.(value.(GENERATORtoGrid), digits=3)
+	r["GENERATORtoGrid"] = zeros(length(p.TimeStep))
+	if !isempty(p.ExportTiers)
+		@expression(m, GENERATORtoGrid[ts in p.TimeStep],
+					sum(m[:dvProductionToGrid][t,u,ts] for t in m[:GeneratorTechs], u in p.ExportTiersByTech[t]))
+		r["GENERATORtoGrid"] = round.(value.(GENERATORtoGrid), digits=3)
+	end
 
 	@expression(m, GENERATORtoLoad[ts in p.TimeStep],
 				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
 					for t in m[:GeneratorTechs]) -
-					GENERATORtoBatt[ts] - GENERATORtoGrid[ts]
+					GENERATORtoBatt[ts] - r["GENERATORtoGrid"][ts]
 					)
 	r["GENERATORtoLoad"] = round.(value.(GENERATORtoLoad), digits=3)
 
@@ -1391,18 +1445,20 @@ function add_wind_results(m, p, r::Dict)
 	r["WINDtoBatt"] = round.(value.(WINDtoBatt), digits=3)
 
 	@expression(m, WINDtoCurtail[ts in p.TimeStep],
-				sum(m[:dvProductionToGrid][t,u,ts] for t in m[:WindTechs], u in p.CurtailmentTiers))
+				sum(m[:dvProductionToCurtail][t,ts] for t in m[:WindTechs]))
 
 	r["WINDtoCurtail"] = round.(value.(WINDtoCurtail), digits=3)
 
-	@expression(m, WINDtoGrid[ts in p.TimeStep],
-				sum(m[:dvProductionToGrid][t,u,ts] for t in m[:WindTechs], u in p.SalesTiersByTech[t]) - WINDtoCurtail[ts])
-
-	r["WINDtoGrid"] = round.(value.(WINDtoGrid), digits=3)
+	r["WINDtoGrid"] = zeros(length(p.TimeStep))
+	if !isempty(p.ExportTiers)
+		@expression(m, WINDtoGrid[ts in p.TimeStep],
+					sum(m[:dvProductionToGrid][t,u,ts] for t in m[:WindTechs], u in p.ExportTiersByTech[t]))
+		r["WINDtoGrid"] = round.(value.(WINDtoGrid), digits=3)
+	end
 
 	@expression(m, WINDtoLoad[ts in p.TimeStep],
 				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
-					for t in m[:WindTechs]) - WINDtoGrid[ts] - WINDtoBatt[ts] - WINDtoCurtail[ts] )
+					for t in m[:WindTechs]) - r["WINDtoGrid"][ts] - WINDtoBatt[ts] - WINDtoCurtail[ts] )
 	r["WINDtoLoad"] = round.(value.(WINDtoLoad), digits=3)
 	m[:Year1WindProd] = @expression(m,
 		p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts]
@@ -1437,16 +1493,24 @@ function add_pv_results(m, p, r::Dict)
 			r[string(PVclass, "toBatt")] = round.(value.(PVtoBatt), digits=3)
 
 			PVtoCurtail = @expression(m, [ts in p.TimeStep],
-					sum(m[:dvProductionToGrid][t,u,ts] for t in PVtechs_in_class, u in p.CurtailmentTiers))
+					sum(m[:dvProductionToCurtail][t, ts] for t in PVtechs_in_class))
     	    r[string(PVclass, "toCurtail")] = round.(value.(PVtoCurtail), digits=3)
 
-			PVtoGrid = @expression(m, [ts in p.TimeStep],
-					sum(m[:dvProductionToGrid][t,u,ts] for t in PVtechs_in_class, u in p.SalesTiersByTech[t]) - PVtoCurtail[ts])
-    	    r[string(PVclass, "toGrid")] = round.(value.(PVtoGrid), digits=3)
+			r[string(PVclass, "toGrid")] = zeros(length(p.TimeStep))
+			r[string("average_annual_energy_exported_", PVclass)] = 0.0
+			if !isempty(p.ExportTiers)
+				PVtoGrid = @expression(m, [ts in p.TimeStep],
+						sum(m[:dvProductionToGrid][t,u,ts] for t in PVtechs_in_class, u in p.ExportTiersByTech[t]))
+				r[string(PVclass, "toGrid")] = round.(value.(PVtoGrid), digits=3)
+
+				ExportedElecPV = @expression(m, sum(m[:dvProductionToGrid][t,u,ts]
+					for t in PVtechs_in_class, u in p.ExportTiersByTech[t], ts in p.TimeStep) * p.TimeStepScaling)
+				r[string("average_annual_energy_exported_", PVclass)] = round(value(ExportedElecPV), digits=0)
+			end
 
 			PVtoLoad = @expression(m, [ts in p.TimeStep],
 				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] for t in PVtechs_in_class)
-				- PVtoGrid[ts] - PVtoBatt[ts] - PVtoCurtail[ts]
+				- r[string(PVclass, "toGrid")][ts] - PVtoBatt[ts] - PVtoCurtail[ts]
 				)
             r[string(PVclass, "toLoad")] = round.(value.(PVtoLoad), digits=3)
 
@@ -1457,10 +1521,6 @@ function add_pv_results(m, p, r::Dict)
 			AveragePvProd = @expression(m, sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
 			    for t in PVtechs_in_class, ts in p.TimeStep) * p.TimeStepScaling)
             r[string("average_yearly_energy_produced_", PVclass)] = round(value(AveragePvProd), digits=0)
-
-			ExportedElecPV = @expression(m, sum(m[:dvProductionToGrid][t,u,ts]
-				for t in PVtechs_in_class, u in p.SalesTiersByTech[t], ts in p.TimeStep) * p.TimeStepScaling)
-            r[string("average_annual_energy_exported_", PVclass)] = round(value(ExportedElecPV), digits=0)
 
             PVPerUnitSizeOMCosts = @expression(m, sum(p.OMperUnitSize[t] * p.pwf_om * m[:dvSize][t] for t in PVtechs_in_class))
             r[string(PVclass, "_net_fixed_om_costs")] = round(value(PVPerUnitSizeOMCosts) * m[:r_tax_fraction_owner], digits=0)
@@ -1483,9 +1543,9 @@ function add_chp_results(m, p, r::Dict)
 	r["year_one_chp_thermal_energy_produced"] = round(value(Year1CHPThermalProd), digits=3)
 	@expression(m, CHPElecProdTotal[ts in p.TimeStep],
 		sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] for t in p.CHPTechs))
-	r["chp_electric_production_series"] = round.(value.(CHPElecProdTotal))
+	r["chp_electric_production_series"] = round.(value.(CHPElecProdTotal), digits=3)
 	@expression(m, CHPtoGrid[ts in p.TimeStep], sum(m[:dvProductionToGrid][t,u,ts]
-			for t in p.CHPTechs, u in p.SalesTiersByTech[t]))
+			for t in p.CHPTechs, u in p.ExportTiersByTech[t]))
 	r["chp_to_grid_series"] = round.(value.(CHPtoGrid), digits=3)
 	@expression(m, CHPtoBatt[ts in p.TimeStep],
 		sum(m[:dvProductionToStorage]["Elec",t,ts] for t in p.CHPTechs))
@@ -1582,7 +1642,14 @@ function add_absorption_chiller_results(m, p, r::Dict)
 		p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts]
 			for t in p.AbsorptionChillers, ts in p.TimeStep))
 	r["year_one_absorp_chiller_thermal_prod_kwh"] = round(value(Year1ABSORPCHLThermalProd), digits=3)
-	nothing
+    @expression(m, ABSORPCHLElectricConsumptionSeries[ts in p.TimeStep],
+        sum(m[:dvThermalProduction][t,ts] / p.AbsorptionChillerElecCOP for t in p.AbsorptionChillers))
+    r["absorption_chiller_electric_consumption_series"] = round.(value.(ABSORPCHLElectricConsumptionSeries), digits=3)
+    @expression(m, Year1ABSORPCHLElectricConsumption,
+        p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts] / p.AbsorptionChillerElecCOP
+            for t in p.AbsorptionChillers, ts in p.TimeStep))
+    r["year_one_absorp_chiller_electric_consumption_kwh"] = round(value(Year1ABSORPCHLElectricConsumption), digits=3)
+    nothing
 end
 
 function add_hot_tes_results(m, p, r::Dict)
@@ -1697,35 +1764,45 @@ end
 
 function add_util_results(m, p, r::Dict)
     net_capital_costs_plus_om = value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]) +
+                                value(m[:TotalPerUnitSizeOMCosts] + m[:TotalPerUnitProdOMCosts]
+                                    + m[:TotalHourlyCHPOMCosts]) * m[:r_tax_fraction_owner] +
+                                value(m[:TotalFuelCharges]) * m[:r_tax_fraction_offtaker]
+
+    total_om_costs_after_tax = value(m[:TotalPerUnitSizeOMCosts] + m[:TotalPerUnitProdOMCosts]
+                                   + m[:TotalHourlyCHPOMCosts]) * m[:r_tax_fraction_owner]
+
+	year_one_om_costs_after_tax = total_om_costs_after_tax / (p.pwf_om * p.two_party_factor)
+
+    net_capital_costs_plus_om = value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]) +
                                 value(m[:TotalPerUnitSizeOMCosts] + m[:TotalPerUnitProdOMCosts]) * m[:r_tax_fraction_owner] +
                                 value(m[:TotalFuelCharges]) * m[:r_tax_fraction_offtaker]
 
-	total_opex_costs = value(m[:TotalPerUnitSizeOMCosts] + m[:TotalPerUnitProdOMCosts] + m[:TotalHourlyCHPOpExCosts]) * m[:r_tax_fraction_owner]
-
-	year_one_opex_costs = total_opex_costs / (p.pwf_om * p.two_party_factor)
-
     push!(r, Dict("year_one_utility_kwh" => round(value(m[:Year1UtilityEnergy]), digits=2),
-						 "year_one_energy_cost" => round(value(m[:Year1EnergyCost]), digits=2),
-						 "year_one_demand_cost" => round(value(m[:Year1DemandCost]), digits=2),
-						 "year_one_demand_tou_cost" => round(value(m[:Year1DemandTOUCost]), digits=2),
-						 "year_one_demand_flat_cost" => round(value(m[:Year1DemandFlatCost]), digits=2),
-						 "year_one_export_benefit" => round(value(m[:ExportBenefitYr1]), digits=0),
-						 "year_one_fixed_cost" => round(m[:Year1FixedCharges], digits=0),
-						 "year_one_min_charge_adder" => round(value(m[:Year1MinCharges]), digits=2),
-						 "year_one_bill" => round(value(m[:Year1Bill]), digits=2),
-						 "year_one_payments_to_third_party_owner" => round(value(m[:TotalDemandCharges]) / p.pwf_e, digits=0),
-						 "total_energy_cost" => round(value(m[:TotalEnergyChargesUtil]) * m[:r_tax_fraction_offtaker], digits=2),
-						 "total_demand_cost" => round(value(m[:TotalDemandCharges]) * m[:r_tax_fraction_offtaker], digits=2),
-						 "total_fixed_cost" => round(m[:TotalFixedCharges] * m[:r_tax_fraction_offtaker], digits=2),
-						 "total_export_benefit" => round(value(m[:TotalExportBenefit]) * m[:r_tax_fraction_offtaker], digits=2),
-						 "total_min_charge_adder" => round(value(m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker], digits=2),
-						 "net_capital_costs_plus_om" => round(net_capital_costs_plus_om, digits=0),
-						 "average_annual_energy_exported_wind" => round(value(m[:ExportedElecWIND]), digits=0),
-						 "average_annual_energy_curtailed_wind" => round(value(m[:CurtailedElecWIND]), digits=0),
-                         "average_annual_energy_exported_gen" => round(value(m[:ExportedElecGEN]), digits=0),
-						 "net_capital_costs" => round(value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]), digits=2),
-						 "total_opex_costs" => round(total_opex_costs, digits=0),
-						 "year_one_opex_costs" => round(year_one_opex_costs, digits=0))...)
+						"year_one_energy_cost" => round(value(m[:Year1EnergyCost]), digits=2),
+						"year_one_demand_cost" => round(value(m[:Year1DemandCost]), digits=2),
+						"year_one_demand_tou_cost" => round(value(m[:Year1DemandTOUCost]), digits=2),
+						"year_one_demand_flat_cost" => round(value(m[:Year1DemandFlatCost]), digits=2),
+						"year_one_coincident_peak_cost" => round(value(m[:Year1CPCost]), digits=2),
+						"year_one_export_benefit" => round(value(m[:ExportBenefitYr1]), digits=0),
+						"year_one_fixed_cost" => round(m[:Year1FixedCharges], digits=0),
+						"year_one_min_charge_adder" => round(value(m[:Year1MinCharges]), digits=2),
+						"year_one_bill" => round(value(m[:Year1Bill]), digits=2),
+						"year_one_payments_to_third_party_owner" => round(value(m[:TotalDemandCharges]) / p.pwf_e, digits=0),
+						"total_energy_cost" => round(value(m[:TotalEnergyChargesUtil]) * m[:r_tax_fraction_offtaker], digits=2),
+						"total_demand_cost" => round(value(m[:TotalDemandCharges]) * m[:r_tax_fraction_offtaker], digits=2),
+						"total_coincident_peak_cost" => round(value(m[:TotalCPCharges]) * m[:r_tax_fraction_offtaker], digits=2),
+						"total_fixed_cost" => round(m[:TotalFixedCharges] * m[:r_tax_fraction_offtaker], digits=2),
+						"total_export_benefit" => round(value(m[:TotalExportBenefit]) * m[:r_tax_fraction_offtaker], digits=2),
+						"total_min_charge_adder" => round(value(m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker], digits=2),
+						"net_capital_costs_plus_om" => round(net_capital_costs_plus_om, digits=0),
+						"average_annual_energy_exported_wind" => round(value(m[:ExportedElecWIND]), digits=0),
+						"average_annual_energy_curtailed_wind" => round(value(m[:CurtailedElecWIND]), digits=0),
+                        "average_annual_energy_exported_gen" => round(value(m[:ExportedElecGEN]), digits=0),
+						"net_capital_costs" => round(value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]), digits=2),
+						"total_om_costs_after_tax" => round(total_om_costs_after_tax, digits=0),
+						"year_one_om_costs_after_tax" => round(year_one_om_costs_after_tax, digits=0),
+						"year_one_om_costs_before_tax" => round(year_one_om_costs_after_tax / m[:r_tax_fraction_owner], digits=0)
+					)...)
 
     @expression(m, GridToLoad[ts in p.TimeStep],
                 sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) - m[:dvGridToStorage][ts] )

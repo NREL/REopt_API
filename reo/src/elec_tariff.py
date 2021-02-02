@@ -41,7 +41,8 @@ class ElecTariff(object):
                  urdb_response=None, add_blended_rates_to_urdb_rate=None, blended_annual_rates_us_dollars_per_kwh=None,
                  blended_annual_demand_charges_us_dollars_per_kw=None, add_tou_energy_rates_to_urdb_rate=None,
                  tou_energy_rates_us_dollars_per_kwh=None, emissions_factor_series_lb_CO2_per_kwh=None,
-                  **kwargs):
+                 coincident_peak_load_active_timesteps=None, coincident_peak_load_charge_us_dollars_per_kw=None,
+                 chp_allowed_to_export=None, **kwargs):
         """
         Electricity Tariff object for creating inputs to REopt
         :param dfm: Object, DataManager
@@ -57,6 +58,8 @@ class ElecTariff(object):
         :param add_blended_rates_to_urdb_rate: bool
         :param blended_annual_rates_us_dollars_per_kwh: float
         :param blended_annual_demand_charges_us_dollars_per_kw: float
+        :param coincident_peak_load_active_timesteps: list of float or list of list of float
+        :param coincident_peak_load_charge_us_dollars_per_kw: float or list of float
         :param kwargs:  not used
         """
         self.run_id = run_id
@@ -68,9 +71,15 @@ class ElecTariff(object):
         self.add_tou_energy_rates_to_urdb_rate = add_tou_energy_rates_to_urdb_rate
         self.override_urdb_rate_with_tou_energy_rates = False
 
-        self.net_metering = False
-        if net_metering_limit_kw > 0:
-            self.net_metering = True
+        if coincident_peak_load_charge_us_dollars_per_kw is not None \
+                and coincident_peak_load_active_timesteps is not None:
+            self.coincident_peak_num_periods = len(coincident_peak_load_charge_us_dollars_per_kw)
+            self.coincident_peak_load_charge_us_dollars_per_kw = coincident_peak_load_charge_us_dollars_per_kw
+            self.coincident_peak_load_active_timesteps = coincident_peak_load_active_timesteps
+        else:
+            self.coincident_peak_num_periods = 0
+            self.coincident_peak_load_charge_us_dollars_per_kw = []
+            self.coincident_peak_load_active_timesteps = []
 
         if urdb_response is not None:
             log.info("Parsing URDB rate")
@@ -112,6 +121,8 @@ class ElecTariff(object):
             self.chp_does_not_reduce_demand_charges = 0
         else:
             self.chp_does_not_reduce_demand_charges = 1
+        
+        self.chp_allowed_to_export = chp_allowed_to_export
 
         dfm.add_elec_tariff(self)
 

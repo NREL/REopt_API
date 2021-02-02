@@ -32,6 +32,7 @@ from reo.src.urdb_parse import UrdbParse
 from reo.src.fuel_params import FuelParams
 from reo.utilities import annuity, degradation_factor, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
     insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, annuity_escalation
+import numpy as np
 max_incentive = 1.0e10
 
 big_number = 1.0e10
@@ -83,8 +84,12 @@ class DataManager:
         self.reopt_inputs_bau = None
         self.optimality_tolerance_decomp_subproblem = None
         self.timeout_decomp_subproblem_seconds = None
+        self.add_soc_incentive = None
 
         # following attributes used to pass data to process_results.py
+        # If we serialize the python classes then we could pass the objects between Celery tasks
+        # (which we could do by making a custom serializer, but have not yet).
+        # For now we just put the values that we need in dicts that get passed between the tasks.
         self.LoadProfile = {}
         self.year_one_energy_cost_series_us_dollars_per_kwh = []
         self.year_one_demand_cost_series_us_dollars_per_kw = []
@@ -116,9 +121,9 @@ class DataManager:
         self.LoadProfile["annual_heating_mmbtu"] = load.annual_mmbtu
         self.heating_load = load
 
-    def add_load_chiller_electric(self, load):
-        self.LoadProfile["year_one_chiller_electric_load_series_kw"] = load.load_list
-        self.LoadProfile["annual_cooling_kwh"] = load.annual_kwh
+    def add_load_chiller_thermal(self, load):
+        self.LoadProfile["year_one_chiller_electric_load_series_kw"] = list(np.array(load.load_list) / load.chiller_cop)
+        self.LoadProfile["annual_cooling_kwh"] = load.annual_kwht / load.chiller_cop
         self.cooling_load = load
 
     def add_boiler(self, boiler):
@@ -298,7 +303,7 @@ class DataManager:
 
             if eval('self.' + tech) is not None:
 
-                if tech not in ['util', 'generator', 'boiler', 'elecchl', 'absorpchl', 'ac', 'hp', 'wher', 'whhp']:
+                if tech not in ['generator', 'boiler', 'elecchl', 'absorpchl', 'ac', 'hp', 'wher', 'whhp']:
 
                     # prod incentives don't need escalation
                     if tech.startswith("pv"):  # PV has degradation
@@ -341,7 +346,7 @@ class DataManager:
 
         for tech in techs:
 
-            if eval('self.' + tech) is not None and tech not in ['util', 'boiler', 'elecchl']:
+            if eval('self.' + tech) is not None and tech not in ['boiler', 'elecchl']:
 
                 existing_kw = 0.0
                 if hasattr(eval('self.' + tech), 'existing_kw'):
@@ -354,7 +359,7 @@ class DataManager:
                 for region in regions[:-1]:
                     tech_incentives[region] = dict()
 
-                    if tech not in ['generator', 'ac', 'hp', 'wher', 'whhp']:
+                    if tech not in ['generator', 'absorpchl', 'ac', 'hp', 'wher', 'whhp']:
 
                         if region == 'federal' or region == 'total':
                             tech_incentives[region]['%'] = eval('self.' + tech + '.incentives.' + region + '.itc')
@@ -372,7 +377,7 @@ class DataManager:
                         if tech_incentives[region]['rebate_max'] == max_incentive:
                             tech_incentives[region]['rebate_max'] = 0.0
 
-                    else:  # for generator there are no incentives
+                    else:  # for generator and absorption chiller, there are no incentives
                         tech_incentives[region]['%'] = 0.0
                         tech_incentives[region]['%_max'] = 0.0
                         tech_incentives[region]['rebate'] = 0.0
@@ -566,13 +571,15 @@ class DataManager:
                 updated_y_intercept = list()
 
                 if tech not in ['ac', 'hp', 'wher', 'whhp']:
-
                     for s in range(n_segments):
 
                         if cost_curve_bp_x[s + 1] > 0:
                             # Remove federal incentives for ITC basis and tax benefit calculations
                             itc = eval('self.' + tech + '.incentives.federal.itc')
                             rebate_federal = eval('self.' + tech + '.incentives.federal.rebate')
+                            if itc is None or rebate_federal is None:
+                                itc = 0.0
+                                rebate_federal = 0.0
                             itc_unit_basis = (tmp_cap_cost_slope[s] + rebate_federal) / (1 - itc)
 
                         sf = self.site.financial
@@ -635,8 +642,8 @@ class DataManager:
                 n_segments_max = max(n_segments, n_segments_max)
                 n_segments_list.append(n_segments)
 
-            # [az] Not sure if we need this or not, first line is updated from DatFileManager and the rest may have been removed in this version
-            elif eval('self.' + tech) is not None and tech in ['util', 'boiler', 'elecchl']:
+            # Append 0's to non-costed technologies
+            elif eval('self.' + tech) is not None and tech in ['boiler', 'elecchl']:
 
                 cap_cost_slope.append(0.0)
                 cap_cost_yint.append(0.0)
@@ -815,7 +822,6 @@ class DataManager:
 
         return tech_class_min_size, techs_in_class
 
-
     def _get_REopt_tech_max_sizes_min_turn_down(self, techs, bau=False):
         max_sizes = list()
         min_turn_down = list()
@@ -949,41 +955,47 @@ class DataManager:
         storage_max_energy = [self.storage.max_kwh]
         storage_decay_rate = [0.0]
 
-        #Obtain storage costs and params
+        # Obtain storage costs and params
         sf = self.site.financial
-        StorageCostPerKW = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kw,  # use full cost as basis
-                                                        self.storage.replace_cost_us_dollars_per_kw,
-                                                        self.storage.inverter_replacement_year,
-                                                        sf.owner_discount_pct,
-                                                        sf.owner_tax_pct,
-                                                        self.storage.incentives.itc_pct,
-                                                        self.storage.incentives.macrs_schedule,
-                                                        self.storage.incentives.macrs_bonus_pct,
-                                                        self.storage.incentives.macrs_itc_reduction)
+        StorageCostPerKW = setup_capital_cost_incentive(
+            self.storage.installed_cost_us_dollars_per_kw,  # use full cost as basis
+            self.storage.replace_cost_us_dollars_per_kw,
+            self.storage.inverter_replacement_year,
+            sf.owner_discount_pct,
+            sf.owner_tax_pct,
+            self.storage.incentives.itc_pct,
+            self.storage.incentives.macrs_schedule,
+            self.storage.incentives.macrs_bonus_pct,
+            self.storage.incentives.macrs_itc_reduction
+        )
         StorageCostPerKW -= self.storage.incentives.rebate
-        StorageCostPerKWH = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kwh,  # there are no cash incentives for kwh
-                                                         self.storage.replace_cost_us_dollars_per_kwh,
-                                                         self.storage.battery_replacement_year,
-                                                         sf.owner_discount_pct,
-                                                         sf.owner_tax_pct,
-                                                         self.storage.incentives.itc_pct,
-                                                         self.storage.incentives.macrs_schedule,
-                                                         self.storage.incentives.macrs_bonus_pct,
-                                                         self.storage.incentives.macrs_itc_reduction)
+        StorageCostPerKWH = setup_capital_cost_incentive(
+            self.storage.installed_cost_us_dollars_per_kwh,  # there are no cash incentives for kwh
+            self.storage.replace_cost_us_dollars_per_kwh,
+            self.storage.battery_replacement_year,
+            sf.owner_discount_pct,
+            sf.owner_tax_pct,
+            self.storage.incentives.itc_pct,
+            self.storage.incentives.macrs_schedule,
+            self.storage.incentives.macrs_bonus_pct,
+            self.storage.incentives.macrs_itc_reduction
+        )
         StorageCostPerKWH -= self.storage.incentives.rebate_kwh
 
         storage_power_cost.append(StorageCostPerKW)
         storage_energy_cost.append(StorageCostPerKWH)
-        if self.hot_tes != None:
-            HotTESCostPerMMBTU = setup_capital_cost_incentive(self.hot_tes.installed_cost_us_dollars_per_mmbtu,  # use full cost as basis
-                                                        0,
-                                                        0,
-                                                        sf.owner_discount_pct,
-                                                        sf.owner_tax_pct,
-                                                        0,
-                                                        self.hot_tes.incentives.macrs_schedule,
-                                                        self.hot_tes.incentives.macrs_bonus_pct,
-                                                        0)
+        if self.hot_tes is not None:
+            HotTESCostPerMMBTU = setup_capital_cost_incentive(
+                self.hot_tes.installed_cost_us_dollars_per_mmbtu,  # use full cost as basis
+                0,
+                0,
+                sf.owner_discount_pct,
+                sf.owner_tax_pct,
+                0,
+                self.hot_tes.incentives.macrs_schedule,
+                self.hot_tes.incentives.macrs_bonus_pct,
+                0
+            )
             storage_techs.append('HotTES')
             storage_power_cost.append(0.0)
             storage_energy_cost.append(HotTESCostPerMMBTU)
@@ -994,9 +1006,7 @@ class DataManager:
             storage_max_energy.append(self.hot_tes.max_mmbtu)
             storage_decay_rate.append(self.hot_tes.thermal_decay_rate_fraction)
 
-
-
-        if self.cold_tes != None:
+        if self.cold_tes is not None:
             ColdTESCostPerKWHT = setup_capital_cost_incentive(self.cold_tes.installed_cost_us_dollars_per_kwht,  # use full cost as basis
                                                         0,
                                                         0,
@@ -1017,8 +1027,8 @@ class DataManager:
             storage_decay_rate.append(self.cold_tes.thermal_decay_rate_fraction)
 
         thermal_storage_techs = storage_techs[1:]
-        hot_tes_techs = [] if self.hot_tes == None else ['HotTES']
-        cold_tes_techs = [] if self.cold_tes == None else ['ColdTES']
+        hot_tes_techs = [] if self.hot_tes is None else ['HotTES']
+        cold_tes_techs = [] if self.cold_tes is None else ['ColdTES']
 
         return storage_techs, thermal_storage_techs, hot_tes_techs, \
             cold_tes_techs, storage_power_cost, storage_energy_cost, \
@@ -1065,6 +1075,85 @@ class DataManager:
             return True, self.hot_water_tank.a_matrix, self.hot_water_tank.b_matrix, self.hot_water_tank.u_inputs, self.hot_water_tank.init_temperatures_degC, \
                    self.hot_water_tank.n_temp_nodes, self.hot_water_tank.n_input_nodes, self.hot_water_tank.injection_node, self.hot_water_tank.water_node, \
                    self.hot_water_tank.temperature_lower_bound_degC, self.hot_water_tank.temperature_upper_bound_degC, self.hot_water_tank.comfort_temp_limit_degC
+
+    def _get_export_curtailment_params(self, techs, export_rates, net_metering_limit_kw):
+        """
+        :param techs: list of string
+        :param export_rates: list of lists from UrdbParse, rates in order of the export tiers:
+            1. Net metering [NEM]
+            2. Wholesale [WHL]
+            3. Excess beyond site load [EXC]
+        :returns
+            rates_by_tech: list of lists
+            techs_by_export_tier: dict with valid export_tiers as keys, lists of tech strings as values
+            export_tiers: list of string
+            techs_cannot_curtail: list of string
+            filtered_export_rates: list of lists
+        """
+        rates_by_tech = list()  # ExportTiersByTech, list of lists, becomes indexed on techs in julia
+        export_tiers = list()
+        techs_by_export_tier = dict()
+        techs_cannot_curtail = list()
+        filtered_export_rates = list()
+
+        if len(techs) > 0:
+            net_metering = False
+            any_can_net_meter = False
+            for tech in techs:  # have to do these for loops because `any` changes the scope and can't access `self`
+                if eval('self.' + tech.lower() + '.can_net_meter'):
+                    any_can_net_meter = True
+                    break
+            if any_can_net_meter and net_metering_limit_kw > 0:
+                net_metering = True
+                filtered_export_rates.append(export_rates[0])
+                export_tiers.append("NEM")
+                techs_by_export_tier["NEM"] = list()
+
+            wholesale_exporting = False
+            any_can_wholesale = False
+            for tech in techs:
+                if eval('self.' + tech.lower() + '.can_wholesale'):
+                    any_can_wholesale = True
+                    break
+            if any_can_wholesale and sum(export_rates[1]) != 0:
+                wholesale_exporting = True
+                filtered_export_rates.append(export_rates[1])
+                export_tiers.append("WHL")
+                techs_by_export_tier["WHL"] = list()
+
+            exporting_beyond_site_load = False
+            any_can_export_beyond_site_load = False
+            for tech in techs:
+                if eval('self.' + tech.lower() + '.can_export_beyond_site_load'):
+                    any_can_export_beyond_site_load = True
+                    break
+            if any_can_export_beyond_site_load and sum(export_rates[2]) != 0:
+                exporting_beyond_site_load = True
+                filtered_export_rates.append(export_rates[2])
+                export_tiers.append("EXC")
+                techs_by_export_tier["EXC"] = list()
+
+            for tech in techs:
+                rates = list()
+                if not tech.lower().endswith('nm') and net_metering:
+                    # these techs can access NEM and curtailment rates, and are limited to the net_metering_limit_kw
+                    if eval('self.' + tech.lower() + '.can_net_meter'):
+                        rates.append("NEM")
+                        techs_by_export_tier["NEM"].append(tech.upper())
+                else:
+                    # techs that end with 'nm' are the option to install capacity beyond the net metering capacity limit
+                    # these techs can access wholesale and curtailment rates
+                    if eval('self.' + tech.lower() + '.can_wholesale') and wholesale_exporting:
+                        rates.append("WHL")
+                        techs_by_export_tier["WHL"].append(tech.upper())
+                if eval('self.' + tech.lower() + '.can_export_beyond_site_load') and exporting_beyond_site_load:
+                    rates.append("EXC")
+                    techs_by_export_tier["EXC"].append(tech.upper())
+                rates_by_tech.append(rates)
+                if not eval('self.' + tech.lower() + '.can_curtail'):
+                    techs_cannot_curtail.append(tech.upper())
+
+        return rates_by_tech, techs_by_export_tier, export_tiers, techs_cannot_curtail, filtered_export_rates
 
     def finalize(self):
         """
@@ -1123,7 +1212,7 @@ class DataManager:
             storage_max_energy, storage_decay_rate = self._get_REopt_storage_techs_and_params()
 
         parser = UrdbParse(big_number=big_number, elec_tariff=self.elec_tariff,
-                          techs=get_techs_not_none(self.available_techs, self),
+                           techs=get_techs_not_none(self.available_techs, self),
                            bau_techs=get_techs_not_none(self.bau_techs, self))
         tariff_args = parser.parse_rate(self.elec_tariff.utility_name, self.elec_tariff.rate_name)
         TechToNMILMapping, TechsByNMILRegime, NMIL_regime = self._get_REopt_techToNMILMapping(self.available_techs)
@@ -1132,12 +1221,12 @@ class DataManager:
             NMILLimits = []
         else:
             NMILLimits = [self.elec_tariff.net_metering_limit_kw, self.elec_tariff.interconnection_limit_kw,
-                      self.elec_tariff.interconnection_limit_kw * 10]
+                          self.elec_tariff.interconnection_limit_kw * 10]
         if len(NMIL_regime_bau) == 0:
             NMILLimits_bau = []
         else:
             NMILLimits_bau = [self.elec_tariff.net_metering_limit_kw, self.elec_tariff.interconnection_limit_kw,
-                      self.elec_tariff.interconnection_limit_kw * 10]
+                              self.elec_tariff.interconnection_limit_kw * 10]
         self.year_one_energy_cost_series_us_dollars_per_kwh = parser.energy_rates_summary
         self.year_one_demand_cost_series_us_dollars_per_kw = parser.demand_rates_summary
 
@@ -1205,43 +1294,35 @@ class DataManager:
         # outdoor_air_temp_degF =[] if self.ac is None else self.ac.outdoor_air_temp_degF
         shr = [] if self.ac is None else self.ac.shr
 
-        if len(reopt_techs) > 0:
-            non_storage_sales_tiers = [1, 2]
-            storage_sales_tiers = [3]
-            curtailment_tiers = [3]
-            max_grid_sales = self.load.annual_kwh
-        else:
-            non_storage_sales_tiers = []
-            storage_sales_tiers = []
-            curtailment_tiers = []
-            max_grid_sales = 0
-
-        if len(reopt_techs_bau) > 0:
-            non_storage_sales_tiers_bau = [1, 2]
-            storage_sales_tiers_bau = [3]
-            curtailment_tiers_bau = [3]
-            max_grid_sales_bau = self.load.annual_kwh
-        else:
-            non_storage_sales_tiers_bau = []
-            storage_sales_tiers_bau = []
-            curtailment_tiers_bau = []
-            max_grid_sales_bau = 0
-
         time_steps_with_grid, time_steps_without_grid = self._get_time_steps_with_grid()
+
+        rates_by_tech, techs_by_export_tier, export_tiers, techs_cannot_curtail, export_rates = \
+            self._get_export_curtailment_params(reopt_techs, tariff_args.grid_export_rates,
+                                                self.elec_tariff.net_metering_limit_kw)
+        rates_by_tech_bau, techs_by_export_tier_bau, export_tiers_bau, techs_cannot_curtail_bau, export_rates_bau = \
+            self._get_export_curtailment_params(reopt_techs_bau, tariff_args.grid_export_rates_bau,
+                                                self.elec_tariff.net_metering_limit_kw)
 
         #populate heating and cooling loads with zeros if not included in model.
         if self.heating_load != None:
             heating_load = self.heating_load.load_list
         else:
             heating_load = [0.0 for _ in self.load.load_list]
-        if self.cooling_load != None:
+        if self.LoadProfile["annual_cooling_kwh"] > 0.0:
             cooling_load = self.cooling_load.load_list
+            # Zero out cooling load for outage hours
+            if time_steps_without_grid not in [None, []]:
+                for outage_time_step in time_steps_without_grid:
+                    cooling_load[outage_time_step-1] = 0.0
+                    self.LoadProfile["year_one_chiller_electric_load_series_kw"][outage_time_step-1] = 0.0
+                self.LoadProfile["annual_cooling_kwh"] = sum(cooling_load) / self.elecchl_cop * self.steplength
         else:
             cooling_load = [0.0 for _ in self.load.load_list]
 
         # Create non-cooling electric load which is ElecLoad in the reopt.jl model
-        non_cooling_electric_load = [self.load.load_list[ts] - cooling_load[ts] for ts in range(len(self.load.load_list))]
-        non_cooling_electric_load_bau = [self.load.bau_load_list[ts] - cooling_load[ts] for ts in range(len(self.load.bau_load_list))]
+        # cooling_load is thermal, so convert to electric and subtract from total electric load to get non_cooling
+        non_cooling_electric_load = [self.load.load_list[ts] - cooling_load[ts] / self.cooling_load.chiller_cop for ts in range(len(self.load.load_list))]
+        non_cooling_electric_load_bau = [self.load.bau_load_list[ts] - cooling_load[ts] / self.cooling_load.chiller_cop for ts in range(len(self.load.bau_load_list))]
 
         sf = self.site.financial
 
@@ -1266,7 +1347,14 @@ class DataManager:
 
         boiler_efficiency = self.boiler.boiler_efficiency if self.boiler != None else 1.0
         elec_chiller_cop = self.elecchl.chiller_cop if self.elecchl != None else 1.0
-        absorp_chiller_cop = self.absorpchl.chiller_cop if self.absorpchl != None else 1.0
+
+        if self.chp is not None:
+            cooling_thermal_factor = self.chp.cooling_thermal_factor
+        else:
+            cooling_thermal_factor = 1.0
+
+        absorp_chiller_cop = self.absorpchl.chiller_cop * cooling_thermal_factor if self.absorpchl != None else 1.0
+        absorp_chiller_elec_cop = self.absorpchl.chiller_elec_cop if self.absorpchl != None else 1.0
 
         # Fuel burning parameters and other CHP-specific parameters
         fuel_params = FuelParams(big_number=big_number, elec_tariff=self.elec_tariff, fuel_tariff=self.fuel_tariff,
@@ -1332,30 +1420,32 @@ class DataManager:
             'TimeStepRatchetsMonth': tariff_args.demand_ratchets_monthly,
             'TimeStepCount': self.n_timesteps,
             'TimeStepScaling': self.steplength,
-            'AnnualElecLoad': self.load.annual_kwh,
+            'AnnualElecLoadkWh': self.load.annual_kwh,
             'StorageMinChargePcent': self.storage.soc_min_pct,
             'InitSOC': self.storage.soc_init_pct,
             'NMILLimits': NMILLimits,
             'TechToNMILMapping': TechToNMILMapping,
             'CapCostSegCount': n_segments,
+            'CoincidentPeakLoadTimeSteps': self.elec_tariff.coincident_peak_load_active_timesteps,
+            'CoincidentPeakRates': self.elec_tariff.coincident_peak_load_charge_us_dollars_per_kw,
+            'CoincidentPeakPeriodCount': self.elec_tariff.coincident_peak_num_periods,
             # new parameters for reformulation
-	        'FuelCost': fuel_costs,
-	        'ElecRate': tariff_args.energy_costs,
-	        'GridExportRates': tariff_args.grid_export_rates, # seems like the wrong size
-	        'FuelBurnSlope': fuel_burn_slope,
-	        'FuelBurnYInt': fuel_burn_intercept,
-	        'MaxGridSales': max_grid_sales,
-	        'ProductionIncentiveRate': production_incentive_rate,
-	        'ProductionFactor': production_factor,
-	        'ElecLoad': non_cooling_electric_load,
-	        'FuelLimit': fuel_limit,
-	        'ChargeEfficiency': charge_efficiency, # Do we need this indexed on tech?
-	        'GridChargeEfficiency': grid_charge_efficiency,
-	        'DischargeEfficiency': discharge_efficiency,
-	        'StorageMinSizeEnergy': storage_min_energy,
-	        'StorageMaxSizeEnergy': storage_max_energy,
-	        'StorageMinSizePower': storage_min_power,
-	        'StorageMaxSizePower': storage_max_power,
+            'FuelCost': fuel_costs,
+            'ElecRate': tariff_args.energy_costs,
+            'GridExportRates': export_rates,
+            'FuelBurnSlope': fuel_burn_slope,
+            'FuelBurnYInt': fuel_burn_intercept,
+            'ProductionIncentiveRate': production_incentive_rate,
+            'ProductionFactor': production_factor,
+            'ElecLoad': non_cooling_electric_load,
+            'FuelLimit': fuel_limit,
+            'ChargeEfficiency': charge_efficiency,  # Do we need this indexed on tech?
+            'GridChargeEfficiency': grid_charge_efficiency,
+            'DischargeEfficiency': discharge_efficiency,
+            'StorageMinSizeEnergy': storage_min_energy,
+            'StorageMaxSizeEnergy': storage_max_energy,
+            'StorageMinSizePower': storage_min_power,
+            'StorageMaxSizePower': storage_max_power,
             'StorageMinSOC': [self.storage.soc_min_pct, self.hot_tes.soc_min_pct, self.cold_tes.soc_min_pct],
             'StorageInitSOC': [self.storage.soc_init_pct, self.hot_tes.soc_init_pct, self.cold_tes.soc_init_pct],
             'StorageCanGridCharge': self.storage.canGridCharge,
@@ -1374,15 +1464,15 @@ class DataManager:
             'ElectricTechs': electric_techs,
             'FuelBurningTechs': fb_techs,
             'TechsNoTurndown': techs_no_turndown,
-            'SalesTierCount': tariff_args.num_sales_tiers,
-            'StorageSalesTiers': storage_sales_tiers,
-            'NonStorageSalesTiers': non_storage_sales_tiers,
+            'ExportTiers': export_tiers,
             'TimeStepsWithGrid': time_steps_with_grid,
             'TimeStepsWithoutGrid': time_steps_without_grid,
-            'SalesTiersByTech': tariff_args.rates_by_tech,
-            'TechsBySalesTier': tariff_args.techs_by_rate,
-            'CurtailmentTiers': curtailment_tiers,
+            'ExportTiersByTech': rates_by_tech,
+            'TechsByExportTier': [techs_by_export_tier[k] for k in export_tiers],
+            'ExportTiersBeyondSiteLoad': ["EXC"],
             'ElectricDerate': electric_derate,
+            'TechsByNMILRegime': TechsByNMILRegime,
+            'TechsCannotCurtail': techs_cannot_curtail,
             'TechsByNMILRegime': TechsByNMILRegime,
             'HeatingLoad': heating_load,
             'CoolingLoad': cooling_load,
@@ -1398,6 +1488,7 @@ class DataManager:
             'BoilerEfficiency': boiler_efficiency,
             'ElectricChillerCOP': elec_chiller_cop,
             'AbsorptionChillerCOP': absorp_chiller_cop,
+            'AbsorptionChillerElecCOP': absorp_chiller_elec_cop,
             'CHPThermalProdSlope': chp_thermal_prod_slope,
             'CHPThermalProdIntercept': chp_thermal_prod_intercept,
             'FuelBurnYIntRate': chp_fuel_burn_intercept,
@@ -1407,6 +1498,7 @@ class DataManager:
             'StorageDecayRate': storage_decay_rate,
             'DecompOptTol': self.optimality_tolerance_decomp_subproblem,
             'DecompTimeOut': self.timeout_decomp_subproblem_seconds,
+            'AddSOCIncentive': self.add_soc_incentive
             # Flex loads
             'FlexTechs': flex_techs,
             'UseFlexLoadsModel': self.rc.use_flexloads_model,
@@ -1443,7 +1535,10 @@ class DataManager:
             'TempUpperBoundWH': temperature_upper_bound_degC,
             'ComfortTempLimitWH': comfort_temp_limit_degC,
             'WaterHeaterTechs': wh_techs
-        }
+            }
+        ## Uncomment the following and run a scenario to get an updated modelinputs.json for creating Julia system image
+        # import json
+        # json.dump(self.reopt_inputs, open("modelinputs.json", "w"))
 
         self.reopt_inputs_bau = {
             'Tech': reopt_techs_bau,
@@ -1493,19 +1588,21 @@ class DataManager:
             'TimeStepRatchetsMonth': tariff_args.demand_ratchets_monthly,
             'TimeStepCount': self.n_timesteps,
             'TimeStepScaling': self.steplength,
-            'AnnualElecLoad': self.load.annual_kwh,
+            'AnnualElecLoadkWh': self.load.annual_kwh,
             'StorageMinChargePcent': self.storage.soc_min_pct,
             'InitSOC': self.storage.soc_init_pct,
             'NMILLimits': NMILLimits_bau,
             'TechToNMILMapping': TechToNMILMapping_bau,
             'CapCostSegCount': n_segments_bau,
+            'CoincidentPeakLoadTimeSteps': self.elec_tariff.coincident_peak_load_active_timesteps,
+            'CoincidentPeakRates': self.elec_tariff.coincident_peak_load_charge_us_dollars_per_kw,
+            'CoincidentPeakPeriodCount': self.elec_tariff.coincident_peak_num_periods,
             # new parameters for reformulation
 	        'FuelCost': fuel_costs_bau,
 	        'ElecRate': tariff_args.energy_costs_bau,
-	        'GridExportRates': tariff_args.grid_export_rates_bau,
+	        'GridExportRates': export_rates_bau,
 	        'FuelBurnSlope': fuel_burn_slope_bau,
 	        'FuelBurnYInt': fuel_burn_intercept_bau,
-	        'MaxGridSales': max_grid_sales_bau,
 	        'ProductionIncentiveRate': production_incentive_rate_bau,
 	        'ProductionFactor': production_factor_bau,
 	        'ElecLoad': non_cooling_electric_load_bau,
@@ -1535,15 +1632,15 @@ class DataManager:
             'ElectricTechs': electric_techs_bau,
             'FuelBurningTechs': fb_techs_bau,
             'TechsNoTurndown': techs_no_turndown_bau,
-            'SalesTierCount': tariff_args.num_sales_tiers_bau,
-            'StorageSalesTiers': storage_sales_tiers_bau,
-            'NonStorageSalesTiers': non_storage_sales_tiers_bau,
+            'ExportTiers': export_tiers_bau,
             'TimeStepsWithGrid': time_steps_with_grid,
             'TimeStepsWithoutGrid': time_steps_without_grid,
-            'SalesTiersByTech': tariff_args.rates_by_tech_bau,
-            'TechsBySalesTier': tariff_args.techs_by_rate_bau,
-            'CurtailmentTiers': curtailment_tiers_bau,
+            'ExportTiersByTech': rates_by_tech_bau,
+            'TechsByExportTier': [techs_by_export_tier_bau[k] for k in export_tiers_bau],
+            'ExportTiersBeyondSiteLoad':  ["EXC"],
             'ElectricDerate': electric_derate_bau,
+            'TechsByNMILRegime': TechsByNMILRegime_bau,
+            'TechsCannotCurtail': techs_cannot_curtail_bau,
             'TechsByNMILRegime': TechsByNMILRegime_bau,
             'HeatingLoad': heating_load,
             'CoolingLoad': cooling_load,
@@ -1559,6 +1656,7 @@ class DataManager:
             'BoilerEfficiency': boiler_efficiency,
             'ElectricChillerCOP': elec_chiller_cop,
             'AbsorptionChillerCOP': absorp_chiller_cop,
+            'AbsorptionChillerElecCOP': absorp_chiller_elec_cop,
             'CHPThermalProdSlope': chp_thermal_prod_slope_bau,
             'CHPThermalProdIntercept': chp_thermal_prod_intercept_bau,
             'FuelBurnYIntRate': chp_fuel_burn_intercept_bau,
@@ -1568,6 +1666,7 @@ class DataManager:
             'StorageDecayRate': storage_decay_rate,
             'DecompOptTol': self.optimality_tolerance_decomp_subproblem,
             'DecompTimeOut': self.timeout_decomp_subproblem_seconds,
+            'AddSOCIncentive': self.add_soc_incentive
             # Flex loads
             'FlexTechs': flex_techs_bau,
             'UseFlexLoadsModel': self.rc.use_flexloads_model_bau,
