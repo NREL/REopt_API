@@ -785,7 +785,7 @@ function add_resource_adequacy(m, p)
 	#Constrains to 0 if did not participate
 	@constraint(m, [mth in keys(p.RaEventStartTimes)],
 		m[:dvMonthlyRaValue][mth] <= m[:binRaParticipate][mth] * m[:MaxMonthlyRa])
-	@info value(m[:binRaParticipate][7])
+	# @info value(m[:binRaParticipate][7])
     m[:TotalRaValue] = @expression(m, sum(m[:dvMonthlyRaValue]))
 end
 
@@ -1038,6 +1038,12 @@ function reopt_results(m, p, r::Dict)
 	if p.RaLookbackDays != 0
 		add_ra_results(m, p, r)
 	else
+		r["monthly_ra_reduction"] = []
+		r["monthly_ra_energy"] = []
+		r["monthly_ra_dr"] = []
+		r["monthly_ra_value"] = []
+	end
+
 
 
 	return r
@@ -1245,11 +1251,11 @@ end
 
 #Output resource adequacy results
 function add_ra_results(m, p, r::Dict)
-	r["monthly_ra_reduction"] = value.(m[:dvMonthlyRA])
-	r["monthly_ra_energy"] = value.(m[:dvMonthlyRaEnergy])
-	r["monthly_ra_dr"] = value.(m[:dvMonthlyRaDr])
-	r["monthly_ra_value"] = value.(m[:dvMonthlyRaValue])
 
+	r["monthly_ra_reduction"] = value.(m[:dvMonthlyRA]).data
+	r["monthly_ra_energy"] = value.(m[:MonthlyRaEnergy]).data
+	r["monthly_ra_dr"] = value.(m[:MonthlyRaDr]).data
+	r["monthly_ra_value"] = value.(m[:dvMonthlyRaValue]).data
 	event_hours = []
 	hourly_reductions = []
 	#Flatten event hour array of arrays to singel array
@@ -1258,10 +1264,12 @@ function add_ra_results(m, p, r::Dict)
 			for h in 0:p.RaMooHours-1
 				push!(event_hours, p.RaEventStartTimes[mth][i] + h)
 				push!(hourly_reductions, value(m[:dvHourlyReductionRA][mth, i, h]))
+			end
 		end
 	end
 
 	r["event_hours"] = event_hours
 	r["hourly_reductions"] = hourly_reductions
+
 	nothing
 end
