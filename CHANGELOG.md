@@ -28,17 +28,24 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## v1.4.1 - 2021-01-29
-### Patch
-`reo`: Fixes database query error the occurs when getting production runs created prior to v1.4.0    
+## v1.4.2 - 2021-02-03
+### Patches
+- `reo`: Fix **Wind** `size_class` was not being set
+- `proforma`: Fix could not handle runs prior to v1.4.0 with no CHP database entries
+- `resilience_stats`: Fix could not handle runs prior to v1.4.0 with no CHP database entries
+- `resilience_stats`: `outage_simulator` returns 100% survivability when chp_kw >= critical_loads_kw
+
+## v1.4.1 - 2021-02-01
+### Patches
+- `reo`: Fixes database query error the occurs when getting production runs created prior to v1.4.0    
 
 ## v1.4.0 - 2021-01-29
 ### Major Updates
 ### Minor Updates
 ## Added
-`reo`/`reopt.jl`: Coincident peak rates and expected time steps can be specified. There can be a single rate and list of time steps. Or there can be multiple CP periods in a year with different rates, and then a set of time steps is specified for each rate. Peak demand occurring during each set of CP time steps is charged at the corresponding CP rate.
+- `reo`/`reopt.jl`: Coincident peak rates and expected time steps can be specified. There can be a single rate and list of time steps. Or there can be multiple CP periods in a year with different rates, and then a set of time steps is specified for each rate. Peak demand occurring during each set of CP time steps is charged at the corresponding CP rate.
 
-`reo`: Add a new **ElectricTariff** inputs and outputs:
+- `reo`: Add a new **ElectricTariff** inputs and outputs:
  - **coincident_peak_load_active_timesteps**
  - **coincident_peak_load_charge_us_dollars_per_kw**
  - **year_one_coincident_peak_cost_us_dollars**
