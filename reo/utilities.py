@@ -224,7 +224,6 @@ def check_common_outputs(Test, d_calculated, d_expected):
                         pass
             else:
                 print("Warning: Expected value for {} not in calculated dictionary.".format(key))
-
         if 'lcc_bau' in c and c['lcc_bau'] > 0:
         # Total LCC BAU is sum of utility costs
             Test.assertTrue(abs((float(c['lcc_bau'] or 0) - float(c['total_energy_cost_bau'] or 0) - float(c['total_min_charge_adder'] or 0)

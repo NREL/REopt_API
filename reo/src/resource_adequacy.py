@@ -34,7 +34,6 @@ import pandas as pd
 import numpy as np
 log = logging.getLogger(__name__)
 
-
 class ResourceAdequacy(object):
 
     def __init__(self, dfm, run_id, load_year, ra_energy_pricing_us_dollars_per_kwh=None, ra_demand_pricing_us_dollars_per_kw=None,
@@ -74,7 +73,6 @@ class ResourceAdequacy(object):
 
         ra_event_start_times = dict()
         ra_lookback_periods = dict()
-
         month_number = 0
         for i in range(len(df_event_days.index)):
             if df_event_days.event_day.values[i]==1:
