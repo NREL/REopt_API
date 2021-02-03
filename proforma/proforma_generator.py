@@ -6,6 +6,7 @@ from reo.models import SiteModel, LoadProfileModel, PVModel, WindModel, Generato
 from openpyxl import load_workbook
 from reo.src.data_manager import big_number
 from reo.nested_inputs import macrs_five_year, macrs_seven_year
+from reo.utilities import empty_record
 
 one_party_workbook = os.path.join('proforma', 'REoptCashFlowTemplateOneParty.xlsx')
 third_party_workbook = os.path.join('proforma', 'REoptCashFlowTemplateThirdPartyOwner.xlsx')
@@ -39,20 +40,20 @@ def generate_proforma(scenariomodel, output_file_path):
     ####################################################################################################################
 
     scenario = scenariomodel
-    batt = StorageModel.objects.filter(run_uuid=scenario.run_uuid).first()
-    pvs = PVModel.objects.filter(run_uuid=scenario.run_uuid)
-    wind = WindModel.objects.filter(run_uuid=scenario.run_uuid).first()
-    generator = GeneratorModel.objects.filter(run_uuid=scenario.run_uuid).first()
-    electric_tariff = ElectricTariffModel.objects.filter(run_uuid=scenario.run_uuid).first()
-    financial = FinancialModel.objects.filter(run_uuid=scenario.run_uuid).first()
-    site = SiteModel.objects.filter(run_uuid=scenario.run_uuid).first()
-    load = LoadProfileModel.objects.filter(run_uuid=scenario.run_uuid).first()
-    chp = CHPModel.objects.filter(run_uuid=scenario.run_uuid).first()
-    absorption_chiller = AbsorptionChillerModel.objects.filter(run_uuid=scenario.run_uuid).first()
-    cold_tes = HotTESModel.objects.filter(run_uuid=scenario.run_uuid).first()
-    hot_tes = ColdTESModel.objects.filter(run_uuid=scenario.run_uuid).first()
-    fuel_tariff = FuelTariffModel.objects.filter(run_uuid=scenario.run_uuid).first()
-    boiler = BoilerModel.objects.filter(run_uuid=scenario.run_uuid).first()
+    batt = StorageModel.objects.filter(run_uuid=scenario.run_uuid).first() or empty_record()
+    pvs = PVModel.objects.filter(run_uuid=scenario.run_uuid) or empty_record()
+    wind = WindModel.objects.filter(run_uuid=scenario.run_uuid).first() or empty_record()
+    generator = GeneratorModel.objects.filter(run_uuid=scenario.run_uuid).first() or empty_record()
+    electric_tariff = ElectricTariffModel.objects.filter(run_uuid=scenario.run_uuid).first() or empty_record()
+    financial = FinancialModel.objects.filter(run_uuid=scenario.run_uuid).first() or empty_record()
+    site = SiteModel.objects.filter(run_uuid=scenario.run_uuid).first() or empty_record()
+    load = LoadProfileModel.objects.filter(run_uuid=scenario.run_uuid).first() or empty_record()
+    chp = CHPModel.objects.filter(run_uuid=scenario.run_uuid).first() or empty_record()
+    absorption_chiller = AbsorptionChillerModel.objects.filter(run_uuid=scenario.run_uuid).first() or empty_record()
+    cold_tes = HotTESModel.objects.filter(run_uuid=scenario.run_uuid).first() or empty_record()
+    hot_tes = ColdTESModel.objects.filter(run_uuid=scenario.run_uuid).first() or empty_record()
+    fuel_tariff = FuelTariffModel.objects.filter(run_uuid=scenario.run_uuid).first() or empty_record()
+    boiler = BoilerModel.objects.filter(run_uuid=scenario.run_uuid).first() or empty_record()
 
     # Open file for reading
     if financial.third_party_ownership is True:
@@ -756,31 +757,31 @@ def generate_proforma(scenariomodel, output_file_path):
 
     current_row += 1
     ws['A{}'.format(current_row)] = "Nominal O&M cost escalation rate (%/year)"
-    ws['B{}'.format(current_row)] = financial.om_cost_escalation_pct * 100
+    ws['B{}'.format(current_row)] = (financial.om_cost_escalation_pct or 0) * 100
     om_escalation_rate_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row, alignment=right_align)
 
     current_row += 1
     ws['A{}'.format(current_row)] = "Nominal electric utility cost escalation rate (%/year)"
-    ws['B{}'.format(current_row)] = financial.escalation_pct * 100
+    ws['B{}'.format(current_row)] = (financial.escalation_pct or 0) * 100
     escalation_pct_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
     current_row += 1
     ws['A{}'.format(current_row)] = "Nominal boiler fuel cost escalation rate (%/year)"
-    ws['B{}'.format(current_row)] = financial.boiler_fuel_escalation_pct * 100
+    ws['B{}'.format(current_row)] = (financial.boiler_fuel_escalation_pct or 0) * 100
     boiler_escalation_pct_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
     current_row += 1
     ws['A{}'.format(current_row)] = "Nominal CHP fuel cost escalation rate (%/year)"
-    ws['B{}'.format(current_row)] = financial.chp_fuel_escalation_pct * 100
+    ws['B{}'.format(current_row)] = (financial.chp_fuel_escalation_pct or 0) * 100
     chp_escalation_pct_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
     current_row += 1
     ws['A{}'.format(current_row)] = "Nominal discount rate (%/year)"
-    ws['B{}'.format(current_row)] = financial.offtaker_discount_pct * 100
+    ws['B{}'.format(current_row)] = (financial.offtaker_discount_pct or 0) * 100
     discount_rate_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     host_discount_rate_cell = discount_rate_cell
     make_attribute_row(ws, current_row)
@@ -788,12 +789,12 @@ def generate_proforma(scenariomodel, output_file_path):
     # NOTE: the following two party logic relies on no lines being inserted here!
     if financial.third_party_ownership:
         ws['A{}'.format(current_row)] = "Nominal third-party discount rate (%/year)"
-        ws['B{}'.format(current_row)] = financial.owner_discount_pct * 100
+        ws['B{}'.format(current_row)] = (financial.owner_discount_pct or 0) * 100
         make_attribute_row(ws, current_row, alignment=right_align)
 
         current_row += 1
         ws['A{}'.format(current_row)] = "Nominal Host discount rate (%/year)"
-        ws['B{}'.format(current_row)] = financial.offtaker_discount_pct * 100
+        ws['B{}'.format(current_row)] = (financial.offtaker_discount_pct or 0) * 100
         host_discount_rate_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
         make_attribute_row(ws, current_row, alignment=right_align)
 
@@ -809,20 +810,20 @@ def generate_proforma(scenariomodel, output_file_path):
 
     current_row += 1
     ws['A{}'.format(current_row)] = "Federal income tax rate (%)"
-    ws['B{}'.format(current_row)] = financial.offtaker_tax_pct * 100
+    ws['B{}'.format(current_row)] = (financial.offtaker_tax_pct or 0) * 100
     fed_tax_rate_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     host_fed_tax_rate_cell = fed_tax_rate_cell
     make_attribute_row(ws, current_row)
 
     if financial.third_party_ownership:
         ws['A{}'.format(current_row)] = "Third-party owner Federal income tax rate (%)"
-        ws['B{}'.format(current_row)] = financial.owner_tax_pct * 100
+        ws['B{}'.format(current_row)] = (financial.owner_tax_pct or 0) * 100
         third_party_fed_tax_rate_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
         make_attribute_row(ws, current_row)
 
         current_row += 1
         ws['A{}'.format(current_row)] = "Host Federal income tax rate (%)"
-        ws['B{}'.format(current_row)] = financial.offtaker_tax_pct * 100
+        ws['B{}'.format(current_row)] = (financial.offtaker_tax_pct or 0) * 100
         host_fed_tax_rate_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
         make_attribute_row(ws, current_row)
 
@@ -1290,7 +1291,7 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
     ws['A{}'.format(current_row)] = "Federal"
     ws['A{}'.format(current_row)].alignment = two_tab_indent
-    ws['B{}'.format(current_row)] = chp.federal_itc_pct * 100
+    ws['B{}'.format(current_row)] = (chp.federal_itc_pct or 0) * 100
     chp_federal_itc_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     ws['C{}'.format(current_row)] = big_number
     chp_itc_fed_percent_maxvalue_cell = "\'{}\'!C{}".format(inandout_sheet_name, current_row)
@@ -1356,7 +1357,7 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
     ws['A{}'.format(current_row)] = "Federal ($/W)"
     ws['A{}'.format(current_row)].alignment = two_tab_indent
-    ws['B{}'.format(current_row)] = chp.federal_rebate_us_dollars_per_kw * 0.001
+    ws['B{}'.format(current_row)] = (chp.federal_rebate_us_dollars_per_kw or 0) * 0.001
     chp_federal_cbi_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     ws['C{}'.format(current_row)] = big_number
     chp_federal_cbi_max_cell = "\'{}\'!C{}".format(inandout_sheet_name, current_row)
@@ -1369,7 +1370,7 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
     ws['A{}'.format(current_row)] = "State  ($/W)"
     ws['A{}'.format(current_row)].alignment = two_tab_indent
-    ws['B{}'.format(current_row)] = chp.state_rebate_us_dollars_per_kw * 0.001
+    ws['B{}'.format(current_row)] = (chp.state_rebate_us_dollars_per_kw or 0) * 0.001
     chp_state_cbi_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     ws['C{}'.format(current_row)] = chp.state_rebate_max_us_dollars
     chp_state_cbi_max_cell = "\'{}\'!C{}".format(inandout_sheet_name, current_row)
@@ -1382,7 +1383,7 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
     ws['A{}'.format(current_row)] = "Utility  ($/W)"
     ws['A{}'.format(current_row)].alignment = two_tab_indent
-    ws['B{}'.format(current_row)] = chp.utility_rebate_us_dollars_per_kw * 0.001
+    ws['B{}'.format(current_row)] = (chp.utility_rebate_us_dollars_per_kw or 0) * 0.001
     chp_utility_cbi_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     ws['C{}'.format(current_row)] = chp.utility_rebate_max_us_dollars
     chp_utility_cbi_max_cell = "\'{}\'!C{}".format(inandout_sheet_name, current_row)
@@ -1698,11 +1699,11 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['B{}'.format(current_row)] = 0
     chp_macrs_cells = []
 
-    for i, c in enumerate(macrs_cells[chp.macrs_option_years]):
+    for i, c in enumerate(macrs_cells[chp.macrs_option_years or 0]):
         ws[upper_case_letters[2 + i] + str(current_row)] = '=' + c
         chp_macrs_cells.append("\'{}\'!".format(inandout_sheet_name) + upper_case_letters[2 + i] + str(current_row))
 
-    start_number = chp.macrs_option_years
+    start_number = chp.macrs_option_years or 0
     if start_number == 0:
         start_number = -1
     for i in range(start_number+ 1, financial.analysis_years):
@@ -1717,11 +1718,11 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['B{}'.format(current_row)] = 0
     absorption_chiller_macrs_cells = []
 
-    for i, c in enumerate(macrs_cells[absorption_chiller.macrs_option_years]):
+    for i, c in enumerate(macrs_cells[absorption_chiller.macrs_option_years or 0]):
         ws[upper_case_letters[2 + i] + str(current_row)] = '=' + c
         absorption_chiller_macrs_cells.append("\'{}\'!".format(inandout_sheet_name) + upper_case_letters[2 + i] + str(current_row))
 
-    start_number = absorption_chiller.macrs_option_years
+    start_number = absorption_chiller.macrs_option_years or 0
     if start_number == 0:
         start_number = -1
     for i in range(start_number+ 1, financial.analysis_years):
@@ -1736,11 +1737,11 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['B{}'.format(current_row)] = 0
     hot_tes_macrs_cells = []
 
-    for i, c in enumerate(macrs_cells[hot_tes.macrs_option_years]):
+    for i, c in enumerate(macrs_cells[hot_tes.macrs_option_years or 0]):
         ws[upper_case_letters[2 + i] + str(current_row)] = '=' + c
         hot_tes_macrs_cells.append("\'{}\'!".format(inandout_sheet_name) + upper_case_letters[2 + i] + str(current_row))
 
-    start_number = hot_tes.macrs_option_years
+    start_number = hot_tes.macrs_option_years or 0
     if start_number == 0:
         start_number = -1
     for i in range(start_number+ 1, financial.analysis_years):
@@ -1755,11 +1756,11 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['B{}'.format(current_row)] = 0
     cold_tes_macrs_cells = []
 
-    for i, c in enumerate(macrs_cells[cold_tes.macrs_option_years]):
+    for i, c in enumerate(macrs_cells[cold_tes.macrs_option_years  or 0]):
         ws[upper_case_letters[2 + i] + str(current_row)] = '=' + c
         cold_tes_macrs_cells.append("\'{}\'!".format(inandout_sheet_name) + upper_case_letters[2 + i] + str(current_row))
 
-    start_number = cold_tes.macrs_option_years
+    start_number = cold_tes.macrs_option_years or 0
     if start_number == 0:
         start_number = -1
     for i in range(start_number+ 1, financial.analysis_years):
