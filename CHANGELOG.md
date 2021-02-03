@@ -29,14 +29,14 @@ Classify the change according to the following categories:
     ### Patches
     
 ## v1.4.2 - 2021-02-03
-Patches
+### Patches
 - `reo`: Fix **Wind** `size_class` was not being set
 - `proforma`: Fix could not handle runs prior to v1.4.0 with no CHP database entries
 - `resilience_stats`: Fix could not handle runs prior to v1.4.0 with no CHP database entries
 - `resilience_stats`: `outage_simulator` returns 100% survivability when chp_kw >= critical_loads_kw
 
 ## v1.4.1 - 2021-02-01
-### Patch
+### Patches
 - `reo`: Fixes database query error the occurs when getting production runs created prior to v1.4.0    
 
 ## v1.4.0 - 2021-01-29
