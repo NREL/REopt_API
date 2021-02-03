@@ -75,7 +75,7 @@ class Tech(object):
 
 class Util(Tech):
 
-    def __init__(self, dfm, outage_start_hour=None, outage_end_hour=None):
+    def __init__(self, dfm, outage_start_time_step=None, outage_end_time_step=None):
         super(Util, self).__init__(max_kw=12000000)
 
         self.outage_start_time_step = outage_start_time_step
@@ -90,11 +90,12 @@ class Util(Tech):
 
         grid_prod_factor = [1.0 for _ in range(self.n_timesteps)]
 
-        if self.outage_start_hour is not None and self.outage_end_hour is not None:  # "turn off" grid resource
-            grid_prod_factor[self.outage_start_hour:self.outage_end_hour] = [0]*(self.outage_end_hour - self.outage_start_hour)
+        if self.outage_start_time_step is not None and self.outage_end_time_step is not None:  # "turn off" grid resource
+            # minus 1 in next line accounts for Python's zero-indexing
+            grid_prod_factor[self.outage_start_time_step - 1:self.outage_end_time_step - 1] = \
+                [0] * (self.outage_end_time_step - self.outage_start_time_step)
 
         return grid_prod_factor
-
 
 class PV(Tech):
     array_type_to_tilt_angle = {

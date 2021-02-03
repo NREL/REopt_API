@@ -3,7 +3,7 @@
 			"Site": {
                 "latitude": 41.140240,
                 "longitude": -104.818802,
-
+				
 				"Financial": {
 					"om_cost_escalation_pct": 0.025,
 					"escalation_pct": 0.023,
@@ -37,7 +37,7 @@
 					"wholesale_rate_us_dollars_per_kwh": 0.0,
 					"wholesale_rate_above_site_load_us_dollars_per_kwh": 0.0
                 },
-
+				
 				"PV": {
 					"existing_kw": 0,
 					"min_kw": 1000,
@@ -72,7 +72,7 @@
 					"radius": 0.0,
 					"tilt": 0.537
 				},
-
+				
 				"Wind": {
 					"min_kw": 1000,
                     "max_kw": 1000,
