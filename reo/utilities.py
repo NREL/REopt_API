@@ -330,3 +330,7 @@ def scrub_numpy_arrays_from_dict(d):
 
 #conversion factor for ton-hours to kilowatt-hours thermal
 TONHOUR_TO_KWHT = 3.51685
+
+#Creates and empty dot accessible dict for spoofing an empty DB record (i.e. empty_record().size_kw resolves to None)
+class empty_record(dict):
+        __getattr__ = dict.get
