@@ -25,8 +25,8 @@
         "year": null,
         "loads_kw": null,
         "critical_loads_kw": null,
-        "outage_start_hour": null,
-        "outage_end_hour": null,
+        "outage_start_time_step": null,
+        "outage_end_time_step": null,
         "critical_load_pct": null,
         "outage_is_major_event": true
       },

@@ -112,7 +112,7 @@ class DataManager:
         self.LoadProfile["year_one_electric_load_series_kw"] = load.load_list
         self.LoadProfile["critical_load_series_kw"] = load.critical_load_series_kw
         self.LoadProfile["resilience_check_flag"] = load.resilience_check_flag
-        self.LoadProfile["sustain_hours"] = load.sustain_hours
+        self.LoadProfile["bau_sustained_time_steps"] = load.bau_sustained_time_steps
         self.LoadProfile["annual_kwh"] = load.annual_kwh
         self.load = load
 
@@ -1498,7 +1498,7 @@ class DataManager:
             'StorageDecayRate': storage_decay_rate,
             'DecompOptTol': self.optimality_tolerance_decomp_subproblem,
             'DecompTimeOut': self.timeout_decomp_subproblem_seconds,
-            'AddSOCIncentive': self.add_soc_incentive
+            'AddSOCIncentive': self.add_soc_incentive,
             # Flex loads
             'FlexTechs': flex_techs,
             'UseFlexLoadsModel': self.rc.use_flexloads_model,
@@ -1666,7 +1666,7 @@ class DataManager:
             'StorageDecayRate': storage_decay_rate,
             'DecompOptTol': self.optimality_tolerance_decomp_subproblem,
             'DecompTimeOut': self.timeout_decomp_subproblem_seconds,
-            'AddSOCIncentive': self.add_soc_incentive
+            'AddSOCIncentive': self.add_soc_incentive,
             # Flex loads
             'FlexTechs': flex_techs_bau,
             'UseFlexLoadsModel': self.rc.use_flexloads_model_bau,

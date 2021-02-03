@@ -241,7 +241,7 @@ function add_bigM_adjustments(m, p)
 		end
 	end
 	for t in p.ElectricTechs
-		m[:NewMaxSize][t] = maximum([sum(p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP + p.MaxElecPenalty[ts]) for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month])
+		m[:NewMaxSize][t] = maximum([sum(p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP + p.MaxElecPenalty[ts] for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month])
 		if (m[:NewMaxSize][t] > p.MaxSize[t])
 			m[:NewMaxSize][t] = p.MaxSize[t]
 		end

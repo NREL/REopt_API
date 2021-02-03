@@ -28,7 +28,6 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
 import json
-import os
 from tastypie.test import ResourceTestCaseMixin
 from django.test import TestCase
 from reo.nested_to_flat_output import nested_to_flat
@@ -123,22 +122,31 @@ class TestFlexibleTimeSteps(ResourceTestCaseMixin, TestCase):
 
     def test_flexible_time_steps(self):
         """
-        - Validation to ensure that upon entering time_steps_per_hour=1 or 4, the results of the analysis
-        are as expected (keeping pv and storage off to test wind module's performance)
-        - the output csv files dimensions (8760, 35040 etc) must also match time_steps_per_hour given as input
-        :return:
+        - Validation to ensure that upon entering time_steps_per_hour = 1 or 4, the results of the analysis
+        are as expected (evaluating with only existing PV to keep test fast)
+        - the output dimensions (8760, 35040 etc) must also match time_steps_per_hour given as input
         """
-        # results for time_steps_per_hour = 1
-        d1 = json.load(open(os.path.join("reo", "tests", "outputs_test_flexible_time_steps_one_per_hour.json"), "r"))
-        c1 = nested_to_flat(d1)
-
         # results for time_steps_per_hour = 4
-        response2 = self.get_response(data=fts_post_2)
-        self.assertHttpCreated(response2)
-        r2 = json.loads(response2.content)
+        response = self.get_response(data=fts_post_2)
+        self.assertHttpCreated(response)
+        r2 = json.loads(response.content)
         run_uuid2 = r2.get('run_uuid')
         d2 = ModelManager.make_response(run_uuid=run_uuid2)
         c2 = nested_to_flat(d2['outputs'])
+
+        self.assertEqual(len(c2["year_one_grid_to_load_series"]), 35040)
+
+        # results for time_steps_per_hour = 1
+        fts_post_2["Scenario"]["time_steps_per_hour"] = 1
+        fts_post_2["Scenario"]["Site"]["LoadProfile"]["loads_kw"] = [50] * 8760
+        fts_post_2["Scenario"]["Site"]["LoadProfile"]["outage_start_time_step"] = 100
+        fts_post_2["Scenario"]["Site"]["LoadProfile"]["outage_end_time_step"] = 124
+        response = self.get_response(data=fts_post_2)
+        self.assertHttpCreated(response)
+        r = json.loads(response.content)
+        run_uuid = r.get('run_uuid')
+        d = ModelManager.make_response(run_uuid=run_uuid)
+        c1 = nested_to_flat(d['outputs'])
 
         # Seems reasonable that the exact resiliency average will be different due to a great granularity of survival
         # information in a quarter-hourly simulation vs hourly.

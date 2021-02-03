@@ -348,8 +348,8 @@ def setup_scenario(self, run_uuid, data, raw_post):
             ModelManager.updateModel('AbsorptionChillerModel', tmp, run_uuid)
 
         util = Util(dfm=dfm,
-                    outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
-                    outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
+                    outage_start_time_step=inputs_dict['Site']['LoadProfile'].get("outage_start_time_step"),
+                    outage_end_time_step=inputs_dict['Site']['LoadProfile'].get("outage_end_time_step"),
                     )
 
         # Assign decomposition subproblem optimization parameters - only used if decomposition is selected

@@ -418,7 +418,7 @@ class BuiltInProfile(object):
         self.annual_energy = annual_energy if annual_energy is not None else (
             sum(monthly_totals_energy) if monthly_totals_energy else self.default_annual_energy)
         self.annual_kwh = round(self.annual_energy,0)
-
+        
 
     @property
     def built_in_profile(self):
@@ -441,7 +441,7 @@ class BuiltInProfile(object):
             if self.nearest_city is None:
                 cities_to_search = self.default_cities
             else:
-                climate_zone = [c for c in self.default_cities if c.name==self.nearest_city][0].zoneid
+                climate_zone = [c for c in self.default_cities if c.name==self.nearest_city][0].zoneid                
                 cities_to_search = [c for c in self.default_cities if c.zoneid ==climate_zone]
             if len(cities_to_search) > 1:
                 # else use old geometric approach, never fails...but isn't necessarily correct
@@ -477,12 +477,12 @@ class BuiltInProfile(object):
     def custom_normalized_flatload(self):
         # built in profiles are assumed to be hourly
         periods = 8760
-        # get datetimes of all hours
+        # get datetimes of all hours 
         series = pd.date_range(start=datetime(self.year, 1, 1, 0), end=datetime(self.year, 12, 31, 23), freq='h')
 
         # clip last day if a leap year
         series = series[:periods]
-
+        
         # create boolean masks for weekday and hour of day filters
         if self.doe_reference_name in ['FlatLoad_24_5','FlatLoad_16_5','FlatLoad_8_5']:
             weekends = [5,6]
@@ -606,11 +606,11 @@ class LoadProfile(BuiltInProfile):
                     if self.time_steps_per_hour > 1:
                         load_list = [val for val in self.built_in_profile for _ in range(self.time_steps_per_hour)]
                     else:
-                        load_list = self.built_in_profile
+                        load_list = self.built_in_profile 
                     combine_loadlist.append(load_list)
 
                 # In the case where the user supplies a list of doe_reference_names and percent shares
-                # for consistency we want to act as if we had scaled the partial load to the total site
+                # for consistency we want to act as if we had scaled the partial load to the total site 
                 # load which was unknown at the start of the loop above. This scalar makes it such that
                 # when the percent shares are later applied that the total site load will be the sum
                 # of the default annual loads for this location
@@ -620,12 +620,12 @@ class LoadProfile(BuiltInProfile):
                         actual_percent_of_site_load = sum(load)/total_site_load
                         scalar = 1.0 / actual_percent_of_site_load
                         combine_loadlist[i] = list(np.array(load)* scalar)
-
+                
                 # Apply the percent share of annual load to each partial load
                 if (len(doe_reference_name_list) > 1):
                     for i,load in enumerate(combine_loadlist):
                         combine_loadlist[i] = (np.array(load) * (kwargs.get("percent_share")[i]/100.0)).tolist()
-
+                
                 # Aggregate total hybrid load
                 self.unmodified_load_list = (np.sum(np.array(combine_loadlist), axis=0)).tolist()
 
@@ -667,39 +667,39 @@ class LoadProfile(BuiltInProfile):
 
                         if gen_output < unmet:
                             resilience_check_flag = False
-                            sustain_hours = i - 1
+                            bau_sustained_time_steps = i - 1
 
-                            return resilience_check_flag, sustain_hours
+                            return resilience_check_flag, bau_sustained_time_steps
 
             else:  # gen_existing_kw = 0 and PV_existing_kw > 0
                 for i, (load, pv) in enumerate(zip(critical_loads_kw, existing_pv_kw_list)):
                     unmet = load - pv
                     if unmet > 0:
                         resilience_check_flag = False
-                        sustain_hours = i - 1
+                        bau_sustained_time_steps = i - 1
 
-                        return resilience_check_flag, sustain_hours
+                        return resilience_check_flag, bau_sustained_time_steps
 
-            sustain_hours = i + 1
+            bau_sustained_time_steps = i + 1
             resilience_check_flag = True
-            return resilience_check_flag, sustain_hours
+            return resilience_check_flag, bau_sustained_time_steps
 
-        if all(x not in [critical_loads_kw, outage_start_hour, outage_end_hour] for x in [None, []]):
+        if all(x not in [critical_loads_kw, outage_start_time_step, outage_end_time_step] for x in [None, []]):
 
             if existing_pv_kw_list is not None and critical_loads_kw_is_net:
                 # Add existing pv in if net critical load provided
                 for i, p in enumerate(existing_pv_kw_list):
                     critical_loads_kw[i] += p
             if existing_pv_kw_list is not None:
-                existing_pv_kw_list = existing_pv_kw_list[outage_start_hour:outage_end_hour]
+                existing_pv_kw_list = existing_pv_kw_list[outage_start_time_step - 1:outage_end_time_step - 1]
 
             # modify loads based on custom critical loads profile
-            self.load_list[outage_start_hour:outage_end_hour] = critical_loads_kw[outage_start_hour:outage_end_hour]
-            self.bau_load_list[outage_start_hour:outage_end_hour] = \
-                [0.0 for _ in critical_loads_kw[outage_start_hour:outage_end_hour]]
+            self.load_list[outage_start_time_step - 1:outage_end_time_step - 1] = critical_loads_kw[outage_start_time_step - 1:outage_end_time_step - 1]
+            self.bau_load_list[outage_start_time_step - 1:outage_end_time_step - 1] = \
+                [0.0 for _ in critical_loads_kw[outage_start_time_step - 1:outage_end_time_step - 1]]
 
             # fill in with zeros when diesel generator run out of fuel
-            resilience_check_flag, sustain_hours = resilienceCheck(critical_loads_kw[outage_start_hour:outage_end_hour],
+            resilience_check_flag, bau_sustained_time_steps = resilienceCheck(critical_loads_kw[outage_start_time_step - 1:outage_end_time_step - 1],
                                                                    existing_pv_kw_list, gen_existing_kw, gen_min_turn_down,
                                                                    fuel_avail_before_outage, fuel_slope, fuel_intercept,
                                                                    self.time_steps_per_hour)
@@ -707,23 +707,23 @@ class LoadProfile(BuiltInProfile):
                 critical_loads_kw[outage_start_time_step:outage_start_time_step+bau_sustained_time_steps]
 
 
-        elif None not in [critical_load_pct, outage_start_hour, outage_end_hour]:  # use native_load * critical_load_pct
+        elif None not in [critical_load_pct, outage_start_time_step, outage_end_time_step]:  # use native_load * critical_load_pct
 
             if existing_pv_kw_list not in [None, []]:
-                existing_pv_kw_list = existing_pv_kw_list[outage_start_hour:outage_end_hour]
+                existing_pv_kw_list = existing_pv_kw_list[outage_start_time_step - 1:outage_end_time_step - 1]
 
             critical_loads_kw = [ld * critical_load_pct for ld in self.load_list]
             # Note: existing PV accounted for in load_list
 
             # modify loads based on percentage
-            self.load_list[outage_start_hour:outage_end_hour] = critical_loads_kw[outage_start_hour:outage_end_hour]
-            self.bau_load_list[outage_start_hour:outage_end_hour] = \
-                [0.0 for _ in critical_loads_kw[outage_start_hour:outage_end_hour]]
+            self.load_list[outage_start_time_step - 1:outage_end_time_step - 1] = critical_loads_kw[outage_start_time_step - 1:outage_end_time_step - 1]
+            self.bau_load_list[outage_start_time_step - 1:outage_end_time_step - 1] = \
+                [0.0 for _ in critical_loads_kw[outage_start_time_step - 1:outage_end_time_step - 1]]
 
             # fill in with zeros when diesel generator run out of fuel
-            resilience_check_flag, sustain_hours = resilienceCheck(critical_loads_kw[outage_start_hour:outage_end_hour],
+            resilience_check_flag, bau_sustained_time_steps = resilienceCheck(critical_loads_kw[outage_start_time_step - 1:outage_end_time_step - 1],
                                                                    existing_pv_kw_list, gen_existing_kw, gen_min_turn_down,
-                                                                   fuel_avail_before_outage, fuel_slope, fuel_intercept,
+                                                                   fuel_avail_before_outage, fuel_slope, fuel_intercept, 
                                                                    self.time_steps_per_hour)
 
             self.bau_load_list[outage_start_time_step:outage_start_time_step+bau_sustained_time_steps] = \
@@ -736,12 +736,12 @@ class LoadProfile(BuiltInProfile):
              outage-simulation stage.
             """
             resilience_check_flag = True
-            sustain_hours = 0 #no outage
+            bau_sustained_time_steps = 0 # no outage
 
-        else:  # missing outage_start_hour, outage_end_hour, or critical_load_kw => no specified outage
+        else:  # missing outage_start_time_step, outage_end_time_step, or critical_load_kw => no specified outage
             critical_loads_kw = [critical_load_pct * ld for ld in self.unmodified_load_list]
             resilience_check_flag = True
-            sustain_hours = 0  # no outage
+            bau_sustained_time_steps = 0  # no outage
 
         # resilience_check_flag: True if existing diesel can sustain critical load during outage
         self.resilience_check_flag = resilience_check_flag
