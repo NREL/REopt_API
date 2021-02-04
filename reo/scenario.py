@@ -158,7 +158,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
                        )
 
         if inputs_dict["Site"]["Generator"]["generator_only_runs_during_grid_outage"]:
-            if inputs_dict['Site']['LoadProfile'].get('outage_start_hour') is not None and inputs_dict['Site']['LoadProfile'].get('outage_end_hour') is not None:
+            if inputs_dict['Site']['LoadProfile'].get('outage_start_time_step') is not None and inputs_dict['Site']['LoadProfile'].get('outage_end_time_step') is not None:
 
                 if inputs_dict["Site"]["Generator"]["max_kw"] > 0 or inputs_dict["Site"]["Generator"]["existing_kw"] > 0:
                     gen = Generator(dfm=dfm,

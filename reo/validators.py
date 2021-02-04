@@ -287,7 +287,7 @@ class URDB_RateValidator:
             self.errors.append('Missing valid entry for {}.'.format(name))
             return False
         return True
-
+    
     def isNotEmptyList(self, name):
         if type(getattr(self,name)) != list:
             self.errors.append('Expecting a list for {}.'.format(name))
@@ -299,7 +299,7 @@ class URDB_RateValidator:
             self.errors.append('List for {} contains null value(s).'.format(name))
             return False
         return True
-
+    
     def validRate(self, rate):
         # check that each  tier in rate structure array has a rate attribute, and that all rates except one contain a 'max' attribute
         # return Boolean if any errors found
@@ -390,8 +390,6 @@ class ValidateNestedInput:
 
 
     # EXAMPLE 1 - BASIC POST
-
-
     # {
     #     "Scenario": {
     #         "Site": {
@@ -448,7 +446,7 @@ class ValidateNestedInput:
         if type(input_dict) is not dict:
             self.input_data_errors.append(("POST must contain a valid JSON formatted according to format described in "
                                            "https://developer.nrel.gov/docs/energy-optimization/reopt-v1/"))
-        else:
+        else:        
             self.input_dict['Scenario'] = input_dict.get('Scenario') or {}
             for k,v in input_dict.items():
                 if k != 'Scenario':
@@ -999,7 +997,7 @@ class ValidateNestedInput:
                     if real_values.get("prod_factor_series_kw"):
                         self.validate_8760(real_values.get("prod_factor_series_kw"),
                                                             "PV", "prod_factor_series_kw", self.input_dict['Scenario']['time_steps_per_hour'])
-
+    
         if object_name_path[-1] == "Wind":
             if any((isinstance(real_values['max_kw'], x) for x in [float, int])):
                 if real_values['max_kw'] > 0:
@@ -1023,44 +1021,74 @@ class ValidateNestedInput:
 
                         self.validate_8760(real_values.get("pressure_atmospheres"),
                                             "Wind", "pressure_atmospheres", self.input_dict['Scenario']['time_steps_per_hour'])
-                    
-                    from reo.src.wind_resource import get_conic_coords
+                    else:
+                        from reo.src.wind_resource import get_conic_coords
 
+                        if self.input_dict['Scenario']['Site']['Wind'].get('size_class') is None:
+                            """
+                            size_class is determined by average load. If using simulated load, then we have to get the ASHRAE
+                            climate zone from the DeveloperREOapi in order to determine the load profile (done in BuiltInProfile).
+                            In order to avoid redundant external API calls, when using the BuiltInProfile here we save the
+                            BuiltInProfile in the inputs as though a user passed in the profile as their own. This logic used to be
+                            handled in reo.src.load_profile, but due to the need for the average load here, the work-flow has been
+                            modified.
+                            """
 
-                    if self.input_dict['Scenario']['Site']['Wind'].get('size_class') is None:
-                        """
-                        size_class is determined by average load. If using simulated load, then we have to get the ASHRAE
-                        climate zone from the DeveloperREOapi in order to determine the load profile (done in BuiltInProfile).
-                        In order to avoid redundant external API calls, when using the BuiltInProfile here we save the
-                        BuiltInProfile in the inputs as though a user passed in the profile as their own. This logic used to be
-                        handled in reo.src.load_profile, but due to the need for the average load here, the work-flow has been
-                        modified.
-                        """
-                        from reo.src.load_profile import LoadProfile
-                        
-                        lp = LoadProfile(dfm=None,
-                             user_profile=self.input_dict['Scenario']['Site']['LoadProfile'].get('loads_kw'),
-                             latitude=self.input_dict['Scenario']['Site'].get('latitude'),
-                             longitude=self.input_dict['Scenario']['Site'].get('longitude'),
-                             time_steps_per_hour=self.input_dict['Scenario']['time_steps_per_hour'],
-                             **self.input_dict['Scenario']['Site']['LoadProfile'])
+                            avg_load_kw = 0
+                            if self.input_dict['Scenario']['Site']['LoadProfile'].get('annual_kwh') is not None:
+                                annual_kwh = self.input_dict['Scenario']['Site']['LoadProfile'].get('annual_kwh')
+                                percent_share_list = self.input_dict['Scenario']['Site']['LoadProfile'].get('percent_share')
+                                # Find weighted avg for hybrid load profile
+                                avg_load_kw = sum(
+                                    [annual_kwh * pct / 100 for pct in percent_share_list]) / 8760
 
-                        avg_load_kw =  np.mean(lp.load_list) 
+                            elif self.input_dict['Scenario']['Site']['LoadProfile'].get('annual_kwh') is None and self.input_dict['Scenario']['Site']['LoadProfile'].get('doe_reference_name') is not None:
+                                from reo.src.load_profile import LoadProfile
+                                default_annual_kwh_list = []
+                                doe_reference_name_list = self.input_dict['Scenario']['Site']['LoadProfile']['doe_reference_name']
+                                percent_share_list = self.input_dict['Scenario']['Site']['LoadProfile']['percent_share']
+                                for i in range(len(doe_reference_name_list)):
+                                    self.input_dict['Scenario']['Site']['LoadProfile']['doe_reference_name'] = doe_reference_name_list[i]
+                                    if type(self.input_dict['Scenario']['Site']['LoadProfile']['doe_reference_name']) != list:
+                                        self.input_dict['Scenario']['Site']['LoadProfile']['doe_reference_name'] = [self.input_dict['Scenario']['Site']['LoadProfile']['doe_reference_name']]
+                                    b = LoadProfile(dfm = None, latitude=self.input_dict['Scenario']['Site']['latitude'],
+                                                       longitude=self.input_dict['Scenario']['Site']['longitude'],
+                                                       **self.input_dict['Scenario']['Site']['LoadProfile']
+                                                       )
+                                    default_annual_kwh_list.append(b.annual_kwh)
+                                avg_load_kw = sum([sum(default_annual_kwh_list) * percent_share_list[i] / 100 for i in range(len(default_annual_kwh_list))]) / 8760
+                                # resetting the doe_reference_name key to its original list
+                                # form for further processing in loadprofile.py file
+                                self.input_dict['Scenario']['Site']['LoadProfile'][
+                                    'doe_reference_name'] = doe_reference_name_list
 
-                        if avg_load_kw <= 12.5:
-                            self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'residential'
-                        elif avg_load_kw <= 100:
-                            self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'commercial'
-                        elif avg_load_kw <= 1000:
-                            self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'medium'
-                        else:
-                            self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'large'
-                    try:
-                        get_conic_coords(
-                            lat=self.input_dict['Scenario']['Site']['latitude'],
-                            lng=self.input_dict['Scenario']['Site']['longitude'])
-                    except Exception as e:
-                        self.input_data_errors.append(e.args[0])
+                            elif self.input_dict['Scenario']['Site']['LoadProfile'].get('loads_kw') in [None,[]]:
+                                from reo.src.load_profile import LoadProfile
+                                if type(self.input_dict['Scenario']['Site']['LoadProfile']['doe_reference_name']) != list:
+                                        self.input_dict['Scenario']['Site']['LoadProfile']['doe_reference_name'] = [self.input_dict['Scenario']['Site']['LoadProfile']['doe_reference_name']]
+                                b = LoadProfile(dfm = None, latitude=self.input_dict['Scenario']['Site']['latitude'],
+                                                   longitude=self.input_dict['Scenario']['Site']['longitude'],
+                                                   **self.input_dict['Scenario']['Site']['LoadProfile']
+                                                   )
+                                self.input_dict['Scenario']['Site']['LoadProfile']['loads_kw'] = b.built_in_profile
+
+                                avg_load_kw = sum(self.input_dict['Scenario']['Site']['LoadProfile']['loads_kw'])\
+                                                / len(self.input_dict['Scenario']['Site']['LoadProfile']['loads_kw'])
+
+                            if avg_load_kw <= 12.5:
+                                self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'residential'
+                            elif avg_load_kw <= 100:
+                                self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'commercial'
+                            elif avg_load_kw <= 1000:
+                                self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'medium'
+                            else:
+                                self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'large'
+                        try:
+                            get_conic_coords(
+                                lat=self.input_dict['Scenario']['Site']['latitude'],
+                                lng=self.input_dict['Scenario']['Site']['longitude'])
+                        except Exception as e:
+                            self.input_data_errors.append(e.args[0])
 
         if object_name_path[-1] == "CHP":
             prime_mover_defaults_all = copy.deepcopy(CHP.prime_mover_defaults_all)
@@ -1161,7 +1189,7 @@ class ValidateNestedInput:
 
                 if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_CO2_per_gal') is None:
                     self.update_attribute_value(object_name_path, number, 'emissions_factor_lb_CO2_per_gal', self.fuel_conversion_per_gal.get('diesel_oil'))
-
+                
                 if (real_values["max_kw"] > 0 or real_values["existing_kw"] > 0):
                     # then replace zeros in default burn rate and slope, and set min/max kw values appropriately for
                     # REopt (which need to be in place before data is saved and passed on to celery tasks)
@@ -1241,7 +1269,7 @@ class ValidateNestedInput:
             elif (len(electric_tariff.get('emissions_factor_series_lb_CO2_per_kwh') or []) == 0):
                 if (self.input_dict['Scenario']['Site'].get('latitude') is not None) and \
                     (self.input_dict['Scenario']['Site'].get('longitude') is not None):
-                    ec = EmissionsCalculator(   latitude=self.input_dict['Scenario']['Site']['latitude'],
+                    ec = EmissionsCalculator(   latitude=self.input_dict['Scenario']['Site']['latitude'], 
                                                     longitude=self.input_dict['Scenario']['Site']['longitude'],
                                                     time_steps_per_hour = self.input_dict['Scenario']['time_steps_per_hour'])
                     emissions_series = None
@@ -1251,21 +1279,21 @@ class ValidateNestedInput:
                     except AttributeError as e:
                         # Emissions warning is a specific type of warning that we check for and display to the users when it occurs
                         # since at this point the emissions are not required to do a run it simply
-                        # tells the user why we could not get an emission series and results in emissions not being
+                        # tells the user why we could not get an emission series and results in emissions not being 
                         # calculated, but does not prevent the run from optimizing
                         self.emission_warning = str(e.args[0])
 
                     if emissions_series is not None:
-                        self.update_attribute_value(object_name_path, number, 'emissions_factor_series_lb_CO2_per_kwh',
+                        self.update_attribute_value(object_name_path, number, 'emissions_factor_series_lb_CO2_per_kwh', 
                             emissions_series)
-                        self.update_attribute_value(object_name_path, number, 'emissions_region',
+                        self.update_attribute_value(object_name_path, number, 'emissions_region', 
                             emissions_region)
             else:
-                self.validate_8760(electric_tariff['emissions_factor_series_lb_CO2_per_kwh'],
-                    "ElectricTariff",
-                    'emissions_factor_series_lb_CO2_per_kwh',
+                self.validate_8760(electric_tariff['emissions_factor_series_lb_CO2_per_kwh'], 
+                    "ElectricTariff", 
+                    'emissions_factor_series_lb_CO2_per_kwh', 
                     self.input_dict['Scenario']['time_steps_per_hour'])
-
+ 
 
             if electric_tariff.get('urdb_response') is not None:
                 self.validate_urdb_response()
@@ -1356,10 +1384,10 @@ class ValidateNestedInput:
                     self.input_data_errors.append((
                         'add_blended_rates_to_urdb_rate is set to "true" yet missing valid entries for the '
                         'following inputs: {}').format(', '.join(missing_keys)))
-
+            
             ts_per_hour = self.input_dict['Scenario'].get('time_steps_per_hour') or \
                                     self.nested_input_definitions['Scenario']['time_steps_per_hour']['default']
-
+            
             for key_name in ['wholesale_rate_us_dollars_per_kwh',
                                 'wholesale_rate_above_site_load_us_dollars_per_kwh']:
                 if type(electric_tariff.get(key_name)) == list:
@@ -1371,12 +1399,12 @@ class ValidateNestedInput:
                                             attr_name=key_name,
                                             time_steps_per_hour=ts_per_hour, number=number,
                                             input_isDict=input_isDict)
-
+            
             if self.isValid:
                 if electric_tariff.get('coincident_peak_load_active_timesteps') is not None:
                     for series in electric_tariff.get('coincident_peak_load_active_timesteps'):
-                        self.validate_timestep_series(series,
-                        "ElectricTariff", 'coincident_peak_load_active_timesteps',
+                        self.validate_timestep_series(series, 
+                        "ElectricTariff", 'coincident_peak_load_active_timesteps', 
                         ts_per_hour, number=number, input_isDict=input_isDict)
                     if len(electric_tariff.get('coincident_peak_load_active_timesteps')) != len(electric_tariff.get('coincident_peak_load_charge_us_dollars_per_kw')):
                         self.input_data_errors.append(( "The number of rates in coincident_peak_load_charge_us_dollars_per_kw must"
@@ -1546,6 +1574,16 @@ class ValidateNestedInput:
                                                                                         chp_prime_mover=chp_prime_mover)
                         self.update_attribute_value(object_name_path, number, 'chiller_cop', absorp_chiller_cop)
 
+        if object_name_path[-1] == "Financial":
+            # Making sure discount and tax rates are correct when saved to the database later in non-third party cases, 
+            # this logic is assumed in calculating after incentive capex costs
+            if real_values.get("third_party_ownership") is False:
+                self.update_attribute_value(object_name_path, number, 'owner_discount_pct', real_values.get("offtaker_discount_pct"))
+                self.defaults_inserted.append(['owner_discount_pct',object_name_path])
+                self.update_attribute_value(object_name_path, number, 'owner_tax_pct', real_values.get("offtaker_tax_pct"))
+                self.defaults_inserted.append(['owner_tax_pct', object_name_path])
+
+
     def check_min_max_restrictions(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
         """
         comparison_function for recursively_check_input_dict.
@@ -1591,7 +1629,7 @@ class ValidateNestedInput:
                                         self.input_data_errors.append(
                                             'At least one value in %s (from %s number %s) exceeds allowable max of %s' % (
                                                 name, self.object_name_string(object_name_path), number, data_validators['max']))
-
+                    
                     if type(value) in [int, float]:
                         if data_validators.get('min') is not None:
                             if value < data_validators['min']:
@@ -1655,13 +1693,13 @@ class ValidateNestedInput:
                     if input_isDict or input_isDict is None:
                         self.input_data_errors.append(
                             'Could not convert %s (%s) in %s to %ss' % (name, value,
-                                                self.object_name_string(object_name_path),
+                                                self.object_name_string(object_name_path), 
                                                 conversion_function_name)
                         )
                     if input_isDict is False:
                         self.input_data_errors.append(
                             'Could not convert %s (%s) in %s (number %s) to %ss' % (name, value,
-                                                self.object_name_string(object_name_path), number,
+                                                self.object_name_string(object_name_path), number, 
                                                 conversion_function_name)
                         )
             except NotImplementedError:
@@ -1709,7 +1747,7 @@ class ValidateNestedInput:
                                         pass
                                 else:
                                     attribute_type = list_eval_function_name.split('_')[-1]
-                                    make_array = True
+                                    make_array = True                        
                             else:
                                 # List of list is more complex to check since it can go along with and of the previously listed list_of_ types
                                 # We see if the data is a list of lists first,
@@ -1768,7 +1806,7 @@ class ValidateNestedInput:
                             new_value = [new_value]
                     if new_value is not None:
                         self.update_attribute_value(object_name_path, number, name, new_value)
-
+                    
 
     def fillin_defaults(self, object_name_path, template_values=None, real_values=None,  number=1, input_isDict=None):
         """
@@ -1939,8 +1977,8 @@ class ValidateNestedInput:
                     self.input_data_errors[-1] = self.input_data_errors[-1].replace(
                         '. Timesteps', ' in {} {}. Timesteps'.format(obj_name, number))
                 break
-        return
-
+        return 
+    
     def validate_8760(self, attr, obj_name, attr_name, time_steps_per_hour, number=1, input_isDict=None):
         """
         This method is for the case that a user uploads a time-series that has either 30 minute or 15 minute
