@@ -332,7 +332,7 @@ def simulated_load(request):
             for key in request.GET.keys():
                 if ('_kw' in key) or ('_ton' in key) or ('_fraction' in key):
                     raise ValueError("Invalid key {} for load_type=heating".format(key))
-
+            
             if doe_reference_name is None:
                 raise ValueError("Please supply a doe_reference_name and optional scaling parameters (annual_mmbtu or monthly_mmbtu).")
 
@@ -538,8 +538,8 @@ def chp_defaults(request):
            Outputs: (uses default existing_boiler_production_type_steam_or_hw based on prime_mover to get default params)
         4. Inputs: prime_mover
            Outputs: (uses default size_class and existing_boiler_production_type_steam_or_hw based on prime_mover to get default params)
-
-    The main purpose of this endpoint is to communicate the following table of dependency of CHP defaults versus
+    
+    The main purpose of this endpoint is to communicate the following table of dependency of CHP defaults versus 
         existing_boiler_production_type_steam_or_hw and avg_boiler_fuel_load_mmbtu_per_hr:
     If hot_water and <= 5 MWe chp_size_based_on_avg_heating_load_kw --> prime_mover = recip_engine of size_class X
     If hot_water and > 5 MWe chp_size_based_on_avg_heating_load_kw --> prime_mover = combustion_turbine of size_class X
@@ -562,7 +562,7 @@ def chp_defaults(request):
             if hw_or_steam is None:  # Use default hw_or_steam based on prime_mover
                 hw_or_steam = Boiler.boiler_type_by_chp_prime_mover_defaults[prime_mover]
         elif hw_or_steam is not None and avg_boiler_fuel_load_mmbtu_per_hr is not None:  # Option 1, determine prime_mover based on inputs
-            if hw_or_steam not in ["hot_water", "steam"]:  # Validate user-entered hw_or_steam
+            if hw_or_steam not in ["hot_water", "steam"]:  # Validate user-entered hw_or_steam 
                 raise ValueError("Invalid argument for existing_boiler_production_type_steam_or_hw; must be 'hot_water' or 'steam'")
         else:
             ValueError("Must provide either existing_boiler_production_type_steam_or_hw or prime_mover")
@@ -592,7 +592,7 @@ def chp_defaults(request):
             chp_elec_size_heuristic_kw = chp_fuel_rate_mmbtu_per_hr * elec_effic * 1.0E6 / 3412.0
         else:
             chp_elec_size_heuristic_kw = None
-
+        
         # If size class is specified use that and ignore heuristic CHP sizing for determining size class
         if size_class is not None:
             size_class = int(size_class)
@@ -615,7 +615,7 @@ def chp_defaults(request):
                         size_class = sc
         else:
             size_class = CHP.default_chp_size_class[prime_mover]
-
+        
         prime_mover_defaults = CHP.get_chp_defaults(prime_mover, hw_or_steam, size_class)
 
         response = JsonResponse(
@@ -797,7 +797,7 @@ def schedule_stats(request):
             for i, period in enumerate(chp_unavailability_periods):
                 start_datetime = datetime(year=year, month=period['month'], day=start_day_of_month_list[i], hour=period['start_hour']-1)
                 end_datetime = start_datetime + timedelta(hours=period['duration_hours'])
-                formatted_datetime_periods.append({"start_datetime": start_datetime.strftime("%Y-%m-%dT%H:%M:%S"),
+                formatted_datetime_periods.append({"start_datetime": start_datetime.strftime("%Y-%m-%dT%H:%M:%S"), 
                                                     "end_datetime": end_datetime.strftime("%Y-%m-%dT%H:%M:%S")})
         else:
             raise ValueError(" ".join(errors_chp_unavailability_periods))

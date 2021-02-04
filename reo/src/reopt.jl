@@ -567,7 +567,7 @@ function add_tech_size_constraints(m, p)
 		sum( m[:binSingleBasicTech][t,c] for t in p.TechsInClass[c] ) <= 1
 		)
 	##Constraint (7c): Minimum size for each tech class
-	@constraint(m, TechClassMinSiMinSizeCon[c in p.TechClass],
+	@constraint(m, TechClassMinSizeCon[c in p.TechClass],
 				sum( m[:dvSize][t] for t in p.TechsInClass[c] ) >= p.TechClassMinSize[c]
 			)
 

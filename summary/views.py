@@ -91,7 +91,7 @@ def unlink(request, user_uuid, run_uuid):
     Retrieve a summary of scenarios for given user_uuid
     :param request:
     :param user_uuid:
-    :return
+    :return 
         True, bool
     """
     content = {'user_uuid':user_uuid, 'run_uuid':run_uuid}
@@ -112,7 +112,7 @@ def unlink(request, user_uuid, run_uuid):
                 return JsonResponse({"Error": str(err.message)}, status=400)
 
     try:
-
+        
         if not ScenarioModel.objects.filter(user_uuid=user_uuid).exists():
             return JsonResponse({"Error":"User {} does not exist".format(user_uuid)}, status=400)
 
@@ -187,7 +187,7 @@ def summary(request, user_uuid):
         if len(scenarios) == 0:
             response = JsonResponse({"Error": "No scenarios found for user '{}'".format(user_uuid)}, content_type='application/json', status=404)
             return response
-
+        
         scenario_run_uuids = [s.run_uuid for s in scenarios]
         scenario_run_ids = [s.id for s in scenarios]
 
@@ -304,12 +304,12 @@ def summary(request, user_uuid):
                 if site:
 
                     # Focus
-                    if load:
+                    if load: 
                         if load.get('outage_start_time_step') is not None:
                             results['focus'] = "Resilience"
                         else:
                             results['focus'] = "Financial"
-
+                        
                         if load.get('loads_kw') is not None:
                             results['doe_reference_name'] = "Custom"
                         else:
@@ -356,7 +356,7 @@ def summary(request, user_uuid):
                         tariff.get('year_one_coincident_peak_cost_us_dollars') or 0,
                         tariff.get('year_one_bill_us_dollars') or 0
                         ]))
-
+                    
                     year_one_costs_bau = sum(filter(None, [
                         tariff.get('year_one_energy_cost_bau_us_dollars') or 0,
                         tariff.get('year_one_demand_cost_bau_us_dollars') or 0,
@@ -370,7 +370,7 @@ def summary(request, user_uuid):
                     results['resilience_hours_min'] = resilience.get('resilience_hours_min', 'not evaluated')
                     results['resilience_hours_max'] = resilience.get('resilience_hours_max', 'not evaluated')
                     results['resilience_hours_avg'] = resilience.get('resilience_hours_avg', 'not evaluated')
-
+                    
                     results['year_one_savings_us_dollars'] = year_one_costs_bau - year_one_costs
 
                     # PV Size
