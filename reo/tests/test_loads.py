@@ -53,7 +53,7 @@ class LoadsTestCase(TestCase):
                                 'Duluth', 'Fairbanks']
 
         for i in range(0, len(test_cities)):
-            profile = BuiltInProfile(test_latitudes[i], test_longitudes[i], "MidriseApartment", 500000)
+            profile = BuiltInProfile(latitude=test_latitudes[i], longitude=test_longitudes[i], doe_reference_name="MidriseApartment", annual_energy=500000)
             self.assertEqual(profile.city, expected_ashrae_city[i], {r"reopt": {"Error": "Incorrect ASHRAE city returned for test city: " + test_cities[i] + " Expected: " + expected_ashrae_city[i] + " Actual: " + profile.city}})
 
 

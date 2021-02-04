@@ -8,6 +8,7 @@ keys.py
 input_files/*
 !input_files/**/
 !input_files/LoadProfiles/**/
+!input_files/CHP/
 .DS_Store
 urdb_rate_errors/
 outage_sizing/
@@ -87,6 +88,8 @@ celerybeat-schedule
 # virtualenv
 venv/
 ENV/
+Scripts/
+pyvenv.cfg
 
 # Spyder project settings
 .spyderproject
@@ -105,13 +108,8 @@ static/files/*
 # Redis
 *.rdb
 
-# Docker files with different names for distinguishing OS vs private
-docker-compose.xpressOS.yml
-
 all_data*
 =======
-# CHP results processing
-results_processing/*
 
 # Math Forumlation Latex
 docs/formulation/*aux
@@ -121,5 +119,9 @@ docs/formulation/*log
 julia_envs/**/**.so
 julia_envs/**/**.dylib
 julia_envs/**/**.dll
+
+# Customized docker files
+docker-compose.xpressOS.yml
+Dockerfile.xpressOS.pyjul
 
 /.werf_secret_key
