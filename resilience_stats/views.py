@@ -27,22 +27,20 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-import json
 import sys
 import uuid
 from typing import Dict, Union
-
 from django.forms.models import model_to_dict
 from django.http import JsonResponse, HttpRequest
-
 from reo.exceptions import UnexpectedError
 from reo.models import ModelManager
-from reo.models import ScenarioModel, PVModel, StorageModel, LoadProfileModel, GeneratorModel, FinancialModel, WindModel
+from reo.models import ScenarioModel, PVModel, StorageModel, LoadProfileModel, GeneratorModel, FinancialModel, \
+    WindModel, CHPModel
 from reo.utilities import annuity
 from resilience_stats.models import ResilienceModel
 from resilience_stats.outage_simulator_LF import simulate_outages
 import numpy as np
-
+from reo.utilities import empty_record
 
 def resilience_stats(request: Union[Dict, HttpRequest], run_uuid=None):
     """
@@ -225,12 +223,13 @@ def financial_check(request, run_uuid=None):
 
 
 def run_outage_sim(run_uuid, with_tech=True, bau=False):
-    load_profile = LoadProfileModel.objects.filter(run_uuid=run_uuid).first()
-    gen = GeneratorModel.objects.filter(run_uuid=run_uuid).first()
-    batt = StorageModel.objects.filter(run_uuid=run_uuid).first()
+    load_profile = LoadProfileModel.objects.filter(run_uuid=run_uuid).first() or empty_record()
+    gen = GeneratorModel.objects.filter(run_uuid=run_uuid).first() or empty_record()
+    batt = StorageModel.objects.filter(run_uuid=run_uuid).first() or empty_record()
     pvs = PVModel.objects.filter(run_uuid=run_uuid)
-    financial = FinancialModel.objects.filter(run_uuid=run_uuid).first()
-    wind = WindModel.objects.filter(run_uuid=run_uuid).first()
+    financial = FinancialModel.objects.filter(run_uuid=run_uuid).first() or empty_record()
+    wind = WindModel.objects.filter(run_uuid=run_uuid).first() or empty_record()
+    chp = CHPModel.objects.filter(run_uuid=run_uuid).first() or empty_record()
 
     batt_roundtrip_efficiency = batt.internal_efficiency_pct \
                                 * batt.inverter_efficiency_pct \
@@ -267,8 +266,8 @@ def run_outage_sim(run_uuid, with_tech=True, bau=False):
             fuel_available=gen.fuel_avail_gal,
             b=gen.fuel_intercept_gal_per_hr,
             m=gen.fuel_slope_gal_per_kwh,
-            diesel_min_turndown=gen.min_turn_down_pct,
-            celery_eager=celery_eager
+            celery_eager=celery_eager,
+            chp_kw=chp.size_kw or 0,
         )
         results.update(tech_results)
 
@@ -289,7 +288,7 @@ def run_outage_sim(run_uuid, with_tech=True, bau=False):
             fuel_available=gen.fuel_avail_gal,
             b=gen.fuel_intercept_gal_per_hr,
             m=gen.fuel_slope_gal_per_kwh,
-            diesel_min_turndown=gen.min_turn_down_pct
+            chp_kw=chp.size_kw or 0,
         )
         results.update({key + '_bau': val for key, val in bau_results.items()})
 
