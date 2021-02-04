@@ -846,5 +846,14 @@ class ModelManager(object):
 
         if resp['inputs']['Scenario']['Site']['LoadProfile'].get('doe_reference_name') == '':
             del resp['inputs']['Scenario']['Site']['LoadProfile']['doe_reference_name']
+        
+        #Preserving Backwards Compatability
+        resp['inputs']['Scenario']['Site']['LoadProfile']['outage_start_hour'] = resp['inputs']['Scenario']['Site']['LoadProfile'].get('outage_start_time_step')
+        if resp['inputs']['Scenario']['Site']['LoadProfile']['outage_start_hour'] is not None:
+            resp['inputs']['Scenario']['Site']['LoadProfile']['outage_start_hour'] -= 1
+        resp['inputs']['Scenario']['Site']['LoadProfile']['outage_end_hour'] = resp['inputs']['Scenario']['Site']['LoadProfile'].get('outage_end_time_step')
+        if resp['inputs']['Scenario']['Site']['LoadProfile']['outage_end_hour'] is not None:
+            resp['inputs']['Scenario']['Site']['LoadProfile']['outage_end_hour'] -= 1
+
 
         return resp

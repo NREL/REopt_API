@@ -151,11 +151,6 @@ nested_output_definitions = {
                   "description": "Business-as-usual present value of operations and maintenance over anlaysis period",
                   "units": "$"
                 },
-                "avoided_outage_costs_us_dollars": {
-                  "type": "float",
-                  "description": "Avoided outage costs are determined using the Value of Lost Load [$/kWh], multiplied by the average critical load in kW (determined using critical_load_pct), the average hours that the critical load is sustained (determined by simulating outages starting at every hour of the year), and a present worth factor that accounts for cost growth with escalation_pct over the analysis_years and discounts the avoided costs to present value using offtaker_discount_pct.  Note that the use of a present worth factor presumes that the outage period and the microgrid's ability to meet the critical load is the same each year in the analysis_years. If outage_is_major_event is set to True, then the present worth factor is set to 1, which assumes that only one outage occurs in the analysis_years.",
-                  "units": "$"
-                },
                 "net_capital_costs": {
                   "type": "float",
                   "description": "Net capital costs for all technologies, in present value, including replacement costs and incentives.",
