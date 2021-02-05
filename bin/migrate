@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+set -Eeuxo pipefail
+
+python manage.py showmigrations --plan
+
+python manage.py migrate
