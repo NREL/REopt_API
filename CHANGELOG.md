@@ -28,6 +28,12 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
     
+## dev - 2021-02-05
+### Patches
+- `reo`: Fix **PVWatts** being called when user provides `PV.prod_factor_series_kw`
+- `reopt_api`: new `docker-compose.nginx.yml` for standing up the API on a server with remote access (for example if one wants to host the API on a cloud service)
+- `reopt_api`: update `Dockerfile.xpress` to use `nlaws/pyjul:1.5.2` base image (was using Julia 1.3)
+    
 ## v1.4.2 - 2021-02-03
 ### Patches
 - `reo`: Fix **Wind** `size_class` was not being set
