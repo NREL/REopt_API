@@ -48,7 +48,8 @@ def check_pvwatts_response_data(resp):
         message = ("Error parsing PVWatts response. "
                    "Status code: {}. Text: {}".format(resp.status_code, resp.text))
         raise_pvwatts_exception(message)
-    return data
+    else:
+        return data
 
 
 def raise_pvwatts_exception(message):
@@ -85,7 +86,29 @@ class PVWatts:
                  offline=False,
                  verify=True,
                  **kwargs):
-
+        """
+        WARNING: the __init__ method calls PVWatts API
+        :param url_base: str
+        :param key: str
+        :param azimuth: float
+        :param system_capacity: float
+        :param losses: float
+        :param array_type: int
+        :param module_type: int
+        :param timeframe: str
+        :param gcr: float
+        :param dc_ac_ratio: float
+        :param inv_eff: float
+        :param radius: float
+        :param dataset: str
+        :param latitude: float
+        :param longitude: float
+        :param tilt: float
+        :param time_steps_per_hour: int
+        :param offline: bool
+        :param verify: bool
+        :param kwargs: dict
+        """
         self.url_base = url_base
         self.key = key
         self.azimuth = azimuth
