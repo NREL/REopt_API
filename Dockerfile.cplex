@@ -1,0 +1,49 @@
+FROM ubuntu:18.04
+
+# ubuntu 18.04 comes with python 3.6
+
+RUN apt update
+RUN apt-get update \
+    && apt-get upgrade -y \
+	&& apt install -y \
+	    python3-pip \
+        curl \
+        git \
+        libboost-program-options1.65.1 \
+        libgfortran4 \
+        libgsl23 \
+        libtbb2 \
+        libblas3 \
+        liblapack3 \
+        default-jre;
+
+
+ENV JULIA_NUM_THREADS=99
+# Install Julia
+WORKDIR /usr/src
+RUN curl -Ok https://julialang-s3.julialang.org/bin/linux/x64/1.4/julia-1.4.2-linux-x86_64.tar.gz
+RUN tar xvfz julia-1.4.2-linux-x86_64.tar.gz && rm julia-1.4.2-linux-x86_64.tar.gz
+ENV PATH=/usr/src/julia-1.4.2/bin:$PATH
+
+# Install CPLEX
+COPY solver/cplex_studio1210.linux-x86-64.bin .
+RUN chmod +x cplex_studio1210.linux-x86-64.bin
+RUN printf '2\n\n1\n\n\n\n\n\n2\n\n' | ./cplex_studio1210.linux-x86-64.bin
+RUN rm cplex_studio1210.linux-x86-64.bin
+
+# Install Julia packages
+COPY julia_envs/CPLEX /opt/reopt/julia_envs/CPLEX/
+ENV LD_PRELOAD=/usr/src/julia-1.4.2/lib/julia/libstdc++.so.6
+ENV CPLEX_STUDIO_BINARIES="/opt/ibm/ILOG/CPLEX_Studio1210/cplex/bin/x86-64_linux/"
+RUN julia --project="/opt/reopt/julia_envs/CPLEX/" -e 'import Pkg; Pkg.instantiate()'
+
+# connect julia to python
+COPY requirements.txt /opt/reopt
+WORKDIR /opt/reopt
+RUN pip3 install -r requirements.txt
+RUN python3 -c 'import julia; julia.install()'
+
+# Copy all code
+ENV PYTHONDONTWRITEBYTECODE 1
+COPY . /opt/reopt
+EXPOSE 8000
