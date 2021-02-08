@@ -108,7 +108,7 @@ nested_input_definitions = {
     "timeout_seconds": {
       "type": "int",
       "min": 1,
-      "max": 4200,
+      "max": 100000,
       "default": 4200,
       "description": "The number of seconds allowed before the optimization times out"
     },
@@ -1871,7 +1871,6 @@ nested_input_definitions = {
           "description": "Percent of upfront project costs to depreciate under MACRS"
         }
       },
-      ##################################################################################################################
       "RC": {
         "use_flexloads_model": {
           "type": "bool",
@@ -1991,22 +1990,17 @@ nested_input_definitions = {
           "type": "list_of_float",
           "default": [],
           "description": "Time-varying SHR"
+        },
+        "fan_power_ratio": {
+          "type": "float",
+          "default": 0.0,
+          "description": "AC fan power ratio"
+        },
+        "dse": {
+          "type": "float",
+          "default": 1.0,
+          "description": "Cooling static duct efficiency"
         }
-        # "use_crankcase": {
-        #   "type": "bool",
-        #   "default": False,
-        #   "description": "Toggle to turn on crankcase modeling."
-        # },
-        # "crankcase_power_kw": {
-        #   "type": "float",
-        #   "default": 0.02,
-        #   "description": "Constant power requirement of the crankcase when it is on in kW."
-        # },
-        # "crankcase_temp_limit_degF": {
-        #   "type": "float",
-        #   "default": 55.0,
-        #   "description": "Crankcase turns on if outdoor temperature in degrees F falls below this level."
-        # }
       },
       "FlexTechHP": {
         "existing_kw": {
@@ -2053,6 +2047,16 @@ nested_input_definitions = {
           "type": "list_of_float",
           "default": [],
           "description": "HP COP. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+        },
+        "fan_power_ratio": {
+          "type": "float",
+          "default": 0.0,
+          "description": "HP fan power ratio"
+        },
+        "dse": {
+          "type": "float",
+          "default": 1.0,
+          "description": "Cooling static duct efficiency"
         }
       },
       "HotWaterTank": {

@@ -210,6 +210,7 @@ Base.@kwdef struct Parameter
 
 	#Added for flexible loads
 	FlexTechs::Array{String,1}
+	HVACTechs::Array{String,1}
 	WaterHeaterTechs::Array{String,1}
 	UseFlexLoadsModel::Bool
 	AMatrix::Array{Float64,2}
@@ -225,10 +226,8 @@ Base.@kwdef struct Parameter
 	TempUpperBound::Float64
 	FlexTechsCOP::AxisArray
 	MaxElecPenalty::Array{Float64,1}
-# 	UseCrankcase::Bool
-#     CrankcasePower::Float64
-#     CrankCaseTempLimit::Float64
-#     OutdoorAirTemp::Array{Float64,1}
+	DSE::AxisArray
+	FanPowerRatio::AxisArray
 
 	#Water heater model
 	UseWaterHeaterModel::Bool
@@ -381,6 +380,9 @@ function Parameter(d::Dict)
 	d["BMatrix"] = reshape(d["BMatrix"],d["TempNodesCount"],d["InputNodesCount"])
 	d["UInputs"] = transpose(reshape(d["UInputs"],d["TimeStepCount"],d["InputNodesCount"]))
 	d["FlexTechsCOP"] = vector_to_axisarray(d["FlexTechsCOP"],d["FlexTechs"],d[:TimeStep])
+	d["DSE"] = AxisArray(d["DSE"],d["HVACTechs"])
+	d["FanPowerRatio"] = AxisArray(d["FanPowerRatio"],d["HVACTechs"])
+
 	d["AMatrixWH"] = reshape(d["AMatrixWH"],d["TempNodesCountWH"],d["TempNodesCountWH"])
 	d["BMatrixWH"] = reshape(d["BMatrixWH"],d["TempNodesCountWH"],d["InputNodesCountWH"])
 	d["UInputsWH"] = transpose(reshape(d["UInputsWH"],d["TimeStepCount"],d["InputNodesCountWH"]))
