@@ -2,12 +2,6 @@
 
 properties([
   parameters([
-    choice(
-      name: "PARAM_STAGE",
-      choices: "staging",
-      description: "Where do you want to deploy to?"
-    ),
-
     string(
       name: "PARAM_BRANCHES",
       description: "Enter a space-deliminted list of branches you wish to undeploy."
