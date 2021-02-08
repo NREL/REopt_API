@@ -920,11 +920,6 @@ end
 
 function add_flex_load_constraints(m, p)
 
-	print(p.DSE["AC"], '\n')
-	print(p.DSE["HP"], '\n')
-	print(p.FanPowerRatio["AC"], '\n')
-	print(p.FanPowerRatio["HP"], '\n')
-
      @constraint(m, [tn in p.TempNodes, ts in UnitRange(2:length(p.TimeStep))],
 	 	m[:dvTemperatures][tn, ts] == sum(m[:dvTemperatures][u, ts-1] * p.AMatrix[tn, u] for u in p.TempNodes) +
  		sum(p.UInputs[i, ts-1] * p.BMatrix[tn, i] for i in [1:p.InjectionNode-1; p.InjectionNode+1:p.InputNodesCount]) +
@@ -935,12 +930,6 @@ function add_flex_load_constraints(m, p)
 				 p.ProductionFactor["HP", ts-1] * m[:dvRatedProduction]["HP",ts-1] * p.FanPowerRatio["HP"] * 1000) * p.DSE["HP"]) *
 		 p.BMatrix[tn, p.InjectionNode]
      	)
-# 	 @constraint(m, [tn in p.TempNodes, ts in UnitRange(2:length(p.TimeStep))],
-# 	 	m[:dvTemperatures][tn, ts] == sum(m[:dvTemperatures][u, ts-1] * p.AMatrix[tn, u] for u in p.TempNodes) +
-#  		sum(p.UInputs[i, ts-1] * p.BMatrix[tn, i] for i in [1:p.InjectionNode-1; p.InjectionNode+1:p.InputNodesCount]) +
-# 		(p.UInputs[p.InjectionNode,ts-1] - p.ProductionFactor["AC", ts-1] * m[:dvRatedProduction]["AC",ts-1] * p.FlexTechsCOP["AC", ts-1] * 1000 * p.SHR[ts-1] +
-#  		p.ProductionFactor["HP", ts-1] * m[:dvRatedProduction]["HP",ts-1] * p.FlexTechsCOP["HP", ts-1] * 1000) * p.BMatrix[tn, p.InjectionNode]
-#      )
 	#initialize state space
 	@constraint(m, [n in p.TempNodes],
         m[:dvTemperatures][n, 1] == p.InitTemperatures[n]
