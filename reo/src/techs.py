@@ -663,11 +663,9 @@ class FlexTechAC(Tech):
         self.prod_factor_series_kw = kwargs.get('prod_factor_series_kw')
         self.cop = kwargs.get('cop')
         self.shr = kwargs.get('shr')
-        # self.use_crankcase = kwargs.get('use_crankcase')
-        # self.crankcase_power_kw = kwargs.get('crankcase_power_kw')
-        # self.crankcase_temp_limit_degF = kwargs.get('crankcase_temp_limit_degF')
-        # self.outdoor_air_temp_degF = outdoor_air_temp_degF
-        # self.use_crankcase_bau = False
+        self.fan_power_ratio = kwargs.get('fan_power_ratio')
+        self.dse = kwargs.get('dse')
+
         dfm.add_flex_tech_ac(self)
 
     @property
@@ -686,6 +684,8 @@ class FlexTechHP(Tech):
         self.existing_kw = kwargs.get('existing_kw')
         self.prod_factor_series_kw = kwargs.get('prod_factor_series_kw')
         self.cop = kwargs.get('cop')
+        self.fan_power_ratio = kwargs.get('fan_power_ratio')
+        self.dse = kwargs.get('dse')
 
         dfm.add_flex_tech_hp(self)
 

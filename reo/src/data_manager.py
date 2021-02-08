@@ -1049,7 +1049,7 @@ class DataManager:
                 elif tech in ['ac', 'hp', 'whhp']:
                     for val in eval('self.' + tech + '.cop'):
                         cop.append(float(val))
-                        single_tech_op.append(1/float(val))
+                        single_tech_op.append((1/float(val))*100)
                 else:
                     pass
                 if len(single_tech_op)>0:
@@ -1067,6 +1067,21 @@ class DataManager:
             return self.rc.a_matrix, self.rc.b_matrix, self.rc.u_inputs, self.rc.n_temp_nodes, self.rc.n_input_nodes
         else:
             return [0.0], [0.0], [0.0]*self.n_timesteps, 1, 1
+
+    def _get_HVAC_inputs(self):
+        shr = [] if self.ac is None else self.ac.shr
+        dse = []
+        fan_power_ratio = []
+        techs = ['ac', 'hp']
+        for tech in techs:
+            if eval('self.' + tech) is not None:
+                dse.append(float(eval('self.' + tech + '.dse')))
+                fan_power_ratio.append(float(eval('self.' + tech + '.fan_power_ratio')))
+            else:
+                dse.append(1.0)
+                fan_power_ratio.append(0.0)
+
+        return shr, dse, fan_power_ratio
 
     def _get_WH_inputs(self):
         if self.wher == None and self.whhp == None:
@@ -1174,6 +1189,8 @@ class DataManager:
         a_matrix, b_matrix, u_inputs, n_temp_nodes, n_input_nodes = self._get_RC_inputs(self.rc.use_flexloads_model)
         a_matrix_bau, b_matrix_bau, u_inputs_bau, n_temp_nodes_bau, n_input_nodes_bau = self._get_RC_inputs(
             self.rc.use_flexloads_model_bau)
+
+        shr, dse, fan_power_ratio = self._get_HVAC_inputs()
 
         use_wh_model, a_matrix_wh, b_matrix_wh, u_inputs_wh, init_temperatures_degC_wh, n_temp_nodes_wh, n_input_nodes_wh, \
         injection_node_wh, water_node, temperature_lower_bound_degC, temperature_upper_bound_degC, comfort_temp_limit_degC = self._get_WH_inputs()
@@ -1286,13 +1303,6 @@ class DataManager:
 
         wh_techs = [t for t in reopt_techs if t.startswith("WHER") or t.startswith("WHHP")]
         wh_techs_bau = [t for t in reopt_techs_bau if t.startswith("WHER") or t.startswith("WHHP")]
-
-        # use_crankcase = False if self.ac is None else self.ac.use_crankcase
-        # use_crankcase_bau = False if self.ac is None else self.ac.use_crankcase_bau
-        # crankcase_power_kw = 0 if self.ac is None else self.ac.crankcase_power_kw
-        # crankcase_temp_limit_degF = 0 if self.ac is None else self.ac.crankcase_temp_limit_degF
-        # outdoor_air_temp_degF =[] if self.ac is None else self.ac.outdoor_air_temp_degF
-        shr = [] if self.ac is None else self.ac.shr
 
         time_steps_with_grid, time_steps_without_grid = self._get_time_steps_with_grid()
 
@@ -1501,6 +1511,7 @@ class DataManager:
             'AddSOCIncentive': self.add_soc_incentive,
             # Flex loads
             'FlexTechs': flex_techs,
+            'HVACTechs': ["AC", "HP"],
             'UseFlexLoadsModel': self.rc.use_flexloads_model,
             'AMatrix': a_matrix,
             'BMatrix': b_matrix,
@@ -1516,11 +1527,9 @@ class DataManager:
             'ComfortTempLimitHP': self.rc.comfort_temp_lower_bound_degC,
             'ComfortTempLimitAC': self.rc.comfort_temp_upper_bound_degC,
             'FlexTechsCOP': flex_techs_cop,
+            'DSE': dse,
+            'FanPowerRatio': fan_power_ratio,
             'MaxElecPenalty': max_elec_penalty,
-            # 'UseCrankcase': use_crankcase,
-            # 'CrankcasePower': crankcase_power_kw,
-            # 'CrankCaseTempLimit': crankcase_temp_limit_degF,
-            # 'OutdoorAirTemp': outdoor_air_temp_degF,
             # Water heater
             'UseWaterHeaterModel': use_wh_model,
             'AMatrixWH': a_matrix_wh,
@@ -1798,6 +1807,7 @@ class DataManager:
             'AddSOCIncentive': self.add_soc_incentive,
             # Flex loads
             'FlexTechs': flex_techs_bau,
+            'HVACTechs': ["AC", "HP"],
             'UseFlexLoadsModel': self.rc.use_flexloads_model_bau,
             'AMatrix': a_matrix_bau,
             'BMatrix': b_matrix_bau,
@@ -1813,11 +1823,9 @@ class DataManager:
             'ComfortTempLimitHP': self.rc.comfort_temp_lower_bound_degC,
             'ComfortTempLimitAC': self.rc.comfort_temp_upper_bound_degC,
             'FlexTechsCOP': flex_techs_cop_bau,
+            'DSE': dse,
+            'FanPowerRatio': fan_power_ratio,
             'MaxElecPenalty': max_elec_penalty_bau,
-            # 'UseCrankcase': use_crankcase_bau,
-            # 'CrankcasePower': crankcase_power_kw,
-            # 'CrankCaseTempLimit': crankcase_temp_limit_degF,
-            # 'OutdoorAirTemp': outdoor_air_temp_degF,
             # Water heater
             'UseWaterHeaterModel': use_wh_model,
             'AMatrixWH': a_matrix_wh,

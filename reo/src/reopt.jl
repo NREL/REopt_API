@@ -628,7 +628,7 @@ end
 
 function add_load_balance_constraints(m, p)
     m[:ElecPenalty] = @expression(m, [ts in p.TimeStep],
-        sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] for t in p.FlexTechs not in p.WaterHeaterTechs) +
+        sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] * (1 + p.FanPowerRatio[t]) for t in p.FlexTechs not in p.WaterHeaterTechs)  +
         sum(p.ProductionFactor[t, ts] * m[:dvWHFractions][t,ts] * p.MaxSize[t] for t in p.WaterHeaterTechs))
 
 	if !isempty(p.ExportTiers)
@@ -920,12 +920,27 @@ end
 
 function add_flex_load_constraints(m, p)
 
+	print(p.DSE["AC"], '\n')
+	print(p.DSE["HP"], '\n')
+	print(p.FanPowerRatio["AC"], '\n')
+	print(p.FanPowerRatio["HP"], '\n')
+
      @constraint(m, [tn in p.TempNodes, ts in UnitRange(2:length(p.TimeStep))],
 	 	m[:dvTemperatures][tn, ts] == sum(m[:dvTemperatures][u, ts-1] * p.AMatrix[tn, u] for u in p.TempNodes) +
  		sum(p.UInputs[i, ts-1] * p.BMatrix[tn, i] for i in [1:p.InjectionNode-1; p.InjectionNode+1:p.InputNodesCount]) +
-		(p.UInputs[p.InjectionNode,ts-1] - p.ProductionFactor["AC", ts-1] * m[:dvRatedProduction]["AC",ts-1] * p.FlexTechsCOP["AC", ts-1] * 1000 * p.SHR[ts-1] +
- 		p.ProductionFactor["HP", ts-1] * m[:dvRatedProduction]["HP",ts-1] * p.FlexTechsCOP["HP", ts-1] * 1000) * p.BMatrix[tn, p.InjectionNode]
-     )
+		(p.UInputs[p.InjectionNode,ts-1] -
+				(p.ProductionFactor["AC", ts-1] * m[:dvRatedProduction]["AC",ts-1] * p.FlexTechsCOP["AC", ts-1] * 1000 * p.SHR[ts-1] -
+				 p.ProductionFactor["AC", ts-1] * m[:dvRatedProduction]["AC",ts-1] * p.FanPowerRatio["AC"] * 1000) * p.DSE["AC"] +
+				(p.ProductionFactor["HP", ts-1] * m[:dvRatedProduction]["HP",ts-1] * p.FlexTechsCOP["HP", ts-1] * 1000 +
+				 p.ProductionFactor["HP", ts-1] * m[:dvRatedProduction]["HP",ts-1] * p.FanPowerRatio["HP"] * 1000) * p.DSE["HP"]) *
+		 p.BMatrix[tn, p.InjectionNode]
+     	)
+# 	 @constraint(m, [tn in p.TempNodes, ts in UnitRange(2:length(p.TimeStep))],
+# 	 	m[:dvTemperatures][tn, ts] == sum(m[:dvTemperatures][u, ts-1] * p.AMatrix[tn, u] for u in p.TempNodes) +
+#  		sum(p.UInputs[i, ts-1] * p.BMatrix[tn, i] for i in [1:p.InjectionNode-1; p.InjectionNode+1:p.InputNodesCount]) +
+# 		(p.UInputs[p.InjectionNode,ts-1] - p.ProductionFactor["AC", ts-1] * m[:dvRatedProduction]["AC",ts-1] * p.FlexTechsCOP["AC", ts-1] * 1000 * p.SHR[ts-1] +
+#  		p.ProductionFactor["HP", ts-1] * m[:dvRatedProduction]["HP",ts-1] * p.FlexTechsCOP["HP", ts-1] * 1000) * p.BMatrix[tn, p.InjectionNode]
+#      )
 	#initialize state space
 	@constraint(m, [n in p.TempNodes],
         m[:dvTemperatures][n, 1] == p.InitTemperatures[n]
@@ -943,14 +958,6 @@ function add_flex_load_constraints(m, p)
 	@constraint(m, [ts in p.TimeStep],
 		m[:dvHVACComfortCost][ts] >= m[:dvTemperatures][p.SpaceNode, ts] - p.ComfortTempLimitAC
     )
-# 	if p.UseCrankcase
-# 		@constraint(m, [ts in p.TimeStep],
-# 			100 * (1 - m[:binCrankcase][ts]) >= p.CrankCaseTempLimit - p.OutdoorAirTemp[ts]
-#     	)
-# 		@constraint(m, [ts in p.TimeStep],
-# 			100 * m[:binCrankcase][ts] + m[:dvCrankcaseConsumption][ts] >= (1 - m[:binTechIsOnInTS]["AC",ts]) * p.CrankcasePower
-#     	)
-# 	end
 end
 
 
@@ -1679,28 +1686,26 @@ function add_flex_load_results(m, p, r::Dict)
 	r["indoor_temperatures"] = round.(value.(IndoorTemperatures), digits=4)
 	r["ac_size_kw"] = round(value(m[:dvSize]["AC"]), digits=4)
 	@expression(m, ACProduction[ts in p.TimeStep],
-				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.FlexTechsCOP[t,ts]  * p.LevelizationFactor[t] for t in ["AC"])
+				sum((m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.FlexTechsCOP[t, ts] * p.SHR[ts] -
+				 p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] * p.FanPowerRatio[t]) * p.DSE[t] for t in ["AC"])
 				)
 	r["ac_production_series"] = round.(value.(ACProduction), digits=4)
 	@expression(m, ACConsumption[ts in p.TimeStep],
-	 			sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] for t in ["AC"])
-# 				sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] * p.OperatingPenalty[t,ts] for t in ["AC"])
+	 			sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t, ts] * (1 + p.FanPowerRatio[t]) for t in ["AC"])
 				)
 	r["ac_consumption_series"] = round.(value.(ACConsumption), digits=4)
 	r["hp_size_kw"] = round(value(m[:dvSize]["HP"]), digits=4)
 	@expression(m, HPProduction[ts in p.TimeStep],
-				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.FlexTechsCOP[t,ts]  * p.LevelizationFactor[t] for t in ["HP"])
+				sum((m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.FlexTechsCOP[t,ts] +
+				 p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] * p.FanPowerRatio[t]) * p.DSE[t] for t in ["HP"])
 				)
 	r["hp_production_series"] = round.(value.(HPProduction), digits=4)
 	@expression(m, HPConsumption[ts in p.TimeStep],
-				sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] for t in ["HP"])
-# 				sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] * p.OperatingPenalty[t,ts] for t in ["HP"])
+				sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t, ts] * (1 + p.FanPowerRatio[t]) for t in ["HP"])
 				)
 	r["hp_consumption_series"] = round.(value.(HPConsumption), digits=4)
 	@expression(m, HVACComfortPenalty[ts in p.TimeStep], m[:dvHVACComfortCost][ts])
 	r["hvac_comfort_penalty"] = round.(value.(HVACComfortPenalty), digits=4)
-# 	@expression(m, CrankcaseConsumption[ts in p.TimeStep], m[:dvCrankcaseConsumption][ts])
-# 	r["crankcase_consumption_series"] = round.(value.(CrankcaseConsumption), digits=4)
 	nothing
 end
 
@@ -1710,15 +1715,6 @@ function add_water_heater_results(m, p, r::Dict)
 	@expression(m, WHComfortPenalty[ts in p.TimeStep], m[:dvWHComfortCost][ts])
 	r["wh_comfort_penalty"] = round.(value.(WHComfortPenalty), digits=4)
 	if "WHER" in p.WaterHeaterTechs
-# 		r["erwh_size_kw"] = round(value(m[:dvSize]["WHER"]), digits=4)
-# 		@expression(m, WHERProduction[ts in p.TimeStep],
-# 				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] for t in ["WHER"])
-# 				)
-# 		r["erwh_production_series"] = round.(value.(WHERProduction), digits=4)
-# 		@expression(m, WHERConsumption[ts in p.TimeStep],
-# 				sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] * p.OperatingPenalty[t,ts] for t in ["WHER"])
-# 				)
-# 		r["erwh_consumption_series"] = round.(value.(WHERConsumption), digits=4)
 		@expression(m, WHERProduction[ts in p.TimeStep],
 				sum(m[:dvWHFractions][t, ts] * p.ProductionFactor[t, ts] * p.MaxSize[t] * p.FlexTechsCOP[t,ts] * p.LevelizationFactor[t] for t in ["WHER"])
 				)
@@ -1735,15 +1731,6 @@ function add_water_heater_results(m, p, r::Dict)
 		r["erwh_fraction_on"] = []
 	end
 	if "WHHP" in p.WaterHeaterTechs
-# 		r["hpwh_size_kw"] = round(value(m[:dvSize]["WHHP"]), digits=4)
-# 		@expression(m, WHHPProduction[ts in p.TimeStep],
-# 				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] for t in ["WHHP"])
-# 				)
-# 		r["hpwh_production_series"] = round.(value.(WHHPProduction), digits=4)
-# 		@expression(m, WHHPConsumption[ts in p.TimeStep],
-# 				sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] * p.OperatingPenalty[t,ts] for t in ["WHHP"])
-# 				)
-# 		r["hpwh_consumption_series"] = round.(value.(WHHPConsumption), digits=4)
 		@expression(m, WHHPProduction[ts in p.TimeStep],
 				sum(m[:dvWHFractions][t, ts] * p.ProductionFactor[t, ts] * p.MaxSize[t] * p.FlexTechsCOP[t,ts] * p.LevelizationFactor[t] for t in ["WHHP"])
 				)

@@ -928,15 +928,13 @@ class FlexTechACModel(models.Model):
     prod_factor_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     cop = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     shr = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    # use_crankcase = models.BooleanField(default=False)
-    # crankcase_power_kw = models.FloatField(null=True, blank=True, default=0.02)
-    # crankcase_temp_limit_degF = models.FloatField(null=True, blank=True, default=55.0)
+    fan_power_ratio = models.FloatField(null=True, blank=True)
+    dse = models.FloatField(null=True, blank=True)
 
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)
     year_one_power_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_power_consumption_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    # year_one_crankcase_power_consumption_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -956,6 +954,8 @@ class FlexTechHPModel(models.Model):
     om_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True)
     prod_factor_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     cop = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    fan_power_ratio = models.FloatField(null=True, blank=True)
+    dse = models.FloatField(null=True, blank=True)
 
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)
