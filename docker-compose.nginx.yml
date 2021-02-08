@@ -26,7 +26,7 @@ services:
     container_name: celery-nginx
     build:
       context: .
-      dockerfile: Dockerfile.xpress.pyjul16rc1
+      dockerfile: Dockerfile.xpress
     command: >
       "celery -A reopt_api worker -l info"
     image: celery-nginx-image
