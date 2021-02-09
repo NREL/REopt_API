@@ -70,9 +70,8 @@ class DataManager:
         self.cold_tes = None
         self.site = None
         self.elec_tariff = None
-	    self.resource_adequacy = None
+        self.resource_adequacy = None
         self.fuel_tariff = None
-
         self.load = None
         self.heating_load = None
         self.cooling_load = None
@@ -1392,13 +1391,12 @@ class DataManager:
             'ElectricDerate': electric_derate,
             'TechsByNMILRegime': TechsByNMILRegime,
             'TechsCannotCurtail': techs_cannot_curtail,
-
             'RaEventStartTimes': ra_event_start_times,
             'RaLookbackPeriods': ra_lookback_periods,
             'RaMooHours': ra_moo_hours,
             'RaLookbackDays': ra_lookback_days,
             'RaMonthlyPrice': ra_demand_pricing,
-            'RaEnergyPrice': ra_energy_pricing
+            'RaEnergyPrice': ra_energy_pricing,
             'TechsByNMILRegime': TechsByNMILRegime,
             'HeatingLoad': heating_load,
             'CoolingLoad': cooling_load,
@@ -1531,13 +1529,12 @@ class DataManager:
             'ElectricDerate': electric_derate_bau,
             'TechsByNMILRegime': TechsByNMILRegime_bau,
             'TechsCannotCurtail': techs_cannot_curtail_bau,
-
             'RaEventStartTimes': {1:[]},
             'RaLookbackPeriods': {1:[]},
             'RaMooHours': 0,
             'RaLookbackDays': 0,
             'RaMonthlyPrice': {1:0},
-            'RaEnergyPrice': []
+            'RaEnergyPrice': [],
             'TechsByNMILRegime': TechsByNMILRegime_bau,
             'HeatingLoad': heating_load,
             'CoolingLoad': cooling_load,
