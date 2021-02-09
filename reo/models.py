@@ -369,7 +369,6 @@ class ElectricTariffModel(models.Model):
     monthly_ra_value = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     event_hours = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     hourly_reductions = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    # "monthly_ra_reduction", "monthly_ra_energy","monthly_ra_dr","monthly_ra_value", "event_hours", "hourly_reductions"
     year_one_coincident_peak_cost_us_dollars = models.FloatField(null=True, blank=True)
     year_one_coincident_peak_cost_bau_us_dollars = models.FloatField(null=True, blank=True)
     total_coincident_peak_cost_us_dollars = models.FloatField(null=True, blank=True)
@@ -403,7 +402,6 @@ class FuelTariffModel(models.Model):
     year_one_chp_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
     total_boiler_fuel_cost_bau_us_dollars = models.FloatField(null=True, blank=True)
 
->>>>>>> develop
     @classmethod
     def create(cls, **kwargs):
         obj = cls(**kwargs)
