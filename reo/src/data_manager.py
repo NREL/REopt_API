@@ -81,6 +81,9 @@ class DataManager:
         self.timeout_decomp_subproblem_seconds = None
         self.add_soc_incentive = None
 
+        #Resource Adeqacy
+        self.resource_adequacy = None
+
         # following attributes used to pass data to process_results.py
         # If we serialize the python classes then we could pass the objects between Celery tasks
         # (which we could do by making a custom serializer, but have not yet).
