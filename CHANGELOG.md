@@ -32,7 +32,8 @@ Classify the change according to the following categories:
 ### Patches
 - `reo`: Fix **PVWatts** being called when user provides `PV.prod_factor_series_kw`
 - `reopt_api`: new `docker-compose.nginx.yml` for standing up the API on a server with remote access (for example if one wants to host the API on a cloud service)
-- `reopt_api`: update `Dockerfile.xpress` to use `nlaws/pyjul:1.5.2` base image (was using Julia 1.3)
+- `reopt_api`: update `Dockerfile.xpress` to use `nlaws/pyjul:1.5.3` base image (was using Julia 1.3)
+- `reopt_api`: update `julia_envs/Xpress` PyCall from 1.91.4 to 1.92.2
     
 ## v1.4.2 - 2021-02-03
 ### Patches
