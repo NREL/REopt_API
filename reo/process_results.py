@@ -540,16 +540,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         data['inputs']['Scenario']["Site"]["Wind"]["federal_itc_pct"] = wind_model.federal_itc_pct
                     else:
                         self.nested_outputs["Scenario"]["Site"][name]['lcoe_us_dollars_per_kwh'] = None                
-                #_________________________________________________________________________________________
-                #Added Resource Adequacy Outputs
-                elif name == "Resource_Adequacy":
-                    self.nested_outputs["Scenario"]["Site"][name]["monthly_ra_reduction"] = self.results_dict.get("monthly_ra_reduction", 0)
-                    self.nested_outputs["Scenario"]["Site"][name]["monthly_ra_energy"] = self.results_dict.get("monthly_ra_energy")
-                    self.nested_outputs["Scenario"]["Site"][name]["monthly_ra_dr"] = self.results_dict.get("monthly_ra_dr")
-                    self.nested_outputs["Scenario"]["Site"][name]["monthly_ra_value"] = self.results_dict.get("monthly_ra_value")
-                    self.nested_outputs["Scenario"]["Site"][name]["event_hours"] = self.results_dict.get("event_hours")
-                    self.nested_outputs["Scenario"]["Site"][name]["hourly_reductions"] = self.results_dict.get("hourly_reductions")
-                #_________________________________________________________________________________________
+
                 elif name == "Storage":
                     self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("batt_kw", 0)
                     self.nested_outputs["Scenario"]["Site"][name]["size_kwh"] = self.results_dict.get("batt_kwh", 0)
@@ -633,6 +624,17 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_chp_standby_cost_us_dollars"] = self.results_dict.get("year_one_chp_standby_cost")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "total_chp_standby_cost_us_dollars"] = self.results_dict.get("total_chp_standby_cost")
+
+                    self.nested_outputs["Scenario"]["Site"][name]["monthly_ra_reduction"] = self.results_dict.get("monthly_ra_reduction", 0)
+                    self.nested_outputs["Scenario"]["Site"][name]["monthly_ra_energy"] = self.results_dict.get("monthly_ra_energy")
+                    self.nested_outputs["Scenario"]["Site"][name]["monthly_ra_dr"] = self.results_dict.get("monthly_ra_dr")
+                    self.nested_outputs["Scenario"]["Site"][name]["monthly_ra_value"] = self.results_dict.get("monthly_ra_value")
+                    self.nested_outputs["Scenario"]["Site"][name]["event_hours"] = self.results_dict.get("event_hours")
+                    self.nested_outputs["Scenario"]["Site"][name]["hourly_reductions"] = self.results_dict.get("hourly_reductions")
+
+
+
+
                 elif name == "FuelTariff":
                     self.nested_outputs["Scenario"]["Site"][name][
                         "total_boiler_fuel_cost_us_dollars"] = self.results_dict.get("total_boiler_fuel_cost")

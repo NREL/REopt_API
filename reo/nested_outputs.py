@@ -816,39 +816,37 @@ nested_output_definitions = {
                   "type": "int",
                   "description": "Total equivalent pounds of carbon dioxide emitted from BAU generator use in the first year.",
                   "units": "lb CO2"
-                }
-              },
-              "Resource_Adequacy" : {
+                },
                 "monthly_ra_reduction": {
                   "type": "list_of_float",
                   "decription": "Amount of RA reduction which occurs in each month where RA is called",
                   "units": "kW by month"
                 },
-              	"monthly_ra_energy" : {
+                "monthly_ra_energy" : {
                   "type": "list_of_float",
                   "description": "RA payments from participation in wholesale energy market. Does not consider whether participation occurs in a given month",
                   "units" : "$"
-              	},
-              	"monthly_ra_dr" : {
+                },
+                "monthly_ra_dr" : {
                   "type": "list_of_float",
                   "description": "RA payments from providing capacity. Does not consider whether participation occurs in given month",
                   "units" : "$"
-              	}, 
-              	"monthly_ra_value" : {
+                }, 
+                "monthly_ra_value" : {
                   "type" : "list_of_float",
                   "description" : "Total monthly ra value. Is zero for months where participation does not occur",
                   "units" : "$"
-              	},
-              	"event_hours" : {
+                },
+                "event_hours" : {
                   "type" : "list_of_int",
                   "description" : "Each hour which is an event hour",
                   "units" : "hour index"
-              	}, 
-              	"hourly_reductions" : {
+                }, 
+                "hourly_reductions" : {
                   "type" : "list_of_float",
                   "description" : "Load reduction by event hour",
                   "units" : "kWh"
-              	}
+                }
               },
 
               "CHP": {
