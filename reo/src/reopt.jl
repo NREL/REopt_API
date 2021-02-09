@@ -34,7 +34,6 @@ function add_continuous_variables(m, p)
 		dvElectricChillerDemand[p.TimeStep] >= 0  #X^{ec}_h: Electrical power consumption by electric chiller in time step h
 		dvOMByHourBySizeCHP[p.Tech, p.TimeStep] >= 0
 		dvTemperatures[p.TempNodes, p.TimeStep] #>= 0
-# 		dvCrankcaseConsumption[p.TimeStep] >= 0
 		dvTemperaturesWH[p.TempNodesWH, p.TimeStep] #>= 0
 		dvWHFractions[p.WaterHeaterTechs, p.TimeStep] >= 0
 		dvWHComfortCost[p.TimeStep] >= 0
@@ -361,15 +360,6 @@ function add_binTechIsOnInTS_constraints(m, p)
 	@constraint(m, MinTurndownCon[t in p.FuelBurningTechs, ts in p.TimeStepsWithGrid],
 		p.MinTurndown[t] * m[:dvSize][t] - m[:dvRatedProduction][t,ts] <= m[:NewMaxSize][t] * (1-m[:binTechIsOnInTS][t,ts])
 	)
-
-# 	if p.UseCrankcase
-# 		@constraint(m, [ts in p.TimeStep],
-# 			m[:binTechIsOnInTS]["AC",ts] => {p.ProductionFactor["AC", ts] * m[:dvRatedProduction]["AC",ts] * p.OperatingPenalty["AC",ts] >= p.CrankcasePower + 0.001}
-# 		)
-# 		@constraint(m, [ts in p.TimeStep],
-# 			!m[:binTechIsOnInTS]["AC",ts] => {p.ProductionFactor["AC", ts] * m[:dvRatedProduction]["AC",ts] * p.OperatingPenalty["AC",ts] <= p.CrankcasePower}
-# 		)
-# 	end
 end
 
 
@@ -628,7 +618,7 @@ end
 
 function add_load_balance_constraints(m, p)
     m[:ElecPenalty] = @expression(m, [ts in p.TimeStep],
-        sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] * (1 + p.FanPowerRatio[t]) for t in p.FlexTechs not in p.WaterHeaterTechs)  +
+		sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] * (1 + p.FanPowerRatio[t]) for t in setdiff(p.FlexTechs, p.WaterHeaterTechs))  +
         sum(p.ProductionFactor[t, ts] * m[:dvWHFractions][t,ts] * p.MaxSize[t] for t in p.WaterHeaterTechs))
 
 	if !isempty(p.ExportTiers)
@@ -669,7 +659,7 @@ function add_load_balance_constraints(m, p)
 		for t in p.ElectricTechs) +
         sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
         sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers )/ p.AbsorptionChillerElecCOP +
-		p.ElecLoad[ts] + m[:ElecPenalty][ts] #+ m[:dvCrankcaseConsumption][ts]
+		p.ElecLoad[ts] + m[:ElecPenalty][ts]
 	)
 end
 
@@ -1344,7 +1334,6 @@ function add_null_flex_load_results(m, p, r::Dict)
 	r["hp_production_series"] = []
 	r["hp_consumption_series"] = []
 	r["hvac_comfort_penalty"] = []
-# 	r["crankcase_consumption_series"] = []
 	nothing
 end
 
