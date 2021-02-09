@@ -919,6 +919,7 @@ end
 function calculate_average_daily_reduction(m, p, month, event_index)
     #Take average across event hours
     return sum([m[:dvHourlyReductionRA][month, event_index, h] for h in 0:p.RaMooHours-1])/p.RaMooHours
+end
 
 function add_coincident_peak_charge_constraints(m, p)
 	## Constraint (14a): in each coincident peak period, charged CP demand is the max of demand in all CP timesteps
