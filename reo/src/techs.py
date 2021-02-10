@@ -125,6 +125,8 @@ class PV(Tech):
         self.prod_factor_series_kw = prod_factor_series_kw
         self.tech_name = 'pv' + str(pv_number)
         self.location = location
+        self.station = None
+        self.pvwatts = None
 
         # if user hasn't entered the tilt (default value is 0.537), tilt value gets assigned based on array_type
         if self.tilt == 0.537:
@@ -145,7 +147,10 @@ class PV(Tech):
             else:  # All other tilts come from lookup table included in the array_type_to_tilt_angle dictionary above
                 self.tilt = PV.array_type_to_tilt_angle[kwargs.get('array_type')]
 
-        self.pvwatts = PVWatts(time_steps_per_hour=self.time_steps_per_hour, azimuth=self.azimuth, tilt=self.tilt, **self.kwargs)
+        if self.prod_factor_series_kw is not None:  # then don't call PVWatts
+            self.station = (kwargs.get("latitude", 0), kwargs.get("longitude", 0), 0)
+        else:
+            self.pvwatts = PVWatts(time_steps_per_hour=self.time_steps_per_hour, azimuth=self.azimuth, tilt=self.tilt, **self.kwargs)
 
         dfm.add_pv(self)
 
@@ -160,9 +165,12 @@ class PV(Tech):
 
     @property
     def station_location(self):
-        station = (self.pvwatts.response['station_info']['lat'],
-                   self.pvwatts.response['station_info']['lon'],
-                   round(self.pvwatts.response['station_info']['distance']/1000,1))
+        if self.pvwatts is not None:
+            station = (self.pvwatts.response['station_info']['lat'],
+                       self.pvwatts.response['station_info']['lon'],
+                       round(self.pvwatts.response['station_info']['distance']/1000,1))
+        else:
+            station = self.station
         return station
 
 
