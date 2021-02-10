@@ -318,8 +318,14 @@ class ElectricTariffModel(models.Model):
     chp_standby_rate_us_dollars_per_kw_per_month = models.FloatField(blank=True, null=True)
     chp_does_not_reduce_demand_charges = models.BooleanField(null=True, blank=True)
     emissions_region = models.TextField(null=True, blank=True)
+    #Resource Adequacy Inputs
+    ra_energy_pricing_us_dollars_per_kwh = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    ra_demand_pricing_us_dollars_per_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    ra_event_day_flags_boolean = ArrayField(models.IntegerField(null=True, blank=True), null=True, blank=True)
+    ra_lookback_days = models.IntegerField(null=True, blank=True)
     coincident_peak_load_active_timesteps = ArrayField(ArrayField(models.FloatField(null=True, blank=True), null=True, default=list), null=True, default=list)
     coincident_peak_load_charge_us_dollars_per_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, default=list)
+
 
     # Ouptuts
     year_one_energy_cost_us_dollars = models.FloatField(null=True, blank=True)
@@ -340,6 +346,8 @@ class ElectricTariffModel(models.Model):
     total_export_benefit_us_dollars = models.FloatField(null=True, blank=True)
     total_export_benefit_bau_us_dollars = models.FloatField(null=True, blank=True)
     total_min_charge_adder_bau_us_dollars = models.FloatField(null=True, blank=True)
+    total_demand_response_us_dollars = models.FloatField(null=True, blank=True)
+    total_demand_response_bau_us_dollars = models.FloatField(null=True, blank=True)
     year_one_bill_us_dollars = models.FloatField(null=True, blank=True)
     year_one_bill_bau_us_dollars = models.FloatField(null=True, blank=True)
     year_one_export_benefit_us_dollars = models.FloatField(null=True, blank=True)
@@ -353,6 +361,14 @@ class ElectricTariffModel(models.Model):
     year_one_energy_supplied_kwh_bau = models.FloatField(null=True, blank=True)
     year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
     year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
+    #Resource Adequacy Outputs
+    monthly_ra_reduction = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    monthly_ra_energy = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    monthly_ra_dr = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    monthly_ra_value = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    event_hours = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    hourly_reductions = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    #
     year_one_coincident_peak_cost_us_dollars = models.FloatField(null=True, blank=True)
     year_one_coincident_peak_cost_bau_us_dollars = models.FloatField(null=True, blank=True)
     total_coincident_peak_cost_us_dollars = models.FloatField(null=True, blank=True)
@@ -1358,6 +1374,8 @@ class ModelManager(object):
                         resp['inputs']['Scenario']['Site'][site_key][k] = None
 
         # add try/except for get fail / bad run_uuid
+
+        #Added Resource Adequacy
         site_keys = ['PV', 'Storage', 'Financial', 'LoadProfile', 'LoadProfileBoilerFuel', 'LoadProfileChillerThermal',
                      'ElectricTariff', 'FuelTariff', 'Generator', 'Wind', 'CHP', 'Boiler', 'ElectricChiller',
                      'AbsorptionChiller', 'HotTES', 'ColdTES', 'RC', 'FlexTechAC', 'FlexTechHP', 'HotWaterTank',

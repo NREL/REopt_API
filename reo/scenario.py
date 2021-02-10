@@ -34,6 +34,7 @@ import logging
 log = logging.getLogger(__name__)
 from reo.src.data_manager import DataManager
 from reo.src.elec_tariff import ElecTariff
+from reo.src.resource_adequacy import ResourceAdequacy
 from reo.src.load_profile import LoadProfile
 from reo.src.fuel_tariff import FuelTariff
 from reo.src.load_profile_boiler_fuel import LoadProfileBoilerFuel
@@ -303,6 +304,11 @@ def setup_scenario(self, run_uuid, data, raw_post):
                                  time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
                                  **inputs_dict['Site']['ElectricTariff'])
 
+        if inputs_dict['Site']['ElectricTariff'].get('ra_event_day_flags_boolean') is not None:
+            resource_adequacy = ResourceAdequacy(dfm=dfm, run_id=run_uuid,
+                                load_year=inputs_dict['Site']['LoadProfile']['year'],
+                                 **inputs_dict['Site']['ElectricTariff'])
+
         if inputs_dict["Site"]["Wind"]["max_kw"] > 0:
             wind = Wind(dfm=dfm, inputs_path=inputs_path,
                         latitude=inputs_dict['Site'].get('latitude'),
@@ -364,7 +370,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         for k in ['storage', 'hot_tes', 'cold_tes', 'site', 'elec_tariff', 'fuel_tariff', 'pvs', 'pvnms', 'load',
                   'util', 'heating_load', 'cooling_load', 'rc', 'flex_tech_ac', 'flex_tech_hp', 'hot_water_tank',
-                  'flex_tech_erwh', 'flex_tech_hpwh'] + dfm.available_techs:
+                  'flex_tech_erwh', 'flex_tech_hpwh', 'resource_adequacy'] + dfm.available_techs:
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
 
