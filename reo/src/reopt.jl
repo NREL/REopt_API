@@ -743,6 +743,11 @@ function add_tou_demand_charge_constraints(m, p)
 
 end
 
+function add_PV_PPA_expressions(m, p)
+	m[:TotalPVPPACosts] = @expression(m, p.pwf_ppa * p.TimeStepScaling * .055 *
+			sum( sum( m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] for ts in p.TimeStep) * p.LevelizationFactor[t] for t in filter(t->startswith(t, "PV"), p.Tech)))
+end
+
 function add_contract_quantity_expressions(m, p)
 	### Expressions related to tariff with contract quantities (developed for Lineage Mira Loma site because of its Calpine contract)
 	m[:TotalContractCharges] = @expression(m, p.pwf_e * p.TimeStepScaling * 
@@ -789,7 +794,10 @@ function add_cost_function(m, p)
         m[:TotalGenFuelCharges] * m[:r_tax_fraction_offtaker] -
                 
         # Subtract Incentives, which are taxable
-		m[:TotalProductionIncentive] * m[:r_tax_fraction_owner]
+		m[:TotalProductionIncentive] * m[:r_tax_fraction_owner] +
+
+		# Solar PV PPA Costs
+		m[:TotalPVPPACosts]
 	)
     #= Note: 0.9999*m[:MinChargeAdder] in Obj b/c when m[:TotalMinCharge] > (TotalEnergyCharges + m[:TotalDemandCharges] + TotalExportBenefit + m[:TotalFixedCharges])
 		it is arbitrary where the min charge ends up (eg. could be in m[:TotalDemandCharges] or m[:MinChargeAdder]).
@@ -890,6 +898,8 @@ function reopt_run(m, p::Parameter)
 		add_curtail_constraint(m, p)
 	end
 
+	add_PV_PPA_expressions(m, p)
+
 	### Extra energy cost expressions for tariff w/ contract quantities (developed to model a Calpine contract)
 	if !isempty(p.ContractQuantities)
 		add_contract_quantity_expressions(m, p)
@@ -909,7 +919,7 @@ function reopt_run(m, p::Parameter)
 	else
 		m[:DemandTOUCharges] = 0
 	end
-    m[:TotalDemandCharges] = @expression(m, m[:DemandTOUCharges] + m[:DemandFlatCharges])
+	m[:TotalDemandCharges] = @expression(m, m[:DemandTOUCharges] + m[:DemandFlatCharges])
 
 	add_parameters(m, p)
 	add_cost_expressions(m, p)
@@ -938,7 +948,7 @@ function reopt_run(m, p::Parameter)
         results["status"] = "optimal"
     else
 		results["status"] = "not optimal"
-    end
+	end
     
 	##############################################################################
     #############  		Outputs    									 #############
@@ -980,6 +990,7 @@ function reopt_results(m, p, r::Dict)
     	r["WINDtoGrid"] = []
 	end
 	add_util_results(m, p, r)
+	r["pv_ppa_cost"] = round(value(m[:TotalPVPPACosts]), digits=2)
 	return r
 end
 

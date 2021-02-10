@@ -132,6 +132,7 @@ Base.@kwdef struct Parameter
 	 ###  Generic Factor Parameters ###
 	 pwf_om::Float64  # f^{om}: Operations and maintenance present worth factor [unitless] 
      pwf_e::Float64   # f^{e}: Energy present worth factor [unitless] 
+     pwf_ppa::Float64   # f^{e}: PV PPA energy present worth factor [unitless] 
 	 r_tax_owner::Float64      # f^{tow}: Tax rate factor for owner [fraction]
      r_tax_offtaker::Float64   # f^{tot}: Tax rate factor for offtaker [fraction]
 	 

@@ -350,6 +350,7 @@ class PVModel(models.Model):
     existing_pv_om_cost_us_dollars = models.FloatField(null=True, blank=True)
     year_one_curtailed_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     lcoe_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
+    pv_ppa_cost_us_dollars = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):

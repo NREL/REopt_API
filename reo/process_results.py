@@ -747,6 +747,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         pv["station_longitude"] = pv_model.station_longitude
                         pv["station_distance_km"] = pv_model.station_distance_km
                         pv['lcoe_us_dollars_per_kwh'] = self.calculate_lcoe(pv, pv_model.__dict__, financials)
+                        pv["pv_ppa_cost_us_dollars"] = self.results_dict.get("pv_ppa_cost")
                         self.nested_outputs['Scenario']["Site"][name].append(pv)
                 elif name == "Wind":
                     self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("wind_kw", 0)

@@ -310,6 +310,11 @@ nested_output_definitions = {
                   "description": "Year one PV power curtailed during outage time series",
                   "units": "kW"
                 },
+                "pv_ppa_cost_us_dollars": {
+                  "type": "float",
+                  "description": "Cost of PV energy purchased through the power purchasing agreement",
+                  "units": "$"
+                }
               },
 
               "Wind": {
