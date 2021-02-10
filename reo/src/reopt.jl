@@ -5,6 +5,7 @@ include("utils.jl")
 
 
 function add_continuous_variables(m, p)
+
     @variables m begin
 	    dvSize[p.Tech] >= 0     #X^{\sigma}_{t}: System Size of Technology t [kW]   (NEW)
     	dvSystemSizeSegment[p.Tech, p.Subdivision, p.Seg] >= 0   #X^{\sigma s}_{tks}: System size of technology t allocated to segmentation k, segment s [kW]  (NEW)
@@ -27,6 +28,7 @@ function add_continuous_variables(m, p)
 		#UtilityMinChargeAdder[p.Month] >= 0   #X^{mc}_m: Annual utility minimum charge adder in month m [\$]
 		#CHP and Fuel-burning variables
 		dvFuelUsage[p.Tech, p.TimeStep] >= 0  # Fuel burned by technology t in time step h
+		dvLookbackBaseline[p.TimeStep] >=0
 		dvFuelBurnYIntercept[p.Tech, p.TimeStep] >= 0  #X^{fb}_{th}: Y-intercept of fuel burned by technology t in time step h
 		dvThermalProduction[p.Tech, p.TimeStep] >= 0  #X^{tp}_{th}: Thermal production by technology t in time step h
 		dvThermalProductionYIntercept[p.Tech, p.TimeStep] >= 0  #X^{tp}_{th}: Thermal production by technology t in time step h
@@ -41,6 +43,14 @@ function add_continuous_variables(m, p)
     end
 	if !isempty(p.ExportTiers)
 		@variable(m, dvProductionToGrid[p.Tech, p.ExportTiers, p.TimeStep] >= 0)  # X^{ptg}_{tuh}: Exports from electrical production to the grid by technology t in demand tier u during time step h [kW]   (NEW)
+	end
+	if p.RaLookbackDays != 0
+		#event_index_by_month = [1:length(event_starts) for event_starts in p.RaEventStartTimes]
+		#Set RA variables
+		@variable(m,dvHourlyReductionRA[mth in keys(p.RaEventStartTimes), i in 1:length(p.RaEventStartTimes[mth]), h in 0:p.RaMooHours-1])
+		@variable(m,dvMonthlyRA[keys(p.RaEventStartTimes)])
+		#Value of RA for each month
+		@variable(m, dvMonthlyRaValue[keys(p.RaEventStartTimes)])
 	end
 end
 
@@ -57,6 +67,10 @@ function add_integer_variables(m, p)
 		binEnergyTier[p.Month, p.PricingTier], Bin    #  Z^{ut}_{mu} 1 If demand tier $u$ is active in month m; 0 otherwise (NEW)
 		binNoGridPurchases[p.TimeStep], Bin  # Binary for the condition where the site load is met by on-site resources so no grid purchases
     end
+	#Add binary for participating in each month
+	if p.RaLookbackDays != 0
+		@variable(m,binRaParticipate[keys(p.RaEventStartTimes)], Bin)
+	end
 end
 
 
@@ -116,7 +130,6 @@ function add_cost_expressions(m, p)
 		m[:TotalHVACComfortCost] = @expression(m, 0.0)
 	end
 end
-
 
 function add_export_expressions(m, p)  # TODO handle empty export tiers (and export rates, etc.)
 
@@ -225,9 +238,17 @@ function add_bigM_adjustments(m, p)
 		end
 	end
 
+
+	#Adds monthly Big M for RA
+	if p.RaLookbackDays != 0
+		#Monthly upper bound on RA payments
+		m[:MaxMonthlyRa] = 1000000 #[p.pwf_e * (p.RaMonthlyPrice[mth] + (p.RaMooHours * length(p.RaEventStartTimes[mth])) * maximum(p.RaEnergyPrice[ts] for ts in p.TimeStepRatchetsMonth[mth])) * maximum(p.ElecLoad[ts] for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month]
+	end
+
 	# NewMaxSize generates a new maximum size that is equal to the largest monthly load of the year.  This is intended to be a reasonable upper bound on size that would never be exceeeded, but is sufficienctly small to replace much larger big-M values placed as a default.
 
 	for t in p.HeatingTechs
+
 		m[:NewMaxSize][t] = maximum([sum(p.HeatingLoad[ts] for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month])
 		if (m[:NewMaxSize][t] > p.MaxSize[t])
 			m[:NewMaxSize][t] = p.MaxSize[t]
@@ -284,6 +305,7 @@ function add_fuel_constraints(m, p)
 	)
 
 	# Constraint (1b): Fuel burn for non-CHP Constraints
+
 	if !isempty(p.TechsInClass["GENERATOR"])
 		@constraint(m, FuelBurnCon[t in p.TechsInClass["GENERATOR"], ts in p.TimeStep],
 			m[:dvFuelUsage][t,ts]  == p.TimeStepScaling * (
@@ -297,6 +319,7 @@ function add_fuel_constraints(m, p)
 
 	if !isempty(p.CHPTechs)
 		#Constraint (1c): Total Fuel burn for CHP
+
 		@constraint(m, CHPFuelBurnCon[t in p.CHPTechs, ts in p.TimeStep],
 			m[:dvFuelUsage][t,ts]  == p.TimeStepScaling * (
 				m[:dvFuelBurnYIntercept][t,ts] +
@@ -356,8 +379,10 @@ function add_binTechIsOnInTS_constraints(m, p)
 	@constraint(m, ProduceIfOnCon[t in [p.FuelBurningTechs; p.FlexTechs], ts in p.TimeStep],
 		m[:dvRatedProduction][t,ts] <= m[:NewMaxSize][t] * m[:binTechIsOnInTS][t,ts]
 	)
+
 	#Constraint (3b): Technologies that are turned on must not be turned down below minimum, except during outage
 	@constraint(m, MinTurndownCon[t in p.FuelBurningTechs, ts in p.TimeStepsWithGrid],
+
 		p.MinTurndown[t] * m[:dvSize][t] - m[:dvRatedProduction][t,ts] <= m[:NewMaxSize][t] * (1-m[:binTechIsOnInTS][t,ts])
 	)
 end
@@ -400,6 +425,7 @@ function add_storage_op_constraints(m, p)
 		p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts]
 	)
 	# Constraint (4f)-1: (Hot) Thermal production sent to storage or grid must be less than technology's rated production
+
 	if !isempty(p.BoilerTechs)
 		@constraint(m, HeatingTechProductionFlowCon[b in p.HotTES, t in p.BoilerTechs, ts in p.TimeStep],
     	        m[:dvProductionToStorage][b,t,ts]  <=
@@ -421,12 +447,14 @@ function add_storage_op_constraints(m, p)
 				)
 	end
 	# Constraint (4h): Reconcile state-of-charge for electrical storage - with grid
+
 	@constraint(m, ElecStorageInventoryCon[b in p.ElecStorage, ts in p.TimeStepsWithGrid],
 		m[:dvStorageSOC][b,ts] == m[:dvStorageSOC][b,ts-1] + p.TimeStepScaling * (
 			sum(p.ChargeEfficiency[t,b] * m[:dvProductionToStorage][b,t,ts] for t in p.ElectricTechs) +
 			p.GridChargeEfficiency*m[:dvGridToStorage][ts] - m[:dvDischargeFromStorage][b,ts]/p.DischargeEfficiency[b]
 		)
 	)
+
 
 	# Constraint (4i): Reconcile state-of-charge for electrical storage - no grid
 	@constraint(m, ElecStorageInventoryConNoGrid[b in p.ElecStorage, ts in p.TimeStepsWithoutGrid],
@@ -435,6 +463,7 @@ function add_storage_op_constraints(m, p)
 			- m[:dvDischargeFromStorage][b,ts] / p.DischargeEfficiency[b]
 		)
 	)
+
 
 	# Constraint (4j)-1: Reconcile state-of-charge for (hot) thermal storage
 	@constraint(m, HotTESInventoryCon[b in p.HotTES, ts in p.TimeStep],
@@ -455,20 +484,26 @@ function add_storage_op_constraints(m, p)
 				)
 
 	# Constraint (4k): Minimum state of charge
+
 	@constraint(m, MinStorageLevelCon[b in p.Storage, ts in p.TimeStep],
 		m[:dvStorageSOC][b,ts] >= p.StorageMinSOC[b] * m[:dvStorageCapEnergy][b]
 	)
 
+
 	#Constraint (4l): Dispatch to and from electrical storage is no greater than power capacity
+
 	@constraint(m, ElecChargeLEQCapConAlt[b in p.ElecStorage, ts in p.TimeStepsWithGrid],
 		m[:dvStorageCapPower][b] >=   m[:dvDischargeFromStorage][b,ts] +
 			sum(m[:dvProductionToStorage][b,t,ts] for t in p.ElectricTechs) + m[:dvGridToStorage][ts]
 	)
+
 	#Constraint (4m): Dispatch to and from electrical storage is no greater than power capacity (no grid interaction)
+
 	@constraint(m, DischargeLEQCapConNoGridAlt[b in p.ElecStorage, ts in p.TimeStepsWithoutGrid],
 		m[:dvStorageCapPower][b] >= m[:dvDischargeFromStorage][b,ts] +
 			sum(m[:dvProductionToStorage][b,t,ts] for t in p.ElectricTechs)
 	)
+
 
 	#Constraint (4n)-1: Dispatch to and from thermal storage is no greater than power capacity
 	@constraint(m, DischargeLEQCapHotCon[b in p.HotTES, ts in p.TimeStep],
@@ -478,6 +513,7 @@ function add_storage_op_constraints(m, p)
 	@constraint(m, DischargeLEQCapColdCon[b in p.ColdTES, ts in p.TimeStep],
     	        m[:dvStorageCapPower][b] >= m[:dvDischargeFromStorage][b,ts] + sum(m[:dvProductionToStorage][b,t,ts] for t in p.CoolingTechs)
 				)
+
 
 	#Constraint (4n): State of charge upper bound is storage system size
 	@constraint(m, StorageEnergyMaxCapCon[b in p.Storage, ts in p.TimeStep],
@@ -627,6 +663,7 @@ function add_load_balance_constraints(m, p)
 			sum( m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage ) +
 			sum( m[:dvGridPurchase][u,ts] for u in p.PricingTier ) ==
 			sum( sum(m[:dvProductionToStorage][b,t,ts] for b in p.ElecStorage) +
+
 				 sum(m[:dvProductionToGrid][t,u,ts] for u in p.ExportTiersByTech[t]) +
 				 m[:dvProductionToCurtail][t,ts]
 		    for t in p.ElectricTechs) +
@@ -644,6 +681,7 @@ function add_load_balance_constraints(m, p)
 				m[:dvProductionToCurtail][t,ts]
 			for t in p.ElectricTechs) +
 			m[:dvGridToStorage][ts] +
+
             sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
             sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers )/ p.AbsorptionChillerElecCOP +
 			p.ElecLoad[ts] + m[:ElecPenalty][ts]
@@ -768,6 +806,7 @@ function add_monthly_demand_charge_constraints(m, p)
 	@constraint(m, [mth in p.Month, n in 2:p.DemandMonthsBinCount],
 		m[:binDemandMonthsTier][mth, n] * m[:NewMaxDemandMonthsInTier][mth,n-1] <= m[:dvPeakDemandEMonth][mth, n-1])
 
+
 	## Constraint (11d): Monthly peak demand is >= demand at each hour in the month
 	if p.CHPDoesNotReduceDemandCharges == 1
 		@constraint(m, [mth in p.Month, ts in p.TimeStepRatchetsMonth[mth]],
@@ -783,6 +822,7 @@ function add_monthly_demand_charge_constraints(m, p)
 			sum( m[:dvGridPurchase][u, ts] for u in p.PricingTier )
 		)
 	end
+
 
 	if !isempty(p.DemandRatesMonth)
 		m[:DemandFlatCharges] = @expression(m, p.pwf_e * sum( p.DemandRatesMonth[mth,n] * m[:dvPeakDemandEMonth][mth,n] for mth in p.Month, n in p.DemandMonthsBin) )
@@ -860,12 +900,53 @@ function add_tou_demand_charge_constraints(m, p)
 	end
 end
 
+
+#Function to add RA value calculations
+function add_resource_adequacy(m, p)
+
+    #Constraints are hourly reductions are equal to the baseline load - event hour load (reductions are indexed by month, event start, and event hourly)
+    @constraint(m, [mth in keys(p.RaEventStartTimes), i in 1:length(p.RaEventStartTimes[mth]), h in 0:p.RaMooHours-1],
+		m[:dvHourlyReductionRA][mth, i, h] <= calculate_hour_reduction(m, p, mth, i, h))
+    #monthly RA is constrained to be the minimum of day average reductions
+    @constraint(m, [mth in keys(p.RaEventStartTimes), i in 1:length(p.RaEventStartTimes[mth])],
+		m[:dvMonthlyRA][mth] <= calculate_average_daily_reduction(m, p, mth, i))
+
+	#Calculate monthly values if RA is acitve
+    m[:MonthlyRaDr] = @expression(m, [mth in keys(p.RaEventStartTimes)],
+		p.pwf_e * p.RaMonthlyPrice[mth] * m[:dvMonthlyRA][mth])
+
+	m[:MonthlyRaEnergy] = @expression(m, [mth in keys(p.RaEventStartTimes)],
+		p.pwf_e * sum(p.RaEnergyPrice[p.RaEventStartTimes[mth][i] + h]*m[:dvHourlyReductionRA][mth, i, h] for i in 1:length(p.RaEventStartTimes[mth]), h in 0:p.RaMooHours-1))
+
+	#The bin part removes the constraint if the value would be constrained to be negative
+	@constraint(m, [mth in keys(p.RaEventStartTimes)],
+		m[:dvMonthlyRaValue][mth] <= m[:MonthlyRaDr][mth] + m[:MonthlyRaEnergy][mth] + (1 - m[:binRaParticipate][mth]) * m[:MaxMonthlyRa])
+	#Constrains to 0 if did not participate
+	@constraint(m, [mth in keys(p.RaEventStartTimes)],
+		m[:dvMonthlyRaValue][mth] <= m[:binRaParticipate][mth] * m[:MaxMonthlyRa])
+	# @info value(m[:binRaParticipate][7])
+    m[:TotalRaValue] = @expression(m, sum(m[:dvMonthlyRaValue]))
+end
+
+function calculate_hour_reduction(m, p, month, event_index, hours_from_start)
+	lbst_list = convert(Array{Int64, 1}, p.RaLookbackPeriods[month][event_index,:])
+	baseline_loads = sum(m[:dvGridPurchase][u, lbts + hours_from_start] for u in p.PricingTier, lbts in lbst_list)/p.RaLookbackDays
+	#baseline loads minus event load
+    return (baseline_loads - sum(m[:dvGridPurchase][u, p.RaEventStartTimes[month][event_index] + hours_from_start] for u in p.PricingTier))
+end
+
+function calculate_average_daily_reduction(m, p, month, event_index)
+    #Take average across event hours
+    return sum([m[:dvHourlyReductionRA][month, event_index, h] for h in 0:p.RaMooHours-1])/p.RaMooHours
+end
+
 function add_coincident_peak_charge_constraints(m, p)
 	## Constraint (14a): in each coincident peak period, charged CP demand is the max of demand in all CP timesteps
 	@constraint(m, [prd in p.CPPeriod, ts in p.CoincidentPeakLoadTimeSteps[prd,:][p.CoincidentPeakLoadTimeSteps[prd,:].!=nothing]],
 		m[:dvPeakDemandCP][prd] >= sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier)
 	)
 	m[:TotalCPCharges] = @expression(m, p.pwf_e * sum( p.CoincidentPeakRates[prd] * m[:dvPeakDemandCP][prd] for prd in p.CPPeriod) )
+
 end
 
 function add_util_fixed_and_min_charges(m, p)
@@ -980,6 +1061,7 @@ function add_cost_function(m, p)
 		(m[:TotalPerUnitProdOMCosts] + m[:TotalHourlyCHPOMCosts]) * m[:r_tax_fraction_owner] +
 
 		# Utility Bill, tax deductible for offtaker
+
 		(m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] + m[:TotalCPCharges] + m[:TotalExportBenefit] + m[:TotalFixedCharges] + 0.999*m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker] +
 
 		# CHP Standby Charges
@@ -988,8 +1070,12 @@ function add_cost_function(m, p)
         ## Total Generator Fuel Costs, tax deductible for offtaker
         m[:TotalFuelCharges] * m[:r_tax_fraction_offtaker] -
 
+
         # Subtract Incentives, which are taxable
-		m[:TotalProductionIncentive] * m[:r_tax_fraction_owner] +
+		m[:TotalProductionIncentive] * m[:r_tax_fraction_owner] -
+
+        #Subtract RA benefits, which are taxable
+        m[:TotalRaValue] * m[:r_tax_fraction_owner] +
 
 		# Comfort Costs
 		m[:TotalWHComfortCost] + m[:TotalHVACComfortCost]
@@ -1019,7 +1105,7 @@ end
 function reopt(reo_model, model_inputs::Dict)
 
 	t_start = time()
-    p = Parameter(model_inputs)
+	p = Parameter(model_inputs)
 	t = time() - t_start
 
 	results = reopt_run(reo_model, p)
@@ -1066,8 +1152,10 @@ function reopt_run(m, p::Parameter)
     ### Constraint set (4): Storage System Constraints
 	add_storage_size_constraints(m, p)
 	add_storage_op_constraints(m, p)
+
 	### Constraint set (5) - hot and cold thermal loads
 	add_thermal_load_constraints(m, p)
+
 
 	### Constraint set (6): Production Incentive Cap
 	add_prod_incent_constraints(m, p)
@@ -1126,6 +1214,13 @@ function reopt_run(m, p::Parameter)
 	add_export_expressions(m, p)
 	add_util_fixed_and_min_charges(m, p)
 
+
+	if p.RaLookbackDays != 0
+		add_resource_adequacy(m, p)
+	else
+		m[:TotalRaValue] = 0
+	end
+
 	if !isempty(p.CHPTechs)
 		add_chp_hourly_om_charges(m, p)
 	end
@@ -1158,6 +1253,8 @@ function reopt_run(m, p::Parameter)
 		results["status"] = "timed-out"
     elseif termination_status(m) == MOI.OPTIMAL
         results["status"] = "optimal"
+	elseif termination_status(m) == MOI.INFEASIBLE
+		results["status"] = "infeasible"
     else
 		results["status"] = "not optimal"
     end
@@ -1180,6 +1277,7 @@ function reopt_run(m, p::Parameter)
 
 	results = reopt_results(m, p, results)
 	results["julia_reopt_postprocess_seconds"] = time() - t_start
+
 	return results
 end
 
@@ -1238,6 +1336,19 @@ function reopt_results(m, p, r::Dict)
 		add_null_water_heater_results(m, p, r)
 	end
 	add_util_results(m, p, r)
+
+	#resource adequacy results
+	if p.RaLookbackDays != 0
+		add_ra_results(m, p, r)
+	else
+		r["monthly_ra_reduction"] = []
+		r["monthly_ra_energy"] = []
+		r["monthly_ra_dr"] = []
+		r["monthly_ra_value"] = []
+	end
+
+
+
 	return r
 end
 
@@ -1772,4 +1883,31 @@ function add_util_results(m, p, r::Dict)
     @expression(m, GridToLoad[ts in p.TimeStep],
                 sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) - m[:dvGridToStorage][ts] )
     r["GridToLoad"] = round.(value.(GridToLoad), digits=3)
+end
+
+
+
+#Output resource adequacy results
+function add_ra_results(m, p, r::Dict)
+
+	r["monthly_ra_reduction"] = value.(m[:dvMonthlyRA]).data
+	r["monthly_ra_energy"] = value.(m[:MonthlyRaEnergy]).data
+	r["monthly_ra_dr"] = value.(m[:MonthlyRaDr]).data
+	r["monthly_ra_value"] = value.(m[:dvMonthlyRaValue]).data
+	event_hours = []
+	hourly_reductions = []
+	#Flatten event hour array of arrays to singel array
+	for mth in keys(p.RaEventStartTimes)
+		for i in 1:length(p.RaEventStartTimes[mth])
+			for h in 0:p.RaMooHours-1
+				push!(event_hours, p.RaEventStartTimes[mth][i] + h)
+				push!(hourly_reductions, value(m[:dvHourlyReductionRA][mth, i, h]))
+			end
+		end
+	end
+
+	r["event_hours"] = event_hours
+	r["hourly_reductions"] = hourly_reductions
+
+	nothing
 end

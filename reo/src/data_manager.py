@@ -70,6 +70,7 @@ class DataManager:
         self.cold_tes = None
         self.site = None
         self.elec_tariff = None
+        self.resource_adequacy = None
         self.fuel_tariff = None
         self.load = None
         self.heating_load = None
@@ -85,6 +86,9 @@ class DataManager:
         self.optimality_tolerance_decomp_subproblem = None
         self.timeout_decomp_subproblem_seconds = None
         self.add_soc_incentive = None
+
+        #Resource Adeqacy
+        self.resource_adequacy = None
 
         # following attributes used to pass data to process_results.py
         # If we serialize the python classes then we could pass the objects between Celery tasks
@@ -243,8 +247,13 @@ class DataManager:
     def add_elec_tariff(self, elec_tariff):
         self.elec_tariff = elec_tariff
 
+
+    def add_resource_adequacy(self, resource_adequacy):
+        self.resource_adequacy = resource_adequacy
+
     def add_fuel_tariff(self, fuel_tariff):
         self.fuel_tariff = fuel_tariff
+
 
     def _get_REopt_pwfs(self, techs):
         sf = self.site.financial
@@ -1313,6 +1322,21 @@ class DataManager:
             self._get_export_curtailment_params(reopt_techs_bau, tariff_args.grid_export_rates_bau,
                                                 self.elec_tariff.net_metering_limit_kw)
 
+        if self.resource_adequacy is not None:
+            ra_event_start_times = self.resource_adequacy.ra_event_start_times
+            ra_lookback_periods = self.resource_adequacy.ra_lookback_periods
+            ra_moo_hours = self.resource_adequacy.ra_moo_hours
+            ra_lookback_days = self.resource_adequacy.ra_lookback_days
+            ra_demand_pricing = self.resource_adequacy.ra_demand_pricing
+            ra_energy_pricing = self.resource_adequacy.ra_energy_pricing
+        else:
+            ra_event_start_times = {1:[]}
+            ra_lookback_periods = {1:[]}
+            ra_moo_hours = 0
+            ra_lookback_days = 0
+            ra_demand_pricing = {1:0}
+            ra_energy_pricing = []
+
         #populate heating and cooling loads with zeros if not included in model.
         if self.heating_load != None:
             heating_load = self.heating_load.load_list
@@ -1483,6 +1507,12 @@ class DataManager:
             'ElectricDerate': electric_derate,
             'TechsByNMILRegime': TechsByNMILRegime,
             'TechsCannotCurtail': techs_cannot_curtail,
+            'RaEventStartTimes': ra_event_start_times,
+            'RaLookbackPeriods': ra_lookback_periods,
+            'RaMooHours': ra_moo_hours,
+            'RaLookbackDays': ra_lookback_days,
+            'RaMonthlyPrice': ra_demand_pricing,
+            'RaEnergyPrice': ra_energy_pricing,
             'TechsByNMILRegime': TechsByNMILRegime,
             'HeatingLoad': heating_load,
             'CoolingLoad': cooling_load,
@@ -1779,6 +1809,12 @@ class DataManager:
             'ElectricDerate': electric_derate_bau,
             'TechsByNMILRegime': TechsByNMILRegime_bau,
             'TechsCannotCurtail': techs_cannot_curtail_bau,
+            'RaEventStartTimes': {1:[]},
+            'RaLookbackPeriods': {1:[]},
+            'RaMooHours': 0,
+            'RaLookbackDays': 0,
+            'RaMonthlyPrice': {1:0},
+            'RaEnergyPrice': [],
             'TechsByNMILRegime': TechsByNMILRegime_bau,
             'HeatingLoad': heating_load,
             'CoolingLoad': cooling_load,
