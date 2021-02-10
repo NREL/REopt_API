@@ -36,12 +36,13 @@ def nested_to_flat(nested_output):
         nested_output: dict, API response
     """
     base = {
+
         'run_uuid': nested_output['Scenario']['run_uuid'],
         'api_version': nested_output['Scenario']['api_version'],
         'status': nested_output['Scenario']['status'],
 
         'year_one_electric_load_series': nested_output['Scenario']['Site']['LoadProfile']['year_one_electric_load_series_kw'],
-        
+
         'lcc': nested_output['Scenario']['Site']['Financial']['lcc_us_dollars'],
         'lcc_bau': nested_output['Scenario']['Site']['Financial']['lcc_bau_us_dollars'],
         'npv': nested_output['Scenario']['Site']['Financial']['npv_us_dollars'],
@@ -58,7 +59,7 @@ def nested_to_flat(nested_output):
         'year_one_pv_to_load_series': nested_output['Scenario']['Site']['PV']['year_one_to_load_series_kw'],
         'year_one_pv_to_grid_series': nested_output['Scenario']['Site']['PV']['year_one_to_grid_series_kw'],
         'existing_pv_om_cost_us_dollars': nested_output['Scenario']['Site']['PV']['existing_pv_om_cost_us_dollars'],
-        
+
         'batt_kw': nested_output['Scenario']['Site']['Storage']['size_kw'],
         'batt_kwh': nested_output['Scenario']['Site']['Storage']['size_kwh'],
         'year_one_battery_to_load_series': nested_output['Scenario']['Site']['Storage']['year_one_to_load_series_kw'],
@@ -94,7 +95,13 @@ def nested_to_flat(nested_output):
         'year_one_coincident_peak_cost': nested_output['Scenario']['Site']['ElectricTariff']['year_one_coincident_peak_cost_us_dollars'],
         'year_one_coincident_peak_cost_bau': nested_output['Scenario']['Site']['ElectricTariff']['year_one_coincident_peak_cost_bau_us_dollars'],
         'total_coincident_peak_cost': nested_output['Scenario']['Site']['ElectricTariff']['total_coincident_peak_cost_us_dollars'],
-        'total_coincident_peak_cost_bau': nested_output['Scenario']['Site']['ElectricTariff']['total_coincident_peak_cost_bau_us_dollars']
+        'total_coincident_peak_cost_bau': nested_output['Scenario']['Site']['ElectricTariff']['total_coincident_peak_cost_bau_us_dollars'],
+        'monthly_ra_reduction':nested_output['Scenario']['Site']['ElectricTariff']['monthly_ra_reduction'],
+        'monthly_ra_energy':nested_output['Scenario']['Site']['ElectricTariff']['monthly_ra_energy'],
+        'monthly_ra_dr': nested_output['Scenario']['Site']['ElectricTariff']['monthly_ra_dr'],
+        'monthly_ra_value': nested_output['Scenario']['Site']['ElectricTariff']['monthly_ra_value'],
+        'event_hours': nested_output['Scenario']['Site']['ElectricTariff']['event_hours'],
+        'hourly_reductions': nested_output['Scenario']['Site']['ElectricTariff']['hourly_reductions']
     }
     if nested_output['Scenario']['Site'].get('Wind') is not None:
         base.update({
@@ -105,6 +112,17 @@ def nested_to_flat(nested_output):
             'year_one_wind_to_load_series': nested_output['Scenario']['Site']['Wind']['year_one_to_load_series_kw'],
             'year_one_wind_to_grid_series': nested_output['Scenario']['Site']['Wind']['year_one_to_grid_series_kw']
        })
+    #_______________________________________________________________________________________________________________
+    # with open("nested output values.txt", "w") as f:
+    #     print(f"monthly ra reductions {nested_output['Scenario']['Site']['ElectricTariff']['monthly_ra_reduction']}", file = f)
+    #     print(f"monthly ra energy {nested_output['Scenario']['Site']['ElectricTariff']['monthly_ra_energy']}", file = f)
+    #     print(f"monthly ra dr {nested_output['Scenario']['Site']['ElectricTariff']['monthly_ra_dr']}", file = f)
+    #     print(f"monthly ra value {nested_output['Scenario']['Site']['ElectricTariff']['monthly_ra_value']}", file = f)
+    #     print(f"event hours {nested_output['Scenario']['Site']['ElectricTariff']['event_hours']}", file = f)
+    #     print(f"hourly reductions {nested_output['Scenario']['Site']['ElectricTariff']['hourly_reductions']}", file = f)
+
+        # "monthly_ra_reduction", "monthly_ra_energy","monthly_ra_dr","monthly_ra_value", "event_hours", "hourly_reductions"
+    #________________________________________________________________________________________________________________
     if nested_output['Scenario']['Site'].get('Generator') is not None:
         base.update({
             'gen_kw':nested_output['Scenario']['Site']['Generator']['size_kw'],
