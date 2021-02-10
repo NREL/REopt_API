@@ -556,6 +556,16 @@ nested_output_definitions = {
                   "description": "Business as usual total utility minimum charge adder",
                   "units": "$"
                 },
+                "total_demand_response_bau_us_dollars": {
+                  "type": "float",
+                  "description": "Business as usual demand response revenue over the lifecycle",
+                  "units": "$"
+                },
+                "total_demand_response_us_dollars": {
+                  "type": "float",
+                  "description": "Demand response revenue over the lifecycle",
+                  "units": "$"
+                },
                 "year_one_bill_us_dollars": {
                   "type": "float",
                   "description": "Optimal year one total utility bill",
@@ -806,6 +816,36 @@ nested_output_definitions = {
                   "type": "int",
                   "description": "Total equivalent pounds of carbon dioxide emitted from BAU generator use in the first year.",
                   "units": "lb CO2"
+                },
+                "monthly_ra_reduction": {
+                  "type": "list_of_float",
+                  "decription": "Amount of RA reduction which occurs in each month where RA is called",
+                  "units": "kW by month"
+                },
+                "monthly_ra_energy" : {
+                  "type": "list_of_float",
+                  "description": "RA payments from participation in wholesale energy market. Does not consider whether participation occurs in a given month",
+                  "units" : "$"
+                },
+                "monthly_ra_dr" : {
+                  "type": "list_of_float",
+                  "description": "RA payments from providing capacity. Does not consider whether participation occurs in given month",
+                  "units" : "$"
+                }, 
+                "monthly_ra_value" : {
+                  "type" : "list_of_float",
+                  "description" : "Total monthly ra value. Is zero for months where participation does not occur",
+                  "units" : "$"
+                },
+                "event_hours" : {
+                  "type" : "list_of_int",
+                  "description" : "Each hour which is an event hour",
+                  "units" : "hour index"
+                }, 
+                "hourly_reductions" : {
+                  "type" : "list_of_float",
+                  "description" : "Load reduction by event hour",
+                  "units" : "kWh"
                 }
               },
 
@@ -1025,8 +1065,100 @@ nested_output_definitions = {
                   "description": "Year one hourly time series of hot TES state of charge",
                   "units": "%"
                 }
+              },
+              "RC": {
+                "temperatures_degree_C": {
+                  "type": list_of_float,
+                  "description": "Hourly time series of indoor temperature",
+                  "units": "Celsius"
+                },
+                "comfort_penalty_degC": {
+                  "type": list_of_float,
+                  "description": "HVAC comfort penalty",
+                  "units": "degrees"
+                }
+              },
+              "FlexTechAC": {
+                "size_kw": {
+                  "type": float,
+                  "description": "AC size",
+                  "units": "kW"
+                },
+                "year_one_power_production_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one AC power production time series",
+                  "units": "kW"
+                },
+                "year_one_power_consumption_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one AC power consumption time series",
+                  "units": "kW"
+                }
+              },
+              "FlexTechHP": {
+                "size_kw": {
+                  "type": float,
+                  "description": "HP size",
+                  "units": "kW"
+                },
+                "year_one_power_production_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one HP power production time series",
+                  "units": "kW"
+                },
+                "year_one_power_consumption_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one HP power consumption time series",
+                  "units": "kW"
+                }
+              },
+              "HotWaterTank": {
+                "year_one_temperature_series_degC": {
+                  "type": list_of_float,
+                  "description": "Hot water tank temperature series",
+                  "units": "Celcius"
+                },
+                "comfort_penalty_degC": {
+                  "type": list_of_float,
+                  "description": "WH comfort penalty",
+                  "units": "degrees"
+                }
+              },
+              "FlexTechERWH": {
+                "year_one_power_production_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one ERWH power production time series",
+                  "units": "kW"
+                },
+                "year_one_power_consumption_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one ERWH power consumption time series",
+                  "units": "kW"
+                },
+                "fraction_on": {
+                  "type": list_of_float,
+                  "description": "Fraction of each hour the ERWH is on for",
+                  "units": "-"
+                }
+              },
+              "FlexTechHPWH": {
+                "year_one_power_production_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one HPWH power production time series",
+                  "units": "kW"
+                },
+                "year_one_power_consumption_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one HPWH power consumption time series",
+                  "units": "kW"
+                },
+                "fraction_on": {
+                  "type": list_of_float,
+                  "description": "Fraction of each hour the ERWH is on for",
+                  "units": "-"
+                }
+              }
             }
-          }
         }
       },
 
