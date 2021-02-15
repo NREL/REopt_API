@@ -1210,7 +1210,12 @@ class DataManager:
 
         if self.resource_adequacy is not None:
             ra_event_start_times = self.resource_adequacy.ra_event_start_times
-            ra_lookback_periods = self.resource_adequacy.ra_lookback_periods
+            ra_lookback_periods = {}
+            for key in self.resource_adequacy.ra_lookback_periods:
+                ra_lookback_periods[key] = []
+                for lst in self.resource_adequacy.ra_lookback_periods[key]:
+                    ra_lookback_periods[key].append([int(i) for i in lst])
+                    
             ra_moo_hours = self.resource_adequacy.ra_moo_hours
             ra_lookback_days = self.resource_adequacy.ra_lookback_days
             ra_demand_pricing = self.resource_adequacy.ra_demand_pricing
