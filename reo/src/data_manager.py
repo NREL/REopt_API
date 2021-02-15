@@ -1323,12 +1323,17 @@ class DataManager:
                                                 self.elec_tariff.net_metering_limit_kw)
 
         if self.resource_adequacy is not None:
-            ra_event_start_times = self.resource_adequacy.ra_event_start_times
-            ra_lookback_periods = self.resource_adequacy.ra_lookback_periods
-            ra_moo_hours = self.resource_adequacy.ra_moo_hours
-            ra_lookback_days = self.resource_adequacy.ra_lookback_days
-            ra_demand_pricing = self.resource_adequacy.ra_demand_pricing
-            ra_energy_pricing = self.resource_adequacy.ra_energy_pricing
+            ra_event_start_times = self.resource_adequacy.ra_event_start_times #dict
+            ra_lookback_periods = {}
+            for key in self.resource_adequacy.ra_lookback_periods:
+                ra_lookback_periods[key] = []
+                for lst in self.resource_adequacy.ra_lookback_periods[key]:
+                    ra_lookback_periods[key].append([int(i) for i in lst])
+
+            ra_moo_hours = self.resource_adequacy.ra_moo_hours #int
+            ra_lookback_days = self.resource_adequacy.ra_lookback_days #int
+            ra_demand_pricing = self.resource_adequacy.ra_demand_pricing #list
+            ra_energy_pricing = self.resource_adequacy.ra_energy_pricing #list
         else:
             ra_event_start_times = {1:[]}
             ra_lookback_periods = {1:[]}
@@ -1578,135 +1583,15 @@ class DataManager:
 
         # test_xl = {
         #     'Tech': reopt_techs,
-        #     'TechToLocation': tech_to_location,
-        #     'MaxSizesLocation': max_sizes_location,
-        #     'TechClass': self.available_tech_classes,
-        #     'TurbineDerate': derate,
-        #     'NMILRegime': NMIL_regime,
-        #     'MaxSize': max_sizes,
-        #     'TechClassMinSize': tech_class_min_size,
-        #     'MinTurndown': min_turn_down,
-        #     'LevelizationFactor': levelization_factor,
-        #     'pwf_e': pwf_e,
-        #     'pwf_om': pwf_om,
-        #     'pwf_fuel': pwf_fuel_by_tech,
-        #     'two_party_factor': two_party_factor,
-        #     'pwf_prod_incent': pwf_prod_incent,
-        #     'MaxProdIncent': max_prod_incent,
-        #     'MaxSizeForProdIncent': max_size_for_prod_incent,
-        #     'CapCostSlope': cap_cost_slope,
-        #     'CapCostX': cap_cost_x,
-        #     'CapCostYInt': cap_cost_yint,
-        #     'r_tax_owner': sf.owner_tax_pct,
-        #     'r_tax_offtaker': sf.offtaker_tax_pct,
-        #     'StorageCostPerKW': storage_power_cost,
-        #     'StorageCostPerKWH': storage_energy_cost,
-        #     'OMperUnitSize': om_cost_us_dollars_per_kw,
-        #     'OMcostPerUnitProd': om_cost_us_dollars_per_kwh,
-        #     'OMcostPerUnitHourPerSize': om_cost_us_dollars_per_hr_per_kw_rated,
-        #     'analysis_years': int(sf.analysis_years),
-        #     'NumRatchets': tariff_args.demand_num_ratchets,
-        #     'FuelBinCount': tariff_args.energy_tiers_num,
-        #     'DemandBinCount': tariff_args.demand_tiers_num,
-        #     'DemandMonthsBinCount': tariff_args.demand_month_tiers_num,
-        #     'DemandRatesMonth': tariff_args.demand_rates_monthly,
-        #     'DemandRates': tariff_args.demand_rates_tou,
-        #     'TimeStepRatchets': tariff_args.demand_ratchets_tou,
-        #     'MaxDemandInTier': tariff_args.demand_max_in_tiers,
-        #     'MaxUsageInTier': tariff_args.energy_max_in_tiers,
-        #     'MaxDemandMonthsInTier': tariff_args.demand_month_max_in_tiers,
-        #     'FixedMonthlyCharge': tariff_args.fixed_monthly_charge,
-        #     'AnnualMinCharge': tariff_args.annual_min_charge,
-        #     'MonthlyMinCharge': tariff_args.min_monthly_charge,
-        #     'DemandLookbackMonths': tariff_args.demand_lookback_months,
-        #     'DemandLookbackRange': tariff_args.demand_lookback_range,
-        #     'DemandLookbackPercent': tariff_args.demand_lookback_percent,
-        #     'TimeStepRatchetsMonth': tariff_args.demand_ratchets_monthly,
-        #     'TimeStepCount': self.n_timesteps,
-        #     'TimeStepScaling': self.steplength,
-        #     'AnnualElecLoadkWh': self.load.annual_kwh,
-        #     'StorageMinChargePcent': self.storage.soc_min_pct,
-        #     'InitSOC': self.storage.soc_init_pct,
-        #     'NMILLimits': NMILLimits,
-        #     'TechToNMILMapping': TechToNMILMapping,
-        #     'CapCostSegCount': n_segments,
-        #     'CoincidentPeakLoadTimeSteps': self.elec_tariff.coincident_peak_load_active_timesteps,
-        #     'CoincidentPeakRates': self.elec_tariff.coincident_peak_load_charge_us_dollars_per_kw,
-        #     'CoincidentPeakPeriodCount': self.elec_tariff.coincident_peak_num_periods,
-        #     # new parameters for reformulation
-        #     'FuelCost': fuel_costs,
-        #     'ElecRate': tariff_args.energy_costs,
-        #     'GridExportRates': export_rates,
-        #     'FuelBurnSlope': fuel_burn_slope,
-        #     'FuelBurnYInt': fuel_burn_intercept,
-        #     'ProductionIncentiveRate': production_incentive_rate,
-        #     'ProductionFactor': production_factor,
-        #     'ElecLoad': non_cooling_electric_load,
-        #     'FuelLimit': fuel_limit,
-        #     'ChargeEfficiency': charge_efficiency,  # Do we need this indexed on tech?
-        #     'GridChargeEfficiency': grid_charge_efficiency,
-        #     'DischargeEfficiency': discharge_efficiency,
-        #     'StorageMinSizeEnergy': storage_min_energy,
-        #     'StorageMaxSizeEnergy': storage_max_energy,
-        #     'StorageMinSizePower': storage_min_power,
-        #     'StorageMaxSizePower': storage_max_power,
-        #     'StorageMinSOC': [self.storage.soc_min_pct, self.hot_tes.soc_min_pct, self.cold_tes.soc_min_pct],
-        #     'StorageInitSOC': [self.storage.soc_init_pct, self.hot_tes.soc_init_pct, self.cold_tes.soc_init_pct],
-        #     'StorageCanGridCharge': self.storage.canGridCharge,
-        #     'SegmentMinSize': segment_min_size,
-        #     'SegmentMaxSize': segment_max_size,
-        #     # Sets that need to be populated
-        #     'Storage': storage_techs,
-        #     'FuelType': fuel_types,
-        #     'Subdivision': subdivisions,
-        #     'PricingTierCount': tariff_args.energy_tiers_num,
-        #     'ElecStorage': ['Elec'],
-        #     'SubdivisionByTech': subdivisions_by_tech,
-        #     'SegByTechSubdivision': seg_by_tech_subdivision,
-        #     'TechsInClass': techs_in_class,
-        #     'TechsByFuelType': techs_by_fuel_type,
-        #     'ElectricTechs': electric_techs,
-        #     'FuelBurningTechs': fb_techs,
-        #     'TechsNoTurndown': techs_no_turndown,
-        #     'ExportTiers': export_tiers,
-        #     'TimeStepsWithGrid': time_steps_with_grid,
-        #     'TimeStepsWithoutGrid': time_steps_without_grid,
-        #     'ExportTiersByTech': rates_by_tech,
-        #     'TechsByExportTier': [techs_by_export_tier[k] for k in export_tiers],
-        #     'ExportTiersBeyondSiteLoad': ["EXC"],
-        #     'ElectricDerate': electric_derate,
-        #     'TechsByNMILRegime': TechsByNMILRegime,
-        #     'TechsCannotCurtail': techs_cannot_curtail,
-        #     'TechsByNMILRegime': TechsByNMILRegime,
-        #     'HeatingLoad': heating_load,
-        #     'CoolingLoad': cooling_load,
-        #     'ThermalStorage': thermal_storage_techs,
-        #     'HotTES': hot_tes_techs,
-        #     'ColdTES': cold_tes_techs,
-        #     'CHPTechs': chp_techs,
-        #     'ElectricChillers': electric_chillers,
-        #     'AbsorptionChillers': absorption_chillers,
-        #     'CoolingTechs': cooling_techs,
-        #     'HeatingTechs': heating_techs,
-        #     'BoilerTechs': boiler_techs,
-        #     'BoilerEfficiency': boiler_efficiency,
-        #     'ElectricChillerCOP': elec_chiller_cop,
-        #     'AbsorptionChillerCOP': absorp_chiller_cop,
-        #     'AbsorptionChillerElecCOP': absorp_chiller_elec_cop,
-        #     'CHPThermalProdSlope': chp_thermal_prod_slope,
-        #     'CHPThermalProdIntercept': chp_thermal_prod_intercept,
-        #     'FuelBurnYIntRate': chp_fuel_burn_intercept,
-        #     'CHPThermalProdFactor': chp_thermal_prod_factor,
-        #     'CHPDoesNotReduceDemandCharges': tariff_args.chp_does_not_reduce_demand_charges,
-        #     'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month,
-        #     'StorageDecayRate': storage_decay_rate,
-        #     'DecompOptTol': self.optimality_tolerance_decomp_subproblem,
-        #     'DecompTimeOut': self.timeout_decomp_subproblem_seconds,
-        #     'AddSOCIncentive': self.add_soc_incentive
+        #     'ProductionFactor': production_factor
         # }
-        ## Uncomment the following and run a scenario to get an updated modelinputs.json for creating Julia system image
+        # ## Uncomment the following and run a scenario to get an updated modelinputs.json for creating Julia system image
         # import json
-        # json.dump(test_xl, open("C:/Users/xli1/Documents/PROJECTS/_FY21/Nova/debug/modelinputs_f2.json", "w"))
+        # import pandas as pd
+        # df = pd.DataFrame()
+        # df['prod_factor'] = production_factor
+        # df.to_csv('C:/Users/xli1/Documents/PROJECTS/_FY21/Nova/debug/prod_factor.csv')
+        # # json.dump(test_xl, open("C:/Users/xli1/Documents/PROJECTS/_FY21/Nova/debug/modelinputs.json", "w"))
 
         self.reopt_inputs_bau = {
             'Tech': reopt_techs_bau,
