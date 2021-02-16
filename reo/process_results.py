@@ -783,6 +783,11 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 present_replacement_cost + self.results_dict.get("total_om_costs_after_tax", 0)
             self.nested_outputs["Scenario"]["Site"]["Financial"]["initial_capital_costs_after_incentives"] = \
                 self.upfront_capex_after_incentives
+            if self.third_party_factor != 1:
+                self.nested_outputs["Scenario"]["Site"]["Financial"][
+                    "developer_om_and_replacement_present_cost_after_tax_us_dollars"] = \
+                    self.nested_outputs["Scenario"]["Site"]["Financial"][
+                        "om_and_replacement_present_cost_after_tax_us_dollars"] / self.third_party_factor
 
             self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] = \
                 self.nested_outputs["Scenario"]["Site"]["Wind"].get("average_yearly_energy_produced_kwh") or 0
