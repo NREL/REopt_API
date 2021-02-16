@@ -763,7 +763,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_hot_tes_soc_series_pct"] = self.results_dict.get("hot_tes_pct_soc_series")
                     if np.isnan(sum(self.results_dict.get("hot_tes_pct_soc_series") or [np.nan])):
                         self.nested_outputs["Scenario"]["Site"][name]["year_one_hot_tes_soc_series_pct"] = None
-
                 elif name == "ColdTES":
                     self.nested_outputs["Scenario"]["Site"][name][
                         "size_gal"] = self.results_dict.get("cold_tes_size_kwht",0) / 0.0287
@@ -788,10 +787,9 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             for pv in self.nested_outputs["Scenario"]["Site"]["PV"]:
                 self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] += \
                 pv.get("average_yearly_energy_produced_kwh") or 0
-            self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] = round(\
-                self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] / \
-                self.nested_outputs["Scenario"]["Site"]["LoadProfile"]["annual_calculated_kwh"],4)
-
+            self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] = round(
+                self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] /
+                self.nested_outputs["Scenario"]["Site"]["LoadProfile"]["annual_calculated_kwh"], 4)
 
             time_outputs = [k for k in self.bau_attributes if (k.startswith("julia") or k.startswith("pyjulia"))]
 
