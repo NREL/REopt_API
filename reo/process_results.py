@@ -269,6 +269,14 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             return round(upfront_capex, 2)
 
         @property
+        def third_party_factor(self):
+            yrs = self.inputs["Financial"]["analysis_years"]
+            pwf_offtaker = annuity(yrs, 0, self.inputs["Financial"]["offtaker_discount_pct"])
+            pwf_owner = annuity(yrs, 0, self.inputs["Financial"]["owner_discount_pct"])
+            return (pwf_offtaker * (1 - self.inputs["Financial"]["offtaker_tax_pct"])) \
+                    / (pwf_owner * (1 - self.inputs["Financial"]["owner_tax_pct"]))
+
+        @property
         def upfront_capex_after_incentives(self):
             """
             The net_capital_costs output is the upfront capex after incentives, except it includes the battery
@@ -277,14 +285,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             Note that the owner_discount_pct and owner_tax_pct are set to the offtaker_discount_pct and offtaker_tax_pct
             respectively when third_party_ownership is False.
             """
-            yrs = self.inputs["Financial"]["analysis_years"]
-            pwf_offtaker = annuity(yrs, 0, self.inputs["Financial"]["offtaker_discount_pct"])
-            pwf_owner = annuity(yrs, 0, self.inputs["Financial"]["owner_discount_pct"])
-            third_party_factor = (pwf_offtaker * (1 - self.inputs["Financial"]["offtaker_tax_pct"])) \
-                                  / (pwf_owner * (1 - self.inputs["Financial"]["owner_tax_pct"]))
-
             upfront_capex_after_incentives = self.nested_outputs["Scenario"]["Site"]["Financial"]["net_capital_costs"] \
-                                             / third_party_factor
+                                             / self.third_party_factor
 
             pwf_inverter = 1 / ((1 + self.inputs["Financial"]["owner_discount_pct"])
                                 ** self.inputs["Storage"]["inverter_replacement_year"])
