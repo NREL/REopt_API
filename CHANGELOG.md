@@ -28,8 +28,9 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
     
-## dev - 2021-02-05
+## dev - 2021-02-16
 ### Patches
+- `reo`: new output `Financial.developer_om_and_replacement_present_cost_after_tax_us_dollars`
 - `reo`: Fix **PVWatts** being called when user provides `PV.prod_factor_series_kw`
 - `reopt_api`: new `docker-compose.nginx.yml` for standing up the API on a server with remote access (for example if one wants to host the API on a cloud service)
 - `reopt_api`: update `Dockerfile.xpress` to use `nlaws/pyjul:1.5.3` base image (was using Julia 1.3)
