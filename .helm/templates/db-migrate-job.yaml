@@ -14,7 +14,7 @@ spec:
       containers:
         - name: {{ .Chart.Name }}-job
 {{ tuple "reopt-api" . | werf_container_image | indent 10 }}
-          args: ["python", "manage.py", "migrate"]
+          args: ["bin/migrate"]
           envFrom:
             - configMapRef:
                 name: {{ .Chart.Name }}-base-config-map
