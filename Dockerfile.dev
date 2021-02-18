@@ -35,14 +35,16 @@ RUN julia --project="." -e 'import Pkg; Pkg.instantiate(); include("buildpkgs.jl
 RUN python -c 'import julia; julia.install()'
 
 
-# Copy all code and check python packages
+# Copy all code
 ENV PYTHONDONTWRITEBYTECODE 1
 COPY . /opt/reopt
-WORKDIR /opt/reopt
 
 # Build Julia system image
+WORKDIR /opt/reopt/julia_envs/Xpress/
 RUN julia --project="." -e 'import Pkg; Pkg.instantiate(); include("build_julia_image.jl"); build_julia_image("/opt/reopt/")'
 
+# Update python packages
+WORKDIR /opt/reopt
 RUN ["pip", "install", "-r", "requirements.txt"]
 
 EXPOSE 8000
