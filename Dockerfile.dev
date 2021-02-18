@@ -34,6 +34,9 @@ WORKDIR /opt/reopt/julia_envs/Xpress/
 RUN julia --project="." -e 'import Pkg; Pkg.instantiate(); include("buildpkgs.jl")'
 RUN python -c 'import julia; julia.install()'
 
+# Build Julia system image
+RUN julia --project="." -e 'import Pkg; Pkg.instantiate(); include("build_julia_image.jl"); build_julia_image("/opt/reopt/")'
+
 
 # Copy all code and check python packages
 ENV PYTHONDONTWRITEBYTECODE 1
