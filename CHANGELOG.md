@@ -28,7 +28,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
     
-## dev - 2021-02-16
+## v1.4.3 - 2021-02-18
 ### Patches
 - `reo`: new output `Financial.developer_om_and_replacement_present_cost_after_tax_us_dollars`
 - `reo`: Fix **PVWatts** being called when user provides `PV.prod_factor_series_kw`
