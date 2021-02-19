@@ -56,8 +56,8 @@ spec:
                 - name: X-Forwarded-Proto
                   value: https
             periodSeconds: 5
-            timeoutSeconds: 3
-            failureThreshold: 3
+            timeoutSeconds: 60
+            failureThreshold: 10
           livenessProbe:
             httpGet:
               path: /_health
@@ -67,5 +67,5 @@ spec:
                   value: https
             initialDelaySeconds: 30
             periodSeconds: 60
-            timeoutSeconds: 30
+            timeoutSeconds: 60
             failureThreshold: 10
