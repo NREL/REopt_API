@@ -1574,9 +1574,11 @@ class ValidateNestedInput:
             for name, value in real_values.items():
                 if self.isAttribute(name):
                     data_validators = template_values[name]
+                    
                     if ("list_of_float" in data_validators['type'] or "list_of_int" in data_validators['type']) and isinstance(value, list):
                         if 'list_of_list' not in data_validators['type']:
                             value = [value]
+                        
                         if data_validators.get('min') is not None:
                             for value_set in value:
                                 if any([v < data_validators['min'] for v in value_set]):
@@ -1618,6 +1620,8 @@ class ValidateNestedInput:
                                 if input_isDict==False:
                                     self.input_data_errors.append('%s value (%s) in %s (number %s) exceeds allowable max %s' % (
                                     name, value, self.object_name_string(object_name_path), number, data_validators['max']))
+                    
+
 
                     if data_validators.get('restrict_to') is not None:
                         # Handle both cases: 1. val is of 'type' 2. List('type')
@@ -1695,11 +1699,14 @@ class ValidateNestedInput:
                     make_array_of_array = False
                     attribute_type = template_values[name]['type']  # attribute_type's include list_of_float
                     new_value = None
-                    if isinstance(attribute_type, list):
+                    if isinstance(attribute_type, list) or attribute_type.startswith('list_of'):
                         # These checks are for cases where the user can supply a simple data type (i.e. string)
                         # or a list of this type (ie. list of string), by convention if both are allowed we will convert to the list form
                         # for simplicity of handlings the data throughout the API workflow
                         list_eval_function_name = None
+                        if not isinstance(attribute_type, list):
+                            if attribute_type.startswith('list_of'):
+                                list_eval_function_name = attribute_type
                         if all([x in attribute_type for x in ['float', 'list_of_float']]):
                             list_eval_function_name = 'list_of_float'
                         if all([x in attribute_type for x in ['int', 'list_of_int']]):
