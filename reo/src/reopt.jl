@@ -1018,6 +1018,10 @@ function add_flex_load_constraints(m, p)
 	@constraint(m, [ts in p.TimeStep],
 		m[:dvHVACComfortCost][ts] >= m[:dvTemperatures][p.SpaceNode, ts] - p.ComfortTempLimitAC
     )
+	#Binary constraints
+	@constraint(m, [ts in p.TimeStep],
+		m[:binTechIsOnInTS]["AC",ts] + m[:binTechIsOnInTS]["HP",ts] <= 1
+	)
 end
 
 
@@ -1078,7 +1082,7 @@ function add_cost_function(m, p)
         m[:TotalRaValue] * m[:r_tax_fraction_owner] +
 
 		# Comfort Costs
-		m[:TotalWHComfortCost] + m[:TotalHVACComfortCost]
+		m[:TotalWHComfortCost] + m[:TotalHVACComfortCost]*100000
 	)
     #= Note: 0.9999*m[:MinChargeAdder] in Obj b/c when m[:TotalMinCharge] > (TotalEnergyCharges + m[:TotalDemandCharges] + TotalExportBenefit + m[:TotalFixedCharges])
 		it is arbitrary where the min charge ends up (eg. could be in m[:TotalDemandCharges] or m[:MinChargeAdder]).
