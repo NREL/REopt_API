@@ -162,6 +162,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
                             time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
                             **inputs_dict["Site"]["Generator"])
 
+# Need to add use_default_outage and utility_name variables to LoadProfile inputs
         if 'gen' in locals():
             lp = LoadProfile(dfm=dfm,
                              user_profile=inputs_dict['Site']['LoadProfile'].get('loads_kw'),
