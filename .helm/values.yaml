@@ -4,5 +4,5 @@ djangoSettingsModule: reopt_api.dev_settings
 redisDataVolumeStorageClassName:
 redisHost: "{{ .Chart.Name }}-redis-service"
 redisPort: 6379
-djangoReplicas: 1
+djangoReplicas: 2
 celeryReplicas: 1
