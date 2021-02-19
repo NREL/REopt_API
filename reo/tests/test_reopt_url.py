@@ -155,7 +155,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             response = self.get_response(test_data)
             err_msg = str(json.loads(response.content)['messages']['input_errors'])
             self.assertTrue(text in err_msg, "'{}' not found in '{}'".format(text, err_msg))
-            
+
         for attribute, test_data in input.test_data('max'):
             text = "exceeds allowable max"
             response = self.get_response(test_data)
