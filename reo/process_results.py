@@ -794,9 +794,10 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             for pv in self.nested_outputs["Scenario"]["Site"]["PV"]:
                 self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] += \
                 pv.get("average_yearly_energy_produced_kwh") or 0
-            self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] = round(
-                self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] /
-                self.nested_outputs["Scenario"]["Site"]["LoadProfile"]["annual_calculated_kwh"], 4)
+            if self.nested_outputs["Scenario"]["Site"]["LoadProfile"]["annual_calculated_kwh"] > 0:
+                self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] = round(
+                    self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] /
+                    self.nested_outputs["Scenario"]["Site"]["LoadProfile"]["annual_calculated_kwh"], 4)
 
             time_outputs = [k for k in self.bau_attributes if (k.startswith("julia") or k.startswith("pyjulia"))]
 
