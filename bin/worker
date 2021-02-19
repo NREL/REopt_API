@@ -3,7 +3,7 @@
 set -Eeuxo pipefail
 
 if [ -n "${K8S_DEPLOY:-}" ]; then
-    exec celery -A reopt_api worker --loglevel=info --queues="$APP_QUEUE_NAME"
+    exec celery -A reopt_api worker --loglevel=info --queues="$APP_QUEUE_NAME" --without-gossip
 else
     set +u
     if [ "$APP_ENV" == "local" ]
