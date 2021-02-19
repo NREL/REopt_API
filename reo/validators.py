@@ -440,7 +440,8 @@ class ValidateNestedInput:
         self.resampled_inputs = []
         self.emission_warning = []
         self.defaults_inserted = []
-        self.emission_warning = []
+        self.emission_warning = [] # Why is this defined twice?
+        self.outage_end_override = [] # Added in outage warning
         self.general_warnings = []
         self.input_dict = dict()
         if type(input_dict) is not dict:
@@ -454,7 +455,7 @@ class ValidateNestedInput:
 
             self.check_object_types(self.input_dict)
         if self.isValid:
-            self.recursively_check_input_dict(self.nested_input_definitions, self.remove_invalid_keys)
+            self.recursively_check_input_dict(self.nested_input_definitions, self.remove_invalid_keys) # How to add in checking for correct outage inputs?
             self.recursively_check_input_dict(self.nested_input_definitions, self.remove_nones)
             self.recursively_check_input_dict(self.nested_input_definitions, self.check_for_nans)
             self.recursively_check_input_dict(self.nested_input_definitions, self.convert_data_types)
@@ -540,6 +541,9 @@ class ValidateNestedInput:
 
         if bool(self.emission_warning):
             output["Emissions Warning"] = {"error":self.emission_warning}
+        
+        if bool(self.outage_end_override):
+            output["Overriding the outage end time"] = {"error":self.outage_end_override} # Need to add case in check_special_cases that will call this
 
         if bool(self.general_warnings):
             output["Other Warnings"] = ';'.join(self.general_warnings)
@@ -1258,6 +1262,26 @@ class ValidateNestedInput:
                     real_values['year'] = 2017
                     # Use 2017 b/c it is most recent year that starts on a Sunday and all reference profiles start on
                     # Sunday
+
+                if real_values.get('outage_utility_name') != None and real_values.get('use_default_outage') == False:
+                    self.general_warnings.append("Overriding use_default_outage value, using the default outage duration")
+                    self.update_attribute_value(object_name_path, number, 'use_default_outage', True)
+                    real_values['use_default_outage'] = True
+                
+                if real_values.get('use_default_outage') == True:
+                    reliability = pd.read_csv('reo/src/data/Reliability_2019.csv', header = 1)
+                    utility_names = reliability['Utility Name']
+                    print(utility_names)
+                    if real_values.get('outage_utility_name') not in utility_names:
+                        self.general_warnings.append("Invalid outage_utility_name, cannot use default outage")
+                        self.update_attribute_value(object_name_path, number, 'use_default_outage', False)
+                        real_values['use_default_outage'] = False
+
+                if real_values.get('use_default_outage') == True and (real_values.get('outage_start_time_step') != None and real_values.get('outage_end_time_step' != None)):
+                    self.outage_end_override.append("Overriding the outage end time step")
+                    self.update_attribute_value(object_name_path, number, 'outage_end_time_step', None)
+                    real_values['outage_end_time_step'] = None
+
 
         if object_name_path[-1] == "ElectricTariff":
             electric_tariff = real_values

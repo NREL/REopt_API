@@ -372,14 +372,12 @@ nested_input_definitions = {
           "type": "int",
           "min": 1,
           "max": 35040,
-          "depends_on": ["outage_end_time_step"],
           "description": "Time step that grid outage starts. Must be less than outage_end."
         },
         "outage_end_time_step": {
           "type": "int",
           "min": 1,
           "max": 35040,
-          "depends_on": ["outage_start_time_step"],
           "description": "Time step that grid outage ends. Must be greater than outage_start."
         },
         "critical_load_pct": {
@@ -394,6 +392,15 @@ nested_input_definitions = {
           "default": True,
           "description": "Boolean value for if outage is a major event, which affects the avoided_outage_costs_us_dollars. If True, the avoided outage costs are calculated for a single outage occurring in the first year of the analysis_years. If False, the outage event is assumed to be an average outage event that occurs every year of the analysis period. In the latter case, the avoided outage costs for one year are escalated and discounted using the escalation_pct and offtaker_discount_pct to account for an annually recurring outage. (Average outage durations for certain utility service areas can be estimated using statistics reported on EIA form 861.)"
         },
+        "outage_utility_name": {
+          "type": "str",
+          "description": "Name of utility company, used by the default outage selector"
+        },
+        "use_default_outage": {
+          "type": "bool",
+          "default": False,
+          "description": "Default outage from CAIDI data"
+        }
       },
 
       "LoadProfileBoilerFuel": {

@@ -568,7 +568,7 @@ class LoadProfile(BuiltInProfile):
     """
 
     def __init__(self, dfm=None, user_profile=None, pvs=[], critical_loads_kw=None, critical_load_pct=None,
-                 outage_start_time_step=None, outage_end_time_step=None, loads_kw_is_net=True, critical_loads_kw_is_net=False,
+                 outage_start_time_step=None, outage_end_time_step=None, use_default_outage = False, outage_utility_name = None, loads_kw_is_net=True, critical_loads_kw_is_net=False,
                  analysis_years=1, time_steps_per_hour=1, gen_existing_kw=0, gen_min_turn_down=0,
                  fuel_avail_before_outage=0, fuel_slope=1, fuel_intercept=0, **kwargs):
 
@@ -580,6 +580,22 @@ class LoadProfile(BuiltInProfile):
         # "pop"ing the following two values to replace them before calling BuiltInProfile (super class)
         doe_reference_name_list = kwargs.pop("doe_reference_name", [])
         self.annual_kwh = kwargs.pop("annual_kwh", None)
+
+        if use_default_outage:
+            print("using default outage")
+            reliability_data = pd.read_csv('reo/src/data/Reliability_2019.csv', header = 1, index_col = 3) 
+            outage_duration = float(reliability_data.loc[outage_utility_name].at['CAIDI With MED'])/60 # CAIDI is given in minutes
+            outage_duration = round(outage_duration * self.time_steps_per_hour)
+            
+            if outage_start_time_step == None:
+                outage_start_time_step = outage_end_time_step - outage_duration  
+            else:
+                outage_end_time_step = outage_start_time_step + outage_duration
+            print('outage start: ', outage_start_time_step)
+            print('outage end: ', outage_end_time_step)
+            print("The default outage length is: ", outage_duration, " hours")
+            
+
 
         if user_profile:
             self.load_list = user_profile
