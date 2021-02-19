@@ -5,4 +5,4 @@ redisDataVolumeStorageClassName:
 redisHost: "{{ .Chart.Name }}-redis-service"
 redisPort: 6379
 djangoReplicas: 2
-celeryReplicas: 1
+celeryReplicas: 2
