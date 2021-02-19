@@ -1574,11 +1574,9 @@ class ValidateNestedInput:
             for name, value in real_values.items():
                 if self.isAttribute(name):
                     data_validators = template_values[name]
-                    
                     if ("list_of_float" in data_validators['type'] or "list_of_int" in data_validators['type']) and isinstance(value, list):
                         if 'list_of_list' not in data_validators['type']:
                             value = [value]
-                        
                         if data_validators.get('min') is not None:
                             for value_set in value:
                                 if any([v < data_validators['min'] for v in value_set]):
@@ -1620,8 +1618,6 @@ class ValidateNestedInput:
                                 if input_isDict==False:
                                     self.input_data_errors.append('%s value (%s) in %s (number %s) exceeds allowable max %s' % (
                                     name, value, self.object_name_string(object_name_path), number, data_validators['max']))
-                    
-
 
                     if data_validators.get('restrict_to') is not None:
                         # Handle both cases: 1. val is of 'type' 2. List('type')
