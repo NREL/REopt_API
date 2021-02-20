@@ -29,7 +29,7 @@ docopt==0.6.2
 et-xmlfile==1.0.1
 Fiona==1.8.18
 future==0.18.2
-geopandas==0.8.2
+geopandas==0.6.2
 gevent==20.12.0
 gitdb==4.0.5
 GitPython==3.1.11
@@ -78,7 +78,7 @@ pycparser==2.20
 Pygments==2.2.0
 PyJWT==2.0.1
 pyparsing==2.4.7
-pyproj==3.0.0.post1
+pyproj==1.9.5.1
 python-dateutil==2.8.0
 python-mimeparse==1.5.1
 pytz==2019.3
