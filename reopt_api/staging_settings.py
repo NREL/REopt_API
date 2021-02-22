@@ -150,7 +150,7 @@ CELERY_IMPORTS = (
 )
 
 # limit number of concurrent workers
-# CELERY_WORKER_CONCURRENCY = 2
+CELERY_WORKER_CONCURRENCY = 1
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
