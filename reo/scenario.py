@@ -231,9 +231,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
         # Boiler which supplies the bau boiler fuel load, if there is a boiler fuel load
         if lpbf.annual_mmbtu > 0.0:
             boiler = Boiler(dfm=dfm, boiler_fuel_series_bau=lpbf.load_list, **inputs_dict['Site']['Boiler'])
-            tmp = dict()
-            tmp['max_mmbtu_per_hr'] = boiler.max_mmbtu_per_hr
-            ModelManager.updateModel('BoilerModel', tmp, run_uuid)
         else:
             boiler = None
 
@@ -273,9 +270,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
         # Electric chiller which supplies the bau electric chiller load, if there is an electric chiller load
         if lpct.annual_kwht > 0.0:
             elecchl = ElectricChiller(dfm=dfm, lpct=lpct, **inputs_dict['Site']['ElectricChiller'])
-            tmp = dict()
-            tmp['max_kw'] = elecchl.max_kw
-            ModelManager.updateModel('ElectricChillerModel', tmp, run_uuid)
         else:
             elecchl = None
 

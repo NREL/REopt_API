@@ -471,12 +471,9 @@ class Boiler(Tech):
 
         self.is_hot = True
         self.reopt_class = 'BOILER'  # Not sure why UTIL tech is not assigned to the UTIL class
-        self.min_mmbtu_per_hr = kwargs.get('min_mmbtu_per_hr')
-        self.max_mmbtu_per_hr = kwargs.get('max_mmbtu_per_hr')
         self.max_thermal_factor_on_peak_load = kwargs.get('max_thermal_factor_on_peak_load')
         self.existing_boiler_production_type_steam_or_hw = kwargs.get('existing_boiler_production_type_steam_or_hw')
         self.boiler_efficiency = kwargs.get('boiler_efficiency')
-        self.installed_cost_us_dollars_per_mmbtu_per_hr = kwargs.get('installed_cost_us_dollars_per_mmbtu_per_hr')
         self.derate = 0
         self.n_timesteps = dfm.n_timesteps
 
@@ -503,10 +500,7 @@ class ElectricChiller(Tech):
         self.loads_served = ['retail', 'tes']
         self.is_cool = True
         self.reopt_class = 'ELECCHL'
-        self.min_kw = kwargs.get('min_kw')
-        self.max_kw = kwargs.get('max_kw')
         self.max_thermal_factor_on_peak_load = kwargs['max_thermal_factor_on_peak_load']
-        self.installed_cost_us_dollars_per_kw = kwargs['installed_cost_us_dollars_per_kw']
         self.derate = 0
         self.n_timesteps = dfm.n_timesteps
         self.chiller_cop = lpct.chiller_cop
