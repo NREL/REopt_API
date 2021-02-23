@@ -27,6 +27,13 @@ Classify the change according to the following categories:
     ##### Deprecated
     ##### Removed
     ### Patches
+
+## develop (unreleased)
+### Minor Updates
+##### Changed
+- `reo`, `*.jl`: Changed the units-basis for heating load, thermal production, and fuel consumption to kW/kWh, from mmbtu/mmbtu_per_hr and gal. This does not affect the units of the inputs or outputs.
+##### Removed
+- `reo`: The following inputs for `Site.Boiler`: `installed_cost_us_dollars_per_mmbtu_per_hr`, `min_mmbtu_per_hr`, and `max_mmbtu_per_hr`, and for `Site.ElectricChiller`: `installed_cost_us_dollars_per_kw`, `min_kw`, and `max_kw`.
     
 ## v1.4.3 - 2021-02-18
 ### Patches
