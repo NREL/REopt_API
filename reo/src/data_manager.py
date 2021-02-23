@@ -941,8 +941,8 @@ class DataManager:
         storage_power_cost.append(StorageCostPerKW)
         storage_energy_cost.append(StorageCostPerKWH)
         if self.hot_tes is not None:
-            HotTESCostPerMMBTU = setup_capital_cost_incentive(
-                self.hot_tes.installed_cost_us_dollars_per_mmbtu,  # use full cost as basis
+            HotTESCostPerKWH = setup_capital_cost_incentive(
+                self.hot_tes.installed_cost_us_dollars_per_kwh,  # use full cost as basis
                 0,
                 0,
                 sf.owner_discount_pct,
@@ -954,12 +954,12 @@ class DataManager:
             )
             storage_techs.append('HotTES')
             storage_power_cost.append(0.0)
-            storage_energy_cost.append(HotTESCostPerMMBTU)
+            storage_energy_cost.append(HotTESCostPerKWH)
             #Note: power not sized in REopt; assume full charge or discharge in one timestep.
-            storage_min_power.append(self.hot_tes.min_mmbtu / self.steplength)
-            storage_max_power.append(self.hot_tes.max_mmbtu / self.steplength)
-            storage_min_energy.append(self.hot_tes.min_mmbtu)
-            storage_max_energy.append(self.hot_tes.max_mmbtu)
+            storage_min_power.append(self.hot_tes.min_kwh / self.steplength)
+            storage_max_power.append(self.hot_tes.max_kwh / self.steplength)
+            storage_min_energy.append(self.hot_tes.min_kwh)
+            storage_max_energy.append(self.hot_tes.max_kwh)
             storage_decay_rate.append(self.hot_tes.thermal_decay_rate_fraction)
 
         if self.cold_tes is not None:
