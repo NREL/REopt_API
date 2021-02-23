@@ -31,7 +31,7 @@ from reo.src.data_manager import big_number
 from reo.src.pvwatts import PVWatts
 from reo.src.wind import WindSAMSDK
 from reo.src.incentives import Incentives, IncentivesNoProdBased
-from reo.utilities import TONHOUR_TO_KWHT, generate_year_profile_hourly
+from reo.utilities import TONHOUR_TO_KWHT, generate_year_profile_hourly, MMBTU_TO_KWH
 import os
 import json
 import copy
@@ -409,19 +409,16 @@ class CHP(Tech):
         Convert the performance parameter inputs to coefficients used readily in Xpress
         :return: fuel_burn_slope, fuel_burn_intercept, thermal_prod_slope, thermal_prod_intercept
         """
-
-        fuel_burn_full_load = 1 / elec_effic_full_load * 3412.0 / 1.0E6 * 1.0  # [MMBtu/hr/kW]
-        fuel_burn_half_load = 1 / elec_effic_half_load * 3412.0 / 1.0E6 * 0.5  # [MMBtu/hr/kW]
-        fuel_burn_slope = (fuel_burn_full_load - fuel_burn_half_load) / (1.0 - 0.5)  # [MMBtu/hr/kW]
-        fuel_burn_intercept = fuel_burn_full_load - fuel_burn_slope * 1.0  # [MMBtu/hr/kW_rated]
-
-        thermal_prod_full_load = 1.0 * 1 / elec_effic_full_load * \
-                                 thermal_effic_full_load * 3412.0 / 1.0E6  # [MMBtu/hr/kW]
-        thermal_prod_half_load = 0.5 * 1 / elec_effic_half_load * \
-                                 thermal_effic_half_load * 3412.0 / 1.0E6   # [MMBtu/hr/kW]
-        thermal_prod_slope = (thermal_prod_full_load - thermal_prod_half_load) / (1.0 - 0.5)  # [MMBtu/hr/kW]
-        thermal_prod_intercept = thermal_prod_full_load - thermal_prod_slope * 1.0  # [MMBtu/hr/kW_rated]
-
+        # Fuel burn slope and intercept
+        fuel_burn_full_load = 1 / elec_effic_full_load * 1.0  # [kWt/kWe]
+        fuel_burn_half_load = 1 / elec_effic_half_load * 0.5  # [kWt/kWe]
+        fuel_burn_slope = (fuel_burn_full_load - fuel_burn_half_load) / (1.0 - 0.5)  # [kWt/kWe]
+        fuel_burn_intercept = fuel_burn_full_load - fuel_burn_slope * 1.0  # [kWt/kWe_rated]
+        # Thermal production slope and intercept
+        thermal_prod_full_load = 1.0 * 1 / elec_effic_full_load * thermal_effic_full_load  # [kWt/kWe]
+        thermal_prod_half_load = 0.5 * 1 / elec_effic_half_load * thermal_effic_half_load   # [kWt/kWe]
+        thermal_prod_slope = (thermal_prod_full_load - thermal_prod_half_load) / (1.0 - 0.5)  # [kWt/kWe]
+        thermal_prod_intercept = thermal_prod_full_load - thermal_prod_slope * 1.0  # [kWt/kWe_rated]
 
         return fuel_burn_slope, fuel_burn_intercept, thermal_prod_slope, thermal_prod_intercept
 
