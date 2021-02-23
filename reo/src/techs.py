@@ -456,6 +456,7 @@ class CHP(Tech):
 
         return prime_mover_defaults
 
+
 class Boiler(Tech):
 
     boiler_efficiency_defaults = {"hot_water": 0.80,
@@ -476,12 +477,10 @@ class Boiler(Tech):
         self.boiler_efficiency = kwargs.get('boiler_efficiency')
         self.derate = 0
         self.n_timesteps = dfm.n_timesteps
-
-        # Unless max_mmbtu_per_hr is a user-input, set the max_mmbtu_per_hr with the heating load and factor
-        if self.max_mmbtu_per_hr is None:
-            self.max_mmbtu_per_hr = max(boiler_fuel_series_bau) * self.boiler_efficiency * \
-                                    self.max_thermal_factor_on_peak_load
-
+        
+        # Assign boiler max size equal to the peak load multiplied by the thermal_factor
+        self.max_kw = max(boiler_fuel_series_bau) * self.boiler_efficiency * self.max_thermal_factor_on_peak_load * MMBTU_TO_KWH        
+        
         dfm.add_boiler(self)
 
     @property
@@ -505,12 +504,10 @@ class ElectricChiller(Tech):
         self.n_timesteps = dfm.n_timesteps
         self.chiller_cop = lpct.chiller_cop
 
+        # Assign max_kw based on cooling thermal load (kw is cooling thermal production capacity)
         self.max_cooling_load_tons = max(lpct.load_list) / TONHOUR_TO_KWHT
         self.max_chiller_thermal_capacity_tons = self.max_cooling_load_tons * self.max_thermal_factor_on_peak_load
-
-        # Unless max_kw is a user-input, set the max_kw with the cooling load and factor
-        if self.max_kw is None:
-            self.max_kw = self.max_chiller_thermal_capacity_tons * TONHOUR_TO_KWHT
+        self.max_kw = self.max_chiller_thermal_capacity_tons * TONHOUR_TO_KWHT
 
         dfm.add_electric_chiller(self)
 
