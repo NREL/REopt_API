@@ -125,3 +125,5 @@ docker-compose.xpressOS.yml
 Dockerfile.xpressOS.pyjul
 
 /.werf_secret_key
+
+julia_src/Manifest.toml
