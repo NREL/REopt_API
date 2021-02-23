@@ -31,7 +31,7 @@ import copy
 from reo.src.urdb_parse import UrdbParse
 from reo.src.fuel_params import FuelParams
 from reo.utilities import annuity, degradation_factor, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
-    insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, annuity_escalation
+    insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, annuity_escalation, MMBTU_TO_KWH
 import numpy as np
 max_incentive = 1.0e10
 
@@ -700,7 +700,7 @@ class DataManager:
                 charge_efficiency.append(self.hot_tes.internal_efficiency_pct)
                 charge_efficiency.append(self.cold_tes.internal_efficiency_pct)
                 # Yearly fixed O&M per unit power
-                if tech.lower() == 'boiler' or tech.lower() == 'elec_chl':
+                if tech.lower() in ['boiler', 'elecchl']:
                     om_cost_us_dollars_per_kw.append(0)
                 else:
                     om_cost_us_dollars_per_kw.append(eval('self.' + tech + '.om_cost_us_dollars_per_kw'))
@@ -1195,9 +1195,9 @@ class DataManager:
             self._get_export_curtailment_params(reopt_techs_bau, tariff_args.grid_export_rates_bau,
                                                 self.elec_tariff.net_metering_limit_kw)
 
-        #populate heating and cooling loads with zeros if not included in model.
+        # Populate heating (convert to kw/kwh) and cooling loads with zeros if not included in model.
         if self.heating_load != None:
-            heating_load = self.heating_load.load_list
+            heating_load = [self.heating_load.load_list[i] * MMBTU_TO_KWH for i in range(len(self.heating_load.load_list))]
         else:
             heating_load = [0.0 for _ in self.load.load_list]
         if self.LoadProfile["annual_cooling_kwh"] > 0.0:
