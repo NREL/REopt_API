@@ -35,4 +35,4 @@ RUN julia --project="." -e 'import Pkg; Pkg.instantiate();'
 # WORKDIR /opt/reopt/julia_envs/Xpress/
 # RUN julia --project="." -e 'import Pkg; Pkg.instantiate(); include("build_julia_image.jl"); build_julia_image("/opt/reopt/")'
 
-CMD ["julia", "--project='.'", "&&", "include(\"api.jl\")"]
+CMD ["julia", "--project='.'", "api.jl"]

@@ -1,5 +1,7 @@
 using Genie, Genie.Router, Genie.Requests, Genie.Renderer.Json
 
+Genie.config.run_as_server = true
+
 route("/jsonpayload", method = POST) do
   @show jsonpayload()
   @show rawpayload()
@@ -7,4 +9,4 @@ route("/jsonpayload", method = POST) do
   json("Hello $(jsonpayload()["name"])")
 end
 
-up()
+Genie.startup()
