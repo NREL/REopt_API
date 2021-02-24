@@ -435,9 +435,6 @@ class BuiltInProfile(object):
             # try shapefile lookup
             log.info("Trying city lookup by shapefile.")
             gdf = gpd.read_file('reo/src/data/climate_cities.shp')
-            
-            from celery.contrib import rdb
-            rdb.set_trace()
             gdf = gdf[gdf.geometry.intersects(g.Point(self.longitude, self.latitude))]
             if not gdf.empty:
                 self.nearest_city = gdf.city.values[0].replace(' ', '')
