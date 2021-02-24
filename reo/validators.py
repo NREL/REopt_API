@@ -1695,11 +1695,14 @@ class ValidateNestedInput:
                     make_array_of_array = False
                     attribute_type = template_values[name]['type']  # attribute_type's include list_of_float
                     new_value = None
-                    if isinstance(attribute_type, list):
+                    if isinstance(attribute_type, list) or attribute_type.startswith('list_of'):
                         # These checks are for cases where the user can supply a simple data type (i.e. string)
                         # or a list of this type (ie. list of string), by convention if both are allowed we will convert to the list form
                         # for simplicity of handlings the data throughout the API workflow
                         list_eval_function_name = None
+                        if not isinstance(attribute_type, list):
+                            if attribute_type.startswith('list_of'):
+                                list_eval_function_name = attribute_type
                         if all([x in attribute_type for x in ['float', 'list_of_float']]):
                             list_eval_function_name = 'list_of_float'
                         if all([x in attribute_type for x in ['int', 'list_of_int']]):
