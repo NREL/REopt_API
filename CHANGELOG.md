@@ -27,6 +27,12 @@ Classify the change according to the following categories:
     ##### Deprecated
     ##### Removed
     ### Patches
+
+## develop
+### Patches
+- `reo`: Fix divide by 0 error in results processing
+- `reo`: Handle floats as URBD periods
+- `reo`: Fix `list_of_float` only types
     
 ## v1.4.3 - 2021-02-18
 ### Patches
