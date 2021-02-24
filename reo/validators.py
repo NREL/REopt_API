@@ -1450,49 +1450,50 @@ class ValidateNestedInput:
                                        'loads_ton', self.input_dict['Scenario']['time_steps_per_hour'])
 
         if object_name_path[-1] == "LoadProfileBoilerFuel":
-            # If an empty dictionary comes in - assume no load by default
-            no_values_given = True
-            for k, v in real_values.items():
-                if v not in [None, []] and v != template_values[k].get('default'):
-                    no_values_given = False
-            if no_values_given:
-                self.update_attribute_value(object_name_path, number, 'loads_mmbtu_per_hour', list(np.concatenate(
-                    [[0] * self.input_dict['Scenario']['time_steps_per_hour'] for _ in range(8760)]).astype(list)))
-                self.defaults_inserted.append(['loads_mmbtu_per_hour', object_name_path])
-            # If a dictionary comes in with vaues and no doe reference name then use the electric load profile building type by default
-            if not no_values_given and real_values.get('doe_reference_name') is None:
-                self.update_attribute_value(object_name_path, number, 'doe_reference_name',
-                                            self.input_dict['Scenario']['Site']['LoadProfile'].get(
-                                                'doe_reference_name'))
-            if real_values.get('doe_reference_name') is not None:
-                if type(real_values['doe_reference_name']) is not list:
-                    self.update_attribute_value(object_name_path, number, 'doe_reference_name', [real_values['doe_reference_name']])
-                    real_values['doe_reference_name'] = [real_values['doe_reference_name']]
-            if type(real_values.get('percent_share')) in [float, int]:
-                if real_values.get('percent_share') == 100:
-                    real_values['percent_share'] = [100]
-                    self.update_attribute_value(object_name_path, number, 'percent_share', [100.0])
-                else:
-                    self.input_data_errors.append(
-                        'The percent_share input for a LoadProfileBoilerFuel must be be 100 or a list of numbers that sums to 100.')
-            if len(real_values.get('percent_share',[])) > 0:
-                percent_share_sum = sum(real_values['percent_share'])
-                if percent_share_sum != 100.0:
-                    self.input_data_errors.append(
-                    'The sum of elements of percent share list for hybrid boiler load profile should be 100.')
-            if real_values.get('percent_share') is None:
-                real_values['percent_share'] = self.input_dict['Scenario']['Site']['LoadProfile'].get(
-                                            'percent_share')
-                self.update_attribute_value(object_name_path, number, 'percent_share', real_values['percent_share'])
-            if real_values.get('doe_reference_name') is not None:
-                if len(real_values.get('doe_reference_name')) != len(real_values.get('percent_share',[])):
-                    self.input_data_errors.append((
-                        'The length of doe_reference_name and percent_share lists should be equal'
-                        ' for constructing hybrid LoadProfileBoilerFuel'))
-            # Validate a user supplied energy series
-            if not no_values_given and real_values.get('loads_mmbtu_per_hour') not in [None, []]:
-                self.validate_8760(real_values.get('loads_mmbtu_per_hour'), "LoadProfileBoilerFuel",
-                                   'loads_mmbtu_per_hour', self.input_dict['Scenario']['time_steps_per_hour'])
+            if self.isValid:
+                # If an empty dictionary comes in - assume no load by default
+                no_values_given = True
+                for k, v in real_values.items():
+                    if v not in [None, []] and v != template_values[k].get('default'):
+                        no_values_given = False
+                if no_values_given:
+                    self.update_attribute_value(object_name_path, number, 'loads_mmbtu_per_hour', list(np.concatenate(
+                        [[0] * self.input_dict['Scenario']['time_steps_per_hour'] for _ in range(8760)]).astype(list)))
+                    self.defaults_inserted.append(['loads_mmbtu_per_hour', object_name_path])
+                # If a dictionary comes in with vaues and no doe reference name then use the electric load profile building type by default
+                if not no_values_given and real_values.get('doe_reference_name') is None:
+                    self.update_attribute_value(object_name_path, number, 'doe_reference_name',
+                                                self.input_dict['Scenario']['Site']['LoadProfile'].get(
+                                                    'doe_reference_name'))
+                if real_values.get('doe_reference_name') is not None:
+                    if type(real_values['doe_reference_name']) is not list:
+                        self.update_attribute_value(object_name_path, number, 'doe_reference_name', [real_values['doe_reference_name']])
+                        real_values['doe_reference_name'] = [real_values['doe_reference_name']]
+                if type(real_values.get('percent_share')) in [float, int]:
+                    if real_values.get('percent_share') == 100:
+                        real_values['percent_share'] = [100]
+                        self.update_attribute_value(object_name_path, number, 'percent_share', [100.0])
+                    else:
+                        self.input_data_errors.append(
+                            'The percent_share input for a LoadProfileBoilerFuel must be be 100 or a list of numbers that sums to 100.')
+                if len(real_values.get('percent_share',[])) > 0:
+                    percent_share_sum = sum(real_values['percent_share'])
+                    if percent_share_sum != 100.0:
+                        self.input_data_errors.append(
+                        'The sum of elements of percent share list for hybrid boiler load profile should be 100.')
+                if real_values.get('percent_share') is None:
+                    real_values['percent_share'] = self.input_dict['Scenario']['Site']['LoadProfile'].get(
+                                                'percent_share')
+                    self.update_attribute_value(object_name_path, number, 'percent_share', real_values['percent_share'])
+                if real_values.get('doe_reference_name') is not None:
+                    if len(real_values.get('doe_reference_name')) != len(real_values.get('percent_share',[])):
+                        self.input_data_errors.append((
+                            'The length of doe_reference_name and percent_share lists should be equal'
+                            ' for constructing hybrid LoadProfileBoilerFuel'))
+                # Validate a user supplied energy series
+                if not no_values_given and real_values.get('loads_mmbtu_per_hour') not in [None, []]:
+                    self.validate_8760(real_values.get('loads_mmbtu_per_hour'), "LoadProfileBoilerFuel",
+                                       'loads_mmbtu_per_hour', self.input_dict['Scenario']['time_steps_per_hour'])
 
         if object_name_path[-1] == "FuelTariff":
             if self.input_dict['Scenario']['Site']['CHP'].get('emissions_factor_lb_CO2_per_mmbtu') is None:
@@ -1570,71 +1571,72 @@ class ValidateNestedInput:
         :param input_isDict: bool, indicates if the object input came in as a dict or list
         :return: None
         """
-        if real_values is not None:
-            for name, value in real_values.items():
-                if self.isAttribute(name):
-                    data_validators = template_values[name]
-                    if ("list_of_float" in data_validators['type'] or "list_of_int" in data_validators['type']) and isinstance(value, list):
-                        if 'list_of_list' not in data_validators['type']:
-                            value = [value]
-                        if data_validators.get('min') is not None:
-                            for value_set in value:
-                                if any([v < data_validators['min'] for v in value_set]):
-                                    if input_isDict or input_isDict is None:
-                                        self.input_data_errors.append(
-                                            'At least one value in %s (from %s) is less than the allowable min of %s' % (
-                                                name, self.object_name_string(object_name_path), data_validators['min']))
-                                    if input_isDict is False:
-                                        self.input_data_errors.append(
-                                            'At least one value in %s (from %s number %s) is less than the allowable min %s' % (
-                                                name, self.object_name_string(object_name_path), number, data_validators['min']))
-                        if data_validators.get('max') is not None:
-                            for value_set in value:
-                                if any([v > data_validators['max'] for v in value_set]):
-                                    if input_isDict or input_isDict is None:
-                                        self.input_data_errors.append(
-                                            'At least one value in %s (from %s) exceeds allowable max of %s' % (
-                                                name, self.object_name_string(object_name_path), data_validators['max']))
-                                    if input_isDict is False:
-                                        self.input_data_errors.append(
-                                            'At least one value in %s (from %s number %s) exceeds allowable max of %s' % (
-                                                name, self.object_name_string(object_name_path), number, data_validators['max']))
-                    
-                    if type(value) in [int, float]:
-                        if data_validators.get('min') is not None:
-                            if value < data_validators['min']:
-                                if input_isDict==True or input_isDict==None:
-                                    self.input_data_errors.append('%s value (%s) in %s is less than the allowable min %s' % (
-                                    name, value, self.object_name_string(object_name_path), data_validators['min']))
-                                if input_isDict==False:
-                                    self.input_data_errors.append('%s value (%s) in %s (number %s) is less than the allowable min %s' % (
-                                    name, value, self.object_name_string(object_name_path), number, data_validators['min']))
+        if self.isValid:
+            if real_values is not None:
+                for name, value in real_values.items():
+                    if self.isAttribute(name):
+                        data_validators = template_values[name]
+                        if ("list_of_float" in data_validators['type'] or "list_of_int" in data_validators['type']) and isinstance(value, list):
+                            if 'list_of_list' not in data_validators['type']:
+                                value = [value]
+                            if data_validators.get('min') is not None:
+                                for value_set in value:
+                                    if any([v < data_validators['min'] for v in value_set]):
+                                        if input_isDict or input_isDict is None:
+                                            self.input_data_errors.append(
+                                                'At least one value in %s (from %s) is less than the allowable min of %s' % (
+                                                    name, self.object_name_string(object_name_path), data_validators['min']))
+                                        if input_isDict is False:
+                                            self.input_data_errors.append(
+                                                'At least one value in %s (from %s number %s) is less than the allowable min %s' % (
+                                                    name, self.object_name_string(object_name_path), number, data_validators['min']))
+                            if data_validators.get('max') is not None:
+                                for value_set in value:
+                                    if any([v > data_validators['max'] for v in value_set]):
+                                        if input_isDict or input_isDict is None:
+                                            self.input_data_errors.append(
+                                                'At least one value in %s (from %s) exceeds allowable max of %s' % (
+                                                    name, self.object_name_string(object_name_path), data_validators['max']))
+                                        if input_isDict is False:
+                                            self.input_data_errors.append(
+                                                'At least one value in %s (from %s number %s) exceeds allowable max of %s' % (
+                                                    name, self.object_name_string(object_name_path), number, data_validators['max']))
+                        
+                        if type(value) in [int, float]:
+                            if data_validators.get('min') is not None:
+                                if value < data_validators['min']:
+                                    if input_isDict==True or input_isDict==None:
+                                        self.input_data_errors.append('%s value (%s) in %s is less than the allowable min %s' % (
+                                        name, value, self.object_name_string(object_name_path), data_validators['min']))
+                                    if input_isDict==False:
+                                        self.input_data_errors.append('%s value (%s) in %s (number %s) is less than the allowable min %s' % (
+                                        name, value, self.object_name_string(object_name_path), number, data_validators['min']))
 
-                        if data_validators.get('max') is not None:
-                            if value > data_validators['max']:
-                                if input_isDict==True or input_isDict==None:
-                                    self.input_data_errors.append('%s value (%s) in %s exceeds allowable max %s' % (
-                                    name, value, self.object_name_string(object_name_path), data_validators['max']))
-                                if input_isDict==False:
-                                    self.input_data_errors.append('%s value (%s) in %s (number %s) exceeds allowable max %s' % (
-                                    name, value, self.object_name_string(object_name_path), number, data_validators['max']))
+                            if data_validators.get('max') is not None:
+                                if value > data_validators['max']:
+                                    if input_isDict==True or input_isDict==None:
+                                        self.input_data_errors.append('%s value (%s) in %s exceeds allowable max %s' % (
+                                        name, value, self.object_name_string(object_name_path), data_validators['max']))
+                                    if input_isDict==False:
+                                        self.input_data_errors.append('%s value (%s) in %s (number %s) exceeds allowable max %s' % (
+                                        name, value, self.object_name_string(object_name_path), number, data_validators['max']))
 
-                    if data_validators.get('restrict_to') is not None:
-                        # Handle both cases: 1. val is of 'type' 2. List('type')
-                        # Approach: Convert case 1 into case 2
-                        value = [value] if not isinstance(value, list) else value
-                        for val in value:
-                            if val not in data_validators['restrict_to']:
-                                if input_isDict == True or input_isDict == None:
-                                    self.input_data_errors.append(
-                                        '%s value (%s) in %s not in allowable inputs - %s' % (
-                                            name, value, self.object_name_string(object_name_path),
-                                            data_validators['restrict_to']))
-                                if input_isDict == False:
-                                    self.input_data_errors.append(
-                                        '%s value (%s) in %s (number %s) exceeds allowable max %s' % (
-                                            name, value, self.object_name_string(object_name_path), number,
-                                            data_validators['max']))
+                        if data_validators.get('restrict_to') is not None:
+                            # Handle both cases: 1. val is of 'type' 2. List('type')
+                            # Approach: Convert case 1 into case 2
+                            value = [value] if not isinstance(value, list) else value
+                            for val in value:
+                                if val not in data_validators['restrict_to']:
+                                    if input_isDict == True or input_isDict == None:
+                                        self.input_data_errors.append(
+                                            '%s value (%s) in %s not in allowable inputs - %s' % (
+                                                name, value, self.object_name_string(object_name_path),
+                                                data_validators['restrict_to']))
+                                    if input_isDict == False:
+                                        self.input_data_errors.append(
+                                            '%s value (%s) in %s (number %s) exceeds allowable max %s' % (
+                                                name, value, self.object_name_string(object_name_path), number,
+                                                data_validators['max']))
 
     def convert_data_types(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
         """
