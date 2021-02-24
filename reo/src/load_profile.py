@@ -409,8 +409,8 @@ class BuiltInProfile(object):
         self.flatload_alternate_options = ['FlatLoad_24_5','FlatLoad_16_7','FlatLoad_16_5','FlatLoad_8_7','FlatLoad_8_5']
         self.annual_loads = annual_loads  # a dictionary of cities and default annual loads or a constant value for any city
         self.builtin_profile_prefix = builtin_profile_prefix
-        self.latitude = float(latitude) if latitude else None
-        self.longitude = float(longitude) if longitude else None
+        self.latitude = float(latitude) if latitude is not None else None
+        self.longitude = float(longitude) if longitude is not None else None
         self.monthly_energy = monthly_totals_energy
         self.doe_reference_name = doe_reference_name
         self.nearest_city = None
@@ -435,6 +435,9 @@ class BuiltInProfile(object):
             # try shapefile lookup
             log.info("Trying city lookup by shapefile.")
             gdf = gpd.read_file('reo/src/data/climate_cities.shp')
+            
+            from celery.contrib import rdb
+            rdb.set_trace()
             gdf = gdf[gdf.geometry.intersects(g.Point(self.longitude, self.latitude))]
             if not gdf.empty:
                 self.nearest_city = gdf.city.values[0].replace(' ', '')
