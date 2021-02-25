@@ -16,23 +16,21 @@ ARG CLASSPATH=${XPRESSDIR}/lib/xprb.jar:${CLASSPATH}
 ENV CLASSPATH=${XPRESSDIR}/lib/xprm.jar:${CLASSPATH}
 ENV PATH=${XPRESSDIR}/bin:${PATH}
 
-# WORKDIR /opt/reopt/solver
-# COPY solver/install.sh .
-# COPY solver/xp8.0.4_linux_x86_64.tar.gz .
-# RUN sed -i -e 's/\r$//' install.sh
-# ARG XPRESS_LICENSE_HOST=lcssvr
-# RUN set -x && printf "f\nc\n\nn\nn\ny\n${XPRESS_LICENSE_HOST}\ny\n" | ./install.sh >> license_info.txt;
-# RUN rm xp8.0.4_linux_x86_64.tar.gz
+WORKDIR /opt/reopt/solver
+COPY xpress/ .
+RUN sed -i -e 's/\r$//' install.sh
+ARG XPRESS_LICENSE_HOST=licenseserver
+RUN set -x && printf "f\nc\n\nn\nn\ny\n${XPRESS_LICENSE_HOST}\ny\n" | ./install.sh >> license_info.txt;
+RUN rm xp8.0.4_linux_x86_64.tar.gz
 
 # Install Julia packages
 WORKDIR /opt/julia_src/
-COPY api.jl .
-COPY Project.toml .
+COPY . .
 RUN julia --project="." -e 'import Pkg; Pkg.instantiate();' 
 # TODO include("buildpkgs.jl")
-
+EXPOSE 8081
 # Build Julia system image
 # WORKDIR /opt/reopt/julia_envs/Xpress/
 # RUN julia --project="." -e 'import Pkg; Pkg.instantiate(); include("build_julia_image.jl"); build_julia_image("/opt/reopt/")'
 
-CMD ["julia", "--project='.'", "api.jl"]
+CMD ["bash"]
