@@ -24,6 +24,7 @@ RUN set -x && printf "f\nc\n\nn\nn\ny\n${XPRESS_LICENSE_HOST}\ny\n" | ./install.
 RUN rm xp8.0.4_linux_x86_64.tar.gz
 
 # Install Julia packages
+ENV JULIA_NUM_THREADS=2
 WORKDIR /opt/julia_src/
 COPY . .
 RUN julia --project="." -e 'import Pkg; Pkg.instantiate();' 
