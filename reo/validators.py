@@ -757,7 +757,7 @@ class ValidateNestedInput:
         """
         test_data_list = []
         number = 1
-        def swap_logic(object_name_path, name, definition, good_val, validation_attribute, number =1):
+        def swap_logic(object_name_path, name, definition, good_val, real_values, validation_attribute, number =1):
             """
             append `name` and a nested-dict (post) to test_data_list with a bad value inserted into the post for
             the input at object_name_path: name
@@ -784,7 +784,7 @@ class ValidateNestedInput:
                 if validation_attribute == 'min':
                     bad_val = attribute - 1
                     if make_array:
-                        bad_val= [bad_val]
+                        bad_val = [bad_val]
                 if validation_attribute == 'max':
                     bad_val = attribute + 1
                     if make_array:
@@ -802,14 +802,40 @@ class ValidateNestedInput:
 
                 if bad_val is not None:
                     self.update_attribute_value(object_name_path, number, name, bad_val)
+                    # This dependency setting is needed to trigger an invalid min/max value in check_min_max_restrictions 
+                    # and not an earlier detected min >= max error in check_min_less_than_max. 
+                    dependency_good_val = None
+                    dependency_name = ''
+                    for min_name, max_name in [['outage_start_hour','outage_end_hour'],
+                                ['outage_start_time_step','outage_end_time_step'],
+                                ['min_kw','max_kw'],
+                                ['min_kwh','max_kwh'],
+                                ['min_gal','max_gal'],
+                                ['min_mmbtu_per_hr','max_mmbtu_per_hr'],
+                                ['min_ton','max_ton']
+                                ]:
+                        if name == min_name and type(bad_val) in [float, int]:
+                            dependency_good_val = real_values.get(max_name)
+                            dependency_name = max_name
+                            self.update_attribute_value(object_name_path, number, max_name, bad_val + 1)
+                            break
+                        if name == max_name and type(bad_val) in [float, int]:
+                            dependency_name = min_name
+                            dependency_good_val = real_values.get(min_name)
+                            self.update_attribute_value(object_name_path, number, min_name, bad_val - 1)
+                            break
                     test_data_list.append([name, copy.deepcopy(self.input_dict)])
                     self.update_attribute_value(object_name_path, number, name, good_val)
+                    if dependency_name is not '':
+                        self.update_attribute_value(object_name_path, number, dependency_name, dependency_good_val)
+                    
+                    
 
         def add_invalid_data(object_name_path, template_values=None, real_values=None, number=number, input_isDict=None):
             if real_values is not None:
                 for name, value in template_values.items():
                     if self.isAttribute(name):
-                        swap_logic(object_name_path, name, value, real_values.get(name),
+                        swap_logic(object_name_path, name, value, real_values.get(name), real_values,
                                     validation_attribute=definition_attribute, number=number)
 
         self.recursively_check_input_dict(self.nested_input_definitions, add_invalid_data)
@@ -1571,11 +1597,11 @@ class ValidateNestedInput:
         :param input_isDict: bool, indicates if the object input came in as a dict or list
         :return: None
         """
-        if self.isValid:
-            if real_values is not None:
-                for name, value in real_values.items():
-                    if self.isAttribute(name):
-                        data_validators = template_values[name]
+        if real_values is not None:
+            for name, value in real_values.items():
+                if self.isAttribute(name):
+                    data_validators = template_values[name]
+                    if self.isValid:
                         if ("list_of_float" in data_validators['type'] or "list_of_int" in data_validators['type']) and isinstance(value, list):
                             if 'list_of_list' not in data_validators['type']:
                                 value = [value]
@@ -1621,22 +1647,22 @@ class ValidateNestedInput:
                                         self.input_data_errors.append('%s value (%s) in %s (number %s) exceeds allowable max %s' % (
                                         name, value, self.object_name_string(object_name_path), number, data_validators['max']))
 
-                        if data_validators.get('restrict_to') is not None:
-                            # Handle both cases: 1. val is of 'type' 2. List('type')
-                            # Approach: Convert case 1 into case 2
-                            value = [value] if not isinstance(value, list) else value
-                            for val in value:
-                                if val not in data_validators['restrict_to']:
-                                    if input_isDict == True or input_isDict == None:
-                                        self.input_data_errors.append(
-                                            '%s value (%s) in %s not in allowable inputs - %s' % (
-                                                name, value, self.object_name_string(object_name_path),
-                                                data_validators['restrict_to']))
-                                    if input_isDict == False:
-                                        self.input_data_errors.append(
-                                            '%s value (%s) in %s (number %s) exceeds allowable max %s' % (
-                                                name, value, self.object_name_string(object_name_path), number,
-                                                data_validators['max']))
+                    if data_validators.get('restrict_to') is not None:
+                        # Handle both cases: 1. val is of 'type' 2. List('type')
+                        # Approach: Convert case 1 into case 2
+                        value = [value] if not isinstance(value, list) else value
+                        for val in value:
+                            if val not in data_validators['restrict_to']:
+                                if input_isDict == True or input_isDict == None:
+                                    self.input_data_errors.append(
+                                        '%s value (%s) in %s not in allowable inputs - %s' % (
+                                            name, value, self.object_name_string(object_name_path),
+                                            data_validators['restrict_to']))
+                                if input_isDict == False:
+                                    self.input_data_errors.append(
+                                        '%s value (%s) in %s (number %s) exceeds allowable max %s' % (
+                                            name, value, self.object_name_string(object_name_path), number,
+                                            data_validators['max']))
 
     def convert_data_types(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
         """
