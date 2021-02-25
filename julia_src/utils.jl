@@ -312,11 +312,12 @@ function Parameter(d::Dict)
 	d["FuelCost"] = vector_to_axisarray(d["FuelCost"], d["FuelType"], d[:TimeStep])
     d["ElecRate"] = transpose(reshape(d["ElecRate"], d["TimeStepCount"], d["PricingTierCount"]))
 
-    if !isempty(d["GridExportRates"])
-        d["GridExportRates"] = AxisArray(d["GridExportRates"], d["ExportTiers"], d[:TimeStep])
-    else
+    # TODO why is this failing? 2D vs. 1D array issue?
+    # if !isempty(d["GridExportRates"])
+    #     d["GridExportRates"] = AxisArray(d["GridExportRates"], d["ExportTiers"], d[:TimeStep])
+    # else
         d["GridExportRates"] = AxisArray([])
-    end
+    # end
     d["FuelBurnSlope"] = AxisArray(d["FuelBurnSlope"], d["FuelBurningTechs"])
     d["FuelBurnYInt"] = AxisArray(d["FuelBurnYInt"], d["FuelBurningTechs"])
     d["ProductionFactor"] = vector_to_axisarray(d["ProductionFactor"], d["Tech"], d[:TimeStep])
