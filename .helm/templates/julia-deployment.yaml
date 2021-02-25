@@ -14,14 +14,12 @@ spec:
       labels:
         app: {{ .Chart.Name }}-julia
     spec:
-      volumes:
-        - name: {{ .Chart.Name }}-secrets-volume
-          secret:
-            secretName: {{ .Chart.Name }}-secrets
       containers:
         - name: {{ .Chart.Name }}-julia
 {{ tuple "julia-api" . | werf_container_image | indent 10 }}
           args: ["julia", "--project=/opt/julia_src", "http.jl"]
+          ports:
+            - containerPort: 8081
           envFrom:
             - configMapRef:
                 name: {{ .Chart.Name }}-base-config-map
