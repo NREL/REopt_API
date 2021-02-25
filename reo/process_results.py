@@ -772,8 +772,9 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_thermal_from_cold_tes_series_ton"] = [x/TONHOUR_TO_KWHT for x in self.results_dict.get("cold_tes_thermal_production_series")]
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_cold_tes_soc_series_pct"] = self.results_dict.get("cold_tes_pct_soc_series")
-                    if np.isnan(sum(self.results_dict.get("cold_tes_pct_soc_series") or [np.nan])):
-                        self.nested_outputs["Scenario"]["Site"][name]["year_one_cold_tes_soc_series_pct"] = None
+                    # TODO what is the following trying to accomplish? leading to TypeError: unsupported operand type(s) for +: 'int' and 'NoneType'
+                    # if np.isnan(sum(self.results_dict.get("cold_tes_pct_soc_series") or [np.nan])):
+                    #     self.nested_outputs["Scenario"]["Site"][name]["year_one_cold_tes_soc_series_pct"] = None
 
             # outputs that depend on multiple object results:
             future_replacement_cost, present_replacement_cost = self.replacement_costs_future_and_present
