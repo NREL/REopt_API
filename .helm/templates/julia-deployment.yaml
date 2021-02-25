@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}-julia-deployment
+  labels:
+    app: {{ .Chart.Name }}-julia
+spec:
+  replicas: {{ .Values.juliaReplicas }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}-julia
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}-julia
+    spec:
+      volumes:
+        - name: {{ .Chart.Name }}-secrets-volume
+          secret:
+            secretName: {{ .Chart.Name }}-secrets
+      containers:
+        - name: {{ .Chart.Name }}-julia
+{{ tuple "julia-api" . | werf_container_image | indent 10 }}
+          args: ["julia", "--project=/opt/julia_src", "http.jl"]
+          envFrom:
+            - configMapRef:
+                name: {{ .Chart.Name }}-base-config-map
+          env:
+{{ tuple "julia-api" . | werf_container_env | indent 12 }}
