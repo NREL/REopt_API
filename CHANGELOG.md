@@ -27,6 +27,14 @@ Classify the change according to the following categories:
     ##### Deprecated
     ##### Removed
     ### Patches
+
+## v1.4.4 - 2021-02-25
+### Patches
+- `reo`: In `validators.py` catches case where invalid percent_share entry was used in check special cases function
+- `reo`: In `loadprofile.py` catches where 0 lat/long was resolving to _False_ and leading to _None_ for lat and long
+- `reo`: Fix divide by 0 error in results processing
+- `reo`: Handle floats as URBD periods
+- `reo`: Fix `list_of_float` only types
     
 ## v1.4.3 - 2021-02-18
 ### Patches
