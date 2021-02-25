@@ -27,7 +27,6 @@ RUN rm xp8.0.4_linux_x86_64.tar.gz
 WORKDIR /opt/julia_src/
 COPY . .
 RUN julia --project="." -e 'import Pkg; Pkg.instantiate();' 
-# TODO include("buildpkgs.jl")
 EXPOSE 8081
 # Build Julia system image
 # WORKDIR /opt/reopt/julia_envs/Xpress/
