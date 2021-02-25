@@ -54,6 +54,7 @@ services:
       - db
       - redis
       - julia
+      - celery
     ports:
       - 8000:8000
     volumes:
