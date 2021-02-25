@@ -33,5 +33,5 @@ else
         export LD_LIBRARY_PATH
     fi
 
-    exec ./env/bin/celery -A reopt_api worker --loglevel=info --queues="$APP_QUEUE_NAME"
+    exec ./env/bin/celery -A reopt_api worker --loglevel=info --queues="$APP_QUEUE_NAME" --without-gossip
 fi

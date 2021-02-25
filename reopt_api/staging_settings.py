@@ -136,9 +136,9 @@ USE_TZ = True
 
 # Results backend
 CELERY_RESULT_BACKEND = 'django-db'
-if os.environ.get('K8S_DEPLOY') is not None:
-    CELERY_WORKER_MAX_TASKS_PER_CHILD = 50
-CELERY_WORKER_MAX_MEMORY_PER_CHILD = 6000000 # 6 GB
+# if os.environ.get('K8S_DEPLOY') is not None:
+#     CELERY_WORKER_MAX_TASKS_PER_CHILD = 50
+CELERY_WORKER_MAX_MEMORY_PER_CHILD = 4000000 # 4 GB
 
 # celery task registration
 CELERY_IMPORTS = (
@@ -150,7 +150,7 @@ CELERY_IMPORTS = (
 )
 
 # limit number of concurrent workers
-CELERY_WORKER_CONCURRENCY = 2
+# CELERY_WORKER_CONCURRENCY = 2
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
