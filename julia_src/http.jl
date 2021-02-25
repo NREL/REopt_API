@@ -1,4 +1,4 @@
-using HTTP, JSON, Sockets
+using HTTP, JSON
 include("REopt.jl")
 using .REopt
 
