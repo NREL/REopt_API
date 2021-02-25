@@ -25,3 +25,10 @@ spec:
                 name: {{ .Chart.Name }}-base-config-map
           env:
 {{ tuple "julia-api" . | werf_container_env | indent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            periodSeconds: 5
+            timeoutSeconds: 60
+            failureThreshold: 10
