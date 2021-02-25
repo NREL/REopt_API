@@ -2,6 +2,7 @@ ingressHost: localhost
 appEnv: development
 djangoSettingsModule: reopt_api.dev_settings
 redisDataVolumeStorageClassName:
+juliaHost: "{{ .Chart.Name }}-julia-service"
 redisHost: "{{ .Chart.Name }}-redis-service"
 redisPort: 6379
 djangoReplicas: 2
