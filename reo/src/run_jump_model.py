@@ -94,7 +94,8 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
     try:
         # if bau or not data["inputs"]["Scenario"]["use_decomposition_model"]:
         t_start = time.time()
-        response = requests.post("http://julia:8081/job/", json=reopt_inputs)
+        julia_host = os.environ.get('JULIA_HOST', "julia")
+        response = requests.post("http://" + julia_host + ":8081/job/", json=reopt_inputs)
         results = response.json()
         time_dict["pyjulia_run_reopt_seconds"] = time.time() - t_start
        # TODO reinstate decomposition?
