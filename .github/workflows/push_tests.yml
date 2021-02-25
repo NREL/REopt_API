@@ -20,7 +20,7 @@ jobs:
           NREL_DEV_API_KEY: ${{ secrets.NREL_DEV_API_KEY }}
         run: ./.github/scripts/make_keys.py.sh 
       - name: Build containers
-        run: docker-compose up -d
+        run: docker-compose up --build -d
       - name: Check running containers
         run: docker ps -a
       - name: Check celery logs
