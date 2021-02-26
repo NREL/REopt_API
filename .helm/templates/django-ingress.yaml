@@ -6,8 +6,8 @@ metadata:
     # Size should be kept in sync with "client_max_body_size" in
     # config/templates/nginx/site.conf.tmpl.
     nginx.ingress.kubernetes.io/proxy-body-size: "2048m"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: 600
-    nginx.ingress.kubernetes.io/proxy-connect-timeout: 600
+    nginx.ingress.kubernetes.io/proxy-read-timeout: 800
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: 800
 spec:
   tls:
     - hosts:
