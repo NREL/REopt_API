@@ -49,6 +49,18 @@ function filter_dict_to_match_struct_field_names(d::Dict, s::DataType)
     return d2
 end
 
+"""
+    array_of_array_to_2D_array(aa)
+
+Convert Array of Array to a two dimensional array
+```@example
+array_of_array_to_2D_array([[1,2,3], [4, 5, 6]])
+````
+"""
+function array_of_array_to_2D_array(aa)
+    transpose([aa[i][j] for j in 1:length(aa[1]), i in 1:length(aa)])
+end
+
 
 Base.@kwdef struct Parameter
 	 ###  Sets  ###
@@ -313,11 +325,12 @@ function Parameter(d::Dict)
     d["ElecRate"] = transpose(reshape(d["ElecRate"], d["TimeStepCount"], d["PricingTierCount"]))
 
     # TODO why is this failing? 2D vs. 1D array issue?
-    # if !isempty(d["GridExportRates"])
-    #     d["GridExportRates"] = AxisArray(d["GridExportRates"], d["ExportTiers"], d[:TimeStep])
-    # else
+    if !isempty(d["GridExportRates"])
+        d["GridExportRates"] = AxisArray(array_of_array_to_2D_array(d["GridExportRates"]), 
+                                         d["ExportTiers"], d[:TimeStep])
+    else
         d["GridExportRates"] = AxisArray([])
-    # end
+    end
     d["FuelBurnSlope"] = AxisArray(d["FuelBurnSlope"], d["FuelBurningTechs"])
     d["FuelBurnYInt"] = AxisArray(d["FuelBurnYInt"], d["FuelBurningTechs"])
     d["ProductionFactor"] = vector_to_axisarray(d["ProductionFactor"], d["Tech"], d[:TimeStep])
