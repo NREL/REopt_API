@@ -29,6 +29,6 @@ jobs:
       - name: Check running containers
         run: docker ps -a
       - name: Wait for julia_api
-        run: ./bin/wait-for-it.bash -t 0 127.0.0.1:8081
+        run: ./bin/wait-for-it.bash -t 0 127.0.0.1:8081/health
       - name: test
         run: docker-compose exec -T reopt_lite_api_celery_1 python manage.py test -v 2 --failfast --no-input
