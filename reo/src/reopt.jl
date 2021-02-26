@@ -544,14 +544,21 @@ function add_tech_size_constraints(m, p)
 
 	##Constraint (7e): Derate factor limits production variable (separate from ProductionFactor)
     for ts in p.TimeStep
-        @constraint(m, [t in p.ElectricTechs; !(t in p.TechsNoTurndown)],
+        @constraint(m, [t in p.Tech; !(t in p.TechsNoTurndown)],
             m[:dvRatedProduction][t,ts]  <= p.ElectricDerate[t,ts] * m[:dvSize][t]
         )
     end
 
+	##Constraint (7_heating_prod_size): Production limit based on size for boiler
+	if !isempty(p.BoilerTechs)
+		@constraint(m, HeatingProductionCon[t in p.BoilerTechs, ts in p.TimeStep],
+			m[:dvThermalProduction][t,ts] <= m[:dvSize][t]
+		)
+	end
+
 	##Constraint (7_cooling_prod_size): Production limit based on size for chillers
 	if !isempty(p.CoolingTechs)
-		@constraint(m, CoolingProductionCon[t in p.AbsorptionChillers, ts in p.TimeStep],
+		@constraint(m, CoolingProductionCon[t in p.CoolingTechs, ts in p.TimeStep],
 			m[:dvThermalProduction][t,ts] <= m[:dvSize][t]
 		)
 	end
