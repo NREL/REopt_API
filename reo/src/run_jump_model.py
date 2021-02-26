@@ -85,9 +85,8 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
     time_dict = dict()
     name = 'reopt' if not bau else 'reopt_bau'
     reopt_inputs = dfm['reopt_inputs'] if not bau else dfm['reopt_inputs_bau']
-    self.data = data
-    self.run_uuid = data['outputs']['Scenario']['run_uuid']
-    self.user_uuid = data['outputs']['Scenario'].get('user_uuid')
+    run_uuid = data['outputs']['Scenario']['run_uuid']
+    user_uuid = data['outputs']['Scenario'].get('user_uuid')
 
     logger.info("Running JuMP model ...")
     try:
@@ -106,13 +105,13 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
         elif "DimensionMismatch" in e.args[0]:  # JuMP may mishandle a timeout when no feasible solution is returned
             msg = "Optimization exceeded timeout: {} seconds.".format(data["inputs"]["Scenario"]["timeout_seconds"])
             logger.info(msg)
-            raise OptimizationTimeout(task=name, message=msg, run_uuid=self.run_uuid, user_uuid=self.user_uuid)
+            raise OptimizationTimeout(task=name, message=msg, run_uuid=run_uuid, user_uuid=user_uuid)
         exc_type, exc_value, exc_traceback = sys.exc_info()
         print(exc_type)
         print(exc_value)
         print(exc_traceback)
-        logger.error("REopt.py raise unexpected error: UUID: " + str(self.run_uuid))
-        raise UnexpectedError(exc_type, exc_value, traceback.format_tb(exc_traceback), task=name, run_uuid=self.run_uuid, user_uuid=self.user_uuid)
+        logger.error("REopt.py raise unexpected error: UUID: " + str(run_uuid))
+        raise UnexpectedError(exc_type, exc_value, traceback.format_tb(exc_traceback), task=name, run_uuid=run_uuid, user_uuid=user_uuid)
     else:
         status = results["status"]
         logger.info("REopt run successful. Status {}".format(status))
@@ -124,10 +123,10 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
         if status.strip().lower() == 'timed-out':
             msg = "Optimization exceeded timeout: {} seconds.".format(data["inputs"]["Scenario"]["timeout_seconds"])
             logger.info(msg)
-            raise OptimizationTimeout(task=name, message=msg, run_uuid=self.run_uuid, user_uuid=self.user_uuid)
+            raise OptimizationTimeout(task=name, message=msg, run_uuid=run_uuid, user_uuid=user_uuid)
         elif status.strip().lower() != 'optimal':
             logger.error("REopt status not optimal. Raising NotOptimal Exception.")
-            raise NotOptimal(task=name, run_uuid=self.run_uuid, status=status.strip(), user_uuid=self.user_uuid)
+            raise NotOptimal(task=name, run_uuid=run_uuid, status=status.strip(), user_uuid=user_uuid)
 
     profiler.profileEnd()
     ModelManager.updateModel('ProfileModel', {name+'_seconds': profiler.getDuration()}, run_uuid)
@@ -138,6 +137,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
     else:
         del dfm['reopt_inputs']
     return dfm
+
 
 def run_decomposed_model(data, model, reopt_inputs,
                          lb_iters=1, max_iters=100):
@@ -203,6 +203,7 @@ def build_submodels(models, reopt_param):
     for idx in range(1, 13):
         result_dicts[idx] = julia.Main.reopt_build(models[idx], reopt_param)
     return result_dicts
+
 
 def solve_subproblems(models, reopt_param, results_dicts, update):
     """
@@ -275,6 +276,7 @@ def get_objective_value(ub_result_dicts, reopt_inputs):
         logger.info("infeasible solution returned.")
         return 1.0e100, 0., 0.
 
+
 def get_added_peak_tou_costs(ub_result_dicts, reopt_inputs):
     """
     Calculated added TOU costs to according to peak lookback months.
@@ -301,6 +303,7 @@ def get_added_peak_tou_costs(ub_result_dicts, reopt_inputs):
             for idx in range(len(bins)):
                 added_obj += reopt_inputs["DemandRates"][idx*reopt_inputs["NumRatchets"]+bins[idx]] * vals[idx]
     return added_obj
+
 
 def get_added_demand_by_bin(start, added_demand, max_demand_by_bin):
     """
@@ -348,6 +351,7 @@ def get_average_sizing_decisions(models, reopt_param):
         sizes[key] /= 12.
     return sizes
 
+
 def get_max_sizing_decisions(models, reopt_param):
     sizes = julia.Main.get_sizing_decisions(models[1], reopt_param)
     for i in range(2, 13):
@@ -355,6 +359,7 @@ def get_max_sizing_decisions(models, reopt_param):
         for key in d.keys():
             sizes[key] = max(d[key], sizes[key])
     return sizes
+
 
 def aggregate_submodel_results(ub_results, obj, min_charge_adder, pwf_e):
     results = ub_results[1]
