@@ -886,6 +886,7 @@ class TestCoincidentPeak(ResourceTestCaseMixin, TestCase):
             else:
                 print("test_coincident_peak message: Bad input case errored correctly.")
                 
+        # TODO do we need all of these test_cases? seems like input checking is redundant with test_validator.py
         test_case(self, self.post_list_of_float_and_list_of_list)
         test_case(self, self.post_float_and_list_of_int)
         test_case(self, self.post_float_and_int)
