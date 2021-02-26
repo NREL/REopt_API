@@ -5,7 +5,8 @@ using .REopt
 
 function job(req::HTTP.Request)
     d = JSON.parse(String(req.body))
-    m = xpress_model(100.0, 0.001)  # TODO add timeout and tolerance to data dict
+    # TODO pass through timeout and tolerance
+    m = xpress_model(420.0, 0.001)  # TODO add timeout and tolerance to data dict
     results = reopt(m, d)
     # TODO @info run_uuid and status
     return HTTP.Response(200, JSON.json(results))
