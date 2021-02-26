@@ -33,4 +33,4 @@ jobs:
         with:
           time: '120s'
       - name: test
-        run: docker-compose exec -T reopt_lite_api_celery_1 python manage.py test -v 2 --failfast --no-input
+        run: docker exec reopt_lite_api_celery_1 python manage.py test -v 2 --failfast --no-input
