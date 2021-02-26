@@ -1,9 +1,9 @@
 FROM julia:1.5.3
 
-# # Install NREL root certs for machines running on NREL's network.
-# ARG NREL_ROOT_CERT_URL_ROOT=""
-# RUN set -x && if [ -n "$NREL_ROOT_CERT_URL_ROOT" ]; then curl -fsSLk -o /usr/local/share/ca-certificates/nrel_root.crt "${NREL_ROOT_CERT_URL_ROOT}/nrel_root.pem" && curl -fsSLk -o /usr/local/share/ca-certificates/nrel_xca1.crt "${NREL_ROOT_CERT_URL_ROOT}/nrel_xca1.pem" &&  update-ca-certificates; fi
-# ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+# Install NREL root certs for machines running on NREL's network.
+ARG NREL_ROOT_CERT_URL_ROOT=""
+RUN set -x && if [ -n "$NREL_ROOT_CERT_URL_ROOT" ]; then curl -fsSLk -o /usr/local/share/ca-certificates/nrel_root.crt "${NREL_ROOT_CERT_URL_ROOT}/nrel_root.pem" && curl -fsSLk -o /usr/local/share/ca-certificates/nrel_xca1.crt "${NREL_ROOT_CERT_URL_ROOT}/nrel_xca1.pem" &&  update-ca-certificates; fi
+ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 
 # Install Xpress solver for client
 ENV XPRESSDIR=/opt/xpressmp
@@ -29,8 +29,5 @@ WORKDIR /opt/julia_src/
 COPY . .
 RUN julia --project="." -e 'import Pkg; Pkg.instantiate();' 
 EXPOSE 8081
-# Build Julia system image
-# WORKDIR /opt/reopt/julia_envs/Xpress/
-# RUN julia --project="." -e 'import Pkg; Pkg.instantiate(); include("build_julia_image.jl"); build_julia_image("/opt/reopt/")'
 
 CMD ["bash"]
