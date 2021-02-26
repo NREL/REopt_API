@@ -25,7 +25,7 @@ services:
       context: .
     image: base-api-image
     command:  >
-      "/opt/reopt/bin/wait-for-it.bash -t 0 julia:8081 -- celery -A reopt_api worker -l info"
+      "celery -A reopt_api worker -l info"
     environment:
       - APP_ENV=local
       - SQL_HOST=db
@@ -43,7 +43,7 @@ services:
     image: base-api-image
     command:  >
       "python manage.py migrate
-      && python manage.py runserver 0.0.0.0:8000"
+      && /opt/reopt/bin/wait-for-it.bash -t 0 julia:8081 -- python manage.py runserver 0.0.0.0:8000"
     environment:
       - APP_ENV=local
       - SQL_HOST=db
