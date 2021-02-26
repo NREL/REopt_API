@@ -27,7 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-import julia
+import julia  # TODO remove julia package (after moving decomposed model to Julia?)
 import sys
 import traceback
 import os
@@ -42,7 +42,6 @@ from reo.exceptions import REoptError, OptimizationTimeout, UnexpectedError, Not
 from reo.models import ModelManager
 from reo.src.profiler import Profiler
 from celery.utils.log import get_task_logger
-from reo.utilities import scrub_numpy_arrays_from_dict
 # julia.install()  # needs to be run if it is the first time you are using julia package
 logger = get_task_logger(__name__)
 
@@ -93,14 +92,12 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
     logger.info("Running JuMP model ...")
     try:
         # if bau or not data["inputs"]["Scenario"]["use_decomposition_model"]:
+        # TODO reinstate decomposition?
         t_start = time.time()
         julia_host = os.environ.get('JULIA_HOST', "julia")
         response = requests.post("http://" + julia_host + ":8081/job/", json=reopt_inputs)
         results = response.json()
         time_dict["pyjulia_run_reopt_seconds"] = time.time() - t_start
-       # TODO reinstate decomposition?
-
-        results = scrub_numpy_arrays_from_dict(results)
         results.update(time_dict)
 
     except Exception as e:

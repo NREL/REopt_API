@@ -27,7 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-from numpy import npv, ndarray
+from numpy import npv
 from math import log10
 from reo.models import ErrorModel
 import pandas as pd
@@ -321,12 +321,6 @@ def get_weekday_weekend_total_hours_by_month(year, year_profile_hourly_list):
         weekday_weekend_total_hours_by_month[m]["total"] = int(weekday_weekend_total_hours_by_month[m]["weekdays"] + weekday_weekend_total_hours_by_month[m]["weekends"])
 
     return weekday_weekend_total_hours_by_month
-
-def scrub_numpy_arrays_from_dict(d):
-    for k, v in d.items():
-        if isinstance(v, ndarray):
-            d[k] = v.tolist()
-    return d
 
 #conversion factor for ton-hours to kilowatt-hours thermal
 TONHOUR_TO_KWHT = 3.51685
