@@ -33,4 +33,4 @@ jobs:
       - name: Check django logs
         run: docker logs reopt_lite_api_django_1
       - name: test
-        run: docker-compose exec -T celery python manage.py test -v 2 --failfast --no-input
+        run: docker-compose exec -T reopt_lite_api_celery_1 python manage.py test -v 2 --failfast --no-input
