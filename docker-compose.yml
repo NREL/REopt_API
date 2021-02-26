@@ -24,8 +24,8 @@ services:
     build:
       context: .
     image: base-api-image
-    command: >
-      "celery -A reopt_api worker -l info"
+    command:  >
+      "/opt/reopt/bin/wait-for-it.bash -t 0 julia:8081 -- celery -A reopt_api worker -l info"
     environment:
       - APP_ENV=local
       - SQL_HOST=db

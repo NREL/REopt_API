@@ -6,6 +6,9 @@ ENV SRC_DIR=/opt/reopt/reo/src
 ENV PYTHONDONTWRITEBYTECODE 1
 COPY . /opt/reopt
 
+WORKDIR /opt/reopt/bin
+RUN chmod +x wait-for-it.bash
+
 # Install python packages
 WORKDIR /opt/reopt
 RUN ["pip", "install", "-r", "requirements.txt"]
