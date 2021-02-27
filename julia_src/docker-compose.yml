@@ -7,8 +7,8 @@ services:
       context: ./xpress/licenseserver
     mac_address: c4:b3:01:d3:d5:eb
     command: xpserver
-    ports:
-      - "27100:27100"
+    expose:
+      - 27100
   
   julia:
     container_name: julia_api_dev
