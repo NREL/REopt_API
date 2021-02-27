@@ -35,7 +35,6 @@ from resilience_stats.api import OutageSimJob
 from tastypie.api import Api
 from reo import views
 from proforma.views import proforma
-from resilience_stats.views import resilience_stats, financial_check
 from django.urls import path
 
 v1_api = Api(api_name='v1')
@@ -56,11 +55,8 @@ def page_not_found(request, url):
 urlpatterns = [
     url(r'^_health/?$', views.health, name='health'),
     path('v1/', include('reo.urls')),
+    path('v1/', include('resilience_stats.urls')),
     url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/proforma/?$', proforma, name='proforma'),
-    url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/resilience_stats/?$', resilience_stats, name='resilience_stats'),
-    url(r'^v1/outagesimjob/(?P<run_uuid>[0-9a-f-]+)/?$', resilience_stats, name='resilience_stats'),
-    url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/resilience_stats/financial_check/?$', financial_check, name='financial_check'),  # preserving old behavior
-    url(r'^v1/financial_check/?$', financial_check, name='financial_check'),
     url(r'^v1/user/?', include('summary.urls'), name='summary'),
     url(r'^v1/load_builder/?', include('load_builder.urls'), name='load_builder'),
     url(r'', include(v1_api.urls), name='job'),
