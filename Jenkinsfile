@@ -20,7 +20,7 @@ pipeline {
     stage("app-agent") {
       agent {
         dockerfile {
-          filename "Dockerfile.dev"
+          filename "Dockerfile"
           additionalBuildArgs "--pull --build-arg XPRESS_LICENSE_HOST='${XPRESS_LICENSE_HOST}' --build-arg NREL_ROOT_CERT_URL_ROOT='${NREL_ROOT_CERT_URL_ROOT}'"
         }
       }
