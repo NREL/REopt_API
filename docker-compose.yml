@@ -73,7 +73,7 @@ services:
     container_name: julia_api
     build:
       context: julia_src/
-    command: julia --project="/opt/julia_src" http.jl
+    command: julia --project=/opt/julia_src -e 'import Pkg; Pkg.instantiate(); include("http.jl")' 
     ports:
       - "8081:8081"
     depends_on: 
