@@ -78,6 +78,8 @@ services:
       - "8081:8081"
     depends_on: 
       - licenseserver
+    volumes:
+      - ./julia_src:/opt/julia_src
 
 volumes:
   pgdata:
