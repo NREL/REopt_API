@@ -34,7 +34,6 @@ from reo.api import Job
 from resilience_stats.api import OutageSimJob
 from tastypie.api import Api
 from reo import views
-from proforma.views import proforma
 from django.urls import path
 
 v1_api = Api(api_name='v1')
@@ -56,7 +55,7 @@ urlpatterns = [
     url(r'^_health/?$', views.health, name='health'),
     path('v1/', include('reo.urls')),
     path('v1/', include('resilience_stats.urls')),
-    url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/proforma/?$', proforma, name='proforma'),
+    path('v1/', include('proforma.urls')),
     url(r'^v1/user/?', include('summary.urls'), name='summary'),
     url(r'^v1/load_builder/?', include('load_builder.urls'), name='load_builder'),
     url(r'', include(v1_api.urls), name='job'),
