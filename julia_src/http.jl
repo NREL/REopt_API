@@ -5,10 +5,12 @@ using .REopt
 
 function job(req::HTTP.Request)
     d = JSON.parse(String(req.body))
-    # TODO pass through timeout and tolerance
-    m = xpress_model(420.0, 0.001)  # TODO add timeout and tolerance to data dict
+    timeout = pop!(d, "timeout_seconds")
+    tol = pop!(d, "tolerance")
+    m = xpress_model(timeout, tol)
+    @info "Starting REopt with timeout of $(timeout) seconds..."
     results = reopt(m, d)
-    # TODO @info run_uuid and status
+    @info "REopt model solved with status $(results["status"])."
     return HTTP.Response(200, JSON.json(results))
 end
 
