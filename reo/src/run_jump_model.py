@@ -87,6 +87,9 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
     reopt_inputs = dfm['reopt_inputs'] if not bau else dfm['reopt_inputs_bau']
     run_uuid = data['outputs']['Scenario']['run_uuid']
     user_uuid = data['outputs']['Scenario'].get('user_uuid')
+    reopt_inputs["timeout_seconds"] = data['inputs']['Scenario']['timeout_seconds']
+    reopt_inputs["tolerance"] = data['inputs']['Scenario']['optimality_tolerance_bau'] if bau \
+        else data['inputs']['Scenario']['optimality_tolerance_techs']
 
     logger.info("Running JuMP model ...")
     try:
