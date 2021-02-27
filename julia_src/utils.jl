@@ -324,7 +324,6 @@ function Parameter(d::Dict)
 	d["FuelCost"] = vector_to_axisarray(d["FuelCost"], d["FuelType"], d[:TimeStep])
     d["ElecRate"] = transpose(reshape(d["ElecRate"], d["TimeStepCount"], d["PricingTierCount"]))
 
-    # TODO why is this failing? 2D vs. 1D array issue?
     if !isempty(d["GridExportRates"])
         d["GridExportRates"] = AxisArray(array_of_array_to_2D_array(d["GridExportRates"]), 
                                          d["ExportTiers"], d[:TimeStep])
