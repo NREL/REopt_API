@@ -72,12 +72,6 @@ def health(request):
     return HttpResponse("OK")
 
 
-def errors(request, page_uuid):
-
-    template= loader.get_template("errors.html")
-    return HttpResponse(template.render())
-
-
 def help(request):
 
     try:
@@ -157,14 +151,15 @@ def annual_kwh(request):
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in annual_kwh endpoint. Check log for more."}, status=500)
 
+
 def remove(request, run_uuid):
     try:
         ModelManager.remove(run_uuid)  # ModelManager has some internal exception handling
-        return JsonResponse({"Success":True}, status=204)
+        return JsonResponse({"Success": True}, status=204)
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        err = UnexpectedError(exc_type, exc_value.args[0], tb.format_tb(exc_traceback), task='reo.views.results', run_uuid=run_uuid)
+        err = UnexpectedError(exc_type, exc_value.args[0], tb.format_tb(exc_traceback), task='remove', run_uuid=run_uuid)
         err.save_to_db()
         resp = make_error_resp(err.message)
         return JsonResponse(resp)
@@ -527,6 +522,7 @@ def generator_efficiency(request):
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in generator_efficiency endpoint. Check log for more."}, status=500)
 
+
 def chp_defaults(request):
     """
     Depending on the set of inputs, different sets of outputs are determine in addition to all CHP cost and performance parameter defaults:
@@ -695,6 +691,7 @@ def loadprofile_chillerthermal_chiller_cop(request):
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in loadprofile_chillerthermal_chiller_cop endpoint. Check log for more."}, status=500)
 
+
 def absorption_chiller_defaults(request):
     """
     This provides the following default parameters for the absorption chiller:
@@ -755,6 +752,7 @@ def absorption_chiller_defaults(request):
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in absorption_chiller_defaults endpoint. Check log for more."}, status=500)
+
 
 def schedule_stats(request):
     """
