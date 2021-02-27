@@ -11,7 +11,6 @@ input_files/*
 !input_files/CHP/
 .DS_Store
 urdb_rate_errors/
-outage_sizing/
 .vscode/
 
 # Distribution / packaging
@@ -125,5 +124,3 @@ docker-compose.xpressOS.yml
 Dockerfile.xpressOS.pyjul
 
 /.werf_secret_key
-
-julia_src/Manifest.toml
