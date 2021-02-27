@@ -50,7 +50,7 @@ pipeline {
         WERF_ADD_ANNOTATION_CI_COMMIT = "ci.werf.io/commit=$GIT_COMMIT"
         WERF_THREE_WAY_MERGE_MODE = "enabled"
         WERF_LOG_VERBOSE = "true"
-        DOCKER_BASE_IMAGE_DIGEST = tadaDockerBaseImageDigest(dockerfile: "Dockerfile.dev")
+        DOCKER_BASE_IMAGE_DIGEST = tadaDockerBaseImageDigest(dockerfile: "Dockerfile")
         XPRESS_LICENSE_HOST = credentials("reopt-api-xpress-license-host")
         NREL_ROOT_CERT_URL_ROOT = credentials("reopt-api-nrel-root-cert-url-root")
       }
