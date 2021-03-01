@@ -242,6 +242,13 @@ nested_input_definitions = {
           "default": 0.034,
           "description": "Annual nominal chp fuel cost escalation rate"
         },
+        "newboiler_fuel_escalation_pct": {
+          "type": "float",
+          "min": -1.0,
+          "max": 1.0,
+          "default": 0.034,
+          "description": "Annual nominal boiler fuel cost escalation rate"
+        },
         "offtaker_tax_pct": {
           "type": "float",
           "min": 0.0,
@@ -631,7 +638,23 @@ nested_input_definitions = {
           "type": "list_of_float",
           "default": [0.0] * 12,
           "description": "Array (length of 12) of blended fuel rates (total monthly energy in mmbtu divided by monthly cost in $)"
-        }
+        },
+        "newboiler_fuel_type": {
+          "type": "str",
+          "default": 'natural_gas',
+          "restrict_to": ["natural_gas", "landfill_bio_gas", "propane", "diesel_oil", "uranium"],
+          "description": "Boiler fuel type one of (natural_gas, landfill_bio_gas, propane, diesel_oil)"
+        },
+        "newboiler_fuel_blended_annual_rates_us_dollars_per_mmbtu": {
+          "type": "float",
+          "default": 0.0,
+          "description": "Single/scalar blended fuel rate for the entire year"
+        },
+        "newboiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu": {
+          "type": "list_of_float",
+          "default": [0.0]*12,
+          "description": "Array (length of 12) of blended fuel rates (total monthly energy in mmbtu divided by monthly cost in $)"
+        },        
       },
 
       "Wind": {
@@ -1791,7 +1814,11 @@ nested_input_definitions = {
         "emissions_factor_lb_CO2_per_mmbtu": {
           "type": "float",
           "description": "Pounds of carbon dioxide emitted per gallon of fuel burned"
-        }
+        },
+        "can_supply_st": {
+          "type": "bool", "default": False,
+          "description": "If the boiler can supply steam to the steam turbine for electric production"
+        }        
       },
 
       "ElectricChiller": {
@@ -1846,7 +1873,99 @@ nested_input_definitions = {
           "default": 0.0,
           "description": "Percent of upfront project costs to depreciate under MACRS"
         }
-      }
+      },
+      "NewBoiler": {
+        "min_mmbtu_per_hr": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "description": "Minimum thermal power size"
+          },
+        "max_mmbtu_per_hr": {
+          "type": "float", "min": 0.0, "max": 1.0e9,
+          "description": "Maximum thermal power size"
+        },
+        "boiler_efficiency": {
+          "type": "float", "min:": 0.0, "max:": 1.0,
+          "description": "New boiler system efficiency - conversion of fuel to usable heating thermal energy"
+        },
+        "can_supply_st": {
+          "type": "bool", "default": True,
+          "description": "If the boiler can supply steam to the steam turbine for electric production"
+        },
+        "installed_cost_us_dollars_per_mmbtu_per_hr": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "description": "Thermal power-based cost"
+        },
+        "om_cost_us_dollars_per_mmbtu_per_hr": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "description": "Thermal power-based fixed O&M cost"
+        },
+        "om_cost_us_dollars_per_mmbtu": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "description": "Thermal energy-based variable O&M cost"
+        },                  
+        "emissions_factor_lb_CO2_per_mmbtu": {
+          "type": "float",
+          "description": "Pounds of carbon dioxide emitted per mmbtu of fuel burned"
+        }
+      },
+      "SteamTurbine": {
+        "min_kw": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "description": "Minimum electric power size"
+          },
+        "max_kw": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "description": "Maximum electric power size"
+        },
+        "is_condensing": {
+          "type": "bool",
+          "description": "Steam turbine type, if it is a condensing turbine which produces no useful thermal (max electric output)"
+        },
+        "inlet_steam_pressure_psig": {
+          "type": "float", "min": 0.0, "max", 5000.0,
+          "description": "Inlet steam pressure to the steam turbine"
+        },
+        "inlet_steam_temperature_degF": {
+          "type": "float", "min": 0.0, "max", 1300.0,
+          "description": "Inlet steam temperature to the steam turbine"
+        },
+        "inlet_steam_superheat_degF": {
+          "type": "float", "min": 0.0, "max", 700.0,
+          "description": "Alternative input to inlet steam temperature, this is the superheat amount (delta from T_saturation) to the steam turbine"
+        },
+        "outlet_steam_pressure_psig": {
+          "type": "float", "min": -14.7, "max", 1000.0,
+          "description": "Outlet steam pressure from the steam turbine (to the condenser or heat recovery unit"
+        },
+        "outlet_steam_min_vapor_fraction": {
+          "type": "float", "min": 0.0, "max", 1.0,
+          "description": "Minimum vapor fraction at the outlet of the steam turbine: this serves as a check on the other inlet and outlet steam conditions to ensure that acceptable amounts of liquid are in the outlet"
+        }                         
+        "isentropic_efficiency": {
+          "type": "float", "min": 0.0, "max": 1.0,
+          "description": "Steam turbine isentropic efficiency - uses inlet T/P and outlet T/P/X to get power out"
+        },
+        "gearbox_generator_efficiency": {
+          "type": "float", "min": 0.0, "max": 1.0,
+          "description": "Conversion of steam turbine shaft power to electric power based on combined gearbox and electric generator efficiency"
+        },
+        "net_to_gross_electric_ratio": {
+          "type": "float", "min": 0.0, "max": 1.0,
+          "description": "Conversion of gross electric power to net power which can account for e.g. pump power"
+        },                
+        "installed_cost_us_dollars_per_kw": {
+          "type": "float", "min": 0.0, "max": 1.0e9,
+          "description": "Electric power-based cost"
+        },
+        "om_cost_us_dollars_per_kw": {
+          "type": "float", "min": 0.0, "max": 1.0e9,
+          "description": "Electric power-based fixed O&M cost"
+        },
+        "om_cost_us_dollars_per_kwh": {
+          "type": "float", "min": 0.0, "max": 1.0e9,
+          "description": "Electric energy-based variable O&M cost"
+        }
+      }      
     }
   }
 }

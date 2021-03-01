@@ -161,6 +161,7 @@ class FinancialModel(models.Model):
     analysis_years = models.IntegerField(null=True, blank=True)
     escalation_pct = models.FloatField(null=True, blank=True)
     boiler_fuel_escalation_pct = models.FloatField(null=True, blank=True)
+    newboiler_fuel_escalation_pct = models.FloatField(null=True, blank=True)
     chp_fuel_escalation_pct = models.FloatField(null=True, blank=True)
     om_cost_escalation_pct = models.FloatField(null=True, blank=True)
     offtaker_discount_pct = models.FloatField(null=True, blank=True)
@@ -379,6 +380,9 @@ class FuelTariffModel(models.Model):
     chp_fuel_type = models.TextField(null=True, blank=True)
     chp_fuel_blended_annual_rates_us_dollars_per_mmbtu = models.FloatField(null=True, blank=True)
     chp_fuel_blended_monthly_rates_us_dollars_per_mmbtu = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True)
+    newboiler_fuel_type = models.TextField(null=True, blank=True)
+    newboiler_fuel_blended_annual_rates_us_dollars_per_mmbtu = models.FloatField(null=True, blank=True)
+    newboiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True)
 
     # Outputs
     total_boiler_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
@@ -780,6 +784,7 @@ class BoilerModel(models.Model):
     existing_boiler_production_type_steam_or_hw = models.TextField(null=True, blank=True)
     boiler_efficiency = models.FloatField(blank=True, default=0, null=True)
     emissions_factor_lb_CO2_per_mmbtu = models.FloatField(null=True, blank=True)
+    can_supply_st = models.BooleanField(null=True, blank=True)
 
     # Outputs
     year_one_boiler_fuel_consumption_series_mmbtu_per_hr = ArrayField(
@@ -884,6 +889,59 @@ class HotTESModel(models.Model):
         return obj
 
 
+class NewBoilerModel(models.Model):
+    # Inputs
+    run_uuid = models.UUIDField(unique=True)
+    min_mmbtu_per_hr = models.FloatField(null=True, blank=True)
+    max_mmbtu_per_hr = models.FloatField(null=True, blank=True)
+    boiler_efficiency = models.FloatField(null=True, blank=True)
+    can_supply_st = models.BooleanField(null=True, blank=True)
+    boiler_efficiency = models.FloatField(blank=True, null=True)
+    installed_cost_us_dollars_per_mmbtu_per_hr = models.FloatField(null=True, blank=True)
+    om_cost_us_dollars_per_mmbtu_per_hr = models.FloatField(null=True, blank=True)
+    om_cost_us_dollars_per_mmbtu = models.FloatField(null=True, blank=True)
+    emissions_factor_lb_CO2_per_mmbtu = models.FloatField(null=True, blank=True)
+
+    # Outputs
+    # TODO
+
+    @classmethod
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
+        obj.save()
+
+        return obj
+
+
+class SteamTurbineModel(models.Model):
+    # Inputs
+    run_uuid = models.UUIDField(unique=True)
+    min_kw = models.FloatField(null=True, blank=True)
+    max_kw = models.FloatField(null=True, blank=True)
+    is_condensing = models.BooleanField(null=True, blank=True)    
+    inlet_steam_pressure_psig = models.FloatField(null=True, blank=True)
+    inlet_steam_temperature_degF = models.FloatField(blank=True, null=True)
+    inlet_steam_superheat_degF = models.FloatField(null=True, blank=True)
+    outlet_steam_pressure_psig = models.FloatField(null=True, blank=True)
+    outlet_steam_min_vapor_fraction = models.FloatField(null=True, blank=True)
+    isentropic_efficiency = models.FloatField(null=True, blank=True)
+    gearbox_generator_efficiency = models.FloatField(null=True, blank=True)
+    net_to_gross_electric_ratio = models.FloatField(null=True, blank=True)
+    installed_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+    om_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+    om_cost_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
+
+    # Outputs
+    # TODO
+
+    @classmethod
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
+        obj.save()
+
+        return obj
+
+
 class MessageModel(models.Model):
     """
     For Example:
@@ -956,6 +1014,8 @@ class ModelManager(object):
         self.cold_tesM = None
         self.profileM = None
         self.messagesM = None
+        self.new_boilerM = None
+        self.steam_turbineM = None
 
     def create_and_save(self, data):
         """
@@ -1002,6 +1062,10 @@ class ModelManager(object):
                                                              **attribute_inputs(d['Site']['HotTES']))
         self.cold_tesM = ColdTESModel.create(run_uuid=self.scenarioM.run_uuid,
                                            **attribute_inputs(d['Site']['ColdTES']))
+        self.new_boilerM = NewBoilerModel.create(run_uuid=self.scenarioM.run_uuid,
+                                           **attribute_inputs(d['Site']['NewBoiler']))
+        self.steam_turbineM = SteamTurbineModel.create(run_uuid=self.scenarioM.run_uuid,
+                                           **attribute_inputs(d['Site']['SteamTurbine']))                                                                                      
         for message_type, message in data['messages'].items():
             MessageModel.create(run_uuid=self.scenarioM.run_uuid, message_type=message_type, message=message)
 
@@ -1039,6 +1103,8 @@ class ModelManager(object):
         AbsorptionChillerModel.objects.filter(run_uuid=run_uuid).delete()
         HotTESModel.objects.filter(run_uuid=run_uuid).delete()
         ColdTESModel.objects.filter(run_uuid=run_uuid).delete()
+        NewBoilerModel.objects.filter(run_uuid=run_uuid).delete()
+        SteamTurbineModel.objects.filter(run_uuid=run_uuid).delete()
         MessageModel.objects.filter(run_uuid=run_uuid).delete()
         ErrorModel.objects.filter(run_uuid=run_uuid).delete()
 
@@ -1076,6 +1142,8 @@ class ModelManager(object):
             **attribute_inputs(d['Site']['AbsorptionChiller']))
         HotTESModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['HotTES']))
         ColdTESModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['ColdTES']))
+        NewBoilerModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['NewBoiler']))
+        SteamTurbineModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['SteamTurbine']))
 
         for message_type, message in data['messages'].items():
             if len(MessageModel.objects.filter(run_uuid=run_uuid, message=message)) > 0:
@@ -1177,7 +1245,7 @@ class ModelManager(object):
         # add try/except for get fail / bad run_uuid
         site_keys = ['PV', 'Storage', 'Financial', 'LoadProfile', 'LoadProfileBoilerFuel', 'LoadProfileChillerThermal',
                      'ElectricTariff', 'FuelTariff', 'Generator', 'Wind', 'CHP', 'Boiler', 'ElectricChiller',
-                     'AbsorptionChiller', 'HotTES', 'ColdTES']
+                     'AbsorptionChiller', 'HotTES', 'ColdTES', 'NewBoiler', 'SteamTurbine']
 
         resp = dict()
         resp['outputs'] = dict()
@@ -1265,6 +1333,14 @@ class ModelManager(object):
         coldtes_record = ColdTESModel.objects.filter(run_uuid=run_uuid) or {}
         if not coldtes_record == {}:
             resp['outputs']['Scenario']['Site']['ColdTES'] = remove_ids(model_to_dict(coldtes_record[0]))
+
+        newboiler_record = NewBoilerModel.objects.filter(run_uuid=run_uuid) or {}
+        if not newboiler_record == {}:
+            resp['outputs']['Scenario']['Site']['NewBoiler'] = remove_ids(model_to_dict(newboiler_record[0]))
+
+        steamturbine_record = SteamTurbineModel.objects.filter(run_uuid=run_uuid) or {}
+        if not steamturbine_record == {}:
+            resp['outputs']['Scenario']['Site']['SteamTurbine'] = remove_ids(model_to_dict(steamturbine_record[0]))
 
         resp['outputs']['Scenario']['Site']['PV'] = []
         for x in PVModel.objects.filter(run_uuid=run_uuid).order_by('pv_number'):
