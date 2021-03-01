@@ -374,6 +374,7 @@ class CHP(Tech):
         self.outage_start_time_step = outage_start_time_step
         self.outage_end_time_step = outage_end_time_step
         self.year = year
+        self.can_supply_st = kwargs.get('can_supply_st')
 
         self.fuel_burn_slope, self.fuel_burn_intercept, self.thermal_prod_slope, self.thermal_prod_intercept = \
             self.convert_performance_params(self.elec_effic_full_load, self.elec_effic_half_load,
@@ -628,7 +629,6 @@ class AbsorptionChiller(Tech):
 
         return absorp_chiller_cop
     
-
 
 class NewBoiler(Tech):
 

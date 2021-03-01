@@ -711,6 +711,7 @@ class CHPModel(models.Model):
     can_export_beyond_site_load = models.BooleanField(null=True, blank=True)
     can_curtail = models.BooleanField(null=True, blank=True)
     cooling_thermal_factor = models.FloatField(null=True, blank=True)
+    can_supply_st = models.BooleanField(null=True, blank=True)
 
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)
@@ -930,6 +931,10 @@ class SteamTurbineModel(models.Model):
     installed_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True)
     om_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True)
     om_cost_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
+    can_net_meter = models.BooleanField(null=True, blank=True)
+    can_wholesale = models.BooleanField(null=True, blank=True)
+    can_export_beyond_site_load = models.BooleanField(null=True, blank=True)
+    can_curtail = models.BooleanField(null=True, blank=True)
 
     # Outputs
     # TODO
