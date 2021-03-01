@@ -27,18 +27,41 @@ Classify the change according to the following categories:
     ##### Deprecated
     ##### Removed
     ### Patches
+
+## v1.4.4 - 2021-02-25
+### Patches
+- `reo`: In `validators.py` catches case where invalid percent_share entry was used in check special cases function
+- `reo`: In `loadprofile.py` catches where 0 lat/long was resolving to _False_ and leading to _None_ for lat and long
+- `reo`: Fix divide by 0 error in results processing
+- `reo`: Handle floats as URBD periods
+- `reo`: Fix `list_of_float` only types
     
-## v1.4.1 - 2021-01-29
-### Patch
-`reo`: Fixes database query error the occurs when getting production runs created prior to v1.4.0    
+## v1.4.3 - 2021-02-18
+### Patches
+- `reo`: new output `Financial.developer_om_and_replacement_present_cost_after_tax_us_dollars`
+- `reo`: Fix **PVWatts** being called when user provides `PV.prod_factor_series_kw`
+- `reopt_api`: new `docker-compose.nginx.yml` for standing up the API on a server with remote access (for example if one wants to host the API on a cloud service)
+- `reopt_api`: update `Dockerfile.xpress` to use `nlaws/pyjul:1.5.3` base image (was using Julia 1.3)
+- `reopt_api`: update `julia_envs/Xpress` PyCall from 1.91.4 to 1.92.2
+    
+## v1.4.2 - 2021-02-03
+### Patches
+- `reo`: Fix **Wind** `size_class` was not being set
+- `proforma`: Fix could not handle runs prior to v1.4.0 with no CHP database entries
+- `resilience_stats`: Fix could not handle runs prior to v1.4.0 with no CHP database entries
+- `resilience_stats`: `outage_simulator` returns 100% survivability when chp_kw >= critical_loads_kw
+
+## v1.4.1 - 2021-02-01
+### Patches
+- `reo`: Fixes database query error the occurs when getting production runs created prior to v1.4.0    
 
 ## v1.4.0 - 2021-01-29
 ### Major Updates
 ### Minor Updates
 ## Added
-`reo`/`reopt.jl`: Coincident peak rates and expected time steps can be specified. There can be a single rate and list of time steps. Or there can be multiple CP periods in a year with different rates, and then a set of time steps is specified for each rate. Peak demand occurring during each set of CP time steps is charged at the corresponding CP rate.
+- `reo`/`reopt.jl`: Coincident peak rates and expected time steps can be specified. There can be a single rate and list of time steps. Or there can be multiple CP periods in a year with different rates, and then a set of time steps is specified for each rate. Peak demand occurring during each set of CP time steps is charged at the corresponding CP rate.
 
-`reo`: Add a new **ElectricTariff** inputs and outputs: 
+- `reo`: Add a new **ElectricTariff** inputs and outputs: 
  - **coincident_peak_load_active_timesteps**
  - **coincident_peak_load_charge_us_dollars_per_kw**
  - **year_one_coincident_peak_cost_us_dollars**

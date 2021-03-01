@@ -1,0 +1,75 @@
+version: "2.1"
+
+services:
+
+  redis-nginx:
+    container_name: redis-nginx
+    image: redis
+    command: redis-server
+    ports:
+      - 6379:6379
+
+  db-nginx:
+    container_name: db-nginx
+    image: postgres
+    restart: always
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=reopt
+      - POSTGRES_PASSWORD=reopt
+      - POSTGRES_DB=reopt
+    ports:
+      - 5432:5432
+
+  celery-nginx:
+    container_name: celery-nginx
+    build:
+      context: .
+      dockerfile: Dockerfile.xpress.pyjul
+    command: >
+      "celery -A reopt_api worker -l info"
+    image: celery-nginx-image
+    environment:
+      - APP_ENV=local
+      - SQL_HOST=db-nginx
+      - SQL_PORT=5432
+      - REDIS_HOST=redis-nginx
+      - SOLVER=xpress
+    volumes:
+      - .:/opt/reopt
+    depends_on:
+      - db-nginx
+      - redis-nginx
+    mac_address: 02:42:ac:12:00:04
+
+  django-nginx:
+    container_name: django-nginx
+    image: celery-nginx-image
+    command:  >
+      "python manage.py migrate
+      && gunicorn reopt_api.wsgi:application --bind 0.0.0.0:8000"
+    environment:
+      - APP_ENV=local
+      - SQL_HOST=db-nginx
+      - SQL_PORT=5432
+      - REDIS_HOST=redis-nginx
+      - SOLVER=xpress
+    depends_on:
+      - db-nginx
+      - redis-nginx
+    expose:
+      - 8000
+    volumes:
+      - .:/opt/reopt
+
+  nginx:
+    build: ./nginx
+    ports:
+      - 80:80
+    depends_on:
+      - django-nginx
+    restart: "on-failure"
+
+volumes:
+  pgdata:
