@@ -201,6 +201,7 @@ class FinancialModel(models.Model):
             models.FloatField(null=True, blank=True), default=list, null=True)
     developer_annual_free_cashflow_series_us_dollars = ArrayField(
             models.FloatField(null=True, blank=True), default=list, null=True)
+    developer_om_and_replacement_present_cost_after_tax_us_dollars = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):

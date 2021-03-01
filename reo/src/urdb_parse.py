@@ -346,9 +346,9 @@ class UrdbParse:
                         energy_ts = hour * energy_ts_per_hour
                         for ts in range(energy_ts_per_hour):
                             if is_weekday:
-                                period = current_rate.energyweekdayschedule[month][energy_ts]
+                                period = int(current_rate.energyweekdayschedule[month][energy_ts])
                             else:
-                                period = current_rate.energyweekendschedule[month][energy_ts]
+                                period = int(current_rate.energyweekendschedule[month][energy_ts])
 
                             # workaround for cases where there are different numbers of tiers in periods
                             n_tiers_in_period = len(current_rate.energyratestructure[period])

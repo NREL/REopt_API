@@ -269,6 +269,14 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             return round(upfront_capex, 2)
 
         @property
+        def third_party_factor(self):
+            yrs = self.inputs["Financial"]["analysis_years"]
+            pwf_offtaker = annuity(yrs, 0, self.inputs["Financial"]["offtaker_discount_pct"])
+            pwf_owner = annuity(yrs, 0, self.inputs["Financial"]["owner_discount_pct"])
+            return (pwf_offtaker * (1 - self.inputs["Financial"]["offtaker_tax_pct"])) \
+                    / (pwf_owner * (1 - self.inputs["Financial"]["owner_tax_pct"]))
+
+        @property
         def upfront_capex_after_incentives(self):
             """
             The net_capital_costs output is the upfront capex after incentives, except it includes the battery
@@ -277,14 +285,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             Note that the owner_discount_pct and owner_tax_pct are set to the offtaker_discount_pct and offtaker_tax_pct
             respectively when third_party_ownership is False.
             """
-            yrs = self.inputs["Financial"]["analysis_years"]
-            pwf_offtaker = annuity(yrs, 0, self.inputs["Financial"]["offtaker_discount_pct"])
-            pwf_owner = annuity(yrs, 0, self.inputs["Financial"]["owner_discount_pct"])
-            third_party_factor = (pwf_offtaker * (1 - self.inputs["Financial"]["offtaker_tax_pct"])) \
-                                  / (pwf_owner * (1 - self.inputs["Financial"]["owner_tax_pct"]))
-
             upfront_capex_after_incentives = self.nested_outputs["Scenario"]["Site"]["Financial"]["net_capital_costs"] \
-                                             / third_party_factor
+                                             / self.third_party_factor
 
             pwf_inverter = 1 / ((1 + self.inputs["Financial"]["owner_discount_pct"])
                                 ** self.inputs["Storage"]["inverter_replacement_year"])
@@ -763,7 +765,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_hot_tes_soc_series_pct"] = self.results_dict.get("hot_tes_pct_soc_series")
                     if np.isnan(sum(self.results_dict.get("hot_tes_pct_soc_series") or [np.nan])):
                         self.nested_outputs["Scenario"]["Site"][name]["year_one_hot_tes_soc_series_pct"] = None
-
                 elif name == "ColdTES":
                     self.nested_outputs["Scenario"]["Site"][name][
                         "size_gal"] = self.results_dict.get("cold_tes_size_kwht",0) / 0.0287
@@ -782,16 +783,21 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 present_replacement_cost + self.results_dict.get("total_om_costs_after_tax", 0)
             self.nested_outputs["Scenario"]["Site"]["Financial"]["initial_capital_costs_after_incentives"] = \
                 self.upfront_capex_after_incentives
+            if self.third_party_factor != 1:
+                self.nested_outputs["Scenario"]["Site"]["Financial"][
+                    "developer_om_and_replacement_present_cost_after_tax_us_dollars"] = \
+                    self.nested_outputs["Scenario"]["Site"]["Financial"][
+                        "om_and_replacement_present_cost_after_tax_us_dollars"] / self.third_party_factor
 
-            self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] = \
-                self.nested_outputs["Scenario"]["Site"]["Wind"].get("average_yearly_energy_produced_kwh") or 0
-            for pv in self.nested_outputs["Scenario"]["Site"]["PV"]:
-                self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] += \
-                pv.get("average_yearly_energy_produced_kwh") or 0
-            self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] = round(\
-                self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] / \
-                self.nested_outputs["Scenario"]["Site"]["LoadProfile"]["annual_calculated_kwh"],4)
-
+            if self.nested_outputs["Scenario"]["Site"]["LoadProfile"]["annual_calculated_kwh"] > 0:
+                self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] = \
+                    self.nested_outputs["Scenario"]["Site"]["Wind"].get("average_yearly_energy_produced_kwh") or 0
+                for pv in self.nested_outputs["Scenario"]["Site"]["PV"]:
+                    self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] += \
+                    pv.get("average_yearly_energy_produced_kwh") or 0
+                self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] = round(
+                    self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] /
+                    self.nested_outputs["Scenario"]["Site"]["LoadProfile"]["annual_calculated_kwh"], 4)
 
             time_outputs = [k for k in self.bau_attributes if (k.startswith("julia") or k.startswith("pyjulia"))]
 
