@@ -79,6 +79,8 @@ class DataManager:
         self.optimality_tolerance_decomp_subproblem = None
         self.timeout_decomp_subproblem_seconds = None
         self.add_soc_incentive = None
+        self.newboiler = None
+        self.steamturbine = None
 
         # following attributes used to pass data to process_results.py
         # If we serialize the python classes then we could pass the objects between Celery tasks
@@ -89,9 +91,9 @@ class DataManager:
         self.year_one_demand_cost_series_us_dollars_per_kw = []
 
         self.available_techs = ['pv1', 'pv1nm', 'wind', 'windnm', 'generator', 'chp', 'boiler',
-                                'elecchl', 'absorpchl']  # order is critical for REopt! Note these are passed to reopt.jl as uppercase
+                                'elecchl', 'absorpchl', 'newboiler', 'steamturbine']  # order is critical for REopt! Note these are passed to reopt.jl as uppercase
         self.available_tech_classes = ['PV1', 'WIND', 'GENERATOR', 'CHP', 'BOILER',
-                                       'ELECCHL', 'ABSORPCHL']  # this is a REopt 'class', not a python class
+                                       'ELECCHL', 'ABSORPCHL', 'NEWBOILER', 'STEAMTURBINE']  # this is a REopt 'class', not a python class
         self.bau_techs = []
         self.NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
         self.fuel_burning_techs = ['GENERATOR', 'CHP']
@@ -207,6 +209,12 @@ class DataManager:
     def add_fuel_tariff(self, fuel_tariff):
         self.fuel_tariff = fuel_tariff
 
+    def add_newboiler(self, newboiler):
+        self.newboiler = newboiler
+
+    def add_steamturbine(self, steamturbine):
+        self.steamturbine = steamturbine
+
     def _get_REopt_pwfs(self, techs):
         sf = self.site.financial
         pwf_owner = annuity(sf.analysis_years, 0, sf.owner_discount_pct) # not used in REopt
@@ -215,6 +223,7 @@ class DataManager:
         pwf_e = annuity(sf.analysis_years, sf.escalation_pct, sf.offtaker_discount_pct)
         pwf_boiler_fuel = annuity(sf.analysis_years, sf.boiler_fuel_escalation_pct, sf.offtaker_discount_pct)
         pwf_chp_fuel = annuity(sf.analysis_years, sf.chp_fuel_escalation_pct, sf.offtaker_discount_pct)
+        pwf_newboiler_fuel = annuity(sf.analysis_years, sf.newboiler_fuel_escalation_pct, sf.offtaker_discount_pct)
         self.pwf_e = pwf_e
         # pwf_op = annuity(sf.analysis_years, sf.escalation_pct, sf.owner_discount_pct)
 
@@ -247,10 +256,12 @@ class DataManager:
                     pwf_fuel_by_tech.append(round(pwf_chp_fuel, 5))
                 elif tech == 'boiler':
                     pwf_fuel_by_tech.append(round(pwf_boiler_fuel, 5))
+                elif tech == 'newboiler':
+                    pwf_fuel_by_tech.append(round(pwf_newboiler_fuel, 5))                
                 else:
                     pwf_fuel_by_tech.append(round(pwf_e, 5))
 
-        return levelization_factor, pwf_e, pwf_om, two_party_factor, pwf_boiler_fuel, pwf_chp_fuel, pwf_fuel_by_tech
+        return levelization_factor, pwf_e, pwf_om, two_party_factor, pwf_fuel_by_tech
 
     def _get_REopt_production_incentives(self, techs):
         sf = self.site.financial
@@ -264,7 +275,7 @@ class DataManager:
 
             if eval('self.' + tech) is not None:
 
-                if tech not in ['generator', 'boiler', 'elecchl', 'absorpchl']:
+                if tech not in ['generator', 'boiler', 'elecchl', 'absorpchl', 'newboiler', 'steamturbine']:
 
                     # prod incentives don't need escalation
                     if tech.startswith("pv"):  # PV has degradation
@@ -320,7 +331,7 @@ class DataManager:
                 for region in regions[:-1]:
                     tech_incentives[region] = dict()
 
-                    if tech not in ['generator', 'absorpchl']:
+                    if tech not in ['generator', 'absorpchl', 'newboiler', 'steamturbine']:
 
                         if region == 'federal' or region == 'total':
                             tech_incentives[region]['%'] = eval('self.' + tech + '.incentives.' + region + '.itc')
@@ -705,9 +716,8 @@ class DataManager:
                 else:
                     om_cost_us_dollars_per_kw.append(eval('self.' + tech + '.om_cost_us_dollars_per_kw'))
 
-
-                # only generator and chp techs have variable o&m cost
-                if tech.lower() == 'generator':
+                # Only certain techs have variable o&m cost, and CHP also has a unique hourly-operating O&M
+                if tech.lower() in ['generator', 'newboiler', 'steamturbine']:
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.kwargs["om_cost_us_dollars_per_kwh"]')))
                     om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
                 elif tech.lower() == 'chp':
@@ -1070,6 +1080,22 @@ class DataManager:
 
         return rates_by_tech, techs_by_export_tier, export_tiers, techs_cannot_curtail, filtered_export_rates
 
+    def can_supply_steam_turbine(self, techs):
+        """
+        Returns a list of techs which can supply the SteamTurbine with steam to drive its electric generation
+        :param techs: list of string
+        :returns
+            can_supply_st: list of string (techs)
+        """
+        can_supply_st = list()
+        if len(techs) > 0:
+            for tech in techs:  # have to do these for loops because `any` changes the scope and can't access `self`
+                if hasattr('self.' + tech.lower() + '.can_supply_st'):
+                    if eval('self.' + tech.lower() + '.can_supply_st'):
+                        can_supply_st.append(tech.upper())
+        
+        return can_supply_st
+    
     def finalize(self):
         """
         necessary for writing out parameters that depend on which Techs are defined
@@ -1097,10 +1123,8 @@ class DataManager:
         max_sizes_bau, min_turn_down_bau, max_sizes_location_bau, min_allowable_size_bau = self._get_REopt_tech_max_sizes_min_turn_down(
             self.bau_techs, bau=True)
 
-        levelization_factor, pwf_e, pwf_om, two_party_factor, \
-        pwf_boiler_fuel, pwf_chp_fuel, pwf_fuel_by_tech = self._get_REopt_pwfs(self.available_techs)
-        levelization_factor_bau, pwf_e_bau, pwf_om_bau, two_party_factor_bau, \
-        pwf_boiler_fuel_bau, pwf_chp_fuel_bau, pwf_fuel_by_tech_bau = self._get_REopt_pwfs(self.bau_techs)
+        levelization_factor, pwf_e, pwf_om, two_party_factor, pwf_fuel_by_tech = self._get_REopt_pwfs(self.available_techs)
+        levelization_factor_bau, pwf_e_bau, pwf_om_bau, two_party_factor_bau, pwf_fuel_by_tech_bau = self._get_REopt_pwfs(self.bau_techs)
 
         pwf_prod_incent, max_prod_incent, max_size_for_prod_incent, production_incentive_rate \
             = self._get_REopt_production_incentives(self.available_techs)
@@ -1183,8 +1207,8 @@ class DataManager:
         techs_no_turndown = [t for t in reopt_techs if t.startswith("PV") or t.startswith("WIND")]
         techs_no_turndown_bau = [t for t in reopt_techs_bau if t.startswith("PV") or t.startswith("WIND")]
 
-        electric_techs = [t for t in reopt_techs if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR") or t.startswith("CHP")]
-        electric_techs_bau = [t for t in reopt_techs_bau if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR") or t.startswith("CHP")]
+        electric_techs = [t for t in reopt_techs if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR") or t.startswith("CHP") or t.lower().startswith('steamturbine')]
+        electric_techs_bau = [t for t in reopt_techs_bau if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR") or t.startswith("CHP") or t.lower().startswith('steamturbine')]
 
         time_steps_with_grid, time_steps_without_grid = self._get_time_steps_with_grid()
 
@@ -1231,13 +1255,26 @@ class DataManager:
         cooling_techs = [t for t in reopt_techs if t.lower().startswith('elecchl') or t.lower().startswith('absorpchl')]
         cooling_techs_bau = [t for t in reopt_techs_bau if t.lower().startswith('elecchl') or t.lower().startswith('absorpchl')]
 
-        heating_techs = [t for t in reopt_techs if t.lower().startswith('chp') or t.lower().startswith('boiler')]
-        heating_techs_bau = [t for t in reopt_techs_bau if t.lower().startswith('chp') or t.lower().startswith('boiler')]
+        heating_techs = [t for t in reopt_techs if t.lower().startswith('chp') or t.lower().endswith('boiler') or t.lower().startswith('steamturbine')]
+        heating_techs_bau = [t for t in reopt_techs_bau if t.lower().startswith('chp') or t.lower().endsswith('boiler') or t.lower().startswith('steamturbine')]
 
-        boiler_techs = [t for t in reopt_techs if t.lower().startswith('boiler')]
-        boiler_techs_bau = [t for t in reopt_techs_bau if t.lower().startswith('boiler')]
+        boiler_techs = [t for t in reopt_techs if t.lower().endswith('boiler')]
+        boiler_techs_bau = [t for t in reopt_techs_bau if t.lower().endswith('boiler')]
 
-        boiler_efficiency = self.boiler.boiler_efficiency if self.boiler != None else 1.0
+        steam_turbine_techs = [t for t in reopt_techs if t.lower().startswith('steamturbine')]
+        steam_turbine_techs_bau = [t for t in reopt_techs_bau if t.lower().endswith('steamturbine')]
+
+        can_supply_steam_turbine = self.can_supply_steam_turbine(heating_techs)
+        can_supply_steam_turbine_bau = list()  # Always empty for BAU
+
+        if self.steamturbine is not None:
+            st_elec_out_to_therm_in_ratio, st_therm_out_to_therm_in_ratio = \
+                self.steamturbine.st_elec_out_to_therm_in_ratio, self.steam_turbine.st_therm_out_to_therm_in_ratio
+        else:
+            st_elec_out_to_therm_in_ratio, st_therm_out_to_therm_in_ratio = 0.0, 0.0
+        st_elec_out_to_therm_in_ratio_bau, st_therm_out_to_therm_in_ratio_bau = 0.0, 0.0
+        
+        boiler_efficiency = [eval('self.' + tech + '.boiler_efficiency') for tech in boiler_techs if eval('self.' + tech) != None else 1.0]
         elec_chiller_cop = self.elecchl.chiller_cop if self.elecchl != None else 1.0
         
         if self.chp is not None:
@@ -1391,7 +1428,11 @@ class DataManager:
             'StorageDecayRate': storage_decay_rate,
             'DecompOptTol': self.optimality_tolerance_decomp_subproblem,
             'DecompTimeOut': self.timeout_decomp_subproblem_seconds,
-            'AddSOCIncentive': self.add_soc_incentive
+            'AddSOCIncentive': self.add_soc_incentive,
+            'SteamTurbineTechs': steam_turbine_techs,
+            'TechCanSupplySteamTurbine': can_supply_steam_turbine,
+            'STElecOutToThermInRatio': st_elec_out_to_therm_in_ratio,
+            'STThermOutToThermInRatio': st_therm_out_to_therm_in_ratio
             }
         ## Uncomment the following and run a scenario to get an updated modelinputs.json for creating Julia system image
         # import json
@@ -1523,5 +1564,9 @@ class DataManager:
             'StorageDecayRate': storage_decay_rate,
             'DecompOptTol': self.optimality_tolerance_decomp_subproblem,
             'DecompTimeOut': self.timeout_decomp_subproblem_seconds,
-            'AddSOCIncentive': self.add_soc_incentive
+            'AddSOCIncentive': self.add_soc_incentive,
+            'SteamTurbineTechs': steam_turbine_techs_bau,
+            'TechCanSupplySteamTurbine': can_supply_steam_turbine_bau,
+            'STElecOutToThermInRatio': st_elec_out_to_therm_in_ratio_bau,
+            'STThermOutToThermInRatio': st_therm_out_to_therm_in_ratio_bau            
         }
