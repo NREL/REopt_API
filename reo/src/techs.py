@@ -35,6 +35,7 @@ from reo.utilities import TONHOUR_TO_KWHT, generate_year_profile_hourly, MMBTU_T
 import os
 import json
 import copy
+import CoolProp.CoolProp as CP
 
 
 class Tech(object):
@@ -626,3 +627,130 @@ class AbsorptionChiller(Tech):
             absorp_chiller_cop = AbsorptionChiller.absorption_chiller_cop_defaults["hot_water"]
 
         return absorp_chiller_cop
+    
+
+
+class NewBoiler(Tech):
+
+    boiler_efficiency_defaults = {"hot_water": 0.90,
+                                  "steam_lp": 0.80,
+                                  "steam_hp": 0.75}
+
+    def __init__(self, dfm, **kwargs):
+        super(NewBoiler, self).__init__(**kwargs)
+
+        self.is_hot = True
+        self.reopt_class = 'NEWBOILER' 
+        self.min_mmbtu_per_hr = kwargs.get('min_mmbtu_per_hr')
+        self.max_mmbtu_per_hr = kwargs.get('max_mmbtu_per_hr')
+        self.boiler_efficiency = kwargs.get('boiler_efficiency')
+        self.can_supply_st = kwargs.get('can_supply_st')
+        self.installed_cost_us_dollars_per_mmbtu_per_hr = kwargs.get('installed_cost_us_dollars_per_mmbtu_per_hr')
+        self.om_cost_us_dollars_per_mmbtu_per_hr = kwargs.get('om_cost_us_dollars_per_mmbtu_per_hr')
+        self.om_cost_us_dollars_per_mmbtu = kwargs.get('om_cost_us_dollars_per_mmbtu')
+
+        # Convert cost basis of mmbtu/mmbtu_per_hr to kwh/kw
+        self.installed_cost_us_dollars_per_kw = self.installed_cost_us_dollars_per_mmbtu_per_hr / MMBTU_TO_KWH
+        self.om_cost_us_dollars_per_kw = self.om_cost_us_dollars_per_mmbtu_per_hr / MMBTU_TO_KWH
+        self.om_cost_us_dollars_per_kwh = self.om_cost_us_dollars_per_mmbtu / MMBTU_TO_KWH
+        
+        self.derate = 0  # TODO remove this from data_manager and *.jl model
+        self.n_timesteps = dfm.n_timesteps
+
+        dfm.add_newboiler(self)
+
+    @property
+    def prod_factor(self):
+        """
+        NewBoiler ProdFactor is where we can account for unavailability
+           and/or ambient temperature affects
+        :return: prod_factor
+        """
+        newboiler_prod_factor = [1.0 for _ in range(self.n_timesteps)]
+
+        return newboiler_prod_factor
+
+class SteamTurbine(Tech):
+
+    #TODO Define ST defaults here, such as ST outlet pressure for condensing, LP back-pressure, and HP back-pressure types
+    #      Also define default "sets" which represent technology types such as Nuclear, Biomass, Waste-To-Energy, etc 
+
+    def __init__(self, dfm, **kwargs):
+        super(SteamTurbine, self).__init__(**kwargs)
+
+        self.reopt_class = 'STEAMTURBINE'
+        self.is_condensing = kwargs.get('is_condensing') 
+        self.inlet_steam_pressure_psig = kwargs.get('inlet_steam_pressure_psig')
+        self.inlet_steam_temperature_degF = kwargs.get('inlet_steam_temperature_degF')
+        self.inlet_steam_superheat_degF = kwargs.get('inlet_steam_superheat_degF')
+        self.outlet_steam_pressure_psig = kwargs.get('outlet_steam_pressure_psig')
+        self.outlet_steam_min_vapor_fraction = kwargs.get('outlet_steam_min_vapor_fraction')
+        self.isentropic_efficiency = kwargs.get('isentropic_efficiency')
+        self.gearbox_generator_efficiency = kwargs.get('gearbox_generator_efficiency')
+        self.net_to_gross_electric_ratio = kwargs.get('net_to_gross_electric_ratio')
+        self.om_cost_us_dollars_per_kwh = kwargs.get('om_cost_us_dollars_per_kwh')
+
+        self.derate = 0  # TODO remove this from data_manager and *.jl model
+        self.n_timesteps = dfm.n_timesteps
+
+        self.st_elec_out_to_therm_in_ratio, self.st_therm_out_to_therm_in_ratio = self.st_elec_and_therm_prod_ratios()
+
+        dfm.add_steamturbine(self)
+
+    @property
+    def prod_factor(self):
+        """
+        SteamTurbine ProdFactor is where we can account for unavailability
+           and/or ambient temperature affects for condensing ST
+        :return: prod_factor
+        """
+        st_prod_factor = [1.0 for _ in range(self.n_timesteps)]
+
+        return st_prod_factor
+
+    def st_elec_and_therm_prod_ratios(self):
+        """
+        Calculate steam turbine (ST) electric output to thermal input ratio based on inlet and outlet steam conditions and ST performance.
+           Units of [kWe_net / kWt_in]
+        :return: st_elec_out_to_therm_in_ratio, st_therm_out_to_therm_in_ratio
+        """
+
+        # Convert input steam conditions to SI (absolute pressures, not gauge)
+        # ST Inlet
+        self.p_in_pa = (self.inlet_steam_pressure_psig / 14.5038 + 1.01325) * 1.0E5
+        if self.inlet_steam_temperature_degF is None:
+            self.t_in_sat_k = CP.PropsSI("T","P",self.p_in_pa,"Q",1.0,"Water")
+            self.t_superheat_in_k = (self.inlet_steam_superheat_degF - 32.0) * 5.0 / 9.0 + 273.15
+            self.t_in_k = self.t_in_sat_k + self.t_superheat_in_k
+        else:
+            self.t_in_k = (self.inlet_steam_temperature_degF - 32.0) * 5.0 / 9.0 + 273.15
+        self.h_in_j_per_kg = CP.PropsSI("H","P",self.p_in_pa,"T",t_in_k,"Water")
+        self.s_in_j_per_kgK = CP.PropsSI("S","P",self.p_in_pa,"T",t_in_k,"Water")
+        
+        # ST Outlet
+        self.p_out_pa = (self.outlet_steam_pressure_psig / 14.5038 + 1.01325) * 1.0E5
+        self.h_out_ideal_j_per_kg = CP.PropsSI("H","P",self.p_out_pa,"S",self.s_in_j_per_kgK,"Water")
+        self.h_out_j_per_kg = self.h_in_j_per_kg - self.isentropic_efficiency * (self.h_in_j_per_kg - self.h_out_ideal_j_per_kg)
+        self.x_out = CP.PropsSI("Q","P",self.p_out_pa,"H",self.h_out_j_per_kg,"Water")
+        
+        # ST Power
+        self.st_shaft_power_kwh_per_kg = (self.h_in_j_per_kg - self.h_out_j_per_kg) / 1000.0 / 3600.0
+        self.st_net_elec_power_kwh_per_kg = self.st_shaft_power_kwh_per_kg * self.gearbox_generator_efficiency * self.net_to_gross_electric_ratio
+
+        # Condenser heat rejection or heat recovery if ST is back-pressure
+        if self.is_condensing
+            self.heat_recovered_kwh_per_kg = 0.0
+        else:
+            self.h_out_sat_liq_j_per_kg = CP.PropsSI("H","P",self.p_out_pa,"Q",0.0,"Water")
+            self.heat_recovered_kwh_per_kg = (self.h_out_j_per_kg - self.h_out_sat_liq_j_per_kg) / 1000.0 / 3600.0
+
+        # Boiler Thermal Power - assume enthalpy at saturated liquid condition (ignore delta H of pump)
+        self.h_boiler_in_j_per_kg = CP.PropsSI("H","P",self.p_out_pa,"Q",0.0,"Water")
+        self.boiler_therm_power_kwh_per_kg = (self.h_in_j_per_kg - self.h_boiler_in_j_per_kg) / 1000.0 / 3600.0
+
+        # Calculate output ratios
+        st_elec_out_to_therm_in_ratio = self.st_net_elec_power_kwh_per_kg / self.boiler_therm_power_kwh_per_kg
+        st_therm_out_to_therm_in_ratio = self.heat_recovered_kwh_per_kg / self.boiler_therm_power_kwh_per_kg
+
+        return st_elec_out_to_therm_in_ratio, st_therm_out_to_therm_in_ratio
+    
