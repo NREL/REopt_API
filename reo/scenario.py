@@ -41,7 +41,7 @@ from reo.src.load_profile_chiller_thermal import LoadProfileChillerThermal
 from reo.src.profiler import Profiler
 from reo.src.site import Site
 from reo.src.storage import Storage, HotTES, ColdTES
-from reo.src.techs import PV, Util, Wind, Generator, CHP, Boiler, ElectricChiller, AbsorptionChiller
+from reo.src.techs import PV, Util, Wind, Generator, CHP, Boiler, ElectricChiller, AbsorptionChiller, NewBoiler, SteamTurbine
 from celery import shared_task, Task
 from reo.models import ModelManager
 from reo.exceptions import REoptError, UnexpectedError, LoadProfileError, WindDownloadError, PVWattsDownloadError
@@ -331,6 +331,20 @@ def setup_scenario(self, run_uuid, data, raw_post):
                     outage_end_time_step=inputs_dict['Site']['LoadProfile'].get("outage_end_time_step"),
                     )
 
+        if inputs_dict["Site"]["NewBoiler"]["max_mmbtu_per_hr"] > 0:
+            newboiler = NewBoiler(dfm=dfm, **inputs_dict['Site']['NewBoiler'])
+            # Any parameters processed and updated?
+            tmp = dict()
+            # Assign tmp["param"] = newboiler.xyx
+            ModelManager.updateModel('NewBoilerModel', tmp, run_uuid)
+        
+        if inputs_dict["Site"]["SteamTurbine"]["max_kw"] > 0:
+            steamturbine = SteamTurbine(dfm=dfm, **inputs_dict['Site']['SteamTurbine'])
+            # Any parameters processed and updated?
+            tmp = dict()
+            # Assign tmp["param"] = steamturbine.xyx
+            ModelManager.updateModel('SteamTurbineModel', tmp, run_uuid)
+
         # Assign decomposition subproblem optimization parameters - only used if decomposition is selected
         dfm.optimality_tolerance_decomp_subproblem = inputs_dict['optimality_tolerance_decomp_subproblem']
         dfm.timeout_decomp_subproblem_seconds = inputs_dict['timeout_decomp_subproblem_seconds']
@@ -342,7 +356,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
         # delete python objects, which are not serializable
 
         for k in ['storage', 'hot_tes', 'cold_tes', 'site', 'elec_tariff', 'fuel_tariff', 'pvs', 'pvnms',
-                'load', 'util', 'heating_load', 'cooling_load'] + dfm.available_techs:
+                'load', 'util', 'heating_load', 'cooling_load', 'newboiler', 'steamturbine'] + dfm.available_techs:
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
 
