@@ -423,7 +423,8 @@ class ValidateNestedInput:
                 "natural_gas":116.9,
                 "landfill_bio_gas":114.8,
                 "propane":138.6,
-                "diesel_oil": 163.1
+                "diesel_oil": 163.1,
+                "uranium": 0.0
             }
 
     fuel_conversion_per_gal = {
