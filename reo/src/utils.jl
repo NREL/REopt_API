@@ -190,7 +190,7 @@ Base.@kwdef struct Parameter
 	BoilerTechs::Array{String,1}
 	HeatingLoad::Array{Float64,1}
 	CoolingLoad::Array{Float64,1}
-	BoilerEfficiency::Float64
+	BoilerEfficiency::AxisArray
 	ElectricChillerCOP::Float64
     AbsorptionChillerCOP::Float64
     AbsorptionChillerElecCOP::Float64
@@ -203,6 +203,10 @@ Base.@kwdef struct Parameter
 	StorageDecayRate::AxisArray
 	DecompOptTol::Float64
 	DecompTimeOut::Int32
+    SteamTurbineTechs::Array{String,1}
+    TechCanSupplySteamTurbine::Array{String,1}
+    STElecOutToThermInRatio::Float64
+    STThermOutToThermInRatio::Float64
 end
 
 
@@ -323,6 +327,7 @@ function Parameter(d::Dict)
 	d["CHPThermalProdFactor"] = vector_to_axisarray(d["CHPThermalProdFactor"],d["CHPTechs"],d[:TimeStep])
 	d["pwf_fuel"] = AxisArray(d["pwf_fuel"], d["Tech"])
 	d["StorageDecayRate"] = AxisArray(d["StorageDecayRate"], d["Storage"])
+    d["BoilerEfficiency"] = AxisArray(d["BoilerEfficiency"],d["BoilerTechs"])
 
     # Indexed Sets
     if isempty(d["FuelType"])
