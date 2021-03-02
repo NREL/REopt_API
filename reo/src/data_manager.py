@@ -1529,5 +1529,5 @@ class DataManager:
             'DecompTimeOut': self.timeout_decomp_subproblem_seconds,
             'AddSOCIncentive': self.add_soc_incentive
         }
-        from celery.contrib import rdb
-        rdb.set_trace()        
+       # from celery.contrib import rdb
+        #rdb.set_trace()        

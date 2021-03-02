@@ -394,6 +394,7 @@ nested_input_definitions = {
         },
         "outage_utility_name": {
           "type": "str",
+          "default": None,
           "description": "Name of utility company, used by the default outage selector"
         },
         "use_default_outage": {
