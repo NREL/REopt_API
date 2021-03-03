@@ -32,14 +32,12 @@ function add_continuous_variables(m, p)
 		dvThermalProductionYIntercept[p.Tech, p.TimeStep] >= 0  #X^{tp}_{th}: Thermal production by technology t in time step h
 		dvAbsorptionChillerDemand[p.TimeStep] >= 0  #X^{ac}_h: Thermal power consumption by absorption chiller in time step h
 		dvElectricChillerDemand[p.TimeStep] >= 0  #X^{ec}_h: Electrical power consumption by electric chiller in time step h
-		dvOMByHourBySizeCHP[p.Tech, p.TimeStep] >= 0 
+		dvOMByHourBySizeCHP[p.Tech, p.TimeStep] >= 0
+        dvThermalToSteamTurbine[p.Tech, p.TimeStep] >= 0  # TODO check if faster to conditionally create this variable, only for p.TechCanSupplySteamTurbine
     end
 	if !isempty(p.ExportTiers)
 		@variable(m, dvProductionToGrid[p.Tech, p.ExportTiers, p.TimeStep] >= 0)  # X^{ptg}_{tuh}: Exports from electrical production to the grid by technology t in demand tier u during time step h [kW]   (NEW)
 	end
-    if !isempty(p.SteamTurbineTechs)
-        @variable(m, dvThermalToSteamTurbine[p.TechCanSupplySteamTurbine, p.TimeStep] >= 0)
-    end
 end
 
 
@@ -1154,9 +1152,9 @@ function reopt_results(m, p, r::Dict)
 		add_null_cold_tes_results(m, p, r)
 	end
     if !isempty(p.SteamTurbineTechs)
-		add_steam_turbine_results(m, p, r)
+		add_steamturbine_results(m, p, r)
 	else
-		add_null_steam_turbine_results(m, p, r)
+		add_null_steamturbine_results(m, p, r)
 	end
 	add_util_results(m, p, r)
 	return r
@@ -1195,6 +1193,7 @@ function add_null_chp_results(m, p, r::Dict)
 	r["chp_to_grid_series"] = []
 	r["chp_thermal_to_load_series"] = []
 	r["chp_thermal_to_tes_series"] = []
+    r["boiler_thermal_to_steamturbine_series"] = []
 	r["chp_thermal_to_waste_series"] = []
 	r["total_chp_fuel_cost"] = 0.0
 	r["year_one_chp_fuel_cost"] = 0.0
@@ -1206,6 +1205,7 @@ function add_null_boiler_results(m, p, r::Dict)
 	r["boiler_thermal_production_series"] = []
 	r["boiler_thermal_to_load_series"] = []
 	r["boiler_thermal_to_tes_series"] = []
+    r["boiler_thermal_to_steamturbine_series"] = []
 	r["year_one_fuel_to_boiler_kwh"] = 0.0
 	r["year_one_boiler_thermal_production_kwh"] = 0.0
 	r["total_boiler_fuel_cost"] = 0.0
@@ -1266,6 +1266,34 @@ function add_storage_results(m, p, r::Dict)
 	nothing
 end
 
+function add_null_newboiler_results(m, p, r::Dict)
+	r["newboiler_size_kw"] = 0.0
+    r["fuel_to_newboiler_series"] = []
+	r["newboiler_thermal_production_series"] = []
+	r["newboiler_thermal_to_load_series"] = []
+	r["newboiler_thermal_to_tes_series"] = []
+	r["newboiler_thermal_to_steamturbine_series"] = []    
+	r["year_one_fuel_to_newboiler_kwh"] = 0.0
+	r["year_one_newboiler_thermal_production_kwh"] = 0.0
+	r["total_newboiler_fuel_cost"] = 0.0
+	r["year_one_newboiler_fuel_cost"] = 0.0
+	nothing
+end
+
+function add_null_steamturbine_results(m, p, r::Dict)
+	r["steamturbine_kw"] = 0.0
+	r["year_one_steamturbine_thermal_consumption"] = 0.0
+	r["year_one_steamturbine_electric_energy_produced"] = 0.0
+	r["year_one_steamturbine_thermal_energy_produced"] = 0.0
+    r["steamturbine_thermal_consumption_series"] = []
+	r["steamturbine_electric_production_series"] = []
+	r["steamturbine_to_battery_series"] = []
+	r["steamturbine_electric_to_load_series"] = []
+	r["steamturbine_to_grid_series"] = []
+	r["steamturbine_thermal_to_load_series"] = []
+	r["steamturbine_thermal_to_tes_series"] = []
+	nothing
+end
 
 function add_generator_results(m, p, r::Dict)
 	m[:GenPerUnitSizeOMCosts] = @expression(m, p.two_party_factor *
@@ -1441,12 +1469,15 @@ function add_chp_results(m, p, r::Dict)
 	@expression(m, CHPtoHotTES[ts in p.TimeStep],
 		sum(m[:dvProductionToStorage]["HotTES",t,ts] for t in p.CHPTechs))
 	r["chp_thermal_to_tes_series"] = round.(value.(CHPtoHotTES), digits=5)
+	@expression(m, CHPToSteamTurbine[ts in p.TimeStep],
+		sum(m[:dvThermalToSteamTurbine][t,ts] for t in p.CHPTechs))
+	r["chp_thermal_to_steamturbine_series"] = round.(value.(CHPToSteamTurbine), digits=3)
 	@expression(m, CHPThermalToWaste[ts in p.TimeStep],
 		sum(m[:dvProductionToWaste][t,ts] for t in p.CHPTechs))
 	r["chp_thermal_to_waste_series"] = round.(value.(CHPThermalToWaste), digits=5)
 	@expression(m, CHPThermalToLoad[ts in p.TimeStep],
 		sum(m[:dvThermalProduction][t,ts]
-			for t in p.CHPTechs) - CHPtoHotTES[ts] - CHPThermalToWaste[ts])
+			for t in p.CHPTechs) - CHPtoHotTES[ts] - CHPToSteamTurbine[ts] - CHPThermalToWaste[ts])
 	r["chp_thermal_to_load_series"] = round.(value.(CHPThermalToLoad), digits=5)
 	@expression(m, TotalCHPFuelCharges,
 		p.pwf_fuel["CHP"] * p.TimeStepScaling * sum(p.FuelCost["CHPFUEL",ts] * m[:dvFuelUsage]["CHP",ts]
@@ -1472,9 +1503,12 @@ function add_boiler_results(m, p, r::Dict)
 	@expression(m, BoilerToHotTES[ts in p.TimeStep],
 		sum(m[:dvProductionToStorage]["HotTES",t,ts] for t in ["BOILER"]))
 	r["boiler_thermal_to_tes_series"] = round.(value.(BoilerToHotTES), digits=3)
+	@expression(m, BoilerToSteamTurbine[ts in p.TimeStep],
+		sum(m[:dvThermalToSteamTurbine][t,ts] for t in ["BOILER"]))
+	r["boiler_thermal_to_steamturbine_series"] = round.(value.(BoilerToSteamTurbine), digits=3)
 	@expression(m, BoilerToLoad[ts in p.TimeStep],
 		sum(m[:dvThermalProduction][t,ts] * p.ProductionFactor[t,ts]
-			for t in ["BOILER"]) - BoilerToHotTES[ts] )
+			for t in ["BOILER"]) - BoilerToHotTES[ts] - BoilerToSteamTurbine[ts])
 	r["boiler_thermal_to_load_series"] = round.(value.(BoilerToLoad), digits=3)
 	@expression(m, TotalBoilerFuelCharges,
 		p.pwf_fuel["BOILER"] * p.TimeStepScaling * sum(p.FuelCost["BOILERFUEL",ts] * m[:dvFuelUsage]["BOILER",ts]
@@ -1558,6 +1592,72 @@ function add_cold_tes_results(m, p, r::Dict)
 	nothing
 end
 
+function add_newboiler_results(m, p, r::Dict)
+	##NewBoiler results go here; need to populate expressions for first collection
+	r["newboiler_kw"] = round(value(m[:dvSize]["NEWBOILER"]), digits=3)
+    @expression(m, FuelToNewBoiler[ts in p.TimeStep], m[:dvFuelUsage]["NEWBOILER", ts])
+	r["fuel_to_newboiler_series"] = round.(value.(FuelToNewBoiler), digits=3)
+	@expression(m, NewBoilerThermalProd[ts in p.TimeStep], p.ProductionFactor["NEWBOILER",ts] * m[:dvThermalProduction]["NEWBOILER",ts])
+	r["newboiler_thermal_production_series"] = round.(value.(NewBoilerThermalProd), digits=3)
+	@expression(m, NewBoilerFuelUsed, sum(m[:dvFuelUsage]["NEWBOILER", ts] for ts in p.TimeStep))
+	r["year_one_fuel_to_newboiler_kwh"] = round(value(NewBoilerFuelUsed), digits=3)
+	@expression(m, NewBoilerThermalProduced, sum(p.ProductionFactor["NEWBOILER",ts] * m[:dvThermalProduction]["NEWBOILER",ts]
+		for ts in p.TimeStep))
+	r["year_one_newboiler_thermal_production_kwh"] = round(value(NewBoilerThermalProduced), digits=3)
+	@expression(m, NewBoilerToHotTES[ts in p.TimeStep],
+		sum(m[:dvProductionToStorage]["HotTES",t,ts] for t in ["NEWBOILER"]))  # Does this "for t in ["NEWBOILER"] avoid issues if "HotTES" doesn't exist?
+	r["newboiler_thermal_to_tes_series"] = round.(value.(NewBoilerToHotTES), digits=3)
+	@expression(m, NewBoilerToSteamTurbine[ts in p.TimeStep],
+		sum(m[:dvThermalToSteamTurbine][t,ts] for t in ["NEWBOILER"]))
+	r["newboiler_thermal_to_steamturbine_series"] = round.(value.(NewBoilerToSteamTurbine), digits=3)
+	@expression(m, NewBoilerToLoad[ts in p.TimeStep],
+		sum((m[:dvThermalProduction]["NEWBOILER",ts] - NewBoilerToSteamTurbine[ts]) * p.ProductionFactor[t,ts] - NewBoilerToHotTES[ts] ))
+	r["newboiler_thermal_to_load_series"] = round.(value.(NewBoilerToLoad), digits=3)
+	@expression(m, TotalNewBoilerFuelCharges,
+		p.pwf_fuel["NEWBOILER"] * p.TimeStepScaling * sum(p.FuelCost["NEWBOILERFUEL",ts] * m[:dvFuelUsage]["NEWBOILER",ts]
+			for ts in p.TimeStep))
+	r["total_newboiler_fuel_cost"] = round(value(TotalNewBoilerFuelCharges * m[:r_tax_fraction_offtaker]), digits=3)
+	r["year_one_newboiler_fuel_cost"] = round(value(TotalNewBoilerFuelCharges / p.pwf_fuel["NEWBOILER"]), digits=3)
+	nothing
+end
+
+function add_steamturbine_results(m, p, r::Dict)
+	r["SteamTurbine"] = Dict()
+	r["steamturbine_kw"] = round(value(sum(m[:dvSize][t] for t in p.SteamTurbineTechs)), digits=3)
+    @expression(m, Year1SteamTurbineThermalConsumption,
+		p.TimeStepScaling * sum(m[:dvThermalToSteamTurbine][tst,ts] for tst in p.TechCanSupplySteamTurbine, ts in p.TimeStep))
+    r["year_one_steamturbine_thermal_consumption"] = round(value(Year1SteamTurbineThermalConsumption), digits=3)    
+    @expression(m, Year1SteamTurbineElecProd,
+		p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts]
+			for t in p.SteamTurbineTechs, ts in p.TimeStep))
+	r["year_one_steamturbine_electric_energy_produced"] = round(value(Year1SteamTurbineElecProd), digits=3)
+	@expression(m, Year1SteamTurbineThermalProd,
+		p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts] for t in p.SteamTurbineTechs, ts in p.TimeStep))
+	r["year_one_steamturbine_thermal_energy_produced"] = round(value(Year1SteamTurbineThermalProd), digits=3)
+    @expression(m, SteamTurbineThermalConsumption[ts in p.TimeStep],
+		sum(m[:dvThermalToSteamTurbine][tst,ts] for tst in p.TechCanSupplySteamTurbine))
+    r["steamturbine_thermal_consumption_series"] = round.(value.(Year1SteamTurbineThermalConsumption), digits=3)     
+	@expression(m, SteamTurbineElecProdTotal[ts in p.TimeStep],
+		sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] for t in p.SteamTurbineTechs))
+	r["steamturbine_electric_production_series"] = round.(value.(SteamTurbineElecProdTotal), digits=3)
+	@expression(m, SteamTurbinetoGrid[ts in p.TimeStep], sum(m[:dvProductionToGrid][t,u,ts]
+			for t in p.SteamTurbineTechs, u in p.ExportTiersByTech[t]))
+	r["steamturbine_to_grid_series"] = round.(value.(SteamTurbinetoGrid), digits=3)
+	@expression(m, SteamTurbinetoBatt[ts in p.TimeStep],
+		sum(m[:dvProductionToStorage]["Elec",t,ts] for t in p.SteamTurbineTechs))
+	r["steamturbine_to_battery_series"] = round.(value.(SteamTurbinetoBatt), digits=3)
+	@expression(m, SteamTurbinetoLoad[ts in p.TimeStep],
+		sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
+			for t in p.SteamTurbineTechs) - SteamTurbinetoBatt[ts] - SteamTurbinetoGrid[ts])
+	r["steamturbine_electric_to_load_series"] = round.(value.(SteamTurbinetoLoad), digits=3)
+	@expression(m, SteamTurbinetoHotTES[ts in p.TimeStep],
+		sum(m[:dvProductionToStorage]["HotTES",t,ts] for t in p.SteamTurbineTechs))
+	r["steamturbine_thermal_to_tes_series"] = round.(value.(SteamTurbinetoHotTES), digits=3)
+	@expression(m, SteamTurbineThermalToLoad[ts in p.TimeStep],
+		sum(m[:dvThermalProduction][t,ts] for t in p.SteamTurbineTechs) - SteamTurbinetoHotTES[ts])
+	r["steamturbine_thermal_to_load_series"] = round.(value.(SteamTurbineThermalToLoad), digits=3)
+	nothing
+end
 
 function add_util_results(m, p, r::Dict)
     net_capital_costs_plus_om = value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]) +
