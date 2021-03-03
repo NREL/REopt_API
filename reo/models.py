@@ -391,6 +391,8 @@ class FuelTariffModel(models.Model):
     total_chp_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
     year_one_chp_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
     total_boiler_fuel_cost_bau_us_dollars = models.FloatField(null=True, blank=True)
+    total_newboiler_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
+    year_one_newboiler_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -731,6 +733,8 @@ class CHPModel(models.Model):
             models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
     year_one_thermal_to_tes_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
+    year_one_thermal_to_steamturbine_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
     year_one_thermal_to_waste_series_mmbtu_per_hour = ArrayField(
             models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
     year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
@@ -796,6 +800,8 @@ class BoilerModel(models.Model):
             models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
     year_one_thermal_to_tes_series_mmbtu_per_hour = ArrayField(
             models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
+    year_one_thermal_to_steamturbine_series_mmbtu_per_hour = ArrayField(
+            models.FloatField(null=True, blank=True), default=list, null=True, blank=True)            
     year_one_boiler_fuel_consumption_mmbtu = models.FloatField(null=True, blank=True)
     year_one_boiler_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
     year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
@@ -897,14 +903,26 @@ class NewBoilerModel(models.Model):
     max_mmbtu_per_hr = models.FloatField(null=True, blank=True)
     boiler_efficiency = models.FloatField(null=True, blank=True)
     can_supply_st = models.BooleanField(null=True, blank=True)
-    boiler_efficiency = models.FloatField(blank=True, null=True)
     installed_cost_us_dollars_per_mmbtu_per_hr = models.FloatField(null=True, blank=True)
     om_cost_us_dollars_per_mmbtu_per_hr = models.FloatField(null=True, blank=True)
     om_cost_us_dollars_per_mmbtu = models.FloatField(null=True, blank=True)
     emissions_factor_lb_CO2_per_mmbtu = models.FloatField(null=True, blank=True)
 
     # Outputs
-    # TODO
+    size_mmbtu_per_hr = models.FloatField(null=True, blank=True)    
+    year_one_boiler_fuel_consumption_series_mmbtu_per_hr = ArrayField(
+            models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
+    year_one_boiler_thermal_production_series_mmbtu_per_hr = ArrayField(
+            models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
+    year_one_thermal_to_load_series_mmbtu_per_hour = ArrayField(
+            models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
+    year_one_thermal_to_tes_series_mmbtu_per_hour = ArrayField(
+            models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
+    year_one_thermal_to_steamturbine_series_mmbtu_per_hour = ArrayField(
+            models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
+    year_one_boiler_fuel_consumption_mmbtu = models.FloatField(null=True, blank=True)
+    year_one_boiler_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
+    year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -937,7 +955,24 @@ class SteamTurbineModel(models.Model):
     can_curtail = models.BooleanField(null=True, blank=True)
 
     # Outputs
-    # TODO
+    size_kw = models.FloatField(null=True, blank=True)
+    year_one_thermal_consumption_mmbtu = models.FloatField(null=True, blank=True)
+    year_one_electric_energy_produced_kwh = models.FloatField(null=True, blank=True)
+    year_one_thermal_energy_produced_mmbtu = models.FloatField(null=True, blank=True)
+    year_one_thermal_consumption_series_mmbtu_per_hr = ArrayField(
+            models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
+    year_one_electric_production_series_kw = ArrayField(
+            models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
+    year_one_to_battery_series_kw = ArrayField(
+            models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
+    year_one_to_load_series_kw = ArrayField(
+            models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
+    year_one_to_grid_series_kw = ArrayField(
+            models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
+    year_one_thermal_to_load_series_mmbtu_per_hour = ArrayField(
+            models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
+    year_one_thermal_to_tes_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):

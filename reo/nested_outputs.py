@@ -694,7 +694,17 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Business as usual total boiler fuel cost over the lifecycle, after-tax",
                   "units": "$"
-                }
+                },
+                "total_newboiler_fuel_cost_us_dollars": {
+                  "type": float,
+                  "description": "Total NewBoiler fuel cost over the lifecycle, after-tax",
+                  "units": "$"
+                },
+                "year_one_newboiler_fuel_cost_us_dollars": {
+                  "type": float,
+                  "description": "Year one NewBoiler fuel cost, before-tax",
+                  "units": "$"
+                }                
               },
 
               "Generator": {
@@ -866,6 +876,11 @@ nested_output_definitions = {
                   "description": "Year one hourly time series of CHP thermal to Hot TES",
                   "units": "MMBtu/hr"
                 },
+                "year_one_thermal_to_steamturbine_series_mmbtu_per_hour": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of CHP thermal to SteamTurbine",
+                  "units": "MMBtu/hr"
+                },								
                 "year_one_thermal_to_waste_series_mmbtu_per_hour": {
                   "type": list_of_float,
                   "description": "Year one hourly time series of CHP thermal to waste heat",
@@ -906,14 +921,19 @@ nested_output_definitions = {
                 },
                 "year_one_thermal_to_load_series_mmbtu_per_hour": {
                   "type": list_of_float,
-                  "description": "Year one hourly time series of CHP thermal to hot thermal load",
+                  "description": "Year one hourly time series of boiler thermal to hot thermal load",
                   "units": "MMBtu/hr"
                 },
                 "year_one_thermal_to_tes_series_mmbtu_per_hour": {
                   "type": list_of_float,
-                  "description": "Year one hourly time series of CHP thermal to Hot TES",
+                  "description": "Year one hourly time series of boiler thermal to Hot TES",
                   "units": "MMBtu/hr"
                 },
+                "year_one_thermal_to_steamturbine_series_mmbtu_per_hour": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of CHP thermal to SteamTurbine",
+                  "units": "MMBtu/hr"
+                },						
                 "year_one_emissions_lb_C02": {
                   "type": int,
                   "description": "Total equivalent pounds of carbon dioxide emitted from boiler fuels consumed on site use in the first year.",
@@ -1001,7 +1021,7 @@ nested_output_definitions = {
                 "size_gal": {
                   "type": float,
                   "description": "Optimal cold TES power capacity",
-                  "units": "Ton"
+                  "units": "gal"
                 },
                 "year_one_thermal_from_cold_tes_series_ton": {
                   "type": list_of_float,
@@ -1019,7 +1039,7 @@ nested_output_definitions = {
                 "size_gal": {
                   "type": float,
                   "description": "Optimal hot TES power capacity",
-                  "units": "MMBtu/hr"
+                  "units": "gal"
                 },
                 "year_one_thermal_from_hot_tes_series_mmbtu_per_hr": {
                   "type": list_of_float,
@@ -1031,10 +1051,114 @@ nested_output_definitions = {
                   "description": "Year one hourly time series of hot TES state of charge",
                   "units": "%"
                 }
-            }
-          }
-        }
-      },
+            	},
+              "NewBoiler": {
+                "size_mmbtu_per_hr": {
+                  "type": float,
+                  "description": "Optimal NewBoiler thermal power capacity",
+                  "units": "MMBtu/hr"
+                },                  
+                "year_one_boiler_fuel_consumption_series_mmbtu_per_hr": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of NewBoiler fuel consumption",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_boiler_thermal_production_series_mmbtu_per_hr": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of NewBoiler thermal production",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_boiler_fuel_consumption_mmbtu": {
+                  "type": float,
+                  "description": "Annual average NewBoiler fuel consumption",
+                  "units": "MMBtu"
+                },
+                "year_one_boiler_thermal_production_mmbtu": {
+                  "type": float,
+                  "description": "Annual average NewBoiler thermal production",
+                  "units": "MMBtu"
+                },
+                "year_one_thermal_to_load_series_mmbtu_per_hour": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of NewBoiler thermal to hot thermal load",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_thermal_to_tes_series_mmbtu_per_hour": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of NewBoiler thermal to Hot TES",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_thermal_to_steamturbine_series_mmbtu_per_hour": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of NewBoiler thermal to SteamTurbine",
+                  "units": "MMBtu/hr"
+                },                
+                "year_one_emissions_lb_C02": {
+                  "type": int,
+                  "description": "Total equivalent pounds of carbon dioxide emitted from NewBoiler fuels consumed on site use in the first year.",
+                  "units": "hours"
+                }              
+            	},
+              "SteamTurbine": {
+                "size_kw": {
+                  "type": float,
+                  "description": "Optimal SteamTurbine rated electric size",
+                  "units": "kW"
+                },
+                "year_one_thermal_consumption_mmbtu": {
+                  "type": float,
+                  "description": "SteamTurbine thermal consumed used over one year",
+                  "units": "MMBtu"
+                },
+                "year_one_electric_energy_produced_kwh": {
+                  "type": float,
+                  "description": "Year one electric energy produced by SteamTurbine",
+                  "units": "kWh"
+                },
+                "year_one_thermal_energy_produced_mmbtu": {
+                  "type": float,
+                  "description": "Year one thermal energy produced by SteamTurbine",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_thermal_consumption_series_mmbtu_per_hr": {
+                  "type": float,
+                  "description": "Year one SteamTurbine thermal production time series",
+                  "units": "MMBtu/hr"
+                },								
+                "year_one_electric_production_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one SteamTurbine electric production time series",
+                  "units": "kW"
+                },
+                "year_one_to_battery_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of SteamTurbine charging battery",
+                  "units": "kW"
+                },
+                "year_one_to_load_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one SteamTurbine to electric load time series.",
+                  "units": "kW"
+                },
+                "year_one_to_grid_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of SteamTurbine exporting to grid",
+                  "units": "kW"
+                },
+                "year_one_thermal_to_load_series_mmbtu_per_hour": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of SteamTurbine thermal to hot thermal load",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_thermal_to_tes_series_mmbtu_per_hour": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of SteamTurbine thermal to Hot TES",
+                  "units": "MMBtu/hr"
+                }
+            	}            
+          	}
+        	}
+    },
 
     "messages": {
         "warnings": {'type': "list_of_string", "description": "Warnings generated by simulation"},
