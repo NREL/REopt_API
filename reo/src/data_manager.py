@@ -31,7 +31,7 @@ import copy
 from reo.src.urdb_parse import UrdbParse
 from reo.src.fuel_params import FuelParams
 from reo.utilities import annuity, degradation_factor, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
-    insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, annuity_escalation
+    insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, annuity_escalation, MMBTU_TO_KWH
 import numpy as np
 max_incentive = 1.0e10
 
@@ -700,7 +700,7 @@ class DataManager:
                 charge_efficiency.append(self.hot_tes.internal_efficiency_pct)
                 charge_efficiency.append(self.cold_tes.internal_efficiency_pct)
                 # Yearly fixed O&M per unit power
-                if tech.lower() == 'boiler' or tech.lower() == 'elec_chl':
+                if tech.lower() in ['boiler', 'elecchl']:
                     om_cost_us_dollars_per_kw.append(0)
                 else:
                     om_cost_us_dollars_per_kw.append(eval('self.' + tech + '.om_cost_us_dollars_per_kw'))
@@ -765,8 +765,6 @@ class DataManager:
                             min_sizes.append((eval('self.' + tech + '.existing_kw') or 0.0))
                         else:
                             min_sizes.append((eval('self.' + tech + '.existing_kw') or 0.0) + (eval('self.' + tech + '.min_kw') or 0.0))
-                    elif tech.lower() == 'boiler':
-                        min_sizes.append(eval('self.' + tech + '.min_mmbtu_per_hr'))
                     else:
                         min_sizes.append((eval('self.' + tech + '.min_kw') or 0.0))
 
@@ -855,8 +853,6 @@ class DataManager:
 
                 if bau and existing_kw > 0:  # existing PV in BAU scenario
                     max_sizes.append(float(existing_kw))
-                elif tech.lower() == 'boiler':
-                    max_sizes.append(eval('self.' + tech + '.max_mmbtu_per_hr'))
                 else:
                     max_sizes.append(float(existing_kw + beyond_existing_cap_kw))
 
@@ -945,8 +941,8 @@ class DataManager:
         storage_power_cost.append(StorageCostPerKW)
         storage_energy_cost.append(StorageCostPerKWH)
         if self.hot_tes is not None:
-            HotTESCostPerMMBTU = setup_capital_cost_incentive(
-                self.hot_tes.installed_cost_us_dollars_per_mmbtu,  # use full cost as basis
+            HotTESCostPerKWH = setup_capital_cost_incentive(
+                self.hot_tes.installed_cost_us_dollars_per_kwh,  # use full cost as basis
                 0,
                 0,
                 sf.owner_discount_pct,
@@ -958,12 +954,12 @@ class DataManager:
             )
             storage_techs.append('HotTES')
             storage_power_cost.append(0.0)
-            storage_energy_cost.append(HotTESCostPerMMBTU)
+            storage_energy_cost.append(HotTESCostPerKWH)
             #Note: power not sized in REopt; assume full charge or discharge in one timestep.
-            storage_min_power.append(self.hot_tes.min_mmbtu / self.steplength)
-            storage_max_power.append(self.hot_tes.max_mmbtu / self.steplength)
-            storage_min_energy.append(self.hot_tes.min_mmbtu)
-            storage_max_energy.append(self.hot_tes.max_mmbtu)
+            storage_min_power.append(self.hot_tes.min_kwh / self.steplength)
+            storage_max_power.append(self.hot_tes.max_kwh / self.steplength)
+            storage_min_energy.append(self.hot_tes.min_kwh)
+            storage_max_energy.append(self.hot_tes.max_kwh)
             storage_decay_rate.append(self.hot_tes.thermal_decay_rate_fraction)
 
         if self.cold_tes is not None:
@@ -1199,9 +1195,9 @@ class DataManager:
             self._get_export_curtailment_params(reopt_techs_bau, tariff_args.grid_export_rates_bau,
                                                 self.elec_tariff.net_metering_limit_kw)
 
-        #populate heating and cooling loads with zeros if not included in model.
+        # Populate heating (convert to kw/kwh) and cooling loads with zeros if not included in model.
         if self.heating_load != None:
-            heating_load = self.heating_load.load_list
+            heating_load = [self.heating_load.load_list[i] * MMBTU_TO_KWH for i in range(len(self.heating_load.load_list))]
         else:
             heating_load = [0.0 for _ in self.load.load_list]
         if self.LoadProfile["annual_cooling_kwh"] > 0.0:

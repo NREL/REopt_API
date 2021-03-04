@@ -28,6 +28,13 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## develop (unreleased)
+### Minor Updates
+##### Changed
+- `reo`, `*.jl`: Changed the units-basis for heating load, thermal production, and fuel consumption to kW/kWh, from mmbtu/mmbtu_per_hr and gal. This does not affect the units of the inputs or outputs.
+##### Removed
+- `reo`: The following inputs for `Site.Boiler`: `installed_cost_us_dollars_per_mmbtu_per_hr`, `min_mmbtu_per_hr`, and `max_mmbtu_per_hr`, and for `Site.ElectricChiller`: `installed_cost_us_dollars_per_kw`, `min_kw`, and `max_kw`.
+
 ## v1.4.4 - 2021-02-25
 ### Patches
 - `reo`: In `validators.py` catches case where invalid percent_share entry was used in check special cases function
