@@ -19,6 +19,7 @@ data:
   {{ end }}
   DJANGO_SETTINGS_MODULE: {{ .Values.djangoSettingsModule | quote }}
   SOLVER: xpress
+  JULIA_NUM_THREADS: 2
   JULIA_HOST: {{ tpl .Values.juliaHost . | quote }}
   REDIS_HOST: {{ tpl .Values.redisHost . | quote }}
   REDIS_PORT: {{ .Values.redisPort | quote }}
