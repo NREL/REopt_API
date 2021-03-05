@@ -51,8 +51,9 @@ class FuelParams:
         # Assign monthly fuel rates for boiler and chp and then convert to timestep intervals
         self.boiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu = fuel_tariff.monthly_rates('boiler')
         self.chp_fuel_blended_monthly_rates_us_dollars_per_mmbtu = fuel_tariff.monthly_rates('chp')
-        self.chp_fuel_rate_array = []
+        self.newboiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu = fuel_tariff.monthly_rates('newboiler')
         self.boiler_fuel_rate_array = []
+        self.chp_fuel_rate_array = []
         self.newboiler_fuel_rate_array = []
         for month in range(0, 12):
             # Create full length (timestep) array of NG cost, converting $/MMBtu to $/kWh
