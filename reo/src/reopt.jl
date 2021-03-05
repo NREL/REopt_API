@@ -225,7 +225,7 @@ function add_bigM_adjustments(m, p)
 		m[:NewMaxSize][t] = maximum([sum(p.HeatingLoad[ts] for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month])
 		if (m[:NewMaxSize][t] > p.MaxSize[t])
 			m[:NewMaxSize][t] = p.MaxSize[t]
-		end
+        end
 	end
 	for t in p.CoolingTechs
 		m[:NewMaxSize][t] = maximum([sum(p.CoolingLoad[ts] for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month])
@@ -233,7 +233,7 @@ function add_bigM_adjustments(m, p)
 			m[:NewMaxSize][t] = p.MaxSize[t]
 		end
 	end
-	for t in p.ElectricTechs
+	for t in p.ElectricTechs  # This will overwrite any NewMaxSize assigned above if Techs are also ElectricTechs (e.g. CHP and SteamTurbine)
 		m[:NewMaxSize][t] = maximum([sum(p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP  for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month])
 		if (m[:NewMaxSize][t] > p.MaxSize[t])
 			m[:NewMaxSize][t] = p.MaxSize[t]
@@ -512,7 +512,7 @@ function add_thermal_load_constraints(m, p)
                 sum(m[:dvThermalProduction][t,ts] for t in p.SteamTurbineTechs) +                
 				sum(p.ProductionFactor[t,ts] * (m[:dvThermalProduction][t,ts] - m[:dvThermalToSteamTurbine][t,ts]) for t in p.BoilerTechs) +
 				sum(m[:dvDischargeFromStorage][b,ts] for b in p.HotTES) ==
-				p.HeatingLoad[ts] * p.BoilerEfficiency["Boiler"] +
+				p.HeatingLoad[ts] * p.BoilerEfficiency["BOILER"] +
 				sum(m[:dvProductionToWaste][t,ts] for t in p.CHPTechs) + sum(m[:dvProductionToStorage][b,t,ts] for b in p.HotTES, t in p.HeatingTechs)  +
 				sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers) / p.AbsorptionChillerCOP
 		)
@@ -1193,7 +1193,7 @@ function add_null_chp_results(m, p, r::Dict)
 	r["chp_to_grid_series"] = []
 	r["chp_thermal_to_load_series"] = []
 	r["chp_thermal_to_tes_series"] = []
-    r["boiler_thermal_to_steamturbine_series"] = []
+    r["chp_thermal_to_steamturbine_series"] = []
 	r["chp_thermal_to_waste_series"] = []
 	r["total_chp_fuel_cost"] = 0.0
 	r["year_one_chp_fuel_cost"] = 0.0
@@ -1605,13 +1605,13 @@ function add_newboiler_results(m, p, r::Dict)
 		for ts in p.TimeStep))
 	r["year_one_newboiler_thermal_production_kwh"] = round(value(NewBoilerThermalProduced), digits=3)
 	@expression(m, NewBoilerToHotTES[ts in p.TimeStep],
-		sum(m[:dvProductionToStorage]["HotTES",t,ts] for t in ["NEWBOILER"]))  # Does this "for t in ["NEWBOILER"] avoid issues if "HotTES" doesn't exist?
+		sum(m[:dvProductionToStorage]["HotTES","NEWBOILER",ts]))
 	r["newboiler_thermal_to_tes_series"] = round.(value.(NewBoilerToHotTES), digits=3)
 	@expression(m, NewBoilerToSteamTurbine[ts in p.TimeStep],
-		sum(m[:dvThermalToSteamTurbine][t,ts] for t in ["NEWBOILER"]))
+		sum(m[:dvThermalToSteamTurbine]["NEWBOILER",ts]))
 	r["newboiler_thermal_to_steamturbine_series"] = round.(value.(NewBoilerToSteamTurbine), digits=3)
 	@expression(m, NewBoilerToLoad[ts in p.TimeStep],
-		sum((m[:dvThermalProduction]["NEWBOILER",ts] - NewBoilerToSteamTurbine[ts]) * p.ProductionFactor[t,ts] - NewBoilerToHotTES[ts] ))
+		sum((m[:dvThermalProduction]["NEWBOILER",ts] - NewBoilerToSteamTurbine[ts]) * p.ProductionFactor["NEWBOILER",ts] - NewBoilerToHotTES[ts] ))
 	r["newboiler_thermal_to_load_series"] = round.(value.(NewBoilerToLoad), digits=3)
 	@expression(m, TotalNewBoilerFuelCharges,
 		p.pwf_fuel["NEWBOILER"] * p.TimeStepScaling * sum(p.FuelCost["NEWBOILERFUEL",ts] * m[:dvFuelUsage]["NEWBOILER",ts]
@@ -1636,7 +1636,7 @@ function add_steamturbine_results(m, p, r::Dict)
 	r["year_one_steamturbine_thermal_energy_produced"] = round(value(Year1SteamTurbineThermalProd), digits=3)
     @expression(m, SteamTurbineThermalConsumption[ts in p.TimeStep],
 		sum(m[:dvThermalToSteamTurbine][tst,ts] for tst in p.TechCanSupplySteamTurbine))
-    r["steamturbine_thermal_consumption_series"] = round.(value.(Year1SteamTurbineThermalConsumption), digits=3)     
+    r["steamturbine_thermal_consumption_series"] = round.(value.(SteamTurbineThermalConsumption), digits=3)     
 	@expression(m, SteamTurbineElecProdTotal[ts in p.TimeStep],
 		sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] for t in p.SteamTurbineTechs))
 	r["steamturbine_electric_production_series"] = round.(value.(SteamTurbineElecProdTotal), digits=3)

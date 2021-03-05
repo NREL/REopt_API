@@ -546,8 +546,8 @@ class DataManager:
 
                     if cost_curve_bp_x[s + 1] > 0:
                         # Remove federal incentives for ITC basis and tax benefit calculations
-                        itc = eval('self.' + tech + '.incentives.federal.itc')
-                        rebate_federal = eval('self.' + tech + '.incentives.federal.rebate')
+                        itc = eval('self.' + tech.lower() + '.incentives.federal.itc')
+                        rebate_federal = eval('self.' + tech.lower() + '.incentives.federal.rebate')
                         if itc is None or rebate_federal is None:
                             itc = 0.0
                             rebate_federal = 0.0
@@ -718,7 +718,7 @@ class DataManager:
 
                 # Only certain techs have variable o&m cost, and CHP also has a unique hourly-operating O&M
                 if tech.lower() in ['generator', 'newboiler', 'steamturbine']:
-                    om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.kwargs["om_cost_us_dollars_per_kwh"]')))
+                    om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kwh')))
                     om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
                 elif tech.lower() == 'chp':
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kwh')))
@@ -1090,7 +1090,7 @@ class DataManager:
         can_supply_st = list()
         if len(techs) > 0:
             for tech in techs:  # have to do these for loops because `any` changes the scope and can't access `self`
-                if hasattr('self.' + tech.lower() + '.can_supply_st'):
+                if hasattr(eval('self.' + tech.lower()), 'can_supply_st'):
                     if eval('self.' + tech.lower() + '.can_supply_st'):
                         can_supply_st.append(tech.upper())
         
@@ -1256,7 +1256,7 @@ class DataManager:
         cooling_techs_bau = [t for t in reopt_techs_bau if t.lower().startswith('elecchl') or t.lower().startswith('absorpchl')]
 
         heating_techs = [t for t in reopt_techs if t.lower().startswith('chp') or t.lower().endswith('boiler') or t.lower().startswith('steamturbine')]
-        heating_techs_bau = [t for t in reopt_techs_bau if t.lower().startswith('chp') or t.lower().endsswith('boiler') or t.lower().startswith('steamturbine')]
+        heating_techs_bau = [t for t in reopt_techs_bau if t.lower().startswith('chp') or t.lower().endswith('boiler') or t.lower().startswith('steamturbine')]
 
         boiler_techs = [t for t in reopt_techs if t.lower().endswith('boiler')]
         boiler_techs_bau = [t for t in reopt_techs_bau if t.lower().endswith('boiler')]
@@ -1269,12 +1269,17 @@ class DataManager:
 
         if self.steamturbine is not None:
             st_elec_out_to_therm_in_ratio, st_therm_out_to_therm_in_ratio = \
-                self.steamturbine.st_elec_out_to_therm_in_ratio, self.steam_turbine.st_therm_out_to_therm_in_ratio
+                self.steamturbine.st_elec_out_to_therm_in_ratio, self.steamturbine.st_therm_out_to_therm_in_ratio
         else:
             st_elec_out_to_therm_in_ratio, st_therm_out_to_therm_in_ratio = 0.0, 0.0
         st_elec_out_to_therm_in_ratio_bau, st_therm_out_to_therm_in_ratio_bau = 0.0, 0.0
         
-        boiler_efficiency = [eval('self.' + tech + '.boiler_efficiency') for tech in boiler_techs if eval('self.' + tech) != None else 1.0]
+        # Must always create boiler_efficiency, even if no boiler techs
+        boiler_efficiency = [1.0, 1.0]
+        for i, tech in enumerate([t for t in self.available_techs if t.lower().endswith('boiler')]):
+            if eval('self.' + tech.lower()) != None:
+                boiler_efficiency[i] = eval('self.' + tech.lower() + '.boiler_efficiency')
+        
         elec_chiller_cop = self.elecchl.chiller_cop if self.elecchl != None else 1.0
         
         if self.chp is not None:

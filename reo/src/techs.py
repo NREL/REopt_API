@@ -261,6 +261,7 @@ class Generator(Tech):
         self.fuel_avail_before_outage_pct = fuel_avail_before_outage_pct
         self.generator_sells_energy_back_to_grid = kwargs['generator_sells_energy_back_to_grid']
         self.diesel_fuel_cost_us_dollars_per_gallon = kwargs['diesel_fuel_cost_us_dollars_per_gallon']
+        self.om_cost_us_dollars_per_kwh = kwargs['om_cost_us_dollars_per_kwh']
         self.derate = 0.0
         self.incentives = Incentives(**kwargs)
         if max_kw < min_kw:
@@ -474,6 +475,7 @@ class Boiler(Tech):
         self.max_thermal_factor_on_peak_load = kwargs.get('max_thermal_factor_on_peak_load')
         self.existing_boiler_production_type_steam_or_hw = kwargs.get('existing_boiler_production_type_steam_or_hw')
         self.boiler_efficiency = kwargs.get('boiler_efficiency')
+        self.can_supply_st = kwargs.get('can_supply_st')
         self.derate = 0
         self.n_timesteps = dfm.n_timesteps
         
@@ -657,6 +659,9 @@ class NewBoiler(Tech):
         self.derate = 0  # TODO remove this from data_manager and *.jl model
         self.n_timesteps = dfm.n_timesteps
 
+        kwargs['macrs_itc_reduction'] = None
+        self.incentives = IncentivesNoProdBased(**kwargs)
+
         dfm.add_newboiler(self)
 
     @property
@@ -695,6 +700,9 @@ class SteamTurbine(Tech):
 
         self.st_elec_out_to_therm_in_ratio, self.st_therm_out_to_therm_in_ratio = self.st_elec_and_therm_prod_ratios()
 
+        kwargs['macrs_itc_reduction'] = None
+        self.incentives = IncentivesNoProdBased(**kwargs)
+
         dfm.add_steamturbine(self)
 
     @property
@@ -724,8 +732,8 @@ class SteamTurbine(Tech):
             self.t_in_k = self.t_in_sat_k + self.t_superheat_in_k
         else:
             self.t_in_k = (self.inlet_steam_temperature_degF - 32.0) * 5.0 / 9.0 + 273.15
-        self.h_in_j_per_kg = CP.PropsSI("H","P",self.p_in_pa,"T",t_in_k,"Water")
-        self.s_in_j_per_kgK = CP.PropsSI("S","P",self.p_in_pa,"T",t_in_k,"Water")
+        self.h_in_j_per_kg = CP.PropsSI("H","P",self.p_in_pa,"T",self.t_in_k,"Water")
+        self.s_in_j_per_kgK = CP.PropsSI("S","P",self.p_in_pa,"T",self.t_in_k,"Water")
         
         # ST Outlet
         self.p_out_pa = (self.outlet_steam_pressure_psig / 14.5038 + 1.01325) * 1.0E5
@@ -738,7 +746,7 @@ class SteamTurbine(Tech):
         self.st_net_elec_power_kwh_per_kg = self.st_shaft_power_kwh_per_kg * self.gearbox_generator_efficiency * self.net_to_gross_electric_ratio
 
         # Condenser heat rejection or heat recovery if ST is back-pressure
-        if self.is_condensing
+        if self.is_condensing:
             self.heat_recovered_kwh_per_kg = 0.0
         else:
             self.h_out_sat_liq_j_per_kg = CP.PropsSI("H","P",self.p_out_pa,"Q",0.0,"Water")

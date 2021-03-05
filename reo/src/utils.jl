@@ -327,7 +327,7 @@ function Parameter(d::Dict)
 	d["CHPThermalProdFactor"] = vector_to_axisarray(d["CHPThermalProdFactor"],d["CHPTechs"],d[:TimeStep])
 	d["pwf_fuel"] = AxisArray(d["pwf_fuel"], d["Tech"])
 	d["StorageDecayRate"] = AxisArray(d["StorageDecayRate"], d["Storage"])
-    d["BoilerEfficiency"] = AxisArray(d["BoilerEfficiency"],d["BoilerTechs"])
+    d["BoilerEfficiency"] = AxisArray(d["BoilerEfficiency"], ["BOILER", "NEWBOILER"])  # Always passes both values, even if partial/none
 
     # Indexed Sets
     if isempty(d["FuelType"])
