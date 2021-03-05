@@ -907,6 +907,8 @@ class NewBoilerModel(models.Model):
     om_cost_us_dollars_per_mmbtu_per_hr = models.FloatField(null=True, blank=True)
     om_cost_us_dollars_per_mmbtu = models.FloatField(null=True, blank=True)
     emissions_factor_lb_CO2_per_mmbtu = models.FloatField(null=True, blank=True)
+    macrs_option_years = models.IntegerField(null=True, blank=True)
+    macrs_bonus_pct = models.FloatField(null=True, blank=True)    
 
     # Outputs
     size_mmbtu_per_hr = models.FloatField(null=True, blank=True)    
@@ -953,6 +955,8 @@ class SteamTurbineModel(models.Model):
     can_wholesale = models.BooleanField(null=True, blank=True)
     can_export_beyond_site_load = models.BooleanField(null=True, blank=True)
     can_curtail = models.BooleanField(null=True, blank=True)
+    macrs_option_years = models.IntegerField(null=True, blank=True)
+    macrs_bonus_pct = models.FloatField(null=True, blank=True)
 
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)
