@@ -1906,7 +1906,20 @@ nested_input_definitions = {
         "emissions_factor_lb_CO2_per_mmbtu": {
           "type": "float",
           "description": "Pounds of carbon dioxide emitted per mmbtu of fuel burned"
-        }
+        },
+        "macrs_option_years": {
+          "type": "int",
+          "restrict_to": macrs_schedules,
+          "default": 0,
+          "description": "MACRS schedule for financial analysis. Set to zero to disable"
+        },
+        "macrs_bonus_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "description": "Percent of upfront project costs to depreciate under MACRS"
+        }        
       },
       "SteamTurbine": {
         "min_kw": {
@@ -1922,25 +1935,25 @@ nested_input_definitions = {
           "description": "Steam turbine type, if it is a condensing turbine which produces no useful thermal (max electric output)"
         },
         "inlet_steam_pressure_psig": {
-          "type": "float", "min": 0.0, "max", 5000.0,
+          "type": "float", "min": 0.0, "max": 5000.0,
           "description": "Inlet steam pressure to the steam turbine"
         },
         "inlet_steam_temperature_degF": {
-          "type": "float", "min": 0.0, "max", 1300.0,
+          "type": "float", "min": 0.0, "max": 1300.0,
           "description": "Inlet steam temperature to the steam turbine"
         },
         "inlet_steam_superheat_degF": {
-          "type": "float", "min": 0.0, "max", 700.0,
+          "type": "float", "min": 0.0, "max": 700.0,
           "description": "Alternative input to inlet steam temperature, this is the superheat amount (delta from T_saturation) to the steam turbine"
         },
         "outlet_steam_pressure_psig": {
-          "type": "float", "min": -14.7, "max", 1000.0,
+          "type": "float", "min": -14.7, "max": 1000.0,
           "description": "Outlet steam pressure from the steam turbine (to the condenser or heat recovery unit"
         },
         "outlet_steam_min_vapor_fraction": {
-          "type": "float", "min": 0.0, "max", 1.0,
+          "type": "float", "min": 0.0, "max": 1.0,
           "description": "Minimum vapor fraction at the outlet of the steam turbine: this serves as a check on the other inlet and outlet steam conditions to ensure that acceptable amounts of liquid are in the outlet"
-        }                         
+        },                         
         "isentropic_efficiency": {
           "type": "float", "min": 0.0, "max": 1.0,
           "description": "Steam turbine isentropic efficiency - uses inlet T/P and outlet T/P/X to get power out"
@@ -1954,15 +1967,15 @@ nested_input_definitions = {
           "description": "Conversion of gross electric power to net power which can account for e.g. pump power"
         },                
         "installed_cost_us_dollars_per_kw": {
-          "type": "float", "min": 0.0, "max": 1.0e9,
+          "type": "float", "min": 0.0, "max": 100000.0,
           "description": "Electric power-based cost"
         },
         "om_cost_us_dollars_per_kw": {
-          "type": "float", "min": 0.0, "max": 1.0e9,
+          "type": "float", "min": 0.0, "max": 5000.0,
           "description": "Electric power-based fixed O&M cost"
         },
         "om_cost_us_dollars_per_kwh": {
-          "type": "float", "min": 0.0, "max": 1.0e9,
+          "type": "float", "min": 0.0, "max": 100.0,
           "description": "Electric energy-based variable O&M cost"
         },
         "can_net_meter": {
@@ -1984,7 +1997,20 @@ nested_input_definitions = {
           "type": "bool",
           "default": False,
           "description": "True/False for if technology can curtail energy produced."
-        }
+        },
+        "macrs_option_years": {
+          "type": "int",
+          "restrict_to": macrs_schedules,
+          "default": 0,
+          "description": "MACRS schedule for financial analysis. Set to zero to disable"
+        },
+        "macrs_bonus_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "description": "Percent of upfront project costs to depreciate under MACRS"
+        }        
       }      
     }
   }
