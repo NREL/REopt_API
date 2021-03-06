@@ -1880,7 +1880,7 @@ nested_input_definitions = {
           "description": "Minimum thermal power size"
           },
         "max_mmbtu_per_hr": {
-          "type": "float", "min": 0.0, "max": 1.0e9,
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
           "description": "Maximum thermal power size"
         },
         "boiler_efficiency": {
