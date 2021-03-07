@@ -784,7 +784,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         self.nested_outputs["Scenario"]["Site"][name]["year_one_cold_tes_soc_series_pct"] = None
                 elif name == "NewBoiler":
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "size_mmbtu_per_hr"] = self.results_dict.get("newboiler_kw") / MMBTU_TO_KWH                    
+                        "size_mmbtu_per_hr"] = self.results_dict.get("newboiler_size_kw") / MMBTU_TO_KWH                    
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_boiler_fuel_consumption_series_mmbtu_per_hr"] = [x / MMBTU_TO_KWH for x in self.results_dict.get("fuel_to_newboiler_series")]
                     self.nested_outputs["Scenario"]["Site"][name][

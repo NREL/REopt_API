@@ -1594,7 +1594,7 @@ end
 
 function add_newboiler_results(m, p, r::Dict)
 	##NewBoiler results go here; need to populate expressions for first collection
-	r["newboiler_kw"] = round(value(m[:dvSize]["NEWBOILER"]), digits=3)
+	r["newboiler_size_kw"] = round(value(m[:dvSize]["NEWBOILER"]), digits=3)
     @expression(m, FuelToNewBoiler[ts in p.TimeStep], m[:dvFuelUsage]["NEWBOILER", ts])
 	r["fuel_to_newboiler_series"] = round.(value.(FuelToNewBoiler), digits=3)
 	@expression(m, NewBoilerThermalProd[ts in p.TimeStep], p.ProductionFactor["NEWBOILER",ts] * m[:dvThermalProduction]["NEWBOILER",ts])
