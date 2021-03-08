@@ -111,11 +111,8 @@
         "cooling_thermal_factor": 1.0
       },
       "Boiler": {
-        "min_mmbtu_per_hr": 0.0,
-        "max_mmbtu_per_hr": 1000000000.0,
         "existing_boiler_production_type_steam_or_hw": "hot_water",
         "boiler_efficiency": 0.8,
-        "installed_cost_us_dollars_per_mmbtu_per_hr": 0.0,
         "emissions_factor_lb_CO2_per_mmbtu": 116.9
       }
     },

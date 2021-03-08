@@ -323,8 +323,31 @@ def get_weekday_weekend_total_hours_by_month(year, year_profile_hourly_list):
     return weekday_weekend_total_hours_by_month
 
 #conversion factor for ton-hours to kilowatt-hours thermal
-TONHOUR_TO_KWHT = 3.51685
+TONHOUR_TO_KWHT = 3.51685  # [kWh/ton-hr]
 
 #Creates and empty dot accessible dict for spoofing an empty DB record (i.e. empty_record().size_kw resolves to None)
 class empty_record(dict):
         __getattr__ = dict.get
+
+# Convert MMBtu to kWh or MMBtu/hr to kW
+MMBTU_TO_KWH = 293.07107018  # [kWh/MMBtu]
+
+# Convert m^3 to gal
+M3_TO_GAL = 264.172  # [gal/m^3]
+
+# Convert gallon of diesel to kWh
+GAL_DIESEL_TO_KWH = 40.7
+
+def convert_gal_to_kwh(delta_T_degF, rho_kg_per_m3, cp_kj_per_kgK):
+    """
+    Convert gallons of stored liquid (e.g. water, water/glycol) to kWh of stored energy in a stratefied tank
+    :param delta_T_degF: temperature difference between the hot/warm side and the cold side
+    :param rho_kg_per_m3: density of the liquid
+    :param cp_kj_per_kgK: heat capacity of the liquid
+    :return gal_to_kwh
+    """  
+    delta_T_K = delta_T_degF * 5.0 / 9.0  # [K]
+    m3_to_kj = rho_kg_per_m3 * cp_kj_per_kgK * delta_T_K  # [kJ/m^3]
+    gal_to_kwh = m3_to_kj / M3_TO_GAL / 3600.0  # [kWh/gal]
+
+    return gal_to_kwh

@@ -108,7 +108,7 @@ Base.@kwdef struct Parameter
      AnnualMinCharge::Float64    # c^{amc}: Utility annual minimum charge
      MonthlyMinCharge::Float64    # c^{mmc}: Utility monthly minimum charge  (not in math; will use this in min charge calculation)
 	 FixedMonthlyCharge::Float64  # c^{fmc}: Utility monthly fixed charge
-	 FuelCost::AxisArray # c^{u}_{f}: Unit cost of fuel type f [$/MMBTU]  in math  (NEW)
+	 FuelCost::AxisArray # c^{u}_{f}: Unit cost of fuel type f [$/kWh]  in math  (NEW)
 	 ElecRate::Array{Float64, 2}  #   c^{g}_{uh}: Grid energy cost in energy demand tier u during time step h  (NEW)
 	 OMperUnitSize::AxisArray # c^{om}_{t}: Operation and maintenance cost of technology t per unit of system size [$/kW]
      OMcostPerUnitProd::AxisArray
@@ -157,7 +157,7 @@ Base.@kwdef struct Parameter
 	 MaxSize::AxisArray    #  \bar{b}^{\sigma}_{t}: Maximum system size for technology t [kW]
 	 SegmentMinSize::AxisArray # \ubar{b}^{\sigma s}_{tks}: Minimum system size for technology t, subdivision k, segments
 	 SegmentMaxSize::AxisArray  # \bar{b}^{\sigma s}_{tks}: Maximum system size for technology t, subdivision k, segments
-	 FuelLimit::AxisArray # b^{fa}_{f}: Amount of available fuel for type f [MMBTU]   (NEW)
+	 FuelLimit::AxisArray # b^{fa}_{f}: Amount of available fuel for type f [kWh]   (NEW)
 
 	 ###  Efficiency Parameters ###
 	 ChargeEfficiency::AxisArray  # \eta^{esi}_{bt}: Efficiency of charging storage system b using technology t  [fraction] (NEW)
