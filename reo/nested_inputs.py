@@ -1694,7 +1694,11 @@ nested_input_definitions = {
           "min": 0.0,
           "max": 1.0,
           "description": "Knockdown factor on absorption chiller COP based on the CHP prime_mover not being able to produce as high of temp/pressure hot water/steam"
-        }
+        },
+        "can_supply_st": {
+          "type": "bool", "default": False,
+          "description": "If CHP can supply steam to the steam turbine for electric production"
+        },        
       },
 
       "ColdTES": {
