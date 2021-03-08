@@ -1085,16 +1085,19 @@ class DataManager:
         Returns a list of techs which can supply the SteamTurbine with steam to drive its electric generation
         :param techs: list of string
         :returns
-            can_supply_st: list of string (techs)
+            all_techs_for_steam_turbine: all possible techs which have the attribute can_supply_st, even if set to False
+            techs_can_supply_st: list of techs which are set allowed to supply steam turbine with steam heat
         """
-        can_supply_st = list()
+        all_techs_for_steam_turbine = list()
+        techs_can_supply_st = list()
         if len(techs) > 0:
             for tech in techs:  # have to do these for loops because `any` changes the scope and can't access `self`
                 if hasattr(eval('self.' + tech.lower()), 'can_supply_st'):
+                    all_techs_for_steam_turbine.append(tech.upper())
                     if eval('self.' + tech.lower() + '.can_supply_st'):
-                        can_supply_st.append(tech.upper())
+                        techs_can_supply_st.append(tech.upper())
         
-        return can_supply_st
+        return all_techs_for_steam_turbine, techs_can_supply_st
     
     def finalize(self):
         """
@@ -1261,11 +1264,14 @@ class DataManager:
         boiler_techs = [t for t in reopt_techs if t.lower().endswith('boiler')]
         boiler_techs_bau = [t for t in reopt_techs_bau if t.lower().endswith('boiler')]
 
+        all_boiler_techs = ["BOILER", "NEWBOILER"]
+        all_boiler_techs_bau = ["BOILER", "NEWBOILER"]  # Needs to be the same size as boiler_efficiency (below) which is length=2
+        
         steam_turbine_techs = [t for t in reopt_techs if t.lower().startswith('steamturbine')]
         steam_turbine_techs_bau = [t for t in reopt_techs_bau if t.lower().endswith('steamturbine')]
 
-        can_supply_steam_turbine = self.can_supply_steam_turbine(heating_techs)
-        can_supply_steam_turbine_bau = list()  # Always empty for BAU
+        all_techs_for_steam_turbine, techs_can_supply_steam_turbine = self.can_supply_steam_turbine(heating_techs)
+        all_techs_for_steam_turbine_bau, techs_can_supply_steam_turbine_bau = list(), list()  # Always empty for BAU
 
         if self.steamturbine is not None:
             st_elec_out_to_therm_in_ratio, st_therm_out_to_therm_in_ratio = \
@@ -1274,7 +1280,7 @@ class DataManager:
             st_elec_out_to_therm_in_ratio, st_therm_out_to_therm_in_ratio = 0.0, 0.0
         st_elec_out_to_therm_in_ratio_bau, st_therm_out_to_therm_in_ratio_bau = 0.0, 0.0
         
-        # Must always create boiler_efficiency, even if no boiler techs
+        # Must always create boiler_efficiency, even if no boiler techs (to handle scenario with heating_techs and no heating_load)
         boiler_efficiency = [1.0, 1.0]
         for i, tech in enumerate([t for t in self.available_techs if t.lower().endswith('boiler')]):
             if eval('self.' + tech.lower()) != None:
@@ -1434,6 +1440,8 @@ class DataManager:
             'DecompOptTol': self.optimality_tolerance_decomp_subproblem,
             'DecompTimeOut': self.timeout_decomp_subproblem_seconds,
             'AddSOCIncentive': self.add_soc_incentive,
+            'AllBoilerTechs': all_boiler_techs,
+            'AllTechsForSteamTurbine': all_techs_for_steam_turbine, 
             'SteamTurbineTechs': steam_turbine_techs,
             'TechCanSupplySteamTurbine': can_supply_steam_turbine,
             'STElecOutToThermInRatio': st_elec_out_to_therm_in_ratio,
@@ -1570,6 +1578,8 @@ class DataManager:
             'DecompOptTol': self.optimality_tolerance_decomp_subproblem,
             'DecompTimeOut': self.timeout_decomp_subproblem_seconds,
             'AddSOCIncentive': self.add_soc_incentive,
+            'AllBoilerTechs': all_boiler_techs_bau,
+            'AllTechsForSteamTurbine': all_techs_for_steam_turbine_bau,             
             'SteamTurbineTechs': steam_turbine_techs_bau,
             'TechCanSupplySteamTurbine': can_supply_steam_turbine_bau,
             'STElecOutToThermInRatio': st_elec_out_to_therm_in_ratio_bau,

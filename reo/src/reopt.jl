@@ -38,8 +38,7 @@ function add_continuous_variables(m, p)
 		@variable(m, dvProductionToGrid[p.Tech, p.ExportTiers, p.TimeStep] >= 0)  # X^{ptg}_{tuh}: Exports from electrical production to the grid by technology t in demand tier u during time step h [kW]   (NEW)
 	end
     if !isempty(p.SteamTurbineTechs)
-        AllTechsForSteamTurbine = ["BOILER", "NEWBOILER", "CHP"]
-        @variable(m, dvThermalToSteamTurbine[AllTechsForSteamTurbine, p.TimeStep] >= 0)
+        @variable(m, dvThermalToSteamTurbine[p.AllTechsForSteamTurbine, p.TimeStep] >= 0)
     end
 end
 
@@ -340,7 +339,7 @@ function add_thermal_production_constraints(m, p)
 
 	if !isempty(p.SteamTurbineTechs)
 		# Force thermal production to steam turbine to zero if not applicable
-        for t in setdiff(AllTechsForSteamTurbine, p.TechCanSupplySteamTurbine)
+        for t in setdiff(p.AllTechsForSteamTurbine, p.TechCanSupplySteamTurbine)
             for ts in p.TimeStep
                 fix(m[:dvThermalToSteamTurbine][t,ts], 0.0, force=true)
             end
