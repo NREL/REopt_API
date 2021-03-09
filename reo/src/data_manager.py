@@ -1443,7 +1443,7 @@ class DataManager:
             'AllBoilerTechs': all_boiler_techs,
             'AllTechsForSteamTurbine': all_techs_for_steam_turbine, 
             'SteamTurbineTechs': steam_turbine_techs,
-            'TechCanSupplySteamTurbine': can_supply_steam_turbine,
+            'TechCanSupplySteamTurbine': techs_can_supply_steam_turbine,
             'STElecOutToThermInRatio': st_elec_out_to_therm_in_ratio,
             'STThermOutToThermInRatio': st_therm_out_to_therm_in_ratio
             }
@@ -1581,7 +1581,7 @@ class DataManager:
             'AllBoilerTechs': all_boiler_techs_bau,
             'AllTechsForSteamTurbine': all_techs_for_steam_turbine_bau,             
             'SteamTurbineTechs': steam_turbine_techs_bau,
-            'TechCanSupplySteamTurbine': can_supply_steam_turbine_bau,
+            'TechCanSupplySteamTurbine': techs_can_supply_steam_turbine_bau,
             'STElecOutToThermInRatio': st_elec_out_to_therm_in_ratio_bau,
             'STThermOutToThermInRatio': st_therm_out_to_therm_in_ratio_bau            
         }
