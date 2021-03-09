@@ -34,7 +34,7 @@ from reo.nested_to_flat_output import nested_to_flat_chp
 from unittest import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
 from unittest import skip
 from reo.models import ModelManager
-from reo.utilities import check_common_outputs
+from reo.utilities import check_common_outputs, MMBTU_TO_KWH
 import numpy as np
 
 class NewBoilerSteamTurbineTest(ResourceTestCaseMixin, TestCase):
@@ -62,7 +62,7 @@ class NewBoilerSteamTurbineTest(ResourceTestCaseMixin, TestCase):
         nested_data = json.load(open(self.test_post, 'rb'))
         nested_data["Scenario"]["timeout_seconds"] = 420
         nested_data["Scenario"]["optimality_tolerance_bau"] = 0.001
-        nested_data["Scenario"]["optimality_tolerance_techs"] = 0.01
+        nested_data["Scenario"]["optimality_tolerance_techs"] = 0.001
 
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
@@ -73,13 +73,13 @@ class NewBoilerSteamTurbineTest(ResourceTestCaseMixin, TestCase):
 
         # The values compared to the expected values may change if optimization parameters were changed
         d_expected = dict()
-        # d_expected['lcc'] = 13476072.0
-        # d_expected['npv'] = 1231748.579
-        d_expected['steamturbine_kw'] = 500.0
-        # d_expected['year_one_thermal_consumption_mmbtu'] = 30555.6
-        # d_expected['year_one_electric_energy_produced_kwh'] = 3086580.645
-        # d_expected['year_one_thermal_energy_produced_mmbtu'] = 9739.972
-        # d_expected['year_one_newboiler_fuel_cost_us_dollars'] = 7211.964
+        d_expected['lcc'] = 9376063.0
+        d_expected['npv'] = 5331758.0
+        d_expected['steamturbine_size_kw'] = 500.0
+        # d_expected['steamturbine_yearly_thermal_consumption_mmbtu'] = 30555.6
+        # d_expected['steamturbine_yearly_electric_energy_produced_kwh'] = 3086580.645
+        # d_expected['steamturbine_yearly_thermal_energy_produced_mmbtu'] = 9739.972
+        # d_expected['newboiler_total_fuel_cost_us_dollars'] = 7211.964
 
         try:
             check_common_outputs(self, c, d_expected)
@@ -87,3 +87,48 @@ class NewBoilerSteamTurbineTest(ResourceTestCaseMixin, TestCase):
             print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
             print("Error message: {}".format(d['messages'].get('error')))
             raise
+
+        thermal_techs = {"Boiler", "NewBoiler", "CHP", "SteamTurbine"}
+        thermal_loads = {"load", "tes", "steamturbine", "waste"}  # We don't track AbsorptionChiller thermal consumption by tech
+        tech_to_thermal_load = {}
+        for tech in thermal_techs:
+            tech_to_thermal_load[tech] = {}
+            for load in thermal_loads:
+                if (tech == "SteamTurbine" and load == "steamturbine") or (load == "waste" and tech != "CHP"):
+                    tech_to_thermal_load[tech][load] = [0.0] * 8760
+                else:
+                    tech_to_thermal_load[tech][load] = d["outputs"]["Scenario"]["Site"][tech]["year_one_thermal_to_"+load+"_series_mmbtu_per_hour"]
+        
+        # Hot TES is the other thermal supply
+        hottes_to_load = d["outputs"]["Scenario"]["Site"]["HotTES"]["year_one_thermal_from_hot_tes_series_mmbtu_per_hr"]
+        
+        # BAU boiler loads
+        load_boiler_fuel = d["outputs"]["Scenario"]["Site"]["LoadProfileBoilerFuel"]["year_one_boiler_fuel_load_series_mmbtu_per_hr"]
+        load_boiler_thermal = d["outputs"]["Scenario"]["Site"]["LoadProfileBoilerFuel"]["year_one_boiler_thermal_load_series_mmbtu_per_hr"]
+
+        # Fuel/thermal **consumption**
+        boiler_fuel = d["outputs"]["Scenario"]["Site"]["Boiler"]["year_one_boiler_fuel_consumption_series_mmbtu_per_hr"]
+        newboiler_fuel = d["outputs"]["Scenario"]["Site"]["NewBoiler"]["year_one_boiler_fuel_consumption_series_mmbtu_per_hr"]
+        steamturbine_thermal_in = d["outputs"]["Scenario"]["Site"]["SteamTurbine"]["year_one_thermal_consumption_series_mmbtu_per_hr"]
+        absorptionchiller_thermal_in = d["outputs"]["Scenario"]["Site"]["AbsorptionChiller"]["year_one_absorp_chl_thermal_consumption_series_mmbtu_per_hr"]
+        
+        # Check that all thermal supply to load meets the BAU load plus AbsorptionChiller load which is not explicitly tracked
+        alltechs_thermal_to_load_total = sum([sum(tech_to_thermal_load[tech]["load"]) for tech in thermal_techs]) + sum(hottes_to_load)
+        thermal_load_total = sum(load_boiler_thermal) + sum(absorptionchiller_thermal_in)  #  + sum(steamturbine_thermal_in)
+        self.assertAlmostEqual(alltechs_thermal_to_load_total, thermal_load_total, places=3) #delta=5
+
+        newboiler_thermal_total = sum([sum(tech_to_thermal_load["NewBoiler"][load]) for load in thermal_loads])
+        newboiler_efficiency = newboiler_thermal_total / sum(newboiler_fuel)
+        self.assertAlmostEqual(newboiler_efficiency, d["inputs"]["Scenario"]["Site"]["NewBoiler"]["boiler_efficiency"], places=5)
+
+        # Check the electric_out/thermal_in efficiency/ratio of the steam turbine with a pre-calculated expected value 
+        steamturbine_electric = d["outputs"]["Scenario"]["Site"]["SteamTurbine"]["year_one_electric_production_series_kw"] 
+        steamturbine_electric_efficiency = sum(steamturbine_electric) / (sum(steamturbine_thermal_in) * MMBTU_TO_KWH)
+        self.assertAlmostEqual(steamturbine_electric_efficiency, 0.235, delta=0.05)
+
+        # Check that "thermal_to_steamturbine" is zero for each tech which has input of can_supply_st as False
+        can_supply_st = {}
+        for tech in thermal_techs - {"SteamTurbine"}:
+            if d["inputs"]["Scenario"]["Site"][tech]["can_supply_st"] == False:
+                self.assertEqual(sum(tech_to_thermal_load[tech]["steamturbine"]), 0.0)
+
