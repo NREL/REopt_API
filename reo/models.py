@@ -1051,7 +1051,7 @@ class ModelManager(object):
         :return: None
         """
         d = data["outputs"]["Scenario"] 
-        ProfileModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Profile']))        
+        ProfileModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Profile']))
         SiteModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']))
         FinancialModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Financial']))
         LoadProfileModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['LoadProfile']))
