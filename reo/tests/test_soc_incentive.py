@@ -34,7 +34,7 @@ from reo.nested_to_flat_output import nested_to_flat
 from django.test import TestCase
 from reo.models import ModelManager
 from reo.utilities import check_common_outputs
-
+from unittest import skip
 
 class SOCIncentiveTests(ResourceTestCaseMixin, TestCase):
     REopt_tol = 1.0e-2
@@ -46,7 +46,8 @@ class SOCIncentiveTests(ResourceTestCaseMixin, TestCase):
 
     def get_response(self, data):
         return self.api_client.post(self.reopt_base, format='json', data=data)
-
+    
+    @skip("Skip SOC Incentive Test Temporarily")
     def test_soc_incentive(self):
         """
         Test scenario with
