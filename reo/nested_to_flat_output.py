@@ -284,5 +284,26 @@ def nested_to_flat_chp(nested_output):
                 'total_chp_fuel_cost_us_dollars'],
             'boiler_bau_total_fuel_cost_us_dollars': nested_output['Scenario']['Site']['FuelTariff'][
                 'total_boiler_fuel_cost_bau_us_dollars'],
+            'newboiler_total_fuel_cost_us_dollars': nested_output['Scenario']['Site']['FuelTariff'][
+                'total_newboiler_fuel_cost_us_dollars'],            
         })
+    if nested_output['Scenario']['Site'].get('NewBoiler') is not None:
+        base.update({
+            'newboiler_size_mmbtu_per_hr': nested_output['Scenario']['Site']['NewBoiler'][
+                'size_mmbtu_per_hr'],
+            'newboiler_yearly_fuel_consumption_mmbtu': nested_output['Scenario']['Site']['NewBoiler'][
+                'year_one_boiler_fuel_consumption_mmbtu'],
+            'newboiler_yearly_thermal_production_mmbtu': nested_output['Scenario']['Site']['NewBoiler'][
+                'year_one_boiler_thermal_production_mmbtu'],
+        })
+    if nested_output['Scenario']['Site'].get('SteamTurbine') is not None:
+        base.update({
+            'steamturbine_size_kw': nested_output['Scenario']['Site']['SteamTurbine']['size_kw'],
+            'steamturbine_yearly_fuel_used_mmbtu': nested_output['Scenario']['Site']['SteamTurbine'][
+                'year_one_thermal_consumption_mmbtu'],
+            'steamturbine_yearly_electric_energy_produced_kwh': nested_output['Scenario']['Site']['SteamTurbine'][
+                'year_one_electric_energy_produced_kwh'],
+            'steamturbine_yearly_thermal_energy_produced_mmbtu': nested_output['Scenario']['Site']['SteamTurbine'][
+                'year_one_thermal_energy_produced_mmbtu'],
+        })    
     return base
