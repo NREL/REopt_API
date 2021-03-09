@@ -35,7 +35,6 @@ from django.test import TestCase
 from reo.models import ModelManager
 from reo.utilities import check_common_outputs
 
-
 class SOCIncentiveTests(ResourceTestCaseMixin, TestCase):
     REopt_tol = 1.0e-2
 
@@ -46,7 +45,7 @@ class SOCIncentiveTests(ResourceTestCaseMixin, TestCase):
 
     def get_response(self, data):
         return self.api_client.post(self.reopt_base, format='json', data=data)
-
+    
     def test_soc_incentive(self):
         """
         Test scenario with
@@ -62,23 +61,9 @@ class SOCIncentiveTests(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
-        c = nested_to_flat(d['outputs'])
-        c['average_soc'] = (sum(d['outputs']['Scenario']['Site']['Storage']['year_one_soc_series_pct']) /
+
+        high_soc_incentive = (sum(d['outputs']['Scenario']['Site']['Storage']['year_one_soc_series_pct']) /
                             len(d['outputs']['Scenario']['Site']['Storage']['year_one_soc_series_pct']))
-
-        print(c['lcc'])
-        print(c['average_soc'])
-
-        d_expected = dict()
-        d_expected['lcc'] = 350416.0
-        d_expected['average_soc'] = 0.7271688516340313
-
-        # try:
-        #     check_common_outputs(self, c, d_expected)
-        # except:
-        #     print("Run {} expected outputs may have changed.".format(run_uuid))
-        #     print("Error message: {}".format(d['messages']))
-        #     raise
 
         nested_data['Scenario']['add_soc_incentive'] = False
         resp = self.get_response(data=nested_data)
@@ -86,18 +71,8 @@ class SOCIncentiveTests(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
-        c = nested_to_flat(d['outputs'])
-        c['average_soc'] = (sum(d['outputs']['Scenario']['Site']['Storage']['year_one_soc_series_pct']) /
+
+        no_soc_incentive = (sum(d['outputs']['Scenario']['Site']['Storage']['year_one_soc_series_pct']) /
                             len(d['outputs']['Scenario']['Site']['Storage']['year_one_soc_series_pct']))
 
-        d_expected['lcc'] = 350416.0
-        d_expected['average_soc'] = 0.6069393099644554
-        print(c['lcc'])
-        print(c['average_soc'])
-
-        try:
-            check_common_outputs(self, c, d_expected)
-        except:
-            print("Run {} expected outputs may have changed.".format(run_uuid))
-            print("Error message: {}".format(d['messages']))
-            raise
+        self.assertGreater(high_soc_incentive, no_soc_incentive)
