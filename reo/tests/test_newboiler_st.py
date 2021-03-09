@@ -81,9 +81,9 @@ class NewBoilerSteamTurbineTest(ResourceTestCaseMixin, TestCase):
         # d_expected['year_one_thermal_energy_produced_mmbtu'] = 9739.972
         # d_expected['year_one_newboiler_fuel_cost_us_dollars'] = 7211.964
 
-        # try:
-        #     check_common_outputs(self, c, d_expected)
-        # except:
-        #     print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
-        #     print("Error message: {}".format(d['messages'].get('error')))
-        #     raise
+        try:
+            check_common_outputs(self, c, d_expected)
+        except:
+            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
+            print("Error message: {}".format(d['messages'].get('error')))
+            raise
