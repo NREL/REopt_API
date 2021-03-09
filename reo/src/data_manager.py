@@ -529,7 +529,7 @@ class DataManager:
 
                 # Following logic modifies the cap cost segments to account for the tax benefits of the ITC and MACRs
                 updated_cap_cost_slope = list()
-                updated_y_intercept = list()
+                updated_y_intercept = list()                
 
                 for s in range(n_segments):
 
@@ -540,8 +540,14 @@ class DataManager:
                         if itc is None or rebate_federal is None:
                             itc = 0.0
                             rebate_federal = 0.0
-                        itc_unit_basis = (tmp_cap_cost_slope[s] + rebate_federal) / (1 - itc)
-
+                        if itc == 1:
+                            itc_unit_basis = 0
+                        else:
+                            itc_unit_basis = (tmp_cap_cost_slope[s] + rebate_federal) / (1 - itc)
+                    else:
+                        # Not sure how else to handle this case, perhaps there is a better way to handle it?
+                        raise Exception('Invalid cost curve for {}. Value at index {} ({}) cannot be less than or equal to 0'.format(tech, s, cost_curve_bp_x[s + 1]))
+                        
                     sf = self.site.financial
                     updated_slope = setup_capital_cost_incentive(
                         itc_basis=itc_unit_basis,  # input tech cost with incentives, but no ITC
