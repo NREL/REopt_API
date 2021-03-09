@@ -50,7 +50,7 @@ function add_continuous_variables(m, p)
 		@variable(m,dvHourlyReductionRA[mth in keys(p.RaEventStartTimes), i in 1:length(p.RaEventStartTimes[mth]), h in 0:p.RaMooHours-1])
 		@variable(m,dvMonthlyRA[keys(p.RaEventStartTimes)])
 		#Value of RA for each month
-		@variable(m, dvMonthlyRaValue[keys(p.RaEventStartTimes)])
+		@variable(m, dvMonthlyRaValue[keys(p.RaEventStartTimes)] >= 0)
 	end
 end
 
@@ -69,7 +69,8 @@ function add_integer_variables(m, p)
     end
 	#Add binary for participating in each month
 	if p.RaLookbackDays != 0
-		@variable(m,binRaParticipate[keys(p.RaEventStartTimes)], Bin)
+		#@variable(m,binRaParticipate[keys(p.RaEventStartTimes)], Bin)
+		@variable(m,binRaParticipate[keys(p.RaEventStartTimes)]==1)
 	end
 end
 
@@ -928,6 +929,25 @@ function add_resource_adequacy(m, p)
     m[:TotalRaValue] = @expression(m, sum(m[:dvMonthlyRaValue]))
 end
 
+#Function to add RA value calculations - idealized to time-varying value
+function add_resource_adequacy_idealized(m, p)
+
+    #Constraints are hourly reductions are equal to the baseline load - event hour load (reductions are indexed by month, event start, and event hourly)
+    @constraint(m, [mth in keys(p.RaEventStartTimes), i in 1:length(p.RaEventStartTimes[mth]), h in 0:p.RaMooHours-1],
+		m[:dvHourlyReductionRA][mth, i, h] <= calculate_hour_reduction(m, p, mth, i, h))
+
+	m[:MonthlyRaEnergy] = @expression(m, [mth in keys(p.RaEventStartTimes)],
+		p.pwf_e * sum(p.RaEnergyPrice[p.RaEventStartTimes[mth][i] + h]*m[:dvHourlyReductionRA][mth, i, h] for i in 1:length(p.RaEventStartTimes[mth]), h in 0:p.RaMooHours-1))
+
+	#The bin part removes the constraint if the value would be constrained to be negative
+	@constraint(m, [mth in keys(p.RaEventStartTimes)],
+		m[:dvMonthlyRaValue][mth] <= m[:MonthlyRaEnergy][mth] + (1 - m[:binRaParticipate][mth]) * m[:MaxMonthlyRa])
+	#Constrains to 0 if did not participate
+	@constraint(m, [mth in keys(p.RaEventStartTimes)],
+		m[:dvMonthlyRaValue][mth] <= m[:binRaParticipate][mth] * m[:MaxMonthlyRa])
+    m[:TotalRaValue] = @expression(m, sum(m[:dvMonthlyRaValue]))
+end
+
 function calculate_hour_reduction(m, p, month, event_index, hours_from_start)
 	lbst_list = convert(Array{Int64, 1}, p.RaLookbackPeriods[month][event_index,:])
 	baseline_loads = sum(m[:dvGridPurchase][u, lbts + hours_from_start] for u in p.PricingTier, lbts in lbst_list)/p.RaLookbackDays
@@ -1220,7 +1240,7 @@ function reopt_run(m, p::Parameter)
 
 
 	if p.RaLookbackDays != 0
-		add_resource_adequacy(m, p)
+		add_resource_adequacy_idealized(m, p)
 	else
 		m[:TotalRaValue] = 0
 	end
@@ -1894,9 +1914,9 @@ end
 #Output resource adequacy results
 function add_ra_results(m, p, r::Dict)
 
-	r["monthly_ra_reduction"] = value.(m[:dvMonthlyRA]).data
+	r["monthly_ra_reduction"] = 0.0 #value.(m[:dvMonthlyRA]).data
 	r["monthly_ra_energy"] = value.(m[:MonthlyRaEnergy]).data
-	r["monthly_ra_dr"] = value.(m[:MonthlyRaDr]).data
+	r["monthly_ra_dr"] = 0.0 #value.(m[:MonthlyRaDr]).data
 	r["monthly_ra_value"] = value.(m[:dvMonthlyRaValue]).data
 	event_hours = []
 	hourly_reductions = []

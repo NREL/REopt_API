@@ -81,6 +81,9 @@ ra_post = {"Scenario": {"Site": {
         }
        }
 
+post_file = os.path.join('reo', 'tests', 'posts', '0.json')
+loaded_post = json.load(open(post_file, 'r'))
+
 class ResourceAdequacyTests(ResourceTestCaseMixin, TestCase):
     REopt_tol = 1e-2
 
@@ -99,7 +102,7 @@ class ResourceAdequacyTests(ResourceTestCaseMixin, TestCase):
         """
         
         d_expected = dict()
-        resp = self.get_response(data=ra_post)
+        resp = self.get_response(data=loaded_post)
         #self.assertHttpCreated(resp)  
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
