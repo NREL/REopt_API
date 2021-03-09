@@ -1130,7 +1130,6 @@ class ValidateNestedInput:
 
                         # Do same validation on chp_unavailability periods whether using the default or user-entered
                         self.input_data_errors += ValidateNestedInput.validate_chp_unavailability_periods(year, chp_unavailability_periods)
-
                         self.validate_chp_inputs(updated_set, object_name_path, number)
 
                 # otherwise, check if the user intended to run CHP and supplied sufficient info
@@ -1162,18 +1161,21 @@ class ValidateNestedInput:
                     # check if user intended to run CHP and supplied sufficient pararmeters to run CHP
                     if user_supplied_chp_inputs:
                         required_keys = prime_mover_defaults_all['recip_engine'].keys()
-                        filtered_values = {k: real_values.get(k) for k in required_keys}
+                        if real_values.get('prime_mover') is None:
+                            self.input_data_errors.append('No prime_mover was input so all cost and performance parameters must be input.')
+                        filtered_values = {k: real_values.get(k) for k in required_keys if k is not 'prime_mover'}
+                        missing_defaults = []
                         for k,v in filtered_values.items():
                             if v is None:
-                                self.input_data_errors.append('No prime_mover was input so all cost and performance parameters must be input. \
-                                    CHP is missing a value for the {} parameter'.format(k))
-
+                                missing_defaults.append(k)
+                        if len(missing_defaults) > 0:                               
+                            self.input_data_errors.append("CHP is missing a value for the following defaults: " + ', '.join(missing_defaults))
                         if real_values.get("chp_unavailability_periods") is None:
                             self.input_data_errors.append('Must provide an input for chp_unavailability_periods since not providing prime_mover')
                         else:
                             self.input_data_errors += ValidateNestedInput.validate_chp_unavailability_periods(year, real_values.get("chp_unavailability_periods"))
-
-                        self.validate_chp_inputs(filtered_values, object_name_path, number)
+                        if self.isValid:
+                            self.validate_chp_inputs(filtered_values, object_name_path, number)
 
                     # otherwise assume user did not want to run CHP and set it's max_kw to 0 to deactivate it
                     else:

@@ -788,7 +788,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     "developer_om_and_replacement_present_cost_after_tax_us_dollars"] = \
                     self.nested_outputs["Scenario"]["Site"]["Financial"][
                         "om_and_replacement_present_cost_after_tax_us_dollars"] / self.third_party_factor
-
             if self.nested_outputs["Scenario"]["Site"]["LoadProfile"]["annual_calculated_kwh"] > 0:
                 self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] = \
                     self.nested_outputs["Scenario"]["Site"]["Wind"].get("average_yearly_energy_produced_kwh") or 0
@@ -798,6 +797,9 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] = round(
                     self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] /
                     self.nested_outputs["Scenario"]["Site"]["LoadProfile"]["annual_calculated_kwh"], 4)
+            else:
+                #If this is not set to None it will contain a dictionary of data parameters
+                self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] = None
 
             time_outputs = [k for k in self.bau_attributes if (k.startswith("julia") or k.startswith("pyjulia"))]
 
