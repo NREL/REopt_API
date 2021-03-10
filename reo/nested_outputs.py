@@ -302,17 +302,23 @@ nested_output_definitions = {
                  },
                  "offtaker_annual_free_cashflow_series_bau_us_dollars": {
                   "type": "float",
-                  "description": ("Annual free cashflow for the host in the business-as-usual case for all analysis years, including year 0. Future years have not been discounted to account for the time value of money. Only calcualted in the non-third-party case."),
+                  "description": ("Annual free cashflow for the host in the business-as-usual case for all analysis years, including year 0. Future years have not been discounted to account for the time value of money. Only calculated in the non-third-party case."),
                   "units": "$"
                  },
                  "offtaker_discounted_annual_free_cashflow_series_bau_us_dollars": {
                   "type": "float",
-                  "description": ("Annual discounted free cashflow for the host in the business-as-usual case for all analysis years, including year 0. Future years have been discounted to account for the time value of money. Only calcualted in the non-third-party case."),
+                  "description": ("Annual discounted free cashflow for the host in the business-as-usual case for all analysis years, including year 0. Future years have been discounted to account for the time value of money. Only calculated in the non-third-party case."),
                   "units": "$"
                  },
                  "developer_annual_free_cashflow_series_bau_us_dollars": {
                   "type": "float",
-                  "description": ("Annual free cashflow for the developer in the business-as-usual third party case for all analysis years, including year 0. Future years have not been discounted to account for the time value of money. Only calcualted in the third-party case."),
+                  "description": ("Annual free cashflow for the developer in the business-as-usual third party case for all analysis years, including year 0. Future years have not been discounted to account for the time value of money. Only calculated in the third-party case."),
+                  "units": "$"
+                 },
+                "developer_om_and_replacement_present_cost_after_tax_us_dollars": {
+                  "type": "float",
+                  "description": ("Net O&M and replacement costs in present value, after-tax for the third-party "
+                                  "developer. Only calculated in the third-party case."),
                   "units": "$"
                  },
                 "powerhouse_civil_cost_us_dollars": {

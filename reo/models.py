@@ -207,6 +207,7 @@ class FinancialModel(models.Model):
             models.FloatField(null=True, blank=True), default=list, null=True)
     developer_annual_free_cashflow_series_us_dollars = ArrayField(
             models.FloatField(null=True, blank=True), default=list, null=True)
+    developer_om_and_replacement_present_cost_after_tax_us_dollars = models.FloatField(null=True, blank=True)
     powerhouse_civil_cost_us_dollars = models.FloatField(null=True, blank=True)
     total_distribution_system_cost_us_dollars = models.FloatField(null=True, blank=True)
     pre_operating_expenses_us_dollars = models.FloatField(null=True, blank=True)
@@ -799,12 +800,9 @@ class AbsorptionChillerModel(models.Model):
 class BoilerModel(models.Model):
     # Inputs
     run_uuid = models.UUIDField(unique=True)
-    min_mmbtu_per_hr = models.FloatField(null=True, blank=True)
-    max_mmbtu_per_hr = models.FloatField(null=True, blank=True)
     max_thermal_factor_on_peak_load = models.FloatField(null=True, blank=True)
     existing_boiler_production_type_steam_or_hw = models.TextField(null=True, blank=True)
     boiler_efficiency = models.FloatField(blank=True, default=0, null=True)
-    installed_cost_us_dollars_per_mmbtu_per_hr = models.FloatField(null=True, blank=True)
     emissions_factor_lb_CO2_per_mmbtu = models.FloatField(null=True, blank=True)
 
     # Outputs
@@ -832,10 +830,7 @@ class BoilerModel(models.Model):
 class ElectricChillerModel(models.Model):
     # Inputs
     run_uuid = models.UUIDField(unique=True)
-    min_kw = models.FloatField(null=True, blank=True)
-    max_kw = models.FloatField(null=True, blank=True)
     max_thermal_factor_on_peak_load = models.FloatField(null=True, blank=True)
-    installed_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True,)
 
     # Outputs
     year_one_electric_chiller_thermal_to_load_series_ton = ArrayField(
@@ -1041,7 +1036,7 @@ class ModelManager(object):
         else:
             if 'PV' in modelName:
                 eval(modelName).objects.filter(run_uuid=run_uuid, pv_number=number).update(**attribute_inputs(modelData))
-        
+
 
     @staticmethod
     def remove(run_uuid):
@@ -1079,7 +1074,7 @@ class ModelManager(object):
         :param model_ids: dict, optional, for use when updating existing models that have not been created in memory
         :return: None
         """
-        d = data["outputs"]["Scenario"] 
+        d = data["outputs"]["Scenario"]
         ProfileModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Profile']))
         SiteModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']))
         FinancialModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Financial']))
@@ -1156,7 +1151,7 @@ class ModelManager(object):
             if k in d.keys():
                 del d[k]
             return d
-        
+
         def remove_ids(d):
             del d['run_uuid']
             del d['id']
@@ -1172,7 +1167,7 @@ class ModelManager(object):
                             if type(resp['outputs']['Scenario']['Site'][site_key])==dict:
                                 resp['inputs']['Scenario']['Site'][site_key][k] = resp['outputs']['Scenario']['Site'][site_key][k]
                                 del resp['outputs']['Scenario']['Site'][site_key][k]
-                            
+
                             elif type(resp['outputs']['Scenario']['Site'][site_key])==list:
                                 max_order = max([p.get('pv_number') for p in resp['outputs']['Scenario']['Site'][site_key]])
                                 if resp['inputs']['Scenario']['Site'].get(site_key) == {}:
@@ -1185,7 +1180,7 @@ class ModelManager(object):
                                     if isinstance(resp['inputs']['Scenario']['Site'][site_key][i][k], list):
                                         if len(resp['inputs']['Scenario']['Site'][site_key][i][k]) == 1:
                                             resp['inputs']['Scenario']['Site'][site_key][i][k] = \
-                                                resp['inputs']['Scenario']['Site'][site_key][i][k][0]                                    
+                                                resp['inputs']['Scenario']['Site'][site_key][i][k][0]
                                     if k not in ['pv_name']:
                                         del resp['outputs']['Scenario']['Site'][site_key][i][k]
 
@@ -1198,7 +1193,7 @@ class ModelManager(object):
                                     resp['inputs']['Scenario']['Site'][site_key][k] = \
                                         resp['inputs']['Scenario']['Site'][site_key][k][0]
                                 elif len(resp['inputs']['Scenario']['Site'][site_key][k]) == 0:
-                                    del resp['inputs']['Scenario']['Site'][site_key][k] 
+                                    del resp['inputs']['Scenario']['Site'][site_key][k]
                             del resp['outputs']['Scenario']['Site'][site_key][k]
                     except KeyError:  # known exception for k = urdb_response (user provided blended rates)
                         resp['inputs']['Scenario']['Site'][site_key][k] = None
@@ -1234,7 +1229,7 @@ class ModelManager(object):
         resp['outputs']['Scenario'] = scenario_data
         resp['outputs']['Scenario']['run_uuid'] = str(run_uuid)
         resp['outputs']['Scenario']['Site'] = remove_ids(model_to_dict(SiteModel.objects.get(run_uuid=run_uuid)))
-        
+
         financial_record = FinancialModel.objects.filter(run_uuid=run_uuid) or {}
         if financial_record is not {}:
             resp['outputs']['Scenario']['Site']['Financial'] = remove_ids(model_to_dict(financial_record[0]))
@@ -1270,7 +1265,7 @@ class ModelManager(object):
         wind_record = WindModel.objects.filter(run_uuid=run_uuid) or {}
         if not wind_record == {}:
             resp['outputs']['Scenario']['Site']['Wind'] = remove_ids(model_to_dict(wind_record[0]))
-        
+
         chp_record = CHPModel.objects.filter(run_uuid=run_uuid) or {}
         if not chp_record == {}:
             resp['outputs']['Scenario']['Site']['CHP'] = remove_ids(model_to_dict(chp_record[0]))
@@ -1298,7 +1293,7 @@ class ModelManager(object):
         resp['outputs']['Scenario']['Site']['PV'] = []
         for x in PVModel.objects.filter(run_uuid=run_uuid).order_by('pv_number'):
             resp['outputs']['Scenario']['Site']['PV'].append(remove_ids(model_to_dict(x)))
-            
+
         profile_data = ProfileModel.objects.filter(run_uuid=run_uuid)
         if len(profile_data) > 0:
             resp['outputs']['Scenario']['Profile'] = remove_ids(model_to_dict(profile_data[0]))
@@ -1327,7 +1322,7 @@ class ModelManager(object):
 
         if resp['inputs']['Scenario']['Site']['LoadProfile'].get('doe_reference_name') == '':
             del resp['inputs']['Scenario']['Site']['LoadProfile']['doe_reference_name']
-        
+
         #Preserving Backwards Compatability
         resp['inputs']['Scenario']['Site']['LoadProfile']['outage_start_hour'] = resp['inputs']['Scenario']['Site']['LoadProfile'].get('outage_start_time_step')
         if resp['inputs']['Scenario']['Site']['LoadProfile']['outage_start_hour'] is not None:

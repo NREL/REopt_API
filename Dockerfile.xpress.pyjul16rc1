@@ -1,4 +1,4 @@
-FROM nlaws/pyjul:1.5.3
+FROM nlaws/pyjul:1.6.0-rc1
 
 ENV APP_ENV=local
 ENV SRC_DIR=/opt/reopt/reo/src
@@ -26,7 +26,7 @@ RUN printf 's\n\nn\ny\n.\ny\n' | ./install.sh >> license_info.txt;
 
 # Install Julia packages
 COPY julia_envs/Xpress /opt/reopt/julia_envs/Xpress/
-ENV LD_PRELOAD=/usr/src/julia-1.5.3/lib/julia/libstdc++.so.6
+ENV LD_PRELOAD=/usr/src/julia-1.6.0-rc1/lib/julia/libstdc++.so.6
 RUN julia --project="/opt/reopt/julia_envs/Xpress/" -e 'import Pkg; Pkg.instantiate()'
 RUN python -c 'import julia; julia.install()'
 
