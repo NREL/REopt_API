@@ -1456,8 +1456,13 @@ class ValidateNestedInput:
                         self.input_data_errors.append(
                         'The sum of elements of percent share list for hybrid LoadProfileChillerThermal should be 100.')
                 if real_values.get('percent_share') is None:
-                    real_values['percent_share'] = self.input_dict['Scenario']['Site']['LoadProfile'].get(
+                    if len(real_values['doe_reference_name']) == 1:
+                        real_values['percent_share'] = [100]
+                    elif real_values['doe_reference_name'] == self.input_dict['Scenario']['Site']['LoadProfile']['doe_reference_name']:
+                        real_values['percent_share'] = self.input_dict['Scenario']['Site']['LoadProfile'].get(
                                                 'percent_share')
+                    else:
+                        real_values['percent_share'] = []
                     self.update_attribute_value(object_name_path, number, 'percent_share', real_values['percent_share'])
                 if real_values.get('doe_reference_name') is not None:
                     if len(real_values.get('doe_reference_name')) != len(real_values.get('percent_share',[])):
