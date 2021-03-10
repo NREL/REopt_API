@@ -436,6 +436,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["sustain_hours"] = int(self.dm["LoadProfile"].get("bau_sustained_time_steps") / (len(self.dm["LoadProfile"].get("year_one_electric_load_series_kw"))/8760))
                     self.nested_outputs["Scenario"]["Site"][name]["bau_sustained_time_steps"] = self.dm["LoadProfile"].get("bau_sustained_time_steps")
                     self.nested_outputs["Scenario"]["Site"][name]['loads_kw'] = self.dm["LoadProfile"].get("year_one_electric_load_series_kw")
+                    self.nested_outputs["Scenario"]["Site"][name]["load_met_series_kw"] = self.results_dict.get("load_met")
+                    self.nested_outputs["Scenario"]["Site"][name]["sr_required_series_kw"] = self.results_dict.get("sr_required_load")
                 elif name == "LoadProfileBoilerFuel":
                     self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_boiler_fuel_load_mmbtu_bau"] = \
                         self.dm["LoadProfile"].get("annual_heating_mmbtu")
@@ -471,6 +473,18 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_om_costs_after_tax")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_om_costs_before_tax_us_dollars"] = \
                         self.results_dict.get("year_one_om_costs_before_tax")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "powerhouse_civil_cost_us_dollars"] = self.results_dict.get("total_powerhouse_civil_costs")
+                    self.nested_outputs["Scenario"]["Site"][name]["total_distribution_system_cost_us_dollars"] =\
+                        self.results_dict.get("total_distribution_system_costs")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "pre_operating_expenses_us_dollars"] = self.results_dict.get("total_pre_op_expenses")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "lc_labor_cost_us_dollars"] = self.results_dict.get("total_labor_costs")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "lc_land_lease_us_dollars"] = self.results_dict.get("total_land_lease_costs")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "microgrid_lcoe_us_dollars_per_kwh"] = self.results_dict.get("microgrid_lcoe")
                 elif name == "PV":
                     pv_models = list(PVModel.objects.filter(run_uuid=meta['run_uuid']).order_by('pv_number'))
                     template_pv = copy.deepcopy(self.nested_outputs['Scenario']["Site"][name])
@@ -489,6 +503,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         pv["year_one_to_load_series_kw"] = self.results_dict.get("PV{}toLoad".format(i))
                         pv["year_one_to_grid_series_kw"] = self.results_dict.get("PV{}toGrid".format(i))
                         pv['year_one_curtailed_production_series_kw'] = self.results_dict.get("PV{}toCurtail".format(i))
+                        pv['sr_required_series_kw'] = self.results_dict.get("SRrequiredPV{}".format(i))
+                        pv['sr_provided_series_kw'] = self.results_dict.get("SRprovidedPV{}".format(i))
                         pv["year_one_power_production_series_kw"] = pv.get("year_one_to_grid_series_kw")
                         if not pv.get("year_one_to_battery_series_kw") is None:
                             if pv["year_one_power_production_series_kw"] is None:
@@ -549,6 +565,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_to_grid_series_kw"] = self.results_dict.get("ElecFromBattExport")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_soc_series_pct"] = \
                         self.results_dict.get("year_one_soc_series_pct")
+                    self.nested_outputs["Scenario"]["Site"][name]["sr_provided_series_kw"] = \
+                        self.results_dict.get("sr_provided_batt")
                 elif name == "ElectricTariff":
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_energy_cost_us_dollars"] = self.results_dict.get("year_one_energy_cost")

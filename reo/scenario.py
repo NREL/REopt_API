@@ -341,6 +341,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
         dfm.optimality_tolerance_decomp_subproblem = inputs_dict['optimality_tolerance_decomp_subproblem']
         dfm.timeout_decomp_subproblem_seconds = inputs_dict['timeout_decomp_subproblem_seconds']
         dfm.add_soc_incentive = inputs_dict['add_soc_incentive']
+        dfm.off_grid_flag = inputs_dict['off_grid_flag']
 
         dfm.finalize()
         dfm_dict = vars(dfm)  # serialize for celery

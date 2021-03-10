@@ -79,6 +79,7 @@ class DataManager:
         self.optimality_tolerance_decomp_subproblem = None
         self.timeout_decomp_subproblem_seconds = None
         self.add_soc_incentive = None
+        self.off_grid_flag = None
 
         # following attributes used to pass data to process_results.py
         # If we serialize the python classes then we could pass the objects between Celery tasks
@@ -896,13 +897,17 @@ class DataManager:
             time_steps_without_grid -- list of ints indicating outage time
                 steps
         """
-        time_steps_with_grid = list()
-        time_steps_without_grid = list()
-        for i, pf in enumerate(self.util.prod_factor):
-            if pf > 0.5:
-                time_steps_with_grid.append(i+1)
-            else:
-                time_steps_without_grid.append(i+1)
+        if self.off_grid_flag:
+            time_steps_with_grid = []
+            time_steps_without_grid = list(range(8760)[1:])
+        else:
+            time_steps_with_grid = list()
+            time_steps_without_grid = list()
+            for i, pf in enumerate(self.util.prod_factor):
+                if pf > 0.5:
+                    time_steps_with_grid.append(i+1)
+                else:
+                    time_steps_without_grid.append(i+1)
         return time_steps_with_grid, time_steps_without_grid
 
     def _get_REopt_storage_techs_and_params(self):
@@ -1395,11 +1400,31 @@ class DataManager:
             'StorageDecayRate': storage_decay_rate,
             'DecompOptTol': self.optimality_tolerance_decomp_subproblem,
             'DecompTimeOut': self.timeout_decomp_subproblem_seconds,
-            'AddSOCIncentive': self.add_soc_incentive
+            'AddSOCIncentive': self.add_soc_incentive,
+            #Offgrid
+            'OffGridFlag': self.off_grid_flag,
+            'TechsRequiringSR': ['PV1NM'],
+            'TechsProvidingSR': ['PV1NM'], #,'GENERATOR'],
+            'MinLoadMetPct': self.load.min_load_met_pct,
+            'SRrequiredPctLoad': self.load.sr_required_pct,
+            'SRrequiredPctTechs': [0.5], # 0.0]
+            'PowerhouseCivilCost': sf.powerhouse_civil_cost_us_dollars_per_sqft,
+            'DistSystemCost': sf.distribution_system_cost_us_dollars,
+            'PreOperatingExpenses': sf.pre_operating_expenses_us_dollars_per_kw * max(non_cooling_electric_load),
+            'LaborCost': sf.labor_cost_us_dollars_per_year * pwf_om,
+            'LandLease': sf.land_lease_us_dollars_per_year * pwf_om,
+            'InverterRoomSqft': self.storage.inverter_room_size_sqft,
+            'BattRoomSqftPerkWh': self.storage.battery_room_size_sqft_per_kwh
             }
         ## Uncomment the following and run a scenario to get an updated modelinputs.json for creating Julia system image
         # import json
         # json.dump(self.reopt_inputs, open("modelinputs.json", "w"))
+
+        # import pandas as pd
+        # df = pd.DataFrame()
+        # df['prod_factor'] = production_factor
+        # df.to_csv('C:/Users/xli1/Documents/PROJECTS/_FY21/Haiti/debug_api/prod_factor.csv')
+        # # json.dump(test_xl, open("C:/Users/xli1/Documents/PROJECTS/_FY21/Nova/debug/modelinputs.json", "w"))
 
         self.reopt_inputs_bau = {
             'Tech': reopt_techs_bau,
@@ -1494,8 +1519,8 @@ class DataManager:
             'FuelBurningTechs': fb_techs_bau,
             'TechsNoTurndown': techs_no_turndown_bau,
             'ExportTiers': export_tiers_bau,
-            'TimeStepsWithGrid': time_steps_with_grid,
-            'TimeStepsWithoutGrid': time_steps_without_grid,
+            'TimeStepsWithGrid': list(range(8761))[1:], #time_steps_with_grid,
+            'TimeStepsWithoutGrid': [], #time_steps_without_grid,
             'ExportTiersByTech': rates_by_tech_bau,
             'TechsByExportTier': [techs_by_export_tier_bau[k] for k in export_tiers_bau],
             'ExportTiersBeyondSiteLoad':  ["EXC"],
@@ -1527,5 +1552,19 @@ class DataManager:
             'StorageDecayRate': storage_decay_rate,
             'DecompOptTol': self.optimality_tolerance_decomp_subproblem,
             'DecompTimeOut': self.timeout_decomp_subproblem_seconds,
-            'AddSOCIncentive': self.add_soc_incentive
+            'AddSOCIncentive': self.add_soc_incentive,
+            # Offgrid
+            'OffGridFlag': False, #self.off_grid_flag,
+            'TechsRequiringSR': ['PV1NM'],
+            'TechsProvidingSR': ['PV1NM'], #, 'GENERATOR'],
+            'MinLoadMetPct': self.load.min_load_met_pct,
+            'SRrequiredPctLoad': self.load.sr_required_pct,
+            'SRrequiredPctTechs': [0.5], #, 0.0]
+            'PowerhouseCivilCost': sf.powerhouse_civil_cost_us_dollars_per_sqft,
+            'DistSystemCost': sf.distribution_system_cost_us_dollars,
+            'PreOperatingExpenses': sf.pre_operating_expenses_us_dollars_per_kw * max(non_cooling_electric_load),
+            'LaborCost': sf.labor_cost_us_dollars_per_year * pwf_om,
+            'LandLease': sf.land_lease_us_dollars_per_year * pwf_om,
+            'InverterRoomSqft': self.storage.inverter_room_size_sqft,
+            'BattRoomSqftPerkWh': self.storage.battery_room_size_sqft_per_kwh
         }
