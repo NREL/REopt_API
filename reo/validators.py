@@ -1163,7 +1163,7 @@ class ValidateNestedInput:
                         required_keys = prime_mover_defaults_all['recip_engine'].keys()
                         if real_values.get('prime_mover') is None:
                             self.input_data_errors.append('No prime_mover was input so all cost and performance parameters must be input.')
-                        filtered_values = {k: real_values.get(k) for k in required_keys if k is not 'prime_mover'}
+                        filtered_values = {k: real_values.get(k) for k in required_keys if k not in ['prime_mover', 'size_class']}
                         missing_defaults = []
                         for k,v in filtered_values.items():
                             if v is None:
