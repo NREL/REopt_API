@@ -409,11 +409,18 @@ function add_storage_op_constraints(m, p)
 	)
 	# Constraint (4f)-1: (Hot) Thermal production sent to storage or grid must be less than technology's rated production
 	if !isempty(p.BoilerTechs)
-		@constraint(m, HeatingTechProductionFlowCon[b in p.HotTES, t in p.BoilerTechs, ts in p.TimeStep],
-    	        m[:dvProductionToStorage][b,t,ts]  <=
-				p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts]
-				)
-	end
+		if !isempty(p.SteamTurbineTechs)
+            @constraint(m, HeatingTechProductionFlowCon[b in p.HotTES, t in p.BoilerTechs, ts in p.TimeStep],
+                    m[:dvProductionToStorage][b,t,ts] + m[:dvThermalToSteamTurbine][t,ts]  <=
+                    p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts]
+                    )
+        else
+            @constraint(m, HeatingTechProductionFlowCon[b in p.HotTES, t in p.BoilerTechs, ts in p.TimeStep],
+                    m[:dvProductionToStorage][b,t,ts]  <=
+                    p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts]
+                    )
+        end            
+    end
 	# Constraint (4f)-2: (Cold) Thermal production sent to storage or grid must be less than technology's rated production
 	if !isempty(p.CoolingTechs)
 		@constraint(m, CoolingTechProductionFlowCon[b in p.ColdTES, t in p.CoolingTechs, ts in p.TimeStep],
@@ -423,10 +430,17 @@ function add_storage_op_constraints(m, p)
 	end
 	# Constraint (4g): CHP Thermal production sent to storage or grid must be less than technology's rated production
 	if !isempty(p.CHPTechs)
-		@constraint(m, CHPTechProductionFlowCon[b in p.HotTES, t in p.CHPTechs, ts in p.TimeStep],
-    	        m[:dvProductionToStorage][b,t,ts] + m[:dvProductionToWaste][t,ts] <=
-				m[:dvThermalProduction][t,ts]
-				)
+		if !isempty(p.SteamTurbineTechs)		
+            @constraint(m, CHPTechProductionFlowCon[b in p.HotTES, t in p.CHPTechs, ts in p.TimeStep],
+                    m[:dvProductionToStorage][b,t,ts] + m[:dvProductionToWaste][t,ts] + m[:dvThermalToSteamTurbine][t,ts] <=
+                    m[:dvThermalProduction][t,ts]
+                    )
+        else
+            @constraint(m, CHPTechProductionFlowCon[b in p.HotTES, t in p.CHPTechs, ts in p.TimeStep],
+                    m[:dvProductionToStorage][b,t,ts] + m[:dvProductionToWaste][t,ts] <=
+                    m[:dvThermalProduction][t,ts]
+                    )
+        end            
 	end
 	# Constraint (4h): Reconcile state-of-charge for electrical storage - with grid
 	@constraint(m, ElecStorageInventoryCon[b in p.ElecStorage, ts in p.TimeStepsWithGrid],
