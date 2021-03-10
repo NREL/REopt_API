@@ -67,7 +67,7 @@ ra_post = {"Scenario": {"Site": {
                     "blended_monthly_demand_charges_us_dollars_per_kw": [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0],
                     "blended_monthly_rates_us_dollars_per_kwh": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2],
                     "ra_event_day_flags_boolean": event_day_flags,
-                    "ra_demand_pricing_us_dollars_per_kw": [0, 0, 0, 0, 0, 0, 18, 18, 0, 0, 0, 0],
+                    "ra_demand_pricing_us_dollars_per_kw": [0, 0, 0, 23, 21, 21, 21, 21, 21, 21, 0, 0],
                     "ra_energy_pricing_us_dollars_per_kwh": energy_pricing
                 },
                 "Financial": {
@@ -81,8 +81,8 @@ ra_post = {"Scenario": {"Site": {
         }
        }
 
-post_file = os.path.join('reo', 'tests', 'posts', '0.json')
-loaded_post = json.load(open(post_file, 'r'))
+#post_file = os.path.join('reo', 'tests', 'posts', '0.json')
+#loaded_post = json.load(open(post_file, 'r'))
 
 class ResourceAdequacyTests(ResourceTestCaseMixin, TestCase):
     REopt_tol = 1e-2
@@ -102,7 +102,7 @@ class ResourceAdequacyTests(ResourceTestCaseMixin, TestCase):
         """
         
         d_expected = dict()
-        resp = self.get_response(data=loaded_post)
+        resp = self.get_response(data=ra_post)
         #self.assertHttpCreated(resp)  
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')

@@ -1238,9 +1238,14 @@ function reopt_run(m, p::Parameter)
 	add_export_expressions(m, p)
 	add_util_fixed_and_min_charges(m, p)
 
-
+	@info typeof(p.RaMonthlyPrice)
 	if p.RaLookbackDays != 0
-		add_resource_adequacy_idealized(m, p)
+		if sum(p.RaMonthlyPrice[k] for k in keys(p.RaMonthlyPrice))==0
+			@info "step 1"
+			add_resource_adequacy_idealized(m, p)
+		else
+			add_resource_adequacy(m, p)
+		end
 	else
 		m[:TotalRaValue] = 0
 	end
@@ -1300,6 +1305,7 @@ function reopt_run(m, p::Parameter)
 	add_yearone_expressions(m, p)
 
 	results = reopt_results(m, p, results)
+	
 	results["julia_reopt_postprocess_seconds"] = time() - t_start
 
 	return results
@@ -1914,10 +1920,17 @@ end
 #Output resource adequacy results
 function add_ra_results(m, p, r::Dict)
 
-	r["monthly_ra_reduction"] = 0.0 #value.(m[:dvMonthlyRA]).data
-	r["monthly_ra_energy"] = value.(m[:MonthlyRaEnergy]).data
-	r["monthly_ra_dr"] = 0.0 #value.(m[:MonthlyRaDr]).data
-	r["monthly_ra_value"] = value.(m[:dvMonthlyRaValue]).data
+	if sum(p.RaMonthlyPrice[k] for k in keys(p.RaMonthlyPrice))==0
+		r["monthly_ra_reduction"] = [] #value.(m[:dvMonthlyRA]).data
+		r["monthly_ra_energy"] = value.(m[:MonthlyRaEnergy]).data
+		r["monthly_ra_dr"] = [] #value.(m[:MonthlyRaDr]).data
+		r["monthly_ra_value"] = value.(m[:dvMonthlyRaValue]).data
+	else
+		r["monthly_ra_reduction"] = value.(m[:dvMonthlyRA]).data
+		r["monthly_ra_energy"] = value.(m[:MonthlyRaEnergy]).data
+		r["monthly_ra_dr"] = value.(m[:MonthlyRaDr]).data
+		r["monthly_ra_value"] = value.(m[:dvMonthlyRaValue]).data
+	end
 	event_hours = []
 	hourly_reductions = []
 	#Flatten event hour array of arrays to singel array
