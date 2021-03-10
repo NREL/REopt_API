@@ -1162,28 +1162,50 @@ class CHP(Tech):
             cf_tp_grade_half_load = cf_tp_grade_full_load
 
         elif self.prime_mover == 'recip_engine':
-            t_water_in = 140.0  # [deg F]
+            t_water_in = 160.0  # [deg F]
             t_water_out = 180.0 # [deg F]
 
-            data_full_load = np.array(pd.read_csv(os.path.join(os.path.join('reo', 'src', 'data'), 'ICE_HW_Map_FullLoad_v3.csv'))) #thermal prod (full load data)
-            data_half_load = np.array(pd.read_csv(os.path.join(os.path.join('reo', 'src', 'data'), 'ICE_HW_Map_HalfLoad_v3.csv'))) #thermal prod (half load data)
-            x = data_full_load[:, 0]  # t_water_in data [deg F]
-            y = data_full_load[:, 1]  # t_water_out data [deg F]
-            q_full_load = data_full_load[:, 4]  # hot water recovery (full load data) [kW]
-            q_half_load = data_half_load[:, 4]  # hot water recovery (half load data) [kW]
+            #design-point 140-180F
+            #data_full_load = np.array(pd.read_csv(os.path.join(os.path.join('reo', 'src', 'data'), 'ICE_HW_Map_FullLoad_v3.csv'))) #thermal prod (full load data)
+            #data_half_load = np.array(pd.read_csv(os.path.join(os.path.join('reo', 'src', 'data'), 'ICE_HW_Map_HalfLoad_v3.csv'))) #thermal prod (half load data)
+            #recalibrate design-point to 160-180 F
+            #data_full_load = np.array(pd.read_csv(os.path.join(os.path.join('reo', 'src', 'data'), 'ICE_HW_Map_FullLoad_v4.csv')))  # thermal prod (full load data)
+            data_full_load = np.array(pd.read_csv(os.path.join(os.path.join('reo', 'src', 'data'), 'ICE_HW_Map_FullLoad_v5.csv')))  # thermal prod (full load data) #add points in 5 F increments
+
+            #x = data_full_load[:, 0]  # t_water_in data [deg F]
+            #y = data_full_load[:, 1]  # t_water_out data [deg F]
+            #q_full_load = data_full_load[:, 2]  # hot water recovery (full load data) [kW]
+            #q_half_load = data_half_load[:, 4]  # hot water recovery (half load data) [kW]
 
             # function to interpolate discontinuous data
-            f_full_load = scipy.interpolate.interp2d(x, y, q_full_load, kind='linear')
-            f_half_load = scipy.interpolate.interp2d(x, y, q_half_load, kind='linear')
+            #f_full_load = scipy.interpolate.interp2d(x, y, q_full_load, kind='linear')
+            #f_half_load = scipy.interpolate.interp2d(x, y, q_half_load, kind='linear')
 
             # calculate cf
-            q_full_load_query = f_full_load(t_water_in, t_water_out)
-            q_full_load_normalization_factor = float(811.0)  # [kW] (default loop of 140 - 180 deg F)
-            cf_tp_grade_full_load = float(q_full_load_query[0]) / q_full_load_normalization_factor
+            #full load interpolation
+            #q_full_load_query = f_full_load(t_water_in, t_water_out)
+            #q_full_load_normalization_factor = float(811.0)  # [kW] (default loop of 140 - 180 deg F)
+            #cf_tp_grade_full_load = float(q_full_load_query[0]) / q_full_load_normalization_factor
 
-            q_half_load_query = f_half_load(t_water_in, t_water_out)
-            q_half_load_normalization_factor = float(491.0)  # [kW]
-            cf_tp_grade_half_load = float(q_half_load_query[0]) / q_half_load_normalization_factor
+            #interpolation is not accurate for all point. Round instead and find data point
+            base5 = 5.0
+            base10 = 10.0
+            t_water_in_approx = base10*round(t_water_in/base10)
+            t_water_out_approx = base5*round(t_water_out/base5)
+            q_full_load_query = 1.0
+            for i in range(data_full_load.shape[0]):
+                if data_full_load[i,0] == t_water_in_approx and data_full_load[i,1] == t_water_out_approx:
+                    q_full_load_query = data_full_load[i,2]
+
+            q_full_load_normalization_factor = float(811.0)  # [kW] (default loop of 160 - 180 deg F)
+            cf_tp_grade_full_load = float(q_full_load_query) / q_full_load_normalization_factor
+            print(cf_tp_grade_full_load)
+
+
+            #half load
+            #q_half_load_query = f_half_load(t_water_in, t_water_out)
+            #q_half_load_normalization_factor = float(491.0)  # [kW]
+            #cf_tp_grade_half_load = float(q_half_load_query[0]) / q_half_load_normalization_factor
 
             #half load factor does not work when it is different than full load factor (not as accurate)
             cf_tp_grade_half_load = cf_tp_grade_full_load
