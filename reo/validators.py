@@ -1455,7 +1455,7 @@ class ValidateNestedInput:
                     if percent_share_sum != 100.0:
                         self.input_data_errors.append(
                         'The sum of elements of percent share list for hybrid LoadProfileChillerThermal should be 100.')
-                if real_values.get('percent_share') is None:
+                if real_values.get('percent_share') is None and real_values.get('doe_reference_name') is not None:
                     if len(real_values['doe_reference_name']) == 1:
                         real_values['percent_share'] = [100]
                     elif real_values['doe_reference_name'] == self.input_dict['Scenario']['Site']['LoadProfile']['doe_reference_name']:
@@ -1514,7 +1514,7 @@ class ValidateNestedInput:
                     if percent_share_sum != 100.0:
                         self.input_data_errors.append(
                         'The sum of elements of percent share list for hybrid boiler load profile should be 100.')
-                if real_values.get('percent_share') is None:
+                if real_values.get('percent_share') is None and real_values.get('doe_reference_name') is not None:
                     if len(real_values['doe_reference_name']) == 1:
                         real_values['percent_share'] = [100]
                     elif real_values['doe_reference_name'] == self.input_dict['Scenario']['Site']['LoadProfile']['doe_reference_name']:
