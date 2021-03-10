@@ -126,7 +126,7 @@ function add_cost_expressions(m, p)
 	end
 	if ("AC" in p.FlexTechs || "HP" in p.FlexTechs)
 		m[:TotalHVACComfortCost] = @expression(m,
-			sum(m[:dvHVACComfortCost][ts]*100000 for ts in p.TimeStep))
+			sum(m[:dvHVACComfortCost][ts] for ts in p.TimeStep))
 	else
 		m[:TotalHVACComfortCost] = @expression(m, 0.0)
 	end
@@ -1102,7 +1102,7 @@ function add_cost_function(m, p)
         m[:TotalRaValue] * m[:r_tax_fraction_owner] +
 
 		# Comfort Costs
-		m[:TotalWHComfortCost] + m[:TotalHVACComfortCost]
+		m[:TotalWHComfortCost] + m[:TotalHVACComfortCost]*100000
 	)
     #= Note: 0.9999*m[:MinChargeAdder] in Obj b/c when m[:TotalMinCharge] > (TotalEnergyCharges + m[:TotalDemandCharges] + TotalExportBenefit + m[:TotalFixedCharges])
 		it is arbitrary where the min charge ends up (eg. could be in m[:TotalDemandCharges] or m[:MinChargeAdder]).
@@ -1238,10 +1238,8 @@ function reopt_run(m, p::Parameter)
 	add_export_expressions(m, p)
 	add_util_fixed_and_min_charges(m, p)
 
-	@info typeof(p.RaMonthlyPrice)
 	if p.RaLookbackDays != 0
 		if sum(p.RaMonthlyPrice[k] for k in keys(p.RaMonthlyPrice))==0
-			@info "step 1"
 			add_resource_adequacy_idealized(m, p)
 		else
 			add_resource_adequacy(m, p)
