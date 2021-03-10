@@ -33,6 +33,13 @@ function add_continuous_variables(m, p)
 		dvAbsorptionChillerDemand[p.TimeStep] >= 0  #X^{ac}_h: Thermal power consumption by absorption chiller in time step h
 		dvElectricChillerDemand[p.TimeStep] >= 0  #X^{ec}_h: Electrical power consumption by electric chiller in time step h
 		dvOMByHourBySizeCHP[p.Tech, p.TimeStep] >= 0
+		#Offgrid analyses
+		dvLoadServed[p.TimeStep] >= 0
+		dvSRbatt[p.ElecStorage, p.TimeStep] >= 0
+		dvSRrequired[p.TimeStep]>= 0
+		dvSRprovided[p.TimeStep] >= 0
+		dvSR[p.TechsProvidingSR, p.TimeStep] >= 0
+		dvProductionToLoad[p.TechsProvidingSR, p.TimeStep] >= 0
     end
 	if !isempty(p.ExportTiers)
 		@variable(m, dvProductionToGrid[p.Tech, p.ExportTiers, p.TimeStep] >= 0)  # X^{ptg}_{tuh}: Exports from electrical production to the grid by technology t in demand tier u during time step h [kW]   (NEW)
@@ -629,6 +636,77 @@ function add_load_balance_constraints(m, p)
 end
 
 
+function add_load_balance_constraints_offgrid(m, p)
+	##Constraint (8b): Electrical Load Balancing without Grid
+	@constraint(m, ElecLoadBalanceNoGridCon[ts in p.TimeStep],
+		sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] for t in p.ElectricTechs) +
+		sum( m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage )  ==
+		sum( sum(m[:dvProductionToStorage][b,t,ts] for b in p.ElecStorage) +
+			 m[:dvProductionToCurtail][t,ts]
+		for t in p.ElectricTechs) +
+        sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
+        sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers )/ p.AbsorptionChillerElecCOP +
+		(p.ElecLoad[ts] * m[:dvLoadServed][ts])
+	)
+	@constraint(m, [ts in p.TimeStep],
+        m[:dvLoadServed][ts] <= 1
+	)
+	@constraint(m, [ts in p.TimeStep],
+		m[:dvLoadServed][ts] >= 0
+	)
+	@constraint(m, sum(m[:dvLoadServed][ts] * p.ElecLoad[ts] for ts in p.TimeStep) >=
+		p.AnnualElecLoadkWh * p.MinLoadMetPct
+	)
+end
+
+
+function add_spinning_reserve_constraints(m, p)
+	# Calculate spinning reserve required
+	@constraint(m, [t in p.TechsProvidingSR, ts in p.TimeStep],
+		m[:dvProductionToLoad][t,ts] == p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] -
+										sum(m[:dvProductionToStorage][b, t, ts] for b in p.ElecStorage) -
+										m[:dvProductionToCurtail][t, ts]
+	)
+	@constraint(m, [ts in p.TimeStep],
+		m[:dvSRrequired][ts] >= sum(m[:dvProductionToLoad][t,ts] * p.SRrequiredPctTechs[t] for t in p.TechsRequiringSR) +
+								p.ElecLoad[ts] * p.SRrequiredPctLoad
+	)
+	# Spinning reserve provided - battery
+	@constraint(m, [b in p.ElecStorage, ts in p.TimeStep],
+		m[:dvSRbatt][b,ts] <= m[:dvStorageSOC][b,ts-1] - p.StorageMinSOC[b] * m[:dvStorageCapEnergy][b] - m[:dvDischargeFromStorage][b,ts] / p.DischargeEfficiency[b]
+	)
+	@constraint(m, [b in p.ElecStorage, ts in p.TimeStep],
+		m[:dvSRbatt][b,ts] <= m[:dvStorageCapPower][b]
+	)
+
+
+
+	# Spinning reserve provided - other technologies
+	@constraint(m, [t in p.TechsProvidingSR, ts in p.TimeStep],
+		 m[:dvSR][t,ts] <= (p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] -
+		                   m[:dvProductionToLoad][t,ts]) * (1 - p.SRrequiredPctTechs[t])
+	)
+	@constraint(m, [t in p.TechsProvidingSR, ts in p.TimeStep],
+		m[:dvSR][t,ts] <= m[:binTechIsOnInTS][t,ts] * m[:NewMaxSize][t]
+	)
+	@constraint(m, [ts in p.TimeStep],
+		m[:dvSRprovided][ts] == sum(m[:dvSR][t,ts] for t in p.TechsProvidingSR) +
+								sum(m[:dvSRbatt][b,ts] for b in p.ElecStorage)
+	)
+
+# 	@constraint(m, [t in p.TechsProvidingSR, ts in p.TimeStep],
+# 		m[:dvSize][t] >= m[:dvSR][t,ts] + m[:dvProductionToLoad][t,ts]
+# 	)
+
+# 	@constraint(m, [ts in p.TimeStep],
+# 		m[:dvSRprovided][ts] == sum(m[:dvSR][t,ts] * p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * (1 - p.SRrequiredPctTechs[t]) for t in p.TechsProvidingSR) +
+# 								sum(m[:dvSRbatt][b,ts] for b in p.ElecStorage)
+# 	)
+	@constraint(m, [ts in p.TimeStep],
+		m[:dvSRrequired][ts] <= m[:dvSRprovided][ts]
+	)
+end
+
 function add_storage_grid_constraints(m, p)
 	##Constraint (8c): Grid-to-storage no greater than grid purchases
 	@constraint(m, GridToStorageCon[ts in p.TimeStepsWithGrid],
@@ -982,7 +1060,12 @@ function reopt_run(m, p::Parameter)
 
 	### Constraint set (8): Electrical Load Balancing and Grid Sales
 	##Constraint (8a): Electrical Load Balancing with Grid
-	add_load_balance_constraints(m, p)
+	if p.OffGridFlag
+		add_load_balance_constraints_offgrid(m, p)
+		add_spinning_reserve_constraints(m, p)
+	else
+		add_load_balance_constraints(m, p)
+	end
 
 	add_storage_grid_constraints(m, p)
 	if !isempty(p.ExportTiers)
@@ -1061,7 +1144,12 @@ function reopt_run(m, p::Parameter)
     #############  		Outputs    									 #############
     ##############################################################################
 	try
-		results["lcc"] = round(value(m[:REcosts]) + 0.0001*value(m[:MinChargeAdder]))
+		if p.OffGridFlag
+			results["lcc"] = round(value(m[:REcosts]) + p.DistSystemCost + p.PreOperatingExpenses + p.LaborCost + p.LandLease +
+							 (p.InverterRoomSqft + value(m[:dvStorageCapEnergy]["Elec"]) * p.BattRoomSqftPerkWh) * p.PowerhouseCivilCost)
+		else
+			results["lcc"] = round(value(m[:REcosts]) + 0.0001*value(m[:MinChargeAdder]))
+		end
 		results["lower_bound"] = round(JuMP.objective_bound(m))
 		results["optimality_gap"] = JuMP.relative_gap(m)
 	catch
@@ -1122,6 +1210,13 @@ function reopt_results(m, p, r::Dict)
 		add_null_cold_tes_results(m, p, r)
 	end
 	add_util_results(m, p, r)
+	if p.OffGridFlag
+		add_load_results(m, p, r)
+		add_offgrid_financial_results(m, p, r)
+	else
+		add_null_load_results(m, p, r)
+		add_null_offgrid_financial_results
+	end
 	return r
 end
 
@@ -1209,6 +1304,42 @@ function add_null_cold_tes_results(m, p, r::Dict)
 	nothing
 end
 
+function add_null_load_results(m, p, r::Dict)
+	r["load_met"] = []
+	r["load_sr_required"] = []
+	nothing
+end
+
+function add_null_offgrid_financial_results(m, p, r::Dict)
+	r["total_powerhouse_civil_costs"] = []
+	r["total_distribution_system_costs"] = []
+	r["total_pre_op_expenses"] = []
+	r["total_labor_costs"] = []
+	r["total_land_lease_costs"] = []
+	r["microgrid_lcoe"] = []
+	nothing
+end
+
+function add_load_results(m, p, r::Dict)
+	@expression(m, LoadMet[ts in p.TimeStep], p.ElecLoad[ts] * m[:dvLoadServed][ts])
+	r["load_met"] = round.(value.(LoadMet), digits=3)
+	@expression(m, SRrequiredLoad[ts in p.TimeStep], p.ElecLoad[ts] * p.SRrequiredPctLoad)
+	r["sr_required_load"] = round.(value.(SRrequiredLoad), digits=3)
+	nothing
+end
+
+function add_offgrid_financial_results(m, p, r::Dict)
+	powerhouse_civil_cost = (p.InverterRoomSqft + value(m[:dvStorageCapEnergy]["Elec"]) * p.BattRoomSqftPerkWh) * p.PowerhouseCivilCost
+	lcc = round(value(m[:REcosts]) + p.DistSystemCost + p.PreOperatingExpenses + p.LaborCost + p.LandLease + powerhouse_civil_cost)
+	r["total_powerhouse_civil_costs"] = powerhouse_civil_cost
+	r["total_distribution_system_costs"] = p.DistSystemCost
+	r["total_pre_op_expenses"] = p.PreOperatingExpenses
+	r["total_labor_costs"] = p.LaborCost
+	r["total_land_lease_costs"] = p.LandLease
+	r["microgrid_lcoe"] = lcc / p.pwf_om / p.AnnualElecLoadkWh
+	nothing
+end
+
 function add_storage_results(m, p, r::Dict)
     r["batt_kwh"] = value(m[:dvStorageCapEnergy]["Elec"])
     r["batt_kw"] = value(m[:dvStorageCapPower]["Elec"])
@@ -1226,6 +1357,14 @@ function add_storage_results(m, p, r::Dict)
 		sum(m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage))
 	r["ElecFromBatt"] = round.(value.(ElecFromBatt), digits=3)
 	r["ElecFromBattExport"] = zeros(length(p.TimeStep))
+
+	#Offgrid
+	if p.OffGridFlag
+		@expression(m, SRprovidedBatt[ts in p.TimeStep], sum(m[:dvSRbatt][b, ts] for b in p.ElecStorage))
+		r["sr_provided_batt"] = round.(value.(SRprovidedBatt), digits=3)
+	else
+		r["sr_provided_batt"] = []
+    end
 	nothing
 end
 
@@ -1280,10 +1419,16 @@ function add_generator_results(m, p, r::Dict)
 	)
 	r["average_yearly_gen_energy_produced"] = round(value(m[:AverageGenProd]), digits=0)
 
+	#Offgrid
+	if p.OffGridFlag
+
+		@expression(m, GenProvidedSR[ts in p.TimeStep], sum(m[:dvSR][t,ts] for t in PVtechs_in_class_noNEM))
+		r["sr_provided_gen"] = round.(value.(GenProvidedSR), digits=3)
+	else
+		r["sr_provided_gen"] = []
+    end
 	nothing
 end
-
-
 
 function add_wind_results(m, p, r::Dict)
 	r["wind_kw"] = round(value(sum(m[:dvSize][t] for t in m[:WindTechs])), digits=4)
@@ -1325,6 +1470,10 @@ function add_pv_results(m, p, r::Dict)
 	PVclasses = filter(tc->startswith(tc, "PV"), p.TechClass)
     for PVclass in PVclasses
 		PVtechs_in_class = filter(t->startswith(t, PVclass), m[:PVTechs])
+		PVtechs_in_class_noNEM = filter(t->endswith(t, "NM"), m[:PVTechs])
+
+		print(PVtechs_in_class, '\n')
+		print(PVtechs_in_class_noNEM, '\n')
 
 		if !isempty(PVtechs_in_class)
 
@@ -1371,6 +1520,12 @@ function add_pv_results(m, p, r::Dict)
 
             PVPerUnitSizeOMCosts = @expression(m, sum(p.OMperUnitSize[t] * p.pwf_om * m[:dvSize][t] for t in PVtechs_in_class))
             r[string(PVclass, "_net_fixed_om_costs")] = round(value(PVPerUnitSizeOMCosts) * m[:r_tax_fraction_owner], digits=0)
+
+			PVrequiredSR = @expression(m, [ts in p.TimeStep], sum(m[:dvProductionToLoad][t,ts] * p.SRrequiredPctTechs[t] for t in PVtechs_in_class_noNEM))
+			r[string("SRrequired", PVclass)] = round.(value.(PVrequiredSR), digits=3)
+
+			PVprovidedSR = @expression(m, [ts in p.TimeStep], sum(m[:dvSR][t,ts] for t in PVtechs_in_class_noNEM))
+			r[string("SRprovided", PVclass)] = round.(value.(PVprovidedSR), digits=3)
         end
 	end
 	nothing

@@ -69,6 +69,7 @@ class Storage(object):
                  installed_cost_us_dollars_per_kw, installed_cost_us_dollars_per_kwh,
                  replace_cost_us_dollars_per_kw, replace_cost_us_dollars_per_kwh,
                  inverter_replacement_year, battery_replacement_year,
+                 inverter_room_size_sqft, battery_room_size_sqft_per_kwh,
                  **kwargs):
 
         self.min_kw = min_kw
@@ -91,6 +92,9 @@ class Storage(object):
         self.replace_cost_us_dollars_per_kwh = replace_cost_us_dollars_per_kwh
         self.inverter_replacement_year = inverter_replacement_year
         self.battery_replacement_year = battery_replacement_year
+
+        self.inverter_room_size_sqft = inverter_room_size_sqft
+        self.battery_room_size_sqft_per_kwh = battery_room_size_sqft_per_kwh
 
         self.incentives = StorageIncentives(**kwargs)
 

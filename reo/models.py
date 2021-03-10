@@ -122,6 +122,7 @@ class ScenarioModel(models.Model):
     optimality_tolerance_decomp_subproblem = models.FloatField(null=True, blank=True)
     timeout_decomp_subproblem_seconds = models.IntegerField(null=True, blank=True)
     add_soc_incentive = models.BooleanField(null=True, blank=True)
+    off_grid_flag = models.BooleanField(null=True, blank=True)
 
     lower_bound = models.FloatField(null=True, blank=True)
     optimality_gap = models.FloatField(null=True, blank=True)
@@ -170,6 +171,11 @@ class FinancialModel(models.Model):
     third_party_ownership = models.BooleanField(null=True, blank=True)
     owner_discount_pct = models.FloatField(null=True, blank=True)
     owner_tax_pct = models.FloatField(null=True, blank=True)
+    powerhouse_civil_cost_us_dollars_per_sqft = models.FloatField(null=True, blank=True)
+    distribution_system_cost_us_dollars = models.FloatField(null=True, blank=True)
+    pre_operating_expenses_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+    labor_cost_us_dollars_per_year = models.FloatField(null=True, blank=True)
+    land_lease_us_dollars_per_year = models.FloatField(null=True, blank=True)
 
     # Outputs
     lcc_us_dollars = models.FloatField(null=True, blank=True)
@@ -201,6 +207,12 @@ class FinancialModel(models.Model):
             models.FloatField(null=True, blank=True), default=list, null=True)
     developer_annual_free_cashflow_series_us_dollars = ArrayField(
             models.FloatField(null=True, blank=True), default=list, null=True)
+    powerhouse_civil_cost_us_dollars = models.FloatField(null=True, blank=True)
+    total_distribution_system_cost_us_dollars = models.FloatField(null=True, blank=True)
+    pre_operating_expenses_us_dollars = models.FloatField(null=True, blank=True)
+    lc_labor_cost_us_dollars = models.FloatField(null=True, blank=True)
+    lc_land_lease_us_dollars = models.FloatField(null=True, blank=True)
+    microgrid_lcoe_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -227,6 +239,8 @@ class LoadProfileModel(models.Model):
     outage_end_time_step = models.IntegerField(null=True, blank=True)
     critical_load_pct = models.FloatField(null=True, blank=True)
     outage_is_major_event = models.BooleanField(null=True, blank=True)
+    min_load_met_pct = models.FloatField(null=True, blank=True)
+    sr_required_pct = models.FloatField(null=True, blank=True)
 
     #Outputs
     year_one_electric_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True)
@@ -235,6 +249,8 @@ class LoadProfileModel(models.Model):
     sustain_hours = models.IntegerField(null=True, blank=True)
     bau_sustained_time_steps = models.IntegerField(null=True, blank=True)
     resilience_check_flag = models.BooleanField(null=True, blank=True)
+    load_met_series_kw = ArrayField(models.FloatField(blank=True), default=list, null=True)
+    sr_required_series_kw = ArrayField(models.FloatField(blank=True), default=list, null=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -440,6 +456,7 @@ class PVModel(models.Model):
     can_wholesale = models.BooleanField(null=True, blank=True)
     can_export_beyond_site_load = models.BooleanField(null=True, blank=True)
     can_curtail = models.BooleanField(null=True, blank=True)
+    sr_required_pct = models.FloatField(null=True, blank=True)
 
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)
@@ -464,6 +481,8 @@ class PVModel(models.Model):
             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
     existing_pv_om_cost_us_dollars = models.FloatField(null=True, blank=True)
     lcoe_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
+    sr_required_series_kw = ArrayField(models.FloatField(blank=True), default=list, null=True)
+    sr_provided_series_kw = ArrayField(models.FloatField(blank=True), default=list, null=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -563,6 +582,9 @@ class StorageModel(models.Model):
     total_itc_pct = models.FloatField(null=True, blank=True)
     total_rebate_us_dollars_per_kw = models.IntegerField(null=True, blank=True)
     total_rebate_us_dollars_per_kwh = models.IntegerField(null=True, blank=True)
+    inverter_room_size_sqft = models.FloatField(null=True, blank=True)
+    battery_room_size_sqft_per_kwh = models.FloatField(null=True, blank=True)
+
 
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)
@@ -573,6 +595,7 @@ class StorageModel(models.Model):
             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
     year_one_soc_series_pct = ArrayField(
             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
+    sr_provided_series_kw = ArrayField(models.FloatField(blank=True), default=list, null=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -649,6 +672,7 @@ class GeneratorModel(models.Model):
     existing_gen_total_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
     year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
     year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
+    sr_provided_series_kw = ArrayField(models.FloatField(blank=True), default=list, null=True)
 
     @classmethod
     def create(cls, **kwargs):

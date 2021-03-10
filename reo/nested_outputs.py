@@ -139,6 +139,16 @@ nested_output_definitions = {
                   "type": "int",
                   "description": "Number of time steps the existing system can sustain the critical load",
                   "units": "time steps"
+                },
+                "load_met_series_kw": {
+                  "type": "list_of_float",
+                  "description": "Spinning reserve requirement for changes in load in each time step",
+                  "units": "kW"
+                },
+                "sr_required_series_kw": {
+                  "type": "list_of_float",
+                  "description": "Spinning reserve requirement for changes in load in each time step",
+                  "units": "kW"
                 }
               },
 
@@ -304,7 +314,37 @@ nested_output_definitions = {
                   "type": "float",
                   "description": ("Annual free cashflow for the developer in the business-as-usual third party case for all analysis years, including year 0. Future years have not been discounted to account for the time value of money. Only calcualted in the third-party case."),
                   "units": "$"
-                 }
+                 },
+                "powerhouse_civil_cost_us_dollars": {
+                  "type": "float",
+                  "description": ("Cost of the structure housing battery and BOS equipment in USD/sqft. In off-grid analyses only."),
+                  "units": "$"
+                },
+                "total_distribution_system_cost_us_dollars": {
+                  "type": "float",
+                  "description": ("Total cost of building out a distribution network in USD. In off-grid analyses only."),
+                  "units": "$"
+                },
+                "pre_operating_expenses_us_dollars": {
+                  "type": "float",
+                  "description": ("Pre-operating expenses in USD/kW-peak load (includes site visits, system design, approvals, feasibility studies, agreements, etc.). In off-grid analyses only."),
+                  "units": "$"
+                },
+                "lc_labor_cost_us_dollars": {
+                  "type": "float",
+                  "description": ("Annual labor costs in USD (includes salaries for plant supervisors, technicians, sales agents etc. to maintain customer relationships, provide technical support, collect revenue, read meters etc.). In off-grid analyses only."),
+                  "units": "$"
+                },
+                "lc_land_lease_us_dollars": {
+                  "type": "float",
+                  "description": ("Cost of leasing land to site microgrid infrastructure in USD/year. In off-grid analyses only."),
+                  "units": "$"
+                },
+                "microgrid_lcoe_us_dollars_per_kwh": {
+                  "type": "float",
+                  "description": ("Cost reflective tariff of the off-grid system in USD/kWh. In off-grid analyses only."),
+                  "units": "$"
+                }
               },
 
               "PV": {
@@ -387,6 +427,16 @@ nested_output_definitions = {
                   "description": "Year one PV power curtailed during outage time series",
                   "units": "kW"
                 },
+                "sr_required_series_kw": {
+                  "type": "list_of_float",
+                  "description": "Spinning reserve requirement for PV serving load in each time step",
+                  "units": "kW"
+                },
+                "sr_provided_series_kw": {
+                  "type": "list_of_float",
+                  "description": "Spinning reserve provided by the PV system in each time step",
+                  "units": "kW"
+                }
               },
 
               "Wind": {
@@ -434,7 +484,7 @@ nested_output_definitions = {
                   "type": "list_of_float",
                   "description": "Year one Wind power curtailed during outage time series",
                   "units": "kW"
-                },
+                }
               },
 
               "Storage": {
@@ -462,6 +512,11 @@ nested_output_definitions = {
                   "type": "list_of_float",
                   "description": "Year one hourly time series of battery state of charge",
                   "units": "%"
+                },
+                "sr_provided_series_kw": {
+                  "type": "list_of_float",
+                  "description": "Spinning reserve provided by the battery in each time step",
+                  "units": "kW"
                 }
               },
 
@@ -806,6 +861,11 @@ nested_output_definitions = {
                   "type": "int",
                   "description": "Total equivalent pounds of carbon dioxide emitted from BAU generator use in the first year.",
                   "units": "lb CO2"
+                },
+                "sr_provided_series_kw": {
+                  "type": "list_of_float",
+                  "description": "Spinning reserve provided by the generator in each time step",
+                  "units": "kW"
                 }
               },
 

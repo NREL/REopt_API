@@ -114,7 +114,7 @@ nested_input_definitions = {
     },
     "user_uuid": {
       "type": "str",
-      "description": "The assigned unique ID of a signed in REOpt user"
+      "description": "The assigned unique ID of a signed in REopt user"
     },
     "description": {
       "type": "str",
@@ -130,26 +130,26 @@ nested_input_definitions = {
       "type": "str",
       "description": "The unique ID of a scenario created by the REopt Lite Webtool. Note that this ID can be shared by several REopt Lite API Scenarios (for example when users select a 'Resilience' analysis more than one REopt API Scenario is created)."
     },
-  "optimality_tolerance_bau": {
+    "optimality_tolerance_bau": {
       "type": "float",
       "min": 1.0e-5,
       "max": 10.0,
       "default": 0.001,
       "description": "The threshold for the difference between the solution's objective value and the best possible value at which the solver terminates"
     },
-  "optimality_tolerance_techs": {
+    "optimality_tolerance_techs": {
       "type": "float",
       "min": 1.0e-5,
       "max": 10.0,
       "default": 0.001,
       "description": "The threshold for the difference between the solution's objective value and the best possible value at which the solver terminates"
     },
-  "use_decomposition_model": {
+    "use_decomposition_model": {
       "type": "bool",
       "default": False,
       "description": "Toggle to use the decomposition model/algorithm"
     },
-  "optimality_tolerance_decomp_subproblem": {
+    "optimality_tolerance_decomp_subproblem": {
       "type": "float",
       "min": 1.0e-5,
       "max": 10.0,
@@ -168,7 +168,11 @@ nested_input_definitions = {
       "default": True,
       "description": "If True, then a small incentive to keep the battery's state of charge high is added to the objective of the optimization."
     },
-
+    "off_grid_flag": {
+      "type": "bool",
+      "default": False,
+      "description": "Set to True to enable off-grid analyses."
+    },
     "Site": {
       "latitude": {
         "type": "float",
@@ -212,7 +216,6 @@ nested_input_definitions = {
         "default": 0.0,
         "description": "Site elevation (above sea sevel), units of feet"
       },
-
       "Financial": {
         "om_cost_escalation_pct": {
           "type": "float",
@@ -295,6 +298,41 @@ nested_input_definitions = {
           "max": 1.0,
           "default": 0.3,
           "description": "Additional cost, in percent of non-islandable capital costs, to make a distributed energy system islandable from the grid and able to serve critical loads. Includes all upgrade costs such as additional laber and critical load panels."
+        },
+        "powerhouse_civil_cost_us_dollars_per_sqft": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e6,
+          "default": 45,
+          "description": "Cost of the structure housing battery and BOS equipment in USD/sqft. Used for off-grid analyses only."
+        },
+        "distribution_system_cost_us_dollars": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e6,
+          "default": 20000,
+          "description": "Total cost of building out a distribution network in USD. Used for off-grid analyses only."
+        },
+        "pre_operating_expenses_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e6,
+          "default": 1200.0,
+          "description": "Pre-operating expenses in USD/kW-peak load (includes site visits, system design, approvals, feasibility studies, agreements, etc.). Used for off-grid analyses only."
+        },
+        "labor_cost_us_dollars_per_year": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e6,
+          "default": 3000.0,
+          "description": "Annual labor costs in USD (includes salaries for plant supervisors, technicians, sales agents etc. to maintain customer relationships, provide technical support, collect revenue, read meters etc.). Used for off-grid analyses only."
+        },
+        "land_lease_us_dollars_per_year": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e6,
+          "default": 800,
+          "description": "Cost of leasing land to site microgrid infrastructure in USD/year. Used for off-grid analyses only."
         }
       },
 
@@ -394,6 +432,20 @@ nested_input_definitions = {
           "default": True,
           "description": "Boolean value for if outage is a major event, which affects the avoided_outage_costs_us_dollars. If True, the avoided outage costs are calculated for a single outage occurring in the first year of the analysis_years. If False, the outage event is assumed to be an average outage event that occurs every year of the analysis period. In the latter case, the avoided outage costs for one year are escalated and discounted using the escalation_pct and offtaker_discount_pct to account for an annually recurring outage. (Average outage durations for certain utility service areas can be estimated using statistics reported on EIA form 861.)"
         },
+        "min_load_met_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 1.0,
+          "description": "Fraction of the load that must be met on an annual energy basis. Value must be between zero and one, inclusive."
+        },
+        "sr_required_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.2,
+          "description": "Spinning reserve requirement for changes in load in off-grid analyses. Value must be between zero and one, inclusive."
+        }
       },
 
       "LoadProfileBoilerFuel": {
@@ -1082,6 +1134,13 @@ nested_input_definitions = {
           "type": "bool",
           "default": True,
           "description": "True/False for if technology can curtail energy produced."
+        },
+        "sr_required_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.5,
+          "description": "Spinning reserve requirement for PV serving load in off-grid analyses. Value must be between zero and one, inclusive."
         }
       },
 
@@ -1173,7 +1232,16 @@ nested_input_definitions = {
           "total_rebate_us_dollars_per_kwh": {
             "type": "float", "min": 0, "max": 1e9, "default": 0,
             "description": "Rebate based on installed energy capacity"
-           }             
+          },
+          "inverter_room_size_sqft": {
+            "type": "float", "min": 0, "max": 1000, "default": 72,
+            "description": "Size of the structure housing the inverter in square feet. Used for off-grid analyses only."
+          },
+          "battery_room_size_sqft_per_kwh": {
+            "type": "float", "min": 0, "max": 10, "default": 0.197852,
+            "description": "Size of the structure housing the battery bank in sqft per kWh of storage capacity. Used for off-grid analyses only."
+          }
+
         },
 
       "Generator": {

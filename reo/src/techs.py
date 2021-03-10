@@ -126,6 +126,7 @@ class PV(Tech):
         self.prod_factor_series_kw = prod_factor_series_kw
         self.tech_name = 'pv' + str(pv_number)
         self.location = location
+        self.sr_required_pct = kwargs.get("sr_required_pct")
 
         # if user hasn't entered the tilt (default value is 0.537), tilt value gets assigned based on array_type
         if self.tilt == 0.537:
@@ -200,6 +201,7 @@ class Wind(Tech):
         self.incentives = Incentives(**kwargs)
         self.installed_cost_us_dollars_per_kw = kwargs.get('installed_cost_us_dollars_per_kw')
         self.prod_factor_series_kw = prod_factor_series_kw
+        self.sr_required_pct = kwargs.get("sr_required_pct")
 
         # if user hasn't entered the federal itc, itc value gets assigned based on size_class
         if self.incentives.federal.itc == 0.3:
