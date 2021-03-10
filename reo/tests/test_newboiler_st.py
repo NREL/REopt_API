@@ -35,6 +35,7 @@ from unittest import TestCase  # have to use unittest.TestCase to get tests to s
 from unittest import skip
 from reo.models import ModelManager
 from reo.utilities import check_common_outputs, MMBTU_TO_KWH
+from reo.src import load_profile, load_profile_boiler_fuel
 import numpy as np
 
 class NewBoilerSteamTurbineTest(ResourceTestCaseMixin, TestCase):
@@ -64,6 +65,30 @@ class NewBoilerSteamTurbineTest(ResourceTestCaseMixin, TestCase):
         nested_data["Scenario"]["optimality_tolerance_bau"] = 0.001
         nested_data["Scenario"]["optimality_tolerance_techs"] = 0.001
 
+        # Modify loads (currently "Hospital" in POST)
+        city = "SanFrancisco"
+        building = "Hospital"
+        nested_data["Scenario"]["Site"]["LoadProfile"]["doe_reference_name"] = building
+        nested_data["Scenario"]["Site"]["LoadProfileBoilerFuel"]["doe_reference_name"] = building
+        nested_data["Scenario"]["Site"]["LoadProfile"]["annual_kwh"] = 5 * load_profile.default_annual_electric_loads[city][building.lower()]
+        nested_data["Scenario"]["Site"]["LoadProfileBoilerFuel"]["annual_mmbtu"] = 5 * load_profile_boiler_fuel.LoadProfileBoilerFuel.annual_loads[city][building.lower()]
+
+        # ST attributes
+        nested_data["Scenario"]["Site"]["SteamTurbine"]["is_condensing"] = False
+        nested_data["Scenario"]["Site"]["SteamTurbine"]["outlet_steam_pressure_psig"] = 100.0
+        
+        # Add Boiler to ST
+        nested_data["Scenario"]["Site"]["Boiler"]["can_supply_st"] = True
+
+        # Add CHP 
+        nested_data["Scenario"]["Site"]["CHP"] = {"prime_mover": "combustion_turbine",
+                                                  #"size_class": 3,
+                                                  "min_kw": 1000.0,
+                                                  "min_allowable_kw":0.0,
+                                                  "max_kw": 1000.0}
+        nested_data["Scenario"]["Site"]["CHP"]["can_supply_st"] = True
+        nested_data["Scenario"]["Site"]["FuelTariff"]["chp_fuel_blended_annual_rates_us_dollars_per_mmbtu"] = 8.0
+
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
@@ -73,8 +98,8 @@ class NewBoilerSteamTurbineTest(ResourceTestCaseMixin, TestCase):
 
         # The values compared to the expected values may change if optimization parameters were changed
         d_expected = dict()
-        d_expected['lcc'] = 9376063.0
-        d_expected['npv'] = 5331758.0
+        # d_expected['lcc'] = 9376063.0
+        # d_expected['npv'] = 5331758.0
         d_expected['steamturbine_size_kw'] = 500.0
         # d_expected['steamturbine_yearly_thermal_consumption_mmbtu'] = 30555.6
         # d_expected['steamturbine_yearly_electric_energy_produced_kwh'] = 3086580.645
@@ -124,7 +149,7 @@ class NewBoilerSteamTurbineTest(ResourceTestCaseMixin, TestCase):
         # Check the electric_out/thermal_in efficiency/ratio of the steam turbine with a pre-calculated expected value 
         steamturbine_electric = d["outputs"]["Scenario"]["Site"]["SteamTurbine"]["year_one_electric_production_series_kw"] 
         steamturbine_electric_efficiency = sum(steamturbine_electric) / (sum(steamturbine_thermal_in) * MMBTU_TO_KWH)
-        self.assertAlmostEqual(steamturbine_electric_efficiency, 0.235, delta=0.05)
+        self.assertAlmostEqual(steamturbine_electric_efficiency, 0.235, delta=0.15)
 
         # Check that "thermal_to_steamturbine" is zero for each tech which has input of can_supply_st as False
         can_supply_st = {}

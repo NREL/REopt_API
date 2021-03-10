@@ -42,14 +42,14 @@
         "om_cost_us_dollars_per_kw": 70.0,
         "om_cost_us_dollars_per_kwh": 0.001,
         "can_wholesale": false,
-				"can_curtail": false
-			},
+		"can_curtail": false
+      },
       "Financial": {
         "om_cost_escalation_pct": 0.025,
         "escalation_pct": 0.023,
         "boiler_fuel_escalation_pct": 0.034,
         "chp_fuel_escalation_pct": 0.034,
-				"newboiler_fuel_escalation_pct": 0.01,
+		"newboiler_fuel_escalation_pct": 0.01,
         "offtaker_tax_pct": 0.26,
         "offtaker_discount_pct": 0.083,
         "third_party_ownership": false,
