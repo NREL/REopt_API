@@ -126,7 +126,7 @@ function add_cost_expressions(m, p)
 	end
 	if ("AC" in p.FlexTechs || "HP" in p.FlexTechs)
 		m[:TotalHVACComfortCost] = @expression(m,
-			sum(m[:dvHVACComfortCost][ts] for ts in p.TimeStep))
+			sum(m[:dvHVACComfortCost][ts]*100000 for ts in p.TimeStep))
 	else
 		m[:TotalHVACComfortCost] = @expression(m, 0.0)
 	end
@@ -1102,7 +1102,7 @@ function add_cost_function(m, p)
         m[:TotalRaValue] * m[:r_tax_fraction_owner] +
 
 		# Comfort Costs
-		m[:TotalWHComfortCost] + m[:TotalHVACComfortCost]*100000
+		m[:TotalWHComfortCost] + m[:TotalHVACComfortCost]
 	)
     #= Note: 0.9999*m[:MinChargeAdder] in Obj b/c when m[:TotalMinCharge] > (TotalEnergyCharges + m[:TotalDemandCharges] + TotalExportBenefit + m[:TotalFixedCharges])
 		it is arbitrary where the min charge ends up (eg. could be in m[:TotalDemandCharges] or m[:MinChargeAdder]).
