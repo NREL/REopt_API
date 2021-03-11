@@ -1421,8 +1421,7 @@ function add_generator_results(m, p, r::Dict)
 
 	#Offgrid
 	if p.OffGridFlag
-
-		@expression(m, GenProvidedSR[ts in p.TimeStep], sum(m[:dvSR][t,ts] for t in PVtechs_in_class_noNEM))
+		@expression(m, GenProvidedSR[ts in p.TimeStep], sum(m[:dvSR][t,ts] for t in ["GENERATOR"]))
 		r["sr_provided_gen"] = round.(value.(GenProvidedSR), digits=3)
 	else
 		r["sr_provided_gen"] = []
@@ -1472,9 +1471,6 @@ function add_pv_results(m, p, r::Dict)
 		PVtechs_in_class = filter(t->startswith(t, PVclass), m[:PVTechs])
 		PVtechs_in_class_noNEM = filter(t->endswith(t, "NM"), m[:PVTechs])
 
-		print(PVtechs_in_class, '\n')
-		print(PVtechs_in_class_noNEM, '\n')
-
 		if !isempty(PVtechs_in_class)
 
 			r[string(PVclass, "_kw")] = round(value(sum(m[:dvSize][t] for t in PVtechs_in_class)), digits=4)
@@ -1521,11 +1517,17 @@ function add_pv_results(m, p, r::Dict)
             PVPerUnitSizeOMCosts = @expression(m, sum(p.OMperUnitSize[t] * p.pwf_om * m[:dvSize][t] for t in PVtechs_in_class))
             r[string(PVclass, "_net_fixed_om_costs")] = round(value(PVPerUnitSizeOMCosts) * m[:r_tax_fraction_owner], digits=0)
 
-			PVrequiredSR = @expression(m, [ts in p.TimeStep], sum(m[:dvProductionToLoad][t,ts] * p.SRrequiredPctTechs[t] for t in PVtechs_in_class_noNEM))
-			r[string("SRrequired", PVclass)] = round.(value.(PVrequiredSR), digits=3)
+			#Offgrid
+			if p.OffGridFlag
+				PVrequiredSR = @expression(m, [ts in p.TimeStep], sum(m[:dvProductionToLoad][t,ts] * p.SRrequiredPctTechs[t] for t in PVtechs_in_class_noNEM))
+				r[string("SRrequired", PVclass)] = round.(value.(PVrequiredSR), digits=3)
 
-			PVprovidedSR = @expression(m, [ts in p.TimeStep], sum(m[:dvSR][t,ts] for t in PVtechs_in_class_noNEM))
-			r[string("SRprovided", PVclass)] = round.(value.(PVprovidedSR), digits=3)
+				PVprovidedSR = @expression(m, [ts in p.TimeStep], sum(m[:dvSR][t,ts] for t in PVtechs_in_class_noNEM))
+				r[string("SRprovided", PVclass)] = round.(value.(PVprovidedSR), digits=3)
+			else
+				r[string("SRrequired", PVclass)] = []
+				r[string("SRprovided", PVclass)] = []
+			end
         end
 	end
 	nothing
