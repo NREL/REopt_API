@@ -69,8 +69,8 @@ function add_integer_variables(m, p)
     end
 	#Add binary for participating in each month
 	if p.RaLookbackDays != 0
-		#@variable(m,binRaParticipate[keys(p.RaEventStartTimes)], Bin)
-		@variable(m,binRaParticipate[keys(p.RaEventStartTimes)]==1)
+		@variable(m,binRaParticipate[keys(p.RaEventStartTimes)], Bin)
+# 		@variable(m,binRaParticipate[keys(p.RaEventStartTimes)]==1)
 	end
 end
 
