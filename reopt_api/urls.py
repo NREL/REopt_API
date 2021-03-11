@@ -40,6 +40,10 @@ v1_api = Api(api_name='v1')
 v1_api.register(Job())
 v1_api.register(OutageSimJob())
 
+stable_api = Api(api_name='stable')
+stable_api.register(Job())
+stable_api.register(OutageSimJob())
+
 
 def page_not_found(request, url):
     """
@@ -51,8 +55,10 @@ def page_not_found(request, url):
     """
     return HttpResponse("Invalid URL: {}".format(url), status=404)
 
+
 urlpatterns = [
     url(r'^_health/?$', views.health, name='health'),
+    
     path('v1/', include('reo.urls')),
     path('v1/', include('resilience_stats.urls')),
     path('v1/', include('proforma.urls')),
@@ -60,6 +66,15 @@ urlpatterns = [
     url(r'^v1/user/?', include('summary.urls'), name='summary'),
     url(r'', include(v1_api.urls), name='job'),
     url(r'', include(v1_api.urls), name='outagesimjob'),
+    
+    path('stable/', include('reo.urls')),
+    path('stable/', include('resilience_stats.urls')),
+    path('stable/', include('proforma.urls')),
+    path('stable/', include('load_builder.urls')),
+    url(r'^stable/user/?', include('summary.urls'), name='summary'),
+    url(r'', include(stable_api.urls), name='job'),
+    url(r'', include(stable_api.urls), name='outagesimjob'),
+    
     url(r'(.*)', page_not_found, name='404'),
     ]
 
