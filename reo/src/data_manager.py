@@ -1400,10 +1400,10 @@ class DataManager:
             #Offgrid
             'OffGridFlag': self.off_grid_flag,
             'TechsRequiringSR': ['PV1NM'],
-            'TechsProvidingSR': ['PV1NM'], #,'GENERATOR'],
+            'TechsProvidingSR': ['PV1NM','GENERATOR'],
             'MinLoadMetPct': self.load.min_load_met_pct,
             'SRrequiredPctLoad': self.load.sr_required_pct,
-            'SRrequiredPctTechs': [0.5], # 0.0]
+            'SRrequiredPctTechs': [0.5, 0.0],
             'PowerhouseCivilCost': sf.powerhouse_civil_cost_us_dollars_per_sqft,
             'DistSystemCost': sf.distribution_system_cost_us_dollars,
             'PreOperatingExpenses': sf.pre_operating_expenses_us_dollars_per_kw * max(non_cooling_electric_load),
