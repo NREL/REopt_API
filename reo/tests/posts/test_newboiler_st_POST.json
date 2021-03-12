@@ -1,12 +1,14 @@
 {
   "Scenario": {
-	"add_soc_incentive": false,
+	"timeout_seconds": 420,
+    "optimality_tolerance_techs": 0.001,
+    "add_soc_incentive": false,
     "Site": {
       "latitude": 37.78,
       "longitude": -122.45,
       "Boiler": {
-        "existing_boiler_production_type_steam_or_hw": "hot_water",
-        "boiler_efficiency": 0.8,
+        "existing_boiler_production_type_steam_or_hw": "steam",
+        "boiler_efficiency": 0.75,
         "emissions_factor_lb_CO2_per_mmbtu": null,
         "can_supply_st": false
       },      
@@ -27,20 +29,20 @@
         "newboiler_fuel_blended_annual_rates_us_dollars_per_mmbtu": 0.5
       },
       "SteamTurbine": {
-        "min_kw": 500.0,
-        "max_kw": 500.0,
+        "min_kw": 0.0,
+        "max_kw": 1500.0,
         "is_condensing": true,
-        "inlet_steam_pressure_psig": 1000.0,
-        "inlet_steam_temperature_degF": 565,
+        "inlet_steam_pressure_psig": 500.0,
+        "inlet_steam_temperature_degF": 550,
         "inlet_steam_superheat_degF": null,
         "outlet_steam_pressure_psig": -12.7,
         "outlet_steam_min_vapor_fraction": 0.7,                         
-        "isentropic_efficiency": 0.7,
-        "gearbox_generator_efficiency": 0.95,
+        "isentropic_efficiency": 0.525,
+        "gearbox_generator_efficiency": 0.94,
         "net_to_gross_electric_ratio": 1.0,
-        "installed_cost_us_dollars_per_kw": 3000.0,
-        "om_cost_us_dollars_per_kw": 70.0,
-        "om_cost_us_dollars_per_kwh": 0.001,
+        "installed_cost_us_dollars_per_kw": 1136.0,
+        "om_cost_us_dollars_per_kw": 0.0,
+        "om_cost_us_dollars_per_kwh": 0.01,
         "can_wholesale": false,
 		"can_curtail": false
       },
