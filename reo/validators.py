@@ -1161,15 +1161,13 @@ class ValidateNestedInput:
                     # check if user intended to run CHP and supplied sufficient pararmeters to run CHP
                     if user_supplied_chp_inputs:
                         required_keys = prime_mover_defaults_all['recip_engine'].keys()
-                        if real_values.get('prime_mover') is None:
-                            self.input_data_errors.append('No prime_mover was input so all cost and performance parameters must be input.')
                         filtered_values = {k: real_values.get(k) for k in required_keys if k not in ['prime_mover', 'size_class']}
                         missing_defaults = []
                         for k,v in filtered_values.items():
                             if v is None:
                                 missing_defaults.append(k)
                         if len(missing_defaults) > 0:                               
-                            self.input_data_errors.append("CHP is missing a value for the following inputs which are dependent on prime mover type: " + ', '.join(missing_defaults))
+                            self.input_data_errors.append("'No prime_mover was input so all cost and performance parameters must be input for CHP. Please send a new job with the following missing CHP attributes filled in: " + ', '.join(missing_defaults))
                         if real_values.get("chp_unavailability_periods") is None:
                             self.input_data_errors.append('Must provide an input for chp_unavailability_periods since not providing prime_mover')
                         else:
