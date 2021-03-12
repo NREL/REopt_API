@@ -44,7 +44,7 @@ from reo.src.storage import Storage, HotTES, ColdTES
 from reo.src.techs import PV, Util, Wind, Generator, CHP, Boiler, ElectricChiller, AbsorptionChiller
 from celery import shared_task, Task
 from reo.models import ModelManager
-from reo.exceptions import REoptError, UnexpectedError, LoadProfileError, WindDownloadError, PVWattsDownloadError
+from reo.exceptions import REoptError, UnexpectedError, LoadProfileError, WindDownloadError, PVWattsDownloadError, RequestError
 
 
 class ScenarioTask(Task):
@@ -382,6 +382,9 @@ def setup_scenario(self, run_uuid, data, raw_post):
                             message += (" from the NSRDB or international datasets. No search threshold was specified when "
                                         "attempting to pull solar resource data from either dataset.")
                         raise PVWattsDownloadError(message=message, task=self.name, run_uuid=run_uuid, user_uuid=self.data['inputs']['Scenario'].get('user_uuid'), traceback=e.args[0])
+                    if e.args[0].startswith("Invalid cost curve"):
+                        raise RequestError(message=e.args[0], task='data_manager.py', run_uuid=run_uuid, user_uuid=self.data['inputs']['Scenario'].get('user_uuid')) 
+
 
         exc_type, exc_value, exc_traceback = sys.exc_info()
         log.error("Scenario.py raising error: " + str(exc_value.args[0]))
