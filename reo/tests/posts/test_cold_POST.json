@@ -1656,17 +1656,11 @@
         "macrs_bonus_pct": 0.0
       } ,
       "Boiler": {
-        "min_mmbtu_per_hr": 0.0 ,
-        "max_mmbtu_per_hr": 1000000000.0 ,
         "existing_boiler_production_type_steam_or_hw": "hot_water" ,
         "boiler_efficiency": 0.78 ,
-        "installed_cost_us_dollars_per_mmbtu_per_hr": 0.0 ,
         "emissions_factor_lb_CO2_per_mmbtu": 116.9
       } ,
       "ElectricChiller": {
-        "min_kw": 0.0 ,
-        "max_kw": 1000000000.0 ,
-        "installed_cost_us_dollars_per_kw": 0.0
       } ,
       "AbsorptionChiller": {
         "min_ton": 400.0 ,
@@ -1676,17 +1670,7 @@
         "om_cost_us_dollars_per_ton": 0.5 ,
         "macrs_option_years": 0 ,
         "macrs_bonus_pct": 0.0 ,
-        "macrs_itc_reduction": 0.0 ,
-        "federal_itc_pct": 0.0 ,
-        "state_ibi_pct": 0.0 ,
-        "state_ibi_max_us_dollars": 0.0 ,
-        "utility_ibi_pct": 0.0 ,
-        "utility_ibi_max_us_dollars": 0.0 ,
-        "federal_rebate_us_dollars_per_kw": 0.0 ,
-        "state_rebate_us_dollars_per_kw": 0.0 ,
-        "state_rebate_max_us_dollars": 0.0 ,
-        "utility_rebate_us_dollars_per_kw": 0.0 ,
-        "utility_rebate_max_us_dollars": 0.0
+        "macrs_itc_reduction": 0.0
       }
     } ,
     "timeout_seconds": 420 ,
