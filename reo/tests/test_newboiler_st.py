@@ -63,31 +63,34 @@ class NewBoilerSteamTurbineTest(ResourceTestCaseMixin, TestCase):
         nested_data = json.load(open(self.test_post, 'rb'))
         nested_data["Scenario"]["timeout_seconds"] = 420
         nested_data["Scenario"]["optimality_tolerance_bau"] = 0.001
-        nested_data["Scenario"]["optimality_tolerance_techs"] = 0.001
+        nested_data["Scenario"]["optimality_tolerance_techs"] = 0.01
 
         # Modify loads (currently "Hospital" in POST)
         city = "SanFrancisco"
         building = "Hospital"
         nested_data["Scenario"]["Site"]["LoadProfile"]["doe_reference_name"] = building
         nested_data["Scenario"]["Site"]["LoadProfileBoilerFuel"]["doe_reference_name"] = building
-        nested_data["Scenario"]["Site"]["LoadProfile"]["annual_kwh"] = 5 * load_profile.default_annual_electric_loads[city][building.lower()]
-        nested_data["Scenario"]["Site"]["LoadProfileBoilerFuel"]["annual_mmbtu"] = 5 * load_profile_boiler_fuel.LoadProfileBoilerFuel.annual_loads[city][building.lower()]
+        nested_data["Scenario"]["Site"]["LoadProfile"]["annual_kwh"] = 1 * load_profile.default_annual_electric_loads[city][building.lower()]
+        nested_data["Scenario"]["Site"]["LoadProfileBoilerFuel"]["annual_mmbtu"] = 10 * load_profile_boiler_fuel.LoadProfileBoilerFuel.annual_loads[city][building.lower()]
 
-        # ST attributes
+        # NewBoiler attributes
+        nested_data["Scenario"]["Site"]["NewBoiler"]["max_mmbtu_per_hr"] = 0.0
+
+        # SteamTurbine attributes
         nested_data["Scenario"]["Site"]["SteamTurbine"]["is_condensing"] = False
-        nested_data["Scenario"]["Site"]["SteamTurbine"]["outlet_steam_pressure_psig"] = 100.0
+        nested_data["Scenario"]["Site"]["SteamTurbine"]["outlet_steam_pressure_psig"] = 50.0
         
-        # Add Boiler to ST
+        # Add Boiler to SteamTurbine
         nested_data["Scenario"]["Site"]["Boiler"]["can_supply_st"] = True
 
         # Add CHP 
-        nested_data["Scenario"]["Site"]["CHP"] = {"prime_mover": "combustion_turbine",
-                                                  #"size_class": 3,
-                                                  "min_kw": 1000.0,
-                                                  "min_allowable_kw":0.0,
-                                                  "max_kw": 1000.0}
-        nested_data["Scenario"]["Site"]["CHP"]["can_supply_st"] = True
-        nested_data["Scenario"]["Site"]["FuelTariff"]["chp_fuel_blended_annual_rates_us_dollars_per_mmbtu"] = 8.0
+        # nested_data["Scenario"]["Site"]["CHP"] = {"prime_mover": "combustion_turbine",
+        #                                           "size_class": 3,
+        #                                           "min_kw": 0.0,
+        #                                           "min_allowable_kw":0.0,
+        #                                           "max_kw": 0.0}
+        #nested_data["Scenario"]["Site"]["CHP"]["can_supply_st"] = True
+        #nested_data["Scenario"]["Site"]["FuelTariff"]["chp_fuel_blended_annual_rates_us_dollars_per_mmbtu"] = 8.0
 
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
@@ -100,7 +103,7 @@ class NewBoilerSteamTurbineTest(ResourceTestCaseMixin, TestCase):
         d_expected = dict()
         # d_expected['lcc'] = 9376063.0
         # d_expected['npv'] = 5331758.0
-        d_expected['steamturbine_size_kw'] = 500.0
+        #d_expected['steamturbine_size_kw'] = 500.0
         # d_expected['steamturbine_yearly_thermal_consumption_mmbtu'] = 30555.6
         # d_expected['steamturbine_yearly_electric_energy_produced_kwh'] = 3086580.645
         # d_expected['steamturbine_yearly_thermal_energy_produced_mmbtu'] = 9739.972
