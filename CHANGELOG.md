@@ -28,7 +28,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-# #v1.5.4 - 2021-03-12
+## v1.5.0 - 2021-03-12
 ### Minor Updates
 ##### Changed
 - `reo`, `*.jl`: Changed the units-basis for heating load, thermal production, and fuel consumption to kW/kWh, from mmbtu/mmbtu_per_hr and gal. This does not affect the units of the inputs or outputs.
