@@ -58,7 +58,6 @@ post = {"Scenario": {
         "doe_reference_name": "LargeOffice",
     },
     "ElectricChiller": {
-        "chiller_cop": 3.4
     },
     "Boiler": {
         "boiler_efficiency": 0.8,
