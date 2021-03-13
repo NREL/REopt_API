@@ -70,7 +70,8 @@ INSTALLED_APPS = (
     'proforma',
     'resilience_stats',
     'django_celery_results',
-    'django_extensions'
+    'django_extensions',
+    'job.apps.JobConfig'
     )
 
 MIDDLEWARE_CLASSES = (
