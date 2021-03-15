@@ -1888,7 +1888,7 @@ nested_input_definitions = {
           "description": "Maximum thermal power size"
         },
         "boiler_efficiency": {
-          "type": "float", "min:": 0.0, "max:": 1.0,
+          "type": "float", "min:": 0.0, "max:": 1.0, "default": 0.8,
           "description": "New boiler system efficiency - conversion of fuel to usable heating thermal energy"
         },
         "can_supply_st": {
@@ -1896,11 +1896,11 @@ nested_input_definitions = {
           "description": "If the boiler can supply steam to the steam turbine for electric production"
         },
         "installed_cost_us_dollars_per_mmbtu_per_hr": {
-          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 293000.0,
           "description": "Thermal power-based cost"
         },
         "om_cost_us_dollars_per_mmbtu_per_hr": {
-          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 2930.0,
           "description": "Thermal power-based fixed O&M cost"
         },
         "om_cost_us_dollars_per_mmbtu": {
@@ -1934,8 +1934,16 @@ nested_input_definitions = {
           "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
           "description": "Maximum electric power size"
         },
+        "electric_produced_to_thermal_consumed_ratio": {
+          "type": "float", "min": 0.0, "max": 1.0,
+          "description": "Simplified input as alternative to detailed calculations from inlet and outlet steam conditions"
+        },
+        "thermal_produced_to_thermal_consumed_ratio": {
+          "type": "float", "min": 0.0, "max": 1.0,
+          "description": "Simplified input as alternative to detailed calculations from condensing outlet steam"
+        },        
         "is_condensing": {
-          "type": "bool",
+          "type": "bool", "default": False,
           "description": "Steam turbine type, if it is a condensing turbine which produces no useful thermal (max electric output)"
         },
         "inlet_steam_pressure_psig": {
@@ -1955,7 +1963,7 @@ nested_input_definitions = {
           "description": "Outlet steam pressure from the steam turbine (to the condenser or heat recovery unit"
         },
         "outlet_steam_min_vapor_fraction": {
-          "type": "float", "min": 0.0, "max": 1.0,
+          "type": "float", "min": 0.0, "max": 1.0, "default": 0.8,
           "description": "Minimum vapor fraction at the outlet of the steam turbine: this serves as a check on the other inlet and outlet steam conditions to ensure that acceptable amounts of liquid are in the outlet"
         },                         
         "isentropic_efficiency": {

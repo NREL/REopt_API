@@ -684,6 +684,8 @@ class SteamTurbine(Tech):
         super(SteamTurbine, self).__init__(**kwargs)
 
         self.reopt_class = 'STEAMTURBINE'
+        self.electric_produced_to_thermal_consumed_ratio = kwargs.get('electric_produced_to_thermal_consumed_ratio')
+        self.thermal_produced_to_thermal_consumed_ratio = kwargs.get('thermal_produced_to_thermal_consumed_ratio') 
         self.is_condensing = kwargs.get('is_condensing') 
         self.inlet_steam_pressure_psig = kwargs.get('inlet_steam_pressure_psig')
         self.inlet_steam_temperature_degF = kwargs.get('inlet_steam_temperature_degF')
@@ -757,8 +759,15 @@ class SteamTurbine(Tech):
         self.boiler_therm_power_kwh_per_kg = (self.h_in_j_per_kg - self.h_boiler_in_j_per_kg) / 1000.0 / 3600.0
 
         # Calculate output ratios
-        st_elec_out_to_therm_in_ratio = self.st_net_elec_power_kwh_per_kg / self.boiler_therm_power_kwh_per_kg
-        st_therm_out_to_therm_in_ratio = self.heat_recovered_kwh_per_kg / self.boiler_therm_power_kwh_per_kg
+        if self.electric_produced_to_thermal_consumed_ratio is None:
+            st_elec_out_to_therm_in_ratio = self.st_net_elec_power_kwh_per_kg / self.boiler_therm_power_kwh_per_kg
+        else:
+            st_elec_out_to_therm_in_ratio = self.electric_produced_to_thermal_consumed_ratio
+        
+        if self.thermal_produced_to_thermal_consumed_ratio is None:
+            st_therm_out_to_therm_in_ratio = self.heat_recovered_kwh_per_kg / self.boiler_therm_power_kwh_per_kg
+        else:
+            st_therm_out_to_therm_in_ratio = self.thermal_produced_to_thermal_consumed_ratio
 
         return st_elec_out_to_therm_in_ratio, st_therm_out_to_therm_in_ratio
     

@@ -939,6 +939,8 @@ class SteamTurbineModel(models.Model):
     run_uuid = models.UUIDField(unique=True)
     min_kw = models.FloatField(null=True, blank=True)
     max_kw = models.FloatField(null=True, blank=True)
+    electric_produced_to_thermal_consumed_ratio = models.FloatField(null=True, blank=True)
+    thermal_produced_to_thermal_consumed_ratio = models.FloatField(null=True, blank=True)
     is_condensing = models.BooleanField(null=True, blank=True)    
     inlet_steam_pressure_psig = models.FloatField(null=True, blank=True)
     inlet_steam_temperature_degF = models.FloatField(blank=True, null=True)
