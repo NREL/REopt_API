@@ -299,7 +299,7 @@ def nested_to_flat_chp(nested_output):
     if nested_output['Scenario']['Site'].get('SteamTurbine') is not None:
         base.update({
             'steamturbine_size_kw': nested_output['Scenario']['Site']['SteamTurbine']['size_kw'],
-            'steamturbine_yearly_fuel_used_mmbtu': nested_output['Scenario']['Site']['SteamTurbine'][
+            'steamturbine_yearly_thermal_consumption_mmbtu': nested_output['Scenario']['Site']['SteamTurbine'][
                 'year_one_thermal_consumption_mmbtu'],
             'steamturbine_yearly_electric_energy_produced_kwh': nested_output['Scenario']['Site']['SteamTurbine'][
                 'year_one_electric_energy_produced_kwh'],
