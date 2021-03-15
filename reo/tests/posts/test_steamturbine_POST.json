@@ -1,0 +1,80 @@
+{
+  "Scenario": {
+	"timeout_seconds": 420,
+    "optimality_tolerance_techs": 0.001,
+    "Site": {
+      "latitude": 37.78,
+      "longitude": -122.45,
+      "Boiler": {
+        "existing_boiler_production_type_steam_or_hw": "steam",
+        "boiler_efficiency": 0.8,
+        "emissions_factor_lb_CO2_per_mmbtu": null,
+        "can_supply_st": true
+      },
+      "FuelTariff": {
+        "existing_boiler_fuel_type": "natural_gas",
+        "boiler_fuel_blended_annual_rates_us_dollars_per_mmbtu": 10.0
+      },
+      "SteamTurbine": {
+        "min_kw": 0.0,
+        "max_kw": 20000.0,
+        "is_condensing": false,
+        "inlet_steam_pressure_psig": 600.0,
+        "inlet_steam_temperature_degF": 575,
+        "inlet_steam_superheat_degF": null,
+        "outlet_steam_pressure_psig": 150.0,
+        "outlet_steam_min_vapor_fraction": 0.7,                         
+        "isentropic_efficiency": 0.612,
+        "gearbox_generator_efficiency": 0.94,
+        "net_to_gross_electric_ratio": 0.9,
+        "installed_cost_us_dollars_per_kw": 682.0,
+        "om_cost_us_dollars_per_kw": 0.0,
+        "om_cost_us_dollars_per_kwh": 0.009,
+        "can_wholesale": false,
+		"can_curtail": false
+      },
+      "Financial": {
+        "om_cost_escalation_pct": 0.025,
+        "escalation_pct": 0.023,
+        "boiler_fuel_escalation_pct": 0.034,
+        "offtaker_tax_pct": 0.26,
+        "offtaker_discount_pct": 0.083,
+        "third_party_ownership": false,
+        "owner_tax_pct": 0.26,
+        "owner_discount_pct": 0.083,
+        "analysis_years": 25,
+        "value_of_lost_load_us_dollars_per_kwh": 100.0,
+        "microgrid_upgrade_cost_pct": 0.0
+        },
+      "LoadProfile": {
+        "doe_reference_name": "Hospital"
+      },
+      "LoadProfileBoilerFuel": {
+        "doe_reference_name": "Hospital"
+      },
+      "ElectricTariff": {
+        "urdb_utility_name": "Pacific Gas & Electric Co",
+        "urdb_rate_name": "E-20 Maximum demand of (1000 KW or more) (Secondary)",
+        "net_metering_limit_kw": 0.0,
+        "interconnection_limit_kw": 100000000.0,
+        "urdb_label": "5e1676e95457a3f87673e3b0"
+      },
+      "PV": {
+        "pv_name": "",
+        "existing_kw": 0.0,
+        "min_kw": 0.0,
+        "max_kw": 0.0
+      },
+      "Storage": {
+        "min_kw": 0.0,
+        "max_kw": 0.0,
+        "min_kwh": 0.0,
+        "max_kwh": 0.0
+      }      
+    },
+    "user_uuid": null,
+    "description": "",
+    "time_steps_per_hour": 1,
+    "webtool_uuid": null
+  }
+}
