@@ -32,12 +32,10 @@ import sys
 import traceback
 import os
 import time
-import platform
 import copy
 import numpy
 import requests
-import json
-from celery import shared_task, Task, group
+from celery import shared_task, Task
 from reo.exceptions import REoptError, OptimizationTimeout, UnexpectedError, NotOptimal, REoptFailedToStartError
 from reo.models import ModelManager
 from reo.src.profiler import Profiler
