@@ -778,12 +778,9 @@ class AbsorptionChillerModel(models.Model):
 class BoilerModel(models.Model):
     # Inputs
     run_uuid = models.UUIDField(unique=True)
-    min_mmbtu_per_hr = models.FloatField(null=True, blank=True)
-    max_mmbtu_per_hr = models.FloatField(null=True, blank=True)
     max_thermal_factor_on_peak_load = models.FloatField(null=True, blank=True)
     existing_boiler_production_type_steam_or_hw = models.TextField(null=True, blank=True)
     boiler_efficiency = models.FloatField(blank=True, default=0, null=True)
-    installed_cost_us_dollars_per_mmbtu_per_hr = models.FloatField(null=True, blank=True)
     emissions_factor_lb_CO2_per_mmbtu = models.FloatField(null=True, blank=True)
 
     # Outputs
@@ -811,10 +808,7 @@ class BoilerModel(models.Model):
 class ElectricChillerModel(models.Model):
     # Inputs
     run_uuid = models.UUIDField(unique=True)
-    min_kw = models.FloatField(null=True, blank=True)
-    max_kw = models.FloatField(null=True, blank=True)
     max_thermal_factor_on_peak_load = models.FloatField(null=True, blank=True)
-    installed_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True,)
 
     # Outputs
     year_one_electric_chiller_thermal_to_load_series_ton = ArrayField(
