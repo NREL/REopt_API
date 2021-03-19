@@ -78,7 +78,7 @@ class RunJumpModelTask(Task):
 
 
 @shared_task(bind=True, base=RunJumpModelTask)
-def run_jump_model(self, dfm, data, run_uuid, bau=False):
+def run_jump_model(self, dfm, data, bau=False):
     profiler = Profiler()
     time_dict = dict()
     name = 'reopt' if not bau else 'reopt_bau'
