@@ -298,6 +298,6 @@ class TestDefaultOutage(ResourceTestCaseMixin, TestCase):
         response = json.loads(self.api_client.get(self.results_url.replace('<run_uuid>', str(uuid))).content)
         outage_sim_response = self.api_client.post(self.outage_sim_url, data = {'run_uuid' : uuid, 'bau': True}, format = 'json')
         resilience_response = json.loads(self.api_client.get(self.resilience_results_url.replace('<run_uuid>', str(uuid))).content)
-        #self.assertEquals
+        self.assertEqual(response['inputs']['Scenario']['Site']['LoadProfile']['outage_end_time_step'], response['inputs']['Scenario']['Site']['LoadProfile']['outage_start_time_step'] + 3)
      
         

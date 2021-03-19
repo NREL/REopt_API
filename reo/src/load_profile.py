@@ -582,8 +582,8 @@ class LoadProfile(BuiltInProfile):
         self.annual_kwh = kwargs.pop("annual_kwh", None)
 
         if use_default_outage:
-            reliability_data = pd.read_csv('reo/src/data/Reliability_2019.csv', header = 1, index_col = 3) 
-            outage_duration = float(reliability_data.loc[outage_utility_name].at['CAIDI With MED'])/60 # CAIDI is given in minutes
+            reliability_data = pd.read_csv('reo/src/data/caidi_by_utility.csv', index_col = 3) 
+            outage_duration = float(reliability_data.loc[outage_utility_name].at['CAIDI Defaults'])/60 # CAIDI is given in minutes
             outage_duration = round(outage_duration * self.time_steps_per_hour)
             
             if outage_start_time_step == None:

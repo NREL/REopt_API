@@ -1259,20 +1259,14 @@ class ValidateNestedInput:
                     # Sunday
 
                 if real_values.get('use_default_outage') == False:
-                    if real_values.get('outage_utility_name') != None and (real_values.get('outage_start_time_step')):
+                    if real_values.get('outage_utility_name') != None and (real_values.get('outage_start_time_step') != None):
                         self.general_warnings.append("Overriding use_default_outage value, using the default outage duration")
                         self.update_attribute_value(object_name_path, number, 'use_default_outage', True)
                         real_values['use_default_outage'] = True
                 
                 if real_values.get('use_default_outage') == True:
-                    reliability = pd.read_csv('reo/src/data/Reliability_2019.csv', header = 1)
-                    utility_names = reliability['Utility Name']
-                    if real_values.get('outage_utility_name') not in utility_names:
-                        self.general_warnings.append("Invalid outage_utility_name {}, cannot use default outage".format(real_values.get('outage_utility_name')))
-                        self.update_attribute_value(object_name_path, number, 'use_default_outage', False)
-                        real_values['use_default_outage'] = False
                     if real_values.get('outage_start_time_step') is None and real_values.get('outage_end_time_step') is None:
-                        self.general_warnings.append("No outage start/end time given, cannot use default outage")
+                        self.general_warnings.append("No outage start or end time given, cannot use default outage")
                         self.update_attribute_value(object_name_path, number, 'use_default_outage', False)
                         real_values['use_default_outage'] = False
                     if  real_values.get('outage_start_time_step') != None and real_values.get('outage_end_time_step' != None):
