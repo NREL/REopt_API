@@ -654,7 +654,7 @@ nested_input_definitions = {
           "type": "list_of_float",
           "default": [0.0]*12,
           "description": "Array (length of 12) of blended fuel rates (total monthly energy in mmbtu divided by monthly cost in $)"
-        },        
+        },
       },
 
       "Wind": {
@@ -1698,7 +1698,11 @@ nested_input_definitions = {
         "can_supply_st": {
           "type": "bool", "default": False,
           "description": "If CHP can supply steam to the steam turbine for electric production"
-        },        
+        },
+        "can_supply_mp": {
+          "type": "bool", "default": False,
+          "description": "If CHP can supply hot thermal to the mass producer"
+        }
       },
 
       "ColdTES": {
@@ -1795,6 +1799,11 @@ nested_input_definitions = {
           "default": 0.0,
           "description": "Percent of upfront project costs to depreciate under MACRS"
         },
+        "can_supply_mp": {
+          "type": "bool",
+          "default": False,
+          "description": "If the HotTES can supply useful thermal energy to the MassProducer"
+        }
       },
 
       "Boiler": {
@@ -1822,6 +1831,10 @@ nested_input_definitions = {
         "can_supply_st": {
           "type": "bool", "default": False,
           "description": "If the boiler can supply steam to the steam turbine for electric production"
+        },
+        "can_supply_mp": {
+          "type": "bool", "default": False,
+          "description": "If the boiler can supply hot thermal to the mass producer"
         }        
       },
 
@@ -1923,7 +1936,11 @@ nested_input_definitions = {
           "max": 1.0,
           "default": 0.0,
           "description": "Percent of upfront project costs to depreciate under MACRS"
-        }        
+        },
+        "can_supply_mp": {
+          "type": "bool", "default": False,
+          "description": "If the boiler can supply hot thermal to the mass producer"
+        }  
       },
       "SteamTurbine": {
         "min_kw": {
@@ -2022,7 +2039,78 @@ nested_input_definitions = {
           "max": 1.0,
           "default": 0.0,
           "description": "Percent of upfront project costs to depreciate under MACRS"
-        }        
+        },
+        "can_supply_mp": {
+          "type": "bool", "default": False,
+          "description": "If the steam turbine can supply hot thermal to the mass producer"
+        }
+      },
+      "MassProducer": {
+        "mass_units": {
+          "type": "str",
+          "restrict_to": ["kg", "lb", "mmbtu", "kwh"],
+          "default": "kg",
+          "description": "Units of mass (or energy) to be used for all relevant inputs"
+        },
+        "time_units": {
+          "type": "str",
+          "restrict_to": ["day", "hr", "sec"],
+          "default": "day",
+          "description": "Units of time (or energy) to be used for all relevant inputs"          
+        },
+        "min_mass_per_time": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "description": "Minimum size based on mass production rate"
+        },
+        "max_mass_per_time": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "description": "Maximum size based on mass production rate"
+        },
+        "electric_consumed_to_mass_produced_ratio_kwh_per_mass": {
+          "type": "float", "min": 0.0, "max": 1.0E9,
+          "description": "Ratio of electric energy consumed to mass produced"
+        },
+        "thermal_consumed_to_mass_produced_ratio_kwh_per_mass": {
+          "type": "float", "min": 0.0, "max": 1.0E9,
+          "description": "Ratio of thermal energy consumed to mass produced"
+        },
+        "feedstock_consumed_to_mass_produced_ratio": {
+          "type": "float", "min": 0.0, "max": 1.0E9,
+          "description": "Ratio of feedstock (e.g. water, CO2) mass consumed to mass produced"
+        },
+        "installed_cost_us_dollars_per_mass_per_time": {
+          "type": "float", "min": 0.0, "max": 1.0E9,
+          "description": "Mass production rate capacity based cost"
+        },
+        "om_cost_us_dollars_per_mass_per_time": {
+          "type": "float", "min": 0.0, "max": 1.0E9,
+          "description": "Mass production rate capacity based (fixed) O&M cost"
+        },
+        "om_cost_us_dollars_per_mass": {
+          "type": "float", "min": 0.0, "max": 1.0E9,
+          "description": "Mass based variable O&M cost"
+        },
+        "mass_value_us_dollars_per_mass": {
+          "type": "float", "min": 0.0, "max": 1.0E9,
+          "description": "The value/price that the MassProducer gets credit for producing"
+        },
+        "feedstock_cost_us_dollars_per_mass": {
+          "type": "float", "min": 0.0, "max": 1.0E9,
+          "description": "The cost of the feedstock to the MassProducer"
+        },
+        "macrs_option_years": {
+          "type": "int",
+          "restrict_to": macrs_schedules,
+          "default": 0,
+          "description": "MACRS schedule for financial analysis. Set to zero to disable"
+        },
+        "macrs_bonus_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "description": "Percent of upfront project costs to depreciate under MACRS"
+        }                
       }      
     }
   }
