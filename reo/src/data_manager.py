@@ -81,6 +81,7 @@ class DataManager:
         self.add_soc_incentive = None
         self.newboiler = None
         self.steamturbine = None
+        self.massproducer = None
 
         # following attributes used to pass data to process_results.py
         # If we serialize the python classes then we could pass the objects between Celery tasks
@@ -91,9 +92,9 @@ class DataManager:
         self.year_one_demand_cost_series_us_dollars_per_kw = []
 
         self.available_techs = ['pv1', 'pv1nm', 'wind', 'windnm', 'generator', 'chp', 'boiler',
-                                'elecchl', 'absorpchl', 'newboiler', 'steamturbine']  # order is critical for REopt! Note these are passed to reopt.jl as uppercase
+                                'elecchl', 'absorpchl', 'newboiler', 'steamturbine', 'massproducer']  # order is critical for REopt! Note these are passed to reopt.jl as uppercase
         self.available_tech_classes = ['PV1', 'WIND', 'GENERATOR', 'CHP', 'BOILER',
-                                       'ELECCHL', 'ABSORPCHL', 'NEWBOILER', 'STEAMTURBINE']  # this is a REopt 'class', not a python class
+                                       'ELECCHL', 'ABSORPCHL', 'NEWBOILER', 'STEAMTURBINE', 'MASSPRODUCER']  # this is a REopt 'class', not a python class
         self.bau_techs = []
         self.NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
         self.fuel_burning_techs = ['GENERATOR', 'CHP']
@@ -214,6 +215,9 @@ class DataManager:
 
     def add_steamturbine(self, steamturbine):
         self.steamturbine = steamturbine
+    
+    def add_massproducer(self, massproducer):
+        self.massproducer = massproducer
 
     def _get_REopt_pwfs(self, techs):
         sf = self.site.financial
@@ -275,7 +279,7 @@ class DataManager:
 
             if eval('self.' + tech) is not None:
 
-                if tech not in ['generator', 'boiler', 'elecchl', 'absorpchl', 'newboiler', 'steamturbine']:
+                if tech not in ['generator', 'boiler', 'elecchl', 'absorpchl', 'newboiler', 'steamturbine', 'massproducer']:
 
                     # prod incentives don't need escalation
                     if tech.startswith("pv"):  # PV has degradation
@@ -331,7 +335,7 @@ class DataManager:
                 for region in regions[:-1]:
                     tech_incentives[region] = dict()
 
-                    if tech not in ['generator', 'absorpchl', 'newboiler', 'steamturbine']:
+                    if tech not in ['generator', 'absorpchl', 'newboiler', 'steamturbine', 'massproducer']:
 
                         if region == 'federal' or region == 'total':
                             tech_incentives[region]['%'] = eval('self.' + tech + '.incentives.' + region + '.itc')
@@ -717,7 +721,7 @@ class DataManager:
                     om_cost_us_dollars_per_kw.append(eval('self.' + tech + '.om_cost_us_dollars_per_kw'))
 
                 # Only certain techs have variable o&m cost, and CHP also has a unique hourly-operating O&M
-                if tech.lower() in ['generator', 'newboiler', 'steamturbine']:
+                if tech.lower() in ['generator', 'newboiler', 'steamturbine', 'massproducer']:
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kwh')))
                     om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
                 elif tech.lower() == 'chp':
@@ -1312,6 +1316,30 @@ class DataManager:
         chp_fuel_burn_intercept_bau, chp_thermal_prod_slope_bau, chp_thermal_prod_intercept_bau, chp_derate_bau \
             = fuel_params._get_chp_unique_params(chp_techs_bau, chp=eval('self.chp'))
 
+        # MassProducer parameters
+        massproducer_techs = [t for t in reopt_techs if t.lower().startswith('massproducer')]
+        massproducer_techs_bau = [t for t in reopt_techs_bau if t.lower().startswith('massproducer')]
+
+        can_supply_mp = [t for t in heating_techs if eval(t.lower() + ".can_supply_mp")]
+        can_supply_mp_bau = list()
+
+        massproducer_consumption_ratios_index = ["Electric", "Thermal", "Feedstock"]
+        if self.massproducer is not None:
+            massproducer_consumption_ratios = [self.massproducer.electric_consumed_to_mass_produced_ratio,
+                                                self.massproducer.thermal_consumed_to_mass_produced_ratio,
+                                                self.massproducer.feedstock_consumed_to_mass_produced_ratio]
+            massproducer_mass_value_us_dollars_per_kwh = self.massproducer.mass_value_us_dollars_per_kwh,
+            massproducer_feedstock_cost_us_dollars_per_kwh = self.massproducer.feedstock_cost_us_dollars_per_kwh
+        else:
+            massproducer_ratios = [0.0, 0.0, 0.0]
+            massproducer_mass_value_us_dollars_per_kwh = 0.0
+            massproducer_feedstock_cost_us_dollars_per_kwh = 0.0
+        
+        if self.hot_tes_techs == [] or not self.hot_tes.can_supply_mp:
+            hot_tes_can_supply_mp = 0
+        else:
+            hot_tes_can_supply_mp = 1
+        hot_tes_can_supply_mp_bau = 0
 
         self.reopt_inputs = {
             'Tech': reopt_techs,
@@ -1445,7 +1473,14 @@ class DataManager:
             'SteamTurbineTechs': steam_turbine_techs,
             'TechCanSupplySteamTurbine': techs_can_supply_steam_turbine,
             'STElecOutToThermInRatio': st_elec_out_to_therm_in_ratio,
-            'STThermOutToThermInRatio': st_therm_out_to_therm_in_ratio
+            'STThermOutToThermInRatio': st_therm_out_to_therm_in_ratio,
+            'MassProducerTechs': massproducer_techs,
+            "TechCanSupplyMassProducer": can_supply_mp,
+            "MassProducerConsumptionRatioIndex": massproducer_consumption_ratios_index,
+            "MassProducerConsumptionRatios": massproducer_ratios,
+            "MassProducerMassValue": massproducer_mass_value_us_dollars_per_kwh,
+            "MassProducerFeedstockCost": massproducer_feedstock_cost_us_dollars_per_kwh,
+            "HotTESCanSupplyMassProducer": hot_tes_can_supply_mp
             }
         ## Uncomment the following and run a scenario to get an updated modelinputs.json for creating Julia system image
         # import json
@@ -1583,5 +1618,12 @@ class DataManager:
             'SteamTurbineTechs': steam_turbine_techs_bau,
             'TechCanSupplySteamTurbine': techs_can_supply_steam_turbine_bau,
             'STElecOutToThermInRatio': st_elec_out_to_therm_in_ratio_bau,
-            'STThermOutToThermInRatio': st_therm_out_to_therm_in_ratio_bau            
+            'STThermOutToThermInRatio': st_therm_out_to_therm_in_ratio_bau,
+            'MassProducerTechs': massproducer_techs_bau,
+            "TechCanSupplyMassProducer": can_supply_mp_bau,
+            "MassProducerConsumptionRatioIndex": massproducer_consumption_ratios_index,
+            "MassProducerConsumptionRatios": massproducer_ratios,
+            "MassProducerMassValue": massproducer_mass_value_us_dollars_per_kwh,
+            "MassProducerFeedstockCost": massproducer_feedstock_cost_us_dollars_per_kwh,
+            "HotTESCanSupplyMassProducer": hot_tes_can_supply_mp_bau
         }
