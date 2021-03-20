@@ -140,6 +140,7 @@ class HotTES(object):
         self.max_kwh = self.max_gal * self.gal_to_kwh_conversion
         self.installed_cost_us_dollars_per_kwh = self.installed_cost_us_dollars_per_gal / self.gal_to_kwh_conversion
         self.om_cost_us_dollars_per_kwh = self.om_cost_us_dollars_per_gal / self.gal_to_kwh_conversion
+        self.can_supply_mp = kwargs.get("can_supply_mp")
 
         self.incentives = TESIncentives(self.macrs_option_years, self.macrs_bonus_pct)
 
