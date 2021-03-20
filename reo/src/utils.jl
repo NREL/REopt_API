@@ -209,6 +209,13 @@ Base.@kwdef struct Parameter
     TechCanSupplySteamTurbine::Array{String,1}
     STElecOutToThermInRatio::Float64
     STThermOutToThermInRatio::Float64
+    MassProducerTechs::Array{String,1}
+    TechCanSupplyMassProducer::Array{String,1}
+    MassProducerConsumptionRatioIndex::Array{String,1}
+    MassProducerConsumptionRatios::AxisArray
+    MassProducerMassValue::Float64
+    MassProducerFeedstockCost::Float64
+    HotTESCanSupplyMassProducer::Int64
 end
 
 
@@ -330,6 +337,7 @@ function Parameter(d::Dict)
 	d["pwf_fuel"] = AxisArray(d["pwf_fuel"], d["Tech"])
 	d["StorageDecayRate"] = AxisArray(d["StorageDecayRate"], d["Storage"])
     d["BoilerEfficiency"] = AxisArray(d["BoilerEfficiency"], d["AllBoilerTechs"])  # Always passes both values, even if partial/none
+    d["MassProducerConsumptionRatios"] = AxisArray(d["MassProducerConsumptionRatios"], d["MassProducerConsumptionRatioIndex"])
 
     # Indexed Sets
     if isempty(d["FuelType"])
