@@ -42,6 +42,7 @@ from reo.utilities import annuity, TONHOUR_TO_KWHT, MMBTU_TO_KWH, GAL_DIESEL_TO_
 from reo.nested_inputs import macrs_five_year, macrs_seven_year
 from reo.src.proforma_metrics import calculate_proforma_metrics
 from reo.src.storage import HotTES, ColdTES
+from reo.src.techs import MassProducer
 log = logging.getLogger(__name__)
 
 
@@ -488,6 +489,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         pv["year_one_energy_produced_kwh"] = self.results_dict.get("year_one_energy_produced_PV{}".format(i))
                         pv["year_one_energy_produced_bau_kwh"] = self.results_dict.get("year_one_PV{}_energy_produced_bau".format(i))
                         pv["year_one_to_battery_series_kw"] = self.results_dict.get("PV{}toBatt".format(i))
+                        pv["year_one_to_massproducer_series_kw"] = self.results_dict.get("PV{}toMassProducer".format(i))
                         pv["year_one_to_load_series_kw"] = self.results_dict.get("PV{}toLoad".format(i))
                         pv["year_one_to_grid_series_kw"] = self.results_dict.get("PV{}toGrid".format(i))
                         pv['year_one_curtailed_production_series_kw'] = self.results_dict.get("PV{}toCurtail".format(i))
@@ -526,6 +528,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_to_battery_series_kw"] = self.results_dict.get("WINDtoBatt")
                     self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_to_massproducer_series_kw"] = self.results_dict.get("WINDtoMassProducer")                        
+                    self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_to_load_series_kw"] = self.results_dict.get("WINDtoLoad")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_to_grid_series_kw"] = self.results_dict.get("WINDtoGrid")
@@ -551,6 +555,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_to_grid_series_kw"] = self.results_dict.get("ElecFromBattExport")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_soc_series_pct"] = \
                         self.results_dict.get("year_one_soc_series_pct")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_to_massproducer_series_kw"] = self.results_dict.get("BattToMassProducer")
                 elif name == "ElectricTariff":
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_energy_cost_us_dollars"] = self.results_dict.get("year_one_energy_cost")
@@ -618,6 +624,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_to_battery_series_kw"] = self.results_dict.get('GridToBatt')
                     self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_to_massproducer_series_kw"] = self.results_dict.get('GridToMassProducer')                        
+                    self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_energy_supplied_kwh"] = self.results_dict.get("year_one_utility_kwh")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_energy_supplied_kwh_bau"] = self.results_dict.get("year_one_utility_kwh_bau")
@@ -652,6 +660,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_to_load_series_kw"] = self.results_dict.get('GENERATORtoLoad')
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_to_battery_series_kw"] = self.results_dict.get('GENERATORtoBatt')
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_to_massproducer_series_kw"] = self.results_dict.get('GENERATORtoMassProducer')                        
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_to_grid_series_kw"] = self.results_dict.get('GENERATORtoGrid')
                     self.nested_outputs["Scenario"]["Site"][name][
@@ -710,6 +720,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_to_battery_series_kw"] = self.results_dict.get("chp_to_battery_series")
                     self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_electric_to_massproducer_series_kw"] = self.results_dict.get("chp_electric_to_massproducer_series")                        
+                    self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_to_load_series_kw"] = self.results_dict.get("chp_electric_to_load_series")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_to_grid_series_kw"] = self.results_dict.get("chp_to_grid_series")
@@ -720,7 +732,9 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_thermal_to_waste_series_mmbtu_per_hour"] = [x / MMBTU_TO_KWH for x in self.results_dict.get("chp_thermal_to_waste_series")]
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_thermal_to_steamturbine_series_mmbtu_per_hour"] = [x / MMBTU_TO_KWH for x in self.results_dict.get("chp_thermal_to_steamturbine_series")]                
+                        "year_one_thermal_to_steamturbine_series_mmbtu_per_hour"] = [x / MMBTU_TO_KWH for x in self.results_dict.get("chp_thermal_to_steamturbine_series")]
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_thermal_to_massproducer_series_mmbtu_per_hr"] = [x / MMBTU_TO_KWH for x in self.results_dict.get("chp_thermal_to_massproducer_series")]
                 elif name == "Boiler":
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_boiler_fuel_consumption_series_mmbtu_per_hr"] = [x / MMBTU_TO_KWH for x in self.results_dict.get("fuel_to_boiler_series")]
@@ -736,6 +750,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_boiler_fuel_consumption_mmbtu"] = self.results_dict.get("year_one_fuel_to_boiler_kwh") / MMBTU_TO_KWH
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_boiler_thermal_production_mmbtu"] = self.results_dict.get("year_one_boiler_thermal_production_kwh") / MMBTU_TO_KWH
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_thermal_to_massproducer_series_mmbtu_per_hr"] = [x / MMBTU_TO_KWH for x in self.results_dict.get("boiler_thermal_to_massproducer_series")]                        
                 elif name == "ElectricChiller":
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_electric_chiller_thermal_to_load_series_ton"] = [x / TONHOUR_TO_KWHT for x in self.results_dict.get("electric_chiller_to_load_series")]
@@ -768,11 +784,13 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "size_gal"] = self.results_dict.get("hot_tes_size_kwh",0) / HotTES.gal_to_kwh_conversion
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_thermal_from_hot_tes_series_mmbtu_per_hr"] = [x / MMBTU_TO_KWH for x in self.results_dict.get("hot_tes_thermal_production_series")]
+                        "year_one_thermal_to_load_series_mmbtu_per_hr"] = [x / MMBTU_TO_KWH for x in self.results_dict.get("hot_tes_thermal_to_load_series")]
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_hot_tes_soc_series_pct"] = self.results_dict.get("hot_tes_pct_soc_series")
                     if np.isnan(sum(self.results_dict.get("hot_tes_pct_soc_series") or [np.nan])):
                         self.nested_outputs["Scenario"]["Site"][name]["year_one_hot_tes_soc_series_pct"] = None
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_thermal_to_massproducer_series_mmbtu_per_hr"] = [x / MMBTU_TO_KWH for x in self.results_dict.get("hot_tes_thermal_to_massproducer_series")]                        
                 elif name == "ColdTES":
                     self.nested_outputs["Scenario"]["Site"][name][
                         "size_gal"] = self.results_dict.get("cold_tes_size_kwht",0) / ColdTES.gal_to_kwh_conversion
@@ -799,6 +817,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_boiler_fuel_consumption_mmbtu"] = self.results_dict.get("year_one_fuel_to_newboiler_kwh") / MMBTU_TO_KWH
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_boiler_thermal_production_mmbtu"] = self.results_dict.get("year_one_newboiler_thermal_production_kwh") / MMBTU_TO_KWH
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_thermal_to_massproducer_series_mmbtu_per_hr"] = [x / MMBTU_TO_KWH for x in self.results_dict.get("newboiler_thermal_to_massproducer_series")]                         
                 elif name == "SteamTurbine":
                     self.nested_outputs["Scenario"]["Site"][name][
                         "size_kw"] = self.results_dict.get("steamturbine_kw")
@@ -815,6 +835,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_to_battery_series_kw"] = self.results_dict.get("steamturbine_to_battery_series")
                     self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_electric_to_massproducer_series_kw"] = self.results_dict.get("steamturbine_electric_to_massproducer_series")                            
+                    self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_to_load_series_kw"] = self.results_dict.get("steamturbine_electric_to_load_series")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_to_grid_series_kw"] = self.results_dict.get("steamturbine_to_grid_series")
@@ -822,7 +844,39 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_thermal_to_load_series_mmbtu_per_hour"] = [x / MMBTU_TO_KWH for x in self.results_dict.get("steamturbine_thermal_to_load_series")]
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_thermal_to_tes_series_mmbtu_per_hour"] = [x / MMBTU_TO_KWH for x in self.results_dict.get("steamturbine_thermal_to_tes_series")]
-
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_thermal_to_massproducer_series_mmbtu_per_hr"] = [x / MMBTU_TO_KWH for x in self.results_dict.get("steamturbine_thermal_to_massproducer_series")]                        
+                elif name == "MassProducer":
+                    mass_units = self.inputs["MassProducer"]["mass_units"]
+                    time_units = self.inputs["MassProducer"]["time_units"]
+                    convert_mass_to_kwh_factor, convert_time_to_hr_factor = MassProducer.get_mass_time_conversion_factor(mass_units, time_units)
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "size_mass_per_time"] = self.results_dict.get("massproducer_size_kw") * convert_time_to_hr_factor / convert_mass_to_kwh_factor
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_electric_consumption_kwh"] = self.results_dict.get("massproducer_year_one_electric_consumption_kwh")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_thermal_consumption_mmbtu"] = self.results_dict.get("massproducer_year_one_thermal_consumption_kwh") / MMBTU_TO_KWH
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_mass_produced_mass"] = self.results_dict.get("massproducer_year_one_mass_produced_kwh") / convert_mass_to_kwh_factor
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_feedstock_consumption_mass"] = self.results_dict.get("massproducer_year_one_feedstock_consumption_kwh") / convert_mass_to_kwh_factor
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_electric_consumption_series_kw"] = self.results_dict.get("massproducer_electric_consumption_series_kw")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_thermal_consumption_series_mmbtu_per_hr"] = [x / MMBTU_TO_KWH for x in self.results_dict.get("massproducer_thermal_consumption_series_kw")]
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_mass_production_series_mass_per_hr"] = [x / convert_mass_to_kwh_factor for x in self.results_dict.get("massproducer_mass_production_series_kw")]
+                    self.nested_outputs
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_mass_value"] = self.results_dict.get("massproducer_year_one_mass_value")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_feedstock_cost"] = self.results_dict.get("massproducer_year_one_feedstock_cost")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "total_mass_value"] = self.results_dict.get("massproducer_total_mass_value")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "total_feedstock_cost"] = self.results_dict.get("massproducer_total_feedstock_cost")
+            
+            
             # outputs that depend on multiple object results:
             future_replacement_cost, present_replacement_cost = self.replacement_costs_future_and_present
             self.nested_outputs["Scenario"]["Site"]["Financial"]["initial_capital_costs"] = self.upfront_capex
