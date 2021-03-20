@@ -376,6 +376,7 @@ class CHP(Tech):
         self.outage_end_time_step = outage_end_time_step
         self.year = year
         self.can_supply_st = kwargs.get('can_supply_st')
+        self.can_supply_mp = kwargs.get('can_supply_mp')        
 
         self.fuel_burn_slope, self.fuel_burn_intercept, self.thermal_prod_slope, self.thermal_prod_intercept = \
             self.convert_performance_params(self.elec_effic_full_load, self.elec_effic_half_load,
@@ -478,7 +479,8 @@ class Boiler(Tech):
         self.can_supply_st = kwargs.get('can_supply_st')
         self.derate = 0
         self.n_timesteps = dfm.n_timesteps
-        
+        self.can_supply_mp = kwargs.get('can_supply_mp')        
+
         # Assign boiler max size equal to the peak load multiplied by the thermal_factor
         self.max_kw = max(boiler_fuel_series_bau) * self.boiler_efficiency * self.max_thermal_factor_on_peak_load * MMBTU_TO_KWH        
         
@@ -650,6 +652,7 @@ class NewBoiler(Tech):
         self.installed_cost_us_dollars_per_mmbtu_per_hr = kwargs.get('installed_cost_us_dollars_per_mmbtu_per_hr')
         self.om_cost_us_dollars_per_mmbtu_per_hr = kwargs.get('om_cost_us_dollars_per_mmbtu_per_hr')
         self.om_cost_us_dollars_per_mmbtu = kwargs.get('om_cost_us_dollars_per_mmbtu')
+        self.can_supply_mp = kwargs.get('can_supply_mp')
 
         # Convert cost basis of mmbtu/mmbtu_per_hr to kwh/kw
         self.installed_cost_us_dollars_per_kw = self.installed_cost_us_dollars_per_mmbtu_per_hr / MMBTU_TO_KWH
@@ -696,6 +699,7 @@ class SteamTurbine(Tech):
         self.gearbox_generator_efficiency = kwargs.get('gearbox_generator_efficiency')
         self.net_to_gross_electric_ratio = kwargs.get('net_to_gross_electric_ratio')
         self.om_cost_us_dollars_per_kwh = kwargs.get('om_cost_us_dollars_per_kwh')
+        self.can_supply_mp = kwargs.get('can_supply_mp')
 
         self.derate = 0  # TODO remove this from data_manager and *.jl model
         self.n_timesteps = dfm.n_timesteps
@@ -771,3 +775,81 @@ class SteamTurbine(Tech):
 
         return st_elec_out_to_therm_in_ratio, st_therm_out_to_therm_in_ratio
     
+class MassProducer(Tech): 
+
+    def __init__(self, dfm, **kwargs):
+        super(MassProducer, self).__init__(**kwargs)
+
+        self.reopt_class = 'MASSPRODUCER'
+        self.mass_units = kwargs.get('mass_units')
+        self.time_units = kwargs.get('time_units')
+        self.min_mass_per_time = kwargs.get('min_mass_per_time')
+        self.max_mass_per_time = kwargs.get('max_mass_per_time')
+        self.electric_consumed_to_mass_produced_ratio_kwh_per_mass = kwargs.get('electric_consumed_to_mass_produced_ratio_kwh_per_mass')
+        self.thermal_consumed_to_mass_produced_ratio_kwh_per_mass = kwargs.get('thermal_consumed_to_mass_produced_ratio_kwh_per_mass') 
+        self.feedstock_consumed_to_mass_produced_ratio = kwargs.get('feedstock_consumed_to_mass_produced_ratio') 
+        self.installed_cost_us_dollars_per_mass_per_time = kwargs.get('installed_cost_us_dollars_per_mass_per_time')
+        self.om_cost_us_dollars_per_mass_per_time = kwargs.get('om_cost_us_dollars_per_mass_per_time')
+        self.om_cost_us_dollars_per_mass = kwargs.get('om_cost_us_dollars_per_mass')
+        self.mass_value_us_dollars_per_mass = kwargs.get('mass_value_us_dollars_per_mass')
+        self.feedstock_cost_us_dollars_per_mass = kwargs.get('feedstock_cost_us_dollars_per_mass')
+        
+        self.derate = 0  # TODO remove this from data_manager and *.jl model
+        self.n_timesteps = dfm.n_timesteps
+
+        self.make_kw_kwh_basis_attributes()
+
+        kwargs['macrs_itc_reduction'] = None
+        self.incentives = IncentivesNoProdBased(**kwargs)
+
+        dfm.add_massproducer(self)
+
+    @property
+    def prod_factor(self):
+        """
+        MassProducer ProductionFactor is where we can account for unavailability
+        :return: prod_factor
+        """
+        mp_prod_factor = [1.0 for _ in range(self.n_timesteps)]
+
+        return mp_prod_factor
+    
+    def make_kw_kwh_basis_attributes(self):
+        """
+        Convert the specified units of mass_per_time into kW and mass into kWh for REopt
+        Will convert these back to their respective units in process_results
+
+        """
+
+        convert_mass_to_kwh_factor, convert_time_to_hr_factor = get_mass_time_conversion_factor(self.mass_units, self.time_units)
+
+        self.min_kw = self.min_mass_per_time * convert_mass_to_kwh_factor / convert_time_to_hr_factor
+        self.max_kw = self.max_mass_per_time * convert_mass_to_kwh_factor / convert_time_to_hr_factor
+        self.electric_consumed_to_mass_produced_ratio = self.electric_consumed_to_mass_produced_ratio_kwh_per_mass / convert_mass_to_kwh_factor
+        self.thermal_consumed_to_mass_produced_ratio = self.thermal_consumed_to_mass_produced_ratio_kwh_per_mass / convert_mass_to_kwh_factor 
+        self.feedstock_consumed_to_mass_produced_ratio = self.feedstock_consumed_to_mass_produced_ratio
+        self.installed_cost_us_dollars_per_kw = self.installed_cost_us_dollars_per_mass_per_time * 1.0 / (convert_mass_to_kwh_factor / convert_time_to_hr_factor)
+        self.om_cost_us_dollars_per_kw = self.om_cost_us_dollars_per_mass_per_time * 1.0 / (convert_mass_to_kwh_factor / convert_time_to_hr_factor)
+        self.om_cost_us_dollars_per_kwh = self.om_cost_us_dollars_per_mass * 1.0 / convert_mass_to_kwh_factor
+        self.mass_value_us_dollars_per_kwh = self.mass_value_us_dollars_per_mass * 1.0 / convert_mass_to_kwh_factor
+        self.feedstock_cost_us_dollars_per_kwh = self.feedstock_cost_us_dollars_per_mass * 1.0 / convert_mass_to_kwh_factor
+
+    @staticmethod
+    def get_mass_time_conversion_factor(mass_units, time_units):
+        """
+        Get conversion factor for mass_to_kwh and time_to_hr
+        """
+        
+        if mass_units == "mmbtu":
+            convert_mass_to_kwh_factor = MMBTU_TO_KWH
+        else:
+            convert_mass_to_kwh_factor = 1.0
+        
+        if time_units == "day":
+            convert_time_to_hr_factor = 24.0
+        elif time_units == "sec":
+            convert_time_to_hr_factor = 1.0 / 3600.0
+        else:
+            convert_time_to_hr_factor = 1.0
+
+        return convert_mass_to_kwh_factor, convert_time_to_hr_factor
