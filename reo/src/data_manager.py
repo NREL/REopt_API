@@ -1320,7 +1320,11 @@ class DataManager:
         massproducer_techs = [t for t in reopt_techs if t.lower().startswith('massproducer')]
         massproducer_techs_bau = [t for t in reopt_techs_bau if t.lower().startswith('massproducer')]
 
-        can_supply_mp = [t for t in heating_techs if eval(t.lower() + ".can_supply_mp")]
+        can_supply_mp = list()
+        for tech in heating_techs:
+            if eval('self.' + tech.lower()) != None:
+                if eval('self.' + tech.lower() + '.can_supply_mp'):
+                    can_supply_mp.append(tech)
         can_supply_mp_bau = list()
 
         massproducer_consumption_ratios_index = ["Electric", "Thermal", "Feedstock"]
@@ -1335,7 +1339,7 @@ class DataManager:
             massproducer_mass_value_us_dollars_per_kwh = 0.0
             massproducer_feedstock_cost_us_dollars_per_kwh = 0.0
         
-        if self.hot_tes_techs == [] or not self.hot_tes.can_supply_mp:
+        if hot_tes_techs == [] or not self.hot_tes.can_supply_mp:
             hot_tes_can_supply_mp = 0
         else:
             hot_tes_can_supply_mp = 1

@@ -182,7 +182,7 @@ class SteamTurbineTest(ResourceTestCaseMixin, TestCase):
                     tech_to_thermal_load[tech][load] = d["outputs"]["Scenario"]["Site"][tech]["year_one_thermal_to_"+load+"_series_mmbtu_per_hour"]
         
         # Hot TES is the other thermal supply
-        hottes_to_load = d["outputs"]["Scenario"]["Site"]["HotTES"]["year_one_thermal_from_hot_tes_series_mmbtu_per_hr"]
+        hottes_to_load = d["outputs"]["Scenario"]["Site"]["HotTES"]["year_one_thermal_to_load_series_mmbtu_per_hr"]
         
         # BAU boiler loads
         load_boiler_fuel = d["outputs"]["Scenario"]["Site"]["LoadProfileBoilerFuel"]["year_one_boiler_fuel_load_series_mmbtu_per_hr"]

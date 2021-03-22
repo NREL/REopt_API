@@ -90,7 +90,7 @@ class ColdTest(ResourceTestCaseMixin, TestCase):
         chp_thermal_to_tes_series = d['outputs']['Scenario']['Site']['CHP']['year_one_thermal_to_tes_series_mmbtu_per_hour']
         chp_thermal_to_waste_series = d['outputs']['Scenario']['Site']['CHP']['year_one_thermal_to_waste_series_mmbtu_per_hour']
         absorpchl_thermal_series = d['outputs']['Scenario']['Site']['AbsorptionChiller']['year_one_absorp_chl_thermal_consumption_series_mmbtu_per_hr']
-        hot_tes_mmbtu_per_hr_to_load_series = d['outputs']['Scenario']['Site']['HotTES']['year_one_thermal_from_hot_tes_series_mmbtu_per_hr']
+        hot_tes_mmbtu_per_hr_to_load_series = d['outputs']['Scenario']['Site']['HotTES']['year_one_thermal_to_load_series_mmbtu_per_hr']
         tes_inflows = sum(chp_thermal_to_tes_series) + sum(boiler_thermal_to_tes_series)
         total_chp_production = sum(chp_thermal_to_load_series) + sum(chp_thermal_to_tes_series) + sum(chp_thermal_to_waste_series)
         tes_outflows = sum(hot_tes_mmbtu_per_hr_to_load_series)

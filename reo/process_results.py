@@ -147,7 +147,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             # remove invalid sizes due to optimization error margins
             for r in [results_dict, results_dict_bau]:
                 for key, value in r.items():
-                    if key.endswith('kw') or key.endswith('kwh'):
+                    if (key.endswith('kw') or key.endswith('kwh')) and "massproducer" not in key:
                         if value < 0:
                             r[key] = 0
 

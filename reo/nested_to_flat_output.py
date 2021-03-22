@@ -272,7 +272,7 @@ def nested_to_flat_chp(nested_output):
         base.update({
             'hottes_gal': nested_output['Scenario']['Site']['HotTES']['size_gal'],
             'hottes_thermal_series_mmbtu_per_hr': nested_output['Scenario']['Site']['HotTES'][
-                'year_one_thermal_from_hot_tes_series_mmbtu_per_hr'],
+                'year_one_thermal_to_load_series_mmbtu_per_hr'],
         })
     if nested_output['Scenario']['Site'].get('FuelTariff') is not None:
         base.update({
