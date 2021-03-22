@@ -85,12 +85,12 @@ pipeline {
             stage("deploy-staging") {
               environment {
                 DEPLOY_ENV = "staging"
-                DEPLOY_SHARED_RESOURCES_NAMESPACE_POD_LIMIT = "4"
-                DEPLOY_APP_NAMESPACE_POD_LIMIT = "5"
+                DEPLOY_SHARED_RESOURCES_NAMESPACE_POD_LIMIT = "6"
+                DEPLOY_APP_NAMESPACE_POD_LIMIT = "50"
               }
 
               steps {
-                withKubeConfig([credentialsId: "kubeconfig-nrel-test"]) {
+                withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod"]) {
                   tadaWithWerfNamespaces(rancherProject: "reopt-api-stage", primaryBranch: "master", dbBaseName: "reopt_api_staging", baseDomain: "${STAGING_BASE_DOMAIN}") {
                     withCredentials([string(credentialsId: "reopt-api-werf-secret-key", variable: "WERF_SECRET_KEY")]) {
                       sh """
@@ -101,7 +101,7 @@ pipeline {
                           --set='branchName=${BRANCH_NAME}' \
                           --set='ingressHost=${DEPLOY_BRANCH_DOMAIN}' \
                           --set='tempIngressHost=${tadaDeployBranchDomain(baseDomain: env.STAGING_TEMP_BASE_DOMAIN, primaryBranch: "master")}' \
-                          --set='dbName=${DEPLOY_BRANCH_DB_NAME}' \
+                          --set='dbName=${DEPLOY_BRANCH_DB_NAME}'
                       """
                     }
                   }
@@ -119,7 +119,7 @@ pipeline {
               }
 
               steps {
-                withKubeConfig([credentialsId: "kubeconfig-nrel-prod"]) {
+                withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod"]) {
                   tadaWithWerfNamespaces(rancherProject: "reopt-api-prod", primaryBranch: "master") {
                     withCredentials([string(credentialsId: "reopt-api-werf-secret-key", variable: "WERF_SECRET_KEY")]) {
                       sh """
@@ -127,7 +127,7 @@ pipeline {
                           --values=./.helm/values.deploy.yaml \
                           --values=./.helm/values.${DEPLOY_ENV}.yaml \
                           --secret-values=./.helm/secret-values.${DEPLOY_ENV}.yaml \
-                          --set='ingressHost=${PRODUCTION_DOMAIN}' \
+                          --set='ingressHost=${PRODUCTION_DOMAIN}'
                       """
                     }
                   }

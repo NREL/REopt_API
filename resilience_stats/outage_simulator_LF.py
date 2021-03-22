@@ -35,8 +35,8 @@ from time import sleep
 
 
 @shared_task
-def simulate_outage(init_time_step, diesel_kw, fuel_available, b, m, diesel_min_turndown, batt_kwh, batt_kw,
-                    batt_roundtrip_efficiency, n_timesteps, n_steps_per_hour, batt_soc_kwh, crit_load):
+def simulate_outage(init_time_step, diesel_kw, fuel_available, b, m, batt_kwh, batt_kw,
+                    batt_roundtrip_efficiency, n_timesteps, n_steps_per_hour, batt_soc_kwh, crit_load, chp_kw):
     """
     Determine how long the critical load can be met with gas generator and energy storage.
     Celery task used to parallelize outage simulations starting every time step in a year.
@@ -45,7 +45,6 @@ def simulate_outage(init_time_step, diesel_kw, fuel_available, b, m, diesel_min_
     :param fuel_available: float, gallons
     :param b: float, diesel fuel burn rate intercept coefficient (y = m*x + b)  [gal/hr]
     :param m: float, diesel fuel burn rate slope (y = m*x + b)  [gal/kWh]
-    :param diesel_min_turndown:
     :param batt_kwh: float, battery capacity
     :param batt_kw: float, battery inverter capacity (AC rating)
     :param batt_roundtrip_efficiency:
@@ -58,7 +57,7 @@ def simulate_outage(init_time_step, diesel_kw, fuel_available, b, m, diesel_min_
     for i in range(n_timesteps):
         t = (init_time_step + i) % n_timesteps  # for wrapping around end of year
         load_kw = crit_load[t]
-
+        load_kw -= chp_kw  # Run CHP. No limit on fuel, no turndown constraint
         if load_kw < 0:  # load is met
             if batt_soc_kwh < batt_kwh:  # charge battery if there's room in the battery
                 batt_soc_kwh += min(
@@ -67,19 +66,11 @@ def simulate_outage(init_time_step, diesel_kw, fuel_available, b, m, diesel_min_
                     -load_kw / n_steps_per_hour * batt_roundtrip_efficiency,  # excess energy
                 )
         else:  # check if we can meet load with generator then storage
-            fuel_needed = (m * max(load_kw, diesel_min_turndown*diesel_kw) + b) / n_steps_per_hour
+            fuel_needed = (m * load_kw + b) / n_steps_per_hour
             # (gal/kWh * kW + gal/hr) * hr = gal
-            # TODO: do we want to enforce diesel_min_turndown? (Used to not b/c we assume it is an emergency so it doesn't matter)
 
             if load_kw <= diesel_kw and fuel_needed <= fuel_available:  # diesel can meet load
                 fuel_available -= fuel_needed
-                if load_kw < diesel_min_turndown * diesel_kw:  # extra generation goes to battery
-                    if batt_soc_kwh < batt_kwh:  # charge battery if there's room in the battery
-                        batt_soc_kwh += min(
-                            batt_kwh - batt_soc_kwh,     # room available
-                            batt_kw / n_steps_per_hour * batt_roundtrip_efficiency,  # inverter capacity
-                            (diesel_min_turndown * diesel_kw - load_kw) / n_steps_per_hour * batt_roundtrip_efficiency  # excess energy
-                        )
                 load_kw = 0
             else:  # diesel can meet part or no load
 
@@ -115,9 +106,9 @@ def simulate_outage(init_time_step, diesel_kw, fuel_available, b, m, diesel_min_
     return n_timesteps / n_steps_per_hour  # met the critical load for all time steps
 
 
-def simulate_outages(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critical_loads_kw=[], wind_kw_ac_hourly=None,
-                     batt_roundtrip_efficiency=0.829, diesel_kw=0, fuel_available=0, b=0, m=0, diesel_min_turndown=0.3,
-                     celery_eager=True
+def simulate_outages(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=[], init_soc=0, critical_loads_kw=[], wind_kw_ac_hourly=None,
+                     batt_roundtrip_efficiency=0.829, diesel_kw=0, fuel_available=0, b=0, m=0,
+                     celery_eager=True, chp_kw=0
                      ):
     """
     :param batt_kwh: float, battery storage capacity
@@ -131,7 +122,6 @@ def simulate_outages(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, criti
     :param fuel_available: float, gallons of diesel fuel available
     :param b: float, diesel fuel burn rate intercept coefficient (y = m*x + b*rated_capacity)  [gal/kwh/kw]
     :param m: float, diesel fuel burn rate slope (y = m*x + b*rated_capacity)  [gal/kWh]
-    :param diesel_min_turndown: minimum generator turndown in fraction of generator capacity (0 to 1)
     :return: dict,
         {
             "resilience_by_timestep": r,
@@ -151,7 +141,7 @@ def simulate_outages(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, criti
     if batt_kw == 0 or batt_kwh == 0:
         init_soc = [0] * n_timesteps  # default is None
 
-        if ((pv_kw_ac_hourly in [None, []]) or (sum(pv_kw_ac_hourly) == 0)) and diesel_kw == 0:
+        if ((pv_kw_ac_hourly in [None, []]) or (sum(pv_kw_ac_hourly) == 0)) and diesel_kw == 0 and chp_kw == 0:
             # no pv, generator, nor battery --> no resilience
             return {"resilience_by_timestep": r,
                     "resilience_hours_min": 0,
@@ -162,6 +152,17 @@ def simulate_outages(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, criti
                     "probs_of_surviving_by_month": [[0] for _ in range(12)],
                     "probs_of_surviving_by_hour_of_the_day": [[0] for _ in range(24)],
                     }
+
+    if chp_kw >= max(critical_loads_kw):
+        return {"resilience_by_timestep": [8760] * n_timesteps,
+                "resilience_hours_min": 8760,
+                "resilience_hours_max": 8760,
+                "resilience_hours_avg": 8760,
+                "outage_durations": list(range(1,8761)),
+                "probs_of_surviving": [1.0] * n_timesteps,
+                "probs_of_surviving_by_month": [[1.0] for _ in range(12)],
+                "probs_of_surviving_by_hour_of_the_day": [[1.0] for _ in range(24)],
+                }
 
     if pv_kw_ac_hourly in [None, []]:
         pv_kw_ac_hourly = [0] * n_timesteps
@@ -178,14 +179,15 @@ def simulate_outages(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, criti
             diesel_kw=diesel_kw,
             fuel_available=fuel_available,
             b=b, m=m,
-            diesel_min_turndown=diesel_min_turndown,
             batt_kwh=batt_kwh,
             batt_kw=batt_kw,
             batt_roundtrip_efficiency=batt_roundtrip_efficiency,
             n_timesteps=n_timesteps,
             n_steps_per_hour=n_steps_per_hour,
             batt_soc_kwh=init_soc[time_step]*batt_kwh,
-            crit_load=load_minus_der) for time_step in range(n_timesteps)
+            crit_load=load_minus_der,
+            chp_kw=chp_kw
+        ) for time_step in range(n_timesteps)
         )
         result = chord(jobs, process_results.s(n_steps_per_hour, n_timesteps)).delay()
         while not result.ready():
@@ -200,14 +202,14 @@ def simulate_outages(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, criti
                 diesel_kw=diesel_kw,
                 fuel_available=fuel_available,
                 b=b, m=m,
-                diesel_min_turndown=diesel_min_turndown,
                 batt_kwh=batt_kwh,
                 batt_kw=batt_kw,
                 batt_roundtrip_efficiency=batt_roundtrip_efficiency,
                 n_timesteps=n_timesteps,
                 n_steps_per_hour=n_steps_per_hour,
                 batt_soc_kwh=init_soc[time_step] * batt_kwh,
-                crit_load=load_minus_der
+                crit_load=load_minus_der,
+                chp_kw=chp_kw
             )
         results = process_results(r, n_steps_per_hour, n_timesteps)
         return results

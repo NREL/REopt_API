@@ -115,7 +115,6 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
     def test_valid_data_types(self):
 
         validator = ValidateNestedInput(self.complete_valid_nestedpost)
-
         for attribute, test_data in validator.test_data('type'):
             if attribute not in ["doe_reference_name", "percent_share"]:
                 response = self.get_response(test_data)
@@ -148,10 +147,11 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     def test_valid_data_ranges(self):
 
+
         input = ValidateNestedInput(self.complete_valid_nestedpost)
 
         for attribute, test_data in input.test_data('min'):
-            text = "exceeds allowable min"
+            text = "is less than the allowable min"
             response = self.get_response(test_data)
             err_msg = str(json.loads(response.content)['messages']['input_errors'])
             self.assertTrue(text in err_msg, "'{}' not found in '{}'".format(text, err_msg))
@@ -167,6 +167,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             response = self.get_response(test_data)
             err_msg = str(json.loads(response.content)['messages']['input_errors'])
             self.assertTrue(text in err_msg, "'{}' not found in '{}'".format(text, err_msg))
+
 
     def test_urdb_rate(self):
 

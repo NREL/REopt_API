@@ -28,7 +28,98 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## develop (unreleased)
+## v1.5.0 - 2021-03-12
+### Minor Updates
+##### Changed
+- `reo`, `*.jl`: Changed the units-basis for heating load, thermal production, and fuel consumption to kW/kWh, from mmbtu/mmbtu_per_hr and gal. This does not affect the units of the inputs or outputs.
+##### Removed
+- `reo`: The following inputs for `Site.Boiler`: `installed_cost_us_dollars_per_mmbtu_per_hr`, `min_mmbtu_per_hr`, and `max_mmbtu_per_hr`, and for `Site.ElectricChiller`: `installed_cost_us_dollars_per_kw`, `min_kw`, and `max_kw`.
+### Patches
+- `reo`: Catch issue in `process_results.py` where `renewable_electricity_energy_pct` is not explicitly set to _None_
+- `reo`:  Catch case where `CHP` `prime_mover` is not set and not all required fields are filled in
+- `reo`:  Catch issues with `itc_unit_basis` when the ITC is 100%
+- `validators.py`: Fix bug where length of percent_share != length of doe_reference_name even though no percent_share is provided (in `LoadProfileBoilerFuel`)
+
+## v1.4.4 - 2021-02-25
+### Patches
+- `reo`: In `validators.py` catches case where invalid percent_share entry was used in check special cases function
+- `reo`: In `loadprofile.py` catches where 0 lat/long was resolving to _False_ and leading to _None_ for lat and long
+- `reo`: Fix divide by 0 error in results processing
+- `reo`: Handle floats as URBD periods
+- `reo`: Fix `list_of_float` only types
+    
+## v1.4.3 - 2021-02-18
+### Patches
+- `reo`: new output `Financial.developer_om_and_replacement_present_cost_after_tax_us_dollars`
+- `reo`: Fix **PVWatts** being called when user provides `PV.prod_factor_series_kw`
+- `reopt_api`: new `docker-compose.nginx.yml` for standing up the API on a server with remote access (for example if one wants to host the API on a cloud service)
+- `reopt_api`: update `Dockerfile.xpress` to use `nlaws/pyjul:1.5.3` base image (was using Julia 1.3)
+- `reopt_api`: update `julia_envs/Xpress` PyCall from 1.91.4 to 1.92.2
+    
+## v1.4.2 - 2021-02-03
+### Patches
+- `reo`: Fix **Wind** `size_class` was not being set
+- `proforma`: Fix could not handle runs prior to v1.4.0 with no CHP database entries
+- `resilience_stats`: Fix could not handle runs prior to v1.4.0 with no CHP database entries
+- `resilience_stats`: `outage_simulator` returns 100% survivability when chp_kw >= critical_loads_kw
+
+## v1.4.1 - 2021-02-01
+### Patches
+- `reo`: Fixes database query error the occurs when getting production runs created prior to v1.4.0    
+
+## v1.4.0 - 2021-01-29
+### Major Updates
+### Minor Updates
+## Added
+- `reo`/`reopt.jl`: Coincident peak rates and expected time steps can be specified. There can be a single rate and list of time steps. Or there can be multiple CP periods in a year with different rates, and then a set of time steps is specified for each rate. Peak demand occurring during each set of CP time steps is charged at the corresponding CP rate.
+
+- `reo`: Add a new **ElectricTariff** inputs and outputs: 
+ - **coincident_peak_load_active_timesteps**
+ - **coincident_peak_load_charge_us_dollars_per_kw**
+ - **year_one_coincident_peak_cost_us_dollars**
+ - **year_one_coincident_peak_cost_bau_us_dollars**
+ - **total_coincident_peak_cost_us_dollars**
+ - **total_coincident_peak_cost_bau_us_dollars**
+
+## v1.3.0 - 2021-01-28
+### Major Updates
+### Minor Updates
+- `reo`: New output **om_and_replacement_present_cost_after_tax_us_dollars**
+- `reo`, `*.jl`: New load **LoadProfileBoilerFuel**
+    - Heating load of the site, as defined by boiler fuel consumption
+- `reo`, `*.jl`: New Tech **Boiler**
+    - BAU Tech which serves heating load. It consumes fuel and produces hot thermal energy.
+- `reo`: New **Site**-level input **FuelTariff**
+    - Cost structure for fuel consumed by **Boiler** and **CHP** Techs. Currently allows fixed annual or monthly values for fuel cost.
+- `reo`, `*.jl`: New load **LoadProfileChillerThermal**
+    - Cooling load of the site, as defined by a thermal load produced by the BAU **ElectricChiller** or a fraction of total electric load.
+    - This is treated as a subset of the total electric load (**LoadProfile**)
+- `reo`, `*.jl`: New Tech **ElectricChiller**
+    - BAU Tech which serves cooling load. It consumes electricity and produces chilled water to meet the cooling load or charge **ColdTES**.
+- `reo`, `*.jl`: New Tech **CHP**
+    - Combined heat and power (CHP) Tech which serves electric and heating loads. Its hot thermal production can also supply **AbsorptionChiller** or charge the **HotTES**.
+- `reo`, `*.jl`: New Tech **AbsorptionChiller**
+    - Cooling technology which serves cooling load with a hot thermal input. It can also charge **ColdTES**.
+- `reo`, `*.jl`: New Storage **HotTES**
+    - Storage model representing a hot water thermal energy storage tank. It can store hot thermal energy produced by **CHP** (or **Boiler**, but not typically).
+- `reo`, `*.jl`: New Storage **ColdTES**
+    - Storage model representing a chilled water thermal energy storage tank. It can store cold thermal energy produced by **ElectricChiller** or **AbsorptionChiller**.
+- `reo`: Changed `/simulated_load` endpoint to add optional **load_type** query param for **cooling** and **heating**
+    - Use **load_type** = "heating" with **annual_mmbtu** or **monthly_mmbtu** for heating load
+    - Use **load_type** = "cooling" with **annual_tonhour** or **monthly_tonhour** for cooling load 
+- `reo`: New endpoint `/chp_defaults`
+    - Endpoint for the default **prime_mover**, **size_class**, and default cost and performance parameters for **CHP**
+- `reo`: New endpoint `/loadprofile_chillerthermal_chiller_cop`
+    - Endpoint for the default **LoadProfileChillerThermal.chiller_cop** based on peak cooling load
+- `reo`: New endpoint `/absorption_chiller_defaults`
+    - Endpoint for the default **AbsorptionChiller** cost and performance parameters based on thermal type ("hot_water" or "steam") and peak cooling load
+- `reo`: New endpoint `/schedule_stats`
+    - Endpoint for getting default **CHP.chp_unavailability_periods** and summary metrics of the unavailability profile
+### Patches
+ - `summary`: Address failing cases in user `summary` endpoint due to missing load profile data
+
+
+## v1.2.0 - 2021-01-04
 ### Major Updates
 ### Minor Updates
 ##### Added
@@ -49,6 +140,8 @@ Classify the change according to the following categories:
 ##### Removed
 
 ### Patches
+- `resilience_stats`: Catch BAU cases and do not calculate avoided outage costs
+- `summary`: Catch jobs that errored out and do not parse results
 - `reo`: Catch `PVWattsDownloadError` when a bad response is received
 - `reo`: **fuel_used_gal** output for **Generator** was incorrect for scenarios with **time_steps_per_hour** not equal to 1
 
