@@ -1332,10 +1332,10 @@ class DataManager:
             massproducer_consumption_ratios = [self.massproducer.electric_consumed_to_mass_produced_ratio,
                                                 self.massproducer.thermal_consumed_to_mass_produced_ratio,
                                                 self.massproducer.feedstock_consumed_to_mass_produced_ratio]
-            massproducer_mass_value_us_dollars_per_kwh = self.massproducer.mass_value_us_dollars_per_kwh,
+            massproducer_mass_value_us_dollars_per_kwh = self.massproducer.mass_value_us_dollars_per_kwh
             massproducer_feedstock_cost_us_dollars_per_kwh = self.massproducer.feedstock_cost_us_dollars_per_kwh
         else:
-            massproducer_ratios = [0.0, 0.0, 0.0]
+            massproducer_consumption_ratios = [0.0, 0.0, 0.0]
             massproducer_mass_value_us_dollars_per_kwh = 0.0
             massproducer_feedstock_cost_us_dollars_per_kwh = 0.0
         
@@ -1481,7 +1481,7 @@ class DataManager:
             'MassProducerTechs': massproducer_techs,
             "TechCanSupplyMassProducer": can_supply_mp,
             "MassProducerConsumptionRatioIndex": massproducer_consumption_ratios_index,
-            "MassProducerConsumptionRatios": massproducer_ratios,
+            "MassProducerConsumptionRatios": massproducer_consumption_ratios,
             "MassProducerMassValue": massproducer_mass_value_us_dollars_per_kwh,
             "MassProducerFeedstockCost": massproducer_feedstock_cost_us_dollars_per_kwh,
             "HotTESCanSupplyMassProducer": hot_tes_can_supply_mp
@@ -1626,7 +1626,7 @@ class DataManager:
             'MassProducerTechs': massproducer_techs_bau,
             "TechCanSupplyMassProducer": can_supply_mp_bau,
             "MassProducerConsumptionRatioIndex": massproducer_consumption_ratios_index,
-            "MassProducerConsumptionRatios": massproducer_ratios,
+            "MassProducerConsumptionRatios": massproducer_consumption_ratios,
             "MassProducerMassValue": massproducer_mass_value_us_dollars_per_kwh,
             "MassProducerFeedstockCost": massproducer_feedstock_cost_us_dollars_per_kwh,
             "HotTESCanSupplyMassProducer": hot_tes_can_supply_mp_bau

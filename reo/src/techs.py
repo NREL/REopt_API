@@ -821,7 +821,7 @@ class MassProducer(Tech):
 
         """
 
-        convert_mass_to_kwh_factor, convert_time_to_hr_factor = get_mass_time_conversion_factor(self.mass_units, self.time_units)
+        convert_mass_to_kwh_factor, convert_time_to_hr_factor = MassProducer.get_mass_time_conversion_factor(self.mass_units, self.time_units)
 
         self.min_kw = self.min_mass_per_time * convert_mass_to_kwh_factor / convert_time_to_hr_factor
         self.max_kw = self.max_mass_per_time * convert_mass_to_kwh_factor / convert_time_to_hr_factor
