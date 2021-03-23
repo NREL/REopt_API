@@ -92,7 +92,11 @@ class REoptError(Exception):
                       'traceback': self.traceback,
                       }
 
-        rollbar.report_message(self.name, 'error', extra_data=extra_data)
+        try:
+            rollbar.report_message(self.name, 'error', extra_data=extra_data)
+        except Exception as e:
+            log.error("Rollbar failed to report message: {}".format(e.args))
+
         try:
         
             em = ErrorModel(task=self.task or '', name=self.name or '', run_uuid=self.run_uuid or '',
