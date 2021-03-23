@@ -1399,7 +1399,7 @@ class ValidateNestedInput:
             if self.isValid:
                 if electric_tariff.get('coincident_peak_load_active_timesteps') is not None:
                     #Patch to resolve Urbanopt jobs with a 0 price default
-                    if np.sum(electric_tariff.get('coincident_peak_load_charge_us_dollars_per_kw')) == 0:
+                    if np.sum(electric_tariff.get('coincident_peak_load_charge_us_dollars_per_kw') or [0]) == 0:
                         self.delete_attribute(object_name_path, number, 'coincident_peak_load_charge_us_dollars_per_kw')
                         self.delete_attribute(object_name_path, number, 'coincident_peak_load_active_timesteps')
                     else:
