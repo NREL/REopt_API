@@ -108,9 +108,16 @@ class ElecTariff(object):
             urdb_response = self.make_urdb_rate(blended_monthly_rates_us_dollars_per_kwh,
                                                 blended_monthly_demand_charges_us_dollars_per_kw)
 
-        self.utility_name = re.sub(r'\W+', '', str(urdb_response.get('utility')))
-        self.rate_name = re.sub(r'\W+', '', str(urdb_response.get('name')))
-        self.urdb_response = urdb_response
+        if self.tou_energy_rates is None:
+            self.utility_name = re.sub(r'\W+', '', str(urdb_response.get('utility')))
+            self.rate_name = re.sub(r'\W+', '', str(urdb_response.get('name')))
+            self.urdb_response = urdb_response
+        else:
+            self.override_urdb_rate_with_tou_energy_rates = True
+            self.utility_name = "custom_name"
+            self.rate_name = "custom_rate"
+            self.urdb_response = {}           
+
         self.net_metering_limit_kw = net_metering_limit_kw
         self.interconnection_limit_kw = interconnection_limit_kw
         self.emissions_factor_series_lb_CO2_per_kwh = emissions_factor_series_lb_CO2_per_kwh
