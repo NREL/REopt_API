@@ -1,0 +1,97 @@
+{
+  "Scenario": {
+	"timeout_seconds": 420,
+    "optimality_tolerance_techs": 0.001,
+    "Site": {
+      "latitude": 37.78,
+      "longitude": -122.45,
+      "MassProducer": {
+        "mass_units": "kg",
+        "time_units": "hr",
+        "min_mass_per_time": 10.0,
+        "max_mass_per_time": 10.0,
+        "electric_consumed_to_mass_produced_ratio_kwh_per_mass": 71.7,
+        "thermal_consumed_to_mass_produced_ratio_kwh_per_mass": 50.0,
+        "feedstock_consumed_to_mass_produced_ratio": 0.0,
+        "installed_cost_us_dollars_per_mass_per_time": 10.0,
+        "om_cost_us_dollars_per_mass_per_time": 1.5,
+        "om_cost_us_dollars_per_mass": 0.0,                         
+        "mass_value_us_dollars_per_mass": 5.0,
+        "feedstock_cost_us_dollars_per_mass": 0.0,
+        "macrs_option_years": 0,
+        "macrs_bonus_pct": 0
+      },
+      "NewBoiler": {
+        "min_mmbtu_per_hr": 0.0,
+        "max_mmbtu_per_hr": 25.0,
+        "boiler_efficiency": 0.8,
+        "can_supply_st": true,
+        "installed_cost_us_dollars_per_mmbtu_per_hr": 10.0,
+        "om_cost_us_dollars_per_mmbtu_per_hr": 0.1,
+        "om_cost_us_dollars_per_mmbtu": 0.0,
+        "emissions_factor_lb_CO2_per_mmbtu": null
+      },
+      "FuelTariff": {
+        "newboiler_fuel_type": "uranium",
+        "newboiler_fuel_blended_annual_rates_us_dollars_per_mmbtu": 0.5
+      },
+      "SteamTurbine": {
+        "min_kw": 500.0,
+        "max_kw": 500.0,
+        "is_condensing": true,
+        "inlet_steam_pressure_psig": 1000.0,
+        "inlet_steam_temperature_degF": null,
+        "inlet_steam_superheat_degF": 10.0,
+        "outlet_steam_pressure_psig": -12.7,
+        "outlet_steam_min_vapor_fraction": 0.7,                         
+        "isentropic_efficiency": 0.7,
+        "gearbox_generator_efficiency": 0.96,
+        "net_to_gross_electric_ratio": 0.98,
+        "installed_cost_us_dollars_per_kw": 4000.0,
+        "om_cost_us_dollars_per_kw": 80.0,
+        "om_cost_us_dollars_per_kwh": 0.0,
+        "can_net_meter": false,
+        "can_wholesale": true,
+        "can_export_beyond_site_load": true,
+        "can_curtail": false        
+      },
+      "Financial": {
+        "om_cost_escalation_pct": 0.034,
+        "escalation_pct": 0.034,
+		"newboiler_fuel_escalation_pct": 0.034,
+        "offtaker_tax_pct": 0.0,
+        "offtaker_discount_pct": 0.083,
+        "third_party_ownership": false,
+        "owner_tax_pct": 0.0,
+        "owner_discount_pct": 0.083,
+        "analysis_years": 25,
+        "value_of_lost_load_us_dollars_per_kwh": 0.0,
+        "microgrid_upgrade_cost_pct": 0.0
+        },
+      "LoadProfile": {
+        "doe_reference_name": "Hospital",
+        "annual_kwh": 8760000.0
+      },
+      "ElectricTariff": {
+        "net_metering_limit_kw": 0.0,
+        "interconnection_limit_kw": 100000000.0
+      },
+      "PV": {
+        "pv_name": "",
+        "existing_kw": 0.0,
+        "min_kw": 0.0,
+        "max_kw": 0.0
+      },
+      "Storage": {
+        "min_kw": 0.0,
+        "max_kw": 0.0,
+        "min_kwh": 0.0,
+        "max_kwh": 0.0
+      }      
+    },
+    "user_uuid": null,
+    "description": "",
+    "time_steps_per_hour": 1,
+    "webtool_uuid": null
+  }
+}
