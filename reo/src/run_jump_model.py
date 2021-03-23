@@ -103,10 +103,16 @@ def run_jump_model(self, dfm, data, bau=False):
     except Exception as e:
         if isinstance(e, REoptFailedToStartError):
             raise e
-        elif "DimensionMismatch" in e.args[0]:  # JuMP may mishandle a timeout when no feasible solution is returned
+        elif "DimensionMismatch" in str(e.args[0]):  # JuMP may mishandle a timeout when no feasible solution is returned
             msg = "Optimization exceeded timeout: {} seconds.".format(data["inputs"]["Scenario"]["timeout_seconds"])
             logger.info(msg)
             raise OptimizationTimeout(task=name, message=msg, run_uuid=run_uuid, user_uuid=user_uuid)
+        elif "RemoteDisconnected" in str(e.args[0]):
+            msg = "Something went wrong in the Julia code."
+            logger.error(msg)
+            raise REoptFailedToStartError(task=name, message=msg, run_uuid=run_uuid, user_uuid=user_uuid)
+
+        # ADD JULIA EXCEPTION HERE
         exc_type, exc_value, exc_traceback = sys.exc_info()
         print(exc_type)
         print(exc_value)
