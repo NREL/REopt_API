@@ -91,7 +91,7 @@ pipeline {
 
               steps {
                 withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod"]) {
-                  tadaWithWerfNamespaces(rancherProject: "reopt-api-stage", primaryBranch: "master_rancher", dbBaseName: "reopt_api_staging", baseDomain: "${STAGING_BASE_DOMAIN}") {
+                  tadaWithWerfNamespaces(rancherProject: "reopt-api-stage", primaryBranch: "master", dbBaseName: "reopt_api_staging", baseDomain: "${STAGING_BASE_DOMAIN}") {
                     withCredentials([string(credentialsId: "reopt-api-werf-secret-key", variable: "WERF_SECRET_KEY")]) {
                       sh """
                         werf deploy \
@@ -100,7 +100,7 @@ pipeline {
                           --secret-values=./.helm/secret-values.${DEPLOY_ENV}.yaml \
                           --set='branchName=${BRANCH_NAME}' \
                           --set='ingressHost=${DEPLOY_BRANCH_DOMAIN}' \
-                          --set='tempIngressHost=${tadaDeployBranchDomain(baseDomain: env.STAGING_TEMP_BASE_DOMAIN, primaryBranch: "master_rancher")}' \
+                          --set='tempIngressHost=${tadaDeployBranchDomain(baseDomain: env.STAGING_TEMP_BASE_DOMAIN, primaryBranch: "master")}' \
                           --set='dbName=${DEPLOY_BRANCH_DB_NAME}'
                       """
                     }
@@ -110,7 +110,7 @@ pipeline {
             }
 
             stage("deploy-production") {
-              when { branch "master_rancher" }
+              when { branch "master" }
 
               environment {
                 DEPLOY_ENV = "production"
@@ -120,7 +120,7 @@ pipeline {
 
               steps {
                 withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod"]) {
-                  tadaWithWerfNamespaces(rancherProject: "reopt-api-prod", primaryBranch: "master_rancher") {
+                  tadaWithWerfNamespaces(rancherProject: "reopt-api-prod", primaryBranch: "master") {
                     withCredentials([string(credentialsId: "reopt-api-werf-secret-key", variable: "WERF_SECRET_KEY")]) {
                       sh """
                         werf deploy \
