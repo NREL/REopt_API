@@ -252,6 +252,8 @@ class LoadProfileModel(models.Model):
     resilience_check_flag = models.BooleanField(null=True, blank=True)
     load_met_series_kw = ArrayField(models.FloatField(blank=True), default=list, null=True)
     sr_required_series_kw = ArrayField(models.FloatField(blank=True), default=list, null=True)
+    total_sr_required = ArrayField(models.FloatField(blank=True), default=list, null=True)
+    total_sr_provided = ArrayField(models.FloatField(blank=True), default=list, null=True)
 
     @classmethod
     def create(cls, **kwargs):

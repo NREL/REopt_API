@@ -440,6 +440,9 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]['loads_kw'] = self.dm["LoadProfile"].get("year_one_electric_load_series_kw")
                     self.nested_outputs["Scenario"]["Site"][name]["load_met_series_kw"] = self.results_dict.get("load_met")
                     self.nested_outputs["Scenario"]["Site"][name]["sr_required_series_kw"] = self.results_dict.get("sr_required_load")
+                    #Debug variables
+                    self.nested_outputs["Scenario"]["Site"][name]["total_sr_required"] = self.results_dict.get("tot_sr_required")
+                    self.nested_outputs["Scenario"]["Site"][name]["total_sr_provided"] = self.results_dict.get("tot_sr_provided")
                 elif name == "LoadProfileBoilerFuel":
                     self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_boiler_fuel_load_mmbtu_bau"] = \
                         self.dm["LoadProfile"].get("annual_heating_mmbtu")
@@ -710,6 +713,9 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "existing_gen_year_one_fuel_cost_us_dollars"] = self.results_dict.get(
                         "gen_year_one_fuel_cost_bau")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "sr_provided_series_kw"] = self.results_dict.get(
+                        "sr_provided_gen")
                 elif name == "CHP":
                     self.nested_outputs["Scenario"]["Site"][name][
                         "size_kw"] = self.results_dict.get("chp_kw")

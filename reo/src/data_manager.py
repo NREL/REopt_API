@@ -878,6 +878,18 @@ class DataManager:
             tech_subdivisions.append(tech_sub)
         return tech_subdivisions
 
+    def _get_sr_required_pct(self, techs):
+        if self.off_grid_flag:
+            sr_required_pct = []
+            for tech in techs:
+                if tech.startswith("PV"):
+                    sr_required_pct.append(eval('self.' + tech.lower() + '.sr_required_pct'))
+                else:
+                    sr_required_pct.append(0.0)
+        else:
+            sr_required_pct = [0.0]*len(techs)
+        return sr_required_pct
+
     def _get_time_steps_with_grid(self):
         """
         Obtains the subdivision of time steps with a grid connection and those
@@ -1269,6 +1281,9 @@ class DataManager:
         chp_fuel_burn_intercept_bau, chp_thermal_prod_slope_bau, chp_thermal_prod_intercept_bau, chp_derate_bau \
             = fuel_params._get_chp_unique_params(chp_techs_bau, chp=eval('self.chp'))
 
+        techs_requiring_sr = [t for t in reopt_techs if (t.startswith("PV") and t.endswith("NM"))]
+        techs_providing_sr = [t for t in reopt_techs if (t.startswith("PV") and t.endswith("NM")) or t.startswith("GENERATOR")]
+        sr_required_pct = self._get_sr_required_pct(techs_providing_sr)
 
         self.reopt_inputs = {
             'Tech': reopt_techs,
@@ -1399,11 +1414,11 @@ class DataManager:
             'AddSOCIncentive': self.add_soc_incentive,
             #Offgrid
             'OffGridFlag': self.off_grid_flag,
-            'TechsRequiringSR': ['PV1NM'],
-            'TechsProvidingSR': ['PV1NM','GENERATOR'],
+            'TechsRequiringSR': techs_requiring_sr,
+            'TechsProvidingSR': techs_providing_sr,
             'MinLoadMetPct': self.load.min_load_met_pct,
             'SRrequiredPctLoad': self.load.sr_required_pct,
-            'SRrequiredPctTechs': [0.5, 0.0],
+            'SRrequiredPctTechs': sr_required_pct,
             'PowerhouseCivilCost': sf.powerhouse_civil_cost_us_dollars_per_sqft,
             'DistSystemCost': sf.distribution_system_cost_us_dollars,
             'PreOperatingExpenses': sf.pre_operating_expenses_us_dollars_per_kw * max(non_cooling_electric_load),
@@ -1515,8 +1530,8 @@ class DataManager:
             'FuelBurningTechs': fb_techs_bau,
             'TechsNoTurndown': techs_no_turndown_bau,
             'ExportTiers': export_tiers_bau,
-            'TimeStepsWithGrid': list(range(8761))[1:], #time_steps_with_grid,
-            'TimeStepsWithoutGrid': [], #time_steps_without_grid,
+            'TimeStepsWithGrid': time_steps_with_grid,
+            'TimeStepsWithoutGrid': time_steps_without_grid,
             'ExportTiersByTech': rates_by_tech_bau,
             'TechsByExportTier': [techs_by_export_tier_bau[k] for k in export_tiers_bau],
             'ExportTiersBeyondSiteLoad':  ["EXC"],
@@ -1551,11 +1566,11 @@ class DataManager:
             'AddSOCIncentive': self.add_soc_incentive,
             # Offgrid
             'OffGridFlag': False, #self.off_grid_flag,
-            'TechsRequiringSR': ['PV1NM'],
-            'TechsProvidingSR': ['PV1NM'], #, 'GENERATOR'],
+            'TechsRequiringSR': techs_requiring_sr,
+            'TechsProvidingSR': techs_providing_sr,
             'MinLoadMetPct': self.load.min_load_met_pct,
             'SRrequiredPctLoad': self.load.sr_required_pct,
-            'SRrequiredPctTechs': [0.5], #, 0.0]
+            'SRrequiredPctTechs': sr_required_pct,
             'PowerhouseCivilCost': sf.powerhouse_civil_cost_us_dollars_per_sqft,
             'DistSystemCost': sf.distribution_system_cost_us_dollars,
             'PreOperatingExpenses': sf.pre_operating_expenses_us_dollars_per_kw * max(non_cooling_electric_load),

@@ -149,6 +149,16 @@ nested_output_definitions = {
                   "type": "list_of_float",
                   "description": "Spinning reserve requirement for changes in load in each time step",
                   "units": "kW"
+                },
+                "total_sr_required": {
+                  "type": "list_of_float",
+                  "description": "Total spinning reserve required",
+                  "units": "kW"
+                },
+                "total_sr_provided": {
+                  "type": "list_of_float",
+                  "description": "Total spinning reserve provided",
+                  "units": "kW"
                 }
               },
 
