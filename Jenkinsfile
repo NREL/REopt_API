@@ -20,7 +20,7 @@ pipeline {
     stage("app-agent") {
       agent {
         dockerfile {
-          filename "Dockerfile.dev"
+          filename "Dockerfile"
           additionalBuildArgs "--pull --build-arg XPRESS_LICENSE_HOST='${XPRESS_LICENSE_HOST}' --build-arg NREL_ROOT_CERT_URL_ROOT='${NREL_ROOT_CERT_URL_ROOT}'"
         }
       }
@@ -50,7 +50,7 @@ pipeline {
         WERF_ADD_ANNOTATION_CI_COMMIT = "ci.werf.io/commit=$GIT_COMMIT"
         WERF_THREE_WAY_MERGE_MODE = "enabled"
         WERF_LOG_VERBOSE = "true"
-        DOCKER_BASE_IMAGE_DIGEST = tadaDockerBaseImageDigest(dockerfile: "Dockerfile.dev")
+        DOCKER_BASE_IMAGE_DIGEST = tadaDockerBaseImageDigest(dockerfile: "Dockerfile")
         XPRESS_LICENSE_HOST = credentials("reopt-api-xpress-license-host")
         NREL_ROOT_CERT_URL_ROOT = credentials("reopt-api-nrel-root-cert-url-root")
       }
@@ -86,12 +86,12 @@ pipeline {
               environment {
                 DEPLOY_ENV = "staging"
                 DEPLOY_SHARED_RESOURCES_NAMESPACE_POD_LIMIT = "6"
-                DEPLOY_APP_NAMESPACE_POD_LIMIT = "50"
+                DEPLOY_APP_NAMESPACE_POD_LIMIT = "10"
               }
 
               steps {
                 withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod"]) {
-                  tadaWithWerfNamespaces(rancherProject: "reopt-api-stage", primaryBranch: "master", dbBaseName: "reopt_api_staging", baseDomain: "${STAGING_BASE_DOMAIN}") {
+                  tadaWithWerfNamespaces(rancherProject: "reopt-api-stage", primaryBranch: "master_rancher", dbBaseName: "reopt_api_staging", baseDomain: "${STAGING_BASE_DOMAIN}") {
                     withCredentials([string(credentialsId: "reopt-api-werf-secret-key", variable: "WERF_SECRET_KEY")]) {
                       sh """
                         werf deploy \
@@ -100,7 +100,7 @@ pipeline {
                           --secret-values=./.helm/secret-values.${DEPLOY_ENV}.yaml \
                           --set='branchName=${BRANCH_NAME}' \
                           --set='ingressHost=${DEPLOY_BRANCH_DOMAIN}' \
-                          --set='tempIngressHost=${tadaDeployBranchDomain(baseDomain: env.STAGING_TEMP_BASE_DOMAIN, primaryBranch: "master")}' \
+                          --set='tempIngressHost=${tadaDeployBranchDomain(baseDomain: env.STAGING_TEMP_BASE_DOMAIN, primaryBranch: "master_rancher")}' \
                           --set='dbName=${DEPLOY_BRANCH_DB_NAME}'
                       """
                     }
@@ -110,17 +110,17 @@ pipeline {
             }
 
             stage("deploy-production") {
-              when { branch "master" }
+              when { branch "master_rancher" }
 
               environment {
                 DEPLOY_ENV = "production"
-                DEPLOY_SHARED_RESOURCES_NAMESPACE_POD_LIMIT = "5"
-                DEPLOY_APP_NAMESPACE_POD_LIMIT = "10"
+                DEPLOY_SHARED_RESOURCES_NAMESPACE_POD_LIMIT = "6"
+                DEPLOY_APP_NAMESPACE_POD_LIMIT = "40"
               }
 
               steps {
                 withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod"]) {
-                  tadaWithWerfNamespaces(rancherProject: "reopt-api-prod", primaryBranch: "master") {
+                  tadaWithWerfNamespaces(rancherProject: "reopt-api-prod", primaryBranch: "master_rancher") {
                     withCredentials([string(credentialsId: "reopt-api-werf-secret-key", variable: "WERF_SECRET_KEY")]) {
                       sh """
                         werf deploy \
