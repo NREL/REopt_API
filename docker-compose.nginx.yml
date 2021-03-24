@@ -6,8 +6,8 @@ services:
     container_name: redis-nginx
     image: redis
     command: redis-server
-    ports:
-      - 6379:6379
+    expose:
+      - 6379
 
   db-nginx:
     container_name: db-nginx

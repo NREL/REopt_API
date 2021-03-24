@@ -30,6 +30,7 @@
 import json
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
+from unittest import skip
 import numpy as np
 from reo.utilities import annuity
 
@@ -831,6 +832,7 @@ class TestCoincidentPeak(ResourceTestCaseMixin, TestCase):
             response = json.loads(self.api_client.get(self.results_url.replace('<run_uuid>', str(uuid))).content)
             return response
 
+    @skip("Skipping test_coincident_peak")
     def test_coincident_peak(self):
         def test_case(self, post, expected_error=None):
             response = self.get_response(data=post, expected_error=expected_error)
@@ -886,6 +888,7 @@ class TestCoincidentPeak(ResourceTestCaseMixin, TestCase):
             else:
                 print("test_coincident_peak message: Bad input case errored correctly.")
                 
+        # TODO do we need all of these test_cases? seems like input checking is redundant with test_validator.py
         test_case(self, self.post_list_of_float_and_list_of_list)
         test_case(self, self.post_float_and_list_of_int)
         test_case(self, self.post_float_and_int)
