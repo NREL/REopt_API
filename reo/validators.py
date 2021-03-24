@@ -1398,27 +1398,22 @@ class ValidateNestedInput:
             
             if self.isValid:
                 if electric_tariff.get('coincident_peak_load_active_timesteps') is not None:
-                    #Patch to resolve Urbanopt jobs with a 0 price default
-                    if np.sum(electric_tariff.get('coincident_peak_load_charge_us_dollars_per_kw') or [0]) == 0:
-                        self.delete_attribute(object_name_path, number, 'coincident_peak_load_charge_us_dollars_per_kw')
-                        self.delete_attribute(object_name_path, number, 'coincident_peak_load_active_timesteps')
-                    else:
-                        for series in electric_tariff.get('coincident_peak_load_active_timesteps'):
-                            self.validate_timestep_series(series, 
-                            "ElectricTariff", 'coincident_peak_load_active_timesteps', 
-                            ts_per_hour, number=number, input_isDict=input_isDict)
-                        if len(electric_tariff.get('coincident_peak_load_active_timesteps')) != len(electric_tariff.get('coincident_peak_load_charge_us_dollars_per_kw')):
-                            self.input_data_errors.append(( "The number of rates in coincident_peak_load_charge_us_dollars_per_kw must"
-                                                            " match the number of timestep sets in coincident_peak_load_active_timesteps"))
-                        if self.isValid:
-                            #All coincident_peak_load_active_timesteps lists must be the same length
-                            max_entries = max([len(i) for i in electric_tariff['coincident_peak_load_active_timesteps']])
-                            for idx, entry in enumerate(electric_tariff['coincident_peak_load_active_timesteps']):
-                                if len(entry) < max_entries:
-                                    electric_tariff['coincident_peak_load_active_timesteps'][idx] += [None for _ in range(max_entries - len(entry))]
-                            real_values['coincident_peak_load_active_timesteps'] = electric_tariff['coincident_peak_load_active_timesteps']
-                            self.update_attribute_value(object_name_path, number, 'coincident_peak_load_active_timesteps',
-                                                        electric_tariff['coincident_peak_load_active_timesteps'])
+                    for series in electric_tariff.get('coincident_peak_load_active_timesteps'):
+                        self.validate_timestep_series(series, 
+                        "ElectricTariff", 'coincident_peak_load_active_timesteps', 
+                        ts_per_hour, number=number, input_isDict=input_isDict)
+                    if len(electric_tariff.get('coincident_peak_load_active_timesteps')) != len(electric_tariff.get('coincident_peak_load_charge_us_dollars_per_kw')):
+                        self.input_data_errors.append(( "The number of rates in coincident_peak_load_charge_us_dollars_per_kw must"
+                                                        " match the number of timestep sets in coincident_peak_load_active_timesteps"))
+                    if self.isValid:
+                        #All coincident_peak_load_active_timesteps lists must be the same length
+                        max_entries = max([len(i) for i in electric_tariff['coincident_peak_load_active_timesteps']])
+                        for idx, entry in enumerate(electric_tariff['coincident_peak_load_active_timesteps']):
+                            if len(entry) < max_entries:
+                                electric_tariff['coincident_peak_load_active_timesteps'][idx] += [None for _ in range(max_entries - len(entry))]
+                        real_values['coincident_peak_load_active_timesteps'] = electric_tariff['coincident_peak_load_active_timesteps']
+                        self.update_attribute_value(object_name_path, number, 'coincident_peak_load_active_timesteps',
+                                                    electric_tariff['coincident_peak_load_active_timesteps'])
 
         if object_name_path[-1] == "LoadProfileChillerThermal":
             if self.isValid:
