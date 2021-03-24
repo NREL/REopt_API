@@ -27,10 +27,27 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-from django.urls import re_path
+module REopt
 
-from . import views
+export
+    reopt,
+    xpress_model
 
-urlpatterns = [
-    re_path(r'^load_builder/?$', views.load_builder),
-]
+using JuMP
+using Xpress
+import MathOptInterface
+import Base.length
+import Base.reshape
+import AxisArrays.AxisArray
+import JuMP.value
+import LinearAlgebra: transpose
+import MutableArithmetics
+using AxisArrays
+
+const MOI = MathOptInterface
+
+include("utils.jl")
+include("reopt_model.jl")
+include("xpress_model.jl")
+
+end
