@@ -86,7 +86,7 @@ pipeline {
               environment {
                 DEPLOY_ENV = "staging"
                 DEPLOY_SHARED_RESOURCES_NAMESPACE_POD_LIMIT = "6"
-                DEPLOY_APP_NAMESPACE_POD_LIMIT = "10"
+                DEPLOY_APP_NAMESPACE_POD_LIMIT = "20"
               }
 
               steps {
@@ -115,7 +115,7 @@ pipeline {
               environment {
                 DEPLOY_ENV = "production"
                 DEPLOY_SHARED_RESOURCES_NAMESPACE_POD_LIMIT = "6"
-                DEPLOY_APP_NAMESPACE_POD_LIMIT = "40"
+                DEPLOY_APP_NAMESPACE_POD_LIMIT = "70"
               }
 
               steps {
