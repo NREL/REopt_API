@@ -669,7 +669,7 @@ function add_spinning_reserve_constraints(m, p)
 	)
 	@constraint(m, [ts in p.TimeStep],
 		m[:dvSRrequired][ts] >= sum(m[:dvProductionToLoad][t,ts] * p.SRrequiredPctTechs[t] for t in p.TechsRequiringSR) +
-								p.ElecLoad[ts] * p.SRrequiredPctLoad
+								p.ElecLoad[ts] * m[:dvLoadServed][ts] * p.SRrequiredPctLoad
 	)
 	# Spinning reserve provided - battery
 	@constraint(m, [b in p.ElecStorage, ts in p.TimeStep],
@@ -678,33 +678,27 @@ function add_spinning_reserve_constraints(m, p)
 	@constraint(m, [b in p.ElecStorage, ts in p.TimeStep],
 		m[:dvSRbatt][b,ts] <= m[:dvStorageCapPower][b]
 	)
-
-
-
 	# Spinning reserve provided - other technologies
 	@constraint(m, [t in p.TechsProvidingSR, ts in p.TimeStep],
-		 m[:dvSR][t,ts] <= (p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] -
+		 # Change dvRatedProd to dvSize - generator SR forces same amount to generator 1S
+		 # m[:dvSR][t,ts] <= (p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] -
+		 m[:dvSR][t,ts] <= (p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvSize][t] -
 		                   m[:dvProductionToLoad][t,ts]) * (1 - p.SRrequiredPctTechs[t])
 	)
 	@constraint(m, [t in p.TechsProvidingSR, ts in p.TimeStep],
-		m[:dvSR][t,ts] <= m[:binTechIsOnInTS][t,ts] * m[:NewMaxSize][t]
+		m[:dvSR][t,ts] <= m[:dvProductionToLoad][t,ts] * 1.0e10 #m[:binTechIsOnInTS][t,ts] * m[:NewMaxSize][t]
 	)
 	@constraint(m, [ts in p.TimeStep],
 		m[:dvSRprovided][ts] == sum(m[:dvSR][t,ts] for t in p.TechsProvidingSR) +
 								sum(m[:dvSRbatt][b,ts] for b in p.ElecStorage)
 	)
-
-# 	@constraint(m, [t in p.TechsProvidingSR, ts in p.TimeStep],
-# 		m[:dvSize][t] >= m[:dvSR][t,ts] + m[:dvProductionToLoad][t,ts]
-# 	)
-
-# 	@constraint(m, [ts in p.TimeStep],
-# 		m[:dvSRprovided][ts] == sum(m[:dvSR][t,ts] * p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * (1 - p.SRrequiredPctTechs[t]) for t in p.TechsProvidingSR) +
-# 								sum(m[:dvSRbatt][b,ts] for b in p.ElecStorage)
-# 	)
 	@constraint(m, [ts in p.TimeStep],
 		m[:dvSRrequired][ts] <= m[:dvSRprovided][ts]
 	)
+	@constraint(m, [ts in p.TimeStep],
+		m[:dvSR]["GENERATOR", 1] == 2
+	)
+
 end
 
 function add_storage_grid_constraints(m, p)
@@ -1323,8 +1317,14 @@ end
 function add_load_results(m, p, r::Dict)
 	@expression(m, LoadMet[ts in p.TimeStep], p.ElecLoad[ts] * m[:dvLoadServed][ts])
 	r["load_met"] = round.(value.(LoadMet), digits=3)
-	@expression(m, SRrequiredLoad[ts in p.TimeStep], p.ElecLoad[ts] * p.SRrequiredPctLoad)
+	@expression(m, SRrequiredLoad[ts in p.TimeStep], p.ElecLoad[ts] * m[:dvLoadServed][ts] * p.SRrequiredPctLoad)
 	r["sr_required_load"] = round.(value.(SRrequiredLoad), digits=3)
+
+	#Debug outputs
+	@expression(m, TotSRrequired[ts in p.TimeStep], m[:dvSRrequired][ts])
+	r["tot_sr_required"] = round.(value.(TotSRrequired), digits=3)
+	@expression(m, TotSRprovided[ts in p.TimeStep], m[:dvSRprovided][ts])
+	r["tot_sr_provided"] = round.(value.(TotSRprovided), digits=3)
 	nothing
 end
 
