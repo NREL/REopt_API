@@ -23,9 +23,10 @@
       },
       "NewBoiler": {
         "min_mmbtu_per_hr": 0.0,
-        "max_mmbtu_per_hr": 25.0,
+        "max_mmbtu_per_hr": 10000.0,
         "boiler_efficiency": 0.8,
         "can_supply_st": true,
+        "can_supply_mp": true,
         "installed_cost_us_dollars_per_mmbtu_per_hr": 10.0,
         "om_cost_us_dollars_per_mmbtu_per_hr": 0.1,
         "om_cost_us_dollars_per_mmbtu": 0.0,
@@ -33,11 +34,11 @@
       },
       "FuelTariff": {
         "newboiler_fuel_type": "uranium",
-        "newboiler_fuel_blended_annual_rates_us_dollars_per_mmbtu": 0.5
+        "newboiler_fuel_blended_annual_rates_us_dollars_per_mmbtu": 6.1
       },
       "SteamTurbine": {
-        "min_kw": 500.0,
-        "max_kw": 500.0,
+        "min_kw": 2000.0,
+        "max_kw": 2000.0,
         "is_condensing": true,
         "inlet_steam_pressure_psig": 1000.0,
         "inlet_steam_temperature_degF": null,
@@ -53,7 +54,8 @@
         "can_net_meter": false,
         "can_wholesale": true,
         "can_export_beyond_site_load": true,
-        "can_curtail": false        
+        "can_curtail": false,
+        "can_supply_mp": false
       },
       "Financial": {
         "om_cost_escalation_pct": 0.034,
@@ -74,7 +76,10 @@
       },
       "ElectricTariff": {
         "net_metering_limit_kw": 0.0,
-        "interconnection_limit_kw": 100000000.0
+        "interconnection_limit_kw": 100000000.0,
+        "tou_energy_rates_us_dollars_per_kwh": null,
+        "wholesale_rate_us_dollars_per_kwh": 0.12,
+        "wholesale_rate_above_site_load_us_dollars_per_kwh": 0.12
       },
       "PV": {
         "pv_name": "",

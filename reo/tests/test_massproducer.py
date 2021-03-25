@@ -47,13 +47,12 @@ class MassProducerTest(ResourceTestCaseMixin, TestCase):
 
         return self.api_client.post(self.reopt_base, format='json', data=data)
 
-    @skip("Skip MassProducer test")
     def test_massproducer_nuclear(self):
         """
-        This first test is specific to a nuclear application with no conventional heating load.
-        The NewBoiler plus condensing-style SteamTurbine (representing Nuclear) can produce electricity for meeting the load or 
-        "hydrogen" in the MassProducer by feeding it electricity (from SteamTurbine) and hot thermal (from NewBoiler).
-        Fix the size of the SteamTurbine so that the site imports electricity to supplement the SteamTurbine to produce hydrogen
+        This test is specific to a nuclear application with no conventional heating load (LoadProfileBoilerFuel).
+        The NewBoiler plus condensing-style SteamTurbine (representing e.g. Nuclear) can produce electricity for meeting the load or 
+        mass (e.g. hydrogen) in the MassProducer by feeding it electricity (from the Grid or SteamTurbine) and hot thermal (from NewBoiler).
+        Fix the size of the SteamTurbine so that the site imports electricity to supplement the SteamTurbine to produce mass during specific times.
         
         Validation to ensure that:
          1) MassProducer takes electricity from SteamTurbine and/or Grid and hot thermal from NewBoiler to make mass during expected times
@@ -65,17 +64,30 @@ class MassProducerTest(ResourceTestCaseMixin, TestCase):
         # Call API, get results in "d" dictionary
         nested_data = json.load(open(self.test_post, 'rb'))
 
-        # Add time of use rates to toggle on/off H2 production
-        elec_price_high = 0.14  # [$/kWh]
-        elec_price_low = 0.08  # [$/kWh]
+        # Add time of use rates to toggle on/off mass production
+        elec_price_high = 0.12  # [$/kWh]
+        elec_price_low = 0.12  # [$/kWh]
+        wholesale_low = 0.01  # [$/kWh]
+        wholesale_high = 0.12  # [$/kWh]
         time_low_start = 8  # timestep index (hour)
         time_low_end = 16  # timestep index (hour)
-        mass_value = 10.1  # [$/kg]
-        nested_data["Scenario"]["Site"]["ElectricTariff"][
-            "tou_energy_rates_us_dollars_per_kwh"] = [elec_price_high] * 8760  # Higher price than value of H2 below ($0.12/kWh)
-        nested_data["Scenario"]["Site"]["ElectricTariff"][
-            "tou_energy_rates_us_dollars_per_kwh"][time_low_start:time_low_end] = \
-                                                    [elec_price_low] * (time_low_end - time_low_start)  # Lower price than H2 value below ($0.12/kWh)
+        mass_value = 8.7  # [$/kg]
+        
+        pricing_names = ["tou_energy_rates_us_dollars_per_kwh", 
+                            "wholesale_rate_us_dollars_per_kwh", 
+                            "wholesale_rate_above_site_load_us_dollars_per_kwh"]
+        for price in pricing_names:
+            if "wholesale" in price:
+                price_high = wholesale_high
+                price_low = wholesale_low
+            else:
+                price_high = elec_price_high
+                price_low = elec_price_low
+            nested_data["Scenario"]["Site"]["ElectricTariff"][
+                price] = [price_high] * 8760  # Higher price than value of H2 below ($0.12/kWh)
+            nested_data["Scenario"]["Site"]["ElectricTariff"][
+                price][time_low_start:time_low_end] = [price_low] * (time_low_end - time_low_start)  # Lower price than H2 value below ($0.12/kWh)
+        
         nested_data["Scenario"]["Site"]["MassProducer"][
             "mass_value_us_dollars_per_mass"] = mass_value  # Overwrites value in POST - eqivalent to value of $0.12/kWh electricity
 
@@ -90,12 +102,14 @@ class MassProducerTest(ResourceTestCaseMixin, TestCase):
         steamturbine_electric_to_mp = d["outputs"]["Scenario"]["Site"]["SteamTurbine"]["year_one_electric_to_massproducer_series_kw"] 
         newboiler_thermal_to_mp_mmbtu_per_hr = d["outputs"]["Scenario"]["Site"]["NewBoiler"]["year_one_thermal_to_massproducer_series_mmbtu_per_hr"]
         grid_electric_to_mp = d["outputs"]["Scenario"]["Site"]["ElectricTariff"]["year_one_to_massproducer_series_kw"]
+        mp_size_kg_per_hr = d["outputs"]["Scenario"]["Site"]["MassProducer"]["size_mass_per_time"]
+        mp_production_kg_per_hr = d["outputs"]["Scenario"]["Site"]["MassProducer"]["year_one_mass_production_series_mass_per_hr"]
         mp_electric_consumed_kwh = d["outputs"]["Scenario"]["Site"]["MassProducer"]["year_one_electric_consumption_kwh"]
         mp_thermal_consumed_mmbtu = d["outputs"]["Scenario"]["Site"]["MassProducer"]["year_one_thermal_consumption_mmbtu"]
-
-        # Check that all SteamTurbine electric production goes to MassProducer during the low electricity price time
-        expected_steamturbine_electric_to_mp = steamturbine_size_kw * (time_low_end - time_low_start)
-        self.assertEqual(expected_steamturbine_electric_to_mp, sum(steamturbine_electric_to_mp))
+        
+        # Check that MassProducer produces the maximum amount during the low electricity export price time, and only that time
+        expected_mp_production_kg = mp_size_kg_per_hr * (time_low_end - time_low_start)
+        self.assertTrue(expected_mp_production_kg, sum(mp_production_kg_per_hr))
         
         # Check that total electric production to MassProducer is equal to total electric consumed by MassProducer
         total_electric_to_mp = sum(steamturbine_electric_to_mp) + sum(grid_electric_to_mp)
