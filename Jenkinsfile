@@ -20,7 +20,7 @@ pipeline {
     stage("app-agent") {
       agent {
         dockerfile {
-          filename "Dockerfile.dev"
+          filename "Dockerfile"
           additionalBuildArgs "--pull --build-arg XPRESS_LICENSE_HOST='${XPRESS_LICENSE_HOST}' --build-arg NREL_ROOT_CERT_URL_ROOT='${NREL_ROOT_CERT_URL_ROOT}'"
         }
       }
@@ -50,7 +50,7 @@ pipeline {
         WERF_ADD_ANNOTATION_CI_COMMIT = "ci.werf.io/commit=$GIT_COMMIT"
         WERF_THREE_WAY_MERGE_MODE = "enabled"
         WERF_LOG_VERBOSE = "true"
-        DOCKER_BASE_IMAGE_DIGEST = tadaDockerBaseImageDigest(dockerfile: "Dockerfile.dev")
+        DOCKER_BASE_IMAGE_DIGEST = tadaDockerBaseImageDigest(dockerfile: "Dockerfile")
         XPRESS_LICENSE_HOST = credentials("reopt-api-xpress-license-host")
         NREL_ROOT_CERT_URL_ROOT = credentials("reopt-api-nrel-root-cert-url-root")
       }
@@ -86,7 +86,7 @@ pipeline {
               environment {
                 DEPLOY_ENV = "staging"
                 DEPLOY_SHARED_RESOURCES_NAMESPACE_POD_LIMIT = "6"
-                DEPLOY_APP_NAMESPACE_POD_LIMIT = "50"
+                DEPLOY_APP_NAMESPACE_POD_LIMIT = "20"
               }
 
               steps {
@@ -114,8 +114,8 @@ pipeline {
 
               environment {
                 DEPLOY_ENV = "production"
-                DEPLOY_SHARED_RESOURCES_NAMESPACE_POD_LIMIT = "5"
-                DEPLOY_APP_NAMESPACE_POD_LIMIT = "10"
+                DEPLOY_SHARED_RESOURCES_NAMESPACE_POD_LIMIT = "6"
+                DEPLOY_APP_NAMESPACE_POD_LIMIT = "70"
               }
 
               steps {

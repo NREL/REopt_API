@@ -136,9 +136,16 @@ USE_TZ = True
 
 # Results backend
 CELERY_RESULT_BACKEND = 'django-db'
-# if os.environ.get('K8S_DEPLOY') is not None:
-#     CELERY_WORKER_MAX_TASKS_PER_CHILD = 50
-CELERY_WORKER_MAX_MEMORY_PER_CHILD = 4000000 # 4 GB
+
+CELERY_WORKER_MAX_MEMORY_PER_CHILD = 4000000  # 4 GB
+# we have been resetting celery workers by max memory due to a memory growth problem.
+# this problem may be fixed by removing PyJulia, but can't view Rancher metrics yet.
+# Once we can confirm that we no longer have a memory grwoth issue we can disable this setting.
+# It has to be set according to the RAM available.
+
+# limit number of concurrent workers
+CELERY_WORKER_CONCURRENCY = 1
+# controlling number of celery workers with number of celery pods
 
 # celery task registration
 CELERY_IMPORTS = (
@@ -148,9 +155,6 @@ CELERY_IMPORTS = (
     'reo.src.run_jump_model',
     'resilience_stats.outage_simulator_LF',
 )
-
-# limit number of concurrent workers
-# CELERY_WORKER_CONCURRENCY = 2
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/

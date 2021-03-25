@@ -27,7 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-from numpy import npv, ndarray
+from numpy import npv
 from math import log10
 from reo.models import ErrorModel
 import pandas as pd
@@ -322,14 +322,8 @@ def get_weekday_weekend_total_hours_by_month(year, year_profile_hourly_list):
 
     return weekday_weekend_total_hours_by_month
 
-def scrub_numpy_arrays_from_dict(d):
-    for k, v in d.items():
-        if isinstance(v, ndarray):
-            d[k] = v.tolist()
-    return d
-
 # Conversion factor for ton-hours to kilowatt-hours thermal
-TONHOUR_TO_KWHT = 3.51685
+TONHOUR_TO_KWHT = 3.51685  # [kWh/ton-hr]
 
 #Creates and empty dot accessible dict for spoofing an empty DB record (i.e. empty_record().size_kw resolves to None)
 class empty_record(dict):
