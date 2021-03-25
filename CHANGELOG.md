@@ -28,12 +28,17 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## develop (unreleased)
+## v1.5.0 - 2021-03-12
 ### Minor Updates
 ##### Changed
 - `reo`, `*.jl`: Changed the units-basis for heating load, thermal production, and fuel consumption to kW/kWh, from mmbtu/mmbtu_per_hr and gal. This does not affect the units of the inputs or outputs.
 ##### Removed
 - `reo`: The following inputs for `Site.Boiler`: `installed_cost_us_dollars_per_mmbtu_per_hr`, `min_mmbtu_per_hr`, and `max_mmbtu_per_hr`, and for `Site.ElectricChiller`: `installed_cost_us_dollars_per_kw`, `min_kw`, and `max_kw`.
+### Patches
+- `reo`: Catch issue in `process_results.py` where `renewable_electricity_energy_pct` is not explicitly set to _None_
+- `reo`:  Catch case where `CHP` `prime_mover` is not set and not all required fields are filled in
+- `reo`:  Catch issues with `itc_unit_basis` when the ITC is 100%
+- `validators.py`: Fix bug where length of percent_share != length of doe_reference_name even though no percent_share is provided (in `LoadProfileBoilerFuel`)
 
 ## v1.4.4 - 2021-02-25
 ### Patches

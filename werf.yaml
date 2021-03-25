@@ -2,7 +2,18 @@ project: reopt-api
 configVersion: 1
 ---
 image: reopt-api
-dockerfile: Dockerfile.dev
+context: .
+dockerfile: Dockerfile
+args:
+  # Bust Werf stage caching whenever new versions of the docker base image are
+  # released (even if the tag is the same).
+  DOCKER_BASE_IMAGE_DIGEST: {{ env "DOCKER_BASE_IMAGE_DIGEST" | quote }}
+  XPRESS_LICENSE_HOST: {{ env "XPRESS_LICENSE_HOST" | quote }}
+  NREL_ROOT_CERT_URL_ROOT: {{ env "NREL_ROOT_CERT_URL_ROOT" | quote }}
+---
+image: julia-api
+context: julia_src/
+dockerfile: julia_src/Dockerfile
 args:
   # Bust Werf stage caching whenever new versions of the docker base image are
   # released (even if the tag is the same).

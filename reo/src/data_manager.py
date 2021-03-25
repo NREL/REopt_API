@@ -51,7 +51,6 @@ class DataManager:
     """
     Creates input dicts for reopt.jl and manages data transfer between Celery tasks
     """
-
     def __init__(self, run_id, user_id=None, n_timesteps=8760):
         self.pvs = []
         self.pvnms = []
@@ -156,7 +155,6 @@ class DataManager:
         exec("self.pv" + str(pv_number) + "nm" + " = self.pvnms[{}]".format(pv_number - 1))
 
     def add_wind(self, wind):
-
         junk = wind.prod_factor  # avoids redundant WindToolkit call for windnm
         self.wind = wind
         self.windnm = copy.deepcopy(wind)
@@ -194,12 +192,10 @@ class DataManager:
 
     def add_hot_tes(self, hot_tes):
         self.hot_tes = hot_tes
-
         # All attributes are written in finalize method because they are stacked 1..2 for hot_tes..cold_tes storages
 
     def add_cold_tes(self, cold_tes):
         self.cold_tes = cold_tes
-
         # All attributes are written in finalize method because they are stacked 1..2 for hot_tes..cold_tes storages
 
     def add_elec_tariff(self, elec_tariff):
@@ -541,7 +537,13 @@ class DataManager:
                         if itc is None or rebate_federal is None:
                             itc = 0.0
                             rebate_federal = 0.0
-                        itc_unit_basis = (tmp_cap_cost_slope[s] + rebate_federal) / (1 - itc)
+                        if itc == 1:
+                            itc_unit_basis = 0
+                        else:
+                            itc_unit_basis = (tmp_cap_cost_slope[s] + rebate_federal) / (1 - itc)
+                    else:
+                        # Not sure how else to handle this case, perhaps there is a better way to handle it?
+                        raise Exception('Invalid cost curve for {}. Value at index {} ({}) cannot be less than or equal to 0'.format(tech, s, cost_curve_bp_x[s + 1]))
 
                     sf = self.site.financial
                     updated_slope = setup_capital_cost_incentive(
@@ -1342,7 +1344,6 @@ class DataManager:
             'CoincidentPeakLoadTimeSteps': self.elec_tariff.coincident_peak_load_active_timesteps,
             'CoincidentPeakRates': self.elec_tariff.coincident_peak_load_charge_us_dollars_per_kw,
             'CoincidentPeakPeriodCount': self.elec_tariff.coincident_peak_num_periods,
-            # new parameters for reformulation
             'FuelCost': fuel_costs,
             'ElecRate': tariff_args.energy_costs,
             'GridExportRates': export_rates,
@@ -1352,7 +1353,7 @@ class DataManager:
             'ProductionFactor': production_factor,
             'ElecLoad': non_cooling_electric_load,
             'FuelLimit': fuel_limit,
-            'ChargeEfficiency': charge_efficiency,  # Do we need this indexed on tech?
+            'ChargeEfficiency': charge_efficiency,
             'GridChargeEfficiency': grid_charge_efficiency,
             'DischargeEfficiency': discharge_efficiency,
             'StorageMinSizeEnergy': storage_min_energy,
@@ -1364,7 +1365,6 @@ class DataManager:
             'StorageCanGridCharge': self.storage.canGridCharge,
             'SegmentMinSize': segment_min_size,
             'SegmentMaxSize': segment_max_size,
-            # Sets that need to be populated
             'Storage': storage_techs,
             'FuelType': fuel_types,
             'Subdivision': subdivisions,
@@ -1494,7 +1494,6 @@ class DataManager:
             'CoincidentPeakLoadTimeSteps': self.elec_tariff.coincident_peak_load_active_timesteps,
             'CoincidentPeakRates': self.elec_tariff.coincident_peak_load_charge_us_dollars_per_kw,
             'CoincidentPeakPeriodCount': self.elec_tariff.coincident_peak_num_periods,
-            # new parameters for reformulation
 	        'FuelCost': fuel_costs_bau,
 	        'ElecRate': tariff_args.energy_costs_bau,
 	        'GridExportRates': export_rates_bau,
@@ -1516,7 +1515,6 @@ class DataManager:
             'StorageCanGridCharge': self.storage.canGridCharge,
             'SegmentMinSize': segment_min_size_bau,
             'SegmentMaxSize': segment_max_size_bau,
-            # Sets that need to be populated
             'Storage': storage_techs,
             'FuelType': fuel_types_bau,
             'Subdivision': subdivisions,
