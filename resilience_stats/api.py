@@ -92,7 +92,7 @@ class OutageSimJob(ModelResource):
         try:
             scenario = ScenarioModel.objects.get(run_uuid=run_uuid)
         except ScenarioModel.DoesNotExist:
-            msg = "Scenario {} does not exist.".format(run_uuid)
+            msg = "Scenario {} does not exist!.".format(run_uuid)
             raise ImmediateHttpResponse(HttpResponse(json.dumps({"Error": msg}), content_type='application/json', status=404))
 
         if scenario.status == "Optimizing...":
@@ -105,9 +105,9 @@ class OutageSimJob(ModelResource):
 
         if ResilienceModel.objects.filter(scenariomodel=scenario).count() > 0:
             err_msg = ("An outage simulation job has already been created for this run_uuid."
-                "Please retrieve the results with a GET request to v1/outagesimjob/<run_uuid>/resilience_stats."
+                "Please retrieve the results with a GET request to v1/outagesimjob/<run_uuid>/results."
                 " Note: Even if not specified when the job was created, business-as-usual (BAU) can be retrieved"
-                " from the results endpoint by specifying bau=True in the URL parameters.")
+                " from the results endpoint by specifying bau=true in the URL parameters.")
 
             raise ImmediateHttpResponse(HttpResponse(
                 json.dumps({"Warning": err_msg}),

@@ -27,10 +27,10 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-from django.urls import re_path
-
-from . import views
-
-urlpatterns = [
-    re_path(r'^load_builder/?$', views.load_builder),
-]
+function xpress_model(MAXTIME, MIPRELSTOP)
+    m = direct_model(Xpress.Optimizer(MAXTIME=-MAXTIME, MIPRELSTOP=MIPRELSTOP, OUTPUTLOG = 0))
+	m[:solver_name] = "Xpress"
+	m[:timeout_seconds] = MAXTIME
+	m[:optimality_tolerance] = MIPRELSTOP
+	return m
+end

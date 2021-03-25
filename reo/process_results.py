@@ -787,8 +787,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_thermal_to_load_series_mmbtu_per_hr"] = [x / MMBTU_TO_KWH for x in self.results_dict.get("hot_tes_thermal_to_load_series")]
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_hot_tes_soc_series_pct"] = self.results_dict.get("hot_tes_pct_soc_series")
-                    if np.isnan(sum(self.results_dict.get("hot_tes_pct_soc_series") or [np.nan])):
-                        self.nested_outputs["Scenario"]["Site"][name]["year_one_hot_tes_soc_series_pct"] = None
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_thermal_to_massproducer_series_mmbtu_per_hr"] = [x / MMBTU_TO_KWH for x in self.results_dict.get("hot_tes_thermal_to_massproducer_series")]                        
                 elif name == "ColdTES":
@@ -798,8 +796,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_thermal_from_cold_tes_series_ton"] = [x / TONHOUR_TO_KWHT for x in self.results_dict.get("cold_tes_thermal_production_series")]
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_cold_tes_soc_series_pct"] = self.results_dict.get("cold_tes_pct_soc_series")
-                    if np.isnan(sum(self.results_dict.get("cold_tes_pct_soc_series") or [np.nan])):
-                        self.nested_outputs["Scenario"]["Site"][name]["year_one_cold_tes_soc_series_pct"] = None
                 elif name == "NewBoiler":
                     self.nested_outputs["Scenario"]["Site"][name][
                         "size_mmbtu_per_hr"] = self.results_dict.get("newboiler_size_kw") / MMBTU_TO_KWH                    
@@ -890,7 +886,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     "developer_om_and_replacement_present_cost_after_tax_us_dollars"] = \
                     self.nested_outputs["Scenario"]["Site"]["Financial"][
                         "om_and_replacement_present_cost_after_tax_us_dollars"] / self.third_party_factor
-
             if self.nested_outputs["Scenario"]["Site"]["LoadProfile"]["annual_calculated_kwh"] > 0:
                 self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] = \
                     self.nested_outputs["Scenario"]["Site"]["Wind"].get("average_yearly_energy_produced_kwh") or 0
@@ -900,6 +895,9 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] = round(
                     self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] /
                     self.nested_outputs["Scenario"]["Site"]["LoadProfile"]["annual_calculated_kwh"], 4)
+            else:
+                #If this is not set to None it will contain a dictionary of data parameters
+                self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] = None
 
             time_outputs = [k for k in self.bau_attributes if (k.startswith("julia") or k.startswith("pyjulia"))]
 
