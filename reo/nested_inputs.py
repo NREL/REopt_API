@@ -1489,6 +1489,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": max_big_number,
+          "default": 0.0,          
           "description": "Minimum CHP size (based on electric) constraint for optimization"
         },
         "max_kw": {
@@ -1519,6 +1520,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e4,
+          "default": 0.0,           
           "description": "Annual CHP fixed operations and maintenance costs in $/kw-yr"
         },
         "om_cost_us_dollars_per_kwh": {
@@ -1531,6 +1533,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0,
+          "default": 0.0,          
           "description": "CHP non-fuel variable operations and maintenance costs in $/hr/kw_rated"
         },
         "elec_effic_full_load": {
@@ -1572,18 +1575,21 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.1,
           "max": 1.5,
+          "default": 1.0,          
           "description": "Maximum derate factor; the y-axis value of the 'flat' part of the derate curve, on the left"
         },
         "derate_start_temp_degF": {
           "type": "float",
           "min": 0.0,
           "max": 150.0,
+          "default": 95.0,          
           "description": "The outdoor air temperature at which the power starts to derate, units of degrees F"
         },
         "derate_slope_pct_per_degF": {
           "type": "float",
           "min": 0.0,
           "max": 1.0,
+          "default": 0.0,            
           "description": "Derate slope as a percent/fraction of rated power per degree F"
         },
         "chp_unavailability_periods": {
