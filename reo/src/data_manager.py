@@ -951,6 +951,7 @@ class DataManager:
         storage_power_cost.append(StorageCostPerKW)
         storage_energy_cost.append(StorageCostPerKWH)
         if self.hot_tes is not None:
+            #TODO speedup possible: self.hot_tes and self.cold_tes (below) are ALWAYS created in scenario.py
             HotTESCostPerKWH = setup_capital_cost_incentive(
                 self.hot_tes.installed_cost_us_dollars_per_kwh,  # use full cost as basis
                 0,

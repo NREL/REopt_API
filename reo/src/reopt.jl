@@ -224,10 +224,11 @@ function add_bigM_adjustments(m, p)
 	# NewMaxSize generates a new maximum size that is equal to the largest monthly load of the year.  This is intended to be a reasonable upper bound on size that would never be exceeeded, but is sufficienctly small to replace much larger big-M values placed as a default.
 
 	for t in p.HeatingTechs
-		m[:NewMaxSize][t] = maximum([sum(p.HeatingLoad[ts] for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month])
-		if (m[:NewMaxSize][t] > p.MaxSize[t])
-			m[:NewMaxSize][t] = p.MaxSize[t]
-        end
+		# m[:NewMaxSize][t] = maximum([sum(p.HeatingLoad[ts] for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month])
+		# if (m[:NewMaxSize][t] > p.MaxSize[t])
+		# 	m[:NewMaxSize][t] = p.MaxSize[t]
+        # end
+        m[:NewMaxSize][t] = p.MaxSize[t]
 	end
 	for t in p.CoolingTechs
 		m[:NewMaxSize][t] = maximum([sum(p.CoolingLoad[ts] for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month])
@@ -235,7 +236,7 @@ function add_bigM_adjustments(m, p)
 			m[:NewMaxSize][t] = p.MaxSize[t]
 		end
 	end
-	for t in p.ElectricTechs  # This will overwrite any NewMaxSize assigned above if Techs are also ElectricTechs (e.g. CHP and SteamTurbine)
+	for t in p.ElectricTechs  # This will overwrite any NewMaxSize assigned above if Techs are also HeatingTechs (e.g. CHP and SteamTurbine)
 		m[:NewMaxSize][t] = maximum([sum(p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP  for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month])
 		if (m[:NewMaxSize][t] > p.MaxSize[t])
 			m[:NewMaxSize][t] = p.MaxSize[t]
@@ -353,6 +354,9 @@ function add_thermal_production_constraints(m, p)
         @constraint(m, SteamTurbineElectricProductionCon[t in p.SteamTurbineTechs, ts in p.TimeStep],
                     m[:dvRatedProduction][t,ts] ==
                     p.STElecOutToThermInRatio * sum(m[:dvThermalToSteamTurbine][tst,ts] for tst in p.TechCanSupplySteamTurbine)
+                    )
+        @constraint(m, SteamTurbineElectricProductionConForce[t in p.SteamTurbineTechs, ts in p.TimeStep],
+                    m[:dvRatedProduction][t,4] == 300.0
                     )
 	end
 end
