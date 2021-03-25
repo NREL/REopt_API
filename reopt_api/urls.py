@@ -34,12 +34,15 @@ from reo.api import Job
 from resilience_stats.api import OutageSimJob
 from tastypie.api import Api
 from reo import views
-from proforma.views import proforma
-from resilience_stats.views import resilience_stats, financial_check
+from django.urls import path
 
 v1_api = Api(api_name='v1')
 v1_api.register(Job())
 v1_api.register(OutageSimJob())
+
+stable_api = Api(api_name='stable')
+stable_api.register(Job())
+stable_api.register(OutageSimJob())
 
 
 def page_not_found(request, url):
@@ -52,31 +55,26 @@ def page_not_found(request, url):
     """
     return HttpResponse("Invalid URL: {}".format(url), status=404)
 
+
 urlpatterns = [
     url(r'^_health/?$', views.health, name='health'),
-    url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/proforma/?$', proforma, name='proforma'),
-    url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/resilience_stats/?$', resilience_stats, name='resilience_stats'),
-    url(r'^v1/outagesimjob/(?P<run_uuid>[0-9a-f-]+)/?$', resilience_stats, name='resilience_stats'),
-    url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/resilience_stats/financial_check/?$', financial_check, name='financial_check'),  # preserving old behavior
-    url(r'^v1/financial_check/?$', financial_check, name='financial_check'),
-    url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/results/?$', views.results, name='results'),
-    url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/remove/?$', views.remove, name='remove'),
+    
+    path('v1/', include('reo.urls')),
+    path('v1/', include('resilience_stats.urls')),
+    path('v1/', include('proforma.urls')),
+    path('v1/', include('load_builder.urls')),
     url(r'^v1/user/?', include('summary.urls'), name='summary'),
-    url(r'^v1/load_builder/?', include('load_builder.urls'), name='load_builder'),
-    url(r'^v1/help/?$', views.help, name='help'),
-    url(r'^v1/invalid_urdb/?$', views.invalid_urdb, name='invalid_urdb'),
-    url(r'^v1/annual_kwh/?$', views.annual_kwh, name='annual_kwh'),
-    url(r'^v1/simulated_load/?$', views.simulated_load, name='simulated_load'),
-    url(r'^v1/emissions_profile/?$', views.emissions_profile, name='emissions_profile'),
-    url(r'^v1/generator_efficiency/?$', views.generator_efficiency, name='generator_efficiency'),
-    url(r'^v1/emissions_profile/?$', views.emissions_profile, name='emissions_profile'),
-    url(r'^errors/(?P<page_uuid>.*)', views.errors, name='errors'),
-    url(r'^v1/chp_defaults/?$', views.chp_defaults, name='chp_defaults'),
-    url(r'^v1/loadprofile_chillerthermal_chiller_cop/?$', views.loadprofile_chillerthermal_chiller_cop, name='loadprofile_chillerthermal_chiller_cop'),
-    url(r'^v1/absorption_chiller_defaults/?$', views.absorption_chiller_defaults, name='absorption_chiller_defaults'),
-    url(r'^v1/schedule_stats/?$', views.schedule_stats, name='schedule_stats'),
     url(r'', include(v1_api.urls), name='job'),
     url(r'', include(v1_api.urls), name='outagesimjob'),
+    
+    path('stable/', include('reo.urls')),
+    path('stable/', include('resilience_stats.urls')),
+    path('stable/', include('proforma.urls')),
+    path('stable/', include('load_builder.urls')),
+    url(r'^stable/user/?', include('summary.urls'), name='summary'),
+    url(r'', include(stable_api.urls), name='job'),
+    url(r'', include(stable_api.urls), name='outagesimjob'),
+    
     url(r'(.*)', page_not_found, name='404'),
     ]
 
