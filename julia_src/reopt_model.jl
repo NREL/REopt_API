@@ -378,9 +378,6 @@ function add_thermal_production_constraints(m, p)
                     m[:dvRatedProduction][t,ts] ==
                     p.STElecOutToThermInRatio * sum(m[:dvThermalToSteamTurbine][tst,ts] for tst in p.TechCanSupplySteamTurbine)
                     )
-        @constraint(m, SteamTurbineElectricProductionConForce[t in p.SteamTurbineTechs, ts in p.TimeStep],
-                    m[:dvRatedProduction][t,4] == 300.0
-                    )
 	end
 end
 
