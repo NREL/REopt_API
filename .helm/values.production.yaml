@@ -1,4 +1,10 @@
 appEnv: production
 djangoSettingsModule: reopt_api.production_settings
+<<<<<<< HEAD
 djangoReplicas: 2
 celeryReplicas: 2
+=======
+djangoReplicas: 3
+celeryReplicas: 20
+juliaReplicas: 10
+>>>>>>> develop

@@ -27,21 +27,19 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-import julia
+import julia  # TODO remove julia package (after moving decomposed model to Julia?)
 import sys
 import traceback
 import os
 import time
-import platform
 import copy
 import numpy
-from celery import shared_task, Task, group
+import requests
+from celery import shared_task, Task
 from reo.exceptions import REoptError, OptimizationTimeout, UnexpectedError, NotOptimal, REoptFailedToStartError
 from reo.models import ModelManager
 from reo.src.profiler import Profiler
 from celery.utils.log import get_task_logger
-from julia.api import LibJulia
-from reo.utilities import scrub_numpy_arrays_from_dict
 # julia.install()  # needs to be run if it is the first time you are using julia package
 logger = get_task_logger(__name__)
 
@@ -79,135 +77,47 @@ class RunJumpModelTask(Task):
         self.request.chord = None  # this seems to stop the infinite chord_unlock call
 
 @shared_task(bind=True, base=RunJumpModelTask)
-def run_jump_model(self, dfm, data, run_uuid, bau=False):
+def run_jump_model(self, dfm, data, bau=False):
     profiler = Profiler()
     time_dict = dict()
     name = 'reopt' if not bau else 'reopt_bau'
     reopt_inputs = dfm['reopt_inputs'] if not bau else dfm['reopt_inputs_bau']
-    self.data = data
-    self.run_uuid = data['outputs']['Scenario']['run_uuid']
-    self.user_uuid = data['outputs']['Scenario'].get('user_uuid')
-
-    if platform.system() == "Darwin":
-        ext = ".dylib"
-    elif platform.system() == "Windows":
-        ext = ".dll"
-    else:
-        ext = ".so"  # if platform.system() == "Linux":
-    julia_img_file = os.path.join("julia_envs", "Xpress", "JuliaXpressSysimage" + ext)
+    run_uuid = data['outputs']['Scenario']['run_uuid']
+    user_uuid = data['outputs']['Scenario'].get('user_uuid')
+    reopt_inputs["timeout_seconds"] = data['inputs']['Scenario']['timeout_seconds']
+    reopt_inputs["tolerance"] = data['inputs']['Scenario']['optimality_tolerance_bau'] if bau \
+        else data['inputs']['Scenario']['optimality_tolerance_techs']
 
     logger.info("Running JuMP model ...")
     try:
-        if os.path.isfile(julia_img_file):
-            # TODO: clean up this try/except block
-            logger.info("Found Julia image file {}.".format(julia_img_file))
-            t_start = time.time()
-            api = LibJulia.load()
-            api.sysimage = julia_img_file
-            api.init_julia()
-            from julia import Main
-            time_dict["pyjulia_start_seconds"] = time.time() - t_start
-        else:
-            t_start = time.time()
-            j = julia.Julia()
-            from julia import Main
-            time_dict["pyjulia_start_seconds"] = time.time() - t_start
-
+        # if bau or not data["inputs"]["Scenario"]["use_decomposition_model"]:
+        # TODO reinstate decomposition?
         t_start = time.time()
-        Main.using("Pkg")
-        from julia import Pkg
-        time_dict["pyjulia_pkg_seconds"] = time.time() - t_start
-
-        if os.environ.get("SOLVER") == "xpress":
-            t_start = time.time()
-            Pkg.activate("./julia_envs/Xpress/")
-            time_dict["pyjulia_activate_seconds"] = time.time() - t_start
-
-            try:
-                t_start = time.time()
-                Main.include("reo/src/reopt_xpress_model.jl")
-                time_dict["pyjulia_include_model_seconds"] = time.time() - t_start
-
-            except ImportError:
-                # should only need to instantiate once
-                Pkg.instantiate()
-                Main.include("reo/src/reopt_xpress_model.jl")
-
-            t_start = time.time()
-            if bau:
-                model = Main.reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]),
-                                         float(data["inputs"]["Scenario"]["optimality_tolerance_bau"]))
-            else:
-                model = Main.reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]),
-                                         float(data["inputs"]["Scenario"]["optimality_tolerance_techs"]))
-            time_dict["pyjulia_make_model_seconds"] = time.time() - t_start
-
-        elif os.environ.get("SOLVER") == "cbc":
-            t_start = time.time()
-            Pkg.activate("./julia_envs/Cbc/")
-            time_dict["pyjulia_activate_seconds"] = time.time() - t_start
-
-            t_start = time.time()
-            Main.include("reo/src/reopt_cbc_model.jl")
-            time_dict["pyjulia_include_model_seconds"] = time.time() - t_start
-
-            t_start = time.time()
-            model = Main.reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]),
-                                     float(data["inputs"]["Scenario"]["optimality_tolerance_bau"]))
-            time_dict["pyjulia_make_model_seconds"] = time.time() - t_start
-
-        elif os.environ.get("SOLVER") == "scip":
-            t_start = time.time()
-            Pkg.activate("./julia_envs/SCIP/")
-            time_dict["pyjulia_activate_seconds"] = time.time() - t_start
-
-            t_start = time.time()
-            Main.include("reo/src/reopt_scip_model.jl")
-            time_dict["pyjulia_include_model_seconds"] = time.time() - t_start
-
-            t_start = time.time()
-            model = Main.reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]),
-                                     float(data["inputs"]["Scenario"]["optimality_tolerance_bau"]))
-            time_dict["pyjulia_make_model_seconds"] = time.time() - t_start
-
-        else:
-            raise REoptFailedToStartError(
-                message="The environment variable SOLVER must be set to one of [xpress, cbc, scip].",
-                run_uuid=self.run_uuid, user_uuid=self.user_uuid)
-
-        if bau or not data["inputs"]["Scenario"]["use_decomposition_model"]:
-            t_start = time.time()
-            Main.include("reo/src/reopt.jl")
-            time_dict["pyjulia_include_reopt_seconds"] = time.time() - t_start
-
-            t_start = time.time()
-            results = Main.reopt(model, reopt_inputs)
-            time_dict["pyjulia_run_reopt_seconds"] = time.time() - t_start
-        else:
-            t_start = time.time()
-            Main.include("reo/src/reopt_decomposed.jl")
-            time_dict["pyjulia_include_reopt_seconds"] = time.time() - t_start
-
-            t_start = time.time()
-            results = run_decomposed_model(data, model, reopt_inputs)
-            time_dict["pyjulia_run_reopt_seconds"] = time.time() - t_start
-
-        results = scrub_numpy_arrays_from_dict(results)
+        julia_host = os.environ.get('JULIA_HOST', "julia")
+        response = requests.post("http://" + julia_host + ":8081/job/", json=reopt_inputs)
+        results = response.json()
+        time_dict["pyjulia_run_reopt_seconds"] = time.time() - t_start
         results.update(time_dict)
 
     except Exception as e:
         if isinstance(e, REoptFailedToStartError):
             raise e
-        elif "DimensionMismatch" in e.args[0]:  # JuMP may mishandle a timeout when no feasible solution is returned
+        elif "DimensionMismatch" in str(e.args[0]):  # JuMP may mishandle a timeout when no feasible solution is returned
             msg = "Optimization exceeded timeout: {} seconds.".format(data["inputs"]["Scenario"]["timeout_seconds"])
             logger.info(msg)
-            raise OptimizationTimeout(task=name, message=msg, run_uuid=self.run_uuid, user_uuid=self.user_uuid)
+            raise OptimizationTimeout(task=name, message=msg, run_uuid=run_uuid, user_uuid=user_uuid)
+        elif "RemoteDisconnected" in str(e.args[0]):
+            msg = "Something went wrong in the Julia code."
+            logger.error(msg)
+            raise REoptFailedToStartError(task=name, message=msg, run_uuid=run_uuid, user_uuid=user_uuid)
+
+        # ADD JULIA EXCEPTION HERE
         exc_type, exc_value, exc_traceback = sys.exc_info()
         print(exc_type)
         print(exc_value)
         print(exc_traceback)
-        logger.error("REopt.py raise unexpected error: UUID: " + str(self.run_uuid))
-        raise UnexpectedError(exc_type, exc_value, traceback.format_tb(exc_traceback), task=name, run_uuid=self.run_uuid, user_uuid=self.user_uuid)
+        logger.error("REopt.py raise unexpected error: UUID: " + str(run_uuid))
+        raise UnexpectedError(exc_type, exc_value, traceback.format_tb(exc_traceback), task=name, run_uuid=run_uuid, user_uuid=user_uuid)
     else:
         status = results["status"]
         logger.info("REopt run successful. Status {}".format(status))
@@ -219,10 +129,10 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
         if status.strip().lower() == 'timed-out':
             msg = "Optimization exceeded timeout: {} seconds.".format(data["inputs"]["Scenario"]["timeout_seconds"])
             logger.info(msg)
-            raise OptimizationTimeout(task=name, message=msg, run_uuid=self.run_uuid, user_uuid=self.user_uuid)
+            raise OptimizationTimeout(task=name, message=msg, run_uuid=run_uuid, user_uuid=user_uuid)
         elif status.strip().lower() != 'optimal':
             logger.error("REopt status not optimal. Raising NotOptimal Exception.")
-            raise NotOptimal(task=name, run_uuid=self.run_uuid, status=status.strip(), user_uuid=self.user_uuid)
+            raise NotOptimal(task=name, run_uuid=run_uuid, status=status.strip(), user_uuid=user_uuid)
 
     profiler.profileEnd()
     ModelManager.updateModel('ProfileModel', {name+'_seconds': profiler.getDuration()}, run_uuid)
@@ -233,6 +143,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
     else:
         del dfm['reopt_inputs']
     return dfm
+
 
 def run_decomposed_model(data, model, reopt_inputs,
                          lb_iters=1, max_iters=100):
@@ -298,6 +209,7 @@ def build_submodels(models, reopt_param):
     for idx in range(1, 13):
         result_dicts[idx] = julia.Main.reopt_build(models[idx], reopt_param)
     return result_dicts
+
 
 def solve_subproblems(models, reopt_param, results_dicts, update):
     """
@@ -370,6 +282,7 @@ def get_objective_value(ub_result_dicts, reopt_inputs):
         logger.info("infeasible solution returned.")
         return 1.0e100, 0., 0.
 
+
 def get_added_peak_tou_costs(ub_result_dicts, reopt_inputs):
     """
     Calculated added TOU costs to according to peak lookback months.
@@ -396,6 +309,7 @@ def get_added_peak_tou_costs(ub_result_dicts, reopt_inputs):
             for idx in range(len(bins)):
                 added_obj += reopt_inputs["DemandRates"][idx*reopt_inputs["NumRatchets"]+bins[idx]] * vals[idx]
     return added_obj
+
 
 def get_added_demand_by_bin(start, added_demand, max_demand_by_bin):
     """
@@ -443,6 +357,7 @@ def get_average_sizing_decisions(models, reopt_param):
         sizes[key] /= 12.
     return sizes
 
+
 def get_max_sizing_decisions(models, reopt_param):
     sizes = julia.Main.get_sizing_decisions(models[1], reopt_param)
     for i in range(2, 13):
@@ -450,6 +365,7 @@ def get_max_sizing_decisions(models, reopt_param):
         for key in d.keys():
             sizes[key] = max(d[key], sizes[key])
     return sizes
+
 
 def aggregate_submodel_results(ub_results, obj, min_charge_adder, pwf_e):
     results = ub_results[1]

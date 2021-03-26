@@ -1,9 +1,32 @@
-using JuMP
-import MathOptInterface
-const MOI = MathOptInterface
-include("utils.jl")
-
-
+# *********************************************************************************
+# REopt, Copyright (c) 2019-2020, Alliance for Sustainable Energy, LLC.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without modification,
+# are permitted provided that the following conditions are met:
+#
+# Redistributions of source code must retain the above copyright notice, this list
+# of conditions and the following disclaimer.
+#
+# Redistributions in binary form must reproduce the above copyright notice, this
+# list of conditions and the following disclaimer in the documentation and/or other
+# materials provided with the distribution.
+#
+# Neither the name of the copyright holder nor the names of its contributors may be
+# used to endorse or promote products derived from this software without specific
+# prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+# OF THE POSSIBILITY OF SUCH DAMAGE.
+# *********************************************************************************
 function add_continuous_variables(m, p)
 
     @variables m begin
@@ -550,7 +573,7 @@ function add_thermal_load_constraints(m, p)
 				sum(m[:dvDischargeFromStorage][b,ts] for b in p.HotTES) ==
 				p.HeatingLoad[ts] * p.BoilerEfficiency +
 				sum(m[:dvProductionToWaste][t,ts] for t in p.CHPTechs) + sum(m[:dvProductionToStorage][b,t,ts] for b in p.HotTES, t in p.HeatingTechs)  +
-				sum(m[:dvThermalProduction][t,ts] * 3412.0 / 1.0E6 for t in p.AbsorptionChillers) / p.AbsorptionChillerCOP
+				sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers) / p.AbsorptionChillerCOP
 		)
 	end
 end
@@ -1126,13 +1149,13 @@ function add_yearone_expressions(m, p)
 end
 
 
-function reopt(reo_model, model_inputs::Dict)
+function reopt(model::JuMP.AbstractModel, model_inputs::Dict)
 
 	t_start = time()
 	p = Parameter(model_inputs)
 	t = time() - t_start
 
-	results = reopt_run(reo_model, p)
+	results = reopt_run(model, p)
 	results["julia_input_construction_seconds"] = t
 	return results
 end
@@ -1390,7 +1413,7 @@ function add_null_generator_results(m, p, r::Dict)
 	r["GENERATORtoBatt"] = []
 	r["GENERATORtoGrid"] = []
 	r["GENERATORtoLoad"] = []
-	r["fuel_used_gal"] = 0
+	r["fuel_used_kwh"] = 0
 	r["year_one_gen_energy_produced"] = 0.0
 	r["average_yearly_gen_energy_produced"] = 0.0
 	nothing
@@ -1424,8 +1447,8 @@ function add_null_boiler_results(m, p, r::Dict)
 	r["boiler_thermal_production_series"] = []
 	r["boiler_thermal_to_load_series"] = []
 	r["boiler_thermal_to_tes_series"] = []
-	r["year_one_fuel_to_boiler_mmbtu"] = 0.0
-	r["year_one_boiler_thermal_production_mmbtu"] = 0.0
+	r["year_one_fuel_to_boiler_kwh"] = 0.0
+	r["year_one_boiler_thermal_production_kwh"] = 0.0
 	r["total_boiler_fuel_cost"] = 0.0
 	r["year_one_boiler_fuel_cost"] = 0.0
 	nothing
@@ -1445,13 +1468,13 @@ function add_null_absorption_chiller_results(m, p, r::Dict)
 	r["absorption_chiller_to_load_series"] = []
 	r["absorption_chiller_to_tes_series"] = []
 	r["absorption_chiller_consumption_series"] = []
-	r["year_one_absorp_chiller_thermal_consumption_mmbtu"] = 0.0
+	r["year_one_absorp_chiller_thermal_consumption_kwh"] = 0.0
 	r["year_one_absorp_chiller_thermal_prod_kwh"] = 0.0
 	nothing
 end
 
 function add_null_hot_tes_results(m, p, r::Dict)
-	r["hot_tes_size_mmbtu"] = 0.0
+	r["hot_tes_size_kwh"] = 0.0
 	r["hot_tes_thermal_production_series"] = []
 	r["hot_tes_pct_soc_series"] = []
 	nothing
@@ -1543,7 +1566,7 @@ function add_generator_results(m, p, r::Dict)
 	r["GENERATORtoLoad"] = round.(value.(GENERATORtoLoad), digits=3)
 
     @expression(m, GeneratorFuelUsed, sum(m[:dvFuelUsage][t, ts] for t in m[:GeneratorTechs], ts in p.TimeStep))
-	r["fuel_used_gal"] = round(value(GeneratorFuelUsed), digits=2)
+	r["fuel_used_kwh"] = round(value(GeneratorFuelUsed), digits=2)
 
 
 	m[:Year1GenProd] = @expression(m,
@@ -1705,10 +1728,10 @@ function add_boiler_results(m, p, r::Dict)
 	@expression(m, BoilerThermalProd[ts in p.TimeStep], p.ProductionFactor["BOILER",ts] * m[:dvThermalProduction]["BOILER",ts])
 	r["boiler_thermal_production_series"] = round.(value.(BoilerThermalProd), digits=3)
 	@expression(m, BoilerFuelUsed, sum(m[:dvFuelUsage]["BOILER", ts] for ts in p.TimeStep))
-	r["year_one_fuel_to_boiler_mmbtu"] = round(value(BoilerFuelUsed), digits=3)
+	r["year_one_fuel_to_boiler_kwh"] = round(value(BoilerFuelUsed), digits=3)
 	@expression(m, BoilerThermalProduced, sum(p.ProductionFactor["BOILER",ts] * m[:dvThermalProduction]["BOILER",ts]
 		for ts in p.TimeStep))
-	r["year_one_boiler_thermal_production_mmbtu"] = round(value(BoilerThermalProduced), digits=3)
+	r["year_one_boiler_thermal_production_kwh"] = round(value(BoilerThermalProduced), digits=3)
 	@expression(m, BoilerToHotTES[ts in p.TimeStep],
 		sum(m[:dvProductionToStorage]["HotTES",t,ts] for t in ["BOILER"]))
 	r["boiler_thermal_to_tes_series"] = round.(value.(BoilerToHotTES), digits=3)
@@ -1756,12 +1779,12 @@ function add_absorption_chiller_results(m, p, r::Dict)
 			- ABSORPCHLtoTES[ts])
 	r["absorption_chiller_to_load_series"] = round.(value.(ABSORPCHLtoLoad), digits=3)
 	@expression(m, ABSORPCHLThermalConsumptionSeries[ts in p.TimeStep],
-		sum(m[:dvThermalProduction][t,ts] / p.AbsorptionChillerCOP * 3412.0 / 1.0E6 for t in p.AbsorptionChillers))
+		sum(m[:dvThermalProduction][t,ts] / p.AbsorptionChillerCOP for t in p.AbsorptionChillers))
 	r["absorption_chiller_consumption_series"] = round.(value.(ABSORPCHLThermalConsumptionSeries), digits=3)
 	@expression(m, Year1ABSORPCHLThermalConsumption,
-		p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts] / p.AbsorptionChillerCOP * 3412.0 / 1.0E6
+		p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts] / p.AbsorptionChillerCOP
 			for t in p.AbsorptionChillers, ts in p.TimeStep))
-	r["year_one_absorp_chiller_thermal_consumption_mmbtu"] = round(value(Year1ABSORPCHLThermalConsumption), digits=3)
+	r["year_one_absorp_chiller_thermal_consumption_kwh"] = round(value(Year1ABSORPCHLThermalConsumption), digits=3)
 	@expression(m, Year1ABSORPCHLThermalProd,
 		p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts]
 			for t in p.AbsorptionChillers, ts in p.TimeStep))
@@ -1777,13 +1800,13 @@ function add_absorption_chiller_results(m, p, r::Dict)
 end
 
 function add_hot_tes_results(m, p, r::Dict)
-	@expression(m, HotTESSizeMMBTU, sum(m[:dvStorageCapEnergy][b] for b in p.HotTES))
-	r["hot_tes_size_mmbtu"] = round(value(HotTESSizeMMBTU), digits=5)
+	@expression(m, HotTESSizeKWH, sum(m[:dvStorageCapEnergy][b] for b in p.HotTES))
+	r["hot_tes_size_kwh"] = round(value(HotTESSizeKWH), digits=3)
 	@expression(m, HotTESDischargeSeries[ts in p.TimeStep], sum(m[:dvDischargeFromStorage][b, ts]
 		for b in p.HotTES))
 	r["hot_tes_thermal_production_series"] = round.(value.(HotTESDischargeSeries), digits=5)
 	@expression(m, HotTESsoc[ts in p.TimeStep], sum(m[:dvStorageSOC][b,ts] for b in p.HotTES))
-	r["hot_tes_pct_soc_series"] = round.(value.(HotTESsoc) / value(HotTESSizeMMBTU), digits=5)
+	r["hot_tes_pct_soc_series"] = round.(value.(HotTESsoc) / value(HotTESSizeKWH), digits=5)
 	nothing
 end
 
