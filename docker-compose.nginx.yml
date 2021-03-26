@@ -35,6 +35,7 @@ services:
       - SQL_PORT=5432
       - REDIS_HOST=redis-nginx
       - SOLVER=xpress
+      - JULIA_HOST=julia-nginx
     volumes:
       - .:/opt/reopt
     depends_on:
@@ -54,6 +55,7 @@ services:
       - SQL_PORT=5432
       - REDIS_HOST=redis-nginx
       - SOLVER=xpress
+      - JULIA_HOST=julia-nginx
     depends_on:
       - db-nginx
       - redis-nginx
