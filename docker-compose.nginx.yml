@@ -43,6 +43,7 @@ services:
       - julia-nginx
 
   django-nginx:
+    image: base-api-image
     container_name: django-nginx
     command: >
       "python manage.py migrate
