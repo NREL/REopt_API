@@ -56,6 +56,7 @@ function add_continuous_variables(m, p)
 		dvAbsorptionChillerDemand[p.TimeStep] >= 0  #X^{ac}_h: Thermal power consumption by absorption chiller in time step h
 		dvElectricChillerDemand[p.TimeStep] >= 0  #X^{ec}_h: Electrical power consumption by electric chiller in time step h
 		dvOMByHourBySizeCHP[p.Tech, p.TimeStep] >= 0
+
 		#Offgrid analyses
 		dvLoadServed[p.TimeStep] >= 0
 		dvSRbatt[p.ElecStorage, p.TimeStep] >= 0
@@ -1077,6 +1078,7 @@ function reopt_run(m, p::Parameter)
 
 	### Constraint set (8): Electrical Load Balancing and Grid Sales
 	##Constraint (8a): Electrical Load Balancing with Grid
+
 	if p.OffGridFlag
 		add_load_balance_constraints_offgrid(m, p)
 		add_spinning_reserve_constraints(m, p)
@@ -1227,6 +1229,7 @@ function reopt_results(m, p, r::Dict)
 		add_null_cold_tes_results(m, p, r)
 	end
 	add_util_results(m, p, r)
+
 	if p.OffGridFlag
 		add_load_results(m, p, r)
 		add_offgrid_financial_results(m, p, r)
@@ -1388,6 +1391,7 @@ function add_storage_results(m, p, r::Dict)
 	else
 		r["sr_provided_batt"] = []
     end
+
 	nothing
 end
 
