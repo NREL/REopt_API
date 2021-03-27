@@ -32,28 +32,44 @@ from celery import shared_task
 from reo.api import Job
 from reo.views import results
 from celery.utils.log import get_task_logger
+from futurecosts.models import cost_forecasts, FutureCostsJob
+from reo.models import ScenarioModel
+from tastypie.exceptions import ImmediateHttpResponse
 log = get_task_logger(__name__)
 
 
-# @shared_task
-def post_job(data):
-    job = Job()
-    resp = job.obj_create(bundle=data)
-    return resp
-
-
-@shared_task
-def check_results(run_uuid):
-    resp = results(None, run_uuid)
-    log.info(resp)
-
-
+@shared_task  # TODO register
 def setup_jobs(run_uuid):
+
+    fcjob = FutureCostsJob.objects.get(run_uuid=run_uuid)
+
+    # 1. Get results for original scenario
     resp1 = results(None, run_uuid)
     d = json.loads(resp1.content)
     d = scrub_urls_from_dict(d)
+
+    # 2 Create future inputs and post them
+    # new_post = fill_in_future_costs(d["inputs"], year=)
+
     resp2 = post_job(d["inputs"])
+    scenario1 = ScenarioModel.objects.get(run_uuid=resp2["run_uuid"])
+    fcjob.future_scenario1 = scenario1
+    fcjob.future_year1 = 2025
+    fcjob.save(force_update=True)
+
     return resp2
+
+
+def post_job(data: dict) -> dict:
+    job = Job()
+    try:
+        job.obj_create(bundle=data)
+    except ImmediateHttpResponse as resp:
+        resp = json.loads(resp.response.content.decode('utf-8'))
+        if "run_uuid" in resp.keys():
+            return resp
+        # TODO handle problems from posting jobs
+    return {}
 
 
 def scrub_urls_from_dict(d: dict) -> dict:
@@ -63,4 +79,20 @@ def scrub_urls_from_dict(d: dict) -> dict:
         if isinstance(v, str):
             if "http://" in v or "https://" in v:
                 d[k] = "url removed"
+    return d
+
+
+def fill_in_future_costs(d: dict, year: int) -> dict:
+    d["Scenario"]["Site"]["Wind"]["installed_cost_us_dollars_per_kw"] = \
+        cost_forecasts.wind(
+            year,
+            type="capital_cost_dollars_per_kw",
+            size_class=d["Scenario"]["Site"]["Wind"].get("size_class", "commercial")
+        )
+    d["Scenario"]["Site"]["Wind"]["om_cost_us_dollars_per_kw"] = \
+        cost_forecasts.wind(
+            year,
+            type="fixed_om_dollars_per_kw_per_yr",
+            size_class=d["Scenario"]["Site"]["Wind"].get("size_class", "commercial")
+        )
     return d

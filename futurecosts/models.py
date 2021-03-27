@@ -29,10 +29,16 @@
 # *********************************************************************************
 from django.db import models
 import copy
+import pandas as pd
 import logging
 from reo.models import ScenarioModel
 
 log = logging.getLogger(__name__)
+year = 2021
+"""
+The year is used to create instantiate the future costs object with the appropriate cost forecasts.
+Note that there is only data for 2021 currently.
+"""
 
 
 def at_least_one_set(model, possible_sets):
@@ -66,32 +72,66 @@ class BaseModel(object):
         return obj
 
 
-class FutureCosts(BaseModel, models.Model):
-    name = "FutureCosts"
+class FutureCostsJob(BaseModel, models.Model):
+    name = "FutureCostsJob"
 
     run_uuid = models.UUIDField(unique=True)
+    description = models.TextField(blank=True)
+    status = models.TextField(blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+
+    # TODO: allow user provided future costs?
 
     base_scenario = models.OneToOneField(
         ScenarioModel,
         to_field='run_uuid',
         on_delete=models.CASCADE,
     )
-    # api_version = models.IntegerField(default=1)
-    # user_uuid = models.TextField(
-    #     null=True,
-    #     blank=True,
-    #     help_text="The assigned unique ID of a signed in REopt user."
-    # )
-    # webtool_uuid = models.TextField(
-    #     null=True,
-    #     blank=True,
-    #     help_text=("The unique ID of a scenario created by the REopt Lite Webtool. Note that this ID can be shared by "
-    #                "several REopt Lite API Scenarios (for example when users select a 'Resilience' analysis more than "
-    #                "one REopt API Scenario is created).")
-    # )
-    # job_type = models.TextField(
-    #     default='developer.nrel.gov'
-    # )
-    # description = models.TextField(blank=True)
-    status = models.TextField(blank=True)
-    created = models.DateTimeField(auto_now_add=True)
+    base_year = models.IntegerField()
+
+    future_scenario1 = models.OneToOneField(
+        ScenarioModel,
+        related_name="future_scenario1",
+        to_field='run_uuid',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True
+    )
+    future_year1 = models.IntegerField(
+        blank=True,
+        null=True
+    )
+
+    def clean(self):
+        if not self.base_year:
+            self.base_year = int(self.base_scenario.created.year)
+
+
+class CostForecasts(object):
+
+    reopt_size_class_to_dGen_hub_height = {
+        'residential': 20,
+        'commercial': 40,
+        'medium': 50,
+        'large': 80,
+    }
+
+    def __init__(self, year: int):
+        self.wind_costs = pd.read_csv("futurecosts/cost_data/{}/wind_prices.csv".format(year))
+
+    def wind(self, year: int, type: str, size_class: str) -> float:
+        assert year in self.wind_costs.year.to_list()
+        assert type in ["capital_cost_dollars_per_kw", "fixed_om_dollars_per_kw_per_yr"]
+        assert size_class in self.reopt_size_class_to_dGen_hub_height.keys()
+        height = self.reopt_size_class_to_dGen_hub_height[size_class]
+        return self.wind_costs[
+            self.wind_costs.default_tower_height_m == height
+        ].loc[year, type]
+
+"""
+1. get Wind.size_class from the original scenario inputs (if Wind.max_kw > 0)
+2. translate to dGen hub height
+3. take wind forecasts from csv/df for dGen hub height 
+"""
+
+cost_forecasts = CostForecasts(year=year)
