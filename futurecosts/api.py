@@ -44,7 +44,7 @@ from tastypie.validation import Validation
 from reo.exceptions import SaveToDatabase, UnexpectedError
 from reo.models import ScenarioModel
 from resilience_stats.validators import validate_run_uuid
-from futurecosts.models import FutureCosts
+from futurecosts.models import FutureCostsJob
 from futurecosts.validators import InputValidator
 from futurecosts.tasks import setup_jobs
 log = logging.getLogger(__name__)
@@ -113,7 +113,7 @@ class FutureCostsAPI(ModelResource):
                 {"Error": "An error occurred in the scenario. Please check the messages from your results."}),
                 content_type='application/json', status=500))
 
-        if FutureCosts.objects.filter(base_scenario=scenario).count() > 0:
+        if FutureCostsJob.objects.filter(base_scenario=scenario).count() > 0:
             err_msg = (
                 "A futurecosts job has already been created for this run_uuid."
                 "You can retrieve the results with a GET request to /futurecosts/<run_uuid>/results."
@@ -123,7 +123,12 @@ class FutureCostsAPI(ModelResource):
                 content_type='application/json',
                 status=208))
         else:  # This is the first POST for this run_uuid
-            resp = setup_jobs(run_uuid)
+
+            job = FutureCostsJob.create(**{"base_scenario": scenario, "run_uuid": run_uuid})
+            job.clean()
+            job.save()
+
+            resp = setup_jobs(run_uuid)  # TODO this becomes a celery task to run asynchronously
             raise ImmediateHttpResponse(HttpResponse(json.dumps(resp),
                                                      content_type='application/json', status=201))
 
