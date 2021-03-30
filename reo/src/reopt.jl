@@ -744,7 +744,7 @@ function add_tou_demand_charge_constraints(m, p)
 end
 
 function add_PV_PPA_expressions(m, p)
-	m[:TotalPVPPACosts] = @expression(m, p.pwf_ppa * p.TimeStepScaling * .055 *
+	m[:TotalPVPPACosts] = @expression(m, p.pwf_ppa * p.TimeStepScaling * .045 *
 			sum( sum( m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] for ts in p.TimeStep) * p.LevelizationFactor[t] for t in filter(t->startswith(t, "PV"), p.Tech)))
 end
 
