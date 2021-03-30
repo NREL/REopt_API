@@ -388,7 +388,7 @@ class UrdbParse:
                 )
             tier_with_lowest_energy_cost = annual_energy_charge_sums.index(min(annual_energy_charge_sums))
 
-        negative_energy_costs = [cost * -0.999 for cost in
+        negative_energy_costs = [0.02482 - cost for cost in #[cost * -0.999 for cost in
                                  energy_costs[tier_with_lowest_energy_cost*self.ts_per_year:(tier_with_lowest_energy_cost+1)*self.ts_per_year]]
 
         # wholesale and excess rates can be either scalar (floats or ints) or lists of floats
