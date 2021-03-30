@@ -1030,10 +1030,10 @@ class ValidateNestedInput:
 
                             if avg_load_kw <= 12.5:
                                 self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'residential'
-                            elif avg_load_kw <= 100:
-                                self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'commercial'
-                            elif avg_load_kw <= 1000:
-                                self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'medium'
+                            #elif avg_load_kw <= 100:
+                            #    self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'commercial'
+                            #elif avg_load_kw <= 1000:
+                            #    self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'medium'
                             else:
                                 self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'large'
                         try:
