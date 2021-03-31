@@ -261,10 +261,13 @@ class CostForecasts(object):
         self.pv_costs.columns = self.pv_costs.columns.astype(int)
 
     def wind(self, year: int, type: str, size_class: str) -> float:
-        # TODO remove asserts for exception handling
-        assert type in ["capital_cost_dollars_per_kw", "fixed_om_dollars_per_kw_per_yr"]
-        assert size_class in self.reopt_size_class_to_dGen_hub_height.keys(), "{} not in size classes".format(size_class)
-
+        """
+        Return capital or O&M costs for given year. See README.md for more.
+        :param year: any int from 2022 to 2050 inclusive
+        :param type: one of ["capital_cost_dollars_per_kw", "fixed_om_dollars_per_kw_per_yr"]
+        :param size_class: one of  ['residential', 'commercial', 'medium', 'large']
+        :return: future cost
+        """
         height = self.reopt_size_class_to_dGen_hub_height[size_class]
         filtered_wind_costs = self.wind_costs[self.wind_costs.default_tower_height_m == height]
         filtered_wind_costs.index = filtered_wind_costs.year
@@ -287,9 +290,6 @@ class CostForecasts(object):
         :param type: one of ["capital_cost_dollars_per_kw", "fixed_om_dollars_per_kw_per_yr"]
         :return: float, cost taken from NREL ATB
         """
-        # TODO remove asserts for exception handling
-        assert type in ["capital_cost_dollars_per_kw", "fixed_om_dollars_per_kw_per_yr"]
-        assert year in self.pv_costs.columns
         return self.pv_costs.loc[type, year]
 
     def storage(self, year: int, type: str) -> float:
