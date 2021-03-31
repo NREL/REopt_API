@@ -128,9 +128,13 @@ class FutureCostsAPI(ModelResource):
             job.clean()
             job.save()
 
-            resp = setup_jobs(run_uuid)  # TODO this becomes a celery task to run asynchronously
-            raise ImmediateHttpResponse(HttpResponse(json.dumps(resp),
-                                                     content_type='application/json', status=201))
+            setup_jobs(run_uuid)
+            resp = {'status': 'Future Costs Job created for scenario {}'.format(run_uuid)}
+            raise ImmediateHttpResponse(HttpResponse(
+                json.dumps(resp),
+                content_type='application/json',
+                status=201
+            ))
 
 
 
