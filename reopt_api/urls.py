@@ -79,6 +79,7 @@ urlpatterns = [
     url(r'', include(stable_api.urls), name='job'),
     url(r'', include(stable_api.urls), name='outagesimjob'),
 
+    path('dev/', include('futurecosts.urls')),
     url(r'', include(dev_api.urls), name='futurecosts'),
     
     url(r'(.*)', page_not_found, name='404'),
