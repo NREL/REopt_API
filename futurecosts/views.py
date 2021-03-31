@@ -54,9 +54,11 @@ def results(request, run_uuid):
     try:
         fcjob = FutureCostsJob.objects.get(run_uuid=run_uuid)
         fcjob.update_status()
-        # TODO add message about querying the full results for each scenario from job/<run_uuid>/results
-        response = JsonResponse(fcjob.dict)
-        return response
+        resp_dict = fcjob.dict
+        resp_dict["messages"] = [
+            "GET the detailed results for each future_scenarioX_id at developer.nrel.gov/stable/job/<id>/results."
+        ]
+        return JsonResponse(resp_dict)
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
