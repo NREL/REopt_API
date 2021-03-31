@@ -1,3 +1,4 @@
-from django.test import TestCase
+# from django.test import TestCase
 
-# Create your tests here.
+# Not sure a futurecosts test is worth it since it requires running 10 scenarios through host/stable/job, which is
+# already extensively tested.
