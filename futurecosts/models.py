@@ -63,7 +63,6 @@ class BaseModel(object):
         d.pop("_state", None)
         d.pop("id", None)
         d.pop("basemodel_ptr_id", None)
-        d.pop("run_uuid", None)
         return d
 
     @classmethod
@@ -74,6 +73,9 @@ class BaseModel(object):
 
 class FutureCostsJob(BaseModel, models.Model):
     name = "FutureCostsJob"
+    future_scenarios = [
+        "future_scenario1"
+    ]
 
     run_uuid = models.UUIDField(unique=True)
     description = models.TextField(blank=True)
@@ -106,6 +108,20 @@ class FutureCostsJob(BaseModel, models.Model):
         if not self.base_year:
             self.base_year = int(self.base_scenario.created.year)
 
+    def update_status(self):
+        statuses = []
+        for fs in self.future_scenarios:
+            statuses.append(
+                eval("self.{}.status".format(fs))
+            )
+        if any([s == "Optimizing..." for s in statuses]):
+            self.status = "Optimizing..."
+        elif all([s == "optimal" for s in statuses]):
+            self.status = "optimal"
+        elif any(["error" in s for s in statuses]):
+            self.status = ("At least one scenario has an error. "
+                           "Please check the individual results for more information.")
+
 
 class CostForecasts(object):
 
@@ -118,20 +134,32 @@ class CostForecasts(object):
 
     def __init__(self, year: int):
         self.wind_costs = pd.read_csv("futurecosts/cost_data/{}/wind_prices.csv".format(year))
+        self.pv_costs = pd.read_csv("futurecosts/cost_data/{}/ATB_2021_PV_costs.csv".format(year))
 
     def wind(self, year: int, type: str, size_class: str) -> float:
-        assert year in self.wind_costs.year.to_list()
-        assert type in ["capital_cost_dollars_per_kw", "fixed_om_dollars_per_kw_per_yr"]
-        assert size_class in self.reopt_size_class_to_dGen_hub_height.keys()
-        height = self.reopt_size_class_to_dGen_hub_height[size_class]
-        return self.wind_costs[
-            self.wind_costs.default_tower_height_m == height
-        ].loc[year, type]
+        # TODO remove asserts for exception handling
 
-"""
-1. get Wind.size_class from the original scenario inputs (if Wind.max_kw > 0)
-2. translate to dGen hub height
-3. take wind forecasts from csv/df for dGen hub height 
-"""
+        assert type in ["capital_cost_dollars_per_kw", "fixed_om_dollars_per_kw_per_yr"]
+        assert size_class in self.reopt_size_class_to_dGen_hub_height.keys(), "{} not in size classes".format(size_class)
+
+        height = self.reopt_size_class_to_dGen_hub_height[size_class]
+        filtered_wind_costs = self.wind_costs[self.wind_costs.default_tower_height_m == height]
+        filtered_wind_costs.index = filtered_wind_costs.year
+        filtered_wind_costs = filtered_wind_costs[type].copy()
+
+        if year in filtered_wind_costs.index:
+            return filtered_wind_costs.loc[year]
+
+        filtered_wind_costs.loc[year] = None
+        filtered_wind_costs.sort_index(inplace=True)
+        filtered_wind_costs = filtered_wind_costs.astype(float).interpolate(axis=0)
+
+        return round(filtered_wind_costs.loc[year], 2)
+
+    def pv(self, year: int, type: str) -> int:
+        assert type in ["capital_cost_dollars_per_kw", "fixed_om_dollars_per_kw_per_yr"]
+        assert str(year) in self.pv_costs.columns
+        return self.pv_costs[self.pv_costs.type == type].loc[0, str(year)]
+
 
 cost_forecasts = CostForecasts(year=year)
