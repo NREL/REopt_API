@@ -75,7 +75,7 @@ class BaseModel(object):
 class FutureCostsJob(BaseModel, models.Model):
     name = "FutureCostsJob"
     future_scenarios = [
-        "future_scenario1"
+        "future_scenario{}".format(i) for i in range(1,11)
     ]
 
     run_uuid = models.UUIDField(unique=True)
@@ -291,6 +291,10 @@ class CostForecasts(object):
         assert type in ["capital_cost_dollars_per_kw", "fixed_om_dollars_per_kw_per_yr"]
         assert year in self.pv_costs.columns
         return self.pv_costs.loc[type, year]
+
+    def storage(self, year: int, type: str) -> float:
+        pass
+        # TODO fill in storage cost forecasts
 
 
 cost_forecasts = CostForecasts(year=year)
