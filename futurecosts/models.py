@@ -30,24 +30,13 @@
 from django.db import models
 import copy
 import pandas as pd
-import logging
 from reo.models import ScenarioModel
 
-log = logging.getLogger(__name__)
 year = 2021
 """
-The year is used to create instantiate the future costs object with the appropriate cost forecasts.
+The year is used to instantiate the future costs object with the appropriate cost forecasts.
 Note that there is only data for 2021 currently.
 """
-
-
-def at_least_one_set(model, possible_sets):
-    case = False
-    for list_of_keys in possible_sets:
-        if all(model.get(key) not in [None, ""] for key in list_of_keys):
-            case = True
-            break
-    return case
 
 
 class BaseModel(object):
