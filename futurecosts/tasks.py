@@ -56,7 +56,6 @@ def setup_jobs(run_uuid):
         resp = post_job(new_post)
         exec("fcjob.future_scenario{} = ScenarioModel.objects.get(run_uuid=resp['run_uuid'])".format(i+1))
         exec("fcjob.future_year{} = year".format(i+1))
-        import pdb; pdb.set_trace()
         break
     fcjob.status = "Optimizing..."
     fcjob.save(force_update=True)
