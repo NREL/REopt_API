@@ -111,9 +111,12 @@ class FutureCostsJob(BaseModel, models.Model):
     def update_status(self):
         statuses = []
         for fs in self.future_scenarios:
-            statuses.append(
-                eval("self.{}.status".format(fs))
-            )
+            try:
+                statuses.append(
+                    eval("self.{}.status".format(fs))
+                )
+            except:
+                statuses.append("error")
         if any([s == "Optimizing..." for s in statuses]):
             self.status = "Optimizing..."
         elif all([s == "optimal" for s in statuses]):
@@ -135,10 +138,12 @@ class CostForecasts(object):
     def __init__(self, year: int):
         self.wind_costs = pd.read_csv("futurecosts/cost_data/{}/wind_prices.csv".format(year))
         self.pv_costs = pd.read_csv("futurecosts/cost_data/{}/ATB_2021_PV_costs.csv".format(year))
+        self.pv_costs.index = self.pv_costs.type
+        self.pv_costs.drop("type", axis=1, inplace=True)
+        self.pv_costs.columns = self.pv_costs.columns.astype(int)
 
     def wind(self, year: int, type: str, size_class: str) -> float:
         # TODO remove asserts for exception handling
-
         assert type in ["capital_cost_dollars_per_kw", "fixed_om_dollars_per_kw_per_yr"]
         assert size_class in self.reopt_size_class_to_dGen_hub_height.keys(), "{} not in size classes".format(size_class)
 
@@ -157,9 +162,17 @@ class CostForecasts(object):
         return round(filtered_wind_costs.loc[year], 2)
 
     def pv(self, year: int, type: str) -> int:
+        """
+        Return capital or O&M costs from NREL ATB forecasts for given year.
+        As of 2021-03-30 we have values for each year from 2022 to 2050 inclusive
+        :param year: any int from 2022 to 2050 inclusive
+        :param type: one of ["capital_cost_dollars_per_kw", "fixed_om_dollars_per_kw_per_yr"]
+        :return: float, cost taken from NREL ATB
+        """
+        # TODO remove asserts for exception handling
         assert type in ["capital_cost_dollars_per_kw", "fixed_om_dollars_per_kw_per_yr"]
-        assert str(year) in self.pv_costs.columns
-        return self.pv_costs[self.pv_costs.type == type].loc[0, str(year)]
+        assert year in self.pv_costs.columns
+        return self.pv_costs.loc[type, year]
 
 
 cost_forecasts = CostForecasts(year=year)

@@ -40,6 +40,12 @@ log = get_task_logger(__name__)
 
 # @shared_task(ignore_result=True)
 def setup_jobs(run_uuid):
+    """
+    POST 10 jobs to main API and connect them to the FutureCostsJob model
+    :param run_uuid: UUID of scenario from current year with "optimal" status. Used as base for all inputs except
+        the future costs of Wind, PV, and Storage
+    :return: None
+    """
 
     fcjob = FutureCostsJob.objects.get(run_uuid=run_uuid)
 
@@ -50,13 +56,13 @@ def setup_jobs(run_uuid):
 
     # 2 Create future inputs and post them
     for i, year in enumerate(range(fcjob.base_year+2, fcjob.base_year+22, 2)):
-
         new_post = fill_in_future_costs(d["inputs"], year=year)
         # TODO make post_job a task and have it retry_on_failure?
         resp = post_job(new_post)
         exec("fcjob.future_scenario{} = ScenarioModel.objects.get(run_uuid=resp['run_uuid'])".format(i+1))
         exec("fcjob.future_year{} = year".format(i+1))
         break
+
     fcjob.status = "Optimizing..."
     fcjob.save(force_update=True)
 
@@ -98,5 +104,16 @@ def fill_in_future_costs(d: dict, year: int) -> dict:
             year,
             type="fixed_om_dollars_per_kw_per_yr",
             size_class=d["Scenario"]["Site"]["Wind"].get("size_class") or "commercial"
+        )
+
+    d["Scenario"]["Site"]["PV"]["installed_cost_us_dollars_per_kw"] = \
+        cost_forecasts.pv(
+            year,
+            type="capital_cost_dollars_per_kw"
+        )
+    d["Scenario"]["Site"]["PV"]["om_cost_us_dollars_per_kw"] = \
+        cost_forecasts.pv(
+            year,
+            type="fixed_om_dollars_per_kw_per_yr"
         )
     return d

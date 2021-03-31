@@ -109,6 +109,7 @@ class FutureCostsAPI(ModelResource):
                 "A futurecosts job has already been created for this run_uuid."
                 "You can retrieve the results with a GET request to /futurecosts/<run_uuid>/results."
             )
+            # TODO: should we allow users to delete FutureCostsJob and make a new one?
             raise ImmediateHttpResponse(HttpResponse(
                 json.dumps({"Warning": err_msg}),
                 content_type='application/json',
