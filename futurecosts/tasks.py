@@ -28,17 +28,18 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
 import json
+import copy
 from celery import shared_task
 from reo.api import Job
 from reo.views import results
 from celery.utils.log import get_task_logger
 from futurecosts.models import cost_forecasts, FutureCostsJob
-from reo.models import ScenarioModel
+from reo.models import ScenarioModel  # used in exec
 from tastypie.exceptions import ImmediateHttpResponse
 log = get_task_logger(__name__)
 
 
-# @shared_task(ignore_result=True)
+@shared_task(ignore_result=True)
 def setup_jobs(run_uuid):
     """
     POST 10 jobs to main API and connect them to the FutureCostsJob model
@@ -61,7 +62,6 @@ def setup_jobs(run_uuid):
         resp = post_job(new_post)
         exec("fcjob.future_scenario{} = ScenarioModel.objects.get(run_uuid=resp['run_uuid'])".format(i+1))
         exec("fcjob.future_year{} = year".format(i+1))
-        break
 
     fcjob.status = "Optimizing..."
     fcjob.save(force_update=True)
@@ -70,7 +70,7 @@ def setup_jobs(run_uuid):
 def post_job(data: dict) -> dict:
     job = Job()
     try:
-        job.obj_create(bundle=data)
+        job.obj_create(bundle=copy.deepcopy(data))
     except ImmediateHttpResponse as resp:
         resp = json.loads(resp.response.content.decode('utf-8'))
         if "run_uuid" in resp.keys():
@@ -107,13 +107,8 @@ def fill_in_future_costs(d: dict, year: int) -> dict:
         )
 
     d["Scenario"]["Site"]["PV"]["installed_cost_us_dollars_per_kw"] = \
-        cost_forecasts.pv(
-            year,
-            type="capital_cost_dollars_per_kw"
-        )
+        cost_forecasts.pv(year, type="capital_cost_dollars_per_kw")
+
     d["Scenario"]["Site"]["PV"]["om_cost_us_dollars_per_kw"] = \
-        cost_forecasts.pv(
-            year,
-            type="fixed_om_dollars_per_kw_per_yr"
-        )
+        cost_forecasts.pv(year, type="fixed_om_dollars_per_kw_per_yr")
     return d
