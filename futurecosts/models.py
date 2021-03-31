@@ -63,6 +63,7 @@ class BaseModel(object):
         d.pop("_state", None)
         d.pop("id", None)
         d.pop("basemodel_ptr_id", None)
+        d.pop("run_uuid", None)  # redundant with base_scenario
         return d
 
     @classmethod
@@ -100,6 +101,123 @@ class FutureCostsJob(BaseModel, models.Model):
         null=True
     )
     future_year1 = models.IntegerField(
+        blank=True,
+        null=True
+    )
+
+    future_scenario2 = models.OneToOneField(
+        ScenarioModel,
+        related_name="future_scenario2",
+        to_field='run_uuid',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True
+    )
+    future_year2 = models.IntegerField(
+        blank=True,
+        null=True
+    )
+
+    future_scenario3 = models.OneToOneField(
+        ScenarioModel,
+        related_name="future_scenario3",
+        to_field='run_uuid',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True
+    )
+    future_year3 = models.IntegerField(
+        blank=True,
+        null=True
+    )
+
+    future_scenario4 = models.OneToOneField(
+        ScenarioModel,
+        related_name="future_scenario4",
+        to_field='run_uuid',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True
+    )
+    future_year4 = models.IntegerField(
+        blank=True,
+        null=True
+    )
+
+    future_scenario5 = models.OneToOneField(
+        ScenarioModel,
+        related_name="future_scenario5",
+        to_field='run_uuid',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True
+    )
+    future_year5 = models.IntegerField(
+        blank=True,
+        null=True
+    )
+
+    future_scenario6 = models.OneToOneField(
+        ScenarioModel,
+        related_name="future_scenario6",
+        to_field='run_uuid',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True
+    )
+    future_year6 = models.IntegerField(
+        blank=True,
+        null=True
+    )
+
+    future_scenario7 = models.OneToOneField(
+        ScenarioModel,
+        related_name="future_scenario7",
+        to_field='run_uuid',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True
+    )
+    future_year7 = models.IntegerField(
+        blank=True,
+        null=True
+    )
+
+    future_scenario8 = models.OneToOneField(
+        ScenarioModel,
+        related_name="future_scenario8",
+        to_field='run_uuid',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True
+    )
+    future_year8 = models.IntegerField(
+        blank=True,
+        null=True
+    )
+
+    future_scenario9 = models.OneToOneField(
+        ScenarioModel,
+        related_name="future_scenario9",
+        to_field='run_uuid',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True
+    )
+    future_year9 = models.IntegerField(
+        blank=True,
+        null=True
+    )
+
+    future_scenario10 = models.OneToOneField(
+        ScenarioModel,
+        related_name="future_scenario10",
+        to_field='run_uuid',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True
+    )
+    future_year10 = models.IntegerField(
         blank=True,
         null=True
     )

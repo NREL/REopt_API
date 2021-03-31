@@ -120,7 +120,7 @@ class FutureCostsAPI(ModelResource):
                 job.clean()
                 job.save()
 
-                setup_jobs(run_uuid)
+                setup_jobs.delay(run_uuid)
                 resp = {'status': 'Future Costs Job created for scenario {}'.format(run_uuid)}
             except Exception:
                 log.error("Could not create and save futurecosts job for run_uuid: {}".format(run_uuid))
