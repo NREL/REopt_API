@@ -38,26 +38,28 @@ from tastypie.exceptions import ImmediateHttpResponse
 log = get_task_logger(__name__)
 
 
-@shared_task  # TODO register
+# @shared_task(ignore_result=True)
 def setup_jobs(run_uuid):
 
     fcjob = FutureCostsJob.objects.get(run_uuid=run_uuid)
 
     # 1. Get results for original scenario
-    resp1 = results(None, run_uuid)
-    d = json.loads(resp1.content)
+    base_results = results(None, run_uuid)
+    d = json.loads(base_results.content)
     d = scrub_urls_from_dict(d)
 
     # 2 Create future inputs and post them
-    # new_post = fill_in_future_costs(d["inputs"], year=)
+    for i, year in enumerate(range(fcjob.base_year+2, fcjob.base_year+22, 2)):
 
-    resp2 = post_job(d["inputs"])
-    scenario1 = ScenarioModel.objects.get(run_uuid=resp2["run_uuid"])
-    fcjob.future_scenario1 = scenario1
-    fcjob.future_year1 = 2025
+        new_post = fill_in_future_costs(d["inputs"], year=year)
+        # TODO make post_job a task and have it retry_on_failure?
+        resp = post_job(new_post)
+        exec("fcjob.future_scenario{} = ScenarioModel.objects.get(run_uuid=resp['run_uuid'])".format(i+1))
+        exec("fcjob.future_year{} = year".format(i+1))
+        import pdb; pdb.set_trace()
+        break
+    fcjob.status = "Optimizing..."
     fcjob.save(force_update=True)
-
-    return resp2
 
 
 def post_job(data: dict) -> dict:
@@ -68,7 +70,10 @@ def post_job(data: dict) -> dict:
         resp = json.loads(resp.response.content.decode('utf-8'))
         if "run_uuid" in resp.keys():
             return resp
-        # TODO handle problems from posting jobs
+        else:
+            log.warning("could not create job:", resp["messages"]["error"])
+            return resp["messages"]
+    # TODO handle problems from posting jobs
     return {}
 
 
@@ -87,12 +92,12 @@ def fill_in_future_costs(d: dict, year: int) -> dict:
         cost_forecasts.wind(
             year,
             type="capital_cost_dollars_per_kw",
-            size_class=d["Scenario"]["Site"]["Wind"].get("size_class", "commercial")
+            size_class=d["Scenario"]["Site"]["Wind"].get("size_class") or "commercial"
         )
     d["Scenario"]["Site"]["Wind"]["om_cost_us_dollars_per_kw"] = \
         cost_forecasts.wind(
             year,
             type="fixed_om_dollars_per_kw_per_yr",
-            size_class=d["Scenario"]["Site"]["Wind"].get("size_class", "commercial")
+            size_class=d["Scenario"]["Site"]["Wind"].get("size_class") or "commercial"
         )
     return d
