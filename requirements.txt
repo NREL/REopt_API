@@ -46,7 +46,6 @@ importlib-metadata==3.4.0
 ipython-genutils==0.2.0
 isodate==0.6.0
 jdcal==1.4.1
-julia==0.5.6
 kombu==5.0.2
 lxml==4.6.3
 more-itertools==8.7.0
