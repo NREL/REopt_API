@@ -86,9 +86,11 @@ services:
     container_name: julia-nginx
     build:
       context: julia_src/
-    command: julia --project=/opt/julia_src http.jl
-    ports:
-      - "8081:8081"
+    command: bash ./run_julia_servers.sh 8
+    environment:
+      - JULIA_NUM_THREADS=2
+    expose:
+      - 8081
     depends_on:
       - licenseserver
     volumes:
