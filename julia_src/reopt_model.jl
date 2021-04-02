@@ -143,7 +143,7 @@ function add_cost_expressions(m, p)
 	end
 	if !isempty(p.WaterHeaterTechs)
 		m[:TotalWHComfortCost] = @expression(m,
-			sum(m[:dvWHComfortCost][ts] for ts in p.TimeStep))
+			sum(m[:dvWHComfortCost][ts]*100000 for ts in p.TimeStep))
 	else
 		m[:TotalWHComfortCost] = @expression(m, 0.0)
 	end
