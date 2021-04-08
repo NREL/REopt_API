@@ -111,7 +111,7 @@ DATABASES = {
         'HOST': 'localhost',
         'NAME': 'reopt_development',
         'OPTIONS': {
-            'options': '-c search_path=reopt_api'
+            'options': '-c search_path=developc110p'
         },
         'USER': dev_user,
         'PASSWORD': dev_user_password,
