@@ -150,19 +150,11 @@ class PVWatts:
     @property
     def data(self):
         if self.response is None:
+            # Check if point is beyond thr bounds of the NRSDB dataset, if use the international dataset
+            if self.latitude < -18.4 or self.latitude > 59.9 or self.longitude > -47.2 or self.longitude < -178.2 :
+                self.dataset = 'intl'
+                self.radius = self.radius *2
             resp = requests.get(self.url, verify=self.verify)
-
-            if not resp.ok:
-                data = check_pvwatts_response_data(resp)
-                # if not ok b/c outside of the US, try again with larger search radius in "intl" dataset
-                if ("This location appears to be outside the US" in s for s in data.get("warnings", [])):
-                    self.dataset = "intl"
-                    self.radius = self.radius * 2  # bump up search radius, since there aren't many sites
-                    resp = requests.get(self.url, verify=self.verify)
-                    if not resp.ok:  # did not get data for international location either (or other problem)
-                        raise_pvwatts_exception("PVWatts status code {}. {}".format(resp.status_code, resp.content))
-                else:
-                    raise_pvwatts_exception("PVWatts status code {}. {}".format(resp.status_code, resp.content))
             log.info("PVWatts API query successful.")
             data = check_pvwatts_response_data(resp)
             self.response = data
