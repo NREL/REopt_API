@@ -43,10 +43,11 @@ logging.disable(logging.CRITICAL)
 
 
 
-event_day_flags = [0]*8760
-event_day_flags[5000] = 1.0
-event_day_flags[5050] = 1.0
-energy_pricing = [0.21]*8760
+event_day_flags = [0.0]*8760
+for i in [4625, 4648, 4673, 4697, 4721, 4895, 5177, 5201, 5225, 5441]:
+    event_day_flags[i] = 1
+
+energy_pricing = [2]*8760
 
 ra_post = {"Scenario": {"Site": {
                 "longitude": -105.2348,
@@ -55,8 +56,8 @@ ra_post = {"Scenario": {"Site": {
                     "max_kw": 1000
                 },
                 "Storage": {
-                    "max_kwh": 0.0,
-                    "max_kw": 0.0
+                    "max_kwh": 100.0,
+                    "max_kw": 100.0
                 },
                 "LoadProfile": {
                     "doe_reference_name": "MidriseApartment",
@@ -65,10 +66,10 @@ ra_post = {"Scenario": {"Site": {
                 },
                 "ElectricTariff": {
                     "blended_monthly_demand_charges_us_dollars_per_kw": [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0],
-                    "blended_monthly_rates_us_dollars_per_kwh": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2] #,
-                    # "ra_event_day_flags_boolean": event_day_flags,
-                    # "ra_demand_pricing_us_dollars_per_kw": [0, 0, 0, 23, 21, 21, 21, 21, 21, 21, 0, 0],
-                    # "ra_energy_pricing_us_dollars_per_kwh": energy_pricing
+                    "blended_monthly_rates_us_dollars_per_kwh": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2],
+                    "ra_event_day_flags_boolean": event_day_flags,
+                    "ra_demand_pricing_us_dollars_per_kw": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    "ra_energy_pricing_us_dollars_per_kwh": energy_pricing
                 },
                 "Financial": {
                     "third_party_ownership": False,
@@ -108,15 +109,15 @@ class ResourceAdequacyTests(ResourceTestCaseMixin, TestCase):
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
         
-        print(d)
-        # err_messages = d['messages'].get('error') or []
-        # if 'Wind Dataset Timed Out' in err_messages:
-        #     print("Wind Dataset Timed Out")
-        # else:
-        #     c = nested_to_flat(d['outputs'])
-        #     try:
-        #         check_common_outputs(self, c, d_expected)
-        #     except:
-        #         print("Run {} expected outputs may have changed.".format(run_uuid))
-        #         print("Error message: {}".format(d['messages'].get('error')))
-                # raise
+        err_messages = d['messages'].get('error') or []
+        if 'Wind Dataset Timed Out' in err_messages:
+            print("Wind Dataset Timed Out")
+        else:
+            c = nested_to_flat(d['outputs'])
+            try:
+                check_common_outputs(self, c, d_expected)
+            except:
+                print("Run {} expected outputs may have changed.".format(run_uuid))
+                print("Error message: {}".format(d['messages'].get('error')))
+                raise
+            print(c)

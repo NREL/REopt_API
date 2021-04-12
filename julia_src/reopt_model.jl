@@ -972,7 +972,8 @@ function add_resource_adequacy_idealized(m, p)
 end
 
 function calculate_hour_reduction(m, p, month, event_index, hours_from_start)
-	lbst_list = convert(Array{Int64, 1}, p.RaLookbackPeriods[month][event_index,:])
+	# lbst_list = convert(Array{Int64, 1}, p.RaLookbackPeriods[month][event_index,:])
+	lbst_list = p.RaLookbackPeriods[month][event_index,:][1]
 	baseline_loads = sum(m[:dvGridPurchase][u, lbts + hours_from_start] for u in p.PricingTier, lbts in lbst_list)/p.RaLookbackDays
 	#baseline loads minus event load
     return (baseline_loads - sum(m[:dvGridPurchase][u, p.RaEventStartTimes[month][event_index] + hours_from_start] for u in p.PricingTier))
@@ -1162,7 +1163,6 @@ end
 
 
 function reopt_run(m, p::Parameter)
-
 	t_start = time()
 	results = Dict{String, Any}()
 
@@ -1326,7 +1326,7 @@ function reopt_run(m, p::Parameter)
 	add_yearone_expressions(m, p)
 
 	results = reopt_results(m, p, results)
-	
+
 	results["julia_reopt_postprocess_seconds"] = time() - t_start
 
 	return results
