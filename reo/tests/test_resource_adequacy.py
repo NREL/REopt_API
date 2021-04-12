@@ -66,9 +66,9 @@ ra_post = {"Scenario": {"Site": {
                 "ElectricTariff": {
                     "blended_monthly_demand_charges_us_dollars_per_kw": [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0],
                     "blended_monthly_rates_us_dollars_per_kwh": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2] #,
-                    # "ra_event_day_flags_boolean": event_day_flags,
-                    # "ra_demand_pricing_us_dollars_per_kw": [0, 0, 0, 23, 21, 21, 21, 21, 21, 21, 0, 0],
-                    # "ra_energy_pricing_us_dollars_per_kwh": energy_pricing
+                    "ra_event_day_flags_boolean": event_day_flags,
+                    "ra_demand_pricing_us_dollars_per_kw": [0, 0, 0, 23, 21, 21, 21, 21, 21, 21, 0, 0],
+                    "ra_energy_pricing_us_dollars_per_kwh": energy_pricing
                 },
                 "Financial": {
                     "third_party_ownership": False,
@@ -108,15 +108,15 @@ class ResourceAdequacyTests(ResourceTestCaseMixin, TestCase):
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
         
-        print(d)
-        # err_messages = d['messages'].get('error') or []
-        # if 'Wind Dataset Timed Out' in err_messages:
-        #     print("Wind Dataset Timed Out")
-        # else:
-        #     c = nested_to_flat(d['outputs'])
-        #     try:
-        #         check_common_outputs(self, c, d_expected)
-        #     except:
-        #         print("Run {} expected outputs may have changed.".format(run_uuid))
-        #         print("Error message: {}".format(d['messages'].get('error')))
-                # raise
+        # print(d)
+        err_messages = d['messages'].get('error') or []
+        if 'Wind Dataset Timed Out' in err_messages:
+            print("Wind Dataset Timed Out")
+        else:
+            c = nested_to_flat(d['outputs'])
+            try:
+                check_common_outputs(self, c, d_expected)
+            except:
+                print("Run {} expected outputs may have changed.".format(run_uuid))
+                print("Error message: {}".format(d['messages'].get('error')))
+                raise
