@@ -26,38 +26,41 @@ services:
     container_name: celery-nginx
     build:
       context: .
-      dockerfile: Dockerfile.xpress.pyjul
+    image: base-api-image
     command: >
       "celery -A reopt_api worker -l info"
-    image: celery-nginx-image
     environment:
       - APP_ENV=local
       - SQL_HOST=db-nginx
       - SQL_PORT=5432
       - REDIS_HOST=redis-nginx
       - SOLVER=xpress
+      - JULIA_HOST=julia-nginx
     volumes:
       - .:/opt/reopt
     depends_on:
       - db-nginx
       - redis-nginx
-    mac_address: 02:42:ac:12:00:04
+      - julia-nginx
 
   django-nginx:
+    image: base-api-image
     container_name: django-nginx
-    image: celery-nginx-image
-    command:  >
+    command: >
       "python manage.py migrate
-      && gunicorn reopt_api.wsgi:application --bind 0.0.0.0:8000"
+      && /opt/reopt/bin/wait-for-it.bash -t 0 julia-nginx:8081 -- python manage.py runserver 0.0.0.0:8000"
     environment:
       - APP_ENV=local
       - SQL_HOST=db-nginx
       - SQL_PORT=5432
       - REDIS_HOST=redis-nginx
       - SOLVER=xpress
+      - JULIA_HOST=julia-nginx
     depends_on:
       - db-nginx
       - redis-nginx
+      - julia-nginx
+      - celery-nginx
     expose:
       - 8000
     volumes:
@@ -70,6 +73,28 @@ services:
     depends_on:
       - django-nginx
     restart: "on-failure"
+
+  licenseserver:
+    build:
+      context: julia_src/xpress/licenseserver
+    mac_address: c4:b3:01:d3:d5:eb
+    command: xpserver
+    expose:
+      - 27100
+
+  julia-nginx:
+    container_name: julia-nginx
+    build:
+      context: julia_src/
+    command: bash ./run_julia_servers.sh 8
+    environment:
+      - JULIA_NUM_THREADS=2
+    expose:
+      - 8081
+    depends_on:
+      - licenseserver
+    volumes:
+      - ./julia_src:/opt/julia_src
 
 volumes:
   pgdata:

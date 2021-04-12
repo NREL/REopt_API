@@ -26,7 +26,8 @@ RUN rm xp8.0.4_linux_x86_64.tar.gz
 ENV JULIA_NUM_THREADS=2
 WORKDIR /opt/julia_src/
 COPY . .
-RUN julia --project="." -e 'import Pkg; Pkg.instantiate();' 
+RUN julia --project="." -e 'import Pkg; Pkg.instantiate();'
+RUN julia --project=. precompile.jl
 EXPOSE 8081
 
 CMD ["bash"]
