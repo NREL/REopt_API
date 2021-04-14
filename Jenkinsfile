@@ -128,7 +128,7 @@ pipeline {
             }
 
             stage("deploy-staging") {
-              when { expression { params.STAGING_DEPLOY || env.BRANCH_NAME == "main" } }
+              when { expression { params.STAGING_DEPLOY || env.BRANCH_NAME == "master" } }
 
               environment {
                 DEPLOY_ENV = "staging"
