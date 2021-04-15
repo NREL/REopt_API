@@ -1586,7 +1586,7 @@ class DataManager:
         # import pandas as pd
         # df = pd.DataFrame()
         # df['prod_factor'] = production_factor
-        # df.to_csv('C:/Users/xli1/Documents/PROJECTS/_FY21/Nova/debug/prod_factor.csv')
+        # df.to_csv('reo/tests/data/outputs/prod_factor.csv')
         # # json.dump(test_xl, open("C:/Users/xli1/Documents/PROJECTS/_FY21/Nova/debug/modelinputs.json", "w"))
 
         self.reopt_inputs_bau = {
