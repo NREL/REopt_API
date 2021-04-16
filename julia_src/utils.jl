@@ -267,6 +267,9 @@ Base.@kwdef struct Parameter
 	MaxElecPenalty::Array{Float64,1}
 	DSE::AxisArray
 	FanPowerRatio::AxisArray
+	ComfortTempLimitHP::Float64
+	ComfortTempLimitAC::Float64
+    HVACComfortValue::Float64
 
 	#Water heater model
 	UseWaterHeaterModel::Bool
@@ -281,8 +284,7 @@ Base.@kwdef struct Parameter
     TempLowerBoundWH::Float64
     TempUpperBoundWH::Float64
 	ComfortTempLimitWH::Float64
-	ComfortTempLimitHP::Float64
-	ComfortTempLimitAC::Float64
+    WHComfortValue::Float64
 end
 
 

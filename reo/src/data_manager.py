@@ -1092,11 +1092,12 @@ class DataManager:
 
     def _get_WH_inputs(self):
         if self.wher == None and self.whhp == None:
-            return False, [0.0], [0.0], [0.0] * self.n_timesteps, [0.0], 1, 1, 1, 1, 0.0, 0.0, 0.0
+            return False, [0.0], [0.0], [0.0] * self.n_timesteps, [0.0], 1, 1, 1, 1, 0.0, 0.0, 0.0, 0.0
         else:
             return True, self.hot_water_tank.a_matrix, self.hot_water_tank.b_matrix, self.hot_water_tank.u_inputs, self.hot_water_tank.init_temperatures_degC, \
                    self.hot_water_tank.n_temp_nodes, self.hot_water_tank.n_input_nodes, self.hot_water_tank.injection_node, self.hot_water_tank.water_node, \
-                   self.hot_water_tank.temperature_lower_bound_degC, self.hot_water_tank.temperature_upper_bound_degC, self.hot_water_tank.comfort_temp_limit_degC
+                   self.hot_water_tank.temperature_lower_bound_degC, self.hot_water_tank.temperature_upper_bound_degC, self.hot_water_tank.comfort_temp_limit_degC, \
+                   self.hot_water_tank.comfort_WH_value_usd_per_degC
 
     def _get_export_curtailment_params(self, techs, export_rates, net_metering_limit_kw):
         """
@@ -1200,7 +1201,8 @@ class DataManager:
         shr, dse, fan_power_ratio = self._get_HVAC_inputs()
 
         use_wh_model, a_matrix_wh, b_matrix_wh, u_inputs_wh, init_temperatures_degC_wh, n_temp_nodes_wh, n_input_nodes_wh, \
-        injection_node_wh, water_node, temperature_lower_bound_degC, temperature_upper_bound_degC, comfort_temp_limit_degC = self._get_WH_inputs()
+        injection_node_wh, water_node, temperature_lower_bound_degC, temperature_upper_bound_degC, comfort_temp_limit_degC, \
+        comfort_WH_value_usd_per_degC = self._get_WH_inputs()
 
         tech_to_location, derate, om_cost_us_dollars_per_kw, \
             om_cost_us_dollars_per_kwh, om_cost_us_dollars_per_hr_per_kw_rated, production_factor, \
@@ -1557,6 +1559,7 @@ class DataManager:
             'TempUpperBound': self.rc.temperature_upper_bound,
             'ComfortTempLimitHP': self.rc.comfort_temp_lower_bound_degC,
             'ComfortTempLimitAC': self.rc.comfort_temp_upper_bound_degC,
+            'HVACComfortValue': self.rc.comfort_HVAC_value_usd_per_degC,
             'FlexTechsCOP': flex_techs_cop,
             'DSE': dse,
             'FanPowerRatio': fan_power_ratio,
@@ -1574,6 +1577,7 @@ class DataManager:
             'TempLowerBoundWH': temperature_lower_bound_degC,
             'TempUpperBoundWH': temperature_upper_bound_degC,
             'ComfortTempLimitWH': comfort_temp_limit_degC,
+            'WHComfortValue': comfort_WH_value_usd_per_degC,
             'WaterHeaterTechs': wh_techs
             }
 
@@ -1737,6 +1741,7 @@ class DataManager:
             'TempUpperBound': self.rc.temperature_upper_bound,
             'ComfortTempLimitHP': self.rc.comfort_temp_lower_bound_degC,
             'ComfortTempLimitAC': self.rc.comfort_temp_upper_bound_degC,
+            'HVACComfortValue': self.rc.comfort_HVAC_value_usd_per_degC,
             'FlexTechsCOP': flex_techs_cop_bau,
             'DSE': dse,
             'FanPowerRatio': fan_power_ratio,
@@ -1754,5 +1759,6 @@ class DataManager:
             'TempLowerBoundWH': temperature_lower_bound_degC,
             'TempUpperBoundWH': temperature_upper_bound_degC,
             'ComfortTempLimitWH': comfort_temp_limit_degC,
+            'WHComfortValue': comfort_WH_value_usd_per_degC,
             'WaterHeaterTechs': wh_techs_bau
         }

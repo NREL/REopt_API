@@ -645,6 +645,7 @@ class RC():
         self.temperature_upper_bound = kwargs.get('temperature_upper_bound')
         self.comfort_temp_lower_bound_degC = kwargs.get('comfort_temp_lower_bound_degC')
         self.comfort_temp_upper_bound_degC = kwargs.get('comfort_temp_upper_bound_degC')
+        self.comfort_HVAC_value_usd_per_degC = kwargs.get('comfort_HVAC_value_usd_per_degC')
 
         dfm.add_rc(self)
 

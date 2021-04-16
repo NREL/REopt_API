@@ -915,6 +915,7 @@ class RCModel(models.Model):
     temperature_upper_bound = models.FloatField(null=True, blank=True)
     comfort_temp_lower_bound_degC = models.FloatField(null=True, blank=True)
     comfort_temp_upper_bound_degC = models.FloatField(null=True, blank=True)
+    comfort_HVAC_value_usd_per_degC = models.FloatField(null=True, blank=True)
 
     # Outputs
     temperatures_degree_C = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
@@ -996,6 +997,7 @@ class HotWaterTankModel(models.Model):
     temperature_upper_bound_degC = models.FloatField(null=True, blank=True)
     installed_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True)
     comfort_temp_limit_degC = models.FloatField(null=True, blank=True)
+    comfort_WH_value_usd_per_degC = models.FloatField(null=True, blank=True)
 
     # Output
     year_one_temperature_series_degC = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
