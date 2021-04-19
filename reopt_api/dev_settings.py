@@ -140,8 +140,8 @@ else:
              'OPTIONS': {
                  'options': '-c search_path=reopt_api'
              },
-             'USER': 'reopt',
-             'PASSWORD': 'reopt',
+             'USER': 'dev_user',
+             'PASSWORD': 'dev_user_password',
          }
 }
 
