@@ -1537,8 +1537,8 @@ class DataManager:
             'CHPDoesNotReduceDemandCharges': tariff_args.chp_does_not_reduce_demand_charges,
             'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month,
             'StorageDecayRate': storage_decay_rate,
-            'DecompOptTol': self.optimality_tolerance_decomp_subproblem,
-            'DecompTimeOut': self.timeout_decomp_subproblem_seconds,
+            # 'DecompOptTol': self.optimality_tolerance_decomp_subproblem,
+            # 'DecompTimeOut': self.timeout_decomp_subproblem_seconds,
             'AddSOCIncentive': self.add_soc_incentive,
             # Flex loads
             'FlexTechs': flex_techs,
@@ -1719,8 +1719,8 @@ class DataManager:
             'CHPDoesNotReduceDemandCharges': tariff_args.chp_does_not_reduce_demand_charges,
             'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month,
             'StorageDecayRate': storage_decay_rate,
-            'DecompOptTol': self.optimality_tolerance_decomp_subproblem,
-            'DecompTimeOut': self.timeout_decomp_subproblem_seconds,
+            # 'DecompOptTol': self.optimality_tolerance_decomp_subproblem,
+            # 'DecompTimeOut': self.timeout_decomp_subproblem_seconds,
             'AddSOCIncentive': self.add_soc_incentive,
             # Flex loads
             'FlexTechs': flex_techs_bau,
