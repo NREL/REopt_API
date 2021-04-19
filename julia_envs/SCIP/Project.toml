@@ -1,0 +1,5 @@
+[deps]
+AxisArrays = "39de3d68-74b9-583c-8d2d-e117c070f3a9"
+JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
+MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
+SCIP = "82193955-e24f-5292-bf16-6f2c5261a85f"
