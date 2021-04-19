@@ -82,8 +82,6 @@ class DataManager:
         self.whhp = None
         self.reopt_inputs = None
         self.reopt_inputs_bau = None
-        self.optimality_tolerance_decomp_subproblem = None
-        self.timeout_decomp_subproblem_seconds = None
         self.add_soc_incentive = None
 
         #Resource Adeqacy

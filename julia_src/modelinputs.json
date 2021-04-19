@@ -123127,8 +123127,6 @@
     0.0004 ,
     0.0004
   ] ,
-  "DecompOptTol": 0.02 ,
-  "DecompTimeOut": 120 ,
   "AddSOCIncentive": false,
   "CoincidentPeakPeriodCount":0,
   "CoincidentPeakRates":[],
