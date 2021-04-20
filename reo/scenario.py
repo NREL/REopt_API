@@ -331,6 +331,8 @@ def setup_scenario(self, run_uuid, data, raw_post):
                     outage_end_time_step=inputs_dict['Site']['LoadProfile'].get("outage_end_time_step"),
                     )
 
+        dfm.add_soc_incentive = inputs_dict['add_soc_incentive']
+
         if inputs_dict["Site"]["NewBoiler"]["max_mmbtu_per_hr"] > 0:
             newboiler = NewBoiler(dfm=dfm, **inputs_dict['Site']['NewBoiler'])
             # Any parameters processed and updated?
@@ -344,11 +346,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
             tmp = dict()
             # Assign tmp["param"] = steamturbine.xyx
             ModelManager.updateModel('SteamTurbineModel', tmp, run_uuid)
-
-        # Assign decomposition subproblem optimization parameters - only used if decomposition is selected
-        dfm.optimality_tolerance_decomp_subproblem = inputs_dict['optimality_tolerance_decomp_subproblem']
-        dfm.timeout_decomp_subproblem_seconds = inputs_dict['timeout_decomp_subproblem_seconds']
-        dfm.add_soc_incentive = inputs_dict['add_soc_incentive']
 
         dfm.finalize()
         dfm_dict = vars(dfm)  # serialize for celery
