@@ -23,5 +23,4 @@ const ROUTER = HTTP.Router()
 
 HTTP.@register(ROUTER, "POST", "/job", job)
 HTTP.@register(ROUTER, "GET", "/health", health)
-HTTP.serve(ROUTER, "0.0.0.0", 8081)
-# TODO sometimes the server is not ready even though all containers are running?
+HTTP.serve(ROUTER, "0.0.0.0", 8081, reuseaddr=true)
