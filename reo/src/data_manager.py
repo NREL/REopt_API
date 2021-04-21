@@ -78,6 +78,7 @@ class DataManager:
         self.add_soc_incentive = None
         self.newboiler = None
         self.steamturbine = None
+        self.ghp = None  # Not adding to the Tech list
 
         # following attributes used to pass data to process_results.py
         # If we serialize the python classes then we could pass the objects between Celery tasks
