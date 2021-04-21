@@ -1155,7 +1155,14 @@ nested_output_definitions = {
                   "description": "Year one hourly time series of SteamTurbine thermal to Hot TES",
                   "units": "MMBtu/hr"
                 }
-            	}            
+            	},
+              "GHP": {
+                "ghp_choice": {
+                  "type": int,
+                  "description": "0 = None, 1 = System Option 1, 2 = System Option 2, etc that refers to the ghpghx inputs and response",
+                  "units": "kW"
+                }
+              }
           	}
         	}
     },
