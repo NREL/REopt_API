@@ -984,6 +984,31 @@ class SteamTurbineModel(models.Model):
 
         return obj
 
+class GHPModel(models.Model):
+    # Inputs
+    run_uuid = models.UUIDField(unique=True)
+    installed_cost_heatpump_us_dollars_per_ton = models.FloatField(null=True, blank=True)
+    installed_cost_ghx_us_dollars_per_ft = models.FloatField(null=True, blank=True)
+    installed_cost_building_hydronic_loop_us_dollars_per_sqft = models.FloatField(null=True, blank=True)
+    om_cost_us_dollars_per_sqft_year = models.FloatField(null=True, blank=True)
+    ghpghx_inputs = PickledObjectField(null=True, editable=True)
+    ghpghx_response = PickledObjectField(null=True, editable=True)
+    macrs_option_years = models.IntegerField(null=True, blank=True)
+    macrs_bonus_pct = models.FloatField(null=True, blank=True)
+    macrs_itc_reduction = models.FloatField(null=True, blank=True)
+    federal_itc_pct = models.FloatField(null=True, blank=True)
+    state_ibi_pct = models.FloatField(null=True, blank=True)
+    state_ibi_max_us_dollars = models.FloatField(null=True, blank=True)
+    utility_ibi_pct = models.FloatField(null=True, blank=True)
+    utility_ibi_max_us_dollars = models.FloatField(null=True, blank=True)
+    federal_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+    state_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+    state_rebate_max_us_dollars = models.FloatField(null=True, blank=True)
+    utility_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+    utility_rebate_max_us_dollars = models.FloatField(null=True, blank=True)
+
+    # Outputs
+    ghp_choice = models.IntegerField(null=True, blank=True)
 
 class MessageModel(models.Model):
     """
@@ -1059,6 +1084,7 @@ class ModelManager(object):
         self.messagesM = None
         self.new_boilerM = None
         self.steam_turbineM = None
+        self.ghpM = None
 
     def create_and_save(self, data):
         """
@@ -1108,7 +1134,9 @@ class ModelManager(object):
         self.new_boilerM = NewBoilerModel.create(run_uuid=self.scenarioM.run_uuid,
                                            **attribute_inputs(d['Site']['NewBoiler']))
         self.steam_turbineM = SteamTurbineModel.create(run_uuid=self.scenarioM.run_uuid,
-                                           **attribute_inputs(d['Site']['SteamTurbine']))                                                                                      
+                                           **attribute_inputs(d['Site']['SteamTurbine']))
+        self.ghpM = GHPModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['GHP']))                                           
+        
         for message_type, message in data['messages'].items():
             MessageModel.create(run_uuid=self.scenarioM.run_uuid, message_type=message_type, message=message)
 
@@ -1148,6 +1176,7 @@ class ModelManager(object):
         ColdTESModel.objects.filter(run_uuid=run_uuid).delete()
         NewBoilerModel.objects.filter(run_uuid=run_uuid).delete()
         SteamTurbineModel.objects.filter(run_uuid=run_uuid).delete()
+        GHPModel.objects.filter(run_uuid=run_uuid).delete()
         MessageModel.objects.filter(run_uuid=run_uuid).delete()
         ErrorModel.objects.filter(run_uuid=run_uuid).delete()
 
@@ -1187,6 +1216,7 @@ class ModelManager(object):
         ColdTESModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['ColdTES']))
         NewBoilerModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['NewBoiler']))
         SteamTurbineModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['SteamTurbine']))
+        GHPModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['GHP']))
 
         for message_type, message in data['messages'].items():
             if len(MessageModel.objects.filter(run_uuid=run_uuid, message=message)) > 0:
@@ -1288,7 +1318,7 @@ class ModelManager(object):
         # add try/except for get fail / bad run_uuid
         site_keys = ['PV', 'Storage', 'Financial', 'LoadProfile', 'LoadProfileBoilerFuel', 'LoadProfileChillerThermal',
                      'ElectricTariff', 'FuelTariff', 'Generator', 'Wind', 'CHP', 'Boiler', 'ElectricChiller',
-                     'AbsorptionChiller', 'HotTES', 'ColdTES', 'NewBoiler', 'SteamTurbine']
+                     'AbsorptionChiller', 'HotTES', 'ColdTES', 'NewBoiler', 'SteamTurbine', 'GHP']
 
         resp = dict()
         resp['outputs'] = dict()
@@ -1384,6 +1414,10 @@ class ModelManager(object):
         steamturbine_record = SteamTurbineModel.objects.filter(run_uuid=run_uuid) or {}
         if not steamturbine_record == {}:
             resp['outputs']['Scenario']['Site']['SteamTurbine'] = remove_ids(model_to_dict(steamturbine_record[0]))
+
+        ghp_record = GHPModel.objects.filter(run_uuid=run_uuid) or {}
+        if not ghp_record == {}:
+            resp['outputs']['Scenario']['Site']['GHP'] = remove_ids(model_to_dict(ghp_record[0]))
 
         resp['outputs']['Scenario']['Site']['PV'] = []
         for x in PVModel.objects.filter(run_uuid=run_uuid).order_by('pv_number'):

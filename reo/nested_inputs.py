@@ -2010,7 +2010,148 @@ nested_input_definitions = {
           "default": 0.0,
           "description": "Percent of upfront project costs to depreciate under MACRS"
         }        
-      }      
+      },
+      "GHP": {
+        "installed_cost_heatpump_us_dollars_per_ton": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e5,
+          "default": 1075.0,
+          "description": "Installed heating heat pump cost in $/ton (based on peak coincident cooling+heating thermal load)"
+        },
+        "heatpump_capacity_sizing_factor_on_peak_load": {
+          "type": "float",
+          "min": 1.0,
+          "max": 5.0,
+          "default": 1.1,
+          "description": "Factor on peak heating and cooling load served by GHP used for determining GHP installed capacity"
+        },
+        "installed_cost_ghx_us_dollars_per_ft": {
+          "type": "float",
+          "min": 0.0,
+          "max": 100.0,
+          "default": 14.0,
+          "description": "Installed cost of the ground heat exchanger (GHX) in $/ft of vertical piping"
+        },
+        "installed_cost_building_hydronic_loop_us_dollars_per_sqft": {
+          "type": "float",
+          "min": 0,
+          "max": 100.0,
+          "default": 1.70,
+          "description": "Installed cost of the building hydronic loop per floor space of the site"
+        },
+        "om_cost_us_dollars_per_sqft_year": {
+          "type": "float",
+          "min": -100,
+          "max": 100,
+          "default": 0.0,
+          "description": "Annual GHP incremental operations and maintenance costs in $/ft^2-building/year"
+        },
+        "building_sqft": {
+          "type": "float",
+          "min": 0.0,
+          "max": max_big_number,
+          "description": "Building square footage for GHP/HVAC cost calculations"
+        },
+        "ghpghx_inputs": {
+          "type": "dict",
+          "description": "GHP-GHX model inputs for /ghpghx endpoint; only include if wanting to do GHP->REopt in one"
+        },
+        "ghpghx_response": {
+          "type": "dict",
+          "description": "GHP-GHX sizing and performance results from /ghpghx endpoint; may be dict_of_dict if more than one ghpghx system option is considered"
+        },
+        "macrs_option_years": {
+          "type": "int",
+          "restrict_to": macrs_schedules,
+          "default": 5,
+          "description": "MACRS schedule for financial analysis. Set to zero to disable"
+        },
+        "macrs_bonus_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 1.0,
+          "description": "Percent of upfront project costs to depreciate under MACRS"
+        },
+        "macrs_itc_reduction": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.5,
+          "description": "Percent of the full ITC that depreciable basis is reduced by"
+        },
+        "federal_itc_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.1,
+          "description": "Percent federal capital cost incentive"
+        },
+        "state_ibi_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "description": "Percent of upfront project costs to discount under state investment based incentives"
+        },
+        "state_ibi_max_us_dollars": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e10,
+          "default": max_incentive,
+          "description": "Maximum rebate allowed under state investment based incentives"
+        },
+        "utility_ibi_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "description": "Percent of upfront project costs to discount under utility investment based incentives"
+        },
+        "utility_ibi_max_us_dollars": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e10,
+          "default": max_incentive,
+          "description": "Maximum rebate allowed under utility investment based incentives"
+        },
+        "federal_rebate_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 0.0,
+          "description": "Federal rebate based on installed capacity"
+        },
+        "state_rebate_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 0.0,
+          "description": "State rebates based on installed capacity"
+        },
+        "state_rebate_max_us_dollars": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e10,
+          "default": max_incentive,
+          "description": "Maximum rebate allowed under state rebates"
+        },
+        "utility_rebate_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 0.0,
+          "description": "Utility rebates based on installed capacity"
+        },
+        "utility_rebate_max_us_dollars": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e10,
+          "default": max_incentive,
+          "description": "Maximum rebate allowed under utility rebates"
+        }
+      }
     }
   }
 }
