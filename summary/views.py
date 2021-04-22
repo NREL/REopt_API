@@ -486,7 +486,7 @@ def summary_by_chunk(request, user_uuid, chunk):
         try:
             # chunk size is an optional URL parameter which defines the number of chunks into which to 
             # divide all user summary results. It must be a positive integer.
-            default_chunk_size = 2
+            default_chunk_size = 30
             chunk_size = int(request.GET.get('chunk_size') or default_chunk_size)
             if chunk_size != float(request.GET.get('chunk_size') or default_chunk_size):
                 return JsonResponse({"Error": "Chunk size must be an integer."}, status=400)    
