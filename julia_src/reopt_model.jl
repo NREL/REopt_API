@@ -217,10 +217,12 @@ function add_bigM_adjustments(m, p)
 					for ts in p.TimeStepRatchetsMonth[mth]])  -
 					sum(m[:NewMaxDemandMonthsInTier][mth,np] for np in 1:(n-1)) ]
 				)
+				m[:NewMaxDemandInTier][r,e] = 1.0E6
 			else
 				m[:NewMaxDemandMonthsInTier][mth,n] = minimum([p.MaxDemandMonthsInTier[n],
 					added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP
 					for ts in p.TimeStepRatchetsMonth[mth]])   ])
+				m[:NewMaxDemandInTier][r,e] = 1.0E6
 			end
 		end
 	end
@@ -228,17 +230,19 @@ function add_bigM_adjustments(m, p)
 	# m[:NewMaxDemandInTier] sets a new minimum if the new peak demand for the ratchet, minus the size of all previous bins for the ratchet, is less than the existing bin size.
 	for e in p.DemandBin
 		for r in p.Ratchets
-			if e > 1
+			if e > 1				
 				m[:NewMaxDemandInTier][r,e] = minimum([p.MaxDemandInTier[e],
 				added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP
 					for ts in p.TimeStep])  -
 				sum(m[:NewMaxDemandInTier][r,ep] for ep in 1:(e-1))
 				])
+				m[:NewMaxDemandInTier][r,e] = 1.0E6
 			else
 				m[:NewMaxDemandInTier][r,e] = minimum([p.MaxDemandInTier[e],
 				added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP
 					for ts in p.TimeStep])
 				])
+				m[:NewMaxDemandInTier][r,e] = 1.0E6
 			end
 		end
 	end
@@ -251,11 +255,13 @@ function add_bigM_adjustments(m, p)
 					added_energy + 2*sum(p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP
 					for ts in p.TimeStepRatchetsMonth[mth]) - sum(m[:NewMaxUsageInTier][mth,up] for up in 1:(u-1))
 				])
+				m[:NewMaxUsageInTier][mth,u] = 1.0E8
 			else
 				m[:NewMaxUsageInTier][mth,u] = minimum([p.MaxUsageInTier[u],
 					added_energy + 2*sum(p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP
 					for ts in p.TimeStepRatchetsMonth[mth])
 				])
+				m[:NewMaxUsageInTier][mth,u] = 1.0E8
 			end
 		end
 	end
