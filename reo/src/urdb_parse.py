@@ -469,9 +469,9 @@ class UrdbParse:
             lookback_months = current_rate.lookbackMonths  # defaults to empty list
             lookback_range = current_rate.lookbackRange or 0
             reopt_lookback_months = []
-            if lookback_range != 0 and len(lookback_months) == 12:
+            if lookback_range == 0 and len(lookback_months) == 12:
                 for month in range(1, 13):
-                    if lookback_months[month] == 1:
+                    if lookback_months[month-1] == 1:
                         reopt_lookback_months.append(month)
 
         self.reopt_args.demand_lookback_months = reopt_lookback_months
