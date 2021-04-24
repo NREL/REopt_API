@@ -97,7 +97,7 @@ class TestLookback(ResourceTestCaseMixin, TestCase):
         self.post["Scenario"]["Site"]["ElectricTariff"]["urdb_response"] = URDB1
         urdb_add = {"lookbackMonths": [1]*12,
                     "lookbackPercent": 1.0,
-                    "lookbackRange": 0,
+                    #"lookbackRange": 12,
                     "flatdemandstructure": [[{"rate": 15.97}]],
                     "flatdemandmonths": [0]*12
                     }
