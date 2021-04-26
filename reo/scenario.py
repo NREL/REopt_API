@@ -42,6 +42,7 @@ from reo.src.profiler import Profiler
 from reo.src.site import Site
 from reo.src.storage import Storage, HotTES, ColdTES
 from reo.src.techs import PV, Util, Wind, Generator, CHP, Boiler, ElectricChiller, AbsorptionChiller, NewBoiler, SteamTurbine
+from reo.src import ghp
 from celery import shared_task, Task
 from reo.models import ModelManager
 from reo.exceptions import REoptError, UnexpectedError, LoadProfileError, WindDownloadError, PVWattsDownloadError, RequestError
@@ -326,6 +327,16 @@ def setup_scenario(self, run_uuid, data, raw_post):
             tmp['om_cost_us_dollars_per_ton'] = absorpchl.om_cost_us_dollars_per_ton
             ModelManager.updateModel('AbsorptionChillerModel', tmp, run_uuid)
 
+        # GHP
+        ghp_option_list = []
+        if inputs_dict["Site"]["GHP"]["ghpghx_response"] is not None:
+            for i in range(1, len(inputs_dict["Site"]["GHP"]["ghpghx_response"])+1):
+                ghp_option_list.append(ghp.GHPGHX(dfm=dfm,
+                                                    ghp_design_number=i,
+                                                    inputs=inputs_dict["Site"]["GHP"]["ghpghx_inputs"][i], 
+                                                    response=inputs_dict["Site"]["GHP"]["ghpghx_response"][i],
+                                                    **inputs_dict["Site"]["GHP"]))
+        
         util = Util(dfm=dfm,
                     outage_start_time_step=inputs_dict['Site']['LoadProfile'].get("outage_start_time_step"),
                     outage_end_time_step=inputs_dict['Site']['LoadProfile'].get("outage_end_time_step"),
@@ -353,7 +364,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
         # delete python objects, which are not serializable
 
         for k in ['storage', 'hot_tes', 'cold_tes', 'site', 'elec_tariff', 'fuel_tariff', 'pvs', 'pvnms',
-                'load', 'util', 'heating_load', 'cooling_load', 'newboiler', 'steamturbine', 'ghp'] + dfm.available_techs:
+                'load', 'util', 'heating_load', 'cooling_load', 'newboiler', 'steamturbine', 'ghp_option_list'] + dfm.available_techs:
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
 

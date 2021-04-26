@@ -1157,7 +1157,7 @@ nested_output_definitions = {
                 }
             	},
               "GHP": {
-                "ghp_choice": {
+                "ghp_option_choice": {
                   "type": int,
                   "description": "0 = None, 1 = System Option 1, 2 = System Option 2, etc that refers to the ghpghx inputs and response",
                   "units": "kW"
