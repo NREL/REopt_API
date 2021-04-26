@@ -2054,12 +2054,12 @@ nested_input_definitions = {
           "description": "Building square footage for GHP/HVAC cost calculations"
         },
         "ghpghx_inputs": {
-          "type": "dict",
+          "type": "list_of_dict",
           "description": "GHP-GHX model inputs for /ghpghx endpoint; only include if wanting to do GHP->REopt in one"
         },
         "ghpghx_response": {
-          "type": "dict",
-          "description": "GHP-GHX sizing and performance results from /ghpghx endpoint; may be dict_of_dict if more than one ghpghx system option is considered"
+          "type": "list_of_dict",
+          "description": "GHP-GHX sizing and performance results from /ghpghx endpoint"
         },
         "macrs_option_years": {
           "type": "int",
@@ -2116,14 +2116,14 @@ nested_input_definitions = {
           "default": max_incentive,
           "description": "Maximum rebate allowed under utility investment based incentives"
         },
-        "federal_rebate_us_dollars_per_kw": {
+        "federal_rebate_us_dollars_per_ton": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e9,
           "default": 0.0,
           "description": "Federal rebate based on installed capacity"
         },
-        "state_rebate_us_dollars_per_kw": {
+        "state_rebate_us_dollars_per_ton": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e9,
@@ -2137,7 +2137,7 @@ nested_input_definitions = {
           "default": max_incentive,
           "description": "Maximum rebate allowed under state rebates"
         },
-        "utility_rebate_us_dollars_per_kw": {
+        "utility_rebate_us_dollars_per_ton": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e9,

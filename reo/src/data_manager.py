@@ -78,7 +78,7 @@ class DataManager:
         self.add_soc_incentive = None
         self.newboiler = None
         self.steamturbine = None
-        self.ghp = None  # Not adding to the Tech list
+        self.ghp_option_list = []  # Not adding to the Tech list
 
         # following attributes used to pass data to process_results.py
         # If we serialize the python classes then we could pass the objects between Celery tasks
@@ -209,6 +209,10 @@ class DataManager:
 
     def add_steamturbine(self, steamturbine):
         self.steamturbine = steamturbine
+
+    def add_ghp(self, ghp):
+        self.ghp_option_list.append(ghp)
+        ghp_number = len(self.ghp_option_list)
 
     def _get_REopt_pwfs(self, techs):
         sf = self.site.financial
@@ -1139,6 +1143,23 @@ class DataManager:
         cap_cost_slope, cap_cost_x, cap_cost_yint, n_segments = self._get_REopt_cost_curve(self.available_techs)
         cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau, n_segments_bau = self._get_REopt_cost_curve(
             self.bau_techs)
+
+        # GHP capital cost: loop through _get_REopt_cost_curve for each ghp_option
+        ghp_installed_cost = []
+        for i, option in enumerate(self.ghp_option_list):
+            cap_cost_slope, cap_cost_x, cap_cost_yint, n_segments = self._get_REopt_cost_curve(techs=["ghp_option_list[{}]".format(i)])
+            ghp_size_tons = option.heatpump_capacity_tons
+            # TODO check indexing of n_segments versus cap_cost_x list length (test!)
+            if ghp_size_tons <= cap_cost_x[1]:
+                n = 1
+            elif ghp_size_tons > cap_cost_x[-1]:
+                n = n_segments
+            else:
+                for n in range(1, n_segments):
+                    if (ghp_size_tons > cap_cost_x[n]) and (ghp_size_tons <= cap_cost_x[n+1]):
+                        break
+            # TODO check that it shouldn't just be y_int + ghp_size_tons * cap_cost_slope[n]
+            ghp_installed_cost.append(cap_cost_yint[n] + (ghp_size_tons - cap_cost_x[n]) * cap_cost_slope[n])
 
         storage_techs, thermal_storage_techs, hot_tes_techs, \
             cold_tes_techs, storage_power_cost, storage_energy_cost, \

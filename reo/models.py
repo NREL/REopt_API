@@ -985,14 +985,15 @@ class SteamTurbineModel(models.Model):
         return obj
 
 class GHPModel(models.Model):
+    # TODO ManyToMany or ForeignKey for relating/linking Several GHP runs with one REopt run (and maybe adding REopt run_uuid to GHP model)
     # Inputs
     run_uuid = models.UUIDField(unique=True)
     installed_cost_heatpump_us_dollars_per_ton = models.FloatField(null=True, blank=True)
     installed_cost_ghx_us_dollars_per_ft = models.FloatField(null=True, blank=True)
     installed_cost_building_hydronic_loop_us_dollars_per_sqft = models.FloatField(null=True, blank=True)
     om_cost_us_dollars_per_sqft_year = models.FloatField(null=True, blank=True)
-    ghpghx_inputs = PickledObjectField(null=True, editable=True)
-    ghpghx_response = PickledObjectField(null=True, editable=True)
+    ghpghx_inputs = ArrayField(PickledObjectField(null=True, editable=True), null=True)
+    ghpghx_response = ArrayField(PickledObjectField(null=True, editable=True), null=True)
     macrs_option_years = models.IntegerField(null=True, blank=True)
     macrs_bonus_pct = models.FloatField(null=True, blank=True)
     macrs_itc_reduction = models.FloatField(null=True, blank=True)
@@ -1001,14 +1002,14 @@ class GHPModel(models.Model):
     state_ibi_max_us_dollars = models.FloatField(null=True, blank=True)
     utility_ibi_pct = models.FloatField(null=True, blank=True)
     utility_ibi_max_us_dollars = models.FloatField(null=True, blank=True)
-    federal_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
-    state_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+    federal_rebate_us_dollars_per_ton = models.FloatField(null=True, blank=True)
+    state_rebate_us_dollars_per_ton = models.FloatField(null=True, blank=True)
     state_rebate_max_us_dollars = models.FloatField(null=True, blank=True)
-    utility_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+    utility_rebate_us_dollars_per_ton = models.FloatField(null=True, blank=True)
     utility_rebate_max_us_dollars = models.FloatField(null=True, blank=True)
 
     # Outputs
-    ghp_choice = models.IntegerField(null=True, blank=True)
+    ghp_option_choice = models.IntegerField(null=True, blank=True)
 
 class MessageModel(models.Model):
     """
