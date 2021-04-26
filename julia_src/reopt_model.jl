@@ -710,7 +710,7 @@ function add_spinning_reserve_constraints(m, p)
 		                   m[:dvProductionToLoad][t,ts]) * (1 - p.SRrequiredPctTechs[t])
 	)
 	@constraint(m, [t in p.TechsProvidingSR, ts in p.TimeStep],
-		m[:dvSR][t,ts] <= m[:dvProductionToLoad][t,ts] * 1.0e10 #m[:binTechIsOnInTS][t,ts] * m[:NewMaxSize][t]
+		m[:dvSR][t,ts] <= m[:binTechIsOnInTS][t,ts] * m[:NewMaxSize][t]
 	)
 	@constraint(m, [ts in p.TimeStep],
 		m[:dvSRprovided][ts] == sum(m[:dvSR][t,ts] for t in p.TechsProvidingSR) +
@@ -718,9 +718,6 @@ function add_spinning_reserve_constraints(m, p)
 	)
 	@constraint(m, [ts in p.TimeStep],
 		m[:dvSRrequired][ts] <= m[:dvSRprovided][ts]
-	)
-	@constraint(m, [ts in p.TimeStep],
-		m[:dvSR]["GENERATOR", 1] == 2
 	)
 
 end
