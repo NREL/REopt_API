@@ -1143,22 +1143,32 @@ class DataManager:
         cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau, n_segments_bau = self._get_REopt_cost_curve(
             self.bau_techs)
 
-        # GHP capital cost: loop through _get_REopt_cost_curve for each ghp_option
-        ghp_installed_cost = []
-        for i, option in enumerate(self.ghp_option_list):
-            cap_cost_slope, cap_cost_x, cap_cost_yint, n_segments = self._get_REopt_cost_curve(techs=["ghp_option_list[{}]".format(i)])
-            ghp_size_tons = option.heatpump_capacity_tons
-            # TODO check indexing of n_segments versus cap_cost_x list length (test!)
-            if ghp_size_tons <= cap_cost_x[1]:
-                n = 1
-            elif ghp_size_tons > cap_cost_x[-1]:
-                n = n_segments
-            else:
-                for n in range(1, n_segments):
-                    if (ghp_size_tons > cap_cost_x[n]) and (ghp_size_tons <= cap_cost_x[n+1]):
-                        break
-            # TODO check that it shouldn't just be y_int + ghp_size_tons * cap_cost_slope[n]
-            ghp_installed_cost.append(cap_cost_yint[n] + (ghp_size_tons - cap_cost_x[n]) * cap_cost_slope[n])
+        # GHP parameters for REopt model
+        # TODO make this a separate DataManager method for keeping finalize() concise
+        ghp_installed_cost, ghp_installed_cost_bau = ([],)*2
+        ghp_om_cost_year_one, ghp_om_cost_year_one_bau = ([],)*2
+        ghp_heating_thermal_load_served_kw, ghp_heating_thermal_load_served_kw_bau = ([[0.0] * self.n_timesteps],)*2
+        ghp_cooling_thermal_load_served_kw, ghp_cooling_thermal_load_served_kw_bau = ([[0.0] * self.n_timesteps],)*2
+        ghp_electric_consumption_kw, ghp_electric_consumption_kw_bau = ([[0.0] * self.n_timesteps],)*2
+        if len(self.ghp_option_list) > 0:
+            for i, option in enumerate(self.ghp_option_list):
+                cap_cost_slope, cap_cost_x, cap_cost_yint, n_segments = self._get_REopt_cost_curve(techs=["ghp_option_list[{}]".format(i)])
+                ghp_size_tons = option.heatpump_capacity_tons
+                # TODO check indexing of n_segments versus cap_cost_x list length (test!)
+                if ghp_size_tons <= cap_cost_x[1]:
+                    n = 1
+                elif ghp_size_tons > cap_cost_x[-1]:
+                    n = n_segments
+                else:
+                    for n in range(1, n_segments):
+                        if (ghp_size_tons > cap_cost_x[n]) and (ghp_size_tons <= cap_cost_x[n+1]):
+                            break
+                # TODO make sure the below is consistent with the y-int + slope * size definitions
+                ghp_installed_cost.append(cap_cost_yint[n] + ghp_size_tons * cap_cost_slope[n])
+                ghp_om_cost_year_one.append(option.om_cost_year_one)
+                ghp_heating_thermal_load_served_kw.append(option.heating_thermal_load_served_kw)
+                ghp_cooling_thermal_load_served_kw.append(option.cooling_thermal_load_served_kw)
+                ghp_electric_consumption_kw.append(option.electric_consumption_kw)
 
         storage_techs, thermal_storage_techs, hot_tes_techs, \
             cold_tes_techs, storage_power_cost, storage_energy_cost, \
@@ -1463,7 +1473,12 @@ class DataManager:
             'SteamTurbineTechs': steam_turbine_techs,
             'TechCanSupplySteamTurbine': techs_can_supply_steam_turbine,
             'STElecOutToThermInRatio': st_elec_out_to_therm_in_ratio,
-            'STThermOutToThermInRatio': st_therm_out_to_therm_in_ratio
+            'STThermOutToThermInRatio': st_therm_out_to_therm_in_ratio,
+            'GHPHeatingThermalServed': ghp_heating_thermal_load_served_kw,
+            'GHPCoolingThermalServed': ghp_cooling_thermal_load_served_kw,
+            'GHPElectricConsumed': ghp_electric_consumption_kw,
+            'GHPInstalledCost': ghp_installed_cost,
+            'GHPOMCost': ghp_om_cost_year_one
             }
         ## Uncomment the following and run a scenario to get an updated modelinputs.json for creating Julia system image
         # import json
@@ -1597,5 +1612,10 @@ class DataManager:
             'SteamTurbineTechs': steam_turbine_techs_bau,
             'TechCanSupplySteamTurbine': techs_can_supply_steam_turbine_bau,
             'STElecOutToThermInRatio': st_elec_out_to_therm_in_ratio_bau,
-            'STThermOutToThermInRatio': st_therm_out_to_therm_in_ratio_bau
+            'STThermOutToThermInRatio': st_therm_out_to_therm_in_ratio_bau,
+            'GHPHeatingThermalServed': ghp_heating_thermal_load_served_kw_bau,
+            'GHPCoolingThermalServed': ghp_cooling_thermal_load_served_kw_bau,
+            'GHPElectricConsumed': ghp_electric_consumption_kw_bau,
+            'GHPInstalledCost': ghp_installed_cost_bau,
+            'GHPOMCost': ghp_om_cost_year_one_bau            
         }

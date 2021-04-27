@@ -44,6 +44,13 @@ class GHPGHX:
         self.om_cost_us_dollars_per_sqft_year = kwargs.get("om_cost_us_dollars_per_sqft_year")
         self.building_sqft = kwargs.get("building_sqft")
 
+        # Heating and cooling loads served and electricity consumed by GHP
+        # TODO with hybrid with auxiliary/supplemental heating/cooling devices, we may want to separate out/distiguish that energy
+        self.heating_thermal_load_served_kw = self.inputs.heating_thermal_load_mmbtu_per_hr * MMBTU_TO_KWH
+        self.cooling_thermal_load_served_kw = self.inputs.cooling_thermal_load_ton * TONHOUR_TO_KWHT
+        self.electric_consumption_kw = self.response.yearly_heatpump_electric_consumption_series_kw + \
+                                            self.response.yearly_ghx_pump_electric_consumption_series_kw
+
         # Change units basis from ton to kW to use existing Incentives class
         self.kwargs_mod = copy.deepcopy(kwargs)
         for region in ["federal", "state", "utility"]:
@@ -83,4 +90,4 @@ class GHPGHX:
 
     def setup_om_cost(self):
         # O&M Cost
-        self.om_cost_yearly = self.building_sqft * self.om_cost_us_dollars_per_sqft_year
+        self.om_cost_year_one = self.building_sqft * self.om_cost_us_dollars_per_sqft_year
