@@ -77,7 +77,8 @@ function add_integer_variables(m, p)
         binDemandMonthsTier[p.Month, p.DemandMonthsBin], Bin # 1 If tier n has allocated demand during month m; 0 otherwise
 		binEnergyTier[p.Month, p.PricingTier], Bin    #  Z^{ut}_{mu} 1 If demand tier $u$ is active in month m; 0 otherwise (NEW)
 		binNoGridPurchases[p.TimeStep], Bin  # Binary for the condition where the site load is met by on-site resources so no grid purchases
-    end
+		binGHP[p.GHPOptions], Bin  # Special order set for GHP options; index 1 = No GHP
+	end
 end
 
 
@@ -104,6 +105,9 @@ function add_cost_expressions(m, p)
 	))
 	m[:TotalStorageCapCosts] = @expression(m, p.two_party_factor *
 		sum( p.StorageCostPerKW[b]*m[:dvStorageCapPower][b] + p.StorageCostPerKWH[b]*m[:dvStorageCapEnergy][b] for b in p.Storage )
+	)
+	m[:GHPCapCosts] = @expression(m, p.two_party_factor *
+		sum(p.GHPInstalledCost[g] for g in p.GHPOptions)
 	)
 	m[:TotalPerUnitSizeOMCosts] = @expression(m, p.two_party_factor * p.pwf_om *
 		sum( p.OMperUnitSize[t] * m[:dvSize][t] for t in p.Tech )
@@ -133,6 +137,9 @@ function add_cost_expressions(m, p)
 		m[:TotalCHPStandbyCharges] = @expression(m, 0.0)
 		m[:TotalHourlyCHPOMCosts] = @expression(m, 0.0)
 	end
+	m[:GHPOMCosts] = @expression(m, p.two_party_factor * p.pwf_om *
+		sum(p.GHPOMCost[g] for g in p.GHPOptions)
+	)
 end
 
 
@@ -546,7 +553,8 @@ function add_thermal_load_constraints(m, p)
 		@constraint(m, ColdThermalLoadCon[ts in p.TimeStep],
 				sum(p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts] for t in p.CoolingTechs) +
 				sum(m[:dvDischargeFromStorage][b,ts] for b in p.ColdTES) ==
-				p.CoolingLoad[ts] +
+				p.CoolingLoad[ts] - 
+				sum(p.GHPCoolingThermalServed[g,ts] * m[:binGHP][g] for g in p.GHPOptions) +
 				sum(m[:dvProductionToStorage][b,t,ts] for b in p.ColdTES, t in p.CoolingTechs)
 		)
 	end
@@ -559,7 +567,8 @@ function add_thermal_load_constraints(m, p)
                     sum(m[:dvThermalProduction][t,ts] for t in p.SteamTurbineTechs) +                
                     sum(p.ProductionFactor[t,ts] * (m[:dvThermalProduction][t,ts] - m[:dvThermalToSteamTurbine][t,ts]) for t in p.BoilerTechs) +
                     sum(m[:dvDischargeFromStorage][b,ts] for b in p.HotTES) ==
-                    p.HeatingLoad[ts] * p.BoilerEfficiency["BOILER"] +
+                    p.HeatingLoad[ts] * p.BoilerEfficiency["BOILER"] -
+					sum(p.GHPHeatingThermalServed[g,ts] * m[:binGHP][g] for g in p.GHPOptions) +
                     sum(m[:dvProductionToWaste][t,ts] for t in p.CHPTechs) + 
                     sum(m[:dvProductionToStorage][b,t,ts] for b in p.HotTES, t in p.HeatingTechs)  +
                     sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers) / p.AbsorptionChillerCOP
@@ -569,7 +578,8 @@ function add_thermal_load_constraints(m, p)
                     sum(m[:dvThermalProduction][t,ts] for t in p.CHPTechs) +                
                     sum(p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts] for t in p.BoilerTechs) +
                     sum(m[:dvDischargeFromStorage][b,ts] for b in p.HotTES) ==
-                    p.HeatingLoad[ts] * p.BoilerEfficiency["BOILER"] +
+                    p.HeatingLoad[ts] * p.BoilerEfficiency["BOILER"] -
+					sum(p.GHPHeatingThermalServed[g,ts] * m[:binGHP][g] for g in p.GHPOptions) +
                     sum(m[:dvProductionToWaste][t,ts] for t in p.CHPTechs) + 
                     sum(m[:dvProductionToStorage][b,t,ts] for b in p.HotTES, t in p.HeatingTechs)  +
                     sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers) / p.AbsorptionChillerCOP
@@ -664,6 +674,12 @@ function add_tech_size_constraints(m, p)
 	##Constraint (7h): At most one segment allowed
 	@constraint(m, SegmentSelectCon[c in p.TechClass, t in p.TechsInClass[c], k in p.Subdivision],
 		sum(m[:binSegmentSelect][t,k,s] for s in 1:p.SegByTechSubdivision[k,t]) <= m[:binSingleBasicTech][t,c]
+	)
+
+	##Constraint GHP: Choose 1 options
+	# TODO Current formulation allows m[:binGHP][1] = 1 or sum(m[:binGHP][g]) = 0 to mean NO GHP - redundant?
+	@constraint(m, GHPOptionSelect,
+		sum(m[:binGHP][g] for g in p.GHPOptions) <= 1
 	)
 end
 
@@ -960,10 +976,10 @@ function add_cost_function(m, p)
 	m[:REcosts] = @expression(m,
 
 		# Capital Costs
-		m[:TotalTechCapCosts] + m[:TotalStorageCapCosts] +
+		m[:TotalTechCapCosts] + m[:TotalStorageCapCosts] + m[:GHPCapCosts] +
 
 		## Fixed O&M, tax deductible for owner
-		m[:TotalPerUnitSizeOMCosts] * m[:r_tax_fraction_owner] +
+		(m[:TotalPerUnitSizeOMCosts] + m[:GHPCapCosts]) * m[:r_tax_fraction_owner] +
 
         ## Variable O&M, tax deductible for owner
 		(m[:TotalPerUnitProdOMCosts] + m[:TotalHourlyCHPOMCosts]) * m[:r_tax_fraction_owner] +

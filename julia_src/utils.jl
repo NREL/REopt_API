@@ -238,6 +238,12 @@ Base.@kwdef struct Parameter
     TechCanSupplySteamTurbine::Array{String,1}
     STElecOutToThermInRatio::Float64
     STThermOutToThermInRatio::Float64
+    # GHP Arrays of different GHP options with index 1 being NO GHP
+    GHPHeatingThermalServed::Array{Float64,2}  # Array of heating load (thermal!) profiles served by GHP
+    GHPCoolingThermalServed::Array{Float64,2}  # Array of cooling load profiles served by GHP
+    GHPElectricConsumed::Array{Float64,2}  # Array of electric load profiles consumed by GHP
+    GHPInstalledCost::Array{Float64,1}  # Array of installed cost for GHP options
+    GHPOMCost::Array{Float64,1}
 end
 
 
@@ -287,6 +293,7 @@ function Parameter(d::Dict)
     n_location = length(d["MaxSizesLocation"])
     d[:Location] = 1:n_location
     d[:CPPeriod] = 1:d["CoincidentPeakPeriodCount"]
+    d[:GHPOptions] = 1:length(d["GHPInstalledCost"])
 
     # the following array manipulation may have to adapt once length(d["Subdivision"]) > 1
     seg_min_size_array = reshape(transpose(reshape(d["SegmentMinSize"], length(d[:Seg]), length(d["Tech"]))),
