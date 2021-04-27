@@ -212,7 +212,6 @@ class DataManager:
 
     def add_ghp(self, ghp):
         self.ghp_option_list.append(ghp)
-        ghp_number = len(self.ghp_option_list)
 
     def _get_REopt_pwfs(self, techs):
         sf = self.site.financial

@@ -332,7 +332,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
         if inputs_dict["Site"]["GHP"]["ghpghx_response"] is not None:
             for i in range(1, len(inputs_dict["Site"]["GHP"]["ghpghx_response"])+1):
                 ghp_option_list.append(ghp.GHPGHX(dfm=dfm,
-                                                    ghp_design_number=i,
                                                     inputs=inputs_dict["Site"]["GHP"]["ghpghx_inputs"][i], 
                                                     response=inputs_dict["Site"]["GHP"]["ghpghx_response"][i],
                                                     **inputs_dict["Site"]["GHP"]))
