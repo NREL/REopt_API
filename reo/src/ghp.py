@@ -30,12 +30,12 @@ class GHPGHXResponse:
 
 class GHPGHX:
         
-    def __init__(self, dfm, ghp_design_number, inputs, response, **kwargs):
+    def __init__(self, dfm, inputs, response, **kwargs):
         # Multiple GHP design choices/options strategy: make a GHPGHX object FOR EACH (in scenario.py)
         # Loop through range(len(response)) in data_manager to create N GHPGHX objects and build array inputs for REopt
-        self.ghp_design_number = ghp_design_number
         self.inputs = GHPGHXInputs(inputs)  # This is a single dictionary where the **kwargs/POST is a list_of_dict
         self.response = GHPGHXResponse(response)  # This is a single dictionary where the **kwargs/POST is a list_of_dict
+        self.ghp_uuid = self.response.ghp_uuid
 
         self.installed_cost_heatpump_us_dollars_per_ton = kwargs.get("installed_cost_heatpump_us_dollars_per_ton")
         self.heatpump_capacity_sizing_factor_on_peak_load = kwargs.get("heatpump_capacity_sizing_factor_on_peak_load")
