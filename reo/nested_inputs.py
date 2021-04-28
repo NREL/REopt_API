@@ -1473,6 +1473,10 @@ nested_input_definitions = {
           "type": "bool",
           "default": False,
           "description": "True/False for if technology can curtail energy produced."
+        },
+        "useful_life_years": {
+          "type": "float", "min": 0.0, "max": max_years, "default": analysis_years,
+          "description": "Number of years asset can be used for before replacement"
         }
       },
       "CHP": {

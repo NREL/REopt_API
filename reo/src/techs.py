@@ -270,6 +270,7 @@ class Generator(Tech):
         self.max_kw = max_kw
         self.existing_kw = existing_kw
         self.emissions_factor_lb_CO2_per_gal = emissions_factor_lb_CO2_per_gal
+        self.useful_life_years = kwargs['useful_life_years']
 
         dfm.add_generator(self)
 

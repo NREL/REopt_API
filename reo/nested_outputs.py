@@ -882,6 +882,11 @@ nested_output_definitions = {
                   "type": "list_of_float",
                   "description": "Spinning reserve provided by the generator in each time step",
                   "units": "kW"
+                },
+                "fuel_used_series_gal": {
+                  "type": "list_of_float",
+                  "description": "Temp variable for fuel usage at each hour",
+                  "units": "US gallons"
                 }
               },
 
