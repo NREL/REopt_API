@@ -169,8 +169,6 @@ function add_bigM_adjustments(m, p)
 	m[:NewMaxUsageInTier] = Array{Float64,2}(undef,12, p.PricingTierCount+1)
 	m[:NewMaxDemandInTier] = Array{Float64,2}(undef, length(p.Ratchets), p.DemandBinCount)
 	m[:NewMaxDemandMonthsInTier] = Array{Float64,2}(undef,12, p.DemandMonthsBinCount)
-	m[:NewMaxSize] = Dict()
-	#m[:NewMaxSizeByHour] = Array{Float64,2}(undef,length(p.Tech),p.TimeStepCount)
 
 	# m[:NewMaxDemandMonthsInTier] sets a new minimum if the new peak demand for the month, minus the size of all previous bins, is less than the existing bin size.
 	if !isempty(p.ElecStorage)
@@ -232,7 +230,10 @@ function add_bigM_adjustments(m, p)
 		end
 	end
 
-	# NewMaxSize generates a new maximum size that is equal to the largest monthly load of the year.  This is intended to be a reasonable upper bound on size that would never be exceeeded, but is sufficienctly small to replace much larger big-M values placed as a default.
+	# NewMaxSize generates a new maximum size that is equal to the largest monthly load of the year.
+	# This is intended to be a reasonable upper bound on size that would never be exceeeded,
+	# but is sufficienctly small to replace much larger big-M values placed as a default.
+	m[:NewMaxSize] = Dict()
 
 	for t in p.HeatingTechs
 		m[:NewMaxSize][t] = maximum([sum(p.HeatingLoad[ts] for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month])
@@ -240,28 +241,23 @@ function add_bigM_adjustments(m, p)
 			m[:NewMaxSize][t] = p.MaxSize[t]
 		end
 	end
+
 	for t in p.CoolingTechs
 		m[:NewMaxSize][t] = maximum([sum(p.CoolingLoad[ts] for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month])
 		if (m[:NewMaxSize][t] > p.MaxSize[t])
 			m[:NewMaxSize][t] = p.MaxSize[t]
 		end
 	end
-	for t in p.ElectricTechs
-		m[:NewMaxSize][t] = maximum([sum(p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP  for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month])
-		if (m[:NewMaxSize][t] > p.MaxSize[t])
-			m[:NewMaxSize][t] = p.MaxSize[t]
+
+	for c in p.TechClass, t in p.TechsInClass[c]
+		if t in p.ElectricTechs
+			m[:NewMaxSize][t] = maximum([sum(p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP
+										 for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month])
+			if m[:NewMaxSize][t] > p.MaxSize[t] || m[:NewMaxSize][t] < p.TechClassMinSize[c]
+				m[:NewMaxSize][t] = p.MaxSize[t]
+			end
 		end
 	end
-
-	# NewMaxSizeByHour is designed to scale the right-hand side of the constraint limiting rated production in each hour to the production factor; in most cases this is unaffected unless the production factor is zero, in which case the right-hand side is set to zero.
-	#for t in p.ElectricTechs
-	#	for ts in p.TimeStep
-	#		NewMaxSizeByHour[t,ts] = minimum([m[:NewMaxSize][t],
-	#			sum(p.ProdFactor[t,d,ts] for d in p.Load if p.LoadProfile[d,ts] > 0)  * m[:NewMaxSize][t],
-	#			sum(p.LoadProfile[d,ts] for d in ["1R"], ts in p.TimeStep)
-	#		])
-	#	end
-	#end
 end
 
 
