@@ -1072,7 +1072,10 @@ function reopt_run(m, p::Parameter)
 		results["status"] = "timed-out"
     elseif termination_status(m) == MOI.OPTIMAL
         results["status"] = "optimal"
+    elseif termination_status(m) == MOI.INFEASIBLE || termination_status(m) == MOI.INFEASIBLE_OR_UNBOUNDED
+        results["status"] = "infeasible"
     else
+    	@warn "not optimal status: $(termination_status(m))"
 		results["status"] = "not optimal"
     end
 
