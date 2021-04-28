@@ -646,6 +646,7 @@ class GeneratorModel(models.Model):
     can_wholesale = models.BooleanField(null=True, blank=True)
     can_export_beyond_site_load = models.BooleanField(null=True, blank=True)
     can_curtail = models.BooleanField(null=True, blank=True)
+    useful_life_years = models.FloatField(null=True, blank=True)
 
     # Outputs
     fuel_used_gal = models.FloatField(null=True, blank=True)
@@ -675,8 +676,11 @@ class GeneratorModel(models.Model):
     existing_gen_total_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
     year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
     year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
-    sr_provided_series_kw = ArrayField(models.FloatField(blank=True), default=list, null=True)
-
+    sr_provided_series_kw = ArrayField(
+            models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
+    fuel_used_series_gal = ArrayField(
+            models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
+    
     @classmethod
     def create(cls, **kwargs):
         obj = cls(**kwargs)

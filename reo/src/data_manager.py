@@ -31,7 +31,7 @@ import copy
 from reo.src.urdb_parse import UrdbParse
 from reo.src.fuel_params import FuelParams
 from reo.utilities import annuity, degradation_factor, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
-    insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, annuity_escalation, MMBTU_TO_KWH
+    insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, setup_capital_cost_offgrid, annuity_escalation, MMBTU_TO_KWH
 import numpy as np
 max_incentive = 1.0e10
 
@@ -546,19 +546,36 @@ class DataManager:
                         raise Exception('Invalid cost curve for {}. Value at index {} ({}) cannot be less than or equal to 0'.format(tech, s, cost_curve_bp_x[s + 1]))
 
                     sf = self.site.financial
-                    updated_slope = setup_capital_cost_incentive(
-                        itc_basis=itc_unit_basis,  # input tech cost with incentives, but no ITC
-                        replacement_cost=0,
-                        replacement_year=sf.analysis_years,
-                        discount_rate=sf.owner_discount_pct,
-                        tax_rate=sf.owner_tax_pct,
-                        itc=itc,
-                        macrs_schedule=eval('self.' + tech + '.incentives.macrs_schedule'),
-                        macrs_bonus_pct=eval('self.' + tech + '.incentives.macrs_bonus_pct'),
-                        macrs_itc_reduction=eval('self.' + tech + '.incentives.macrs_itc_reduction')
-                    )
-                    # The way REopt incentives currently work, the federal rebate is the only incentive that doesn't reduce ITC basis
-                    updated_slope -= rebate_federal
+                    if self.off_grid_flag:
+                        replacement_cost = eval('self.' + tech + '.installed_cost_us_dollars_per_kw')
+                        useful_life = sf.analysis_years
+
+                        if hasattr(eval('self.' + tech), 'replace_cost_us_dollars_per_kw'):
+                            replacement_cost = eval('self.' + tech + '.replace_cost_us_dollars_per_kw')
+                        if hasattr(eval('self.' + tech), 'useful_life_years'):
+                            useful_life = eval('self.' + tech + '.useful_life_years')
+                        
+                        updated_slope = setup_capital_cost_offgrid(
+                            sf.analysis_years,
+                            sf.owner_discount_pct,
+                            eval('self.' + tech + '.installed_cost_us_dollars_per_kw'),
+                            replacement_cost,
+                            useful_life
+                        )
+                    else:
+                        updated_slope = setup_capital_cost_incentive(
+                            itc_basis=itc_unit_basis,  # input tech cost with incentives, but no ITC
+                            replacement_cost=0,
+                            replacement_year=sf.analysis_years,
+                            discount_rate=sf.owner_discount_pct,
+                            tax_rate=sf.owner_tax_pct,
+                            itc=itc,
+                            macrs_schedule=eval('self.' + tech + '.incentives.macrs_schedule'),
+                            macrs_bonus_pct=eval('self.' + tech + '.incentives.macrs_bonus_pct'),
+                            macrs_itc_reduction=eval('self.' + tech + '.incentives.macrs_itc_reduction')
+                        )
+                        # The way REopt incentives currently work, the federal rebate is the only incentive that doesn't reduce ITC basis
+                        updated_slope -= rebate_federal
                     updated_cap_cost_slope.append(updated_slope)
 
                 for p in range(1, n_segments + 1):
@@ -932,30 +949,47 @@ class DataManager:
 
         # Obtain storage costs and params
         sf = self.site.financial
-        StorageCostPerKW = setup_capital_cost_incentive(
-            self.storage.installed_cost_us_dollars_per_kw,  # use full cost as basis
-            self.storage.replace_cost_us_dollars_per_kw,
-            self.storage.inverter_replacement_year,
-            sf.owner_discount_pct,
-            sf.owner_tax_pct,
-            self.storage.incentives.itc_pct,
-            self.storage.incentives.macrs_schedule,
-            self.storage.incentives.macrs_bonus_pct,
-            self.storage.incentives.macrs_itc_reduction
-        )
-        StorageCostPerKW -= self.storage.incentives.rebate
-        StorageCostPerKWH = setup_capital_cost_incentive(
-            self.storage.installed_cost_us_dollars_per_kwh,  # there are no cash incentives for kwh
-            self.storage.replace_cost_us_dollars_per_kwh,
-            self.storage.battery_replacement_year,
-            sf.owner_discount_pct,
-            sf.owner_tax_pct,
-            self.storage.incentives.itc_pct,
-            self.storage.incentives.macrs_schedule,
-            self.storage.incentives.macrs_bonus_pct,
-            self.storage.incentives.macrs_itc_reduction
-        )
-        StorageCostPerKWH -= self.storage.incentives.rebate_kwh
+
+        if self.off_grid_flag:
+            StorageCostPerKW = setup_capital_cost_offgrid(
+                sf.analysis_years,
+                sf.owner_discount_pct,
+                self.storage.installed_cost_us_dollars_per_kw, 
+                self.storage.replace_cost_us_dollars_per_kw,
+                self.storage.inverter_replacement_year
+            )
+            StorageCostPerKWH = setup_capital_cost_offgrid(
+                sf.analysis_years,
+                sf.owner_discount_pct,
+                self.storage.installed_cost_us_dollars_per_kwh,  # there are no cash incentives for kwh
+                self.storage.replace_cost_us_dollars_per_kwh,
+                self.storage.battery_replacement_year
+            )
+        else:
+            StorageCostPerKW = setup_capital_cost_incentive(
+                self.storage.installed_cost_us_dollars_per_kw,  # use full cost as basis
+                self.storage.replace_cost_us_dollars_per_kw,
+                self.storage.inverter_replacement_year,
+                sf.owner_discount_pct,
+                sf.owner_tax_pct,
+                self.storage.incentives.itc_pct,
+                self.storage.incentives.macrs_schedule,
+                self.storage.incentives.macrs_bonus_pct,
+                self.storage.incentives.macrs_itc_reduction
+            )
+            StorageCostPerKW -= self.storage.incentives.rebate
+            StorageCostPerKWH = setup_capital_cost_incentive(
+                self.storage.installed_cost_us_dollars_per_kwh,  # there are no cash incentives for kwh
+                self.storage.replace_cost_us_dollars_per_kwh,
+                self.storage.battery_replacement_year,
+                sf.owner_discount_pct,
+                sf.owner_tax_pct,
+                self.storage.incentives.itc_pct,
+                self.storage.incentives.macrs_schedule,
+                self.storage.incentives.macrs_bonus_pct,
+                self.storage.incentives.macrs_itc_reduction
+            )
+            StorageCostPerKWH -= self.storage.incentives.rebate_kwh
 
         storage_power_cost.append(StorageCostPerKW)
         storage_energy_cost.append(StorageCostPerKWH)
@@ -1286,7 +1320,7 @@ class DataManager:
         techs_requiring_sr = [t for t in reopt_techs if (t.startswith("PV") and t.endswith("NM"))]
         techs_providing_sr = [t for t in reopt_techs if (t.startswith("PV") and t.endswith("NM")) or t.startswith("GENERATOR")]
         sr_required_pct = self._get_sr_required_pct(techs_providing_sr)
-
+    
         self.reopt_inputs = {
             'Tech': reopt_techs,
             'TechToLocation': tech_to_location,

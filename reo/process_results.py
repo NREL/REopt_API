@@ -663,6 +663,11 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("generator_kw", 0)
                     self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal"] = self.results_dict.get(
                         "fuel_used_kwh") / GAL_DIESEL_TO_KWH
+                    if self.results_dict.get("fuel_used_kwh_series") is None:
+                        self.nested_outputs["Scenario"]["Site"][name]["fuel_used_series_gal"] = self.results_dict.get("fuel_used_kwh_series")
+                    else:
+                        self.nested_outputs["Scenario"]["Site"][name]["fuel_used_series_gal"] = [i/GAL_DIESEL_TO_KWH for i in self.results_dict.get(
+                            "fuel_used_kwh_series")] 
                     self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal_bau"] = self.results_dict.get(
                         "fuel_used_kwh_bau") / GAL_DIESEL_TO_KWH
                     self.nested_outputs["Scenario"]["Site"][name][
