@@ -1,0 +1,66 @@
+{
+    "Scenario": {
+        "timeout_seconds": 400,
+        "optimality_tolerance_techs": 0.01,
+        "Site": {
+            "latitude": 37.78 ,
+            "longitude": -122.45 ,
+            "land_acres": null ,
+            "roof_squarefeet": null ,
+            "Financial": {
+                "om_cost_escalation_pct": 0.01 ,
+                "escalation_pct": 0.006 ,
+                "boiler_fuel_escalation_pct": 0.034 ,
+                "owner_tax_pct": 0.0 ,
+                "owner_discount_pct": 0.083 ,
+                "analysis_years": 25
+            } ,
+            "LoadProfile": {
+                "doe_reference_name": "Hospital"
+            } ,
+            "LoadProfileBoilerFuel": {
+                "doe_reference_name": "Hospital"
+            } ,
+            "Boiler": {
+                "existing_boiler_production_type_steam_or_hw": "hot_water" ,
+                "boiler_efficiency": 0.8
+            } ,
+            "LoadProfileChillerThermal": {
+                "doe_reference_name": "Hospital" ,
+                "chiller_cop": 3.4
+            } ,
+            "ElectricTariff": {
+                "urdb_label": "5cef0a415457a33576f60fe2",
+                "net_metering_limit_kw": 0.0 ,
+                "interconnection_limit_kw": 100000000.0
+            } ,
+            "FuelTariff": {
+                "existing_boiler_fuel_type": "natural_gas" ,
+                "boiler_fuel_blended_annual_rates_us_dollars_per_mmbtu": 8.0
+            } ,
+            "GHP": {
+                "force_ghp": true,
+                "installed_cost_heatpump_us_dollars_per_ton": 1075.0,
+                "heatpump_capacity_sizing_factor_on_peak_load": 1.1,
+                "installed_cost_ghx_us_dollars_per_ft": 14.0,
+                "installed_cost_building_hydronic_loop_us_dollars_per_sqft": 1.7,
+                "om_cost_us_dollars_per_sqft_year": 0.0,
+                "building_sqft": 50000.0,
+                "ghpghx_response": [],
+                "macrs_option_years": 0 ,
+                "macrs_bonus_pct": 0.0 ,
+                "macrs_itc_reduction": 0.0 ,
+                "federal_itc_pct": 0.0 ,
+                "state_ibi_pct": 0.0 ,
+                "state_ibi_max_us_dollars": 0.0 ,
+                "utility_ibi_pct": 0.0 ,
+                "utility_ibi_max_us_dollars": 0.0 ,
+                "federal_rebate_us_dollars_per_kw": 0.0 ,
+                "state_rebate_us_dollars_per_kw": 0.0 ,
+                "state_rebate_max_us_dollars": 0.0 ,
+                "utility_rebate_us_dollars_per_kw": 0.0 ,
+                "utility_rebate_max_us_dollars": 0.0
+            }
+        }
+    }
+}
