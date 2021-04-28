@@ -95,6 +95,7 @@ class DataManager:
         self.bau_techs = []
         self.NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
         self.fuel_burning_techs = ['GENERATOR', 'CHP']
+        self.ghp_uuid_list = []
 
         self.run_id = run_id
         self.user_id = user_id
@@ -212,6 +213,7 @@ class DataManager:
 
     def add_ghp(self, ghp):
         self.ghp_option_list.append(ghp)
+        self.ghp_uuid_list.append(ghp.ghp_uuid)
 
     def _get_REopt_pwfs(self, techs):
         sf = self.site.financial
@@ -1145,6 +1147,7 @@ class DataManager:
 
         # GHP parameters for REopt model
         # TODO make this a separate DataManager method for keeping finalize() concise
+        force_ghp = 0
         ghp_installed_cost, ghp_installed_cost_bau = ([],)*2
         ghp_om_cost_year_one, ghp_om_cost_year_one_bau = ([],)*2
         ghp_heating_thermal_load_served_kw, ghp_heating_thermal_load_served_kw_bau = ([[0.0] * self.n_timesteps],)*2

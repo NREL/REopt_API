@@ -77,7 +77,7 @@ function add_integer_variables(m, p)
         binDemandMonthsTier[p.Month, p.DemandMonthsBin], Bin # 1 If tier n has allocated demand during month m; 0 otherwise
 		binEnergyTier[p.Month, p.PricingTier], Bin    #  Z^{ut}_{mu} 1 If demand tier $u$ is active in month m; 0 otherwise (NEW)
 		binNoGridPurchases[p.TimeStep], Bin  # Binary for the condition where the site load is met by on-site resources so no grid purchases
-		binGHP[p.GHPOptions], Bin  # Special order set for GHP options; index 1 = No GHP
+		binGHP[p.GHPOptions], Bin  # Includes Index 1 = NO GHP or NOT???
 	end
 end
 
@@ -676,11 +676,18 @@ function add_tech_size_constraints(m, p)
 		sum(m[:binSegmentSelect][t,k,s] for s in 1:p.SegByTechSubdivision[k,t]) <= m[:binSingleBasicTech][t,c]
 	)
 
-	##Constraint GHP: Choose 1 options
-	# TODO Current formulation allows m[:binGHP][1] = 1 or sum(m[:binGHP][g]) = 0 to mean NO GHP - redundant?
-	@constraint(m, GHPOptionSelect,
-		sum(m[:binGHP][g] for g in p.GHPOptions) <= 1
-	)
+	##Constraint GHP: Choose up to 1 option
+	if !isempty(p.GHPOptions)
+		if p.ForceCHP == 1
+			@constraint(m, GHPOptionSelect,
+				sum(m[:binGHP][g] for g in p.GHPOptions) == 1
+			)
+		else
+			@constraint(m, GHPOptionSelect,
+				sum(m[:binGHP][g] for g in p.GHPOptions) <= 1
+			)
+		end
+	end
 end
 
 
@@ -1235,6 +1242,11 @@ function reopt_results(m, p, r::Dict)
 	else
 		add_null_steamturbine_results(m, p, r)
 	end
+	if !isempty(p.GHPOptions)
+		add_ghp_results(m, p, r)
+	else
+		add_null_ghp_results(m, p, r)
+	end
 	add_util_results(m, p, r)
 	return r
 end
@@ -1371,6 +1383,11 @@ function add_null_steamturbine_results(m, p, r::Dict)
 	r["steamturbine_to_grid_series"] = []
 	r["steamturbine_thermal_to_load_series"] = []
 	r["steamturbine_thermal_to_tes_series"] = []
+	nothing
+end
+
+function add_null_ghp_results(m, p, r::Dict)
+	r["GHPOptionChosen"] = 0
 	nothing
 end
 
@@ -1745,6 +1762,12 @@ function add_steamturbine_results(m, p, r::Dict)
 	@expression(m, SteamTurbineThermalToLoad[ts in p.TimeStep],
 		sum(m[:dvThermalProduction][t,ts] for t in p.SteamTurbineTechs) - SteamTurbinetoHotTES[ts])
 	r["steamturbine_thermal_to_load_series"] = round.(value.(SteamTurbineThermalToLoad), digits=3)
+	nothing
+end
+
+function add_ghp_results(m, p, r::Dict)
+	@expression(m, GHPOptionChosen, sum(g * m[:binGHP][g] for g in p.GHPOptions))
+	r["GHPOptionChosen"] = value(GHPOptionChosen)
 	nothing
 end
 

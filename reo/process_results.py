@@ -818,6 +818,13 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_thermal_to_load_series_mmbtu_per_hour"] = [x / MMBTU_TO_KWH for x in self.results_dict.get("steamturbine_thermal_to_load_series")]
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_thermal_to_tes_series_mmbtu_per_hour"] = [x / MMBTU_TO_KWH for x in self.results_dict.get("steamturbine_thermal_to_tes_series")]
+                elif name == "GHP":
+                    if results_dict.get("GHPOptionChosen") >= 1:
+                        self.nested_outputs["Scenario"]["Site"][name][
+                            "ghp_chosen_uuid"] = self.dm.get("ghp_uuid_list")[results_dict.get(results_dict.get("GHPOptionChosen")) - 1]
+                    else:
+                        self.nested_outputs["Scenario"]["Site"][name][
+                            "ghp_chosen_uuid"] = None
 
             # outputs that depend on multiple object results:
             future_replacement_cost, present_replacement_cost = self.replacement_costs_future_and_present
