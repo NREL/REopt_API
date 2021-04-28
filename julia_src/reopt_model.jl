@@ -1431,6 +1431,8 @@ function add_generator_results(m, p, r::Dict)
     @expression(m, GeneratorFuelUsed, sum(m[:dvFuelUsage][t, ts] for t in m[:GeneratorTechs], ts in p.TimeStep))
 	r["fuel_used_kwh"] = round(value(GeneratorFuelUsed), digits=2)
 
+	@expression(m, GeneratorFuelSeries[ts in p.TimeStep], sum(m[:dvFuelUsage][t, ts] for t in m[:GeneratorTechs]))
+	r["fuel_used_kwh_series"] = round.(value.(GeneratorFuelSeries), digits=2)
 
 	m[:Year1GenProd] = @expression(m,
 		p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts]
