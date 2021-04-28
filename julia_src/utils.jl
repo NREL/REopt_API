@@ -239,11 +239,12 @@ Base.@kwdef struct Parameter
     STElecOutToThermInRatio::Float64
     STThermOutToThermInRatio::Float64
     # GHP Arrays of different GHP options with index 1 being NO GHP
+    ForceCHP::Int64
     GHPHeatingThermalServed::Array{Float64,2}  # Array of heating load (thermal!) profiles served by GHP
     GHPCoolingThermalServed::Array{Float64,2}  # Array of cooling load profiles served by GHP
     GHPElectricConsumed::Array{Float64,2}  # Array of electric load profiles consumed by GHP
     GHPInstalledCost::Array{Float64,1}  # Array of installed cost for GHP options
-    GHPOMCost::Array{Float64,1}
+    GHPOMCost::Array{Float64,1}  # Array of O&M cost for GHP options
 end
 
 

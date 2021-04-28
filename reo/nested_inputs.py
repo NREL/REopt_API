@@ -2012,6 +2012,11 @@ nested_input_definitions = {
         }        
       },
       "GHP": {
+        "force_ghp": {
+          "type": "bool",
+          "default": False,
+          "description": "Force one of the considered GHP design options"
+        },
         "installed_cost_heatpump_us_dollars_per_ton": {
           "type": "float",
           "min": 0.0,
@@ -2053,13 +2058,9 @@ nested_input_definitions = {
           "max": max_big_number,
           "description": "Building square footage for GHP/HVAC cost calculations"
         },
-        "ghpghx_inputs": {
-          "type": "list_of_dict",
-          "description": "GHP-GHX model inputs for /ghpghx endpoint; only include if wanting to do GHP->REopt in one"
-        },
         "ghpghx_response": {
           "type": "list_of_dict",
-          "description": "GHP-GHX sizing and performance results from /ghpghx endpoint"
+          "description": "GHP-GHX response from /ghpghx endpoint, includes ghp_uuid, inputs/POST to /ghpghx, and outputs/results"
         },
         "macrs_option_years": {
           "type": "int",
