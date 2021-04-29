@@ -2,6 +2,12 @@
 
 set -Eeuxo pipefail
 
+if [ ! "$( psql -tAc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'" )" = '1' ]
+then
+    echo "Database does not exist."
+    psql -tAc "CREATE DATABASE $DB_NAME"
+fi
+
 python manage.py showmigrations --plan
 
 python manage.py migrate
