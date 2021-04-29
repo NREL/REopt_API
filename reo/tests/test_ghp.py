@@ -120,8 +120,6 @@ class GHPTest(ResourceTestCaseMixin, TestCase):
                                                                             "yearly_ghx_pump_electric_consumption_series_kw": [case2_size_fraction * ghx_pump_elec[i] for i in range(len(ghx_pump_elec))]
                                                                         }})                                                                        
         
-        
-        # TODO add results ghp_chosen_uuid
 
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
@@ -129,4 +127,9 @@ class GHPTest(ResourceTestCaseMixin, TestCase):
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
 
-        # TODO Check results with expected
+        ghp_uuid = d["outputs"]["Scenario"]["Site"]["GHP"]["ghp_chosen_uuid"]
+
+        #TODO index into the ghp_response with ghp_uuid to get GHP results
+        # Could add actual index to outputs to index on list_of_dict instead, but that would be redundant
+        # could instead get ghp_uuid after getting index of list_of_dict, but maybe we could instead do a 
+        # ModelManager call in process_results to assign the chosen ghp_response
