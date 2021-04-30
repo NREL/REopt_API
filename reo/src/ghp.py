@@ -2,8 +2,7 @@ import numpy as np
 import copy
 from reo.utilities import MMBTU_TO_KWH, TONHOUR_TO_KWHT
 from reo.src.incentives import Incentives, IncentivesNoProdBased
-
-big_number = 1.0e10
+from reo.src.data_manager import big_number
 
 class GHPGHXInputs:
     """
@@ -14,9 +13,9 @@ class GHPGHXInputs:
         #TODO Add ALL the input fields for the GHPGHX model
         #   (remove all intermediate calculated fields based on inputs from here, so it's cleaner as the GHP POST)
         self.heating_thermal_mmbtu_per_hr = inputs_dict["heating_thermal_load_mmbtu_per_hr"]
-        self.heating_thermal_kw = self.heating_thermal_mmbtu_per_hr * MMBTU_TO_KWH
+        self.heating_thermal_kw = list(np.array(self.heating_thermal_mmbtu_per_hr) * MMBTU_TO_KWH)
         self.cooling_thermal_ton = inputs_dict["cooling_thermal_load_ton"]
-        self.cooling_thermal_kw = self.cooling_thermal_ton * TONHOUR_TO_KWHT
+        self.cooling_thermal_kw = list(np.array(self.cooling_thermal_ton) * TONHOUR_TO_KWHT)
 
 class GHPGHXOutputs:
     """
@@ -36,7 +35,7 @@ class GHPGHX:
     def __init__(self, dfm, response, **kwargs):
         # Multiple GHP design choices/options strategy: make a GHPGHX object FOR EACH (in scenario.py)
         # Loop through range(len(response)) in data_manager to build array inputs for REopt
-        self.ghp_uuid = self.response["ghp_uuid"]
+        self.ghp_uuid = response["ghp_uuid"]
         # Inputs of GHPGHX, which are still needed in REopt
         self.inputs = GHPGHXInputs(response["inputs"])   
         # Outputs of GHPGHX, such as number of bores for GHX size

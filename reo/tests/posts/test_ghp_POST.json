@@ -60,6 +60,12 @@
                 "state_rebate_max_us_dollars": 0.0 ,
                 "utility_rebate_us_dollars_per_kw": 0.0 ,
                 "utility_rebate_max_us_dollars": 0.0
+            },
+            "PV":{
+                "max_kw": 0.0
+            },
+            "Storage":{
+                "max_kwh": 0.0
             }
         }
     }
