@@ -19,13 +19,14 @@ elif env == 'production':
     dbuser = production_user
     dbpass = production_user_password
 
-
-
 conn = psycopg2.connect(
-    host=dbhost,
+    dbname="postgres",
     user=dbuser,
-    password=dbpass
+    password=dbpass,
+    host=dbhost,
 )
+# excluding dbname="postgres" works on Mac,
+# but not in linux? (pod uses the user name as dbname and fails)
 
 conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
 
