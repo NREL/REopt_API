@@ -106,9 +106,6 @@ function add_cost_expressions(m, p)
 	m[:TotalStorageCapCosts] = @expression(m, p.two_party_factor *
 		sum( p.StorageCostPerKW[b]*m[:dvStorageCapPower][b] + p.StorageCostPerKWH[b]*m[:dvStorageCapEnergy][b] for b in p.Storage )
 	)
-	m[:GHPCapCosts] = @expression(m, p.two_party_factor *
-		sum(p.GHPInstalledCost[g] for g in p.GHPOptions)
-	)
 	m[:TotalPerUnitSizeOMCosts] = @expression(m, p.two_party_factor * p.pwf_om *
 		sum( p.OMperUnitSize[t] * m[:dvSize][t] for t in p.Tech )
 	)
@@ -137,9 +134,18 @@ function add_cost_expressions(m, p)
 		m[:TotalCHPStandbyCharges] = @expression(m, 0.0)
 		m[:TotalHourlyCHPOMCosts] = @expression(m, 0.0)
 	end
-	m[:GHPOMCosts] = @expression(m, p.two_party_factor * p.pwf_om *
-		sum(p.GHPOMCost[g] for g in p.GHPOptions)
-	)
+	# TODO is this if else statement necessary or will model value m[:GHPCap/OMCosts] = 0 if isempty(p.GHPOptions)?
+	if !isempty(p.GHPOptions)
+		m[:GHPCapCosts] = @expression(m, p.two_party_factor *
+			sum(p.GHPInstalledCost[g] for g in p.GHPOptions)
+		)
+		m[:GHPOMCosts] = @expression(m, p.two_party_factor * p.pwf_om *
+			sum(p.GHPOMCost[g] for g in p.GHPOptions)
+		)
+	else
+		m[:GHPCapCosts] = @expression(m, 0.0)
+		m[:GHPOMCosts] = @expression(m, 0.0)
+	end
 end
 
 
@@ -678,7 +684,7 @@ function add_tech_size_constraints(m, p)
 
 	##Constraint GHP: Choose up to 1 option
 	if !isempty(p.GHPOptions)
-		if p.ForceCHP == 1
+		if p.ForceGHP == 1
 			@constraint(m, GHPOptionSelect,
 				sum(m[:binGHP][g] for g in p.GHPOptions) == 1
 			)
@@ -986,7 +992,7 @@ function add_cost_function(m, p)
 		m[:TotalTechCapCosts] + m[:TotalStorageCapCosts] + m[:GHPCapCosts] +
 
 		## Fixed O&M, tax deductible for owner
-		(m[:TotalPerUnitSizeOMCosts] + m[:GHPCapCosts]) * m[:r_tax_fraction_owner] +
+		(m[:TotalPerUnitSizeOMCosts] + m[:GHPOMCosts]) * m[:r_tax_fraction_owner] +
 
         ## Variable O&M, tax deductible for owner
 		(m[:TotalPerUnitProdOMCosts] + m[:TotalHourlyCHPOMCosts]) * m[:r_tax_fraction_owner] +
@@ -1767,24 +1773,20 @@ end
 
 function add_ghp_results(m, p, r::Dict)
 	@expression(m, GHPOptionChosen, sum(g * m[:binGHP][g] for g in p.GHPOptions))
-	r["GHPOptionChosen"] = value(GHPOptionChosen)
+	r["GHPOptionChosen"] = convert(Int64, value(GHPOptionChosen))
 	nothing
 end
 
 function add_util_results(m, p, r::Dict)
-    net_capital_costs_plus_om = value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]) +
+    net_capital_costs_plus_om = value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts] + m[:GHPCapCosts]) +
                                 value(m[:TotalPerUnitSizeOMCosts] + m[:TotalPerUnitProdOMCosts] 
-                                    + m[:TotalHourlyCHPOMCosts]) * m[:r_tax_fraction_owner] +
+                                    + m[:TotalHourlyCHPOMCosts] + m[:GHPOMCosts]) * m[:r_tax_fraction_owner]
                                 value(m[:TotalFuelCharges]) * m[:r_tax_fraction_offtaker]
 
     total_om_costs_after_tax = value(m[:TotalPerUnitSizeOMCosts] + m[:TotalPerUnitProdOMCosts] 
-                                   + m[:TotalHourlyCHPOMCosts]) * m[:r_tax_fraction_owner]
+                                   + m[:TotalHourlyCHPOMCosts] + m[:GHPOMCosts]) * m[:r_tax_fraction_owner]
 
 	year_one_om_costs_after_tax = total_om_costs_after_tax / (p.pwf_om * p.two_party_factor)
-	
-    net_capital_costs_plus_om = value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]) +
-                                value(m[:TotalPerUnitSizeOMCosts] + m[:TotalPerUnitProdOMCosts]) * m[:r_tax_fraction_owner] +
-                                value(m[:TotalFuelCharges]) * m[:r_tax_fraction_offtaker]
 
     push!(r, Dict("year_one_utility_kwh" => round(value(m[:Year1UtilityEnergy]), digits=2),
 						"year_one_energy_cost" => round(value(m[:Year1EnergyCost]), digits=2),

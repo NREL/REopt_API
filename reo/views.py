@@ -442,6 +442,8 @@ def simulated_load(request):
                     monthly_tonhour = None
 
                 chiller_cop = request.GET.get('chiller_cop')
+                if chiller_cop is not None:
+                    chiller_cop = float(chiller_cop)
 
                 if 'max_thermal_factor_on_peak_load' in request.GET.keys():
                     max_thermal_factor_on_peak_load = float(request.GET.get('max_thermal_factor_on_peak_load'))

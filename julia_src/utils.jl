@@ -239,7 +239,8 @@ Base.@kwdef struct Parameter
     STElecOutToThermInRatio::Float64
     STThermOutToThermInRatio::Float64
     # GHP Arrays of different GHP options with index 1 being NO GHP
-    ForceCHP::Int64
+    GHPOptions::UnitRange{Int64}
+    ForceGHP::Int64
     GHPHeatingThermalServed::Array{Float64,2}  # Array of heating load (thermal!) profiles served by GHP
     GHPCoolingThermalServed::Array{Float64,2}  # Array of cooling load profiles served by GHP
     GHPElectricConsumed::Array{Float64,2}  # Array of electric load profiles consumed by GHP
@@ -380,6 +381,10 @@ function Parameter(d::Dict)
     d["ExportTiersByTech"] = AxisArray(d["ExportTiersByTech"], d["Tech"])
 	d["TechsByExportTier"] = AxisArray(d["TechsByExportTier"], d["ExportTiers"])
     d["TechsByNMILRegime"] = AxisArray(d["TechsByNMILRegime"], d["NMILRegime"])
+    
+    d["GHPHeatingThermalServed"] = array_of_array_to_2D_array(d["GHPHeatingThermalServed"])
+    d["GHPCoolingThermalServed"] = array_of_array_to_2D_array(d["GHPCoolingThermalServed"])
+    d["GHPElectricConsumed"] = array_of_array_to_2D_array(d["GHPElectricConsumed"])
 
     d = string_dictkeys_tosymbols(d)
     d = filter_dict_to_match_struct_field_names(d, Parameter)

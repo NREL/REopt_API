@@ -77,26 +77,29 @@ class GHPTest(ResourceTestCaseMixin, TestCase):
                             "load_type": "heating"}
         cooling_params = copy.deepcopy(heating_params)
         cooling_params["load_type"] = "cooling"
+        cooling_params["chiller_cop"] = nested_data["Scenario"]["Site"]["LoadProfileChillerThermal"]["chiller_cop"]
         
         heating_load_resp = self.get_loads_response(params_dict=heating_params)  # This is FUEL-based
+        heating_load_dict = json.loads(heating_load_resp.content)
         boiler_effic = nested_data["Scenario"]["Site"]["Boiler"]["boiler_efficiency"]
-        heating_load_thermal = [np.array(heating_load_resp.loads_mmbtu) * boiler_effic]
+        heating_load_thermal = list(np.array(heating_load_dict["loads_mmbtu"]) * boiler_effic)
         cooling_load_resp = self.get_loads_response(params_dict=cooling_params)
-        cooling_load_thermal = cooling_load_resp.loads_ton
+        cooling_load_dict = json.loads(cooling_load_resp.content)
+        cooling_load_thermal = cooling_load_dict["loads_ton"]
 
         # Estimate electric consumption from GHP based on heating and cooling load and estimated COPs
         heating_cop = 2.5
         cooling_cop = 4.5
         ghp_heating_elec = np.array(heating_load_thermal) * MMBTU_TO_KWH / heating_cop
         ghp_cooling_elec = np.array(cooling_load_thermal) * TONHOUR_TO_KWHT / cooling_cop
-        ghp_elec = [ghp_heating_elec + ghp_cooling_elec]
-        ghx_pump_elec = [0.05 * (ghp_heating_elec + ghp_cooling_elec)]
+        ghp_elec = list(ghp_heating_elec + ghp_cooling_elec)
+        ghx_pump_elec = list(0.05 * (ghp_heating_elec + ghp_cooling_elec))
 
         # Add mock ghp_response, 2 design options
         # 2nd design option serves a fraction of the loads with a fraction of the size, so
         #   it assumes that the existing Boiler and ElectricChiller can serve the remainder of the load
         case2_size_fraction = 0.5
-        nested_data["Scenario"]["Site"]["GHP"]["ghp_response"].append({"ghp_uuid": "1aaa",
+        nested_data["Scenario"]["Site"]["GHP"]["ghpghx_response"].append({"ghp_uuid": "1aaa",
                                                                         "inputs":{
                                                                             "heating_thermal_load_mmbtu_per_hr": heating_load_thermal,
                                                                             "cooling_thermal_load_ton": cooling_load_thermal
@@ -108,7 +111,7 @@ class GHPTest(ResourceTestCaseMixin, TestCase):
                                                                             "yearly_ghx_pump_electric_consumption_series_kw": ghx_pump_elec
                                                                         }})
 
-        nested_data["Scenario"]["Site"]["GHP"]["ghp_response"].append({"ghp_uuid": "2bbb",
+        nested_data["Scenario"]["Site"]["GHP"]["ghpghx_response"].append({"ghp_uuid": "2bbb",
                                                                         "inputs":{
                                                                             "heating_thermal_load_mmbtu_per_hr": [case2_size_fraction * heating_load_thermal[i] for i in range(len(heating_load_thermal))],
                                                                             "cooling_thermal_load_ton": [case2_size_fraction * cooling_load_thermal[i] for i in range(len(cooling_load_thermal))]
@@ -120,14 +123,17 @@ class GHPTest(ResourceTestCaseMixin, TestCase):
                                                                             "yearly_ghx_pump_electric_consumption_series_kw": [case2_size_fraction * ghx_pump_elec[i] for i in range(len(ghx_pump_elec))]
                                                                         }})                                                                        
         
-
-        resp = self.get_response(data=nested_data)
+        # Call REopt
+        #json.dump(nested_data, open("ghp_post.json", "w"))
+        resp = self.get_reopt_response(data=nested_data)
+        json.dumps(nested_data)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
 
         ghp_uuid = d["outputs"]["Scenario"]["Site"]["GHP"]["ghp_chosen_uuid"]
+        print("GHP uuid chosen = ", ghp_uuid)
 
         #TODO index into the ghp_response with ghp_uuid to get GHP results
         # Could add actual index to outputs to index on list_of_dict instead, but that would be redundant

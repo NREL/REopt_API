@@ -371,7 +371,8 @@ class DataManager:
                     if tech_size[0] != 0: # Append a 0 to the front of the list if not included(we'll assume that it has a 0 y-intercept below)
                         xp_array_incent['utility'] += [0]
                     xp_array_incent['utility'] += [tech_size[i] for i in range(len(tech_size))]  # [$]  # Append list of sizes for cost curve [kW]
-                    xp_array_incent['utility'] += [float(big_number)]  # Append big number size to assume same cost as last input point
+                    if tech_size[-1] < (float(big_number) - 1.0):  # -1 just to make sure it's ~=big_number
+                        xp_array_incent['utility'] += [float(big_number)]  # Append big number size to assume same cost as last input point
                 else:
                     xp_array_incent['utility'] = [0.0, float(big_number)]
 
@@ -1147,31 +1148,35 @@ class DataManager:
 
         # GHP parameters for REopt model
         # TODO make this a separate DataManager method for keeping finalize() concise
-        force_ghp = 0
-        ghp_installed_cost, ghp_installed_cost_bau = ([],)*2
-        ghp_om_cost_year_one, ghp_om_cost_year_one_bau = ([],)*2
-        ghp_heating_thermal_load_served_kw, ghp_heating_thermal_load_served_kw_bau = ([[0.0] * self.n_timesteps],)*2
-        ghp_cooling_thermal_load_served_kw, ghp_cooling_thermal_load_served_kw_bau = ([[0.0] * self.n_timesteps],)*2
-        ghp_electric_consumption_kw, ghp_electric_consumption_kw_bau = ([[0.0] * self.n_timesteps],)*2
+        force_ghp, force_ghp_bau = 0, 0
+        ghp_installed_cost, ghp_installed_cost_bau = [], []
+        ghp_om_cost_year_one, ghp_om_cost_year_one_bau = [], []
+        ghp_heating_thermal_load_served_kw, ghp_heating_thermal_load_served_kw_bau = [], [[]]
+        ghp_cooling_thermal_load_served_kw, ghp_cooling_thermal_load_served_kw_bau = [], [[]]
+        ghp_electric_consumption_kw, ghp_electric_consumption_kw_bau = [], [[]]
         if len(self.ghp_option_list) > 0:
+            force_ghp = self.ghp_option_list[0].force_ghp  # This does not change with the number of options
             for i, option in enumerate(self.ghp_option_list):
-                cap_cost_slope, cap_cost_x, cap_cost_yint, n_segments = self._get_REopt_cost_curve(techs=["ghp_option_list[{}]".format(i)])
+                ghp_cap_cost_slope, ghp_cap_cost_x, ghp_cap_cost_yint, ghp_n_segments = self._get_REopt_cost_curve(techs=["ghp_option_list[{}]".format(i)])
                 ghp_size_tons = option.heatpump_capacity_tons
-                # TODO check indexing of n_segments versus cap_cost_x list length (test!)
-                if ghp_size_tons <= cap_cost_x[1]:
-                    n = 1
-                elif ghp_size_tons > cap_cost_x[-1]:
-                    n = n_segments
+                if ghp_size_tons <= ghp_cap_cost_x[1]:
+                    n = 0
+                elif ghp_size_tons > ghp_cap_cost_x[-1]:
+                    n = ghp_n_segments - 1
                 else:
-                    for n in range(1, n_segments):
-                        if (ghp_size_tons > cap_cost_x[n]) and (ghp_size_tons <= cap_cost_x[n+1]):
+                    for n in range(ghp_n_segments):
+                        if (ghp_size_tons > ghp_cap_cost_x[n]) and (ghp_size_tons <= ghp_cap_cost_x[n+1]):
                             break
                 # TODO make sure the below is consistent with the y-int + slope * size definitions
-                ghp_installed_cost.append(cap_cost_yint[n] + ghp_size_tons * cap_cost_slope[n])
+                ghp_installed_cost.append(ghp_cap_cost_yint[n] + ghp_size_tons * ghp_cap_cost_slope[n])
                 ghp_om_cost_year_one.append(option.om_cost_year_one)
                 ghp_heating_thermal_load_served_kw.append(option.heating_thermal_load_served_kw)
                 ghp_cooling_thermal_load_served_kw.append(option.cooling_thermal_load_served_kw)
                 ghp_electric_consumption_kw.append(option.electric_consumption_kw)
+        else:
+            ghp_heating_thermal_load_served_kw.append([])
+            ghp_cooling_thermal_load_served_kw.append([])
+            ghp_electric_consumption_kw.append([])
 
         storage_techs, thermal_storage_techs, hot_tes_techs, \
             cold_tes_techs, storage_power_cost, storage_energy_cost, \
@@ -1477,6 +1482,7 @@ class DataManager:
             'TechCanSupplySteamTurbine': techs_can_supply_steam_turbine,
             'STElecOutToThermInRatio': st_elec_out_to_therm_in_ratio,
             'STThermOutToThermInRatio': st_therm_out_to_therm_in_ratio,
+            'ForceGHP': force_ghp,
             'GHPHeatingThermalServed': ghp_heating_thermal_load_served_kw,
             'GHPCoolingThermalServed': ghp_cooling_thermal_load_served_kw,
             'GHPElectricConsumed': ghp_electric_consumption_kw,
@@ -1616,6 +1622,7 @@ class DataManager:
             'TechCanSupplySteamTurbine': techs_can_supply_steam_turbine_bau,
             'STElecOutToThermInRatio': st_elec_out_to_therm_in_ratio_bau,
             'STThermOutToThermInRatio': st_therm_out_to_therm_in_ratio_bau,
+            'ForceGHP': force_ghp_bau,
             'GHPHeatingThermalServed': ghp_heating_thermal_load_served_kw_bau,
             'GHPCoolingThermalServed': ghp_cooling_thermal_load_served_kw_bau,
             'GHPElectricConsumed': ghp_electric_consumption_kw_bau,
