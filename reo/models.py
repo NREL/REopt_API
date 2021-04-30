@@ -991,10 +991,11 @@ class GHPModel(models.Model):
     run_uuid = models.UUIDField(unique=True)
     force_ghp = models.BooleanField(null=True, blank=True)
     installed_cost_heatpump_us_dollars_per_ton = models.FloatField(null=True, blank=True)
+    heatpump_capacity_sizing_factor_on_peak_load = models.FloatField(null=True, blank=True)
     installed_cost_ghx_us_dollars_per_ft = models.FloatField(null=True, blank=True)
     installed_cost_building_hydronic_loop_us_dollars_per_sqft = models.FloatField(null=True, blank=True)
     om_cost_us_dollars_per_sqft_year = models.FloatField(null=True, blank=True)
-    # TODO add ghp_uuid to ghpghx_response, to be referenced in the chosen design option
+    building_sqft = models.FloatField(null=True, blank=True)
     ghpghx_response = ArrayField(PickledObjectField(null=True, editable=True), null=True)
     macrs_option_years = models.IntegerField(null=True, blank=True)
     macrs_bonus_pct = models.FloatField(null=True, blank=True)
@@ -1011,7 +1012,15 @@ class GHPModel(models.Model):
     utility_rebate_max_us_dollars = models.FloatField(null=True, blank=True)
 
     # Outputs
-    ghp_chosen_uuid = models.IntegerField(null=True, blank=True)
+    # TODO may make this a UUIDField once it's actually assigned one from the GHPGHX endpoint
+    ghp_chosen_uuid = models.TextField(null=True, blank=True)
+
+    @classmethod
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
+        obj.save()
+
+        return obj
 
 class MessageModel(models.Model):
     """
