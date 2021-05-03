@@ -1453,13 +1453,8 @@ class DataManager:
             'MinLoadMetPct': self.load.min_load_met_pct,
             'SRrequiredPctLoad': self.load.sr_required_pct,
             'SRrequiredPctTechs': sr_required_pct,
-            'PowerhouseCivilCost': sf.powerhouse_civil_cost_us_dollars_per_sqft,
-            'DistSystemCost': sf.distribution_system_cost_us_dollars,
-            'PreOperatingExpenses': sf.pre_operating_expenses_us_dollars_per_kw * max(non_cooling_electric_load),
-            'LaborCost': sf.labor_cost_us_dollars_per_year * pwf_om,
-            'LandLease': sf.land_lease_us_dollars_per_year * pwf_om,
-            'InverterRoomSqft': self.storage.inverter_room_size_sqft,
-            'BattRoomSqftPerkWh': self.storage.battery_room_size_sqft_per_kwh
+            'OtherCapitalCosts': sf.other_capital_costs_us_dollars,
+            'OtherAnnualCosts': sf.other_annual_costs_us_dollars_per_year * pwf_om
             }
         ## Uncomment the following and run a scenario to get an updated modelinputs.json for creating Julia system image
         # import json
@@ -1603,11 +1598,6 @@ class DataManager:
             'MinLoadMetPct': self.load.min_load_met_pct,
             'SRrequiredPctLoad': self.load.sr_required_pct,
             'SRrequiredPctTechs': sr_required_pct,
-            'PowerhouseCivilCost': sf.powerhouse_civil_cost_us_dollars_per_sqft,
-            'DistSystemCost': sf.distribution_system_cost_us_dollars,
-            'PreOperatingExpenses': sf.pre_operating_expenses_us_dollars_per_kw * max(non_cooling_electric_load),
-            'LaborCost': sf.labor_cost_us_dollars_per_year * pwf_om,
-            'LandLease': sf.land_lease_us_dollars_per_year * pwf_om,
-            'InverterRoomSqft': self.storage.inverter_room_size_sqft,
-            'BattRoomSqftPerkWh': self.storage.battery_room_size_sqft_per_kwh
+            'OtherCapitalCosts': sf.other_capital_costs_us_dollars,
+            'OtherAnnualCosts': sf.other_annual_costs_us_dollars_per_year * pwf_om
         }

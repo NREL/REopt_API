@@ -242,13 +242,8 @@ Base.@kwdef struct Parameter
 	MinLoadMetPct::Float64
 	SRrequiredPctLoad::Float64
 	SRrequiredPctTechs::AxisArray
-    PowerhouseCivilCost::Float64
-    DistSystemCost::Float64
-    PreOperatingExpenses::Float64
-    LaborCost::Float64
-    LandLease::Float64
-	InverterRoomSqft::Float64
-    BattRoomSqftPerkWh::Float64
+    OtherCapitalCosts::Float64
+    OtherAnnualCosts::Float64
 end
 
 

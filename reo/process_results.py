@@ -479,15 +479,9 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_om_costs_before_tax_us_dollars"] = \
                         self.results_dict.get("year_one_om_costs_before_tax")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "powerhouse_civil_cost_us_dollars"] = self.results_dict.get("total_powerhouse_civil_costs")
-                    self.nested_outputs["Scenario"]["Site"][name]["total_distribution_system_cost_us_dollars"] =\
-                        self.results_dict.get("total_distribution_system_costs")
+                        "additional_cap_costs_us_dollars"] = self.results_dict.get("total_other_cap_costs")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "pre_operating_expenses_us_dollars"] = self.results_dict.get("total_pre_op_expenses")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "lc_labor_cost_us_dollars"] = self.results_dict.get("total_labor_costs")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "lc_land_lease_us_dollars"] = self.results_dict.get("total_land_lease_costs")
+                        "total_annual_cost_us_dollars"] = self.results_dict.get("total_annual_costs")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "microgrid_lcoe_us_dollars_per_kwh"] = self.results_dict.get("microgrid_lcoe")
                 elif name == "PV":

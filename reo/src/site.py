@@ -57,11 +57,8 @@ class Financial(object):
         self.third_party_ownership = third_party_ownership
         self.offtaker_discount_pct = offtaker_discount_pct
         self.analysis_years = analysis_years
-        self.powerhouse_civil_cost_us_dollars_per_sqft = kwargs.get('powerhouse_civil_cost_us_dollars_per_sqft')
-        self.distribution_system_cost_us_dollars = kwargs.get('distribution_system_cost_us_dollars')
-        self.pre_operating_expenses_us_dollars_per_kw = kwargs.get('pre_operating_expenses_us_dollars_per_kw')
-        self.labor_cost_us_dollars_per_year = kwargs.get('labor_cost_us_dollars_per_year')
-        self.land_lease_us_dollars_per_year = kwargs.get('land_lease_us_dollars_per_year')
+        self.other_capital_costs_us_dollars = kwargs.get('other_capital_costs_us_dollars')
+        self.other_annual_costs_us_dollars_per_year = kwargs.get('other_annual_costs_us_dollars_per_year')
 
         # set-up direct ownership
         if self.third_party_ownership is False:

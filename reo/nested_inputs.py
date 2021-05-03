@@ -299,40 +299,19 @@ nested_input_definitions = {
           "default": 0.3,
           "description": "Additional cost, in percent of non-islandable capital costs, to make a distributed energy system islandable from the grid and able to serve critical loads. Includes all upgrade costs such as additional laber and critical load panels."
         },
-        "powerhouse_civil_cost_us_dollars_per_sqft": {
+        "other_capital_costs_us_dollars": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0e6,
-          "default": 45,
-          "description": "Cost of the structure housing battery and BOS equipment in USD/sqft. Used for off-grid analyses only."
+          "max": max_big_number,
+          "default": 0,
+          "description": "Other capital costs."
         },
-        "distribution_system_cost_us_dollars": {
+        "other_annual_costs_us_dollars_per_year": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0e6,
-          "default": 20000,
-          "description": "Total cost of building out a distribution network in USD. Used for off-grid analyses only."
-        },
-        "pre_operating_expenses_us_dollars_per_kw": {
-          "type": "float",
-          "min": 0.0,
-          "max": 1.0e6,
-          "default": 1200.0,
-          "description": "Pre-operating expenses in USD/kW-peak load (includes site visits, system design, approvals, feasibility studies, agreements, etc.). Used for off-grid analyses only."
-        },
-        "labor_cost_us_dollars_per_year": {
-          "type": "float",
-          "min": 0.0,
-          "max": 1.0e6,
-          "default": 3000.0,
-          "description": "Annual labor costs in USD (includes salaries for plant supervisors, technicians, sales agents etc. to maintain customer relationships, provide technical support, collect revenue, read meters etc.). Used for off-grid analyses only."
-        },
-        "land_lease_us_dollars_per_year": {
-          "type": "float",
-          "min": 0.0,
-          "max": 1.0e6,
-          "default": 800,
-          "description": "Cost of leasing land to site microgrid infrastructure in USD/year. Used for off-grid analyses only."
+          "max": max_big_number,
+          "default": 0,
+          "description": "Other annual costs."
         }
       },
 
@@ -1232,16 +1211,7 @@ nested_input_definitions = {
           "total_rebate_us_dollars_per_kwh": {
             "type": "float", "min": 0, "max": 1e9, "default": 0,
             "description": "Rebate based on installed energy capacity"
-          },
-          "inverter_room_size_sqft": {
-            "type": "float", "min": 0, "max": 1000, "default": 72,
-            "description": "Size of the structure housing the inverter in square feet. Used for off-grid analyses only."
-          },
-          "battery_room_size_sqft_per_kwh": {
-            "type": "float", "min": 0, "max": 10, "default": 0.197852,
-            "description": "Size of the structure housing the battery bank in sqft per kWh of storage capacity. Used for off-grid analyses only."
           }
-
         },
 
       "Generator": {
