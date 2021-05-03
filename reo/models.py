@@ -171,11 +171,8 @@ class FinancialModel(models.Model):
     third_party_ownership = models.BooleanField(null=True, blank=True)
     owner_discount_pct = models.FloatField(null=True, blank=True)
     owner_tax_pct = models.FloatField(null=True, blank=True)
-    powerhouse_civil_cost_us_dollars_per_sqft = models.FloatField(null=True, blank=True)
-    distribution_system_cost_us_dollars = models.FloatField(null=True, blank=True)
-    pre_operating_expenses_us_dollars_per_kw = models.FloatField(null=True, blank=True)
-    labor_cost_us_dollars_per_year = models.FloatField(null=True, blank=True)
-    land_lease_us_dollars_per_year = models.FloatField(null=True, blank=True)
+    other_capital_costs_us_dollars = models.FloatField(null=True, blank=True)
+    other_annual_costs_us_dollars_per_year = models.FloatField(null=True, blank=True)
 
     # Outputs
     lcc_us_dollars = models.FloatField(null=True, blank=True)
@@ -208,11 +205,8 @@ class FinancialModel(models.Model):
     developer_annual_free_cashflow_series_us_dollars = ArrayField(
             models.FloatField(null=True, blank=True), default=list, null=True)
     developer_om_and_replacement_present_cost_after_tax_us_dollars = models.FloatField(null=True, blank=True)
-    powerhouse_civil_cost_us_dollars = models.FloatField(null=True, blank=True)
-    total_distribution_system_cost_us_dollars = models.FloatField(null=True, blank=True)
-    pre_operating_expenses_us_dollars = models.FloatField(null=True, blank=True)
-    lc_labor_cost_us_dollars = models.FloatField(null=True, blank=True)
-    lc_land_lease_us_dollars = models.FloatField(null=True, blank=True)
+    additional_cap_costs_us_dollars = models.FloatField(null=True, blank=True)
+    total_annual_cost_us_dollars = models.FloatField(null=True, blank=True)
     microgrid_lcoe_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
 
     @classmethod
@@ -585,8 +579,6 @@ class StorageModel(models.Model):
     total_itc_pct = models.FloatField(null=True, blank=True)
     total_rebate_us_dollars_per_kw = models.IntegerField(null=True, blank=True)
     total_rebate_us_dollars_per_kwh = models.IntegerField(null=True, blank=True)
-    inverter_room_size_sqft = models.FloatField(null=True, blank=True)
-    battery_room_size_sqft_per_kwh = models.FloatField(null=True, blank=True)
 
 
     # Outputs

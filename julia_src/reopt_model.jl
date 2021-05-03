@@ -1161,8 +1161,7 @@ function reopt_run(m, p::Parameter)
     ##############################################################################
 	try
 		if p.OffGridFlag
-			results["lcc"] = round(value(m[:REcosts]) + p.DistSystemCost + p.PreOperatingExpenses + p.LaborCost + p.LandLease +
-							 (p.InverterRoomSqft + value(m[:dvStorageCapEnergy]["Elec"]) * p.BattRoomSqftPerkWh) * p.PowerhouseCivilCost)
+			results["lcc"] = round(value(m[:REcosts]) + p.OtherCapitalCosts + p.OtherAnnualCosts)
 		else
 			results["lcc"] = round(value(m[:REcosts]) + 0.0001*value(m[:MinChargeAdder]))
 		end
@@ -1328,11 +1327,8 @@ function add_null_load_results(m, p, r::Dict)
 end
 
 function add_null_offgrid_financial_results(m, p, r::Dict)
-	r["total_powerhouse_civil_costs"] = []
-	r["total_distribution_system_costs"] = []
-	r["total_pre_op_expenses"] = []
-	r["total_labor_costs"] = []
-	r["total_land_lease_costs"] = []
+	r["total_other_cap_costs"] = []
+	r["total_annual_costs"] = []
 	r["microgrid_lcoe"] = []
 	nothing
 end
@@ -1352,13 +1348,9 @@ function add_load_results(m, p, r::Dict)
 end
 
 function add_offgrid_financial_results(m, p, r::Dict)
-	powerhouse_civil_cost = (p.InverterRoomSqft + value(m[:dvStorageCapEnergy]["Elec"]) * p.BattRoomSqftPerkWh) * p.PowerhouseCivilCost
-	lcc = round(value(m[:REcosts]) + p.DistSystemCost + p.PreOperatingExpenses + p.LaborCost + p.LandLease + powerhouse_civil_cost)
-	r["total_powerhouse_civil_costs"] = powerhouse_civil_cost
-	r["total_distribution_system_costs"] = p.DistSystemCost
-	r["total_pre_op_expenses"] = p.PreOperatingExpenses
-	r["total_labor_costs"] = p.LaborCost
-	r["total_land_lease_costs"] = p.LandLease
+	lcc = round(value(m[:REcosts]) + p.OtherCapitalCosts + p.OtherAnnualCosts)
+	r["total_other_cap_costs"] = p.OtherCapitalCosts
+	r["total_annual_costs"] = p.OtherAnnualCosts
 	r["microgrid_lcoe"] = lcc / p.pwf_om / p.AnnualElecLoadkWh
 	nothing
 end

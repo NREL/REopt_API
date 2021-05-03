@@ -331,29 +331,14 @@ nested_output_definitions = {
                                   "developer. Only calculated in the third-party case."),
                   "units": "$"
                  },
-                "powerhouse_civil_cost_us_dollars": {
+                "additional_cap_costs_us_dollars": {
                   "type": "float",
-                  "description": ("Cost of the structure housing battery and BOS equipment in USD/sqft. In off-grid analyses only."),
+                  "description": ("Additional capital costs as specified by the user."),
                   "units": "$"
                 },
-                "total_distribution_system_cost_us_dollars": {
+                "total_annual_cost_us_dollars": {
                   "type": "float",
-                  "description": ("Total cost of building out a distribution network in USD. In off-grid analyses only."),
-                  "units": "$"
-                },
-                "pre_operating_expenses_us_dollars": {
-                  "type": "float",
-                  "description": ("Pre-operating expenses in USD/kW-peak load (includes site visits, system design, approvals, feasibility studies, agreements, etc.). In off-grid analyses only."),
-                  "units": "$"
-                },
-                "lc_labor_cost_us_dollars": {
-                  "type": "float",
-                  "description": ("Annual labor costs in USD (includes salaries for plant supervisors, technicians, sales agents etc. to maintain customer relationships, provide technical support, collect revenue, read meters etc.). In off-grid analyses only."),
-                  "units": "$"
-                },
-                "lc_land_lease_us_dollars": {
-                  "type": "float",
-                  "description": ("Cost of leasing land to site microgrid infrastructure in USD/year. In off-grid analyses only."),
+                  "description": ("Life-cycle sum of all annual costs."),
                   "units": "$"
                 },
                 "microgrid_lcoe_us_dollars_per_kwh": {
