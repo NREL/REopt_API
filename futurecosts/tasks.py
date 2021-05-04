@@ -105,10 +105,15 @@ def fill_in_future_costs(d: dict, year: int) -> dict:
             type="fixed_om_dollars_per_kw_per_yr",
             size_class=d["Scenario"]["Site"]["Wind"].get("size_class") or "commercial"
         )
-
     d["Scenario"]["Site"]["PV"]["installed_cost_us_dollars_per_kw"] = \
         cost_forecasts.pv(year, type="capital_cost_dollars_per_kw")
 
     d["Scenario"]["Site"]["PV"]["om_cost_us_dollars_per_kw"] = \
         cost_forecasts.pv(year, type="fixed_om_dollars_per_kw_per_yr")
+
+    d["Scenario"]["Site"]["Storage"]["installed_cost_us_dollars_per_kw"] = \
+        cost_forecasts.storage(year, type="installed_cost_us_dollars_per_kw")
+
+    d["Scenario"]["Site"]["Storage"]["installed_cost_us_dollars_per_kwh"] = \
+        cost_forecasts.storage(year, type="installed_cost_us_dollars_per_kwh")
     return d
