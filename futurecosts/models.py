@@ -243,6 +243,7 @@ class CostForecasts(object):
     }
 
     def __init__(self, year: int):
+        self.base_year = year
         self.wind_costs = pd.read_csv("futurecosts/cost_data/{}/wind_prices.csv".format(year))
         self.pv_costs = pd.read_csv("futurecosts/cost_data/{}/ATB_2021_PV_costs.csv".format(year))
         self.pv_costs.index = self.pv_costs.type
@@ -282,8 +283,24 @@ class CostForecasts(object):
         return self.pv_costs.loc[type, year]
 
     def storage(self, year: int, type: str) -> float:
-        pass
-        # TODO fill in storage cost forecasts
+        """
+        Return capital costs for given year. See README.md for more.
+        :param year: any int from 2022 to 2050 inclusive
+        :param type: one of ["installed_cost_us_dollars_per_kw", "installed_cost_us_dollars_per_kwh"]
+        return: future cost
+        """
+        annual_cost_reduction = 0.055
+        base_kw_cost = 840.0
+        base_kwh_cost = 420.0
+        years = year - self.base_year
+        if type == "installed_cost_us_dollars_per_kw":
+            return base_kw_cost * (1-annual_cost_reduction)**years
+        elif type == "installed_cost_us_dollars_per_kwh":
+            return base_kwh_cost * (1-annual_cost_reduction)**years
+        else:
+            raise NotImplementedError("""
+                type must be one of ["installed_cost_us_dollars_per_kw", "installed_cost_us_dollars_per_kwh"]
+            """)
 
 
 cost_forecasts = CostForecasts(year=year)
