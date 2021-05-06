@@ -25,8 +25,6 @@ conn = psycopg2.connect(
     password=dbpass,
     host=dbhost,
 )
-# excluding dbname="postgres" works on Mac,
-# but not in linux? (pod uses the user name as dbname and fails)
 
 conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
 
@@ -51,7 +49,6 @@ if dbname not in dbnames:
     cur.execute("CREATE SCHEMA reopt_api;")
     cur.execute("ALTER SCHEMA reopt_api OWNER TO {};".format(dbuser))
     conn.commit()
-
 
 cur.close()
 conn.close()
