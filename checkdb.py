@@ -3,14 +3,14 @@ import os
 from keys import *
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
-
-dbname = os.getenv("DB_NAME")
-dbhost = dev_database_host
-dbuser = dev_user
-dbpass = dev_user_password
 env = os.getenv('APP_ENV')
+dbname = os.getenv("DB_NAME")
 
-if env == 'staging':
+if env == 'development':
+    dbhost = dev_database_host
+    dbuser = dev_user
+    dbpass = dev_user_password
+elif env == 'staging':
     dbhost = staging_database_host
     dbuser = staging_user
     dbpass = staging_user_password
@@ -18,6 +18,11 @@ elif env == 'production':
     dbhost = prod_database_host
     dbuser = production_user
     dbpass = production_user_password
+else:
+    dbname = dev_database_name
+    dbhost = dev_database_host
+    dbuser = dev_user
+    dbpass = dev_user_password
 
 conn = psycopg2.connect(
     dbname="postgres",
