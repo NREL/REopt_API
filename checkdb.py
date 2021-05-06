@@ -38,9 +38,20 @@ for dbn in cur.fetchall():
 
 if dbname not in dbnames:
     cur.execute("CREATE DATABASE {};".format(dbname))
-    cur.execute("CREATE SCHEMA reopt_api;")
-    cur.execute("ALTER SCHEMA reopt_api OWNER TO reopt_api;")
     conn.commit()
+    cur.close()
+    conn.close()
+    conn = psycopg2.connect(
+        dbname=dbname,
+        user=dbuser,
+        password=dbpass,
+        host=dbhost,
+    )
+    cur = conn.cursor()
+    cur.execute("CREATE SCHEMA reopt_api;")
+    cur.execute("ALTER SCHEMA reopt_api OWNER TO {};".format(dbuser))
+    conn.commit()
+
 
 cur.close()
 conn.close()
