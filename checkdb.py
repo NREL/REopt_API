@@ -37,7 +37,7 @@ cur = conn.cursor()
 dbnames = []
 cur.execute("SELECT datname FROM pg_database;")
 for dbn in cur.fetchall():
-    dbnames.append(dbn)
+    dbnames.append(dbn[0])
 
 if dbname not in dbnames:
     cur.execute("CREATE DATABASE {};".format(dbname))
