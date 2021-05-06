@@ -75,8 +75,6 @@ class DataManager:
         self.cooling_load = None
         self.reopt_inputs = None
         self.reopt_inputs_bau = None
-        self.optimality_tolerance_decomp_subproblem = None
-        self.timeout_decomp_subproblem_seconds = None
         self.add_soc_incentive = None
         self.off_grid_flag = None
 
@@ -1443,8 +1441,6 @@ class DataManager:
             'CHPDoesNotReduceDemandCharges': tariff_args.chp_does_not_reduce_demand_charges,
             'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month,
             'StorageDecayRate': storage_decay_rate,
-            'DecompOptTol': self.optimality_tolerance_decomp_subproblem,
-            'DecompTimeOut': self.timeout_decomp_subproblem_seconds,
             'AddSOCIncentive': self.add_soc_incentive,
             #Offgrid
             'OffGridFlag': self.off_grid_flag,
@@ -1588,8 +1584,6 @@ class DataManager:
             'CHPDoesNotReduceDemandCharges': tariff_args.chp_does_not_reduce_demand_charges,
             'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month,
             'StorageDecayRate': storage_decay_rate,
-            'DecompOptTol': self.optimality_tolerance_decomp_subproblem,
-            'DecompTimeOut': self.timeout_decomp_subproblem_seconds,
             'AddSOCIncentive': self.add_soc_incentive,
             # Offgrid
             'OffGridFlag': False, #self.off_grid_flag,
