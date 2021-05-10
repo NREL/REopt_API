@@ -32,9 +32,3 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 60
             failureThreshold: 10
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: 8081
-            initialDelaySeconds: 60
-            periodSeconds: 5
