@@ -443,11 +443,13 @@ class ValidateNestedInput:
         self.emission_warning = []
         self.general_warnings = []
         self.input_dict = dict()
+        self.off_grid_flag = False
         if type(input_dict) is not dict:
             self.input_data_errors.append(("POST must contain a valid JSON formatted according to format described in "
                                            "https://developer.nrel.gov/docs/energy-optimization/reopt-v1/"))
         else:        
             self.input_dict['Scenario'] = input_dict.get('Scenario') or {}
+            self.off_grid_flag = input_dict['Scenario'].get('off_grid_flag') or False
             for k,v in input_dict.items():
                 if k != 'Scenario':
                     self.invalid_inputs.append([k, ["Top Level"]])
@@ -1930,7 +1932,10 @@ class ValidateNestedInput:
                     message = '(' + ' OR '.join(
                         [' and '.join(missing_set) for missing_set in missing_attribute_sets]) + ')'
                     if message not in all_missing_attribute_sets:
-                        all_missing_attribute_sets.append(message)
+                        if self.off_grid_flag and 'urdb' in message:
+                            pass
+                        else:
+                            all_missing_attribute_sets.append(message)
 
         if len(all_missing_attribute_sets) > 0:
             final_message = " AND ".join(all_missing_attribute_sets)
