@@ -25,9 +25,10 @@ class GHPGHXOutputs:
     def __init__(self, outputs_dict, **kwargs):           
         
         # Outputs/results of GHPGHX
-        self.n_bores = outputs_dict["n_bores"]
-        self.length_boreholes = outputs_dict["length_boreholes"]
-        self.yearly_heatpump_electric_consumption_series_kw = outputs_dict["yearly_heatpump_electric_consumption_series_kw"]
+        self.number_of_boreholes = outputs_dict["number_of_boreholes"]
+        self.length_boreholes_ft = outputs_dict["length_boreholes_ft"]
+        self.yearly_heating_heatpump_electric_consumption_series_kw = outputs_dict["yearly_heating_heatpump_electric_consumption_series_kw"]
+        self.yearly_cooling_heatpump_electric_consumption_series_kw = outputs_dict["yearly_cooling_heatpump_electric_consumption_series_kw"]
         self.yearly_ghx_pump_electric_consumption_series_kw = outputs_dict["yearly_ghx_pump_electric_consumption_series_kw"]
 
 class GHPGHX:
@@ -53,8 +54,9 @@ class GHPGHX:
         # TODO with hybrid with auxiliary/supplemental heating/cooling devices, we may want to separate out/distiguish that energy
         self.heating_thermal_load_served_kw = self.inputs.heating_thermal_kw
         self.cooling_thermal_load_served_kw = self.inputs.cooling_thermal_kw
-        self.electric_consumption_kw = self.outputs.yearly_heatpump_electric_consumption_series_kw + \
-                                            self.outputs.yearly_ghx_pump_electric_consumption_series_kw
+        self.electric_consumption_kw = self.outputs.yearly_heating_heatpump_electric_consumption_series_kw + \
+                                        self.outputs.yearly_cooling_heatpump_electric_consumption_series_kw + \
+                                        self.outputs.yearly_ghx_pump_electric_consumption_series_kw
 
         # Change units basis from ton to kW to use existing Incentives class
         self.kwargs_mod = copy.deepcopy(kwargs)
@@ -70,7 +72,7 @@ class GHPGHX:
     
     def setup_installed_cost_curve(self):
         # GHX and GHP sizing metrics for cost calculations
-        self.total_ghx_ft = self.outputs.n_bores * self.outputs.length_boreholes
+        self.total_ghx_ft = self.outputs.number_of_boreholes * self.outputs.length_boreholes_ft
         self.heatpump_peak_tons = np.max(np.array(self.inputs.heating_thermal_kw) / TONHOUR_TO_KWHT + 
                                                 np.array(self.inputs.cooling_thermal_ton))
         
