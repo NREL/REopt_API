@@ -950,9 +950,6 @@ function reopt(model::JuMP.AbstractModel, model_inputs::Dict)
 
 	results = reopt_run(model, p)
 	results["julia_input_construction_seconds"] = t
-	# fix our memory leak? https://github.com/jump-dev/CPLEX.jl/issues/185
-	model = nothing
-	GC.gc()
 	return results
 end
 
