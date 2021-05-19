@@ -70,7 +70,8 @@ INSTALLED_APPS = (
     'proforma',
     'resilience_stats',
     'django_celery_results',
-    'django_extensions'
+    'django_extensions',
+    'ghpghx'
 )
 
 MIDDLEWARE_CLASSES = (
@@ -154,6 +155,8 @@ CELERY_IMPORTS = (
     'reo.process_results',
     'reo.src.run_jump_model',
     'resilience_stats.outage_simulator_LF',
+    'django_extensions',
+    'ghpghx'    
 )
 
 # Static files (CSS, JavaScript, Images)
