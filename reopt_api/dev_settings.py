@@ -70,7 +70,8 @@ INSTALLED_APPS = (
     'proforma',
     'resilience_stats',
     'django_celery_results',
-    'django_extensions'
+    'django_extensions',
+    'ghpghx'
     )
 
 MIDDLEWARE_CLASSES = (
@@ -169,6 +170,8 @@ CELERY_IMPORTS = (
     'reo.process_results',
     'reo.src.run_jump_model',
     'resilience_stats.outage_simulator_LF',
+    'ghpghx.run_ghpghx_sizing',
+    'ghpghx.process_ghpghx_results',
 )
 
 if 'test' in sys.argv:
