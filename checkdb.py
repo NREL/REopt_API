@@ -24,7 +24,7 @@ else:
     dbuser = dev_user
     dbpass = dev_user_password
 
-if env != 'production:
+if env != 'production':
     conn = psycopg2.connect(
         dbname="postgres",
         user=dbuser,
