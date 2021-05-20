@@ -75,6 +75,7 @@ function size_borefield(p)
         println("X_Now = ", r.X_Now[size_iter])
         println("N_bores = ", r.N_Bores[size_iter])
         for year in 1:p.simulation_years
+            println("  ",OUT[1],"  ")
             #println("Time = ", TimeArray[1])  # This has some interesting small decimal place behavior (from Fortran?)
             for hr in 1:8760  # TESS model has hourly-based timesteps per hour
                 Q_Heat = p.HeatingThermalLoadKW[hr] * 3600.0  # Convert kW to kJ/hr
@@ -105,7 +106,6 @@ function size_borefield(p)
                     INFO[7] = 0
                     INFO[8] += 1
                     Tout_GHX = OUT[1]  # [C] This is always OUT[1] for ANY GHX model, but if that changes need to update                  
-                    #println("  ",OUT[1],"  ")
                     EWT_F = Tout_GHX * 1.8 + 32.0  # [F] 
                     # Find COP_Heat (Col 2) and COP_Cool (Col 3) based on temperature (Col 1) map; use interpolation between data points
                     if EWT_F <= p.HeatPumpCOPMap[1, 1]
