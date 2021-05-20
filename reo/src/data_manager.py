@@ -1146,38 +1146,6 @@ class DataManager:
         cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau, n_segments_bau = self._get_REopt_cost_curve(
             self.bau_techs)
 
-        # GHP parameters for REopt model
-        # TODO make this a separate DataManager method for keeping finalize() concise
-        force_ghp, force_ghp_bau = 0, 0
-        ghp_installed_cost, ghp_installed_cost_bau = [], []
-        ghp_om_cost_year_one, ghp_om_cost_year_one_bau = [], []
-        ghp_heating_thermal_load_served_kw, ghp_heating_thermal_load_served_kw_bau = [], [[]]
-        ghp_cooling_thermal_load_served_kw, ghp_cooling_thermal_load_served_kw_bau = [], [[]]
-        ghp_electric_consumption_kw, ghp_electric_consumption_kw_bau = [], [[]]
-        if len(self.ghp_option_list) > 0:
-            force_ghp = self.ghp_option_list[0].force_ghp  # This does not change with the number of options
-            for i, option in enumerate(self.ghp_option_list):
-                ghp_cap_cost_slope, ghp_cap_cost_x, ghp_cap_cost_yint, ghp_n_segments = self._get_REopt_cost_curve(techs=["ghp_option_list[{}]".format(i)])
-                ghp_size_tons = option.heatpump_capacity_tons
-                if ghp_size_tons <= ghp_cap_cost_x[1]:
-                    n = 0
-                elif ghp_size_tons > ghp_cap_cost_x[-1]:
-                    n = ghp_n_segments - 1
-                else:
-                    for n in range(ghp_n_segments):
-                        if (ghp_size_tons > ghp_cap_cost_x[n]) and (ghp_size_tons <= ghp_cap_cost_x[n+1]):
-                            break
-                # TODO make sure the below is consistent with the y-int + slope * size definitions
-                ghp_installed_cost.append(ghp_cap_cost_yint[n] + ghp_size_tons * ghp_cap_cost_slope[n])
-                ghp_om_cost_year_one.append(option.om_cost_year_one)
-                ghp_heating_thermal_load_served_kw.append(option.heating_thermal_load_served_kw)
-                ghp_cooling_thermal_load_served_kw.append(option.cooling_thermal_load_served_kw)
-                ghp_electric_consumption_kw.append(option.electric_consumption_kw)
-        else:
-            ghp_heating_thermal_load_served_kw.append([])
-            ghp_cooling_thermal_load_served_kw.append([])
-            ghp_electric_consumption_kw.append([])
-
         storage_techs, thermal_storage_techs, hot_tes_techs, \
             cold_tes_techs, storage_power_cost, storage_energy_cost, \
             storage_min_power, storage_max_power, storage_min_energy, \
@@ -1282,6 +1250,39 @@ class DataManager:
         # cooling_load is thermal, so convert to electric and subtract from total electric load to get non_cooling
         non_cooling_electric_load = [self.load.load_list[ts] - cooling_load[ts] / self.cooling_load.chiller_cop for ts in range(len(self.load.load_list))]
         non_cooling_electric_load_bau = [self.load.bau_load_list[ts] - cooling_load[ts] / self.cooling_load.chiller_cop for ts in range(len(self.load.bau_load_list))]
+
+        # GHP parameters for REopt model
+        # TODO make this a separate DataManager method for keeping finalize() concise
+        force_ghp, force_ghp_bau = 0, 0
+        ghp_installed_cost, ghp_installed_cost_bau = [], []
+        ghp_om_cost_year_one, ghp_om_cost_year_one_bau = [], []
+        ghp_heating_thermal_load_served_kw, ghp_heating_thermal_load_served_kw_bau = [], [[]]
+        ghp_cooling_thermal_load_served_kw, ghp_cooling_thermal_load_served_kw_bau = [], [[]]
+        ghp_electric_consumption_kw, ghp_electric_consumption_kw_bau = [], [[]]
+        if len(self.ghp_option_list) > 0:
+            force_ghp = self.ghp_option_list[0].force_ghp  # This does not change with the number of options
+            for i, option in enumerate(self.ghp_option_list):
+                ghp_cap_cost_slope, ghp_cap_cost_x, ghp_cap_cost_yint, ghp_n_segments = self._get_REopt_cost_curve(techs=["ghp_option_list[{}]".format(i)])
+                ghp_size_tons = option.heatpump_capacity_tons
+                if ghp_size_tons <= ghp_cap_cost_x[1]:
+                    n = 0
+                elif ghp_size_tons > ghp_cap_cost_x[-1]:
+                    n = ghp_n_segments - 1
+                else:
+                    for n in range(ghp_n_segments):
+                        if (ghp_size_tons > ghp_cap_cost_x[n]) and (ghp_size_tons <= ghp_cap_cost_x[n+1]):
+                            break
+                # TODO make sure the below is consistent with the y-int + slope * size definitions
+                ghp_installed_cost.append(ghp_cap_cost_yint[n] + ghp_size_tons * ghp_cap_cost_slope[n])
+                ghp_om_cost_year_one.append(option.om_cost_year_one)
+                heating_thermal_load = np.array(heating_load) * (self.boiler_efficiency or 0.0)
+                ghp_heating_thermal_load_served_kw.append(list(np.minimum(option.heating_thermal_load_served_kw, heating_thermal_load)))
+                ghp_cooling_thermal_load_served_kw.append(list(np.minimum(option.cooling_thermal_load_served_kw, cooling_load)))
+                ghp_electric_consumption_kw.append(option.electric_consumption_kw)
+        else:
+            ghp_heating_thermal_load_served_kw.append([])
+            ghp_cooling_thermal_load_served_kw.append([])
+            ghp_electric_consumption_kw.append([])
 
         sf = self.site.financial
 
