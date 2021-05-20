@@ -124,8 +124,8 @@ class GHPGHXJob(ModelResource):
             
             # If **fuel** for heating load is given, convert to thermal
             if ghpghxM.heating_thermal_load_mmbtu_per_hr in [None, []]:
-                ghpghxM.heating_thermal_load_mmbtu_per_hr = np.array(ghpghxM.heating_fuel_load_mmbtu_per_hr) * \
-                                                ghpghxM.existing_boiler_efficiency
+                ghpghxM.heating_thermal_load_mmbtu_per_hr = list(np.array(ghpghxM.heating_fuel_load_mmbtu_per_hr) * \
+                                                ghpghxM.existing_boiler_efficiency)
             # Call PVWatts for hourly dry-bulb outdoor air temperature
             if ghpghxM.ambient_temperature_f in [None, []]:
                 try:
@@ -163,6 +163,11 @@ class GHPGHXJob(ModelResource):
                                                      status=500))  # internal server error
         
         data["inputs"] = ModelManager.make_response(ghp_uuid=ghp_uuid)["inputs"]
+        # Remove extra inputs used above but not expected in ghpghx_inputs.jl
+        data["inputs"].pop("latitude", None)
+        data["inputs"].pop("longitude", None)
+        data["inputs"].pop("heating_fuel_load_mmbtu_per_hr", None)
+        data["inputs"].pop("existing_boiler_efficiency", None)
         data["status"] = 'Solving for GHX Size...'
 
         try:

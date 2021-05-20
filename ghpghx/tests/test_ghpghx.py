@@ -43,7 +43,7 @@ class TestGHPGHX(ResourceTestCaseMixin, TestCase):
         # setUp() is a standard method which is run for every test (in addition to __init__())
         super(TestGHPGHX, self).setUp()
         self.ghpghx_base = '/v1/ghpghx/'
-        self.test_post_base = os.path.join('ghpghx', 'tests', 'posts', 'test_ghp_POST.json')
+        self.test_post_base = os.path.join('ghpghx', 'tests', 'posts', 'test_ghpghx_POST.json')
 
     def get_response(self, data):
         #response = self.api_client.get(self.views_endpoint_base, data=params_dict)

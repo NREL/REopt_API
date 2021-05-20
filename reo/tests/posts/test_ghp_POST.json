@@ -26,8 +26,7 @@
                 "boiler_efficiency": 0.8
             } ,
             "LoadProfileChillerThermal": {
-                "doe_reference_name": "Hospital" ,
-                "chiller_cop": 3.4
+                "doe_reference_name": "Hospital"
             } ,
             "ElectricTariff": {
                 "urdb_label": "5cef0a415457a33576f60fe2",

@@ -248,7 +248,8 @@ class ModelManager(object):
                         "length_boreholes_ft", 
                         "yearly_heating_heatpump_electric_consumption_series_kw",
                         "yearly_cooling_heatpump_electric_consumption_series_kw",
-                        "yearly_ghx_pump_electric_consumption_series_kw"]
+                        "yearly_ghx_pump_electric_consumption_series_kw",
+                        "ewt_error"]
 
         resp["inputs"] = ghpghx_data
         del resp["inputs"]["status"]
