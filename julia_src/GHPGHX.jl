@@ -116,7 +116,7 @@ function size_borefield(p)
                         COP_Cool = p.HeatPumpCOPMap[end, 3]            
                     else
                         # Loop over all temperature points in p.HeatPumpCOPMap, but break out of loop if it is found
-                        for (index, tmp) in enumerate(p.HeatPumpCOPMap[2:end-1, 1])  # Omit first and last temp checks, done above
+                        for (index, tmp) in enumerate(p.HeatPumpCOPMap[2:end, 1])  # Omit first and last temp checks, done above
                             if EWT_F > p.HeatPumpCOPMap[index, 1] && EWT_F <= tmp  # "index" starts at 1, not 2, which is i-1 of tmp index in HeatPumpCOPMap
                                 slope_heat = (p.HeatPumpCOPMap[index+1, 2] - p.HeatPumpCOPMap[index, 2]) / (tmp - p.HeatPumpCOPMap[index, 1])
                                 COP_Heat = p.HeatPumpCOPMap[index, 2] + (tmp - EWT_F) * slope_heat
