@@ -996,6 +996,7 @@ class GHPModel(models.Model):
     installed_cost_building_hydronic_loop_us_dollars_per_sqft = models.FloatField(null=True, blank=True)
     om_cost_us_dollars_per_sqft_year = models.FloatField(null=True, blank=True)
     building_sqft = models.FloatField(null=True, blank=True)
+    ghpghx_inputs = ArrayField(PickledObjectField(null=True, editable=True), null=True)
     ghpghx_response = ArrayField(PickledObjectField(null=True, editable=True), null=True)
     macrs_option_years = models.IntegerField(null=True, blank=True)
     macrs_bonus_pct = models.FloatField(null=True, blank=True)

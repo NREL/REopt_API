@@ -77,7 +77,7 @@ function add_integer_variables(m, p)
         binDemandMonthsTier[p.Month, p.DemandMonthsBin], Bin # 1 If tier n has allocated demand during month m; 0 otherwise
 		binEnergyTier[p.Month, p.PricingTier], Bin    #  Z^{ut}_{mu} 1 If demand tier $u$ is active in month m; 0 otherwise (NEW)
 		binNoGridPurchases[p.TimeStep], Bin  # Binary for the condition where the site load is met by on-site resources so no grid purchases
-		binGHP[p.GHPOptions], Bin  # Includes Index 1 = NO GHP or NOT???
+		binGHP[p.GHPOptions], Bin  # Can be <= 1 if ForceGHP=0, and is ==1 if ForceGHP=1
 	end
 end
 
@@ -137,10 +137,10 @@ function add_cost_expressions(m, p)
 	# TODO is this if else statement necessary or will model value m[:GHPCap/OMCosts] = 0 if isempty(p.GHPOptions)?
 	if !isempty(p.GHPOptions)
 		m[:GHPCapCosts] = @expression(m, p.two_party_factor *
-			sum(p.GHPInstalledCost[g] for g in p.GHPOptions)
+			sum(p.GHPInstalledCost[g] * m[:binGHP][g] for g in p.GHPOptions)
 		)
 		m[:GHPOMCosts] = @expression(m, p.two_party_factor * p.pwf_om *
-			sum(p.GHPOMCost[g] for g in p.GHPOptions)
+			sum(p.GHPOMCost[g] * m[:binGHP][g] for g in p.GHPOptions)
 		)
 	else
 		m[:GHPCapCosts] = @expression(m, 0.0)

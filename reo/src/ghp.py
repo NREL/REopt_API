@@ -42,7 +42,10 @@ class GHPGHX:
         # Outputs of GHPGHX, such as number of bores for GHX size
         self.outputs = GHPGHXOutputs(response["outputs"])  # This is a single dictionary where the POST is a list_of_dict
 
-        self.force_ghp = kwargs.get("force_ghp")
+        if kwargs.get("force_ghp"):
+            self.force_ghp = 1
+        else:
+            self.force_ghp = 0
         self.installed_cost_heatpump_us_dollars_per_ton = kwargs.get("installed_cost_heatpump_us_dollars_per_ton")
         self.heatpump_capacity_sizing_factor_on_peak_load = kwargs.get("heatpump_capacity_sizing_factor_on_peak_load")
         self.installed_cost_ghx_us_dollars_per_ft = kwargs.get("installed_cost_ghx_us_dollars_per_ft")

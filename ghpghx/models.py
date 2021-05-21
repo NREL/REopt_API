@@ -185,7 +185,7 @@ class GHPGHXModel(models.Model):
         default=15, validators=[MinValueValidator(1), MaxValueValidator(15)],
         help_text="Maximum number of sizing iterations before the GHPGHX model times out")
     init_sizing_factor_ft_per_peak_ton = models.FloatField(null=True, blank=True, 
-        default=246.1, validators=[MinValueValidator(1.0), MaxValueValidator(1500.0)],
+        default=246.1, validators=[MinValueValidator(1.0), MaxValueValidator(5000.0)],
         help_text="Initial guess of total feet of GHX boreholes (total feet = N bores * Length bore) based on peak ton heating/cooling [ft/ton]")
 
     # Outputs/results
