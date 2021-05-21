@@ -149,8 +149,7 @@ class GHPGHXJob(ModelResource):
                                                      status=500))  # internal server error
 
         try:
-            # Create and save the model instance to the db ("create" = create and save)
-            # TODO understand if "objects" is correct with create - REopt models.py uses it, but also alters create class method with obj.save()
+            # Save the instance of the GHPGHXModel to the database
             ghpghxM.save()
         except Exception:
             log.error("Could not create and save ghp_uuid: {}\n Data: {}".format(ghp_uuid, data))

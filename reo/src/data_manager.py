@@ -1493,6 +1493,7 @@ class DataManager:
         ## Uncomment the following and run a scenario to get an updated modelinputs.json for creating Julia system image
         # import json
         # json.dump(self.reopt_inputs, open("modelinputs.json", "w"))
+        dummy = 3
 
         self.reopt_inputs_bau = {
             'Tech': reopt_techs_bau,

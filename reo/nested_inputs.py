@@ -2058,6 +2058,10 @@ nested_input_definitions = {
           "max": max_big_number,
           "description": "Building square footage for GHP/HVAC cost calculations"
         },
+        "ghpghx_inputs": {
+          "type": "list_of_dict",
+          "description": "GHP-GHX inputs/POST to /ghpghx endpoint"
+        },        
         "ghpghx_response": {
           "type": "list_of_dict",
           "description": "GHP-GHX response from /ghpghx endpoint, includes ghp_uuid, inputs/POST to /ghpghx, and outputs/results"

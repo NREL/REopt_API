@@ -45,6 +45,7 @@
                 "installed_cost_building_hydronic_loop_us_dollars_per_sqft": 1.7,
                 "om_cost_us_dollars_per_sqft_year": 0.0,
                 "building_sqft": 50000.0,
+                "ghpghx_inputs": [],
                 "ghpghx_response": [],
                 "macrs_option_years": 0 ,
                 "macrs_bonus_pct": 0.0 ,
