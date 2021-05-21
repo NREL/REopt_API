@@ -205,6 +205,12 @@ class FinancialModel(models.Model):
     additional_cap_costs_us_dollars = models.FloatField(null=True, blank=True)
     total_annual_cost_us_dollars = models.FloatField(null=True, blank=True)
     microgrid_lcoe_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
+    lcoe_component_fuel_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
+    lcoe_component_re_capex_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
+    lcoe_component_diesel_capex_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
+    lcoe_component_other_capex_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
+    lcoe_component_om_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
+    lcoe_component_other_annual_costs_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -470,7 +476,7 @@ class PVModel(models.Model):
             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
     year_one_to_grid_series_kw = ArrayField(
             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
-    existing_pv_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    total_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
     year_one_curtailed_production_series_kw = ArrayField(
             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
     existing_pv_om_cost_us_dollars = models.FloatField(null=True, blank=True)

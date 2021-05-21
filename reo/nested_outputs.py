@@ -345,6 +345,36 @@ nested_output_definitions = {
                   "type": "float",
                   "description": ("Cost reflective tariff of the off-grid system in USD/kWh. In off-grid analyses only."),
                   "units": "$"
+                },
+                "lcoe_component_fuel_us_dollars_per_kwh": {
+                  "type": "float",
+                  "description": ("Fuel component of the LCOE in USD/kWh. In off-grid analyses only."),
+                  "units": "$"
+                },
+                "lcoe_component_re_capex_us_dollars_per_kwh": {
+                  "type": "float",
+                  "description": ("Renewable energy CAPEX component of the LCOE in USD/kWh. In off-grid analyses only."),
+                  "units": "$"
+                },
+                "lcoe_component_diesel_capex_us_dollars_per_kwh": {
+                  "type": "float",
+                  "description": ("Diesel CAPEX component of the LCOE in USD/kWh. In off-grid analyses only."),
+                  "units": "$"
+                },
+                "lcoe_component_other_capex_us_dollars_per_kwh": {
+                  "type": "float",
+                  "description": ("Other CAPEX component of the LCOE in USD/kWh. In off-grid analyses only."),
+                  "units": "$"
+                },
+                "lcoe_component_om_us_dollars_per_kwh": {
+                  "type": "float",
+                  "description": ("O&M cost component of the LCOE in USD/kWh. In off-grid analyses only."),
+                  "units": "$"
+                },
+                "lcoe_component_other_annual_costs_us_dollars_per_kwh": {
+                  "type": "float",
+                  "description": ("Other annual cost component of the LCOE in USD/kWh. In off-grid analyses only."),
+                  "units": "$"
                 }
               },
 
