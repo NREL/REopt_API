@@ -176,6 +176,12 @@ class Scenario(BaseModel, models.Model):
 class OptimizationInputs(BaseModel, models.Model):
     name = "Optimization"
 
+    scenario = models.OneToOneField(
+        Scenario,
+        on_delete=models.CASCADE,
+        primary_key=True,
+    )
+
     run_uuid = models.UUIDField(unique=True)
     timeout_seconds = models.IntegerField(
         default=420,
@@ -208,6 +214,12 @@ class OptimizationInputs(BaseModel, models.Model):
 class SiteInputs(BaseModel, models.Model):
     name = "Site"
 
+    scenario = models.OneToOneField(
+        Scenario,
+        on_delete=models.CASCADE,
+        primary_key=True,
+    )
+
     run_uuid = models.UUIDField(unique=True)
     latitude = models.FloatField(
         validators=[
@@ -236,6 +248,12 @@ class SiteInputs(BaseModel, models.Model):
 
 class FinancialInputs(BaseModel, models.Model):
     name = "Financial"
+
+    scenario = models.OneToOneField(
+        Scenario,
+        on_delete=models.CASCADE,
+        primary_key=True,
+    )
 
     run_uuid = models.UUIDField(unique=True)
     analysis_years = models.IntegerField(
@@ -331,6 +349,12 @@ class FinancialInputs(BaseModel, models.Model):
 
 # class FinancialOutputs(BaseModel, models.Model):
 #     name = "FinancialOutputs"
+
+    scenario = models.OneToOneField(
+        Scenario,
+        on_delete=models.CASCADE,
+        primary_key=True,
+    )
 #
 #     run_uuid = models.UUIDField(unique=True)
 #     lcc_us_dollars = models.FloatField(null=True, blank=True)
@@ -367,6 +391,12 @@ class FinancialInputs(BaseModel, models.Model):
 
 class LoadProfileInputs(BaseModel, models.Model):
     name = "LoadProfile"
+
+    scenario = models.OneToOneField(
+        Scenario,
+        on_delete=models.CASCADE,
+        primary_key=True,
+    )
 
     possible_sets = [
         ["loads_kw"],
@@ -484,6 +514,13 @@ class LoadProfileInputs(BaseModel, models.Model):
 
 class ElectricTariffInputs(BaseModel, models.Model):
     name = "ElectricTariff"
+
+    scenario = models.OneToOneField(
+        Scenario,
+        on_delete=models.CASCADE,
+        primary_key=True,
+    )
+
     possible_sets = [
         ["urdb_response"],
         ["blended_monthly_demand_charges_us_dollars_per_kw", "blended_monthly_rates_us_dollars_per_kwh"],
@@ -575,6 +612,11 @@ class ElectricTariffInputs(BaseModel, models.Model):
 
 
 # class PV(BaseModel, models.Model):
+
+#     scenario = models.ForeignKey(
+#         Scenario,
+#         on_delete=models.CASCADE
+#     )
 #
 #     #Inputs
 #     run_uuid = models.UUIDField(unique=False)
@@ -646,6 +688,13 @@ class ElectricTariffInputs(BaseModel, models.Model):
 #
 #
 # class Storage(BaseModel, models.Model):
+
+#     scenario = models.OneToOneField(
+#         Scenario,
+#         on_delete=models.CASCADE,
+#         primary_key=True,
+#     )
+# 
 #     # Inputs
 #     run_uuid = models.UUIDField(unique=True)
 #     min_kw = models.FloatField(null=True, blank=True)
@@ -683,6 +732,13 @@ class ElectricTariffInputs(BaseModel, models.Model):
 #
 #
 # class Generator(BaseModel, models.Model):
+
+#     scenario = models.OneToOneField(
+#         Scenario,
+#         on_delete=models.CASCADE,
+#         primary_key=True,
+#     )
+
 #     # Inputs
 #     run_uuid = models.UUIDField(unique=True)
 #     existing_kw = models.FloatField(null=True, blank=True)
