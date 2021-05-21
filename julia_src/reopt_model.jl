@@ -364,10 +364,17 @@ function add_binTechIsOnInTS_constraints(m, p)
 	@constraint(m, ProduceIfOnCon[t in p.FuelBurningTechs, ts in p.TimeStep],
 		m[:dvRatedProduction][t,ts] <= m[:NewMaxSize][t] * m[:binTechIsOnInTS][t,ts]
 	)
-	#Constraint (3b): Technologies that are turned on must not be turned down below minimum, except during outage
-	@constraint(m, MinTurndownCon[t in p.FuelBurningTechs, ts in p.TimeStepsWithGrid],
+	if p.OffGridFlag
+		#Constraint (3b): Technologies that are turned on must not be turned down below minimum, except during outage
+		@constraint(m, MinTurndownCon[t in p.FuelBurningTechs, ts in p.TimeStep],
 		p.MinTurndown[t] * m[:dvSize][t] - m[:dvRatedProduction][t,ts] <= m[:NewMaxSize][t] * (1-m[:binTechIsOnInTS][t,ts])
-	)
+		)
+	else
+		#Constraint (3b): Technologies that are turned on must not be turned down below minimum, except during outage
+		@constraint(m, MinTurndownCon[t in p.FuelBurningTechs, ts in p.TimeStepsWithGrid],
+		p.MinTurndown[t] * m[:dvSize][t] - m[:dvRatedProduction][t,ts] <= m[:NewMaxSize][t] * (1-m[:binTechIsOnInTS][t,ts])
+		)
+	end 
 end
 
 
@@ -697,10 +704,10 @@ function add_spinning_reserve_constraints(m, p)
 	)
 	# Spinning reserve provided - battery
 	@constraint(m, [b in p.ElecStorage, ts in p.TimeStep],
-		m[:dvSRbatt][b,ts] <= m[:dvStorageSOC][b,ts-1] - p.StorageMinSOC[b] * m[:dvStorageCapEnergy][b] - m[:dvDischargeFromStorage][b,ts] / p.DischargeEfficiency[b]
+		m[:dvSRbatt][b,ts] <= (m[:dvStorageSOC][b,ts-1] - p.StorageMinSOC[b] * m[:dvStorageCapEnergy][b]) / p.TimeStepScaling - (m[:dvDischargeFromStorage][b,ts] / p.DischargeEfficiency[b])
 	)
 	@constraint(m, [b in p.ElecStorage, ts in p.TimeStep],
-		m[:dvSRbatt][b,ts] <= m[:dvStorageCapPower][b]
+		m[:dvSRbatt][b,ts] <= m[:dvStorageCapPower][b] - m[:dvDischargeFromStorage][b,ts] / p.DischargeEfficiency[b]
 	)
 	# Spinning reserve provided - other technologies
 	@constraint(m, [t in p.TechsProvidingSR, ts in p.TimeStep],
@@ -1349,9 +1356,10 @@ end
 
 function add_offgrid_financial_results(m, p, r::Dict)
 	lcc = round(value(m[:REcosts]) + p.OtherCapitalCosts + p.OtherAnnualCosts)
+	@expression(m, AnnualkWhServed, sum(p.ElecLoad[ts] * value(m[:dvLoadServed][ts]) for  ts in p.TimeStep))
 	r["total_other_cap_costs"] = p.OtherCapitalCosts
 	r["total_annual_costs"] = p.OtherAnnualCosts
-	r["microgrid_lcoe"] = lcc / p.pwf_om / p.AnnualElecLoadkWh
+	r["microgrid_lcoe"] = round(lcc / p.pwf_om / value(AnnualkWhServed), digits=4)
 	nothing
 end
 

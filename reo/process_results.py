@@ -307,6 +307,58 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                                               (1 - self.inputs["Financial"]["owner_tax_pct"])
             return round(upfront_capex_after_incentives, 2)
 
+        @property
+        def get_offgrid_lcoe_breakdown(self):
+
+            lcoe_component_fuel = None
+            lcoe_component_re_capex = None
+            lcoe_component_diesel_capex = None
+            lcoe_component_other_capex = None
+            lcoe_component_om = None
+            lcoe_component_other_annual_costs = None
+            lcoe = self.nested_outputs["Scenario"]["Site"]["Financial"]["microgrid_lcoe_us_dollars_per_kwh"]
+            
+            if lcoe is not None:
+                lcc = self.nested_outputs["Scenario"]["Site"]["Financial"]["lcc_us_dollars"]
+                
+                fuel = (self.nested_outputs["Scenario"]['Site']['Generator']['total_fuel_cost_us_dollars'] or 0)
+                other_capex = (self.nested_outputs["Scenario"]["Site"]["Financial"]["additional_cap_costs_us_dollars"] or 0)
+                other_annual_costs = (self.nested_outputs["Scenario"]["Site"]["Financial"]["total_annual_cost_us_dollars"] or 0)
+                
+                pv_om = 0
+                for i in range(len(self.nested_outputs['Scenario']['Site']['PV'])):
+                    pv_om += self.nested_outputs['Scenario']['Site']['PV'][i]['total_fixed_om_cost_us_dollars']
+
+                diesel_variable_om = (self.nested_outputs['Scenario']['Site']['Generator']['total_variable_om_cost_us_dollars'] or 0)
+                diesel_fixed_om = (self.nested_outputs['Scenario']['Site']['Generator']['total_fixed_om_cost_us_dollars'] or 0)
+                total_om = pv_om + diesel_variable_om + diesel_fixed_om
+
+                diesel_capex = max(self.inputs["Generator"]["installed_cost_us_dollars_per_kw"]
+                                    * (self.nested_outputs["Scenario"]["Site"]["Generator"]["size_kw"]
+                                    - self.inputs["Generator"]["existing_kw"]), 0)
+                re_capex = 0
+                for pv in self.inputs["PV"]:
+                    re_capex += max(pv["installed_cost_us_dollars_per_kw"]
+                                    * (self.nested_outputs["Scenario"]["Site"]["PV"][pv["pv_number"]-1]["size_kw"]
+                                    - pv["existing_kw"]), 0)
+                for tech in ["Storage", "Wind"]:
+                    re_capex += (self.inputs[tech].get("installed_cost_us_dollars_per_kw") or 0) * \
+                                    (self.nested_outputs["Scenario"]["Site"][tech].get("size_kw") or 0)
+
+                # storage capacity
+                re_capex += (self.inputs["Storage"].get("installed_cost_us_dollars_per_kwh") or 0) * \
+                            (self.nested_outputs["Scenario"]["Site"]["Storage"].get("size_kwh") or 0)
+            
+                lcoe_component_fuel = round((fuel/lcc) * lcoe, 4)
+                lcoe_component_re_capex = round((re_capex/lcc) * lcoe, 4)
+                lcoe_component_diesel_capex = round((diesel_capex/lcc) * lcoe, 4)
+                lcoe_component_other_capex = round((other_capex/lcc) * lcoe, 4)
+                lcoe_component_om = round((total_om/lcc) * lcoe, 4)
+                lcoe_component_other_annual_costs = round((other_annual_costs/lcc) * lcoe, 4)
+
+            return lcoe_component_fuel, lcoe_component_re_capex, lcoe_component_diesel_capex, \
+                   lcoe_component_other_capex, lcoe_component_om, lcoe_component_other_annual_costs
+
         def calculate_lcoe(self, tech_results_dict, tech_inputs_dict, financials):
             """
             The LCOE is calculated as annualized costs (capital and O+M translated to current value) divided by annualized energy
@@ -521,6 +573,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                                          np.array(pv.get("year_one_to_load_series_kw")))
                         if pv["year_one_power_production_series_kw"] is None:
                             pv["year_one_power_production_series_kw"] = []
+                        pv["total_fixed_om_cost_us_dollars"] = self.results_dict.get("PV{}_net_fixed_om_costs".format(i))
                         pv["existing_pv_om_cost_us_dollars"] = self.results_dict.get("PV{}_net_fixed_om_costs_bau".format(i))
                         pv["station_latitude"] = pv_model.station_latitude
                         pv["station_longitude"] = pv_model.station_longitude
@@ -825,6 +878,15 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             for k in time_outputs:
                 self.nested_outputs["Scenario"]["Profile"][k] = self.results_dict.get(k)
                 self.nested_outputs["Scenario"]["Profile"][k + "_bau"] = self.results_dict.get(k + "_bau")
+
+            lcoe_component_fuel, lcoe_component_re_capex, lcoe_component_diesel_capex, lcoe_component_other_capex, \
+            lcoe_component_om, lcoe_component_other_annual_costs = self.get_offgrid_lcoe_breakdown
+            self.nested_outputs["Scenario"]["Site"]["Financial"]["lcoe_component_fuel_us_dollars_per_kwh"] = lcoe_component_fuel
+            self.nested_outputs["Scenario"]["Site"]["Financial"]["lcoe_component_re_capex_us_dollars_per_kwh"] = lcoe_component_re_capex
+            self.nested_outputs["Scenario"]["Site"]["Financial"]["lcoe_component_diesel_capex_us_dollars_per_kwh"] = lcoe_component_diesel_capex
+            self.nested_outputs["Scenario"]["Site"]["Financial"]["lcoe_component_other_capex_us_dollars_per_kwh"] = lcoe_component_other_capex
+            self.nested_outputs["Scenario"]["Site"]["Financial"]["lcoe_component_om_us_dollars_per_kwh"] = lcoe_component_om
+            self.nested_outputs["Scenario"]["Site"]["Financial"]["lcoe_component_other_annual_costs_us_dollars_per_kwh"] = lcoe_component_other_annual_costs
 
         def compute_total_power(self, tech):
             power_lists = list()
