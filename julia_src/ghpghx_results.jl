@@ -41,7 +41,7 @@ Base.@kwdef mutable struct ResultsStruct
     P_WSHPh_Hourly::Array{Float64, 1} = zeros(total_hours)
     P_WSHPc_Hourly::Array{Float64, 1} = zeros(total_hours)
     Qh_Hourly::Array{Float64, 1} = zeros(total_hours)
-    Qc_Hourly::Array{Float64, 1} = zeros(total_hours)  # And Q_Heat/Q_Cool is the input kJ/hr
+    Qc_Hourly::Array{Float64, 1} = zeros(total_hours)
     EWT::Array{Float64, 1} = zeros(total_hours)
 end
 
@@ -67,16 +67,38 @@ end
 function get_ghpghx_results_for_reopt(r::ResultsStruct, p::InputsStruct)
     results_dict = Dict{Any,Any}()
     results_dict["number_of_boreholes"] = r.N_Bores_Final
-    results_dict["length_boreholes_ft"] = r.Length_Boreholes
+    results_dict["length_boreholes_ft"] = round(r.Length_Boreholes, digits=1)
     results_dict["yearly_heating_heatpump_electric_consumption_series_kw"] = zeros(8760)
     results_dict["yearly_cooling_heatpump_electric_consumption_series_kw"] = zeros(8760)
     results_dict["yearly_ghx_pump_electric_consumption_series_kw"] = zeros(8760)
     # Get average electric consumption
     for yr in 1:p.simulation_years
-        results_dict["yearly_heating_heatpump_electric_consumption_series_kw"] += r.P_WSHPh_Hourly[(yr-1)*8760+1:yr*8760] / p.simulation_years
-        results_dict["yearly_cooling_heatpump_electric_consumption_series_kw"] += r.P_WSHPc_Hourly[(yr-1)*8760+1:yr*8760] / p.simulation_years
-        results_dict["yearly_ghx_pump_electric_consumption_series_kw"] = r.P_GHXPump_Hourly[(yr-1)*8760+1:yr*8760] / p.simulation_years
+        results_dict["yearly_heating_heatpump_electric_consumption_series_kw"] += round.(r.P_WSHPh_Hourly[(yr-1)*8760+1:yr*8760] / p.simulation_years, digits=3)
+        results_dict["yearly_cooling_heatpump_electric_consumption_series_kw"] += round.(r.P_WSHPc_Hourly[(yr-1)*8760+1:yr*8760] / p.simulation_years, digits=3)
+        results_dict["yearly_ghx_pump_electric_consumption_series_kw"] += round.(r.P_GHXPump_Hourly[(yr-1)*8760+1:yr*8760] / p.simulation_years, digits=3)
     end
-    results_dict["ewt_error"] = r.FX_Final
+    results_dict["yearly_total_electric_consumption_series_kw"] = 
+        results_dict["yearly_heating_heatpump_electric_consumption_series_kw"] + 
+        results_dict["yearly_cooling_heatpump_electric_consumption_series_kw"] + 
+        results_dict["yearly_ghx_pump_electric_consumption_series_kw"]
+    results_dict["yearly_total_electric_consumption_kwh"] = round(sum(results_dict["yearly_total_electric_consumption_series_kw"]), digits=1)
+    results_dict["peak_heating_heatpump_thermal_ton"] = round(p.PeakTons_WSHP_H, digits=3)
+    results_dict["peak_cooling_heatpump_thermal_ton"] = round(p.PeakTons_WSHP_C, digits=3)
+    results_dict["peak_combined_heatpump_thermal_ton"] = round(p.PeakTons_WSHP_GHX, digits=3)
+    results_dict["max_eft_f"] = round(maximum(r.EWT) * 1.8 + 32.0)
+    results_dict["min_eft_f"] = round(minimum(r.EWT) * 1.8 + 32.0)
+    # Calculate average COP for heating and cooling; estimate allocation of pump power to heating and cooling by thermal energy served
+    heating_thermal_kwh = sum(p.HeatingThermalLoadKW)
+    cooling_thermal_kwh = sum(p.CoolingThermalLoadKW)
+    heating_thermal_frac = heating_thermal_kwh / (heating_thermal_kwh + cooling_thermal_kwh)
+    cooling_thermal_frac = cooling_thermal_kwh / (heating_thermal_kwh + cooling_thermal_kwh)
+    ghx_pump_electric_kwh = sum(results_dict["yearly_ghx_pump_electric_consumption_series_kw"])
+    heating_ghx_pump_electric_kwh = heating_thermal_frac * ghx_pump_electric_kwh
+    cooling_ghx_pump_electric_kwh = cooling_thermal_frac * ghx_pump_electric_kwh
+    heating_heatpump_electric_kwh = sum(results_dict["yearly_heating_heatpump_electric_consumption_series_kw"])
+    cooling_heatpump_electric_kwh = sum(results_dict["yearly_cooling_heatpump_electric_consumption_series_kw"])
+    results_dict["heating_cop_avg"] = round(heating_thermal_kwh / (heating_heatpump_electric_kwh + heating_ghx_pump_electric_kwh), digits=3)
+    results_dict["cooling_cop_avg"] = round(cooling_thermal_kwh / (cooling_heatpump_electric_kwh + cooling_ghx_pump_electric_kwh), digits=3)
+    results_dict["solved_eft_error_f"] = round(r.FX_Final, digits=3)
     return results_dict
 end

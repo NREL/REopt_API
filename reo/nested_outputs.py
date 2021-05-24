@@ -1161,6 +1161,11 @@ nested_output_definitions = {
                   "type": "str",
                   "description": "Unique id",
                   "units": "none"
+                },
+                "ghpghx_chosen_outputs": {
+                    "type": "dict",
+                    "description": "Output fields from the ghpghx_response",
+                    "units": "none"
                 }
               }
           	}
