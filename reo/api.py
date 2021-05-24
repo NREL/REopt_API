@@ -45,6 +45,9 @@ from reo.src.profiler import Profiler
 from reo.process_results import process_results
 from reo.src.run_jump_model import run_jump_model
 from reo.exceptions import REoptError, UnexpectedError
+from ghpghx.models import GHPGHXModel
+from ghpghx.resources import return400
+from django.core.exceptions import ValidationError
 from celery import group, chain
 log = logging.getLogger(__name__)
 
@@ -110,7 +113,19 @@ class Job(ModelResource):
         uuidFilter = UUIDFilter(run_uuid)
         log.addFilter(uuidFilter)
         log.info('Beginning run setup')
-
+        
+        # Validate ghpghx_inputs, if applicable
+        if bundle.data["Scenario"]["Site"]["GHP"].get("ghpghx_inputs") not in [None, []] and \
+            bundle.data["Scenario"]["Site"]["GHP"].get("ghpghx_response") in [None, []]:
+            for ghpghx_inputs in bundle.data["Scenario"]["Site"]["GHP"]["ghpghx_inputs"]:
+                ghpghxM = GHPGHXModel(**ghpghx_inputs)
+                try:
+                    # Validate individual model fields
+                    ghpghxM.clean_fields()
+                except ValidationError as ve:
+                    validation_errors = ve.message_dict
+                    return400(data, validation_errors)
+        
         try:
             input_validator = ValidateNestedInput(bundle.data)
         except Exception as e:
