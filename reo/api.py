@@ -115,7 +115,8 @@ class Job(ModelResource):
         log.info('Beginning run setup')
         
         # Validate ghpghx_inputs, if applicable
-        if bundle.data["Scenario"]["Site"]["GHP"].get("ghpghx_inputs") not in [None, []] and \
+        if bundle.data["Scenario"]["Site"].get("GHP") is not None and \
+            bundle.data["Scenario"]["Site"]["GHP"].get("ghpghx_inputs") not in [None, []] and \
             bundle.data["Scenario"]["Site"]["GHP"].get("ghpghx_response") in [None, []]:
             for ghpghx_inputs in bundle.data["Scenario"]["Site"]["GHP"]["ghpghx_inputs"]:
                 ghpghxM = GHPGHXModel(**ghpghx_inputs)
