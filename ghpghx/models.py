@@ -52,7 +52,7 @@ class GHPGHXModel(models.Model):
     
     # Parameters
     borehole_depth_ft = models.FloatField(null=True, blank=True, 
-        default=400.0, validators=[MinValueValidator(1.0), MaxValueValidator(600.0)],
+        default=400.0, validators=[MinValueValidator(10.0), MaxValueValidator(600.0)],
         help_text="Vertical depth of each borehole [ft]")
     ghx_header_depth_ft = models.FloatField(null=True, blank=True, 
         default=4.0, validators=[MinValueValidator(0.1), MaxValueValidator(50.0)],
@@ -188,7 +188,7 @@ class GHPGHXModel(models.Model):
         default=246.1, validators=[MinValueValidator(1.0), MaxValueValidator(5000.0)],
         help_text="Initial guess of total feet of GHX boreholes (total feet = N bores * Length bore) based on peak ton heating/cooling [ft/ton]")
 
-    # Outputs/results
+    # Outputs/results - need to move these from "inputs to outputs" in ModelManager.make_response
     number_of_boreholes = models.FloatField(null=True, blank=True,
         help_text="Minimum required number of boreholes to meet heat pump EWT constraints")
     length_boreholes_ft = models.FloatField(null=True, blank=True,
@@ -202,8 +202,27 @@ class GHPGHXModel(models.Model):
     yearly_ghx_pump_electric_consumption_series_kw = ArrayField(models.FloatField(null=True, blank=True), 
         default=list, null=True, blank=True,
         help_text="Hourly GHX pump electric consumption, average across simulation years [kW]")
-    ewt_error = models.FloatField(null=True, blank=True,
-        help_text="Error of entering water temperature of solved GHPGHX system")
+    yearly_total_electric_consumption_series_kw = ArrayField(models.FloatField(null=True, blank=True), 
+        default=list, null=True, blank=True,
+        help_text="Hourly total GHP electric consumption, average across simulation years [kW]")
+    yearly_total_electric_consumption_kwh = models.FloatField(null=True, blank=True, 
+        help_text="Total yearly electric consumption by GHPGHX system [kWh]")
+    peak_heating_heatpump_thermal_ton = models.FloatField(null=True, blank=True, 
+        help_text="Peak heating heat pump thermal load served [ton]")
+    peak_cooling_heatpump_thermal_ton = models.FloatField(null=True, blank=True, 
+        help_text="Peak cooling heat pump thermal load served [ton]")
+    peak_combined_heatpump_thermal_ton = models.FloatField(null=True, blank=True, 
+        help_text="Peak combined heating/cooling heat pump thermal load served [ton]")
+    max_eft_f = models.FloatField(null=True, blank=True, 
+        help_text="Maximum entering fluid temperature (to heat pump, from ghx) throughout the GHPGHX simulation period")
+    min_eft_f = models.FloatField(null=True, blank=True, 
+        help_text="Minimum entering fluid temperature (to heat pump, from ghx) throughout the GHPGHX simulation period")
+    heating_cop_avg = models.FloatField(null=True, blank=True, 
+        help_text="Average heating heatpump system coefficient of performance (COP) (includes ghx pump allocation)")
+    cooling_cop_avg = models.FloatField(null=True, blank=True, 
+        help_text="Average cooling heatpump system coefficient of performance (COP) (includes ghx pump allocation)")
+    solved_eft_error_f = models.FloatField(null=True, blank=True,
+        help_text="Error between the solved GHPGHX system EFT and the max or min limit for EFT")
 
 
 class ModelManager(object):
@@ -249,7 +268,16 @@ class ModelManager(object):
                         "yearly_heating_heatpump_electric_consumption_series_kw",
                         "yearly_cooling_heatpump_electric_consumption_series_kw",
                         "yearly_ghx_pump_electric_consumption_series_kw",
-                        "ewt_error"]
+                        "yearly_total_electric_consumption_series_kw",
+                        "yearly_total_electric_consumption_kwh",
+                        "peak_heating_heatpump_thermal_ton",
+                        "peak_cooling_heatpump_thermal_ton",
+                        "peak_combined_heatpump_thermal_ton",
+                        "max_eft_f",
+                        "min_eft_f",
+                        "heating_cop_avg",
+                        "cooling_cop_avg",
+                        "solved_eft_error_f"]
 
         resp["inputs"] = ghpghx_data
         del resp["inputs"]["status"]

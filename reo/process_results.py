@@ -42,6 +42,8 @@ from reo.utilities import annuity, TONHOUR_TO_KWHT, MMBTU_TO_KWH, GAL_DIESEL_TO_
 from reo.nested_inputs import macrs_five_year, macrs_seven_year
 from reo.src.proforma_metrics import calculate_proforma_metrics
 from reo.src.storage import HotTES, ColdTES
+from ghpghx.models import GHPGHXModel
+from ghpghx.models import ModelManager as ghpModelManager
 log = logging.getLogger(__name__)
 
 
@@ -820,11 +822,12 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_thermal_to_tes_series_mmbtu_per_hour"] = [x / MMBTU_TO_KWH for x in self.results_dict.get("steamturbine_thermal_to_tes_series")]
                 elif name == "GHP":
                     if self.results_dict.get("GHPOptionChosen") >= 1:
-                        self.nested_outputs["Scenario"]["Site"][name][
-                            "ghp_chosen_uuid"] = self.dm.get("ghp_uuid_list")[self.results_dict.get("GHPOptionChosen") - 1]
+                        ghp_uuid = self.dm.get("ghp_uuid_list")[self.results_dict.get("GHPOptionChosen")-1] # -1 is right
+                        self.nested_outputs["Scenario"]["Site"][name]["ghp_chosen_uuid"] = ghp_uuid
+                        ghpghx_chosen = ghpModelManager.make_response(ghp_uuid=ghp_uuid)
+                        self.nested_outputs["Scenario"]["Site"][name]["ghpghx_chosen_outputs"] = ghpghx_chosen["outputs"]
                     else:
-                        self.nested_outputs["Scenario"]["Site"][name][
-                            "ghp_chosen_uuid"] = None
+                        self.nested_outputs["Scenario"]["Site"][name]["ghp_chosen_uuid"] = None
 
             # outputs that depend on multiple object results:
             future_replacement_cost, present_replacement_cost = self.replacement_costs_future_and_present

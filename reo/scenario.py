@@ -50,8 +50,6 @@ from reo.src import ghp
 from celery import shared_task, Task
 from reo.models import ModelManager
 from reo.exceptions import REoptError, UnexpectedError, LoadProfileError, WindDownloadError, PVWattsDownloadError, RequestError
-from ghpghx.models import GHPGHXModel
-from ghpghx.models import ModelManager as ghpModelManager
 from tastypie.test import TestApiClient
 
 class ScenarioTask(Task):
@@ -338,9 +336,12 @@ def setup_scenario(self, run_uuid, data, raw_post):
         # Call /ghpghx endpoint if only ghpghx_inputs is given, otherwise
         if (inputs_dict["Site"]["GHP"].get("ghpghx_inputs") not in [None, []] and \
             inputs_dict["Site"]["GHP"].get("ghpghx_response") in [None, []]):
-            inputs_dict["Site"]["GHP"]["ghpghx_response"] = []
+            ghpghx_response_list = []
+            # TODO running this twice causes issues? (with no time.sleep(10))
             for i in range(len(inputs_dict["Site"]["GHP"]["ghpghx_inputs"])):
                 ghpghx_post = inputs_dict["Site"]["GHP"]["ghpghx_inputs"][i]
+                ghpghx_post["latitude"] = inputs_dict["Site"]["latitude"]
+                ghpghx_post["longitude"] = inputs_dict["Site"]["longitude"]
                 ghpghx_post["heating_fuel_load_mmbtu_per_hr"] = dfm.heating_load.load_list #lpbf.load_list
                 ghpghx_post["existing_boiler_efficiency"] = dfm.boiler.boiler_efficiency #boiler.boiler_efficiency
                 ghpghx_post["cooling_thermal_load_ton"] = dfm.cooling_load.load_list #lpct.load_list
@@ -351,11 +352,15 @@ def setup_scenario(self, run_uuid, data, raw_post):
                 ghpghx_results_url = "/v1/ghpghx/"+ghp_uuid+"/results/"
                 ghpghx_results_resp = client.get(ghpghx_results_url)  # same as doing gMakeResponse(ghp_uuid)
                 ghpghx_results_resp_dict = json.loads(ghpghx_results_resp.content)
-                inputs_dict["Site"]["GHP"]["ghpghx_response"].append(ghpghx_results_resp_dict)
+                ghpghx_response_list.append(ghpghx_results_resp_dict)
                 ghp_option_list.append(ghp.GHPGHX(dfm=dfm,
-                                                    response=inputs_dict["Site"]["GHP"]["ghpghx_response"][i],
+                                                    response=ghpghx_response_list[i],
                                                     **inputs_dict["Site"]["GHP"]))
-            # Sleep to avoid calling julia_api for /job (reopt) too quickly after /ghpghx
+            # Update GHPModel with created ghpghx_response
+            tmp = dict()
+            tmp['ghpghx_response'] = ghpghx_response_list
+            ModelManager.updateModel('GHPModel', tmp, run_uuid)
+            # Sleep to avoid calling julia_api for /job (reopt) too quickly after /ghpghx (only required locally and/or for debugging?)
             time.sleep(10)
         # If ghpghx_response is included in inputs/POST, do NOT run /ghpghx model and use already-run ghpghx
         elif inputs_dict["Site"]["GHP"].get("ghpghx_response") not in [None, []]:

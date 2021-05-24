@@ -32,5 +32,5 @@
     "dst_ghx_timesteps_per_hour": 12,
     "tess_ghx_minimum_timesteps_per_hour": 1,
     "max_sizing_iterations": 12,
-    "init_sizing_factor_ft_per_peak_ton": 246.0
+    "init_sizing_factor_ft_per_peak_ton": 500.0
 }
