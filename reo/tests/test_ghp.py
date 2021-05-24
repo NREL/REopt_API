@@ -34,10 +34,11 @@ import time
 import numpy as np
 import pandas as pd
 from tastypie.test import ResourceTestCaseMixin
-from unittest import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
+from unittest import TestCase, skip  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
 from reo.models import ModelManager
 from ghpghx.models import ModelManager as gModelManager
 from reo.utilities import MMBTU_TO_KWH, TONHOUR_TO_KWHT
+
 
 class GHPTest(ResourceTestCaseMixin, TestCase):
     REopt_tol = 1e-2
@@ -59,6 +60,7 @@ class GHPTest(ResourceTestCaseMixin, TestCase):
     def get_reopt_response(self, data):
         return self.api_client.post(self.reopt_base, format='json', data=data)
 
+    @skip("Skip 2-endpoint GHP test")
     def test_ghp(self):
         """
         GHP Testing
@@ -105,6 +107,7 @@ class GHPTest(ResourceTestCaseMixin, TestCase):
         ghpghx_results_url = "/v1/ghpghx/"+ghp_uuid+"/results/"
         ghpghx_results_resp = self.api_client.get(ghpghx_results_url)  # same as doing gMakeResponse(ghp_uuid)
         ghpghx_results_resp_dict = json.loads(ghpghx_results_resp.content)
+        nested_data["Scenario"]["Site"]["GHP"]["ghpghx_response"] = []
         nested_data["Scenario"]["Site"]["GHP"]["ghpghx_response"].append(ghpghx_results_resp_dict)
 
         # Call API, get results in "d" dictionary
