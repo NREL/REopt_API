@@ -826,6 +826,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         self.nested_outputs["Scenario"]["Site"][name]["ghp_chosen_uuid"] = ghp_uuid
                         ghpghx_chosen = ghpModelManager.make_response(ghp_uuid=ghp_uuid)
                         self.nested_outputs["Scenario"]["Site"][name]["ghpghx_chosen_outputs"] = ghpghx_chosen["outputs"]
+                        self.nested_outputs["Scenario"]["Site"][name]["ghpghx_chosen_outputs"]["heating_thermal_load_mmbtu_per_hr"] = ghpghx_chosen["inputs"]["heating_thermal_load_mmbtu_per_hr"]
+                        self.nested_outputs["Scenario"]["Site"][name]["ghpghx_chosen_outputs"]["cooling_thermal_load_ton"] = ghpghx_chosen["inputs"]["cooling_thermal_load_ton"]
                     else:
                         self.nested_outputs["Scenario"]["Site"][name]["ghp_chosen_uuid"] = None
 

@@ -34,6 +34,8 @@ from django.forms.models import model_to_dict
 from picklefield.fields import PickledObjectField
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
+import pandas as pd
+import os
 
 log = logging.getLogger(__name__)
 
@@ -61,7 +63,7 @@ class GHPGHXModel(models.Model):
         default=20.0, validators=[MinValueValidator(1.0), MaxValueValidator(100.0)],
         help_text="Distance from the centerline of each borehole to the centerline of its adjacent boreholes [ft]")
     borehole_diameter_inch = models.FloatField(null=True, blank=True, 
-        default=1.66, validators=[MinValueValidator(0.25), MaxValueValidator(24.0)],
+        default=10.0, validators=[MinValueValidator(0.25), MaxValueValidator(24.0)],
         help_text="Diameter of the borehole/well drilled in the ground [in]")
     borehole_choices = [("rectangular", "rectangular"),
                         ("hexagonal", "hexagonal")]
@@ -81,7 +83,7 @@ class GHPGHXModel(models.Model):
         default=2.5, validators=[MinValueValidator(0.5), MaxValueValidator(100.0)],
         help_text="Distance between the centerline of the upwards and downwards u-tube legs [in]")
     ground_thermal_conductivity_btu_per_hr_ft_f = models.FloatField(null=True, blank=True, 
-        default=0.98, validators=[MinValueValidator(0.01), MaxValueValidator(15.0)],
+        default=1.18, validators=[MinValueValidator(0.01), MaxValueValidator(15.0)],
         help_text="Thermal conductivity of the ground surrounding the borehole field [Btu/(hr-ft-degF)]")
     ground_mass_density_lb_per_ft3 = models.FloatField(null=True, blank=True,
         default=162.3, validators=[MinValueValidator(10.0), MaxValueValidator(500.0)],
@@ -140,8 +142,25 @@ class GHPGHXModel(models.Model):
     ambient_temperature_f = ArrayField(models.FloatField(null=True, blank=True), 
         default=list, null=True, blank=True,
         help_text="Hourly outdoor air dry bulb temperature, typically TMY3 data [degF]")
+    def _get_cop_map():
+        hp_cop_filepath = os.path.join('ghpghx', 'tests', 'posts', "heatpump_cop_map_Tranquility.csv" )
+        heatpump_copmap_df = pd.read_csv(hp_cop_filepath)
+        heatpump_copmap_list_of_dict = heatpump_copmap_df.to_dict('records')
+        return heatpump_copmap_list_of_dict
+    # cop_map_tranquility = [{'eft': 20, 'heat_cop': 3.33, 'cool_cop': 7.7},
+    #                         {'eft': 30, 'heat_cop': 3.66, 'cool_cop': 7.7},
+    #                         {'eft': 40, 'heat_cop': 4.05, 'cool_cop': 7.7},
+    #                         {'eft': 50, 'heat_cop': 4.42, 'cool_cop': 7.63},
+    #                         {'eft': 60, 'heat_cop': 4.76, 'cool_cop': 7.13},
+    #                         {'eft': 70, 'heat_cop': 5.04, 'cool_cop': 6.19},
+    #                         {'eft': 80, 'heat_cop': 5.24, 'cool_cop': 5.29},
+    #                         {'eft': 90, 'heat_cop': 5.27, 'cool_cop': 4.55},
+    #                         {'eft': 100, 'heat_cop': 5.27, 'cool_cop': 3.75},
+    #                         {'eft': 110, 'heat_cop': 5.27, 'cool_cop': 3.13},
+    #                         {'eft': 120, 'heat_cop': 5.27, 'cool_cop': 2.62}]
     cop_map_eft_heating_cooling = ArrayField(
         PickledObjectField(null=True, editable=True), null=True,
+        default=_get_cop_map,
         help_text="Heat pump coefficient of performance (COP) map: list of dictionaries, each with 3 keys: 1) EFT, 2) HeatingCOP, 3) CoolingCOP")
 
     """
@@ -168,10 +187,10 @@ class GHPGHXModel(models.Model):
         default=25, validators=[MinValueValidator(1), MaxValueValidator(50)],
         help_text="The time span for which GHX is sized to meet the entering fluid temperature constraints [year]")
     solver_eft_tolerance_f = models.FloatField(null=True, blank=True, 
-        default=0.1, validators=[MinValueValidator(0.001), MaxValueValidator(5.0)],
+        default=2.0, validators=[MinValueValidator(0.001), MaxValueValidator(5.0)],
         help_text="Tolerance for GHX sizing based on the entering fluid temperature limits [degF]")
     ghx_model_choices = [("TESS", "TESS"),
-                         ("DST", "DST")]        
+                         ("DST", "DST")]
     ghx_model = models.TextField(blank=True,
         default="TESS", choices=ghx_model_choices,
         help_text="GHX model to use in the simulation: TESS or DST")

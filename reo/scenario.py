@@ -334,11 +334,17 @@ def setup_scenario(self, run_uuid, data, raw_post):
         # GHP
         ghp_option_list = []
         # Call /ghpghx endpoint if only ghpghx_inputs is given, otherwise
-        if (inputs_dict["Site"]["GHP"].get("ghpghx_inputs") not in [None, []] and \
+        if inputs_dict["Site"]["GHP"].get("building_sqft") is not None or \
+            (inputs_dict["Site"]["GHP"].get("ghpghx_inputs") not in [None, []] and \
             inputs_dict["Site"]["GHP"].get("ghpghx_response") in [None, []]):
             ghpghx_response_list = []
             # TODO running this twice causes issues? (with no time.sleep(10))
-            for i in range(len(inputs_dict["Site"]["GHP"]["ghpghx_inputs"])):
+            if inputs_dict["Site"]["GHP"].get("ghpghx_inputs") in [None, []]:
+                number_of_ghpghx = 1
+                inputs_dict["Site"]["GHP"]["ghpghx_inputs"] = [{}]
+            else:
+                number_of_ghpghx = len(inputs_dict["Site"]["GHP"]["ghpghx_inputs"])
+            for i in range(number_of_ghpghx):
                 ghpghx_post = inputs_dict["Site"]["GHP"]["ghpghx_inputs"][i]
                 ghpghx_post["latitude"] = inputs_dict["Site"]["latitude"]
                 ghpghx_post["longitude"] = inputs_dict["Site"]["longitude"]
@@ -363,7 +369,8 @@ def setup_scenario(self, run_uuid, data, raw_post):
             # Sleep to avoid calling julia_api for /job (reopt) too quickly after /ghpghx (only required locally and/or for debugging?)
             time.sleep(10)
         # If ghpghx_response is included in inputs/POST, do NOT run /ghpghx model and use already-run ghpghx
-        elif inputs_dict["Site"]["GHP"].get("ghpghx_response") not in [None, []]:
+        elif inputs_dict["Site"]["GHP"].get("building_sqft") is not None and \
+                inputs_dict["Site"]["GHP"].get("ghpghx_response") not in [None, []]:
             for i in range(len(inputs_dict["Site"]["GHP"]["ghpghx_response"])):
                 ghp_option_list.append(ghp.GHPGHX(dfm=dfm,
                                                     response=inputs_dict["Site"]["GHP"]["ghpghx_response"][i],
