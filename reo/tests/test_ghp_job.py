@@ -62,15 +62,17 @@ class GHPTest(ResourceTestCaseMixin, TestCase):
         # Call to GHPGHX app to run GHPGHX model and return the "ghpghx_response" as input to REopt
         #   this mimicks the process the webtool (and API users) would call GHPGHX then REopt
         nested_data = json.load(open(self.test_reopt_post, 'rb'))
-        ghpghx_post = json.load(open(self.test_ghpghx_post, 'rb'))
+        #ghpghx_post = json.load(open(self.test_ghpghx_post, 'rb'))
 
         # Heat pump performance maps
-        hp_cop_filepath = os.path.join('ghpghx', 'tests', 'posts', "heatpump_cop_map.csv" )
-        heatpump_copmap_df = pd.read_csv(hp_cop_filepath)
-        heatpump_copmap_list_of_dict = heatpump_copmap_df.to_dict('records')
-        ghpghx_post["cop_map_eft_heating_cooling"] = heatpump_copmap_list_of_dict
+        # hp_cop_filepath = os.path.join('ghpghx', 'tests', 'posts', "heatpump_cop_map_Tranquility.csv" )
+        # heatpump_copmap_df = pd.read_csv(hp_cop_filepath)
+        # heatpump_copmap_list_of_dict = heatpump_copmap_df.to_dict('records')
+        # ghpghx_post["cop_map_eft_heating_cooling"] = heatpump_copmap_list_of_dict
+        # json.dump(heatpump_copmap_list_of_dict, open("cop_map_eft_heating_cooling.json", "w"))
 
-        nested_data["Scenario"]["Site"]["GHP"]["ghpghx_inputs"] = [ghpghx_post]
+        #nested_data["Scenario"]["Site"]["GHP"]["ghpghx_inputs"] = [ghpghx_post]
+        #nested_data["Scenario"]["Site"]["GHP"]["ghpghx_inputs"] = []
 
         # Call API, get results in "d" dictionary
         nested_data["Scenario"]["timeout_seconds"] = 420  # Overwriting

@@ -161,7 +161,7 @@ function InputsProcess(d::Dict)
     # Convert COP map list_of_dict to Array{Float64, 2}
     d[:HeatPumpCOPMap] = zeros(Float64, length(d["cop_map_eft_heating_cooling"]), 3)
     for i in 1:length(d["cop_map_eft_heating_cooling"])
-        d[:HeatPumpCOPMap][i,1] = d["cop_map_eft_heating_cooling"][i]["ewt"]
+        d[:HeatPumpCOPMap][i,1] = d["cop_map_eft_heating_cooling"][i]["eft"]
         d[:HeatPumpCOPMap][i,2] = d["cop_map_eft_heating_cooling"][i]["heat_cop"]
         d[:HeatPumpCOPMap][i,3] = d["cop_map_eft_heating_cooling"][i]["cool_cop"]
     end
