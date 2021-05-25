@@ -72,11 +72,8 @@ function size_borefield(p)
             assign_PAR!(p, r, PAR, size_iter)
             init_ghx_calls_2x!(p, TimeArray, XIN, OUT, PAR, INFO)
         end
-        println("X_Now = ", r.X_Now[size_iter])
         println("N_bores = ", r.N_Bores[size_iter])
         for year in 1:p.simulation_years
-            println("  ",OUT[1],"  ")
-            #println("Time = ", TimeArray[1])  # This has some interesting small decimal place behavior (from Fortran?)
             for hr in 1:8760  # TESS model has hourly-based timesteps per hour
                 Q_Heat = p.HeatingThermalLoadKW[hr] * 3600.0  # Convert kW to kJ/hr
                 Q_Cool = p.CoolingThermalLoadKW[hr] * 3600.0  # Convert kW to kJ/hr
@@ -250,6 +247,7 @@ function size_borefield(p)
                     INFO[13] = 0
                 end
             end
+            println("EFT after year ", year ," = ", round(OUT[1] * 1.8 + 32.0, digits=1)," F")
         end
         # Use a Newton's method to calculate the bore size to meet the design goals
         # FX => error of temperature limits
@@ -257,13 +255,13 @@ function size_borefield(p)
         FX_Cooling = p.Tmax_Sizing - r.Tmax_GHX
         FX_Heating = r.Tmin_GHX - p.Tmin_Sizing
         # If tolerance is met for either heating or cooling, break the while loop and accept size solution
-        if (abs(FX_Cooling) < p.solver_ewt_tolerance) && (abs(FX_Heating) < p.solver_ewt_tolerance)
+        if (abs(FX_Cooling) < p.solver_eft_tolerance) && (abs(FX_Heating) < p.solver_eft_tolerance)
             r.FX_Now[size_iter] = min(FX_Cooling, FX_Heating)
             break
-        elseif (abs(FX_Cooling) < p.solver_ewt_tolerance) && (FX_Heating > 0.0)
+        elseif (abs(FX_Cooling) < p.solver_eft_tolerance) && (FX_Heating > 0.0)
             r.FX_Now[size_iter] = FX_Cooling
             break
-        elseif (abs(FX_Heating) < p.solver_ewt_tolerance) && (FX_Cooling > 0.0)
+        elseif (abs(FX_Heating) < p.solver_eft_tolerance) && (FX_Cooling > 0.0)
             r.FX_Now[size_iter] = FX_Heating
             break
         end
@@ -287,10 +285,10 @@ function size_borefield(p)
             size_iter += 1
             continue
         elseif size_iter > 1
-            if (FX_Cooling > p.solver_ewt_tolerance) || (FX_Heating > p.solver_ewt_tolerance)
-                if FX_Heating < p.solver_ewt_tolerance
+            if (FX_Cooling > p.solver_eft_tolerance) || (FX_Heating > p.solver_eft_tolerance)
+                if FX_Heating < p.solver_eft_tolerance
                     r.FX_Now[size_iter] = FX_Heating
-                elseif FX_Cooling < p.solver_ewt_tolerance
+                elseif FX_Cooling < p.solver_eft_tolerance
                     r.FX_Now[size_iter] = FX_Cooling
                 else  # Both are greater than tolerance
                     r.FX_Now[size_iter] = min(FX_Cooling, FX_Heating)

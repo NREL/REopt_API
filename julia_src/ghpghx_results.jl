@@ -67,7 +67,7 @@ end
 function get_ghpghx_results_for_reopt(r::ResultsStruct, p::InputsStruct)
     results_dict = Dict{Any,Any}()
     results_dict["number_of_boreholes"] = r.N_Bores_Final
-    results_dict["length_boreholes_ft"] = round(r.Length_Boreholes, digits=1)
+    results_dict["length_boreholes_ft"] = round(r.Length_Boreholes * p.METER_TO_FEET, digits=1)
     results_dict["yearly_heating_heatpump_electric_consumption_series_kw"] = zeros(8760)
     results_dict["yearly_cooling_heatpump_electric_consumption_series_kw"] = zeros(8760)
     results_dict["yearly_ghx_pump_electric_consumption_series_kw"] = zeros(8760)
@@ -99,6 +99,6 @@ function get_ghpghx_results_for_reopt(r::ResultsStruct, p::InputsStruct)
     cooling_heatpump_electric_kwh = sum(results_dict["yearly_cooling_heatpump_electric_consumption_series_kw"])
     results_dict["heating_cop_avg"] = round(heating_thermal_kwh / (heating_heatpump_electric_kwh + heating_ghx_pump_electric_kwh), digits=3)
     results_dict["cooling_cop_avg"] = round(cooling_thermal_kwh / (cooling_heatpump_electric_kwh + cooling_ghx_pump_electric_kwh), digits=3)
-    results_dict["solved_eft_error_f"] = round(r.FX_Final, digits=3)
+    results_dict["solved_eft_error_f"] = round(r.FX_Final * 1.8, digits=3)
     return results_dict
 end

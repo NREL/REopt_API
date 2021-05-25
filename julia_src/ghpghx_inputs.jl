@@ -36,7 +36,8 @@ Base.@kwdef struct InputsStruct
 
     # Model Settings
     simulation_years::Int64  # Number of years for GHP-GHX model
-    solver_ewt_tolerance::Float64  # Tolerance for the EWT error to accept a GHX sizing solution
+    solver_eft_tolerance_f::Float64  # Tolerance for the EFT error to accept a GHX sizing solution
+    solver_eft_tolerance::Float64  # Convert to degC
     ghx_model::String  # "TESS" or "DST"
     dst_ghx_timesteps_per_hour::Int64
     tess_ghx_minimum_timesteps_per_hour::Int64
@@ -82,7 +83,7 @@ Base.@kwdef struct InputsStruct
     # These are defined based on the above inputs and processed in the function below
     TON_TO_KW::Float64 # [kw/ton]
     MMBTU_TO_KWH::Float64  # [kwh/MMBtu]
-    FEET_TO_METER::Float64  # [ft/m]
+    METER_TO_FEET::Float64  # [ft/m]
 
     PeakTons_WSHP_H::Float64
     PeakTons_WSHP_C::Float64
@@ -106,37 +107,38 @@ function InputsProcess(d::Dict)
     # Constants
     d[:TON_TO_KW] = 3.5169  # [kw/ton]
     d[:MMBTU_TO_KWH] = 293.07  # [kwh/MMBtu]
-    d[:FEET_TO_METER] = 3.28084  # [ft/m]
+    d[:METER_TO_FEET] = 3.28084  # [ft/m]
 
     # Convert API inputs to GHPGHX variable names, and units from English to SI
-    d[:Depth_Bores] =  d["borehole_depth_ft"] / d[:FEET_TO_METER]  # [m]
-    d[:Depth_Header] = d["ghx_header_depth_ft"] / d[:FEET_TO_METER]  # [m]
-    d[:BoreSpacing] = d["borehole_spacing_ft"] / d[:FEET_TO_METER]  # [m]
+    d[:Depth_Bores] =  d["borehole_depth_ft"] / d[:METER_TO_FEET]  # [m]
+    d[:Depth_Header] = d["ghx_header_depth_ft"] / d[:METER_TO_FEET]  # [m]
+    d[:BoreSpacing] = d["borehole_spacing_ft"] / d[:METER_TO_FEET]  # [m]
     if d["borehole_spacing_type"] == "rectangular"
         d[:SpacingType] = 1
     else
         d[:SpacingType] = 2
     end
-    d[:Radius_Bores] = d["borehole_diameter_inch"] / 2.0 / 12.0 / d[:FEET_TO_METER]  # [m]
-    d[:Ro_Pipe] = d["ghx_pipe_outer_diameter_inch"] / 2.0 / 12.0 / d[:FEET_TO_METER]  # [m]
-    d[:Ri_Pipe] = (d["ghx_pipe_outer_diameter_inch"] / 2.0 - d["ghx_pipe_wall_thickness_inch"]) / 12.0 / d[:FEET_TO_METER]  # [m]
-    d[:K_Pipe] = d["ghx_pipe_thermal_conductivity_btu_per_hr_ft_f"] * 1.055 * d[:FEET_TO_METER] * 1.8  # [kJ/h.m.K]
-    d[:Center_Center_Distance] = d["ghx_shank_space_inch"] / 12.0 / d[:FEET_TO_METER]  # [m]
-    d[:K_Soil] = d["ground_thermal_conductivity_btu_per_hr_ft_f"] * 1.055 * d[:FEET_TO_METER] * 1.8  # [kJ/h.m]
+    d[:Radius_Bores] = d["borehole_diameter_inch"] / 2.0 / 12.0 / d[:METER_TO_FEET]  # [m]
+    d[:Ro_Pipe] = d["ghx_pipe_outer_diameter_inch"] / 2.0 / 12.0 / d[:METER_TO_FEET]  # [m]
+    d[:Ri_Pipe] = (d["ghx_pipe_outer_diameter_inch"] / 2.0 - d["ghx_pipe_wall_thickness_inch"]) / 12.0 / d[:METER_TO_FEET]  # [m]
+    d[:K_Pipe] = d["ghx_pipe_thermal_conductivity_btu_per_hr_ft_f"] * 1.055 * d[:METER_TO_FEET] * 1.8  # [kJ/h.m.K]
+    d[:Center_Center_Distance] = d["ghx_shank_space_inch"] / 12.0 / d[:METER_TO_FEET]  # [m]
+    d[:K_Soil] = d["ground_thermal_conductivity_btu_per_hr_ft_f"] * 1.055 * d[:METER_TO_FEET] * 1.8  # [kJ/h.m]
     d[:Rho_Soil] = d["ground_mass_density_lb_per_ft3"] * 35.31467 / 2.20462  # [kg/m3]
     d[:Cp_Soil] = d["ground_specific_heat_btu_per_lb_f"] * 1.8 * 2.20462 * 1.055  # [kJ/kg.K]
-    d[:K_Grout] = d["grout_thermal_conductivity_btu_per_hr_ft_f"] * 1.055 * d[:FEET_TO_METER] * 1.8  # [kJ/h.m.K]    
+    d[:K_Grout] = d["grout_thermal_conductivity_btu_per_hr_ft_f"] * 1.055 * d[:METER_TO_FEET] * 1.8  # [kJ/h.m.K]    
     # See processing of ambient temperature for temperature parameters
     d[:Cp_GHXFluid] = d["ghx_fluid_specific_heat_btu_per_lb_f"] * 1.8 * 2.20462 * 1.055  # [kJ/kg.K]
     d[:Rho_GHXFluid] = d["ghx_fluid_mass_density_lb_per_ft3"] * 35.31467 / 2.20462  # [kg/m3]
-    d[:K_GHXFluid] = d["ghx_fluid_thermal_conductivity_btu_per_hr_ft_f"] * 1.055 * d[:FEET_TO_METER] * 1.8  # [kJ/h.m.K]
-    d[:Mu_GHXFluid] = d["ghx_fluid_dynamic_viscosity_lbm_per_ft_hr"] * d[:FEET_TO_METER] / 2.20462  # [kg/h.m]
+    d[:K_GHXFluid] = d["ghx_fluid_thermal_conductivity_btu_per_hr_ft_f"] * 1.055 * d[:METER_TO_FEET] * 1.8  # [kJ/h.m.K]
+    d[:Mu_GHXFluid] = d["ghx_fluid_dynamic_viscosity_lbm_per_ft_hr"] * d[:METER_TO_FEET] / 2.20462  # [kg/h.m]
     d[:GPMperTon_WSHP] = d["ghx_fluid_flow_rate_gpm_per_ton"]
     d[:WattPerGPM_GHXPump] = d["ghx_pump_power_watt_per_gpm"]
     d[:fMin_VSP_GHXPump] = d["ghx_pump_min_speed_fraction"]
     d[:Exponent_GHXPump] = d["ghx_pump_power_exponent"]
     d[:Tmax_Sizing] = (d["max_eft_allowable_f"] - 32.0) / 1.8  # [C]
     d[:Tmin_Sizing] = (d["min_eft_allowable_f"] - 32.0) / 1.8  # [C]
+    d[:solver_eft_tolerance] = d["solver_eft_tolerance_f"] / 1.8  # [C]
 
     # Convert array input units to SI
     d[:HeatingThermalLoadKW] = d["heating_thermal_load_mmbtu_per_hr"] * d[:MMBTU_TO_KWH]
@@ -152,7 +154,7 @@ function InputsProcess(d::Dict)
         avg_temp_month[mo] = sum(d[:AmbientTemperature][hour_start:hour_end]) / (days * 24)
     end
     
-    d[:T_Ground] = sum(d[:AmbientTemperature]) / (364 * 24)  # [C]
+    d[:T_Ground] = sum(d[:AmbientTemperature]) / (365 * 24)  # [C]
     d[:Tamp_Ground] =  (maximum(avg_temp_month) - minimum(avg_temp_month)) / 2  # [C]
     d[:DayMin_Surface] = convert(Int64, round(argmin(d[:AmbientTemperature]) / 24))  # day of year
 
@@ -168,7 +170,7 @@ function InputsProcess(d::Dict)
     d[:PeakTons_WSHP_H] = maximum(d[:HeatingThermalLoadKW]) / d[:TON_TO_KW]
     d[:PeakTons_WSHP_C] = maximum(d["cooling_thermal_load_ton"])
     d[:PeakTons_WSHP_GHX] = maximum(d[:HeatingThermalLoadKW] + d[:CoolingThermalLoadKW]) / d[:TON_TO_KW]
-    d[:X_init] = d["init_sizing_factor_ft_per_peak_ton"] / d[:FEET_TO_METER] * d[:PeakTons_WSHP_GHX]  # [m]
+    d[:X_init] = d["init_sizing_factor_ft_per_peak_ton"] / d[:METER_TO_FEET] * d[:PeakTons_WSHP_GHX]  # [m]
     
     # Set some intermediate conditions
     d[:N_Series] = 1

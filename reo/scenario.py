@@ -32,7 +32,6 @@ import sys
 import os
 import logging
 
-from reo.src import load_profile_boiler_fuel
 log = logging.getLogger(__name__)
 import json
 import time
@@ -51,6 +50,7 @@ from celery import shared_task, Task
 from reo.models import ModelManager
 from reo.exceptions import REoptError, UnexpectedError, LoadProfileError, WindDownloadError, PVWattsDownloadError, RequestError
 from tastypie.test import TestApiClient
+from reo.utilities import TONHOUR_TO_KWHT
 
 class ScenarioTask(Task):
     """
@@ -344,7 +344,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
                 ghpghx_post["longitude"] = inputs_dict["Site"]["longitude"]
                 ghpghx_post["heating_fuel_load_mmbtu_per_hr"] = dfm.heating_load.load_list #lpbf.load_list
                 ghpghx_post["existing_boiler_efficiency"] = dfm.boiler.boiler_efficiency #boiler.boiler_efficiency
-                ghpghx_post["cooling_thermal_load_ton"] = dfm.cooling_load.load_list #lpct.load_list
+                ghpghx_post["cooling_thermal_load_ton"] = [kwt / TONHOUR_TO_KWHT for kwt in dfm.cooling_load.load_list] #lpct.load_list
                 client = TestApiClient()
                 ghpghx_post_resp = client.post('/v1/ghpghx/', data=ghpghx_post)
                 ghpghx_post_resp_dict = json.loads(ghpghx_post_resp.content)

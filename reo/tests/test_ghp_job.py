@@ -71,7 +71,6 @@ class GHPTest(ResourceTestCaseMixin, TestCase):
         ghpghx_post["cop_map_eft_heating_cooling"] = heatpump_copmap_list_of_dict
 
         nested_data["Scenario"]["Site"]["GHP"]["ghpghx_inputs"] = [ghpghx_post]
-        json.dump(ghpghx_post, open("ghpghx_inputs.json", "w"))
 
         # Call API, get results in "d" dictionary
         nested_data["Scenario"]["timeout_seconds"] = 420  # Overwriting
