@@ -142,22 +142,13 @@ class GHPGHXModel(models.Model):
     ambient_temperature_f = ArrayField(models.FloatField(null=True, blank=True), 
         default=list, null=True, blank=True,
         help_text="Hourly outdoor air dry bulb temperature, typically TMY3 data [degF]")
+    
     def _get_cop_map():
         hp_cop_filepath = os.path.join('ghpghx', 'tests', 'posts', "heatpump_cop_map_Tranquility.csv" )
         heatpump_copmap_df = pd.read_csv(hp_cop_filepath)
         heatpump_copmap_list_of_dict = heatpump_copmap_df.to_dict('records')
         return heatpump_copmap_list_of_dict
-    # cop_map_tranquility = [{'eft': 20, 'heat_cop': 3.33, 'cool_cop': 7.7},
-    #                         {'eft': 30, 'heat_cop': 3.66, 'cool_cop': 7.7},
-    #                         {'eft': 40, 'heat_cop': 4.05, 'cool_cop': 7.7},
-    #                         {'eft': 50, 'heat_cop': 4.42, 'cool_cop': 7.63},
-    #                         {'eft': 60, 'heat_cop': 4.76, 'cool_cop': 7.13},
-    #                         {'eft': 70, 'heat_cop': 5.04, 'cool_cop': 6.19},
-    #                         {'eft': 80, 'heat_cop': 5.24, 'cool_cop': 5.29},
-    #                         {'eft': 90, 'heat_cop': 5.27, 'cool_cop': 4.55},
-    #                         {'eft': 100, 'heat_cop': 5.27, 'cool_cop': 3.75},
-    #                         {'eft': 110, 'heat_cop': 5.27, 'cool_cop': 3.13},
-    #                         {'eft': 120, 'heat_cop': 5.27, 'cool_cop': 2.62}]
+        
     cop_map_eft_heating_cooling = ArrayField(
         PickledObjectField(null=True, editable=True), null=True,
         default=_get_cop_map,
