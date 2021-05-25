@@ -334,7 +334,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
         # GHP
         ghp_option_list = []
         # Call /ghpghx endpoint if only ghpghx_inputs is given, otherwise
-        if inputs_dict["Site"]["GHP"].get("building_sqft") is not None or \
+        if inputs_dict["Site"]["GHP"].get("building_sqft") is not None and \
             (inputs_dict["Site"]["GHP"].get("ghpghx_inputs") not in [None, []] and \
             inputs_dict["Site"]["GHP"].get("ghpghx_response") in [None, []]):
             ghpghx_response_list = []
@@ -356,7 +356,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
                 ghpghx_post_resp_dict = json.loads(ghpghx_post_resp.content)
                 ghp_uuid = ghpghx_post_resp_dict.get('ghp_uuid')
                 ghpghx_results_url = "/v1/ghpghx/"+ghp_uuid+"/results/"
-                ghpghx_results_resp = client.get(ghpghx_results_url)  # same as doing gMakeResponse(ghp_uuid)
+                ghpghx_results_resp = client.get(ghpghx_results_url)  # same as doing ghpMakeResponse(ghp_uuid)
                 ghpghx_results_resp_dict = json.loads(ghpghx_results_resp.content)
                 ghpghx_response_list.append(ghpghx_results_resp_dict)
                 ghp_option_list.append(ghp.GHPGHX(dfm=dfm,

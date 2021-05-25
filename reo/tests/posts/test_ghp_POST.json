@@ -39,7 +39,7 @@
             } ,
             "GHP": {
                 "force_ghp": true,
-                "ghpghx_inputs": [],
+                "ghpghx_inputs": [{}],
                 "building_sqft": 50000.0
             },
             "PV":{
