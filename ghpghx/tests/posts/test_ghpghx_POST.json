@@ -27,7 +27,7 @@
     "ambient_temperature_f": [],
     "cop_map_eft_heating_cooling": [],
     "simulation_years": 20,
-    "solver_ewt_tolerance": 0.01,
+    "solver_eft_tolerance_f": 1.0,
     "ghx_model": "TESS",
     "dst_ghx_timesteps_per_hour": 12,
     "tess_ghx_minimum_timesteps_per_hour": 1,

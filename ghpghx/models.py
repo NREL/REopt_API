@@ -166,10 +166,10 @@ class GHPGHXModel(models.Model):
     # Model Settings
     simulation_years = models.IntegerField(null=True, blank=True, 
         default=25, validators=[MinValueValidator(1), MaxValueValidator(50)],
-        help_text="The time span for which GHX is sized to meet the entering water temperature constraints [year]")
-    solver_ewt_tolerance = models.FloatField(null=True, blank=True, 
+        help_text="The time span for which GHX is sized to meet the entering fluid temperature constraints [year]")
+    solver_eft_tolerance_f = models.FloatField(null=True, blank=True, 
         default=0.1, validators=[MinValueValidator(0.001), MaxValueValidator(5.0)],
-        help_text="Tolerance for GHX sizing based on the entering water temperature limits [degF]")
+        help_text="Tolerance for GHX sizing based on the entering fluid temperature limits [degF]")
     ghx_model_choices = [("TESS", "TESS"),
                          ("DST", "DST")]        
     ghx_model = models.TextField(blank=True,
