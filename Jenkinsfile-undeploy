@@ -19,7 +19,7 @@ pipeline {
     booleanParam(
       name: "UNDEPLOY_MERGED_BRANCHES",
       defaultValue: true,
-      description: "Undeploy branches that have been merged into the main branch (but not deleted) from staging.",
+      description: "Undeploy branches that have been merged into the master branch (but not deleted) from staging.",
     )
     string(
       name: "UNDEPLOY_BRANCH_NAMES",
@@ -49,7 +49,7 @@ pipeline {
         stage("undeploy-branches") {
           steps {
             withKubeConfig([credentialsId: "kubeconfig-nrel-test"]) {
-              tadaUndeployEachBranch(rancherProject: env.RANCHER_PROJECT, undeployDeletedBranches: params.UNDEPLOY_DELETED_BRANCHES, undeployMergedBranches: params.UNDEPLOY_MERGED_BRANCHES, undeployBranchNames: params.UNDEPLOY_BRANCH_NAMES) {
+              tadaUndeployEachBranch(rancherProject: env.RANCHER_PROJECT, undeployDeletedBranches: params.UNDEPLOY_DELETED_BRANCHES, undeployMergedBranches: params.UNDEPLOY_MERGED_BRANCHES, undeployBranchNames: params.UNDEPLOY_BRANCH_NAMES, primaryBranch: "master") {
                 tadaWithWerfEnv(rancherProject: env.RANCHER_PROJECT, dbBaseName: env.DB_BASE_NAME) {
                   tadaUndeployBranch()
                 }
