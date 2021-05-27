@@ -349,7 +349,10 @@ def setup_scenario(self, run_uuid, data, raw_post):
                 ghpghx_post["latitude"] = inputs_dict["Site"]["latitude"]
                 ghpghx_post["longitude"] = inputs_dict["Site"]["longitude"]
                 ghpghx_post["heating_fuel_load_mmbtu_per_hr"] = dfm.heating_load.load_list #lpbf.load_list
-                ghpghx_post["existing_boiler_efficiency"] = dfm.boiler.boiler_efficiency #boiler.boiler_efficiency
+                if dfm.boiler is not None:
+                    ghpghx_post["existing_boiler_efficiency"] = dfm.boiler.boiler_efficiency #boiler.boiler_efficiency
+                else:
+                    ghpghx_post["existing_boiler_efficiency"] = 0.8
                 ghpghx_post["cooling_thermal_load_ton"] = [kwt / TONHOUR_TO_KWHT for kwt in dfm.cooling_load.load_list] #lpct.load_list
                 client = TestApiClient()
                 ghpghx_post_resp = client.post('/v1/ghpghx/', data=ghpghx_post)
