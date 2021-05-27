@@ -1275,7 +1275,10 @@ class DataManager:
                 # TODO make sure the below is consistent with the y-int + slope * size definitions
                 ghp_installed_cost.append(ghp_cap_cost_yint[n] + ghp_size_tons * ghp_cap_cost_slope[n])
                 ghp_om_cost_year_one.append(option.om_cost_year_one)
-                heating_thermal_load = np.array(heating_load) * (self.boiler_efficiency or 0.0)
+                if self.boiler is not None:
+                    heating_thermal_load = np.array(heating_load) * self.boiler_efficiency
+                else:
+                    heating_thermal_load = np.array(heating_load) * 0.8
                 ghp_heating_thermal_load_served_kw.append(list(np.minimum(option.heating_thermal_load_served_kw, heating_thermal_load)))
                 ghp_cooling_thermal_load_served_kw.append(list(np.minimum(option.cooling_thermal_load_served_kw, cooling_load)))
                 ghp_electric_consumption_kw.append(option.electric_consumption_kw)
