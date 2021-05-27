@@ -440,7 +440,7 @@ def summary(request, user_uuid):
 def summary_by_chunk(request, user_uuid, chunk):
     """
     Retrieve a summary of scenarios for given user_uuid by chunk (i.e. a chunk is a subset of all user results). 
-    Default chunk size is 30, but this is customizable from the chunk_size URL parameter.
+    Default chunk_size is 30, but this is customizable from the chunk_size URL parameter.
     
     :param request:
     :param user_uuid:
