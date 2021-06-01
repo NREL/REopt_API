@@ -335,8 +335,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
         ghp_option_list = []
         # Call /ghpghx endpoint if only ghpghx_inputs is given, otherwise
         if inputs_dict["Site"]["GHP"].get("building_sqft") is not None and \
-            (inputs_dict["Site"]["GHP"].get("ghpghx_inputs") not in [None, []] and \
-            inputs_dict["Site"]["GHP"].get("ghpghx_response") in [None, []]):
+            inputs_dict["Site"]["GHP"].get("ghpghx_response") in [None, []]:
             ghpghx_response_list = []
             # TODO running this twice causes issues? (with no time.sleep(10))
             if inputs_dict["Site"]["GHP"].get("ghpghx_inputs") in [None, []]:
