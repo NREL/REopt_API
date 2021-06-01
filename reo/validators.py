@@ -1562,9 +1562,12 @@ class ValidateNestedInput:
                             self.update_attribute_value(object_name_path, number,
                                                         'boiler_efficiency',
                                                         boiler_effic)
-                        elif chp_prime_mover is not None:
-                            hw_or_steam = boiler_type_by_chp_pm_defaults[chp_prime_mover]
-                            boiler_effic = boiler_effic_by_type_defaults[hw_or_steam]
+                        else:
+                            if chp_prime_mover is not None:
+                                hw_or_steam = boiler_type_by_chp_pm_defaults[chp_prime_mover]
+                            else:
+                                hw_or_steam = "hot_water"
+                            boiler_effic = boiler_effic_by_type_defaults[hw_or_steam]  
                             self.update_attribute_value(object_name_path, number,
                                                         'existing_boiler_production_type_steam_or_hw',
                                                         hw_or_steam)
