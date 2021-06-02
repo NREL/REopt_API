@@ -28,7 +28,6 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
 import sys
-import json
 from django.http import JsonResponse
 from reo.models import ScenarioModel, SiteModel, LoadProfileModel, PVModel, StorageModel, \
     WindModel, GeneratorModel, FinancialModel, ElectricTariffModel, \
@@ -40,45 +39,37 @@ import uuid
 from summary.models import UserUnlinkedRuns
 
 
-def add_user_uuid(request):
+def add_user_uuid(request, user_uuid, run_uuid):
     """
     update the user_uuid associated with a Scenario run_uuid
-    :param request POST:
-        {
-            "user_uuid",
-            "run_uuid"
-        }
-    :return: None
     """
+    content = {'user_uuid': user_uuid, 'run_uuid': run_uuid}
+    for name, check_id in content.items():
+        try:
+            uuid.UUID(check_id)  # raises ValueError if not valid uuid
+        except ValueError as e:
+            if e.args[0] == "badly formed hexadecimal UUID string":
+                return JsonResponse({"Error": "{} {}".format(name, e.args[0]) }, status=400)
+            else:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                if name == 'user_uuid':
+                    err = UnexpectedError(exc_type, exc_value, exc_traceback, task='unlink', user_uuid=check_id)
+                if name == 'run_uuid':
+                    err = UnexpectedError(exc_type, exc_value, exc_traceback, task='unlink', run_uuid=check_id)
+                err.save_to_db()
+                return JsonResponse({"Error": str(err.message)}, status=400)
     try:
-        if request.method == 'POST':
-            post = request.body
-            # Try to import JSON
-            try:
-                data = json.loads(post)
-                try:
-                    user_uuid = str(data['user_uuid'])
-                    run_uuid = str(data['run_uuid'])
-                    uuid.UUID(user_uuid)  # raises ValueError if not valid uuid
-                    uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
-                    try:
-                        scenario = ScenarioModel.objects.filter(run_uuid=run_uuid).first()
-                        print (scenario.user_uuid)
-                        if scenario.user_uuid is None:
-                            ModelManager.add_user_uuid(user_uuid, run_uuid)
-                            response = JsonResponse(
-                                {"Success": "user_uuid for run_uuid {} has been set to {}".format(run_uuid, user_uuid)})
-                            return response
-                        else:
-                            return JsonResponse({"Error": "a user_uuid already exists for run_uuid {}".format(run_uuid)})
-                    except:
-                        return JsonResponse({"Error": "run_uuid does not exist"})
-                except:
-                    return JsonResponse({"Error": "Invalid inputs: must provide user_uuid and run_uuid key value pairs as valid UUIDs"})
-            except:
-                return JsonResponse({"Error": "Invalid JSON"})
-        else:
-            return JsonResponse({"Error": "Must POST a JSON with user_uuid and run_uuid key value pairs"})
+        try:
+            scenario = ScenarioModel.objects.filter(run_uuid=run_uuid).first()
+            if scenario.user_uuid is None:
+                ModelManager.add_user_uuid(user_uuid, run_uuid)
+                response = JsonResponse(
+                    {"Success": "user_uuid for run_uuid {} has been set to {}".format(run_uuid, user_uuid)})
+                return response
+            else:
+                return JsonResponse({"Error": "a user_uuid already exists for run_uuid {}".format(run_uuid)})
+        except:
+            return JsonResponse({"Error": "run_uuid does not exist"})
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -86,19 +77,15 @@ def add_user_uuid(request):
         err.save_to_db()
         return JsonResponse({"Error": err.message}, status=500)
 
+
 def unlink(request, user_uuid, run_uuid):
     """
-    Retrieve a summary of scenarios for given user_uuid
-    :param request:
-    :param user_uuid:
-    :return 
-        True, bool
+    add an entry to the UserUnlinkedRuns for the given user_uuid and run_uuid
     """
-    content = {'user_uuid':user_uuid, 'run_uuid':run_uuid}
+    content = {'user_uuid': user_uuid, 'run_uuid': run_uuid}
     for name, check_id in content.items():
         try:
             uuid.UUID(check_id)  # raises ValueError if not valid uuid
-
         except ValueError as e:
             if e.args[0] == "badly formed hexadecimal UUID string":
                 return JsonResponse({"Error": "{} {}".format(name, e.args[0]) }, status=400)
@@ -112,22 +99,24 @@ def unlink(request, user_uuid, run_uuid):
                 return JsonResponse({"Error": str(err.message)}, status=400)
 
     try:
-        
         if not ScenarioModel.objects.filter(user_uuid=user_uuid).exists():
-            return JsonResponse({"Error":"User {} does not exist".format(user_uuid)}, status=400)
+            return JsonResponse({"Error": "User {} does not exist".format(user_uuid)}, status=400)
 
         if not ScenarioModel.objects.filter(run_uuid=run_uuid).exists():
-            return JsonResponse({"Error":"Run {} does not exist".format(run_uuid)}, status=400)
+            return JsonResponse({"Error": "Run {} does not exist".format(run_uuid)}, status=400)
 
         runs = ScenarioModel.objects.filter(run_uuid=run_uuid)
         if runs.exists():
             if runs[0].user_uuid != user_uuid:
-                return JsonResponse({"Error":"Run {} is not associated with user {}".format(run_uuid, user_uuid)}, status=400)
+                return JsonResponse({"Error": "Run {} is not associated with user {}".format(run_uuid, user_uuid)}, status=400)
 
         if not UserUnlinkedRuns.objects.filter(run_uuid=run_uuid).exists():
             UserUnlinkedRuns.create(**content)
-
-        return JsonResponse({"Success":True}, status=204)
+            return JsonResponse({"Success": "user_uuid {} unlinked from run_uuid {}".format(user_uuid, run_uuid)},
+                                status=201)
+        else:
+            return JsonResponse({"Nothing changed": "user_uuid {} is already unlinked from run_uuid {}".format(user_uuid, run_uuid)},
+                                status=208)
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         err = UnexpectedError(exc_type, exc_value, exc_traceback, task='unlink', user_uuid=user_uuid)
