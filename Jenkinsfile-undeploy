@@ -14,17 +14,17 @@ pipeline {
     booleanParam(
       name: "UNDEPLOY_DELETED_BRANCHES",
       defaultValue: true,
-      description: "Undeploy branches that have been deleted from staging.",
+      description: "Undeploy branches from staging that have been deleted.",
     )
     booleanParam(
       name: "UNDEPLOY_MERGED_BRANCHES",
       defaultValue: true,
-      description: "Undeploy branches that have been merged into the master branch (but not deleted) from staging.",
+      description: "Undeploy branches from staging that have been merged into the master branch (but not deleted).",
     )
     string(
       name: "UNDEPLOY_BRANCH_NAMES",
       defaultValue: "",
-      description: "Undeploy the listed branch names (space separated for multiple branches) from staging.",
+      description: "Undeploy the listed branch names from staging (space separated for multiple branches).",
     )
   }
 
