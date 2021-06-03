@@ -158,6 +158,7 @@ class FinancialModel(models.Model):
     run_uuid = models.UUIDField(unique=True)
     analysis_years = models.IntegerField(null=True, blank=True)
     escalation_pct = models.FloatField(null=True, blank=True)
+    generator_fuel_escalation_pct = models.FloatField(null=True, blank=True)
     boiler_fuel_escalation_pct = models.FloatField(null=True, blank=True)
     chp_fuel_escalation_pct = models.FloatField(null=True, blank=True)
     om_cost_escalation_pct = models.FloatField(null=True, blank=True)

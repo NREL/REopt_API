@@ -208,6 +208,7 @@ class DataManager:
         pwf_offtaker = annuity(sf.analysis_years, 0, sf.offtaker_discount_pct)  # not used in REopt
         pwf_om = annuity(sf.analysis_years, sf.om_cost_escalation_pct, sf.owner_discount_pct)
         pwf_e = annuity(sf.analysis_years, sf.escalation_pct, sf.offtaker_discount_pct)
+        pwf_generator_fuel = annuity(sf.analysis_years, sf.generator_fuel_escalation_pct, sf.offtaker_discount_pct)
         pwf_boiler_fuel = annuity(sf.analysis_years, sf.boiler_fuel_escalation_pct, sf.offtaker_discount_pct)
         pwf_chp_fuel = annuity(sf.analysis_years, sf.chp_fuel_escalation_pct, sf.offtaker_discount_pct)
         self.pwf_e = pwf_e
@@ -240,6 +241,8 @@ class DataManager:
                 # Assign pwf_fuel_by_tech
                 if tech in ['chp', 'chpnm']:
                     pwf_fuel_by_tech.append(round(pwf_chp_fuel, 5))
+                elif tech == 'generator':
+                    pwf_fuel_by_tech.append(round(pwf_generator_fuel, 5))
                 elif tech == 'boiler':
                     pwf_fuel_by_tech.append(round(pwf_boiler_fuel, 5))
                 else:
