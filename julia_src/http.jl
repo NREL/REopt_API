@@ -10,6 +10,9 @@ function job(req::HTTP.Request)
     m = xpress_model(timeout, tol)
     @info "Starting REopt with timeout of $(timeout) seconds..."
     results = reopt(m, d)
+	# fix our memory leak? https://github.com/jump-dev/CPLEX.jl/issues/185
+	m = nothing
+	GC.gc()
     @info "REopt model solved with status $(results["status"])."
     return HTTP.Response(200, JSON.json(results))
 end
@@ -23,5 +26,4 @@ const ROUTER = HTTP.Router()
 
 HTTP.@register(ROUTER, "POST", "/job", job)
 HTTP.@register(ROUTER, "GET", "/health", health)
-HTTP.serve(ROUTER, "0.0.0.0", 8081)
-# TODO sometimes the server is not ready even though all containers are running?
+HTTP.serve(ROUTER, "0.0.0.0", 8081, reuseaddr=true)
