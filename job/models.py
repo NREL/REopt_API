@@ -29,7 +29,7 @@
 # *********************************************************************************
 # from django.contrib.auth.models import User
 from django.db import models
-# from django.contrib.postgres.fields import *
+from django.contrib.postgres.fields import *
 from django.forms.models import model_to_dict
 from picklefield.fields import PickledObjectField
 from reo.nested_inputs import nested_input_definitions
@@ -43,7 +43,73 @@ import logging
 
 log = logging.getLogger(__name__)
 """
+Can we use:
+django.db.models.Model
+for all that nested_inputs provides, and some validation? YES!
 
+https://docs.djangoproject.com/en/3.1/ref/models/fields/#validators
+
+max/min   https://docs.djangoproject.com/en/3.1/ref/validators/#maxvaluevalidator
+weight = models.FloatField(
+    validators=[MinValueValidator(0.9), MaxValueValidator(58)],
+)
+
+type Field type
+
+default https://docs.djangoproject.com/en/3.1/ref/models/fields/#default 
+
+required https://docs.djangoproject.com/en/3.1/ref/models/fields/#blank
+
+restrict_to https://docs.djangoproject.com/en/3.1/ref/models/fields/#choices
+
+description https://docs.djangoproject.com/en/3.1/ref/models/fields/#help-text
+
+
+Define our own clean method for each model:
+https://docs.djangoproject.com/en/3.1/ref/models/instances/#django.db.models.Model.clean
+
+https://docs.djangoproject.com/en/3.1/ref/models/fields/#error-messages
+
+
+https://github.com/django/django/blob/876dc0c1a7dbf569782eb64f62f339c1daeb75e0/django/db/models/base.py#L1256
+# Skip validation for empty fields with blank=True. The developer
+# is responsible for making sure they have a valid value.
+-> implies that we should NOT have blank=True for required inputs
+
+
+Avoid using null on string-based fields such as CharField and TextField.
+https://stackoverflow.com/questions/8609192/what-is-the-difference-between-null-true-and-blank-true-in-django
+
+Guidance:
+- start all Model fields with required fields (default value of blank is False)
+- TextField and CharField should not have null=True
+
+
+Input and Results models
+test type validation for multiple fields, need to override clean_fields to go through all fields before rasing ValidationError?
+
+    def clean_fields(self, exclude=None):
+        Clean all fields and raise a ValidationError containing a dict
+        of all validation errors if any occur.
+        if exclude is None:
+            exclude = []
+
+        errors = {}
+        for f in self._meta.fields:
+            if f.name in exclude:
+                continue
+            # Skip validation for empty fields with blank=True. The developer
+            # is responsible for making sure they have a valid value.
+            raw_value = getattr(self, f.attname)
+            if f.blank and raw_value in f.empty_values:
+                continue
+            try:
+                setattr(self, f.attname, f.clean(raw_value, self))
+            except ValidationError as e:
+                errors[f.name] = e.error_list
+
+        if errors:
+            raise ValidationError(errors)
             
 """
 
