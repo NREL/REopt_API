@@ -174,8 +174,8 @@ class Job(ModelResource):
         setup = setup_scenario.s(run_uuid=run_uuid, data=data, raw_post=bundle.data)
         call_back = process_results.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version})
         # (use .si for immutable signature, if no outputs were passed from reopt_jobs)
-        rjm = run_jump_model.s(data=data, run_uuid=run_uuid)
-        rjm_bau = run_jump_model.s(data=data, run_uuid=run_uuid, bau=True)
+        rjm = run_jump_model.s(data=data)
+        rjm_bau = run_jump_model.s(data=data, bau=True)
 
         log.info("Starting celery chain")
         try:

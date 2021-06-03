@@ -330,10 +330,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
                     outage_start_time_step=inputs_dict['Site']['LoadProfile'].get("outage_start_time_step"),
                     outage_end_time_step=inputs_dict['Site']['LoadProfile'].get("outage_end_time_step"),
                     )
-
-        # Assign decomposition subproblem optimization parameters - only used if decomposition is selected
-        dfm.optimality_tolerance_decomp_subproblem = inputs_dict['optimality_tolerance_decomp_subproblem']
-        dfm.timeout_decomp_subproblem_seconds = inputs_dict['timeout_decomp_subproblem_seconds']
+                    
         dfm.add_soc_incentive = inputs_dict['add_soc_incentive']
 
         dfm.finalize()
