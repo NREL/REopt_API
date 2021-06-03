@@ -114,6 +114,13 @@ test type validation for multiple fields, need to override clean_fields to go th
 
 
 def at_least_one_set(model, possible_sets):
+    """
+    Check if at least one set of possible_sets are defined in the Model.dict
+    :param model: BaseModel.dict
+    :param possible_sets: list of lists (of str)
+    :return: Bool, True if the BaseModel.dict includes non-empty or non-null values for at least one set of keys in
+        possible_sets
+    """
     case = False
     for list_of_keys in possible_sets:
         if all(model.get(key) not in [None, ""] for key in list_of_keys):
