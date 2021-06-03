@@ -647,7 +647,6 @@ class UrdbParse:
         """
         step_array = []
         start_step = 1
-        start_hour = 1
 
         demand_ts_per_hour = int(len(current_rate.demandweekdayschedule[0] or 0)/24)
         simulation_time_steps_per_rate_time_step = int(self.time_steps_per_hour / demand_ts_per_hour)
