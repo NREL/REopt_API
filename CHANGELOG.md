@@ -28,6 +28,11 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop - 2021-06-03
+### Minor Updates
+##### Added
+- `summary`: Added `/summary_by_chunk` endpoint to enable a fraction of a user's total runs and summary metrics to be returned; this prevents excessive wait times when the UI was trying to load all runs
+
 ## v1.5.0 - 2021-03-12
 ### Minor Updates
 ##### Changed
