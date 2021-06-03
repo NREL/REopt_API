@@ -131,7 +131,6 @@ def at_least_one_set(model, possible_sets):
 
 class BaseModel(object):
 
-
     @property
     def dict(self):
         """
