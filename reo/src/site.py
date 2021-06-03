@@ -37,6 +37,7 @@ class Financial(object):
     def __init__(self,
                  om_cost_escalation_pct,
                  escalation_pct,
+                 generator_fuel_escalation_pct,
                  boiler_fuel_escalation_pct,
                  chp_fuel_escalation_pct,
                  offtaker_tax_pct,
@@ -49,6 +50,7 @@ class Financial(object):
                  ):
         self.om_cost_escalation_pct = om_cost_escalation_pct
         self.escalation_pct = escalation_pct
+        self.generator_fuel_escalation_pct = generator_fuel_escalation_pct
         self.boiler_fuel_escalation_pct = boiler_fuel_escalation_pct
         self.chp_fuel_escalation_pct = chp_fuel_escalation_pct
         self.owner_tax_pct = owner_tax_pct

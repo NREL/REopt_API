@@ -212,6 +212,13 @@ nested_input_definitions = {
           "default": 0.023,
           "description": "Annual nominal utility electricity cost escalation rate"
         },
+        "generator_fuel_escalation_pct": {
+          "type": "float",
+          "min": -1.0,
+          "max": 1.0,
+          "default": 0.03,
+          "description": "Annual nominal diesel generator fuel cost escalation rate"
+        },
         "boiler_fuel_escalation_pct": {
           "type": "float",
           "min": -1.0,
