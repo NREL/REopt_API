@@ -43,9 +43,13 @@ import logging
 
 log = logging.getLogger(__name__)
 """
-When editing this file, help_text ,ust have the following punctuation:
-    1- One line of text must be enclosed by quotes 
-    2- More than one line of text must be enclosed by quotes within parentheses 
+When editing this file, help_text ,must have the following punctuation:
+    1- One line of text must be enclosed by quotes, example:
+    help_text="The number of seconds allowed before the optimization times out."
+    2- More than one line of text must be enclosed by quotes within parentheses, example: 
+    help_text=("The threshold for the difference between the solution's objective value and the best possible "
+               "value at which the solver terminates")
+    
 """
 
 
