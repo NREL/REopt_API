@@ -50,11 +50,6 @@ for all that nested_inputs provides, and some validation? YES!
 https://docs.djangoproject.com/en/3.1/ref/models/fields/#validators
 
 max/min   https://docs.djangoproject.com/en/3.1/ref/validators/#maxvaluevalidator
-weight = models.FloatField(
-    validators=[MinValueValidator(0.9), MaxValueValidator(58)],
-)
-
-type Field type
 
 default https://docs.djangoproject.com/en/3.1/ref/models/fields/#default 
 
@@ -64,29 +59,26 @@ restrict_to https://docs.djangoproject.com/en/3.1/ref/models/fields/#choices
 
 description https://docs.djangoproject.com/en/3.1/ref/models/fields/#help-text
 
-
 Define our own clean method for each model:
 https://docs.djangoproject.com/en/3.1/ref/models/instances/#django.db.models.Model.clean
 
 https://docs.djangoproject.com/en/3.1/ref/models/fields/#error-messages
-
 
 https://github.com/django/django/blob/876dc0c1a7dbf569782eb64f62f339c1daeb75e0/django/db/models/base.py#L1256
 # Skip validation for empty fields with blank=True. The developer
 # is responsible for making sure they have a valid value.
 -> implies that we should NOT have blank=True for required inputs
 
-
 Avoid using null on string-based fields such as CharField and TextField.
 https://stackoverflow.com/questions/8609192/what-is-the-difference-between-null-true-and-blank-true-in-django
 
 Guidance:
-- start all Model fields with required fields (default value of blank is False)
+- start all Model fields with required fields (do not need to include `blank` b/c the default value of blank is False)
 - TextField and CharField should not have null=True
 
 
 Input and Results models
-test type validation for multiple fields, need to override clean_fields to go through all fields before rasing ValidationError?
+test type validation for multiple fields, need to override clean_fields to go through all fields before raising ValidationError?
 
     def clean_fields(self, exclude=None):
         Clean all fields and raise a ValidationError containing a dict
@@ -112,7 +104,7 @@ test type validation for multiple fields, need to override clean_fields to go th
             raise ValidationError(errors)
             
 """
-
+# TODO check all fields (do we really want so many null's allowed? are the blank=True all correct? Can we add more defaults)
 
 def at_least_one_set(model, possible_sets):
     """
@@ -625,6 +617,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
         models.FloatField(blank=True),
         default=list,
         null=True,
+        blank=True,
         help_text=("Array (length of 12) of blended energy rates (total monthly energy in kWh divided by monthly cost "
                   "in $)")
     )
@@ -633,6 +626,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
         models.FloatField(null=True, blank=True),
         default=list,
         null=True,
+        blank=True,
         help_text=("Array (length of 12) of blended demand charges (demand charge cost in $ divided by monthly peak "
                   "demand in kW)")
     )
