@@ -71,7 +71,7 @@ urlpatterns = [
     path('stable/', include('resilience_stats.urls')),
     path('stable/', include('proforma.urls')),
     path('stable/', include('load_builder.urls')),
-    url(r'^stable/user/?', include('summary.urls'), name='summary'),
+    path('stable/', include('summary.urls')),
     url(r'', include(stable_api.urls), name='job'),
     url(r'', include(stable_api.urls), name='outagesimjob'),
     
