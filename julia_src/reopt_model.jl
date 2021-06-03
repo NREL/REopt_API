@@ -1934,6 +1934,13 @@ function add_util_results(m, p, r::Dict)
     @expression(m, GridToLoad[ts in p.TimeStep],
                 sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) - m[:dvGridToStorage][ts] )
     r["GridToLoad"] = round.(value.(GridToLoad), digits=3)
+
+	#XL - Sonnen demand charge 
+	@expression(m, DemandCostByRatchet[r in p.Ratchets, e in p.DemandBin], p.DemandRates[r, e])
+	r["demand_cost_by_ratchet"] = DemandCostByRatchet
+
+	@expression(m, PeakDemandByRatchet[r in p.Ratchets, e in p.DemandBin], m[:dvPeakDemandE][r, e])
+	r["peak_demand_by_ratchet"] = value.(PeakDemandByRatchet)
 end
 
 

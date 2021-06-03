@@ -634,7 +634,12 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["event_hours"] = self.results_dict.get("event_hours")
                     self.nested_outputs["Scenario"]["Site"][name]["hourly_reductions"] = self.results_dict.get("hourly_reductions")
 
-
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_demand_cost_by_ratchet_us_dollars_per_kw"] = [item for sublist in self.results_dict.get("demand_cost_by_ratchet") for item in sublist]
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_peak_demand_by_ratchet_kw"] = [item for sublist in self.results_dict.get("peak_demand_by_ratchet") for item in sublist]
+	
+                    
+	
+	
 
 
                 elif name == "FuelTariff":

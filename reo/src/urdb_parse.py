@@ -199,7 +199,7 @@ class UrdbParse:
         self.last_hour_in_month = []
         for month in range(0, 12):
             days_elapsed = sum(self.days_in_month[0:month + 1])
-            self.last_hour_in_month.append((days_elapsed * 24) - 1)
+            self.last_hour_in_month.append((days_elapsed * 24))# - 1)
 
     def parse_rate(self, utility, rate):
         log.info("Processing: " + utility + ", " + rate)
@@ -595,7 +595,7 @@ class UrdbParse:
                         demand_rates.append(tou_rate + tou_adj)
 
                         for step in time_steps:
-                            self.demand_rates_summary[step] += tou_rate + tou_adj
+                            self.demand_rates_summary[step-1] += tou_rate + tou_adj
 
         self.reopt_args.demand_ratchets_tou = demand_periods
         self.reopt_args.demand_rates_tou = demand_rates

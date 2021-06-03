@@ -373,6 +373,8 @@ class ElectricTariffModel(models.Model):
     total_coincident_peak_cost_bau_us_dollars = models.FloatField(null=True, blank=True)
     year_one_chp_standby_cost_us_dollars = models.FloatField(null=True, blank=True)
     total_chp_standby_cost_us_dollars = models.FloatField(null=True, blank=True)
+    year_one_demand_cost_by_ratchet_us_dollars_per_kw = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
+    year_one_peak_demand_by_ratchet_kw = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
