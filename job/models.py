@@ -43,6 +43,13 @@ import logging
 
 log = logging.getLogger(__name__)
 """
+When editing this file help_text must have the following punctuation:
+    1- One line of text must be enclosed by quotes, example:
+      help_text="The number of seconds allowed before the optimization times out."
+    2- More than one line of text must be enclosed by quotes within parentheses, example: 
+      help_text=("The threshold for the difference between the solution's objective value and the best possible "
+                 "value at which the solver terminates")
+
 Can we use:
 django.db.models.Model
 for all that nested_inputs provides, and some validation? YES!
@@ -102,7 +109,7 @@ test type validation for multiple fields, need to override clean_fields to go th
 
         if errors:
             raise ValidationError(errors)
-            
+           
 """
 # TODO check all fields (do we really want so many null's allowed? are the blank=True all correct? Can we add more defaults)
 
