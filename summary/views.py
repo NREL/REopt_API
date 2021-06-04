@@ -325,7 +325,9 @@ def summary(request, user_uuid):
                     results['address'] = site.get('address')
 
                     # Utility Tariff
-                    if tariff.get('urdb_rate_name') is not None:
+                    if scenario.off_grid_flag is True:
+                        results['urdb_rate_name'] = 'not evaluated'
+                    elif tariff.get('urdb_rate_name') is not None:
                         results['urdb_rate_name'] = tariff.get('urdb_rate_name')
                     else:
                         results['urdb_rate_name'] = "Custom"
