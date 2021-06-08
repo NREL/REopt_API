@@ -48,24 +48,24 @@ spec:
               readOnly: true
               mountPath: /opt/reopt/keys.py
               subPath: {{ .Values.appEnv }}-keys.py
-          readinessProbe:
-            httpGet:
-              path: /_health
-              port: 8000
-              httpHeaders:
-                - name: X-Forwarded-Proto
-                  value: https
-            periodSeconds: 5
-            timeoutSeconds: 3
-            failureThreshold: 3
-          livenessProbe:
-            httpGet:
-              path: /_health
-              port: 8000
-              httpHeaders:
-                - name: X-Forwarded-Proto
-                  value: https
-            initialDelaySeconds: 30
-            periodSeconds: 60
-            timeoutSeconds: 30
-            failureThreshold: 10
+#           readinessProbe:
+#             httpGet:
+#               path: /_health
+#               port: 8000
+#               httpHeaders:
+#                 - name: X-Forwarded-Proto
+#                   value: https
+#             periodSeconds: 5
+#             timeoutSeconds: 60
+#             failureThreshold: 10
+#           livenessProbe:
+#             httpGet:
+#               path: /_health
+#               port: 8000
+#               httpHeaders:
+#                 - name: X-Forwarded-Proto
+#                   value: https
+#             initialDelaySeconds: 30
+#             periodSeconds: 60
+#             timeoutSeconds: 60
+#             failureThreshold: 10

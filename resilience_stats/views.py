@@ -42,6 +42,7 @@ from resilience_stats.outage_simulator_LF import simulate_outages
 import numpy as np
 
 
+
 def resilience_stats(request: Union[Dict, HttpRequest], run_uuid=None):
     """
     Run outage simulator for given run_uuid

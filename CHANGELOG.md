@@ -5,16 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Guidelines
+- When making a Pull Request into `develop` start a new double-hash header for "Develop - YYYY-MM-DD"
+- When making a Pull Request into `master` change "Develop" to the next version number
 
-Use **bold** markup for field and model names (i.e. **outage_start_time_step**)
-
-Use `code` markup for  REopt Lite-specific file names, classes and endpoints (i.e `reo/validators.py`)
-
-Use _italic_ for code terms (i.e. _list_)
-
-Prepend change with tag(s) directing where it is in the repository:
-
-
+### Formatting
+- Use **bold** markup for field and model names (i.e. **outage_start_time_step**)
+- Use `code` markup for  REopt Lite-specific file names, classes and endpoints (i.e `reo/validators.py`)
+- Use _italic_ for code terms (i.e. _list_)
+- Prepend change with tag(s) directing where it is in the repository:  
 `reo`,`proforma`,`resilience_stats`,`*.jl`,`REopt_Lite_API`
 
 Classify the change according to the following categories:
@@ -28,6 +26,39 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop - 2021-06-03
+### Minor Updates
+##### Added
+- `summary`: Added `/summary_by_chunk` endpoint to enable a fraction of a user's total runs and summary metrics to be returned; this prevents excessive wait times when the UI was trying to load all runs
+
+## v1.5.0 - 2021-03-12
+### Minor Updates
+##### Changed
+- `reo`, `*.jl`: Changed the units-basis for heating load, thermal production, and fuel consumption to kW/kWh, from mmbtu/mmbtu_per_hr and gal. This does not affect the units of the inputs or outputs.
+##### Removed
+- `reo`: The following inputs for `Site.Boiler`: `installed_cost_us_dollars_per_mmbtu_per_hr`, `min_mmbtu_per_hr`, and `max_mmbtu_per_hr`, and for `Site.ElectricChiller`: `installed_cost_us_dollars_per_kw`, `min_kw`, and `max_kw`.
+### Patches
+- `reo`: Catch issue in `process_results.py` where `renewable_electricity_energy_pct` is not explicitly set to _None_
+- `reo`:  Catch case where `CHP` `prime_mover` is not set and not all required fields are filled in
+- `reo`:  Catch issues with `itc_unit_basis` when the ITC is 100%
+- `validators.py`: Fix bug where length of percent_share != length of doe_reference_name even though no percent_share is provided (in `LoadProfileBoilerFuel`)
+
+## v1.4.4 - 2021-02-25
+### Patches
+- `reo`: In `validators.py` catches case where invalid percent_share entry was used in check special cases function
+- `reo`: In `loadprofile.py` catches where 0 lat/long was resolving to _False_ and leading to _None_ for lat and long
+- `reo`: Fix divide by 0 error in results processing
+- `reo`: Handle floats as URBD periods
+- `reo`: Fix `list_of_float` only types
+    
+## v1.4.3 - 2021-02-18
+### Patches
+- `reo`: new output `Financial.developer_om_and_replacement_present_cost_after_tax_us_dollars`
+- `reo`: Fix **PVWatts** being called when user provides `PV.prod_factor_series_kw`
+- `reopt_api`: new `docker-compose.nginx.yml` for standing up the API on a server with remote access (for example if one wants to host the API on a cloud service)
+- `reopt_api`: update `Dockerfile.xpress` to use `nlaws/pyjul:1.5.3` base image (was using Julia 1.3)
+- `reopt_api`: update `julia_envs/Xpress` PyCall from 1.91.4 to 1.92.2
+    
 ## v1.4.2 - 2021-02-03
 ### Patches
 - `reo`: Fix **Wind** `size_class` was not being set

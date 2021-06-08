@@ -1,0 +1,19 @@
+version: "2.1"
+
+services: 
+  licenseserver:
+    container_name: xpress_license_server_dev
+    build:
+      context: ./xpress/licenseserver
+    mac_address: c4:b3:01:d3:d5:eb
+    command: xpserver
+    expose:
+      - 27100
+  
+  julia:
+    container_name: julia_api_dev
+    build:
+      context: .
+    command: julia --project="/opt/julia_src" http.jl
+    ports:
+      - "8081:8081"
