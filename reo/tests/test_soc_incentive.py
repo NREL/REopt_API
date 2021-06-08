@@ -70,8 +70,8 @@ class SOCIncentiveTests(ResourceTestCaseMixin, TestCase):
         print(c['average_soc'])
 
         d_expected = dict()
-        d_expected['lcc'] = 350416.0
-        d_expected['average_soc'] = 0.7271688516340313
+        d_expected['lcc'] = 354610.0
+        d_expected['average_soc'] = 0.7271688516
 
         # try:
         #     check_common_outputs(self, c, d_expected)
@@ -90,8 +90,8 @@ class SOCIncentiveTests(ResourceTestCaseMixin, TestCase):
         c['average_soc'] = (sum(d['outputs']['Scenario']['Site']['Storage']['year_one_soc_series_pct']) /
                             len(d['outputs']['Scenario']['Site']['Storage']['year_one_soc_series_pct']))
 
-        d_expected['lcc'] = 350416.0
-        d_expected['average_soc'] = 0.6069393099644554
+        d_expected['lcc'] = 354610.0
+        d_expected['average_soc'] = 0.584223065490931
         print(c['lcc'])
         print(c['average_soc'])
 
