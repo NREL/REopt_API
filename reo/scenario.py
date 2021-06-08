@@ -44,7 +44,7 @@ from reo.src.storage import Storage, HotTES, ColdTES, HotWaterTank
 from reo.src.techs import PV, Util, Wind, Generator, CHP, Boiler, ElectricChiller, AbsorptionChiller, RC, FlexTechAC, FlexTechHP, FlexTechERWH, FlexTechHPWH
 from celery import shared_task, Task
 from reo.models import ModelManager
-from reo.exceptions import REoptError, UnexpectedError, LoadProfileError, WindDownloadError, PVWattsDownloadError
+from reo.exceptions import REoptError, UnexpectedError, LoadProfileError, WindDownloadError, PVWattsDownloadError, RequestError
 
 
 class ScenarioTask(Task):
@@ -246,9 +246,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
         # Boiler which supplies the bau boiler fuel load, if there is a boiler fuel load
         if lpbf.annual_mmbtu > 0.0:
             boiler = Boiler(dfm=dfm, boiler_fuel_series_bau=lpbf.load_list, **inputs_dict['Site']['Boiler'])
-            tmp = dict()
-            tmp['max_mmbtu_per_hr'] = boiler.max_mmbtu_per_hr
-            ModelManager.updateModel('BoilerModel', tmp, run_uuid)
         else:
             boiler = None
 
@@ -288,9 +285,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
         # Electric chiller which supplies the bau electric chiller load, if there is an electric chiller load
         if lpct.annual_kwht > 0.0:
             elecchl = ElectricChiller(dfm=dfm, lpct=lpct, **inputs_dict['Site']['ElectricChiller'])
-            tmp = dict()
-            tmp['max_kw'] = elecchl.max_kw
-            ModelManager.updateModel('ElectricChillerModel', tmp, run_uuid)
         else:
             elecchl = None
 
@@ -351,10 +345,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
                     outage_start_time_step=inputs_dict['Site']['LoadProfile'].get("outage_start_time_step"),
                     outage_end_time_step=inputs_dict['Site']['LoadProfile'].get("outage_end_time_step"),
                     )
-
-        # Assign decomposition subproblem optimization parameters - only used if decomposition is selected
-        dfm.optimality_tolerance_decomp_subproblem = inputs_dict['optimality_tolerance_decomp_subproblem']
-        dfm.timeout_decomp_subproblem_seconds = inputs_dict['timeout_decomp_subproblem_seconds']
+                    
         dfm.add_soc_incentive = inputs_dict['add_soc_incentive']
 
         dfm.finalize()
@@ -404,6 +395,9 @@ def setup_scenario(self, run_uuid, data, raw_post):
                             message += (" from the NSRDB or international datasets. No search threshold was specified when "
                                         "attempting to pull solar resource data from either dataset.")
                         raise PVWattsDownloadError(message=message, task=self.name, run_uuid=run_uuid, user_uuid=self.data['inputs']['Scenario'].get('user_uuid'), traceback=e.args[0])
+                    if e.args[0].startswith("Invalid cost curve"):
+                        raise RequestError(message=e.args[0], task='data_manager.py', run_uuid=run_uuid, user_uuid=self.data['inputs']['Scenario'].get('user_uuid')) 
+
 
         exc_type, exc_value, exc_traceback = sys.exc_info()
         log.error("Scenario.py raising error: " + str(exc_value.args[0]))

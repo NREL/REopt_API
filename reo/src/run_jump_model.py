@@ -27,22 +27,16 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-import julia
 import sys
 import traceback
 import os
 import time
-import platform
-import copy
-import numpy
-from celery import shared_task, Task, group
+import requests
+from celery import shared_task, Task
 from reo.exceptions import REoptError, OptimizationTimeout, UnexpectedError, NotOptimal, REoptFailedToStartError
 from reo.models import ModelManager
 from reo.src.profiler import Profiler
 from celery.utils.log import get_task_logger
-from julia.api import LibJulia
-from reo.utilities import scrub_numpy_arrays_from_dict
-# julia.install()  # needs to be run if it is the first time you are using julia package
 logger = get_task_logger(__name__)
 
 
@@ -79,135 +73,45 @@ class RunJumpModelTask(Task):
         self.request.chord = None  # this seems to stop the infinite chord_unlock call
 
 @shared_task(bind=True, base=RunJumpModelTask)
-def run_jump_model(self, dfm, data, run_uuid, bau=False):
+def run_jump_model(self, dfm, data, bau=False):
     profiler = Profiler()
     time_dict = dict()
     name = 'reopt' if not bau else 'reopt_bau'
     reopt_inputs = dfm['reopt_inputs'] if not bau else dfm['reopt_inputs_bau']
-    self.data = data
-    self.run_uuid = data['outputs']['Scenario']['run_uuid']
-    self.user_uuid = data['outputs']['Scenario'].get('user_uuid')
-
-    if platform.system() == "Darwin":
-        ext = ".dylib"
-    elif platform.system() == "Windows":
-        ext = ".dll"
-    else:
-        ext = ".so"  # if platform.system() == "Linux":
-    julia_img_file = os.path.join("julia_envs", "Xpress", "JuliaXpressSysimage" + ext)
+    run_uuid = data['outputs']['Scenario']['run_uuid']
+    user_uuid = data['outputs']['Scenario'].get('user_uuid')
+    reopt_inputs["timeout_seconds"] = data['inputs']['Scenario']['timeout_seconds']
+    reopt_inputs["tolerance"] = data['inputs']['Scenario']['optimality_tolerance_bau'] if bau \
+        else data['inputs']['Scenario']['optimality_tolerance_techs']
 
     logger.info("Running JuMP model ...")
     try:
-        if os.path.isfile(julia_img_file):
-            # TODO: clean up this try/except block
-            logger.info("Found Julia image file {}.".format(julia_img_file))
-            t_start = time.time()
-            api = LibJulia.load()
-            api.sysimage = julia_img_file
-            api.init_julia()
-            from julia import Main
-            time_dict["pyjulia_start_seconds"] = time.time() - t_start
-        else:
-            t_start = time.time()
-            j = julia.Julia()
-            from julia import Main
-            time_dict["pyjulia_start_seconds"] = time.time() - t_start
-
         t_start = time.time()
-        Main.using("Pkg")
-        from julia import Pkg
-        time_dict["pyjulia_pkg_seconds"] = time.time() - t_start
-
-        if os.environ.get("SOLVER") == "xpress":
-            t_start = time.time()
-            Pkg.activate("./julia_envs/Xpress/")
-            time_dict["pyjulia_activate_seconds"] = time.time() - t_start
-
-            try:
-                t_start = time.time()
-                Main.include("reo/src/reopt_xpress_model.jl")
-                time_dict["pyjulia_include_model_seconds"] = time.time() - t_start
-
-            except ImportError:
-                # should only need to instantiate once
-                Pkg.instantiate()
-                Main.include("reo/src/reopt_xpress_model.jl")
-
-            t_start = time.time()
-            if bau:
-                model = Main.reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]),
-                                         float(data["inputs"]["Scenario"]["optimality_tolerance_bau"]))
-            else:
-                model = Main.reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]),
-                                         float(data["inputs"]["Scenario"]["optimality_tolerance_techs"]))
-            time_dict["pyjulia_make_model_seconds"] = time.time() - t_start
-
-        elif os.environ.get("SOLVER") == "cbc":
-            t_start = time.time()
-            Pkg.activate("./julia_envs/Cbc/")
-            time_dict["pyjulia_activate_seconds"] = time.time() - t_start
-
-            t_start = time.time()
-            Main.include("reo/src/reopt_cbc_model.jl")
-            time_dict["pyjulia_include_model_seconds"] = time.time() - t_start
-
-            t_start = time.time()
-            model = Main.reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]),
-                                     float(data["inputs"]["Scenario"]["optimality_tolerance_bau"]))
-            time_dict["pyjulia_make_model_seconds"] = time.time() - t_start
-
-        elif os.environ.get("SOLVER") == "scip":
-            t_start = time.time()
-            Pkg.activate("./julia_envs/SCIP/")
-            time_dict["pyjulia_activate_seconds"] = time.time() - t_start
-
-            t_start = time.time()
-            Main.include("reo/src/reopt_scip_model.jl")
-            time_dict["pyjulia_include_model_seconds"] = time.time() - t_start
-
-            t_start = time.time()
-            model = Main.reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]),
-                                     float(data["inputs"]["Scenario"]["optimality_tolerance_bau"]))
-            time_dict["pyjulia_make_model_seconds"] = time.time() - t_start
-
-        else:
-            raise REoptFailedToStartError(
-                message="The environment variable SOLVER must be set to one of [xpress, cbc, scip].",
-                run_uuid=self.run_uuid, user_uuid=self.user_uuid)
-
-        if bau or not data["inputs"]["Scenario"]["use_decomposition_model"]:
-            t_start = time.time()
-            Main.include("reo/src/reopt.jl")
-            time_dict["pyjulia_include_reopt_seconds"] = time.time() - t_start
-
-            t_start = time.time()
-            results = Main.reopt(model, reopt_inputs)
-            time_dict["pyjulia_run_reopt_seconds"] = time.time() - t_start
-        else:
-            t_start = time.time()
-            Main.include("reo/src/reopt_decomposed.jl")
-            time_dict["pyjulia_include_reopt_seconds"] = time.time() - t_start
-
-            t_start = time.time()
-            results = run_decomposed_model(data, model, reopt_inputs)
-            time_dict["pyjulia_run_reopt_seconds"] = time.time() - t_start
-
-        results = scrub_numpy_arrays_from_dict(results)
+        julia_host = os.environ.get('JULIA_HOST', "julia")
+        response = requests.post("http://" + julia_host + ":8081/job/", json=reopt_inputs)
+        results = response.json()
+        time_dict["pyjulia_run_reopt_seconds"] = time.time() - t_start
         results.update(time_dict)
 
     except Exception as e:
         if isinstance(e, REoptFailedToStartError):
             raise e
-        elif "DimensionMismatch" in e.args[0]:  # JuMP may mishandle a timeout when no feasible solution is returned
+        elif "DimensionMismatch" in str(e.args[0]):  # JuMP may mishandle a timeout when no feasible solution is returned
             msg = "Optimization exceeded timeout: {} seconds.".format(data["inputs"]["Scenario"]["timeout_seconds"])
             logger.info(msg)
-            raise OptimizationTimeout(task=name, message=msg, run_uuid=self.run_uuid, user_uuid=self.user_uuid)
+            raise OptimizationTimeout(task=name, message=msg, run_uuid=run_uuid, user_uuid=user_uuid)
+        elif "RemoteDisconnected" in str(e.args[0]):
+            msg = "Something went wrong in the Julia code."
+            logger.error(msg)
+            raise REoptFailedToStartError(task=name, message=msg, run_uuid=run_uuid, user_uuid=user_uuid)
+
+        # ADD JULIA EXCEPTION HERE
         exc_type, exc_value, exc_traceback = sys.exc_info()
         print(exc_type)
         print(exc_value)
         print(exc_traceback)
-        logger.error("REopt.py raise unexpected error: UUID: " + str(self.run_uuid))
-        raise UnexpectedError(exc_type, exc_value, traceback.format_tb(exc_traceback), task=name, run_uuid=self.run_uuid, user_uuid=self.user_uuid)
+        logger.error("REopt.py raise unexpected error: UUID: " + str(run_uuid))
+        raise UnexpectedError(exc_type, exc_value, traceback.format_tb(exc_traceback), task=name, run_uuid=run_uuid, user_uuid=user_uuid)
     else:
         status = results["status"]
         logger.info("REopt run successful. Status {}".format(status))
@@ -219,10 +123,10 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
         if status.strip().lower() == 'timed-out':
             msg = "Optimization exceeded timeout: {} seconds.".format(data["inputs"]["Scenario"]["timeout_seconds"])
             logger.info(msg)
-            raise OptimizationTimeout(task=name, message=msg, run_uuid=self.run_uuid, user_uuid=self.user_uuid)
+            raise OptimizationTimeout(task=name, message=msg, run_uuid=run_uuid, user_uuid=user_uuid)
         elif status.strip().lower() != 'optimal':
             logger.error("REopt status not optimal. Raising NotOptimal Exception.")
-            raise NotOptimal(task=name, run_uuid=self.run_uuid, status=status.strip(), user_uuid=self.user_uuid)
+            raise NotOptimal(task=name, run_uuid=run_uuid, status=status.strip(), user_uuid=user_uuid)
 
     profiler.profileEnd()
     ModelManager.updateModel('ProfileModel', {name+'_seconds': profiler.getDuration()}, run_uuid)
@@ -233,229 +137,3 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
     else:
         del dfm['reopt_inputs']
     return dfm
-
-def run_decomposed_model(data, model, reopt_inputs,
-                         lb_iters=1, max_iters=100):
-    time_limit = data["inputs"]["Scenario"]["timeout_seconds"]
-    opt_tolerance = data["inputs"]["Scenario"]["optimality_tolerance_techs"]
-    reopt_param = julia.Main.Parameter(reopt_inputs)
-    lb_models = {}
-    ub_models = {}
-    for idx in range(1, 13):
-        lb_models[idx] = julia.Main.add_decomp_model(model, reopt_param, "lb", idx)
-        ub_models[idx] = julia.Main.add_decomp_model(model, reopt_param, "ub", idx)
-    lb_result_dicts = build_submodels(lb_models, reopt_param)
-    ub_result_dicts = build_submodels(ub_models, reopt_param)
-    t_start = time.time()
-    lb_result_dicts = solve_subproblems(lb_models, reopt_param, lb_result_dicts, False)
-    lb = sum([lb_result_dicts[m]["lower_bound"] for m in range(1, 13)])
-    system_sizes = get_average_sizing_decisions(lb_models, reopt_param)
-    fix_sizing_decisions(ub_models, reopt_param, system_sizes)
-    ub_result_dicts = solve_subproblems(ub_models, reopt_param, ub_result_dicts, False)
-    best_result_dicts = copy.deepcopy(ub_result_dicts)
-    ub, min_charge_adder, prod_incentives = get_objective_value(ub_result_dicts, reopt_inputs)
-    gap = (ub - lb) / lb
-    for k in range(1, max_iters+1):
-        if time.time() - t_start > time_limit or gap <= opt_tolerance:
-            break
-        mean_sizes = get_average_sizing_decisions(lb_models, reopt_param)
-        for i in range(1, 13):
-            julia.Main.update_decomp_penalties(lb_models[i], reopt_param, mean_sizes)
-        lb_result_dicts = solve_subproblems(lb_models, reopt_param, lb_result_dicts, True)
-        iter_lb = sum([lb_result_dicts[m]["lower_bound"] for m in range(1, 13)])
-        if iter_lb > lb:
-            lb = iter_lb
-            gap = (ub - lb) / lb
-        if k % lb_iters == 0:
-            mean_sizes = get_average_sizing_decisions(lb_models, reopt_param)
-            fix_sizing_decisions(ub_models, reopt_param, mean_sizes)
-            ub_result_dicts = solve_subproblems(ub_models, reopt_param, ub_result_dicts, ub < 1.0e99)
-            iter_ub, iter_min_charge_adder, iter_prod_incentives = get_objective_value(ub_result_dicts, reopt_inputs)
-            if iter_ub < ub:
-                ub = iter_ub
-                best_result_dicts = copy.deepcopy(ub_result_dicts)
-                min_charge_adder = iter_min_charge_adder
-                gap = (ub - lb) / lb
-            max_sizes = get_max_sizing_decisions(lb_models, reopt_param)
-            fix_sizing_decisions(ub_models, reopt_param, max_sizes)
-            ub_result_dicts = solve_subproblems(ub_models, reopt_param, ub_result_dicts, ub < 1.0e99)
-            iter_ub, iter_min_charge_adder, iter_prod_incentives = get_objective_value(ub_result_dicts, reopt_inputs)
-            if iter_ub < ub:
-                ub = iter_ub
-                best_result_dicts = copy.deepcopy(ub_result_dicts)
-                min_charge_adder = iter_min_charge_adder
-                gap = (ub - lb) / lb
-        k += 1
-    results = aggregate_submodel_results(best_result_dicts, ub, min_charge_adder, reopt_inputs["pwf_e"])
-    results = julia.Main.convert_to_axis_arrays(reopt_param, results)
-    results["lower_bound"] = lb
-    results["optimality_gap"] = gap
-    return results
-
-
-def build_submodels(models, reopt_param):
-    result_dicts = {}
-    for idx in range(1, 13):
-        result_dicts[idx] = julia.Main.reopt_build(models[idx], reopt_param)
-    return result_dicts
-
-def solve_subproblems(models, reopt_param, results_dicts, update):
-    """
-    Solves subproblems, so far in a for loop.
-    TODO: make a celery task for each subproblem solve.
-    :param models: dictionary in which key=month (1=Jan, 12=Def) and values are JuMP model objects
-    :param reopt_param: JuMP parameter object
-    :param results_dicts: dictionary in which key=month and vals are submodel results dictionaries
-    :param update: Boolean that is True if skipping the creation of output expressions, and False o.w.
-    :return: results_dicts -- dictionary in which key=month and vals are submodel results dictionaries
-    """
-    inputs = []
-
-    for idx in range(1, 13):
-        inputs.append({"m": models[idx],
-                       "p": reopt_param,
-                       "r": results_dicts[idx],
-                       "u": update,
-                       "month": idx
-        })
-        solve_subproblem(inputs[idx-1])
-
-    # Note: with task decorator removed, can't call this as a group
-    #r = group(solve_subproblem(x) for x in inputs)()
-    #r.forget()
-
-    results_dicts = {}
-    for i in range(1, 13):
-        results_dicts[i] = inputs[i-1]["r"]
-    return results_dicts
-
-
-def solve_subproblem(kwargs):
-    kwargs["r"] = julia.Main.reopt_solve(kwargs["m"], kwargs["p"], kwargs["r"], kwargs["u"])
-
-
-def fix_sizing_decisions(ub_models, reopt_param, system_sizes):
-    for i in range(1, 13):
-        julia.Main.fix_sizing_decisions(ub_models[i], reopt_param, system_sizes)
-
-
-def get_objective_value(ub_result_dicts, reopt_inputs):
-    """
-    Calculates the full-year problem objective value by adjusting
-    year-long components as required.
-    :param ub_result_dicts: subproblem results dictionaries
-    :param reopt_inputs: inputs dictionary from DataManager
-    :return obj:  full-year objective value
-    :return prod_incentives: list of production incentive by technology
-    :return min_charge_adder: calculated annual minimum charge adder
-    """
-    try:
-        obj = sum([ub_result_dicts[idx]["obj_no_annuals"] for idx in range(1, 13)])
-        min_charge_comp = sum([ub_result_dicts[idx]["min_charge_adder_comp"] for idx in range(1, 13)])
-        total_min_charge = sum([ub_result_dicts[idx]["total_min_charge"] for idx in range(1, 13)])
-        min_charge_adder = max(0, total_min_charge - min_charge_comp)
-        obj += min_charge_adder
-        prod_incentives = []
-        for tech_idx in range(len(reopt_inputs['Tech'])):
-            max_prod_incent = reopt_inputs['MaxProdIncent'][tech_idx] * reopt_inputs['pwf_prod_incent'][tech_idx] * \
-                              reopt_inputs['two_party_factor']
-            prod_incent = sum([ub_result_dicts[idx]["sub_incentive"][tech_idx] for idx in range(1, 13)])
-            prod_incentive = min(prod_incent, max_prod_incent)
-            obj -= prod_incentive
-            prod_incentives.append(prod_incentive)
-        if len(reopt_inputs['DemandLookbackMonths']) > 0 and reopt_inputs['DemandLookbackPercent'] > 0.0:
-            obj += get_added_peak_tou_costs(ub_result_dicts, reopt_inputs)
-        return obj, min_charge_adder, prod_incentives
-    except KeyError:
-        logger.info("infeasible solution returned.")
-        return 1.0e100, 0., 0.
-
-def get_added_peak_tou_costs(ub_result_dicts, reopt_inputs):
-    """
-    Calculated added TOU costs to according to peak lookback months.
-    :param ub_result_dicts:
-    :param reopt_inputs:
-    :return:
-    """
-    added_obj = 0.
-    max_lookback_val = ub_result_dicts[1]["peak_demand_for_month"] if 1 in reopt_inputs['DemandLookbackMonths'] else 0.0
-    peak_ratchets = ub_result_dicts[1]["peak_ratchets"]
-    for m in range(2, 13):
-        #update max ratchet purchases
-        peak_ratchets = numpy.maximum(peak_ratchets, ub_result_dicts[1]["peak_ratchets"])
-        #Update Demandlookback months if required
-        if m in reopt_inputs["DemandLookbackMonths"]:
-            max_lookback_val = max(max_lookback_val, ub_result_dicts[m]["peak_demand_for_month"])
-    #update any ratchet if it is less than the appropriate value
-    if all(peak_ratchets >= max_lookback_val * reopt_inputs["DemandLookbackPercent"]):
-        return 0.
-    for r in range(reopt_inputs["NumRatchets"]):
-        if peak_ratchets[r] >= max_lookback_val * reopt_inputs["DemandLookbackPercent"]:
-            added_demand = peak_ratchets[r] - max_lookback_val * reopt_inputs["DemandLookbackPercent"]
-            bins, vals = get_added_demand_by_bin(peak_ratchets[r], added_demand, reopt_inputs["MaxDemandInBin"])
-            for idx in range(len(bins)):
-                added_obj += reopt_inputs["DemandRates"][idx*reopt_inputs["NumRatchets"]+bins[idx]] * vals[idx]
-    return added_obj
-
-def get_added_demand_by_bin(start, added_demand, max_demand_by_bin):
-    """
-    obtains added demand by bin for calculation of additional ratchet
-    charges when rolling up year-long costs while accounting for
-    demand lookback months.
-    :param start:  starting peak ratchet demand
-    :param added_demand: amount of excess demand to add
-    :param bin_maxes: list of bin_maxes
-    :return bins: list of bin indices (start at zero)
-    :return vals: list of additional value by bin
-    """
-    excess_remaining = added_demand
-    start_remaining = start
-    bins = []
-    vals = []
-    for idx in range(len(max_demand_by_bin)):
-        if excess_remaining == 0. and start_remaining == 0.:
-            break
-        bin_remaining = max_demand_by_bin[idx]
-        if bin_remaining > start_remaining:
-            bin_remaining -= start_remaining
-            start_remaining = 0.
-        else:
-            start_remaining -= bin_remaining
-            continue
-        bins.append(idx)
-        if bin_remaining >= excess_remaining:
-            bin_remaining -= excess_remaining
-            vals.append(excess_remaining)
-            excess_remaining = 0.
-        else:
-            excess_remaining -= bin_remaining
-            vals.append(bin_remaining)
-    return bins, vals
-
-
-def get_average_sizing_decisions(models, reopt_param):
-    sizes = julia.Main.get_sizing_decisions(models[1], reopt_param)
-    for i in range(2, 13):
-        d = julia.Main.get_sizing_decisions(models[i], reopt_param)
-        for key in d.keys():
-            sizes[key] += d[key]
-    for key in d.keys():
-        sizes[key] /= 12.
-    return sizes
-
-def get_max_sizing_decisions(models, reopt_param):
-    sizes = julia.Main.get_sizing_decisions(models[1], reopt_param)
-    for i in range(2, 13):
-        d = julia.Main.get_sizing_decisions(models[i], reopt_param)
-        for key in d.keys():
-            sizes[key] = max(d[key], sizes[key])
-    return sizes
-
-def aggregate_submodel_results(ub_results, obj, min_charge_adder, pwf_e):
-    results = ub_results[1]
-    for idx in range(2, 13):
-        results = julia.Main.add_to_results(results, ub_results[idx])
-    results["lcc"] = obj
-    results["total_min_charge_adder"] = min_charge_adder
-    results["year_one_min_charge_adder"] = min_charge_adder / pwf_e
-    return results

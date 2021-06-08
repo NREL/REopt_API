@@ -27,11 +27,14 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-from django.conf.urls import url
+from django.urls import re_path
 
 from . import views
 
 urlpatterns = [
-    url(r'^$', views.resilience_stats, name='resilience_stats'),
-    url(r'^$', views.financial_check, name='financial_check'),
+    re_path(r'^job/(?P<run_uuid>[0-9a-f-]+)/resilience_stats/?$', views.resilience_stats),
+    re_path(r'^outagesimjob/(?P<run_uuid>[0-9a-f-]+)/results/?$', views.resilience_stats),
+    re_path(r'^outagesimjob/(?P<run_uuid>[0-9a-f-]+)/resilience_stats/?$', views.resilience_stats),
+    re_path(r'^financial_check/?$', views.financial_check),
+    re_path(r'^job/(?P<run_uuid>[0-9a-f-]+)/resilience_stats/financial_check/?$', views.financial_check),  # preserving old behavior
 ]

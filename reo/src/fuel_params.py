@@ -32,6 +32,7 @@ import operator
 import calendar
 import numpy
 import logging
+from reo.utilities import MMBTU_TO_KWH, GAL_DIESEL_TO_KWH
 log = logging.getLogger(__name__)
 
 class FuelParams:
@@ -53,13 +54,13 @@ class FuelParams:
         self.chp_fuel_rate_array = []
         self.boiler_fuel_rate_array = []
         for month in range(0, 12):
-            # Create full length (timestep) array of NG cost in $/MMBtu
-            self.boiler_fuel_rate_array.extend([self.boiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu[month]] *
-                                      self.days_in_month[month] * 24 * self.time_steps_per_hour)
-            self.chp_fuel_rate_array.extend([self.chp_fuel_blended_monthly_rates_us_dollars_per_mmbtu[month]] *
-                                      self.days_in_month[month] * 24 * self.time_steps_per_hour)
+            # Create full length (timestep) array of NG cost, converting $/MMBtu to $/kWh
+            self.boiler_fuel_rate_array.extend([self.boiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu[month] / MMBTU_TO_KWH] * 
+                                                self.days_in_month[month] * 24 * self.time_steps_per_hour)
+            self.chp_fuel_rate_array.extend([self.chp_fuel_blended_monthly_rates_us_dollars_per_mmbtu[month] / MMBTU_TO_KWH] *
+                                                self.days_in_month[month] * 24 * self.time_steps_per_hour)
         if generator is not None:
-            self.generator_fuel_rate_array = [generator.diesel_fuel_cost_us_dollars_per_gallon for
+            self.generator_fuel_rate_array = [generator.diesel_fuel_cost_us_dollars_per_gallon / GAL_DIESEL_TO_KWH for
                                               _ in range(8760 * self.time_steps_per_hour)]
 
     def _get_fuel_burning_tech_params(self, techs, generator=None, chp=None):
@@ -80,13 +81,14 @@ class FuelParams:
         techs_by_fuel_type = []
 
         for tech in techs:
-            # have to rubber stamp other tech values for each energy tier so that array is filled appropriately
+            # Assign fuel_costs, fuel_burn_slope, fuel_burn_intercept, fuel_limit, techs_by_fuel_type, and fuel_types,
+            # Convert fuel basis to kWh if not already
             if tech.lower() == 'generator':
                 # generator fuel is not free anymore since generator is also a design variable
                 fuel_costs = operator.add(fuel_costs, self.generator_fuel_rate_array)
-                fuel_burn_slope.append(generator.fuel_slope)
-                fuel_burn_intercept.append(generator.fuel_intercept)
-                fuel_limit.append(generator.fuel_avail)
+                fuel_burn_slope.append(generator.fuel_slope * GAL_DIESEL_TO_KWH)
+                fuel_burn_intercept.append(generator.fuel_intercept * GAL_DIESEL_TO_KWH)
+                fuel_limit.append(generator.fuel_avail * GAL_DIESEL_TO_KWH)
                 techs_by_fuel_type.append([tech.upper()])
                 fuel_types.append("DIESEL")
             elif tech.lower() == 'boiler':

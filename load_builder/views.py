@@ -87,12 +87,11 @@ def load_builder(request):
                 try:
                     loads_table = json.loads(post)
                 except:
-                    loads_table = unicode(post, "utf-8")
+                    loads_table = post.decode("utf-8")
                 finally:
                     if not isinstance(loads_table, list):
                         csv_reader = csv.DictReader(io.StringIO(loads_table))
                         loads_table = list(csv_reader)
-
             except:
                 return JsonResponse({"Error": "Invalid JSON or CSV"})
 

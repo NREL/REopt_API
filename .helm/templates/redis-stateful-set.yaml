@@ -20,22 +20,22 @@ spec:
       containers:
         - name: {{ .Chart.Name }}-redis
           image: redis:6.0.8-alpine
-          args: ["sh", "-c", "redis-server --requirepass $$REDIS_PASSWORD --save 900 1 --save 300 10 --save 60 10000 --appendonly yes --maxmemory 512mb --maxmemory-policy volatile-lru"]
-          volumeMounts:
-            - name: {{ .Chart.Name }}-redis-data-volume
-              mountPath: /data
+          args: ["sh", "-c", "redis-server --requirepass $$REDIS_PASSWORD --save 900 1 --save 300 10 --save 60 10000 --appendonly yes --maxmemory 1024mb --maxmemory-policy volatile-lru"]
+          # volumeMounts:
+          #   - name: {{ .Chart.Name }}-redis-data-volume
+          #     mountPath: /data
           env:
             - name: REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ .Chart.Name }}-secrets
                   key: redis_password
-  volumeClaimTemplates:
-    - metadata:
-        name: {{ .Chart.Name }}-redis-data-volume
-      spec:
-        storageClassName: {{ .Values.redisDataVolumeStorageClassName | quote }}
-        accessModes: ["ReadWriteOnce"]
-        resources:
-          requests:
-            storage: 1.5Gi
+  # volumeClaimTemplates:
+  #   - metadata:
+  #       name: {{ .Chart.Name }}-redis-data-volume
+  #     spec:
+  #       storageClassName: {{ .Values.redisDataVolumeStorageClassName | quote }}
+  #       accessModes: ["ReadWriteOnce"]
+  #       resources:
+  #         requests:
+  #           storage: 1.5Gi

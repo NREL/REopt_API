@@ -27,22 +27,22 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-from django.conf.urls import url
 from . import views
 from django.conf.urls.static import static
 from django.conf import settings
+from django.urls import re_path
 
 urlpatterns = [
-    url(r'^errors/', views.errors, name='errors'),
-    url(r'^annual_kwh/', views.annual_kwh, name='annual_kwh'),
-    url(r'^invalid_urdb/', views.invalid_urdb, name='invalid_urdb'),
-    url(r'^help/', views.help, name='help'),
-    url(r'^results/', views.results, name='results'),
-    url(r'^simulated_load/', views.simulated_load, name='simulated_load'),
-    url(r'^emissions_profile/', views.emissions_profile, name='emissions_profile'),
-    url(r'^generator_efficiency/', views.generator_efficiency, name='generator_efficiency'),
-    url(r'^chp_defaults/', views.chp_defaults, name='chp_defaults'),
-    url(r'^loadprofile_chillerthermal_chiller_cop/', views.loadprofile_chillerthermal_chiller_cop, name='loadprofile_chillerthermal_chiller_cop'),
-    url(r'^absorption_chiller_defaults/', views.absorption_chiller_defaults, name='absorption_chiller_defaults'),
-    url(r'^schedule_stats/', views.schedule_stats, name='schedule_stats')
+    re_path(r'^annual_kwh/?$', views.annual_kwh),
+    re_path(r'^invalid_urdb/?$', views.invalid_urdb),
+    re_path(r'^help/?$', views.help),
+    re_path(r'^job/(?P<run_uuid>[0-9a-f-]+)/results/?$', views.results),
+    re_path(r'^simulated_load/?$', views.simulated_load),
+    re_path(r'^emissions_profile/?$', views.emissions_profile),
+    re_path('^generator_efficiency/?$', views.generator_efficiency),
+    re_path(r'^chp_defaults/?$', views.chp_defaults),
+    re_path(r'^loadprofile_chillerthermal_chiller_cop/?$', views.loadprofile_chillerthermal_chiller_cop),
+    re_path(r'^absorption_chiller_defaults/?$', views.absorption_chiller_defaults),
+    re_path(r'^schedule_stats/?$', views.schedule_stats),
+    re_path(r'^job/(?P<run_uuid>[0-9a-f-]+)/remove/?$', views.remove),
 ]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
