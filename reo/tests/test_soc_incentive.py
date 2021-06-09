@@ -62,23 +62,8 @@ class SOCIncentiveTests(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
-        c = nested_to_flat(d['outputs'])
-        c['average_soc'] = (sum(d['outputs']['Scenario']['Site']['Storage']['year_one_soc_series_pct']) /
-                            len(d['outputs']['Scenario']['Site']['Storage']['year_one_soc_series_pct']))
-
-        print(c['lcc'])
-        print(c['average_soc'])
-
-        d_expected = dict()
-        d_expected['lcc'] = 354610.0
-        d_expected['average_soc'] = 0.7271688516
-
-        # try:
-        #     check_common_outputs(self, c, d_expected)
-        # except:
-        #     print("Run {} expected outputs may have changed.".format(run_uuid))
-        #     print("Error message: {}".format(d['messages']))
-        #     raise
+        high_avg_soc = (sum(d['outputs']['Scenario']['Site']['Storage']['year_one_soc_series_pct']) /
+                        len(d['outputs']['Scenario']['Site']['Storage']['year_one_soc_series_pct']))
 
         nested_data['Scenario']['add_soc_incentive'] = False
         resp = self.get_response(data=nested_data)
@@ -86,18 +71,7 @@ class SOCIncentiveTests(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
-        c = nested_to_flat(d['outputs'])
-        c['average_soc'] = (sum(d['outputs']['Scenario']['Site']['Storage']['year_one_soc_series_pct']) /
-                            len(d['outputs']['Scenario']['Site']['Storage']['year_one_soc_series_pct']))
+        low_avg_soc = (sum(d['outputs']['Scenario']['Site']['Storage']['year_one_soc_series_pct']) /
+                       len(d['outputs']['Scenario']['Site']['Storage']['year_one_soc_series_pct']))
 
-        d_expected['lcc'] = 354610.0
-        d_expected['average_soc'] = 0.584223065490931
-        print(c['lcc'])
-        print(c['average_soc'])
-
-        try:
-            check_common_outputs(self, c, d_expected)
-        except:
-            print("Run {} expected outputs may have changed.".format(run_uuid))
-            print("Error message: {}".format(d['messages']))
-            raise
+        self.assertGreater(high_avg_soc, low_avg_soc, "Average SOC should be higher when including SOC incentive.")
