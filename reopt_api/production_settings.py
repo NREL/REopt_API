@@ -70,6 +70,7 @@ INSTALLED_APPS = (
     'tastypie',
     'proforma',
     'resilience_stats',
+    'futurecosts',
     'django_celery_results',
     'django_extensions'
 )
