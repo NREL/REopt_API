@@ -232,8 +232,6 @@ Base.@kwdef struct Parameter
 	CHPStandbyCharge::Float64
 	CHPDoesNotReduceDemandCharges::Int64
 	StorageDecayRate::AxisArray
-	DecompOptTol::Float64
-	DecompTimeOut::Int32
 end
 
 
@@ -312,6 +310,7 @@ function Parameter(d::Dict)
     d["OMcostPerUnitHourPerSize"] = AxisArray(d["OMcostPerUnitHourPerSize"], d["Tech"])
     if !isempty(d["CoincidentPeakLoadTimeSteps"])
         d["CoincidentPeakRates"] = AxisArray(d["CoincidentPeakRates"], d[:CPPeriod])
+        d["CoincidentPeakLoadTimeSteps"] = permutedims(hcat(d["CoincidentPeakLoadTimeSteps"]...), (2,1))
         d["CoincidentPeakLoadTimeSteps"] = AxisArray(d["CoincidentPeakLoadTimeSteps"], d[:CPPeriod], 1:size(d["CoincidentPeakLoadTimeSteps"],2))
     else
         d["CoincidentPeakRates"] = AxisArray([])

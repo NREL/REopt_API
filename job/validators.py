@@ -51,6 +51,19 @@ def scrub_fields(obj: BaseModel, raw_fields: dict):
 class InputValidator(object):
 
     def __init__(self, raw_inputs: dict, run_uuid: str):
+        """
+        Validate user inputs
+        Used in job/api.py to:
+        1. Clean each Model's individual fields, which checks:
+            - required inputs provided
+            - inputs have correct types
+            - inputs within min/max limits
+            - fills in default values
+        2. Check requirements across each Model's fields
+            - eg. if user provides outage_start_time_step then must also provide outage_start_end_step
+        3. Check requirements across Model fields
+            - eg. the time_steps_per_hour must align with the length of loads_kw
+        """
         self.validation_errors = []
         self.models = []
         self.objects = (
