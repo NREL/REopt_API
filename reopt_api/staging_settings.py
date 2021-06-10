@@ -28,7 +28,9 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
 from keys import *
-
+import os
+import django
+import rollbar
 """
 Django settings for reopt_api project.
 
@@ -42,8 +44,6 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-import os
-import django
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -154,6 +154,8 @@ CELERY_IMPORTS = (
     'reo.process_results',
     'reo.src.run_jump_model',
     'resilience_stats.outage_simulator_LF',
+    'futurecosts.api',
+    'futurecosts.tasks',
 )
 
 # Static files (CSS, JavaScript, Images)
@@ -168,7 +170,6 @@ ROLLBAR = {
     'branch': os.environ.get('BRANCH_NAME')
 }
 
-import rollbar
 rollbar.init(**ROLLBAR)
 
 APPEND_SLASH = False
