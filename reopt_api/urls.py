@@ -35,6 +35,7 @@ from resilience_stats.api import OutageSimJob
 from tastypie.api import Api
 from reo import views
 from django.urls import path
+from futurecosts.api import FutureCostsAPI
 from ghpghx.resources import GHPGHXJob
 from ghpghx import views
 
@@ -47,6 +48,9 @@ stable_api = Api(api_name='stable')
 stable_api.register(Job())
 stable_api.register(OutageSimJob())
 stable_api.register(GHPGHXJob())
+
+dev_api = Api(api_name="dev")
+dev_api.register(FutureCostsAPI())
 
 
 def page_not_found(request, url):
@@ -67,22 +71,26 @@ urlpatterns = [
     path('v1/', include('resilience_stats.urls')),
     path('v1/', include('proforma.urls')),
     path('v1/', include('load_builder.urls')),
+    path('v1/', include('summary.urls')),
     path('v1/', include('ghpghx.urls')),
-    url(r'^v1/user/?', include('summary.urls'), name='summary'),
     url(r'', include(v1_api.urls), name='job'),
     url(r'', include(v1_api.urls), name='outagesimjob'),
     url(r'', include(v1_api.urls), name='ghpghx'),
-    
+
     path('stable/', include('reo.urls')),
     path('stable/', include('resilience_stats.urls')),
     path('stable/', include('proforma.urls')),
     path('stable/', include('load_builder.urls')),
+    path('stable/', include('summary.urls')),
     path('stable/', include('ghpghx.urls')),
-    url(r'^stable/user/?', include('summary.urls'), name='summary'),
     url(r'', include(stable_api.urls), name='job'),
     url(r'', include(stable_api.urls), name='outagesimjob'),
+
+    path('dev/', include('futurecosts.urls')),
+    url(r'', include(dev_api.urls), name='futurecosts'),
+
     url(r'', include(stable_api.urls), name='ghpghx'),
-    
+
     url(r'(.*)', page_not_found, name='404'),
     ]
 
