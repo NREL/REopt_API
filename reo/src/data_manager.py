@@ -306,6 +306,52 @@ class DataManager:
 
         return pwf_prod_incent, max_prod_incent, max_size_for_prod_incent, production_incentive_rate
 
+    def _get_cost_intercept(self, tech, y_int_cost, regions):
+        """
+        Helper function in case there is a non-zero y-intercept cost for the **first** cost segment (typically zero)
+        This y-intercept ($) is not capacity-based, so only the %-based incentives are relevant (itc and ibi_pct)
+        This must also apply MACRS tax-based adjustments from ITC, using existing functions
+        return: y_int_cost_mod: the net adjusted y_int_cost for all regions combined
+        return: p_cap_used: the amount of p_cap used for each region, needed to reduce the p_cap for remaining segments
+        """
+        y_int_cost_mod = y_int_cost
+        p_cap_used = {}
+
+        for region in regions[:-1]:
+            if region == 'federal':
+                region_pct = eval('self.' + tech + '.incentives.' + region + '.itc')
+                max_incent = eval('self.' + tech + '.incentives.' + region + '.itc_max')  # [$]
+            else:  # region == 'state' or region == 'utility'
+                region_pct = eval('self.' + tech + '.incentives.' + region + '.ibi')
+                max_incent = eval('self.' + tech + '.incentives.' + region + '.ibi_max')  # [$]
+            
+            incent = min(y_int_cost_mod * region_pct, max_incent)
+            y_int_cost_mod -= incent
+            p_cap_used[region] = incent
+
+        # Remove federal incentives for ITC basis and tax benefit (MACRS) calculations
+        itc = eval('self.' + tech.lower() + '.incentives.federal.itc')
+        if itc is None:
+            itc = 0.0
+        if itc == 1:
+            itc_unit_basis = 0
+        else:
+            itc_unit_basis = y_int_cost_mod / (1 - itc)            
+        sf = self.site.financial
+        updated_y_int_cost_mod = setup_capital_cost_incentive(
+            itc_basis=itc_unit_basis,  # input tech cost with incentives, but no ITC
+            replacement_cost=0,
+            replacement_year=sf.analysis_years,
+            discount_rate=sf.owner_discount_pct,
+            tax_rate=sf.owner_tax_pct,
+            itc=itc,
+            macrs_schedule=eval('self.' + tech + '.incentives.macrs_schedule'),
+            macrs_bonus_pct=eval('self.' + tech + '.incentives.macrs_bonus_pct'),
+            macrs_itc_reduction=eval('self.' + tech + '.incentives.macrs_itc_reduction')
+        )
+
+        return updated_y_int_cost_mod, p_cap_used
+
     def _get_REopt_cost_curve(self, techs):
         regions = ['utility', 'state', 'federal', 'combined']
         cap_cost_slope = list()
@@ -314,7 +360,6 @@ class DataManager:
         n_segments_max = 0  # tracking the maximum number of cost curve segments
         n_segments = 1
         n_segments_list = list()
-        tech_to_size = float(big_number)
 
         for tech in techs:
 
@@ -333,70 +378,73 @@ class DataManager:
 
                     if tech not in ['generator', 'absorpchl', 'newboiler', 'steamturbine']:
 
-                        if region == 'federal' or region == 'total':
+                        if region == 'federal':
                             tech_incentives[region]['%'] = eval('self.' + tech + '.incentives.' + region + '.itc')
-                            tech_incentives[region]['%_max'] = eval('self.' + tech + '.incentives.' + region + '.itc_max')
+                            tech_incentives[region]['%_max'] = eval('self.' + tech + '.incentives.' + region + '.itc_max')  # [$]
                         else:  # region == 'state' or region == 'utility'
                             tech_incentives[region]['%'] = eval('self.' + tech + '.incentives.' + region + '.ibi')
-                            tech_incentives[region]['%_max'] = eval('self.' + tech + '.incentives.' + region + '.ibi_max')
+                            tech_incentives[region]['%_max'] = eval('self.' + tech + '.incentives.' + region + '.ibi_max')  # [$]
 
-                        tech_incentives[region]['rebate'] = eval('self.' + tech + '.incentives.' + region + '.rebate')
-                        tech_incentives[region]['rebate_max'] = eval('self.' + tech + '.incentives.' + region + '.rebate_max')
+                        tech_incentives[region]['rebate'] = eval('self.' + tech + '.incentives.' + region + '.rebate')  # [$/kW]
+                        tech_incentives[region]['rebate_max'] = eval('self.' + tech + '.incentives.' + region + '.rebate_max')  # [$]
 
                         # Workaround to consider fact that REopt incentive calculation works best if "unlimited" incentives are entered as 0
                         if tech_incentives[region]['%_max'] == max_incentive:
-                            tech_incentives[region]['%_max'] = 0.0
+                            tech_incentives[region]['%_max'] = 0.0  # [$]
                         if tech_incentives[region]['rebate_max'] == max_incentive:
-                            tech_incentives[region]['rebate_max'] = 0.0
+                            tech_incentives[region]['rebate_max'] = 0.0  # [$]
 
                     else:  # for generator and absorption chiller, there are no incentives
                         tech_incentives[region]['%'] = 0.0
-                        tech_incentives[region]['%_max'] = 0.0
-                        tech_incentives[region]['rebate'] = 0.0
-                        tech_incentives[region]['rebate_max'] = 0.0
+                        tech_incentives[region]['%_max'] = 0.0  # [$]
+                        tech_incentives[region]['rebate'] = 0.0  # [$/kW]
+                        tech_incentives[region]['rebate_max'] = 0.0  # [$]
 
                 # Intermediate Cost curve
                 # New input of tech_size_for_cost_curve to be associated with tech_cost (installed_cost_us_dollars_per_kw) with same type and length
                 if hasattr(eval('self.' + tech), 'tech_size_for_cost_curve'):
                     if eval('self.' + tech + '.tech_size_for_cost_curve') not in [None, []]:
-                        tech_size = eval('self.' + tech + '.tech_size_for_cost_curve')
+                        tech_size = eval('self.' + tech + '.tech_size_for_cost_curve')  # [kW]
                     else:
-                        tech_size = [float(big_number)]
+                        tech_size = [float(big_number)]  # [kW]
                 else:
-                    tech_size = [float(big_number)]
+                    tech_size = [float(big_number)]  # [kW]
 
                 xp_array_incent = dict()
                 if len(tech_size) > 1:
                     xp_array_incent['utility'] = []
-                    if tech_size[0] != 0: # Append a 0 to the front of the list if not included(we'll assume that it has a 0 y-intercept below)
+                    if tech_size[0] != 0: # Append a 0 to the front of the list if not included (we'll assume that it has a 0 y-intercept below)
                         xp_array_incent['utility'] += [0]
                     xp_array_incent['utility'] += [tech_size[i] for i in range(len(tech_size))]  # [$]  # Append list of sizes for cost curve [kW]
                     if tech_size[-1] < (float(big_number) - 1.0):  # -1 just to make sure it's ~=big_number
                         xp_array_incent['utility'] += [float(big_number)]  # Append big number size to assume same cost as last input point
                 else:
-                    xp_array_incent['utility'] = [0.0, float(big_number)]
+                    xp_array_incent['utility'] = [0.0, float(big_number)]  # [kW]
 
                 yp_array_incent = dict()
                 if len(tech_size) > 1:
-                    if tech_size[0] == 0:
-                        yp_array_incent['utility'] = [tech_cost[0]]  # tech_cost[0] is assumed to be in units of $, if there is tech_size[0]=0 point
+                    if (tech_size[0] == 0) and (tech_cost[0] != 0):
+                        # Special handling for non-zero y-intercept of first segment
+                        y_int_cost_mod, p_cap_used = self._get_cost_intercept(tech, tech_cost[0], regions) 
+                        yp_array_incent['utility'] = [y_int_cost_mod]  # tech_cost[0] is assumed to be in units of $, if there is tech_size[0]=0 point
                         yp_array_incent['utility'] += [tech_size[i] * tech_cost[i] for i in range(1, len(tech_cost))]  # [$]
                     else:
                         yp_array_incent['utility'] = [0]
                         yp_array_incent['utility'] += [tech_size[i] * tech_cost[i] for i in range(len(tech_cost))]  # [$]
-                    yp_array_incent['utility'] += [float(big_number) * tech_cost[-1]]  # Last cost assumed for big_number size
+                    if tech_size[-1] < (float(big_number) - 1.0):
+                        yp_array_incent['utility'] += [float(big_number) * tech_cost[-1]]  # Last cost assumed for big_number size
                     # Final cost curve
-                    cost_curve_bp_y = [yp_array_incent['utility'][0]]
+                    cost_curve_bp_y = [yp_array_incent['utility'][0]]  # [$]
                 else:
                     if isinstance(tech_cost, list):
                         yp_array_incent['utility'] = [0.0, float(big_number) * tech_cost[0]]  # [$]
                     else:
                         yp_array_incent['utility'] = [0.0, float(big_number) * tech_cost]  # [$]
                     # Final cost curve
-                    cost_curve_bp_y = [0.0]
+                    cost_curve_bp_y = [0.0]  # [$]
 
                 # Final cost curve
-                cost_curve_bp_x = [0.0]
+                cost_curve_bp_x = [0.0]               
 
                 for r in range(len(regions)-1):
 
@@ -404,16 +452,20 @@ class DataManager:
                     next_region = regions[r + 1]
 
                     # Apply incentives, initialize first value
-                    xp_array_incent[next_region] = [0.0]
-                    yp_array_incent[next_region] = [0.0]
+                    xp_array_incent[next_region] = [0.0]  # [kW]
+                    yp_array_incent[next_region] = [0.0]  # [$]
 
                     # percentage based incentives
                     p = float(tech_incentives[region]['%'])
-                    p_cap = float(tech_incentives[region]['%_max'])
+                    p_cap = float(tech_incentives[region]['%_max'])  # [$]
 
                     # rebates, for some reason called 'u' in REopt
-                    u = float(tech_incentives[region]['rebate'])
-                    u_cap = float(tech_incentives[region]['rebate_max'])
+                    u = float(tech_incentives[region]['rebate'])   # [$/kW]
+                    u_cap = float(tech_incentives[region]['rebate_max'])  # [$]
+
+                    # If non-zero y-int cost for segment 1 (cost curve), adjust p_cap based on that used by intercept
+                    if cost_curve_bp_y[0] != 0 and p_cap > 0.0:
+                        p_cap = max(0.0, p_cap - p_cap_used[region])  # [$]
 
                     # reset switches and break point counter
                     switch_percentage = False
@@ -424,16 +476,16 @@ class DataManager:
                     if u == 0 or u_cap == 0:
                         switch_rebate = True
 
-                    # start at second point, first is always zero
+                    # TODO not true: start at second point, first is always zero
                     for point in range(1, len(xp_array_incent[region])):
 
                         # previous points
-                        xp_prev = xp_array_incent[region][point - 1]
-                        yp_prev = yp_array_incent[region][point - 1]
+                        xp_prev = xp_array_incent[region][point - 1]  # [kW]
+                        yp_prev = yp_array_incent[region][point - 1]  # [$]
 
                         # current, unadjusted points
-                        xp = xp_array_incent[region][point]
-                        yp = yp_array_incent[region][point]
+                        xp = xp_array_incent[region][point]  # [kW]
+                        yp = yp_array_incent[region][point]  # [$]
 
                         # initialize the adjusted points on cost curve
                         xa = xp
@@ -446,12 +498,12 @@ class DataManager:
                         p_ybp = 0.0
 
                         if not switch_rebate:
-                            u_xbp = u_cap / u
-                            u_ybp = slope(xp_prev, yp_prev, xp, yp) * u_xbp + intercept(xp_prev, yp_prev, xp, yp)
+                            u_xbp = u_cap / u  # [$ / ($/kw)] = [kW]
+                            u_ybp = slope(xp_prev, yp_prev, xp, yp) * u_xbp + intercept(xp_prev, yp_prev, xp, yp)  # [$]
 
                         if not switch_percentage:
-                            p_xbp = (p_cap / p - intercept(xp_prev, yp_prev, xp, yp)) / slope(xp_prev, yp_prev, xp, yp)
-                            p_ybp = p_cap / p
+                            p_ybp = p_cap / p  # [$ / %] = [$]
+                            p_xbp = (p_ybp - intercept(xp_prev, yp_prev, xp, yp)) / slope(xp_prev, yp_prev, xp, yp)  # [$ / ($/kW)] = [$]
 
                         if ((p * yp) < p_cap or p_cap == 0) and ((u * xp) < u_cap or u_cap == 0):
                             ya = yp - (p * yp + u * xp)
