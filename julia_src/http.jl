@@ -1,4 +1,4 @@
-using HTTP, JSON
+using HTTP, JSON, JuMP
 include("REopt.jl")
 
 using .REopt
