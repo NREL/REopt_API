@@ -2049,7 +2049,7 @@ nested_input_definitions = {
           "type": "float",
           "min": -100,
           "max": 100,
-          "default": 0.0,
+          "default": -0.51,
           "description": "Annual GHP incremental operations and maintenance costs in $/ft^2-building/year"
         },
         "building_sqft": {
