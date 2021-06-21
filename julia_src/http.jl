@@ -1,4 +1,4 @@
-using HTTP, JSON
+using HTTP, JSON, JuMP
 include("REopt.jl")
 include("GHPGHX.jl")
 
@@ -12,8 +12,7 @@ function job(req::HTTP.Request)
     m = xpress_model(timeout, tol)
     @info "Starting REopt with timeout of $(timeout) seconds..."
     results = reopt(m, d)
-	# fix our memory leak? https://github.com/jump-dev/CPLEX.jl/issues/185
-	m = nothing
+	finalize(backend(m))
 	GC.gc()
     @info "REopt model solved with status $(results["status"])."
     return HTTP.Response(200, JSON.json(results))
