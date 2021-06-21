@@ -63,7 +63,7 @@ class GHPGHXModel(models.Model):
         default=20.0, validators=[MinValueValidator(1.0), MaxValueValidator(100.0)],
         help_text="Distance from the centerline of each borehole to the centerline of its adjacent boreholes [ft]")
     borehole_diameter_inch = models.FloatField(null=True, blank=True, 
-        default=10.0, validators=[MinValueValidator(0.25), MaxValueValidator(24.0)],
+        default=5.0, validators=[MinValueValidator(0.25), MaxValueValidator(24.0)],
         help_text="Diameter of the borehole/well drilled in the ground [in]")
     borehole_choices = [("rectangular", "rectangular"),
                         ("hexagonal", "hexagonal")]
