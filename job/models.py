@@ -225,9 +225,6 @@ class SiteInputs(BaseModel, models.Model):
         primary_key=True,
     )
 
-    run_uuid = models.UUIDField(unique=True)
-
-    # Inputs
     latitude = models.FloatField(
         validators=[
             MinValueValidator(-90),
@@ -242,19 +239,6 @@ class SiteInputs(BaseModel, models.Model):
         ],
         help_text="The approximate longitude of the site in decimal degrees."
     )
-    address = models.TextField(
-        blank=True,
-        help_text="A user defined address as optional metadata (street address, city, state or zip code)"
-    )
-    elevation_ft = models.FloatField(
-        default=0,
-        validators=[
-            MinValueValidator(0),
-            MaxValueValidator(15000)
-        ],
-        null=True, blank=True,
-        help_text="Site elevation (above sea sevel), units of feet"
-    )
     land_acres = models.FloatField(
         validators=[
             MinValueValidator(0),
@@ -263,12 +247,6 @@ class SiteInputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Land area in acres available for PV panel siting"
     )
-    outdoor_air_temp_degF = ArrayField(
-        models.FloatField(
-            null=True, blank=True,
-            help_text="Hourly outdoor air temperature (dry-bulb)."
-        ), 
-        default=list, null=True)
     roof_squarefeet = models.FloatField(
         validators=[
             MinValueValidator(0),
@@ -277,9 +255,29 @@ class SiteInputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Area of roof in square feet available for PV siting"
     )
-    year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
-    year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
-    renewable_electricity_energy_pct = models.FloatField(null=True, blank=True)
+    # TODO make sure that fields not used in Julia pkg are removed before passing to Julia (like Site.address)
+    # address = models.TextField(
+    #     blank=True,
+    #     help_text="A user defined address as optional metadata (street address, city, state or zip code)"
+    # )
+    # elevation_ft = models.FloatField(
+    #     default=0,
+    #     validators=[
+    #         MinValueValidator(0),
+    #         MaxValueValidator(15000)
+    #     ],
+    #     null=True, blank=True,
+    #     help_text="Site elevation (above sea sevel), units of feet"
+    # )
+    # outdoor_air_temp_degF = ArrayField(
+    #     models.FloatField(
+    #         null=True, blank=True,
+    #         help_text="Hourly outdoor air temperature (dry-bulb)."
+    #     ),
+    #     default=list, null=True)
+    # year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
+    # year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
+    # renewable_electricity_energy_pct = models.FloatField(null=True, blank=True)
 
 
 class FinancialInputs(BaseModel, models.Model):
@@ -453,8 +451,8 @@ class FinancialInputs(BaseModel, models.Model):
 #     developer_om_and_replacement_present_cost_after_tax_us_dollars = models.FloatField(null=True, blank=True)
 
 
-class LoadProfileInputs(BaseModel, models.Model):
-    name = "LoadProfile"
+class ElectricLoadInputs(BaseModel, models.Model):
+    name = "ElectricLoad"
 
     scenario = models.OneToOneField(
         Scenario,
@@ -469,7 +467,6 @@ class LoadProfileInputs(BaseModel, models.Model):
         ["doe_reference_name"]
     ]
 
-    run_uuid = models.UUIDField(unique=True)
     DOE_REFERENCE_NAME = models.TextChoices('DOE_REFERENCE_NAME', (
         'FastFoodRest '
         'FullServiceRest '
@@ -495,7 +492,6 @@ class LoadProfileInputs(BaseModel, models.Model):
         'FlatLoad_8_5'
     ))
 
-    # Inputs
     annual_kwh = models.FloatField(
         validators=[
             MinValueValidator(1),
@@ -515,110 +511,6 @@ class LoadProfileInputs(BaseModel, models.Model):
                    "//energy.gov/eere/buildings/commercial-reference-buildings' target='blank'>Commercial Reference "
                    "Buildings</a>")
     )
-    loads_kw = ArrayField(
-        models.FloatField(
-            blank=True,
-        ),
-        default=list,
-        null=True, blank=True,
-        help_text=("Typical load over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples). All non-net load values must be greater than or equal to zero.")
-    )
-    monthly_totals_kwh = ArrayField(
-        models.FloatField(
-            blank=True,
-            validators=[
-                MinValueValidator(0),
-                MaxValueValidator(100000000)
-            ]
-        ),
-        default=list,
-        null=True, blank=True,
-        help_text=("Monthly site energy consumption from electricity series (an array 12 entries long), in kWh, used to scale simulated default building load profile for the site's climate zone")
-    )
-    outage_end_hour = models.IntegerField(
-        validators=[
-            MinValueValidator(0),
-            MaxValueValidator(8759)
-        ],
-        null=True, blank=True,
-        help_text=("Hour of year that grid outage ends. Must be greater than outage_start.")
-    )
-    outage_end_time_step = models.IntegerField(
-        validators=[
-            MinValueValidator(1),
-            MaxValueValidator(35040)
-        ],
-        null=True, blank=True,
-        help_text=("Time step that grid outage ends. Must be greater than outage_start.")
-    )
-    outage_start_hour = models.IntegerField(
-        validators=[
-            MinValueValidator(0),
-            MaxValueValidator(8759)
-        ],
-        null=True, blank=True,
-        help_text=("Hour of year that grid outage starts. Must be less than outage_end.")
-    )
-    outage_start_time_step = models.IntegerField(
-        validators=[
-            MinValueValidator(1),
-            MaxValueValidator(35040)
-        ],
-        null=True, blank=True,
-        help_text=("Time step that grid outage starts. Must be less than outage_end.")
-    )
-    critical_load_pct = models.FloatField(
-        default=0.5,
-        validators=[
-            MinValueValidator(0),
-            MaxValueValidator(2)
-        ],
-        null=True, blank=True,
-        help_text=("Critical load factor is multiplied by the typical load to determine the critical load that must be met during an outage. Value must be between zero and one, inclusive.")
-    )
-    critical_loads_kw = ArrayField(
-        models.FloatField(
-            blank=True
-        ),
-        default=list,
-        null=True, blank=True,
-        help_text=("Critical load during an outage period. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples). All non-net load values must be greater than or equal to zero.")
-    )
-    critical_loads_kw_is_net = models.BooleanField(
-        default=False,
-        blank=True, #should bool fields have null=True?
-        help_text=("If there is existing PV, must specify whether provided load is the net load after existing PV or not.")
-    )
-    loads_kw_is_net = models.BooleanField(
-        default=True,
-        blank=True, #should bool fields have null=True?
-        help_text=("If there is existing PV, must specify whether provided load is the net load after existing PV or not.")
-    )
-    outage_is_major_event = models.BooleanField(
-        default=True,
-        blank=True, #should bool fields have null=True?
-        help_text=("Boolean value for if outage is a major event, which affects the avoided_outage_costs_us_dollars. "
-                    "If True, the avoided outage costs are calculated for a single outage occurring in the first year "
-                    "of the analysis_years. If False, the outage event is assumed to be an average outage event that "
-                    "occurs every year of the analysis period. In the latter case, the avoided outage costs for one year "
-                    "are escalated and discounted using the escalation_pct and offtaker_discount_pct to account for an "
-                    "annually recurring outage. (Average outage durations for certain utility service areas can be "
-                    "estimated using statistics reported on EIA form 861.)")
-    )
-    percent_share = ArrayField(
-        models.FloatField(
-            default=100,
-            validators=[
-                MinValueValidator(1),
-                MaxValueValidator(100)
-            ],
-            blank=True
-        ),
-        default=list,
-        null=True, blank=True,
-        help_text=("Percentage share of the types of building for creating hybrid simulated building and campus "
-                   "profiles.")
-    )
     year = models.IntegerField(
         default=2020,
         validators=[
@@ -631,7 +523,6 @@ class LoadProfileInputs(BaseModel, models.Model):
                    "determined correctly for the utility rate tariff. If a DOE Reference Building profile (aka "
                    "'simulated' profile) is used, the year is set to 2017 since the DOE profiles start on a Sunday.")
     )
-
     monthly_totals_kwh = ArrayField(
         models.FloatField(
             default=1.0e8,
@@ -693,7 +584,6 @@ class LoadProfileInputs(BaseModel, models.Model):
         ],
         help_text="Time step that grid outage starts. Must be less than outage_end."
     )
-
     outage_end_time_step = models.IntegerField(
         null=True,
         blank=True,
@@ -715,18 +605,32 @@ class LoadProfileInputs(BaseModel, models.Model):
                   "met during an outage. Value must be between zero and one, inclusive."
 
     )
-    outage_is_major_event = models.BooleanField(
-        null=True,
-        blank=True,
-        default=True,
-        help_text="Boolean value for if outage is a major event, which affects the avoided_outage_costs_us_dollars. If "
-                  "True, the avoided outage costs are calculated for a single outage occurring in the first year of "
-                  "the analysis_years. If False, the outage event is assumed to be an average outage event that occurs "
-                  "every year of the analysis period. In the latter case, the avoided outage costs for one year are "
-                  "escalated and discounted using the escalation_pct and offtaker_discount_pct to account for an "
-                  "annually recurring outage. (Average outage durations for certain utility service areas can be "
-                  "estimated using statistics reported on EIA form 861.)"
-    )
+    # outage_is_major_event = models.BooleanField(
+    #     null=True,
+    #     blank=True,
+    #     default=True,
+    #     help_text="Boolean value for if outage is a major event, which affects the avoided_outage_costs_us_dollars. If "
+    #               "True, the avoided outage costs are calculated for a single outage occurring in the first year of "
+    #               "the analysis_years. If False, the outage event is assumed to be an average outage event that occurs "
+    #               "every year of the analysis period. In the latter case, the avoided outage costs for one year are "
+    #               "escalated and discounted using the escalation_pct and offtaker_discount_pct to account for an "
+    #               "annually recurring outage. (Average outage durations for certain utility service areas can be "
+    #               "estimated using statistics reported on EIA form 861.)"
+    # )
+    # percent_share = ArrayField(
+    #     models.FloatField(
+    #         default=100,
+    #         validators=[
+    #             MinValueValidator(1),
+    #             MaxValueValidator(100)
+    #         ],
+    #         blank=True
+    #     ),
+    #     default=list,
+    #     null=True, blank=True,
+    #     help_text=("Percentage share of the types of building for creating hybrid simulated building and campus "
+    #                "profiles.")
+    # )
 
     # #Outputs
     # year_one_electric_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True)
