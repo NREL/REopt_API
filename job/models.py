@@ -179,8 +179,8 @@ class Scenario(BaseModel, models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
 
-class OptimizationInputs(BaseModel, models.Model):
-    name = "Optimization"
+class Settings(BaseModel, models.Model):
+    name = "Settings"
 
     scenario = models.OneToOneField(
         Scenario,
@@ -188,7 +188,6 @@ class OptimizationInputs(BaseModel, models.Model):
         primary_key=True,
     )
 
-    run_uuid = models.UUIDField(unique=True)
     timeout_seconds = models.IntegerField(
         default=420,
         validators=[
@@ -783,7 +782,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
         ["urdb_utility_name", "urdb_rate_name"],
         ["tou_energy_rates_us_dollars_per_kwh"]
     ]
-    # Inputs
+
     run_uuid = models.UUIDField(unique=True)
     blended_annual_demand_charges_us_dollars_per_kw = models.FloatField(
         blank=True,
@@ -948,10 +947,10 @@ class ElectricTariffInputs(BaseModel, models.Model):
     )
 
     # Ouptuts
-    emissions_region = models.TextField(
-        null=True,
-        blank=True
-    )
+    # emissions_region = models.TextField(
+    #     null=True,
+    #     blank=True
+    # )
     # year_one_energy_cost_us_dollars = models.FloatField(null=True, blank=True)
     # year_one_demand_cost_us_dollars = models.FloatField(null=True, blank=True)
     # year_one_fixed_cost_us_dollars = models.FloatField(null=True, blank=True)
@@ -1348,6 +1347,8 @@ class ElectricTariffInputs(BaseModel, models.Model):
 #     Scenario.objects.filter(run_uuid=run_uuid).update(**d)
 #     Error.objects.filter(run_uuid=run_uuid).update(**d)
 #
+
+"""
 class LoadProfileChillerThermalInputs(BaseModel, models.Model):
     # Inputs
     run_uuid = models.UUIDField(unique=True)
@@ -1456,3 +1457,4 @@ class LoadProfileChillerThermalInputs(BaseModel, models.Model):
         obj.save()
 
         return obj
+"""
