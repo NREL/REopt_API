@@ -19,10 +19,11 @@ end
 
 function reopt(req::HTTP.Request)
     d = JSON.parse(String(req.body))
+	settings = d["Settings"]
 	m = direct_model(
 			Xpress.Optimizer(
-				MAXTIME = -d["Optimization"]["timeout_seconds"],
-				MIPRELSTOP = d["Optimization"]["optimality_tolerance"],
+				MAXTIME = -pop!(settings, "timeout_seconds"),
+				MIPRELSTOP = pop!(settings, "optimality_tolerance"),
 				OUTPUTLOG = 0
 			)
 		)

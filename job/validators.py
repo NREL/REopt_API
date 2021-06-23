@@ -28,7 +28,7 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
 import logging
-from job.models import Scenario, SiteInputs, OptimizationInputs, LoadProfileInputs, ElectricTariffInputs, \
+from job.models import Scenario, SiteInputs, Settings, LoadProfileInputs, ElectricTariffInputs, \
     FinancialInputs, BaseModel
 from django.core.exceptions import ValidationError
 log = logging.getLogger(__name__)
@@ -69,7 +69,7 @@ class InputValidator(object):
         self.objects = (
             Scenario,
             SiteInputs,
-            OptimizationInputs,
+            Settings,
             LoadProfileInputs,
             ElectricTariffInputs,
             FinancialInputs
