@@ -91,6 +91,8 @@ def run_jump_model(dfm, data, bau=False):
         julia_host = os.environ.get('JULIA_HOST', "julia")
         response = requests.post("http://" + julia_host + ":8081/job/", json=reopt_inputs)
         results = response.json()
+        if response.status_code == 500:
+            raise REoptFailedToStartError(task=name, message=results["error"], run_uuid=run_uuid, user_uuid=user_uuid)
         time_dict["pyjulia_run_reopt_seconds"] = time.time() - t_start
         results.update(time_dict)
 
@@ -102,7 +104,7 @@ def run_jump_model(dfm, data, bau=False):
             logger.info(msg)
             raise OptimizationTimeout(task=name, message=msg, run_uuid=run_uuid, user_uuid=user_uuid)
         elif "RemoteDisconnected" in str(e.args[0]):
-            msg = "Something went wrong in the Julia code."
+            msg = "The Julia API disconnected."
             logger.error(msg)
             raise REoptFailedToStartError(task=name, message=msg, run_uuid=run_uuid, user_uuid=user_uuid)
 
