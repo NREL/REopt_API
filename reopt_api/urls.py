@@ -36,6 +36,7 @@ from tastypie.api import Api
 from reo import views
 from django.urls import path
 from job.api import Job as DevJob
+from futurecosts.api import FutureCostsAPI
 
 v1_api = Api(api_name='v1')
 v1_api.register(Job())
@@ -47,6 +48,7 @@ stable_api.register(OutageSimJob())
 
 dev_api = Api(api_name='dev')
 dev_api.register(DevJob())
+dev_api.register(FutureCostsAPI())
 
 
 def page_not_found(request, url):
@@ -81,6 +83,9 @@ urlpatterns = [
 
     url(r'', include(dev_api.urls), name='job'),
 
+    path('dev/', include('futurecosts.urls')),
+    url(r'', include(dev_api.urls), name='futurecosts'),
+    
     url(r'(.*)', page_not_found, name='404'),
     ]
 
