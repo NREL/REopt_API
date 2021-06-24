@@ -40,8 +40,8 @@ from tastypie.resources import ModelResource
 from tastypie.validation import Validation
 from job.validators import InputValidator
 from reo.src.profiler import Profiler
-# from job.src.run_jump_model import run_jump_model
-from reo.exceptions import UnexpectedError
+from job.src.run_jump_model import run_jump_model
+from reo.exceptions import UnexpectedError, REoptError
 log = logging.getLogger(__name__)
 
 
@@ -105,12 +105,15 @@ class Job(ModelResource):
 
         # TODO finish minimum Models for REoptLite.jl
         # TODO migrations
-        # TODO add REoptLite.jl to http.jl
         # TODO add dev URLs
+        if "Scenario" in bundle.data.keys():
+            bundle.data["Scenario"]["run_uuid"] = run_uuid
+        else:
+            bundle.data.update({"Scenario": {"run_uuid": run_uuid}})
 
         # Validate inputs
         try:
-            input_validator = InputValidator(bundle.data, run_uuid=run_uuid)
+            input_validator = InputValidator(bundle.data)
             input_validator.clean_fields()  # step 1 check field values
             if not input_validator.is_valid:
                 return400(data, input_validator)
@@ -141,7 +144,7 @@ class Job(ModelResource):
         Have to serialize the Django Models to pass to celery task!
         """
 
-        # data["inputs"] = input_validator.input_dict
+        # data.update(input_validator.scrubbed_inputs)
         # data["messages"] = input_validator.messages
 
         data["status"] = 'Optimizing...'
@@ -174,24 +177,24 @@ class Job(ModelResource):
                                                      content_type='application/json',
                                                      status=500))  # internal server error
 
-        # try:
-        #     run_jump_model.s(data=data)()
-        # except Exception as e:
-        #     if isinstance(e, REoptError):
-        #         pass  # handled in each task
-        #     else:  # for every other kind of exception
-        #         exc_type, exc_value, exc_traceback = sys.exc_info()
-        #         err = UnexpectedError(exc_type, exc_value.args[0], traceback.format_tb(exc_traceback), task='api.py',
-        #                               run_uuid=run_uuid)
-        #         err.save_to_db()
-        #         data["status"] = 'Internal Server Error. See messages for more.'
-        #         if 'messages' not in data.keys():
-        #             data['messages'] = {}
-        #         data['messages']['error'] = err.message
-        #         log.error("Internal Server error: " + err.message)
-        #         raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
-        #                                                  content_type='application/json',
-        #                                                  status=500))  # internal server error
+        try:
+            run_jump_model.s(data=input_validator.scrubbed_inputs)()
+        except Exception as e:
+            if isinstance(e, REoptError):
+                pass  # handled in each task
+            else:  # for every other kind of exception
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                err = UnexpectedError(exc_type, exc_value.args[0], traceback.format_tb(exc_traceback), task='api.py',
+                                      run_uuid=run_uuid)
+                err.save_to_db()
+                data["status"] = 'Internal Server Error. See messages for more.'
+                if 'messages' not in data.keys():
+                    data['messages'] = {}
+                data['messages']['error'] = err.message
+                log.error("Internal Server error: " + err.message)
+                raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
+                                                         content_type='application/json',
+                                                         status=500))  # internal server error
 
         raise ImmediateHttpResponse(HttpResponse(json.dumps({'run_uuid': run_uuid}),
                                                  content_type='application/json', status=201))
