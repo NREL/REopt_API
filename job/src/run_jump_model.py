@@ -78,19 +78,20 @@ def run_jump_model(data, bau=False):
     profiler = Profiler()
     time_dict = dict()
     name = 'reopt' if not bau else 'reopt_bau'
-    run_uuid = data['outputs']['Scenario']['run_uuid']
-    user_uuid = data['outputs']['Scenario'].get('user_uuid')
+    run_uuid = data['Scenario']['run_uuid']
+    user_uuid = data['Scenario'].get('user_uuid')
 
     logger.info("Running JuMP model ...")
     try:
         t_start = time.time()
         julia_host = os.environ.get('JULIA_HOST', "julia")
-        response = requests.post("http://" + julia_host + ":8081/REoptLite/", json=data["inputs"])
+        response = requests.post("http://" + julia_host + ":8081/reopt/", json=data)
         results = response.json()
         time_dict["pyjulia_run_reopt_seconds"] = time.time() - t_start
         results.update(time_dict)
 
     except Exception as e:
+        raise e
         if isinstance(e, REoptFailedToStartError):
             raise e
         elif "DimensionMismatch" in e.args[0]:  # JuMP may mishandle a timeout when no feasible solution is returned
