@@ -514,7 +514,7 @@ class ValidateNestedInput:
     def errors(self):
         output = {}
 
-        if self.input_data_errors or self.input_data_errors or self.ghpghx_inputs_errors:
+        if self.input_data_errors or self.urdb_errors or self.ghpghx_inputs_errors:
             output["error"] = "Invalid inputs. See 'input_errors'."
             if self.input_data_errors:
                 output["input_errors"] = self.input_data_errors
@@ -526,7 +526,7 @@ class ValidateNestedInput:
             
             for error in inner_error_map:
                 if eval("self." + error[1]):
-                    output["input_errors"] += [error[0]+"".join(eval("self." + error[1]))]
+                    output["input_errors"] += [error[0] + " ".join(eval("self." + error[1]))]
 
         return output
 
