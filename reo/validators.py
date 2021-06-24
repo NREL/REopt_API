@@ -431,11 +431,12 @@ class ValidateNestedInput:
                 'diesel_oil':22.51
             }
 
-    def __init__(self, input_dict):
+    def __init__(self, input_dict, ghpghx_inputs_validation_errors):
         self.list_or_dict_objects = ['PV']
         self.nested_input_definitions = nested_input_definitions
         self.input_data_errors = []
         self.urdb_errors = []
+        self.ghpghx_inputs_errors = ghpghx_inputs_validation_errors
         self.input_as_none = []
         self.invalid_inputs = []
         self.resampled_inputs = []
@@ -477,7 +478,7 @@ class ValidateNestedInput:
 
     @property
     def isValid(self):
-        if self.input_data_errors or self.urdb_errors:
+        if self.input_data_errors or self.urdb_errors or self.ghpghx_inputs_errors:
             return False
 
         return True
@@ -513,16 +514,19 @@ class ValidateNestedInput:
     def errors(self):
         output = {}
 
-        if self.input_data_errors:
+        if self.input_data_errors or self.input_data_errors or self.ghpghx_inputs_errors:
             output["error"] = "Invalid inputs. See 'input_errors'."
-            output["input_errors"] = self.input_data_errors
-
-        if self.urdb_errors and self.input_data_errors:
-            output["input_errors"] += ['URDB Rate: ' + ' '.join(self.urdb_errors)]
-
-        elif self.urdb_errors:
-            output["error"] = "Invalid inputs. See 'input_errors'."
-            output["input_errors"] = ['URDB Rate: ' + ' '.join(self.urdb_errors)]
+            if self.input_data_errors:
+                output["input_errors"] = self.input_data_errors
+            else:
+                output["input_errors"] = []
+            
+            inner_error_map = [("URDB Rate: ","urdb_errors"),
+                               ("GHPGHX Inputs: ","ghpghx_inputs_errors")]
+            
+            for error in inner_error_map:
+                if eval("self." + error[1]):
+                    output["input_errors"] += [error[0]+"".join(eval("self." + error[1]))]
 
         return output
 
