@@ -35,8 +35,8 @@ log = logging.getLogger(__name__)
 
 
 def scrub_fields(obj: BaseModel, raw_fields: dict):
-    valid_fields = [f.name for f in obj._meta.fields[2:]]
-    types = [str(type(f)) for f in obj._meta.fields[2:]]
+    valid_fields = [f.name for f in obj._meta.fields[1:]]
+    types = [str(type(f)) for f in obj._meta.fields[1:]]
     types_dict = {k: v for k, v in zip(valid_fields, types)}
 
     scrubbed_dict = dict()
@@ -50,7 +50,7 @@ def scrub_fields(obj: BaseModel, raw_fields: dict):
 
 class InputValidator(object):
 
-    def __init__(self, raw_inputs: dict, run_uuid: str):
+    def __init__(self, raw_inputs: dict):
         """
         Validate user inputs
         Used in job/api.py to:
@@ -76,18 +76,24 @@ class InputValidator(object):
         )
         
         scrubbed_inputs = dict()
+        scrubbed_inputs[Scenario.name] = scrub_fields(Scenario, raw_inputs[Scenario.name])
+        scenario = Scenario.create(**scrubbed_inputs[Scenario.name])
+        self.models.append(scenario)
+        scenario.save()  # must save the Scenario first to use it as a OneToOneField in other models
+
         for obj in self.objects:
+            if obj == Scenario: continue
             if obj.name in raw_inputs.keys():
 
                 scrubbed_inputs[obj.name] = scrub_fields(obj, raw_inputs[obj.name])
 
                 self.models.append(
-                    obj.create(run_uuid=run_uuid, **scrubbed_inputs[obj.name])
+                    obj.create(scenario=scenario, **scrubbed_inputs[obj.name])
                 )
             else:
                 # THIS WILL ONLY WORK IF MODEL HAS DEFAULTS FOR ALL REQUIRED FIELDS?
                 self.models.append(
-                    obj.create(run_uuid=run_uuid)
+                    obj.create(scenario=scenario)
                 )
         self.scrubbed_inputs = scrubbed_inputs
 
