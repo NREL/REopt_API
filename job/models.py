@@ -275,9 +275,31 @@ class SiteInputs(BaseModel, models.Model):
     #         help_text="Hourly outdoor air temperature (dry-bulb)."
     #     ),
     #     default=list, null=True)
-    # year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
-    # year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
-    # renewable_electricity_energy_pct = models.FloatField(null=True, blank=True)
+
+class SiteOutputs(BaseModel, models.Model):
+    name = "SiteOutputs"
+
+    scenario = models.OneToOneField(
+        Scenario,
+        on_delete=models.CASCADE,
+        primary_key=True,
+    )
+
+    year_one_emissions_lb_C02 = models.FloatField(
+        null=True, blank=True,
+        help_text="Total equivalent pounds of carbon dioxide emitted from the site in the first year."
+    )
+    year_one_emissions_bau_lb_C02 = models.FloatField(
+        null=True, blank=True,
+        help_text="Total equivalent pounds of carbon dioxide emittedf rom the site use in the first year in the BAU case."
+    )
+    renewable_electricity_energy_pct = models.FloatField(
+        null=True, blank=True,
+        help_text=("Portion of electrictrity use that is derived from on-site "
+                    "renewable resource generation in year one. Calculated as "
+                    "total PV and Wind generation in year one (including exports), "
+                    "divided by the total annual load in year one.")
+    )
 
 
 class FinancialInputs(BaseModel, models.Model):
@@ -409,45 +431,150 @@ class FinancialInputs(BaseModel, models.Model):
     # )
 
 
-# class FinancialOutputs(BaseModel, models.Model):
-#     name = "FinancialOutputs"
+class FinancialOutputs(BaseModel, models.Model):
+    name = "FinancialOutputs"
 
-#     scenario = models.OneToOneField(
-#         Scenario,
-#         on_delete=models.CASCADE,
-#         primary_key=True,
-#     )
+    scenario = models.OneToOneField(
+        Scenario,
+        on_delete=models.CASCADE,
+        primary_key=True,
+    )
 
-#     lcc_us_dollars = models.FloatField(null=True, blank=True)
-#     lcc_bau_us_dollars = models.FloatField(null=True, blank=True)
-#     npv_us_dollars = models.FloatField(null=True, blank=True)
-#     net_capital_costs_plus_om_us_dollars = models.FloatField(null=True, blank=True)
-#     avoided_outage_costs_us_dollars = models.FloatField(null=True, blank=True)
-#     microgrid_upgrade_cost_us_dollars = models.FloatField(null=True, blank=True)
-#     net_capital_costs = models.FloatField(null=True, blank=True)
-#     net_om_us_dollars_bau = models.FloatField(null=True, blank=True)
-#     initial_capital_costs = models.FloatField(null=True, blank=True)
-#     replacement_costs = models.FloatField(null=True, blank=True)
-#     om_and_replacement_present_cost_after_tax_us_dollars = models.FloatField(null=True, blank=True)
-#     initial_capital_costs_after_incentives = models.FloatField(null=True, blank=True)
-#     total_om_costs_us_dollars = models.FloatField(null=True, blank=True)
-#     year_one_om_costs_us_dollars = models.FloatField(null=True, blank=True)
-#     year_one_om_costs_before_tax_us_dollars = models.FloatField(null=True, blank=True)
-#     simple_payback_years = models.FloatField(null=True, blank=True)
-#     irr_pct = models.FloatField(null=True, blank=True)
-#     net_present_cost_us_dollars = models.FloatField(null=True, blank=True)
-#     annualized_payment_to_third_party_us_dollars = models.FloatField(null=True, blank=True)
-#     offtaker_annual_free_cashflow_series_us_dollars = ArrayField(
-#             models.FloatField(null=True, blank=True), default=list, null=True)
-#     offtaker_discounted_annual_free_cashflow_series_us_dollars = ArrayField(
-#             models.FloatField(null=True, blank=True), default=list, null=True)
-#     offtaker_annual_free_cashflow_series_bau_us_dollars = ArrayField(
-#             models.FloatField(null=True, blank=True), default=list, null=True)
-#     offtaker_discounted_annual_free_cashflow_series_bau_us_dollars = ArrayField(
-#             models.FloatField(null=True, blank=True), default=list, null=True)
-#     developer_annual_free_cashflow_series_us_dollars = ArrayField(
-#             models.FloatField(null=True, blank=True), default=list, null=True)
-#     developer_om_and_replacement_present_cost_after_tax_us_dollars = models.FloatField(null=True, blank=True)
+    lcc_us_dollars = models.FloatField(
+        null=True, blank=True,
+        help_text="Optimal lifecycle cost"
+    )
+    lcc_bau_us_dollars = models.FloatField(
+        null=True, blank=True,
+        help_text="Business as usual lifecycle cost"
+    )
+    npv_us_dollars = models.FloatField(
+        null=True, blank=True,
+        help_text="Net present value of savings realized by the project"
+    )
+    net_capital_costs_plus_om_us_dollars = models.FloatField(
+        null=True, blank=True,
+        help_text="Capital cost for all technologies plus present value of operations and maintenance over anlaysis period"
+    )
+    net_om_us_dollars_bau = models.FloatField(
+        null=True, blank=True,
+        help_text="Business-as-usual present value of operations and maintenance over anlaysis period",
+    )
+    net_capital_costs = models.FloatField(
+        null=True, blank=True,
+        help_text="Net capital costs for all technologies, in present value, including replacement costs and incentives."
+    )
+    # don't know about this one because it's not in nested_outputs or on developer.nrel.gov
+    # avoided_outage_costs_us_dollars = models.FloatField(
+    #     null=True, blank=True,
+    #     help_text=""
+    # )
+    microgrid_upgrade_cost_us_dollars = models.FloatField(
+        null=True, blank=True,
+        help_text="Cost in US dollars to make a distributed energy system islandable from the grid. Determined by multiplying the total capital costs of resultant energy systems from REopt (such as PV and Storage system) with the input value for microgrid_upgrade_cost_pct (which defaults to 0.30)."
+    )
+    initial_capital_costs = models.FloatField(
+        null=True, blank=True,
+        help_text="Up-front capital costs for all technologies, in present value, excluding replacement costs and incentives."
+    )
+    initial_capital_costs_after_incentives = models.FloatField(
+        null=True, blank=True,
+        help_text="Up-front capital costs for all technologies, in present value, excluding replacement costs, including incentives."
+    )
+    replacement_costs = models.FloatField(
+        null=True, blank=True,
+        help_text="Net replacement costs for all technologies, in future value, excluding incentives."
+    )
+    om_and_replacement_present_cost_after_tax_us_dollars = models.FloatField(
+        null=True, blank=True,
+        help_text="Net O&M and replacement costs in present value, after-tax."
+    )
+    total_om_costs_us_dollars = models.FloatField(
+        null=True, blank=True,
+        help_text="Total operations and maintenance cost over analysis period."
+    )
+    year_one_om_costs_us_dollars = models.FloatField(
+        null=True, blank=True,
+        help_text="Year one operations and maintenance cost after tax."
+    )
+    year_one_om_costs_before_tax_us_dollars = models.FloatField(
+        null=True, blank=True,
+        help_text="Year one operations and maintenance cost before tax."
+    )
+    simple_payback_years = models.FloatField(
+        null=True, blank=True,
+        help_text=("Number of years until the cumulative annual cashflow turns positive. "
+                                  "If the cashflow becomes negative again after becoming positive (i.e. due to battery repalcement costs)"
+                                  " then simple payback is increased by the number of years that the cash flow "
+                                  "is negative beyond the break-even year.")
+    )
+    irr_pct = models.FloatField(
+        null=True, blank=True,
+        help_text=("internal Rate of Return of the cost-optimal system. In two-party cases the "
+                    "developer discount rate is used in place of the offtaker discount rate.")
+    )
+    net_present_cost_us_dollars = models.FloatField(
+        null=True, blank=True,
+        help_text=("Present value of the total costs incurred by the third-party owning and operating the "
+                    "distributed energy resource assets.")
+    )
+    annualized_payment_to_third_party_us_dollars = models.FloatField(
+        null=True, blank=True,
+        help_text=("The annualized amount the host will pay to the third-party owner over the life of the project.")
+    )
+    offtaker_annual_free_cashflow_series_us_dollars = ArrayField(
+            models.FloatField(
+                null=True, blank=True
+            ), 
+            default=list, 
+            null=True,
+            help_text=("Annual free cashflow for the host in the optimal case for all analysis years, "
+                        "including year 0. Future years have not been discounted to account for the time value of money.")
+    )
+    offtaker_discounted_annual_free_cashflow_series_us_dollars = ArrayField(
+            models.FloatField(
+                null=True, blank=True
+            ), 
+            default=list, 
+            null=True,
+            help_text=("Annual discounted free cashflow for the host in the optimal case for all analysis years, "
+                        "including year 0. Future years have been discounted to account for the time value of money.")
+    )
+    offtaker_annual_free_cashflow_series_bau_us_dollars = ArrayField(
+            models.FloatField(
+                null=True, blank=True
+            ), 
+            default=list, 
+            null=True,
+            help_text=("Annual free cashflow for the host in the business-as-usual case for all analysis years, "
+                        "including year 0. Future years have not been discounted to account for the time value of "
+                        "money. Only calculated in the non-third-party case.")
+    )
+    offtaker_discounted_annual_free_cashflow_series_bau_us_dollars = ArrayField(
+            models.FloatField(
+                null=True, blank=True
+            ), 
+            default=list, 
+            null=True,
+            help_text=("Annual discounted free cashflow for the host in the business-as-usual case for all analysis "
+                        "years, including year 0. Future years have been discounted to account for the time value of "
+                        "money. Only calculated in the non-third-party case.")
+    )
+    developer_annual_free_cashflow_series_us_dollars = ArrayField(
+            models.FloatField(
+                null=True, blank=True
+            ), 
+            default=list, 
+            null=True,
+            help_text=("Annual free cashflow for the developer in the business-as-usual third party case for all "
+                        "analysis years, including year 0. Future years have not been discounted to account for "
+                        "the time value of money. Only calculated in the third-party case.")
+    )
+    developer_om_and_replacement_present_cost_after_tax_us_dollars = models.FloatField(
+        null=True, blank=True,
+        help_text=("Net O&M and replacement costs in present value, after-tax for the third-party "
+                    "developer. Only calculated in the third-party case.")
+    )
 
 
 class ElectricLoadInputs(BaseModel, models.Model):
@@ -629,14 +756,6 @@ class ElectricLoadInputs(BaseModel, models.Model):
     #                "profiles.")
     # )
 
-    # #Outputs
-    # year_one_electric_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True)
-    # critical_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True)
-    # annual_calculated_kwh = models.FloatField(null=True, blank=True)
-    # sustain_hours = models.IntegerField(null=True, blank=True)
-    # bau_sustained_time_steps = models.IntegerField(null=True, blank=True)
-    # resilience_check_flag = models.BooleanField(null=True, blank=True)
-
     def clean(self):
         error_messages = []
 
@@ -665,6 +784,49 @@ class ElectricLoadInputs(BaseModel, models.Model):
         if error_messages:
             raise ValidationError(' & '.join(error_messages))
 
+class ElectricLoadOutputs(BaseModel, models.Model):
+    name = "ElectricLoadOutputs"
+
+    scenario = models.OneToOneField(
+        Scenario,
+        on_delete=models.CASCADE,
+        primary_key=True,
+    )
+
+    year_one_electric_load_series_kw = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ), 
+        default=list, 
+        null=True,
+        help_text="Year one hourly time series of electric load"
+    )
+    critical_load_series_kw = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ), 
+        default=list, 
+        null=True,
+        help_text=("Hourly critical load for outage simulator. Values are either uploaded by user, "
+                    "or determined from typical load (either uploaded or simulated) and critical_load_pct.")
+    )
+    annual_calculated_kwh = models.FloatField(
+        null=True, blank=True,
+        help_text="Annual energy consumption calculated by summing up 8760 load profile"
+    )
+    resilience_check_flag = models.BooleanField(
+        null=True, blank=True,
+        help_text="BAU resilience check status for existing system"
+    )
+    # TODO: is it hours or timesteps?? one of these should be renamed to be consistent with each other
+    sustain_hours = models.IntegerField(
+        null=True, blank=True,
+        help_text="Number of hours the existing system can sustain with resilience check"
+    )
+    bau_sustained_time_steps = models.IntegerField(
+        null=True, blank=True,
+        help_text="Number of time steps the existing system can sustain the critical load"
+    )
 
 class ElectricTariffInputs(BaseModel, models.Model):
     name = "ElectricTariff"
@@ -731,7 +893,6 @@ class ElectricTariffInputs(BaseModel, models.Model):
     #     null=True, blank=True,
     #     help_text=("Time-of-use energy rates, provided by user. Must be an array with length equal to number of "
     #               "timesteps per year. Hourly or 15 minute rates allowed.")
-    #
     # )
     # urdb_rate_name = models.TextField(
     #     blank=True,
@@ -850,6 +1011,26 @@ class ElectricTariffInputs(BaseModel, models.Model):
     #               "specified in coincident_peak_load_active_timesteps")
     # )
 
+    def clean(self):
+        error_messages = []
+
+        # possible sets for defining tariff
+        if not at_least_one_set(self.dict, self.possible_sets):
+            error_messages.append((
+                "Must provide at valid at least one set of valid inputs from {}.".format(self.possible_sets)
+            ))
+
+        if error_messages:
+            raise ValidationError(' & '.join(error_messages))
+
+class ElectricTariffOutputs(BaseModel, models.Model):
+    name = "ElectricTariffOutputs"
+
+    scenario = models.OneToOneField(
+        Scenario,
+        on_delete=models.CASCADE,
+        primary_key=True,
+    )
     # Ouptuts
     # emissions_region = models.TextField(
     #     null=True,
@@ -893,20 +1074,8 @@ class ElectricTariffInputs(BaseModel, models.Model):
     # year_one_chp_standby_cost_us_dollars = models.FloatField(null=True, blank=True)
     # total_chp_standby_cost_us_dollars = models.FloatField(null=True, blank=True)
 
-    def clean(self):
-        error_messages = []
 
-        # possible sets for defining tariff
-        if not at_least_one_set(self.dict, self.possible_sets):
-            error_messages.append((
-                "Must provide at valid at least one set of valid inputs from {}.".format(self.possible_sets)
-            ))
-
-        if error_messages:
-            raise ValidationError(' & '.join(error_messages))
-
-
-# class PV(BaseModel, models.Model):
+# class PVInputs(BaseModel, models.Model):
 
 #     scenario = models.ForeignKey(
 #         Scenario,
@@ -955,7 +1124,13 @@ class ElectricTariffInputs(BaseModel, models.Model):
 #     can_wholesale = models.BooleanField(null=True, blank=True)
 #     can_export_beyond_site_load = models.BooleanField(null=True, blank=True)
 #     can_curtail = models.BooleanField(null=True, blank=True)
-#
+
+# class PVOutputs(BaseModel, models.Model):
+
+#     scenario = models.ForeignKey(
+#         Scenario,
+#         on_delete=models.CASCADE
+#     )
 #     # Outputs
 #     size_kw = models.FloatField(null=True, blank=True)
 #     station_latitude = models.FloatField(null=True, blank=True)
@@ -981,7 +1156,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
 #     lcoe_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
 #
 #
-# class Storage(BaseModel, models.Model):
+# class StorageInputs(BaseModel, models.Model):
 
 #     scenario = models.OneToOneField(
 #         Scenario,
@@ -1012,7 +1187,15 @@ class ElectricTariffInputs(BaseModel, models.Model):
 #     total_itc_pct = models.FloatField(null=True, blank=True)
 #     total_rebate_us_dollars_per_kw = models.IntegerField(null=True, blank=True)
 #     total_rebate_us_dollars_per_kwh = models.IntegerField(null=True, blank=True)
-#
+
+# class StorageOutputs(BaseModel, models.Model):
+
+#     scenario = models.OneToOneField(
+#         Scenario,
+#         on_delete=models.CASCADE,
+#         primary_key=True,
+#     )
+
 #     # Outputs
 #     size_kw = models.FloatField(null=True, blank=True)
 #     size_kwh = models.FloatField(null=True, blank=True)
@@ -1024,7 +1207,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
 #             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
 #
 #
-# class Generator(BaseModel, models.Model):
+# class GeneratorInputs(BaseModel, models.Model):
 
 #     scenario = models.OneToOneField(
 #         Scenario,
@@ -1068,7 +1251,14 @@ class ElectricTariffInputs(BaseModel, models.Model):
 #     can_wholesale = models.BooleanField(null=True, blank=True)
 #     can_export_beyond_site_load = models.BooleanField(null=True, blank=True)
 #     can_curtail = models.BooleanField(null=True, blank=True)
-#
+
+# class GeneratorOutputs(BaseModel, models.Model):
+
+#     scenario = models.OneToOneField(
+#         Scenario,
+#         on_delete=models.CASCADE,
+#         primary_key=True,
+#     )
 #     # Outputs
 #     fuel_used_gal = models.FloatField(null=True, blank=True)
 #     fuel_used_gal_bau = models.FloatField(null=True, blank=True)
