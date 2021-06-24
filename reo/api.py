@@ -132,7 +132,7 @@ class Job(ModelResource):
                     ghpghx_inputs_validation_errors += [key + ": " + val[i] + " " for key, val in ve.message_dict.items() for i in range(len(val))]
         
         try:
-            input_validator = ValidateNestedInput(bundle.data, ghpghx_inputs_validation_errors)
+            input_validator = ValidateNestedInput(bundle.data, ghpghx_inputs_validation_errors=ghpghx_inputs_validation_errors)
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             err = UnexpectedError(exc_type, exc_value.args[0], traceback.format_tb(exc_traceback), task='ValidateNestedInput', run_uuid=run_uuid)
