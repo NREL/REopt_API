@@ -9,6 +9,9 @@ class LoadProfileBoilerFuel(BuiltInProfile):
     """
     Boiler Load Profiles based on CRB defined load shapes or user-defined input
     """
+    # TODO for separating space heating and DHW - make these two reference files instance attributes defined by kwargs
+    # and then we can create two separate lpbf instances (lpbf_space and lpbf_dhw) in scenario.py and data_manager.py
+    # also must separate out applicable techs to supply each, e.g. ghp can only suppy space heating
     with open(os.path.join(BuiltInProfile.library_path, 'reference_heating_mmbtu.json'), 'r') as f:
         annual_loads = json.loads(f.read())
 
