@@ -46,7 +46,7 @@ from reo.exceptions import UnexpectedError  #, RequestError  # should we save ba
 import logging
 log = logging.getLogger(__name__)
 from reo.src.techs import Generator, CHP, AbsorptionChiller, Boiler
-from reo.src.emissions_calculator import EmissionsCalculator
+from reo.src.emissions_calculator import EmissionsCalculator, EmissionsCalculator_NOx
 from django.http import HttpResponse
 from django.template import  loader
 import pandas as pd
@@ -208,6 +208,40 @@ def emissions_profile(request):
                     'emissions_series_lb_CO2_per_kWh': ec.emissions_series,
                     'units': 'Pounds Carbon Dioxide Equivalent',
                     'description': 'Regional hourly grid emissions factor for EPA AVERT regions.',
+                    'meters_to_region': ec.meters_to_region
+                })
+            return response
+        except AttributeError as e:
+            return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing Parameter": str(e.args[0])}, status=500)
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except Exception:
+
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.error(debug_msg)
+        return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
+
+def emissions_profile_NOx(request):
+    try:
+        latitude = float(request.GET['latitude'])  # need float to convert unicode
+        longitude = float(request.GET['longitude'])
+
+        ec = EmissionsCalculator_NOx(latitude=latitude,longitude=longitude)
+
+        try:
+            response = JsonResponse({
+                    'region_abbr': ec.region_abbr,
+                    'region': ec.region,
+                    'emissions_series_lb_NOx_per_kWh': ec.emissions_series,
+                    'units': 'Pounds NOx',
+                    'description': 'NOx Regional hourly grid emissions factor for EPA AVERT regions.',
                     'meters_to_region': ec.meters_to_region
                 })
             return response
