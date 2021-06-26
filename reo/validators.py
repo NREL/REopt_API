@@ -39,7 +39,7 @@ from reo.src.urdb_rate import Rate
 import re
 import uuid
 from reo.src.techs import Generator, Boiler, CHP, AbsorptionChiller
-from reo.src.emissions_calculator import EmissionsCalculator
+from reo.src.emissions_calculator import EmissionsCalculator, EmissionsCalculator_NOx
 from reo.utilities import generate_year_profile_hourly
 
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
@@ -419,6 +419,7 @@ class ValidateNestedInput:
     #         }
     #     }
 
+    ## I believe this is lbs CO2 per mmbtu
     fuel_conversion_per_mmbtu = {
                 "natural_gas":116.9,
                 "landfill_bio_gas":114.8,
@@ -426,7 +427,23 @@ class ValidateNestedInput:
                 "diesel_oil": 163.1
             }
 
+    ## I believe this is lbs CO2 per gallon
     fuel_conversion_per_gal = {
+                'diesel_oil':22.51
+            }
+    
+    # NOx fuel conversion
+    # TODO: Update with real values (same as CO2 for now)
+    fuel_conversion_lb_NOx_per_mmbtu = {
+                "natural_gas":116.9,
+                "landfill_bio_gas":114.8,
+                "propane":138.6,
+                "diesel_oil": 163.1
+            }
+
+    # NOx fuel conversion
+    # # TODO: Update with real values (same as CO2 for now)
+    fuel_conversion_lb_NOx_per_gal = {
                 'diesel_oil':22.51
             }
 
@@ -438,7 +455,7 @@ class ValidateNestedInput:
         self.input_as_none = []
         self.invalid_inputs = []
         self.resampled_inputs = []
-        self.emission_warning = []
+        self.emission_warning = [] ## I defined this the same way for NOx, might cause an error 
         self.defaults_inserted = []
         self.emission_warning = []
         self.general_warnings = []
@@ -1144,7 +1161,7 @@ class ValidateNestedInput:
                                 if template_values[k]['default'] != v:
                                     user_supplied_chp_inputs = True
 
-                            # check the special case default for emissions
+                            # check the special case default for emissions # TODO: maybe do the same for NOX? 
                             elif k == 'emissions_factor_lb_CO2_per_mmbtu':
                                 fuel = self.input_dict['Scenario']['Site']['FuelTariff'].get('chp_fuel_type')
                                 if fuel is not None:
@@ -1160,7 +1177,7 @@ class ValidateNestedInput:
 
                     # check if user intended to run CHP and supplied sufficient pararmeters to run CHP
                     if user_supplied_chp_inputs:
-                        required_keys = prime_mover_defaults_all['recip_engine'].keys()
+                        required_keys = prime_mover_defaults_all['recip_engine'].keys() # TODO: Check this for NOx rate
                         filtered_values = {k: real_values.get(k) for k in required_keys if k not in ['prime_mover', 'size_class']}
                         missing_defaults = []
                         for k,v in filtered_values.items():
@@ -1183,8 +1200,13 @@ class ValidateNestedInput:
         if object_name_path[-1] == "Generator":
             if self.isValid:
 
+                # If user has not supplied CO2 emissions rate
                 if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_CO2_per_gal') is None:
                     self.update_attribute_value(object_name_path, number, 'emissions_factor_lb_CO2_per_gal', self.fuel_conversion_per_gal.get('diesel_oil'))
+                
+                # If user has not supplied NOx emissions rate
+                if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_NOx_per_gal') is None:
+                    self.update_attribute_value(object_name_path, number, 'emissions_factor_lb_NOx_per_gal', self.fuel_conversion_lb_NOx_per_gal.get('diesel_oil'))
                 
                 if (real_values["max_kw"] > 0 or real_values["existing_kw"] > 0):
                     # then replace zeros in default burn rate and slope, and set min/max kw values appropriately for
@@ -1257,11 +1279,14 @@ class ValidateNestedInput:
 
         if object_name_path[-1] == "ElectricTariff":
             electric_tariff = real_values
+            
+            # If user supplies single CO2 emissions rate
             if type(electric_tariff.get('emissions_factor_series_lb_CO2_per_kwh')) == float:
                 emissions_series = [electric_tariff['emissions_factor_series_lb_CO2_per_kwh'] for i in range(8760*self.input_dict['Scenario']['time_steps_per_hour'])]
                 electric_tariff['emissions_factor_series_lb_CO2_per_kwh'] = emissions_series
                 self.update_attribute_value(object_name_path, number, 'emissions_factor_series_lb_CO2_per_kwh', emissions_series)
 
+            # If user has not supplied CO2 emissions rates, use Emissions calculator
             elif (len(electric_tariff.get('emissions_factor_series_lb_CO2_per_kwh') or []) == 0):
                 if (self.input_dict['Scenario']['Site'].get('latitude') is not None) and \
                     (self.input_dict['Scenario']['Site'].get('longitude') is not None):
@@ -1289,7 +1314,42 @@ class ValidateNestedInput:
                     "ElectricTariff", 
                     'emissions_factor_series_lb_CO2_per_kwh', 
                     self.input_dict['Scenario']['time_steps_per_hour'])
- 
+
+        # If user supplies single NOx emissions rate
+            if type(electric_tariff.get('emissions_factor_series_lb_NOx_per_kwh')) == float:
+                emissions_series = [electric_tariff['emissions_factor_series_lb_NOx_per_kwh'] for i in range(8760*self.input_dict['Scenario']['time_steps_per_hour'])]
+                electric_tariff['emissions_factor_series_lb_NOx_per_kwh'] = emissions_series
+                self.update_attribute_value(object_name_path, number, 'emissions_factor_series_lb_NOx_per_kwh', emissions_series)
+
+            # If user has not supplied NOx emissions rates, use Emissions calculator
+            elif (len(electric_tariff.get('emissions_factor_series_lb_NOx_per_kwh') or []) == 0):
+                if (self.input_dict['Scenario']['Site'].get('latitude') is not None) and \
+                    (self.input_dict['Scenario']['Site'].get('longitude') is not None):
+                    ec = EmissionsCalculator_NOx(   latitude=self.input_dict['Scenario']['Site']['latitude'], 
+                                                    longitude=self.input_dict['Scenario']['Site']['longitude'],
+                                                    time_steps_per_hour = self.input_dict['Scenario']['time_steps_per_hour'])
+                    emissions_series = None
+                    try:
+                        emissions_series = ec.emissions_series
+                        emissions_region = ec.region
+                    except AttributeError as e:
+                        # Emissions warning is a specific type of warning that we check for and display to the users when it occurs
+                        # since at this point the emissions are not required to do a run it simply
+                        # tells the user why we could not get an emission series and results in emissions not being 
+                        # calculated, but does not prevent the run from optimizing
+                        self.emission_warning = str(e.args[0])
+
+                    # TODO: Might need to update or remove this? 
+                    if emissions_series is not None:
+                        self.update_attribute_value(object_name_path, number, 'emissions_factor_series_lb_NOx_per_kwh', 
+                            emissions_series)
+                        self.update_attribute_value(object_name_path, number, 'emissions_region', 
+                            emissions_region)
+            else:
+                self.validate_8760(electric_tariff['emissions_factor_series_lb_NOx_per_kwh'], 
+                    "ElectricTariff", 
+                    'emissions_factor_series_lb_NOx_per_kwh', 
+                    self.input_dict['Scenario']['time_steps_per_hour'])
 
             if electric_tariff.get('urdb_response') is not None:
                 self.validate_urdb_response()
@@ -1532,8 +1592,10 @@ class ValidateNestedInput:
                                        'loads_mmbtu_per_hour', self.input_dict['Scenario']['time_steps_per_hour'])
 
         if object_name_path[-1] == "FuelTariff":
+            # If user has not supplied a CO2 emissions factor
             if self.input_dict['Scenario']['Site']['CHP'].get('emissions_factor_lb_CO2_per_mmbtu') is None:
                 chp_fuel = real_values.get('chp_fuel_type')
+                # Then use default fuel emissions value (in fuel_conversion_per_mmbtu)
                 self.update_attribute_value(object_name_path[:-1] + ['CHP'], number,
                                             'emissions_factor_lb_CO2_per_mmbtu',
                                             self.fuel_conversion_per_mmbtu.get(chp_fuel))
@@ -1545,6 +1607,22 @@ class ValidateNestedInput:
             if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_CO2_per_gal') is None:
                     self.update_attribute_value(object_name_path[:-1] + ['Generator'],  number, \
                         'emissions_factor_lb_CO2_per_gal', self.fuel_conversion_per_gal.get('diesel_oil'))
+            
+            # If user has not supplied a NOx emissions factor
+            if self.input_dict['Scenario']['Site']['CHP'].get('emissions_factor_lb_NOx_per_mmbtu') is None:
+                chp_fuel = real_values.get('chp_fuel_type')
+                # Then use default fuel emissions value (in fuel_conversion_per_mmbtu)
+                self.update_attribute_value(object_name_path[:-1] + ['CHP'], number,
+                                            'emissions_factor_lb_NOx_per_mmbtu',
+                                            self.fuel_conversion_lb_NOx_per_mmbtu.get(chp_fuel))
+            if self.input_dict['Scenario']['Site']['Boiler'].get('emissions_factor_lb_NOx_per_mmbtu') is None:
+                boiler_fuel = real_values.get('existing_boiler_fuel_type')
+                self.update_attribute_value(object_name_path[:-1] + ['Boiler'], number,
+                                            'emissions_factor_lb_NOx_per_mmbtu',
+                                            self.fuel_conversion_lb_NOx_per_mmbtu.get(boiler_fuel))
+            if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_NOx_per_gal') is None:
+                    self.update_attribute_value(object_name_path[:-1] + ['Generator'],  number, \
+                        'emissions_factor_lb_NOx_per_gal', self.fuel_conversion_lb_NOx_per_gal.get('diesel_oil'))
 
         if object_name_path[-1] == "Boiler":
                 if self.isValid:

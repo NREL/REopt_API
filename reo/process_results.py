@@ -37,7 +37,7 @@ from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
 from reo.models import ModelManager, PVModel, FinancialModel, WindModel, AbsorptionChillerModel
 from reo.src.profiler import Profiler
-from reo.src.emissions_calculator import EmissionsCalculator
+from reo.src.emissions_calculator import EmissionsCalculator, EmissionsCalculator_NOx
 from reo.utilities import annuity, TONHOUR_TO_KWHT, MMBTU_TO_KWH, GAL_DIESEL_TO_KWH
 from reo.nested_inputs import macrs_five_year, macrs_seven_year
 from reo.src.proforma_metrics import calculate_proforma_metrics
@@ -854,6 +854,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             offtaker_discounted_annual_free_cashflow_series_bau_us_dollars
 
         data = EmissionsCalculator.add_to_data(data)
+        data = EmissionsCalculator_NOx.add_to_data(data)
 
         pv_watts_station_check = data['outputs']['Scenario']['Site']['PV'][0].get('station_distance_km') or 0
         if pv_watts_station_check > 322:
@@ -872,6 +873,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
         #calc_avoided_outage_costs(data, present_worth_factor=dfm_list[0]['pwf_e'], run_uuid=self.run_uuid)
 
         data = EmissionsCalculator.add_to_data(data)
+        data = EmissionsCalculator_NOx.add_to_data(data)
+        
         if len(data['outputs']['Scenario']['Site']['PV']) == 1:
             data['outputs']['Scenario']['Site']['PV'] = data['outputs']['Scenario']['Site']['PV'][0]
 
