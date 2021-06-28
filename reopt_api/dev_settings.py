@@ -73,7 +73,7 @@ INSTALLED_APPS = (
     'futurecosts',
     'django_celery_results',
     'django_extensions',
-    'job.apps.JobConfig'
+    'job'
     )
 
 MIDDLEWARE_CLASSES = (
@@ -173,6 +173,8 @@ CELERY_IMPORTS = (
     'resilience_stats.outage_simulator_LF',
     'futurecosts.api',
     'futurecosts.tasks',
+    'job.api',
+    'job.src.run_jump_model'
 )
 
 if 'test' in sys.argv:
