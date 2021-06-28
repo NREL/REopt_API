@@ -82,7 +82,7 @@ https://stackoverflow.com/questions/8609192/what-is-the-difference-between-null-
 Guidance:
 - start all Model fields with required fields (do not need to include `blank` b/c the default value of blank is False)
 - TextField and CharField should not have null=True
-
+- description: use square brackets or unit, eg. [dollars per kWh]
 
 Input and Results models
 test type validation for multiple fields, need to override clean_fields to go through all fields before raising ValidationError?
@@ -112,6 +112,7 @@ test type validation for multiple fields, need to override clean_fields to go th
            
 """
 # TODO check all fields (do we really want so many null's allowed? are the blank=True all correct? Can we add more defaults)
+
 
 def at_least_one_set(model, possible_sets):
     """
@@ -276,6 +277,7 @@ class SiteInputs(BaseModel, models.Model):
     #     ),
     #     default=list, null=True)
 
+"""
 class SiteOutputs(BaseModel, models.Model):
     name = "SiteOutputs"
 
@@ -300,7 +302,7 @@ class SiteOutputs(BaseModel, models.Model):
                     "total PV and Wind generation in year one (including exports), "
                     "divided by the total annual load in year one.")
     )
-
+"""
 
 class FinancialInputs(BaseModel, models.Model):
     name = "Financial"
@@ -430,7 +432,7 @@ class FinancialInputs(BaseModel, models.Model):
     #     help_text=("Annual nominal chp fuel cost escalation rate")
     # )
 
-
+"""
 class FinancialOutputs(BaseModel, models.Model):
     name = "FinancialOutputs"
 
@@ -575,7 +577,7 @@ class FinancialOutputs(BaseModel, models.Model):
         help_text=("Net O&M and replacement costs in present value, after-tax for the third-party "
                     "developer. Only calculated in the third-party case.")
     )
-
+"""
 
 class ElectricLoadInputs(BaseModel, models.Model):
     name = "ElectricLoad"
@@ -634,7 +636,7 @@ class ElectricLoadInputs(BaseModel, models.Model):
         help_text=("Simulated load profile from DOE <a href='https: "
                    "//energy.gov/eere/buildings/commercial-reference-buildings' target='blank'>Commercial Reference "
                    "Buildings</a>")
-    ),
+    )
     year = models.IntegerField(
         default=2020,
         validators=[
@@ -784,6 +786,7 @@ class ElectricLoadInputs(BaseModel, models.Model):
         if error_messages:
             raise ValidationError(' & '.join(error_messages))
 
+"""
 class ElectricLoadOutputs(BaseModel, models.Model):
     name = "ElectricLoadOutputs"
 
@@ -827,6 +830,7 @@ class ElectricLoadOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Number of time steps the existing system can sustain the critical load"
     )
+"""
 
 class ElectricTariffInputs(BaseModel, models.Model):
     name = "ElectricTariff"
@@ -1023,6 +1027,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
         if error_messages:
             raise ValidationError(' & '.join(error_messages))
 
+"""
 class ElectricTariffOutputs(BaseModel, models.Model):
     name = "ElectricTariffOutputs"
 
@@ -1073,7 +1078,7 @@ class ElectricTariffOutputs(BaseModel, models.Model):
     # total_coincident_peak_cost_bau_us_dollars = models.FloatField(null=True, blank=True)
     # year_one_chp_standby_cost_us_dollars = models.FloatField(null=True, blank=True)
     # total_chp_standby_cost_us_dollars = models.FloatField(null=True, blank=True)
-
+"""""
 
 # class PVInputs(BaseModel, models.Model):
 
