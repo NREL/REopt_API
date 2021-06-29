@@ -144,7 +144,7 @@ class GHPGHXModel(models.Model):
         help_text="Hourly outdoor air dry bulb temperature, typically TMY3 data [degF]")
     
     def _get_cop_map():
-        hp_cop_filepath = os.path.join('ghpghx', 'tests', 'posts', "heatpump_cop_map_Tranquility.csv" )
+        hp_cop_filepath = os.path.join('ghpghx', 'tests', 'posts', "heatpump_cop_map.csv" )
         heatpump_copmap_df = pd.read_csv(hp_cop_filepath)
         heatpump_copmap_list_of_dict = heatpump_copmap_df.to_dict('records')
         return heatpump_copmap_list_of_dict
