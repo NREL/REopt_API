@@ -462,6 +462,7 @@ class ValidateNestedInput:
             self.recursively_check_input_dict(self.nested_input_definitions, self.check_min_less_than_max)
             self.recursively_check_input_dict(self.nested_input_definitions, self.check_min_max_restrictions)
             self.recursively_check_input_dict(self.nested_input_definitions, self.check_required_attributes)
+        if self.isValid:
             self.recursively_check_input_dict(self.nested_input_definitions, self.check_special_cases)
 
             self.recursively_check_input_dict(self.nested_input_definitions, self.add_number_to_listed_inputs)
