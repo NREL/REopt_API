@@ -255,7 +255,7 @@ class EmissionsCalculator_NOx:
         self.latitude = float(latitude) if latitude is not None else None
         self.longitude = float(longitude) if longitude is not None else None
         self._region_abbr = None
-        self._emmissions_profile_NOx = None
+        self._emmissions_profile = None
         self._transmission_and_distribution_losses = None
         self.meters_to_region = None
         self.time_steps_per_hour = kwargs.get('time_steps_per_hour') or 1

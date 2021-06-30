@@ -1315,7 +1315,7 @@ class ValidateNestedInput:
                     'emissions_factor_series_lb_CO2_per_kwh', 
                     self.input_dict['Scenario']['time_steps_per_hour'])
 
-        # If user supplies single NOx emissions rate
+            # If user supplies single NOx emissions rate
             if type(electric_tariff.get('emissions_factor_series_lb_NOx_per_kwh')) == float:
                 emissions_series = [electric_tariff['emissions_factor_series_lb_NOx_per_kwh'] for i in range(8760*self.input_dict['Scenario']['time_steps_per_hour'])]
                 electric_tariff['emissions_factor_series_lb_NOx_per_kwh'] = emissions_series
@@ -1325,12 +1325,12 @@ class ValidateNestedInput:
             elif (len(electric_tariff.get('emissions_factor_series_lb_NOx_per_kwh') or []) == 0):
                 if (self.input_dict['Scenario']['Site'].get('latitude') is not None) and \
                     (self.input_dict['Scenario']['Site'].get('longitude') is not None):
-                    ec = EmissionsCalculator_NOx(   latitude=self.input_dict['Scenario']['Site']['latitude'], 
+                    ec_NOx = EmissionsCalculator_NOx(   latitude=self.input_dict['Scenario']['Site']['latitude'], 
                                                     longitude=self.input_dict['Scenario']['Site']['longitude'],
                                                     time_steps_per_hour = self.input_dict['Scenario']['time_steps_per_hour'])
                     emissions_series = None
                     try:
-                        emissions_series = ec.emissions_series
+                        emissions_series = ec_NOx.emissions_series
                         emissions_region = ec.region
                     except AttributeError as e:
                         # Emissions warning is a specific type of warning that we check for and display to the users when it occurs
