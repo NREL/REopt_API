@@ -1161,11 +1161,18 @@ class ValidateNestedInput:
                                 if template_values[k]['default'] != v:
                                     user_supplied_chp_inputs = True
 
-                            # check the special case default for emissions # TODO: maybe do the same for NOX? 
+                            # check the special case default for CO2 emissions 
                             elif k == 'emissions_factor_lb_CO2_per_mmbtu':
                                 fuel = self.input_dict['Scenario']['Site']['FuelTariff'].get('chp_fuel_type')
                                 if fuel is not None:
                                     if v != self.fuel_conversion_per_mmbtu[fuel]:
+                                        user_supplied_chp_inputs = True
+
+                            # check the special case default for NOx emissions 
+                            elif k == 'emissions_factor_lb_NOx_per_mmbtu':
+                                fuel = self.input_dict['Scenario']['Site']['FuelTariff'].get('chp_fuel_type')
+                                if fuel is not None:
+                                    if v != self.fuel_conversion_lb_NOx_per_mmbtu[fuel]:
                                         user_supplied_chp_inputs = True
 
                             # check that the value is not None, or setting max_kw to 0 to deactivate CHP
@@ -1317,9 +1324,9 @@ class ValidateNestedInput:
 
             # If user supplies single NOx emissions rate
             if type(electric_tariff.get('emissions_factor_series_lb_NOx_per_kwh')) == float:
-                emissions_series = [electric_tariff['emissions_factor_series_lb_NOx_per_kwh'] for i in range(8760*self.input_dict['Scenario']['time_steps_per_hour'])]
-                electric_tariff['emissions_factor_series_lb_NOx_per_kwh'] = emissions_series
-                self.update_attribute_value(object_name_path, number, 'emissions_factor_series_lb_NOx_per_kwh', emissions_series)
+                emissions_series_NOx = [electric_tariff['emissions_factor_series_lb_NOx_per_kwh'] for i in range(8760*self.input_dict['Scenario']['time_steps_per_hour'])]
+                electric_tariff['emissions_factor_series_lb_NOx_per_kwh'] = emissions_series_NOx
+                self.update_attribute_value(object_name_path, number, 'emissions_factor_series_lb_NOx_per_kwh', emissions_series_NOx)
 
             # If user has not supplied NOx emissions rates, use Emissions calculator
             elif (len(electric_tariff.get('emissions_factor_series_lb_NOx_per_kwh') or []) == 0):
@@ -1328,10 +1335,10 @@ class ValidateNestedInput:
                     ec_NOx = EmissionsCalculator_NOx(   latitude=self.input_dict['Scenario']['Site']['latitude'], 
                                                     longitude=self.input_dict['Scenario']['Site']['longitude'],
                                                     time_steps_per_hour = self.input_dict['Scenario']['time_steps_per_hour'])
-                    emissions_series = None
+                    emissions_series_NOx = None
                     try:
-                        emissions_series = ec_NOx.emissions_series
-                        emissions_region = ec.region
+                        emissions_series_NOx = ec_NOx.emissions_series
+                        emissions_region = ec_NOx.region
                     except AttributeError as e:
                         # Emissions warning is a specific type of warning that we check for and display to the users when it occurs
                         # since at this point the emissions are not required to do a run it simply
@@ -1340,9 +1347,9 @@ class ValidateNestedInput:
                         self.emission_warning = str(e.args[0])
 
                     # TODO: Might need to update or remove this? 
-                    if emissions_series is not None:
+                    if emissions_series_NOx is not None:
                         self.update_attribute_value(object_name_path, number, 'emissions_factor_series_lb_NOx_per_kwh', 
-                            emissions_series)
+                            emissions_series_NOx)
                         self.update_attribute_value(object_name_path, number, 'emissions_region', 
                             emissions_region)
             else:
