@@ -252,6 +252,7 @@ class LoadProfileBoilerFuelModel(models.Model):
     doe_reference_name = ArrayField(
             models.TextField(null=True, blank=True), default=list, null=True)
     percent_share = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True)
+    addressable_fraction = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True)
 
     # Outputs
     annual_calculated_boiler_fuel_load_mmbtu_bau = models.FloatField(null=True, blank=True)
