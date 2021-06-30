@@ -72,13 +72,17 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
                     "year": 2017
                   },
                   "ElectricTariff": {
+                    "add_blended_rates_to_urdb_rate": false,
+                    "wholesale_rate_us_dollars_per_kwh": 0.0,
+                    "net_metering_limit_kw": 0.0,
+                    "interconnection_limit_kw": 100000000.0,
                     "urdb_utility_name": "",
+                    "urdb_label": "",
+                    "wholesale_rate_above_site_load_us_dollars_per_kwh": 0.0,
                     "urdb_rate_name": "",
-                    "add_blended_rates_to_urdb_rate": False,
-                    "blended_annual_rates_us_dollars_per_kwh": 0.3,
-                    "blended_annual_demand_charges_us_dollars_per_kw": 20.0,
-                    "urdb_response": None,
-                    "urdb_label": ""
+                    "urdb_response": null,
+                    "blended_annual_demand_charges_us_dollars_per_kw": 0.0,
+                    "blended_annual_rates_us_dollars_per_kwh": 0.1
                   },
                   "PV": {
                     "existing_kw": 0.0,
@@ -138,9 +142,8 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
                     "total_rebate_us_dollars_per_kw": 0
                   },
                   "Generator": {
-                    "useful_life_years": 5,
                     "existing_kw": 0.0,
-                    "min_kw": 10.0,
+                    "min_kw": 0.0,
                     "max_kw": 10.0,
                     "installed_cost_us_dollars_per_kw": 500.0,
                     "om_cost_us_dollars_per_kw": 10.0,
@@ -226,11 +229,14 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
             # output_df['total_sr_required'] = response['outputs']['Scenario']['Site']['LoadProfile']['total_sr_required']
             # output_df['total_sr_provided'] = response['outputs']['Scenario']['Site']['LoadProfile']['total_sr_provided']
 
-            output_df.to_csv('reo/tests/outputs/test_load_constraints.csv')
+            #output_df.to_csv('reo/tests/outputs/test_load_constraints.csv')
 
-            self.assertEqual(pv_out['size_kw'], expected_pv_size,
-                             "AC size ({}) does not equal expected AC size ({})."
-                             .format(pv_out['size_kw'], expected_pv_size))
+            # self.assertEqual(pv_out['size_kw'], expected_pv_size,
+            #                  "AC size ({}) does not equal expected AC size ({})."
+            #                  .format(pv_out['size_kw'], expected_pv_size))
+
+            print(response['outputs']['Scenario']['Site']['year_one_emissions_lb_C02'])
+
         except Exception as e:
             error_msg = None
             if hasattr(messages, "error"):
