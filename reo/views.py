@@ -233,16 +233,16 @@ def emissions_profile_NOx(request):
         latitude = float(request.GET['latitude'])  # need float to convert unicode
         longitude = float(request.GET['longitude'])
 
-        ec = EmissionsCalculator_NOx(latitude=latitude,longitude=longitude)
+        ec_NOx = EmissionsCalculator_NOx(latitude=latitude,longitude=longitude)
 
         try:
             response = JsonResponse({
-                    'region_abbr': ec.region_abbr,
-                    'region': ec.region,
-                    'emissions_series_lb_NOx_per_kWh': ec.emissions_series,
+                    'region_abbr': ec_NOx.region_abbr,
+                    'region': ec_NOx.region,
+                    'emissions_series_lb_NOx_per_kWh': ec_NOx.emissions_series,
                     'units': 'Pounds NOx',
                     'description': 'NOx Regional hourly grid emissions factor for EPA AVERT regions.',
-                    'meters_to_region': ec.meters_to_region
+                    'meters_to_region': ec_NOx.meters_to_region
                 })
             return response
         except AttributeError as e:
