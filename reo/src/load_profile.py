@@ -394,7 +394,11 @@ def bau_outage_check(critical_loads_kw, existing_pv_kw_list, gen_existing_kw, ge
 
 class BuiltInProfile(object):
 
-    library_path = os.path.join('input_files', 'LoadProfiles')
+    library_path_base = os.path.join('input_files', 'LoadProfiles')
+    load_type_file_map = {"Electric": "Load8760_norm_",
+                          "SpaceHeating": "SpaceHeating8760_norm_",
+                          "DHW": "DHW8760_norm_",
+                          "Cooling": "Cooling8760_norm_"}
     Default_city = namedtuple("Default_city", "name lat lng tmyid zoneid")
     default_cities = [
         Default_city('Miami', 25.761680, -80.191790, 722020, '1A'),
@@ -438,7 +442,7 @@ class BuiltInProfile(object):
                          'FlatLoad_8_5'
                          ]
 
-    def __init__(self, annual_loads=default_annual_electric_loads, builtin_profile_prefix="Load8760_norm_",
+    def __init__(self, annual_loads=default_annual_electric_loads, load_type='Electric',
                  latitude=None, longitude=None, doe_reference_name='', annual_energy=None,
                  monthly_totals_energy=None, **kwargs):
         """
@@ -450,9 +454,10 @@ class BuiltInProfile(object):
         :param year: year of load profile, needed for monthly scaling
         :param kwargs:
         """
+        self.library_path = os.path.join(BuiltInProfile.library_path_base, load_type)
+        self.builtin_profile_prefix = BuiltInProfile.load_type_file_map[load_type]
         self.flatload_alternate_options = ['FlatLoad_24_5','FlatLoad_16_7','FlatLoad_16_5','FlatLoad_8_7','FlatLoad_8_5']
         self.annual_loads = annual_loads  # a dictionary of cities and default annual loads or a constant value for any city
-        self.builtin_profile_prefix = builtin_profile_prefix
         self.latitude = float(latitude) if latitude is not None else None
         self.longitude = float(longitude) if longitude is not None else None
         self.monthly_energy = monthly_totals_energy
@@ -585,7 +590,7 @@ class BuiltInProfile(object):
 
     @property
     def normalized_profile(self):
-        profile_path = os.path.join(BuiltInProfile.library_path,
+        profile_path = os.path.join(self.library_path,
                                     self.builtin_profile_prefix + self.city + "_" + self.building_type + ".dat")
         normalized_profile = list()
         f = open(profile_path, 'r')

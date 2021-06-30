@@ -224,7 +224,18 @@ def setup_scenario(self, run_uuid, data, raw_post):
         lp.load_list = [0 if ((x > negative_load_tolerance) and (x < 0)) else x for x in lp.load_list]
 
         # Load Profile Boiler Fuel
-        lpbf = LoadProfileBoilerFuel(dfm=dfm,
+        lpbf_space = LoadProfileBoilerFuel(load_type="SpaceHeating",
+            dfm=dfm,
+            time_steps_per_hour=inputs_dict['time_steps_per_hour'],
+            latitude=inputs_dict['Site']['latitude'],
+            longitude=inputs_dict['Site']['longitude'],
+            nearest_city=lp.nearest_city,
+            year=lp.year,
+            **inputs_dict['Site']['LoadProfileBoilerFuel']
+            )
+        
+        lpbf_dhw = LoadProfileBoilerFuel(load_type="DHW",
+            dfm=dfm,
             time_steps_per_hour=inputs_dict['time_steps_per_hour'],
             latitude=inputs_dict['Site']['latitude'],
             longitude=inputs_dict['Site']['longitude'],
@@ -234,17 +245,20 @@ def setup_scenario(self, run_uuid, data, raw_post):
             )
 
         # Boiler which supplies the bau boiler fuel load, if there is a boiler fuel load
-        if lpbf.annual_mmbtu > 0.0:
-            boiler = Boiler(dfm=dfm, boiler_fuel_series_bau=lpbf.load_list, **inputs_dict['Site']['Boiler'])
+        if (lpbf_space.annual_mmbtu + lpbf_dhw.annual_mmbtu) > 0.0:
+            lpbf_total = [lpbf_space.load_list[i] + lpbf_dhw.load_list[i] for i in range(len(lpbf_space.load_list))]
+            boiler = Boiler(dfm=dfm, boiler_fuel_series_bau=lpbf_total.load_list, **inputs_dict['Site']['Boiler'])
         else:
             boiler = None
 
         # Load Profile Chiller Electric        
-        lpct = LoadProfileChillerThermal(dfm=dfm, total_electric_load_list=lp.unmodified_load_list, 
+        lpct = LoadProfileChillerThermal(load_type="Cooling",
+                                            dfm=dfm,
+                                            total_electric_load_list=lp.unmodified_load_list, 
                                             time_steps_per_hour=inputs_dict['time_steps_per_hour'],
                                             latitude=inputs_dict['Site']['latitude'], 
                                             longitude=inputs_dict['Site']['longitude'], 
-                                            nearest_city=lp.nearest_city or lpbf.nearest_city, 
+                                            nearest_city=lp.nearest_city or lpbf_space.nearest_city, 
                                             year=lp.year, max_thermal_factor_on_peak_load=
                                             inputs_dict['Site']['ElectricChiller']['max_thermal_factor_on_peak_load'],
                                             **inputs_dict['Site']['LoadProfileChillerThermal'])
@@ -347,7 +361,8 @@ def setup_scenario(self, run_uuid, data, raw_post):
                 ghpghx_post = inputs_dict["Site"]["GHP"]["ghpghx_inputs"][i]
                 ghpghx_post["latitude"] = inputs_dict["Site"]["latitude"]
                 ghpghx_post["longitude"] = inputs_dict["Site"]["longitude"]
-                ghpghx_post["heating_fuel_load_mmbtu_per_hr"] = dfm.heating_load.load_list #lpbf.load_list
+                # Only SpaceHeating portion of Heating Load gets served by GHP (does not serve DHW)
+                ghpghx_post["heating_fuel_load_mmbtu_per_hr"] = lpbf_space.load_list
                 if dfm.boiler is not None:
                     ghpghx_post["existing_boiler_efficiency"] = dfm.boiler.boiler_efficiency #boiler.boiler_efficiency
                 else:
