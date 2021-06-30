@@ -412,6 +412,12 @@ nested_input_definitions = {
           "max": 100.0,
          "description": "Percentage share of the types of building for creating hybrid simulated building and campus profiles."
         },
+        "addressable_fraction": {
+         "type": ["float", "list_of_float"],
+          "min": 1.0,
+          "max": 100.0,
+         "description": "Fraction of the annual (scalar value) or monthly (list of 12 values) energy that can be served by heating technologies."
+        }
       },
 
       "LoadProfileChillerThermal": {
