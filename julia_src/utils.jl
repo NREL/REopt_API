@@ -285,6 +285,11 @@ Base.@kwdef struct Parameter
     TempUpperBoundWH::Float64
 	ComfortTempLimitWH::Float64
     WHComfortValue::Float64
+
+    # Sonnen 
+    SonnenFlag::Bool
+    SonnenFullTS::Array{Int64, 1}
+    SonnenEmptyTS::Array{Int64, 1}
 end
 
 

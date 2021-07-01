@@ -1409,6 +1409,9 @@ class DataManager:
         chp_fuel_burn_intercept_bau, chp_thermal_prod_slope_bau, chp_thermal_prod_intercept_bau, chp_derate_bau \
             = fuel_params._get_chp_unique_params(chp_techs_bau, chp=eval('self.chp'))
 
+        sonnen_full_timesteps = [15+i*24 for i in range(365)]
+        sonnen_empty_timesteps = [20+i*24 for i in range(365)]
+        
         self.reopt_inputs = {
             'Tech': reopt_techs,
             'TechToLocation': tech_to_location,
@@ -1576,7 +1579,10 @@ class DataManager:
             'TempUpperBoundWH': temperature_upper_bound_degC,
             'ComfortTempLimitWH': comfort_temp_limit_degC,
             'WHComfortValue': comfort_WH_value_usd_per_degC,
-            'WaterHeaterTechs': wh_techs
+            'WaterHeaterTechs': wh_techs,
+            'SonnenFlag': True,
+            'SonnenFullTS': sonnen_full_timesteps,
+            'SonnenEmptyTS': sonnen_empty_timesteps
             }
 
         # test_xl = {
@@ -1758,5 +1764,8 @@ class DataManager:
             'TempUpperBoundWH': temperature_upper_bound_degC,
             'ComfortTempLimitWH': comfort_temp_limit_degC,
             'WHComfortValue': comfort_WH_value_usd_per_degC,
-            'WaterHeaterTechs': wh_techs_bau
+            'WaterHeaterTechs': wh_techs_bau,
+            'SonnenFlag': False,
+            'SonnenFullTS': [],
+            'SonnenEmptyTS': []
         }

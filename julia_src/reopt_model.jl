@@ -922,6 +922,17 @@ function add_tou_demand_charge_constraints(m, p)
 		m[:DemandTOUCharges] = @expression(m, p.pwf_e * sum( p.DemandRates[r,e] * m[:dvPeakDemandE][r,e] for r in p.Ratchets, e in p.DemandBin) )
 
 	end
+
+	#Sonnen 
+	# if p.SonnenFlag
+	# 	@constraint(m, sum(p.DemandRates[r,e] * m[:dvPeakDemandE][r, e] for r in p.Ratchets, e in p.DemandBin) <= 0)
+	# 	# @constraint(m, [ts in p.SonnenFullTS],
+	# 	# 	m[:dvStorageSOC]["Elec",ts] == m[:dvStorageCapEnergy]["Elec"]
+	# 	# )
+	# 	# @constraint(m, [ts in p.SonnenEmptyTS],
+	# 	# 	m[:dvStorageSOC]["Elec",ts] == 0
+	# 	# )
+	# end
 end
 
 
@@ -1127,6 +1138,7 @@ function add_cost_function(m, p)
 
 		# Comfort Costs
 		m[:TotalWHComfortCost] + m[:TotalHVACComfortCost]
+
 	)
     #= Note: 0.9999*m[:MinChargeAdder] in Obj b/c when m[:TotalMinCharge] > (TotalEnergyCharges + m[:TotalDemandCharges] + TotalExportBenefit + m[:TotalFixedCharges])
 		it is arbitrary where the min charge ends up (eg. could be in m[:TotalDemandCharges] or m[:MinChargeAdder]).
