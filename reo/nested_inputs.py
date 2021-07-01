@@ -558,6 +558,14 @@ nested_input_definitions = {
           "type": ["list_of_float", "float"],
           "description": "NOx emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.",
         },
+        "emissions_factor_series_lb_SO2_per_kwh": {
+          "type": ["list_of_float", "float"],
+          "description": "SO2 emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.",
+        },
+        "emissions_factor_series_lb_PM_per_kwh": {
+          "type": ["list_of_float", "float"],
+          "description": "PM2.5 emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.",
+        },
         "chp_standby_rate_us_dollars_per_kw_per_month": {
           "type": "float",
           "min": 0.0,
@@ -1375,6 +1383,14 @@ nested_input_definitions = {
           "type": "float",
           "description": "Pounds of NOx emitted per gallon of fuel burned"
         },
+        "emissions_factor_lb_SO2_per_gal": {
+          "type": "float",
+          "description": "Pounds of SO2 emitted per gallon of fuel burned"
+        },
+        "emissions_factor_lb_PM_per_gal": {
+          "type": "float",
+          "description": "Pounds of PM2.5 emitted per gallon of fuel burned"
+        },
         "can_net_meter": {
           "type": "bool",
           "default": False,
@@ -1645,6 +1661,14 @@ nested_input_definitions = {
           "type": "float",
           "description": "Average NOx emissions factor"
         },
+        "emissions_factor_lb_SO2_per_mmbtu": {
+          "type": "float",
+          "description": "Average SO2 emissions factor"
+        },
+        "emissions_factor_lb_PM_per_mmbtu": {
+          "type": "float",
+          "description": "Average PM2.5 emissions factor"
+        },
         "can_net_meter": {
           "type": "bool",
           "default": False,
@@ -1794,6 +1818,14 @@ nested_input_definitions = {
         "emissions_factor_lb_NOx_per_mmbtu": {
           "type": "float",
           "description": "Pounds of NOx emitted per gallon of fuel burned"
+        },
+        "emissions_factor_lb_SO2_per_mmbtu": {
+          "type": "float",
+          "description": "Pounds of SO2 emitted per gallon of fuel burned"
+        },
+        "emissions_factor_lb_PM_per_mmbtu": {
+          "type": "float",
+          "description": "Pounds of PM2.5 emitted per gallon of fuel burned"
         }
       },
 

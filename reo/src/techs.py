@@ -240,7 +240,8 @@ class Generator(Tech):
 
     def __init__(self, dfm, min_kw, max_kw, existing_kw, fuel_slope_gal_per_kwh, fuel_intercept_gal_per_hr,
                  fuel_avail_gal, min_turn_down_pct, outage_start_time_step=None, outage_end_time_step=None, time_steps_per_hour=1,
-                 fuel_avail_before_outage_pct=1, emissions_factor_lb_CO2_per_gal=None, emissions_factor_lb_NOx_per_gal=None, **kwargs):
+                 fuel_avail_before_outage_pct=1, emissions_factor_lb_CO2_per_gal=None, emissions_factor_lb_NOx_per_gal=None,
+                 emissions_factor_lb_SO2_per_gal=None, emissions_factor_lb_PM_per_gal=None, **kwargs):
         super(Generator, self).__init__(min_kw=min_kw, max_kw=max_kw, **kwargs)
         """
         super class init for generator is not unique anymore as we are now allowing users to define min/max sizes;
@@ -269,6 +270,8 @@ class Generator(Tech):
         self.existing_kw = existing_kw
         self.emissions_factor_lb_CO2_per_gal = emissions_factor_lb_CO2_per_gal
         self.emissions_factor_lb_NOx_per_gal = emissions_factor_lb_NOx_per_gal
+        self.emissions_factor_lb_SO2_per_gal = emissions_factor_lb_SO2_per_gal
+        self.emissions_factor_lb_PM_per_gal = emissions_factor_lb_PM_per_gal
 
         dfm.add_generator(self)
 
