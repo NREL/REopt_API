@@ -37,7 +37,7 @@ from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
 from reo.models import ModelManager, PVModel, FinancialModel, WindModel, AbsorptionChillerModel
 from reo.src.profiler import Profiler
-from reo.src.emissions_calculator import EmissionsCalculator, EmissionsCalculator_NOx
+from reo.src.emissions_calculator import EmissionsCalculator, EmissionsCalculator_NOx, EmissionsCalculator_SO2, EmissionsCalculator_PM
 from reo.utilities import annuity, TONHOUR_TO_KWHT, MMBTU_TO_KWH, GAL_DIESEL_TO_KWH
 from reo.nested_inputs import macrs_five_year, macrs_seven_year
 from reo.src.proforma_metrics import calculate_proforma_metrics
@@ -855,6 +855,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
 
         data = EmissionsCalculator.add_to_data(data)
         data = EmissionsCalculator_NOx.add_to_data(data)
+        data = EmissionsCalculator_SO2.add_to_data(data)
+        data = EmissionsCalculator_PM.add_to_data(data)
 
         pv_watts_station_check = data['outputs']['Scenario']['Site']['PV'][0].get('station_distance_km') or 0
         if pv_watts_station_check > 322:
@@ -874,6 +876,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
 
         data = EmissionsCalculator.add_to_data(data)
         data = EmissionsCalculator_NOx.add_to_data(data)
+        data = EmissionsCalculator_SO2.add_to_data(data)
+        data = EmissionsCalculator_PM.add_to_data(data)
         
         if len(data['outputs']['Scenario']['Site']['PV']) == 1:
             data['outputs']['Scenario']['Site']['PV'] = data['outputs']['Scenario']['Site']['PV'][0]

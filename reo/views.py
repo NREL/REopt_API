@@ -46,7 +46,7 @@ from reo.exceptions import UnexpectedError  #, RequestError  # should we save ba
 import logging
 log = logging.getLogger(__name__)
 from reo.src.techs import Generator, CHP, AbsorptionChiller, Boiler
-from reo.src.emissions_calculator import EmissionsCalculator, EmissionsCalculator_NOx
+from reo.src.emissions_calculator import EmissionsCalculator, EmissionsCalculator_NOx, EmissionsCalculator_SO2, EmissionsCalculator_PM
 from django.http import HttpResponse
 from django.template import  loader
 import pandas as pd
@@ -262,6 +262,73 @@ def emissions_profile_NOx(request):
         log.error(debug_msg)
         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
 
+def emissions_profile_SO2(request):
+    try:
+        latitude = float(request.GET['latitude'])  # need float to convert unicode
+        longitude = float(request.GET['longitude'])
+
+        ec_SO2 = EmissionsCalculator_SO2(latitude=latitude,longitude=longitude)
+
+        try:
+            response = JsonResponse({
+                    'region_abbr': ec_SO2.region_abbr,
+                    'region': ec_SO2.region,
+                    'emissions_series_lb_SO2_per_kWh': ec_SO2.emissions_series,
+                    'units': 'Pounds SO2',
+                    'description': 'SO2 Regional hourly grid emissions factor for EPA AVERT regions.',
+                    'meters_to_region': ec_SO2.meters_to_region
+                })
+            return response
+        except AttributeError as e:
+            return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing Parameter": str(e.args[0])}, status=500)
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except Exception:
+
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.error(debug_msg)
+        return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
+
+def emissions_profile_PM(request):
+    try:
+        latitude = float(request.GET['latitude'])  # need float to convert unicode
+        longitude = float(request.GET['longitude'])
+
+        ec_PM = EmissionsCalculator_PM(latitude=latitude,longitude=longitude)
+
+        try:
+            response = JsonResponse({
+                    'region_abbr': ec_PM.region_abbr,
+                    'region': ec_PM.region,
+                    'emissions_series_lb_PM_per_kWh': ec_PM.emissions_series,
+                    'units': 'Pounds PM',
+                    'description': 'PM Regional hourly grid emissions factor for EPA AVERT regions.',
+                    'meters_to_region': ec_PM.meters_to_region
+                })
+            return response
+        except AttributeError as e:
+            return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing Parameter": str(e.args[0])}, status=500)
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except Exception:
+
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.error(debug_msg)
+        return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
 
 def simulated_load(request):
     try:

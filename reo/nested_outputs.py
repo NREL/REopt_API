@@ -100,6 +100,16 @@ nested_output_definitions = {
                   "description": "Total pounds of NOx emitted from the site in the first year.",
                   "units": "lb NOx"
                 },
+              "year_one_emissions_lb_SO2": {
+                  "type": "int",
+                  "description": "Total pounds of SO2 emitted from the site in the first year.",
+                  "units": "lb SO2"
+                },
+              "year_one_emissions_lb_PM": {
+                  "type": "int",
+                  "description": "Total pounds of PM2.5 emitted from the site in the first year.",
+                  "units": "lb PM2.5"
+                },
               "year_one_emissions_bau_lb_C02": {
                   "type": "int",
                   "description": "Total equivalent pounds of carbon dioxide emitted from the site use in the first year in the BAU case.",
@@ -109,6 +119,16 @@ nested_output_definitions = {
                   "type": "int",
                   "description": "Total pounds of NOx emitted from the site use in the first year in the BAU case.",
                   "units": "lb NOx"
+                },
+              "year_one_emissions_bau_lb_SO2": {
+                  "type": "int",
+                  "description": "Total pounds of SO2 emitted from the site use in the first year in the BAU case.",
+                  "units": "lb SO2"
+                },
+              "year_one_emissions_bau_lb_PM": {
+                  "type": "int",
+                  "description": "Total pounds of PM2.5 emitted from the site use in the first year in the BAU case.",
+                  "units": "lb PM2.5"
                 },
               "renewable_electricity_energy_pct": {
                 "type": float,
@@ -641,6 +661,20 @@ nested_output_definitions = {
                                   "In AK and HI, the best available data are EPA eGRID annual averages."),
                   "units": "lb NOx"
                 },
+                "year_one_emissions_lb_SO2": {
+                  "type": "int",
+                  "description": ("Total pounds of SO2 emitted from utility electricity use "
+                                  "in the first year. Calculated from EPA AVERT region hourly grid emissions factor series for the continental US."
+                                  "In AK and HI, the best available data are EPA eGRID annual averages."),
+                  "units": "lb SO2"
+                },
+                "year_one_emissions_lb_PM": {
+                  "type": "int",
+                  "description": ("Total pounds of PM2.5 emitted from utility electricity use "
+                                  "in the first year. Calculated from EPA AVERT region hourly grid emissions factor series for the continental US."
+                                  "In AK and HI, the best available data are EPA eGRID annual averages."),
+                  "units": "lb PM2.5"
+                },
                 "year_one_emissions_bau_lb_C02": {
                   "type": "int",
                   "description": "Total equivalent pounds of carbon dioxide emitted from BAU utility electricity use in the first year. Calculated by default from hourly emissions estimates except in AK and HI.",
@@ -650,6 +684,16 @@ nested_output_definitions = {
                   "type": "int",
                   "description": "Total pounds of NOx emitted from BAU utility electricity use in the first year. Calculated by default from hourly emissions estimates except in AK and HI.",
                   "units": "lb NOx"
+                },
+                "year_one_emissions_bau_lb_SO2": {
+                  "type": "int",
+                  "description": "Total pounds of SO2 emitted from BAU utility electricity use in the first year. Calculated by default from hourly emissions estimates except in AK and HI.",
+                  "units": "lb SO2"
+                },
+                "year_one_emissions_bau_lb_PM": {
+                  "type": "int",
+                  "description": "Total pounds of PM2.5 emitted from BAU utility electricity use in the first year. Calculated by default from hourly emissions estimates except in AK and HI.",
+                  "units": "lb PM2.5"
                 },
                 "year_one_coincident_peak_cost_us_dollars": {
                   "type": "float",
@@ -835,6 +879,16 @@ nested_output_definitions = {
                   "description": "Total pounds of NOx emitted from generator use in the first year.",
                   "units": "lb NOx"
                 },
+                "year_one_emissions_lb_SO2": {
+                  "type": "int",
+                  "description": "Total pounds of SO2 emitted from generator use in the first year.",
+                  "units": "lb SO2"
+                },
+                "year_one_emissions_lb_PM": {
+                  "type": "int",
+                  "description": "Total pounds of PM2.5 emitted from generator use in the first year.",
+                  "units": "lb PM2.5"
+                },
                 "year_one_emissions_bau_lb_C02": {
                   "type": "int",
                   "description": "Total equivalent pounds of carbon dioxide emitted from BAU generator use in the first year.",
@@ -844,6 +898,16 @@ nested_output_definitions = {
                   "type": "int",
                   "description": "Total pounds of NOx emitted from BAU generator use in the first year.",
                   "units": "lb NOx"
+                },
+                "year_one_emissions_bau_lb_SO2": {
+                  "type": "int",
+                  "description": "Total pounds of SO2 emitted from BAU generator use in the first year.",
+                  "units": "lb SO2"
+                },
+                "year_one_emissions_bau_lb_PM": {
+                  "type": "int",
+                  "description": "Total pounds of PM2.5 emitted from BAU generator use in the first year.",
+                  "units": "lb PM2.5"
                 }
               },
 
@@ -913,6 +977,16 @@ nested_output_definitions = {
                   "description": "Total pounds of NOx emitted from CHP fuels consumed on site use in the first year.",
                   "units": "lb NOx"
                 },
+                "year_one_emissions_lb_SO2": {
+                  "type": int,
+                  "description": "Total pounds of SO2 emitted from CHP fuels consumed on site use in the first year.",
+                  "units": "lb SO2"
+                },
+                "year_one_emissions_lb_PM": {
+                  "type": int,
+                  "description": "Total pounds of PM2.5 emitted from CHP fuels consumed on site use in the first year.",
+                  "units": "lb PM2.5"
+                },
                 "year_one_emissions_bau_lb_C02": {
                   "type": int,
                   "description": "Total equivalent pounds of carbon dioxide emitted from CHP fuels consumed on site use in the first year in the BAU case.",
@@ -922,6 +996,16 @@ nested_output_definitions = {
                   "type": int,
                   "description": "Total pounds of NOx emitted from CHP fuels consumed on site use in the first year in the BAU case.",
                   "units": "lb NOx"
+                },
+                "year_one_emissions_bau_lb_SO2": {
+                  "type": int,
+                  "description": "Total pounds of SO2 emitted from CHP fuels consumed on site use in the first year in the BAU case.",
+                  "units": "lb SO2"
+                },
+                "year_one_emissions_bau_lb_PM": {
+                  "type": int,
+                  "description": "Total pounds of PM2.5 emitted from CHP fuels consumed on site use in the first year in the BAU case.",
+                  "units": "lb PM2.5"
                 }
               },
 
@@ -966,6 +1050,16 @@ nested_output_definitions = {
                   "description": "Total pounds of NOx emitted from boiler fuels consumed on site use in the first year.",
                   "units": "lb NOx"
                 },
+                "year_one_emissions_lb_SO2": {
+                  "type": int,
+                  "description": "Total pounds of SO2 emitted from boiler fuels consumed on site use in the first year.",
+                  "units": "lb SO2"
+                },
+                "year_one_emissions_lb_PM": {
+                  "type": int,
+                  "description": "Total pounds of PM2.5 emitted from boiler fuels consumed on site use in the first year.",
+                  "units": "lb PM2.5"
+                },
                 "year_one_emissions_bau_lb_C02": {
                   "type": int,
                   "description": "Total equivalent pounds of carbon dioxide emitted from boiler fuels consumed on site use in the first year in the BAU case.",
@@ -975,6 +1069,16 @@ nested_output_definitions = {
                   "type": int,
                   "description": "Total pounds of NOx emitted from boiler fuels consumed on site use in the first year in the BAU case.",
                   "units": "lb NOx"
+                },
+                "year_one_emissions_bau_lb_SO2": {
+                  "type": int,
+                  "description": "Total pounds of SO2 emitted from boiler fuels consumed on site use in the first year in the BAU case.",
+                  "units": "lb SO2"
+                },
+                "year_one_emissions_bau_lb_PM": {
+                  "type": int,
+                  "description": "Total pounds of PM2.5 emitted from boiler fuels consumed on site use in the first year in the BAU case.",
+                  "units": "lb PM2.5"
                 }
               },
 

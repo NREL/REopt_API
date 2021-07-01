@@ -42,6 +42,8 @@ class ElecTariff(object):
                  blended_annual_demand_charges_us_dollars_per_kw=None, add_tou_energy_rates_to_urdb_rate=None,
                  tou_energy_rates_us_dollars_per_kwh=None, emissions_factor_series_lb_CO2_per_kwh=None,
                  emissions_factor_series_lb_NOx_per_kwh=None,
+                 emissions_factor_series_lb_SO2_per_kwh=None,
+                 emissions_factor_series_lb_PM_per_kwh=None,
                  coincident_peak_load_active_timesteps=None, coincident_peak_load_charge_us_dollars_per_kw=None,
                  chp_allowed_to_export=None, **kwargs):
         """
@@ -116,6 +118,8 @@ class ElecTariff(object):
         self.interconnection_limit_kw = interconnection_limit_kw
         self.emissions_factor_series_lb_CO2_per_kwh = emissions_factor_series_lb_CO2_per_kwh
         self.emissions_factor_series_lb_NOx_per_kwh = emissions_factor_series_lb_NOx_per_kwh
+        self.emissions_factor_series_lb_SO2_per_kwh = emissions_factor_series_lb_SO2_per_kwh
+        self.emissions_factor_series_lb_PM_per_kwh = emissions_factor_series_lb_PM_per_kwh
 
         # Standby charges for CHP
         self.chp_standby_rate_us_dollars_per_kw_per_month = kwargs['chp_standby_rate_us_dollars_per_kw_per_month']
