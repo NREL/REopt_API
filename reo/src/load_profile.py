@@ -214,7 +214,7 @@ default_annual_electric_loads = {
         "flatload": 1687915
       },
       "Houston": {
-        "fastfoodrest": 210283,
+        "fastfoodrest": 210282,
         "fullservicerest": 383987,
         "hospital": 9634661,
         "largehotel": 3050370,
