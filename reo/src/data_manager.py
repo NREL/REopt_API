@@ -79,6 +79,7 @@ class DataManager:
         self.newboiler = None
         self.steamturbine = None
         self.ghp_option_list = []  # Not adding to the Tech list
+        self.ghp_cost = []
 
         # following attributes used to pass data to process_results.py
         # If we serialize the python classes then we could pass the objects between Celery tasks
@@ -214,6 +215,10 @@ class DataManager:
     def add_ghp(self, ghp):
         self.ghp_option_list.append(ghp)
         self.ghp_uuid_list.append(ghp.ghp_uuid)
+        self.ghp_cost.append({"installed_cost_dollars": ghp.installed_cost_us_dollars_per_kw[0] + 
+                                                        ghp.installed_cost_us_dollars_per_kw[1] * 
+                                                        ghp.heatpump_capacity_tons,
+                              "om_cost_year_one_dollars": ghp.om_cost_year_one})
 
     def _get_REopt_pwfs(self, techs):
         sf = self.site.financial
