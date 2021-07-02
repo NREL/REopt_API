@@ -233,7 +233,8 @@ def simulated_load(request):
     try:
         valid_keys = ["doe_reference_name","latitude","longitude","load_type","percent_share","annual_kwh",
                         "monthly_totals_kwh","annual_mmbtu","annual_fraction","annual_tonhour","monthly_tonhour",
-                        "monthly_mmbtu","monthly_fraction","max_thermal_factor_on_peak_load","chiller_cop"]
+                        "monthly_mmbtu","monthly_fraction","max_thermal_factor_on_peak_load","chiller_cop",
+                        "addressable_load_fraction"]
         for key in request.GET.keys():
             k = key
             if "[" in key:
@@ -325,7 +326,7 @@ def simulated_load(request):
 
         if load_type == "heating":
             for key in request.GET.keys():
-                if ('_kw' in key) or ('_ton' in key) or ('_fraction' in key):
+                if ('_kw' in key) or ('_ton' in key): # or ('_fraction' in key):
                     raise ValueError("Invalid key {} for load_type=heating".format(key))
             
             if doe_reference_name is None:
@@ -352,18 +353,38 @@ def simulated_load(request):
             else:
                 monthly_mmbtu = None
 
-            b = LoadProfileBoilerFuel(dfm=None, latitude=latitude, longitude=longitude, doe_reference_name=doe_reference_name,
-                           annual_mmbtu=annual_mmbtu, monthly_mmbtu=monthly_mmbtu, time_steps_per_hour=1,
-                           percent_share=percent_share_list)
+            if 'addressable_load_fraction' in request.GET.keys():
+                addressable_load_fraction = [float(request.GET.get('addressable_load_fraction'))]
+            else:
+                addressable_load_fraction = [nested_input_definitions["Scenario"]["Site"]["LoadProfileBoilerFuel"]["addressable_load_fraction"]["default"]]
+            kwargs_heating = {"addressable_load_fraction": addressable_load_fraction}
 
-            lp = b.load_list
+            b_space = LoadProfileBoilerFuel(load_type="SpaceHeating", dfm=None, latitude=latitude, longitude=longitude, doe_reference_name=doe_reference_name,
+                           annual_mmbtu=annual_mmbtu, monthly_mmbtu=monthly_mmbtu, time_steps_per_hour=1,
+                           percent_share=percent_share_list, **kwargs_heating)
+
+            b_dhw = LoadProfileBoilerFuel(load_type="DHW", dfm=None, latitude=latitude, longitude=longitude, doe_reference_name=doe_reference_name,
+                           annual_mmbtu=annual_mmbtu, monthly_mmbtu=monthly_mmbtu, time_steps_per_hour=1,
+                           percent_share=percent_share_list, **kwargs_heating)            
+
+            lp = [b_space.load_list[i] + b_dhw.load_list[i] for i in range(len(b_space.load_list))]
 
             response = JsonResponse(
                 {'loads_mmbtu': [round(ld, 3) for ld in lp],
-                 'annual_mmbtu': b.annual_mmbtu,
+                 'annual_mmbtu': b_space.annual_mmbtu + b_dhw.annual_mmbtu,
                  'min_mmbtu': round(min(lp), 3),
                  'mean_mmbtu': round(sum(lp) / len(lp), 3),
                  'max_mmbtu': round(max(lp), 3),
+                 'space_loads_mmbtu': [round(ld, 3) for ld in b_space.load_list],
+                 'space_annual_mmbtu': b_space.annual_mmbtu,
+                 'space_min_mmbtu': round(min(b_space.load_list), 3),
+                 'space_mean_mmbtu': round(sum(b_space.load_list) / len(b_space.load_list), 3),
+                 'space_max_mmbtu': round(max(b_space.load_list), 3),
+                 'dhw_loads_mmbtu': [round(ld, 3) for ld in b_dhw.load_list],
+                 'dhw_annual_mmbtu': b_dhw.annual_mmbtu,
+                 'dhw_min_mmbtu': round(min(b_dhw.load_list), 3),
+                 'dhw_mean_mmbtu': round(sum(b_dhw.load_list) / len(b_dhw.load_list), 3),
+                 'dhw_max_mmbtu': round(max(b_dhw.load_list), 3),
                  }
                 )
 
