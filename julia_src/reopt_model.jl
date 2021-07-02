@@ -706,7 +706,8 @@ function add_load_balance_constraints(m, p)
 			m[:dvGridToStorage][ts] +
             sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
             sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers )/ p.AbsorptionChillerElecCOP +
-			p.ElecLoad[ts]
+			p.ElecLoad[ts] + 
+            sum(p.GHPElectricConsumed[g,ts] * m[:binGHP][g] for g in p.GHPOptions)
 		)
 	else
 		@constraint(m, ElecLoadBalanceCon[ts in p.TimeStepsWithGrid],
@@ -719,7 +720,8 @@ function add_load_balance_constraints(m, p)
 			m[:dvGridToStorage][ts] +
             sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
             sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers )/ p.AbsorptionChillerElecCOP +
-			p.ElecLoad[ts]
+			p.ElecLoad[ts] + 
+            sum(p.GHPElectricConsumed[g,ts] * m[:binGHP][g] for g in p.GHPOptions)
 		)
 	end
 	

@@ -250,6 +250,11 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 elif len(cost_list) == 1:
                     upfront_capex += (cost_list[0] or 0) * (chp_size or 0)
 
+            # GHP
+            if len(self.dm["ghp_cost"]) >= 1:
+                # TODO currently this only reports the first option cost
+                upfront_capex += self.dm["ghp_cost"][0]["installed_cost_dollars"]
+
             # storage capacity
             upfront_capex += (self.inputs["Storage"].get("installed_cost_us_dollars_per_kwh") or 0) * \
                              (self.nested_outputs["Scenario"]["Site"]["Storage"].get("size_kwh") or 0)
