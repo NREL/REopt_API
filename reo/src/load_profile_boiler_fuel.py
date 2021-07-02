@@ -1,5 +1,5 @@
 from reo.src.load_profile import BuiltInProfile
-import pandas as pd
+import json
 import os
 import copy
 import numpy as np
@@ -15,7 +15,6 @@ class LoadProfileBoilerFuel(BuiltInProfile):
     # we can keep HeatingLoad as the total site heating load (space + DHW)
     # maybe add space heating to sim_loads endpoint to supply 
     
-    annual_heating_stats = pd.read_csv(os.path.join(BuiltInProfile.library_path_base, 'annual_heating_stats.csv'))
 
     def __init__(self, load_type, dfm=None, latitude = None, longitude = None, nearest_city = None, time_steps_per_hour = None, 
                     year = None, **kwargs):
@@ -37,12 +36,29 @@ class LoadProfileBoilerFuel(BuiltInProfile):
         self.time_steps_per_hour = time_steps_per_hour
         self.year = year
 
-        self.annual_loads = annual_heating_stats["load_type"]
+        if load_type == "SpaceHeating":
+            load_type_alias = "space_heating"
+        elif load_type == "DHW":
+            load_type_alias = "dhw"
 
-        self.addressable_fraction = kwargs.get("addressable_fraction", [1.0])
+        self.annual_loads = json.load(open(os.path.join(BuiltInProfile.library_path_base, load_type_alias + "_annual_mmbtu.json"), "rb"))
+
+        self.addressable_load_fraction = kwargs.get("addressable_load_fraction")
+        self.fraction_of_addressable_load = kwargs.get(load_type_alias + "_fraction_of_addressable_load")
         
         if kwargs.get('loads_mmbtu_per_hour') is not None:
-            self.load_list = kwargs['loads_mmbtu_per_hour']
+            if len(self.addressable_load_fraction) == 1:
+                self.addressable_load_fraction = [self.addressable_load_fraction[0] for _ in range(8760 * self.time_steps_per_hour)]
+            if not self.fraction_of_addressable_load:
+                self.load_list = [kwargs['loads_mmbtu_per_hour'][i] * 
+                                    self.addressable_load_fraction[i] for i in range(8760 * self.time_steps_per_hour)]                
+            else:
+                if len(self.fraction_of_addressable_load) == 1:
+                    self.fraction_of_addressable_load = [self.fraction_of_addressable_load[0] for _ in range(8760 * self.time_steps_per_hour)]
+                # Note, split between Space Heating and DHW can be a single value or time step interval, not monthly
+                self.load_list = [kwargs['loads_mmbtu_per_hour'][i] * 
+                                    self.addressable_load_fraction[i] * 
+                                    self.fraction_of_addressable_load[i] for i in range(8760 * self.time_steps_per_hour)]
             self.annual_mmbtu = sum(self.load_list)
 
         else:  # building type and (annual_mmbtu OR monthly_mmbtu) defined by user
@@ -53,13 +69,17 @@ class LoadProfileBoilerFuel(BuiltInProfile):
                 # Monthly loads can only be used to scale a non-hybrid profile
                 self.monthly_totals_energy = kwargs.get("monthly_mmbtu")
                 if self.monthly_totals_energy not in [[], None]:
-                     kwargs['monthly_totals_energy'] = [self.monthly_totals_energy[i] * self.addressable_fraction[i] for i in range(12)]
+                    if len(self.addressable_load_fraction) == 1:
+                        self.addressable_load_fraction = [self.addressable_load_fraction[0] for _ in range(12)]
+                    # Note, when using doe_reference_name, the user cannot adjust the fraction_of_addressable_load for Space Heating versus DHW
+                    kwargs['monthly_totals_energy'] = [self.monthly_totals_energy[i] * 
+                                                        self.addressable_load_fraction[i] for i in range(12)]
                 if len(doe_reference_name) > 1:
                     kwargs['monthly_totals_energy'] = None
                 kwargs['annual_energy'] = None
                 # We only scale by percent share if a raw annual mmbtu value has not been provided
                 if kwargs.get("annual_mmbtu") is not None:
-                    kwargs['annual_energy'] = kwargs["annual_mmbtu"] * self.addressable_fraction[0]
+                    kwargs['annual_energy'] = kwargs["annual_mmbtu"] * self.addressable_load_fraction[0]
                     percent_share = 100
                 else:
                     percent_share = kwargs.get("percent_share")[i]
@@ -101,5 +121,8 @@ class LoadProfileBoilerFuel(BuiltInProfile):
             self.load_list = copy.copy(hybrid_loadlist)
             self.annual_mmbtu = int(round(sum(self.load_list),0))
 
-        if dfm is not None:
-            dfm.add_load_boiler_fuel(self)
+        if dfm is not None and load_type == "SpaceHeating":
+            dfm.add_load_boiler_fuel_space_heating(self)
+
+        if dfm is not None and load_type == "DHW":
+            dfm.add_load_boiler_fuel_dhw(self)
