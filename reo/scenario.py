@@ -247,7 +247,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
         # Boiler which supplies the bau boiler fuel load, if there is a boiler fuel load
         if (lpbf_space.annual_mmbtu + lpbf_dhw.annual_mmbtu) > 0.0:
             lpbf_total = [lpbf_space.load_list[i] + lpbf_dhw.load_list[i] for i in range(len(lpbf_space.load_list))]
-            boiler = Boiler(dfm=dfm, boiler_fuel_series_bau=lpbf_total.load_list, **inputs_dict['Site']['Boiler'])
+            boiler = Boiler(dfm=dfm, boiler_fuel_series_bau=lpbf_total, **inputs_dict['Site']['Boiler'])
         else:
             boiler = None
 
@@ -376,6 +376,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
                 ghpghx_results_resp = client.get(ghpghx_results_url)  # same as doing ghpMakeResponse(ghp_uuid)
                 ghpghx_results_resp_dict = json.loads(ghpghx_results_resp.content)
                 ghpghx_response_list.append(ghpghx_results_resp_dict)
+                #json.dump(ghpghx_response_list, open("ghpghx_response.json", "w"))
                 ghp_option_list.append(ghp.GHPGHX(dfm=dfm,
                                                     response=ghpghx_response_list[i],
                                                     **inputs_dict["Site"]["GHP"]))
@@ -420,7 +421,8 @@ def setup_scenario(self, run_uuid, data, raw_post):
         # delete python objects, which are not serializable
 
         for k in ['storage', 'hot_tes', 'cold_tes', 'site', 'elec_tariff', 'fuel_tariff', 'pvs', 'pvnms',
-                'load', 'util', 'heating_load', 'cooling_load', 'newboiler', 'steamturbine', 'ghp_option_list'] + dfm.available_techs:
+                'load', 'util', 'heating_load', 'cooling_load', 'newboiler', 'steamturbine', 'ghp_option_list',
+                'heating_load_space_heating', 'heating_load_dhw'] + dfm.available_techs:
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
 
