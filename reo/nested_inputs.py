@@ -412,12 +412,25 @@ nested_input_definitions = {
           "max": 100.0,
          "description": "Percentage share of the types of building for creating hybrid simulated building and campus profiles."
         },
-        "addressable_fraction": {
+        "addressable_load_fraction": {
          "type": ["float", "list_of_float"],
-          "min": 1.0,
-          "max": 100.0,
-         "description": "Fraction of the annual (scalar value) or monthly (list of 12 values) energy that can be served by heating technologies."
-        }
+          "min": 0.0,
+          "max": 1.0,
+          "default": 1.0,
+         "description": "Fraction of the annual (scalar value), monthly (list of 12 values), or houry/sub-hourly energy that can be served by heating technologies."
+        },
+        "space_heating_fraction_of_addressable_load": {
+         "type": ["float", "list_of_float"],
+          "min": 0.0,
+          "max": 1.0,
+         "description": "Fraction of the addressable heating load annual (scalar value) or monthly (list of 12 values), or houry/sub-hourly (list of 8760/35040) energy that is for space heating."
+        },
+        "dhw_fraction_of_addressable_load": {
+         "type": ["float", "list_of_float"],
+          "min": 0.0,
+          "max": 1.0,
+         "description": "Fraction of the addressable heating load annual (scalar value) or monthly (list of 12 values), or houry/sub-hourly (list of 8760/35040) energy that is for domestic hot water (DHW)."
+        },
       },
 
       "LoadProfileChillerThermal": {
