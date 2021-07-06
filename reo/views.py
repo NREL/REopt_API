@@ -234,7 +234,7 @@ def simulated_load(request):
         valid_keys = ["doe_reference_name","latitude","longitude","load_type","percent_share","annual_kwh",
                         "monthly_totals_kwh","annual_mmbtu","annual_fraction","annual_tonhour","monthly_tonhour",
                         "monthly_mmbtu","monthly_fraction","max_thermal_factor_on_peak_load","chiller_cop",
-                        "addressable_load_fraction"]
+                        "addressable_load_fraction", "space_heating_fraction_of_heating_load"]
         for key in request.GET.keys():
             k = key
             if "[" in key:
@@ -353,11 +353,16 @@ def simulated_load(request):
             else:
                 monthly_mmbtu = None
 
+            kwargs_heating = {}
             if 'addressable_load_fraction' in request.GET.keys():
                 addressable_load_fraction = [float(request.GET.get('addressable_load_fraction'))]
             else:
                 addressable_load_fraction = [nested_input_definitions["Scenario"]["Site"]["LoadProfileBoilerFuel"]["addressable_load_fraction"]["default"]]
-            kwargs_heating = {"addressable_load_fraction": addressable_load_fraction}
+            kwargs_heating["addressable_load_fraction"] = addressable_load_fraction
+
+            if 'space_heating_fraction_of_heating_load' in request.GET.keys():
+                space_heating_fraction_of_heating_load = [float(request.GET.get('space_heating_fraction_of_heating_load'))]
+                kwargs_heating["space_heating_fraction_of_heating_load"] = space_heating_fraction_of_heating_load            
 
             b_space = LoadProfileBoilerFuel(load_type="SpaceHeating", dfm=None, latitude=latitude, longitude=longitude, doe_reference_name=doe_reference_name,
                            annual_mmbtu=annual_mmbtu, monthly_mmbtu=monthly_mmbtu, time_steps_per_hour=1,
