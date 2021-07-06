@@ -5,16 +5,22 @@ import copy
 import numpy as np
 
 
+
+# Data for annual heating energy load totals for commercial reference buildings
+space_heating_annual_loads = json.load(open(os.path.join(BuiltInProfile.library_path_base, "space_heating_annual_mmbtu.json"), "rb"))
+dhw_annual_loads = json.load(open(os.path.join(BuiltInProfile.library_path_base, "dhw_annual_mmbtu.json"), "rb"))
+total_heating_annual_loads = {city: {building: space_heating_annual_loads[city][building] + dhw_annual_loads[city][building] for building in space_heating_annual_loads[city].keys()} for city in space_heating_annual_loads.keys()}
+space_heating_fraction_flat_load = {city: space_heating_annual_loads[city]["flatload"] / total_heating_annual_loads[city]["flatload"] for city in space_heating_annual_loads.keys()}
+
 class LoadProfileBoilerFuel(BuiltInProfile):
     """
     Boiler Load Profiles based on CRB defined load shapes or user-defined input
-    """
-    # TODO for separating space heating and DHW - see reference file that Chris made
-    # and then we can create two separate lpbf instances (lpbf_space and lpbf_dhw) in scenario.py and data_manager.py
-    # since ghpghx is run in Scenario.py we just need to send only space heating to it, and
-    # we can keep HeatingLoad as the total site heating load (space + DHW)
-    # maybe add space heating to sim_loads endpoint to supply 
-    
+
+    This load class used for both space heating and domestic hot water (DHW)
+    Two separate lpbf instances (lpbf_space and lpbf_dhw) are created in scenario.py so GHP can serve just space heating
+    In the reopt_model.jl, the HeatingLoad is the sum of both space heating and DHW
+
+    """  
 
     def __init__(self, load_type, dfm=None, latitude = None, longitude = None, nearest_city = None, time_steps_per_hour = None, 
                     year = None, **kwargs):
@@ -36,29 +42,25 @@ class LoadProfileBoilerFuel(BuiltInProfile):
         self.time_steps_per_hour = time_steps_per_hour
         self.year = year
 
-        if load_type == "SpaceHeating":
-            load_type_alias = "space_heating"
-        elif load_type == "DHW":
-            load_type_alias = "dhw"
-
-        self.annual_loads = json.load(open(os.path.join(BuiltInProfile.library_path_base, load_type_alias + "_annual_mmbtu.json"), "rb"))
+        # Using total/combined Space Heating plus DHW loads because the "normalized" profiles used in BuiltInProfile are based on the combined loads
+        self.annual_loads = total_heating_annual_loads
 
         self.addressable_load_fraction = kwargs.get("addressable_load_fraction")
-        self.fraction_of_addressable_load = kwargs.get(load_type_alias + "_fraction_of_addressable_load")
+        self.space_heating_fraction = kwargs.get("space_heating_fraction_of_heating_load")
         
         if kwargs.get('loads_mmbtu_per_hour') is not None:
             if len(self.addressable_load_fraction) == 1:
                 self.addressable_load_fraction = [self.addressable_load_fraction[0] for _ in range(8760 * self.time_steps_per_hour)]
-            if not self.fraction_of_addressable_load:
+            if not self.space_heating_fraction:
                 self.load_list = [kwargs['loads_mmbtu_per_hour'][i] * 
                                     self.addressable_load_fraction[i] for i in range(8760 * self.time_steps_per_hour)]                
             else:
-                if len(self.fraction_of_addressable_load) == 1:
-                    self.fraction_of_addressable_load = [self.fraction_of_addressable_load[0] for _ in range(8760 * self.time_steps_per_hour)]
+                if len(self.space_heating_fraction) == 1:
+                    self.space_heating_fraction = [self.space_heating_fraction[0] for _ in range(8760 * self.time_steps_per_hour)]
                 # Note, split between Space Heating and DHW can be a single value or time step interval, not monthly
                 self.load_list = [kwargs['loads_mmbtu_per_hour'][i] * 
                                     self.addressable_load_fraction[i] * 
-                                    self.fraction_of_addressable_load[i] for i in range(8760 * self.time_steps_per_hour)]
+                                    self.space_heating_fraction[i] for i in range(8760 * self.time_steps_per_hour)]
             self.annual_mmbtu = sum(self.load_list)
 
         else:  # building type and (annual_mmbtu OR monthly_mmbtu) defined by user
@@ -71,7 +73,7 @@ class LoadProfileBoilerFuel(BuiltInProfile):
                 if self.monthly_totals_energy not in [[], None]:
                     if len(self.addressable_load_fraction) == 1:
                         self.addressable_load_fraction = [self.addressable_load_fraction[0] for _ in range(12)]
-                    # Note, when using doe_reference_name, the user cannot adjust the fraction_of_addressable_load for Space Heating versus DHW
+                    # Note, when using doe_reference_name, the user cannot adjust the space_heating_fraction
                     kwargs['monthly_totals_energy'] = [self.monthly_totals_energy[i] * 
                                                         self.addressable_load_fraction[i] for i in range(12)]
                 if len(doe_reference_name) > 1:
@@ -91,6 +93,7 @@ class LoadProfileBoilerFuel(BuiltInProfile):
                 kwargs['nearest_city'] = nearest_city
                 kwargs['time_steps_per_hour'] = time_steps_per_hour
                 kwargs['year'] = year
+                kwargs['space_heating_fraction'] = self.space_heating_fraction
                 super(LoadProfileBoilerFuel, self).__init__(**kwargs)
                 if time_steps_per_hour > 1:
                     partial_load_list = np.concatenate([[x] * time_steps_per_hour \
