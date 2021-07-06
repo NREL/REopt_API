@@ -39,8 +39,19 @@ import logging
 import geopandas as gpd
 from shapely import geometry as g
 from reo.exceptions import LoadProfileError
-from reo.src.load_profile_boiler_fuel import space_heating_fraction_flat_load
 log = logging.getLogger(__name__)
+import json
+
+library_path_base = os.path.join('input_files', 'LoadProfiles')
+load_type_file_map = {"Electric": "Load8760_norm_",
+                        "SpaceHeating": "SpaceHeating8760_norm_",
+                        "DHW": "DHW8760_norm_",
+                        "Cooling": "Cooling8760_norm_"}
+
+space_heating_annual_loads = json.load(open(os.path.join(library_path_base, "space_heating_annual_mmbtu.json"), "rb"))
+dhw_annual_loads = json.load(open(os.path.join(library_path_base, "dhw_annual_mmbtu.json"), "rb"))
+total_heating_annual_loads = {city: {building: space_heating_annual_loads[city][building] + dhw_annual_loads[city][building] for building in space_heating_annual_loads[city].keys()} for city in space_heating_annual_loads.keys()}
+space_heating_fraction_flat_load = {city: space_heating_annual_loads[city]["flatload"] / total_heating_annual_loads[city]["flatload"] for city in space_heating_annual_loads.keys()}
 
 default_annual_electric_loads = {
       "Albuquerque": {
@@ -395,11 +406,6 @@ def bau_outage_check(critical_loads_kw, existing_pv_kw_list, gen_existing_kw, ge
 
 class BuiltInProfile(object):
 
-    library_path_base = os.path.join('input_files', 'LoadProfiles')
-    load_type_file_map = {"Electric": "Load8760_norm_",
-                          "SpaceHeating": "SpaceHeating8760_norm_",
-                          "DHW": "DHW8760_norm_",
-                          "Cooling": "Cooling8760_norm_"}
     Default_city = namedtuple("Default_city", "name lat lng tmyid zoneid")
     default_cities = [
         Default_city('Miami', 25.761680, -80.191790, 722020, '1A'),
@@ -455,8 +461,8 @@ class BuiltInProfile(object):
         :param year: year of load profile, needed for monthly scaling
         :param kwargs:
         """
-        self.library_path = os.path.join(BuiltInProfile.library_path_base, load_type)
-        self.builtin_profile_prefix = BuiltInProfile.load_type_file_map[load_type]
+        self.library_path = os.path.join(library_path_base, load_type)
+        self.builtin_profile_prefix = load_type_file_map[load_type]
         self.flatload_alternate_options = ['FlatLoad_24_5','FlatLoad_16_7','FlatLoad_16_5','FlatLoad_8_7','FlatLoad_8_5']
         self.annual_loads = annual_loads  # a dictionary of cities and default annual loads or a constant value for any city
         self.latitude = float(latitude) if latitude is not None else None
