@@ -1,16 +1,10 @@
-from reo.src.load_profile import BuiltInProfile
+from reo.src.load_profile import library_path_base, BuiltInProfile, space_heating_annual_loads, dhw_annual_loads, \
+                                    total_heating_annual_loads, space_heating_fraction_flat_load
 import json
 import os
 import copy
 import numpy as np
 
-
-
-# Data for annual heating energy load totals for commercial reference buildings
-space_heating_annual_loads = json.load(open(os.path.join(BuiltInProfile.library_path_base, "space_heating_annual_mmbtu.json"), "rb"))
-dhw_annual_loads = json.load(open(os.path.join(BuiltInProfile.library_path_base, "dhw_annual_mmbtu.json"), "rb"))
-total_heating_annual_loads = {city: {building: space_heating_annual_loads[city][building] + dhw_annual_loads[city][building] for building in space_heating_annual_loads[city].keys()} for city in space_heating_annual_loads.keys()}
-space_heating_fraction_flat_load = {city: space_heating_annual_loads[city]["flatload"] / total_heating_annual_loads[city]["flatload"] for city in space_heating_annual_loads.keys()}
 
 class LoadProfileBoilerFuel(BuiltInProfile):
     """

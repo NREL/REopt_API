@@ -1,4 +1,4 @@
-from reo.src.load_profile import BuiltInProfile
+from reo.src.load_profile import library_path_base, BuiltInProfile
 import os
 import json
 import pandas as pd
@@ -12,7 +12,7 @@ class LoadProfileChillerThermal(BuiltInProfile):
     Chiller Load Profiles based on CRB defined load shapes or user-defined input
     """
     
-    with open(os.path.join(BuiltInProfile.library_path_base, 'reference_cooling_kwh.json'), 'r') as f:
+    with open(os.path.join(library_path_base, 'reference_cooling_kwh.json'), 'r') as f:
         annual_loads = json.loads(f.read())
 
     builtin_profile_prefix = "Cooling8760_norm_"
