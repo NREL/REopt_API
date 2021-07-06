@@ -253,8 +253,7 @@ class LoadProfileBoilerFuelModel(models.Model):
             models.TextField(null=True, blank=True), default=list, null=True)
     percent_share = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True)
     addressable_load_fraction = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True)
-    space_heating_fraction_of_addressable_load = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True)
-    dhw_fraction_of_addressable_load = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True)
+    space_heating_fraction_of_heating_load = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True)
 
     # Outputs
     annual_calculated_boiler_fuel_load_mmbtu_bau = models.FloatField(null=True, blank=True)
@@ -1001,6 +1000,7 @@ class GHPModel(models.Model):
     building_sqft = models.FloatField(null=True, blank=True)
     ghpghx_inputs = ArrayField(PickledObjectField(null=True, editable=True), null=True, default=list)
     ghpghx_response = ArrayField(PickledObjectField(null=True, editable=True), null=True, default=list)
+    can_serve_dhw = models.BooleanField(null=True, blank=True)
     macrs_option_years = models.IntegerField(null=True, blank=True)
     macrs_bonus_pct = models.FloatField(null=True, blank=True)
     macrs_itc_reduction = models.FloatField(null=True, blank=True)

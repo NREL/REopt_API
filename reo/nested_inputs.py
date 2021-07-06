@@ -417,19 +417,13 @@ nested_input_definitions = {
           "min": 0.0,
           "max": 1.0,
           "default": 1.0,
-         "description": "Fraction of the annual (scalar value), monthly (list of 12 values), or houry/sub-hourly energy that can be served by heating technologies."
+         "description": "Fraction of the boiler fuel load be served by heating technologies."
         },
-        "space_heating_fraction_of_addressable_load": {
+        "space_heating_fraction_of_heating_load": {
          "type": ["float", "list_of_float"],
           "min": 0.0,
           "max": 1.0,
-         "description": "Fraction of the addressable heating load annual (scalar value) or monthly (list of 12 values), or houry/sub-hourly (list of 8760/35040) energy that is for space heating."
-        },
-        "dhw_fraction_of_addressable_load": {
-         "type": ["float", "list_of_float"],
-          "min": 0.0,
-          "max": 1.0,
-         "description": "Fraction of the addressable heating load annual (scalar value) or monthly (list of 12 values), or houry/sub-hourly (list of 8760/35040) energy that is for domestic hot water (DHW)."
+         "description": "Fraction of the total heating load (domestic hot water (DHW) plus space heating) for space heating."
         },
       },
 
@@ -2080,11 +2074,15 @@ nested_input_definitions = {
         "ghpghx_inputs": {
           "type": "list_of_dict",
           "description": "GHP-GHX inputs/POST to /ghpghx endpoint"
-        },        
+        },
         "ghpghx_response": {
           "type": "list_of_dict",
           "description": "GHP-GHX response from /ghpghx endpoint, includes ghp_uuid, inputs/POST to /ghpghx, and outputs/results"
         },
+        "can_serve_dhw": {
+          "type": "bool", "default": False,
+          "description": "If GHP can serve the domestic hot water (DHW) portion of the heating load"
+        },              
         "macrs_option_years": {
           "type": "int",
           "restrict_to": macrs_schedules,
