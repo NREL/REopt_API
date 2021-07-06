@@ -39,6 +39,7 @@ import logging
 import geopandas as gpd
 from shapely import geometry as g
 from reo.exceptions import LoadProfileError
+from reo.src.load_profile_boiler_fuel import space_heating_fraction_flat_load
 log = logging.getLogger(__name__)
 
 default_annual_electric_loads = {
@@ -467,15 +468,16 @@ class BuiltInProfile(object):
         self.annual_energy = annual_energy if annual_energy is not None else (
             sum(monthly_totals_energy) if monthly_totals_energy else self.default_annual_energy)
         self.annual_kwh = round(self.annual_energy,0)
+        self.user_entered_space_heating_fraction = kwargs.get("space_heating_fraction")
         
 
     @property
     def built_in_profile(self):
-        if self.doe_reference_name in ['FlatLoad'] + self.flatload_alternate_options:
-            return [ld * self.annual_energy for ld in self.custom_normalized_flatload]
-
         if self.monthly_energy in [None, []]:
-            return [ld * self.annual_energy for ld in self.normalized_profile]
+            if self.doe_reference_name in ['FlatLoad'] + self.flatload_alternate_options:
+                return [ld * self.annual_energy * self.heating_fraction[0] for ld in self.custom_normalized_flatload]            
+            else:
+                return [ld * self.annual_energy for ld in self.normalized_profile]
         return self.monthly_scaled_profile
 
     @property
@@ -562,8 +564,14 @@ class BuiltInProfile(object):
         month_total = 0
         month_scale_factor = []
 
-        for load in self.normalized_profile:
+        if self.doe_reference_name in ['FlatLoad'] + self.flatload_alternate_options:
+            normalized_profile = self.custom_normalized_flatload
+        else:
+            normalized_profile = self.normalized_profile
+        
+        for load in normalized_profile:
             month = datetime_current.month
+            # Monthly total based on annual_energy (sum of monthly_energy) and the normalized profile, later used to scale actual monthly energy
             month_total += self.annual_energy * load
 
             # add an hour
@@ -573,12 +581,12 @@ class BuiltInProfile(object):
                 if month_total == 0:
                     month_scale_factor.append(0)
                 else:
-                    month_scale_factor.append(float(self.monthly_energy[month - 1] / month_total))
+                    month_scale_factor.append(float(self.monthly_energy[month - 1] / month_total * self.heating_fraction[month - 1]))
                 month_total = 0
 
         datetime_current = datetime(self.year, 1, 1, 0)
 
-        for load in self.normalized_profile:
+        for load in normalized_profile:
             month = datetime_current.month
 
             load_profile.append(self.annual_energy * load * month_scale_factor[month - 1])
@@ -599,6 +607,27 @@ class BuiltInProfile(object):
 
         return normalized_profile
 
+    @property
+    def heating_fraction(self):
+        if self.load_type == "SpaceHeating":
+            if self.user_entered_space_heating_fraction in [None, []]:
+                heating_fraction = [space_heating_fraction_flat_load[self.city] for _ in range(12)]
+            elif len(self.user_entered_space_heating_fraction) == 1:
+                heating_fraction = [self.user_entered_space_heating_fraction[0] for _ in range(12)]
+            else:
+                heating_fraction = self.user_entered_space_heating_fraction
+        elif self.load_type == "DHW":            
+            if self.user_entered_space_heating_fraction in [None, []]:
+                heating_fraction = [1.0 - space_heating_fraction_flat_load[self.city] for _ in range(12)]
+            elif len(self.user_entered_space_heating_fraction) == 1:
+                heating_fraction = [1.0 - self.user_entered_space_heating_fraction[0] for _ in range(12)]
+            else:
+                heating_fraction = [1.0 - self.user_entered_space_heating_fraction[i] for i in range(12)]
+        else:
+            # Electric and Cooling loads use this fraction of 1.0 to make irrelevant
+            heating_fraction = [1.0] * 12
+        
+        return heating_fraction
 
 class LoadProfile(BuiltInProfile):
     """
