@@ -461,8 +461,9 @@ class BuiltInProfile(object):
         :param year: year of load profile, needed for monthly scaling
         :param kwargs:
         """
-        self.library_path = os.path.join(library_path_base, load_type)
-        self.builtin_profile_prefix = load_type_file_map[load_type]
+        self.load_type = load_type
+        self.library_path = os.path.join(library_path_base, self.load_type)
+        self.builtin_profile_prefix = load_type_file_map[self.load_type]
         self.flatload_alternate_options = ['FlatLoad_24_5','FlatLoad_16_7','FlatLoad_16_5','FlatLoad_8_7','FlatLoad_8_5']
         self.annual_loads = annual_loads  # a dictionary of cities and default annual loads or a constant value for any city
         self.latitude = float(latitude) if latitude is not None else None
