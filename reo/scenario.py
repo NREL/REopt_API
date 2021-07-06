@@ -362,7 +362,10 @@ def setup_scenario(self, run_uuid, data, raw_post):
                 ghpghx_post["latitude"] = inputs_dict["Site"]["latitude"]
                 ghpghx_post["longitude"] = inputs_dict["Site"]["longitude"]
                 # Only SpaceHeating portion of Heating Load gets served by GHP (does not serve DHW)
-                ghpghx_post["heating_fuel_load_mmbtu_per_hr"] = lpbf_space.load_list
+                if not inputs_dict["can_serve_dhw"]:
+                    ghpghx_post["heating_fuel_load_mmbtu_per_hr"] = lpbf_space.load_list
+                else:
+                    ghpghx_post["heating_fuel_load_mmbtu_per_hr"] = [lpbf_space.load_list[i] + lpbf_dhw.load_list[i] for i in range(len(lpbf_space.load_list))]
                 if dfm.boiler is not None:
                     ghpghx_post["existing_boiler_efficiency"] = dfm.boiler.boiler_efficiency #boiler.boiler_efficiency
                 else:
