@@ -46,15 +46,20 @@ class LoadProfileBoilerFuel(BuiltInProfile):
             if len(self.addressable_load_fraction) == 1:
                 self.addressable_load_fraction = [self.addressable_load_fraction[0] for _ in range(8760 * self.time_steps_per_hour)]
             if not self.space_heating_fraction:
-                self.load_list = [kwargs['loads_mmbtu_per_hour'][i] * 
-                                    self.addressable_load_fraction[i] for i in range(8760 * self.time_steps_per_hour)]                
+                # Assume 50/50 split between space heating and DHW if not entered by user (different defaults used for CRBs)
+                self.space_heating_fraction = [0.5 for _ in range(8760 * self.time_steps_per_hour)]
             else:
                 if len(self.space_heating_fraction) == 1:
                     self.space_heating_fraction = [self.space_heating_fraction[0] for _ in range(8760 * self.time_steps_per_hour)]
                 # Note, split between Space Heating and DHW can be a single value or time step interval, not monthly
+            if self.load_type == "SpaceHeating":
                 self.load_list = [kwargs['loads_mmbtu_per_hour'][i] * 
                                     self.addressable_load_fraction[i] * 
                                     self.space_heating_fraction[i] for i in range(8760 * self.time_steps_per_hour)]
+            else:
+                self.load_list = [kwargs['loads_mmbtu_per_hour'][i] * 
+                                    self.addressable_load_fraction[i] * 
+                                    (1 - self.space_heating_fraction[i]) for i in range(8760 * self.time_steps_per_hour)]                                                
             self.annual_mmbtu = sum(self.load_list)
 
         else:  # building type and (annual_mmbtu OR monthly_mmbtu) defined by user
