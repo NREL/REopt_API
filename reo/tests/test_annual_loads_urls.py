@@ -32,6 +32,7 @@ from tastypie.test import ResourceTestCaseMixin
 from reo.src.load_profile import BuiltInProfile, default_annual_electric_loads
 import random
 import json
+from math import floor
 
 
 class EntryResourceTest(ResourceTestCaseMixin, TestCase):
@@ -54,7 +55,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             })
             annual_kwh_from_api = json.loads(response.content).get('annual_kwh')
             msg = "Loads not equal for: " + str(bldg) + " city 1: " + str(city.name) + " city 2: " + str(json.loads(response.content).get('city'))
-            self.assertEqual(round(annual_kwh_from_api, 0), round(default_annual_electric_loads[city.name][bldg.lower()], 0), msg=msg)
+            self.assertEqual(floor(annual_kwh_from_api), floor(default_annual_electric_loads[city.name][bldg.lower()]), msg=msg)
 
     def test_annual_kwh_bad_latitude(self):
         bldg = self.default_building_types[random.choice(range(len(self.default_building_types)))]
