@@ -1019,6 +1019,7 @@ class GHPModel(models.Model):
     # TODO may make this a UUIDField once it's actually assigned one from the GHPGHX endpoint
     ghp_chosen_uuid = models.TextField(null=True, blank=True)
     ghpghx_chosen_outputs = PickledObjectField(null=True, editable=True)
+    size_heat_pump_ton = models.FloatField(null=True, blank=True)  # This includes a factor on the peak coincident heating+cooling load
 
     @classmethod
     def create(cls, **kwargs):
