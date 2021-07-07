@@ -361,8 +361,8 @@ def setup_scenario(self, run_uuid, data, raw_post):
                 ghpghx_post = inputs_dict["Site"]["GHP"]["ghpghx_inputs"][i]
                 ghpghx_post["latitude"] = inputs_dict["Site"]["latitude"]
                 ghpghx_post["longitude"] = inputs_dict["Site"]["longitude"]
-                # Only SpaceHeating portion of Heating Load gets served by GHP (does not serve DHW)
-                if not inputs_dict["can_serve_dhw"]:
+                # Only SpaceHeating portion of Heating Load gets served by GHP, unless allowed by can_serve_dhw
+                if not inputs_dict["Site"]["GHP"].get("can_serve_dhw"):
                     ghpghx_post["heating_fuel_load_mmbtu_per_hr"] = lpbf_space.load_list
                 else:
                     ghpghx_post["heating_fuel_load_mmbtu_per_hr"] = [lpbf_space.load_list[i] + lpbf_dhw.load_list[i] for i in range(len(lpbf_space.load_list))]
