@@ -474,7 +474,8 @@ class Boiler(Tech):
                                                "combustion_turbine": "steam",
                                                "fuel_cell": "hot_water"}
 
-    def __init__(self, dfm, boiler_fuel_series_bau, **kwargs):
+    def __init__(self, dfm, boiler_fuel_series_bau, emissions_factor_lb_CO2_per_mmbtu=None, emissions_factor_lb_NOx_per_mmbtu=None,
+                 emissions_factor_lb_SO2_per_mmbtu=None, emissions_factor_lb_PM_per_mmbtu=None, **kwargs):
         super(Boiler, self).__init__(**kwargs)
 
         self.is_hot = True
@@ -484,6 +485,10 @@ class Boiler(Tech):
         self.boiler_efficiency = kwargs.get('boiler_efficiency')
         self.derate = 0
         self.n_timesteps = dfm.n_timesteps
+        self.emissions_factor_lb_CO2_per_mmbtu = emissions_factor_lb_CO2_per_mmbtu
+        self.emissions_factor_lb_NOx_per_mmbtu = emissions_factor_lb_NOx_per_mmbtu
+        self.emissions_factor_lb_SO2_per_mmbtu = emissions_factor_lb_SO2_per_mmbtu
+        self.emissions_factor_lb_PM_per_mmbtu = emissions_factor_lb_PM_per_mmbtu
         
         # Assign boiler max size equal to the peak load multiplied by the thermal_factor
         self.max_kw = max(boiler_fuel_series_bau) * self.boiler_efficiency * self.max_thermal_factor_on_peak_load * MMBTU_TO_KWH        
