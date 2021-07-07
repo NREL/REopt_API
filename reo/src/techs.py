@@ -341,7 +341,9 @@ class CHP(Tech):
                               "combustion_turbine": 0,
                               "fuel_cell": 0}
 
-    def __init__(self, dfm, run_uuid, existing_boiler_production_type_steam_or_hw, oa_temp_degF, site_elevation_ft,
+    def __init__(self, dfm, run_uuid, existing_boiler_production_type_steam_or_hw, oa_temp_degF, site_elevation_ft, 
+                 emissions_factor_lb_CO2_per_mmbtu=None, emissions_factor_lb_NOx_per_mmbtu=None,
+                 emissions_factor_lb_SO2_per_mmbtu=None, emissions_factor_lb_PM_per_mmbtu=None,
                  outage_start_time_step=None, outage_end_time_step=None, time_steps_per_hour=1, year=None, **kwargs):
         super(CHP, self).__init__(**kwargs)
 
@@ -377,6 +379,10 @@ class CHP(Tech):
         self.outage_start_time_step = outage_start_time_step
         self.outage_end_time_step = outage_end_time_step
         self.year = year
+        self.emissions_factor_lb_CO2_per_mmbtu = emissions_factor_lb_CO2_per_mmbtu
+        self.emissions_factor_lb_NOx_per_mmbtu = emissions_factor_lb_NOx_per_mmbtu
+        self.emissions_factor_lb_SO2_per_mmbtu = emissions_factor_lb_SO2_per_mmbtu
+        self.emissions_factor_lb_PM_per_mmbtu = emissions_factor_lb_PM_per_mmbtu
 
         self.fuel_burn_slope, self.fuel_burn_intercept, self.thermal_prod_slope, self.thermal_prod_intercept = \
             self.convert_performance_params(self.elec_effic_full_load, self.elec_effic_half_load,
