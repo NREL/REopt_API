@@ -564,46 +564,47 @@ class DataManager:
                 updated_cap_cost_slope = list()
                 updated_y_intercept = list()
 
-                for s in range(n_segments):
+                if tech not in ['ac', 'hp', 'wher', 'whhp']:
+                    for s in range(n_segments):
 
-                    if cost_curve_bp_x[s + 1] > 0:
-                        # Remove federal incentives for ITC basis and tax benefit calculations
-                        itc = eval('self.' + tech + '.incentives.federal.itc')
-                        rebate_federal = eval('self.' + tech + '.incentives.federal.rebate')
-                        if itc is None or rebate_federal is None:
-                            itc = 0.0
-                            rebate_federal = 0.0
-                        if itc == 1:
-                            itc_unit_basis = 0
+                        if cost_curve_bp_x[s + 1] > 0:
+                            # Remove federal incentives for ITC basis and tax benefit calculations
+                            itc = eval('self.' + tech + '.incentives.federal.itc')
+                            rebate_federal = eval('self.' + tech + '.incentives.federal.rebate')
+                            if itc is None or rebate_federal is None:
+                                itc = 0.0
+                                rebate_federal = 0.0
+                            if itc == 1:
+                                itc_unit_basis = 0
+                            else:
+                                itc_unit_basis = (tmp_cap_cost_slope[s] + rebate_federal) / (1 - itc)
                         else:
-                            itc_unit_basis = (tmp_cap_cost_slope[s] + rebate_federal) / (1 - itc)
-                    else:
-                        # Not sure how else to handle this case, perhaps there is a better way to handle it?
-                        raise Exception('Invalid cost curve for {}. Value at index {} ({}) cannot be less than or equal to 0'.format(tech, s, cost_curve_bp_x[s + 1]))
+                            # Not sure how else to handle this case, perhaps there is a better way to handle it?
+                            raise Exception('Invalid cost curve for {}. Value at index {} ({}) cannot be less than or equal to 0'.format(tech, s, cost_curve_bp_x[s + 1]))
 
-                    sf = self.site.financial
-                    updated_slope = setup_capital_cost_incentive(
-                        itc_basis=itc_unit_basis,  # input tech cost with incentives, but no ITC
-                        replacement_cost=0,
-                        replacement_year=sf.analysis_years,
-                        discount_rate=sf.owner_discount_pct,
-                        tax_rate=sf.owner_tax_pct,
-                        itc=itc,
-                        macrs_schedule=eval('self.' + tech + '.incentives.macrs_schedule'),
-                        macrs_bonus_pct=eval('self.' + tech + '.incentives.macrs_bonus_pct'),
-                        macrs_itc_reduction=eval('self.' + tech + '.incentives.macrs_itc_reduction')
-                    )
-                    # The way REopt incentives currently work, the federal rebate is the only incentive that doesn't reduce ITC basis
-                    updated_slope -= rebate_federal
-                    updated_cap_cost_slope.append(updated_slope)
+                        sf = self.site.financial
+                        updated_slope = setup_capital_cost_incentive(
+                            itc_basis=itc_unit_basis,  # input tech cost with incentives, but no ITC
+                            replacement_cost=0,
+                            replacement_year=sf.analysis_years,
+                            discount_rate=sf.owner_discount_pct,
+                            tax_rate=sf.owner_tax_pct,
+                            itc=itc,
+                            macrs_schedule=eval('self.' + tech + '.incentives.macrs_schedule'),
+                            macrs_bonus_pct=eval('self.' + tech + '.incentives.macrs_bonus_pct'),
+                            macrs_itc_reduction=eval('self.' + tech + '.incentives.macrs_itc_reduction')
+                        )
+                        # The way REopt incentives currently work, the federal rebate is the only incentive that doesn't reduce ITC basis
+                        updated_slope -= rebate_federal
+                        updated_cap_cost_slope.append(updated_slope)
 
-                for p in range(1, n_segments + 1):
-                    cost_curve_bp_y[p] = cost_curve_bp_y[p - 1] + updated_cap_cost_slope[p - 1] * \
-                                                                  (cost_curve_bp_x[p] - cost_curve_bp_x[p - 1])
-                    updated_y_intercept.append(cost_curve_bp_y[p] - updated_cap_cost_slope[p - 1] * cost_curve_bp_x[p])
+                    for p in range(1, n_segments + 1):
+                        cost_curve_bp_y[p] = cost_curve_bp_y[p - 1] + updated_cap_cost_slope[p - 1] * \
+                                                                    (cost_curve_bp_x[p] - cost_curve_bp_x[p - 1])
+                        updated_y_intercept.append(cost_curve_bp_y[p] - updated_cap_cost_slope[p - 1] * cost_curve_bp_x[p])
 
-                tmp_cap_cost_slope = updated_cap_cost_slope
-                tmp_cap_cost_yint = updated_y_intercept
+                    tmp_cap_cost_slope = updated_cap_cost_slope
+                    tmp_cap_cost_yint = updated_y_intercept
 
                 """
                 Adjust first cost curve segment to account for existing_kw.
@@ -1080,11 +1081,12 @@ class DataManager:
 
     def _get_WH_inputs(self):
         if self.wher == None and self.whhp == None:
-            return False, [0.0], [0.0], [0.0] * self.n_timesteps, [0.0], 1, 1, 1, 1, 0.0, 0.0, 0.0
+            return False, [0.0], [0.0], [0.0] * self.n_timesteps, [0.0], 1, 1, 1, 1, 0.0, 0.0, 0.0, 0.0
         else:
             return True, self.hot_water_tank.a_matrix, self.hot_water_tank.b_matrix, self.hot_water_tank.u_inputs, self.hot_water_tank.init_temperatures_degC, \
                    self.hot_water_tank.n_temp_nodes, self.hot_water_tank.n_input_nodes, self.hot_water_tank.injection_node, self.hot_water_tank.water_node, \
-                   self.hot_water_tank.temperature_lower_bound_degC, self.hot_water_tank.temperature_upper_bound_degC, self.hot_water_tank.comfort_temp_limit_degC
+                   self.hot_water_tank.temperature_lower_bound_degC, self.hot_water_tank.temperature_upper_bound_degC, self.hot_water_tank.comfort_temp_limit_degC, \
+                   self.hot_water_tank.comfort_WH_value_usd_per_degC
 
     def _get_export_curtailment_params(self, techs, export_rates, net_metering_limit_kw):
         """
@@ -1188,7 +1190,8 @@ class DataManager:
         shr, dse, fan_power_ratio = self._get_HVAC_inputs()
 
         use_wh_model, a_matrix_wh, b_matrix_wh, u_inputs_wh, init_temperatures_degC_wh, n_temp_nodes_wh, n_input_nodes_wh, \
-        injection_node_wh, water_node, temperature_lower_bound_degC, temperature_upper_bound_degC, comfort_temp_limit_degC = self._get_WH_inputs()
+        injection_node_wh, water_node, temperature_lower_bound_degC, temperature_upper_bound_degC, comfort_temp_limit_degC, \
+        comfort_WH_value_usd_per_degC = self._get_WH_inputs()
 
         tech_to_location, derate, om_cost_us_dollars_per_kw, \
             om_cost_us_dollars_per_kwh, om_cost_us_dollars_per_hr_per_kw_rated, production_factor, \
@@ -1517,6 +1520,7 @@ class DataManager:
             'TempUpperBound': self.rc.temperature_upper_bound,
             'ComfortTempLimitHP': self.rc.comfort_temp_lower_bound_degC,
             'ComfortTempLimitAC': self.rc.comfort_temp_upper_bound_degC,
+            'HVACComfortValue': self.rc.comfort_HVAC_value_usd_per_degC,
             'FlexTechsCOP': flex_techs_cop,
             'DSE': dse,
             'FanPowerRatio': fan_power_ratio,
@@ -1534,137 +1538,9 @@ class DataManager:
             'TempLowerBoundWH': temperature_lower_bound_degC,
             'TempUpperBoundWH': temperature_upper_bound_degC,
             'ComfortTempLimitWH': comfort_temp_limit_degC,
+            'WHComfortValue': comfort_WH_value_usd_per_degC,
             'WaterHeaterTechs': wh_techs
             }
-
-        # test_xl = {
-        #     'Tech': reopt_techs,
-        #     'TechToLocation': tech_to_location,
-        #     'MaxSizesLocation': max_sizes_location,
-        #     'TechClass': self.available_tech_classes,
-        #     'TurbineDerate': derate,
-        #     'NMILRegime': NMIL_regime,
-        #     'MaxSize': max_sizes,
-        #     'TechClassMinSize': tech_class_min_size,
-        #     'MinTurndown': min_turn_down,
-        #     'LevelizationFactor': levelization_factor,
-        #     'pwf_e': pwf_e,
-        #     'pwf_om': pwf_om,
-        #     'pwf_fuel': pwf_fuel_by_tech,
-        #     'two_party_factor': two_party_factor,
-        #     'pwf_prod_incent': pwf_prod_incent,
-        #     'MaxProdIncent': max_prod_incent,
-        #     'MaxSizeForProdIncent': max_size_for_prod_incent,
-        #     'CapCostSlope': cap_cost_slope,
-        #     'CapCostX': cap_cost_x,
-        #     'CapCostYInt': cap_cost_yint,
-        #     'r_tax_owner': sf.owner_tax_pct,
-        #     'r_tax_offtaker': sf.offtaker_tax_pct,
-        #     'StorageCostPerKW': storage_power_cost,
-        #     'StorageCostPerKWH': storage_energy_cost,
-        #     'OMperUnitSize': om_cost_us_dollars_per_kw,
-        #     'OMcostPerUnitProd': om_cost_us_dollars_per_kwh,
-        #     'OMcostPerUnitHourPerSize': om_cost_us_dollars_per_hr_per_kw_rated,
-        #     'analysis_years': int(sf.analysis_years),
-        #     'NumRatchets': tariff_args.demand_num_ratchets,
-        #     'FuelBinCount': tariff_args.energy_tiers_num,
-        #     'DemandBinCount': tariff_args.demand_tiers_num,
-        #     'DemandMonthsBinCount': tariff_args.demand_month_tiers_num,
-        #     'DemandRatesMonth': tariff_args.demand_rates_monthly,
-        #     'DemandRates': tariff_args.demand_rates_tou,
-        #     'TimeStepRatchets': tariff_args.demand_ratchets_tou,
-        #     'MaxDemandInTier': tariff_args.demand_max_in_tiers,
-        #     'MaxUsageInTier': tariff_args.energy_max_in_tiers,
-        #     'MaxDemandMonthsInTier': tariff_args.demand_month_max_in_tiers,
-        #     'FixedMonthlyCharge': tariff_args.fixed_monthly_charge,
-        #     'AnnualMinCharge': tariff_args.annual_min_charge,
-        #     'MonthlyMinCharge': tariff_args.min_monthly_charge,
-        #     'DemandLookbackMonths': tariff_args.demand_lookback_months,
-        #     'DemandLookbackRange': tariff_args.demand_lookback_range,
-        #     'DemandLookbackPercent': tariff_args.demand_lookback_percent,
-        #     'TimeStepRatchetsMonth': tariff_args.demand_ratchets_monthly,
-        #     'TimeStepCount': self.n_timesteps,
-        #     'TimeStepScaling': self.steplength,
-        #     'AnnualElecLoadkWh': self.load.annual_kwh,
-        #     'StorageMinChargePcent': self.storage.soc_min_pct,
-        #     'InitSOC': self.storage.soc_init_pct,
-        #     'NMILLimits': NMILLimits,
-        #     'TechToNMILMapping': TechToNMILMapping,
-        #     'CapCostSegCount': n_segments,
-        #     'CoincidentPeakLoadTimeSteps': self.elec_tariff.coincident_peak_load_active_timesteps,
-        #     'CoincidentPeakRates': self.elec_tariff.coincident_peak_load_charge_us_dollars_per_kw,
-        #     'CoincidentPeakPeriodCount': self.elec_tariff.coincident_peak_num_periods,
-        #     # new parameters for reformulation
-        #     'FuelCost': fuel_costs,
-        #     'ElecRate': tariff_args.energy_costs,
-        #     'GridExportRates': export_rates,
-        #     'FuelBurnSlope': fuel_burn_slope,
-        #     'FuelBurnYInt': fuel_burn_intercept,
-        #     'ProductionIncentiveRate': production_incentive_rate,
-        #     'ProductionFactor': production_factor,
-        #     'ElecLoad': non_cooling_electric_load,
-        #     'FuelLimit': fuel_limit,
-        #     'ChargeEfficiency': charge_efficiency,  # Do we need this indexed on tech?
-        #     'GridChargeEfficiency': grid_charge_efficiency,
-        #     'DischargeEfficiency': discharge_efficiency,
-        #     'StorageMinSizeEnergy': storage_min_energy,
-        #     'StorageMaxSizeEnergy': storage_max_energy,
-        #     'StorageMinSizePower': storage_min_power,
-        #     'StorageMaxSizePower': storage_max_power,
-        #     'StorageMinSOC': [self.storage.soc_min_pct, self.hot_tes.soc_min_pct, self.cold_tes.soc_min_pct],
-        #     'StorageInitSOC': [self.storage.soc_init_pct, self.hot_tes.soc_init_pct, self.cold_tes.soc_init_pct],
-        #     'StorageCanGridCharge': self.storage.canGridCharge,
-        #     'SegmentMinSize': segment_min_size,
-        #     'SegmentMaxSize': segment_max_size,
-        #     # Sets that need to be populated
-        #     'Storage': storage_techs,
-        #     'FuelType': fuel_types,
-        #     'Subdivision': subdivisions,
-        #     'PricingTierCount': tariff_args.energy_tiers_num,
-        #     'ElecStorage': ['Elec'],
-        #     'SubdivisionByTech': subdivisions_by_tech,
-        #     'SegByTechSubdivision': seg_by_tech_subdivision,
-        #     'TechsInClass': techs_in_class,
-        #     'TechsByFuelType': techs_by_fuel_type,
-        #     'ElectricTechs': electric_techs,
-        #     'FuelBurningTechs': fb_techs,
-        #     'TechsNoTurndown': techs_no_turndown,
-        #     'ExportTiers': export_tiers,
-        #     'TimeStepsWithGrid': time_steps_with_grid,
-        #     'TimeStepsWithoutGrid': time_steps_without_grid,
-        #     'ExportTiersByTech': rates_by_tech,
-        #     'TechsByExportTier': [techs_by_export_tier[k] for k in export_tiers],
-        #     'ExportTiersBeyondSiteLoad': ["EXC"],
-        #     'ElectricDerate': electric_derate,
-        #     'TechsByNMILRegime': TechsByNMILRegime,
-        #     'TechsCannotCurtail': techs_cannot_curtail,
-        #     'TechsByNMILRegime': TechsByNMILRegime,
-        #     'HeatingLoad': heating_load,
-        #     'CoolingLoad': cooling_load,
-        #     'ThermalStorage': thermal_storage_techs,
-        #     'HotTES': hot_tes_techs,
-        #     'ColdTES': cold_tes_techs,
-        #     'CHPTechs': chp_techs,
-        #     'ElectricChillers': electric_chillers,
-        #     'AbsorptionChillers': absorption_chillers,
-        #     'CoolingTechs': cooling_techs,
-        #     'HeatingTechs': heating_techs,
-        #     'BoilerTechs': boiler_techs,
-        #     'BoilerEfficiency': boiler_efficiency,
-        #     'ElectricChillerCOP': elec_chiller_cop,
-        #     'AbsorptionChillerCOP': absorp_chiller_cop,
-        #     'AbsorptionChillerElecCOP': absorp_chiller_elec_cop,
-        #     'CHPThermalProdSlope': chp_thermal_prod_slope,
-        #     'CHPThermalProdIntercept': chp_thermal_prod_intercept,
-        #     'FuelBurnYIntRate': chp_fuel_burn_intercept,
-        #     'CHPThermalProdFactor': chp_thermal_prod_factor,
-        #     'CHPDoesNotReduceDemandCharges': tariff_args.chp_does_not_reduce_demand_charges,
-        #     'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month,
-        #     'StorageDecayRate': storage_decay_rate,
-        #     'DecompOptTol': self.optimality_tolerance_decomp_subproblem,
-        #     'DecompTimeOut': self.timeout_decomp_subproblem_seconds,
-        #     'AddSOCIncentive': self.add_soc_incentive
-        # }
         ## Uncomment the following and run a scenario to get an updated modelinputs.json for creating Julia system image
         # import json
         # json.dump(test_xl, open("C:/Users/xli1/Documents/PROJECTS/_FY21/Nova/debug/modelinputs_f2.json", "w"))
@@ -1809,6 +1685,7 @@ class DataManager:
             'TempUpperBound': self.rc.temperature_upper_bound,
             'ComfortTempLimitHP': self.rc.comfort_temp_lower_bound_degC,
             'ComfortTempLimitAC': self.rc.comfort_temp_upper_bound_degC,
+            'HVACComfortValue': self.rc.comfort_HVAC_value_usd_per_degC,
             'FlexTechsCOP': flex_techs_cop_bau,
             'DSE': dse,
             'FanPowerRatio': fan_power_ratio,
@@ -1826,5 +1703,6 @@ class DataManager:
             'TempLowerBoundWH': temperature_lower_bound_degC,
             'TempUpperBoundWH': temperature_upper_bound_degC,
             'ComfortTempLimitWH': comfort_temp_limit_degC,
+            'WHComfortValue': comfort_WH_value_usd_per_degC,
             'WaterHeaterTechs': wh_techs_bau
         }

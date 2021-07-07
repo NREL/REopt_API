@@ -128,13 +128,13 @@ function add_cost_expressions(m, p)
 	end
 	if !isempty(p.WaterHeaterTechs)
 		m[:TotalWHComfortCost] = @expression(m,
-			sum(m[:dvWHComfortCost][ts] for ts in p.TimeStep))
+			sum(m[:dvWHComfortCost][ts]*p.WHComfortValue for ts in p.TimeStep))
 	else
 		m[:TotalWHComfortCost] = @expression(m, 0.0)
 	end
 	if ("AC" in p.FlexTechs || "HP" in p.FlexTechs)
 		m[:TotalHVACComfortCost] = @expression(m,
-			sum(m[:dvHVACComfortCost][ts] for ts in p.TimeStep))
+			sum(m[:dvHVACComfortCost][ts]*p.HVACComfortValue for ts in p.TimeStep))
 	else
 		m[:TotalHVACComfortCost] = @expression(m, 0.0)
 	end
@@ -956,6 +956,10 @@ function add_flex_load_constraints(m, p)
 	@constraint(m, [ts in p.TimeStep],
 		m[:dvHVACComfortCost][ts] >= m[:dvTemperatures][p.SpaceNode, ts] - p.ComfortTempLimitAC
     )
+	# Prevent model from cooling and heating simultaneously under certain market conditions
+	@constraint(m, [ts in p.TimeStep],
+		m[:binTechIsOnInTS]["AC",ts] + m[:binTechIsOnInTS]["HP",ts] <= 1
+	)
 end
 
 

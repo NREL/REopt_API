@@ -1901,6 +1901,10 @@ nested_input_definitions = {
         "comfort_temp_upper_bound_degC": {
           "type": "float", "min": 0.0, "max": 40.0, "default": 40.0,
           "description": "Comfort costs are incurred if indoor temperature rises above this limit in degree Celsius"
+        },
+        "comfort_HVAC_value_usd_per_degC": {
+          "type": "float", "min": 0.0, "max": 1000000, "default": 1,
+          "description": "Comfort costs (in $/degC) are applied to each timestep where temperature goes outside comfort bounds"
         }
       },
       "FlexTechAC": {
@@ -2078,6 +2082,10 @@ nested_input_definitions = {
         "comfort_temp_limit_degC": {
           "type": "float", "min": 0.0, "max": 60.0, "default": 0.0,
           "description": "Comfort costs are incurred if tank temperature drops below this limit in degree Celsius"
+        },
+        "comfort_WH_value_usd_per_degC": {
+          "type": "float", "min": 0.0, "max": 1000000, "default": 1,
+          "description": "Comfort costs (in $/degC) are applied to each timestep where tank temperature goes below comfort bound"
         }
       },
       "FlexTechERWH": {
