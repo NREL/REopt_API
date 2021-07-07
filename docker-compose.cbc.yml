@@ -30,6 +30,7 @@ services:
       - SQL_HOST=db-cbc
       - SQL_PORT=5432
       - REDIS_HOST=redis-cbc
+      - JULIA_HOST=julia-cbc
     volumes:
       - .:/opt/reopt
     depends_on:
@@ -41,12 +42,13 @@ services:
     image: base-api-image-cbc
     command:  >
       "python manage.py migrate
-      && /opt/reopt/bin/wait-for-it.bash -t 0 julia:8081 -- python manage.py runserver 0.0.0.0:8000"
+      && /opt/reopt/bin/wait-for-it.bash -t 0 julia-cbc:8081 -- python manage.py runserver 0.0.0.0:8000"
     environment:
       - APP_ENV=local
       - SQL_HOST=db-cbc
       - SQL_PORT=5432
       - REDIS_HOST=redis-cbc
+      - JULIA_HOST=julia-cbc
     depends_on:
       - db-cbc
       - redis-cbc
