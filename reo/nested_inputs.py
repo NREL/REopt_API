@@ -270,7 +270,7 @@ off_grid_defaults = {
           "type": "float",
           "min": 0.0,
           "max": 1.0,
-          "default": 0.2,
+          "default": 0.15,
           "description": "Minimum generator loading in percent of capacity (size_kw)."
         },
         "generator_only_runs_during_grid_outage": {
