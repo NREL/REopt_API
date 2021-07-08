@@ -32,6 +32,7 @@ class EmissionsCalculator:
         proj102008 = pyproj.Proj("+proj=aea +lat_1=20 +lat_2=60 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs")
         self.project4326_to_102008 = partial(pyproj.transform,pyproj.Proj(init='epsg:4326'),proj102008)
     
+    '''
     @staticmethod
     def add_to_data(data):
 
@@ -182,7 +183,8 @@ class EmissionsCalculator:
             data['messages']['warnings']['Emissions Calculation Warning'] = message
 
         return data
-
+    '''
+    
     @property
     def region(self):
         lookup = {  'AK':'Alaska',

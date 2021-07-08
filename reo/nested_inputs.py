@@ -575,7 +575,7 @@ nested_input_definitions = {
           "min": -1.0,
           "max": 1.0,
           "default": 0.05,
-          "description": "Percent decrease in the total annual CO2 marginal emissions rate of the grid. The first year's hourly marginal emissions rates are scaled to the new annual total in each subsequent year.",
+          "description": "Percent decrease in the total annual CO2 marginal emissions rate of the grid. The first year's hourly marginal emissions rates are levelized using this percent decrease.",
         },
         "emissions_factor_series_lb_NOx_per_kwh": {
           "type": ["list_of_float", "float"],
