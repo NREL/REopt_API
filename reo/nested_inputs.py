@@ -277,17 +277,17 @@ nested_input_definitions = {
           "default": 0.3,
           "description": "Additional cost, in percent of non-islandable capital costs, to make a distributed energy system islandable from the grid and able to serve critical loads. Includes all upgrade costs such as additional laber and critical load panels."
         },
-        "CO2_cost_us_dollars_per_tonne": {
+        "co2_cost_us_dollars_per_tonne": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e3,
           "default": 51.0,
           "description": "Social Cost of CO2 in the first year of the analysis. Units are US dollars per metric ton of CO2. The default of $51/t is the 2020 value (using a 3 pct discount rate) estimated by the U.S. Interagency Working Group on Social Cost of Greenhouse Gases."
         },   
-        "CO2_cost_escalation_pct": {
+        "co2_cost_escalation_pct": {
           "type": "float",
-          "min": -1,
-          "max": 1,
+          "min": -1.0,
+          "max": 1.0,
           "default": 0.01778, 
           "description": "Annual nominal Social Cost of CO2 escalation rate."
         },   
@@ -570,19 +570,28 @@ nested_input_definitions = {
           "type": ["list_of_float", "float"],
           "description": "Carbon Dioxide emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.",
         },
-        # TODO: emissions_factor_series_pct_decrease - % annual decrease in the marginal emissions rates
+        "emissions_factor_series_CO2_pct_decrease": {
+          "type": "float",
+          "min": -1.0,
+          "max": 1.0,
+          "default": 0.05,
+          "description": "Percent decrease in the total annual CO2 marginal emissions rate of the grid. The first year's hourly marginal emissions rates are scaled to the new annual total in each subsequent year.",
+        },
         "emissions_factor_series_lb_NOx_per_kwh": {
           "type": ["list_of_float", "float"],
           "description": "NOx emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.",
         },
+        # TODO: pct decrease NOx? 
         "emissions_factor_series_lb_SO2_per_kwh": {
           "type": ["list_of_float", "float"],
           "description": "SO2 emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.",
         },
+        # TODO: pct decrease SO2?
         "emissions_factor_series_lb_PM_per_kwh": {
           "type": ["list_of_float", "float"],
           "description": "PM2.5 emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.",
         },
+        # TODO: pct decrease PM2.5? 
         "chp_standby_rate_us_dollars_per_kw_per_month": {
           "type": "float",
           "min": 0.0,
