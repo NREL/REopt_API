@@ -45,6 +45,8 @@ class Financial(object):
                  third_party_ownership,
                  owner_tax_pct,
                  owner_discount_pct,
+                 co2_cost_us_dollars_per_tonne,
+                 co2_cost_escalation_pct,
                  **kwargs
                  ):
         self.om_cost_escalation_pct = om_cost_escalation_pct
@@ -57,6 +59,8 @@ class Financial(object):
         self.third_party_ownership = third_party_ownership
         self.offtaker_discount_pct = offtaker_discount_pct
         self.analysis_years = analysis_years
+        self.co2_cost_us_dollars_per_tonne = co2_cost_us_dollars_per_tonne
+        self.co2_cost_escalation_pct = co2_cost_escalation_pct
 
         # set-up direct ownership
         if self.third_party_ownership is False:
