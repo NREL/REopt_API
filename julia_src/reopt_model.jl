@@ -682,7 +682,8 @@ function add_load_balance_constraints_offgrid(m, p)
 		m[:dvLoadServed][ts] >= 0
 	)
 	@constraint(m, sum(m[:dvLoadServed][ts] * p.ElecLoad[ts] for ts in p.TimeStep) >=
-		p.AnnualElecLoadkWh * p.MinLoadMetPct
+		sum(p.ElecLoad) * p.MinLoadMetPct
+		# p.AnnualElecLoadkWh * p.MinLoadMetPct
 	)
 end
 

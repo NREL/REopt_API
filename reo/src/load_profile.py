@@ -746,7 +746,7 @@ class LoadProfile(BuiltInProfile):
         self.resilience_check_flag = resilience_check_flag
         self.bau_sustained_time_steps = bau_sustained_time_steps
         # Off-grid can't meeting 100% of load if rounding up
-        self.annual_kwh = int(math.floor(sum(self.load_list)))
+        self.annual_kwh = int(round(sum(self.load_list)))
         self.bau_annual_kwh = int(round(sum(self.bau_load_list),0))
         self.loads_kw_is_net = loads_kw_is_net
         self.critical_loads_kw_is_net = critical_loads_kw_is_net
