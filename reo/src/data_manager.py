@@ -677,6 +677,8 @@ class DataManager:
         chp_thermal_prod_factor = list()
         om_cost_us_dollars_per_hr_per_kw_rated = list()
 
+        tech_emissions_factors = list()
+
         charge_efficiency = list()
         discharge_efficiency = list()
 
@@ -705,17 +707,22 @@ class DataManager:
                 else:
                     om_cost_us_dollars_per_kw.append(eval('self.' + tech + '.om_cost_us_dollars_per_kw'))
 
-
+                # variable om and emissions
                 # only generator and chp techs have variable o&m cost
                 if tech.lower() == 'generator':
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.kwargs["om_cost_us_dollars_per_kwh"]')))
                     om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
+                    tech_emissions_factors.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_gal')))
                 elif tech.lower() == 'chp':
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kwh')))
                     om_cost_us_dollars_per_hr_per_kw_rated.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_hr_per_kw_rated')))
+                    tech_emissions_factors.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_mmbtu')))
+                elif tech.lower() == 'boiler': 
+                    tech_emissions_factors.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_mmbtu')))
                 else:
                     om_cost_us_dollars_per_kwh.append(0.0)
                     om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
+                    tech_emissions_factors.append(0.0)
 
                 for location in ['roof', 'ground', 'both']:
                     if tech.startswith('pv'):
@@ -736,7 +743,8 @@ class DataManager:
         return tech_to_location, derate, \
                om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, om_cost_us_dollars_per_hr_per_kw_rated, \
                production_factor, charge_efficiency, discharge_efficiency, \
-               electric_derate, chp_thermal_prod_factor
+               electric_derate, chp_thermal_prod_factor, \
+               tech_emissions_factors
 
     def _get_REopt_techs(self, techs):
         reopt_techs = list()
@@ -1086,11 +1094,16 @@ class DataManager:
         tech_to_location, derate, om_cost_us_dollars_per_kw, \
             om_cost_us_dollars_per_kwh, om_cost_us_dollars_per_hr_per_kw_rated, production_factor, \
             charge_efficiency, discharge_efficiency, \
-            electric_derate, chp_thermal_prod_factor = self._get_REopt_array_tech_load(self.available_techs)
+            electric_derate, chp_thermal_prod_factor, \
+            tech_emissions_factors = self._get_REopt_array_tech_load(self.available_techs)
         tech_to_location_bau, derate_bau, om_cost_us_dollars_per_kw_bau, \
             om_cost_us_dollars_per_kwh_bau, om_cost_us_dollars_per_hr_per_kw_rated_bau, production_factor_bau, \
             charge_efficiency_bau, discharge_efficiency_bau, \
-            electric_derate_bau, chp_thermal_prod_factor_bau = self._get_REopt_array_tech_load(self.bau_techs)
+            electric_derate_bau, chp_thermal_prod_factor_bau, \
+            tech_emissions_factors_bau = self._get_REopt_array_tech_load(self.bau_techs)
+        
+        grid_emissions_factor = self.elec_tariff.emissions_factor_series_lb_CO2_per_kwh
+        bau_emissions = self.bau_emissions()
 
         max_sizes, min_turn_down, max_sizes_location, min_allowable_size = self._get_REopt_tech_max_sizes_min_turn_down(
             self.available_techs)
@@ -1364,7 +1377,11 @@ class DataManager:
             'ElectricDerate': electric_derate,
             'TechsByNMILRegime': TechsByNMILRegime,
             'TechsCannotCurtail': techs_cannot_curtail,
-            'TechsByNMILRegime': TechsByNMILRegime,
+            'TechsByNMILRegime': TechsByNMILRegime, # repeat? 
+            "GridEmissionsFactor": grid_emissions_factor,
+            "TechEmissionsFactors": tech_emissions_factors,
+            "IncludeExportedElecEmissionsInTotal": self.site.include_exported_elec_emissions_in_total,
+            "BAUYr1Emissions": bau_emissions, ## TODO: Check this
             'HeatingLoad': heating_load,
             'CoolingLoad': cooling_load,
             'ThermalStorage': thermal_storage_techs,
@@ -1515,5 +1532,9 @@ class DataManager:
             'CHPDoesNotReduceDemandCharges': tariff_args.chp_does_not_reduce_demand_charges,
             'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month,
             'StorageDecayRate': storage_decay_rate,
-            'AddSOCIncentive': self.add_soc_incentive
+            'AddSOCIncentive': self.add_soc_incentive,
+            "GridEmissionsFactor": grid_emissions_factor,
+            "TechEmissionsFactors": tech_emissions_factors_bau,
+            "IncludeExportedElecEmissionsInTotal": self.site.include_exported_elec_emissions_in_total,
+            "BAUYr1Emissions": bau_emissions,
         }
