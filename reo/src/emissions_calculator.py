@@ -42,8 +42,8 @@ class EmissionsCalculator:
         missing_emissions = []
 
         
-        data['outputs']['Scenario']['Site']['year_one_emissions_lb_C02'] = 0
-        data['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_C02'] = 0
+        data['outputs']['Scenario']['Site']['year_one_emissions_lb_CO2'] = 0
+        data['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_CO2'] = 0
 
         hourly_emissions = np.array(data['inputs']['Scenario']['Site']['ElectricTariff'].get('emissions_factor_series_lb_CO2_per_kwh') or [])
         from_utility_series = np.array(data['outputs']['Scenario']['Site']['ElectricTariff'].get('year_one_to_load_series_kw') \
@@ -54,21 +54,21 @@ class EmissionsCalculator:
         # If user supplies hourly CO2 emissions rates
         if hourly_emissions.shape[0] > 0:
             # Year one CO2 emissions from grid purchases (excludes exports)
-            data['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_lb_C02'] = \
+            data['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_lb_CO2'] = \
             round((hourly_emissions * from_utility_series).sum(),precision)
             
             # Add to total Year 1 CO2 emissions
-            data['outputs']['Scenario']['Site']['year_one_emissions_lb_C02'] += \
-            round(data['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_lb_C02'],precision)
+            data['outputs']['Scenario']['Site']['year_one_emissions_lb_CO2'] += \
+            round(data['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_lb_CO2'],precision)
 
             # BAU calcs
             loads_kw = np.array(data['outputs']['Scenario']['Site']['ElectricTariff']['year_one_to_load_series_bau_kw'] or [])
             if len(loads_kw) == 0:
                 loads_kw = 0
-            data['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_bau_lb_C02'] = \
+            data['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_bau_lb_CO2'] = \
                 round((hourly_emissions * loads_kw).sum(),precision)
-            data['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_C02'] += \
-                round(data['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_bau_lb_C02'],precision)
+            data['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_CO2'] += \
+                round(data['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_bau_lb_CO2'],precision)
         
         # If user has not supplied CO2 emissions rates
         else:
@@ -76,93 +76,93 @@ class EmissionsCalculator:
                 cannot_calc_total_emissions = True
                 missing_emissions.append('ElectricTariff')
             else:
-                data['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_lb_C02'] = 0
+                data['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_lb_CO2'] = 0
 
             if (sum(data['outputs']['Scenario']['Site']['ElectricTariff'].get('year_one_to_load_bau_series_kw') or [0]) > 0):
                 cannot_calc_bau_total_emissions = True
                 missing_emissions.append('ElectricTariff')
             else:
-                data['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_bau_lb_C02'] = 0
+                data['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_bau_lb_CO2'] = 0
 
         # Generator emissions
         generator_emmissions = data['inputs']['Scenario']['Site']['Generator'].get('emissions_factor_lb_CO2_per_gal')
         if generator_emmissions is not None:
-            data['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_C02'] = \
+            data['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_CO2'] = \
                 round(generator_emmissions * (data['outputs']['Scenario']['Site']['Generator'].get("fuel_used_gal") or 0),precision)
-            data['outputs']['Scenario']['Site']['year_one_emissions_lb_C02'] += \
-                round(data['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_C02'],precision)
+            data['outputs']['Scenario']['Site']['year_one_emissions_lb_CO2'] += \
+                round(data['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_CO2'],precision)
             
-            data['outputs']['Scenario']['Site']['Generator']['year_one_emissions_bau_lb_C02'] = \
+            data['outputs']['Scenario']['Site']['Generator']['year_one_emissions_bau_lb_CO2'] = \
                 round(generator_emmissions *  (data['outputs']['Scenario']['Site']['Generator'].get("fuel_used_gal_bau") or 0),precision)
-            data['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_C02'] += \
-                round(data['outputs']['Scenario']['Site']['Generator']['year_one_emissions_bau_lb_C02'],precision)
+            data['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_CO2'] += \
+                round(data['outputs']['Scenario']['Site']['Generator']['year_one_emissions_bau_lb_CO2'],precision)
                         
         else:
             if data['outputs']['Scenario']['Site']['Generator'].get("fuel_used_gal") or 0 > 0:
                 cannot_calc_total_emissions = True
                 missing_emissions.append('Generator')
             else:
-                data['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_C02'] = 0
+                data['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_CO2'] = 0
 
             if data['outputs']['Scenario']['Site']['Generator'].get('fuel_used_gal_bau') or 0 > 0:
                 cannot_calc_bau_total_emissions = True
                 missing_emissions.append('Generator')
             else:
-                data['outputs']['Scenario']['Site']['Generator']['year_one_emissions_bau_lb_C02'] = 0
+                data['outputs']['Scenario']['Site']['Generator']['year_one_emissions_bau_lb_CO2'] = 0
         
         # CHP emissions
         chp_emmissions = data['inputs']['Scenario']['Site']['CHP'].get('emissions_factor_lb_CO2_per_mmbtu')
         if chp_emmissions is not None:
-            data['outputs']['Scenario']['Site']['CHP']['year_one_emissions_lb_C02'] = \
+            data['outputs']['Scenario']['Site']['CHP']['year_one_emissions_lb_CO2'] = \
                 round(chp_emmissions * (data['outputs']['Scenario']['Site']['CHP'].get("year_one_fuel_used_mmbtu") or 0),precision)
-            data['outputs']['Scenario']['Site']['year_one_emissions_lb_C02'] += \
-                round(data['outputs']['Scenario']['Site']['CHP']['year_one_emissions_lb_C02'],precision)
+            data['outputs']['Scenario']['Site']['year_one_emissions_lb_CO2'] += \
+                round(data['outputs']['Scenario']['Site']['CHP']['year_one_emissions_lb_CO2'],precision)
             
         elif data['outputs']['Scenario']['Site']['CHP'].get("year_one_fuel_used_mmbtu") or 0 > 0:
             cannot_calc_total_emissions = True
             missing_emissions.append('CHP')
         elif data['outputs']['Scenario']['Site']['CHP'].get("year_one_fuel_used_mmbtu") or 0 == 0:
-            data['outputs']['Scenario']['Site']['CHP']['year_one_emissions_lb_C02'] = 0
+            data['outputs']['Scenario']['Site']['CHP']['year_one_emissions_lb_CO2'] = 0
         
-        data['outputs']['Scenario']['Site']['CHP']['year_one_emissions_bau_lb_C02'] = 0
+        data['outputs']['Scenario']['Site']['CHP']['year_one_emissions_bau_lb_CO2'] = 0
 
         # Boiler emissions
         boiler_emmissions = data['inputs']['Scenario']['Site']['Boiler'].get('emissions_factor_lb_CO2_per_mmbtu')
         if boiler_emmissions is not None:
-            data['outputs']['Scenario']['Site']['Boiler']['year_one_emissions_lb_C02'] = \
+            data['outputs']['Scenario']['Site']['Boiler']['year_one_emissions_lb_CO2'] = \
                 round(boiler_emmissions * (data['outputs']['Scenario']['Site']['Boiler'].get("year_one_boiler_fuel_consumption_mmbtu") or 0)\
                 ,precision)
             
-            data['outputs']['Scenario']['Site']['year_one_emissions_lb_C02'] += \
-                round(data['outputs']['Scenario']['Site']['Boiler']['year_one_emissions_lb_C02'],precision)
+            data['outputs']['Scenario']['Site']['year_one_emissions_lb_CO2'] += \
+                round(data['outputs']['Scenario']['Site']['Boiler']['year_one_emissions_lb_CO2'],precision)
             
-            data['outputs']['Scenario']['Site']['Boiler']['year_one_emissions_bau_lb_C02'] = \
+            data['outputs']['Scenario']['Site']['Boiler']['year_one_emissions_bau_lb_CO2'] = \
                 round(boiler_emmissions * \
                 (data['outputs']['Scenario']['Site']['LoadProfileBoilerFuel'].get("annual_calculated_boiler_fuel_load_mmbtu_bau") or 0)\
                 ,precision)
 
-            data['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_C02'] += \
-            round(data['outputs']['Scenario']['Site']['Boiler']['year_one_emissions_bau_lb_C02'],precision)
+            data['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_CO2'] += \
+            round(data['outputs']['Scenario']['Site']['Boiler']['year_one_emissions_bau_lb_CO2'],precision)
         
         else:
             if data['outputs']['Scenario']['Site']['Boiler'].get("year_one_boiler_fuel_consumption_mmbtu") or 0 > 0:
                 cannot_calc_total_emissions = True
                 missing_emissions.append('Boiler')
             else:
-                data['outputs']['Scenario']['Site']['Boiler']['year_one_emissions_lb_C02'] = 0
+                data['outputs']['Scenario']['Site']['Boiler']['year_one_emissions_lb_CO2'] = 0
             
             if data['outputs']['Scenario']['Site']['LoadProfileBoilerFuel'].get("annual_calculated_boiler_fuel_load_mmbtu_bau") or 0 > 0:
                 cannot_calc_bau_total_emissions = True
                 missing_emissions.append('Boiler')
             else:
-                data['outputs']['Scenario']['Site']['Boiler']['year_one_emissions_bau_lb_C02'] = 0
+                data['outputs']['Scenario']['Site']['Boiler']['year_one_emissions_bau_lb_CO2'] = 0
 
 
         if cannot_calc_total_emissions:
-            data['outputs']['Scenario']['Site']['year_one_emissions_lb_C02'] = None
+            data['outputs']['Scenario']['Site']['year_one_emissions_lb_CO2'] = None
 
         if cannot_calc_bau_total_emissions:
-            data['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_C02'] = None
+            data['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_CO2'] = None
         
         if cannot_calc_bau_total_emissions or cannot_calc_total_emissions:
             

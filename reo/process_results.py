@@ -129,7 +129,11 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "pyjulia_include_model_seconds",
             "pyjulia_make_model_seconds",
             "pyjulia_include_reopt_seconds",
-            "pyjulia_run_reopt_seconds"
+            "pyjulia_run_reopt_seconds",
+            "year_one_emissions_lb_CO2",
+            "yr1_CO2_emissions_from_fuelburn",
+            "yr1_CO2_emissions_from_elec_grid_purchase",
+            "yr1_CO2_emissions_offset_from_elec_exports"
         ]
 
         def __init__(self, results_dict, results_dict_bau, dm, inputs):
@@ -426,6 +430,33 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             """
             # TODO: move the filling in of outputs to reopt.jl
             self.nested_outputs["Scenario"]["status"] = self.results_dict["status"]
+
+            #Parse Emissions Results
+            # Site totals
+            ## self.nested_outputs["Scenario"]["Site"]["year_one_renewable_electricity_pct"] = self.results_dict.get("annual_re_elec_percent")
+            ## self.nested_outputs["Scenario"]["Site"]["year_one_renewable_electricity_kwh"] = self.results_dict.get("annual_re_elec_kwh")
+            ## self.nested_outputs["Scenario"]["Site"]["year_one_renewable_heat_pct"] = self.results_dict.get("annual_re_heat_percent")
+            ## self.nested_outputs["Scenario"]["Site"]["year_one_renewable_heat_mmbtu"] = self.results_dict.get("annual_re_heat_mmbtu")
+
+            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_lb_CO2"] = self.results_dict.get("year_one_emissions_lb_CO2")
+            self.nested_outputs["Scenario"]["Site"]["year_one_CO2_emissions_from_fuelburn"] = self.results_dict.get("yr1_CO2_emissions_from_fuelburn")
+            self.nested_outputs["Scenario"]["Site"]["year_one_CO2_emissions_from_elec_grid_purchase"] = self.results_dict.get("yr1_CO2_emissions_from_elec_grid_purchase")
+            self.nested_outputs["Scenario"]["Site"]["year_one_CO2_emissions_offset_from_elec_exports"] = self.results_dict.get("yr1_CO2_emissions_offset_from_elec_exports")
+            self.nested_outputs["Scenario"]["Site"]["year_one_CO2_emissions_reduction_pct"] = self.results_dict.get("year_one_CO2_emissionsreduction_percent")
+            #self.nested_outputs["Scenario"]["Site"]["year_one_cost_of_emissions_reduction_us_dollars_per_ton_CO2"] = \
+            #    self.results_dict.get("npv")/self.results_dict.get("pwf_om")/ \
+            #    ((self.results_dict.get("year_one_emissions_lb_CO2")-self.results_dict.get("year_one_emissions_lb_CO2_bau"))/2000) \
+            #    if (self.results_dict.get("year_one_emissions_lb_CO2")-self.results_dict.get("year_one_emissions_lb_CO2_bau")) \
+            #    else 0.0
+            
+            ## self.nested_outputs["Scenario"]["Site"]["year_one_renewable_electricity_bau_pct"] = self.results_dict.get("annual_re_elec_percent_bau")
+            ## self.nested_outputs["Scenario"]["Site"]["year_one_renewable_electricity_bau_kwh"] = self.results_dict.get("annual_re_elec_kwh_bau")
+            ## self.nested_outputs["Scenario"]["Site"]["year_one_renewable_heat_bau_pct"] = self.results_dict.get("annual_re_heat_percent_bau")
+            ## self.nested_outputs["Scenario"]["Site"]["year_one_renewable_heat_bau_mmbtu"] = self.results_dict.get("annual_re_heat_mmbtu_bau")
+            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_bau_lb_CO2"] = self.results_dict.get("year_one_emissions_lb_CO2_bau")
+            ## self.nested_outputs["Scenario"]["Site"]["preprocessed_year_one_emissions_bau_lb_CO2"] = self.results_dict.get("preprocessed_BAU_Yr1_emissions")
+
+
             self.nested_outputs["Scenario"]["lower_bound"] = self.results_dict.get("lower_bound")
             self.nested_outputs["Scenario"]["optimality_gap"] = self.results_dict.get("optimality_gap")
             financials = FinancialModel.objects.filter(run_uuid=meta['run_uuid']).first() #getting financial inputs for wind and pv lcoe calculations
@@ -853,10 +884,13 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
         data['outputs']['Scenario']['Site']['Financial']['offtaker_discounted_annual_free_cashflow_series_bau_us_dollars'] = \
             offtaker_discounted_annual_free_cashflow_series_bau_us_dollars
 
+        '''
+        # Calcs now done in reopt.jl
         data = EmissionsCalculator.add_to_data(data)
         data = EmissionsCalculator_NOx.add_to_data(data)
         data = EmissionsCalculator_SO2.add_to_data(data)
         data = EmissionsCalculator_PM.add_to_data(data)
+        '''
 
         pv_watts_station_check = data['outputs']['Scenario']['Site']['PV'][0].get('station_distance_km') or 0
         if pv_watts_station_check > 322:
@@ -874,10 +908,12 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
         # Calculate avoided outage costs moved to resilience stats
         #calc_avoided_outage_costs(data, present_worth_factor=dfm_list[0]['pwf_e'], run_uuid=self.run_uuid)
 
+        '''
         data = EmissionsCalculator.add_to_data(data)
         data = EmissionsCalculator_NOx.add_to_data(data)
         data = EmissionsCalculator_SO2.add_to_data(data)
         data = EmissionsCalculator_PM.add_to_data(data)
+        '''
         
         if len(data['outputs']['Scenario']['Site']['PV']) == 1:
             data['outputs']['Scenario']['Site']['PV'] = data['outputs']['Scenario']['Site']['PV'][0]
