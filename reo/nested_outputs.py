@@ -90,7 +90,7 @@ nested_output_definitions = {
             },
 
             "Site": {
-              "year_one_emissions_lb_C02": {
+              "year_one_emissions_lb_CO2": {
                   "type": "int",
                   "description": "Total equivalent pounds of carbon dioxide emitted from the site in the first year.",
                   "units": "lb CO2"
@@ -110,7 +110,7 @@ nested_output_definitions = {
                   "description": "Total pounds of PM2.5 emitted from the site in the first year.",
                   "units": "lb PM2.5"
                 },
-              "year_one_emissions_bau_lb_C02": {
+              "year_one_emissions_bau_lb_CO2": {
                   "type": "int",
                   "description": "Total equivalent pounds of carbon dioxide emitted from the site use in the first year in the BAU case.",
                   "units": "lb CO2"
@@ -667,7 +667,7 @@ nested_output_definitions = {
                   "description": "Year one energy supplied from grid to load in the business-as-usual scenario",
                   "units": "kWh"
                 },
-                "year_one_emissions_lb_C02": {
+                "year_one_emissions_lb_CO2": {
                   "type": "int",
                   "description": ("Total equivalent pounds of carbon dioxide emitted from utility electricity use "
                                   "in the first year. Calculated from EPA AVERT region hourly grid emissions factor series for the continental US."
@@ -695,7 +695,7 @@ nested_output_definitions = {
                                   "In AK and HI, the best available data are EPA eGRID annual averages."),
                   "units": "lb PM2.5"
                 },
-                "year_one_emissions_bau_lb_C02": {
+                "year_one_emissions_bau_lb_CO2": {
                   "type": "int",
                   "description": "Total equivalent pounds of carbon dioxide emitted from BAU utility electricity use in the first year. Calculated by default from hourly emissions estimates except in AK and HI.",
                   "units": "lb CO2"
@@ -889,7 +889,7 @@ nested_output_definitions = {
                   "description": "Year one fuel cost for existing diesel generator system",
                   "units": "$"
                 },
-                "year_one_emissions_lb_C02": {
+                "year_one_emissions_lb_CO2": {
                   "type": "int",
                   "description": "Total equivalent pounds of carbon dioxide emitted from generator use in the first year.",
                   "units": "lb CO2"
@@ -909,7 +909,7 @@ nested_output_definitions = {
                   "description": "Total pounds of PM2.5 emitted from generator use in the first year.",
                   "units": "lb PM2.5"
                 },
-                "year_one_emissions_bau_lb_C02": {
+                "year_one_emissions_bau_lb_CO2": {
                   "type": "int",
                   "description": "Total equivalent pounds of carbon dioxide emitted from BAU generator use in the first year.",
                   "units": "lb CO2"
@@ -987,7 +987,7 @@ nested_output_definitions = {
                   "description": "Year one hourly time series of CHP thermal to waste heat",
                   "units": "MMBtu/hr"
                 },
-                "year_one_emissions_lb_C02": {
+                "year_one_emissions_lb_CO2": {
                   "type": int,
                   "description": "Total equivalent pounds of carbon dioxide emitted from CHP fuels consumed on site use in the first year.",
                   "units": "lb CO2"
@@ -1007,7 +1007,7 @@ nested_output_definitions = {
                   "description": "Total pounds of PM2.5 emitted from CHP fuels consumed on site use in the first year.",
                   "units": "lb PM2.5"
                 },
-                "year_one_emissions_bau_lb_C02": {
+                "year_one_emissions_bau_lb_CO2": {
                   "type": int,
                   "description": "Total equivalent pounds of carbon dioxide emitted from CHP fuels consumed on site use in the first year in the BAU case.",
                   "units": "lb CO2"
@@ -1060,7 +1060,7 @@ nested_output_definitions = {
                   "description": "Year one hourly time series of CHP thermal to Hot TES",
                   "units": "MMBtu/hr"
                 },
-                "year_one_emissions_lb_C02": {
+                "year_one_emissions_lb_CO2": {
                   "type": int,
                   "description": "Total equivalent pounds of carbon dioxide emitted from boiler fuels consumed on site use in the first year.",
                   "units": "lb CO2"
@@ -1080,7 +1080,7 @@ nested_output_definitions = {
                   "description": "Total pounds of PM2.5 emitted from boiler fuels consumed on site use in the first year.",
                   "units": "lb PM2.5"
                 },
-                "year_one_emissions_bau_lb_C02": {
+                "year_one_emissions_bau_lb_CO2": {
                   "type": int,
                   "description": "Total equivalent pounds of carbon dioxide emitted from boiler fuels consumed on site use in the first year in the BAU case.",
                   "units": "lb CO2"

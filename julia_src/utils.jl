@@ -269,7 +269,11 @@ function Parameter(d::Dict)
 		"NMILRegime",
 		"TechsByNMILRegime",
 		"TechsByFuelType",
-		"FuelCost"
+		"FuelCost",
+        ##"MinAnnualPercentREElec",
+        ##"MaxAnnualPercentREElec",
+        ##"MinPercentEmissionsReduction",
+        ##"MaxPercentEmissionsReduction",
      )
 	for x in ["Tech","FuelType","CHPTechs"]
 		if typeof(d[x]) === Array{Any, 1}  # came from Python as empty array
@@ -323,6 +327,10 @@ function Parameter(d::Dict)
     d["TechToNMILMapping"] = vector_to_axisarray(d["TechToNMILMapping"], d["Tech"], d["NMILRegime"])
     d["OMcostPerUnitProd"] = AxisArray(d["OMcostPerUnitProd"], d["Tech"])
     d["OMcostPerUnitHourPerSize"] = AxisArray(d["OMcostPerUnitHourPerSize"], d["Tech"])
+
+    d["TechEmissionsFactors"] = AxisArray(d["TechEmissionsFactors"], d["Tech"])
+    ##d["TechPercentRE"] = AxisArray(d["TechPercentRE"], d["Tech"])
+
     if !isempty(d["CoincidentPeakLoadTimeSteps"])
         d["CoincidentPeakRates"] = AxisArray(d["CoincidentPeakRates"], d[:CPPeriod])
         d["CoincidentPeakLoadTimeSteps"] = permutedims(hcat(d["CoincidentPeakLoadTimeSteps"]...), (2,1))

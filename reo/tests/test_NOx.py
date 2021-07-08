@@ -231,14 +231,14 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
             print('Batt kW: ', response['outputs']['Scenario']['Site']['Storage']['size_kw'])
             print('Generator kW: ', response['outputs']['Scenario']['Site']['Generator']['size_kw'])
 
-            print('Year 1 CO2: ', response['outputs']['Scenario']['Site']['year_one_emissions_lb_C02'])
-            print('Year 1 CO2 BAU: ', response['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_C02'])
+            print('Year 1 CO2: ', response['outputs']['Scenario']['Site']['year_one_emissions_lb_CO2'])
+            print('Year 1 CO2 BAU: ', response['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_CO2'])
 
             print('Year 1 NOx: ', response['outputs']['Scenario']['Site']['year_one_emissions_lb_NOx'])
             print('Year 1 NOx BAU: ', response['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_NOx'])
 
-            print('Generator Year 1 CO2: ', response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_C02'])
-            print('Generator Year 1 CO2 BAU: ', response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_bau_lb_C02'])
+            print('Generator Year 1 CO2: ', response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_CO2'])
+            print('Generator Year 1 CO2 BAU: ', response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_bau_lb_CO2'])
 
             print('Generator Year 1 NOx: ', response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_NOx'])
             print('Generator Year 1 NOx BAU: ', response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_bau_lb_NOx'])

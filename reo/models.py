@@ -511,6 +511,8 @@ class PVModel(models.Model):
             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
     existing_pv_om_cost_us_dollars = models.FloatField(null=True, blank=True)
     lcoe_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
+    ## year_one_exported_emissions_offset_lb_CO2 = models.FloatField(null=True, blank=True)
+    ## year_one_exported_emissions_offset_bau_lb_CO2 = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -576,6 +578,8 @@ class WindModel(models.Model):
     lcoe_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
     year_one_curtailed_production_series_kw = ArrayField(
             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
+    ## year_one_exported_emissions_offset_lb_CO2 = models.FloatField(null=True, blank=True)
+    ## year_one_exported_emissions_offset_bau_lb_CO2 = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
