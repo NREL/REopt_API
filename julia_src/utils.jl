@@ -209,6 +209,21 @@ Base.@kwdef struct Parameter
      Location::UnitRange
 	 AddSOCIncentive::Int64
 
+    # Annual RE parameters
+     ## IncludeExportedREElecinTotal::Bool
+     ##TechPercentRE::AxisArray
+     ##MinAnnualPercentREElec::Union{Float64,Nothing} 
+     ##MaxAnnualPercentREElec::Union{Float64,Nothing} 
+
+    # Emissions parameters
+     IncludeExportedElecEmissionsInTotal::Bool
+     ##IncludeOutageEmissionsInTotal::Bool
+     ##MinPercentEmissionsReduction::Union{Float64,Nothing} 
+     ##MaxPercentEmissionsReduction::Union{Float64,Nothing} 
+     BAUYr1Emissions::Float64
+     GridEmissionsFactor::Array{Float64,1}
+     TechEmissionsFactors::AxisArray
+
 	# Added for CHP
 	HotTES::Array{String,1}
 	ColdTES::Array{String,1}
