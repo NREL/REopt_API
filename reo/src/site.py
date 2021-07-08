@@ -70,9 +70,12 @@ class Financial(object):
 
 class Site(object):
 
-    def __init__(self, dfm, land_acres=None, roof_squarefeet=None, **kwargs):
+    def __init__(self, dfm, land_acres=None, roof_squarefeet=None,
+    include_exported_elec_emissions_in_total=None,
+     **kwargs):
 
         self.land_acres = land_acres
         self.roof_squarefeet = roof_squarefeet
         self.financial = Financial(**kwargs['Financial'])
+        self.include_exported_elec_emissions_in_total = include_exported_elec_emissions_in_total
         dfm.add_site(self)

@@ -193,6 +193,11 @@ nested_input_definitions = {
         "default": 0.0,
         "description": "Site elevation (above sea sevel), units of feet"
       },
+      "include_exported_elec_emissions_in_total": {
+        "type": "bool",
+        "default": False,
+        "description": "Include the emissions reductions (or increases) in grid emissions associated with exported onsite electrical generation in the calculation of Year 1 emissions."  
+      },
 
       "Financial": {
         "om_cost_escalation_pct": {
