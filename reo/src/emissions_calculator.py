@@ -184,7 +184,7 @@ class EmissionsCalculator:
 
         return data
     '''
-    
+
     @property
     def region(self):
         lookup = {  'AK':'Alaska',
@@ -242,6 +242,7 @@ class EmissionsCalculator:
             else:
                 raise AttributeError("Emissions error. Cannnot find hourly emmissions for region {} ({},{}) \
                     ".format(self.region, self.latitude,self.longitude))
+            ## TODO: Levelize profile
         return self._emmissions_profile
 
 class EmissionsCalculator_NOx:

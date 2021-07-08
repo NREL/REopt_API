@@ -138,7 +138,27 @@ nested_output_definitions = {
                   "divided by the total annual load in year one."
                   ),
                 "units": "%"
-              },
+                },
+              "year_one_CO2_emissions_from_fuelburn": {
+                  "type": int,
+                  "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption in the first year.",
+                  "units": "lb CO2"
+                },
+              "year_one_CO2_emissions_from_elec_grid_purchase": {
+                  "type": int,
+                  "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption in the first year.",
+                  "units": "lb CO2"
+                },
+              "year_one_CO2_emissions_offset_from_elec_exports": {
+                  "type": int,
+                  "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption in the first year.",
+                  "units": "lb CO2"
+                },
+              "year_one_CO2_emissions_reduction_pct": {
+                  "type": float,
+                  "description": "Percent reduction in total pounds of carbon dioxide emissions in the optimal case relative to the BAU case to the ",
+                  "units": "%"
+                },
 
               "LoadProfile": {
                 "year_one_electric_load_series_kw": {
