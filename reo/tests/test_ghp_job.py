@@ -83,7 +83,7 @@ class GHPTest(ResourceTestCaseMixin, TestCase):
         nested_data["Scenario"]["optimality_tolerance_techs"] = 0.001  # Overwriting
         nested_data["Scenario"]["optimality_tolerance_bau"] = 0.001
         
-        #nested_data["Scenario"]["Site"]["GHP"]["ghpghx_response"] = json.load(open("ghpghx_response.json", "r"))
+        #nested_data["Scenario"]["Site"]["GHP"]["ghpghx_response"] = json.load(open("reo/tests/posts/ghpghx_response.json", "r"))
         nested_data["Scenario"]["Site"]["LoadProfileBoilerFuel"]["doe_reference_name"] = "FlatLoad_24_5"
         nested_data["Scenario"]["Site"]["LoadProfileBoilerFuel"]["monthly_mmbtu"] = [500.0] + [1000.0]*10 + [1500.0]
 
