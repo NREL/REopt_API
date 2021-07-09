@@ -37,7 +37,7 @@ import json
 import time
 from reo.src.data_manager import DataManager
 from reo.src.elec_tariff import ElecTariff
-from reo.src.load_profile import LoadProfile
+from reo.src.load_profile import LoadProfile, get_climate_zone
 from reo.src.fuel_tariff import FuelTariff
 from reo.src.load_profile_boiler_fuel import LoadProfileBoilerFuel
 from reo.src.load_profile_chiller_thermal import LoadProfileChillerThermal
@@ -372,12 +372,11 @@ def setup_scenario(self, run_uuid, data, raw_post):
                     ghpghx_post["existing_boiler_efficiency"] = 0.8
                 ghpghx_post["cooling_thermal_load_ton"] = [kwt / TONHOUR_TO_KWHT for kwt in dfm.cooling_load.load_list] #lpct.load_list
                 client = TestApiClient()
-                # Update ground thermal conductivity based on climate zone with /ground_conductivity view if not user-input
+                # Update ground thermal conductivity based on climate zone if not user-input
                 if not ghpghx_post.get("ground_thermal_conductivity_btu_per_hr_ft_f"):
-                    params = {"latitude": ghpghx_post["latitude"], "longitude": ghpghx_post["longitude"]}
-                    zone_k_resp = client.get('/v1/ground_conductivity/', data=params)
-                    zone_k = json.loads(zone_k_resp.content)
-                    ghpghx_post["ground_thermal_conductivity_btu_per_hr_ft_f"] = zone_k["Thermal Conductivity"]
+                    k_by_zone = ghp.ground_k_by_climate_zone
+                    climate_zone = get_climate_zone(ghpghx_post["latitude"], ghpghx_post["longitude"])
+                    ghpghx_post["ground_thermal_conductivity_btu_per_hr_ft_f"] = k_by_zone.loc[climate_zone,"k"]
                 # Call /ghpghx endpoint to size GHP and GHX
                 ghpghx_post_resp = client.post('/v1/ghpghx/', data=ghpghx_post)
                 ghpghx_post_resp_dict = json.loads(ghpghx_post_resp.content)

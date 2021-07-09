@@ -818,3 +818,29 @@ class LoadProfile(BuiltInProfile):
             native_load = [i + j for i, j in zip(self.unmodified_load_list, existing_pv_kw_list)]
             return native_load, existing_pv_kw_list
         return copy.copy(self.unmodified_load_list), existing_pv_kw_list
+
+def get_climate_zone(latitude, longitude):
+    gdf = gpd.read_file('reo/src/data/climate_cities.shp')
+    gdf = gdf[gdf.geometry.intersects(g.Point(longitude, latitude))]
+    if not gdf.empty:
+        nearest_city = gdf.city.values[0].replace(' ', '')
+    if nearest_city is None:
+        cities_to_search = BuiltInProfile.default_cities
+    else:
+        climate_zone = [c for c in BuiltInProfile.default_cities if c.name==nearest_city][0].zoneid
+        cities_to_search = [c for c in BuiltInProfile.default_cities if c.zoneid==climate_zone]
+    if len(cities_to_search) > 1:
+        # else use old geometric approach, never fails...but isn't necessarily correct
+        min_distance = None
+        for i, c in enumerate(cities_to_search):
+            distance = math.sqrt((latitude - c.lat) ** 2 + (longitude - c.lng) ** 2)
+            if i == 0:
+                min_distance = distance
+                nearest_city = c.name
+            elif distance < min_distance:
+                min_distance = distance
+                nearest_city = c.name
+    
+    climate_zone = [c for c in BuiltInProfile.default_cities if c.name==nearest_city][0].zoneid
+
+    return climate_zone
