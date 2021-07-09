@@ -53,6 +53,9 @@ import pandas as pd
 from reo.utilities import generate_year_profile_hourly, TONHOUR_TO_KWHT, get_weekday_weekend_total_hours_by_month
 from reo.validators import ValidateNestedInput
 from datetime import datetime, timedelta
+import math
+import geopandas as gpd
+from shapely import geometry as g
 
 
 # loading the labels of hard problems - doing it here so loading happens once on startup
@@ -850,3 +853,65 @@ def schedule_stats(request):
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in schedule_stats endpoint. Check log for more."}, status=500)
+
+def ground_conductivity(request):
+    """
+    GET ground thermal conductivity based on the climate zone from the lat/long input
+    param: latitude: latitude of the site location
+    param: longitude: longitude of the site location
+    return: Climate Zone: climate zone of the site location
+    return: Thermal Conductivity [Btu/(hr-ft-degF)]: thermal conductivity of the ground in climate zone
+    """
+    try:
+        latitude = float(request.GET['latitude'])  # need float to convert unicode
+        longitude = float(request.GET['longitude'])
+
+        # TODO make this a function in utilities because it's duplicated from load_profile.BuiltInProfile
+        #   and we'll want to use it for updating the GHPGHX ground thermal conductivity value in scenario.py
+        gdf = gpd.read_file('reo/src/data/climate_cities.shp')
+        gdf = gdf[gdf.geometry.intersects(g.Point(longitude, latitude))]
+        if not gdf.empty:
+            nearest_city = gdf.city.values[0].replace(' ', '')
+        if nearest_city is None:
+            cities_to_search = BuiltInProfile.default_cities
+        else:
+            climate_zone = [c for c in BuiltInProfile.default_cities if c.name==nearest_city][0].zoneid
+            cities_to_search = [c for c in BuiltInProfile.default_cities if c.zoneid==climate_zone]
+        if len(cities_to_search) > 1:
+            # else use old geometric approach, never fails...but isn't necessarily correct
+            log.info("Using geometrically nearest city to lat/lng.")
+            min_distance = None
+            for i, c in enumerate(cities_to_search):
+                distance = math.sqrt((latitude - c.lat) ** 2 + (longitude - c.lng) ** 2)
+                if i == 0:
+                    min_distance = distance
+                    nearest_city = c.name
+                elif distance < min_distance:
+                    min_distance = distance
+                    nearest_city = c.name
+        
+        climate_zone = [c for c in BuiltInProfile.default_cities if c.name==nearest_city][0].zoneid
+
+        k_all = pd.read_csv("input_files/ground_conductivity.csv", index_col="zone", dtype={"zone":str, "k": float})
+        k = k_all.loc[climate_zone,"k"]
+
+        response = JsonResponse(
+            {
+                "Climate Zone": climate_zone,
+                "Thermal Conductivity": k
+            }
+        )
+        return response
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=400)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=400)
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected error in ground_conductivity endpoint. Check log for more."}, status=500)
