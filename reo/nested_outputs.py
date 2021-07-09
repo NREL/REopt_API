@@ -115,6 +115,13 @@ nested_output_definitions = {
                   "description": "Total equivalent pounds of carbon dioxide emitted from the site use in the first year in the BAU case.",
                   "units": "lb CO2"
                 },
+              '''
+              "preprocessed_year_one_emissions_bau_lb_CO2": {
+                "type": int,
+                "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption in the first year in the BAU case.",
+                "units": "lb CO2"
+                },
+              '''
               "year_one_emissions_bau_lb_NOx": {
                   "type": "int",
                   "description": "Total pounds of NOx emitted from the site use in the first year in the BAU case.",
@@ -159,6 +166,53 @@ nested_output_definitions = {
                   "description": "Percent reduction in total pounds of carbon dioxide emissions in the optimal case relative to the BAU case to the ",
                   "units": "%"
                 },
+              '''
+              "year_one_renewable_electricity_pct": {
+                  "type": float,
+                  "description": "Percent of total electricity consumption provided by renewable energy.",
+                  "units": "%"
+                },
+              "year_one_renewable_electricity_kwh": {
+                  "type": int,
+                  "description": "Total annual renewable electricity.",
+                  "units": "kWh"
+                },
+              "year_one_renewable_heat_pct": {
+                  "type": float,
+                  "description": "Percent of total electricity consumption provided by renewable energy.",
+                  "units": "%"
+                },
+              "year_one_renewable_heat_mmbtu": {
+                  "type": int,
+                  "description": "Total annual renewable electricity.",
+                  "units": "mmbtu"
+                },
+              "year_one_cost_of_emissions_reduction_us_dollars_per_ton_CO2": {
+                  "type": float,
+                  "description": "Cost of emissions reduction per ton CO2, assuming NPV is distributed as annuity throughout analysis period",
+                  "units": "%"
+                },
+              "year_one_renewable_electricity_bau_pct": {
+                "type": float,
+                "description": "Percent of total electricity consumption provided by renewable energy in the BAU case.",
+                "units": "%"
+              },
+              "year_one_renewable_electricity_bau_kwh": {
+                "type": int,
+                "description": "Total annual renewable electricity in the BAU case.",
+                "units": "kWh"
+              },
+              "year_one_renewable_heat_bau_pct": {
+                  "type": float,
+                  "description": "Percent of total electricity consumption provided by renewable energy.",
+                  "units": "%"
+                },
+              "year_one_renewable_heat_bau_mmbtu": {
+                  "type": int,
+                  "description": "Total annual renewable electricity.",
+                  "units": "mmbtu"
+                },
+                '''
 
               "LoadProfile": {
                 "year_one_electric_load_series_kw": {
