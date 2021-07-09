@@ -909,7 +909,6 @@ class DataManager:
                 time_steps_without_grid.append(i+1)
         return time_steps_with_grid, time_steps_without_grid
 
-    '''
     def bau_emissions(self):
         
         """
@@ -956,7 +955,6 @@ class DataManager:
             total_emissions_lb_CO2_per_year += self.heating_load.annual_mmbtu * self.boiler.emissions_factor_lb_CO2_per_mmbtu
 
         return total_emissions_lb_CO2_per_year
-    '''
 
     def _get_REopt_storage_techs_and_params(self):
         storage_techs = ['Elec']
@@ -1152,7 +1150,7 @@ class DataManager:
             tech_emissions_factors_bau = self._get_REopt_array_tech_load(self.bau_techs)
         
         grid_emissions_factor = self.elec_tariff.emissions_factor_series_lb_CO2_per_kwh
-        ##bau_emissions = self.bau_emissions()
+        bau_emissions = self.bau_emissions()
 
         max_sizes, min_turn_down, max_sizes_location, min_allowable_size = self._get_REopt_tech_max_sizes_min_turn_down(
             self.available_techs)
@@ -1426,11 +1424,11 @@ class DataManager:
             'ElectricDerate': electric_derate,
             'TechsByNMILRegime': TechsByNMILRegime,
             'TechsCannotCurtail': techs_cannot_curtail,
-            'TechsByNMILRegime': TechsByNMILRegime, # repeat? 
+            'TechsByNMILRegime': TechsByNMILRegime, ## repeat? 
             "GridEmissionsFactor": grid_emissions_factor,
             "TechEmissionsFactors": tech_emissions_factors,
             "IncludeExportedElecEmissionsInTotal": self.site.include_exported_elec_emissions_in_total,
-            ## "BAUYr1Emissions": bau_emissions, ## TODO: Check this
+            "BAUYr1Emissions": bau_emissions, ## TODO: Check this
             'HeatingLoad': heating_load,
             'CoolingLoad': cooling_load,
             'ThermalStorage': thermal_storage_techs,
@@ -1585,5 +1583,5 @@ class DataManager:
             "GridEmissionsFactor": grid_emissions_factor,
             "TechEmissionsFactors": tech_emissions_factors_bau,
             "IncludeExportedElecEmissionsInTotal": self.site.include_exported_elec_emissions_in_total,
-            ## "BAUYr1Emissions": bau_emissions,
+            "BAUYr1Emissions": bau_emissions,
         }

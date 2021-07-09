@@ -453,7 +453,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             ## self.nested_outputs["Scenario"]["Site"]["year_one_renewable_electricity_bau_kwh"] = self.results_dict.get("annual_re_elec_kwh_bau")
             ## self.nested_outputs["Scenario"]["Site"]["year_one_renewable_heat_bau_pct"] = self.results_dict.get("annual_re_heat_percent_bau")
             ## self.nested_outputs["Scenario"]["Site"]["year_one_renewable_heat_bau_mmbtu"] = self.results_dict.get("annual_re_heat_mmbtu_bau")
-            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_bau_lb_CO2"] = self.results_dict.get("year_one_emissions_lb_CO2_bau")
+            ## REMOVED: self.nested_outputs["Scenario"]["Site"]["year_one_emissions_bau_lb_CO2"] = self.results_dict.get("year_one_emissions_lb_CO2_bau")
+            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_bau_lb_CO2"] = self.results_dict.get("preprocessed_BAU_Yr1_emissions")
             ## self.nested_outputs["Scenario"]["Site"]["preprocessed_year_one_emissions_bau_lb_CO2"] = self.results_dict.get("preprocessed_BAU_Yr1_emissions")
 
 
