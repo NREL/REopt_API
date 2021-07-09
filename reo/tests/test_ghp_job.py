@@ -77,11 +77,6 @@ class GHPTest(ResourceTestCaseMixin, TestCase):
         ghpghx_post["cop_map_eft_heating_cooling"] = heatpump_copmap_list_of_dict
 
         nested_data["Scenario"]["Site"]["GHP"]["ghpghx_inputs"] = [ghpghx_post]
-
-        # Call API, get results in "d" dictionary
-        nested_data["Scenario"]["timeout_seconds"] = 420  # Overwriting
-        nested_data["Scenario"]["optimality_tolerance_techs"] = 0.001  # Overwriting
-        nested_data["Scenario"]["optimality_tolerance_bau"] = 0.001
         
         #nested_data["Scenario"]["Site"]["GHP"]["ghpghx_response"] = json.load(open("reo/tests/posts/ghpghx_response.json", "r"))
         nested_data["Scenario"]["Site"]["LoadProfileBoilerFuel"]["doe_reference_name"] = "FlatLoad_24_5"
