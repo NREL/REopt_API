@@ -35,7 +35,7 @@ import uuid
 import copy
 import json
 from django.http import JsonResponse
-from reo.src.load_profile import BuiltInProfile, LoadProfile
+from reo.src.load_profile import BuiltInProfile, LoadProfile, get_climate_zone
 from reo.src.load_profile_boiler_fuel import LoadProfileBoilerFuel
 from reo.src.load_profile_chiller_thermal import LoadProfileChillerThermal
 from reo.models import URDBError
@@ -53,9 +53,10 @@ import pandas as pd
 from reo.utilities import generate_year_profile_hourly, TONHOUR_TO_KWHT, get_weekday_weekend_total_hours_by_month
 from reo.validators import ValidateNestedInput
 from datetime import datetime, timedelta
-import math
-import geopandas as gpd
-from shapely import geometry as g
+from reo.src.ghp import ground_k_by_climate_zone
+# import math
+# import geopandas as gpd
+# from shapely import geometry as g
 
 
 # loading the labels of hard problems - doing it here so loading happens once on startup
@@ -866,34 +867,8 @@ def ground_conductivity(request):
         latitude = float(request.GET['latitude'])  # need float to convert unicode
         longitude = float(request.GET['longitude'])
 
-        # TODO make this a function in utilities because it's duplicated from load_profile.BuiltInProfile
-        #   and we'll want to use it for updating the GHPGHX ground thermal conductivity value in scenario.py
-        gdf = gpd.read_file('reo/src/data/climate_cities.shp')
-        gdf = gdf[gdf.geometry.intersects(g.Point(longitude, latitude))]
-        if not gdf.empty:
-            nearest_city = gdf.city.values[0].replace(' ', '')
-        if nearest_city is None:
-            cities_to_search = BuiltInProfile.default_cities
-        else:
-            climate_zone = [c for c in BuiltInProfile.default_cities if c.name==nearest_city][0].zoneid
-            cities_to_search = [c for c in BuiltInProfile.default_cities if c.zoneid==climate_zone]
-        if len(cities_to_search) > 1:
-            # else use old geometric approach, never fails...but isn't necessarily correct
-            log.info("Using geometrically nearest city to lat/lng.")
-            min_distance = None
-            for i, c in enumerate(cities_to_search):
-                distance = math.sqrt((latitude - c.lat) ** 2 + (longitude - c.lng) ** 2)
-                if i == 0:
-                    min_distance = distance
-                    nearest_city = c.name
-                elif distance < min_distance:
-                    min_distance = distance
-                    nearest_city = c.name
-        
-        climate_zone = [c for c in BuiltInProfile.default_cities if c.name==nearest_city][0].zoneid
-
-        k_all = pd.read_csv("input_files/ground_conductivity.csv", index_col="zone", dtype={"zone":str, "k": float})
-        k = k_all.loc[climate_zone,"k"]
+        climate_zone = get_climate_zone(latitude, longitude)
+        k = ground_k_by_climate_zone.loc[climate_zone,"k"]
 
         response = JsonResponse(
             {
