@@ -909,6 +909,55 @@ class DataManager:
                 time_steps_without_grid.append(i+1)
         return time_steps_with_grid, time_steps_without_grid
 
+    '''
+    def bau_emissions(self):
+        
+        """
+        Pre-processing of the BAU emissions to use in determining emissions reductions in the optimal case
+        """
+        total_emissions_lb_CO2_per_year = 0 
+        
+        ## Grid emissions 
+
+        # bau load list is non-net so must remove exising PV to get to the load served by the grid
+        grid_to_load_kw = np.array(self.load.bau_load_list) 
+
+        years = self.site.financial.analysis_years
+        for pv in self.pvs:
+            """
+            This comes from reo/load_profile.py 
+            
+            Must account for levelization factor to align with how PV is modeled in REopt:
+            Because we only model one year, we multiply the "year 1" PV production by a levelization_factor
+            that accounts for the PV capacity degradation over the analysis_years. In other words, by
+            multiplying the pv.prod_factor by the levelization_factor we are modeling the average pv production.
+            """
+            levelization_factor = round(degradation_factor(years, pv.degradation_pct), 5)
+            grid_to_load_kw -= np.array([pv.existing_kw * x * levelization_factor for x in pv.prod_factor])
+        
+        #Ensure that existing PV cannot export/get emissions reductions credits during an outage 
+        for i in range((self.load.outage_start_time_step or 1) -1, (self.load.outage_end_time_step or 1) -1):
+            if grid_to_load_kw[i] < 0:
+                grid_to_load_kw[i] = 0
+
+        #If no net emissions accounting, no credit for RE grid exports:
+        if self.site.include_exported_elec_emissions_in_total is False:
+            grid_to_load_kw = np.array([i if i > 0 else 0 for i in grid_to_load_kw])
+        # Might need to add additional logic to match reopt.jl curtailment approach...
+        grid_emissions_lb_CO2_per_year = self.steplength*sum(np.array(self.elec_tariff.emissions_factor_series_lb_CO2_per_kwh) * grid_to_load_kw)
+        total_emissions_lb_CO2_per_year += grid_emissions_lb_CO2_per_year
+
+        ## Generator emissions
+        if self.generator is not None:
+            total_emissions_lb_CO2_per_year += self.load.generator_fuel_use_gal * self.generator.emissions_factor_lb_CO2_per_gal
+                
+        ## Boiler emissions
+        if self.boiler is not None:
+            total_emissions_lb_CO2_per_year += self.heating_load.annual_mmbtu * self.boiler.emissions_factor_lb_CO2_per_mmbtu
+
+        return total_emissions_lb_CO2_per_year
+    '''
+
     def _get_REopt_storage_techs_and_params(self):
         storage_techs = ['Elec']
         storage_power_cost = list()
@@ -1103,7 +1152,7 @@ class DataManager:
             tech_emissions_factors_bau = self._get_REopt_array_tech_load(self.bau_techs)
         
         grid_emissions_factor = self.elec_tariff.emissions_factor_series_lb_CO2_per_kwh
-        bau_emissions = self.bau_emissions()
+        ##bau_emissions = self.bau_emissions()
 
         max_sizes, min_turn_down, max_sizes_location, min_allowable_size = self._get_REopt_tech_max_sizes_min_turn_down(
             self.available_techs)
@@ -1381,7 +1430,7 @@ class DataManager:
             "GridEmissionsFactor": grid_emissions_factor,
             "TechEmissionsFactors": tech_emissions_factors,
             "IncludeExportedElecEmissionsInTotal": self.site.include_exported_elec_emissions_in_total,
-            "BAUYr1Emissions": bau_emissions, ## TODO: Check this
+            ## "BAUYr1Emissions": bau_emissions, ## TODO: Check this
             'HeatingLoad': heating_load,
             'CoolingLoad': cooling_load,
             'ThermalStorage': thermal_storage_techs,
@@ -1536,5 +1585,5 @@ class DataManager:
             "GridEmissionsFactor": grid_emissions_factor,
             "TechEmissionsFactors": tech_emissions_factors_bau,
             "IncludeExportedElecEmissionsInTotal": self.site.include_exported_elec_emissions_in_total,
-            "BAUYr1Emissions": bau_emissions,
+            ## "BAUYr1Emissions": bau_emissions,
         }

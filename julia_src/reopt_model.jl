@@ -1287,7 +1287,7 @@ function add_site_results(m, p, r::Dict)
 	r["yr1_emissions_from_fuelburn"] = round(value(m[:yr1_emissions_from_fuelburn]), digits=2) 
 	r["yr1_emissions_from_elec_grid_purchase"] = round(value(m[:yr1_emissions_from_elec_grid_purchase]), digits=2) 
 	r["yr1_emissions_offset_from_elec_exports"] = round(value(m[:yr1_emissions_offset_from_elec_exports]), digits=2) 
-	r["year_one_emissionsreduction_percent"] = round(value(1-m[:EmissionsYr1_Total_LbsCO2]/p.BAUYr1Emissions), digits=4)
+	## r["year_one_emissionsreduction_percent"] = round(value(1-m[:EmissionsYr1_Total_LbsCO2]/p.BAUYr1Emissions), digits=4)
 	
 end
 
