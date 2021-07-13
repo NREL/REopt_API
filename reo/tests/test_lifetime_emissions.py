@@ -216,9 +216,9 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
         response = json.loads(self.api_client.get(self.results_url.replace('<run_uuid>', str(uuid))).content)
         
         return response
-
+    
     def test_NOx_modeling(self):
-        expected_pv_size = 42 #41.6667
+        ## expected_pv_size = 42 #41.6667
 
         response = self.get_response(self.post)
         
@@ -264,3 +264,4 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
             print("test_flex_tech API error message: {}".format(error_msg))
             print("Run uuid: {}".format(response['outputs']['Scenario']['run_uuid']))
             raise e
+

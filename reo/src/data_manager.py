@@ -909,7 +909,7 @@ class DataManager:
                 time_steps_without_grid.append(i+1)
         return time_steps_with_grid, time_steps_without_grid
 
-    def bau_emissions(self):
+    def bau_emissions_CO2(self):
         
         """
         Pre-processing of the BAU emissions to use in determining emissions reductions in the optimal case
@@ -1142,15 +1142,15 @@ class DataManager:
             om_cost_us_dollars_per_kwh, om_cost_us_dollars_per_hr_per_kw_rated, production_factor, \
             charge_efficiency, discharge_efficiency, \
             electric_derate, chp_thermal_prod_factor, \
-            tech_emissions_factors = self._get_REopt_array_tech_load(self.available_techs)
+            tech_emissions_factors = self._get_REopt_array_tech_load(self.available_techs) ## TODO: , tech_pct_RE 
         tech_to_location_bau, derate_bau, om_cost_us_dollars_per_kw_bau, \
             om_cost_us_dollars_per_kwh_bau, om_cost_us_dollars_per_hr_per_kw_rated_bau, production_factor_bau, \
             charge_efficiency_bau, discharge_efficiency_bau, \
             electric_derate_bau, chp_thermal_prod_factor_bau, \
-            tech_emissions_factors_bau = self._get_REopt_array_tech_load(self.bau_techs)
+            tech_emissions_factors_bau = self._get_REopt_array_tech_load(self.bau_techs) ## TODO: , tech_pct_RE_bau
         
         grid_emissions_factor = self.elec_tariff.emissions_factor_series_lb_CO2_per_kwh
-        bau_emissions = self.bau_emissions()
+        bau_emissions_CO2 = self.bau_emissions_CO2()
 
         max_sizes, min_turn_down, max_sizes_location, min_allowable_size = self._get_REopt_tech_max_sizes_min_turn_down(
             self.available_techs)
@@ -1428,7 +1428,7 @@ class DataManager:
             "GridEmissionsFactor": grid_emissions_factor,
             "TechEmissionsFactors": tech_emissions_factors,
             "IncludeExportedElecEmissionsInTotal": self.site.include_exported_elec_emissions_in_total,
-            "BAUYr1Emissions": bau_emissions, ## TODO: Check this
+            "BAUYr1Emissions_CO2": bau_emissions_CO2, ## TODO: Check this
             'HeatingLoad': heating_load,
             'CoolingLoad': cooling_load,
             'ThermalStorage': thermal_storage_techs,
@@ -1583,5 +1583,5 @@ class DataManager:
             "GridEmissionsFactor": grid_emissions_factor,
             "TechEmissionsFactors": tech_emissions_factors_bau,
             "IncludeExportedElecEmissionsInTotal": self.site.include_exported_elec_emissions_in_total,
-            "BAUYr1Emissions": bau_emissions,
+            "BAUYr1Emissions_CO2": bau_emissions_CO2,
         }

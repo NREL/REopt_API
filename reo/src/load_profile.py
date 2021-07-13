@@ -363,7 +363,11 @@ def bau_outage_check(critical_loads_kw, existing_pv_kw_list, gen_existing_kw, ge
     :param time_steps_per_hour: int
     :return: bool, int for number of time steps the existing generator and PV can meet the critical load, and
         boolean for if the entire critical load is met
+    ## TODO: add generator_fuel_use_gal 
     """
+
+    generator_fuel_use_gal = 0 ## Check 
+
     if gen_existing_kw == 0 and existing_pv_kw_list in [None, []]:
         return False, 0
 
@@ -378,18 +382,19 @@ def bau_outage_check(critical_loads_kw, existing_pv_kw_list, gen_existing_kw, ge
                 gen_avail = min(fuel_kwh, gen_existing_kw * (1.0 / time_steps_per_hour))
                 gen_output = max(min(unmet, gen_avail), gen_min_turn_down * gen_existing_kw)
                 fuel_needed = fuel_intercept + fuel_slope * gen_output
+                generator_fuel_use_gal += max(min(fuel_needed,fuel_gal), 0) ## check 
                 fuel_gal -= fuel_needed
 
                 if gen_output < unmet:
-                    return False, i
+                    return False, i, generator_fuel_use_gal
 
     else:  # gen_existing_kw = 0 and PV_existing_kw > 0
         for i, (load, pv) in enumerate(zip(critical_loads_kw, existing_pv_kw_list)):
             unmet = load - pv
             if unmet > 0:
-                return False, i
+                return False, i, generator_fuel_use_gal
 
-    return True, len(critical_loads_kw)
+    return True, len(critical_loads_kw), generator_fuel_use_gal
 
 
 class BuiltInProfile(object):
@@ -713,11 +718,13 @@ class LoadProfile(BuiltInProfile):
              outage-simulation stage. (This is a web app specific use-case)
             """
             resilience_check_flag = True
+            generator_fuel_use_gal = 0
             bau_sustained_time_steps = 0 # no outage
 
         else:  # missing outage_start_time_step, outage_end_time_step, or critical_load_kw => no specified outage
             critical_loads_kw = [critical_load_pct * ld for ld in self.unmodified_load_list]
             resilience_check_flag = True
+            generator_fuel_use_gal = 0 
             bau_sustained_time_steps = 0  # no outage
 
         if outage_with_crit_load_pct or outage_with_crit_load_pct:
@@ -730,7 +737,7 @@ class LoadProfile(BuiltInProfile):
             self.bau_load_list[outage_start_time_step - 1:outage_end_time_step] = \
                 [0.0 for _ in critical_loads_kw[outage_start_time_step - 1:outage_end_time_step]]
 
-            resilience_check_flag, bau_sustained_time_steps = \
+            resilience_check_flag, bau_sustained_time_steps, generator_fuel_use_gal = \
                 bau_outage_check(critical_loads_kw[outage_start_time_step - 1:outage_end_time_step],
                                     existing_pv_kw_list, gen_existing_kw, gen_min_turn_down,
                                     fuel_avail_before_outage, fuel_slope, fuel_intercept,
@@ -741,6 +748,10 @@ class LoadProfile(BuiltInProfile):
                     critical_loads_kw[outage_start_time_step:outage_start_time_step+bau_sustained_time_steps]
 
         # resilience_check_flag: True if existing diesel and/or PV can sustain critical load during outage
+        self.outage_start_time_step = outage_start_time_step
+        self.outage_end_time_step = outage_end_time_step
+        self.generator_fuel_use_gal = generator_fuel_use_gal
+        
         self.resilience_check_flag = resilience_check_flag
         self.bau_sustained_time_steps = bau_sustained_time_steps
         self.annual_kwh = int(round(sum(self.load_list), 0))

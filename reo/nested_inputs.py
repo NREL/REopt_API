@@ -572,7 +572,7 @@ nested_input_definitions = {
           "description": "Label attribute of utility rate structure from <a href='https: //openei.org/services/doc/rest/util_rates/?version=3' target='blank'>Utility Rate Database API</a>"
         },
         "emissions_factor_series_lb_CO2_per_kwh": {
-          "type": ["list_of_float", "float"],
+          "type": ["float", "list_of_float"],
           "description": "Carbon Dioxide emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.",
         },
         "emissions_factor_series_CO2_pct_decrease": {
