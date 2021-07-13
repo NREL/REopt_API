@@ -39,7 +39,7 @@ from reo.src.urdb_rate import Rate
 import re
 import uuid
 from reo.src.techs import Generator, Boiler, CHP, AbsorptionChiller
-from reo.src.emissions_calculator import EmissionsCalculator, EmissionsCalculator_NOx, EmissionsCalculator_SO2, EmissionsCalculator_PM
+from reo.src.emissions_calculator import EmissionsCalculator ##, EmissionsCalculator_NOx, EmissionsCalculator_SO2, EmissionsCalculator_PM
 from reo.utilities import generate_year_profile_hourly
 
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
@@ -1339,149 +1339,59 @@ class ValidateNestedInput:
 
         if object_name_path[-1] == "ElectricTariff":
             electric_tariff = real_values
+
+            ts_per_hour = self.input_dict['Scenario'].get('time_steps_per_hour') or \
+                                    self.nested_input_definitions['Scenario']['time_steps_per_hour']['default']
             
-            # If user supplies single CO2 emissions rate
-            if type(electric_tariff.get('emissions_factor_series_lb_CO2_per_kwh')) == float:
-                emissions_series = [electric_tariff['emissions_factor_series_lb_CO2_per_kwh'] for i in range(8760*self.input_dict['Scenario']['time_steps_per_hour'])]
-                electric_tariff['emissions_factor_series_lb_CO2_per_kwh'] = emissions_series
-                self.update_attribute_value(object_name_path, number, 'emissions_factor_series_lb_CO2_per_kwh', emissions_series)
+            
+            for key_name in ['emissions_factor_series_lb_CO2_per_kwh', 'emissions_factor_series_lb_NOx_per_kwh',
+            'emissions_factor_series_lb_SO2_per_kwh', 'emissions_factor_series_lb_PM_per_kwh']:
+                
+                # If user supplies single emissions rate
+                if type(electric_tariff.get(key_name)) == list:
+                    if len(electric_tariff.get(key_name)) == 1:
+                        emissions_series = electric_tariff.get(key_name) * 8760 * ts_per_hour
+                            
+                        electric_tariff[key_name] = emissions_series
+                        self.update_attribute_value(object_name_path, number, key_name, emissions_series)
 
-            # If user has not supplied CO2 emissions rates, use Emissions calculator
-            elif (len(electric_tariff.get('emissions_factor_series_lb_CO2_per_kwh') or []) == 0):
-                if (self.input_dict['Scenario']['Site'].get('latitude') is not None) and \
-                    (self.input_dict['Scenario']['Site'].get('longitude') is not None):
-                    ec = EmissionsCalculator(   latitude=self.input_dict['Scenario']['Site']['latitude'], 
-                                                    longitude=self.input_dict['Scenario']['Site']['longitude'],
-                                                    time_steps_per_hour = self.input_dict['Scenario']['time_steps_per_hour'])
-                    emissions_series = None
-                    try:
-                        emissions_series = ec.emissions_series
-                        emissions_region = ec.region
-                    except AttributeError as e:
-                        # Emissions warning is a specific type of warning that we check for and display to the users when it occurs
-                        # since at this point the emissions are not required to do a run it simply
-                        # tells the user why we could not get an emission series and results in emissions not being 
-                        # calculated, but does not prevent the run from optimizing
-                        self.emission_warning = str(e.args[0])
+                # If user has not supplied emissions rates, use Emissions calculator
+                elif (len(electric_tariff.get(key_name) or []) == 0):
+                    if (self.input_dict['Scenario']['Site'].get('latitude') is not None) and \
+                        (self.input_dict['Scenario']['Site'].get('longitude') is not None):
+                        if 'CO2' in key_name: 
+                            pollutant = 'CO2'
+                        elif 'NOx' in key_name:
+                            pollutant = 'NOx'
+                        elif 'SO2' in key_name:
+                            pollutant = 'SO2'
+                        elif 'PM' in key_name:
+                            pollutant = 'PM'
+                        ec = EmissionsCalculator(   latitude=self.input_dict['Scenario']['Site']['latitude'], 
+                                                        longitude=self.input_dict['Scenario']['Site']['longitude'],
+                                                        pollutant = pollutant,
+                                                        time_steps_per_hour = ts_per_hour)
+                        emissions_series = None
+                        try:
+                            emissions_series = ec.emissions_series
+                            emissions_region = ec.region
+                        except AttributeError as e:
+                            # Emissions warning is a specific type of warning that we check for and display to the users when it occurs
+                            # since at this point the emissions are not required to do a run it simply
+                            # tells the user why we could not get an emission series and results in emissions not being 
+                            # calculated, but does not prevent the run from optimizing
+                            self.emission_warning = str(e.args[0])
 
-                    if emissions_series is not None:
-                        self.update_attribute_value(object_name_path, number, 'emissions_factor_series_lb_CO2_per_kwh', 
-                            emissions_series)
-                        self.update_attribute_value(object_name_path, number, 'emissions_region', 
-                            emissions_region)
-            else:
-                self.validate_8760(electric_tariff['emissions_factor_series_lb_CO2_per_kwh'], 
-                    "ElectricTariff", 
-                    'emissions_factor_series_lb_CO2_per_kwh', 
-                    self.input_dict['Scenario']['time_steps_per_hour'])
-
-            # If user supplies single NOx emissions rate
-            if type(electric_tariff.get('emissions_factor_series_lb_NOx_per_kwh')) == float:
-                emissions_series_NOx = [electric_tariff['emissions_factor_series_lb_NOx_per_kwh'] for i in range(8760*self.input_dict['Scenario']['time_steps_per_hour'])]
-                electric_tariff['emissions_factor_series_lb_NOx_per_kwh'] = emissions_series_NOx
-                self.update_attribute_value(object_name_path, number, 'emissions_factor_series_lb_NOx_per_kwh', emissions_series_NOx)
-
-            # If user has not supplied NOx emissions rates, use Emissions calculator
-            elif (len(electric_tariff.get('emissions_factor_series_lb_NOx_per_kwh') or []) == 0):
-                if (self.input_dict['Scenario']['Site'].get('latitude') is not None) and \
-                    (self.input_dict['Scenario']['Site'].get('longitude') is not None):
-                    ec_NOx = EmissionsCalculator_NOx(   latitude=self.input_dict['Scenario']['Site']['latitude'], 
-                                                    longitude=self.input_dict['Scenario']['Site']['longitude'],
-                                                    time_steps_per_hour = self.input_dict['Scenario']['time_steps_per_hour'])
-                    emissions_series_NOx = None
-                    try:
-                        emissions_series_NOx = ec_NOx.emissions_series
-                        emissions_region = ec_NOx.region
-                    except AttributeError as e:
-                        # Emissions warning is a specific type of warning that we check for and display to the users when it occurs
-                        # since at this point the emissions are not required to do a run it simply
-                        # tells the user why we could not get an emission series and results in emissions not being 
-                        # calculated, but does not prevent the run from optimizing
-                        self.emission_warning = str(e.args[0])
-
-                    # TODO: Might need to update or remove this? 
-                    if emissions_series_NOx is not None:
-                        self.update_attribute_value(object_name_path, number, 'emissions_factor_series_lb_NOx_per_kwh', 
-                            emissions_series_NOx)
-                        self.update_attribute_value(object_name_path, number, 'emissions_region', 
-                            emissions_region)
-            else:
-                self.validate_8760(electric_tariff['emissions_factor_series_lb_NOx_per_kwh'], 
-                    "ElectricTariff", 
-                    'emissions_factor_series_lb_NOx_per_kwh', 
-                    self.input_dict['Scenario']['time_steps_per_hour'])
-
-            # If user supplies single SO2 emissions rate
-            if type(electric_tariff.get('emissions_factor_series_lb_SO2_per_kwh')) == float:
-                emissions_series_SO2 = [electric_tariff['emissions_factor_series_lb_SO2_per_kwh'] for i in range(8760*self.input_dict['Scenario']['time_steps_per_hour'])]
-                electric_tariff['emissions_factor_series_lb_SO2_per_kwh'] = emissions_series_SO2
-                self.update_attribute_value(object_name_path, number, 'emissions_factor_series_lb_SO2_per_kwh', emissions_series_SO2)
-
-            # If user has not supplied SO2 emissions rates, use Emissions calculator
-            elif (len(electric_tariff.get('emissions_factor_series_lb_SO2_per_kwh') or []) == 0):
-                if (self.input_dict['Scenario']['Site'].get('latitude') is not None) and \
-                    (self.input_dict['Scenario']['Site'].get('longitude') is not None):
-                    ec_SO2 = EmissionsCalculator_SO2(   latitude=self.input_dict['Scenario']['Site']['latitude'], 
-                                                    longitude=self.input_dict['Scenario']['Site']['longitude'],
-                                                    time_steps_per_hour = self.input_dict['Scenario']['time_steps_per_hour'])
-                    emissions_series_SO2 = None
-                    try:
-                        emissions_series_SO2 = ec_SO2.emissions_series
-                        emissions_region = ec_SO2.region
-                    except AttributeError as e:
-                        # Emissions warning is a specific type of warning that we check for and display to the users when it occurs
-                        # since at this point the emissions are not required to do a run it simply
-                        # tells the user why we could not get an emission series and results in emissions not being 
-                        # calculated, but does not prevent the run from optimizing
-                        self.emission_warning = str(e.args[0])
-
-                    # TODO: Might need to update or remove this? 
-                    if emissions_series_SO2 is not None:
-                        self.update_attribute_value(object_name_path, number, 'emissions_factor_series_lb_SO2_per_kwh', 
-                            emissions_series_SO2)
-                        self.update_attribute_value(object_name_path, number, 'emissions_region', 
-                            emissions_region)
-            else:
-                self.validate_8760(electric_tariff['emissions_factor_series_lb_SO2_per_kwh'], 
-                    "ElectricTariff", 
-                    'emissions_factor_series_lb_SO2_per_kwh', 
-                    self.input_dict['Scenario']['time_steps_per_hour'])
-
-            # If user supplies single PM emissions rate
-            if type(electric_tariff.get('emissions_factor_series_lb_PM_per_kwh')) == float:
-                emissions_series_PM = [electric_tariff['emissions_factor_series_lb_PM_per_kwh'] for i in range(8760*self.input_dict['Scenario']['time_steps_per_hour'])]
-                electric_tariff['emissions_factor_series_lb_PM_per_kwh'] = emissions_series_PM
-                self.update_attribute_value(object_name_path, number, 'emissions_factor_series_lb_PM_per_kwh', emissions_series_PM)
-
-            # If user has not supplied PM emissions rates, use Emissions calculator
-            elif (len(electric_tariff.get('emissions_factor_series_lb_PM_per_kwh') or []) == 0):
-                if (self.input_dict['Scenario']['Site'].get('latitude') is not None) and \
-                    (self.input_dict['Scenario']['Site'].get('longitude') is not None):
-                    ec_PM = EmissionsCalculator_PM(   latitude=self.input_dict['Scenario']['Site']['latitude'], 
-                                                    longitude=self.input_dict['Scenario']['Site']['longitude'],
-                                                    time_steps_per_hour = self.input_dict['Scenario']['time_steps_per_hour'])
-                    emissions_series_PM = None
-                    try:
-                        emissions_series_PM = ec_PM.emissions_series
-                        emissions_region = ec_PM.region
-                    except AttributeError as e:
-                        # Emissions warning is a specific type of warning that we check for and display to the users when it occurs
-                        # since at this point the emissions are not required to do a run it simply
-                        # tells the user why we could not get an emission series and results in emissions not being 
-                        # calculated, but does not prevent the run from optimizing
-                        self.emission_warning = str(e.args[0])
-
-                    # TODO: Might need to update or remove this? 
-                    if emissions_series_PM is not None:
-                        self.update_attribute_value(object_name_path, number, 'emissions_factor_series_lb_PM_per_kwh', 
-                            emissions_series_PM)
-                        self.update_attribute_value(object_name_path, number, 'emissions_region', 
-                            emissions_region)
-            else:
-                self.validate_8760(electric_tariff['emissions_factor_series_lb_PM_per_kwh'], 
-                    "ElectricTariff", 
-                    'emissions_factor_series_lb_PM_per_kwh', 
-                    self.input_dict['Scenario']['time_steps_per_hour'])
+                        if emissions_series is not None:
+                            self.update_attribute_value(object_name_path, number, key_name, 
+                                emissions_series)
+                            self.update_attribute_value(object_name_path, number, 'emissions_region', 
+                                emissions_region)
+                else:
+                    self.validate_8760(electric_tariff[key_name], 
+                        "ElectricTariff", 
+                        key_name, 
+                        self.input_dict['Scenario']['time_steps_per_hour'])
 
             if electric_tariff.get('urdb_response') is not None:
                 self.validate_urdb_response()
@@ -1572,9 +1482,6 @@ class ValidateNestedInput:
                     self.input_data_errors.append((
                         'add_blended_rates_to_urdb_rate is set to "true" yet missing valid entries for the '
                         'following inputs: {}').format(', '.join(missing_keys)))
-            
-            ts_per_hour = self.input_dict['Scenario'].get('time_steps_per_hour') or \
-                                    self.nested_input_definitions['Scenario']['time_steps_per_hour']['default']
             
             for key_name in ['wholesale_rate_us_dollars_per_kwh',
                                 'wholesale_rate_above_site_load_us_dollars_per_kwh']:

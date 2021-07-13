@@ -993,10 +993,10 @@ end
 #=
 function add_emissions_constraints(m,p)
 	if !isnothing(p.MinPercentEmissionsReduction)
-		@constraint(m, MinEmissionsReductionCon, m[:EmissionsYr1_Total_LbsCO2] <= (1-p.MinPercentEmissionsReduction)*p.BAUYr1Emissions)
+		@constraint(m, MinEmissionsReductionCon, m[:EmissionsYr1_Total_LbsCO2] <= (1-p.MinPercentEmissionsReduction)*p.BAUYr1Emissions_CO2)
 	end
 	if !isnothing(p.MaxPercentEmissionsReduction)
-		@constraint(m, MaxEmissionsReductionCon, m[:EmissionsYr1_Total_LbsCO2] >= (1-p.MaxPercentEmissionsReduction)*p.BAUYr1Emissions)
+		@constraint(m, MaxEmissionsReductionCon, m[:EmissionsYr1_Total_LbsCO2] >= (1-p.MaxPercentEmissionsReduction)*p.BAUYr1Emissions_CO2)
 	end
 end
 =#
@@ -1143,6 +1143,8 @@ function reopt_run(m, p::Parameter)
 	add_export_expressions(m, p)
 	add_util_fixed_and_min_charges(m, p)
 
+	add_emissions_calcs(m,p) ## Check! 
+
 	#=
 	#if RE and/or emissions constraints apply, include calcs & constraints now. otherwise save calcs for add_site_results
 	if !isnothing(p.MinAnnualPercentREElec) || !isnothing(p.MaxAnnualPercentREElec) 
@@ -1266,10 +1268,15 @@ function add_site_results(m, p, r::Dict)
 		add_emissions_calcs(m,p)
 	end
 	r["pwf_om"] = round(value(p.pwf_om),digits=4)
-	r["preprocessed_BAU_Yr1_emissions"] = round(value(p.BAUYr1Emissions),digits=2)	
+	=#
+
+	r["preprocessed_BAU_Yr1_emissions_CO2"] = round(value(p.BAUYr1Emissions_CO2),digits=2)	
+
+	#=
 	r["annual_re_elec_kwh"] = round(value(m[:AnnualREEleckWh]), digits=2)
 	m[:AnnualREElecPercent] = @expression(m, m[:AnnualREEleckWh]/(sum(p.ElecLoad[ts] for ts in p.TimeStep)))
 	r["annual_re_elec_percent"] = round(value(m[:AnnualREElecPercent]), digits=4)
+	
 
 	# renewable heat
 	if !isempty(p.HeatingTechs)
@@ -1284,10 +1291,22 @@ function add_site_results(m, p, r::Dict)
 	=#
 
 	r["year_one_emissions_lb_CO2"] = round(value(m[:EmissionsYr1_Total_LbsCO2]), digits=2) 
-	r["yr1_emissions_from_fuelburn"] = round(value(m[:yr1_emissions_from_fuelburn]), digits=2) 
-	r["yr1_emissions_from_elec_grid_purchase"] = round(value(m[:yr1_emissions_from_elec_grid_purchase]), digits=2) 
-	r["yr1_emissions_offset_from_elec_exports"] = round(value(m[:yr1_emissions_offset_from_elec_exports]), digits=2) 
-	## r["year_one_emissionsreduction_percent"] = round(value(1-m[:EmissionsYr1_Total_LbsCO2]/p.BAUYr1Emissions), digits=4)
+	r["yr1_CO2_emissions_from_fuelburn"] = round(value(m[:yr1_emissions_from_fuelburn]), digits=2) 
+	r["yr1_CO2_emissions_from_elec_grid_purchase"] = round(value(m[:yr1_emissions_from_elec_grid_purchase]), digits=2) 
+	r["yr1_CO2_emissions_offset_from_elec_exports"] = round(value(m[:yr1_emissions_offset_from_elec_exports]), digits=2) 
+	## r["year_one_emissionsreduction_percent"] = round(value(1-m[:EmissionsYr1_Total_LbsCO2]/p.BAUYr1Emissions_CO2), digits=4)
+
+	# NOx results 
+	## TODO: change to correct calc
+	r["year_one_emissions_lb_NOx"] = round(value(m[:EmissionsYr1_Total_LbsCO2]), digits=2) 
+
+	# SO2 results
+	## TODO: change to correct calc
+	r["year_one_emissions_lb_SO2"] = round(value(m[:EmissionsYr1_Total_LbsCO2]), digits=2) 
+
+	# PM2.5 results
+	## TODO: change to correct calc
+	r["year_one_emissions_lb_PM"] = round(value(m[:EmissionsYr1_Total_LbsCO2]), digits=2) 
 	
 end
 
@@ -1449,6 +1468,8 @@ function add_generator_results(m, p, r::Dict)
 	EmissionsYr1_LbsCO2_GEN = calc_yr1_emissions_from_fuelburn(m,p; tech_array = m[:GeneratorTechs])
 	r["year_one_generator_emissions_lb_CO2"] = round(value(EmissionsYr1_LbsCO2_GEN), digits=2)
 
+	## TODO: add health emissions
+
 	nothing
 end
 
@@ -1599,6 +1620,8 @@ function add_chp_results(m, p, r::Dict)
 	EmissionsYr1_LbsCO2_CHP = calc_yr1_emissions_from_fuelburn(m,p; tech_array = p.CHPTechs)
 	r["year_one_chp_emissions_lb_CO2"] = round(value(EmissionsYr1_LbsCO2_CHP), digits=2)
 
+	## TODO: add Health! 
+
 	nothing
 end
 
@@ -1628,6 +1651,8 @@ function add_boiler_results(m, p, r::Dict)
 
 	EmissionsYr1_LbsCO2_boiler = calc_yr1_emissions_from_fuelburn(m,p; tech_array = ["BOILER"])
 	r["year_one_boiler_emissions_lb_CO2"] = round(value(EmissionsYr1_LbsCO2_boiler), digits=2)
+
+	## TODO: add health! 
 
 	nothing
 end
@@ -1755,5 +1780,6 @@ function add_util_results(m, p, r::Dict)
 
 	yr1_emissions_from_elec_grid_purchase = calc_yr1_emissions_from_elec_grid_purchase(m,p)
 	r["year_one_elec_grid_emissions_lb_CO2"] = round(value(yr1_emissions_from_elec_grid_purchase), digits=2)
+	## TODO: add Health emissions from grid
 	
 end

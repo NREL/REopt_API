@@ -46,7 +46,7 @@ from reo.exceptions import UnexpectedError  #, RequestError  # should we save ba
 import logging
 log = logging.getLogger(__name__)
 from reo.src.techs import Generator, CHP, AbsorptionChiller, Boiler
-from reo.src.emissions_calculator import EmissionsCalculator, EmissionsCalculator_NOx, EmissionsCalculator_SO2, EmissionsCalculator_PM
+from reo.src.emissions_calculator import EmissionsCalculator ##, EmissionsCalculator_NOx, EmissionsCalculator_SO2, EmissionsCalculator_PM
 from django.http import HttpResponse
 from django.template import  loader
 import pandas as pd
@@ -199,7 +199,7 @@ def emissions_profile(request):
         latitude = float(request.GET['latitude'])  # need float to convert unicode
         longitude = float(request.GET['longitude'])
 
-        ec = EmissionsCalculator(latitude=latitude,longitude=longitude)
+        ec = EmissionsCalculator(latitude=latitude,longitude=longitude, pollutant='CO2')
 
         try:
             response = JsonResponse({
@@ -233,7 +233,7 @@ def emissions_profile_NOx(request):
         latitude = float(request.GET['latitude'])  # need float to convert unicode
         longitude = float(request.GET['longitude'])
 
-        ec_NOx = EmissionsCalculator_NOx(latitude=latitude,longitude=longitude)
+        ec_NOx = EmissionsCalculator(latitude=latitude,longitude=longitude, pollutant='NOx')
 
         try:
             response = JsonResponse({
@@ -267,7 +267,7 @@ def emissions_profile_SO2(request):
         latitude = float(request.GET['latitude'])  # need float to convert unicode
         longitude = float(request.GET['longitude'])
 
-        ec_SO2 = EmissionsCalculator_SO2(latitude=latitude,longitude=longitude)
+        ec_SO2 = EmissionsCalculator(latitude=latitude,longitude=longitude, pollutant='SO2')
 
         try:
             response = JsonResponse({
@@ -301,7 +301,7 @@ def emissions_profile_PM(request):
         latitude = float(request.GET['latitude'])  # need float to convert unicode
         longitude = float(request.GET['longitude'])
 
-        ec_PM = EmissionsCalculator_PM(latitude=latitude,longitude=longitude)
+        ec_PM = EmissionsCalculator(latitude=latitude,longitude=longitude, pollutant='PM')
 
         try:
             response = JsonResponse({

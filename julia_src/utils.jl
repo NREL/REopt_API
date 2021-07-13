@@ -220,7 +220,7 @@ Base.@kwdef struct Parameter
      ##IncludeOutageEmissionsInTotal::Bool
      ##MinPercentEmissionsReduction::Union{Float64,Nothing} 
      ##MaxPercentEmissionsReduction::Union{Float64,Nothing} 
-     BAUYr1Emissions::Float64
+     BAUYr1Emissions_CO2::Float64
      GridEmissionsFactor::Array{Float64,1}
      TechEmissionsFactors::AxisArray
 
