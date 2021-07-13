@@ -678,13 +678,15 @@ function add_prod_grid_constraints(m, p)
 
 	# Cannot export power while importing from Grid
 	@constraint(m, NoGridPurchasesBinary[ts in p.TimeStep],
-		sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) + m[:dvGridToStorage][ts] -
-		(1 - m[:binNoGridPurchases][ts]) * 1.0E9 <= 0
+        m[:binNoGridPurchases][ts] => {
+            sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) + m[:dvGridToStorage][ts] <= 0
+        }
 	)
 
 	@constraint(m, ExportOnlyAfterSiteLoadMetCon[ts in p.TimeStep],
-		sum(sum(m[:dvProductionToGrid][t,u,ts] for t in p.Tech, u in p.ExportTiers) -
-			m[:binNoGridPurchases][ts] * 1.0E9) <= 0
+		!m[:binNoGridPurchases][ts] => {
+            sum(m[:dvProductionToGrid][t,u,ts] for t in p.Tech, u in p.ExportTiers) <= 0
+        }
 	)
 end
 
