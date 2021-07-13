@@ -217,7 +217,7 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
         
         return response
     
-    def test_NOx_modeling(self):
+    def test_emissions_modeling(self):
         ## expected_pv_size = 42 #41.6667
 
         response = self.get_response(self.post)
@@ -231,20 +231,15 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
             print('Batt kW: ', response['outputs']['Scenario']['Site']['Storage']['size_kw'])
             print('Generator kW: ', response['outputs']['Scenario']['Site']['Generator']['size_kw'])
 
-            print('Year 1 CO2: ', response['outputs']['Scenario']['Site']['year_one_emissions_lb_CO2'])
-            print('Year 1 CO2 BAU: ', response['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_CO2'])
+            for item in ['CO2', 'NOx', 'SO2', 'PM']:
+              print('Year 1 {}: '.format(item), response['outputs']['Scenario']['Site']['year_one_emissions_lb_{}'.format(item)])
+              print('Year 1 {} BAU: '.format(item), response['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_{}'.format(item)])
+              
+              print('Generator Year 1 {}: '.format(item), response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_{}'.format(item)])
+              print('Generator Year 1 {} BAU: '.format(item), response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_bau_lb_{}'.format(item)])
 
-            print('Year 1 NOx: ', response['outputs']['Scenario']['Site']['year_one_emissions_lb_NOx'])
-            print('Year 1 NOx BAU: ', response['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_NOx'])
-
-            print('Generator Year 1 CO2: ', response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_CO2'])
-            print('Generator Year 1 CO2 BAU: ', response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_bau_lb_CO2'])
-
-            print('Generator Year 1 NOx: ', response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_NOx'])
-            print('Generator Year 1 NOx BAU: ', response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_bau_lb_NOx'])
-
-            path = 'reo/tests/outputs/'
-            json.dump(response, open(path+'/'+"NOx_results.json", "w"))
+            ## path = 'reo/tests/outputs/'
+            ## json.dump(response, open(path+'/'+"NOx_results.json", "w"))
 
             # output_df = pd.DataFrame()
             # output_df['load'] = response['outputs']['Scenario']['Site']['LoadProfile']['year_one_electric_load_series_kw']
