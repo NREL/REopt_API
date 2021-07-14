@@ -78,10 +78,17 @@ def results(request, run_uuid):
     r = s.dict
     r["inputs"] = dict()
     r["inputs"]["Financial"] = s.FinancialInputs.dict
+    r["inputs"]["Site"] = s.SiteInputs.dict
+
+    for d in r["inputs"].values():
+        d.pop("scenario_id", None)
 
     try:
         r["outputs"] = dict()
         r["outputs"]["Financial"] = s.FinancialOutputs.dict
+
+        for d in r["outputs"].values():
+            d.pop("scenario_id", None)
         # TODO fill out rest of out/inputs
     except Exception as e:
         if 'RelatedObjectDoesNotExist' in str(type(e)):
