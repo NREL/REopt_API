@@ -164,11 +164,6 @@ nested_output_definitions = {
                   "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption over the analysis period.",
                   "units": "lb CO2"
                 },
-                # TODO: lifetime BAU emissions
-                # TODO: "lifetime_emissions_lb_NOX", SO2, PM2.5
-                # TODO: lifetime_emissions_cost_CO2_us_dollars 
-                # TODO: lifetime_emissions_cost_health_us_dollars
-                # TODO: Emissions_in_objective:: bool 
 
               "LoadProfile": {
                 "year_one_electric_load_series_kw": {
