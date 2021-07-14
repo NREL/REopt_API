@@ -969,6 +969,7 @@ function add_emissions_calcs(m,p)
 	else
 		include_exported_elec_emissions_in_total = 0
 	end
+	## TODO: levelize grid emissions to account for greening of grid
 	m[:EmissionsYr1_Total_LbsCO2] = m[:yr1_emissions_from_fuelburn] + m[:yr1_emissions_from_elec_grid_purchase] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports]
 end 
 
@@ -988,7 +989,13 @@ function calc_yr1_emissions_offset_from_elec_exports(m,p; tech_array=p.ElectricT
 		for t in tech_array, ts in p.TimeStep, u in p.ExportTiersByTech[t]))
 		# if battery ends up being able to discharge to grid, need to incorporate here- might require complex tracking of what's charging battery  
 	return yr1_emissions_offset_from_elec_exports
+## TODO: all of these calcs for health emissions 
 end
+
+### Lifetime emissions calculations
+function add_lifetime_emissions_calcs_lbs(m,p)
+	m[:Lifetime_Emissions_Lbs_CO2] = m[:EmissionsYr1_Total_LbsCO2] * p.analysis_years
+end 
 
 #=
 function add_emissions_constraints(m,p)
@@ -1290,6 +1297,7 @@ function add_site_results(m, p, r::Dict)
 	end 
 	=#
 
+	# Year 1 Emissions results at Site level
 	r["year_one_emissions_lb_CO2"] = round(value(m[:EmissionsYr1_Total_LbsCO2]), digits=2) 
 	r["yr1_CO2_emissions_from_fuelburn"] = round(value(m[:yr1_emissions_from_fuelburn]), digits=2) 
 	r["yr1_CO2_emissions_from_elec_grid_purchase"] = round(value(m[:yr1_emissions_from_elec_grid_purchase]), digits=2) 
@@ -1307,6 +1315,11 @@ function add_site_results(m, p, r::Dict)
 	# PM2.5 results
 	## TODO: change to correct calc
 	r["year_one_emissions_lb_PM"] = round(value(m[:EmissionsYr1_Total_LbsCO2]), digits=2) 
+
+	# Lifetime emissions results at Site level
+	r["lifetime_emissions_lb_CO2"] = round(value(m[:Lifetime_Emissions_Lbs_CO2]), digits=2)
+	
+
 	
 end
 
