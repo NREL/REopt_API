@@ -27,7 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-from django.shortcuts import render
+from django.db import models
 import uuid
 import sys
 import traceback as tb
@@ -39,16 +39,13 @@ from job.models import Scenario
 def make_error_resp(msg):
         resp = dict()
         resp['messages'] = {'error': msg}
-        resp['outputs'] = dict()
-        resp['outputs']['Scenario'] = dict()
-        resp['outputs']['Scenario']['status'] = 'error'
+        resp['status'] = 'error'
         return resp
 
 
 def results(request, run_uuid):
     try:
         uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
-
     except ValueError as e:
         if e.args[0] == "badly formed hexadecimal UUID string":
             resp = make_error_resp(e.args[0])
@@ -61,22 +58,40 @@ def results(request, run_uuid):
             return JsonResponse({"Error": str(err.args[0])}, status=400)
 
     try:
-        # TODO exception for missing scenario, does this handle unsaved outputs?
         s = Scenario.objects.get(run_uuid=run_uuid)
-        r = s.dict
+    except Exception as e:
+        if isinstance(e, models.ObjectDoesNotExist):
+            resp = {"messages": {"error": ""}}
+            resp['messages']['error'] = (
+                "run_uuid {} not in database. "
+                "You may have hit the results endpoint too quickly after POST'ing scenario, "
+                "have a typo in your run_uuid, or the scenario was deleted.").format(run_uuid)
+            resp['status'] = 'error'
+            return JsonResponse(resp, status=404)
+        else:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            err = UnexpectedError(exc_type, exc_value.args[0], tb.format_tb(exc_traceback), task='job.views.results', 
+                run_uuid=run_uuid)
+            err.save_to_db()
+            resp = make_error_resp(err.message)
+            return JsonResponse(resp, status=500)
+    r = s.dict
+    r["inputs"] = dict()
+    r["inputs"]["Financial"] = s.FinancialInputs.dict
+
+    try:
         r["outputs"] = dict()
         r["outputs"]["Financial"] = s.FinancialOutputs.dict
         # TODO fill out rest of out/inputs
+    except Exception as e:
+        if 'RelatedObjectDoesNotExist' in str(type(e)):
+            pass
+        else:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            err = UnexpectedError(exc_type, exc_value.args[0], tb.format_tb(exc_traceback), task='job.views.results', 
+                run_uuid=run_uuid)
+            err.save_to_db()
+            resp = make_error_resp(err.message)
+            return JsonResponse(resp, status=500)
 
-        r["inputs"] = dict()
-        r["inputs"]["Financial"] = s.FinancialInputs.dict
-
-        return JsonResponse(r)
-
-    except Exception:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        err = UnexpectedError(exc_type, exc_value.args[0], tb.format_tb(exc_traceback), task='job.views.results', 
-            run_uuid=run_uuid)
-        err.save_to_db()
-        resp = make_error_resp(err.message)
-        return JsonResponse(resp, status=500)
+    return JsonResponse(r)
