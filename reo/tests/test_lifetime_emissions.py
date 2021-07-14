@@ -110,7 +110,7 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
                 "state_rebate_max_us_dollars": 0.0,
                 "federal_itc_pct": 0.0,
                 "pbi_us_dollars_per_kwh": 0.0,
-                "existing_kw": 0.0,
+                "existing_kw": 10.0,
                 "om_cost_us_dollars_per_kw": 10.0,
                 "utility_rebate_us_dollars_per_kw": 0.0,
                 "macrs_itc_reduction": 0.0,
@@ -230,6 +230,7 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
             print('Batt kWh: ', response['outputs']['Scenario']['Site']['Storage']['size_kwh'])
             print('Batt kW: ', response['outputs']['Scenario']['Site']['Storage']['size_kw'])
             print('Generator kW: ', response['outputs']['Scenario']['Site']['Generator']['size_kw'])
+            print('Annual kWh: ', response['outputs']['Scenario']['Site']["LoadProfile"]["annual_calculated_kwh"])
 
             for item in ['CO2', 'NOx', 'SO2', 'PM']:
               print('Year 1 {}: '.format(item), response['outputs']['Scenario']['Site']['year_one_emissions_lb_{}'.format(item)])
@@ -238,8 +239,12 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
               print('Generator Year 1 {}: '.format(item), response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_{}'.format(item)])
               print('Generator Year 1 {} BAU: '.format(item), response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_bau_lb_{}'.format(item)])
 
-            ## path = 'reo/tests/outputs/'
-            ## json.dump(response, open(path+'/'+"NOx_results.json", "w"))
+            print('year_one_CO2_emissions_from_fuelburn: ', response['outputs']['Scenario']['Site']['year_one_CO2_emissions_from_fuelburn'])
+            ## print('Lifetime lbs CO2: ', response['outputs']['Scenario']['Site']['lifetime_emissions_lb_CO2'])
+              
+            
+            path = 'reo/tests/outputs/'
+            json.dump(response, open(path+'/'+"lifetime_emissions_results.json", "w"))
 
             # output_df = pd.DataFrame()
             # output_df['load'] = response['outputs']['Scenario']['Site']['LoadProfile']['year_one_electric_load_series_kw']
