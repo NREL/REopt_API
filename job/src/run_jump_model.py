@@ -66,7 +66,7 @@ class RunJumpModelTask(Task):
             msg = exc.args[0]
         data = kwargs['data']
         data["messages"]["error"] = msg
-        data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
+        data["status"] = "An error occurred. See messages for more."
         # ModelManager.update_scenario_and_messages(data, run_uuid=data['outputs']['Scenario']['run_uuid'])
 
         self.request.chain = None  # stop the chain
@@ -88,11 +88,12 @@ def run_jump_model(data, bau=False):
         julia_host = os.environ.get('JULIA_HOST', "julia")
         response = requests.post("http://" + julia_host + ":8081/reopt/", json=data)
         results = response.json()
+        if response.status_code == 500:
+            raise REoptFailedToStartError(task=name, message=results["error"], run_uuid=run_uuid, user_uuid=user_uuid)
         time_dict["pyjulia_run_reopt_seconds"] = time.time() - t_start
         results.update(time_dict)
 
     except Exception as e:
-        raise e
         if isinstance(e, REoptFailedToStartError):
             raise e
         elif "DimensionMismatch" in e.args[0]:  # JuMP may mishandle a timeout when no feasible solution is returned
@@ -116,6 +117,6 @@ def run_jump_model(data, bau=False):
             raise NotOptimal(task=name, run_uuid=run_uuid, status=status.strip(), user_uuid=user_uuid)
 
     profiler.profileEnd()
-    # ModelManager.updateModel('ProfileModel', {name+'_seconds': profiler.getDuration()}, run_uuid)
+    # TODO save profile times
     process_results(results, run_uuid)
     return True
