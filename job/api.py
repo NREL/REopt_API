@@ -42,6 +42,7 @@ from job.validators import InputValidator
 from reo.src.profiler import Profiler
 from job.src.run_jump_model import run_jump_model
 from reo.exceptions import UnexpectedError, REoptError
+from job.models import Scenario
 log = logging.getLogger(__name__)
 
 
@@ -106,10 +107,20 @@ class Job(ModelResource):
         # TODO finish minimum Models for REoptLite.jl
         # TODO migrations
         # TODO add dev URLs
-        if "Scenario" in bundle.data.keys():
-            bundle.data["Scenario"]["run_uuid"] = run_uuid
+
+        bundle.data.update({"Scenario": {"run_uuid": run_uuid, "status": "validating..."}})
+
+        if bundle.request.META.get('HTTP_X_API_USER_ID', False):
+            if bundle.request.META.get('HTTP_X_API_USER_ID', '') == '6f09c972-8414-469b-b3e8-a78398874103':
+                bundle.data['Scenario']['job_type'] = 'REopt Lite Web Tool'
+            else:
+                bundle.data['outputs']['Scenario']['job_type'] = 'developer.nrel.gov'
         else:
-            bundle.data.update({"Scenario": {"run_uuid": run_uuid}})
+            bundle.data['Scenario']['job_type'] = 'Internal NREL'
+
+        test_case = bundle.request.META.get('HTTP_USER_AGENT') or ''
+        if test_case.startswith('check_http/'):
+            bundle.data['Scenario']['job_type'] = 'Monitoring'
 
         # Validate inputs
         try:
@@ -146,19 +157,7 @@ class Job(ModelResource):
 
         # data.update(input_validator.scrubbed_inputs)
         # data["messages"] = input_validator.messages
-
-        data["status"] = 'Optimizing...'
         # data['outputs']['Scenario']['Profile']['POST_validation_seconds'] = profiler.getDuration()
-        # if bundle.request.META.get('HTTP_X_API_USER_ID', False):
-        #     if bundle.request.META.get('HTTP_X_API_USER_ID', '') == '6f09c972-8414-469b-b3e8-a78398874103':
-        #         data['outputs']['Scenario']['job_type'] = 'REopt Lite Web Tool'
-        #     else:
-        #         data['outputs']['Scenario']['job_type'] = 'developer.nrel.gov'
-        # else:
-        #     data['outputs']['Scenario']['job_type'] = 'Internal NREL'
-        # test_case = bundle.request.META.get('HTTP_USER_AGENT') or ''
-        # if test_case.startswith('check_http/'):
-        #     data['outputs']['Scenario']['job_type'] = 'Monitoring'
         # profiler.profileEnd()
 
         try:
@@ -177,6 +176,7 @@ class Job(ModelResource):
                                                      content_type='application/json',
                                                      status=500))  # internal server error
 
+        Scenario.objects.filter(run_uuid=run_uuid).update(status='Optimizing...')
         try:
             run_jump_model.s(data=input_validator.scrubbed_inputs).apply_async()
         except Exception as e:
