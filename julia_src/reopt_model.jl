@@ -994,7 +994,14 @@ end
 
 ### Lifetime emissions calculations
 function add_lifetime_emissions_calcs(m,p)
-	m[:Lifetime_Emissions_Lbs_CO2] = m[:EmissionsYr1_Total_LbsCO2] ## TODO! * p.analysis_years
+	# Lifetime lbs CO2 
+	m[:Lifetime_Emissions_Lbs_CO2] = m[:EmissionsYr1_Total_LbsCO2] * p.analysis_years
+	# Lifetime cost CO2
+	# pwf: accounts for discounting (TODO: set to 3%?) 
+	## TODO! 
+	# 2204.62 lb / metric ton
+	m[:Lifetime_Emissions_Cost_CO2] = p.pwf_CO2 * p.co2_cost_us_dollars_per_tonne * m[:EmissionsYr1_Total_LbsCO2] / 2204.62 
+
 end 
 
 #=

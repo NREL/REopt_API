@@ -180,6 +180,9 @@ class SiteModel(models.Model):
     year_one_emissions_lb_PM = models.FloatField(null=True, blank=True)
     year_one_emissions_bau_lb_PM = models.FloatField(null=True, blank=True)
 
+    lifetime_emissions_lb_CO2 = models.FloatField(null=True, blank=True) # TODO: add _bau
+
+
     @classmethod
     def create(cls, **kwargs):
         obj = cls(**kwargs)

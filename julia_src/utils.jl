@@ -151,6 +151,7 @@ Base.@kwdef struct Parameter
 	 pwf_fuel::AxisArray
 	 r_tax_owner::Float64      # f^{tow}: Tax rate factor for owner [fraction]
      r_tax_offtaker::Float64   # f^{tot}: Tax rate factor for offtaker [fraction]
+     pwf_CO2::Float64 # Cost of CO2 present worth factor [unitless]
 
 	 ###  System Size and Fuel Limit Parameters ###
 	 TechClassMinSize::AxisArray   #  \ubar{b}^{\sigma}_{c}: Minimum system size for technology class c [kW]
@@ -223,6 +224,7 @@ Base.@kwdef struct Parameter
      BAUYr1Emissions_CO2::Float64
      GridEmissionsFactor::Array{Float64,1}
      TechEmissionsFactors::AxisArray
+     CO2_dollars_tonne::Float64
 
 	# Added for CHP
 	HotTES::Array{String,1}
