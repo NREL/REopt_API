@@ -993,8 +993,8 @@ function calc_yr1_emissions_offset_from_elec_exports(m,p; tech_array=p.ElectricT
 end
 
 ### Lifetime emissions calculations
-function add_lifetime_emissions_calcs_lbs(m,p)
-	m[:Lifetime_Emissions_Lbs_CO2] = m[:EmissionsYr1_Total_LbsCO2] * p.analysis_years
+function add_lifetime_emissions_calcs(m,p)
+	m[:Lifetime_Emissions_Lbs_CO2] = m[:EmissionsYr1_Total_LbsCO2] ## TODO! * p.analysis_years
 end 
 
 #=
@@ -1150,7 +1150,8 @@ function reopt_run(m, p::Parameter)
 	add_export_expressions(m, p)
 	add_util_fixed_and_min_charges(m, p)
 
-	add_emissions_calcs(m,p) ## Check! 
+	add_emissions_calcs(m,p) ## TODO: Check?
+	add_lifetime_emissions_calcs(m,p)
 
 	#=
 	#if RE and/or emissions constraints apply, include calcs & constraints now. otherwise save calcs for add_site_results
