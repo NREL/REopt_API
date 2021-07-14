@@ -117,5 +117,5 @@ def run_jump_model(data, bau=False):
 
     profiler.profileEnd()
     # ModelManager.updateModel('ProfileModel', {name+'_seconds': profiler.getDuration()}, run_uuid)
-    process_results(results)
+    process_results(results, run_uuid)
     return True

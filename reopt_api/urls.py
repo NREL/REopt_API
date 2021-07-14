@@ -81,6 +81,7 @@ urlpatterns = [
     url(r'', include(stable_api.urls), name='job'),
     url(r'', include(stable_api.urls), name='outagesimjob'),
 
+    path('dev/', include('job.urls')),
     url(r'', include(dev_api.urls), name='job'),
 
     path('dev/', include('futurecosts.urls')),

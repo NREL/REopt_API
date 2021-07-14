@@ -28,5 +28,53 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
 from django.shortcuts import render
+import uuid
+import sys
+import traceback as tb
+from django.http import JsonResponse
+from reo.exceptions import UnexpectedError
+from job.models import Scenario
 
-# Create your views here.
+
+def make_error_resp(msg):
+        resp = dict()
+        resp['messages'] = {'error': msg}
+        resp['outputs'] = dict()
+        resp['outputs']['Scenario'] = dict()
+        resp['outputs']['Scenario']['status'] = 'error'
+        return resp
+
+
+def results(request, run_uuid):
+    try:
+        uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
+
+    except ValueError as e:
+        if e.args[0] == "badly formed hexadecimal UUID string":
+            resp = make_error_resp(e.args[0])
+            return JsonResponse(resp, status=400)
+        else:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            err = UnexpectedError(exc_type, exc_value.args[0], tb.format_tb(exc_traceback), task='job.views.results', 
+                run_uuid=run_uuid)
+            err.save_to_db()
+            return JsonResponse({"Error": str(err.args[0])}, status=400)
+
+    try:
+        s = Scenario.objects.get(run_uuid=run_uuid)
+        r = s.dict
+        r["outputs"] = dict()
+        r["outputs"]["Financial"] = s.FinancialOutputs.dict
+
+        r["inputs"] = dict()
+        r["inputs"]["Financial"] = s.FinancialInputs.dict
+
+        return JsonResponse(r)
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value.args[0], tb.format_tb(exc_traceback), task='job.views.results', 
+            run_uuid=run_uuid)
+        err.save_to_db()
+        resp = make_error_resp(err.message)
+        return JsonResponse(resp, status=500)
