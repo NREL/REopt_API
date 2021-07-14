@@ -82,7 +82,7 @@ https://stackoverflow.com/questions/8609192/what-is-the-difference-between-null-
 Guidance:
 - start all Model fields with required fields (do not need to include `blank` b/c the default value of blank is False)
 - TextField and CharField should not have null=True
-- description: use square brackets or unit, eg. [dollars per kWh]
+- description: use square brackets for units, eg. [dollars per kWh]
 
 Input and Results models
 test type validation for multiple fields, need to override clean_fields to go through all fields before raising ValidationError?
@@ -109,6 +109,10 @@ test type validation for multiple fields, need to override clean_fields to go th
 
         if errors:
             raise ValidationError(errors)
+
+
+Output models need to have null=True, blank=True for cases when results are not generated 
+(when errors occur during solve or post-processing)
            
 """
 # TODO check all fields (do we really want so many null's allowed? are the blank=True all correct? Can we add more defaults)
@@ -432,7 +436,7 @@ class FinancialInputs(BaseModel, models.Model):
     #     help_text=("Annual nominal chp fuel cost escalation rate")
     # )
 
-"""
+
 class FinancialOutputs(BaseModel, models.Model):
     name = "FinancialOutputs"
 
@@ -466,14 +470,11 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Net capital costs for all technologies, in present value, including replacement costs and incentives."
     )
-    # don't know about this one because it's not in nested_outputs or on developer.nrel.gov
-    # avoided_outage_costs_us_dollars = models.FloatField(
-    #     null=True, blank=True,
-    #     help_text=""
-    # )
-    microgrid_upgrade_cost_us_dollars = models.FloatField(
+    microgrid_upgrade_cost = models.FloatField(
         null=True, blank=True,
-        help_text="Cost in US dollars to make a distributed energy system islandable from the grid. Determined by multiplying the total capital costs of resultant energy systems from REopt (such as PV and Storage system) with the input value for microgrid_upgrade_cost_pct (which defaults to 0.30)."
+        help_text=("Cost to make a distributed energy system islandable from the grid. Determined by multiplying the "
+            "total capital costs of resultant energy systems from REopt (such as PV and Storage system) with the input "
+            "value for microgrid_upgrade_cost_pct (which defaults to 0.30).")
     )
     initial_capital_costs = models.FloatField(
         null=True, blank=True,
@@ -506,9 +507,9 @@ class FinancialOutputs(BaseModel, models.Model):
     simple_payback_years = models.FloatField(
         null=True, blank=True,
         help_text=("Number of years until the cumulative annual cashflow turns positive. "
-                                  "If the cashflow becomes negative again after becoming positive (i.e. due to battery repalcement costs)"
-                                  " then simple payback is increased by the number of years that the cash flow "
-                                  "is negative beyond the break-even year.")
+            "If the cashflow becomes negative again after becoming positive (i.e. due to battery repalcement costs)"
+            " then simple payback is increased by the number of years that the cash flow "
+            "is negative beyond the break-even year.")
     )
     irr_pct = models.FloatField(
         null=True, blank=True,
@@ -524,60 +525,60 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text=("The annualized amount the host will pay to the third-party owner over the life of the project.")
     )
-    offtaker_annual_free_cashflow_series_us_dollars = ArrayField(
-            models.FloatField(
-                null=True, blank=True
-            ), 
-            default=list, 
-            null=True,
-            help_text=("Annual free cashflow for the host in the optimal case for all analysis years, "
-                        "including year 0. Future years have not been discounted to account for the time value of money.")
+    offtaker_annual_free_cashflow_series = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ), 
+        default=list, 
+        null=True,
+        help_text=("Annual free cashflow for the host in the optimal case for all analysis years, "
+                    "including year 0. Future years have not been discounted to account for the time value of money.")
     )
     offtaker_discounted_annual_free_cashflow_series_us_dollars = ArrayField(
             models.FloatField(
                 null=True, blank=True
             ), 
-            default=list, 
-            null=True,
-            help_text=("Annual discounted free cashflow for the host in the optimal case for all analysis years, "
-                        "including year 0. Future years have been discounted to account for the time value of money.")
+        default=list,
+        null=True,
+        help_text=("Annual discounted free cashflow for the host in the optimal case for all analysis years, "
+                    "including year 0. Future years have been discounted to account for the time value of money.")
     )
     offtaker_annual_free_cashflow_series_bau_us_dollars = ArrayField(
             models.FloatField(
                 null=True, blank=True
             ), 
-            default=list, 
-            null=True,
-            help_text=("Annual free cashflow for the host in the business-as-usual case for all analysis years, "
-                        "including year 0. Future years have not been discounted to account for the time value of "
-                        "money. Only calculated in the non-third-party case.")
+        default=list,
+        null=True,
+        help_text=("Annual free cashflow for the host in the business-as-usual case for all analysis years, "
+                    "including year 0. Future years have not been discounted to account for the time value of "
+                    "money. Only calculated in the non-third-party case.")
     )
     offtaker_discounted_annual_free_cashflow_series_bau_us_dollars = ArrayField(
             models.FloatField(
                 null=True, blank=True
             ), 
-            default=list, 
-            null=True,
-            help_text=("Annual discounted free cashflow for the host in the business-as-usual case for all analysis "
-                        "years, including year 0. Future years have been discounted to account for the time value of "
-                        "money. Only calculated in the non-third-party case.")
+        default=list,
+        null=True,
+        help_text=("Annual discounted free cashflow for the host in the business-as-usual case for all analysis "
+                    "years, including year 0. Future years have been discounted to account for the time value of "
+                    "money. Only calculated in the non-third-party case.")
     )
     developer_annual_free_cashflow_series_us_dollars = ArrayField(
             models.FloatField(
                 null=True, blank=True
             ), 
-            default=list, 
-            null=True,
-            help_text=("Annual free cashflow for the developer in the business-as-usual third party case for all "
-                        "analysis years, including year 0. Future years have not been discounted to account for "
-                        "the time value of money. Only calculated in the third-party case.")
+        default=list,
+        null=True,
+        help_text=("Annual free cashflow for the developer in the business-as-usual third party case for all "
+                    "analysis years, including year 0. Future years have not been discounted to account for "
+                    "the time value of money. Only calculated in the third-party case.")
     )
     developer_om_and_replacement_present_cost_after_tax_us_dollars = models.FloatField(
         null=True, blank=True,
         help_text=("Net O&M and replacement costs in present value, after-tax for the third-party "
                     "developer. Only calculated in the third-party case.")
     )
-"""
+
 
 class ElectricLoadInputs(BaseModel, models.Model):
     name = "ElectricLoad"
