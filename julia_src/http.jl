@@ -38,8 +38,24 @@ function reopt(req::HTTP.Request)
 				OUTPUTLOG = 0
 			)
 		)
-	results = REoptLite.run_reopt(m, d)
-    return HTTP.Response(200, JSON.json(results))
+    @info "Starting REopt..."
+    error_response = Dict()
+    results = Dict()
+    try
+        results = REoptLite.run_reopt(m, d)
+    catch e
+        @error "Something went wrong in the Julia code!" exception=(e, catch_backtrace())
+        error_response["error"] = sprint(showerror, e)
+    end
+    finalize(backend(m))
+    GC.gc()
+    if isempty(error_response)
+        @info "REopt model solved with status $(results["status"])."
+        return HTTP.Response(200, JSON.json(results))
+    else
+        @info "An error occured in the Julia code."
+        return HTTP.Response(500, JSON.json(error_response))
+    end
 end
 
 function health(req::HTTP.Request)
