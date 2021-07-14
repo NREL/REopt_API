@@ -37,13 +37,16 @@ from job.models import Scenario
 
 
 def make_error_resp(msg):
-        resp = dict()
-        resp['messages'] = {'error': msg}
-        resp['status'] = 'error'
-        return resp
+    resp = dict()
+    resp['messages'] = {'error': msg}
+    resp['status'] = 'error'
+    return resp
 
 
 def results(request, run_uuid):
+    """
+    results endpoint for jobs
+    """
     try:
         uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
     except ValueError as e:
