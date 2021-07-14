@@ -178,7 +178,7 @@ class Job(ModelResource):
                                                      status=500))  # internal server error
 
         try:
-            run_jump_model.s(data=input_validator.scrubbed_inputs)()
+            run_jump_model.s(data=input_validator.scrubbed_inputs).apply_async()
         except Exception as e:
             if isinstance(e, REoptError):
                 pass  # handled in each task
