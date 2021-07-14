@@ -27,8 +27,9 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-from job.models import FinancialOutputs
+from job.models import FinancialOutputs, Scenario
 
 
-def process_results(results: dict) -> None:
-    FinancialOutputs.create(**results["Financial"])
+def process_results(results: dict, run_uuid: str) -> None:
+    s = Scenario.objects.get(run_uuid=run_uuid)
+    FinancialOutputs.create(scenario=s, **results["Financial"]).save()

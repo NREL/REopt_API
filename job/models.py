@@ -314,7 +314,7 @@ class FinancialInputs(BaseModel, models.Model):
     scenario = models.OneToOneField(
         Scenario,
         on_delete=models.CASCADE,
-        primary_key=True,
+        related_name="FinancialInputs"
     )
 
     # Inputs
@@ -443,7 +443,7 @@ class FinancialOutputs(BaseModel, models.Model):
     scenario = models.OneToOneField(
         Scenario,
         on_delete=models.CASCADE,
-        primary_key=True,
+        related_name="FinancialOutputs"
     )
 
     lcc_us_dollars = models.FloatField(

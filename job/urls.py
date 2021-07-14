@@ -27,3 +27,9 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
+from . import views
+from django.urls import re_path
+
+urlpatterns = [
+    re_path(r'^job/(?P<run_uuid>[0-9a-f-]+)/results/?$', views.results),
+]
