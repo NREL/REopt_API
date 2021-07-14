@@ -61,10 +61,12 @@ def results(request, run_uuid):
             return JsonResponse({"Error": str(err.args[0])}, status=400)
 
     try:
+        # TODO exception for missing scenario, does this handle unsaved outputs?
         s = Scenario.objects.get(run_uuid=run_uuid)
         r = s.dict
         r["outputs"] = dict()
         r["outputs"]["Financial"] = s.FinancialOutputs.dict
+        # TODO fill out rest of out/inputs
 
         r["inputs"] = dict()
         r["inputs"]["Financial"] = s.FinancialInputs.dict

@@ -42,6 +42,8 @@ import warnings
 import logging
 
 log = logging.getLogger(__name__)
+
+# TODO add related_name field to all OneToOne Scenario's
 """
 When editing this file help_text must have the following punctuation:
     1- One line of text must be enclosed by quotes, example:

@@ -31,5 +31,12 @@ from job.models import FinancialOutputs, Scenario
 
 
 def process_results(results: dict, run_uuid: str) -> None:
+    """
+    Saves the results returned from the Julia API in the backend database.
+    Called in job/run_jump_model (a celery task)
+    """
     s = Scenario.objects.get(run_uuid=run_uuid)
+    s.status = results.get("status")
+    s.save(update_fields=["status"])
     FinancialOutputs.create(scenario=s, **results["Financial"]).save()
+    # TODO process rest of results
