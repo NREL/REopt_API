@@ -240,7 +240,7 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
               print('Generator Year 1 {} BAU: '.format(item), response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_bau_lb_{}'.format(item)])
 
             print('year_one_CO2_emissions_from_fuelburn: ', response['outputs']['Scenario']['Site']['year_one_CO2_emissions_from_fuelburn'])
-            ## print('Lifetime lbs CO2: ', response['outputs']['Scenario']['Site']['lifetime_emissions_lb_CO2'])
+            print('Lifetime lbs CO2: ', response['outputs']['Scenario']['Site']['lifetime_emissions_lb_CO2'])
               
             
             path = 'reo/tests/outputs/'

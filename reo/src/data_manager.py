@@ -209,6 +209,9 @@ class DataManager:
         pwf_e = annuity(sf.analysis_years, sf.escalation_pct, sf.offtaker_discount_pct)
         pwf_boiler_fuel = annuity(sf.analysis_years, sf.boiler_fuel_escalation_pct, sf.offtaker_discount_pct)
         pwf_chp_fuel = annuity(sf.analysis_years, sf.chp_fuel_escalation_pct, sf.offtaker_discount_pct)
+        # TODO: should this use annuity_escalation instead? (assumes growth in yr 2 instead of 1)
+        # TODO: Should this use a 3% discount rate instead of the offtaker's? 
+        pwf_CO2 = annuity(sf.analysis_years, sf.co2_cost_escalation_pct, sf.offtaker_discount_pct) 
         self.pwf_e = pwf_e
         # pwf_op = annuity(sf.analysis_years, sf.escalation_pct, sf.owner_discount_pct)
 
@@ -244,7 +247,7 @@ class DataManager:
                 else:
                     pwf_fuel_by_tech.append(round(pwf_e, 5))
 
-        return levelization_factor, pwf_e, pwf_om, two_party_factor, pwf_boiler_fuel, pwf_chp_fuel, pwf_fuel_by_tech
+        return levelization_factor, pwf_e, pwf_om, two_party_factor, pwf_boiler_fuel, pwf_chp_fuel, pwf_fuel_by_tech, pwf_CO2
 
     def _get_REopt_production_incentives(self, techs):
         sf = self.site.financial
@@ -1149,8 +1152,10 @@ class DataManager:
             electric_derate_bau, chp_thermal_prod_factor_bau, \
             tech_emissions_factors_bau = self._get_REopt_array_tech_load(self.bau_techs) ## TODO: , tech_pct_RE_bau
         
+        # Emissions inputs 
         grid_emissions_factor = self.elec_tariff.emissions_factor_series_lb_CO2_per_kwh
         bau_emissions_CO2 = self.bau_emissions_CO2()
+        co2_cost_us_dollars_per_tonne = self.site.financial.co2_cost_us_dollars_per_tonne
 
         max_sizes, min_turn_down, max_sizes_location, min_allowable_size = self._get_REopt_tech_max_sizes_min_turn_down(
             self.available_techs)
@@ -1158,9 +1163,9 @@ class DataManager:
             self.bau_techs, bau=True)
 
         levelization_factor, pwf_e, pwf_om, two_party_factor, \
-        pwf_boiler_fuel, pwf_chp_fuel, pwf_fuel_by_tech = self._get_REopt_pwfs(self.available_techs)
+        pwf_boiler_fuel, pwf_chp_fuel, pwf_fuel_by_tech, pwf_CO2 = self._get_REopt_pwfs(self.available_techs)
         levelization_factor_bau, pwf_e_bau, pwf_om_bau, two_party_factor_bau, \
-        pwf_boiler_fuel_bau, pwf_chp_fuel_bau, pwf_fuel_by_tech_bau = self._get_REopt_pwfs(self.bau_techs)
+        pwf_boiler_fuel_bau, pwf_chp_fuel_bau, pwf_fuel_by_tech_bau, pwf_CO2_bau = self._get_REopt_pwfs(self.bau_techs)
 
         pwf_prod_incent, max_prod_incent, max_size_for_prod_incent, production_incentive_rate \
             = self._get_REopt_production_incentives(self.available_techs)
@@ -1339,6 +1344,7 @@ class DataManager:
             'pwf_e': pwf_e,
             'pwf_om': pwf_om,
             'pwf_fuel': pwf_fuel_by_tech,
+            'pwf_CO2': pwf_CO2,
             'two_party_factor': two_party_factor,
             'pwf_prod_incent': pwf_prod_incent,
             'MaxProdIncent': max_prod_incent,
@@ -1451,7 +1457,8 @@ class DataManager:
             'CHPDoesNotReduceDemandCharges': tariff_args.chp_does_not_reduce_demand_charges,
             'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month,
             'StorageDecayRate': storage_decay_rate,
-            'AddSOCIncentive': self.add_soc_incentive
+            'AddSOCIncentive': self.add_soc_incentive,
+            'CO2_dollars_tonne': co2_cost_us_dollars_per_tonne
             }
         ## Uncomment the following and run a scenario to get an updated modelinputs.json for creating Julia system image
         # import json
@@ -1471,6 +1478,7 @@ class DataManager:
             'pwf_e': pwf_e_bau,
             'pwf_om': pwf_om_bau,
             'pwf_fuel': pwf_fuel_by_tech_bau,
+            'pwf_CO2': pwf_CO2_bau,
             'two_party_factor': two_party_factor_bau,
             'pwf_prod_incent': pwf_prod_incent_bau,
             'MaxProdIncent': max_prod_incent_bau,
@@ -1584,4 +1592,5 @@ class DataManager:
             "TechEmissionsFactors": tech_emissions_factors_bau,
             "IncludeExportedElecEmissionsInTotal": self.site.include_exported_elec_emissions_in_total,
             "BAUYr1Emissions_CO2": bau_emissions_CO2,
+            'CO2_dollars_tonne': co2_cost_us_dollars_per_tonne
         }

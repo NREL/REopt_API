@@ -139,6 +139,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "year_one_emissions_lb_PM",
             "year_one_generator_emissions_lb_CO2",
             ## TODO: add health calcs for "year_one_generator_emissions_lb_XX" 
+            ## TODO: add lifetime_emissions_lb_CO2 
 
         ]
 
