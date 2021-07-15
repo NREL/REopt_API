@@ -175,7 +175,11 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
                 "analysis_years": 20,
                 "microgrid_upgrade_cost_pct": 0.3,
                 "offtaker_tax_pct": 0.26,
-                "om_cost_escalation_pct": 0.025
+                "om_cost_escalation_pct": 0.025,
+                "co2_cost_us_dollars_per_tonne": 51.0,
+                "nox_cost_us_dollars_per_tonne": 51.0, # TODO: change to values from EASIUR! (and also make seasonal?)
+                "so2_cost_us_dollars_per_tonne": 51.0, # TODO: change to values from EASIUR! 
+                "pm_cost_us_dollars_per_tonne": 51.0 # TODO: change to values from EASIUR! 
               },
               "Wind": {
                 "pbi_years": 1.0,
@@ -240,12 +244,25 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
               print('Generator Year 1 {}: '.format(item), response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_{}'.format(item)])
               print('Generator Year 1 {} BAU: '.format(item), response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_bau_lb_{}'.format(item)])
 
+            print('fuel_used_gal: ', response['outputs']['Scenario']['Site']['Generator']['fuel_used_gal'])
             print('year_one_CO2_emissions_from_fuelburn: ', response['outputs']['Scenario']['Site']['year_one_CO2_emissions_from_fuelburn'])
             print('Lifetime lbs CO2: ', response['outputs']['Scenario']['Site']['lifetime_emissions_lb_CO2'])
             print('Lifetime lbs CO2 BAU: ', response['outputs']['Scenario']['Site']['lifetime_emissions_lb_CO2_bau'])
             print('Lifetime cost CO2: ', response['outputs']['Scenario']['Site']['lifetime_emissions_cost_CO2'])
             print('Lifetime cost CO2 BAU: ', response['outputs']['Scenario']['Site']['lifetime_emissions_cost_CO2_bau'])
-            print('fuel_used_gal: ', response['outputs']['Scenario']['Site']['Generator']['fuel_used_gal'])
+
+            print('Lifetime cost Health: ', response['outputs']['Scenario']['Site']['lifetime_emissions_cost_Health'])
+            print('Lifetime cost Health BAU: ', response['outputs']['Scenario']['Site']['lifetime_emissions_cost_Health_bau'])
+
+            ## TODO: add these results 
+            # self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_NOx"] = self.results_dict.get("lifetime_emissions_lb_NOx")
+            # self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_NOx_bau"] = self.results_dict.get("lifetime_emissions_lb_NOx_bau")
+            # self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_SO2"] = self.results_dict.get("lifetime_emissions_lb_SO2")
+            # self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_SO2_bau"] = self.results_dict.get("lifetime_emissions_lb_SO2_bau")
+            # self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_PM"] = self.results_dict.get("lifetime_emissions_lb_PM")
+            # self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_PM_bau"] = self.results_dict.get("lifetime_emissions_lb_PM_bau")
+            # "lifetime_emissions_cost_Health_bau" 
+            # "lifetime_emissions_cost_Health" 
             
             ## path = 'reo/tests/outputs/'
             ## json.dump(response, open(path+'/'+"lifetime_emissions_results.json", "w"))

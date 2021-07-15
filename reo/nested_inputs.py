@@ -154,6 +154,11 @@ nested_input_definitions = {
       "default": False,
       "description": "If True, then the lifetime cost of CO2 emissions will be included in the objective function. Lifetime CO2 impacts will be calculated regardless."
     },
+    "include_health_in_objective": {
+      "type": "bool",
+      "default": False,
+      "description": "If True, then the lifetime cost of SO2, NOx, and PM2.5 emissions will be included in the objective function. Lifetime health impacts will be calculated regardless, but you must provide marginal health costs for each pollutant."
+    },
 
     "Site": {
       "latitude": {
@@ -293,7 +298,28 @@ nested_input_definitions = {
           "max": 1.0e3,
           "default": 51.0,
           "description": "Social Cost of CO2 in the first year of the analysis. Units are US dollars per metric ton of CO2. The default of $51/t is the 2020 value (using a 3 pct discount rate) estimated by the U.S. Interagency Working Group on Social Cost of Greenhouse Gases."
-        },   
+        }, 
+        "nox_cost_us_dollars_per_tonne": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e5,
+          "default": 0.0,
+          "description": "Public health damage cost of NOx in the first year of the analysis. Units are US dollars per metric ton. Must provide value if considering health damages in objective."
+        },
+        "so2_cost_us_dollars_per_tonne": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e5,
+          "default": 0.0,
+          "description": "Social Cost of SO2 in the first year of the analysis. Units are US dollars per metric ton. Must provide value if considering health damages in objective."
+        },
+        "pm_cost_us_dollars_per_tonne": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e5,
+          "default": 0.0,
+          "description": "Social Cost of PM2.5 in the first year of the analysis. Units are US dollars per metric ton. Must provide value if considering health damages in objective."
+        },  
         "co2_cost_escalation_pct": {
           "type": "float",
           "min": -1.0,

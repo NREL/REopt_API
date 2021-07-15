@@ -124,6 +124,7 @@ class ScenarioModel(models.Model):
     optimality_gap = models.FloatField(null=True, blank=True)
 
     include_climate_in_objective = models.BooleanField(null=True, blank=True)
+    include_health_in_objective = models.BooleanField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -183,7 +184,9 @@ class SiteModel(models.Model):
     year_one_emissions_bau_lb_PM = models.FloatField(null=True, blank=True)
 
     lifetime_emissions_lb_CO2 = models.FloatField(null=True, blank=True) # TODO: add _bau
+    lifetime_emissions_lb_CO2_bau = models.FloatField(null=True, blank=True)
     lifetime_emissions_cost_CO2 = models.FloatField(null=True, blank=True) # TODO: add _bau
+    lifetime_emissions_cost_CO2_bau = models.FloatField(null=True, blank=True)
 
 
     @classmethod
@@ -210,6 +213,9 @@ class FinancialModel(models.Model):
     owner_discount_pct = models.FloatField(null=True, blank=True)
     owner_tax_pct = models.FloatField(null=True, blank=True)
     co2_cost_us_dollars_per_tonne = models.FloatField(null=True, blank=True)
+    nox_cost_us_dollars_per_tonne = models.FloatField(null=True, blank=True)
+    so2_cost_us_dollars_per_tonne = models.FloatField(null=True, blank=True)
+    pm_cost_us_dollars_per_tonne = models.FloatField(null=True, blank=True)
     co2_cost_escalation_pct = models.FloatField(null=True, blank=True)
 
     # Outputs

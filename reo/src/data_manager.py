@@ -77,6 +77,7 @@ class DataManager:
         self.reopt_inputs_bau = None
         self.add_soc_incentive = None
         self.include_climate_in_objective = None
+        self.include_health_in_objective = None
 
         # following attributes used to pass data to process_results.py
         # If we serialize the python classes then we could pass the objects between Celery tasks
@@ -681,7 +682,10 @@ class DataManager:
         chp_thermal_prod_factor = list()
         om_cost_us_dollars_per_hr_per_kw_rated = list()
 
-        tech_emissions_factors = list()
+        tech_emissions_factors_CO2 = list()
+        tech_emissions_factors_NOx = list()
+        tech_emissions_factors_SO2 = list()
+        tech_emissions_factors_PM = list()
 
         charge_efficiency = list()
         discharge_efficiency = list()
@@ -716,20 +720,29 @@ class DataManager:
                 if tech.lower() == 'generator':
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.kwargs["om_cost_us_dollars_per_kwh"]')))
                     om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
-                    for pollutant in ['CO2', 'NOx', 'SO2', 'PM']:
-                        tech_emissions_factors.append(float(eval('self.' + tech + '.emissions_factor_lb_{}_per_gal'.format(pollutant))))
+                    tech_emissions_factors_CO2.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_gal')))
+                    tech_emissions_factors_NOx.append(float(eval('self.' + tech + '.emissions_factor_lb_NOx_per_gal')))
+                    tech_emissions_factors_SO2.append(float(eval('self.' + tech + '.emissions_factor_lb_SO2_per_gal')))
+                    tech_emissions_factors_PM.append(float(eval('self.' + tech + '.emissions_factor_lb_PM_per_gal')))
                 elif tech.lower() == 'chp':
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kwh')))
                     om_cost_us_dollars_per_hr_per_kw_rated.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_hr_per_kw_rated')))
-                    for pollutant in ['CO2', 'NOx', 'SO2', 'PM']:
-                        tech_emissions_factors.append(float(eval('self.' + tech + '.emissions_factor_lb_{}_per_mmbtu'.format(pollutant))))
+                    tech_emissions_factors_CO2.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_mmbtu')))
+                    tech_emissions_factors_NOx.append(float(eval('self.' + tech + '.emissions_factor_lb_NOx_per_mmbtu')))
+                    tech_emissions_factors_SO2.append(float(eval('self.' + tech + '.emissions_factor_lb_SO2_per_mmbtu')))
+                    tech_emissions_factors_PM.append(float(eval('self.' + tech + '.emissions_factor_lb_PM_per_mmbtu')))
                 elif tech.lower() == 'boiler': 
-                    for pollutant in ['CO2', 'NOx', 'SO2', 'PM']:
-                        tech_emissions_factors.append(float(eval('self.' + tech + '.emissions_factor_lb_{}_per_mmbtu'.format(pollutant))))
+                    tech_emissions_factors_CO2.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_mmbtu')))
+                    tech_emissions_factors_NOx.append(float(eval('self.' + tech + '.emissions_factor_lb_NOx_per_mmbtu')))
+                    tech_emissions_factors_SO2.append(float(eval('self.' + tech + '.emissions_factor_lb_SO2_per_mmbtu')))
+                    tech_emissions_factors_PM.append(float(eval('self.' + tech + '.emissions_factor_lb_PM_per_mmbtu')))
                 else:
                     om_cost_us_dollars_per_kwh.append(0.0)
                     om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
-                    tech_emissions_factors.append(0.0)
+                    tech_emissions_factors_CO2.append(0.0)
+                    tech_emissions_factors_NOx.append(0.0)
+                    tech_emissions_factors_SO2.append(0.0)
+                    tech_emissions_factors_PM.append(0.0)
 
                 for location in ['roof', 'ground', 'both']:
                     if tech.startswith('pv'):
@@ -751,7 +764,7 @@ class DataManager:
                om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, om_cost_us_dollars_per_hr_per_kw_rated, \
                production_factor, charge_efficiency, discharge_efficiency, \
                electric_derate, chp_thermal_prod_factor, \
-               tech_emissions_factors
+               tech_emissions_factors_CO2, tech_emissions_factors_NOx, tech_emissions_factors_SO2, tech_emissions_factors_PM 
 
     def _get_REopt_techs(self, techs):
         reopt_techs = list()
@@ -1167,12 +1180,12 @@ class DataManager:
             om_cost_us_dollars_per_kwh, om_cost_us_dollars_per_hr_per_kw_rated, production_factor, \
             charge_efficiency, discharge_efficiency, \
             electric_derate, chp_thermal_prod_factor, \
-            tech_emissions_factors = self._get_REopt_array_tech_load(self.available_techs) ## TODO: , tech_pct_RE 
+            tech_emissions_factors_CO2, tech_emissions_factors_NOx, tech_emissions_factors_SO2, tech_emissions_factors_PM = self._get_REopt_array_tech_load(self.available_techs) ## TODO: , tech_pct_RE 
         tech_to_location_bau, derate_bau, om_cost_us_dollars_per_kw_bau, \
             om_cost_us_dollars_per_kwh_bau, om_cost_us_dollars_per_hr_per_kw_rated_bau, production_factor_bau, \
             charge_efficiency_bau, discharge_efficiency_bau, \
             electric_derate_bau, chp_thermal_prod_factor_bau, \
-            tech_emissions_factors_bau = self._get_REopt_array_tech_load(self.bau_techs) ## TODO: , tech_pct_RE_bau
+            tech_emissions_factors_CO2_bau, tech_emissions_factors_NOx_bau, tech_emissions_factors_SO2_bau, tech_emissions_factors_PM_bau = self._get_REopt_array_tech_load(self.bau_techs) ## TODO: , tech_pct_RE_bau
         
         # Emissions inputs 
         grid_emissions_factor_CO2 = self.elec_tariff.emissions_factor_series_lb_CO2_per_kwh
@@ -1182,6 +1195,10 @@ class DataManager:
 
         bau_emissions_CO2, bau_emissions_NOx, bau_emissions_SO2, bau_emissions_PM = self.bau_emissions()
         co2_cost_us_dollars_per_tonne = self.site.financial.co2_cost_us_dollars_per_tonne
+        nox_cost_us_dollars_per_tonne = self.site.financial.nox_cost_us_dollars_per_tonne
+        so2_cost_us_dollars_per_tonne = self.site.financial.so2_cost_us_dollars_per_tonne
+        pm_cost_us_dollars_per_tonne = self.site.financial.pm_cost_us_dollars_per_tonne
+
 
         max_sizes, min_turn_down, max_sizes_location, min_allowable_size = self._get_REopt_tech_max_sizes_min_turn_down(
             self.available_techs)
@@ -1461,7 +1478,10 @@ class DataManager:
             "GridEmissionsFactor_NOx": grid_emissions_factor_NOx,
             "GridEmissionsFactor_SO2": grid_emissions_factor_SO2,
             "GridEmissionsFactor_PM": grid_emissions_factor_PM,
-            "TechEmissionsFactors": tech_emissions_factors,
+            "TechEmissionsFactors_CO2": tech_emissions_factors_CO2,
+            "TechEmissionsFactors_NOx": tech_emissions_factors_NOx,
+            "TechEmissionsFactors_SO2": tech_emissions_factors_SO2,
+            "TechEmissionsFactors_PM": tech_emissions_factors_PM,
             "IncludeExportedElecEmissionsInTotal": self.site.include_exported_elec_emissions_in_total,
             "BAUYr1Emissions_CO2": bau_emissions_CO2, ## TODO: Check this
             "BAUYr1Emissions_NOx": bau_emissions_NOx, ## TODO: Check this
@@ -1491,7 +1511,11 @@ class DataManager:
             'StorageDecayRate': storage_decay_rate,
             'AddSOCIncentive': self.add_soc_incentive,
             'CO2_dollars_tonne': co2_cost_us_dollars_per_tonne,
-            'Include_climate_in_objective': self.include_climate_in_objective
+            'NOx_dollars_tonne': nox_cost_us_dollars_per_tonne,
+            'SO2_dollars_tonne': so2_cost_us_dollars_per_tonne,
+            'PM_dollars_tonne': pm_cost_us_dollars_per_tonne,
+            'Include_climate_in_objective': self.include_climate_in_objective,
+            'Include_health_in_objective': self.include_health_in_objective
             }
         ## Uncomment the following and run a scenario to get an updated modelinputs.json for creating Julia system image
         # import json
@@ -1625,12 +1649,19 @@ class DataManager:
             "GridEmissionsFactor_NOx": grid_emissions_factor_NOx,
             "GridEmissionsFactor_SO2": grid_emissions_factor_SO2,
             "GridEmissionsFactor_PM": grid_emissions_factor_PM,
-            "TechEmissionsFactors": tech_emissions_factors_bau,
+            "TechEmissionsFactors_CO2": tech_emissions_factors_CO2_bau,
+            "TechEmissionsFactors_NOx": tech_emissions_factors_NOx_bau,
+            "TechEmissionsFactors_SO2": tech_emissions_factors_SO2_bau,
+            "TechEmissionsFactors_PM": tech_emissions_factors_PM_bau,
             "IncludeExportedElecEmissionsInTotal": self.site.include_exported_elec_emissions_in_total,
             "BAUYr1Emissions_CO2": bau_emissions_CO2,
             "BAUYr1Emissions_NOx": bau_emissions_NOx,
             "BAUYr1Emissions_SO2": bau_emissions_SO2,
             "BAUYr1Emissions_PM": bau_emissions_PM,
             'CO2_dollars_tonne': co2_cost_us_dollars_per_tonne,
-            'Include_climate_in_objective': self.include_climate_in_objective
+            'NOx_dollars_tonne': nox_cost_us_dollars_per_tonne,
+            'SO2_dollars_tonne': so2_cost_us_dollars_per_tonne,
+            'PM_dollars_tonne': pm_cost_us_dollars_per_tonne,
+            'Include_climate_in_objective': self.include_climate_in_objective,
+            'Include_health_in_objective': self.include_health_in_objective
         }
