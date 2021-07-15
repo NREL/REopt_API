@@ -222,7 +222,13 @@ Base.@kwdef struct Parameter
      ##MinPercentEmissionsReduction::Union{Float64,Nothing} 
      ##MaxPercentEmissionsReduction::Union{Float64,Nothing} 
      BAUYr1Emissions_CO2::Float64
-     GridEmissionsFactor::Array{Float64,1}
+     BAUYr1Emissions_NOx::Float64
+     BAUYr1Emissions_SO2::Float64
+     BAUYr1Emissions_PM::Float64
+     GridEmissionsFactor_CO2::Array{Float64,1}
+     GridEmissionsFactor_NOx::Array{Float64,1}
+     GridEmissionsFactor_SO2::Array{Float64,1}
+     GridEmissionsFactor_PM::Array{Float64,1}
      TechEmissionsFactors::AxisArray
      CO2_dollars_tonne::Float64
      Include_climate_in_objective::Bool

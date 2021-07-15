@@ -991,12 +991,12 @@ function calc_yr1_emissions_from_fuelburn(m,p; tech_array=p.FuelBurningTechs)
 end
 function calc_yr1_emissions_from_elec_grid_purchase(m,p)
 	yr1_emissions_from_elec_grid_purchase = @expression(m,p.TimeStepScaling*
-		sum(m[:dvGridPurchase][u,ts]*p.GridEmissionsFactor[ts] for ts in p.TimeStep, u in p.PricingTier))
+		sum(m[:dvGridPurchase][u,ts]*p.GridEmissionsFactor_CO2[ts] for ts in p.TimeStep, u in p.PricingTier))
 	return yr1_emissions_from_elec_grid_purchase
 end
 function calc_yr1_emissions_offset_from_elec_exports(m,p; tech_array=p.ElectricTechs)
 	yr1_emissions_offset_from_elec_exports = @expression(m,p.TimeStepScaling*
-		sum(m[:dvProductionToGrid][t,u,ts]  * (p.GridEmissionsFactor[ts] - p.TechEmissionsFactors[t]) 
+		sum(m[:dvProductionToGrid][t,u,ts]  * (p.GridEmissionsFactor_CO2[ts] - p.TechEmissionsFactors[t]) 
 		for t in tech_array, ts in p.TimeStep, u in p.ExportTiersByTech[t]))
 		# if battery ends up being able to discharge to grid, need to incorporate here- might require complex tracking of what's charging battery  
 	return yr1_emissions_offset_from_elec_exports
@@ -1008,9 +1008,7 @@ function add_lifetime_emissions_calcs(m,p)
 	# Lifetime lbs CO2 
 	m[:Lifetime_Emissions_Lbs_CO2] = m[:EmissionsYr1_Total_LbsCO2] * p.analysis_years
 	# Lifetime cost CO2
-	# pwf: accounts for discounting (TODO: set to 3%?) 
-	## TODO! 
-	# 2204.62 lb / metric ton
+	# pwf: accounts for discounting (TODO: set to 3%?) ; 2204.62 lb / metric ton
 	m[:Lifetime_Emissions_Cost_CO2] = p.pwf_CO2 * p.CO2_dollars_tonne * m[:EmissionsYr1_Total_LbsCO2] / 2204.62 
 
 end 
@@ -1296,7 +1294,16 @@ function add_site_results(m, p, r::Dict)
 	r["pwf_om"] = round(value(p.pwf_om),digits=4)
 	=#
 
-	r["preprocessed_BAU_Yr1_emissions_CO2"] = round(value(p.BAUYr1Emissions_CO2),digits=2)	
+	# Year 1 BAU emissions impacts 
+	r["preprocessed_BAU_Yr1_emissions_CO2"] = round(value(p.BAUYr1Emissions_CO2),digits=2)
+	r["preprocessed_BAU_Yr1_emissions_NOx"] = round(value(p.BAUYr1Emissions_NOx),digits=2) 
+	r["preprocessed_BAU_Yr1_emissions_SO2"] = round(value(p.BAUYr1Emissions_SO2),digits=2) 
+	r["preprocessed_BAU_Yr1_emissions_PM"] = round(value(p.BAUYr1Emissions_PM),digits=2) 
+
+	# Lifetime BAU emissions impacts 
+	r["lifetime_emissions_lb_CO2_bau"] = round(value(p.BAUYr1Emissions_CO2 * p.analysis_years),digits=2)
+	r["lifetime_emissions_cost_CO2_bau"] = round(value(p.pwf_CO2 * p.CO2_dollars_tonne * p.BAUYr1Emissions_CO2 / 2204.62),digits=2) 
+
 
 	#=
 	r["annual_re_elec_kwh"] = round(value(m[:AnnualREEleckWh]), digits=2)

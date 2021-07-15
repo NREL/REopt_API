@@ -716,13 +716,16 @@ class DataManager:
                 if tech.lower() == 'generator':
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.kwargs["om_cost_us_dollars_per_kwh"]')))
                     om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
-                    tech_emissions_factors.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_gal')))
+                    for pollutant in ['CO2', 'NOx', 'SO2', 'PM']:
+                        tech_emissions_factors.append(float(eval('self.' + tech + '.emissions_factor_lb_{}_per_gal'.format(pollutant))))
                 elif tech.lower() == 'chp':
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kwh')))
                     om_cost_us_dollars_per_hr_per_kw_rated.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_hr_per_kw_rated')))
-                    tech_emissions_factors.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_mmbtu')))
+                    for pollutant in ['CO2', 'NOx', 'SO2', 'PM']:
+                        tech_emissions_factors.append(float(eval('self.' + tech + '.emissions_factor_lb_{}_per_mmbtu'.format(pollutant))))
                 elif tech.lower() == 'boiler': 
-                    tech_emissions_factors.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_mmbtu')))
+                    for pollutant in ['CO2', 'NOx', 'SO2', 'PM']:
+                        tech_emissions_factors.append(float(eval('self.' + tech + '.emissions_factor_lb_{}_per_mmbtu'.format(pollutant))))
                 else:
                     om_cost_us_dollars_per_kwh.append(0.0)
                     om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
@@ -913,12 +916,15 @@ class DataManager:
                 time_steps_without_grid.append(i+1)
         return time_steps_with_grid, time_steps_without_grid
 
-    def bau_emissions_CO2(self):
+    def bau_emissions(self):
         
         """
         Pre-processing of the BAU emissions to use in determining emissions reductions in the optimal case
         """
         total_emissions_lb_CO2_per_year = 0 
+        total_emissions_lb_NOx_per_year = 0 
+        total_emissions_lb_SO2_per_year = 0 
+        total_emissions_lb_PM_per_year = 0 
         
         ## Grid emissions 
 
@@ -949,16 +955,31 @@ class DataManager:
         # Might need to add additional logic to match reopt.jl curtailment approach...
         grid_emissions_lb_CO2_per_year = self.steplength*sum(np.array(self.elec_tariff.emissions_factor_series_lb_CO2_per_kwh) * grid_to_load_kw)
         total_emissions_lb_CO2_per_year += grid_emissions_lb_CO2_per_year
+        
+        grid_emissions_lb_NOx_per_year = self.steplength*sum(np.array(self.elec_tariff.emissions_factor_series_lb_NOx_per_kwh) * grid_to_load_kw)
+        total_emissions_lb_NOx_per_year += grid_emissions_lb_NOx_per_year
+
+        grid_emissions_lb_SO2_per_year = self.steplength*sum(np.array(self.elec_tariff.emissions_factor_series_lb_SO2_per_kwh) * grid_to_load_kw)
+        total_emissions_lb_SO2_per_year += grid_emissions_lb_SO2_per_year
+
+        grid_emissions_lb_PM_per_year = self.steplength*sum(np.array(self.elec_tariff.emissions_factor_series_lb_PM_per_kwh) * grid_to_load_kw)
+        total_emissions_lb_PM_per_year += grid_emissions_lb_PM_per_year
 
         ## Generator emissions
         if self.generator is not None:
             total_emissions_lb_CO2_per_year += self.load.generator_fuel_use_gal * self.generator.emissions_factor_lb_CO2_per_gal
+            total_emissions_lb_NOx_per_year += self.load.generator_fuel_use_gal * self.generator.emissions_factor_lb_NOx_per_gal
+            total_emissions_lb_SO2_per_year += self.load.generator_fuel_use_gal * self.generator.emissions_factor_lb_SO2_per_gal
+            total_emissions_lb_PM_per_year += self.load.generator_fuel_use_gal * self.generator.emissions_factor_lb_PM_per_gal
                 
         ## Boiler emissions
         if self.boiler is not None:
             total_emissions_lb_CO2_per_year += self.heating_load.annual_mmbtu * self.boiler.emissions_factor_lb_CO2_per_mmbtu
+            total_emissions_lb_NOx_per_year += self.heating_load.annual_mmbtu * self.boiler.emissions_factor_lb_NOx_per_mmbtu
+            total_emissions_lb_SO2_per_year += self.heating_load.annual_mmbtu * self.boiler.emissions_factor_lb_SO2_per_mmbtu
+            total_emissions_lb_PM_per_year += self.heating_load.annual_mmbtu * self.boiler.emissions_factor_lb_PM_per_mmbtu
 
-        return total_emissions_lb_CO2_per_year
+        return total_emissions_lb_CO2_per_year, total_emissions_lb_NOx_per_year, total_emissions_lb_SO2_per_year, total_emissions_lb_PM_per_year,
 
     def _get_REopt_storage_techs_and_params(self):
         storage_techs = ['Elec']
@@ -1154,8 +1175,12 @@ class DataManager:
             tech_emissions_factors_bau = self._get_REopt_array_tech_load(self.bau_techs) ## TODO: , tech_pct_RE_bau
         
         # Emissions inputs 
-        grid_emissions_factor = self.elec_tariff.emissions_factor_series_lb_CO2_per_kwh
-        bau_emissions_CO2 = self.bau_emissions_CO2()
+        grid_emissions_factor_CO2 = self.elec_tariff.emissions_factor_series_lb_CO2_per_kwh
+        grid_emissions_factor_NOx = self.elec_tariff.emissions_factor_series_lb_NOx_per_kwh
+        grid_emissions_factor_SO2 = self.elec_tariff.emissions_factor_series_lb_SO2_per_kwh
+        grid_emissions_factor_PM = self.elec_tariff.emissions_factor_series_lb_PM_per_kwh
+
+        bau_emissions_CO2, bau_emissions_NOx, bau_emissions_SO2, bau_emissions_PM = self.bau_emissions()
         co2_cost_us_dollars_per_tonne = self.site.financial.co2_cost_us_dollars_per_tonne
 
         max_sizes, min_turn_down, max_sizes_location, min_allowable_size = self._get_REopt_tech_max_sizes_min_turn_down(
@@ -1432,10 +1457,16 @@ class DataManager:
             'TechsByNMILRegime': TechsByNMILRegime,
             'TechsCannotCurtail': techs_cannot_curtail,
             'TechsByNMILRegime': TechsByNMILRegime, ## repeat? 
-            "GridEmissionsFactor": grid_emissions_factor,
+            "GridEmissionsFactor_CO2": grid_emissions_factor_CO2,
+            "GridEmissionsFactor_NOx": grid_emissions_factor_NOx,
+            "GridEmissionsFactor_SO2": grid_emissions_factor_SO2,
+            "GridEmissionsFactor_PM": grid_emissions_factor_PM,
             "TechEmissionsFactors": tech_emissions_factors,
             "IncludeExportedElecEmissionsInTotal": self.site.include_exported_elec_emissions_in_total,
             "BAUYr1Emissions_CO2": bau_emissions_CO2, ## TODO: Check this
+            "BAUYr1Emissions_NOx": bau_emissions_NOx, ## TODO: Check this
+            "BAUYr1Emissions_SO2": bau_emissions_SO2, ## TODO: Check this
+            "BAUYr1Emissions_PM": bau_emissions_PM, ## TODO: Check this
             'HeatingLoad': heating_load,
             'CoolingLoad': cooling_load,
             'ThermalStorage': thermal_storage_techs,
@@ -1590,10 +1621,16 @@ class DataManager:
             'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month,
             'StorageDecayRate': storage_decay_rate,
             'AddSOCIncentive': self.add_soc_incentive,
-            "GridEmissionsFactor": grid_emissions_factor,
+            "GridEmissionsFactor_CO2": grid_emissions_factor_CO2,
+            "GridEmissionsFactor_NOx": grid_emissions_factor_NOx,
+            "GridEmissionsFactor_SO2": grid_emissions_factor_SO2,
+            "GridEmissionsFactor_PM": grid_emissions_factor_PM,
             "TechEmissionsFactors": tech_emissions_factors_bau,
             "IncludeExportedElecEmissionsInTotal": self.site.include_exported_elec_emissions_in_total,
             "BAUYr1Emissions_CO2": bau_emissions_CO2,
+            "BAUYr1Emissions_NOx": bau_emissions_NOx,
+            "BAUYr1Emissions_SO2": bau_emissions_SO2,
+            "BAUYr1Emissions_PM": bau_emissions_PM,
             'CO2_dollars_tonne': co2_cost_us_dollars_per_tonne,
             'Include_climate_in_objective': self.include_climate_in_objective
         }
