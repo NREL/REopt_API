@@ -183,10 +183,20 @@ class SiteModel(models.Model):
     year_one_emissions_lb_PM = models.FloatField(null=True, blank=True)
     year_one_emissions_bau_lb_PM = models.FloatField(null=True, blank=True)
 
-    lifetime_emissions_lb_CO2 = models.FloatField(null=True, blank=True) # TODO: add _bau
+    lifetime_emissions_lb_CO2 = models.FloatField(null=True, blank=True) 
     lifetime_emissions_lb_CO2_bau = models.FloatField(null=True, blank=True)
-    lifetime_emissions_cost_CO2 = models.FloatField(null=True, blank=True) # TODO: add _bau
+    lifetime_emissions_cost_CO2 = models.FloatField(null=True, blank=True) 
     lifetime_emissions_cost_CO2_bau = models.FloatField(null=True, blank=True)
+
+    lifetime_emissions_lb_NOx = models.FloatField(null=True, blank=True) 
+    lifetime_emissions_lb_NOx_bau = models.FloatField(null=True, blank=True)
+    lifetime_emissions_lb_SO2 = models.FloatField(null=True, blank=True) 
+    lifetime_emissions_lb_SO2_bau = models.FloatField(null=True, blank=True)
+    lifetime_emissions_lb_PM = models.FloatField(null=True, blank=True) 
+    lifetime_emissions_lb_PM_bau = models.FloatField(null=True, blank=True)
+
+    lifetime_emissions_cost_Health = models.FloatField(null=True, blank=True) 
+    lifetime_emissions_cost_Health_bau = models.FloatField(null=True, blank=True)
 
 
     @classmethod

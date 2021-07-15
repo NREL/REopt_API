@@ -926,7 +926,7 @@ function add_cost_function(m, p)
 	end
 
 	# # Add Health costs (NOx, SO2, PM2.5) TODO 
-	if p.Includ_health_in_objective
+	if p.Include_health_in_objective
 		add_to_expression!(Costs, m[:Lifetime_Emissions_Cost_Health])
 	end
 
@@ -1053,9 +1053,9 @@ function add_lifetime_emissions_calcs(m,p)
 	m[:Lifetime_Emissions_Lbs_PM] = m[:EmissionsYr1_Total_LbsPM] * p.analysis_years
 
 	# TODO! Create a pwf for SO2, PM2.5, and NOx? Escalation % will be location dependent... 
-	m[:Lifetime_Emissions_Cost_NOx] = p.pwf_CO2 * p.NOx_dollars_tonne * m[:EmissionsYr1_Total_LbsNOx] 
-	m[:Lifetime_Emissions_Cost_SO2] = p.pwf_CO2 * p.SO2_dollars_tonne * m[:EmissionsYr1_Total_LbsSO2] 
-	m[:Lifetime_Emissions_Cost_PM] = p.pwf_CO2 * p.PM_dollars_tonne * m[:EmissionsYr1_Total_LbsPM] 
+	m[:Lifetime_Emissions_Cost_NOx] = p.pwf_CO2 * p.NOx_dollars_tonne * m[:EmissionsYr1_Total_LbsNOx] / 2204.62 
+	m[:Lifetime_Emissions_Cost_SO2] = p.pwf_CO2 * p.SO2_dollars_tonne * m[:EmissionsYr1_Total_LbsSO2] / 2204.62 
+	m[:Lifetime_Emissions_Cost_PM] = p.pwf_CO2 * p.PM_dollars_tonne * m[:EmissionsYr1_Total_LbsPM] / 2204.62 
 
 	m[:Lifetime_Emissions_Cost_Health] = m[:Lifetime_Emissions_Cost_NOx] + m[:Lifetime_Emissions_Cost_SO2] + m[:Lifetime_Emissions_Cost_PM]
 
@@ -1356,9 +1356,9 @@ function add_site_results(m, p, r::Dict)
 
 	r["lifetime_emissions_cost_CO2_bau"] = round(value(p.pwf_CO2 * p.CO2_dollars_tonne * p.BAUYr1Emissions_CO2 / 2204.62),digits=2) 
 	# TODO: update to health emissions-specific pwf's 
-	r["lifetime_emissions_cost_Health_bau"] = round(value(p.pwf_CO2 * p.NOx_dollars_tonne * p.BAUYr1Emissions_NOx
+	r["lifetime_emissions_cost_Health_bau"] = round(value((p.pwf_CO2 * p.NOx_dollars_tonne * p.BAUYr1Emissions_NOx
 															+ p.pwf_CO2 * p.SO2_dollars_tonne * p.BAUYr1Emissions_SO2
-															+ p.pwf_CO2 * p.PM_dollars_tonne * p.BAUYr1Emissions_PM ),digits=2) 
+															+ p.pwf_CO2 * p.PM_dollars_tonne * p.BAUYr1Emissions_PM) / 2204.62),digits=2) 
 
 
 	#=

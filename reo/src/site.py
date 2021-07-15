@@ -46,6 +46,9 @@ class Financial(object):
                  owner_tax_pct,
                  owner_discount_pct,
                  co2_cost_us_dollars_per_tonne,
+                 nox_cost_us_dollars_per_tonne,
+                 so2_cost_us_dollars_per_tonne,
+                 pm_cost_us_dollars_per_tonne,
                  co2_cost_escalation_pct,
                  **kwargs
                  ):
@@ -60,6 +63,9 @@ class Financial(object):
         self.offtaker_discount_pct = offtaker_discount_pct
         self.analysis_years = analysis_years
         self.co2_cost_us_dollars_per_tonne = co2_cost_us_dollars_per_tonne
+        self.nox_cost_us_dollars_per_tonne = nox_cost_us_dollars_per_tonne
+        self.so2_cost_us_dollars_per_tonne = so2_cost_us_dollars_per_tonne
+        self.pm_cost_us_dollars_per_tonne = pm_cost_us_dollars_per_tonne
         self.co2_cost_escalation_pct = co2_cost_escalation_pct
 
         # set-up direct ownership
