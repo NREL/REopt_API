@@ -1739,7 +1739,6 @@ class ValidateNestedInput:
                 self.update_attribute_value(object_name_path, number, 'owner_tax_pct', real_values.get("offtaker_tax_pct"))
                 self.defaults_inserted.append(['owner_tax_pct', object_name_path])
 
-
     def check_min_max_restrictions(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
         """
         comparison_function for recursively_check_input_dict.

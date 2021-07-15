@@ -229,9 +229,16 @@ Base.@kwdef struct Parameter
      GridEmissionsFactor_NOx::Array{Float64,1}
      GridEmissionsFactor_SO2::Array{Float64,1}
      GridEmissionsFactor_PM::Array{Float64,1}
-     TechEmissionsFactors::AxisArray
+     TechEmissionsFactors_CO2::AxisArray
+     TechEmissionsFactors_NOx::AxisArray
+     TechEmissionsFactors_SO2::AxisArray
+     TechEmissionsFactors_PM::AxisArray
      CO2_dollars_tonne::Float64
+     NOx_dollars_tonne::Float64
+     SO2_dollars_tonne::Float64
+     PM_dollars_tonne::Float64
      Include_climate_in_objective::Bool
+     Include_health_in_objective::Bool
 
 	# Added for CHP
 	HotTES::Array{String,1}
@@ -337,7 +344,10 @@ function Parameter(d::Dict)
     d["OMcostPerUnitProd"] = AxisArray(d["OMcostPerUnitProd"], d["Tech"])
     d["OMcostPerUnitHourPerSize"] = AxisArray(d["OMcostPerUnitHourPerSize"], d["Tech"])
 
-    d["TechEmissionsFactors"] = AxisArray(d["TechEmissionsFactors"], d["Tech"])
+    d["TechEmissionsFactors_CO2"] = AxisArray(d["TechEmissionsFactors_CO2"], d["Tech"])
+    d["TechEmissionsFactors_NOx"] = AxisArray(d["TechEmissionsFactors_NOx"], d["Tech"])
+    d["TechEmissionsFactors_SO2"] = AxisArray(d["TechEmissionsFactors_SO2"], d["Tech"])
+    d["TechEmissionsFactors_PM"] = AxisArray(d["TechEmissionsFactors_PM"], d["Tech"])
     ##d["TechPercentRE"] = AxisArray(d["TechPercentRE"], d["Tech"])
 
     if !isempty(d["CoincidentPeakLoadTimeSteps"])

@@ -333,6 +333,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
                     
         dfm.add_soc_incentive = inputs_dict['add_soc_incentive']
         dfm.include_climate_in_objective = inputs_dict['include_climate_in_objective']
+        dfm.include_health_in_objective = inputs_dict['include_health_in_objective']
 
         dfm.finalize()
         dfm_dict = vars(dfm)  # serialize for celery
