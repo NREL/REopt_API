@@ -54,6 +54,7 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
           "Scenario": {
             "time_steps_per_hour": 1,
             "include_climate_in_objective": False,
+            "include_health_in_objective": True,
             "Site": {
               "longitude": -91.7337,
               "latitude": 35.2468,
