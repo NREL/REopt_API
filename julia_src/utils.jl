@@ -225,6 +225,7 @@ Base.@kwdef struct Parameter
      GridEmissionsFactor::Array{Float64,1}
      TechEmissionsFactors::AxisArray
      CO2_dollars_tonne::Float64
+     Include_climate_in_objective::Bool
 
 	# Added for CHP
 	HotTES::Array{String,1}

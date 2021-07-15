@@ -149,6 +149,11 @@ nested_input_definitions = {
       "default": True,
       "description": "If True, then a small incentive to keep the battery's state of charge high is added to the objective of the optimization."
     },
+    "include_climate_in_objective": {
+      "type": "bool",
+      "default": False,
+      "description": "If True, then the lifetime cost of CO2 emissions will be included in the objective function. Lifetime CO2 impacts will be calculated regardless."
+    },
 
     "Site": {
       "latitude": {

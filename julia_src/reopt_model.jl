@@ -893,7 +893,7 @@ function add_chp_hourly_om_charges(m, p)
 end
 
 function add_cost_function(m, p)
-	m[:REcosts] = @expression(m,
+	m[:REcosts] = @expression(m, Costs,
 
 		# Capital Costs
 		m[:TotalTechCapCosts] + m[:TotalStorageCapCosts] +
@@ -919,6 +919,17 @@ function add_cost_function(m, p)
     #= Note: 0.9999*m[:MinChargeAdder] in Obj b/c when m[:TotalMinCharge] > (TotalEnergyCharges + m[:TotalDemandCharges] + TotalExportBenefit + m[:TotalFixedCharges])
 		it is arbitrary where the min charge ends up (eg. could be in m[:TotalDemandCharges] or m[:MinChargeAdder]).
 		0.0001*m[:MinChargeAdder] is added back into LCC when writing to results.  =#
+
+	# Add climate costs 
+	if p.Include_climate_in_objective # if user selects to include climate in objective
+		add_to_expression!(Costs, m[:Lifetime_Emissions_Cost_CO2])
+	end
+
+	# # Add Health costs (NOx, SO2, PM2.5) TODO 
+	# if p.includ_health_in_objective
+	# 	add_to_expression!(Costs, m[:Lifetime_Emissions_Cost_Health])
+	# end
+
 end
 
 #=
@@ -1000,7 +1011,7 @@ function add_lifetime_emissions_calcs(m,p)
 	# pwf: accounts for discounting (TODO: set to 3%?) 
 	## TODO! 
 	# 2204.62 lb / metric ton
-	m[:Lifetime_Emissions_Cost_CO2] = p.pwf_CO2 * p.co2_cost_us_dollars_per_tonne * m[:EmissionsYr1_Total_LbsCO2] / 2204.62 
+	m[:Lifetime_Emissions_Cost_CO2] = p.pwf_CO2 * p.CO2_dollars_tonne * m[:EmissionsYr1_Total_LbsCO2] / 2204.62 
 
 end 
 
@@ -1326,6 +1337,7 @@ function add_site_results(m, p, r::Dict)
 
 	# Lifetime emissions results at Site level
 	r["lifetime_emissions_lb_CO2"] = round(value(m[:Lifetime_Emissions_Lbs_CO2]), digits=2)
+	r["lifetime_emissions_cost_CO2"] = round(value(m[:Lifetime_Emissions_Cost_CO2]), digits=2)
 	
 
 	
