@@ -179,11 +179,6 @@ nested_output_definitions = {
                   "description": "Total pounds of PM2.5 emissions associated with the site's energy consumption over the analysis period.",
                   "units": "lb PM2.5"
                 },
-              "lifetime_emissions_cost_CO2": {
-                  "type": int,
-                  "description": "Total cost of carbon dioxide emissions associated with the site's energy consumption over the analysis period.",
-                  "units": "dollars"
-                },
               "lifetime_emissions_lb_CO2_bau": {
                   "type": int,
                   "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption over the analysis period in the BAU case.",
@@ -204,9 +199,19 @@ nested_output_definitions = {
                   "description": "Total pounds of PM2.5 emissions associated with the site's energy consumption over the analysis period in the BAU case.",
                   "units": "lb PM2.5"
                 },
+              "lifetime_emissions_cost_CO2": {
+                  "type": int,
+                  "description": "Total cost of carbon dioxide emissions associated with the site's energy consumption over the analysis period.",
+                  "units": "dollars"
+                },
               "lifetime_emissions_cost_CO2_bau": {
                   "type": int,
                   "description": "Total cost of carbon dioxide emissions associated with the site's energy consumption over the analysis period in the BAU case.",
+                  "units": "dollars"
+                },
+              "lifetime_emissions_cost_Health": {
+                  "type": int,
+                  "description": "Total cost of NOx, SO2, and PM2.5 emissions associated with the site's energy consumption over the analysis period.",
                   "units": "dollars"
                 },
               "lifetime_emissions_cost_Health_bau": {
