@@ -53,7 +53,7 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
         self.post = {
           "Scenario": {
             "time_steps_per_hour": 1,
-            "include_climate_in_objective": True,
+            "include_climate_in_objective": False,
             "Site": {
               "longitude": -91.7337,
               "latitude": 35.2468,
@@ -242,10 +242,13 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
 
             print('year_one_CO2_emissions_from_fuelburn: ', response['outputs']['Scenario']['Site']['year_one_CO2_emissions_from_fuelburn'])
             print('Lifetime lbs CO2: ', response['outputs']['Scenario']['Site']['lifetime_emissions_lb_CO2'])
+            print('Lifetime lbs CO2 BAU: ', response['outputs']['Scenario']['Site']['lifetime_emissions_lb_CO2_bau'])
             print('Lifetime cost CO2: ', response['outputs']['Scenario']['Site']['lifetime_emissions_cost_CO2'])
+            print('Lifetime cost CO2 BAU: ', response['outputs']['Scenario']['Site']['lifetime_emissions_cost_CO2_bau'])
+            print('fuel_used_gal: ', response['outputs']['Scenario']['Site']['Generator']['fuel_used_gal'])
             
-            path = 'reo/tests/outputs/'
-            json.dump(response, open(path+'/'+"lifetime_emissions_results.json", "w"))
+            ## path = 'reo/tests/outputs/'
+            ## json.dump(response, open(path+'/'+"lifetime_emissions_results.json", "w"))
 
             # output_df = pd.DataFrame()
             # output_df['load'] = response['outputs']['Scenario']['Site']['LoadProfile']['year_one_electric_load_series_kw']
