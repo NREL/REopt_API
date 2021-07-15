@@ -53,6 +53,7 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
         self.post = {
           "Scenario": {
             "time_steps_per_hour": 1,
+            "include_climate_in_objective": True,
             "Site": {
               "longitude": -91.7337,
               "latitude": 35.2468,
@@ -241,7 +242,7 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
 
             print('year_one_CO2_emissions_from_fuelburn: ', response['outputs']['Scenario']['Site']['year_one_CO2_emissions_from_fuelburn'])
             print('Lifetime lbs CO2: ', response['outputs']['Scenario']['Site']['lifetime_emissions_lb_CO2'])
-              
+            print('Lifetime cost CO2: ', response['outputs']['Scenario']['Site']['lifetime_emissions_cost_CO2'])
             
             path = 'reo/tests/outputs/'
             json.dump(response, open(path+'/'+"lifetime_emissions_results.json", "w"))

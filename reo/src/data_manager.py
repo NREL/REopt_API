@@ -76,6 +76,7 @@ class DataManager:
         self.reopt_inputs = None
         self.reopt_inputs_bau = None
         self.add_soc_incentive = None
+        self.include_climate_in_objective = None
 
         # following attributes used to pass data to process_results.py
         # If we serialize the python classes then we could pass the objects between Celery tasks
@@ -1458,7 +1459,8 @@ class DataManager:
             'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month,
             'StorageDecayRate': storage_decay_rate,
             'AddSOCIncentive': self.add_soc_incentive,
-            'CO2_dollars_tonne': co2_cost_us_dollars_per_tonne
+            'CO2_dollars_tonne': co2_cost_us_dollars_per_tonne,
+            'Include_climate_in_objective': self.include_climate_in_objective
             }
         ## Uncomment the following and run a scenario to get an updated modelinputs.json for creating Julia system image
         # import json
@@ -1592,5 +1594,6 @@ class DataManager:
             "TechEmissionsFactors": tech_emissions_factors_bau,
             "IncludeExportedElecEmissionsInTotal": self.site.include_exported_elec_emissions_in_total,
             "BAUYr1Emissions_CO2": bau_emissions_CO2,
-            'CO2_dollars_tonne': co2_cost_us_dollars_per_tonne
+            'CO2_dollars_tonne': co2_cost_us_dollars_per_tonne,
+            'Include_climate_in_objective': self.include_climate_in_objective
         }

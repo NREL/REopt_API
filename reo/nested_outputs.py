@@ -164,6 +164,11 @@ nested_output_definitions = {
                   "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption over the analysis period.",
                   "units": "lb CO2"
                 },
+              "lifetime_emissions_cost_CO2": {
+                  "type": int,
+                  "description": "Total cost of carbon dioxide emissions associated with the site's energy consumption over the analysis period.",
+                  "units": "dollars"
+                },
 
               "LoadProfile": {
                 "year_one_electric_load_series_kw": {

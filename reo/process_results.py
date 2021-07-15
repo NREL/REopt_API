@@ -139,7 +139,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "year_one_emissions_lb_PM",
             "year_one_generator_emissions_lb_CO2",
             ## TODO: add health calcs for "year_one_generator_emissions_lb_XX" 
-            ## TODO: add lifetime_emissions_lb_CO2 
+            ## TODO: add lifetime_emissions_lb_CO2, lifetime_emissions_cost_CO2
 
         ]
 
@@ -475,9 +475,9 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             self.nested_outputs["Scenario"]["Site"]["year_one_emissions_bau_lb_SO2"] = self.results_dict.get("preprocessed_BAU_Yr1_emissions_CO2")
             self.nested_outputs["Scenario"]["Site"]["year_one_emissions_bau_lb_PM"] = self.results_dict.get("preprocessed_BAU_Yr1_emissions_CO2")
 
-            ##### Lifetime emissions results ## TODO 
+            ##### Lifetime emissions results ## TODO add bau?
             self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_CO2"] = self.results_dict.get("lifetime_emissions_lb_CO2")
-            
+            self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_cost_CO2"] = self.results_dict.get("lifetime_emissions_cost_CO2")
 
 
             self.nested_outputs["Scenario"]["lower_bound"] = self.results_dict.get("lower_bound")

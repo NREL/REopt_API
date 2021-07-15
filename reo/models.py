@@ -123,6 +123,8 @@ class ScenarioModel(models.Model):
     lower_bound = models.FloatField(null=True, blank=True)
     optimality_gap = models.FloatField(null=True, blank=True)
 
+    include_climate_in_objective = models.BooleanField(null=True, blank=True)
+
     @classmethod
     def create(cls, **kwargs):
         obj = cls(**kwargs)
@@ -181,6 +183,7 @@ class SiteModel(models.Model):
     year_one_emissions_bau_lb_PM = models.FloatField(null=True, blank=True)
 
     lifetime_emissions_lb_CO2 = models.FloatField(null=True, blank=True) # TODO: add _bau
+    lifetime_emissions_cost_CO2 = models.FloatField(null=True, blank=True) # TODO: add _bau
 
 
     @classmethod
