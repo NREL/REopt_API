@@ -62,6 +62,7 @@ def results(request, run_uuid):
 
     try:
         s = Scenario.objects.get(run_uuid=run_uuid)
+        # TODO "join" all database queries into a single query (check Django ORM documentation)
     except Exception as e:
         if isinstance(e, models.ObjectDoesNotExist):
             resp = {"messages": {"error": ""}}
