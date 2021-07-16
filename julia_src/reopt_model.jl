@@ -925,7 +925,7 @@ function add_cost_function(m, p)
 		add_to_expression!(Costs, m[:Lifetime_Emissions_Cost_CO2])
 	end
 
-	# # Add Health costs (NOx, SO2, PM2.5) TODO 
+	# Add Health costs (NOx, SO2, PM2.5)
 	if p.Include_health_in_objective
 		add_to_expression!(Costs, m[:Lifetime_Emissions_Cost_Health])
 	end
@@ -1565,10 +1565,8 @@ function add_generator_results(m, p, r::Dict)
 	)
 	r["average_yearly_gen_energy_produced"] = round(value(m[:AverageGenProd]), digits=0)
 
-	EmissionsYr1_LbsCO2_GEN, EmissionsYr1_LbsNOx_GEN, EmissionsYr1_LbsSO2_GEN, EmissionsYr1_LbsPM_GEN = calc_yr1_emissions_from_fuelburn(m,p; tech_array = m[:GeneratorTechs]) ## TODO: check this!
+	EmissionsYr1_LbsCO2_GEN, EmissionsYr1_LbsNOx_GEN, EmissionsYr1_LbsSO2_GEN, EmissionsYr1_LbsPM_GEN = calc_yr1_emissions_from_fuelburn(m,p; tech_array = m[:GeneratorTechs]) 
 	r["year_one_generator_emissions_lb_CO2"] = round(value(EmissionsYr1_LbsCO2_GEN), digits=2)
-
-	## TODO: add health emissions
 
 	nothing
 end
@@ -1720,8 +1718,6 @@ function add_chp_results(m, p, r::Dict)
 	EmissionsYr1_LbsCO2_CHP, EmissionsYr1_LbsNOx_CHP, EmissionsYr1_LbsSO2_CHP, EmissionsYr1_LbsPM_CHP = calc_yr1_emissions_from_fuelburn(m,p; tech_array = p.CHPTechs)
 	r["year_one_chp_emissions_lb_CO2"] = round(value(EmissionsYr1_LbsCO2_CHP), digits=2)
 
-	## TODO: add Health! 
-
 	nothing
 end
 
@@ -1752,7 +1748,6 @@ function add_boiler_results(m, p, r::Dict)
 	EmissionsYr1_LbsCO2_boiler, EmissionsYr1_LbsNOx_boiler, EmissionsYr1_LbsSO2_boiler, EmissionsYr1_LbsPM_boiler = calc_yr1_emissions_from_fuelburn(m,p; tech_array = ["BOILER"])
 	r["year_one_boiler_emissions_lb_CO2"] = round(value(EmissionsYr1_LbsCO2_boiler), digits=2)
 
-	## TODO: add health! 
 
 	nothing
 end
