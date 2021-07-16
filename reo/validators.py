@@ -419,7 +419,7 @@ class ValidateNestedInput:
     #         }
     #     }
 
-    ## I believe this is lbs CO2 per mmbtu
+    # lbs CO2 per mmbtu
     fuel_conversion_per_mmbtu = {
                 "natural_gas":116.9,
                 "landfill_bio_gas":114.8,
@@ -427,54 +427,54 @@ class ValidateNestedInput:
                 "diesel_oil": 163.1
             }
 
-    ## I believe this is lbs CO2 per gallon
+    # lbs CO2 per gallon
     fuel_conversion_per_gal = {
                 'diesel_oil':22.51
             }
     
     # NOx fuel conversion
-    # TODO: Update with real values (same as CO2 for now)
+    # TODO: validate
     fuel_conversion_lb_NOx_per_mmbtu = {
-                "natural_gas":116.9,
-                "landfill_bio_gas":114.8,
-                "propane":138.6,
-                "diesel_oil": 163.1
+                "natural_gas":0.09139,
+                "landfill_bio_gas":0.14,
+                "propane":0.15309,
+                "diesel_oil": 0.56
             }
 
     # NOx fuel conversion
-    # # TODO: Update with real values (same as CO2 for now)
+    # # TODO: validate
     fuel_conversion_lb_NOx_per_gal = {
-                'diesel_oil':22.51
+                'diesel_oil':0.0775544
             }
 
     # SO2 fuel conversion
-    # TODO: Update with real values (same as CO2 for now)
+    # TODO: validate
     fuel_conversion_lb_SO2_per_mmbtu = {
-                "natural_gas":116.9,
-                "landfill_bio_gas":114.8,
-                "propane":138.6,
-                "diesel_oil": 163.1
+                "natural_gas":0.000578592,
+                "landfill_bio_gas":0.045,
+                "propane":0.0,
+                "diesel_oil": 0.28897737
             }
 
     # SO2 fuel conversion
-    # # TODO: Update with real values (same as CO2 for now)
+    # TODO: validate
     fuel_conversion_lb_SO2_per_gal = {
-                'diesel_oil':22.51
+                'diesel_oil':0.040020476
             }
 
     # PM2.5 fuel conversion
-    # TODO: Update with real values (same as CO2 for now)
+    # TODO: validate
     fuel_conversion_lb_PM_per_mmbtu = {
-                "natural_gas":116.9,
-                "landfill_bio_gas":114.8,
-                "propane":138.6,
-                "diesel_oil": 163.1
+                "natural_gas":0.007328833,
+                "landfill_bio_gas":0.02484,
+                "propane":0.009906836,
+                "diesel_oil": 0.0
             }
 
     # PM2.5 fuel conversion
-    # # TODO: Update with real values (same as CO2 for now)
+    # # TODO: validate
     fuel_conversion_lb_PM_per_gal = {
-                'diesel_oil':22.51
+                'diesel_oil':0.0
             }
 
     def __init__(self, input_dict):
