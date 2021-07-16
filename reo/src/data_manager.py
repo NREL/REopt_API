@@ -1483,10 +1483,10 @@ class DataManager:
             "TechEmissionsFactors_SO2": tech_emissions_factors_SO2,
             "TechEmissionsFactors_PM": tech_emissions_factors_PM,
             "IncludeExportedElecEmissionsInTotal": self.site.include_exported_elec_emissions_in_total,
-            "BAUYr1Emissions_CO2": bau_emissions_CO2, ## TODO: Check this
-            "BAUYr1Emissions_NOx": bau_emissions_NOx, ## TODO: Check this
-            "BAUYr1Emissions_SO2": bau_emissions_SO2, ## TODO: Check this
-            "BAUYr1Emissions_PM": bau_emissions_PM, ## TODO: Check this
+            "BAUYr1Emissions_CO2": bau_emissions_CO2, 
+            "BAUYr1Emissions_NOx": bau_emissions_NOx, 
+            "BAUYr1Emissions_SO2": bau_emissions_SO2, 
+            "BAUYr1Emissions_PM": bau_emissions_PM, 
             'HeatingLoad': heating_load,
             'CoolingLoad': cooling_load,
             'ThermalStorage': thermal_storage_techs,
