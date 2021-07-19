@@ -7,7 +7,7 @@ function job(req::HTTP.Request)
     d = JSON.parse(String(req.body))
     timeout = pop!(d, "timeout_seconds")
     tol = pop!(d, "tolerance")
-    m = xpress_model(timeout, tol)
+    m = cbc_model(timeout, tol)
     @info "Starting REopt with timeout of $(timeout) seconds..."
 	error_response = Dict()
 	results = Dict()
