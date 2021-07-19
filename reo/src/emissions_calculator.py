@@ -243,7 +243,7 @@ class EmissionsCalculator:
             else:
                 raise AttributeError("Emissions error. Cannnot find hourly emmissions for region {} ({},{}) \
                     ".format(self.region, self.latitude,self.longitude))
-            ## TODO: Levelize profile
+            ## TODO: Levelize profile using emissions_factor_series_CO2_pct_decrease 
         return self._emmissions_profile
 
 # class EmissionsCalculator_NOx:

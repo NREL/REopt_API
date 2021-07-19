@@ -41,7 +41,7 @@ class ClassAttributes:
 
 class TestNOx(ResourceTestCaseMixin, TestCase):
     """
-    Test new NOx variables
+    Test lifetime climate and health emissions calculations
     """
 
     def setUp(self):
@@ -53,7 +53,7 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
         self.post = {
           "Scenario": {
             "time_steps_per_hour": 1,
-            "include_climate_in_objective": False,
+            "include_climate_in_objective": True,
             "include_health_in_objective": True,
             "Site": {
               "longitude": -91.7337,
@@ -96,8 +96,9 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
               },
               "Generator": {
                 "om_cost_us_dollars_per_kwh": 0.01,
-                "max_kw": 100.0,
-                "min_kw": 90.0,
+                "max_kw": 0.0,
+                "min_kw": 0.0,
+                "existing_kw": 0.0,
                 "pbi_max_us_dollars": 0.0,
                 "state_ibi_pct": 0.0,
                 "generator_only_runs_during_grid_outage": False,
@@ -112,7 +113,6 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
                 "state_rebate_max_us_dollars": 0.0,
                 "federal_itc_pct": 0.0,
                 "pbi_us_dollars_per_kwh": 0.0,
-                "existing_kw": 10.0,
                 "om_cost_us_dollars_per_kw": 10.0,
                 "utility_rebate_us_dollars_per_kw": 0.0,
                 "macrs_itc_reduction": 0.0,
@@ -139,9 +139,9 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
                 "total_itc_pct": 0.0,
                 "min_kw": 0.0,
                 "max_kw": 0.0,
+                "min_kwh": 0.0,
                 "replace_cost_us_dollars_per_kw": 460.0,
                 "replace_cost_us_dollars_per_kwh": 230.0,
-                "min_kwh": 0.0,
                 "installed_cost_us_dollars_per_kw": 1000.0,
                 "total_rebate_us_dollars_per_kw": 0,
                 "installed_cost_us_dollars_per_kwh": 500.0,
@@ -157,6 +157,7 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
                 "inverter_replacement_year": 10
               },
               "ElectricTariff": {
+                "emissions_factor_series_lb_CO2_per_kwh": [1.0],
                 "add_blended_rates_to_urdb_rate": False,
                 "wholesale_rate_us_dollars_per_kwh": 0.0,
                 "net_metering_limit_kw": 0.0,
@@ -186,6 +187,7 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
                 "pbi_years": 1.0,
                 "macrs_bonus_pct": 0.0,
                 "max_kw": 0.0,
+                "min_kw": 0.0,
                 "pbi_max_us_dollars": 1000000000.0,
                 "wind_meters_per_sec": None,
                 "state_ibi_pct": 0.0,
@@ -205,7 +207,6 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
                 "pbi_us_dollars_per_kwh": 0.0,
                 "om_cost_us_dollars_per_kw": 35.0,
                 "utility_rebate_us_dollars_per_kw": 0.0,
-                "min_kw": 0.0,
                 "macrs_itc_reduction": 0.5,
                 "federal_rebate_us_dollars_per_kw": 0.0
               }
@@ -223,6 +224,7 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
         
         return response
     
+
     def test_emissions_modeling(self):
         ## expected_pv_size = 42 #41.6667
 
@@ -232,11 +234,15 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
         messages = response['messages']
 
         try:
+            print('Emissions Region: ', response['outputs']['Scenario']['Site']['ElectricTariff']['emissions_region'])
             print('PV size: ', response['outputs']['Scenario']['Site']['PV']['size_kw'])
             print('Batt kWh: ', response['outputs']['Scenario']['Site']['Storage']['size_kwh'])
             print('Batt kW: ', response['outputs']['Scenario']['Site']['Storage']['size_kw'])
             print('Generator kW: ', response['outputs']['Scenario']['Site']['Generator']['size_kw'])
-            print('Annual kWh: ', response['outputs']['Scenario']['Site']["LoadProfile"]["annual_calculated_kwh"])
+            print('Annual Load kWh: ', response['outputs']['Scenario']['Site']["LoadProfile"]["annual_calculated_kwh"])
+            print('Year 1 kWh from grid: ', response['outputs']['Scenario']['Site']["ElectricTariff"]["year_one_energy_supplied_kwh"])
+            print('Year 1 kWh from grid BAU: ', response['outputs']['Scenario']['Site']["ElectricTariff"]["year_one_energy_supplied_kwh_bau"])
+            
 
             for item in ['CO2', 'NOx', 'SO2', 'PM']:
               print('Year 1 {}: '.format(item), response['outputs']['Scenario']['Site']['year_one_emissions_lb_{}'.format(item)])
