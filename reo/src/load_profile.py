@@ -820,7 +820,8 @@ class LoadProfile(BuiltInProfile):
         return copy.copy(self.unmodified_load_list), existing_pv_kw_list
 
 def get_climate_zone(latitude, longitude):
-    gdf = gpd.read_file('reo/src/data/climate_cities.shp')
+    gdf_filepath = os.path.join("reo", "src", "data", "climate_cities.shp")
+    gdf = gpd.read_file(gdf_filepath)
     gdf = gdf[gdf.geometry.intersects(g.Point(longitude, latitude))]
     if not gdf.empty:
         nearest_city = gdf.city.values[0].replace(' ', '')
