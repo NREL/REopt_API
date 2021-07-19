@@ -108,8 +108,8 @@ nested_input_definitions = {
     "timeout_seconds": {
       "type": "int",
       "min": 1,
-      "max": 100000,
-      "default": 4200,
+      "max": 420,
+      "default": 420,
       "description": "The number of seconds allowed before the optimization times out"
     },
     "user_uuid": {
