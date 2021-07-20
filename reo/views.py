@@ -53,10 +53,7 @@ import pandas as pd
 from reo.utilities import generate_year_profile_hourly, TONHOUR_TO_KWHT, get_weekday_weekend_total_hours_by_month
 from reo.validators import ValidateNestedInput
 from datetime import datetime, timedelta
-from reo.src.ghp import ground_k_by_climate_zone
-# import math
-# import geopandas as gpd
-# from shapely import geometry as g
+from reo.src.ghp import GHPGHXInputs
 
 
 # loading the labels of hard problems - doing it here so loading happens once on startup
@@ -868,7 +865,7 @@ def ground_conductivity(request):
         longitude = float(request.GET['longitude'])
 
         climate_zone = get_climate_zone(latitude, longitude)
-        k = ground_k_by_climate_zone.loc[climate_zone,"k"]
+        k = GHPGHXInputs.ground_k_by_climate_zone[climate_zone]
 
         response = JsonResponse(
             {
