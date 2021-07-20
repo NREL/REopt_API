@@ -239,7 +239,9 @@ def site_summary_df(site):
                 "with_PV_75pctl_resilience": "With Added PV, 75th pctl Resilience",
                 "no_PV_50pctl_resilience": "No Added PV, 50th pctl Resilience",
                 "with_PV_50pctl_resilience": "With Added PV, 50th pctl Resilience",
-                # "with_PV": "Net Zero"
+                "no_PV_no_resilience": "No Added PV, No Extra Resilience",
+                "with_PV_no_resilience": "With Added PV, No Extra Resilience",
+                "with_PV_neutral_NPV": "With Added PV, Neutral NPV Resilience"
                 }
     add_BAU_col = False
     df = pd.DataFrame(index=rows)
@@ -519,9 +521,9 @@ def resilience_main():
     rmaxRE = []
     y_valsRE = []
 
-    for scen in ["no_PV","with_PV"]:
-        for pctl in [100,75,50]:
-            json_input_path = "SIAD_results_{}_{}pctl_resilience.json".format(scen,pctl)
+    for scen in ["with_PV"]:#,"no_PV"]:
+        # for pctl in [100,75,50]:
+            json_input_path = "SIAD_results_{}_neutral_NPV.json".format(scen)
             output_path = "./{}".format(json_input_path[:-5])
             # Run Resilience
             tag = ""
@@ -676,7 +678,7 @@ def resilience_main():
 if __name__ == '__main__':
 
     # print_max_system_sizes()
-    # resilience_main()
+    resilience_main()
     multi_site_summary_xlsx()
     # load_profiles_plot()
 
