@@ -374,7 +374,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
                 client = TestApiClient()
                 # Update ground thermal conductivity based on climate zone if not user-input
                 if not ghpghx_post.get("ground_thermal_conductivity_btu_per_hr_ft_f"):
-                    k_by_zone = ghp.ground_k_by_climate_zone
+                    k_by_zone = ghp.GHPGHXInputs.ground_k_by_climate_zone
                     climate_zone = get_climate_zone(ghpghx_post["latitude"], ghpghx_post["longitude"])
                     ghpghx_post["ground_thermal_conductivity_btu_per_hr_ft_f"] = k_by_zone.loc[climate_zone,"k"]
                 # Call /ghpghx endpoint to size GHP and GHX
