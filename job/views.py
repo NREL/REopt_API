@@ -61,8 +61,8 @@ def results(request, run_uuid):
             return JsonResponse({"Error": str(err.args[0])}, status=400)
 
     try:
-        s = Scenario.objects.get(run_uuid=run_uuid)
-        # TODO "join" all database queries into a single query (check Django ORM documentation)
+        s = Scenario.objects.select_related('FinancialInputs','SiteInputs','FinancialOutputs').get(run_uuid=run_uuid)
+        # TODO: add to select_related args above the names of all related models that should be selected in this single database query
     except Exception as e:
         if isinstance(e, models.ObjectDoesNotExist):
             resp = {"messages": {"error": ""}}
