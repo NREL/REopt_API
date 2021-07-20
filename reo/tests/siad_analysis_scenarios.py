@@ -58,6 +58,51 @@ class TestSIADScenarios(ResourceTestCaseMixin, TestCase):
         # response = self.get_response(data=self.post_BAU)
         # with open(os.path.join(results_dir,'SIAD_results_BAU.json'), 'w') as json_file:
         #     json.dump(response, json_file)
+        # response = self.get_response(data=self.post_with_PV)
+        # with open(os.path.join(results_dir,'SIAD_results_with_PV_no_resilience.json'), 'w') as json_file:
+        #     json.dump(response, json_file)
+        # response = self.get_response(data=self.post_no_PV)
+        # with open(os.path.join(results_dir,'SIAD_results_no_PV_no_resilience.json'), 'w') as json_file:
+        #     json.dump(response, json_file)
+
+        critical_pct = .3
+        self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["critical_load_pct"] = critical_pct
+        day = 329
+        self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = day*24
+        self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"] = (day+14)*24
+        response = self.get_response(data=self.post_with_PV)
+        pv_kw = response["outputs"]["Scenario"]["Site"]["PV"]["size_kw"] - self.post_with_PV["Scenario"]["Site"]["PV"]["existing_kw"]
+        day = 281
+        self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = day*24
+        self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"] = (day+14)*24
+        response = self.get_response(data=self.post_with_PV)
+        batt_kw = response["outputs"]["Scenario"]["Site"]["Storage"]["size_kw"]
+        day = 7
+        self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = day*24
+        self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"] = (day+14)*24
+        response = self.get_response(data=self.post_with_PV)
+        batt_kwh = response["outputs"]["Scenario"]["Site"]["Storage"]["size_kwh"]
+        day = 334
+        self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = day*24
+        self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"] = (day+14)*24
+        response = self.get_response(data=self.post_with_PV)
+        gen_kw = response["outputs"]["Scenario"]["Site"]["Generator"]["size_kw"]
+        
+        self.post_with_PV["Scenario"]["Site"]["PV"]["max_kw"] = pv_kw
+        self.post_with_PV["Scenario"]["Site"]["PV"]["min_kw"] = pv_kw
+        self.post_with_PV["Scenario"]["Site"]["Storage"]["max_kw"] = batt_kw
+        self.post_with_PV["Scenario"]["Site"]["Storage"]["min_kw"] = batt_kw
+        self.post_with_PV["Scenario"]["Site"]["Storage"]["max_kwh"] = batt_kwh
+        self.post_with_PV["Scenario"]["Site"]["Storage"]["min_kwh"] = batt_kwh
+        self.post_with_PV["Scenario"]["Site"]["Generator"]["max_kw"] = gen_kw
+        self.post_with_PV["Scenario"]["Site"]["Generator"]["min_kw"] = gen_kw
+        self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = 0
+        self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"] = 1
+        response = self.get_response(data=self.post_with_PV)
+        with open(os.path.join(results_dir,'SIAD_results_with_PV_neutral_NPV.json'), 'w') as json_file:
+            json.dump(response, json_file)
+        print(response["outputs"]["Scenario"]["Site"]["Financial"]["npv_us_dollars"])
+
         # for day in range(365-14):
         #     self.post_no_PV["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = day*24
         #     self.post_no_PV["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"] = (day+14)*24
@@ -69,47 +114,51 @@ class TestSIADScenarios(ResourceTestCaseMixin, TestCase):
         #     response = self.get_response(data=self.post_with_PV)
         #     with open(os.path.join(results_dir,'SIAD_results_with_PV_outage_{}.json'.format(day)), 'w') as json_file:
         #         json.dump(response, json_file)
-        # self.post_no_PV["Scenario"]["Site"]["Storage"]["max_kw"] = 1193.5068
-        # self.post_no_PV["Scenario"]["Site"]["Storage"]["min_kw"] = 1193.5067
-        # self.post_no_PV["Scenario"]["Site"]["Storage"]["max_kwh"] = 3167.9786
-        # self.post_no_PV["Scenario"]["Site"]["Storage"]["min_kwh"] = 3167.9785
-        # self.post_with_PV["Scenario"]["Site"]["PV"]["max_kw"] = 5449.2676 - self.post_with_PV["Scenario"]["Site"]["PV"]["existing_kw"]
-        # self.post_with_PV["Scenario"]["Site"]["PV"]["min_kw"] = 5449.2675 - self.post_with_PV["Scenario"]["Site"]["PV"]["existing_kw"]
-        # self.post_with_PV["Scenario"]["Site"]["Storage"]["max_kw"] = 1357.6899
-        # self.post_with_PV["Scenario"]["Site"]["Storage"]["min_kw"] = 1357.6898
-        # self.post_with_PV["Scenario"]["Site"]["Storage"]["max_kwh"] = 4431.3940
-        # self.post_with_PV["Scenario"]["Site"]["Storage"]["min_kwh"] = 4431.3939
-        # self.post_no_PV["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = 0
-        # self.post_no_PV["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"] = 1
-        # self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = 0
-        # self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"] = 1
-        # self.post_no_PV["Scenario"]["Site"]["Generator"]["max_kw"] = 2261.1046
-        # self.post_no_PV["Scenario"]["Site"]["Generator"]["min_kw"] = 2261.1045
-        # self.post_with_PV["Scenario"]["Site"]["Generator"]["max_kw"] = 1773.9847
-        # self.post_with_PV["Scenario"]["Site"]["Generator"]["min_kw"] = 1773.9846
-        # response = self.get_response(data=self.post_no_PV)
-        # with open(os.path.join(results_dir,'SIAD_results_no_PV_max_resilience.json'), 'w') as json_file:
-        #     json.dump(response, json_file)
-        # response = self.get_response(data=self.post_with_PV)
-        # with open(os.path.join(results_dir,'SIAD_results_with_PV_max_resilience.json'), 'w') as json_file:
-        #     json.dump(response, json_file)
         
-        resilience_sizes = {
-            "no_PV":
-                {
-                    "PV_kw": {100: 3100, 75: 3100, 50: 3100},
-                    "Storage_kw": {100: 1193.5067039999997, 75: 854.7337587499999, 50: 630.4682222068786},
-                    "Storage_kwh": {100: 3167.9785765893807, 75: 2442.9684545042373, 50: 1914.4676437190394},
-                    "Generator_kw": {100: 2261.104548506551, 75: 2261.104548506551, 50: 1560.7940500714649}
-                },
-            "with_PV":
-                {
-                    "PV_kw": {100: 5449.2675, 75: 5183.6452, 50: 5092.6271},
-                    "Storage_kw": {100: 1357.6898421055575, 75: 1137.6451204218793, 50: 997.7849278437443},
-                    "Storage_kwh": {100: 4431.39393077016, 75: 3561.9007866028724, 50: 3101.541476740098},
-                    "Generator_kw": {100: 1773.9846833661054, 75: 1323.1884774629507, 50: 1167.351564405073}
-                }
-        }
+        # resilience_sizes = {
+        #     "no_PV":
+        #         {
+        #             "PV_kw": {100: 3100, 75: 3100, 50: 3100},
+        #             "Storage_kw": {100: 1193.5067039999997, 75: 854.7337587499999, 50: 630.4682222068786},
+        #             "Storage_kwh": {100: 3167.9785765893807, 75: 2442.9684545042373, 50: 1914.4676437190394},
+        #             "Generator_kw": {100: 2261.104548506551, 75: 2261.104548506551, 50: 1560.7940500714649}
+        #         },
+        #     "with_PV":
+        #         {
+        #             "PV_kw": {100: 5449.2675, 75: 5183.6452, 50: 5092.6271},
+        #             "Storage_kw": {100: 1357.6898421055575, 75: 1137.6451204218793, 50: 997.7849278437443},
+        #             "Storage_kwh": {100: 4431.39393077016, 75: 3561.9007866028724, 50: 3101.541476740098},
+        #             "Generator_kw": {100: 1773.9846833661054, 75: 1323.1884774629507, 50: 1167.351564405073}
+        #         }
+        # }
+        # for pctl in [100,75,50]:
+        #     scen = "with_PV"
+        #     self.post_with_PV["Scenario"]["Site"]["PV"]["max_kw"] = resilience_sizes[scen]["PV_kw"][pctl] - self.post_with_PV["Scenario"]["Site"]["PV"]["existing_kw"]
+        #     self.post_with_PV["Scenario"]["Site"]["PV"]["min_kw"] = resilience_sizes[scen]["PV_kw"][pctl] - self.post_with_PV["Scenario"]["Site"]["PV"]["existing_kw"]
+        #     self.post_with_PV["Scenario"]["Site"]["Storage"]["max_kw"] = resilience_sizes[scen]["Storage_kw"][pctl]
+        #     self.post_with_PV["Scenario"]["Site"]["Storage"]["min_kw"] = resilience_sizes[scen]["Storage_kw"][pctl]
+        #     self.post_with_PV["Scenario"]["Site"]["Storage"]["max_kwh"] = resilience_sizes[scen]["Storage_kwh"][pctl]
+        #     self.post_with_PV["Scenario"]["Site"]["Storage"]["min_kwh"] = resilience_sizes[scen]["Storage_kwh"][pctl]
+        #     self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = 0
+        #     self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"] = 1
+        #     self.post_with_PV["Scenario"]["Site"]["Generator"]["max_kw"] = resilience_sizes[scen]["Generator_kw"][pctl]
+        #     self.post_with_PV["Scenario"]["Site"]["Generator"]["min_kw"] = resilience_sizes[scen]["Generator_kw"][pctl]
+        #     response = self.get_response(data=self.post_with_PV)
+        #     with open(os.path.join(results_dir,'SIAD_results_{}_{}pctl_resilience.json'.format(scen,pctl)), 'w') as json_file:
+        #             json.dump(response, json_file)
+        #     scen = "no_PV"
+        #     self.post_no_PV["Scenario"]["Site"]["Storage"]["max_kw"] = resilience_sizes[scen]["Storage_kw"][pctl]
+        #     self.post_no_PV["Scenario"]["Site"]["Storage"]["min_kw"] = resilience_sizes[scen]["Storage_kw"][pctl]
+        #     self.post_no_PV["Scenario"]["Site"]["Storage"]["max_kwh"] = resilience_sizes[scen]["Storage_kwh"][pctl]
+        #     self.post_no_PV["Scenario"]["Site"]["Storage"]["min_kwh"] = resilience_sizes[scen]["Storage_kwh"][pctl]
+        #     self.post_no_PV["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = 0
+        #     self.post_no_PV["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"] = 1
+        #     self.post_no_PV["Scenario"]["Site"]["Generator"]["max_kw"] = resilience_sizes[scen]["Generator_kw"][pctl]
+        #     self.post_no_PV["Scenario"]["Site"]["Generator"]["min_kw"] = resilience_sizes[scen]["Generator_kw"][pctl]
+        #     response = self.get_response(data=self.post_no_PV)
+        #     with open(os.path.join(results_dir,'SIAD_results_{}_{}pctl_resilience.json'.format(scen,pctl)), 'w') as json_file:
+        #             json.dump(response, json_file)
+            
         # for scen in ["no_PV","with_PV"]:
         #     for pctl in [100,75,50]:
         #         exec('self.post_{}["Scenario"]["Site"]["PV"]["max_kw"] = resilience_sizes[scen]["PV_kw"][pctl] - self.post_{}["Scenario"]["Site"]["PV"]["existing_kw"]'.format(scen,scen))
@@ -125,32 +174,4 @@ class TestSIADScenarios(ResourceTestCaseMixin, TestCase):
         #         exec('response = self.get_response(data=self.post_{})'.format(scen))
         #         with open(os.path.join(results_dir,'SIAD_results_{}_{}pctl_resilience.json'.format(scen,pctl)), 'w') as json_file:
         #             json.dump(response, json_file)
-
-        for pctl in [100,75,50]:
-            scen = "with_PV"
-            self.post_with_PV["Scenario"]["Site"]["PV"]["max_kw"] = resilience_sizes[scen]["PV_kw"][pctl] - self.post_with_PV["Scenario"]["Site"]["PV"]["existing_kw"]
-            self.post_with_PV["Scenario"]["Site"]["PV"]["min_kw"] = resilience_sizes[scen]["PV_kw"][pctl] - self.post_with_PV["Scenario"]["Site"]["PV"]["existing_kw"]
-            self.post_with_PV["Scenario"]["Site"]["Storage"]["max_kw"] = resilience_sizes[scen]["Storage_kw"][pctl]
-            self.post_with_PV["Scenario"]["Site"]["Storage"]["min_kw"] = resilience_sizes[scen]["Storage_kw"][pctl]
-            self.post_with_PV["Scenario"]["Site"]["Storage"]["max_kwh"] = resilience_sizes[scen]["Storage_kwh"][pctl]
-            self.post_with_PV["Scenario"]["Site"]["Storage"]["min_kwh"] = resilience_sizes[scen]["Storage_kwh"][pctl]
-            self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = 0
-            self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"] = 1
-            self.post_with_PV["Scenario"]["Site"]["Generator"]["max_kw"] = resilience_sizes[scen]["Generator_kw"][pctl]
-            self.post_with_PV["Scenario"]["Site"]["Generator"]["min_kw"] = resilience_sizes[scen]["Generator_kw"][pctl]
-            response = self.get_response(data=self.post_with_PV)
-            with open(os.path.join(results_dir,'SIAD_results_{}_{}pctl_resilience.json'.format(scen,pctl)), 'w') as json_file:
-                    json.dump(response, json_file)
-            scen = "no_PV"
-            self.post_no_PV["Scenario"]["Site"]["Storage"]["max_kw"] = resilience_sizes[scen]["Storage_kw"][pctl]
-            self.post_no_PV["Scenario"]["Site"]["Storage"]["min_kw"] = resilience_sizes[scen]["Storage_kw"][pctl]
-            self.post_no_PV["Scenario"]["Site"]["Storage"]["max_kwh"] = resilience_sizes[scen]["Storage_kwh"][pctl]
-            self.post_no_PV["Scenario"]["Site"]["Storage"]["min_kwh"] = resilience_sizes[scen]["Storage_kwh"][pctl]
-            self.post_no_PV["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = 0
-            self.post_no_PV["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"] = 1
-            self.post_no_PV["Scenario"]["Site"]["Generator"]["max_kw"] = resilience_sizes[scen]["Generator_kw"][pctl]
-            self.post_no_PV["Scenario"]["Site"]["Generator"]["min_kw"] = resilience_sizes[scen]["Generator_kw"][pctl]
-            response = self.get_response(data=self.post_no_PV)
-            with open(os.path.join(results_dir,'SIAD_results_{}_{}pctl_resilience.json'.format(scen,pctl)), 'w') as json_file:
-                    json.dump(response, json_file)
 
