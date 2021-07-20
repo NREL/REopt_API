@@ -12040,7 +12040,7 @@ class TestFlexLoads(ResourceTestCaseMixin, TestCase):
             "Scenario": {
                 "webtool_uuid": None,
                 "description": "",
-                "timeout_seconds": 4200,
+                "timeout_seconds": 420,
                 "optimality_tolerance_techs": 0.03,
                 "add_soc_incentive": False,
                 "Site": {
