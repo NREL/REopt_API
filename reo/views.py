@@ -865,7 +865,8 @@ def ground_conductivity(request):
         longitude = float(request.GET['longitude'])
 
         climate_zone = get_climate_zone(latitude, longitude)
-        k = GHPGHXInputs.ground_k_by_climate_zone[climate_zone]
+        k_by_zone = copy.deepcopy(GHPGHXInputs.ground_k_by_climate_zone)
+        k = k_by_zone[climate_zone]
 
         response = JsonResponse(
             {

@@ -35,6 +35,7 @@ import logging
 log = logging.getLogger(__name__)
 import json
 import time
+import copy
 from reo.src.data_manager import DataManager
 from reo.src.elec_tariff import ElecTariff
 from reo.src.load_profile import LoadProfile, get_climate_zone
@@ -374,9 +375,9 @@ def setup_scenario(self, run_uuid, data, raw_post):
                 client = TestApiClient()
                 # Update ground thermal conductivity based on climate zone if not user-input
                 if not ghpghx_post.get("ground_thermal_conductivity_btu_per_hr_ft_f"):
-                    k_by_zone = ghp.GHPGHXInputs.ground_k_by_climate_zone
+                    k_by_zone = copy.deepcopy(ghp.GHPGHXInputs.ground_k_by_climate_zone)
                     climate_zone = get_climate_zone(ghpghx_post["latitude"], ghpghx_post["longitude"])
-                    ghpghx_post["ground_thermal_conductivity_btu_per_hr_ft_f"] = k_by_zone.loc[climate_zone,"k"]
+                    ghpghx_post["ground_thermal_conductivity_btu_per_hr_ft_f"] = k_by_zone[climate_zone]
                 # Call /ghpghx endpoint to size GHP and GHX
                 ghpghx_post_resp = client.post('/v1/ghpghx/', data=ghpghx_post)
                 ghpghx_post_resp_dict = json.loads(ghpghx_post_resp.content)
