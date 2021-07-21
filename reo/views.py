@@ -857,8 +857,8 @@ def ground_conductivity(request):
     GET ground thermal conductivity based on the climate zone from the lat/long input
     param: latitude: latitude of the site location
     param: longitude: longitude of the site location
-    return: Climate Zone: climate zone of the site location
-    return: Thermal Conductivity [Btu/(hr-ft-degF)]: thermal conductivity of the ground in climate zone
+    return: climate_zone: climate zone of the site location
+    return: thermal_conductivity [Btu/(hr-ft-degF)]: thermal conductivity of the ground in climate zone
     """
     try:
         latitude = float(request.GET['latitude'])  # need float to convert unicode
