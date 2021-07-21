@@ -870,8 +870,8 @@ def ground_conductivity(request):
 
         response = JsonResponse(
             {
-                "Climate Zone": climate_zone,
-                "Thermal Conductivity": k
+                "climate_zone": climate_zone,
+                "thermal_conductivity": k
             }
         )
         return response
