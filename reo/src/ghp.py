@@ -1,13 +1,33 @@
 import numpy as np
+import pandas as pd
 import copy
 from reo.utilities import MMBTU_TO_KWH, TONHOUR_TO_KWHT
 from reo.src.incentives import Incentives, IncentivesNoProdBased
 from reo.src.data_manager import big_number
 
+
 class GHPGHXInputs:
     """
     Map the GHPGHX inputs to the objects in this class
     """
+
+    ground_k_by_climate_zone = {
+                                "1A": 1.029,
+                                "2A": 1.348,
+                                "2B": 0.917,
+                                "3A": 1.243,
+                                "3B": 1.364,
+                                "3C": 1.117,
+                                "4A": 1.023,
+                                "4B": 0.972,
+                                "4C": 1.418,
+                                "5A": 1.726,
+                                "5B": 1.177,
+                                "6A": 0.977,
+                                "6B": 0.981,
+                                "7A": 1.034,
+                                "7B": 1.508
+                                }
 
     def __init__(self, inputs_dict, **kwargs):
         #TODO Add ALL the input fields for the GHPGHX model
