@@ -1,4 +1,4 @@
-using HTTP, JSON
+using HTTP, JSON, JuMP
 include("REopt.jl")
 
 using .REopt
@@ -9,9 +9,23 @@ function job(req::HTTP.Request)
     tol = pop!(d, "tolerance")
     m = xpress_model(timeout, tol)
     @info "Starting REopt with timeout of $(timeout) seconds..."
-    results = reopt(m, d)
-    @info "REopt model solved with status $(results["status"])."
-    return HTTP.Response(200, JSON.json(results))
+	error_response = Dict()
+	results = Dict()
+	try
+    	results = reopt(m, d)
+	catch e
+		@error "Something went wrong in the Julia code!" exception=(e, catch_backtrace())
+		error_response["error"] = sprint(showerror, e)
+	end
+	finalize(backend(m))
+	GC.gc()
+	if isempty(error_response)
+    	@info "REopt model solved with status $(results["status"])."
+    	return HTTP.Response(200, JSON.json(results))
+	else
+		@info "An error occured in the Julia code."
+		return HTTP.Response(500, JSON.json(error_response))
+	end
 end
 
 function health(req::HTTP.Request)

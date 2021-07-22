@@ -35,6 +35,7 @@ from resilience_stats.api import OutageSimJob
 from tastypie.api import Api
 from reo import views
 from django.urls import path
+from futurecosts.api import FutureCostsAPI
 
 v1_api = Api(api_name='v1')
 v1_api.register(Job())
@@ -43,6 +44,9 @@ v1_api.register(OutageSimJob())
 stable_api = Api(api_name='stable')
 stable_api.register(Job())
 stable_api.register(OutageSimJob())
+
+dev_api = Api(api_name="dev")
+dev_api.register(FutureCostsAPI())
 
 
 def page_not_found(request, url):
@@ -63,7 +67,7 @@ urlpatterns = [
     path('v1/', include('resilience_stats.urls')),
     path('v1/', include('proforma.urls')),
     path('v1/', include('load_builder.urls')),
-    url(r'^v1/user/?', include('summary.urls'), name='summary'),
+    path('v1/', include('summary.urls')),
     url(r'', include(v1_api.urls), name='job'),
     url(r'', include(v1_api.urls), name='outagesimjob'),
     
@@ -71,9 +75,12 @@ urlpatterns = [
     path('stable/', include('resilience_stats.urls')),
     path('stable/', include('proforma.urls')),
     path('stable/', include('load_builder.urls')),
-    url(r'^stable/user/?', include('summary.urls'), name='summary'),
+    path('stable/', include('summary.urls')),
     url(r'', include(stable_api.urls), name='job'),
     url(r'', include(stable_api.urls), name='outagesimjob'),
+
+    path('dev/', include('futurecosts.urls')),
+    url(r'', include(dev_api.urls), name='futurecosts'),
     
     url(r'(.*)', page_not_found, name='404'),
     ]

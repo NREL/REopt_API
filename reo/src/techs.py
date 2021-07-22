@@ -92,8 +92,8 @@ class Util(Tech):
 
         if self.outage_start_time_step is not None and self.outage_end_time_step is not None:  # "turn off" grid resource
             # minus 1 in next line accounts for Python's zero-indexing
-            grid_prod_factor[self.outage_start_time_step - 1:self.outage_end_time_step - 1] = \
-                [0] * (self.outage_end_time_step - self.outage_start_time_step)
+            grid_prod_factor[self.outage_start_time_step - 1:self.outage_end_time_step] = \
+                [0] * (self.outage_end_time_step - self.outage_start_time_step + 1)
 
         return grid_prod_factor
 
@@ -239,7 +239,8 @@ class Generator(Tech):
 
     def __init__(self, dfm, min_kw, max_kw, existing_kw, fuel_slope_gal_per_kwh, fuel_intercept_gal_per_hr,
                  fuel_avail_gal, min_turn_down_pct, outage_start_time_step=None, outage_end_time_step=None, time_steps_per_hour=1,
-                 fuel_avail_before_outage_pct=1, emissions_factor_lb_CO2_per_gal=None, **kwargs):
+                 fuel_avail_before_outage_pct=1, emissions_factor_lb_CO2_per_gal=None, emissions_factor_lb_NOx_per_gal=None,
+                 emissions_factor_lb_SO2_per_gal=None, emissions_factor_lb_PM_per_gal=None, **kwargs):
         super(Generator, self).__init__(min_kw=min_kw, max_kw=max_kw, **kwargs)
         """
         super class init for generator is not unique anymore as we are now allowing users to define min/max sizes;
@@ -267,6 +268,9 @@ class Generator(Tech):
         self.max_kw = max_kw
         self.existing_kw = existing_kw
         self.emissions_factor_lb_CO2_per_gal = emissions_factor_lb_CO2_per_gal
+        self.emissions_factor_lb_NOx_per_gal = emissions_factor_lb_NOx_per_gal
+        self.emissions_factor_lb_SO2_per_gal = emissions_factor_lb_SO2_per_gal
+        self.emissions_factor_lb_PM_per_gal = emissions_factor_lb_PM_per_gal
 
         dfm.add_generator(self)
 
@@ -277,9 +281,8 @@ class Generator(Tech):
         if self.generator_only_runs_during_grid_outage:
             if self.outage_start_time_step is not None and self.outage_end_time_step is not None:
                 # minus 1 in next line accounts for Python's zero-indexing
-                gen_prod_factor[self.outage_start_time_step - 1:self.outage_end_time_step - 1] \
-                    = [1] * (self.outage_end_time_step - self.outage_start_time_step)
-
+                gen_prod_factor[self.outage_start_time_step - 1:self.outage_end_time_step] \
+                    = [1] * (self.outage_end_time_step - self.outage_start_time_step + 1)
         else:
             gen_prod_factor = [1] * len(gen_prod_factor)
 
@@ -337,7 +340,9 @@ class CHP(Tech):
                               "combustion_turbine": 0,
                               "fuel_cell": 0}
 
-    def __init__(self, dfm, run_uuid, existing_boiler_production_type_steam_or_hw, oa_temp_degF, site_elevation_ft,
+    def __init__(self, dfm, run_uuid, existing_boiler_production_type_steam_or_hw, oa_temp_degF, site_elevation_ft, 
+                 emissions_factor_lb_CO2_per_mmbtu=None, emissions_factor_lb_NOx_per_mmbtu=None,
+                 emissions_factor_lb_SO2_per_mmbtu=None, emissions_factor_lb_PM_per_mmbtu=None,
                  outage_start_time_step=None, outage_end_time_step=None, time_steps_per_hour=1, year=None, **kwargs):
         super(CHP, self).__init__(**kwargs)
 
@@ -373,6 +378,10 @@ class CHP(Tech):
         self.outage_start_time_step = outage_start_time_step
         self.outage_end_time_step = outage_end_time_step
         self.year = year
+        self.emissions_factor_lb_CO2_per_mmbtu = emissions_factor_lb_CO2_per_mmbtu
+        self.emissions_factor_lb_NOx_per_mmbtu = emissions_factor_lb_NOx_per_mmbtu
+        self.emissions_factor_lb_SO2_per_mmbtu = emissions_factor_lb_SO2_per_mmbtu
+        self.emissions_factor_lb_PM_per_mmbtu = emissions_factor_lb_PM_per_mmbtu
 
         self.fuel_burn_slope, self.fuel_burn_intercept, self.thermal_prod_slope, self.thermal_prod_intercept = \
             self.convert_performance_params(self.elec_effic_full_load, self.elec_effic_half_load,
@@ -395,10 +404,10 @@ class CHP(Tech):
 
         # Ignore unavailability in timestep if it intersects with an outage interval
         if self.outage_start_time_step and self.outage_end_time_step:
-            chp_elec_prod_factor[self.outage_start_time_step - 1:self.outage_end_time_step - 1] = \
-                [1.0] * (self.outage_end_time_step - self.outage_start_time_step)
-            chp_thermal_prod_factor[self.outage_start_time_step - 1:self.outage_end_time_step - 1] = \
-                [1.0] * (self.outage_end_time_step - self.outage_start_time_step)
+            chp_elec_prod_factor[self.outage_start_time_step - 1:self.outage_end_time_step] = \
+                [1.0] * (self.outage_end_time_step - self.outage_start_time_step + 1)
+            chp_thermal_prod_factor[self.outage_start_time_step - 1:self.outage_end_time_step] = \
+                [1.0] * (self.outage_end_time_step - self.outage_start_time_step + 1)
 
         return chp_elec_prod_factor, chp_thermal_prod_factor
 
@@ -464,7 +473,8 @@ class Boiler(Tech):
                                                "combustion_turbine": "steam",
                                                "fuel_cell": "hot_water"}
 
-    def __init__(self, dfm, boiler_fuel_series_bau, **kwargs):
+    def __init__(self, dfm, boiler_fuel_series_bau, emissions_factor_lb_CO2_per_mmbtu=None, emissions_factor_lb_NOx_per_mmbtu=None,
+                 emissions_factor_lb_SO2_per_mmbtu=None, emissions_factor_lb_PM_per_mmbtu=None, **kwargs):
         super(Boiler, self).__init__(**kwargs)
 
         self.is_hot = True
@@ -474,6 +484,10 @@ class Boiler(Tech):
         self.boiler_efficiency = kwargs.get('boiler_efficiency')
         self.derate = 0
         self.n_timesteps = dfm.n_timesteps
+        self.emissions_factor_lb_CO2_per_mmbtu = emissions_factor_lb_CO2_per_mmbtu
+        self.emissions_factor_lb_NOx_per_mmbtu = emissions_factor_lb_NOx_per_mmbtu
+        self.emissions_factor_lb_SO2_per_mmbtu = emissions_factor_lb_SO2_per_mmbtu
+        self.emissions_factor_lb_PM_per_mmbtu = emissions_factor_lb_PM_per_mmbtu
         
         # Assign boiler max size equal to the peak load multiplied by the thermal_factor
         self.max_kw = max(boiler_fuel_series_bau) * self.boiler_efficiency * self.max_thermal_factor_on_peak_load * MMBTU_TO_KWH        

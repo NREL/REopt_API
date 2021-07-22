@@ -149,6 +149,16 @@ nested_input_definitions = {
       "default": True,
       "description": "If True, then a small incentive to keep the battery's state of charge high is added to the objective of the optimization."
     },
+    "include_climate_in_objective": {
+      "type": "bool",
+      "default": False,
+      "description": "If True, then the lifetime cost of CO2 emissions will be included in the objective function. Lifetime CO2 impacts will be calculated regardless."
+    },
+    "include_health_in_objective": {
+      "type": "bool",
+      "default": False,
+      "description": "If True, then the lifetime cost of SO2, NOx, and PM2.5 emissions will be included in the objective function. Lifetime health impacts will be calculated regardless, but you must provide marginal health costs for each pollutant."
+    },
 
     "Site": {
       "latitude": {
@@ -192,6 +202,11 @@ nested_input_definitions = {
         "max": 15000.0,
         "default": 0.0,
         "description": "Site elevation (above sea sevel), units of feet"
+      },
+      "include_exported_elec_emissions_in_total": {
+        "type": "bool",
+        "default": False,
+        "description": "Include the emissions reductions (or increases) in grid emissions associated with exported onsite electrical generation in the calculation of Year 1 emissions."  
       },
 
       "Financial": {
@@ -276,7 +291,44 @@ nested_input_definitions = {
           "max": 1.0,
           "default": 0.3,
           "description": "Additional cost, in percent of non-islandable capital costs, to make a distributed energy system islandable from the grid and able to serve critical loads. Includes all upgrade costs such as additional laber and critical load panels."
-        }
+        },
+        "co2_cost_us_dollars_per_tonne": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e3,
+          "default": 51.0,
+          "description": "Social Cost of CO2 in the first year of the analysis. Units are US dollars per metric ton of CO2. The default of $51/t is the 2020 value (using a 3 pct discount rate) estimated by the U.S. Interagency Working Group on Social Cost of Greenhouse Gases."
+        }, 
+        "nox_cost_us_dollars_per_tonne": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e5,
+          "default": 0.0,
+          "description": "Public health damage cost of NOx in the first year of the analysis. Units are US dollars per metric ton. Must provide value if considering health damages in objective."
+        },
+        "so2_cost_us_dollars_per_tonne": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e5,
+          "default": 0.0,
+          "description": "Social Cost of SO2 in the first year of the analysis. Units are US dollars per metric ton. Must provide value if considering health damages in objective."
+        },
+        "pm_cost_us_dollars_per_tonne": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e5,
+          "default": 0.0,
+          "description": "Social Cost of PM2.5 in the first year of the analysis. Units are US dollars per metric ton. Must provide value if considering health damages in objective."
+        },  
+        "co2_cost_escalation_pct": {
+          "type": "float",
+          "min": -1.0,
+          "max": 1.0,
+          "default": 0.01778, 
+          "description": "Annual nominal Social Cost of CO2 escalation rate."
+        },   
+        # TODO: add in PM2.5, SO2, NOx here
+        # TODO: potentially add in CO2_discount_rate 
       },
 
       "LoadProfile": {
@@ -551,9 +603,31 @@ nested_input_definitions = {
           "description": "Label attribute of utility rate structure from <a href='https: //openei.org/services/doc/rest/util_rates/?version=3' target='blank'>Utility Rate Database API</a>"
         },
         "emissions_factor_series_lb_CO2_per_kwh": {
-          "type": ["list_of_float", "float"],
+          "type": ["float", "list_of_float"],
           "description": "Carbon Dioxide emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.",
         },
+        "emissions_factor_series_CO2_pct_decrease": {
+          "type": "float",
+          "min": -1.0,
+          "max": 1.0,
+          "default": 0.05,
+          "description": "Percent decrease in the total annual CO2 marginal emissions rate of the grid. The first year's hourly marginal emissions rates are levelized using this percent decrease.",
+        },
+        "emissions_factor_series_lb_NOx_per_kwh": {
+          "type": ["list_of_float", "float"],
+          "description": "NOx emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.",
+        },
+        # TODO: pct decrease NOx? 
+        "emissions_factor_series_lb_SO2_per_kwh": {
+          "type": ["list_of_float", "float"],
+          "description": "SO2 emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.",
+        },
+        # TODO: pct decrease SO2?
+        "emissions_factor_series_lb_PM_per_kwh": {
+          "type": ["list_of_float", "float"],
+          "description": "PM2.5 emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.",
+        },
+        # TODO: pct decrease PM2.5? 
         "chp_standby_rate_us_dollars_per_kw_per_month": {
           "type": "float",
           "min": 0.0,
@@ -1390,6 +1464,18 @@ nested_input_definitions = {
           "type": "float",
           "description": "Pounds of carbon dioxide emitted per gallon of fuel burned"
         },
+        "emissions_factor_lb_NOx_per_gal": {
+          "type": "float",
+          "description": "Pounds of NOx emitted per gallon of fuel burned"
+        },
+        "emissions_factor_lb_SO2_per_gal": {
+          "type": "float",
+          "description": "Pounds of SO2 emitted per gallon of fuel burned"
+        },
+        "emissions_factor_lb_PM_per_gal": {
+          "type": "float",
+          "description": "Pounds of PM2.5 emitted per gallon of fuel burned"
+        },
         "can_net_meter": {
           "type": "bool",
           "default": False,
@@ -1656,6 +1742,18 @@ nested_input_definitions = {
           "type": "float",
           "description": "Average carbon dioxide emissions factor"
         },
+        "emissions_factor_lb_NOx_per_mmbtu": {
+          "type": "float",
+          "description": "Average NOx emissions factor"
+        },
+        "emissions_factor_lb_SO2_per_mmbtu": {
+          "type": "float",
+          "description": "Average SO2 emissions factor"
+        },
+        "emissions_factor_lb_PM_per_mmbtu": {
+          "type": "float",
+          "description": "Average PM2.5 emissions factor"
+        },
         "can_net_meter": {
           "type": "bool",
           "default": False,
@@ -1801,6 +1899,18 @@ nested_input_definitions = {
         "emissions_factor_lb_CO2_per_mmbtu": {
           "type": "float",
           "description": "Pounds of carbon dioxide emitted per gallon of fuel burned"
+        },
+        "emissions_factor_lb_NOx_per_mmbtu": {
+          "type": "float",
+          "description": "Pounds of NOx emitted per gallon of fuel burned"
+        },
+        "emissions_factor_lb_SO2_per_mmbtu": {
+          "type": "float",
+          "description": "Pounds of SO2 emitted per gallon of fuel burned"
+        },
+        "emissions_factor_lb_PM_per_mmbtu": {
+          "type": "float",
+          "description": "Pounds of PM2.5 emitted per gallon of fuel burned"
         }
       },
 

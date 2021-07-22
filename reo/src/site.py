@@ -45,6 +45,11 @@ class Financial(object):
                  third_party_ownership,
                  owner_tax_pct,
                  owner_discount_pct,
+                 co2_cost_us_dollars_per_tonne,
+                 nox_cost_us_dollars_per_tonne,
+                 so2_cost_us_dollars_per_tonne,
+                 pm_cost_us_dollars_per_tonne,
+                 co2_cost_escalation_pct,
                  **kwargs
                  ):
         self.om_cost_escalation_pct = om_cost_escalation_pct
@@ -57,6 +62,11 @@ class Financial(object):
         self.third_party_ownership = third_party_ownership
         self.offtaker_discount_pct = offtaker_discount_pct
         self.analysis_years = analysis_years
+        self.co2_cost_us_dollars_per_tonne = co2_cost_us_dollars_per_tonne
+        self.nox_cost_us_dollars_per_tonne = nox_cost_us_dollars_per_tonne
+        self.so2_cost_us_dollars_per_tonne = so2_cost_us_dollars_per_tonne
+        self.pm_cost_us_dollars_per_tonne = pm_cost_us_dollars_per_tonne
+        self.co2_cost_escalation_pct = co2_cost_escalation_pct
 
         # set-up direct ownership
         if self.third_party_ownership is False:
@@ -66,9 +76,12 @@ class Financial(object):
 
 class Site(object):
 
-    def __init__(self, dfm, land_acres=None, roof_squarefeet=None, **kwargs):
+    def __init__(self, dfm, land_acres=None, roof_squarefeet=None,
+    include_exported_elec_emissions_in_total=None,
+     **kwargs):
 
         self.land_acres = land_acres
         self.roof_squarefeet = roof_squarefeet
         self.financial = Financial(**kwargs['Financial'])
+        self.include_exported_elec_emissions_in_total = include_exported_elec_emissions_in_total
         dfm.add_site(self)

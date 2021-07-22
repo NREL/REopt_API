@@ -525,6 +525,51 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['B{}'.format(current_row)] = chp.year_one_emissions_lb_C02
     make_attribute_row(ws, current_row)
     current_row += 1
+
+    ws['A{}'.format(current_row)] = "Year one total site NOx emissions (lb NOx equivalent)"
+    ws['B{}'.format(current_row)] = site.year_one_emissions_lb_NOx
+    make_attribute_row(ws, current_row)
+    current_row += 1
+
+    ws['A{}'.format(current_row)] = "Year one total site NOx emissions BAU (lb NOx equivalent)"
+    ws['B{}'.format(current_row)] = site.year_one_emissions_bau_lb_NOx
+    make_attribute_row(ws, current_row)
+    current_row += 1
+    
+    ws['A{}'.format(current_row)] = "Year one total NOx emissions from electric utility purchases (lb NOx equivalent)"
+    ws['B{}'.format(current_row)] = electric_tariff.year_one_emissions_lb_NOx
+    make_attribute_row(ws, current_row)
+    current_row += 1
+    
+    ws['A{}'.format(current_row)] = "Year one total NOx emissions from electric utility purchases BAU (lb NOx equivalent)"
+    ws['B{}'.format(current_row)] = electric_tariff.year_one_emissions_bau_lb_NOx
+    make_attribute_row(ws, current_row)
+    current_row += 1
+    
+    ws['A{}'.format(current_row)] = "Year one total NOx emissions from backup generator use (lb NOx equivalent)"
+    ws['B{}'.format(current_row)] = generator.year_one_emissions_lb_NOx
+    make_attribute_row(ws, current_row)
+    current_row += 1
+    
+    ws['A{}'.format(current_row)] = "Year one total NOx emissions from backup generator use BAU (lb NOx equivalent)"
+    ws['B{}'.format(current_row)] = generator.year_one_emissions_bau_lb_NOx
+    make_attribute_row(ws, current_row)
+    current_row += 1
+
+    ws['A{}'.format(current_row)] = "Year one total NOx emissions from boiler fuels (lb NOx equivalent)"
+    ws['B{}'.format(current_row)] = boiler.year_one_emissions_lb_NOx
+    make_attribute_row(ws, current_row)
+    current_row += 1
+
+    ws['A{}'.format(current_row)] = "Year one total NOx emissions from boiler fuels BAU (lb NOx equivalent)"
+    ws['B{}'.format(current_row)] = boiler.year_one_emissions_bau_lb_NOx
+    make_attribute_row(ws, current_row)
+    current_row += 1
+
+    ws['A{}'.format(current_row)] = "Year one total NOx emissions from CHP fuels (lb NOx equivalent)"
+    ws['B{}'.format(current_row)] = chp.year_one_emissions_lb_NOx
+    make_attribute_row(ws, current_row)
+    current_row += 1
     current_row += 1
 
     ####################################################################################################################

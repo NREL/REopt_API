@@ -151,6 +151,7 @@ Base.@kwdef struct Parameter
 	 pwf_fuel::AxisArray
 	 r_tax_owner::Float64      # f^{tow}: Tax rate factor for owner [fraction]
      r_tax_offtaker::Float64   # f^{tot}: Tax rate factor for offtaker [fraction]
+     pwf_CO2::Float64 # Cost of CO2 present worth factor [unitless]
 
 	 ###  System Size and Fuel Limit Parameters ###
 	 TechClassMinSize::AxisArray   #  \ubar{b}^{\sigma}_{c}: Minimum system size for technology class c [kW]
@@ -220,6 +221,36 @@ Base.@kwdef struct Parameter
      RaMonthlyPrice::Dict
      RaEnergyPrice::Array{Float64, 1}
 	 AddSOCIncentive::Int64
+
+    # Annual RE parameters
+     ## IncludeExportedREElecinTotal::Bool
+     ##TechPercentRE::AxisArray
+     ##MinAnnualPercentREElec::Union{Float64,Nothing} 
+     ##MaxAnnualPercentREElec::Union{Float64,Nothing} 
+
+    # Emissions parameters
+     IncludeExportedElecEmissionsInTotal::Bool
+     ##IncludeOutageEmissionsInTotal::Bool
+     ##MinPercentEmissionsReduction::Union{Float64,Nothing} 
+     ##MaxPercentEmissionsReduction::Union{Float64,Nothing} 
+     BAUYr1Emissions_CO2::Float64
+     BAUYr1Emissions_NOx::Float64
+     BAUYr1Emissions_SO2::Float64
+     BAUYr1Emissions_PM::Float64
+     GridEmissionsFactor_CO2::Array{Float64,1}
+     GridEmissionsFactor_NOx::Array{Float64,1}
+     GridEmissionsFactor_SO2::Array{Float64,1}
+     GridEmissionsFactor_PM::Array{Float64,1}
+     TechEmissionsFactors_CO2::AxisArray
+     TechEmissionsFactors_NOx::AxisArray
+     TechEmissionsFactors_SO2::AxisArray
+     TechEmissionsFactors_PM::AxisArray
+     CO2_dollars_tonne::Float64
+     NOx_dollars_tonne::Float64
+     SO2_dollars_tonne::Float64
+     PM_dollars_tonne::Float64
+     Include_climate_in_objective::Bool
+     Include_health_in_objective::Bool
 
 	# Added for CHP
 	HotTES::Array{String,1}
@@ -316,6 +347,10 @@ function Parameter(d::Dict)
 		"SHR",
 		"InitTemperatures",
 		"InitTemperaturesWH",
+        ##"MinAnnualPercentREElec",
+        ##"MaxAnnualPercentREElec",
+        ##"MinPercentEmissionsReduction",
+        ##"MaxPercentEmissionsReduction",
      )
 	for x in ["Tech","FuelType","CHPTechs","FlexTechs","WaterHeaterTechs"]
 		if typeof(d[x]) === Array{Any, 1}  # came from Python as empty array
@@ -376,6 +411,13 @@ function Parameter(d::Dict)
     d["TechToNMILMapping"] = vector_to_axisarray(d["TechToNMILMapping"], d["Tech"], d["NMILRegime"])
     d["OMcostPerUnitProd"] = AxisArray(d["OMcostPerUnitProd"], d["Tech"])
     d["OMcostPerUnitHourPerSize"] = AxisArray(d["OMcostPerUnitHourPerSize"], d["Tech"])
+
+    d["TechEmissionsFactors_CO2"] = AxisArray(d["TechEmissionsFactors_CO2"], d["Tech"])
+    d["TechEmissionsFactors_NOx"] = AxisArray(d["TechEmissionsFactors_NOx"], d["Tech"])
+    d["TechEmissionsFactors_SO2"] = AxisArray(d["TechEmissionsFactors_SO2"], d["Tech"])
+    d["TechEmissionsFactors_PM"] = AxisArray(d["TechEmissionsFactors_PM"], d["Tech"])
+    ##d["TechPercentRE"] = AxisArray(d["TechPercentRE"], d["Tech"])
+
     if !isempty(d["CoincidentPeakLoadTimeSteps"])
         d["CoincidentPeakRates"] = AxisArray(d["CoincidentPeakRates"], d[:CPPeriod])
         d["CoincidentPeakLoadTimeSteps"] = permutedims(hcat(d["CoincidentPeakLoadTimeSteps"]...), (2,1))
