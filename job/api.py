@@ -123,6 +123,7 @@ class Job(ModelResource):
             bundle.data['Scenario']['job_type'] = 'Monitoring'
 
         # Validate inputs
+        # TODO transfer all v1 validators capabilities to v2
         try:
             input_validator = InputValidator(bundle.data)
             input_validator.clean_fields()  # step 1 check field values
@@ -179,6 +180,7 @@ class Job(ModelResource):
         Scenario.objects.filter(run_uuid=run_uuid).update(status='Optimizing...')
         try:
             run_jump_model.s(data=input_validator.scrubbed_inputs).apply_async()
+            # TODO where to address BAU scenario? want this to be an input option with default to True, pass to Julia
         except Exception as e:
             if isinstance(e, REoptError):
                 pass  # handled in each task
