@@ -690,29 +690,32 @@ end
 
 function add_spinning_reserve_constraints(m, p)
 	# Calculate spinning reserve required
+	# 1. Production going to load from Techs Providing SR 
 	@constraint(m, [t in p.TechsProvidingSR, ts in p.TimeStep],
 		m[:dvProductionToLoad][t,ts] == p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] -
 										sum(m[:dvProductionToStorage][b, t, ts] for b in p.ElecStorage) -
 										m[:dvProductionToCurtail][t, ts]
 	)
+	# 2. Total SR required by Techs & Load
 	@constraint(m, [ts in p.TimeStep],
 		m[:dvSRrequired][ts] >= sum(m[:dvProductionToLoad][t,ts] * p.SRrequiredPctTechs[t] for t in p.TechsRequiringSR) +
 								p.ElecLoad[ts] * m[:dvLoadServed][ts] * p.SRrequiredPctLoad
 	)
-	# Spinning reserve provided - battery
+	# 3. Spinning reserve provided - battery
 	@constraint(m, [b in p.ElecStorage, ts in p.TimeStep],
 		m[:dvSRbatt][b,ts] <= (m[:dvStorageSOC][b,ts-1] - p.StorageMinSOC[b] * m[:dvStorageCapEnergy][b]) / p.TimeStepScaling - (m[:dvDischargeFromStorage][b,ts] / p.DischargeEfficiency[b])
 	)
 	@constraint(m, [b in p.ElecStorage, ts in p.TimeStep],
 		m[:dvSRbatt][b,ts] <= m[:dvStorageCapPower][b] - m[:dvDischargeFromStorage][b,ts] / p.DischargeEfficiency[b]
 	)
-	# Spinning reserve provided - other technologies
+	# 4. Spinning reserve provided - other technologies
 	@constraint(m, [t in p.TechsProvidingSR, ts in p.TimeStep],
 		 # Change dvRatedProd to dvSize - generator SR forces same amount to generator 1S
 		 # m[:dvSR][t,ts] <= (p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] -
 		 m[:dvSR][t,ts] <= (p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvSize][t] -
 		                   m[:dvProductionToLoad][t,ts]) * (1 - p.SRrequiredPctTechs[t])
 	)
+	# 5. Total spinning reserve provided 
 	@constraint(m, [t in p.TechsProvidingSR, ts in p.TimeStep],
 		m[:dvSR][t,ts] <= m[:binTechIsOnInTS][t,ts] * m[:NewMaxSize][t]
 	)
@@ -720,6 +723,7 @@ function add_spinning_reserve_constraints(m, p)
 		m[:dvSRprovided][ts] == sum(m[:dvSR][t,ts] for t in p.TechsProvidingSR) +
 								sum(m[:dvSRbatt][b,ts] for b in p.ElecStorage)
 	)
+	# 6. SR provided must be greater than SR required
 	@constraint(m, [ts in p.TimeStep],
 		m[:dvSRrequired][ts] <= m[:dvSRprovided][ts]
 	)
