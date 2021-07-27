@@ -194,6 +194,8 @@ function add_bigM_adjustments(m, p)
 	m[:NewMaxUsageInTier] = Array{Float64,2}(undef,12, p.PricingTierCount+1)
 	m[:NewMaxDemandInTier] = Array{Float64,2}(undef, length(p.Ratchets), p.DemandBinCount)
 	m[:NewMaxDemandMonthsInTier] = Array{Float64,2}(undef,12, p.DemandMonthsBinCount)
+    DemandBigM = 1.0E9
+    EnergyBigM = 1.0E10
 
 	# m[:NewMaxDemandMonthsInTier] sets a new minimum if the new peak demand for the month, minus the size of all previous bins, is less than the existing bin size.
 	if !isempty(p.ElecStorage)
@@ -207,17 +209,17 @@ function add_bigM_adjustments(m, p)
 	for n in p.DemandMonthsBin
 		for mth in p.Month
 			if n > 1
-				m[:NewMaxDemandMonthsInTier][mth,n] = minimum([p.MaxDemandMonthsInTier[n],
-					added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP
-					for ts in p.TimeStepRatchetsMonth[mth]])  -
-					sum(m[:NewMaxDemandMonthsInTier][mth,np] for np in 1:(n-1)) ]
-				)
-                m[:NewMaxDemandMonthsInTier][mth,n] = 1.0E9
+				m[:NewMaxDemandMonthsInTier][mth,n] = minimum([p.MaxDemandMonthsInTier[n], DemandBigM])
+				# 	added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP
+				# 	for ts in p.TimeStepRatchetsMonth[mth]])  -
+				# 	sum(m[:NewMaxDemandMonthsInTier][mth,np] for np in 1:(n-1)) ]
+				# )
+                # m[:NewMaxDemandMonthsInTier][mth,n] = 1.0E9
 			else
-				m[:NewMaxDemandMonthsInTier][mth,n] = minimum([p.MaxDemandMonthsInTier[n],
-					added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP
-					for ts in p.TimeStepRatchetsMonth[mth]])   ])
-                m[:NewMaxDemandMonthsInTier][mth,n] = 1.0E9
+				m[:NewMaxDemandMonthsInTier][mth,n] = minimum([p.MaxDemandMonthsInTier[n], DemandBigM])
+				# 	added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP
+				# 	for ts in p.TimeStepRatchetsMonth[mth]])   ])
+                # m[:NewMaxDemandMonthsInTier][mth,n] = 1.0E9
 			end
 		end
 	end
@@ -226,18 +228,18 @@ function add_bigM_adjustments(m, p)
 	for e in p.DemandBin
 		for r in p.Ratchets
 			if e > 1
-				m[:NewMaxDemandInTier][r,e] = minimum([p.MaxDemandInTier[e],
-				added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP
-					for ts in p.TimeStep])  -
-				sum(m[:NewMaxDemandInTier][r,ep] for ep in 1:(e-1))
-				])
-                m[:NewMaxDemandInTier][r,e] = 1.0E9
+				m[:NewMaxDemandInTier][r,e] = minimum([p.MaxDemandInTier[e], DemandBigM])
+				# added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP
+				# 	for ts in p.TimeStep])  -
+				# sum(m[:NewMaxDemandInTier][r,ep] for ep in 1:(e-1))
+				# ])
+                # m[:NewMaxDemandInTier][r,e] = 1.0E9
 			else
-				m[:NewMaxDemandInTier][r,e] = minimum([p.MaxDemandInTier[e],
-				added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP
-					for ts in p.TimeStep])
-				])
-                m[:NewMaxDemandInTier][r,e] = 1.0E9
+				m[:NewMaxDemandInTier][r,e] = minimum([p.MaxDemandInTier[e], DemandBigM])
+				# added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP
+				# 	for ts in p.TimeStep])
+				# ])
+                # m[:NewMaxDemandInTier][r,e] = 1.0E9
 			end
 		end
 	end
@@ -246,17 +248,17 @@ function add_bigM_adjustments(m, p)
 	for u in p.PricingTier
 		for mth in p.Month
 			if u > 1
-				m[:NewMaxUsageInTier][mth,u] = minimum([p.MaxUsageInTier[u],
-					added_energy + 2*sum(p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP
-					for ts in p.TimeStepRatchetsMonth[mth]) - sum(m[:NewMaxUsageInTier][mth,up] for up in 1:(u-1))
-				])
-                m[:NewMaxUsageInTier][mth,u] = 1.0E10
+				m[:NewMaxUsageInTier][mth,u] = minimum([p.MaxUsageInTier[u], EnergyBigM])
+				# 	added_energy + 2*sum(p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP
+				# 	for ts in p.TimeStepRatchetsMonth[mth]) - sum(m[:NewMaxUsageInTier][mth,up] for up in 1:(u-1))
+				# ])
+                # m[:NewMaxUsageInTier][mth,u] = 1.0E10
 			else
-				m[:NewMaxUsageInTier][mth,u] = minimum([p.MaxUsageInTier[u],
-					added_energy + 2*sum(p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP
-					for ts in p.TimeStepRatchetsMonth[mth])
-				])
-                m[:NewMaxUsageInTier][mth,u] = 1.0E10
+				m[:NewMaxUsageInTier][mth,u] = minimum([p.MaxUsageInTier[u], EnergyBigM])
+				# 	added_energy + 2*sum(p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP
+				# 	for ts in p.TimeStepRatchetsMonth[mth])
+				# ])
+                # m[:NewMaxUsageInTier][mth,u] = 1.0E10
 			end
 		end
 	end
