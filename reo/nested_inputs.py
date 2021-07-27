@@ -296,7 +296,7 @@ nested_input_definitions = {
         "annual_kwh": {
           "type": "float",
           "min": 1.0,
-          "max": max_big_number,
+          "max": 1.0E10,
           "replacement_sets": load_profile_possible_sets,
           "depends_on": ["doe_reference_name"],
           "description": "Annual site energy consumption from electricity, in kWh, used to scale simulated default building load profile for the site's climate zone"
