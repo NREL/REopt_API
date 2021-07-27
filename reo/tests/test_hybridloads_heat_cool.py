@@ -20,30 +20,24 @@ post = {
             "latitude": 37.78,
             "longitude": -122.45,
             "LoadProfile": {
-                # "annual_kwh": 100,
-                # "doe_reference_name": "Hospital",
-                #"doe_reference_name": ["Hospital", "LargeHotel"],
-                #"percent_share": [50, 50]
+                # Assigned below
             },
             "LoadProfileBoilerFuel": {
-                # "doe_reference_name": ["Hospital", "LargeHotel"],
-                # "percent_share": [50, 50]
+                # Assigned below
             },
             "LoadProfileChillerThermal": {
-                # "doe_reference_name": ["Hospital", "LargeHotel"],
-                # "percent_share": [50, 50],
-                # "chiller_cop": 3.4
+                # Assigned below
             },
             "ElectricTariff": {
                 "urdb_label": "5cef0a415457a33576f60fe2"
             },
-            # "FuelTariff": {
-            #     "boiler_fuel_blended_annual_rates_us_dollars_per_mmbtu": 11.0,
-            #     "chp_fuel_blended_annual_rates_us_dollars_per_mmbtu": 11.0
-            # },
-            # "Boiler": {
-            #     "existing_boiler_production_type_steam_or_hw": "hot_water"
-            # },
+            "FuelTariff": {
+                "boiler_fuel_blended_annual_rates_us_dollars_per_mmbtu": 11.0,
+            },
+            "Boiler": {
+                "existing_boiler_production_type_steam_or_hw": "hot_water",
+                "boiler_efficiency": 0.8
+            },
             "PV": {
                 "min_kw": 0.0,
                 "max_kw": 0.0
@@ -128,6 +122,12 @@ class HybridLoadsHeatCoolTest(ResourceTestCaseMixin, TestCase):
         post["Scenario"]["Site"]["LoadProfileChillerThermal"]["doe_reference_name"] = building_list
         post["Scenario"]["Site"]["LoadProfileChillerThermal"]["percent_share"] = percent_share_list
 
+        # Add GHP to the scenario so we can parse Space Heating (GHP-servable) Vs DHW (not GHP-servable) for hybrid loads
+        post["Scenario"]["Site"]["GHP"] = {}
+        post["Scenario"]["Site"]["GHP"]["building_sqft"] = 100000.0
+        post["Scenario"]["Site"]["GHP"]["force_ghp"] = True
+        #post["Scenario"]["Site"]["GHP"]["ghpghx_response"] = json.load(open("ghpghx_response.json", "r"))
+
         resp = self.get_response(data=post)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
@@ -142,6 +142,24 @@ class HybridLoadsHeatCoolTest(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(0.0, sum([lp_combined[i] - (lp_hospital[i] + lp_largehotel[i]) for i in range(len(lp_combined))]), places=3)
         self.assertAlmostEqual(0.0, sum([lpbf_combined[i] - (lpbf_hospital[i] + lpbf_largehotel[i]) for i in range(len(lpbf_combined))]), places=3)
         
+        # Check that the Space Heating Vs DHW is scaling correctly with hybrid blends of buildings
+        # Values below are from input_files/LoadProfiles [space/dhw]_annual_mmbtu.json
+        default_hospital_space_mmbtu = 11570.9155
+        default_largehotel_space_mmbtu = 1713.362967
+        default_hospital_dhw_mmbtu = 671.40531
+        default_largehotel_dhw_mmbtu = 6241.842643
+        default_hospital_total_mmbtu = default_hospital_space_mmbtu + default_hospital_dhw_mmbtu
+        default_largehotel_total_mmbtu = default_largehotel_space_mmbtu + default_largehotel_dhw_mmbtu
+
+        # Check expected space heating with the heating load which GHP served
+        expected_space_heating_mmbtu = annual_energy * (default_hospital_space_mmbtu / default_hospital_total_mmbtu * hospital_pct / 100.0 + 
+                                                  default_largehotel_space_mmbtu / default_largehotel_total_mmbtu * hotel_pct / 100.0)
+
+        ghp_space_heating_served = np.array(d['outputs']['Scenario']['Site']['GHP']['ghpghx_chosen_outputs']['heating_thermal_load_mmbtu_per_hr']) / \
+                                            d['inputs']['Scenario']['Site']['Boiler']['boiler_efficiency']
+
+        self.assertAlmostEqual(expected_space_heating_mmbtu, sum(ghp_space_heating_served), places=3)
+
         # Check that the cooling load is the weighted average of the default CRB fraction of total electric profiles
         lpct_combined_expected = [lp_combined[i] * (lpct_hospital_frac_of_total[i] * hospital_pct / 100.0 + 
                                                     lpct_largehotel_frac_of_total[i] * hotel_pct / 100.0)
