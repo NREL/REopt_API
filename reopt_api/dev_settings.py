@@ -56,32 +56,6 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
-# using LOGGING to see database queries with DEBUG = True
-# note that celery has its own logging, so databse queries in celery tasks will not show up in the django console
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'filters': {
-        'require_debug_true': {
-            '()': 'django.utils.log.RequireDebugTrue',
-        }
-    },
-    'handlers': {
-        'console': {
-            'level': 'DEBUG',
-            'filters': ['require_debug_true'],
-            'class': 'logging.StreamHandler',
-        }
-    },
-    'loggers': {
-        'django.db.backends': {
-            'level': 'DEBUG',
-            'handlers': ['console'],
-        }
-    }
-}
-
-
 # Application definition
 
 INSTALLED_APPS = (
