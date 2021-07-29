@@ -451,6 +451,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             self.nested_outputs["Scenario"]["Site"]["year_one_CO2_emissions_from_elec_grid_purchase"] = self.results_dict.get("yr1_CO2_emissions_from_elec_grid_purchase")
             self.nested_outputs["Scenario"]["Site"]["year_one_CO2_emissions_offset_from_elec_exports"] = self.results_dict.get("yr1_CO2_emissions_offset_from_elec_exports")
             self.nested_outputs["Scenario"]["Site"]["year_one_CO2_emissions_reduction_pct"] = self.results_dict.get("year_one_CO2_emissionsreduction_percent")
+            ## TODO: add health outputs here? 
+            
             #self.nested_outputs["Scenario"]["Site"]["year_one_cost_of_emissions_reduction_us_dollars_per_ton_CO2"] = \
             #    self.results_dict.get("npv")/self.results_dict.get("pwf_om")/ \
             #    ((self.results_dict.get("year_one_emissions_lb_CO2")-self.results_dict.get("year_one_emissions_lb_CO2_bau"))/2000) \
@@ -711,24 +713,24 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_emissions_bau_lb_CO2"] = self.results_dict.get(
                         "year_one_elec_grid_emissions_lb_CO2_bau")
                     # health
-                    ## TODO: Update to correct calcs
+                    ## TODO: Update to correct calcs (check if this gets used? )
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_lb_NOx"] = self.results_dict.get("year_one_elec_grid_emissions_lb_CO2")
+                        "year_one_emissions_lb_NOx"] = self.results_dict.get("year_one_elec_grid_emissions_lb_NOx")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_emissions_bau_lb_NOx"] = self.results_dict.get(
-                        "year_one_elec_grid_emissions_lb_CO2_bau")
+                        "year_one_elec_grid_emissions_lb_NOx_bau")
 
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_lb_SO2"] = self.results_dict.get("year_one_elec_grid_emissions_lb_CO2")
+                        "year_one_emissions_lb_SO2"] = self.results_dict.get("year_one_elec_grid_emissions_lb_SO2")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_emissions_bau_lb_SO2"] = self.results_dict.get(
-                        "year_one_elec_grid_emissions_lb_CO2_bau")
+                        "year_one_elec_grid_emissions_lb_SO2_bau")
                         
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_lb_PM"] = self.results_dict.get("year_one_elec_grid_emissions_lb_CO2")
+                        "year_one_emissions_lb_PM"] = self.results_dict.get("year_one_elec_grid_emissions_lb_PM")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_emissions_bau_lb_PM"] = self.results_dict.get(
-                        "year_one_elec_grid_emissions_lb_CO2_bau")
+                        "year_one_elec_grid_emissions_lb_PM_bau")
 
                 elif name == "FuelTariff":
                     self.nested_outputs["Scenario"]["Site"][name][
