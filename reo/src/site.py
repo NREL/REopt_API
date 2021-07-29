@@ -46,9 +46,12 @@ class Financial(object):
                  owner_tax_pct,
                  owner_discount_pct,
                  co2_cost_us_dollars_per_tonne,
-                 nox_cost_us_dollars_per_tonne,
-                 so2_cost_us_dollars_per_tonne,
-                 pm_cost_us_dollars_per_tonne,
+                 nox_cost_us_dollars_per_tonne_grid,
+                 so2_cost_us_dollars_per_tonne_grid,
+                 pm_cost_us_dollars_per_tonne_grid,
+                 nox_cost_us_dollars_per_tonne_onsite_fuelburn,
+                 so2_cost_us_dollars_per_tonne_onsite_fuelburn,
+                 pm_cost_us_dollars_per_tonne_onsite_fuelburn,
                  co2_cost_escalation_pct,
                  **kwargs
                  ):
@@ -63,9 +66,12 @@ class Financial(object):
         self.offtaker_discount_pct = offtaker_discount_pct
         self.analysis_years = analysis_years
         self.co2_cost_us_dollars_per_tonne = co2_cost_us_dollars_per_tonne
-        self.nox_cost_us_dollars_per_tonne = nox_cost_us_dollars_per_tonne
-        self.so2_cost_us_dollars_per_tonne = so2_cost_us_dollars_per_tonne
-        self.pm_cost_us_dollars_per_tonne = pm_cost_us_dollars_per_tonne
+        self.nox_cost_us_dollars_per_tonne_grid = nox_cost_us_dollars_per_tonne_grid
+        self.so2_cost_us_dollars_per_tonne_grid = so2_cost_us_dollars_per_tonne_grid
+        self.pm_cost_us_dollars_per_tonne_grid = pm_cost_us_dollars_per_tonne_grid
+        self.nox_cost_us_dollars_per_tonne_onsite_fuelburn = nox_cost_us_dollars_per_tonne_onsite_fuelburn
+        self.so2_cost_us_dollars_per_tonne_onsite_fuelburn = so2_cost_us_dollars_per_tonne_onsite_fuelburn
+        self.pm_cost_us_dollars_per_tonne_onsite_fuelburn = pm_cost_us_dollars_per_tonne_onsite_fuelburn
         self.co2_cost_escalation_pct = co2_cost_escalation_pct
 
         # set-up direct ownership

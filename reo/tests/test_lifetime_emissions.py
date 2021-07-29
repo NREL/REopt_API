@@ -179,9 +179,12 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
                 "offtaker_tax_pct": 0.26,
                 "om_cost_escalation_pct": 0.025,
                 "co2_cost_us_dollars_per_tonne": 51.0,
-                "nox_cost_us_dollars_per_tonne": 51.0, # TODO: change to values from EASIUR! (and also make seasonal?)
-                "so2_cost_us_dollars_per_tonne": 51.0, # TODO: change to values from EASIUR! 
-                "pm_cost_us_dollars_per_tonne": 51.0 # TODO: change to values from EASIUR! 
+                "nox_cost_us_dollars_per_tonne_grid": 51.0, # TODO: change to values from EASIUR! (and also make seasonal?)
+                "so2_cost_us_dollars_per_tonne_grid": 51.0, # TODO: change to values from EASIUR! 
+                "pm_cost_us_dollars_per_tonne_grid": 51.0, # TODO: change to values from EASIUR! 
+                "nox_cost_us_dollars_per_tonne_onsite_fuelburn": 51.0, # TODO: change to values from EASIUR! (and also make seasonal?)
+                "so2_cost_us_dollars_per_tonne_onsite_fuelburn": 51.0, # TODO: change to values from EASIUR! 
+                "pm_cost_us_dollars_per_tonne_onsite_fuelburn": 51.0 # TODO: change to values from EASIUR! 
               },
               "Wind": {
                 "pbi_years": 1.0,
@@ -271,9 +274,12 @@ class TestNOx(ResourceTestCaseMixin, TestCase):
                 "offtaker_tax_pct": 0.26,
                 "om_cost_escalation_pct": 0.025,
                 "co2_cost_us_dollars_per_tonne": 51.0,
-                "nox_cost_us_dollars_per_tonne": 51.0, # TODO: change to values from EASIUR! (and also make seasonal?)
-                "so2_cost_us_dollars_per_tonne": 51.0, # TODO: change to values from EASIUR! 
-                "pm_cost_us_dollars_per_tonne": 51.0 # TODO: change to values from EASIUR! 
+                "nox_cost_us_dollars_per_tonne_grid": 51.0, # TODO: change to values from EASIUR! (and also make seasonal?)
+                "so2_cost_us_dollars_per_tonne_grid": 51.0, # TODO: change to values from EASIUR! 
+                "pm_cost_us_dollars_per_tonne_grid": 51.0, # TODO: change to values from EASIUR! 
+                "nox_cost_us_dollars_per_tonne_onsite_fuelburn": 51.0, # TODO: change to values from EASIUR! (and also make seasonal?)
+                "so2_cost_us_dollars_per_tonne_onsite_fuelburn": 51.0, # TODO: change to values from EASIUR! 
+                "pm_cost_us_dollars_per_tonne_onsite_fuelburn": 51.0 # TODO: change to values from EASIUR! 
               },
               "Wind": {
                 "max_kw": 0.0,
