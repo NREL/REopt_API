@@ -235,9 +235,9 @@ class EmissionsCalculator:
     @property
     def emissions_series(self):
         if self._emmissions_profile is None:
-            df = pd.read_csv(os.path.join(self.library_path,'AVERT_hourly_emissions_{}.csv'.format(self.pollutant)))
+            df = pd.read_csv(os.path.join(self.library_path,'AVERT_hourly_emissions_{}.csv'.format(self.pollutant)), dtype='float64', float_precision='high')
             if self.region_abbr in df.columns:
-                self._emmissions_profile = list(df[self.region_abbr].round(3).values)
+                self._emmissions_profile = list(df[self.region_abbr].round(6).values)
                 if self.time_steps_per_hour > 1:
                     self._emmissions_profile = list(np.concatenate([[i] * self.time_steps_per_hour for i in self._emmissions_profile]))
             else:
