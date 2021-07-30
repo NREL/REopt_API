@@ -295,49 +295,49 @@ nested_input_definitions = {
         "co2_cost_us_dollars_per_tonne": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0e3,
+          "max": 1.0e5,
           "default": 51.0,
           "description": "Social Cost of CO2 in the first year of the analysis. Units are US dollars per metric ton of CO2. The default of $51/t is the 2020 value (using a 3 pct discount rate) estimated by the U.S. Interagency Working Group on Social Cost of Greenhouse Gases."
         }, 
         "nox_cost_us_dollars_per_tonne_grid": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0e5,
+          "max": 1.0e8,
           "default": 0.0,
           "description": "Public health damage cost of NOx emissions from grid electricity in the first year of the analysis. Units are US dollars per metric ton. Must provide value if considering health damages in objective."
         },
         "so2_cost_us_dollars_per_tonne_grid": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0e5,
+          "max": 1.0e8,
           "default": 0.0,
           "description": "Social Cost of SO2 emissions from grid electricity in the first year of the analysis. Units are US dollars per metric ton. Must provide value if considering health damages in objective."
         },
         "pm_cost_us_dollars_per_tonne_grid": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0e5,
+          "max": 1.0e8,
           "default": 0.0,
           "description": "Social Cost of PM2.5 emissions from grid electricity in the first year of the analysis. Units are US dollars per metric ton. Must provide value if considering health damages in objective."
         },  
         "nox_cost_us_dollars_per_tonne_onsite_fuelburn": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0e5,
+          "max": 1.0e8,
           "default": 0.0,
           "description": "Public health damage cost of NOx from onsite fuelburn in the first year of the analysis. Units are US dollars per metric ton. Must provide value if considering health damages in objective."
         },
         "so2_cost_us_dollars_per_tonne_onsite_fuelburn": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0e5,
+          "max": 1.0e8,
           "default": 0.0,
           "description": "Social Cost of SO2 from onsite fuelburn in the first year of the analysis. Units are US dollars per metric ton. Must provide value if considering health damages in objective."
         },
         "pm_cost_us_dollars_per_tonne_onsite_fuelburn": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0e5,
+          "max": 1.0e8,
           "default": 0.0,
           "description": "Social Cost of PM2.5 from onsite fuelburn in the first year of the analysis. Units are US dollars per metric ton. Must provide value if considering health damages in objective."
         }, 
@@ -349,7 +349,7 @@ nested_input_definitions = {
           "description": "Annual nominal Social Cost of CO2 escalation rate."
         },   
         # TODO: add in PM2.5, SO2, NOx here
-        # TODO: potentially add in CO2_discount_rate 
+        # TODO: potentially add in CO2_discount_rate (for use in pwf_CO2)
       },
 
       "LoadProfile": {
