@@ -284,6 +284,16 @@ def simulated_load(request):
             raise ValueError("load_type parameter must be one of the folloing: 'heating', 'cooling', or 'electric'."
                              " If load_type is not specified, 'electric' is assumed.")
 
+        # The following is possibly used in both load_type == "electric" and "cooling", so have to bring it out of those if-statements
+        chiller_cop = request.GET.get('chiller_cop')
+        if chiller_cop is not None:
+            chiller_cop = float(chiller_cop)
+
+        if 'max_thermal_factor_on_peak_load' in request.GET.keys():
+            max_thermal_factor_on_peak_load = float(request.GET.get('max_thermal_factor_on_peak_load'))
+        else:
+            max_thermal_factor_on_peak_load = nested_input_definitions['Scenario']['Site']['ElectricChiller']['max_thermal_factor_on_peak_load']['default'] 
+
         if load_type == "electric":
             for key in request.GET.keys():
                 if ('_mmbtu' in key) or ('_ton' in key) or ('_fraction' in key):
@@ -310,7 +320,22 @@ def simulated_load(request):
 
             b = LoadProfile(dfm=None, latitude=latitude, longitude=longitude, doe_reference_name=doe_reference_name,
                            annual_kwh=annual_kwh, monthly_totals_kwh=monthly_totals_kwh, critical_load_pct=0,
-                           percent_share=percent_share_list)
+                           percent_share=percent_share_list)                                      
+
+            if len(percent_share_list) > 1:
+                lpct = LoadProfileChillerThermal(dfm=None, latitude=latitude, longitude=longitude,
+                                                    total_electric_load_list=b.unmodified_load_list, nearest_city=b.nearest_city,
+                                                    doe_reference_name=doe_reference_name, time_steps_per_hour=b.time_steps_per_hour,
+                                                    chiller_cop=chiller_cop, max_thermal_factor_on_peak_load=max_thermal_factor_on_peak_load,
+                                                    percent_share=percent_share_list)
+                cooling_defaults_dict = {'loads_ton': [round(ld/TONHOUR_TO_KWHT, 3) for ld in lpct.load_list],
+                                            'annual_tonhour': round(lpct.annual_kwht/TONHOUR_TO_KWHT,3),
+                                            'chiller_cop': lpct.chiller_cop,
+                                            'min_ton': round(min(lpct.load_list)/TONHOUR_TO_KWHT, 3),
+                                            'mean_ton': round((sum(lpct.load_list)/len(lpct.load_list))/TONHOUR_TO_KWHT, 3),
+                                            'max_ton': round(max(lpct.load_list)/TONHOUR_TO_KWHT, 3)}
+            else:
+                cooling_defaults_dict = {}
 
             lp = b.load_list
 
@@ -320,6 +345,7 @@ def simulated_load(request):
                  'min_kw': round(min(lp), 3),
                  'mean_kw': round(sum(lp) / len(lp), 3),
                  'max_kw': round(max(lp), 3),
+                 'cooling_defaults': cooling_defaults_dict,
                  }
                 )
 
@@ -467,15 +493,9 @@ def simulated_load(request):
                     monthly_tonhour = [float(i) for i in monthly_tonhour]
                 else:
                     monthly_tonhour = None
-
-                chiller_cop = request.GET.get('chiller_cop')
-                if chiller_cop is not None:
-                    chiller_cop = float(chiller_cop)
-
-                if 'max_thermal_factor_on_peak_load' in request.GET.keys():
-                    max_thermal_factor_on_peak_load = float(request.GET.get('max_thermal_factor_on_peak_load'))
-                else:
-                    max_thermal_factor_on_peak_load = nested_input_definitions['Scenario']['Site']['ElectricChiller']['max_thermal_factor_on_peak_load']['default']
+                
+                if len(doe_reference_name) > 1 and not annual_tonhour and not monthly_tonhour:
+                    raise ValueError('Use load_type=electric to get cooling load for hybrid/campus buildings with no annual_tonhour or monthly_tonhour input (response.cooling_defaults)')
 
                 c = LoadProfileChillerThermal(dfm=None, latitude=latitude, longitude=longitude, doe_reference_name=doe_reference_name,
                                annual_tonhour=annual_tonhour, monthly_tonhour=monthly_tonhour, time_steps_per_hour=1, annual_fraction=None,
