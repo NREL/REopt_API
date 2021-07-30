@@ -137,7 +137,7 @@ def at_least_one_set(model, possible_sets):
     """
     case = False
     for list_of_keys in possible_sets:
-        if all(model.get(key) not in [None, ""] for key in list_of_keys):
+        if all(model.get(key) not in [None, "", []] for key in list_of_keys):
             case = True
             break
     return case
@@ -796,8 +796,6 @@ class ElectricLoadInputs(BaseModel, models.Model):
                 "Must provide at valid at least one set of valid inputs from {}.".format(self.possible_sets)
             ))
 
-        # TODO validate length of load profile
-
         if error_messages:
             raise ValidationError(' & '.join(error_messages))
 
@@ -1243,10 +1241,12 @@ class PVInputs(BaseModel, models.Model):
         GROUND_MOUNT_ONE_AXIS_TRACKING = 2
         ONE_AXIS_BACKTRACKING = 3
         GROUND_MOUNT_TWO_AXIS_TRACKING = 4
+
     class MODULE_TYPE_CHOICES(models.IntegerChoices):
         STANDARD = 0
         PREMIUM = 1
         THIN_FILM = 2
+
     class PV_LOCATION_CHOICES(models.TextChoices):
         ROOF = 'roof'
         GROUND = 'ground'
@@ -1737,19 +1737,21 @@ class PVInputs(BaseModel, models.Model):
 #     year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
 #
 #
-# class Message(models.Model):
-#     """
-#     For Example:
-#     {"messages":{
-#                 "warnings": "This is a warning message.",
-#                 "error": "REopt had an error."
-#                 }
-#     }
-#     """
-#     message_type = models.TextField(null=True, blank=True, default='')
-#     message = models.TextField(null=True, blank=True, default='')
-#     run_uuid = models.UUIDField(unique=False)
-#     description = models.TextField(null=True, blank=True, default='')
+class Message(models.Model):
+    """
+    For Example:
+    {"messages":{
+                "warnings": "This is a warning message.",
+                "error": "REopt had an error."
+                }
+    }
+    """
+    message_type = models.TextField(default='')
+    message = models.TextField(default='')
+    scenario = models.ForeignKey(
+        Scenario,
+        on_delete=models.CASCADE
+    )
 #
 #
 # class BadPost(models.Model):

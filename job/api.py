@@ -50,7 +50,9 @@ def return400(data: dict, validator: InputValidator):
     data["status"] = (
         'Invalid inputs. No optimization task has been created. See messages for details.'
     )
-    data["messages"] = validator.validation_errors
+    # TODO save BadInputs ?
+    data["messages"]["error"] = "Invalid inputs. See 'input_errors'."
+    data["messages"]["input_errors"] = validator.validation_errors
     raise ImmediateHttpResponse(HttpResponse(json.dumps(data), content_type='application/json', status=400))
 
 
@@ -96,7 +98,8 @@ class Job(ModelResource):
         run_uuid = str(uuid.uuid4())
         data = {
             "run_uuid": run_uuid,
-            "api_version": 2
+            "api_version": 2,
+            "messages": dict()
         }
 
         # Setup and start profile
@@ -136,7 +139,7 @@ class Job(ModelResource):
             if not input_validator.is_valid:
                 return400(data, input_validator)
         except ImmediateHttpResponse as e:
-            raise e
+            raise e  # returns the response from return400
         except Exception:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             err = UnexpectedError(exc_type, exc_value.args[0], traceback.format_tb(exc_traceback),
@@ -180,7 +183,7 @@ class Job(ModelResource):
         Scenario.objects.filter(run_uuid=run_uuid).update(status='Optimizing...')
         try:
             run_jump_model.s(data=input_validator.scrubbed_inputs).apply_async()
-            # TODO where to address BAU scenario? want this to be an input option with default to True, pass to Julia
+            # TODO add BAU scenario via an input option with default to True, pass to Julia
         except Exception as e:
             if isinstance(e, REoptError):
                 pass  # handled in each task
