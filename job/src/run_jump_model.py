@@ -96,10 +96,15 @@ def run_jump_model(data, bau=False):
     except Exception as e:
         if isinstance(e, REoptFailedToStartError):
             raise e
-        elif "DimensionMismatch" in e.args[0]:  # JuMP may mishandle a timeout when no feasible solution is returned
+
+        if isinstance(e, requests.exceptions.ConnectionError):  # Julia server down
+            raise REoptFailedToStartError(task=name, message="Julia server is down.", run_uuid=run_uuid, user_uuid=user_uuid)
+
+        if "DimensionMismatch" in e.args[0]:  # JuMP may mishandle a timeout when no feasible solution is returned
             msg = "Optimization exceeded timeout: {} seconds.".format(data["inputs"]["Scenario"]["timeout_seconds"])
             logger.info(msg)
             raise OptimizationTimeout(task=name, message=msg, run_uuid=run_uuid, user_uuid=user_uuid)
+
         exc_type, exc_value, exc_traceback = sys.exc_info()
         logger.error("REopt.py raise unexpected error: UUID: " + str(run_uuid))
         raise UnexpectedError(exc_type, exc_value, traceback.format_tb(exc_traceback), task=name, run_uuid=run_uuid,
