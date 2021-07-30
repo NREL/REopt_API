@@ -159,7 +159,7 @@ class Job(ModelResource):
         Have to serialize the Django Models to pass to celery task!
         """
 
-        # data.update(input_validator.scrubbed_inputs)
+        # data.update(input_validator.filtered_user_post)
         # data["messages"] = input_validator.messages
         # data['outputs']['Scenario']['Profile']['POST_validation_seconds'] = profiler.getDuration()
         # profiler.profileEnd()
@@ -182,7 +182,7 @@ class Job(ModelResource):
 
         Scenario.objects.filter(run_uuid=run_uuid).update(status='Optimizing...')
         try:
-            run_jump_model.s(data=input_validator.scrubbed_inputs).apply_async()
+            run_jump_model.s(data=input_validator.validated_input_dict).apply_async()
             # TODO add BAU scenario via an input option with default to True, pass to Julia
         except Exception as e:
             if isinstance(e, REoptError):
