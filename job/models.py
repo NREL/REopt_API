@@ -122,10 +122,13 @@ Output models need to have null=True, blank=True for cases when results are not 
 MAX_BIG_NUMBER = 1.0e8
 MAX_INCENTIVE = 1.0e10
 MAX_YEARS = 75
+
+
 class MACRS_YEARS_CHOICES(models.IntegerChoices):
     ZERO = 0
     FIVE = 5
     SEVEN = 7
+
 
 def at_least_one_set(model, possible_sets):
     """
@@ -156,7 +159,7 @@ class BaseModel(object):
         d.pop("_state", None)
         d.pop("id", None)
         d.pop("basemodel_ptr_id", None)
-        d.pop("run_uuid", None)
+        d.pop("scenario_id", None)
         return d
 
     @classmethod
@@ -541,28 +544,25 @@ class FinancialOutputs(BaseModel, models.Model):
     )
     offtaker_annual_free_cashflow_series = ArrayField(
         models.FloatField(
-            null=True, blank=True
+            blank=True
         ), 
-        default=list, #TODO: do we need default for outputs?
-        null=True,
+        default=list, blank=True,
         help_text=("Annual free cashflow for the host in the optimal case for all analysis years, "
                     "including year 0. Future years have not been discounted to account for the time value of money.")
     )
     offtaker_discounted_annual_free_cashflow_series_us_dollars = ArrayField(
             models.FloatField(
-                null=True, blank=True
+                blank=True
             ), 
-        default=list,
-        null=True,
+        default=list, blank=True,
         help_text=("Annual discounted free cashflow for the host in the optimal case for all analysis years, "
                     "including year 0. Future years have been discounted to account for the time value of money.")
     )
     offtaker_annual_free_cashflow_series_bau_us_dollars = ArrayField(
             models.FloatField(
-                null=True, blank=True
+                blank=True
             ), 
-        default=list,
-        null=True,
+        default=list, blank=True,
         help_text=("Annual free cashflow for the host in the business-as-usual case for all analysis years, "
                     "including year 0. Future years have not been discounted to account for the time value of "
                     "money. Only calculated in the non-third-party case.")
@@ -571,7 +571,7 @@ class FinancialOutputs(BaseModel, models.Model):
             models.FloatField(
                 null=True, blank=True
             ), 
-        default=list,
+        default=list, blank=True,
         null=True,
         help_text=("Annual discounted free cashflow for the host in the business-as-usual case for all analysis "
                     "years, including year 0. Future years have been discounted to account for the time value of "
@@ -579,10 +579,9 @@ class FinancialOutputs(BaseModel, models.Model):
     )
     developer_annual_free_cashflow_series_us_dollars = ArrayField(
             models.FloatField(
-                null=True, blank=True
+                blank=True
             ), 
-        default=list,
-        null=True,
+        default=list, blank=True,
         help_text=("Annual free cashflow for the developer in the business-as-usual third party case for all "
                     "analysis years, including year 0. Future years have not been discounted to account for "
                     "the time value of money. Only calculated in the third-party case.")
@@ -666,41 +665,30 @@ class ElectricLoadInputs(BaseModel, models.Model):
     )
     monthly_totals_kwh = ArrayField(
         models.FloatField(
-            default=1.0e8,
             validators=[
                 MinValueValidator(0),
                 MaxValueValidator(1.0e8)
             ],
             blank=True
         ),
-        default=list,
+        default=list, blank=True,
         help_text=("Monthly site energy consumption from electricity series (an array 12 entries long), in kWh, used "
-                   "to scale simulated default building load profile for the site's climate zone"),
-        null=True,
-        blank=True
+                   "to scale simulated default building load profile for the site's climate zone")
     )
     loads_kw = ArrayField(
-        models.FloatField(
-            blank=True
-        ),
-        default=list,
+        models.FloatField(blank=True),
+        default=list, blank=True,
         help_text=("Typical load over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,"
                    "520 samples), or 15 minute (35,040 samples). All non-net load values must be greater than or "
                    "equal to zero. "
-                   ),
-        null=True,
-        blank=True
+                   )
     )
     critical_loads_kw = ArrayField(
-        models.FloatField(
-            blank=True
-        ),
-        default=list,
+        models.FloatField(blank=True),
+        default=list, blank=True,
         help_text=("Critical load during an outage period. Must be hourly (8,760 samples), 30 minute (17,520 samples),"
                    "or 15 minute (35,040 samples). All non-net load values must be greater than or equal to zero."
-                   ),
-        null=True,
-        blank=True
+                   )
     )
     loads_kw_is_net = models.BooleanField(
         null=True,
@@ -715,24 +703,6 @@ class ElectricLoadInputs(BaseModel, models.Model):
         default=False,
         help_text=("If there is existing PV, must specify whether provided load is the net load after existing PV or "
                    "not.")
-    )
-    outage_start_time_step = models.IntegerField(
-        null=True,
-        blank=True,
-        validators=[
-            MinValueValidator(1),
-            MaxValueValidator(35040)
-        ],
-        help_text="Time step that grid outage starts. Must be less than outage_end."
-    )
-    outage_end_time_step = models.IntegerField(
-        null=True,
-        blank=True,
-        validators=[
-            MinValueValidator(1),
-            MaxValueValidator(35040)
-        ],
-        help_text="Time step that grid outage ends. Must be greater than outage_start."
     )
     critical_load_pct = models.FloatField(
         null=True,
@@ -775,20 +745,6 @@ class ElectricLoadInputs(BaseModel, models.Model):
 
     def clean(self):
         error_messages = []
-
-        # outage start/end time step dependencies
-        if self.outage_start_time_step and self.outage_end_time_step is None:
-            error_messages.append("Got outage_start_time_step but no outage_end_time_step.")
-
-        if self.outage_end_time_step and self.outage_start_time_step is None:
-            error_messages.append("Got outage_end_time_step but no outage_start_time_step.")
-
-        if self.outage_start_time_step is not None and self.outage_end_time_step is not None:
-            if self.outage_start_time_step >= self.outage_end_time_step:
-                error_messages.append((
-                    'LoadProfile outage_end_time_step must be larger than outage_start_time_step and these inputs '
-                    'cannot be equal.'
-                ))
 
         # possible sets for defining load profile
         if not at_least_one_set(self.dict, self.possible_sets):
@@ -854,30 +810,24 @@ class ElectricTariffInputs(BaseModel, models.Model):
         primary_key=True,
     )
 
-    # TODO should time_steps_per_hour be here? It is in the Julia pkg
-
     possible_sets = [
         ["urdb_response"],
         ["monthly_demand_rates", "monthly_energy_rates"],
-        # ["blended_annual_demand_charges_us_dollars_per_kw", "blended_annual_rates_us_dollars_per_kwh"],
+        ["blended_annual_energy_rate", "blended_annual_demand_charge"],
         ["urdb_label"],
-        # ["urdb_utility_name", "urdb_rate_name"],
+        ["urdb_utility_name", "urdb_rate_name"],
         # ["tou_energy_rates_us_dollars_per_kwh"]
     ]
 
     monthly_demand_rates = ArrayField(
         models.FloatField(blank=True),
-        default=list,
-        null=True,
-        blank=True,
+        default=list, blank=True,
         size=12,
         help_text="Array (length of 12) of blended demand charges in dollars per kW"
     )
     monthly_energy_rates = ArrayField(
         models.FloatField(blank=True),
-        default=list,
-        null=True,
-        blank=True,
+        default=list, blank=True,
         size=12,
         help_text="Array (length of 12) of blended energy rates in dollars per kWh."
     )
@@ -890,34 +840,43 @@ class ElectricTariffInputs(BaseModel, models.Model):
         editable=True,
         help_text=("Utility rate structure from <a href='https://openei.org/services/doc/rest/util_rates/?version=3' target='blank'>Utility Rate Database API</a>")
     )
-
-    # TODO: is it worth having an annual and a monthly rate input? for annual one can just put the same value in each month
-    # blended_annual_demand_charges_us_dollars_per_kw = models.FloatField(
-    #     blank=True,
-    #     default=0,
-    #     null=True,
-    #     help_text="Annual blended demand rates (annual demand charge cost in $ divided by annual peak demand in kW)"
-    # )
-    # blended_annual_rates_us_dollars_per_kwh = models.FloatField(
-    #     blank=True,
-    #     default=0,
-    #     null=True,
-    #     help_text="Annual blended energy rate (total annual energy in kWh divided by annual cost in $)"
-    # )
+    urdb_rate_name = models.TextField(
+        blank=True,
+        help_text=("Name of utility rate from <a href='https://openei.org/wiki/Utility_Rate_Database' target='blank'>Utility Rate Database</a>")
+    )
+    urdb_utility_name = models.TextField(
+        blank=True,
+        help_text=("Name of Utility from <a href='https://openei.org/wiki/Utility_Rate_Database' target='blank'>Utility Rate Database</a>")
+    )
+    blended_annual_demand_charge = models.FloatField(
+        blank=True,
+        null=True,
+        help_text="Annual blended demand rates (annual demand charge cost in $ divided by annual peak demand in kW)"
+    )
+    blended_annual_energy_rate = models.FloatField(
+        blank=True,
+        null=True,
+        help_text="Annual blended energy rate (total annual energy in kWh divided by annual cost in $)"
+    )
+    wholesale_rate = ArrayField(
+        models.FloatField(
+            blank=True,
+            validators=[
+                MinValueValidator(0)
+            ]
+        ),
+        default=list, blank=True,
+        help_text=("Price of electricity sold back to the grid in absence of net metering."
+                  " Can be a scalar value, which applies for all-time, or an array with time-sensitive"
+                  " values. If an array is input then it must have a length of 8760, 17520, or 35040. The inputed array"
+                  "values are up/down-sampled using mean values to match the Settings.time_steps_per_hour.")
+    )
     # tou_energy_rates_us_dollars_per_kwh = ArrayField(
     #     models.FloatField(blank=True),
     #     default=list,
     #     null=True, blank=True,
     #     help_text=("Time-of-use energy rates, provided by user. Must be an array with length equal to number of "
     #               "timesteps per year. Hourly or 15 minute rates allowed.")
-    # )
-    # urdb_rate_name = models.TextField(
-    #     blank=True,
-    #     help_text=("Name of utility rate from <a href='https://openei.org/wiki/Utility_Rate_Database' target='blank'>Utility Rate Database</a>")
-    # )
-    # urdb_utility_name = models.TextField(
-    #     blank=True,
-    #     help_text=("Name of Utility from <a href='https://openei.org/wiki/Utility_Rate_Database' target='blank'>Utility Rate Database</a>")
     # )
     # add_blended_rates_to_urdb_rate = models.BooleanField(
     #     blank=True,
@@ -988,22 +947,6 @@ class ElectricTariffInputs(BaseModel, models.Model):
     #               "input then it must have a length of 8760, 17520, or 35040. The inputed array values are up/down-"
     #               "sampled using mean values to match the Scenario time_steps_per_hour.")
     # )
-    # wholesale_rate_us_dollars_per_kwh = ArrayField(
-    #     models.FloatField(
-    #         blank=True,
-    #         default=0,
-    #         validators=[
-    #             MinValueValidator(0)
-    #         ]
-    #     ),
-    #     default=list,
-    #     null=True, blank=True,
-    #     help_text=("Price of electricity sold back to the grid in absence of net metering or above net metering limit. "
-    #               " The total annual kWh that can be compensated under this rate is restricted to the total annual "
-    #               "site-load in kWh. Can be a scalar value, which applies for all-time, or an array with time-sensitive"
-    #               " values. If an array is input then it must have a length of 8760, 17520, or 35040. The inputed array"
-    #               "values are up/down-sampled using mean values to match the Scenario time_steps_per_hour. ")
-    # )
     # coincident_peak_load_active_timesteps = ArrayField(
     #     ArrayField(
     #         models.FloatField(blank=True),
@@ -1037,8 +980,66 @@ class ElectricTariffInputs(BaseModel, models.Model):
                 "Must provide at valid at least one set of valid inputs from {}.".format(self.possible_sets)
             ))
 
+        for possible_set in self.possible_sets:
+            if len(possible_set) == 2:  # check dependencies
+                if (possible_set[0] and not possible_set[1]) or (not possible_set[0] and possible_set[1]):
+                    error_messages.append(f"Must provide both {possible_set[0]} and {possible_set[1]}")
+
+        if len(self.wholesale_rate) == 1:
+            self.wholesale_rate = self.wholesale_rate * 8760  # upsampling handled in InputValidator.cross_clean
+
         if error_messages:
             raise ValidationError(' & '.join(error_messages))
+
+
+class ElectricUtilityInputs(BaseModel, models.Model):
+    name = "ElectricUtility"
+
+    scenario = models.OneToOneField(
+        Scenario,
+        on_delete=models.CASCADE,
+        primary_key=True,
+    )
+
+    outage_start_time_step = models.IntegerField(
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(35040)
+        ],
+        help_text="Time step that grid outage starts. Must be less than outage_end."
+    )
+    outage_end_time_step = models.IntegerField(
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(35040)
+        ],
+        help_text="Time step that grid outage ends. Must be greater than outage_start."
+    )
+
+    def clean(self):
+        error_messages = []
+
+        # outage start/end time step dependencies
+        if self.outage_start_time_step and self.outage_end_time_step is None:
+            error_messages.append("Got outage_start_time_step but no outage_end_time_step.")
+
+        if self.outage_end_time_step and self.outage_start_time_step is None:
+            error_messages.append("Got outage_end_time_step but no outage_start_time_step.")
+
+        if self.outage_start_time_step is not None and self.outage_end_time_step is not None:
+            if self.outage_start_time_step >= self.outage_end_time_step:
+                error_messages.append((
+                    'outage_end_time_step must be larger than outage_start_time_step and these inputs '
+                    'cannot be equal.'
+                ))
+
+        if error_messages:
+            raise ValidationError(' & '.join(error_messages))
+
 
 
 class ElectricTariffOutputs(BaseModel, models.Model):
@@ -1144,42 +1145,37 @@ class ElectricTariffOutputs(BaseModel, models.Model):
     )
     year_one_energy_cost_series_us_dollars_per_kwh = ArrayField(
         models.FloatField(
-            null=True, blank=True
+            blank=True
         ), 
-        default=list, 
-        null=True, blank=True,
+        default=list, blank=True,
         help_text=("Optimal year one hourly energy costs")
     )
     year_one_demand_cost_series_us_dollars_per_kw = ArrayField(
         models.FloatField(
-            null=True, blank=True
+            blank=True
         ), 
-        default=list, 
-        null=True, blank=True,
+        default=list, blank=True,
         help_text=("Optimal year one hourly demand costs")
     )
     year_one_to_load_series_kw = ArrayField(
         models.FloatField(
-            null=True, blank=True
+            blank=True
         ), 
-        default=list, 
-        null=True, blank=True,
+        default=list, blank=True,
         help_text=("Optimal year one grid to load time series")
     )
     year_one_to_load_series_bau_kw = ArrayField(
         models.FloatField(
-            null=True, blank=True
+            blank=True
         ), 
-        default=list, 
-        null=True, blank=True,
+        default=list, blank=True,
         help_text=("Business as usual year one grid to load time series")
     )
     year_one_to_battery_series_kw = ArrayField(
         models.FloatField(
-            null=True, blank=True
+            blank=True
         ), 
-        default=list, 
-        null=True, blank=True,
+        default=list, blank=True,
         help_text=("Optimal year one grid to battery time series")
     )
     year_one_energy_supplied_kwh = models.FloatField(
@@ -1546,10 +1542,9 @@ class PVInputs(BaseModel, models.Model):
     )
     prod_factor_series_kw = ArrayField(
         models.FloatField(
-            null=True, blank=True
+            blank=True
         ),
-        default=list,
-        null=True,
+        default=list, blank=True,
         help_text=("Optional user-defined production factors. Entries have units of kWh/kW, representing the energy (kWh) output of a 1 kW system in each time step. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples).")
     )
     can_net_meter = models.BooleanField(
@@ -1560,7 +1555,7 @@ class PVInputs(BaseModel, models.Model):
     can_wholesale = models.BooleanField(
         default=True,
         null=True, blank=True,
-        help_text=("True/False for if technology has option to export energy that is compensated at the wholesale_rate_us_dollars_per_kwh. Note that a technology can only participate in either net metering or wholesale rates (not both).")
+        help_text=("True/False for if technology has option to export energy that is compensated at the wholesale_rate. Note that a technology can only participate in either net metering or wholesale rates (not both).")
     )
     can_export_beyond_site_load = models.BooleanField(
         default=True,

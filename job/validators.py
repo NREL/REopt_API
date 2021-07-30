@@ -30,12 +30,19 @@
 import logging
 import pandas as pd
 from job.models import Scenario, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
-    FinancialInputs, BaseModel, Message
+    FinancialInputs, BaseModel, Message, ElectricUtilityInputs
 from django.core.exceptions import ValidationError
 log = logging.getLogger(__name__)
 
 
 def scrub_fields(obj: BaseModel, raw_fields: dict):
+    """
+    Remove invalid inputs (by only keeping the inputs with names matching the Django Model fields).
+    Also converts non-list values to lists when the Django field is an ArrayField.
+    :param obj:
+    :param raw_fields:
+    :return:
+    """
     valid_fields = [f.name for f in obj._meta.fields[1:]]
     types = [str(type(f)) for f in obj._meta.fields[1:]]
     types_dict = {k: v for k, v in zip(valid_fields, types)}
@@ -45,6 +52,7 @@ def scrub_fields(obj: BaseModel, raw_fields: dict):
         if k in valid_fields:
             scrubbed_dict[k] = v
             if "ArrayField" in types_dict[k] and not isinstance(v, list):
+                # this if block allows inputs to be Array or Real values (converted to Array for database)
                 scrubbed_dict[k] = [v]
     return scrubbed_dict
 
@@ -75,12 +83,13 @@ class InputValidator(object):
             Settings,
             ElectricLoadInputs,
             ElectricTariffInputs,
-            FinancialInputs
+            FinancialInputs,
+            ElectricUtilityInputs
         )
         
-        scrubbed_inputs = dict()
-        scrubbed_inputs[Scenario.name] = scrub_fields(Scenario, raw_inputs[Scenario.name])
-        scenario = Scenario.create(**scrubbed_inputs[Scenario.name])
+        filtered_user_post = dict()
+        filtered_user_post[Scenario.name] = scrub_fields(Scenario, raw_inputs[Scenario.name])
+        scenario = Scenario.create(**filtered_user_post[Scenario.name])
         self.models[Scenario.name] = scenario
         scenario.save()  # must save the Scenario first to use it as a OneToOneField in other models
 
@@ -88,14 +97,14 @@ class InputValidator(object):
             if obj == Scenario: continue
             if obj.name in raw_inputs.keys():
 
-                scrubbed_inputs[obj.name] = scrub_fields(obj, raw_inputs[obj.name])
+                filtered_user_post[obj.name] = scrub_fields(obj, raw_inputs[obj.name])
 
-                self.models[obj.name] = obj.create(scenario=scenario, **scrubbed_inputs[obj.name])
+                self.models[obj.name] = obj.create(scenario=scenario, **filtered_user_post[obj.name])
             else:
                 # THIS WILL ONLY WORK IF MODEL HAS DEFAULTS FOR ALL REQUIRED FIELDS?
                 self.models[obj.name] = obj.create(scenario=scenario)
 
-        self.scrubbed_inputs = scrubbed_inputs
+        self.scrubbed_inputs = filtered_user_post
 
     @property
     def messages(self):
@@ -111,6 +120,13 @@ class InputValidator(object):
             msg_dict["resampled inputs"] = self.resampling_messages
 
         return msg_dict
+
+    @property
+    def validated_input_dict(self):
+        d = {"messages": self.messages}
+        for model in self.models.values():
+            d[model.name] = {k: v for (k, v) in model.dict.items() if v not in [None, []]}
+        return d
 
     def clean_fields(self):
         """
@@ -144,10 +160,10 @@ class InputValidator(object):
         Time series values are up or down sampled to align with Settings.time_steps_per_hour
         """
         for key, time_series in zip(
-            ["ElectricLoad", "ElectricLoad"],
-            ["loads_kw",      "critical_loads_kw"]
+            ["ElectricLoad", "ElectricLoad",      "ElectricTariff"],
+            ["loads_kw",     "critical_loads_kw", "wholesale_rate"]
         ):
-            if len(self.models[key].__getattribute__(time_series)) > 0:
+            if self.models[key].__getattribute__(time_series):
                 resampled_series, resampling_msg, err_msg = validate_time_series(
                     self.models[key].__getattribute__(time_series), self.models["Settings"].time_steps_per_hour
                 )
@@ -176,13 +192,6 @@ class InputValidator(object):
         if self.validation_errors:
             return False
         return True
-
-    @property
-    def dict(self):
-        d = dict()
-        for model in self.models.values:
-            d[model.name] = model.dict
-        return d
 
 
 def validate_time_series(series: list, time_steps_per_hour: int) -> (list, str, str):
