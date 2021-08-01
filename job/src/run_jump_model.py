@@ -34,7 +34,7 @@ import time
 import requests
 from celery import shared_task, Task
 from reo.exceptions import REoptError, OptimizationTimeout, UnexpectedError, NotOptimal, REoptFailedToStartError
-# from reo.models import ModelManager
+from job.models import Scenario, Message
 from reo.src.profiler import Profiler
 from job.src.process_results import process_results
 from celery.utils.log import get_task_logger
@@ -62,12 +62,12 @@ class RunJumpModelTask(Task):
         if isinstance(exc, REoptError):
             exc.save_to_db()
             msg = exc.message
-        else:
-            msg = exc.args[0]
-        data = kwargs['data']
-        data["messages"]["error"] = msg
-        data["status"] = "An error occurred. See messages for more."
-        # ModelManager.update_scenario_and_messages(data, run_uuid=data['outputs']['Scenario']['run_uuid'])
+            s = Scenario.objects.get(run_uuid=exc.run_uuid)
+            s.status = "An error occurred. See messages for more."
+            s.save(update_fields=["status"])
+            Message.create(scenario=s, message_type="error", message=msg)
+
+        # TODO is it possible for non-REoptErrors to get here? if so what do we do?
 
         self.request.chain = None  # stop the chain
         self.request.callback = None

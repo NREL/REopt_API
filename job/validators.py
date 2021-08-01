@@ -30,7 +30,7 @@
 import logging
 import pandas as pd
 from job.models import Scenario, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
-    FinancialInputs, BaseModel, Message, ElectricUtilityInputs
+    FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs
 from django.core.exceptions import ValidationError
 log = logging.getLogger(__name__)
 
@@ -84,7 +84,8 @@ class InputValidator(object):
             ElectricLoadInputs,
             ElectricTariffInputs,
             FinancialInputs,
-            ElectricUtilityInputs
+            ElectricUtilityInputs,
+            PVInputs  # TODO handle multiple PV's
         )
         
         filtered_user_post = dict()
@@ -126,6 +127,7 @@ class InputValidator(object):
         d = {"messages": self.messages}
         for model in self.models.values():
             d[model.name] = {k: v for (k, v) in model.dict.items() if v not in [None, []]}
+            # cleaning out model attribute
         return d
 
     def clean_fields(self):

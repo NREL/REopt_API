@@ -33,7 +33,7 @@ import sys
 import traceback as tb
 from django.http import JsonResponse
 from reo.exceptions import UnexpectedError
-from job.models import Scenario
+from job.models import Scenario, Message
 
 
 def make_error_resp(msg):
@@ -61,7 +61,12 @@ def results(request, run_uuid):
             return JsonResponse({"Error": str(err.args[0])}, status=400)
 
     try:
-        s = Scenario.objects.select_related('FinancialInputs','SiteInputs','FinancialOutputs').get(run_uuid=run_uuid)
+        s = Scenario.objects.select_related(
+            'FinancialInputs', 'FinancialOutputs',
+            'SiteInputs',
+            'PVInputs', 'PVOutputs'
+        ).get(run_uuid=run_uuid)
+        # TODO: how do we get the Message's models?
         # TODO: add to select_related args above the names of all related models that should be selected in this single database query
     except Exception as e:
         if isinstance(e, models.ObjectDoesNotExist):
@@ -83,6 +88,7 @@ def results(request, run_uuid):
     r["inputs"] = dict()
     r["inputs"]["Financial"] = s.FinancialInputs.dict
     r["inputs"]["Site"] = s.SiteInputs.dict
+    r["inputs"]["PV"] = s.PVInputs.dict
 
     for d in r["inputs"].values():
         d.pop("scenario_id", None)
@@ -90,6 +96,7 @@ def results(request, run_uuid):
     try:
         r["outputs"] = dict()
         r["outputs"]["Financial"] = s.FinancialOutputs.dict
+        r["outputs"]["PV"] = s.PVOutputs.dict
 
         for d in r["outputs"].values():
             d.pop("scenario_id", None)
