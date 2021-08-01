@@ -49,7 +49,7 @@ function add_continuous_variables(m, p)
 		MinChargeAdder >= 0   #to be removed
 		#UtilityMinChargeAdder[p.Month] >= 0   #X^{mc}_m: Annual utility minimum charge adder in month m [\$]
 		#CHP and Fuel-burning variables
-		dvFuelUsage[p.Tech, p.TimeStep] >= 0  # Fuel burned by technology t in time step h
+		dvFuelUsage[p.Tech, p.TimeStep] >= 0  # Fuel burned by technology t in time step h (units=kWh)
 		dvFuelBurnYIntercept[p.Tech, p.TimeStep] >= 0  #X^{fb}_{th}: Y-intercept of fuel burned by technology t in time step h
 		dvThermalProduction[p.Tech, p.TimeStep] >= 0  #X^{tp}_{th}: Thermal production by technology t in time step h
 		dvThermalProductionYIntercept[p.Tech, p.TimeStep] >= 0  #X^{tp}_{th}: Thermal production by technology t in time step h
@@ -989,8 +989,9 @@ function add_emissions_calcs(m,p)
 end 
 
 function calc_yr1_emissions_from_fuelburn(m,p; tech_array=p.FuelBurningTechs)
+	## Incorrect units! tech_emissions_factor [lb CO2/gal and lb/mmbtu] but dvFuelUse in kWh 
 	yr1_emissions_from_fuelburn_CO2 = @expression(m,p.TimeStepScaling* 
-		sum(m[:dvFuelUsage][t,ts]*p.TechEmissionsFactors_CO2[t] for t in tech_array, ts in p.TimeStep))
+		sum(m[:dvFuelUsage][t,ts]*p.TechEmissionsFactors_CO2[t] for t in tech_array, ts in p.TimeStep)) 
 
 	yr1_emissions_from_fuelburn_NOx = @expression(m,p.TimeStepScaling* 
 		sum(m[:dvFuelUsage][t,ts]*p.TechEmissionsFactors_NOx[t] for t in tech_array, ts in p.TimeStep))
@@ -1354,6 +1355,8 @@ function add_site_results(m, p, r::Dict)
 	r["preprocessed_BAU_Yr1_emissions_NOx"] = round(value(p.BAUYr1Emissions_NOx),digits=2) 
 	r["preprocessed_BAU_Yr1_emissions_SO2"] = round(value(p.BAUYr1Emissions_SO2),digits=2) 
 	r["preprocessed_BAU_Yr1_emissions_PM"] = round(value(p.BAUYr1Emissions_PM),digits=2) 
+
+	r["preprocessed_BAU_Yr1_emissions_from_grid_CO2"] = round(value(p.BAUYr1Emissions_grid_CO2),digits=2)
 
 	# Lifetime BAU emissions impacts 
 	r["lifetime_emissions_lb_CO2_bau"] = round(value(p.BAUYr1Emissions_CO2 * p.analysis_years),digits=2)

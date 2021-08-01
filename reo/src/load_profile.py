@@ -369,7 +369,7 @@ def bau_outage_check(critical_loads_kw, existing_pv_kw_list, gen_existing_kw, ge
     generator_fuel_use_gal = 0 ## Check 
 
     if gen_existing_kw == 0 and existing_pv_kw_list in [None, []]:
-        return False, 0
+        return False, 0, generator_fuel_use_gal
 
     elif gen_existing_kw > 0:
         if existing_pv_kw_list in [None, []]:
@@ -380,13 +380,13 @@ def bau_outage_check(critical_loads_kw, existing_pv_kw_list, gen_existing_kw, ge
             if unmet > 0:
                 fuel_kwh = (fuel_gal - fuel_intercept) / fuel_slope
                 gen_avail = min(fuel_kwh, gen_existing_kw * (1.0 / time_steps_per_hour))
-                gen_output = max(min(unmet, gen_avail), gen_min_turn_down * gen_existing_kw)
+                gen_output = max(min(unmet, gen_avail), gen_min_turn_down * gen_existing_kw) # output = the greater of either the unmet load or available generation based on fuel and the min loading 
                 fuel_needed = fuel_intercept + fuel_slope * gen_output
-                generator_fuel_use_gal += max(min(fuel_needed,fuel_gal), 0) ## check 
                 fuel_gal -= fuel_needed
+                generator_fuel_use_gal += fuel_needed ## max(min(fuel_needed,fuel_gal), 0) # previous logic, check new value
 
-                if gen_output < unmet:
-                    return False, i, generator_fuel_use_gal
+                if gen_output < unmet: # if the generator cannot meet the full load, still assume it runs during the outage
+                    return False, i, generator_fuel_use_gal 
 
     else:  # gen_existing_kw = 0 and PV_existing_kw > 0
         for i, (load, pv) in enumerate(zip(critical_loads_kw, existing_pv_kw_list)):
@@ -727,7 +727,7 @@ class LoadProfile(BuiltInProfile):
             generator_fuel_use_gal = 0 
             bau_sustained_time_steps = 0  # no outage
 
-        if outage_with_crit_load_pct or outage_with_crit_load_pct:
+        if outage_with_crit_load_pct or outage_with_user_crit_load:
 
             # splice critical loads in to load_list (used in optimal case)
             self.load_list[outage_start_time_step - 1:outage_end_time_step] = \
