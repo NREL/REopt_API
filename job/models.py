@@ -325,6 +325,7 @@ class SiteOutputs(BaseModel, models.Model):
     )
 """
 
+
 class FinancialInputs(BaseModel, models.Model):
     name = "Financial"
 
@@ -801,6 +802,7 @@ class ElectricLoadOutputs(BaseModel, models.Model):
     )
 """
 
+
 class ElectricTariffInputs(BaseModel, models.Model):
     name = "ElectricTariff"
 
@@ -1041,7 +1043,6 @@ class ElectricUtilityInputs(BaseModel, models.Model):
             raise ValidationError(' & '.join(error_messages))
 
 
-
 class ElectricTariffOutputs(BaseModel, models.Model):
     name = "ElectricTariffOutputs"
 
@@ -1225,10 +1226,12 @@ class ElectricTariffOutputs(BaseModel, models.Model):
 
 
 class PVInputs(BaseModel, models.Model):
-
-    scenario = models.ForeignKey(
+    # TODO need to have class level attribute `name` for InputValidator, but already have `PV.name` field and `PV.name` in julia pkg
+    # TODO: how to use ForeignKey for scenario and still get results in view.py?
+    scenario = models.OneToOneField(
         Scenario,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name="PVInputs"
     )
     
     class ARRAY_TYPE_CHOICES(models.IntegerChoices):
@@ -1248,13 +1251,14 @@ class PVInputs(BaseModel, models.Model):
         GROUND = 'ground'
         BOTH = 'both'
 
-    pv_number = models.IntegerField(
-        null=True, blank=True,
-        help_text=("Index out of all PV system models")
-    )
-    pv_name = models.TextField(
+    # number = models.IntegerField(
+    #     null=True, blank=True,
+    #     help_text="Index out of all PV system models"
+    # )
+    name = models.TextField(
         blank=True,
-        help_text=("PV name/description")
+        default="PV",
+        help_text="PV description for distinguishing between multiple PV models"
     )
     existing_kw = models.FloatField(
         default=0,
@@ -1262,8 +1266,8 @@ class PVInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(1.0e5)
         ],
-        null=True, blank=True,
-        help_text=("Existing PV size")
+        blank=True,
+        help_text="Existing PV size"
     )
     min_kw = models.FloatField(
         default=0,
@@ -1271,8 +1275,8 @@ class PVInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(1.0e9)
         ],
-        null=True, blank=True,
-        help_text=("Minimum PV size constraint for optimization")
+        blank=True,
+        help_text="Minimum PV size constraint for optimization"
     )
     max_kw = models.FloatField(
         default=1.0e9,
@@ -1280,32 +1284,32 @@ class PVInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(1.0e9)
         ],
-        null=True, blank=True,
-        help_text=("Maximum PV size constraint for optimization. Set to zero to disable PV")
+        blank=True,
+        help_text="Maximum PV size constraint for optimization. Set to zero to disable PV"
     )
-    installed_cost_us_dollars_per_kw = models.FloatField(
+    installed_cost_per_kw = models.FloatField(
         default=1600,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e5)
         ],
-        null=True, blank=True,
-        help_text=("Installed PV cost in $/kW")
+        blank=True,
+        help_text="Installed PV cost in $/kW"
     )
-    om_cost_us_dollars_per_kw = models.FloatField(
+    om_cost_per_kw = models.FloatField(
         default=16,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e3)
         ],
-        null=True, blank=True,
-        help_text=("Annual PV operations and maintenance costs in $/kW")
+        blank=True,
+        help_text="Annual PV operations and maintenance costs in $/kW"
     )
     macrs_option_years = models.IntegerField(
         default=MACRS_YEARS_CHOICES.FIVE,
         choices=MACRS_YEARS_CHOICES.choices,
-        null=True, blank=True,
-        help_text=("Duration over which accelerated depreciation will occur. Set to zero to disable")
+        blank=True,
+        help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_pct = models.FloatField(
         default=0,
@@ -1313,8 +1317,8 @@ class PVInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(1)
         ],
-        null=True, blank=True,
-        help_text=("Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation")
+        blank=True,
+        help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
     )
     macrs_itc_reduction = models.FloatField(
         default=0.5,
@@ -1322,8 +1326,8 @@ class PVInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(1)
         ],
-        null=True, blank=True,
-        help_text=("Percent of the ITC value by which depreciable basis is reduced")
+        blank=True,
+        help_text="Percent of the ITC value by which depreciable basis is reduced"
     )
     federal_itc_pct = models.FloatField(
         default=0.26,
@@ -1331,8 +1335,8 @@ class PVInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(1)
         ],
-        null=True, blank=True,
-        help_text=("Percentage of capital costs that are credited towards federal taxes")
+        blank=True,
+        help_text="Percentage of capital costs that are credited towards federal taxes"
     )
     state_ibi_pct = models.FloatField(
         default=0,
@@ -1340,17 +1344,17 @@ class PVInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(1)
         ],
-        null=True, blank=True,
-        help_text=("Percentage of capital costs offset by state incentives")
+        blank=True,
+        help_text="Percentage of capital costs offset by state incentives"
     )
-    state_ibi_max_us_dollars = models.FloatField(
+    state_ibi_max = models.FloatField(
         default=MAX_INCENTIVE,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(MAX_INCENTIVE)
         ],
-        null=True, blank=True,
-        help_text=("Maximum dollar value of state percentage-based capital cost incentive")
+        blank=True,
+        help_text="Maximum dollar value of state percentage-based capital cost incentive"
     )
     utility_ibi_pct = models.FloatField(
         default=0,
@@ -1358,98 +1362,98 @@ class PVInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(1)
         ],
-        null=True, blank=True,
-        help_text=("Percentage of capital costs offset by utility incentives")
+        blank=True,
+        help_text="Percentage of capital costs offset by utility incentives"
     )
-    utility_ibi_max_us_dollars = models.FloatField(
+    utility_ibi_max = models.FloatField(
         default=MAX_INCENTIVE,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(MAX_INCENTIVE)
         ],
-        null=True, blank=True,
-        help_text=("Maximum dollar value of utility percentage-based capital cost incentive")
+        blank=True,
+        help_text="Maximum dollar value of utility percentage-based capital cost incentive"
     )
-    federal_rebate_us_dollars_per_kw = models.FloatField(
+    federal_rebate_per_kw = models.FloatField(
         default=0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e9)
         ],
-        null=True, blank=True,
-        help_text=("Federal rebates based on installed capacity")
+        blank=True,
+        help_text="Federal rebates based on installed capacity"
     )
-    state_rebate_us_dollars_per_kw = models.FloatField(
+    state_rebate_per_kw = models.FloatField(
         default=0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e9)
         ],
-        null=True, blank=True,
-        help_text=("State rebate based on installed capacity")
+        blank=True,
+        help_text="State rebate based on installed capacity"
     )
-    state_rebate_max_us_dollars = models.FloatField(
+    state_rebate_max = models.FloatField(
         default=MAX_INCENTIVE,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(MAX_INCENTIVE)
         ],
-        null=True, blank=True,
-        help_text=("Maximum state rebate")
+        blank=True,
+        help_text="Maximum state rebate"
     )
-    utility_rebate_us_dollars_per_kw = models.FloatField(
+    utility_rebate_per_kw = models.FloatField(
         default=0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e9)
         ],
-        null=True, blank=True,
-        help_text=("Utility rebate based on installed capacity")
+        blank=True,
+        help_text="Utility rebate based on installed capacity"
     )
-    utility_rebate_max_us_dollars = models.FloatField(
+    utility_rebate_max = models.FloatField(
         default=MAX_INCENTIVE,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(MAX_INCENTIVE)
         ],
-        null=True, blank=True,
-        help_text=("Maximum utility rebate")
+        blank=True,
+        help_text="Maximum utility rebate"
     )
-    pbi_us_dollars_per_kwh = models.FloatField(
+    production_incentive_per_kwh = models.FloatField(
         default=0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e9)
         ],
-        null=True, blank=True,
-        help_text=("Production-based incentive value")
+        blank=True,
+        help_text="Production-based incentive value"
     )
-    pbi_max_us_dollars = models.FloatField(
+    production_incentive_max_benefit = models.FloatField(
         default=1.0e9,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e9)
         ],
-        null=True, blank=True,
-        help_text=("Maximum annual value in present terms of production-based incentives")
+        blank=True,
+        help_text="Maximum annual value in present terms of production-based incentives"
     )
-    pbi_years = models.FloatField(
+    production_incentive_years = models.FloatField(
         default=1,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(100)
         ],
-        null=True, blank=True,
-        help_text=("Duration of production-based incentives from installation date")
+        blank=True,
+        help_text="Duration of production-based incentives from installation date"
     )
-    pbi_system_max_kw = models.FloatField(
+    production_incentive_max_kw = models.FloatField(
         default=1.0e9,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e9)
         ],
-        null=True, blank=True,
-        help_text=("Maximum system size eligible for production-based incentive")
+        blank=True,
+        help_text="Maximum system size eligible for production-based incentive"
     )
     degradation_pct = models.FloatField(
         default=0.005,
@@ -1457,8 +1461,8 @@ class PVInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(1)
         ],
-        null=True, blank=True,
-        help_text=("Annual rate of degradation in PV energy production")
+        blank=True,
+        help_text="Annual rate of degradation in PV energy production"
     )
     azimuth = models.FloatField(
         default=180,
@@ -1466,7 +1470,7 @@ class PVInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(360)
         ],
-        null=True, blank=True,
+        blank=True,
         help_text=("PV azimuth angle")
     )
     losses = models.FloatField(
@@ -1475,20 +1479,21 @@ class PVInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(0.99)
         ],
-        null=True, blank=True,
+        blank=True,
         help_text=("PV system performance losses")
     )
     array_type = models.IntegerField(
         default=ARRAY_TYPE_CHOICES.ROOFTOP_FIXED,
         choices=ARRAY_TYPE_CHOICES.choices,
-        null=True, blank=True,
-        help_text=("PV Watts array type (0: Ground Mount Fixed (Open Rack); 1: Rooftop, Fixed; 2: Ground Mount 1-Axis Tracking; 3 : 1-Axis Backtracking; 4: Ground Mount, 2-Axis Tracking)")
+        blank=True,
+        help_text=("PV Watts array type (0: Ground Mount Fixed (Open Rack); 1: Rooftop, Fixed; 2: Ground Mount 1-Axis "
+                   "Tracking; 3 : 1-Axis Backtracking; 4: Ground Mount, 2-Axis Tracking)")
     )
     module_type = models.IntegerField(
         default=MODULE_TYPE_CHOICES.STANDARD,
         choices=MODULE_TYPE_CHOICES.choices,
-        null=True, blank=True,
-        help_text=("PV module type (0: Standard; 1: Premium; 2: Thin Film)")
+        blank=True,
+        help_text="PV module type (0: Standard; 1: Premium; 2: Thin Film)"
     )
     gcr = models.FloatField(
         default=0.4,
@@ -1505,8 +1510,8 @@ class PVInputs(BaseModel, models.Model):
             MinValueValidator(-1),
             MaxValueValidator(1)
         ],
-        null=True, blank=True,
-        help_text=("PV DC-AC ratio")
+        blank=True,
+        help_text="PV DC-AC ratio"
     )
     inv_eff = models.FloatField(
         default=0.96,
@@ -1515,15 +1520,16 @@ class PVInputs(BaseModel, models.Model):
             MaxValueValidator(0.995)
         ],
         null=True, blank=True,
-        help_text=("PV inverter efficiency")
+        help_text="PV inverter efficiency"
     )
-    radius = models.FloatField(
+    radius = models.IntegerField(
         default=0,
         validators=[
             MinValueValidator(0)
         ],
         null=True, blank=True,
-        help_text=("Radius, in miles, to use when searching for the closest climate data station. Use zero to use the closest station regardless of the distance")
+        help_text=("Radius, in miles, to use when searching for the closest climate data station. Use zero to use the "
+                   "closest station regardless of the distance.")
     )
     tilt = models.FloatField(
         default=0.537,
@@ -1531,70 +1537,86 @@ class PVInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(90)
         ],
-        null=True, blank=True,
+        blank=True,
         help_text=("PV system tilt")
     )
     location = models.TextField(
         default=PV_LOCATION_CHOICES.BOTH,
         choices=PV_LOCATION_CHOICES.choices,
         blank=True,
-        help_text=("Where PV can be deployed. One of [roof, ground, both] with default as both")
+        help_text="Where PV can be deployed. One of [roof, ground, both] with default as both."
     )
     prod_factor_series_kw = ArrayField(
         models.FloatField(
             blank=True
         ),
         default=list, blank=True,
-        help_text=("Optional user-defined production factors. Entries have units of kWh/kW, representing the energy (kWh) output of a 1 kW system in each time step. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples).")
+        help_text=("Optional user-defined production factors. Entries have units of kWh/kW, representing the energy "
+                   "(kWh) output of a 1 kW system in each time step. Must be hourly (8,760 samples), 30 minute "
+                   "(17,520 samples), or 15 minute (35,040 samples).")
     )
-    can_net_meter = models.BooleanField(
-        default=True,
-        null=True, blank=True,
-        help_text=("True/False for if technology has option to participate in net metering agreement with utility. Note that a technology can only participate in either net metering or wholesale rates (not both).")
-    )
-    can_wholesale = models.BooleanField(
-        default=True,
-        null=True, blank=True,
-        help_text=("True/False for if technology has option to export energy that is compensated at the wholesale_rate. Note that a technology can only participate in either net metering or wholesale rates (not both).")
-    )
-    can_export_beyond_site_load = models.BooleanField(
-        default=True,
-        null=True, blank=True,
-        help_text=("True/False for if technology can export energy beyond the annual site load (and be compensated for that energy at the wholesale_rate_above_site_load_us_dollars_per_kwh).")
-    )
-    can_curtail = models.BooleanField(
-        default=True,
-        null=True, blank=True,
-        help_text=("True/False for if technology can curtail energy produced.")
-    )
+    # can_net_meter = models.BooleanField(
+    #     default=True,
+    #     blank=True,
+    #     help_text=("True/False for if technology has option to participate in net metering agreement with utility. "
+    #                "Note that a technology can only participate in either net metering or wholesale rates (not both).")
+    # )
+    # can_wholesale = models.BooleanField(
+    #     default=True,
+    #     blank=True,
+    #     help_text=("True/False for if technology has option to export energy that is compensated at the wholesale_rate. "
+    #                "Note that a technology can only participate in either net metering or wholesale rates (not both).")
+    # )
+    # can_export_beyond_site_load = models.BooleanField(
+    #     default=True,
+    #     blank=True,
+    #     help_text=("True/False for if technology can export energy beyond the annual site load (and be compensated for "
+    #                "that energy at the wholesale_rate_above_site_load_us_dollars_per_kwh).")
+    # )
+    # can_curtail = models.BooleanField(
+    #     default=True,
+    #     blank=True,
+    #     help_text="True/False for if technology can curtail energy produced."
+    # )
 
-# class PVOutputs(BaseModel, models.Model):
 
-#     scenario = models.ForeignKey(
-#         Scenario,
-#         on_delete=models.CASCADE
-#     )
-#     # Outputs
-#     size_kw = models.FloatField(null=True, blank=True)
+class PVOutputs(BaseModel, models.Model):
+    # TODO: how to use ForeignKey for scenario and still get results in view.py?
+    scenario = models.OneToOneField(
+        Scenario,
+        on_delete=models.CASCADE,
+        related_name="PVOutputs"
+    )
+    # Outputs
+    size_kw = models.FloatField(null=True, blank=True)
+    total_om_cost_us_dollars = models.FloatField(null=True, blank=True)
 #     station_latitude = models.FloatField(null=True, blank=True)
 #     station_longitude = models.FloatField(null=True, blank=True)
 #     station_distance_km = models.FloatField(null=True, blank=True)
 #     average_yearly_energy_produced_kwh = models.FloatField(null=True, blank=True)
 #     average_yearly_energy_produced_bau_kwh = models.FloatField(null=True, blank=True)
-#     average_yearly_energy_exported_kwh = models.FloatField(null=True, blank=True)
-#     year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)
+    average_annual_energy_exported = models.FloatField(null=True, blank=True)
+    year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)
 #     year_one_energy_produced_bau_kwh = models.FloatField(null=True, blank=True)
 #     year_one_power_production_series_kw = ArrayField(
 #             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
-#     year_one_to_battery_series_kw = ArrayField(
-#             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
-#     year_one_to_load_series_kw = ArrayField(
-#             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
-#     year_one_to_grid_series_kw = ArrayField(
-#             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
+    year_one_to_battery_series_kw = ArrayField(
+        models.FloatField(null=True, blank=True),
+        blank=True, default=list
+    )
+    year_one_to_load_series_kw = ArrayField(
+        models.FloatField(null=True, blank=True),
+        blank=True, default=list
+    )
+    year_one_to_grid_series_kw = ArrayField(
+        models.FloatField(null=True, blank=True),
+        blank=True, default=list
+    )
 #     existing_pv_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-#     year_one_curtailed_production_series_kw = ArrayField(
-#             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
+    year_one_curtailed_production_series_kw = ArrayField(
+        models.FloatField(null=True, blank=True),
+        blank=True, default=list
+    )
 #     existing_pv_om_cost_us_dollars = models.FloatField(null=True, blank=True)
 #     lcoe_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
 #
@@ -1730,9 +1752,9 @@ class PVInputs(BaseModel, models.Model):
 #     existing_gen_total_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
 #     year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
 #     year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
-#
-#
-class Message(models.Model):
+
+
+class Message(BaseModel, models.Model):
     """
     For Example:
     {"messages":{
@@ -1741,6 +1763,10 @@ class Message(models.Model):
                 }
     }
     """
+    scenario = models.ForeignKey(
+        Scenario,
+        on_delete=models.CASCADE
+    )
     message_type = models.TextField(default='')
     message = models.TextField(default='')
     scenario = models.ForeignKey(
