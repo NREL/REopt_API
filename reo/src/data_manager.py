@@ -31,7 +31,7 @@ import copy
 from reo.src.urdb_parse import UrdbParse
 from reo.src.fuel_params import FuelParams
 from reo.utilities import annuity, degradation_factor, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
-    insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, annuity_escalation, MMBTU_TO_KWH
+    insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, annuity_escalation, MMBTU_TO_KWH, GAL_DIESEL_TO_KWH
 import numpy as np
 max_incentive = 1.0e10
 
@@ -720,22 +720,23 @@ class DataManager:
                 if tech.lower() == 'generator':
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.kwargs["om_cost_us_dollars_per_kwh"]')))
                     om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
-                    tech_emissions_factors_CO2.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_gal')))
-                    tech_emissions_factors_NOx.append(float(eval('self.' + tech + '.emissions_factor_lb_NOx_per_gal')))
-                    tech_emissions_factors_SO2.append(float(eval('self.' + tech + '.emissions_factor_lb_SO2_per_gal')))
-                    tech_emissions_factors_PM.append(float(eval('self.' + tech + '.emissions_factor_lb_PM_per_gal')))
+                    # NOTE: tech_emissions_factors in lb / kWh (gets multiplied by kWh of fuel burned, not kWh electricity consumption, ergo the use of the HHV instead of fuel slope)
+                    tech_emissions_factors_CO2.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_gal') / GAL_DIESEL_TO_KWH)) # lb/gal * gal/kWh
+                    tech_emissions_factors_NOx.append(float(eval('self.' + tech + '.emissions_factor_lb_NOx_per_gal') / GAL_DIESEL_TO_KWH))
+                    tech_emissions_factors_SO2.append(float(eval('self.' + tech + '.emissions_factor_lb_SO2_per_gal') / GAL_DIESEL_TO_KWH))
+                    tech_emissions_factors_PM.append(float(eval('self.' + tech + '.emissions_factor_lb_PM_per_gal') / GAL_DIESEL_TO_KWH))
                 elif tech.lower() == 'chp':
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kwh')))
-                    om_cost_us_dollars_per_hr_per_kw_rated.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_hr_per_kw_rated')))
-                    tech_emissions_factors_CO2.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_mmbtu')))
-                    tech_emissions_factors_NOx.append(float(eval('self.' + tech + '.emissions_factor_lb_NOx_per_mmbtu')))
-                    tech_emissions_factors_SO2.append(float(eval('self.' + tech + '.emissions_factor_lb_SO2_per_mmbtu')))
-                    tech_emissions_factors_PM.append(float(eval('self.' + tech + '.emissions_factor_lb_PM_per_mmbtu')))
+                    om_cost_us_dollars_per_hr_per_kw_rated.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_hr_per_kw_rated') / MMBTU_TO_KWH))
+                    tech_emissions_factors_CO2.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_mmbtu') / MMBTU_TO_KWH))
+                    tech_emissions_factors_NOx.append(float(eval('self.' + tech + '.emissions_factor_lb_NOx_per_mmbtu') / MMBTU_TO_KWH))
+                    tech_emissions_factors_SO2.append(float(eval('self.' + tech + '.emissions_factor_lb_SO2_per_mmbtu') / MMBTU_TO_KWH))
+                    tech_emissions_factors_PM.append(float(eval('self.' + tech + '.emissions_factor_lb_PM_per_mmbtu') / MMBTU_TO_KWH))
                 elif tech.lower() == 'boiler': 
-                    tech_emissions_factors_CO2.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_mmbtu')))
-                    tech_emissions_factors_NOx.append(float(eval('self.' + tech + '.emissions_factor_lb_NOx_per_mmbtu')))
-                    tech_emissions_factors_SO2.append(float(eval('self.' + tech + '.emissions_factor_lb_SO2_per_mmbtu')))
-                    tech_emissions_factors_PM.append(float(eval('self.' + tech + '.emissions_factor_lb_PM_per_mmbtu')))
+                    tech_emissions_factors_CO2.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_mmbtu') / MMBTU_TO_KWH))
+                    tech_emissions_factors_NOx.append(float(eval('self.' + tech + '.emissions_factor_lb_NOx_per_mmbtu') / MMBTU_TO_KWH))
+                    tech_emissions_factors_SO2.append(float(eval('self.' + tech + '.emissions_factor_lb_SO2_per_mmbtu') / MMBTU_TO_KWH))
+                    tech_emissions_factors_PM.append(float(eval('self.' + tech + '.emissions_factor_lb_PM_per_mmbtu') / MMBTU_TO_KWH))
                 else:
                     om_cost_us_dollars_per_kwh.append(0.0)
                     om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
@@ -965,6 +966,7 @@ class DataManager:
         #If no net emissions accounting, no credit for RE grid exports:
         if self.site.include_exported_elec_emissions_in_total is False:
             grid_to_load_kw = np.array([i if i > 0 else 0 for i in grid_to_load_kw])
+            
         # Might need to add additional logic to match reopt.jl curtailment approach...
         grid_emissions_lb_CO2_per_year = self.steplength*sum(np.array(self.elec_tariff.emissions_factor_series_lb_CO2_per_kwh) * grid_to_load_kw)
         total_emissions_lb_CO2_per_year += grid_emissions_lb_CO2_per_year

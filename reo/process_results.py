@@ -465,6 +465,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             ## self.nested_outputs["Scenario"]["Site"]["year_one_renewable_heat_bau_mmbtu"] = self.results_dict.get("annual_re_heat_mmbtu_bau")
             ## REMOVED: self.nested_outputs["Scenario"]["Site"]["year_one_emissions_bau_lb_CO2"] = self.results_dict.get("year_one_emissions_lb_CO2_bau")
             self.nested_outputs["Scenario"]["Site"]["year_one_emissions_bau_lb_CO2"] = self.results_dict.get("preprocessed_BAU_Yr1_emissions_CO2")
+            self.nested_outputs["Scenario"]["Site"]["year_one_CO2_emissions_from_elec_grid_purchase_bau"] = self.results_dict.get("preprocessed_BAU_Yr1_emissions_from_grid_CO2")
             
             ## self.nested_outputs["Scenario"]["Site"]["preprocessed_year_one_emissions_bau_lb_CO2"] = self.results_dict.get("preprocessed_BAU_Yr1_emissions")
 
@@ -748,7 +749,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 elif name == "Generator":
                     self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("generator_kw", 0)
                     self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal"] = self.results_dict.get(
-                        "fuel_used_kwh") / GAL_DIESEL_TO_KWH
+                        "fuel_used_kwh") / GAL_DIESEL_TO_KWH 
                     self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal_bau"] = self.results_dict.get(
                         "fuel_used_kwh_bau") / GAL_DIESEL_TO_KWH
                     self.nested_outputs["Scenario"]["Site"][name][
