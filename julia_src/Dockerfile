@@ -19,8 +19,8 @@ WORKDIR /opt/reopt/solver
 COPY xpress/ .
 RUN sed -i -e 's/\r$//' install.sh
 ARG XPRESS_LICENSE_HOST=licenseserver
-RUN set -x && printf "f\nc\n\nn\nn\ny\n${XPRESS_LICENSE_HOST}\ny\n" | ./install.sh >> license_info.txt;
-RUN rm xp8.0.4_linux_x86_64.tar.gz
+RUN set -x && printf "f\nc\n\nn\nn\ny\nn\n${XPRESS_LICENSE_HOST}\ny\n" | ./install.sh >> license_info.txt;
+RUN rm xp8.8.0_linux_x86_64.tar.gz
 
 # Install gfortran for /ghpghx
 RUN apt-get update

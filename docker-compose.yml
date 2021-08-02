@@ -73,6 +73,8 @@ services:
     container_name: julia_api
     build:
       context: julia_src/
+      args:
+        - XPRESS_LICENSE_HOST=xpress_license_server
     command: julia --project=/opt/julia_src http.jl
     ports:
       - "8081:8081"
