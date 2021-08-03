@@ -936,6 +936,7 @@ class NewBoilerModel(models.Model):
 class SteamTurbineModel(models.Model):
     # Inputs
     run_uuid = models.UUIDField(unique=True)
+    size_class = models.IntegerField(null=True, blank=True)
     min_kw = models.FloatField(null=True, blank=True)
     max_kw = models.FloatField(null=True, blank=True)
     electric_produced_to_thermal_consumed_ratio = models.FloatField(null=True, blank=True)
