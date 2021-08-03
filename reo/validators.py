@@ -1603,24 +1603,26 @@ class ValidateNestedInput:
             steam_turbine_defaults_all = copy.deepcopy(SteamTurbine.steam_turbine_defaults_all)
             n_classes = len(SteamTurbine.class_bounds)
             if self.isValid:
-                # fill in prime mover specific defaults
+                # Fill in steam turbine defaults, if considered with size_class and/or max_kw
                 size_class = real_values.get('size_class')
                 hw_or_steam = self.input_dict['Scenario']['Site']['Boiler'].get('existing_boiler_production_type_steam_or_hw')
                 if size_class is not None:
-                    if (size_class < 0) or (size_class >= n_classes):
-                        self.input_data_errors.append(
-                            'The size class input is outside the valid set of [0,1,2,3]')
-                else:
+                    eval_st = True
+                elif real_values.get('max_kw') or 0 > 0:
                     size_class = 0
-                prime_mover_defaults = SteamTurbine.get_steam_turbine_defaults(size_class=size_class)
-                # create an updated attribute set to check invalid combinations of input data later
-                prime_mover_defaults.update({"size_class": size_class})
-                updated_set = copy.deepcopy(prime_mover_defaults)
-                for param, value in prime_mover_defaults.items():
-                    if real_values.get(param) is None:
-                        self.update_attribute_value(object_name_path, number, param, value)
-                    else:
-                        updated_set[param] = real_values.get(param)        
+                    eval_st = True
+                else:
+                    eval_st = False
+                if eval_st:
+                    prime_mover_defaults = SteamTurbine.get_steam_turbine_defaults(size_class=size_class)
+                    # create an updated attribute set to check invalid combinations of input data later
+                    prime_mover_defaults.update({"size_class": size_class})
+                    updated_set = copy.deepcopy(prime_mover_defaults)
+                    for param, value in prime_mover_defaults.items():
+                        if real_values.get(param) is None:
+                            self.update_attribute_value(object_name_path, number, param, value)
+                        else:
+                            updated_set[param] = real_values.get(param)        
 
 
     def check_min_max_restrictions(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
