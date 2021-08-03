@@ -677,8 +677,10 @@ class NewBoiler(Tech):
 
 class SteamTurbine(Tech):
 
-    #TODO Define ST defaults here, such as ST outlet pressure for condensing, LP back-pressure, and HP back-pressure types
-    #      Also define default "sets" which represent technology types such as Nuclear, Biomass, Waste-To-Energy, etc 
+    # Default data, created from input_files.CHP.steam_turbine_Default_data.json
+    # Data points for steam turbine are 500 kW, 3000 kW, and 15000 kW; class bounds span above and below the data point sizes
+    class_bounds = [(0.0, 25000.0), (0, 1000.0), (1000.0, 5000.0), (5000.0, 250000.0)]
+    steam_turbine_defaults_all = json.load(open(os.path.join("input_files","CHP","steam_turbine_default_data.json")))
 
     def __init__(self, dfm, **kwargs):
         super(SteamTurbine, self).__init__(**kwargs)
@@ -770,4 +772,23 @@ class SteamTurbine(Tech):
             st_therm_out_to_therm_in_ratio = self.thermal_produced_to_thermal_consumed_ratio
 
         return st_elec_out_to_therm_in_ratio, st_therm_out_to_therm_in_ratio
+
+    @staticmethod
+    def get_steam_turbine_defaults(size_class=None):
+        """
+        Parse the default steam turbine cost and performance parameters
+        :return: dictionary of default cost and performance parameters
+        """
+
+        # Default to average parameter values across all size classes (size_class = 0) if None is input
+        if size_class is None:
+            size_class = 0
+
+        # Get default steam turbine parameters based on size_class
+        steam_turbine_defaults_all = copy.deepcopy(SteamTurbine.steam_turbine_defaults_all)
+        steam_turbine_defaults = {}
+        for param in steam_turbine_defaults_all.keys():
+            steam_turbine_defaults[param] = steam_turbine_defaults_all[param][size_class]
+
+        return steam_turbine_defaults
     

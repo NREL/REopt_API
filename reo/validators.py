@@ -38,7 +38,7 @@ import copy
 from reo.src.urdb_rate import Rate
 import re
 import uuid
-from reo.src.techs import Generator, Boiler, CHP, AbsorptionChiller
+from reo.src.techs import Generator, Boiler, CHP, AbsorptionChiller, SteamTurbine
 from reo.src.emissions_calculator import EmissionsCalculator
 from reo.utilities import generate_year_profile_hourly
 
@@ -1598,6 +1598,29 @@ class ValidateNestedInput:
                 self.defaults_inserted.append(['owner_discount_pct',object_name_path])
                 self.update_attribute_value(object_name_path, number, 'owner_tax_pct', real_values.get("offtaker_tax_pct"))
                 self.defaults_inserted.append(['owner_tax_pct', object_name_path])
+        
+        if object_name_path[-1] == "SteamTurbine":
+            steam_turbine_defaults_all = copy.deepcopy(SteamTurbine.steam_turbine_defaults_all)
+            n_classes = len(SteamTurbine.class_bounds)
+            if self.isValid:
+                # fill in prime mover specific defaults
+                size_class = real_values.get('size_class')
+                hw_or_steam = self.input_dict['Scenario']['Site']['Boiler'].get('existing_boiler_production_type_steam_or_hw')
+                if size_class is not None:
+                    if (size_class < 0) or (size_class >= n_classes):
+                        self.input_data_errors.append(
+                            'The size class input is outside the valid set of [0,1,2,3]')
+                else:
+                    size_class = 0
+                prime_mover_defaults = SteamTurbine.get_steam_turbine_defaults(size_class=size_class)
+                # create an updated attribute set to check invalid combinations of input data later
+                prime_mover_defaults.update({"size_class": size_class})
+                updated_set = copy.deepcopy(prime_mover_defaults)
+                for param, value in prime_mover_defaults.items():
+                    if real_values.get(param) is None:
+                        self.update_attribute_value(object_name_path, number, param, value)
+                    else:
+                        updated_set[param] = real_values.get(param)        
 
 
     def check_min_max_restrictions(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
