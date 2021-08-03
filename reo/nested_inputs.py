@@ -1926,6 +1926,11 @@ nested_input_definitions = {
         }        
       },
       "SteamTurbine": {
+        "size_class": {
+          "type": "int",
+          "restrict_to": [0, 1, 2, 3],
+          "description": "Steam turbine size class for using appropriate default inputs"
+        },
         "min_kw": {
           "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
           "description": "Minimum electric power size"
