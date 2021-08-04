@@ -138,7 +138,9 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "year_one_emissions_lb_SO2",
             "year_one_emissions_lb_PM",
             "year_one_generator_emissions_lb_CO2",
-            ## TODO: add health calcs for "year_one_generator_emissions_lb_XX" 
+            "year_one_generator_emissions_lb_NOx",
+            "year_one_generator_emissions_lb_SO2",
+            "year_one_generator_emissions_lb_PM",
             ## TODO: add lifetime_emissions_lb_CO2, lifetime_emissions_cost_CO2
 
         ]
@@ -812,27 +814,27 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     ## TODO: update to correct values
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_emissions_lb_NOx"] = self.results_dict.get(
-                        "year_one_generator_emissions_lb_CO2")
+                        "year_one_generator_emissions_lb_NOx")
                     if not self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal_bau"] is 0:
                         self.nested_outputs["Scenario"]["Site"][name][
                             "year_one_emissions_bau_lb_NOx"] = self.results_dict.get(
-                            "year_one_generator_emissions_lb_CO2_bau")
+                            "year_one_generator_emissions_lb_NOx_bau")
                     
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_emissions_lb_SO2"] = self.results_dict.get(
-                        "year_one_generator_emissions_lb_CO2")
+                        "year_one_generator_emissions_lb_SO2")
                     if not self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal_bau"] is 0:
                         self.nested_outputs["Scenario"]["Site"][name][
                             "year_one_emissions_bau_lb_SO2"] = self.results_dict.get(
-                            "year_one_generator_emissions_lb_CO2_bau")
+                            "year_one_generator_emissions_lb_SO2_bau")
                     
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_emissions_lb_PM"] = self.results_dict.get(
-                        "year_one_generator_emissions_lb_CO2")
+                        "year_one_generator_emissions_lb_PM")
                     if not self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal_bau"] is 0:
                         self.nested_outputs["Scenario"]["Site"][name][
                             "year_one_emissions_bau_lb_PM"] = self.results_dict.get(
-                            "year_one_generator_emissions_lb_CO2_bau")
+                            "year_one_generator_emissions_lb_PM_bau")
 
                 elif name == "CHP":
                     self.nested_outputs["Scenario"]["Site"][name][

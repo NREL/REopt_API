@@ -989,7 +989,6 @@ function add_emissions_calcs(m,p)
 end 
 
 function calc_yr1_emissions_from_fuelburn(m,p; tech_array=p.FuelBurningTechs)
-	## Incorrect units! tech_emissions_factor [lb CO2/gal and lb/mmbtu] but dvFuelUse in kWh 
 	yr1_emissions_from_fuelburn_CO2 = @expression(m,p.TimeStepScaling* 
 		sum(m[:dvFuelUsage][t,ts]*p.TechEmissionsFactors_CO2[t] for t in tech_array, ts in p.TimeStep)) 
 
@@ -1041,6 +1040,7 @@ function calc_yr1_emissions_offset_from_elec_exports(m,p; tech_array=p.ElectricT
 end
 
 ### Lifetime emissions calculations
+# TODO: account for if outage is major event! If so, shouldn't repeat fuel usage in each year
 function add_lifetime_emissions_calcs(m,p)
 	# Lifetime lbs CO2 
 	m[:Lifetime_Emissions_Lbs_CO2] = m[:EmissionsYr1_Total_LbsCO2] * p.analysis_years
@@ -1579,7 +1579,9 @@ function add_generator_results(m, p, r::Dict)
 
 	EmissionsYr1_LbsCO2_GEN, EmissionsYr1_LbsNOx_GEN, EmissionsYr1_LbsSO2_GEN, EmissionsYr1_LbsPM_GEN = calc_yr1_emissions_from_fuelburn(m,p; tech_array = m[:GeneratorTechs]) 
 	r["year_one_generator_emissions_lb_CO2"] = round(value(EmissionsYr1_LbsCO2_GEN), digits=2)
-	# TODO: add health calcs for generator
+	r["year_one_generator_emissions_lb_NOx"] = round(value(EmissionsYr1_LbsNOx_GEN), digits=2)
+	r["year_one_generator_emissions_lb_SO2"] = round(value(EmissionsYr1_LbsSO2_GEN), digits=2)
+	r["year_one_generator_emissions_lb_PM"] = round(value(EmissionsYr1_LbsPM_GEN), digits=2)
 
 	nothing
 end
