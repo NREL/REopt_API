@@ -322,20 +322,18 @@ def simulated_load(request):
                            annual_kwh=annual_kwh, monthly_totals_kwh=monthly_totals_kwh, critical_load_pct=0,
                            percent_share=percent_share_list)                                      
 
-            if len(percent_share_list) > 1:
-                lpct = LoadProfileChillerThermal(dfm=None, latitude=latitude, longitude=longitude,
-                                                    total_electric_load_list=b.unmodified_load_list, nearest_city=b.nearest_city,
-                                                    doe_reference_name=doe_reference_name, time_steps_per_hour=b.time_steps_per_hour,
-                                                    chiller_cop=chiller_cop, max_thermal_factor_on_peak_load=max_thermal_factor_on_peak_load,
-                                                    percent_share=percent_share_list)
-                cooling_defaults_dict = {'loads_ton': [round(ld/TONHOUR_TO_KWHT, 3) for ld in lpct.load_list],
-                                            'annual_tonhour': round(lpct.annual_kwht/TONHOUR_TO_KWHT,3),
-                                            'chiller_cop': lpct.chiller_cop,
-                                            'min_ton': round(min(lpct.load_list)/TONHOUR_TO_KWHT, 3),
-                                            'mean_ton': round((sum(lpct.load_list)/len(lpct.load_list))/TONHOUR_TO_KWHT, 3),
-                                            'max_ton': round(max(lpct.load_list)/TONHOUR_TO_KWHT, 3)}
-            else:
-                cooling_defaults_dict = {}
+            # Get the default cooling portion of the total electric load (used when we want cooling load without annual_tonhour input)
+            lpct = LoadProfileChillerThermal(dfm=None, latitude=latitude, longitude=longitude,
+                                                total_electric_load_list=b.unmodified_load_list, nearest_city=b.nearest_city,
+                                                doe_reference_name=doe_reference_name, time_steps_per_hour=b.time_steps_per_hour,
+                                                chiller_cop=chiller_cop, max_thermal_factor_on_peak_load=max_thermal_factor_on_peak_load,
+                                                percent_share=percent_share_list)
+            cooling_defaults_dict = {'loads_ton': [round(ld/TONHOUR_TO_KWHT, 3) for ld in lpct.load_list],
+                                        'annual_tonhour': round(lpct.annual_kwht/TONHOUR_TO_KWHT,3),
+                                        'chiller_cop': lpct.chiller_cop,
+                                        'min_ton': round(min(lpct.load_list)/TONHOUR_TO_KWHT, 3),
+                                        'mean_ton': round((sum(lpct.load_list)/len(lpct.load_list))/TONHOUR_TO_KWHT, 3),
+                                        'max_ton': round(max(lpct.load_list)/TONHOUR_TO_KWHT, 3)}
 
             lp = b.load_list
 
@@ -425,7 +423,7 @@ def simulated_load(request):
         if load_type == "cooling":
             for key in request.GET.keys():
                 if ('_kw' in key) or ('_mmbtu' in key):
-                    raise ValueError("Invalid key {} for load_type=heating".format(key))
+                    raise ValueError("Invalid key {} for load_type=cooling".format(key))
 
             if request.GET.get('annual_fraction') is not None:  # annual_kwh is optional. if not provided, then DOE reference value is used.
                 annual_fraction = float(request.GET['annual_fraction'])
@@ -494,8 +492,8 @@ def simulated_load(request):
                 else:
                     monthly_tonhour = None
                 
-                if len(doe_reference_name) > 1 and not annual_tonhour and not monthly_tonhour:
-                    raise ValueError('Use load_type=electric to get cooling load for hybrid/campus buildings with no annual_tonhour or monthly_tonhour input (response.cooling_defaults)')
+                if not annual_tonhour and not monthly_tonhour:
+                    raise ValueError('Use load_type=electric to get cooling load for buildings with no annual_tonhour or monthly_tonhour input (response.cooling_defaults)')
 
                 c = LoadProfileChillerThermal(dfm=None, latitude=latitude, longitude=longitude, doe_reference_name=doe_reference_name,
                                annual_tonhour=annual_tonhour, monthly_tonhour=monthly_tonhour, time_steps_per_hour=1, annual_fraction=None,
