@@ -223,7 +223,7 @@ nested_output_definitions = {
                 },
                 "net_capital_costs_plus_om_us_dollars": {
                   "type": "float",
-                  "description": "Capital cost for all technologies plus present value of operations and maintenance over anlaysis period",
+                  "description": "Capital cost for all technologies plus present value of operations and maintenance (including fuel purchases) over anlaysis period",
                   "units": "$"
                 },
                 "net_om_us_dollars_bau": {
