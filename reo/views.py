@@ -54,6 +54,7 @@ from reo.utilities import MMBTU_TO_KWH, generate_year_profile_hourly, TONHOUR_TO
 from reo.validators import ValidateNestedInput
 from datetime import datetime, timedelta
 from reo.src.ghp import GHPGHXInputs
+import numpy as np
 
 
 # loading the labels of hard problems - doing it here so loading happens once on startup
@@ -328,12 +329,18 @@ def simulated_load(request):
                                                 doe_reference_name=doe_reference_name, time_steps_per_hour=b.time_steps_per_hour,
                                                 chiller_cop=chiller_cop, max_thermal_factor_on_peak_load=max_thermal_factor_on_peak_load,
                                                 percent_share=percent_share_list)
+
+            for i, building in enumerate(doe_reference_name):
+                    default_fraction = np.array(lpct.get_default_fraction_of_total_electric(building))
+                    modified_fraction = list(default_fraction * percent_share_list[i] / 100.0)
+
             cooling_defaults_dict = {'loads_ton': [round(ld/TONHOUR_TO_KWHT, 3) for ld in lpct.load_list],
                                         'annual_tonhour': round(lpct.annual_kwht/TONHOUR_TO_KWHT,3),
                                         'chiller_cop': lpct.chiller_cop,
                                         'min_ton': round(min(lpct.load_list)/TONHOUR_TO_KWHT, 3),
                                         'mean_ton': round((sum(lpct.load_list)/len(lpct.load_list))/TONHOUR_TO_KWHT, 3),
-                                        'max_ton': round(max(lpct.load_list)/TONHOUR_TO_KWHT, 3)}
+                                        'max_ton': round(max(lpct.load_list)/TONHOUR_TO_KWHT, 3),
+                                        'fraction_of_total_electric_profile': [round(mf, 9) for mf in modified_fraction]}
 
             lp = b.load_list
 
