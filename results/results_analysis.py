@@ -270,7 +270,7 @@ def site_summary_df(site):
                                         "-",
                                         "",
                                         100*results["PV"]["average_yearly_energy_produced_bau_kwh"]/sum(json.load(open(json_filename))['inputs']["Scenario"]["Site"]["LoadProfile"]["loads_kw"]),
-                                        results["ElectricTariff"]["year_one_energy_supplied_kwh_bau"]/1000,
+                                        # results["ElectricTariff"]["year_one_energy_supplied_kwh_bau"]/1000,
                                         results["ElectricTariff"]["year_one_emissions_bau_lb_C02"]/1000
                                         # (results["ElectricTariff"]["year_one_energy_supplied_kwh_bau"]/eGRID_factor_marg)/1000,
                                         # (results["ElectricTariff"]["year_one_energy_supplied_kwh_bau"]/eGRID_factor_avg)/1000
