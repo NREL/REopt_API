@@ -363,15 +363,17 @@ def setup_scenario(self, run_uuid, data, raw_post):
                 ghpghx_post["latitude"] = inputs_dict["Site"]["latitude"]
                 ghpghx_post["longitude"] = inputs_dict["Site"]["longitude"]
                 # Only SpaceHeating portion of Heating Load gets served by GHP, unless allowed by can_serve_dhw
-                if not inputs_dict["Site"]["GHP"].get("can_serve_dhw"):
-                    ghpghx_post["heating_fuel_load_mmbtu_per_hr"] = lpbf_space.load_list
-                else:
-                    ghpghx_post["heating_fuel_load_mmbtu_per_hr"] = [lpbf_space.load_list[i] + lpbf_dhw.load_list[i] for i in range(len(lpbf_space.load_list))]
+                if ghpghx_post.get("heating_thermal_load_mmbtu_per_hr") in [None, []]:
+                    if not inputs_dict["Site"]["GHP"].get("can_serve_dhw"):
+                        ghpghx_post["heating_fuel_load_mmbtu_per_hr"] = lpbf_space.load_list
+                    else:
+                        ghpghx_post["heating_fuel_load_mmbtu_per_hr"] = [lpbf_space.load_list[i] + lpbf_dhw.load_list[i] for i in range(len(lpbf_space.load_list))]
                 if dfm.boiler is not None:
                     ghpghx_post["existing_boiler_efficiency"] = dfm.boiler.boiler_efficiency #boiler.boiler_efficiency
                 else:
                     ghpghx_post["existing_boiler_efficiency"] = 0.8
-                ghpghx_post["cooling_thermal_load_ton"] = [kwt / TONHOUR_TO_KWHT for kwt in dfm.cooling_load.load_list] #lpct.load_list
+                if ghpghx_post.get("cooling_thermal_load_ton") in [None, []]:
+                    ghpghx_post["cooling_thermal_load_ton"] = [kwt / TONHOUR_TO_KWHT for kwt in dfm.cooling_load.load_list] #lpct.load_list
                 client = TestApiClient()
                 # Update ground thermal conductivity based on climate zone if not user-input
                 if not ghpghx_post.get("ground_thermal_conductivity_btu_per_hr_ft_f"):
