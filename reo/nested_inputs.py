@@ -1710,6 +1710,14 @@ nested_input_definitions = {
           "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
           "description": "Maximum TES volume (energy) size constraint for optimization. Set to zero to disable storage"
         },
+        "chilled_supply_water_temp_degF": {
+          "type": "float", "min": 0.0, "max": 100.0, "default": 44.0,
+          "description": "Chilled-side supply water temperature from ColdTES (bottom of tank) to the cooling load"
+        },
+        "warmed_return_water_temp_degF": {
+          "type": "float", "min": 6.0, "max": 120.0, "default": 56.0,
+          "description": "Warmed-side return water temperature from the cooling load to the ColdTES (top of tank)"
+        },        
         "internal_efficiency_pct": {
           "type": "float", "min": 0.0, "max": 1.0, "default": 0.999999,
           "description": "Thermal losses due to mixing from thermal power entering or leaving tank"
@@ -1758,6 +1766,14 @@ nested_input_definitions = {
           "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
           "description": "Maximum TES volume (energy) size constraint for optimization. Set to zero to disable storage"
         },
+        "hot_supply_water_temp_degF": {
+          "type": "float", "min": 40.0, "max": 210.0, "default": 180.0,
+          "description": "Hot-side supply water temperature from HotTES (top of tank) to the heating load"
+        },
+        "cooled_return_water_temp_degF": {
+          "type": "float", "min": 33.0, "max": 200.0, "default": 160.0,
+          "description": "Cold-side return water temperature from the heating load to the HotTES (bottom of tank)"
+        },        
         "internal_efficiency_pct": {
           "type": "float", "min": 0.0, "max": 1.0, "default": 0.999999,
           "description": "Thermal losses due to mixing from thermal power entering or leaving tank"
