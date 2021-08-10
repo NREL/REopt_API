@@ -704,7 +704,7 @@ class SteamTurbine(Tech):
 
         self.st_elec_out_to_therm_in_ratio, self.st_therm_out_to_therm_in_ratio = self.st_elec_and_therm_prod_ratios()
 
-        kwargs['macrs_itc_reduction'] = None
+        kwargs['macrs_itc_reduction'] = 0.0
         self.incentives = IncentivesNoProdBased(**kwargs)
 
         dfm.add_steamturbine(self)
