@@ -82,6 +82,7 @@ class DataManager:
         self.steamturbine = None
         self.ghp_option_list = []  # Not adding to the Tech list
         self.ghp_cost = []
+        self.tes_kwh_to_gal = {}
 
         # following attributes used to pass data to process_results.py
         # If we serialize the python classes then we could pass the objects between Celery tasks
@@ -197,10 +198,12 @@ class DataManager:
 
     def add_hot_tes(self, hot_tes):
         self.hot_tes = hot_tes
+        self.tes_kwh_to_gal["HotTES"] = 1.0 / self.hot_tes.gal_to_kwh_conversion
         # All attributes are written in finalize method because they are stacked 1..2 for hot_tes..cold_tes storages
 
     def add_cold_tes(self, cold_tes):
         self.cold_tes = cold_tes
+        self.tes_kwh_to_gal["ColdTES"] = 1.0 / self.cold_tes.gal_to_kwh_conversion
         # All attributes are written in finalize method because they are stacked 1..2 for hot_tes..cold_tes storages
 
     def add_elec_tariff(self, elec_tariff):
