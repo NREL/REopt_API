@@ -1600,8 +1600,6 @@ class ValidateNestedInput:
                 self.defaults_inserted.append(['owner_tax_pct', object_name_path])
         
         if object_name_path[-1] == "SteamTurbine":
-            steam_turbine_defaults_all = copy.deepcopy(SteamTurbine.steam_turbine_defaults_all)
-            n_classes = len(SteamTurbine.class_bounds)
             if self.isValid:
                 # Fill in steam turbine defaults, if considered with size_class and/or max_kw
                 size_class = real_values.get('size_class')
@@ -1619,7 +1617,7 @@ class ValidateNestedInput:
                     prime_mover_defaults.update({"size_class": size_class})
                     updated_set = copy.deepcopy(prime_mover_defaults)
                     for param, value in prime_mover_defaults.items():
-                        if real_values.get(param) is None:
+                        if real_values.get(param) is None or param == "max_kw":
                             self.update_attribute_value(object_name_path, number, param, value)
                         else:
                             updated_set[param] = real_values.get(param)        
