@@ -1553,42 +1553,42 @@ class ValidateNestedInput:
                         'emissions_factor_lb_CO2_per_gal', self.fuel_conversion_per_gal.get('diesel_oil'))
 
         if object_name_path[-1] == "Boiler":
-                if self.isValid:
-                    # Set default boiler efficiency based on CHP prime mover value or boiler type, if not defined by user
-                    boiler_effic_by_type_defaults = copy.deepcopy(Boiler.boiler_efficiency_defaults)
-                    boiler_type_by_chp_pm_defaults = copy.deepcopy(Boiler.boiler_type_by_chp_prime_mover_defaults)
-                    hw_or_steam_user_input = real_values.get('existing_boiler_production_type_steam_or_hw')
-                    boiler_effic_user_input = real_values.get('boiler_efficiency')
-                    chp_prime_mover = self.input_dict['Scenario']['Site']['CHP'].get("prime_mover")
-                    if boiler_effic_user_input is None:
-                        if hw_or_steam_user_input is not None:
-                            hw_or_steam = hw_or_steam_user_input
-                            boiler_effic = boiler_effic_by_type_defaults[hw_or_steam]
-                            self.update_attribute_value(object_name_path, number,
-                                                        'boiler_efficiency',
-                                                        boiler_effic)
+            if self.isValid:
+                # Set default boiler efficiency based on CHP prime mover value or boiler type, if not defined by user
+                boiler_effic_by_type_defaults = copy.deepcopy(Boiler.boiler_efficiency_defaults)
+                boiler_type_by_chp_pm_defaults = copy.deepcopy(Boiler.boiler_type_by_chp_prime_mover_defaults)
+                hw_or_steam_user_input = real_values.get('existing_boiler_production_type_steam_or_hw')
+                boiler_effic_user_input = real_values.get('boiler_efficiency')
+                chp_prime_mover = self.input_dict['Scenario']['Site']['CHP'].get("prime_mover")
+                if boiler_effic_user_input is None:
+                    if hw_or_steam_user_input is not None:
+                        hw_or_steam = hw_or_steam_user_input
+                        boiler_effic = boiler_effic_by_type_defaults[hw_or_steam]
+                        self.update_attribute_value(object_name_path, number,
+                                                    'boiler_efficiency',
+                                                    boiler_effic)
+                    else:
+                        if chp_prime_mover is not None:
+                            hw_or_steam = boiler_type_by_chp_pm_defaults[chp_prime_mover]
                         else:
-                            if chp_prime_mover is not None:
-                                hw_or_steam = boiler_type_by_chp_pm_defaults[chp_prime_mover]
-                            else:
-                                hw_or_steam = "hot_water"
-                            boiler_effic = boiler_effic_by_type_defaults[hw_or_steam]  
-                            self.update_attribute_value(object_name_path, number,
-                                                        'existing_boiler_production_type_steam_or_hw',
-                                                        hw_or_steam)
-                            self.update_attribute_value(object_name_path, number,
-                                                        'boiler_efficiency',
-                                                        boiler_effic)
+                            hw_or_steam = "hot_water"
+                        boiler_effic = boiler_effic_by_type_defaults[hw_or_steam]
+                        self.update_attribute_value(object_name_path, number,
+                                                    'existing_boiler_production_type_steam_or_hw',
+                                                    hw_or_steam)
+                        self.update_attribute_value(object_name_path, number,
+                                                    'boiler_efficiency',
+                                                    boiler_effic)
 
         if object_name_path[-1] == "AbsorptionChiller":
-                if self.isValid:
-                    # Set default absorption chiller cost and performance based on boiler type or chp prime mover
-                    hw_or_steam_user_input = self.input_dict['Scenario']['Site']['Boiler'].get('existing_boiler_production_type_steam_or_hw')
-                    chp_prime_mover = self.input_dict['Scenario']['Site']['CHP'].get("prime_mover")
-                    if real_values.get('chiller_cop') is None:
-                        absorp_chiller_cop = AbsorptionChiller.get_absorp_chiller_cop(hot_water_or_steam=hw_or_steam_user_input,
-                                                                                        chp_prime_mover=chp_prime_mover)
-                        self.update_attribute_value(object_name_path, number, 'chiller_cop', absorp_chiller_cop)
+            if self.isValid:
+                # Set default absorption chiller cost and performance based on boiler type or chp prime mover
+                hw_or_steam_user_input = self.input_dict['Scenario']['Site']['Boiler'].get('existing_boiler_production_type_steam_or_hw')
+                chp_prime_mover = self.input_dict['Scenario']['Site']['CHP'].get("prime_mover")
+                if real_values.get('chiller_cop') is None:
+                    absorp_chiller_cop = AbsorptionChiller.get_absorp_chiller_cop(hot_water_or_steam=hw_or_steam_user_input,
+                                                                                    chp_prime_mover=chp_prime_mover)
+                    self.update_attribute_value(object_name_path, number, 'chiller_cop', absorp_chiller_cop)
 
         if object_name_path[-1] == "Financial":
             # Making sure discount and tax rates are correct when saved to the database later in non-third party cases, 
