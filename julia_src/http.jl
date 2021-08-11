@@ -12,7 +12,7 @@ function job(req::HTTP.Request)
 	error_response = Dict()
 	results = Dict()
 	try
-    	results = reopt(m, d)
+    	results = REopt.reopt(m, d)
 	catch e
 		@error "Something went wrong in the Julia code!" exception=(e, catch_backtrace())
 		error_response["error"] = sprint(showerror, e)
