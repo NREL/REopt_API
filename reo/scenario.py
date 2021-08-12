@@ -337,9 +337,13 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         # Absorption chiller
         if inputs_dict["Site"]["AbsorptionChiller"]["max_ton"] > 0 and lpct.annual_kwht > 0.0:
+            try:
+                chp_prime_mover = chp.prime_mover
+            except:
+                chp_prime_mover = None
             absorpchl = AbsorptionChiller(dfm=dfm, max_cooling_load_tons=elecchl.max_cooling_load_tons,
                                           hw_or_steam=boiler.existing_boiler_production_type_steam_or_hw,
-                                          chp_prime_mover=chp.prime_mover,
+                                          chp_prime_mover=chp_prime_mover,
                                           **inputs_dict['Site']['AbsorptionChiller'])
             tmp = dict()
             tmp['installed_cost_us_dollars_per_ton'] = absorpchl.installed_cost_us_dollars_per_ton
