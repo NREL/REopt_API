@@ -331,7 +331,7 @@ class CHP(Tech):
                     "micro_turbine": [(30, 1290), (30, 60), (60, 190), (190, 950), (950, 1290)],
                     "combustion_turbine": [(950, 20000), (950, 1800), (1800, 3300), (3300, 5400), (5400, 7500),
                                            (7500, 14000), (14000, 20000)],
-                    "fuel_cell": [(30, 9300), (30, 320), (320, 1400), (1400, 9300)]}
+                    "fuel_cell": [(440, 9300), (440, 1400), (1400, 9300)]}
 
     # The default CHP size class, currently set to size_class 0 which is the average values across the entire range of data (i.e. all size classes)
     default_chp_size_class = {"recip_engine": 0,
