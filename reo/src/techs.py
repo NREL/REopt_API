@@ -528,8 +528,12 @@ class AbsorptionChiller(Tech):
                                        "steam": 1.42}
 
     # Data format for cost is (ton, $/ton, $/ton/yr); less than 1st or greater than last size uses constant, otherwise lin-interp
-    absorption_chiller_cost_defaults = {"hot_water": [(50, 6000.0, 42.0), (440, 2250.0, 14.0), (1320, 2000.0, 7.0)],
-                                        "steam": [(330, 3300.0, 21.0), (1000, 2000.0, 7.0)]}
+    absorption_chiller_cost_defaults = {"hot_water": [(10, 4104.0, 400.0), (50, 3066.0, 80.0), (200, 2027.0, 36.0), (300, 1587.0, 32.0),
+                                                      (400, 1527.0, 31.0), (500, 1426.0, 30.0), (600, 1365.0, 28.0), (700, 1313.0, 26.0),
+                                                      (800, 1312.0, 23.0), (900, 1277.0, 20.0), (1000, 1248.0, 18.0)],
+                                        "steam": [(10, 4985.0, 500.0), (50, 3723.0, 80.0), (200, 2461.0, 36.0), (300, 1960.0, 32.0),
+                                                      (400, 1855.0, 31.0), (500, 1709.0, 30.0), (600, 1623.0, 28.0), (700, 1547.0, 26.0),
+                                                      (800, 1520.0, 23.0), (900, 1470.0, 20.0), (1000, 1427.0, 18.0)]}
 
     def __init__(self, dfm, max_cooling_load_tons, hw_or_steam, chp_prime_mover, chiller_cop, **kwargs):
         super(AbsorptionChiller, self).__init__(**kwargs)
