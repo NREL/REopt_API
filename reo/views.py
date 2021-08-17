@@ -385,11 +385,20 @@ def simulated_load(request):
             else:
                 monthly_mmbtu = None
 
-            kwargs_heating = {}
+            # Addressable heating load
             if 'addressable_load_fraction' in request.GET.keys():
-                addressable_load_fraction = [float(request.GET.get('addressable_load_fraction'))]
+                string_array = request.GET.get('addressable_load_fraction')
+                addressable_load_fraction = [float(v) for v in string_array.strip('[]').split(',')]
+            elif 'addressable_load_fraction[0]' in request.GET.keys():
+                addressable_load_fraction  = [request.GET.get('addressable_load_fraction[{}]'.format(i)) for i in range(12)]
+                if None in addressable_load_fraction:
+                    bad_index = addressable_load_fraction.index(None)
+                    raise ValueError("addressable_load_fraction must contain a value for each month. {} is null".format('addressable_load_fraction[{}]'.format(bad_index)))
+                addressable_load_fraction = [float(i) for i in addressable_load_fraction]
             else:
-                addressable_load_fraction = [nested_input_definitions["Scenario"]["Site"]["LoadProfileBoilerFuel"]["addressable_load_fraction"]["default"]]
+                addressable_load_fraction = addressable_load_fraction = [nested_input_definitions["Scenario"]["Site"]["LoadProfileBoilerFuel"]["addressable_load_fraction"]["default"]]            
+            
+            kwargs_heating = {}
             kwargs_heating["addressable_load_fraction"] = addressable_load_fraction
 
             if 'space_heating_fraction_of_heating_load' in request.GET.keys():
