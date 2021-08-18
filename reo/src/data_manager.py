@@ -1404,8 +1404,12 @@ class DataManager:
         
         if self.chp is not None:
             cooling_thermal_factor = self.chp.cooling_thermal_factor
+            supplementary_firing_max_steam_ratio = self.chp.supplementary_firing_max_steam_ratio
+            supplementary_firing_efficiency = self.chp.supplementary_firing_efficiency
         else:
             cooling_thermal_factor = 1.0
+            supplementary_firing_max_steam_ratio = 1.0
+            supplementary_firing_efficiency = 0.9
 
         absorp_chiller_cop = self.absorpchl.chiller_cop * cooling_thermal_factor if self.absorpchl != None else 1.0
         absorp_chiller_elec_cop = self.absorpchl.chiller_elec_cop if self.absorpchl != None else 1.0
@@ -1561,12 +1565,13 @@ class DataManager:
             'GHPCoolingThermalServed': ghp_cooling_thermal_load_served_kw,
             'GHPElectricConsumed': ghp_electric_consumption_kw,
             'GHPInstalledCost': ghp_installed_cost,
-            'GHPOMCost': ghp_om_cost_year_one
+            'GHPOMCost': ghp_om_cost_year_one,
+            'CHPSupplementaryFireMaxRatio': supplementary_firing_max_steam_ratio,
+            'CHPSupplementaryFireEfficiency': supplementary_firing_efficiency
             }
         ## Uncomment the following and run a scenario to get an updated modelinputs.json for creating Julia system image
-        # import json
-        # json.dump(self.reopt_inputs, open("modelinputs.json", "w"))
-        dummy = 3
+        import json
+        json.dump(self.reopt_inputs, open("modelinputs.json", "w"))
 
         self.reopt_inputs_bau = {
             'Tech': reopt_techs_bau,
@@ -1702,5 +1707,7 @@ class DataManager:
             'GHPCoolingThermalServed': ghp_cooling_thermal_load_served_kw_bau,
             'GHPElectricConsumed': ghp_electric_consumption_kw_bau,
             'GHPInstalledCost': ghp_installed_cost_bau,
-            'GHPOMCost': ghp_om_cost_year_one_bau            
+            'GHPOMCost': ghp_om_cost_year_one_bau,
+            'CHPSupplementaryFireMaxRatio': supplementary_firing_max_steam_ratio,
+            'CHPSupplementaryFireEfficiency': supplementary_firing_efficiency
         }
