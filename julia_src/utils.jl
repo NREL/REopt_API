@@ -246,6 +246,8 @@ Base.@kwdef struct Parameter
     GHPElectricConsumed::Array{Float64,2}  # Array of electric load profiles consumed by GHP
     GHPInstalledCost::Array{Float64,1}  # Array of installed cost for GHP options
     GHPOMCost::Array{Float64,1}  # Array of O&M cost for GHP options
+    CHPSupplementaryFireMaxRatio::Float64
+    CHPSupplementaryFireEfficiency::Float64        
 end
 
 
