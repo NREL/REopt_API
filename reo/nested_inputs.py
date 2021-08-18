@@ -1515,6 +1515,20 @@ nested_input_definitions = {
           "max": 1.0,
           "description": "CHP fraction of fuel energy converted to hot-thermal energy at half electric load"
         },
+        "supplementary_firing_max_steam_ratio": {
+          "type": "float",
+          "min": 1.0,
+          "max": 10.0,
+          "default": 1.0,
+          "description": "Ratio of max fired steam to un-fired steam production. Relevant only for combustion_turbine prime_mover"
+        },
+        "supplementary_firing_efficiency": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.9,
+          "description": "Thermal efficiency of the incremental steam production from supplementary firing. Relevant only for combustion_turbine prime_mover"
+        },
         "use_default_derate": {
           "type": "bool",
           "default": True,
