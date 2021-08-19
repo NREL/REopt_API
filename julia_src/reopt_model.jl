@@ -391,7 +391,7 @@ function add_thermal_production_constraints(m, p)
             # Constrain upper limit of dvSupplementaryThermalProduction
             @constraint(m, CHPSupplementaryFireCon[t in p.CHPTechs, ts in p.TimeStep],
                         m[:dvSupplementaryThermalProduction][ts] <=
-                        p.CHPSupplementaryFireMaxRatio * p.ProductionFactor[t,ts] * (p.CHPThermalProdSlope[t] * m[:dvSize][t] + m[:dvThermalProductionYIntercept][t,ts])
+                        (p.CHPSupplementaryFireMaxRatio - 1.0) * p.ProductionFactor[t,ts] * (p.CHPThermalProdSlope[t] * m[:dvSize][t] + m[:dvThermalProductionYIntercept][t,ts])
                         )
             # Constrain lower limit of 0 if CHP tech is off
             @constraint(m, NoCHPSupplementaryFireCon[t in p.CHPTechs, ts in p.TimeStep],
