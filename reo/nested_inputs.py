@@ -159,11 +159,11 @@ off_grid_defaults = {
       "LoadProfile": {
         "critical_load_pct": {
           "type": "float",
-          "min": 0.0,
-          "max": 2.0,
+          "min": 1.0,
+          "max": 1.0,
           "default": 1.0,
-          "description": "Critical load factor is multiplied by the typical load to determine the critical load that must be met during an outage. Value must be between zero and one, inclusive."
-        },
+          "description": "In off-grid scenarios, 100 percent of the typical load is assumed to be critical from a modeling standpoint (a 8760 hour outage is modeled). To adjust the 'critical load', change the typical load or the min_load_met_pct inputs."
+        },  
         "outage_is_major_event": {
           "type": "bool",
           "default": False,
