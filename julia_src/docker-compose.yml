@@ -5,6 +5,8 @@ services:
     container_name: xpress_license_server_dev
     build:
       context: ./xpress/licenseserver
+      args:
+        - XPRESS_LICENSE_HOST=xpress_license_server_dev
     mac_address: c4:b3:01:d3:d5:eb
     command: xpserver
     expose:
