@@ -75,8 +75,6 @@ class DataManager:
         self.cooling_load = None
         self.reopt_inputs = None
         self.reopt_inputs_bau = None
-        self.optimality_tolerance_decomp_subproblem = None
-        self.timeout_decomp_subproblem_seconds = None
         self.add_soc_incentive = None
         self.newboiler = None
         self.steamturbine = None
@@ -211,7 +209,7 @@ class DataManager:
 
     def add_steamturbine(self, steamturbine):
         self.steamturbine = steamturbine
-    
+
     def add_massproducer(self, massproducer):
         self.massproducer = massproducer
 
@@ -257,7 +255,7 @@ class DataManager:
                 elif tech == 'boiler':
                     pwf_fuel_by_tech.append(round(pwf_boiler_fuel, 5))
                 elif tech == 'newboiler':
-                    pwf_fuel_by_tech.append(round(pwf_newboiler_fuel, 5))                
+                    pwf_fuel_by_tech.append(round(pwf_newboiler_fuel, 5))
                 else:
                     pwf_fuel_by_tech.append(round(pwf_e, 5))
 
@@ -1103,9 +1101,9 @@ class DataManager:
                     all_techs_for_steam_turbine.append(tech.upper())
                     if eval('self.' + tech.lower() + '.can_supply_st'):
                         techs_can_supply_st.append(tech.upper())
-        
+
         return all_techs_for_steam_turbine, techs_can_supply_st
-    
+
     def finalize(self):
         """
         necessary for writing out parameters that depend on which Techs are defined
@@ -1273,7 +1271,7 @@ class DataManager:
 
         all_boiler_techs = ["BOILER", "NEWBOILER"]
         all_boiler_techs_bau = ["BOILER", "NEWBOILER"]  # Needs to be the same size as boiler_efficiency (below) which is length=2
-        
+
         steam_turbine_techs = [t for t in reopt_techs if t.lower().startswith('steamturbine')]
         steam_turbine_techs_bau = [t for t in reopt_techs_bau if t.lower().endswith('steamturbine')]
 
@@ -1286,13 +1284,13 @@ class DataManager:
         else:
             st_elec_out_to_therm_in_ratio, st_therm_out_to_therm_in_ratio = 0.0, 0.0
         st_elec_out_to_therm_in_ratio_bau, st_therm_out_to_therm_in_ratio_bau = 0.0, 0.0
-        
+
         # Must always create boiler_efficiency, even if no boiler techs (to handle scenario with heating_techs and no heating_load)
         boiler_efficiency = [1.0, 1.0]
         for i, tech in enumerate([t for t in self.available_techs if t.lower().endswith('boiler')]):
             if eval('self.' + tech.lower()) != None:
                 boiler_efficiency[i] = eval('self.' + tech.lower() + '.boiler_efficiency')
-        
+
         elec_chiller_cop = self.elecchl.chiller_cop if self.elecchl != None else 1.0
         
         if self.chp is not None:
@@ -1341,7 +1339,7 @@ class DataManager:
             massproducer_consumption_ratios = [0.0, 0.0, 0.0]
             massproducer_mass_value_us_dollars_per_kwh = 0.0
             massproducer_feedstock_cost_us_dollars_per_kwh = 0.0
-        
+
         if hot_tes_techs == [] or not self.hot_tes.can_supply_mp:
             hot_tes_can_supply_mp = 0
         else:
@@ -1474,7 +1472,7 @@ class DataManager:
             'DecompTimeOut': self.timeout_decomp_subproblem_seconds,
             'AddSOCIncentive': self.add_soc_incentive,
             'AllBoilerTechs': all_boiler_techs,
-            'AllTechsForSteamTurbine': all_techs_for_steam_turbine, 
+            'AllTechsForSteamTurbine': all_techs_for_steam_turbine,
             'SteamTurbineTechs': steam_turbine_techs,
             'TechCanSupplySteamTurbine': techs_can_supply_steam_turbine,
             'STElecOutToThermInRatio': st_elec_out_to_therm_in_ratio,
@@ -1617,7 +1615,7 @@ class DataManager:
             'DecompTimeOut': self.timeout_decomp_subproblem_seconds,
             'AddSOCIncentive': self.add_soc_incentive,
             'AllBoilerTechs': all_boiler_techs_bau,
-            'AllTechsForSteamTurbine': all_techs_for_steam_turbine_bau,             
+            'AllTechsForSteamTurbine': all_techs_for_steam_turbine_bau,
             'SteamTurbineTechs': steam_turbine_techs_bau,
             'TechCanSupplySteamTurbine': techs_can_supply_steam_turbine_bau,
             'STElecOutToThermInRatio': st_elec_out_to_therm_in_ratio_bau,

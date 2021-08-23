@@ -232,8 +232,6 @@ Base.@kwdef struct Parameter
 	CHPStandbyCharge::Float64
 	CHPDoesNotReduceDemandCharges::Int64
 	StorageDecayRate::AxisArray
-	DecompOptTol::Float64
-	DecompTimeOut::Int32
     AllBoilerTechs::Array{String,1}
     AllTechsForSteamTurbine::Array{String,1}
     SteamTurbineTechs::Array{String,1}

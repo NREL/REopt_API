@@ -118,9 +118,6 @@ class ScenarioModel(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     optimality_tolerance_bau = models.FloatField(null=True, blank=True)
     optimality_tolerance_techs = models.FloatField(null=True, blank=True)
-    use_decomposition_model = models.BooleanField(null=True, blank=True)
-    optimality_tolerance_decomp_subproblem = models.FloatField(null=True, blank=True)
-    timeout_decomp_subproblem_seconds = models.IntegerField(null=True, blank=True)
     add_soc_incentive = models.BooleanField(null=True, blank=True)
 
     lower_bound = models.FloatField(null=True, blank=True)

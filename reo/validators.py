@@ -463,6 +463,7 @@ class ValidateNestedInput:
             self.recursively_check_input_dict(self.nested_input_definitions, self.check_min_less_than_max)
             self.recursively_check_input_dict(self.nested_input_definitions, self.check_min_max_restrictions)
             self.recursively_check_input_dict(self.nested_input_definitions, self.check_required_attributes)
+        if self.isValid:
             self.recursively_check_input_dict(self.nested_input_definitions, self.check_special_cases)
 
             self.recursively_check_input_dict(self.nested_input_definitions, self.add_number_to_listed_inputs)
@@ -925,8 +926,8 @@ class ValidateNestedInput:
                             self.input_data_errors.append('LoadProfile outage_end_hour must be larger than outage_end_hour and these inputs cannot be equal')
 
                     if real_values.get('outage_start_time_step') is not None and real_values.get('outage_end_time_step') is not None:
-                        if real_values.get('outage_start_time_step') >= real_values.get('outage_end_time_step'):
-                            self.input_data_errors.append('LoadProfile outage_end_time_step must be larger than outage_start_time_step and these inputs cannot be equal')
+                        if real_values.get('outage_start_time_step') > real_values.get('outage_end_time_step'):
+                            self.input_data_errors.append('LoadProfile outage_end_time_step must be larger than outage_start_time_step.')
 
     def check_for_nans(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
         """

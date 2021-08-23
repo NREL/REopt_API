@@ -1,4 +1,4 @@
-FROM julia:1.5.3
+FROM julia:1.6.1
 
 # Install NREL root certs for machines running on NREL's network.
 ARG NREL_ROOT_CERT_URL_ROOT=""
@@ -19,14 +19,15 @@ WORKDIR /opt/reopt/solver
 COPY xpress/ .
 RUN sed -i -e 's/\r$//' install.sh
 ARG XPRESS_LICENSE_HOST=licenseserver
-RUN set -x && printf "f\nc\n\nn\nn\ny\n${XPRESS_LICENSE_HOST}\ny\n" | ./install.sh >> license_info.txt;
-RUN rm xp8.0.4_linux_x86_64.tar.gz
+RUN set -x && printf "f\nc\n\nn\nn\ny\nn\n${XPRESS_LICENSE_HOST}\ny\n" | ./install.sh >> license_info.txt;
+RUN rm xp8.8.0_linux_x86_64.tar.gz
 
 # Install Julia packages
 ENV JULIA_NUM_THREADS=2
 WORKDIR /opt/julia_src/
 COPY . .
-RUN julia --project="." -e 'import Pkg; Pkg.instantiate();' 
+RUN julia --project="." -e 'import Pkg; Pkg.instantiate();'
+RUN julia --project=. precompile.jl
 EXPOSE 8081
 
 CMD ["bash"]
