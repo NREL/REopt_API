@@ -339,9 +339,9 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                                    self.inputs["Storage"]["installed_cost_us_dollars_per_kwh"],
                                    self.inputs["Storage"]["replace_cost_us_dollars_per_kwh"],
                                    self.inputs["Storage"]["battery_replacement_year"])
-                pv_om = 0
+                pv_om = 0.0
                 for i in range(len(self.nested_outputs['Scenario']['Site']['PV'])):
-                    pv_om += self.nested_outputs['Scenario']['Site']['PV'][i]['total_fixed_om_cost_us_dollars']
+                    pv_om += (self.nested_outputs['Scenario']['Site']['PV'][i]['total_fixed_om_cost_us_dollars'] or 0.0)
 
                 diesel_variable_om = (self.nested_outputs['Scenario']['Site']['Generator']['total_variable_om_cost_us_dollars'] or 0)
                 diesel_fixed_om = (self.nested_outputs['Scenario']['Site']['Generator']['total_fixed_om_cost_us_dollars'] or 0)
