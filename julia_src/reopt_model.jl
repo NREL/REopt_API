@@ -259,23 +259,27 @@ function add_bigM_adjustments(m, p)
 	end
 
 	# m[:NewMaxUsageInTier] sets a new minumum if the total demand for the month, minus the size of all previous bins, is less than the existing bin size.
-	for u in p.PricingTier
-		for mth in p.Month
-			if u > 1
-				m[:NewMaxUsageInTier][mth,u] = minimum([p.MaxUsageInTier[u],
-					added_energy + 2*sum(p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP
-					for ts in p.TimeStepRatchetsMonth[mth]) - sum(m[:NewMaxUsageInTier][mth,up] for up in 1:(u-1))
-				])
-				m[:NewMaxUsageInTier][mth,u] = 1.0E8
-			else
-				m[:NewMaxUsageInTier][mth,u] = minimum([p.MaxUsageInTier[u],
-					added_energy + 2*sum(p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP
-					for ts in p.TimeStepRatchetsMonth[mth])
-				])
-				m[:NewMaxUsageInTier][mth,u] = 1.0E8
-			end
-		end
-	end
+    if length(p.PricingTier) > 1
+        for u in p.PricingTier
+            for mth in p.Month
+                if u > 1
+                    m[:NewMaxUsageInTier][mth,u] = minimum([p.MaxUsageInTier[u],
+                        added_energy + 2*sum(p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP
+                        for ts in p.TimeStepRatchetsMonth[mth]) - sum(m[:NewMaxUsageInTier][mth,up] for up in 1:(u-1))
+                    ])
+                else
+                    m[:NewMaxUsageInTier][mth,u] = minimum([p.MaxUsageInTier[u],
+                        added_energy + 2*sum(p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP
+                        for ts in p.TimeStepRatchetsMonth[mth])
+                    ])
+                end
+            end
+        end
+    else
+        for mth in p.Month
+            m[:NewMaxUsageInTier][mth,1] = 1.0E8
+        end
+    end
 
 	# NewMaxSize generates a new maximum size that is equal to the largest monthly load of the year.
 	# This is intended to be a reasonable upper bound on size that would never be exceeeded,
