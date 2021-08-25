@@ -236,7 +236,8 @@ def simulated_load(request):
         valid_keys = ["doe_reference_name","latitude","longitude","load_type","percent_share","annual_kwh",
                         "monthly_totals_kwh","annual_mmbtu","annual_fraction","annual_tonhour","monthly_tonhour",
                         "monthly_mmbtu","monthly_fraction","max_thermal_factor_on_peak_load","chiller_cop",
-                        "addressable_load_fraction", "space_heating_fraction_of_heating_load"]
+                        "addressable_load_fraction", "space_heating_fraction_of_heating_load", "cooling_doe_ref_name",
+                        "cooling_pct_share"]
         for key in request.GET.keys():
             k = key
             if "[" in key:
@@ -262,6 +263,22 @@ def simulated_load(request):
                 idx += 1
         else:
             doe_reference_name = None
+
+        # When wanting cooling profile based on building type(s) for cooling, need separate cooling building(s)
+        if 'cooling_doe_ref_name' in request.GET.keys():
+            cooling_doe_ref_name = [request.GET.get('cooling_doe_ref_name')]
+            cooling_pct_share_list = [100.0]
+        elif 'cooling_doe_ref_name[0]' in request.GET.keys():
+            idx = 0
+            cooling_doe_ref_name = []
+            cooling_pct_share_list = []
+            while 'doe_reference_name[{}]'.format(idx) in request.GET.keys():
+                cooling_doe_ref_name.append(request.GET['cooling_doe_ref_name[{}]'.format(idx)])
+                if 'cooling_pct_share[{}]'.format(idx) in request.GET.keys():
+                    cooling_pct_share_list.append(float(request.GET['cooling_pct_share[{}]'.format(idx)]))
+                idx += 1
+        else:
+            cooling_doe_ref_name = None        
 
         if doe_reference_name is not None:
             if len(percent_share_list) != len(doe_reference_name):
@@ -324,23 +341,26 @@ def simulated_load(request):
                            percent_share=percent_share_list)                                      
 
             # Get the default cooling portion of the total electric load (used when we want cooling load without annual_tonhour input)
-            lpct = LoadProfileChillerThermal(dfm=None, latitude=latitude, longitude=longitude,
-                                                total_electric_load_list=b.unmodified_load_list, nearest_city=b.nearest_city,
-                                                doe_reference_name=doe_reference_name, time_steps_per_hour=b.time_steps_per_hour,
-                                                chiller_cop=chiller_cop, max_thermal_factor_on_peak_load=max_thermal_factor_on_peak_load,
-                                                percent_share=percent_share_list)
+            if cooling_doe_ref_name is not None:
+                lpct = LoadProfileChillerThermal(dfm=None, latitude=latitude, longitude=longitude,
+                                                    total_electric_load_list=b.unmodified_load_list, nearest_city=b.nearest_city,
+                                                    doe_reference_name=cooling_doe_ref_name, time_steps_per_hour=b.time_steps_per_hour,
+                                                    chiller_cop=chiller_cop, max_thermal_factor_on_peak_load=max_thermal_factor_on_peak_load,
+                                                    percent_share=cooling_pct_share_list)
 
-            for i, building in enumerate(doe_reference_name):
-                    default_fraction = np.array(lpct.get_default_fraction_of_total_electric(building))
-                    modified_fraction = list(default_fraction * percent_share_list[i] / 100.0)
+                for i, building in enumerate(cooling_doe_ref_name):
+                        default_fraction = np.array(lpct.get_default_fraction_of_total_electric(building))
+                        modified_fraction = list(default_fraction * cooling_pct_share_list[i] / 100.0)
 
-            cooling_defaults_dict = {'loads_ton': [round(ld/TONHOUR_TO_KWHT, 3) for ld in lpct.load_list],
-                                        'annual_tonhour': round(lpct.annual_kwht/TONHOUR_TO_KWHT,3),
-                                        'chiller_cop': lpct.chiller_cop,
-                                        'min_ton': round(min(lpct.load_list)/TONHOUR_TO_KWHT, 3),
-                                        'mean_ton': round((sum(lpct.load_list)/len(lpct.load_list))/TONHOUR_TO_KWHT, 3),
-                                        'max_ton': round(max(lpct.load_list)/TONHOUR_TO_KWHT, 3),
-                                        'fraction_of_total_electric_profile': [round(mf, 9) for mf in modified_fraction]}
+                cooling_defaults_dict = {'loads_ton': [round(ld/TONHOUR_TO_KWHT, 3) for ld in lpct.load_list],
+                                            'annual_tonhour': round(lpct.annual_kwht/TONHOUR_TO_KWHT,3),
+                                            'chiller_cop': lpct.chiller_cop,
+                                            'min_ton': round(min(lpct.load_list)/TONHOUR_TO_KWHT, 3),
+                                            'mean_ton': round((sum(lpct.load_list)/len(lpct.load_list))/TONHOUR_TO_KWHT, 3),
+                                            'max_ton': round(max(lpct.load_list)/TONHOUR_TO_KWHT, 3),
+                                            'fraction_of_total_electric_profile': [round(mf, 9) for mf in modified_fraction]}
+            else:
+                cooling_defaults_dict = {}
 
             lp = b.load_list
 
