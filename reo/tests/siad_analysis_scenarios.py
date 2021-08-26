@@ -59,13 +59,18 @@ class TestSIADScenarios(ResourceTestCaseMixin, TestCase):
         # with open(os.path.join(results_dir,'SIAD_results_BAU.json'), 'w') as json_file:
         #     json.dump(response, json_file)
         # response = self.get_response(data=self.post_with_PV)
-        # with open(os.path.join(results_dir,'SIAD_results_with_PV_no_resilience.json'), 'w') as json_file:
+        # with open(os.path.join(results_dir,'SIAD_results_with_PV_no_resilience_newfin.json'), 'w') as json_file:
         #     json.dump(response, json_file)
         # response = self.get_response(data=self.post_no_PV)
         # with open(os.path.join(results_dir,'SIAD_results_no_PV_no_resilience.json'), 'w') as json_file:
         #     json.dump(response, json_file)
 
-        critical_pct = .3
+        FULL_RESILIENCE = False
+        if FULL_RESILIENCE == True:
+            critical_pct = 1
+        else:
+            critical_pct = .8
+            
         self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["critical_load_pct"] = critical_pct
         day = 329
         self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = day*24
@@ -99,9 +104,14 @@ class TestSIADScenarios(ResourceTestCaseMixin, TestCase):
         self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = 0
         self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"] = 1
         response = self.get_response(data=self.post_with_PV)
-        with open(os.path.join(results_dir,'SIAD_results_with_PV_neutral_NPV.json'), 'w') as json_file:
-            json.dump(response, json_file)
-        print(response["outputs"]["Scenario"]["Site"]["Financial"]["npv_us_dollars"])
+        if FULL_RESILIENCE == True:
+            with open(os.path.join(results_dir,'SIAD_results_with_PV_full_resilience_newfin.json'), 'w') as json_file:
+                json.dump(response, json_file)
+            print(response["outputs"]["Scenario"]["Site"]["Financial"]["npv_us_dollars"])
+        else:
+            with open(os.path.join(results_dir,'SIAD_results_with_PV_neutral_NPV_newfin.json'), 'w') as json_file:
+                json.dump(response, json_file)
+            print(response["outputs"]["Scenario"]["Site"]["Financial"]["npv_us_dollars"])
 
         # for day in range(365-14):
         #     self.post_no_PV["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = day*24

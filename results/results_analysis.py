@@ -200,7 +200,7 @@ def print_max_system_sizes():
 
 
 def multi_site_summary_xlsx():
-    summary_filename = "siad_results.xlsx"
+    summary_filename = "siad_results_newfin.xlsx"
     sites = ["SIAD"]
     # df_all_sites = None
     print(site_summary_df(sites[0]))
@@ -232,16 +232,21 @@ def site_summary_df(site):
             # "Year 1 emissions – eGRID marginal (1000 lb CO2)",
             # "Year 1 emissions – eGRID overall (1000 lb CO2)"
             ]
-    scenarios = {#"BAU": "Business as Usual",
-                "no_PV_100pctl_resilience": "No Added PV, 100th pctl Resilience",
-                "with_PV_100pctl_resilience": "With Added PV, 100th pctl Resilience",
-                "no_PV_75pctl_resilience": "No Added PV, 75th pctl Resilience",
-                "with_PV_75pctl_resilience": "With Added PV, 75th pctl Resilience",
-                "no_PV_50pctl_resilience": "No Added PV, 50th pctl Resilience",
-                "with_PV_50pctl_resilience": "With Added PV, 50th pctl Resilience",
-                "no_PV_no_resilience": "No Added PV, No Extra Resilience",
-                "with_PV_no_resilience": "With Added PV, No Extra Resilience",
-                "with_PV_neutral_NPV": "With Added PV, Neutral NPV Resilience"
+    # scenarios = {#"BAU": "Business as Usual",
+    #             "no_PV_100pctl_resilience": "No Added PV, 100th pctl Resilience",
+    #             "with_PV_100pctl_resilience": "With Added PV, 100th pctl Resilience",
+    #             "no_PV_75pctl_resilience": "No Added PV, 75th pctl Resilience",
+    #             "with_PV_75pctl_resilience": "With Added PV, 75th pctl Resilience",
+    #             "no_PV_50pctl_resilience": "No Added PV, 50th pctl Resilience",
+    #             "with_PV_50pctl_resilience": "With Added PV, 50th pctl Resilience",
+    #             "no_PV_no_resilience": "No Added PV, No Extra Resilience",
+    #             "with_PV_no_resilience": "With Added PV, No Extra Resilience",
+    #             "with_PV_neutral_NPV": "With Added PV, Neutral NPV Resilience"
+    #             }
+    scenarios = {
+                "with_PV_no_resilience_newfin": "With Added PV, No Extra Resilience",
+                "with_PV_neutral_NPV_newfin": "With Added PV, Neutral NPV Resilience",
+                "with_PV_full_resilience_newfin": "With Added PV, Full pctl Resilience"
                 }
     add_BAU_col = False
     df = pd.DataFrame(index=rows)
@@ -521,9 +526,20 @@ def resilience_main():
     rmaxRE = []
     y_valsRE = []
 
-    for scen in ["with_PV"]:#,"no_PV"]:
+    scen_abrvs = [
+                "with_PV_no_resilience_newfin",
+                "with_PV_neutral_NPV_newfin",
+                "with_PV_full_resilience_newfin"
+                ]
+    scen_titles = [
+                "No Extra Resilience",
+                "Neutral NPV Resilience",
+                "Full Resilience"
+                ]
+
+    for scen in scen_abrvs:#["with_PV","no_PV"]:
         # for pctl in [100,75,50]:
-            json_input_path = "SIAD_results_{}_neutral_NPV.json".format(scen)
+            json_input_path = "SIAD_results_{}.json".format(scen)
             output_path = "./{}".format(json_input_path[:-5])
             # Run Resilience
             tag = ""
@@ -667,7 +683,7 @@ def resilience_main():
         ax2.plot(x2[:672], Y[:672], linewidth=1.5)
     ax2.set_ylabel("Probability of Surviving Outage")
     ax2.set_xlabel("Duration of Outage (hours)")
-    ax2.legend(["Optimal, No Added PV","Optimal, With Added PV"])#[name[13:-5] for name in scenario_result_input_files])
+    ax2.legend(scen_titles)#[name[13:-5] for name in scenario_result_input_files])
     ax2.set_title(project + "Survivability")
     plt.ylim((0,1.1))
     plt.xlim((0,float(672)/float(n_steps_per_hour)))
@@ -679,7 +695,7 @@ if __name__ == '__main__':
 
     # print_max_system_sizes()
     resilience_main()
-    multi_site_summary_xlsx()
+    # multi_site_summary_xlsx()
     # load_profiles_plot()
 
     # dir = '.'
