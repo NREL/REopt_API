@@ -132,14 +132,14 @@ nested_input_definitions = {
     },
   "optimality_tolerance_bau": {
       "type": "float",
-      "min": 0.0005,
+      "min": 0.0001,
       "max": 0.05,
       "default": 0.001,
       "description": "The threshold for the difference between the solution's objective value and the best possible value at which the solver terminates"
     },
   "optimality_tolerance_techs": {
       "type": "float",
-      "min": 0.0005,
+      "min": 0.0001,
       "max": 0.05,
       "default": 0.001,
       "description": "The threshold for the difference between the solution's objective value and the best possible value at which the solver terminates"
