@@ -272,7 +272,7 @@ def simulated_load(request):
             idx = 0
             cooling_doe_ref_name = []
             cooling_pct_share_list = []
-            while 'doe_reference_name[{}]'.format(idx) in request.GET.keys():
+            while 'cooling_doe_ref_name[{}]'.format(idx) in request.GET.keys():
                 cooling_doe_ref_name.append(request.GET['cooling_doe_ref_name[{}]'.format(idx)])
                 if 'cooling_pct_share[{}]'.format(idx) in request.GET.keys():
                     cooling_pct_share_list.append(float(request.GET['cooling_pct_share[{}]'.format(idx)]))
