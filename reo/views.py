@@ -278,7 +278,11 @@ def simulated_load(request):
                     cooling_pct_share_list.append(float(request.GET['cooling_pct_share[{}]'.format(idx)]))
                 idx += 1
         else:
-            cooling_doe_ref_name = None        
+            cooling_doe_ref_name = None
+        
+        if doe_reference_name is None and cooling_doe_ref_name is not None:
+            doe_reference_name = cooling_doe_ref_name
+            percent_share_list = cooling_pct_share_list
 
         if doe_reference_name is not None:
             if len(percent_share_list) != len(doe_reference_name):
