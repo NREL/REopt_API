@@ -410,7 +410,7 @@ class FinancialInputs(BaseModel, models.Model):
                    "generator(s).")
     )
     # TODO rename VoLL in Julia pkg?
-    # value_of_lost_load_us_dollars_per_kwh = models.FloatField(
+    # value_of_lost_load_per_kwh = models.FloatField(
     #     default=100,
     #     validators=[
     #         MinValueValidator(0),
@@ -464,23 +464,23 @@ class FinancialOutputs(BaseModel, models.Model):
         related_name="FinancialOutputs"
     )
 
-    lcc_us_dollars = models.FloatField(
+    lcc = models.FloatField(
         null=True, blank=True,
         help_text="Optimal lifecycle cost"
     )
-    lcc_bau_us_dollars = models.FloatField(
+    lcc_bau = models.FloatField(
         null=True, blank=True,
         help_text="Business as usual lifecycle cost"
     )
-    npv_us_dollars = models.FloatField(
+    npv = models.FloatField(
         null=True, blank=True,
         help_text="Net present value of savings realized by the project"
     )
-    net_capital_costs_plus_om_us_dollars = models.FloatField(
+    net_capital_costs_plus_om = models.FloatField(
         null=True, blank=True,
         help_text="Capital cost for all technologies plus present value of operations and maintenance over anlaysis period"
     )
-    net_om_us_dollars_bau = models.FloatField(
+    net_om_costs_bau = models.FloatField(
         null=True, blank=True,
         help_text="Business-as-usual present value of operations and maintenance over anlaysis period",
     )
@@ -506,19 +506,19 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Net replacement costs for all technologies, in future value, excluding incentives."
     )
-    om_and_replacement_present_cost_after_tax_us_dollars = models.FloatField(
+    om_and_replacement_present_cost_after_tax = models.FloatField(
         null=True, blank=True,
         help_text="Net O&M and replacement costs in present value, after-tax."
     )
-    total_om_costs_us_dollars = models.FloatField(
+    total_om_costs = models.FloatField(
         null=True, blank=True,
         help_text="Total operations and maintenance cost over analysis period."
     )
-    year_one_om_costs_us_dollars = models.FloatField(
+    year_one_om_costs = models.FloatField(
         null=True, blank=True,
         help_text="Year one operations and maintenance cost after tax."
     )
-    year_one_om_costs_before_tax_us_dollars = models.FloatField(
+    year_one_om_costs_before_tax = models.FloatField(
         null=True, blank=True,
         help_text="Year one operations and maintenance cost before tax."
     )
@@ -534,12 +534,12 @@ class FinancialOutputs(BaseModel, models.Model):
         help_text=("internal Rate of Return of the cost-optimal system. In two-party cases the "
                     "developer discount rate is used in place of the offtaker discount rate.")
     )
-    net_present_cost_us_dollars = models.FloatField(
+    net_present_cost = models.FloatField(
         null=True, blank=True,
         help_text=("Present value of the total costs incurred by the third-party owning and operating the "
                     "distributed energy resource assets.")
     )
-    annualized_payment_to_third_party_us_dollars = models.FloatField(
+    annualized_payment_to_third_party = models.FloatField(
         null=True, blank=True,
         help_text=("The annualized amount the host will pay to the third-party owner over the life of the project.")
     )
@@ -551,7 +551,7 @@ class FinancialOutputs(BaseModel, models.Model):
         help_text=("Annual free cashflow for the host in the optimal case for all analysis years, "
                     "including year 0. Future years have not been discounted to account for the time value of money.")
     )
-    offtaker_discounted_annual_free_cashflow_series_us_dollars = ArrayField(
+    offtaker_discounted_annual_free_cashflow_series = ArrayField(
             models.FloatField(
                 blank=True
             ), 
@@ -559,7 +559,7 @@ class FinancialOutputs(BaseModel, models.Model):
         help_text=("Annual discounted free cashflow for the host in the optimal case for all analysis years, "
                     "including year 0. Future years have been discounted to account for the time value of money.")
     )
-    offtaker_annual_free_cashflow_series_bau_us_dollars = ArrayField(
+    offtaker_annual_free_cashflow_series_bau = ArrayField(
             models.FloatField(
                 blank=True
             ), 
@@ -568,7 +568,7 @@ class FinancialOutputs(BaseModel, models.Model):
                     "including year 0. Future years have not been discounted to account for the time value of "
                     "money. Only calculated in the non-third-party case.")
     )
-    offtaker_discounted_annual_free_cashflow_series_bau_us_dollars = ArrayField(
+    offtaker_discounted_annual_free_cashflow_series_bau = ArrayField(
             models.FloatField(
                 null=True, blank=True
             ), 
@@ -578,7 +578,7 @@ class FinancialOutputs(BaseModel, models.Model):
                     "years, including year 0. Future years have been discounted to account for the time value of "
                     "money. Only calculated in the non-third-party case.")
     )
-    developer_annual_free_cashflow_series_us_dollars = ArrayField(
+    developer_annual_free_cashflow_series = ArrayField(
             models.FloatField(
                 blank=True
             ), 
@@ -587,7 +587,7 @@ class FinancialOutputs(BaseModel, models.Model):
                     "analysis years, including year 0. Future years have not been discounted to account for "
                     "the time value of money. Only calculated in the third-party case.")
     )
-    developer_om_and_replacement_present_cost_after_tax_us_dollars = models.FloatField(
+    developer_om_and_replacement_present_cost_after_tax = models.FloatField(
         null=True, blank=True,
         help_text=("Net O&M and replacement costs in present value, after-tax for the third-party "
                     "developer. Only calculated in the third-party case.")
@@ -721,7 +721,7 @@ class ElectricLoadInputs(BaseModel, models.Model):
     #     null=True,
     #     blank=True,
     #     default=True,
-    #     help_text="Boolean value for if outage is a major event, which affects the avoided_outage_costs_us_dollars. If "
+    #     help_text="Boolean value for if outage is a major event, which affects the avoided_outage_costs. If "
     #               "True, the avoided outage costs are calculated for a single outage occurring in the first year of "
     #               "the analysis_years. If False, the outage event is assumed to be an average outage event that occurs "
     #               "every year of the analysis period. In the latter case, the avoided outage costs for one year are "
@@ -818,7 +818,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
         ["blended_annual_energy_rate", "blended_annual_demand_charge"],
         ["urdb_label"],
         ["urdb_utility_name", "urdb_rate_name"],
-        # ["tou_energy_rates_us_dollars_per_kwh"]
+        # ["tou_energy_rates_per_kwh"]
     ]
 
     monthly_demand_rates = ArrayField(
@@ -873,7 +873,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
                   " values. If an array is input then it must have a length of 8760, 17520, or 35040. The inputed array"
                   "values are up/down-sampled using mean values to match the Settings.time_steps_per_hour.")
     )
-    # tou_energy_rates_us_dollars_per_kwh = ArrayField(
+    # tou_energy_rates_per_kwh = ArrayField(
     #     models.FloatField(blank=True),
     #     default=list,
     #     null=True, blank=True,
@@ -899,7 +899,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
     #     blank=True,
     #     help_text=("Boolean indicator if CHP does not reduce demand charges")
     # )
-    # chp_standby_rate_us_dollars_per_kw_per_month = models.FloatField(
+    # chp_standby_rate_per_kw_per_month = models.FloatField(
     #     default=0,
     #     validators=[
     #         MinValueValidator(0),
@@ -934,7 +934,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
     #     null=True, blank=True,
     #     help_text=("Upper limit on the total capacity of technologies that can participate in net metering agreement.")
     # )
-    # wholesale_rate_above_site_load_us_dollars_per_kwh = ArrayField(
+    # wholesale_rate_above_site_load_per_kwh = ArrayField(
     #     models.FloatField(
     #         blank=True,
     #         default=0,
@@ -956,10 +956,10 @@ class ElectricTariffInputs(BaseModel, models.Model):
     #         default=list),
     #     null=True, blank=True,
     #     default=list,
-    #     help_text=("The optional coincident_peak_load_charge_us_dollars_per_kw will apply at the max grid-purchased "
+    #     help_text=("The optional coincident_peak_load_charge_per_kw will apply at the max grid-purchased "
     #               "power during these timesteps. Note timesteps are indexed to a base of 1 not 0.")
     # )
-    # coincident_peak_load_charge_us_dollars_per_kw = ArrayField(
+    # coincident_peak_load_charge_per_kw = ArrayField(
     #     models.FloatField(
     #         blank=True,
     #         validators=[
@@ -1056,102 +1056,102 @@ class ElectricTariffOutputs(BaseModel, models.Model):
         null=True,
         blank=True
     )
-    year_one_energy_cost_us_dollars = models.FloatField(
+    year_one_energy_cost = models.FloatField(
         null=True, blank=True,
         help_text=("Optimal year one utility energy cost")
     )
-    year_one_demand_cost_us_dollars = models.FloatField(
+    year_one_demand_cost = models.FloatField(
         null=True, blank=True,
         help_text=("Optimal year one utility demand cost")
     )
-    year_one_fixed_cost_us_dollars = models.FloatField(
+    year_one_fixed_cost = models.FloatField(
         null=True, blank=True,
         help_text=("Optimal year one utility fixed cost")
     )
-    year_one_min_charge_adder_us_dollars = models.FloatField(
+    year_one_min_charge_adder = models.FloatField(
         null=True, blank=True,
         help_text=("Optimal year one utility minimum charge adder")
     )
-    year_one_energy_cost_bau_us_dollars = models.FloatField(
+    year_one_energy_cost_bau = models.FloatField(
         null=True, blank=True,
         help_text=("Business as usual year one utility energy cost")
     )
-    year_one_demand_cost_bau_us_dollars = models.FloatField(
+    year_one_demand_cost_bau = models.FloatField(
         null=True, blank=True,
         help_text=("Business as usual year one utility demand cost")
     )
-    year_one_fixed_cost_bau_us_dollars = models.FloatField(
+    year_one_fixed_cost_bau = models.FloatField(
         null=True, blank=True,
         help_text=("Business as usual year one utility fixed cost")
     )
-    year_one_min_charge_adder_bau_us_dollars = models.FloatField(
+    year_one_min_charge_adder_bau = models.FloatField(
         null=True, blank=True,
         help_text=("Business as usual year one utility minimum charge adder")
     )
-    total_energy_cost_us_dollars = models.FloatField(
+    total_energy_cost = models.FloatField(
         null=True, blank=True,
         help_text=("Optimal total utility energy cost over the analysis period, after-tax")
     )
-    total_demand_cost_us_dollars = models.FloatField(
+    total_demand_cost = models.FloatField(
         null=True, blank=True,
         help_text=("Optimal total lifecycle utility demand cost over the analysis period, after-tax")
     )
-    total_fixed_cost_us_dollars = models.FloatField(
+    total_fixed_cost = models.FloatField(
         null=True, blank=True,
         help_text=("Optimal total utility fixed cost over the analysis period, after-tax")
     )
-    total_min_charge_adder_us_dollars = models.FloatField(
+    total_min_charge_adder = models.FloatField(
         null=True, blank=True,
         help_text=("Optimal total utility minimum charge adder over the analysis period, after-tax")
     )
-    total_energy_cost_bau_us_dollars = models.FloatField(
+    total_energy_cost_bau = models.FloatField(
         null=True, blank=True,
         help_text=("Business as usual total utility energy cost over the analysis period, after-tax")
     )
-    total_demand_cost_bau_us_dollars = models.FloatField(
+    total_demand_cost_bau = models.FloatField(
         null=True, blank=True,
         help_text=("Business as usual total lifecycle utility demand cost over the analysis period, after-tax")
     )
-    total_fixed_cost_bau_us_dollars = models.FloatField(
+    total_fixed_cost_bau = models.FloatField(
         null=True, blank=True,
         help_text=("Business as usual total utility fixed cost over the analysis period, after-tax")
     )
-    total_min_charge_adder_bau_us_dollars = models.FloatField(
+    total_min_charge_adder_bau = models.FloatField(
         null=True, blank=True,
         help_text=("Business as usual total utility minimum charge adder over the analysis period, after-tax")
     )
-    total_export_benefit_us_dollars = models.FloatField(
+    total_export_benefit = models.FloatField(
         null=True, blank=True,
         help_text=("Optimal total value of exported energy over the analysis period, after-tax")
     )
-    total_export_benefit_bau_us_dollars = models.FloatField(
+    total_export_benefit_bau = models.FloatField(
         null=True, blank=True,
         help_text=("Business as usual total value of exported energy over the analysis period, after-tax")
     )
-    year_one_bill_us_dollars = models.FloatField(
+    year_one_bill = models.FloatField(
         null=True, blank=True,
         help_text=("Optimal year one total utility bill")
     )
-    year_one_bill_bau_us_dollars = models.FloatField(
+    year_one_bill_bau = models.FloatField(
         null=True, blank=True,
         help_text=("Business as usual year one total utility bill")
     )
-    year_one_export_benefit_us_dollars = models.FloatField(
+    year_one_export_benefit = models.FloatField(
         null=True, blank=True,
         help_text=("Optimal year one value of exported energy")
     )
-    year_one_export_benefit_bau_us_dollars = models.FloatField(
+    year_one_export_benefit_bau = models.FloatField(
         null=True, blank=True,
         help_text=("Business as usual year one value of exported energy")
     )
-    year_one_energy_cost_series_us_dollars_per_kwh = ArrayField(
+    year_one_energy_cost_series_per_kwh = ArrayField(
         models.FloatField(
             blank=True
         ), 
         default=list, blank=True,
         help_text=("Optimal year one hourly energy costs")
     )
-    year_one_demand_cost_series_us_dollars_per_kw = ArrayField(
+    year_one_demand_cost_series_per_kw = ArrayField(
         models.FloatField(
             blank=True
         ), 
@@ -1199,27 +1199,27 @@ class ElectricTariffOutputs(BaseModel, models.Model):
                     "Calculated from EPA AVERT region hourly grid emissions factor series for the continental US."
                     "In AK and HI, the best available data are EPA eGRID annual averages.")
     )
-    year_one_coincident_peak_cost_us_dollars = models.FloatField(
+    year_one_coincident_peak_cost = models.FloatField(
         null=True, blank=True,
         help_text=("Optimal year one coincident peak charges")
     )
-    year_one_coincident_peak_cost_bau_us_dollars = models.FloatField(
+    year_one_coincident_peak_cost_bau = models.FloatField(
         null=True, blank=True,
         help_text=("Business as usual year one coincident peak charges")
     )
-    total_coincident_peak_cost_us_dollars = models.FloatField(
+    total_coincident_peak_cost = models.FloatField(
         null=True, blank=True,
         help_text=("Optimal total coincident peak charges over the analysis period, after-tax")
     )
-    total_coincident_peak_cost_bau_us_dollars = models.FloatField(
+    total_coincident_peak_cost_bau = models.FloatField(
         null=True, blank=True,
         help_text=("Business as usual total coincident peak charges over the analysis period, after-tax")
     )
-    year_one_chp_standby_cost_us_dollars = models.FloatField(
+    year_one_chp_standby_cost = models.FloatField(
         null=True, blank=True,
         help_text=("Optimal year one standby charge cost incurred by CHP")
     )
-    total_chp_standby_cost_us_dollars = models.FloatField(
+    total_chp_standby_cost = models.FloatField(
         null=True, blank=True,
         help_text=("Optimal total standby charge cost incurred by CHP over the analysis period, after-tax")
     )
@@ -1571,7 +1571,7 @@ class PVInputs(BaseModel, models.Model):
     #     default=True,
     #     blank=True,
     #     help_text=("True/False for if technology can export energy beyond the annual site load (and be compensated for "
-    #                "that energy at the wholesale_rate_above_site_load_us_dollars_per_kwh).")
+    #                "that energy at the wholesale_rate_above_site_load_per_kwh).")
     # )
     # can_curtail = models.BooleanField(
     #     default=True,
@@ -1589,7 +1589,7 @@ class PVOutputs(BaseModel, models.Model):
     )
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)
-    total_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    total_om_cost = models.FloatField(null=True, blank=True)
 #     station_latitude = models.FloatField(null=True, blank=True)
 #     station_longitude = models.FloatField(null=True, blank=True)
 #     station_distance_km = models.FloatField(null=True, blank=True)
@@ -1612,13 +1612,13 @@ class PVOutputs(BaseModel, models.Model):
         models.FloatField(null=True, blank=True),
         blank=True, default=list
     )
-#     existing_pv_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+#     existing_pv_om_cost = models.FloatField(null=True, blank=True)
     year_one_curtailed_production_series_kw = ArrayField(
         models.FloatField(null=True, blank=True),
         blank=True, default=list
     )
-#     existing_pv_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-#     lcoe_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
+#     existing_pv_om_cost = models.FloatField(null=True, blank=True)
+#     lcoe_per_kwh = models.FloatField(null=True, blank=True)
 #
 #
 # class StorageInputs(BaseModel, models.Model):
@@ -1640,18 +1640,18 @@ class PVOutputs(BaseModel, models.Model):
 #     soc_min_pct = models.FloatField(null=True, blank=True)
 #     soc_init_pct = models.FloatField(null=True, blank=True)
 #     canGridCharge = models.BooleanField(null=True, blank=True)
-#     installed_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True)
-#     installed_cost_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
-#     replace_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True)
-#     replace_cost_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
+#     installed_cost_per_kw = models.FloatField(null=True, blank=True)
+#     installed_cost_per_kwh = models.FloatField(null=True, blank=True)
+#     replace_cost_per_kw = models.FloatField(null=True, blank=True)
+#     replace_cost_per_kwh = models.FloatField(null=True, blank=True)
 #     inverter_replacement_year = models.IntegerField(null=True, blank=True)
 #     battery_replacement_year = models.IntegerField(null=True, blank=True)
 #     macrs_option_years = models.IntegerField(null=True, blank=True)
 #     macrs_bonus_pct = models.FloatField(null=True, blank=True)
 #     macrs_itc_reduction = models.FloatField(null=True, blank=True)
 #     total_itc_pct = models.FloatField(null=True, blank=True)
-#     total_rebate_us_dollars_per_kw = models.IntegerField(null=True, blank=True)
-#     total_rebate_us_dollars_per_kwh = models.IntegerField(null=True, blank=True)
+#     total_rebate_per_kw = models.IntegerField(null=True, blank=True)
+#     total_rebate_per_kwh = models.IntegerField(null=True, blank=True)
 
 # class StorageOutputs(BaseModel, models.Model):
 
@@ -1684,10 +1684,10 @@ class PVOutputs(BaseModel, models.Model):
 #     existing_kw = models.FloatField(null=True, blank=True)
 #     min_kw = models.FloatField(null=True, blank=True)
 #     max_kw = models.FloatField(null=True, blank=True)
-#     installed_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True,)
-#     om_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True)
-#     om_cost_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
-#     diesel_fuel_cost_us_dollars_per_gallon = models.FloatField(null=True, blank=True)
+#     installed_cost_per_kw = models.FloatField(null=True, blank=True,)
+#     om_cost_per_kw = models.FloatField(null=True, blank=True)
+#     om_cost_per_kwh = models.FloatField(null=True, blank=True)
+#     diesel_fuel_cost_per_gallon = models.FloatField(null=True, blank=True)
 #     fuel_slope_gal_per_kwh = models.FloatField(null=True, blank=True)
 #     fuel_intercept_gal_per_hr = models.FloatField(null=True, blank=True)
 #     fuel_avail_gal = models.FloatField(null=True, blank=True)
@@ -1699,16 +1699,16 @@ class PVOutputs(BaseModel, models.Model):
 #     macrs_itc_reduction = models.FloatField(null=True, blank=True)
 #     federal_itc_pct = models.FloatField(null=True, blank=True)
 #     state_ibi_pct = models.FloatField(null=True, blank=True)
-#     state_ibi_max_us_dollars = models.FloatField(null=True, blank=True)
+#     state_ibi_max = models.FloatField(null=True, blank=True)
 #     utility_ibi_pct = models.FloatField(null=True, blank=True)
-#     utility_ibi_max_us_dollars = models.FloatField(null=True, blank=True)
-#     federal_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
-#     state_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
-#     state_rebate_max_us_dollars = models.FloatField(null=True, blank=True)
-#     utility_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
-#     utility_rebate_max_us_dollars = models.FloatField(null=True, blank=True)
-#     pbi_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
-#     pbi_max_us_dollars = models.FloatField(null=True, blank=True)
+#     utility_ibi_max = models.FloatField(null=True, blank=True)
+#     federal_rebate_per_kw = models.FloatField(null=True, blank=True)
+#     state_rebate_per_kw = models.FloatField(null=True, blank=True)
+#     state_rebate_max = models.FloatField(null=True, blank=True)
+#     utility_rebate_per_kw = models.FloatField(null=True, blank=True)
+#     utility_rebate_max = models.FloatField(null=True, blank=True)
+#     pbi_per_kwh = models.FloatField(null=True, blank=True)
+#     pbi_max = models.FloatField(null=True, blank=True)
 #     pbi_years = models.FloatField(null=True, blank=True)
 #     pbi_system_max_kw = models.FloatField(null=True, blank=True)
 #     emissions_factor_lb_CO2_per_gal = models.FloatField(null=True, blank=True)
@@ -1739,17 +1739,17 @@ class PVOutputs(BaseModel, models.Model):
 #             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
 #     year_one_to_grid_series_kw = ArrayField(
 #             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
-#     year_one_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-#     year_one_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
-#     year_one_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-#     total_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-#     total_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
-#     total_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-#     existing_gen_year_one_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-#     existing_gen_year_one_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
-#     existing_gen_total_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-#     existing_gen_total_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
-#     existing_gen_total_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+#     year_one_variable_om_cost = models.FloatField(null=True, blank=True)
+#     year_one_fuel_cost = models.FloatField(null=True, blank=True)
+#     year_one_fixed_om_cost = models.FloatField(null=True, blank=True)
+#     total_variable_om_cost = models.FloatField(null=True, blank=True)
+#     total_fuel_cost = models.FloatField(null=True, blank=True)
+#     total_fixed_om_cost = models.FloatField(null=True, blank=True)
+#     existing_gen_year_one_variable_om_cost = models.FloatField(null=True, blank=True)
+#     existing_gen_year_one_fuel_cost = models.FloatField(null=True, blank=True)
+#     existing_gen_total_variable_om_cost = models.FloatField(null=True, blank=True)
+#     existing_gen_total_fuel_cost = models.FloatField(null=True, blank=True)
+#     existing_gen_total_fixed_om_cost = models.FloatField(null=True, blank=True)
 #     year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
 #     year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
 
