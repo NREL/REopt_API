@@ -916,24 +916,6 @@ class ElectricTariffInputs(BaseModel, models.Model):
     #               "constant fraction that will be applied across all timesteps, or an annual timeseries array at an "
     #               "hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.")
     # )
-    # interconnection_limit_kw = models.FloatField(
-    #     validators=[
-    #         MinValueValidator(0),
-    #         MaxValueValidator(1.0e9)
-    #     ],
-    #     default=1.0e8,
-    #     null=True, blank=True,
-    #     help_text="Limit on system capacity size that can be interconnected to the grid"
-    # )
-    # net_metering_limit_kw = models.FloatField(
-    #     default=0,
-    #     validators=[
-    #         MinValueValidator(0),
-    #         MaxValueValidator(100000000)
-    #     ],
-    #     null=True, blank=True,
-    #     help_text=("Upper limit on the total capacity of technologies that can participate in net metering agreement.")
-    # )
     # wholesale_rate_above_site_load_per_kwh = ArrayField(
     #     models.FloatField(
     #         blank=True,
@@ -1000,7 +982,7 @@ class ElectricUtilityInputs(BaseModel, models.Model):
     scenario = models.OneToOneField(
         Scenario,
         on_delete=models.CASCADE,
-        primary_key=True,
+        related_name="ElectricUtilityInputs",
     )
 
     outage_start_time_step = models.IntegerField(
@@ -1020,6 +1002,24 @@ class ElectricUtilityInputs(BaseModel, models.Model):
             MaxValueValidator(35040)
         ],
         help_text="Time step that grid outage ends. Must be greater than outage_start."
+    )
+    interconnection_limit_kw = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        default=1.0e9,
+        blank=True,
+        help_text="Limit on total system capacity that can be interconnected to the grid"
+    )
+    net_metering_limit_kw = models.FloatField(
+        default=0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        null=True, blank=True,
+        help_text="Upper limit on the total capacity of technologies that can participate in net metering agreement."
     )
 
     def clean(self):
