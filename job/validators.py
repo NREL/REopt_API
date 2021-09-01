@@ -160,6 +160,12 @@ class InputValidator(object):
         """
 
         """
+        PV tilt set to latitude if not provided
+        """
+        if self.models["PV"].__getattribute__("tilt") == 0.537:
+            self.models["PV"].__setattr__("tilt", self.models["Site"].__getattribute__("latitude"))
+
+        """
         Time series values are up or down sampled to align with Settings.time_steps_per_hour
         """
         for key, time_series in zip(
