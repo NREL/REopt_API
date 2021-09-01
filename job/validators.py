@@ -30,7 +30,7 @@
 import logging
 import pandas as pd
 from job.models import Scenario, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
-    FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs
+    FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, StorageInputs
 from django.core.exceptions import ValidationError
 log = logging.getLogger(__name__)
 
@@ -85,7 +85,8 @@ class InputValidator(object):
             ElectricTariffInputs,
             FinancialInputs,
             ElectricUtilityInputs,
-            PVInputs  # TODO handle multiple PV's
+            PVInputs,  # TODO handle multiple PV's
+            StorageInputs
         )
         
         filtered_user_post = dict()

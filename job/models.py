@@ -1538,7 +1538,7 @@ class PVInputs(BaseModel, models.Model):
             MaxValueValidator(90)
         ],
         blank=True,
-        help_text=("PV system tilt")
+        help_text="PV system tilt"
     )
     location = models.TextField(
         default=PV_LOCATION_CHOICES.BOTH,
@@ -1619,59 +1619,229 @@ class PVOutputs(BaseModel, models.Model):
     )
 #     existing_pv_om_cost = models.FloatField(null=True, blank=True)
 #     lcoe_per_kwh = models.FloatField(null=True, blank=True)
-#
-#
-# class StorageInputs(BaseModel, models.Model):
 
-#     scenario = models.OneToOneField(
-#         Scenario,
-#         on_delete=models.CASCADE,
-#         primary_key=True,
-#     )
-# 
-#     # Inputs
-#     min_kw = models.FloatField(null=True, blank=True)
-#     max_kw = models.FloatField(null=True, blank=True)
-#     min_kwh = models.FloatField(null=True, blank=True)
-#     max_kwh = models.FloatField(null=True, blank=True)
-#     internal_efficiency_pct = models.FloatField(null=True, blank=True)
-#     inverter_efficiency_pct = models.FloatField(null=True, blank=True)
-#     rectifier_efficiency_pct = models.FloatField(null=True, blank=True)
-#     soc_min_pct = models.FloatField(null=True, blank=True)
-#     soc_init_pct = models.FloatField(null=True, blank=True)
-#     canGridCharge = models.BooleanField(null=True, blank=True)
-#     installed_cost_per_kw = models.FloatField(null=True, blank=True)
-#     installed_cost_per_kwh = models.FloatField(null=True, blank=True)
-#     replace_cost_per_kw = models.FloatField(null=True, blank=True)
-#     replace_cost_per_kwh = models.FloatField(null=True, blank=True)
-#     inverter_replacement_year = models.IntegerField(null=True, blank=True)
-#     battery_replacement_year = models.IntegerField(null=True, blank=True)
-#     macrs_option_years = models.IntegerField(null=True, blank=True)
-#     macrs_bonus_pct = models.FloatField(null=True, blank=True)
-#     macrs_itc_reduction = models.FloatField(null=True, blank=True)
-#     total_itc_pct = models.FloatField(null=True, blank=True)
-#     total_rebate_per_kw = models.IntegerField(null=True, blank=True)
-#     total_rebate_per_kwh = models.IntegerField(null=True, blank=True)
 
-# class StorageOutputs(BaseModel, models.Model):
+class StorageInputs(BaseModel, models.Model):
+    name = "Storage"
 
-#     scenario = models.OneToOneField(
-#         Scenario,
-#         on_delete=models.CASCADE,
-#         primary_key=True,
-#     )
+    scenario = models.OneToOneField(
+        Scenario,
+        on_delete=models.CASCADE,
+        related_name="StorageInputs",
+    )
 
-#     # Outputs
-#     size_kw = models.FloatField(null=True, blank=True)
-#     size_kwh = models.FloatField(null=True, blank=True)
-#     year_one_to_load_series_kw = ArrayField(
-#             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
-#     year_one_to_grid_series_kw = ArrayField(
-#             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
-#     year_one_soc_series_pct = ArrayField(
-#             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
-#
-#
+    min_kw = models.FloatField(
+        default=0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Minimum storage inverter capacity constraint for optimization."
+    )
+    max_kw = models.FloatField(
+        default=1.0e9,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Maximum storage inverter capacity constraint for optimization."
+    )
+    min_kwh = models.FloatField(
+        default=0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Minimum energy storage capacity constraint for optimization."
+    )
+    max_kwh = models.FloatField(
+        default=1.0e6,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Maximum energy storage capacity constraint for optimization."
+    )
+    internal_efficiency_pct = models.FloatField(
+        default=0.975,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        help_text="Battery inherent efficiency independent of inverter and rectifier"
+    )
+    inverter_efficiency_pct = models.FloatField(
+        default=0.96,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        help_text="Battery inverter efficiency"
+    )
+    rectifier_efficiency_pct = models.FloatField(
+        default=0.96,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        help_text="Battery rectifier efficiency"
+    )
+    soc_min_pct = models.FloatField(
+        default=0.2,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        help_text="Minimum allowable battery state of charge as fraction of energy capacity."
+    )
+    soc_init_pct = models.FloatField(
+        default=0.5,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        help_text="Battery state of charge at first hour of optimization as fraction of energy capacity."
+    )
+    can_grid_charge = models.BooleanField(
+        default=True,
+        blank=True,
+        help_text="Flag to set whether the battery can be charged from the grid, or just onsite generation."
+    )
+    installed_cost_per_kw = models.FloatField(
+        default=840.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e4)
+        ],
+        blank=True,
+        help_text="Total upfront battery power capacity costs (e.g. inverter and balance of power systems)"
+    )
+    installed_cost_per_kwh = models.FloatField(
+        default=420.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e4)
+        ],
+        blank=True,
+        help_text="Total upfront battery costs"
+    )
+    replace_cost_per_kw = models.FloatField(
+        default=410.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e4)
+        ],
+        blank=True,
+        help_text="Battery power capacity replacement cost at time of replacement year"
+    )
+    replace_cost_per_kwh = models.FloatField(
+        default=200.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e4)
+        ],
+        blank=True,
+        help_text="Battery energy capacity replacement cost at time of replacement year"
+    )
+    inverter_replacement_year = models.IntegerField(
+        default=10,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_YEARS)
+        ],
+        blank=True,
+        help_text="Number of years from start of analysis period to replace inverter"
+    )
+    battery_replacement_year = models.IntegerField(
+        default=10,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_YEARS)
+        ],
+        blank=True,
+        help_text="Number of years from start of analysis period to replace battery"
+    )
+    macrs_option_years = models.IntegerField(
+        default=MACRS_YEARS_CHOICES.SEVEN,
+        choices=MACRS_YEARS_CHOICES.choices,
+        blank=True,
+        help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
+    )
+    macrs_bonus_pct = models.FloatField(
+        default=1.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
+    )
+    macrs_itc_reduction = models.FloatField(
+        default=0.5,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text="Percent of the ITC value by which depreciable basis is reduced"
+    )
+    total_itc_pct = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text="Total investment tax credit in percent applied toward capital costs"
+    )
+    total_rebate_per_kw = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Rebate based on installed power capacity"
+    )
+    total_rebate_per_kwh = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Rebate based on installed energy capacity"
+    )
+
+
+class StorageOutputs(BaseModel, models.Model):
+
+    scenario = models.OneToOneField(
+        Scenario,
+        on_delete=models.CASCADE,
+        related_name="StorageOutputs",
+    )
+    size_kw = models.FloatField(null=True, blank=True)
+    size_kwh = models.FloatField(null=True, blank=True)
+    year_one_soc_series_pct = ArrayField(
+        models.FloatField(null=True, blank=True),
+        blank=True, default=list
+    )
+    # year_one_to_load_series_kw = ArrayField(
+    #         models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
+    # year_one_to_grid_series_kw = ArrayField(
+    #         models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
+
+
 # class GeneratorInputs(BaseModel, models.Model):
 
 #     scenario = models.OneToOneField(
