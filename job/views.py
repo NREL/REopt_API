@@ -65,6 +65,7 @@ def results(request, run_uuid):
             'FinancialInputs', 'FinancialOutputs',
             'SiteInputs',
             'ElectricLoadInputs',
+            'ElectricTariffInputs',
             'PVInputs', 'PVOutputs',
             'StorageInputs', 'StorageOutputs'
         ).get(run_uuid=run_uuid)
@@ -93,6 +94,7 @@ def results(request, run_uuid):
     r["inputs"]["PV"] = s.PVInputs.dict
     r["inputs"]["Storage"] = s.StorageInputs.dict
     r["inputs"]["ElectricLoad"] = s.ElectricLoadInputs.dict
+    r["inputs"]["ElectricTariff"] = s.ElectricTariffInputs.dict
 
     for d in r["inputs"].values():
         d.pop("scenario_id", None)
