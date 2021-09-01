@@ -64,7 +64,8 @@ def results(request, run_uuid):
         s = Scenario.objects.select_related(
             'FinancialInputs', 'FinancialOutputs',
             'SiteInputs',
-            'PVInputs', 'PVOutputs'
+            'PVInputs', 'PVOutputs',
+            'StorageInputs', 'StorageOutputs'
         ).get(run_uuid=run_uuid)
         # TODO: how do we get the Message's models?
         # TODO: add to select_related args above the names of all related models that should be selected in this single database query
@@ -89,6 +90,7 @@ def results(request, run_uuid):
     r["inputs"]["Financial"] = s.FinancialInputs.dict
     r["inputs"]["Site"] = s.SiteInputs.dict
     r["inputs"]["PV"] = s.PVInputs.dict
+    r["inputs"]["Storage"] = s.StorageInputs.dict
 
     for d in r["inputs"].values():
         d.pop("scenario_id", None)
@@ -97,6 +99,7 @@ def results(request, run_uuid):
         r["outputs"] = dict()
         r["outputs"]["Financial"] = s.FinancialOutputs.dict
         r["outputs"]["PV"] = s.PVOutputs.dict
+        r["outputs"]["Storage"] = s.StorageOutputs.dict
 
         for d in r["outputs"].values():
             d.pop("scenario_id", None)
