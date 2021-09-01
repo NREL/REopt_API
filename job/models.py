@@ -226,8 +226,8 @@ class Settings(BaseModel, models.Model):
     optimality_tolerance = models.FloatField(
         default=0.001,
         validators=[
-            MinValueValidator(1.0e-5),
-            MaxValueValidator(10)
+            MinValueValidator(5.0e-6),
+            MaxValueValidator(0.05)
         ],
         help_text=("The threshold for the difference between the solution's objective value and the best possible "
                    "value at which the solver terminates")
@@ -1228,6 +1228,7 @@ class ElectricTariffOutputs(BaseModel, models.Model):
 class PVInputs(BaseModel, models.Model):
     # TODO need to have class level attribute `name` for InputValidator, but already have `PV.name` field and `PV.name` in julia pkg
     # TODO: how to use ForeignKey for scenario and still get results in view.py?
+    name = "PV"
     scenario = models.OneToOneField(
         Scenario,
         on_delete=models.CASCADE,
@@ -1255,11 +1256,11 @@ class PVInputs(BaseModel, models.Model):
     #     null=True, blank=True,
     #     help_text="Index out of all PV system models"
     # )
-    name = models.TextField(
-        blank=True,
-        default="PV",
-        help_text="PV description for distinguishing between multiple PV models"
-    )
+    # name = models.TextField(
+    #     blank=True,
+    #     default="PV",
+    #     help_text="PV description for distinguishing between multiple PV models"
+    # )
     existing_kw = models.FloatField(
         default=0,
         validators=[
