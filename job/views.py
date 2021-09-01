@@ -64,6 +64,7 @@ def results(request, run_uuid):
         s = Scenario.objects.select_related(
             'FinancialInputs', 'FinancialOutputs',
             'SiteInputs',
+            'ElectricLoadInputs',
             'PVInputs', 'PVOutputs',
             'StorageInputs', 'StorageOutputs'
         ).get(run_uuid=run_uuid)
@@ -91,6 +92,7 @@ def results(request, run_uuid):
     r["inputs"]["Site"] = s.SiteInputs.dict
     r["inputs"]["PV"] = s.PVInputs.dict
     r["inputs"]["Storage"] = s.StorageInputs.dict
+    r["inputs"]["ElectricLoad"] = s.ElectricLoadInputs.dict
 
     for d in r["inputs"].values():
         d.pop("scenario_id", None)

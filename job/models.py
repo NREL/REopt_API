@@ -600,7 +600,7 @@ class ElectricLoadInputs(BaseModel, models.Model):
     scenario = models.OneToOneField(
         Scenario,
         on_delete=models.CASCADE,
-        primary_key=True,
+        related_name="ElectricLoadInputs",
     )
 
     possible_sets = [
