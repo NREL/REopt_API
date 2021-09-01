@@ -27,7 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-from job.models import FinancialOutputs, Scenario, PVOutputs, StorageOutputs
+from job.models import FinancialOutputs, Scenario, PVOutputs, StorageOutputs, ElectricTariffOutputs
 
 
 def process_results(results: dict, run_uuid: str) -> None:
@@ -39,6 +39,7 @@ def process_results(results: dict, run_uuid: str) -> None:
     s.status = results.get("status")
     s.save(update_fields=["status"])
     FinancialOutputs.create(scenario=s, **results["Financial"]).save()
+    ElectricTariffOutputs.create(scenario=s, **results["ElectricTariff"]).save()
     if "PV" in results.keys():
         PVOutputs.create(scenario=s, **results["PV"]).save()
     if "Storage" in results.keys():
