@@ -32,7 +32,6 @@ from django.db import models
 from django.contrib.postgres.fields import *
 from django.forms.models import model_to_dict
 from picklefield.fields import PickledObjectField
-from reo.nested_inputs import nested_input_definitions
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 import copy
@@ -1232,7 +1231,8 @@ class PVInputs(BaseModel, models.Model):
     scenario = models.OneToOneField(
         Scenario,
         on_delete=models.CASCADE,
-        related_name="PVInputs"
+        related_name="PVInputs",
+        primary_key=True
     )
     
     class ARRAY_TYPE_CHOICES(models.IntegerChoices):
@@ -1506,10 +1506,10 @@ class PVInputs(BaseModel, models.Model):
         help_text=("PV ground cover ratio (photovoltaic array area : total ground area).")
     )
     dc_ac_ratio = models.FloatField(
-        default=0.023,
+        default=1.2,
         validators=[
-            MinValueValidator(-1),
-            MaxValueValidator(1)
+            MinValueValidator(0),
+            MaxValueValidator(2)
         ],
         blank=True,
         help_text="PV DC-AC ratio"
