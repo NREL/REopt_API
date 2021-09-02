@@ -88,6 +88,9 @@ class InputValidator(object):
             PVInputs,  # TODO handle multiple PV's
             StorageInputs
         )
+        required_object_names = [
+            "Site", "ElectricLoad", "ElectricTariff"
+        ]
         
         filtered_user_post = dict()
         filtered_user_post[Scenario.name] = scrub_fields(Scenario, raw_inputs[Scenario.name])
@@ -96,15 +99,14 @@ class InputValidator(object):
         scenario.save()  # must save the Scenario first to use it as a OneToOneField in other models
 
         for obj in self.objects:
-            if obj == Scenario: continue
+            if obj == Scenario: continue  # Scenario not used in Julia
             if obj.name in raw_inputs.keys():
 
                 filtered_user_post[obj.name] = scrub_fields(obj, raw_inputs[obj.name])
 
                 self.models[obj.name] = obj.create(scenario=scenario, **filtered_user_post[obj.name])
-            else:
-                # THIS WILL ONLY WORK IF MODEL HAS DEFAULTS FOR ALL REQUIRED FIELDS?
-                self.models[obj.name] = obj.create(scenario=scenario)
+            elif obj.name in required_object_names:
+                self.validation_errors[obj.name] = "Missing required inputs."
 
         self.scrubbed_inputs = filtered_user_post
 
@@ -162,8 +164,9 @@ class InputValidator(object):
         """
         PV tilt set to latitude if not provided
         """
-        if self.models["PV"].__getattribute__("tilt") == 0.537:
-            self.models["PV"].__setattr__("tilt", self.models["Site"].__getattribute__("latitude"))
+        if "PV" in self.models.keys():
+            if self.models["PV"].__getattribute__("tilt") == 0.537:
+                self.models["PV"].__setattr__("tilt", self.models["Site"].__getattribute__("latitude"))
 
         """
         Time series values are up or down sampled to align with Settings.time_steps_per_hour
