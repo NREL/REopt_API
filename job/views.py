@@ -33,7 +33,7 @@ import sys
 import traceback as tb
 from django.http import JsonResponse
 from reo.exceptions import UnexpectedError
-from job.models import Scenario, Message
+from job.models import Scenario, Message, PVInputs, PVOutputs
 
 
 def make_error_resp(msg):
@@ -61,14 +61,12 @@ def results(request, run_uuid):
             return JsonResponse({"Error": str(err.args[0])}, status=400)
 
     try:
+        # get all required inputs/outputs
         s = Scenario.objects.select_related(
             'FinancialInputs', 'FinancialOutputs',
             'SiteInputs',
             'ElectricLoadInputs',
             'ElectricTariffInputs', 'ElectricTariffOutputs',
-            'ElectricUtilityInputs',
-            'PVInputs', 'PVOutputs',
-            'StorageInputs', 'StorageOutputs'
         ).get(run_uuid=run_uuid)
         # TODO: how do we get the Message's models?
         # TODO: add to select_related args above the names of all related models that should be selected in this single database query
@@ -88,15 +86,25 @@ def results(request, run_uuid):
             err.save_to_db()
             resp = make_error_resp(err.message)
             return JsonResponse(resp, status=500)
+
     r = s.dict
     r["inputs"] = dict()
     r["inputs"]["Financial"] = s.FinancialInputs.dict
-    r["inputs"]["Site"] = s.SiteInputs.dict
-    r["inputs"]["PV"] = s.PVInputs.dict
-    r["inputs"]["Storage"] = s.StorageInputs.dict
     r["inputs"]["ElectricLoad"] = s.ElectricLoadInputs.dict
     r["inputs"]["ElectricTariff"] = s.ElectricTariffInputs.dict
-    r["inputs"]["ElectricUtility"] = s.ElectricUtilityInputs.dict
+    r["inputs"]["Site"] = s.SiteInputs.dict
+
+    # We have to try for the following objects because they may or may not be defined
+    try: r["inputs"]["PV"] = s.PVInputs.dict
+    except: pass
+
+    try: r["inputs"]["ElectricUtility"] = s.ElectricUtilityInputs.dict
+    except: pass
+
+    try: r["inputs"]["Storage"] = s.StorageInputs.dict
+    except: pass
+
+    # BAU results match, why not with PV and Storage?
 
     for d in r["inputs"].values():
         d.pop("scenario_id", None)
@@ -104,9 +112,12 @@ def results(request, run_uuid):
     try:
         r["outputs"] = dict()
         r["outputs"]["Financial"] = s.FinancialOutputs.dict
-        r["outputs"]["PV"] = s.PVOutputs.dict
-        r["outputs"]["Storage"] = s.StorageOutputs.dict
         r["outputs"]["ElectricTariff"] = s.ElectricTariffOutputs.dict
+
+        try: r["outputs"]["PV"] = s.PVOutputs.dict
+        except: pass
+        try: r["outputs"]["Storage"] = s.StorageOutputs.dict
+        except: pass
 
         for d in r["outputs"].values():
             d.pop("scenario_id", None)
