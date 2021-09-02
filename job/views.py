@@ -118,6 +118,8 @@ def results(request, run_uuid):
         except: pass
         try: r["outputs"]["Storage"] = s.StorageOutputs.dict
         except: pass
+        try: r["outputs"]["ElectricUtility"] = s.ElectricUtilityOutputs.dict
+        except: pass
 
         for d in r["outputs"].values():
             d.pop("scenario_id", None)
