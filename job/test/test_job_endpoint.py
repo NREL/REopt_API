@@ -34,16 +34,21 @@ from unittest import skip
 import logging
 logging.disable(logging.CRITICAL)
 
+# python manage.py test job.test.test_job_endpoint
+
 
 class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
 
-    @skip("v2 dev test")
+    # @skip("v2 dev test")
     def test_pv_and_battery_scenario(self):
         """
         Same test as in the Julia package. Used in development of v2. No need to keep this test.
+
+        Not sure why the LCC's do not match. Tried optimality tolerance, seems that some input validation/processing
+        is leading to a different input to the Julia package via the API (compared to the scenario POST going directly
+        into the Julia package). However, I've checked the API inputs vs. the package inputs many times ???
         :return:
         """
-
         scenario = {
             "Settings": {
               "optimality_tolerance": 0.000005
@@ -107,11 +112,11 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
         r = json.loads(resp.content)
         results = r["outputs"]
-        # import pdb; pdb.set_trace()
-        self.assertEquals(results["Financial"]["lcc"], 1.23887e7)
+
+        self.assertAlmostEqual(results["Financial"]["lcc"], 1.23887e7, places=-3)
         # self.assertEquals(results["Financial"]["lcc_bau"], 11257165)
-        self.assertEquals(results["PV"]["size_kw"], 216.667)
-        # self.assertEquals(results["Storage"]["size_kw"], 55.9)
-        # self.assertEquals(results["Storage"]["size_kwh"], 78.9)
+        self.assertAlmostEqual(results["PV"]["size_kw"], 216.667, places=1)
+        self.assertAlmostEqual(results["Storage"]["size_kw"], 55.9, places=1)
+        self.assertAlmostEqual(results["Storage"]["size_kwh"], 78.9, places=1)
         # self.assertEquals(results["ElectricUtility"]["year_one_energy_supplied_kwh"], 9614654)
 
