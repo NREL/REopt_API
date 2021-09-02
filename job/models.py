@@ -872,6 +872,21 @@ class ElectricTariffInputs(BaseModel, models.Model):
                   " values. If an array is input then it must have a length of 8760, 17520, or 35040. The inputed array"
                   "values are up/down-sampled using mean values to match the Settings.time_steps_per_hour.")
     )
+    export_rate_beyond_net_metering_limit = ArrayField(
+        models.FloatField(
+            blank=True,
+            default=0,
+            validators=[
+                MinValueValidator(0)
+            ]
+        ),
+        default=list,
+        blank=True,
+        help_text=("Price of electricity sold back to the grid above the site load, regardless of net metering.  Can be "
+                  "a scalar value, which applies for all-time, or an array with time-sensitive values. If an array is "
+                  "input then it must have a length of 8760, 17520, or 35040. The inputed array values are up/down-"
+                  "sampled using mean values to match the Scenario time_steps_per_hour.")
+    )
     # tou_energy_rates_per_kwh = ArrayField(
     #     models.FloatField(blank=True),
     #     default=list,
@@ -914,21 +929,6 @@ class ElectricTariffInputs(BaseModel, models.Model):
     #     help_text=("Carbon Dioxide emissions factor over all hours in one year. Can be provided as either a single "
     #               "constant fraction that will be applied across all timesteps, or an annual timeseries array at an "
     #               "hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.")
-    # )
-    # wholesale_rate_above_site_load_per_kwh = ArrayField(
-    #     models.FloatField(
-    #         blank=True,
-    #         default=0,
-    #         validators=[
-    #             MinValueValidator(0)
-    #         ]
-    #     ),
-    #     default=list,
-    #     null=True, blank=True,
-    #     help_text=("Price of electricity sold back to the grid above the site load, regardless of net metering.  Can be "
-    #               "a scalar value, which applies for all-time, or an array with time-sensitive values. If an array is "
-    #               "input then it must have a length of 8760, 17520, or 35040. The inputed array values are up/down-"
-    #               "sampled using mean values to match the Scenario time_steps_per_hour.")
     # )
     # coincident_peak_load_active_timesteps = ArrayField(
     #     ArrayField(
@@ -1225,8 +1225,8 @@ class ElectricTariffOutputs(BaseModel, models.Model):
 
 
 class PVInputs(BaseModel, models.Model):
-    # TODO need to have class level attribute `name` for InputValidator, but already have `PV.name` field and `PV.name` in julia pkg
-    # TODO: how to use ForeignKey for scenario and still get results in view.py?
+    # TODO need to have class level attribute `name` for InputValidator, but already have `PV.name` field and `PV.name`
+    #  in julia pkg; maybe use something other than Model.name in Validator
     name = "PV"
     scenario = models.OneToOneField(
         Scenario,
@@ -1556,24 +1556,24 @@ class PVInputs(BaseModel, models.Model):
                    "(kWh) output of a 1 kW system in each time step. Must be hourly (8,760 samples), 30 minute "
                    "(17,520 samples), or 15 minute (35,040 samples).")
     )
-    # can_net_meter = models.BooleanField(
-    #     default=True,
-    #     blank=True,
-    #     help_text=("True/False for if technology has option to participate in net metering agreement with utility. "
-    #                "Note that a technology can only participate in either net metering or wholesale rates (not both).")
-    # )
-    # can_wholesale = models.BooleanField(
-    #     default=True,
-    #     blank=True,
-    #     help_text=("True/False for if technology has option to export energy that is compensated at the wholesale_rate. "
-    #                "Note that a technology can only participate in either net metering or wholesale rates (not both).")
-    # )
-    # can_export_beyond_site_load = models.BooleanField(
-    #     default=True,
-    #     blank=True,
-    #     help_text=("True/False for if technology can export energy beyond the annual site load (and be compensated for "
-    #                "that energy at the wholesale_rate_above_site_load_per_kwh).")
-    # )
+    can_net_meter = models.BooleanField(
+        default=True,
+        blank=True,
+        help_text=("True/False for if technology has option to participate in net metering agreement with utility. "
+                   "Note that a technology can only participate in either net metering or wholesale rates (not both).")
+    )
+    can_wholesale = models.BooleanField(
+        default=True,
+        blank=True,
+        help_text=("True/False for if technology has option to export energy that is compensated at the wholesale_rate. "
+                   "Note that a technology can only participate in either net metering or wholesale rates (not both).")
+    )
+    can_export_beyond_nem_limit = models.BooleanField(
+        default=True,
+        blank=True,
+        help_text=("True/False for if technology can export energy beyond the annual site load (and be compensated for "
+                   "that energy at the export_rate_beyond_net_metering_limit).")
+    )
     # can_curtail = models.BooleanField(
     #     default=True,
     #     blank=True,
@@ -1885,7 +1885,7 @@ class StorageOutputs(BaseModel, models.Model):
 #     emissions_factor_lb_CO2_per_gal = models.FloatField(null=True, blank=True)
 #     can_net_meter = models.BooleanField(null=True, blank=True)
 #     can_wholesale = models.BooleanField(null=True, blank=True)
-#     can_export_beyond_site_load = models.BooleanField(null=True, blank=True)
+#     can_export_beyond_nem_limit = models.BooleanField(null=True, blank=True)
 #     can_curtail = models.BooleanField(null=True, blank=True)
 
 # class GeneratorOutputs(BaseModel, models.Model):
