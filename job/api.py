@@ -99,6 +99,7 @@ class Job(ModelResource):
         data = {
             "run_uuid": run_uuid,
             "api_version": 2,
+            "reopt_version": "0.9.0",
             "messages": dict()
         }
 
