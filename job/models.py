@@ -42,6 +42,17 @@ import logging
 
 log = logging.getLogger(__name__)
 
+"""
+Running list of changes from v1 to document:
+- flattened the input/output structure
+- moved any inputs that are not needed for REopt optimization to Scenario
+    - moved Site.address to Scenario
+- moved Site attributes only needed for CHP to CHP
+    - moved Site.elevation_ft to CHP
+    - moved Site.outdoor_air_temp_degF to CHP
+
+"""
+
 # TODO add related_name field to all OneToOne Scenario's
 """
 When editing this file help_text must have the following punctuation:
@@ -193,6 +204,10 @@ class Scenario(BaseModel, models.Model):
     description = models.TextField(blank=True)
     status = models.TextField(blank=True)
     created = models.DateTimeField(auto_now_add=True)
+    address = models.TextField(
+        blank=True,
+        help_text="A user defined address as optional metadata (street address, city, state or zip code)"
+    )
 
 
 class Settings(BaseModel, models.Model):
@@ -276,11 +291,7 @@ class SiteInputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Area of roof in square feet available for PV siting"
     )
-    # TODO make sure that fields not used in Julia pkg are removed before passing to Julia (like Site.address)
-    # address = models.TextField(
-    #     blank=True,
-    #     help_text="A user defined address as optional metadata (street address, city, state or zip code)"
-    # )
+    # TODO move elevation_ft to CHP model
     # elevation_ft = models.FloatField(
     #     default=0,
     #     validators=[
@@ -290,6 +301,7 @@ class SiteInputs(BaseModel, models.Model):
     #     null=True, blank=True,
     #     help_text="Site elevation (above sea sevel), units of feet"
     # )
+    # TODO move outdoor_air_temp_degF to CHP model
     # outdoor_air_temp_degF = ArrayField(
     #     models.FloatField(
     #         null=True, blank=True,
@@ -298,6 +310,9 @@ class SiteInputs(BaseModel, models.Model):
     #     default=list, null=True)
 
 """
+# TODO should we move the emissions_calculator to Julia? 
+# Or is it supplanted by new emissions capabilities (not in develop/master as of 21.09.02)?
+
 class SiteOutputs(BaseModel, models.Model):
     name = "SiteOutputs"
 
@@ -408,32 +423,30 @@ class FinancialInputs(BaseModel, models.Model):
                    "not purcharse the generation technologies, but pays the generation owner for energy from the "
                    "generator(s).")
     )
-    # TODO rename VoLL in Julia pkg?
-    # value_of_lost_load_per_kwh = models.FloatField(
-    #     default=100,
-    #     validators=[
-    #         MinValueValidator(0),
-    #         MaxValueValidator(1e6)
-    #     ],
-    #     null=True, blank=True,
-    #     help_text=("Value placed on unmet site load during grid outages. Units are US dollars per unmet kilowatt-hour. "
-    #                "The value of lost load (VoLL) is used to determine the avoided outage costs by multiplying VoLL "
-    #                "[$/kWh] with the average number of hours that the critical load can be met by the energy system "
-    #                "(determined by simulating outages occuring at every hour of the year), and multiplying by the mean "
-    #                "critical load.")
-    # )
-    # TODO rename microgrid_premium_pct in Julia pkg?
-    # microgrid_upgrade_cost_pct = models.FloatField(
-    #     default=0.3,
-    #     validators=[
-    #         MinValueValidator(0),
-    #         MaxValueValidator(1)
-    #     ],
-    #     null=True, blank=True,
-    #     help_text=("Additional cost, in percent of non-islandable capital costs, to make a distributed energy system "
-    #                "islandable from the grid and able to serve critical loads. Includes all upgrade costs such as "
-    #                "additional laber and critical load panels.")
-    # )
+    value_of_lost_load_per_kwh = models.FloatField(
+        default=100,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1e6)
+        ],
+        blank=True,
+        help_text=("Value placed on unmet site load during grid outages. Units are US dollars per unmet kilowatt-hour. "
+                   "The value of lost load (VoLL) is used to determine the avoided outage costs by multiplying VoLL "
+                   "[$/kWh] with the average number of hours that the critical load can be met by the energy system "
+                   "(determined by simulating outages occuring at every hour of the year), and multiplying by the mean "
+                   "critical load.")
+    )
+    microgrid_upgrade_cost_pct = models.FloatField(
+        default=0.3,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text=("Additional cost, in percent of non-islandable capital costs, to make a distributed energy system "
+                   "islandable from the grid and able to serve critical loads. Includes all upgrade costs such as "
+                   "additional laber and critical load panels.")
+    )
     # boiler_fuel_escalation_pct = models.FloatField(
     #     default=0.034,
     #     validators=[

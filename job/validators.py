@@ -127,6 +127,12 @@ class InputValidator(object):
 
     @property
     def validated_input_dict(self):
+        """
+        Passed to the Julia package, which can handle unused top level keys (such as messages) but will error if
+        keys that do not align with the Scenario struct fields are provided. For example, if Site.address is passed to
+        the Julia package then a method error will be raised in Julia because the Site struct has no address field.
+        :return:
+        """
         d = {"messages": self.messages}
         for model in self.models.values():
             d[model.name] = {k: v for (k, v) in model.dict.items() if v not in [None, []]}
