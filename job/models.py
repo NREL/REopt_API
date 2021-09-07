@@ -50,6 +50,7 @@ Running list of changes from v1 to document:
 - moved Site attributes only needed for CHP to CHP
     - moved Site.elevation_ft to CHP
     - moved Site.outdoor_air_temp_degF to CHP
+- Financial.total_om_costs and Financial.year_one_om_costs -> *_after_tax appended to name for clarity
 
 """
 
@@ -522,13 +523,17 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Net O&M and replacement costs in present value, after-tax."
     )
-    total_om_costs = models.FloatField(
+    total_om_costs_after_tax = models.FloatField(
         null=True, blank=True,
-        help_text="Total operations and maintenance cost over analysis period."
+        help_text="Total operations and maintenance cost over analysis period after tax."
     )
-    year_one_om_costs = models.FloatField(
+    year_one_om_costs_after_tax = models.FloatField(
         null=True, blank=True,
         help_text="Year one operations and maintenance cost after tax."
+    )
+    total_om_costs_before_tax = models.FloatField(
+        null=True, blank=True,
+        help_text="Total operations and maintenance cost over analysis period before tax."
     )
     year_one_om_costs_before_tax = models.FloatField(
         null=True, blank=True,
