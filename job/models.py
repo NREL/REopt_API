@@ -51,6 +51,7 @@ Running list of changes from v1 to document:
     - moved Site.elevation_ft to CHP
     - moved Site.outdoor_air_temp_degF to CHP
 - Financial.total_om_costs and Financial.year_one_om_costs -> *_after_tax appended to name for clarity
+- moved power and energy outputs related to the grid from ElectricTariff to ElectricUtility
 
 """
 
@@ -1060,6 +1061,58 @@ class ElectricUtilityInputs(BaseModel, models.Model):
             raise ValidationError(' & '.join(error_messages))
 
 
+class ElectricUtilityOutputs(BaseModel, models.Model):
+    name = "ElectricUtilityOutputs"
+
+    scenario = models.OneToOneField(
+        Scenario,
+        on_delete=models.CASCADE,
+        related_name="ElectricUtilityOutputs",
+    )
+
+    year_one_to_load_series_kw = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Optimal year one grid to load time series")
+    )
+    year_one_to_load_series_kw_bau = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Business as usual year one grid to load time series")
+    )
+    year_one_to_battery_series_kw = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Optimal year one grid to battery time series")
+    )
+    year_one_energy_supplied_kwh = models.FloatField(
+        null=True, blank=True,
+        help_text=("Year one energy supplied from grid to load")
+    )
+    year_one_energy_supplied_kwh_bau = models.FloatField(
+        null=True, blank=True,
+        help_text=("Year one energy supplied from grid to load")
+    )
+    year_one_emissions_lb_C02 = models.FloatField(
+        null=True, blank=True,
+        help_text=("Optimal year one equivalent pounds of carbon dioxide emitted from utility electricity use. "
+                    "Calculated from EPA AVERT region hourly grid emissions factor series for the continental US."
+                    "In AK and HI, the best available data are EPA eGRID annual averages.")
+    )
+    year_one_emissions_bau_lb_C02 = models.FloatField(
+        null=True, blank=True,
+        help_text=("Business as usual year one equivalent pounds of carbon dioxide emitted from utility electricity use. "
+                    "Calculated from EPA AVERT region hourly grid emissions factor series for the continental US."
+                    "In AK and HI, the best available data are EPA eGRID annual averages.")
+    )
+
+
 class ElectricTariffOutputs(BaseModel, models.Model):
     name = "ElectricTariffOutputs"
 
@@ -1174,47 +1227,6 @@ class ElectricTariffOutputs(BaseModel, models.Model):
         ), 
         default=list, blank=True,
         help_text=("Optimal year one hourly demand costs")
-    )
-    year_one_to_load_series_kw = ArrayField(
-        models.FloatField(
-            blank=True
-        ), 
-        default=list, blank=True,
-        help_text=("Optimal year one grid to load time series")
-    )
-    year_one_to_load_series_bau_kw = ArrayField(
-        models.FloatField(
-            blank=True
-        ), 
-        default=list, blank=True,
-        help_text=("Business as usual year one grid to load time series")
-    )
-    year_one_to_battery_series_kw = ArrayField(
-        models.FloatField(
-            blank=True
-        ), 
-        default=list, blank=True,
-        help_text=("Optimal year one grid to battery time series")
-    )
-    year_one_energy_supplied_kwh = models.FloatField(
-        null=True, blank=True,
-        help_text=("Year one energy supplied from grid to load")
-    )
-    year_one_energy_supplied_kwh_bau = models.FloatField(
-        null=True, blank=True,
-        help_text=("Year one energy supplied from grid to load")
-    )
-    year_one_emissions_lb_C02 = models.FloatField(
-        null=True, blank=True,
-        help_text=("Optimal year one equivalent pounds of carbon dioxide emitted from utility electricity use. "
-                    "Calculated from EPA AVERT region hourly grid emissions factor series for the continental US."
-                    "In AK and HI, the best available data are EPA eGRID annual averages.")
-    )
-    year_one_emissions_bau_lb_C02 = models.FloatField(
-        null=True, blank=True,
-        help_text=("Business as usual year one equivalent pounds of carbon dioxide emitted from utility electricity use. "
-                    "Calculated from EPA AVERT region hourly grid emissions factor series for the continental US."
-                    "In AK and HI, the best available data are EPA eGRID annual averages.")
     )
     year_one_coincident_peak_cost = models.FloatField(
         null=True, blank=True,
