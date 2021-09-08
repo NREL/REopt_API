@@ -1343,7 +1343,7 @@ class PVInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_pct = models.FloatField(
-        default=0,
+        default=1.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -1468,7 +1468,7 @@ class PVInputs(BaseModel, models.Model):
         blank=True,
         help_text="Maximum annual value in present terms of production-based incentives"
     )
-    production_incentive_years = models.FloatField(
+    production_incentive_years = models.IntegerField(
         default=1,
         validators=[
             MinValueValidator(0),
@@ -1659,6 +1659,7 @@ class StorageInputs(BaseModel, models.Model):
         Scenario,
         on_delete=models.CASCADE,
         related_name="StorageInputs",
+        primary_key=True
     )
 
     min_kw = models.FloatField(
@@ -1873,86 +1874,333 @@ class StorageOutputs(BaseModel, models.Model):
     #         models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
 
 
-# class GeneratorInputs(BaseModel, models.Model):
+class GeneratorInputs(BaseModel, models.Model):
+    name = "Generator"
 
-#     scenario = models.OneToOneField(
-#         Scenario,
-#         on_delete=models.CASCADE,
-#         primary_key=True,
-#     )
+    scenario = models.OneToOneField(
+        Scenario,
+        on_delete=models.CASCADE,
+        related_name="GeneratorInputs",
+        primary_key=True
+    )
 
-#     # Inputs
-#     existing_kw = models.FloatField(null=True, blank=True)
-#     min_kw = models.FloatField(null=True, blank=True)
-#     max_kw = models.FloatField(null=True, blank=True)
-#     installed_cost_per_kw = models.FloatField(null=True, blank=True,)
-#     om_cost_per_kw = models.FloatField(null=True, blank=True)
-#     om_cost_per_kwh = models.FloatField(null=True, blank=True)
-#     diesel_fuel_cost_per_gallon = models.FloatField(null=True, blank=True)
-#     fuel_slope_gal_per_kwh = models.FloatField(null=True, blank=True)
-#     fuel_intercept_gal_per_hr = models.FloatField(null=True, blank=True)
-#     fuel_avail_gal = models.FloatField(null=True, blank=True)
-#     min_turn_down_pct = models.FloatField(null=True, blank=True)
-#     generator_only_runs_during_grid_outage = models.BooleanField(null=True, blank=True)
-#     generator_sells_energy_back_to_grid = models.BooleanField(null=True, blank=True)
-#     macrs_option_years = models.IntegerField(null=True, blank=True)
-#     macrs_bonus_pct = models.FloatField(null=True, blank=True)
-#     macrs_itc_reduction = models.FloatField(null=True, blank=True)
-#     federal_itc_pct = models.FloatField(null=True, blank=True)
-#     state_ibi_pct = models.FloatField(null=True, blank=True)
-#     state_ibi_max = models.FloatField(null=True, blank=True)
-#     utility_ibi_pct = models.FloatField(null=True, blank=True)
-#     utility_ibi_max = models.FloatField(null=True, blank=True)
-#     federal_rebate_per_kw = models.FloatField(null=True, blank=True)
-#     state_rebate_per_kw = models.FloatField(null=True, blank=True)
-#     state_rebate_max = models.FloatField(null=True, blank=True)
-#     utility_rebate_per_kw = models.FloatField(null=True, blank=True)
-#     utility_rebate_max = models.FloatField(null=True, blank=True)
-#     pbi_per_kwh = models.FloatField(null=True, blank=True)
-#     pbi_max = models.FloatField(null=True, blank=True)
-#     pbi_years = models.FloatField(null=True, blank=True)
-#     pbi_system_max_kw = models.FloatField(null=True, blank=True)
-#     emissions_factor_lb_CO2_per_gal = models.FloatField(null=True, blank=True)
-#     can_net_meter = models.BooleanField(null=True, blank=True)
-#     can_wholesale = models.BooleanField(null=True, blank=True)
-#     can_export_beyond_nem_limit = models.BooleanField(null=True, blank=True)
-#     can_curtail = models.BooleanField(null=True, blank=True)
+    existing_kw = models.FloatField(
+        default=0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e5)
+        ],
+        blank=True,
+        help_text="Existing diesel generator size"
+    )
+    min_kw = models.FloatField(
+        default=0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Minimum diesel generator size constraint for optimization"
+    )
+    max_kw = models.FloatField(
+        default=1.0e9,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Maximum diesel generator size constraint for optimization. Set to zero to disable PV"
+    )
+    installed_cost_per_kw = models.FloatField(
+        default=500,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e5)
+        ],
+        blank=True,
+        help_text="Installed diesel generator cost in $/kW"
+    )
+    om_cost_per_kw = models.FloatField(
+        default=10.0,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e3)
+        ],
+        blank=True,
+        help_text="Annual diesel generator fixed operations and maintenance costs in $/kW"
+    )
+    om_cost_per_kwh = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e3)
+        ],
+        blank=True,
+        help_text="Diesel generator per unit production (variable) operations and maintenance costs in $/kWh"
+    )
+    fuel_cost_per_gallon = models.FloatField(
+        default=3.0,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e2)
+        ],
+        blank=True,
+        help_text="Diesel cost in $/gallon"
+    )
+    fuel_slope_gal_per_kwh = models.FloatField(
+        default=0.076,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(10.0)
+        ],
+        blank=True,
+        help_text="Generator fuel burn rate in gallons/kWh."
+    )
+    fuel_intercept_gal_per_hr = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(10.0)
+        ],
+        blank=True,
+        help_text="Generator fuel consumption curve y-intercept in gallons per hour."
+    )
+    fuel_avail_gal = models.FloatField(
+        default=660.0,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="On-site generator fuel available in gallons."
+    )
+    min_turn_down_pct = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        help_text="Minimum generator loading in percent of capacity (size_kw)."
+    )
+    only_runs_during_grid_outage = models.BooleanField(
+        default=True,
+        blank=True,
+        help_text="Determines if the generator can run only during grid outage or all the time."
+    )
+    sells_energy_back_to_grid = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text="Determines if generator can participate in NEM and wholesale markets."
+    )
+    macrs_option_years = models.IntegerField(
+        default=MACRS_YEARS_CHOICES.ZERO,
+        choices=MACRS_YEARS_CHOICES.choices,
+        blank=True,
+        help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
+    )
+    macrs_bonus_pct = models.FloatField(
+        default=1.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
+    )
+    macrs_itc_reduction = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text="Percent of the ITC value by which depreciable basis is reduced"
+    )
+    federal_itc_pct = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text="Percentage of capital costs that are credited towards federal taxes"
+    )
+    state_ibi_pct = models.FloatField(
+        default=0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text="Percentage of capital costs offset by state incentives"
+    )
+    state_ibi_max = models.FloatField(
+        default=MAX_INCENTIVE,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_INCENTIVE)
+        ],
+        blank=True,
+        help_text="Maximum dollar value of state percentage-based capital cost incentive"
+    )
+    utility_ibi_pct = models.FloatField(
+        default=0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text="Percentage of capital costs offset by utility incentives"
+    )
+    utility_ibi_max = models.FloatField(
+        default=MAX_INCENTIVE,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_INCENTIVE)
+        ],
+        blank=True,
+        help_text="Maximum dollar value of utility percentage-based capital cost incentive"
+    )
+    federal_rebate_per_kw = models.FloatField(
+        default=0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Federal rebates based on installed capacity"
+    )
+    state_rebate_per_kw = models.FloatField(
+        default=0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="State rebate based on installed capacity"
+    )
+    state_rebate_max = models.FloatField(
+        default=MAX_INCENTIVE,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_INCENTIVE)
+        ],
+        blank=True,
+        help_text="Maximum state rebate"
+    )
+    utility_rebate_per_kw = models.FloatField(
+        default=0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Utility rebate based on installed capacity"
+    )
+    utility_rebate_max = models.FloatField(
+        default=MAX_INCENTIVE,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_INCENTIVE)
+        ],
+        blank=True,
+        help_text="Maximum utility rebate"
+    )
+    production_incentive_per_kwh = models.FloatField(
+        default=0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Production-based incentive value"
+    )
+    production_incentive_max_benefit = models.FloatField(
+        default=1.0e9,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Maximum annual value in present terms of production-based incentives"
+    )
+    production_incentive_years = models.IntegerField(
+        default=0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(100)
+        ],
+        blank=True,
+        help_text="Duration of production-based incentives from installation date"
+    )
+    production_incentive_max_kw = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Maximum system size eligible for production-based incentive"
+    )
+    can_net_meter = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text=("True/False for if technology has option to participate in net metering agreement with utility. "
+                   "Note that a technology can only participate in either net metering or wholesale rates (not both).")
+    )
+    can_wholesale = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text=("True/False for if technology has option to export energy that is compensated at the wholesale_rate. "
+                   "Note that a technology can only participate in either net metering or wholesale rates (not both).")
+    )
+    can_export_beyond_nem_limit = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text=("True/False for if technology can export energy beyond the annual site load (and be compensated for "
+                   "that energy at the export_rate_beyond_net_metering_limit).")
+    )
+    # can_curtail = models.BooleanField(null=True, blank=True)
+    # emissions_factor_lb_CO2_per_gal = models.FloatField(null=True, blank=True)
 
-# class GeneratorOutputs(BaseModel, models.Model):
 
-#     scenario = models.OneToOneField(
-#         Scenario,
-#         on_delete=models.CASCADE,
-#         primary_key=True,
-#     )
-#     # Outputs
-#     fuel_used_gal = models.FloatField(null=True, blank=True)
-#     fuel_used_gal_bau = models.FloatField(null=True, blank=True)
-#     size_kw = models.FloatField(null=True, blank=True)
-#     average_yearly_energy_produced_kwh = models.FloatField(null=True, blank=True)
-#     average_yearly_energy_exported_kwh = models.FloatField(null=True, blank=True)
-#     year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)
-#     year_one_power_production_series_kw = ArrayField(
-#             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
-#     year_one_to_battery_series_kw = ArrayField(
-#             models.FloatField(null=True, blank=True), null=True, blank=True)
-#     year_one_to_load_series_kw = ArrayField(
-#             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
-#     year_one_to_grid_series_kw = ArrayField(
-#             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
-#     year_one_variable_om_cost = models.FloatField(null=True, blank=True)
-#     year_one_fuel_cost = models.FloatField(null=True, blank=True)
-#     year_one_fixed_om_cost = models.FloatField(null=True, blank=True)
-#     total_variable_om_cost = models.FloatField(null=True, blank=True)
-#     total_fuel_cost = models.FloatField(null=True, blank=True)
-#     total_fixed_om_cost = models.FloatField(null=True, blank=True)
-#     existing_gen_year_one_variable_om_cost = models.FloatField(null=True, blank=True)
-#     existing_gen_year_one_fuel_cost = models.FloatField(null=True, blank=True)
-#     existing_gen_total_variable_om_cost = models.FloatField(null=True, blank=True)
-#     existing_gen_total_fuel_cost = models.FloatField(null=True, blank=True)
-#     existing_gen_total_fixed_om_cost = models.FloatField(null=True, blank=True)
-#     year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
-#     year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
+class GeneratorOutputs(BaseModel, models.Model):
+
+    scenario = models.OneToOneField(
+        Scenario,
+        on_delete=models.CASCADE,
+        related_name="GeneratorOutputs",
+        primary_key=True,
+    )
+
+    fuel_used_gal = models.FloatField(null=True, blank=True)
+    fuel_used_gal_bau = models.FloatField(null=True, blank=True)
+    size_kw = models.FloatField(null=True, blank=True)
+    average_yearly_energy_produced_kwh = models.FloatField(null=True, blank=True)
+    average_yearly_energy_exported_kwh = models.FloatField(null=True, blank=True)
+    year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)
+    year_one_power_production_series_kw = ArrayField(
+            models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
+    year_one_to_battery_series_kw = ArrayField(
+            models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_to_load_series_kw = ArrayField(
+            models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
+    year_one_to_grid_series_kw = ArrayField(
+            models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
+    year_one_variable_om_cost = models.FloatField(null=True, blank=True)
+    year_one_fuel_cost = models.FloatField(null=True, blank=True)
+    year_one_fixed_om_cost = models.FloatField(null=True, blank=True)
+    total_variable_om_cost = models.FloatField(null=True, blank=True)
+    total_fuel_cost = models.FloatField(null=True, blank=True)
+    total_fixed_om_cost = models.FloatField(null=True, blank=True)
+    existing_gen_year_one_variable_om_cost = models.FloatField(null=True, blank=True)
+    existing_gen_year_one_fuel_cost = models.FloatField(null=True, blank=True)
+    existing_gen_total_variable_om_cost = models.FloatField(null=True, blank=True)
+    existing_gen_total_fuel_cost = models.FloatField(null=True, blank=True)
+    existing_gen_total_fixed_om_cost = models.FloatField(null=True, blank=True)
+    year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
+    year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
 
 
 class Message(BaseModel, models.Model):
