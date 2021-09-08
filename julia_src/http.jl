@@ -31,23 +31,33 @@ end
 function reopt(req::HTTP.Request)
     d = JSON.parse(String(req.body))
 	settings = d["Settings"]
-	m = direct_model(
-			Xpress.Optimizer(
-				MAXTIME = -pop!(settings, "timeout_seconds"),
-				MIPRELSTOP = pop!(settings, "optimality_tolerance"),
-				OUTPUTLOG = 0
-			)
+	timeout_seconds = -pop!(settings, "timeout_seconds")
+	optimality_tolerance = pop!(settings, "optimality_tolerance")
+	m1 = direct_model(
+		Xpress.Optimizer(
+			MAXTIME = timeout_seconds,
+			MIPRELSTOP = optimality_tolerance,
+			OUTPUTLOG = 0
 		)
+	)
+	m2 = direct_model(
+		Xpress.Optimizer(
+			MAXTIME = timeout_seconds,
+			MIPRELSTOP = optimality_tolerance,
+			OUTPUTLOG = 0
+		)
+	)
     @info "Starting REopt..."
     error_response = Dict()
     results = Dict()
     try
-        results = REoptLite.run_reopt(m, d)
+        results = REoptLite.run_reopt([m1, m2], d)
     catch e
         @error "Something went wrong in the Julia code!" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
     end
-    finalize(backend(m))
+    finalize(backend(m1))
+    finalize(backend(m2))
     GC.gc()
     if isempty(error_response)
         @info "REopt model solved with status $(results["status"])."
