@@ -101,10 +101,10 @@ class GHPGHXModel(models.Model):
         default=62.4, validators=[MinValueValidator(1.0), MaxValueValidator(200.0)],
         help_text="Mass density of the fluid in the GHX (nominally water) [lb/ft^3]")
     ghx_fluid_thermal_conductivity_btu_per_hr_ft_f = models.FloatField(null=True, blank=True, 
-        default=0.36, validators=[MinValueValidator(0.01), MaxValueValidator(5.0)],
+        default=0.34, validators=[MinValueValidator(0.01), MaxValueValidator(5.0)],
         help_text="Thermal conductivity of the fluid in the GHX (nominally water) [Btu/(hr-ft-degF)]")
     ghx_fluid_dynamic_viscosity_lbm_per_ft_hr = models.FloatField(null=True, blank=True, 
-        default=1.58, validators=[MinValueValidator(0.1), MaxValueValidator(10.0)],
+        default=2.75, validators=[MinValueValidator(0.1), MaxValueValidator(10.0)],
         help_text="Dynamic viscosity of the fluid in the GHX (nominally water) [lb/(ft-hr)]")
     ghx_fluid_flow_rate_gpm_per_ton = models.FloatField(null=True, blank=True, 
         default=2.5, validators=[MinValueValidator(0.1), MaxValueValidator(10.0)],
