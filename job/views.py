@@ -105,7 +105,8 @@ def results(request, run_uuid):
     try: r["inputs"]["Storage"] = s.StorageInputs.dict
     except: pass
 
-    # BAU results match, why not with PV and Storage?
+    try: r["inputs"]["Generator"] = s.GeneratorInputs.dict
+    except: pass
 
     for d in r["inputs"].values():
         d.pop("scenario_id", None)
@@ -120,7 +121,7 @@ def results(request, run_uuid):
         except: pass
         try: r["outputs"]["Storage"] = s.StorageOutputs.dict
         except: pass
-        try: r["outputs"]["ElectricUtility"] = s.ElectricUtilityOutputs.dict
+        try: r["outputs"]["Generator"] = s.GeneratorOutputs.dict
         except: pass
 
         for d in r["outputs"].values():
