@@ -67,6 +67,7 @@ def results(request, run_uuid):
             'SiteInputs',
             'ElectricLoadInputs',
             'ElectricTariffInputs', 'ElectricTariffOutputs',
+            'ElectricUtilityOutputs'
         ).get(run_uuid=run_uuid)
         # TODO: how do we get the Message's models?
         # TODO: add to select_related args above the names of all related models that should be selected in this single database query
@@ -113,6 +114,7 @@ def results(request, run_uuid):
         r["outputs"] = dict()
         r["outputs"]["Financial"] = s.FinancialOutputs.dict
         r["outputs"]["ElectricTariff"] = s.ElectricTariffOutputs.dict
+        r["outputs"]["ElectricUtility"] = s.ElectricUtilityOutputs.dict
 
         try: r["outputs"]["PV"] = s.PVOutputs.dict
         except: pass
