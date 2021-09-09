@@ -52,6 +52,7 @@ Running list of changes from v1 to document:
     - moved Site.outdoor_air_temp_degF to CHP
 - Financial.total_om_costs and Financial.year_one_om_costs -> *_after_tax appended to name for clarity
 - moved power and energy outputs related to the grid from ElectricTariff to ElectricUtility
+- `existing_gen_*` Generator outputs now just have `_bau` appended to the name (removed `existing_gen_`)
 
 """
 
@@ -2194,11 +2195,11 @@ class GeneratorOutputs(BaseModel, models.Model):
     total_variable_om_cost = models.FloatField(null=True, blank=True)
     total_fuel_cost = models.FloatField(null=True, blank=True)
     total_fixed_om_cost = models.FloatField(null=True, blank=True)
-    existing_gen_year_one_variable_om_cost = models.FloatField(null=True, blank=True)
-    existing_gen_year_one_fuel_cost = models.FloatField(null=True, blank=True)
-    existing_gen_total_variable_om_cost = models.FloatField(null=True, blank=True)
-    existing_gen_total_fuel_cost = models.FloatField(null=True, blank=True)
-    existing_gen_total_fixed_om_cost = models.FloatField(null=True, blank=True)
+    year_one_variable_om_cost_bau = models.FloatField(null=True, blank=True)
+    year_one_fuel_cost_bau = models.FloatField(null=True, blank=True)
+    total_variable_om_cost_bau = models.FloatField(null=True, blank=True)
+    total_fuel_cost_bau = models.FloatField(null=True, blank=True)
+    total_fixed_om_cost_bau = models.FloatField(null=True, blank=True)
     year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
     year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
 
