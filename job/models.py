@@ -476,7 +476,8 @@ class FinancialOutputs(BaseModel, models.Model):
     scenario = models.OneToOneField(
         Scenario,
         on_delete=models.CASCADE,
-        related_name="FinancialOutputs"
+        related_name="FinancialOutputs",
+        primary_key=True
     )
 
     lcc = models.FloatField(
@@ -1869,10 +1870,10 @@ class StorageOutputs(BaseModel, models.Model):
         models.FloatField(null=True, blank=True),
         blank=True, default=list
     )
-    # year_one_to_load_series_kw = ArrayField(
-    #         models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
-    # year_one_to_grid_series_kw = ArrayField(
-    #         models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
+    year_one_to_load_series_kw = ArrayField(
+        models.FloatField(null=True, blank=True),
+        blank=True, default=list
+    )
 
 
 class GeneratorInputs(BaseModel, models.Model):
