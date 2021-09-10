@@ -28,7 +28,7 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
 from job.models import FinancialOutputs, Scenario, PVOutputs, StorageOutputs, ElectricTariffOutputs,\
-    ElectricUtilityOutputs, GeneratorOutputs
+    ElectricUtilityOutputs, GeneratorOutputs, ElectricLoadOutputs
 
 
 def process_results(results: dict, run_uuid: str) -> None:
@@ -42,6 +42,7 @@ def process_results(results: dict, run_uuid: str) -> None:
     FinancialOutputs.create(scenario=s, **results["Financial"]).save()
     ElectricTariffOutputs.create(scenario=s, **results["ElectricTariff"]).save()
     ElectricUtilityOutputs.create(scenario=s, **results["ElectricUtility"]).save()
+    ElectricLoadOutputs.create(scenario=s, **results["ElectricLoad"]).save()
     if "PV" in results.keys():
         PVOutputs.create(scenario=s, **results["PV"]).save()
     if "Storage" in results.keys():

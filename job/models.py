@@ -54,6 +54,7 @@ Running list of changes from v1 to document:
 - moved power and energy outputs related to the grid from ElectricTariff to ElectricUtility
 - `existing_gen_*` Generator outputs now just have `_bau` appended to the name (removed `existing_gen_`)
 - remove "_series" from cashflow outputs
+- irr_pct -> internal_rate_of_return
 """
 
 # TODO add related_name field to all OneToOne Scenario's
@@ -219,7 +220,8 @@ class Settings(BaseModel, models.Model):
     scenario = models.OneToOneField(
         Scenario,
         on_delete=models.CASCADE,
-        primary_key=True
+        primary_key=True,
+        related_name="Settings"
     )
 
     class TIME_STEP_CHOICES(models.IntegerChoices):
@@ -551,10 +553,10 @@ class FinancialOutputs(BaseModel, models.Model):
             " then simple payback is increased by the number of years that the cash flow "
             "is negative beyond the break-even year.")
     )
-    irr_pct = models.FloatField(
+    internal_rate_of_return = models.FloatField(
         null=True, blank=True,
         help_text=("internal Rate of Return of the cost-optimal system. In two-party cases the "
-                    "developer discount rate is used in place of the offtaker discount rate.")
+                   "developer discount rate is used in place of the offtaker discount rate.")
     )
     net_present_cost = models.FloatField(
         null=True, blank=True,
@@ -778,7 +780,7 @@ class ElectricLoadInputs(BaseModel, models.Model):
         if error_messages:
             raise ValidationError(' & '.join(error_messages))
 
-"""
+
 class ElectricLoadOutputs(BaseModel, models.Model):
     name = "ElectricLoadOutputs"
 
@@ -786,43 +788,41 @@ class ElectricLoadOutputs(BaseModel, models.Model):
         Scenario,
         on_delete=models.CASCADE,
         primary_key=True,
+        related_name="ElectricLoadOutputs"
     )
 
-    year_one_electric_load_series_kw = ArrayField(
+    load_series_kw = ArrayField(
         models.FloatField(
             null=True, blank=True
         ), 
-        default=list, 
-        null=True,
+        default=list,
         help_text="Year one hourly time series of electric load"
     )
     critical_load_series_kw = ArrayField(
         models.FloatField(
             null=True, blank=True
         ), 
-        default=list, 
-        null=True,
+        default=list,
         help_text=("Hourly critical load for outage simulator. Values are either uploaded by user, "
-                    "or determined from typical load (either uploaded or simulated) and critical_load_pct.")
+                   "or determined from typical load (either uploaded or simulated) and critical_load_pct.")
     )
     annual_calculated_kwh = models.FloatField(
         null=True, blank=True,
         help_text="Annual energy consumption calculated by summing up 8760 load profile"
     )
-    resilience_check_flag = models.BooleanField(
-        null=True, blank=True,
-        help_text="BAU resilience check status for existing system"
-    )
-    # TODO: is it hours or timesteps?? one of these should be renamed to be consistent with each other
-    sustain_hours = models.IntegerField(
-        null=True, blank=True,
-        help_text="Number of hours the existing system can sustain with resilience check"
-    )
-    bau_sustained_time_steps = models.IntegerField(
-        null=True, blank=True,
-        help_text="Number of time steps the existing system can sustain the critical load"
-    )
-"""
+    # resilience_check_flag = models.BooleanField(
+    #     null=True, blank=True,
+    #     help_text="BAU resilience check status for existing system"
+    # )
+    # # TODO: is it hours or timesteps?? one of these should be renamed to be consistent with each other
+    # sustain_hours = models.IntegerField(
+    #     null=True, blank=True,
+    #     help_text="Number of hours the existing system can sustain with resilience check"
+    # )
+    # bau_sustained_time_steps = models.IntegerField(
+    #     null=True, blank=True,
+    #     help_text="Number of time steps the existing system can sustain the critical load"
+    # )
 
 
 class ElectricTariffInputs(BaseModel, models.Model):
@@ -1628,11 +1628,11 @@ class PVOutputs(BaseModel, models.Model):
 #     station_latitude = models.FloatField(null=True, blank=True)
 #     station_longitude = models.FloatField(null=True, blank=True)
 #     station_distance_km = models.FloatField(null=True, blank=True)
-#     average_yearly_energy_produced_kwh = models.FloatField(null=True, blank=True)
-#     average_yearly_energy_produced_bau_kwh = models.FloatField(null=True, blank=True)
+    average_yearly_energy_produced_kwh = models.FloatField(null=True, blank=True)
+    average_yearly_energy_produced_kwh_bau = models.FloatField(null=True, blank=True)
     average_annual_energy_exported = models.FloatField(null=True, blank=True)
     year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)
-#     year_one_energy_produced_bau_kwh = models.FloatField(null=True, blank=True)
+    year_one_energy_produced_kwh_bau = models.FloatField(null=True, blank=True)
 #     year_one_power_production_series_kw = ArrayField(
 #             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
     year_one_to_battery_series_kw = ArrayField(
