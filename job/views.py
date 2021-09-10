@@ -63,6 +63,7 @@ def results(request, run_uuid):
     try:
         # get all required inputs/outputs
         s = Scenario.objects.select_related(
+            "Settings",
             'FinancialInputs', 'FinancialOutputs',
             'SiteInputs',
             'ElectricLoadInputs',
@@ -94,6 +95,7 @@ def results(request, run_uuid):
     r["inputs"]["ElectricLoad"] = s.ElectricLoadInputs.dict
     r["inputs"]["ElectricTariff"] = s.ElectricTariffInputs.dict
     r["inputs"]["Site"] = s.SiteInputs.dict
+    r["inputs"]["Settings"] = s.Settings.dict
 
     # We have to try for the following objects because they may or may not be defined
     try: r["inputs"]["PV"] = s.PVInputs.dict
@@ -116,6 +118,7 @@ def results(request, run_uuid):
         r["outputs"]["Financial"] = s.FinancialOutputs.dict
         r["outputs"]["ElectricTariff"] = s.ElectricTariffOutputs.dict
         r["outputs"]["ElectricUtility"] = s.ElectricUtilityOutputs.dict
+        r["outputs"]["ElectricLoad"] = s.ElectricLoadOutputs.dict
 
         try: r["outputs"]["PV"] = s.PVOutputs.dict
         except: pass
