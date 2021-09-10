@@ -53,7 +53,7 @@ Running list of changes from v1 to document:
 - Financial.total_om_costs and Financial.year_one_om_costs -> *_after_tax appended to name for clarity
 - moved power and energy outputs related to the grid from ElectricTariff to ElectricUtility
 - `existing_gen_*` Generator outputs now just have `_bau` appended to the name (removed `existing_gen_`)
-
+- remove "_series" from cashflow outputs
 """
 
 # TODO add related_name field to all OneToOne Scenario's
@@ -544,8 +544,8 @@ class FinancialOutputs(BaseModel, models.Model):
     )
     simple_payback_years = models.FloatField(
         null=True, blank=True,
-        help_text=("Number of years until the cumulative annual cashflow turns positive. "
-            "If the cashflow becomes negative again after becoming positive (i.e. due to battery repalcement costs)"
+        help_text=("Number of years until the cumulative annual cashflows turn positive. "
+            "If the cashflows become negative again after becoming positive (i.e. due to battery repalcement costs)"
             " then simple payback is increased by the number of years that the cash flow "
             "is negative beyond the break-even year.")
     )
@@ -563,32 +563,32 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text=("The annualized amount the host will pay to the third-party owner over the life of the project.")
     )
-    offtaker_annual_free_cashflow_series = ArrayField(
+    offtaker_annual_free_cashflows = ArrayField(
         models.FloatField(
             blank=True
         ), 
         default=list, blank=True,
-        help_text=("Annual free cashflow for the host in the optimal case for all analysis years, "
+        help_text=("Annual free cashflows for the host in the optimal case for all analysis years, "
                     "including year 0. Future years have not been discounted to account for the time value of money.")
     )
-    offtaker_discounted_annual_free_cashflow_series = ArrayField(
+    offtaker_discounted_annual_free_cashflows = ArrayField(
             models.FloatField(
                 blank=True
             ), 
         default=list, blank=True,
-        help_text=("Annual discounted free cashflow for the host in the optimal case for all analysis years, "
+        help_text=("Annual discounted free cashflows for the host in the optimal case for all analysis years, "
                     "including year 0. Future years have been discounted to account for the time value of money.")
     )
-    offtaker_annual_free_cashflow_series_bau = ArrayField(
+    offtaker_annual_free_cashflows_bau = ArrayField(
             models.FloatField(
                 blank=True
             ), 
         default=list, blank=True,
-        help_text=("Annual free cashflow for the host in the business-as-usual case for all analysis years, "
+        help_text=("Annual free cashflows for the host in the business-as-usual case for all analysis years, "
                     "including year 0. Future years have not been discounted to account for the time value of "
                     "money. Only calculated in the non-third-party case.")
     )
-    offtaker_discounted_annual_free_cashflow_series_bau = ArrayField(
+    offtaker_discounted_annual_free_cashflows_bau = ArrayField(
             models.FloatField(
                 null=True, blank=True
             ), 
@@ -598,7 +598,7 @@ class FinancialOutputs(BaseModel, models.Model):
                     "years, including year 0. Future years have been discounted to account for the time value of "
                     "money. Only calculated in the non-third-party case.")
     )
-    developer_annual_free_cashflow_series = ArrayField(
+    developer_annual_free_cashflows = ArrayField(
             models.FloatField(
                 blank=True
             ), 
