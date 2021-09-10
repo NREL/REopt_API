@@ -249,10 +249,12 @@ class Settings(BaseModel, models.Model):
         help_text=("The threshold for the difference between the solution's objective value and the best possible "
                    "value at which the solver terminates")
     )
-    # use_decomposition_model = models.BooleanField(null=True, blank=True)
-    # optimality_tolerance_decomp_subproblem = models.FloatField(null=True, blank=True)
-    # timeout_decomp_subproblem_seconds = models.IntegerField(null=True, blank=True)
-    # add_soc_incentive = models.BooleanField(null=True, blank=True)
+    add_soc_incentive = models.BooleanField(
+        default=True,
+        blank=True,
+        help_text=("If True, then a small incentive to keep the battery's state of charge high is added to the "
+                   "objective of the optimization.")
+    )
 
 
 class SiteInputs(BaseModel, models.Model):
@@ -572,45 +574,45 @@ class FinancialOutputs(BaseModel, models.Model):
                     "including year 0. Future years have not been discounted to account for the time value of money.")
     )
     offtaker_discounted_annual_free_cashflows = ArrayField(
-            models.FloatField(
-                blank=True
-            ), 
+        models.FloatField(
+            blank=True
+        ),
         default=list, blank=True,
         help_text=("Annual discounted free cashflows for the host in the optimal case for all analysis years, "
                     "including year 0. Future years have been discounted to account for the time value of money.")
     )
     offtaker_annual_free_cashflows_bau = ArrayField(
-            models.FloatField(
-                blank=True
-            ), 
+        models.FloatField(
+            blank=True
+        ),
         default=list, blank=True,
         help_text=("Annual free cashflows for the host in the business-as-usual case for all analysis years, "
                     "including year 0. Future years have not been discounted to account for the time value of "
                     "money. Only calculated in the non-third-party case.")
     )
     offtaker_discounted_annual_free_cashflows_bau = ArrayField(
-            models.FloatField(
-                null=True, blank=True
-            ), 
+        models.FloatField(
+            null=True, blank=True
+        ),
         default=list, blank=True,
         null=True,
         help_text=("Annual discounted free cashflow for the host in the business-as-usual case for all analysis "
-                    "years, including year 0. Future years have been discounted to account for the time value of "
-                    "money. Only calculated in the non-third-party case.")
+                   "years, including year 0. Future years have been discounted to account for the time value of "
+                   "money. Only calculated in the non-third-party case.")
     )
     developer_annual_free_cashflows = ArrayField(
-            models.FloatField(
-                blank=True
-            ), 
+        models.FloatField(
+            blank=True
+        ),
         default=list, blank=True,
         help_text=("Annual free cashflow for the developer in the business-as-usual third party case for all "
-                    "analysis years, including year 0. Future years have not been discounted to account for "
-                    "the time value of money. Only calculated in the third-party case.")
+                   "analysis years, including year 0. Future years have not been discounted to account for "
+                   "the time value of money. Only calculated in the third-party case.")
     )
     developer_om_and_replacement_present_cost_after_tax = models.FloatField(
         null=True, blank=True,
-        help_text=("Net O&M and replacement costs in present value, after-tax for the third-party "
-                    "developer. Only calculated in the third-party case.")
+        help_text=("Net O&M and replacement costs in present value, after-tax for the third-party developer."
+                   "Only calculated in the third-party case.")
     )
 
 
