@@ -55,6 +55,7 @@ Running list of changes from v1 to document:
 - `existing_gen_*` Generator outputs now just have `_bau` appended to the name (removed `existing_gen_`)
 - remove "_series" from cashflow outputs
 - irr_pct -> internal_rate_of_return
+- resilience_check_flag -> bau_critical_load_met
 """
 
 # TODO add related_name field to all OneToOne Scenario's
@@ -810,19 +811,14 @@ class ElectricLoadOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Annual energy consumption calculated by summing up 8760 load profile"
     )
-    # resilience_check_flag = models.BooleanField(
-    #     null=True, blank=True,
-    #     help_text="BAU resilience check status for existing system"
-    # )
-    # # TODO: is it hours or timesteps?? one of these should be renamed to be consistent with each other
-    # sustain_hours = models.IntegerField(
-    #     null=True, blank=True,
-    #     help_text="Number of hours the existing system can sustain with resilience check"
-    # )
-    # bau_sustained_time_steps = models.IntegerField(
-    #     null=True, blank=True,
-    #     help_text="Number of time steps the existing system can sustain the critical load"
-    # )
+    bau_critical_load_met = models.BooleanField(
+        null=True, blank=True,
+        help_text="Boolean for if the critical load is met by the existing technologies in the BAU scenario."
+    )
+    bau_critical_load_met_time_steps = models.IntegerField(
+        null=True, blank=True,
+        help_text="Number of time steps the existing system can sustain the critical load."
+    )
 
 
 class ElectricTariffInputs(BaseModel, models.Model):
