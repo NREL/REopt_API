@@ -122,7 +122,7 @@ test type validation for multiple fields, need to override clean_fields to go th
             try:
                 setattr(self, f.attname, f.clean(raw_value, self))
             except ValidationError as e:
-                errors[f.name] = e.error_list
+                errors[f.key] = e.error_list
 
         if errors:
             raise ValidationError(errors)
@@ -187,7 +187,7 @@ class Scenario(BaseModel, models.Model):
     """
     All the values specific to API (and not used in Julia package)
     """
-    name = "Scenario"
+    key = "Scenario"
 
     run_uuid = models.UUIDField(unique=True)
     api_version = models.IntegerField(default=2)
@@ -216,7 +216,7 @@ class Scenario(BaseModel, models.Model):
 
 
 class Settings(BaseModel, models.Model):
-    name = "Settings"
+    key = "Settings"
 
     scenario = models.OneToOneField(
         Scenario,
@@ -261,7 +261,7 @@ class Settings(BaseModel, models.Model):
 
 
 class SiteInputs(BaseModel, models.Model):
-    name = "Site"
+    key = "Site"
 
     scenario = models.OneToOneField(
         Scenario,
@@ -322,7 +322,7 @@ class SiteInputs(BaseModel, models.Model):
 # Or is it supplanted by new emissions capabilities (not in develop/master as of 21.09.02)?
 
 class SiteOutputs(BaseModel, models.Model):
-    name = "SiteOutputs"
+    key = "SiteOutputs"
 
     scenario = models.OneToOneField(
         Scenario,
@@ -349,7 +349,7 @@ class SiteOutputs(BaseModel, models.Model):
 
 
 class FinancialInputs(BaseModel, models.Model):
-    name = "Financial"
+    key = "Financial"
 
     scenario = models.OneToOneField(
         Scenario,
@@ -476,7 +476,7 @@ class FinancialInputs(BaseModel, models.Model):
 
 
 class FinancialOutputs(BaseModel, models.Model):
-    name = "FinancialOutputs"
+    key = "FinancialOutputs"
 
     scenario = models.OneToOneField(
         Scenario,
@@ -620,7 +620,7 @@ class FinancialOutputs(BaseModel, models.Model):
 
 
 class ElectricLoadInputs(BaseModel, models.Model):
-    name = "ElectricLoad"
+    key = "ElectricLoad"
 
     scenario = models.OneToOneField(
         Scenario,
@@ -783,7 +783,7 @@ class ElectricLoadInputs(BaseModel, models.Model):
 
 
 class ElectricLoadOutputs(BaseModel, models.Model):
-    name = "ElectricLoadOutputs"
+    key = "ElectricLoadOutputs"
 
     scenario = models.OneToOneField(
         Scenario,
@@ -822,7 +822,7 @@ class ElectricLoadOutputs(BaseModel, models.Model):
 
 
 class ElectricTariffInputs(BaseModel, models.Model):
-    name = "ElectricTariff"
+    key = "ElectricTariff"
 
     scenario = models.OneToOneField(
         Scenario,
@@ -995,7 +995,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
 
 
 class ElectricUtilityInputs(BaseModel, models.Model):
-    name = "ElectricUtility"
+    key = "ElectricUtility"
 
     scenario = models.OneToOneField(
         Scenario,
@@ -1062,7 +1062,7 @@ class ElectricUtilityInputs(BaseModel, models.Model):
 
 
 class ElectricUtilityOutputs(BaseModel, models.Model):
-    name = "ElectricUtilityOutputs"
+    key = "ElectricUtilityOutputs"
 
     scenario = models.OneToOneField(
         Scenario,
@@ -1114,7 +1114,7 @@ class ElectricUtilityOutputs(BaseModel, models.Model):
 
 
 class ElectricTariffOutputs(BaseModel, models.Model):
-    name = "ElectricTariffOutputs"
+    key = "ElectricTariffOutputs"
 
     scenario = models.OneToOneField(
         Scenario,
@@ -1255,9 +1255,7 @@ class ElectricTariffOutputs(BaseModel, models.Model):
 
 
 class PVInputs(BaseModel, models.Model):
-    # TODO need to have class level attribute `name` for InputValidator, but already have `PV.name` field and `PV.name`
-    #  in julia pkg; maybe use something other than Model.name in Validator
-    name = "PV"
+    key = "PV"
     scenario = models.OneToOneField(
         Scenario,
         on_delete=models.CASCADE,
@@ -1286,11 +1284,11 @@ class PVInputs(BaseModel, models.Model):
     #     null=True, blank=True,
     #     help_text="Index out of all PV system models"
     # )
-    # name = models.TextField(
-    #     blank=True,
-    #     default="PV",
-    #     help_text="PV description for distinguishing between multiple PV models"
-    # )
+    name = models.TextField(
+        blank=True,
+        default="PV",
+        help_text="PV description for distinguishing between multiple PV models"
+    )
     existing_kw = models.FloatField(
         default=0,
         validators=[
@@ -1653,7 +1651,7 @@ class PVOutputs(BaseModel, models.Model):
 
 
 class StorageInputs(BaseModel, models.Model):
-    name = "Storage"
+    key = "Storage"
 
     scenario = models.OneToOneField(
         Scenario,
@@ -1856,7 +1854,7 @@ class StorageInputs(BaseModel, models.Model):
 
 
 class StorageOutputs(BaseModel, models.Model):
-
+    key = "StorageOutputs"
     scenario = models.OneToOneField(
         Scenario,
         on_delete=models.CASCADE,
@@ -1875,7 +1873,7 @@ class StorageOutputs(BaseModel, models.Model):
 
 
 class GeneratorInputs(BaseModel, models.Model):
-    name = "Generator"
+    key = "Generator"
 
     scenario = models.OneToOneField(
         Scenario,
