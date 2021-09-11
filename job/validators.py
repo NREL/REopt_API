@@ -94,20 +94,20 @@ class InputValidator(object):
         ]
         
         filtered_user_post = dict()
-        filtered_user_post[Scenario.name] = scrub_fields(Scenario, raw_inputs[Scenario.name])
-        scenario = Scenario.create(**filtered_user_post[Scenario.name])
-        self.models[Scenario.name] = scenario
+        filtered_user_post[Scenario.key] = scrub_fields(Scenario, raw_inputs[Scenario.key])
+        scenario = Scenario.create(**filtered_user_post[Scenario.key])
+        self.models[Scenario.key] = scenario
         scenario.save()  # must save the Scenario first to use it as a OneToOneField in other models
 
         for obj in self.objects:
             if obj == Scenario: continue  # Scenario not used in Julia
-            if obj.name in raw_inputs.keys():
+            if obj.key in raw_inputs.keys():
 
-                filtered_user_post[obj.name] = scrub_fields(obj, raw_inputs[obj.name])
+                filtered_user_post[obj.key] = scrub_fields(obj, raw_inputs[obj.key])
 
-                self.models[obj.name] = obj.create(scenario=scenario, **filtered_user_post[obj.name])
-            elif obj.name in required_object_names:
-                self.validation_errors[obj.name] = "Missing required inputs."
+                self.models[obj.key] = obj.create(scenario=scenario, **filtered_user_post[obj.key])
+            elif obj.key in required_object_names:
+                self.validation_errors[obj.key] = "Missing required inputs."
 
         self.scrubbed_inputs = filtered_user_post
 
@@ -136,7 +136,7 @@ class InputValidator(object):
         """
         d = {"messages": self.messages}
         for model in self.models.values():
-            d[model.name] = {k: v for (k, v) in model.dict.items() if v not in [None, []]}
+            d[model.key] = {k: v for (k, v) in model.dict.items() if v not in [None, []]}
             # cleaning out model attribute
         return d
 
@@ -149,7 +149,7 @@ class InputValidator(object):
             try:
                 model.clean_fields()
             except ValidationError as ve:
-                self.validation_errors[model.name] = ve.message_dict
+                self.validation_errors[model.key] = ve.message_dict
 
     def clean(self):
         """
@@ -160,7 +160,7 @@ class InputValidator(object):
             try:
                 model.clean()
             except ValidationError as ve:
-                self.validation_errors[model.name] = ve.message_dict
+                self.validation_errors[model.key] = ve.message_dict
 
     def cross_clean(self):
         """

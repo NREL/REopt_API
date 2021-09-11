@@ -99,16 +99,16 @@ def results(request, run_uuid):
 
     # We have to try for the following objects because they may or may not be defined
     try: r["inputs"]["PV"] = s.PVInputs.dict
-    except: pass
+    except Exception as e: print(e.args)
 
     try: r["inputs"]["ElectricUtility"] = s.ElectricUtilityInputs.dict
-    except: pass
+    except Exception as e: print(e.args)
 
     try: r["inputs"]["Storage"] = s.StorageInputs.dict
-    except: pass
+    except Exception as e: print(e.args)
 
     try: r["inputs"]["Generator"] = s.GeneratorInputs.dict
-    except: pass
+    except Exception as e: print(e.args)
 
     for d in r["inputs"].values():
         d.pop("scenario_id", None)
