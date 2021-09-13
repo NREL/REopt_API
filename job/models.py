@@ -56,6 +56,9 @@ Running list of changes from v1 to document:
 - remove "_series" from cashflow outputs
 - irr_pct -> internal_rate_of_return
 - resilience_check_flag -> bau_critical_load_met
+- remove PV.year_one_power_production_series_kw (b/c it is the sum of other outputs and we want to cut down on the 
+    amount of data in every response)
+- existing_pv_om_cost -> PV.total_om_cost_bau
 """
 
 # TODO add related_name field to all OneToOne Scenario's
@@ -1619,6 +1622,7 @@ class PVOutputs(BaseModel, models.Model):
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)
     total_om_cost = models.FloatField(null=True, blank=True)
+    total_om_cost_bau = models.FloatField(null=True, blank=True)
 #     station_latitude = models.FloatField(null=True, blank=True)
 #     station_longitude = models.FloatField(null=True, blank=True)
 #     station_distance_km = models.FloatField(null=True, blank=True)
@@ -1627,8 +1631,6 @@ class PVOutputs(BaseModel, models.Model):
     average_annual_energy_exported = models.FloatField(null=True, blank=True)
     year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)
     year_one_energy_produced_kwh_bau = models.FloatField(null=True, blank=True)
-#     year_one_power_production_series_kw = ArrayField(
-#             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
     year_one_to_battery_series_kw = ArrayField(
         models.FloatField(null=True, blank=True),
         blank=True, default=list
@@ -1641,12 +1643,10 @@ class PVOutputs(BaseModel, models.Model):
         models.FloatField(null=True, blank=True),
         blank=True, default=list
     )
-#     existing_pv_om_cost = models.FloatField(null=True, blank=True)
     year_one_curtailed_production_series_kw = ArrayField(
         models.FloatField(null=True, blank=True),
         blank=True, default=list
     )
-#     existing_pv_om_cost = models.FloatField(null=True, blank=True)
 #     lcoe_per_kwh = models.FloatField(null=True, blank=True)
 
 
