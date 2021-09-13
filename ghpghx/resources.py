@@ -133,7 +133,7 @@ class GHPGHXJob(ModelResource):
                     amb_temp_c = pvwatts_inst.response["outputs"]["tamb"]
                     ghpghxM.ambient_temperature_f = list(np.array(amb_temp_c) * 1.8 + 32.0)
                 except Exception:
-                    return400(data, {"Error": "Error in PVWatts call"})
+                    return400(data, {"Error": "Error in PVWatts call when getting temperature for GHP model."})
         except ImmediateHttpResponse as e:
             raise e
         except Exception:
