@@ -1647,7 +1647,7 @@ class PVOutputs(BaseModel, models.Model):
         models.FloatField(null=True, blank=True),
         blank=True, default=list
     )
-#     lcoe_per_kwh = models.FloatField(null=True, blank=True)
+    lcoe_per_kwh = models.FloatField(null=True, blank=True)
 
 
 class StorageInputs(BaseModel, models.Model):
