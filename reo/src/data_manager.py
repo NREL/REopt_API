@@ -31,7 +31,7 @@ import copy
 from reo.src.urdb_parse import UrdbParse
 from reo.src.fuel_params import FuelParams
 from reo.utilities import annuity, degradation_factor, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
-    insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, annuity_escalation, MMBTU_TO_KWH
+    insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, annuity_escalation, MMBTU_TO_KWH, GAL_DIESEL_TO_KWH
 import numpy as np
 max_incentive = 1.0e10
 
@@ -769,22 +769,23 @@ class DataManager:
                 if tech.lower() == 'generator':
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.kwargs["om_cost_us_dollars_per_kwh"]')))
                     om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
-                    tech_emissions_factors_CO2.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_gal')))
-                    tech_emissions_factors_NOx.append(float(eval('self.' + tech + '.emissions_factor_lb_NOx_per_gal')))
-                    tech_emissions_factors_SO2.append(float(eval('self.' + tech + '.emissions_factor_lb_SO2_per_gal')))
-                    tech_emissions_factors_PM.append(float(eval('self.' + tech + '.emissions_factor_lb_PM_per_gal')))
+                    # NOTE: tech_emissions_factors in lb / kWh (gets multiplied by kWh of fuel burned, not kWh electricity consumption, ergo the use of the HHV instead of fuel slope)
+                    tech_emissions_factors_CO2.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_gal') / GAL_DIESEL_TO_KWH)) # lb/gal * gal/kWh
+                    tech_emissions_factors_NOx.append(float(eval('self.' + tech + '.emissions_factor_lb_NOx_per_gal') / GAL_DIESEL_TO_KWH))
+                    tech_emissions_factors_SO2.append(float(eval('self.' + tech + '.emissions_factor_lb_SO2_per_gal') / GAL_DIESEL_TO_KWH))
+                    tech_emissions_factors_PM.append(float(eval('self.' + tech + '.emissions_factor_lb_PM_per_gal') / GAL_DIESEL_TO_KWH))
                 elif tech.lower() == 'chp':
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kwh')))
-                    om_cost_us_dollars_per_hr_per_kw_rated.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_hr_per_kw_rated')))
-                    tech_emissions_factors_CO2.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_mmbtu')))
-                    tech_emissions_factors_NOx.append(float(eval('self.' + tech + '.emissions_factor_lb_NOx_per_mmbtu')))
-                    tech_emissions_factors_SO2.append(float(eval('self.' + tech + '.emissions_factor_lb_SO2_per_mmbtu')))
-                    tech_emissions_factors_PM.append(float(eval('self.' + tech + '.emissions_factor_lb_PM_per_mmbtu')))
+                    om_cost_us_dollars_per_hr_per_kw_rated.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_hr_per_kw_rated') / MMBTU_TO_KWH))
+                    tech_emissions_factors_CO2.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_mmbtu') / MMBTU_TO_KWH))
+                    tech_emissions_factors_NOx.append(float(eval('self.' + tech + '.emissions_factor_lb_NOx_per_mmbtu') / MMBTU_TO_KWH))
+                    tech_emissions_factors_SO2.append(float(eval('self.' + tech + '.emissions_factor_lb_SO2_per_mmbtu') / MMBTU_TO_KWH))
+                    tech_emissions_factors_PM.append(float(eval('self.' + tech + '.emissions_factor_lb_PM_per_mmbtu') / MMBTU_TO_KWH))
                 elif tech.lower() == 'boiler': 
-                    tech_emissions_factors_CO2.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_mmbtu')))
-                    tech_emissions_factors_NOx.append(float(eval('self.' + tech + '.emissions_factor_lb_NOx_per_mmbtu')))
-                    tech_emissions_factors_SO2.append(float(eval('self.' + tech + '.emissions_factor_lb_SO2_per_mmbtu')))
-                    tech_emissions_factors_PM.append(float(eval('self.' + tech + '.emissions_factor_lb_PM_per_mmbtu')))
+                    tech_emissions_factors_CO2.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_mmbtu') / MMBTU_TO_KWH))
+                    tech_emissions_factors_NOx.append(float(eval('self.' + tech + '.emissions_factor_lb_NOx_per_mmbtu') / MMBTU_TO_KWH))
+                    tech_emissions_factors_SO2.append(float(eval('self.' + tech + '.emissions_factor_lb_SO2_per_mmbtu') / MMBTU_TO_KWH))
+                    tech_emissions_factors_PM.append(float(eval('self.' + tech + '.emissions_factor_lb_PM_per_mmbtu') / MMBTU_TO_KWH))
                 else:
                     om_cost_us_dollars_per_kwh.append(0.0)
                     om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
@@ -1014,6 +1015,7 @@ class DataManager:
         #If no net emissions accounting, no credit for RE grid exports:
         if self.site.include_exported_elec_emissions_in_total is False:
             grid_to_load_kw = np.array([i if i > 0 else 0 for i in grid_to_load_kw])
+            
         # Might need to add additional logic to match reopt.jl curtailment approach...
         grid_emissions_lb_CO2_per_year = self.steplength*sum(np.array(self.elec_tariff.emissions_factor_series_lb_CO2_per_kwh) * grid_to_load_kw)
         total_emissions_lb_CO2_per_year += grid_emissions_lb_CO2_per_year
@@ -1041,7 +1043,7 @@ class DataManager:
             total_emissions_lb_SO2_per_year += self.heating_load.annual_mmbtu * self.boiler.emissions_factor_lb_SO2_per_mmbtu
             total_emissions_lb_PM_per_year += self.heating_load.annual_mmbtu * self.boiler.emissions_factor_lb_PM_per_mmbtu
 
-        return total_emissions_lb_CO2_per_year, total_emissions_lb_NOx_per_year, total_emissions_lb_SO2_per_year, total_emissions_lb_PM_per_year,
+        return total_emissions_lb_CO2_per_year, total_emissions_lb_NOx_per_year, total_emissions_lb_SO2_per_year, total_emissions_lb_PM_per_year, grid_emissions_lb_CO2_per_year, grid_emissions_lb_NOx_per_year, grid_emissions_lb_SO2_per_year, grid_emissions_lb_PM_per_year
 
     def _get_REopt_storage_techs_and_params(self):
         storage_techs = ['Elec']
@@ -1312,11 +1314,14 @@ class DataManager:
         grid_emissions_factor_SO2 = self.elec_tariff.emissions_factor_series_lb_SO2_per_kwh
         grid_emissions_factor_PM = self.elec_tariff.emissions_factor_series_lb_PM_per_kwh
 
-        bau_emissions_CO2, bau_emissions_NOx, bau_emissions_SO2, bau_emissions_PM = self.bau_emissions()
+        bau_emissions_CO2, bau_emissions_NOx, bau_emissions_SO2, bau_emissions_PM, bau_grid_emissions_CO2, bau_grid_emissions_NOx, bau_grid_emissions_SO2, bau_grid_emissions_PM = self.bau_emissions()
         co2_cost_us_dollars_per_tonne = self.site.financial.co2_cost_us_dollars_per_tonne
-        nox_cost_us_dollars_per_tonne = self.site.financial.nox_cost_us_dollars_per_tonne
-        so2_cost_us_dollars_per_tonne = self.site.financial.so2_cost_us_dollars_per_tonne
-        pm_cost_us_dollars_per_tonne = self.site.financial.pm_cost_us_dollars_per_tonne
+        nox_cost_us_dollars_per_tonne_grid = self.site.financial.nox_cost_us_dollars_per_tonne_grid
+        so2_cost_us_dollars_per_tonne_grid = self.site.financial.so2_cost_us_dollars_per_tonne_grid
+        pm_cost_us_dollars_per_tonne_grid = self.site.financial.pm_cost_us_dollars_per_tonne_grid
+        nox_cost_us_dollars_per_tonne_onsite_fuelburn = self.site.financial.nox_cost_us_dollars_per_tonne_onsite_fuelburn
+        so2_cost_us_dollars_per_tonne_onsite_fuelburn = self.site.financial.so2_cost_us_dollars_per_tonne_onsite_fuelburn
+        pm_cost_us_dollars_per_tonne_onsite_fuelburn = self.site.financial.pm_cost_us_dollars_per_tonne_onsite_fuelburn
 
 
         max_sizes, min_turn_down, max_sizes_location, min_allowable_size = self._get_REopt_tech_max_sizes_min_turn_down(
@@ -1640,6 +1645,10 @@ class DataManager:
             "BAUYr1Emissions_NOx": bau_emissions_NOx, 
             "BAUYr1Emissions_SO2": bau_emissions_SO2, 
             "BAUYr1Emissions_PM": bau_emissions_PM, 
+            "BAUYr1Emissions_grid_CO2": bau_grid_emissions_CO2, 
+            "BAUYr1Emissions_grid_NOx": bau_grid_emissions_NOx, 
+            "BAUYr1Emissions_grid_SO2": bau_grid_emissions_SO2, 
+            "BAUYr1Emissions_grid_PM": bau_grid_emissions_PM, 
             'HeatingLoad': heating_load,
             'CoolingLoad': cooling_load,
             'ThermalStorage': thermal_storage_techs,
@@ -1704,9 +1713,12 @@ class DataManager:
             'SonnenFullTS': sonnen_full_timesteps,
             'SonnenEmptyTS': sonnen_empty_timesteps,
             'CO2_dollars_tonne': co2_cost_us_dollars_per_tonne,
-            'NOx_dollars_tonne': nox_cost_us_dollars_per_tonne,
-            'SO2_dollars_tonne': so2_cost_us_dollars_per_tonne,
-            'PM_dollars_tonne': pm_cost_us_dollars_per_tonne,
+            'NOx_dollars_tonne_grid': nox_cost_us_dollars_per_tonne_grid,
+            'SO2_dollars_tonne_grid': so2_cost_us_dollars_per_tonne_grid,
+            'PM_dollars_tonne_grid': pm_cost_us_dollars_per_tonne_grid,
+            'NOx_dollars_tonne_onsite_fuelburn': nox_cost_us_dollars_per_tonne_onsite_fuelburn,
+            'SO2_dollars_tonne_onsite_fuelburn': so2_cost_us_dollars_per_tonne_onsite_fuelburn,
+            'PM_dollars_tonne_onsite_fuelburn': pm_cost_us_dollars_per_tonne_onsite_fuelburn,
             'Include_climate_in_objective': self.include_climate_in_objective,
             'Include_health_in_objective': self.include_health_in_objective
 
@@ -1907,10 +1919,17 @@ class DataManager:
             "BAUYr1Emissions_NOx": bau_emissions_NOx,
             "BAUYr1Emissions_SO2": bau_emissions_SO2,
             "BAUYr1Emissions_PM": bau_emissions_PM,
+            "BAUYr1Emissions_grid_CO2": bau_grid_emissions_CO2, 
+            "BAUYr1Emissions_grid_NOx": bau_grid_emissions_NOx, 
+            "BAUYr1Emissions_grid_SO2": bau_grid_emissions_SO2, 
+            "BAUYr1Emissions_grid_PM": bau_grid_emissions_PM, 
             'CO2_dollars_tonne': co2_cost_us_dollars_per_tonne,
-            'NOx_dollars_tonne': nox_cost_us_dollars_per_tonne,
-            'SO2_dollars_tonne': so2_cost_us_dollars_per_tonne,
-            'PM_dollars_tonne': pm_cost_us_dollars_per_tonne,
+            'NOx_dollars_tonne_grid': nox_cost_us_dollars_per_tonne_grid,
+            'SO2_dollars_tonne_grid': so2_cost_us_dollars_per_tonne_grid,
+            'PM_dollars_tonne_grid': pm_cost_us_dollars_per_tonne_grid,
+            'NOx_dollars_tonne_onsite_fuelburn': nox_cost_us_dollars_per_tonne_onsite_fuelburn,
+            'SO2_dollars_tonne_onsite_fuelburn': so2_cost_us_dollars_per_tonne_onsite_fuelburn,
+            'PM_dollars_tonne_onsite_fuelburn': pm_cost_us_dollars_per_tonne_onsite_fuelburn,
             'Include_climate_in_objective': self.include_climate_in_objective,
             'Include_health_in_objective': self.include_health_in_objective
         }

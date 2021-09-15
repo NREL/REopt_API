@@ -155,7 +155,21 @@ function add_cost_expressions(m, p)
 	end
 end
 
-function add_export_expressions(m, p)  # TODO handle empty export tiers (and export rates, etc.)
+
+function add_export_expressions(m, p)
+    """
+    There are three Export tiers and their associated export rates (negative values):
+    1. NEM
+    2. Wholesale
+    3. Excess
+
+    Only one of NEM and Wholesale can be exported into due to the NMIL binary constraints.
+    Excess can be exported into in the same time step as NEM or Wholesale.
+
+    Excess is meant to be combined with NEM: NEM export is limited to the total grid purchased energy in a year and some
+    utilities offer a compensation mechanism for export beyond the site load.
+    The Excess tier does not have really have a purpose with the Wholesale tier. (It used to be effectively curtailment).
+    """
 
 	m[:TotalExportBenefit] = 0
 	m[:CurtailedElecWIND] = 0
@@ -734,22 +748,17 @@ function add_prod_grid_constraints(m, p)
 	  	sum(m[:dvProductionToGrid][t,u,ts] for u in p.ExportTiersByTech[t]) + m[:dvProductionToCurtail][t,ts]
 	)
 
-	##Constraint (8f): Total sales to grid no greater than annual allocation, excluding storage tiers
-	@constraint(m,  AnnualGridSalesLimitCon,
-	 p.TimeStepScaling * (
-	  	sum( m[:dvProductionToGrid][t,u,ts] for u in p.ExportTiers, t in p.TechsByExportTier[u], ts in p.TimeStepsWithGrid
-	  		if !(u in p.ExportTiersBeyondSiteLoad))) <= p.AnnualElecLoadkWh + sum(m[:ElecPenalty][ts] for ts in p.TimeStep)
-	)
-
 	# Cannot export power while importing from Grid
 	@constraint(m, NoGridPurchasesBinary[ts in p.TimeStep],
-		sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) + m[:dvGridToStorage][ts] -
-		(1 - m[:binNoGridPurchases][ts]) * 1.0E9 <= 0
+        m[:binNoGridPurchases][ts] => {
+            sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) + m[:dvGridToStorage][ts] <= 0
+        }
 	)
 
 	@constraint(m, ExportOnlyAfterSiteLoadMetCon[ts in p.TimeStep],
-		sum(sum(m[:dvProductionToGrid][t,u,ts] for t in p.Tech, u in p.ExportTiers) -
-			m[:binNoGridPurchases][ts] * 1.0E9) <= 0
+		!m[:binNoGridPurchases][ts] => {
+            sum(m[:dvProductionToGrid][t,u,ts] for t in p.Tech, u in p.ExportTiers) <= 0
+        }
 	)
 end
 
@@ -776,8 +785,8 @@ end
 
 function add_nem_constraint(m, p)
 	@constraint(m, GridSalesLimit,
-		p.TimeStepScaling * sum(m[:dvProductionToGrid][t, "NEM", ts] for t in p.TechsByExportTier["NEM"], ts in p.TimeStep)
-		<= p.TimeStepScaling * sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier, ts in p.TimeStep)
+		sum(m[:dvProductionToGrid][t, "NEM", ts] for t in p.TechsByExportTier["NEM"], ts in p.TimeStep)
+		<= sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier, ts in p.TimeStep)
 	)
 end
 
@@ -1206,7 +1215,7 @@ end
 
 function calc_yr1_emissions_from_fuelburn(m,p; tech_array=p.FuelBurningTechs)
 	yr1_emissions_from_fuelburn_CO2 = @expression(m,p.TimeStepScaling* 
-		sum(m[:dvFuelUsage][t,ts]*p.TechEmissionsFactors_CO2[t] for t in tech_array, ts in p.TimeStep))
+		sum(m[:dvFuelUsage][t,ts]*p.TechEmissionsFactors_CO2[t] for t in tech_array, ts in p.TimeStep)) 
 
 	yr1_emissions_from_fuelburn_NOx = @expression(m,p.TimeStepScaling* 
 		sum(m[:dvFuelUsage][t,ts]*p.TechEmissionsFactors_NOx[t] for t in tech_array, ts in p.TimeStep))
@@ -1256,11 +1265,12 @@ function calc_yr1_emissions_offset_from_elec_exports(m,p; tech_array=p.ElectricT
 end
 
 ### Lifetime emissions calculations
+# TODO: account for if outage is major event! If so, shouldn't repeat fuel usage in each year
 function add_lifetime_emissions_calcs(m,p)
 	# Lifetime lbs CO2 
 	m[:Lifetime_Emissions_Lbs_CO2] = m[:EmissionsYr1_Total_LbsCO2] * p.analysis_years
 	# Lifetime cost CO2 ; 2204.62 lb / metric ton
-	# pwf: accounts for discounting (TODO: set to 3%?) 
+	# pwf: accounts for discounting (TODO: set to 3% to match SC-CO2 discount rate?) 
 	m[:Lifetime_Emissions_Cost_CO2] = p.pwf_CO2 * p.CO2_dollars_tonne * m[:EmissionsYr1_Total_LbsCO2] / 2204.62 
 
 	# Health calcs
@@ -1268,10 +1278,17 @@ function add_lifetime_emissions_calcs(m,p)
 	m[:Lifetime_Emissions_Lbs_SO2] = m[:EmissionsYr1_Total_LbsSO2] * p.analysis_years
 	m[:Lifetime_Emissions_Lbs_PM] = m[:EmissionsYr1_Total_LbsPM] * p.analysis_years
 
-	# TODO! Create a pwf for SO2, PM2.5, and NOx? Escalation % will be location dependent... 
-	m[:Lifetime_Emissions_Cost_NOx] = p.pwf_CO2 * p.NOx_dollars_tonne * m[:EmissionsYr1_Total_LbsNOx] / 2204.62 
-	m[:Lifetime_Emissions_Cost_SO2] = p.pwf_CO2 * p.SO2_dollars_tonne * m[:EmissionsYr1_Total_LbsSO2] / 2204.62 
-	m[:Lifetime_Emissions_Cost_PM] = p.pwf_CO2 * p.PM_dollars_tonne * m[:EmissionsYr1_Total_LbsPM] / 2204.62 
+	if p.IncludeExportedElecEmissionsInTotal
+		include_exported_elec_emissions_in_total = 1
+	else
+		include_exported_elec_emissions_in_total = 0
+	end
+
+	# TODO: Create a pwf for SO2, PM2.5, and NOx? Escalation % will be location dependent... 
+	# Current assumption is that CO2 pwf is applicable for NOx, SO2, and PM2.5
+	m[:Lifetime_Emissions_Cost_NOx] = p.pwf_CO2 * (p.NOx_dollars_tonne_grid * (m[:yr1_emissions_from_elec_grid_purchase_NOx] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_NOx]) + p.NOx_dollars_tonne_onsite_fuelburn * m[:yr1_emissions_from_fuelburn_NOx]) / 2204.62 
+	m[:Lifetime_Emissions_Cost_SO2] = p.pwf_CO2 * (p.SO2_dollars_tonne_grid * (m[:yr1_emissions_from_elec_grid_purchase_SO2] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_SO2]) + p.SO2_dollars_tonne_onsite_fuelburn * m[:yr1_emissions_from_fuelburn_SO2]) / 2204.62
+	m[:Lifetime_Emissions_Cost_PM] = p.pwf_CO2 * (p.PM_dollars_tonne_grid * (m[:yr1_emissions_from_elec_grid_purchase_PM] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_PM]) + p.PM_dollars_tonne_onsite_fuelburn * m[:yr1_emissions_from_fuelburn_PM]) / 2204.62
 
 	m[:Lifetime_Emissions_Cost_Health] = m[:Lifetime_Emissions_Cost_NOx] + m[:Lifetime_Emissions_Cost_SO2] + m[:Lifetime_Emissions_Cost_PM]
 
@@ -1604,11 +1621,13 @@ function add_site_results(m, p, r::Dict)
 	r["pwf_om"] = round(value(p.pwf_om),digits=4)
 	=#
 
-	# Year 1 BAU emissions impacts 
+	# Year 1 BAU emissions impacts ## HERE!! 
 	r["preprocessed_BAU_Yr1_emissions_CO2"] = round(value(p.BAUYr1Emissions_CO2),digits=2)
 	r["preprocessed_BAU_Yr1_emissions_NOx"] = round(value(p.BAUYr1Emissions_NOx),digits=2) 
 	r["preprocessed_BAU_Yr1_emissions_SO2"] = round(value(p.BAUYr1Emissions_SO2),digits=2) 
 	r["preprocessed_BAU_Yr1_emissions_PM"] = round(value(p.BAUYr1Emissions_PM),digits=2) 
+
+	r["preprocessed_BAU_Yr1_emissions_from_grid_CO2"] = round(value(p.BAUYr1Emissions_grid_CO2),digits=2)
 
 	# Lifetime BAU emissions impacts 
 	r["lifetime_emissions_lb_CO2_bau"] = round(value(p.BAUYr1Emissions_CO2 * p.analysis_years),digits=2)
@@ -1617,10 +1636,11 @@ function add_site_results(m, p, r::Dict)
 	r["lifetime_emissions_lb_PM_bau"] = round(value(p.BAUYr1Emissions_PM * p.analysis_years),digits=2)
 
 	r["lifetime_emissions_cost_CO2_bau"] = round(value(p.pwf_CO2 * p.CO2_dollars_tonne * p.BAUYr1Emissions_CO2 / 2204.62),digits=2) 
-	# TODO: update to health emissions-specific pwf's 
-	r["lifetime_emissions_cost_Health_bau"] = round(value((p.pwf_CO2 * p.NOx_dollars_tonne * p.BAUYr1Emissions_NOx
-															+ p.pwf_CO2 * p.SO2_dollars_tonne * p.BAUYr1Emissions_SO2
-															+ p.pwf_CO2 * p.PM_dollars_tonne * p.BAUYr1Emissions_PM) / 2204.62),digits=2) 
+	# TODO: update pwf_CO2 to health emissions-specific pwf's 
+	r["lifetime_emissions_cost_Health_bau"] = round(value((p.pwf_CO2 * (p.NOx_dollars_tonne_grid * p.BAUYr1Emissions_grid_NOx + p.NOx_dollars_tonne_onsite_fuelburn * (p.BAUYr1Emissions_NOx - p.BAUYr1Emissions_grid_NOx))
+															+ p.pwf_CO2 * (p.SO2_dollars_tonne_grid * p.BAUYr1Emissions_grid_SO2 + p.SO2_dollars_tonne_onsite_fuelburn * (p.BAUYr1Emissions_SO2 - p.BAUYr1Emissions_grid_SO2))
+															+ p.pwf_CO2 * (p.PM_dollars_tonne_grid * p.BAUYr1Emissions_grid_PM + p.PM_dollars_tonne_onsite_fuelburn * (p.BAUYr1Emissions_PM - p.BAUYr1Emissions_grid_PM)))
+															/ 2204.62), digits=2) 
 
 
 	#=
@@ -1650,6 +1670,7 @@ function add_site_results(m, p, r::Dict)
 
 	# NOx results 
 	r["year_one_emissions_lb_NOx"] = round(value(m[:EmissionsYr1_Total_LbsNOx]), digits=2) 
+	r["yr1_NOx_emissions_from_fuelburn"] = round(value(m[:yr1_emissions_from_fuelburn_NOx]), digits=2) 
 
 	# SO2 results
 	r["year_one_emissions_lb_SO2"] = round(value(m[:EmissionsYr1_Total_LbsSO2]), digits=2) 
@@ -1851,6 +1872,9 @@ function add_generator_results(m, p, r::Dict)
 
 	EmissionsYr1_LbsCO2_GEN, EmissionsYr1_LbsNOx_GEN, EmissionsYr1_LbsSO2_GEN, EmissionsYr1_LbsPM_GEN = calc_yr1_emissions_from_fuelburn(m,p; tech_array = m[:GeneratorTechs]) 
 	r["year_one_generator_emissions_lb_CO2"] = round(value(EmissionsYr1_LbsCO2_GEN), digits=2)
+	r["year_one_generator_emissions_lb_NOx"] = round(value(EmissionsYr1_LbsNOx_GEN), digits=2)
+	r["year_one_generator_emissions_lb_SO2"] = round(value(EmissionsYr1_LbsSO2_GEN), digits=2)
+	r["year_one_generator_emissions_lb_PM"] = round(value(EmissionsYr1_LbsPM_GEN), digits=2)
 
 	nothing
 end
@@ -2226,8 +2250,11 @@ function add_util_results(m, p, r::Dict)
 	
 	## yr1_emissions_from_elec_grid_purchase_CO2 = calc_yr1_emissions_from_elec_grid_purchase(m,p)
 	## r["year_one_elec_grid_emissions_lb_CO2"] = round(value(yr1_emissions_from_elec_grid_purchase), digits=2)
+	## I think these results are repeats of "yr1_CO2_emissions_from_elec_grid_purchase" 
 	r["year_one_elec_grid_emissions_lb_CO2"] = round(value(m[:yr1_emissions_from_elec_grid_purchase_CO2]), digits=2)
-	## TODO: add Health emissions from grid
+	r["year_one_elec_grid_emissions_lb_NOx"] = round(value(m[:yr1_emissions_from_elec_grid_purchase_NOx]), digits=2)
+	r["year_one_elec_grid_emissions_lb_SO2"] = round(value(m[:yr1_emissions_from_elec_grid_purchase_SO2]), digits=2)
+	r["year_one_elec_grid_emissions_lb_PM"] = round(value(m[:yr1_emissions_from_elec_grid_purchase_PM]), digits=2)
 	
 	#XL - Sonnen demand charge 
 	@expression(m, DemandCostByRatchet[r in p.Ratchets, e in p.DemandBin], p.DemandRates[r, e])

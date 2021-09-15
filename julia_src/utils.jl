@@ -237,6 +237,10 @@ Base.@kwdef struct Parameter
      BAUYr1Emissions_NOx::Float64
      BAUYr1Emissions_SO2::Float64
      BAUYr1Emissions_PM::Float64
+     BAUYr1Emissions_grid_CO2::Float64
+     BAUYr1Emissions_grid_NOx::Float64
+     BAUYr1Emissions_grid_SO2::Float64
+     BAUYr1Emissions_grid_PM::Float64
      GridEmissionsFactor_CO2::Array{Float64,1}
      GridEmissionsFactor_NOx::Array{Float64,1}
      GridEmissionsFactor_SO2::Array{Float64,1}
@@ -246,9 +250,12 @@ Base.@kwdef struct Parameter
      TechEmissionsFactors_SO2::AxisArray
      TechEmissionsFactors_PM::AxisArray
      CO2_dollars_tonne::Float64
-     NOx_dollars_tonne::Float64
-     SO2_dollars_tonne::Float64
-     PM_dollars_tonne::Float64
+     NOx_dollars_tonne_grid::Float64
+     SO2_dollars_tonne_grid::Float64
+     PM_dollars_tonne_grid::Float64
+     NOx_dollars_tonne_onsite_fuelburn::Float64
+     SO2_dollars_tonne_onsite_fuelburn::Float64
+     PM_dollars_tonne_onsite_fuelburn::Float64
      Include_climate_in_objective::Bool
      Include_health_in_objective::Bool
 

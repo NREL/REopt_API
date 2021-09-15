@@ -149,6 +149,11 @@ nested_output_definitions = {
                   "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption in the first year.",
                   "units": "lb CO2"
                 },
+              "year_one_CO2_emissions_from_elec_grid_purchase_bau": {
+                  "type": int,
+                  "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption in the first year in the BAU case.",
+                  "units": "lb CO2"
+                },
               "year_one_CO2_emissions_offset_from_elec_exports": {
                   "type": int,
                   "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption in the first year.",

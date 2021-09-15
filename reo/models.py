@@ -223,9 +223,12 @@ class FinancialModel(models.Model):
     owner_discount_pct = models.FloatField(null=True, blank=True)
     owner_tax_pct = models.FloatField(null=True, blank=True)
     co2_cost_us_dollars_per_tonne = models.FloatField(null=True, blank=True)
-    nox_cost_us_dollars_per_tonne = models.FloatField(null=True, blank=True)
-    so2_cost_us_dollars_per_tonne = models.FloatField(null=True, blank=True)
-    pm_cost_us_dollars_per_tonne = models.FloatField(null=True, blank=True)
+    nox_cost_us_dollars_per_tonne_grid = models.FloatField(null=True, blank=True)
+    so2_cost_us_dollars_per_tonne_grid = models.FloatField(null=True, blank=True)
+    pm_cost_us_dollars_per_tonne_grid = models.FloatField(null=True, blank=True)
+    nox_cost_us_dollars_per_tonne_onsite_fuelburn = models.FloatField(null=True, blank=True)
+    so2_cost_us_dollars_per_tonne_onsite_fuelburn = models.FloatField(null=True, blank=True)
+    pm_cost_us_dollars_per_tonne_onsite_fuelburn = models.FloatField(null=True, blank=True)
     co2_cost_escalation_pct = models.FloatField(null=True, blank=True)
 
     # Outputs
