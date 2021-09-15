@@ -56,7 +56,7 @@ function add_continuous_variables(m, p)
 		dvAbsorptionChillerDemand[p.TimeStep] >= 0  #X^{ac}_h: Thermal power consumption by absorption chiller in time step h
 		dvElectricChillerDemand[p.TimeStep] >= 0  #X^{ec}_h: Electrical power consumption by electric chiller in time step h
 		dvOMByHourBySizeCHP[p.Tech, p.TimeStep] >= 0
-        dvSupplementaryThermalProduction[p.TimeStep] >= 0
+        dvSupplementaryThermalProduction[p.CHPTechs, p.TimeStep] >= 0
     end
 	if !isempty(p.ExportTiers)
 		@variable(m, dvProductionToGrid[p.Tech, p.ExportTiers, p.TimeStep] >= 0)  # X^{ptg}_{tuh}: Exports from electrical production to the grid by technology t in demand tier u during time step h [kW]   (NEW)
@@ -353,7 +353,7 @@ function add_fuel_constraints(m, p)
 			m[:dvFuelUsage][t,ts]  == p.TimeStepScaling * (
 				m[:dvFuelBurnYIntercept][t,ts] +
 				p.ProductionFactor[t,ts] * p.FuelBurnSlope[t] * m[:dvRatedProduction][t,ts] + 
-                m[:dvSupplementaryThermalProduction][ts] / p.CHPSupplementaryFireEfficiency
+                m[:dvSupplementaryThermalProduction][t,ts] / p.CHPSupplementaryFireEfficiency
 			)
 		)
 
@@ -398,22 +398,22 @@ function add_thermal_production_constraints(m, p)
 		@constraint(m, CHPThermalProductionCon[t in p.CHPTechs, ts in p.TimeStep],
 					m[:dvThermalProduction][t,ts] ==
 					p.CHPThermalProdSlope[t] * p.ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts] + m[:dvThermalProductionYIntercept][t,ts] + 
-                    m[:dvSupplementaryThermalProduction][ts]
+                    m[:dvSupplementaryThermalProduction][t,ts]
 					)
         # Supplementary firing thermal constraint
         if p.CHPSupplementaryFireMaxRatio > 1.0
             # Constrain upper limit of dvSupplementaryThermalProduction
             @constraint(m, CHPSupplementaryFireCon[t in p.CHPTechs, ts in p.TimeStep],
-                        m[:dvSupplementaryThermalProduction][ts] <=
+                        m[:dvSupplementaryThermalProduction][t,ts] <=
                         (p.CHPSupplementaryFireMaxRatio - 1.0) * p.ProductionFactor[t,ts] * (p.CHPThermalProdSlope[t] * m[:dvSize][t] + m[:dvThermalProductionYIntercept][t,ts])
                         )
             # Constrain lower limit of 0 if CHP tech is off
             @constraint(m, NoCHPSupplementaryFireCon[t in p.CHPTechs, ts in p.TimeStep],
-                        !m[:binTechIsOnInTS][t,ts] => {m[:dvSupplementaryThermalProduction][ts] == 0.0}
+                        !m[:binTechIsOnInTS][t,ts] => {m[:dvSupplementaryThermalProduction][t,ts] == 0.0}
                         )
         else
             for ts in p.TimeStep
-                fix(m[:dvSupplementaryThermalProduction][ts], 0.0, force=true)
+                fix(m[:dvSupplementaryThermalProduction][t,ts], 0.0, force=true)
             end            
         end
 	end
