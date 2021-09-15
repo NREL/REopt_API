@@ -709,7 +709,7 @@ function add_tech_size_constraints(m, p)
 	##Constraint (7_supplementary_firing_size): Production limit for supplementary firing
 	if !isempty(p.CHPTechs)
 		@constraint(m, CHPSupplementaryFiringProd[t in p.CHPTechs, ts in p.TimeStep],
-			dvSupplementaryThermalProduction[t,ts] <= dvSupplementaryThermalSize[t]
+			m[:dvSupplementaryThermalProduction][t,ts] <= m[:dvSupplementaryThermalSize][t]
 		)
 	end
 
@@ -748,18 +748,18 @@ function add_tech_size_constraints(m, p)
 
 	if !isempty(p.CHPTechs)
 		##Constraint (7_supplementary_firing_size_a): size=0 if not chosen
-		@constraint(m, CHPSupplementaryFiringSize_A[p.CHPTechs],
-			dvSupplementaryThermalSize <= m[:NewMaxSize][t] * binUseSupplementaryFiring[t]
+		@constraint(m, CHPSupplementaryFiringSize_A[t in p.CHPTechs],
+			dvSupplementaryThermalSize[t] <= m[:NewMaxSize][t] * binUseSupplementaryFiring[t]
 		)
 		
 		##Constraint (7_supplementary_firing_size_b): size=CHP if not chosen
-		@constraint(m, CHPSupplementaryFiringSize_B[p.CHPTechs],
-			dvSupplementaryThermalSize >= dvSize[t] - m[:NewMaxSize][t] * (1-binUseSupplementaryFiring[t])
+		@constraint(m, CHPSupplementaryFiringSize_B[t in p.CHPTechs],
+			dvSupplementaryThermalSize[t] >= dvSize[t] - m[:NewMaxSize][t] * (1-binUseSupplementaryFiring[t])
 		)
 
 		##Constraint (7_supplementary_firing_size_b): size=CHP if not chosen
-		@constraint(m, CHPSupplementaryFiringSize_C[p.CHPTechs],
-			dvSupplementaryThermalSize <= dvSize[t] + m[:NewMaxSize][t] * (1-binUseSupplementaryFiring[t])
+		@constraint(m, CHPSupplementaryFiringSize_C[t in p.CHPTechs],
+			dvSupplementaryThermalSize[t] <= dvSize[t] + m[:NewMaxSize][t] * (1-binUseSupplementaryFiring[t])
 		)
 	end
 end
