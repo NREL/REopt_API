@@ -402,10 +402,10 @@ function add_thermal_production_constraints(m, p)
 					)
         # Supplementary firing thermal constraint
         if p.CHPSupplementaryFireMaxRatio > 1.0
-            # Constrain upper limit of dvSupplementaryThermalProduction
+            # Constrain upper limit of dvSupplementaryThermalProduction, using auxiliary variable for (size * useSupplementaryFiring)
             @constraint(m, CHPSupplementaryFireCon[t in p.CHPTechs, ts in p.TimeStep],
                         m[:dvSupplementaryThermalProduction][t,ts] <=
-                        (p.CHPSupplementaryFireMaxRatio - 1.0) * p.ProductionFactor[t,ts] * (p.CHPThermalProdSlope[t] * m[:dvSize][t] + m[:dvThermalProductionYIntercept][t,ts])
+                        (p.CHPSupplementaryFireMaxRatio - 1.0) * p.ProductionFactor[t,ts] * (p.CHPThermalProdSlope[t] * m[:dvSupplementaryThermalSize][t] + m[:dvThermalProductionYIntercept][t,ts])
                         )
             # Constrain lower limit of 0 if CHP tech is off
             @constraint(m, NoCHPSupplementaryFireCon[t in p.CHPTechs, ts in p.TimeStep],
@@ -703,13 +703,6 @@ function add_tech_size_constraints(m, p)
 	if !isempty(p.CoolingTechs)
 		@constraint(m, CoolingProductionCon[t in p.CoolingTechs, ts in p.TimeStep],
 			m[:dvThermalProduction][t,ts] <= m[:dvSize][t]
-		)
-	end
-
-	##Constraint (7_supplementary_firing_size): Production limit for supplementary firing
-	if !isempty(p.CHPTechs)
-		@constraint(m, CHPSupplementaryFiringProd[t in p.CHPTechs, ts in p.TimeStep],
-			m[:dvSupplementaryThermalProduction][t,ts] <= m[:dvSupplementaryThermalSize][t]
 		)
 	end
 
