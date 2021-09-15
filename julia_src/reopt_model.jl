@@ -65,7 +65,7 @@ function add_continuous_variables(m, p)
         @variable(m, dvThermalToSteamTurbine[p.AllTechsForSteamTurbine, p.TimeStep] >= 0)
     end
 	if !isempty(p.CHPTechs)
-		@variable(dvSupplementaryThermalSize >= 0)  #X^{\sigma db}_{t}: System size of CHP supplementary firing [kW]
+		@variable(dvSupplementaryThermalSize[p.CHPTechs] >= 0)  #X^{\sigma db}_{t}: System size of CHP supplementary firing [kW]
 	end
 end
 
@@ -84,7 +84,7 @@ function add_integer_variables(m, p)
 		binGHP[p.GHPOptions], Bin  # Can be <= 1 if ForceGHP=0, and is ==1 if ForceGHP=1
 	end
 	if !isempty(p.CHPTechs)
-		@variable(binUseSupplementaryFiring[p.Tech] >= 0)  #Z^{db}_{t}: 1 if supplementary firing is included with CHP system, 0 o.w.
+		@variable(binUseSupplementaryFiring[p.CHPTechs] >= 0)  #Z^{db}_{t}: 1 if supplementary firing is included with CHP system, 0 o.w.
 	end
 end
 
@@ -110,7 +110,7 @@ function add_cost_expressions(m, p)
 		m[:TotalTechCapCosts] = @expression(m, p.two_party_factor * (
 			sum( p.CapCostSlope[t,s] * m[:dvSystemSizeSegment][t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) +
 			sum( p.CapCostYInt[t,s] * m[:binSegmentSelect][t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) +
-			p.CapCostSupplementaryFiring * dvSupplementaryThermalSize
+			sum( p.CapCostSupplementaryFiring[t] * dvSupplementaryThermalSize[t] for t in p.CHPTEchs ) 
 		))
 	else
 		m[:TotalTechCapCosts] = @expression(m, p.two_party_factor * (
