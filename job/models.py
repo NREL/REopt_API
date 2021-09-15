@@ -1606,11 +1606,11 @@ class PVInputs(BaseModel, models.Model):
         help_text=("True/False for if technology can export energy beyond the annual site load (and be compensated for "
                    "that energy at the export_rate_beyond_net_metering_limit).")
     )
-    # can_curtail = models.BooleanField(
-    #     default=True,
-    #     blank=True,
-    #     help_text="True/False for if technology can curtail energy produced."
-    # )
+    can_curtail = models.BooleanField(
+        default=True,
+        blank=True,
+        help_text="True/False for if technology has the ability to curtail energy production."
+    )
 
 
 class PVOutputs(BaseModel, models.Model):
@@ -1912,7 +1912,11 @@ class WindInputs(BaseModel, models.Model):
         help_text=("True/False for if technology can export energy beyond the annual site load (and be compensated for "
                    "that energy at the export_rate_beyond_net_metering_limit).")
     )
-    # can_curtail = models.BooleanField(null=True, blank=True)
+    can_curtail = models.BooleanField(
+        default=True,
+        blank=True,
+        help_text="True/False for if technology has the ability to curtail energy production."
+    )
 
 
 class WindOutputs(BaseModel, models.Model):
@@ -2450,7 +2454,11 @@ class GeneratorInputs(BaseModel, models.Model):
         help_text=("True/False for if technology can export energy beyond the annual site load (and be compensated for "
                    "that energy at the export_rate_beyond_net_metering_limit).")
     )
-    # can_curtail = models.BooleanField(null=True, blank=True)
+    can_curtail = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text="True/False for if technology has the ability to curtail energy production."
+    )
     # emissions_factor_lb_CO2_per_gal = models.FloatField(null=True, blank=True)
 
 
