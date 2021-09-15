@@ -27,17 +27,12 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-# from django.contrib.auth.models import User
 from django.db import models
 from django.contrib.postgres.fields import *
-from django.forms.models import model_to_dict
 from picklefield.fields import PickledObjectField
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 import copy
-import sys
-import traceback as tb
-import warnings
 import logging
 
 log = logging.getLogger(__name__)
@@ -131,13 +126,9 @@ test type validation for multiple fields, need to override clean_fields to go th
         if errors:
             raise ValidationError(errors)
 
-
 Output models need to have null=True, blank=True for cases when results are not generated 
 (when errors occur during solve or post-processing)
-           
 """
-# TODO check all fields (do we really want so many null's allowed? are the blank=True all correct? Can we add more defaults)
-
 MAX_BIG_NUMBER = 1.0e8
 MAX_INCENTIVE = 1.0e10
 MAX_YEARS = 75
@@ -1614,13 +1605,11 @@ class PVInputs(BaseModel, models.Model):
 
 
 class PVOutputs(BaseModel, models.Model):
-    # TODO: how to use ForeignKey for scenario and still get results in view.py?
     scenario = models.OneToOneField(
         Scenario,
         on_delete=models.CASCADE,
         related_name="PVOutputs"
     )
-    # Outputs
     size_kw = models.FloatField(null=True, blank=True)
     total_om_cost = models.FloatField(null=True, blank=True)
     total_om_cost_bau = models.FloatField(null=True, blank=True)
@@ -2514,254 +2503,5 @@ class Message(BaseModel, models.Model):
     )
     message_type = models.TextField(default='')
     message = models.TextField(default='')
-    scenario = models.ForeignKey(
-        Scenario,
-        on_delete=models.CASCADE
-    )
-#
-#
-# class BadPost(models.Model):
-#     run_uuid = models.UUIDField(unique=True)
-#     post = models.TextField(blank=True)
-#     errors = models.TextField(blank=True)
-#
-#     def save(self, force_insert=False, force_update=False, using=None,
-#              update_fields=None):
-#         try:
-#             super(BadPost, self).save()
-#         except Exception as e:
-#             log.info("Database saving error: {}".format(e.args[0]))
-#
-#
-# def attribute_inputs(inputs):
-#     return {k: v for k, v in inputs.items() if k[0] == k[0].lower() and v is not None}
-#
-#
-# class Error(models.Model):
-#     task = models.TextField(null=True, blank=True, default='')
-#     name = models.TextField(null=True, blank=True, default='')
-#     run_uuid = models.TextField(null=True, blank=True, default='')
-#     user_uuid = models.TextField(null=True, blank=True, default='')
-#     message = models.TextField(null=True, blank=True, default='')
-#     traceback = models.TextField(null=True, blank=True, default='')
-#     created = models.DateTimeField(auto_now_add=True)
-#
-#
-# def update_model(model_name, model_data, run_uuid, number=None):
-#     if number is None:
-#         eval(model_name).objects.filter(run_uuid=run_uuid).update(**attribute_inputs(model_data))
-#     else:
-#         if 'PV' in model_name:
-#             eval(model_name).objects.filter(run_uuid=run_uuid, pv_number=number).update(**attribute_inputs(model_data))
-#
-#
-# def remove(run_uuid):
-#     """
-#     remove Scenario from database
-#     :param run_uuid: id of Scenario
-#     :return: None
-#     """
-#     Scenario.objects.filter(run_uuid=run_uuid).delete()
-#     # Profile.objects.filter(run_uuid=run_uuid).delete()
-#     SiteInputs.objects.filter(run_uuid=run_uuid).delete()
-#     FinancialInputs.objects.filter(run_uuid=run_uuid).delete()
-#     LoadProfileInputs.objects.filter(run_uuid=run_uuid).delete()
-#     # LoadProfileBoilerFuel.objects.filter(run_uuid=run_uuid).delete()
-#     # LoadProfileChillerThermal.objects.filter(run_uuid=run_uuid).delete()
-#     ElectricTariffInputs.objects.filter(run_uuid=run_uuid).delete()
-#     PV.objects.filter(run_uuid=run_uuid).delete()
-#     # Wind.objects.filter(run_uuid=run_uuid).delete()
-#     Storage.objects.filter(run_uuid=run_uuid).delete()
-#     Generator.objects.filter(run_uuid=run_uuid).delete()
-#     # CHP.objects.filter(run_uuid=run_uuid).delete()
-#     # Boiler.objects.filter(run_uuid=run_uuid).delete()
-#     # ElectricChiller.objects.filter(run_uuid=run_uuid).delete()
-#     # AbsorptionChiller.objects.filter(run_uuid=run_uuid).delete()
-#     # HotTES.objects.filter(run_uuid=run_uuid).delete()
-#     # ColdTES.objects.filter(run_uuid=run_uuid).delete()
-#     Message.objects.filter(run_uuid=run_uuid).delete()
-#     Error.objects.filter(run_uuid=run_uuid).delete()
-#
-#
-# def update(data, run_uuid):
-#     """
-#     save Scenario results in database
-#     :param data: dict, constructed in api.py, mirrors reopt api response structure
-#     :param model_ids: dict, optional, for use when updating existing models that have not been created in memory
-#     :return: None
-#     """
-#     d = data["outputs"]["Scenario"]
-#     # Profile.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Profile']))
-#     SiteInputs.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']))
-#     FinancialInputs.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Financial']))
-#     LoadProfileInputs.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['LoadProfile']))
-#     # LoadProfileBoilerFuel.objects.filter(run_uuid=run_uuid).update(
-#     #     **attribute_inputs(d['Site']['LoadProfileBoilerFuel']))
-#     # LoadProfileChillerThermal.objects.filter(run_uuid=run_uuid).update(
-#     #     **attribute_inputs(d['Site']['LoadProfileChillerThermal']))
-#     ElectricTariffInputs.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['ElectricTariff']))
-#     # FuelTariff.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['FuelTariff']))
-#     if type(d['Site']['PV'])==dict:
-#         PV.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['PV']))
-#     if type(d['Site']['PV']) == list:
-#         for pv in d['Site']['PV']:
-#             PV.objects.filter(run_uuid=run_uuid, pv_number=pv['pv_number']).update(**attribute_inputs(pv))
-#     # Wind.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Wind']))
-#     Storage.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Storage']))
-#     Generator.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Generator']))
-#     # CHP.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['CHP']))
-#     # Boiler.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Boiler']))
-#     # ElectricChiller.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['ElectricChiller']))
-#     # AbsorptionChiller.objects.filter(run_uuid=run_uuid).update(
-#     #     **attribute_inputs(d['Site']['AbsorptionChiller']))
-#     # HotTES.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['HotTES']))
-#     # ColdTES.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['ColdTES']))
-#
-#     for message_type, message in data['messages'].items():
-#         if len(Message.objects.filter(run_uuid=run_uuid, message=message)) > 0:
-#             # message already saved
-#             pass
-#         else:
-#             Message.create(run_uuid=run_uuid, message_type=message_type, message=message)
-#     # Do this last so that the status does not change to optimal before the rest of the results are filled in
-#     Scenario.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d))  # force_update=True
-#
-#
-# def update_scenario_and_messages(data, run_uuid):
-#     """
-#     save Scenario results in database
-#     :param data: dict, constructed in api.py, mirrors reopt api response structure
-#     :return: None
-#     """
-#     d = data["outputs"]["Scenario"]
-#     Scenario.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d))
-#     for message_type, message in data['messages'].items():
-#         if len(Message.objects.filter(run_uuid=run_uuid, message=message)) > 0:
-#             # message already saved
-#             pass
-#         else:
-#             Message.create(run_uuid=run_uuid, message_type=message_type, message=message)
-#
-#
-# def add_user_uuid(user_uuid, run_uuid):
-#     """
-#     update the user_uuid associated with a Scenario
-#     :param user_uuid: string
-#     :param run_uuid: string
-#     :return: None
-#     """
-#     d = {"user_uuid": user_uuid}
-#     Scenario.objects.filter(run_uuid=run_uuid).update(**d)
-#     Error.objects.filter(run_uuid=run_uuid).update(**d)
-#
 
-"""
-class LoadProfileChillerThermalInputs(BaseModel, models.Model):
-    # Inputs
-    run_uuid = models.UUIDField(unique=True)
-    loads_ton = ArrayField(
-        models.FloatField(
-            null=True,
-            blank=True),
-        default=list,
-        null=True,
-        help_text="Typical electric chiller load for all hours in one year."
-    )
-    annual_tonhour = models.FloatField(
-        null=True,
-        blank=True,
-        validators=[
-            MinValueValidator(0),
-            MaxValueValidator(1.0e8)
-        ],
-        help_text=("Annual electric chiller energy consumption, in ton-hours, used to scale simulated default electric "
-                   "chiller load profile for the site's climate zone")
-
-    )
-    monthly_tonhour = ArrayField(
-        models.FloatField(
-            blank=True,
-            validators=[
-                MinValueValidator(0),
-                MaxValueValidator(1.0e8)
-            ]
-        ),
-        default=list,
-        null=True,
-        help_text=("Monthly electric chiller energy consumption series (an array 12 entries long), in ton-hours, used "
-                   "to scale simulated default electric chiller load profile for the site's climate zone")
-
-    )
-    annual_fraction = models.FloatField(
-        null=True,
-        blank=True,
-        validators=[
-            MinValueValidator(0),
-            MaxValueValidator(1)
-        ],
-        help_text=("Annual electric chiller energy consumption scalar (i.e. fraction of total electric load, used to "
-                   "scale simulated default electric chiller load profile for the site's climate zone"),
-
-    )
-    monthly_fraction = ArrayField(
-        models.FloatField(
-            blank=True,
-            validators=[
-                MinValueValidator(0),
-                MaxValueValidator(1)
-            ]
-        ),
-        default=list,
-        null=True,
-        help_text=("Monthly electric chiller energy consumption scalar series (i.e. 12 fractions of total electric "
-                  "load by month), used to scale simulated default electric chiller load profile for the site's "
-                  "climate zone.")
-
-    )
-    loads_fraction = ArrayField(
-        models.FloatField(
-            blank=True,
-            validators=[
-                MinValueValidator(0),
-                MaxValueValidator(1.0e8)
-            ]
-        ),
-        default=list,
-        null=True,
-        help_text=("Typical electric chiller load proporion of electric load series (unit is a percent) for all time "
-                   "steps in one year.")
-    )
-    doe_reference_name = ArrayField(
-        models.TextField(null=True, blank=True), default=list, null=True)
-    percent_share = ArrayField(
-        models.FloatField(
-            null=True,
-            blank=True,
-            validators=[
-                MinValueValidator(0),
-                MaxValueValidator(100)
-            ]
-        ),
-        default=list,
-        null=True,
-        help_text=("Percentage share of the types of building for creating hybrid simulated building and campus "
-                   "profiles.")
-    )
-    chiller_cop = models.FloatField(
-        null=True,
-        blank=True,
-        validators=[
-            MinValueValidator(0),
-            MaxValueValidator(20)
-        ],
-        help_text=("Existing electric chiller system coefficient of performance - conversion of electricity to usable "
-                   "cooling thermal energy")
-    )
-
-    @classmethod
-    def create(cls, **kwargs):
-        obj = cls(**kwargs)
-        obj.save()
-
-        return obj
-"""
+# TODO other necessary models from reo/models.py
