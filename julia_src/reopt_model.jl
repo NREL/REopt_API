@@ -706,6 +706,13 @@ function add_tech_size_constraints(m, p)
 		)
 	end
 
+	##Constraint (7_supplementary_firing_size): Production limit for supplementary firing
+	if !isempty(p.CHPTechs)
+		@constraint(m, CHPSupplementaryFiringProd[t in p.CHPTechs, ts in p.TimeStep],
+			dvSupplementaryThermalProduction[t,ts] <= dvSupplementaryThermalSize[t]
+		)
+	end
+
 	##Constraint (7f)-1: Minimum segment size
 	@constraint(m, SegmentSizeMinCon[t in p.Tech, k in p.Subdivision, s in 1:p.SegByTechSubdivision[k,t]],
 		m[:dvSystemSizeSegment][t,k,s] >= p.SegmentMinSize[t,k,s] * m[:binSegmentSelect][t,k,s]
