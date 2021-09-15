@@ -64,6 +64,9 @@ function add_continuous_variables(m, p)
     if !isempty(p.SteamTurbineTechs)
         @variable(m, dvThermalToSteamTurbine[p.AllTechsForSteamTurbine, p.TimeStep] >= 0)
     end
+	if !isempty(p.CHPTechs)
+		@variable(dvSupplementaryThermalSize >= 0)  #X^{\sigma db}_{t}: System size of CHP supplementary firing [kW]
+	end
 end
 
 
@@ -79,6 +82,9 @@ function add_integer_variables(m, p)
 		binEnergyTier[p.Month, p.PricingTier], Bin    #  Z^{ut}_{mu} 1 If demand tier $u$ is active in month m; 0 otherwise (NEW)
 		binNoGridPurchases[p.TimeStep], Bin  # Binary for the condition where the site load is met by on-site resources so no grid purchases
 		binGHP[p.GHPOptions], Bin  # Can be <= 1 if ForceGHP=0, and is ==1 if ForceGHP=1
+	end
+	if !isempty(p.CHPTechs)
+		@variable(binUseSupplementaryFiring[p.Tech] >= 0)  #Z^{db}_{t}: 1 if supplementary firing is included with CHP system, 0 o.w.
 	end
 end
 
