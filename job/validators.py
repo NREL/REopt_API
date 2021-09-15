@@ -30,8 +30,10 @@
 import logging
 import pandas as pd
 from job.models import Scenario, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
-    FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, StorageInputs, GeneratorInputs
+    FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, StorageInputs, GeneratorInputs, WindInputs
 from django.core.exceptions import ValidationError
+from pyproj import Proj
+
 log = logging.getLogger(__name__)
 
 
@@ -87,7 +89,8 @@ class InputValidator(object):
             ElectricUtilityInputs,
             PVInputs,  # TODO handle multiple PV's
             StorageInputs,
-            GeneratorInputs
+            GeneratorInputs,
+            WindInputs
         )
         required_object_names = [
             "Site", "ElectricLoad", "ElectricTariff"
@@ -172,7 +175,7 @@ class InputValidator(object):
         PV tilt set to latitude if not provided
         """
         if "PV" in self.models.keys():
-            if self.models["PV"].__getattribute__("tilt") == 0.537:
+            if self.models["PV"].__getattribute__("tilt") == 0.537:  # 0.537 is a dummy number, default tilt
                 self.models["PV"].__setattr__("tilt", self.models["Site"].__getattribute__("latitude"))
 
         """
@@ -182,18 +185,31 @@ class InputValidator(object):
             ["ElectricLoad", "ElectricLoad",      "ElectricTariff"],
             ["loads_kw",     "critical_loads_kw", "wholesale_rate"]
         ):
-            if self.models[key].__getattribute__(time_series):
-                resampled_series, resampling_msg, err_msg = validate_time_series(
-                    self.models[key].__getattribute__(time_series), self.models["Settings"].time_steps_per_hour
-                )
-                if resampling_msg:
-                    self.models[key].__setattr__(time_series, resampled_series)
-                    self.resampling_messages[key] = {time_series: resampling_msg}
-                if err_msg:
-                    if key not in self.validation_errors.keys():
-                        self.validation_errors[key] = {time_series: err_msg}
-                    else:
-                        self.validation_errors[key].update({time_series: err_msg})
+            self.clean_time_series(key, time_series)
+                        
+        """
+        Wind model validation
+        1. If wind resource not provided, add a validation error if lat/lon not within WindToolkit data set
+        2. If prod factor or resource data provided, validate_time_series for each
+        
+        NOTE: if size_class is not provided it is determined in the Julia package based off of average load.
+        """
+        if "Wind" in self.models.keys():
+            if self.models["Wind"].__getattribute__("max_kw") > 0:
+                wind_resource_inputs = [
+                    "wind_meters_per_sec", "wind_direction_degrees",
+                    "temperature_celsius", "pressure_atmospheres"
+                ]
+
+                for time_series in ["prod_factor_series_kw"] + wind_resource_inputs:
+                    self.clean_time_series("Wind", time_series)
+
+                if not all([self.models["Wind"].__getattribute__(wr) for wr in wind_resource_inputs]):
+                    # then no wind_resource_inputs provided, so we need to get the resource from WindToolkit
+                    if not lat_lon_in_windtoolkit(self.models["Site"].__getattribute__("latitude"),
+                                                  self.models["Site"].__getattribute__("longitude")):
+                        self.add_validation_error("Wind", "Site",
+                              "latitude/longitude not in the WindToolkit database. Cannot retrieve wind resource data.")
 
     def save(self):
         """
@@ -211,6 +227,44 @@ class InputValidator(object):
         if self.validation_errors:
             return False
         return True
+
+    def add_validation_error(self, model_key: str, attribute_name: str, msg: str):
+        """
+        Update self.validation_errors
+        :param model_key: eg. "PV", "Wind", etc.
+        :param attribute_name: model field name, eg. "latitude"
+        :param msg: message to provide to user
+        :return: None
+        """
+        if model_key not in self.validation_errors.keys():
+            self.validation_errors[model_key] = {attribute_name: msg}
+        else:
+            self.validation_errors[model_key].update({attribute_name: msg})
+
+    def add_resampling_message(self, model_key: str, attribute_name: str, msg: str):
+        """
+        Update self.resampling_messages
+        :param model_key: eg. "PV", "Wind", etc.
+        :param attribute_name: model field name, eg. "latitude"
+        :param msg: message to provide to user
+        :return: None
+        """
+        if model_key not in self.resampling_messages.keys():
+            self.resampling_messages[model_key] = {attribute_name: msg}
+        else:
+            self.resampling_messages[model_key].update({attribute_name: msg})
+    
+    def clean_time_series(self, model_key: str, series_name: str):
+        if self.models[model_key].__getattribute__(series_name):
+            resampled_series, resampling_msg, err_msg = validate_time_series(
+                self.models[model_key].__getattribute__(series_name),
+                self.models["Settings"].time_steps_per_hour
+            )
+            if resampling_msg:
+                self.models[model_key].__setattr__(series_name, resampled_series)
+                self.add_resampling_message(model_key, series_name, resampling_msg)
+            if err_msg:
+                self.add_validation_error(model_key, series_name, err_msg)
 
 
 def validate_time_series(series: list, time_steps_per_hour: int) -> (list, str, str):
@@ -251,3 +305,25 @@ def validate_time_series(series: list, time_steps_per_hour: int) -> (list, str, 
     resampling_msg = f"Upsampled to match time_steps_per_hour via forward-fill."
     resampled_val = [x for x in series for _ in range(int(time_steps_per_hour/time_steps_per_hour_in_series))]
     return resampled_val, resampling_msg, ""
+
+
+def lat_lon_in_windtoolkit(lat, lon):
+    """
+    Convert latitude, longitude into integer values for wind tool kit database.
+    Modified from "indicesForCoord" in https://github.com/NREL/hsds-examples/blob/master/notebooks/01_introduction.ipynb
+    Questions? Perr-Sauer, Jordan <Jordan.Perr-Sauer@nrel.gov>
+    """
+    projstring = """+proj=lcc +lat_1=30 +lat_2=60 
+                    +lat_0=38.47240422490422 +lon_0=-96.0 
+                    +x_0=0 +y_0=0 +ellps=sphere 
+                    +units=m +no_defs """
+    projectLcc = Proj(projstring)
+    origin_ll = reversed((19.624062, -123.30661))  # origin_ll = reversed(dset[0][0])  to grab origin directly from database
+    origin = projectLcc(*origin_ll)
+    point = projectLcc(lon, lat)
+    x = int(round((point[0] - origin[0]) / 2000))
+    y = int(round((point[1] - origin[1]) / 2000))
+    y_max, x_max = (1602, 2976) # dset.shape to grab shape directly from database
+    if (x < 0) or (y < 0) or (x >= x_max) or (y >= y_max):
+        raise ValueError("Latitude/Longitude is outside of wind resource dataset bounds.")
+    return y,x
