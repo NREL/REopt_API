@@ -7,6 +7,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('reo', '0118_auto_20210715_2148'),
+        ('reo', '0119_merge_20210721_2005'),
     ]
 
     operations = [
