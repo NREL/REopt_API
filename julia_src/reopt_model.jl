@@ -1614,7 +1614,7 @@ function add_chp_results(m, p, r::Dict)
 			for t in p.CHPTechs, ts in p.TimeStep))
 	r["year_one_chp_electric_energy_produced"] = round(value(Year1CHPElecProd), digits=3)
 	@expression(m, Year1CHPThermalProd,
-		p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts]-m[:dvProductionToWaste][t,ts] for t in p.CHPTechs, ts in p.TimeStep))
+		p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts]+m[:dvSupplementaryThermalProduction][t,ts]-m[:dvProductionToWaste][t,ts] for t in p.CHPTechs, ts in p.TimeStep))
 	r["year_one_chp_thermal_energy_produced"] = round(value(Year1CHPThermalProd), digits=3)
 	@expression(m, CHPElecProdTotal[ts in p.TimeStep],
 		sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] for t in p.CHPTechs))
