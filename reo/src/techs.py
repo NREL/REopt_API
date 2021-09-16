@@ -378,6 +378,7 @@ class CHP(Tech):
         self.can_supply_st = kwargs.get('can_supply_st')
         self.supplementary_firing_max_steam_ratio = kwargs.get('supplementary_firing_max_steam_ratio')
         self.supplementary_firing_efficiency = kwargs.get('supplementary_firing_efficiency')
+        self.supplementary_firing_capital_cost_per_kw = kwargs.get('supplementary_firing_capital_cost_per_kw')
 
         self.fuel_burn_slope, self.fuel_burn_intercept, self.thermal_prod_slope, self.thermal_prod_intercept = \
             self.convert_performance_params(self.elec_effic_full_load, self.elec_effic_half_load,
