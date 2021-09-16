@@ -190,7 +190,8 @@ class BaseModel(object):
         for field in self._meta.fields:
             if field.attname.endswith("id"): continue
             d[field.attname] = dict()
-            d[field.attname]["required"] = not field.blank and field.default == NOT_PROVIDED
+            if "Outputs" not in getattr(self, "key", ""):
+                d[field.attname]["required"] = not field.blank and field.default == NOT_PROVIDED
             if field.choices is not None:
                 d[field.attname]["choices"] = [t[0] for t in field.choices]
             if not field.default == NOT_PROVIDED and field.default != list:
@@ -1634,6 +1635,7 @@ class PVInputs(BaseModel, models.Model):
 
 
 class PVOutputs(BaseModel, models.Model):
+    key = "PVOutputs"
     scenario = models.OneToOneField(
         Scenario,
         on_delete=models.CASCADE,
@@ -2481,7 +2483,7 @@ class GeneratorInputs(BaseModel, models.Model):
 
 
 class GeneratorOutputs(BaseModel, models.Model):
-
+    key = "GeneratorOutputs"
     scenario = models.OneToOneField(
         Scenario,
         on_delete=models.CASCADE,
