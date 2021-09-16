@@ -48,6 +48,7 @@ Guidance:
 MAX_BIG_NUMBER = 1.0e8
 MAX_INCENTIVE = 1.0e10
 MAX_YEARS = 75
+# TODO all financial values that start with `total_` or `net_` change to `lifecyle_` (here and in Julia package)
 
 
 class MACRS_YEARS_CHOICES(models.IntegerChoices):
