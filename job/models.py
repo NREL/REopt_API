@@ -28,6 +28,7 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
 from django.db import models
+from django.db.models.fields import NOT_PROVIDED
 from django.contrib.postgres.fields import *
 from picklefield.fields import PickledObjectField
 from django.core.exceptions import ValidationError
@@ -176,6 +177,29 @@ class BaseModel(object):
     def create(cls, **kwargs):
         obj = cls(**kwargs)
         return obj
+
+    def info_dict(self):
+        """
+        :return: dict with keys for each model field and sub-dicts for the settings for each key, such as help_text
+        """
+        d = dict()
+        for field in self._meta.fields:
+            if field.attname.endswith("id"): continue
+            d[field.attname] = dict()
+            d[field.attname]["required"] = not field.blank and field.default == NOT_PROVIDED
+            if field.choices is not None:
+                d[field.attname]["choices"] = [t[0] for t in field.choices]
+            if not field.default == NOT_PROVIDED and field.default != list:
+                try:
+                    d[field.attname]["default"] = field.default.value
+                except:
+                    d[field.attname]["default"] = field.default
+            if len(field.help_text) > 0:
+                d[field.attname]["help_text"] = field.help_text
+            for val in field.validators:
+                if val.limit_value not in (-2147483648, 2147483647):  # integer limits
+                    d[field.attname][val.code] = val.limit_value
+        return d
 
 
 class Scenario(BaseModel, models.Model):
@@ -668,9 +692,8 @@ class ElectricLoadInputs(BaseModel, models.Model):
         null=False,
         blank=True,  # TODO do we have to include "" in choices for blank=True to work?
         choices=DOE_REFERENCE_NAME.choices,
-        help_text=("Simulated load profile from DOE <a href='https: "
-                   "//energy.gov/eere/buildings/commercial-reference-buildings' target='blank'>Commercial Reference "
-                   "Buildings</a>")
+        help_text=("Simulated load profile from DOE Commercial Reference Buildings "
+                   "https://energy.gov/eere/buildings/commercial-reference-buildings")
     )
     year = models.IntegerField(
         default=2020,
@@ -848,20 +871,22 @@ class ElectricTariffInputs(BaseModel, models.Model):
     )
     urdb_label = models.TextField(
         blank=True,
-        help_text=("Label attribute of utility rate structure from <a href='https://openei.org/services/doc/rest/util_rates/?version=3' target='blank'>Utility Rate Database API</a>")
+        help_text=("Label attribute of utility rate structure from Utility Rate Database API "
+                   "https://openei.org/services/doc/rest/util_rates/?version=8")
     )
     urdb_response = PickledObjectField(
         null=True, blank=True,
         editable=True,
-        help_text=("Utility rate structure from <a href='https://openei.org/services/doc/rest/util_rates/?version=3' target='blank'>Utility Rate Database API</a>")
+        help_text=("Utility rate structure from Utility Rate Database API "
+                   "https://openei.org/services/doc/rest/util_rates/?version=8")
     )
     urdb_rate_name = models.TextField(
         blank=True,
-        help_text=("Name of utility rate from <a href='https://openei.org/wiki/Utility_Rate_Database' target='blank'>Utility Rate Database</a>")
+        help_text="Name of utility rate from Utility Rate Database https://openei.org/wiki/Utility_Rate_Database"
     )
     urdb_utility_name = models.TextField(
         blank=True,
-        help_text=("Name of Utility from <a href='https://openei.org/wiki/Utility_Rate_Database' target='blank'>Utility Rate Database</a>")
+        help_text="Name of Utility from Utility Rate Database https://openei.org/wiki/Utility_Rate_Database"
     )
     blended_annual_demand_charge = models.FloatField(
         blank=True,
