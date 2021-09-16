@@ -43,8 +43,10 @@ class TestSIADScenarios(ResourceTestCaseMixin, TestCase):
         self.submit_url = '/v1/job/'
         self.results_url = '/v1/job/<run_uuid>/results/'
         self.post_BAU = json.load(open(os.path.join('reo', 'tests', 'posts', 'SIAD_post_BAU.json'),'rb'))
-        self.post_no_PV = json.load(open(os.path.join('reo', 'tests', 'posts', 'SIAD_post_no_PV.json'),'rb'))
-        self.post_with_PV = json.load(open(os.path.join('reo', 'tests', 'posts', 'SIAD_post_with_PV.json'),'rb'))
+        self.post_no_PV_no_ITC = json.load(open(os.path.join('reo', 'tests', 'posts', 'SIAD_post_no_PV_no_ITC.json'),'rb'))
+        self.post_no_PV_with_ITC = json.load(open(os.path.join('reo', 'tests', 'posts', 'SIAD_post_no_PV_with_ITC.json'),'rb'))
+        self.post_with_PV_no_ITC = json.load(open(os.path.join('reo', 'tests', 'posts', 'SIAD_post_with_PV_no_ITC.json'),'rb'))
+        self.post_with_PV_with_ITC = json.load(open(os.path.join('reo', 'tests', 'posts', 'SIAD_post_with_PV_with_ITC.json'),'rb'))
 
     def get_response(self, data):
         initial_post = self.api_client.post(self.submit_url, format='json', data=data)
@@ -65,53 +67,52 @@ class TestSIADScenarios(ResourceTestCaseMixin, TestCase):
         # with open(os.path.join(results_dir,'SIAD_results_no_PV_no_resilience.json'), 'w') as json_file:
         #     json.dump(response, json_file)
 
-        FULL_RESILIENCE = False
-        if FULL_RESILIENCE == True:
-            critical_pct = 1
-        else:
-            critical_pct = .8
+        def analyze_resilient_coa(FULL_RESILIENCE, post, results_filename):
+            if FULL_RESILIENCE == True:
+                critical_pct = 1
+            else:
+                critical_pct = .97
+                
+            post["Scenario"]["Site"]["LoadProfile"]["critical_load_pct"] = critical_pct
+            day = 329
+            post["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = day*24
+            post["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"] = (day+14)*24
+            response = self.get_response(data=post)
+            pv_kw = response["outputs"]["Scenario"]["Site"]["PV"]["size_kw"] - post["Scenario"]["Site"]["PV"]["existing_kw"]
+            day = 281
+            post["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = day*24
+            post["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"] = (day+14)*24
+            response = self.get_response(data=post)
+            batt_kw = response["outputs"]["Scenario"]["Site"]["Storage"]["size_kw"]
+            day = 7
+            post["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = day*24
+            post["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"] = (day+14)*24
+            response = self.get_response(data=post)
+            batt_kwh = response["outputs"]["Scenario"]["Site"]["Storage"]["size_kwh"]
+            day = 334
+            post["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = day*24
+            post["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"] = (day+14)*24
+            response = self.get_response(data=post)
+            gen_kw = response["outputs"]["Scenario"]["Site"]["Generator"]["size_kw"]
             
-        self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["critical_load_pct"] = critical_pct
-        day = 329
-        self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = day*24
-        self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"] = (day+14)*24
-        response = self.get_response(data=self.post_with_PV)
-        pv_kw = response["outputs"]["Scenario"]["Site"]["PV"]["size_kw"] - self.post_with_PV["Scenario"]["Site"]["PV"]["existing_kw"]
-        day = 281
-        self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = day*24
-        self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"] = (day+14)*24
-        response = self.get_response(data=self.post_with_PV)
-        batt_kw = response["outputs"]["Scenario"]["Site"]["Storage"]["size_kw"]
-        day = 7
-        self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = day*24
-        self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"] = (day+14)*24
-        response = self.get_response(data=self.post_with_PV)
-        batt_kwh = response["outputs"]["Scenario"]["Site"]["Storage"]["size_kwh"]
-        day = 334
-        self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = day*24
-        self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"] = (day+14)*24
-        response = self.get_response(data=self.post_with_PV)
-        gen_kw = response["outputs"]["Scenario"]["Site"]["Generator"]["size_kw"]
+            post["Scenario"]["Site"]["PV"]["max_kw"] = pv_kw
+            post["Scenario"]["Site"]["PV"]["min_kw"] = pv_kw
+            post["Scenario"]["Site"]["Storage"]["max_kw"] = batt_kw
+            post["Scenario"]["Site"]["Storage"]["min_kw"] = batt_kw
+            post["Scenario"]["Site"]["Storage"]["max_kwh"] = batt_kwh
+            post["Scenario"]["Site"]["Storage"]["min_kwh"] = batt_kwh
+            post["Scenario"]["Site"]["Generator"]["max_kw"] = gen_kw
+            post["Scenario"]["Site"]["Generator"]["min_kw"] = gen_kw
+            post["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = 0
+            post["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"] = 1
+            response = self.get_response(data=post)
+            with open(os.path.join(results_dir,results_filename), 'w') as json_file:
+                json.dump(response, json_file)
+            print(response["outputs"]["Scenario"]["Site"]["Financial"]["npv_us_dollars"])
         
-        self.post_with_PV["Scenario"]["Site"]["PV"]["max_kw"] = pv_kw
-        self.post_with_PV["Scenario"]["Site"]["PV"]["min_kw"] = pv_kw
-        self.post_with_PV["Scenario"]["Site"]["Storage"]["max_kw"] = batt_kw
-        self.post_with_PV["Scenario"]["Site"]["Storage"]["min_kw"] = batt_kw
-        self.post_with_PV["Scenario"]["Site"]["Storage"]["max_kwh"] = batt_kwh
-        self.post_with_PV["Scenario"]["Site"]["Storage"]["min_kwh"] = batt_kwh
-        self.post_with_PV["Scenario"]["Site"]["Generator"]["max_kw"] = gen_kw
-        self.post_with_PV["Scenario"]["Site"]["Generator"]["min_kw"] = gen_kw
-        self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = 0
-        self.post_with_PV["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"] = 1
-        response = self.get_response(data=self.post_with_PV)
-        if FULL_RESILIENCE == True:
-            with open(os.path.join(results_dir,'SIAD_results_with_PV_full_resilience_newfin.json'), 'w') as json_file:
-                json.dump(response, json_file)
-            print(response["outputs"]["Scenario"]["Site"]["Financial"]["npv_us_dollars"])
-        else:
-            with open(os.path.join(results_dir,'SIAD_results_with_PV_neutral_NPV_newfin.json'), 'w') as json_file:
-                json.dump(response, json_file)
-            print(response["outputs"]["Scenario"]["Site"]["Financial"]["npv_us_dollars"])
+        FULL_RESILIENCE = False
+        # analyze_resilient_coa(FULL_RESILIENCE, self.post_with_PV_no_ITC, 'SIAD_results_with_PV_no_ITC_{}.json'.format("full_resilience" if FULL_RESILIENCE else "neutral_NPV"))
+        analyze_resilient_coa(FULL_RESILIENCE, self.post_with_PV_with_ITC, 'SIAD_results_with_PV_with_ITC_{}.json'.format("full_resilience" if FULL_RESILIENCE else "neutral_NPV"))
 
         # for day in range(365-14):
         #     self.post_no_PV["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = day*24

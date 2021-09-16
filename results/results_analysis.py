@@ -200,7 +200,7 @@ def print_max_system_sizes():
 
 
 def multi_site_summary_xlsx():
-    summary_filename = "siad_results_newfin.xlsx"
+    summary_filename = "siad_results_09152021.xlsx"
     sites = ["SIAD"]
     # df_all_sites = None
     print(site_summary_df(sites[0]))
@@ -244,9 +244,10 @@ def site_summary_df(site):
     #             "with_PV_neutral_NPV": "With Added PV, Neutral NPV Resilience"
     #             }
     scenarios = {
-                "with_PV_no_resilience_newfin": "With Added PV, No Extra Resilience",
-                "with_PV_neutral_NPV_newfin": "With Added PV, Neutral NPV Resilience",
-                "with_PV_full_resilience_newfin": "With Added PV, Full pctl Resilience"
+                "with_PV_with_ITC_neutral_NPV": "With ITC, Neutral NPV Resilience",
+                "with_PV_with_ITC_full_resilience": "With ITC, Full Resilience",
+                "with_PV_no_ITC_neutral_NPV": "No ITC, Neutral NPV Resilience",
+                "with_PV_no_ITC_full_resilience": "No ITC, Full Resilience"
                 }
     add_BAU_col = False
     df = pd.DataFrame(index=rows)
@@ -293,7 +294,7 @@ def site_summary_df(site):
                         results["Financial"]["lcc_us_dollars"]/1000,
                         results["Financial"]["npv_us_dollars"]/1000 if results["Financial"]["npv_us_dollars"] != 0 else "-",
                         "",
-                        100*results["PV"]["average_yearly_energy_produced_kwh"]/sum(json.load(open(json_filename))['inputs']["Scenario"]["Site"]["LoadProfile"]["loads_kw"]),
+                        100*(sum(results["PV"]["year_one_power_production_series_kw"])-sum(results["PV"]["year_one_curtailed_production_series_kw"]))/sum(json.load(open(json_filename))['inputs']["Scenario"]["Site"]["LoadProfile"]["loads_kw"]),
                         # results["ElectricTariff"]["year_one_energy_supplied_kwh"]/1000,
                         results["ElectricTariff"]["year_one_emissions_lb_C02"]/1000
                         # (results["ElectricTariff"]["year_one_energy_supplied_kwh"]/eGRID_factor_marg)/1000,
@@ -527,15 +528,20 @@ def resilience_main():
     y_valsRE = []
 
     scen_abrvs = [
-                "with_PV_no_resilience_newfin",
-                "with_PV_neutral_NPV_newfin",
-                "with_PV_full_resilience_newfin"
+                "with_PV_with_ITC_neutral_NPV",
+                "with_PV_with_ITC_full_resilience",
+                "with_PV_no_ITC_neutral_NPV",
+                "with_PV_no_ITC_full_resilience"
                 ]
     scen_titles = [
-                "No Extra Resilience",
-                "Neutral NPV Resilience",
-                "Full Resilience"
+                "With ITC, Neutral NPV Resilience",
+                "With ITC, Full Resilience",
+                "No ITC, Neutral NPV Resilience",
+                "No ITC, Full Resilience"
                 ]
+    # just for SIAD to use 100% critical load to evaluate solution found using lower % to get neutral npv
+    with open("SIAD_results_{}.json".format(scen_abrvs[1])) as f:
+        critical_load = json.load(f)["outputs"]["Scenario"]["Site"]["Storage"]["year_one_soc_series_pct"]
 
     for scen in scen_abrvs:#["with_PV","no_PV"]:
         # for pctl in [100,75,50]:
@@ -579,7 +585,7 @@ def resilience_main():
                 'batt_kw': battPower,
                 'pv_kw_ac_hourly': pv_kw_ac_hourly,
                 'wind_kw_ac_hourly': wind_kw_ac_hourly,
-                'critical_loads_kw': load,
+                'critical_loads_kw': critical_load,#TODO: change back to load returned from readInputsFromREoptResultsFile() for future analysis
                 'init_soc': soc,
                 'diesel_kw': genPower,
                 'fuel_available': fuelAvail
@@ -694,8 +700,8 @@ def resilience_main():
 if __name__ == '__main__':
 
     # print_max_system_sizes()
-    resilience_main()
-    # multi_site_summary_xlsx()
+    # resilience_main()
+    multi_site_summary_xlsx()
     # load_profiles_plot()
 
     # dir = '.'
