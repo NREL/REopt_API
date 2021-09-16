@@ -183,6 +183,10 @@ class BaseModel(object):
         :return: dict with keys for each model field and sub-dicts for the settings for each key, such as help_text
         """
         d = dict()
+        possible_sets = getattr(self, "possible_sets", None)
+        if possible_sets is not None:
+            d["possible_sets"] = possible_sets
+
         for field in self._meta.fields:
             if field.attname.endswith("id"): continue
             d[field.attname] = dict()
