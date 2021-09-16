@@ -39,96 +39,11 @@ import logging
 log = logging.getLogger(__name__)
 
 """
-Running list of changes from v1 to document:
-- flattened the input/output structure
-- moved any inputs that are not needed for REopt optimization to Scenario
-    - moved Site.address to Scenario
-- moved Site attributes only needed for CHP to CHP
-    - moved Site.elevation_ft to CHP
-    - moved Site.outdoor_air_temp_degF to CHP
-- Financial.total_om_costs and Financial.year_one_om_costs -> *_after_tax appended to name for clarity
-- moved power and energy outputs related to the grid from ElectricTariff to ElectricUtility
-- `existing_gen_*` Generator outputs now just have `_bau` appended to the name (removed `existing_gen_`)
-- remove "_series" from cashflow outputs
-- irr_pct -> internal_rate_of_return
-- resilience_check_flag -> bau_critical_load_met
-- remove year_one_power_production_series_kw for all techs (b/c it is the sum of other outputs and we want to cut down on the 
-    amount of data in every response)
-- existing_pv_om_cost -> PV.total_om_cost_bau
-- average_yearly_* outputs -> average_annual_* (we had a mix before)
-"""
-
-# TODO add related_name field to all OneToOne Scenario's
-"""
-When editing this file help_text must have the following punctuation:
-    1- One line of text must be enclosed by quotes, example:
-      help_text="The number of seconds allowed before the optimization times out."
-    2- More than one line of text must be enclosed by quotes within parentheses, example: 
-      help_text=("The threshold for the difference between the solution's objective value and the best possible "
-                 "value at which the solver terminates")
-
-Can we use:
-django.db.models.Model
-for all that nested_inputs provides, and some validation? YES!
-
-https://docs.djangoproject.com/en/3.1/ref/models/fields/#validators
-
-max/min   https://docs.djangoproject.com/en/3.1/ref/validators/#maxvaluevalidator
-
-default https://docs.djangoproject.com/en/3.1/ref/models/fields/#default 
-
-required https://docs.djangoproject.com/en/3.1/ref/models/fields/#blank
-
-restrict_to https://docs.djangoproject.com/en/3.1/ref/models/fields/#choices
-
-description https://docs.djangoproject.com/en/3.1/ref/models/fields/#help-text
-
-Define our own clean method for each model:
-https://docs.djangoproject.com/en/3.1/ref/models/instances/#django.db.models.Model.clean
-
-https://docs.djangoproject.com/en/3.1/ref/models/fields/#error-messages
-
-https://github.com/django/django/blob/876dc0c1a7dbf569782eb64f62f339c1daeb75e0/django/db/models/base.py#L1256
-# Skip validation for empty fields with blank=True. The developer
-# is responsible for making sure they have a valid value.
--> implies that we should NOT have blank=True for required inputs
-
-Avoid using null on string-based fields such as CharField and TextField.
-https://stackoverflow.com/questions/8609192/what-is-the-difference-between-null-true-and-blank-true-in-django
-
 Guidance:
 - start all Model fields with required fields (do not need to include `blank` b/c the default value of blank is False)
 - TextField and CharField should not have null=True
 - description: use square brackets for units, eg. [dollars per kWh]
-
-Input and Results models
-test type validation for multiple fields, need to override clean_fields to go through all fields before raising ValidationError?
-
-    def clean_fields(self, exclude=None):
-        Clean all fields and raise a ValidationError containing a dict
-        of all validation errors if any occur.
-        if exclude is None:
-            exclude = []
-
-        errors = {}
-        for f in self._meta.fields:
-            if f.name in exclude:
-                continue
-            # Skip validation for empty fields with blank=True. The developer
-            # is responsible for making sure they have a valid value.
-            raw_value = getattr(self, f.attname)
-            if f.blank and raw_value in f.empty_values:
-                continue
-            try:
-                setattr(self, f.attname, f.clean(raw_value, self))
-            except ValidationError as e:
-                errors[f.key] = e.error_list
-
-        if errors:
-            raise ValidationError(errors)
-
-Output models need to have null=True, blank=True for cases when results are not generated 
-(when errors occur during solve or post-processing)
+- Output models need to have null=True, blank=True for cases when results are not generated 
 """
 MAX_BIG_NUMBER = 1.0e8
 MAX_INCENTIVE = 1.0e10
@@ -323,23 +238,6 @@ class SiteInputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Area of roof in square feet available for PV siting"
     )
-    # TODO move elevation_ft to CHP model
-    # elevation_ft = models.FloatField(
-    #     default=0,
-    #     validators=[
-    #         MinValueValidator(0),
-    #         MaxValueValidator(15000)
-    #     ],
-    #     null=True, blank=True,
-    #     help_text="Site elevation (above sea sevel), units of feet"
-    # )
-    # TODO move outdoor_air_temp_degF to CHP model
-    # outdoor_air_temp_degF = ArrayField(
-    #     models.FloatField(
-    #         null=True, blank=True,
-    #         help_text="Hourly outdoor air temperature (dry-bulb)."
-    #     ),
-    #     default=list, null=True)
 
 """
 # TODO should we move the emissions_calculator to Julia? 
@@ -352,6 +250,7 @@ class SiteOutputs(BaseModel, models.Model):
         Scenario,
         on_delete=models.CASCADE,
         primary_key=True,
+        related_name="SiteOutputs"
     )
 
     year_one_emissions_lb_C02 = models.FloatField(
@@ -527,7 +426,7 @@ class FinancialOutputs(BaseModel, models.Model):
     )
     net_om_costs_bau = models.FloatField(
         null=True, blank=True,
-        help_text="Business-as-usual present value of operations and maintenance over anlaysis period",
+        help_text="Business-as-usual present value of operations and maintenance over analysis period",
     )
     net_capital_costs = models.FloatField(
         null=True, blank=True,
