@@ -32,4 +32,5 @@ from django.urls import re_path
 
 urlpatterns = [
     re_path(r'^job/(?P<run_uuid>[0-9a-f-]+)/results/?$', views.results),
+    re_path(r'^help/?$', views.help),
 ]

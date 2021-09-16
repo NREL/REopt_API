@@ -33,7 +33,8 @@ import sys
 import traceback as tb
 from django.http import JsonResponse
 from reo.exceptions import UnexpectedError
-from job.models import Scenario, Message, PVInputs, PVOutputs
+from job.models import Scenario, Settings, PVInputs, StorageInputs, WindInputs, GeneratorInputs, ElectricLoadInputs,\
+    ElectricTariffInputs, ElectricUtilityInputs
 
 
 def make_error_resp(msg):
@@ -41,6 +42,25 @@ def make_error_resp(msg):
     resp['messages'] = {'error': msg}
     resp['status'] = 'error'
     return resp
+
+
+def help(request):
+
+    try:
+        d = dict()
+        d["Scenario"] = Scenario.info_dict(Scenario)
+        d["Settings"] = Settings.info_dict(Settings)
+        d["ElectricLoad"] = ElectricLoadInputs.info_dict(ElectricLoadInputs)
+        d["ElectricTariff"] = ElectricTariffInputs.info_dict(ElectricTariffInputs)
+        d["ElectricUtility"] = ElectricUtilityInputs.info_dict(ElectricUtilityInputs)
+        d["PV"] = PVInputs.info_dict(PVInputs)
+        d["Storage"] = StorageInputs.info_dict(StorageInputs)
+        d["Wind"] = WindInputs.info_dict(WindInputs)
+        d["Generator"] = GeneratorInputs.info_dict(GeneratorInputs)
+        return JsonResponse(d)
+
+    except Exception as e:
+        return JsonResponse({"Error": "Unexpected error in help endpoint: {}".format(e.args[0])}, status=500)
 
 
 def results(request, run_uuid):
