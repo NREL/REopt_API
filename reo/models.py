@@ -683,6 +683,7 @@ class CHPModel(models.Model):
     min_turn_down_pct = models.FloatField(null=True, blank=True)
     thermal_effic_full_load = models.FloatField(null=True, blank=True)
     thermal_effic_half_load = models.FloatField(null=True, blank=True)
+    supplementary_firing_capital_cost_per_kw = models.FloatField(null=True, blank=True)
     supplementary_firing_max_steam_ratio = models.FloatField(null=True, blank=True)
     supplementary_firing_efficiency = models.FloatField(null=True, blank=True)
     macrs_option_years = models.IntegerField(null=True, blank=True)
