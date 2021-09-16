@@ -34,7 +34,8 @@ import traceback as tb
 from django.http import JsonResponse
 from reo.exceptions import UnexpectedError
 from job.models import Scenario, Settings, PVInputs, StorageInputs, WindInputs, GeneratorInputs, ElectricLoadInputs,\
-    ElectricTariffInputs, ElectricUtilityInputs
+    ElectricTariffInputs, ElectricUtilityInputs, PVOutputs, StorageOutputs, WindOutputs, GeneratorOutputs, \
+    ElectricTariffOutputs, ElectricUtilityOutputs, ElectricLoadOutputs
 
 
 def make_error_resp(msg):
@@ -45,7 +46,9 @@ def make_error_resp(msg):
 
 
 def help(request):
-
+    """
+    used for job/inputs. keeping the help endpoint behavior from v1
+    """
     try:
         d = dict()
         d["Scenario"] = Scenario.info_dict(Scenario)
@@ -57,6 +60,37 @@ def help(request):
         d["Storage"] = StorageInputs.info_dict(StorageInputs)
         d["Wind"] = WindInputs.info_dict(WindInputs)
         d["Generator"] = GeneratorInputs.info_dict(GeneratorInputs)
+        return JsonResponse(d)
+
+    except Exception as e:
+        return JsonResponse({"Error": "Unexpected error in help endpoint: {}".format(e.args[0])}, status=500)
+
+
+def inputs(request):
+    """
+    Served at host/job/inputs
+    :param request: 
+    :return: JSON response with all job inputs
+    """
+    resp = help(request)
+    return resp
+
+
+def outputs(request):
+    """
+    Served at host/job/outputs
+    :return: JSON response with all job outputs
+    """
+
+    try:
+        d = dict()
+        d["ElectricLoad"] = ElectricLoadOutputs.info_dict(ElectricLoadOutputs)
+        d["ElectricTariff"] = ElectricTariffOutputs.info_dict(ElectricTariffOutputs)
+        d["ElectricUtility"] = ElectricUtilityOutputs.info_dict(ElectricUtilityOutputs)
+        d["PV"] = PVOutputs.info_dict(PVOutputs)
+        d["Storage"] = StorageOutputs.info_dict(StorageOutputs)
+        d["Wind"] = WindOutputs.info_dict(WindOutputs)
+        d["Generator"] = GeneratorOutputs.info_dict(GeneratorOutputs)
         return JsonResponse(d)
 
     except Exception as e:
