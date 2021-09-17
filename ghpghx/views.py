@@ -42,8 +42,6 @@ from django.template import  loader
 from django.views.decorators.csrf import csrf_exempt
 from ghpghx.resources import UUIDFilter
 from ghpghx.models import ModelManager
-# from ghpghx.exceptions import UnexpectedError  #, RequestError  # should we save bad requests? could be sql injection attack?
-# from ghpghx.validators import ValidateNestedInput
 
 log = logging.getLogger(__name__)
 
@@ -102,39 +100,3 @@ def results(request, ghp_uuid):
         exc_type, exc_value, exc_traceback = sys.exc_info()
         resp = make_error_resp("Error when trying to make_response")
         return JsonResponse(resp, status=500)
-
-@csrf_exempt  # Required for POST, but not GET requests
-def post_exmpl(request):
-    """
-    Description
-    :param year: query param
-    :return: response field
-    """
-    try:
-        if request.method == "GET":
-            msg = "Successful GET request"
-            resp = {}
-        elif request.method == "POST":
-            request_dict = json.loads(request.body)
-            msg = "Successful POST request"
-            resp = request_dict
-        response = JsonResponse(
-            {
-                "message": msg,
-                "echo_post": resp
-            }
-        )
-        return response
-
-    except ValueError as e:
-        return JsonResponse({"Error": str(e.args[0])}, status=400)
-
-    except KeyError as e:
-        return JsonResponse({"Error. Missing": str(e.args[0])}, status=400)
-
-    except Exception:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
-                                                                            tb.format_tb(exc_traceback))
-        log.debug(debug_msg)
-        return JsonResponse({"Error": "Unexpected error in post_exmpl endpoint. Check log for more."}, status=500)
