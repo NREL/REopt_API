@@ -53,16 +53,16 @@ class GHPGHXModel(models.Model):
         help_text="Longitude of the site")
     
     # Parameters
-    borehole_depth_ft = models.FloatField(null=True, blank=True, 
+    borehole_depth_ft = models.FloatField(blank=True, 
         default=400.0, validators=[MinValueValidator(10.0), MaxValueValidator(600.0)],
         help_text="Vertical depth of each borehole [ft]")
-    ghx_header_depth_ft = models.FloatField(null=True, blank=True, 
+    ghx_header_depth_ft = models.FloatField(blank=True, 
         default=4.0, validators=[MinValueValidator(0.1), MaxValueValidator(50.0)],
         help_text="Depth under the ground of the GHX header pipe [ft]")
-    borehole_spacing_ft = models.FloatField(null=True, blank=True, 
+    borehole_spacing_ft = models.FloatField(blank=True, 
         default=20.0, validators=[MinValueValidator(1.0), MaxValueValidator(100.0)],
         help_text="Distance from the centerline of each borehole to the centerline of its adjacent boreholes [ft]")
-    borehole_diameter_inch = models.FloatField(null=True, blank=True, 
+    borehole_diameter_inch = models.FloatField(blank=True, 
         default=5.0, validators=[MinValueValidator(0.25), MaxValueValidator(24.0)],
         help_text="Diameter of the borehole/well drilled in the ground [in]")
     borehole_choices = [("rectangular", "rectangular"),
@@ -70,58 +70,58 @@ class GHPGHXModel(models.Model):
     borehole_spacing_type = models.TextField(blank=True,
         default="rectangular", choices=borehole_choices,
         help_text="Borehole spacing pattern type: rectangular or hexagonal")
-    ghx_pipe_outer_diameter_inch = models.FloatField(null=True, blank=True, 
+    ghx_pipe_outer_diameter_inch = models.FloatField(blank=True, 
         default=1.66, validators=[MinValueValidator(0.25), MaxValueValidator(24.0)],
         help_text="Outer diameter of the GHX pipe [in]")
-    ghx_pipe_wall_thickness_inch = models.FloatField(null=True, blank=True, 
+    ghx_pipe_wall_thickness_inch = models.FloatField(blank=True, 
         default=0.16, validators=[MinValueValidator(0.01), MaxValueValidator(5.0)],
         help_text="Wall thickness of the GHX pipe [in]")
-    ghx_pipe_thermal_conductivity_btu_per_hr_ft_f = models.FloatField(null=True, blank=True, 
+    ghx_pipe_thermal_conductivity_btu_per_hr_ft_f = models.FloatField(blank=True, 
         default=0.25, validators=[MinValueValidator(0.01), MaxValueValidator(10.0)],
         help_text="Thermal conductivity of the GHX pipe [Btu/(hr-ft-degF)]")
-    ghx_shank_space_inch = models.FloatField(null=True, blank=True, 
+    ghx_shank_space_inch = models.FloatField(blank=True, 
         default=2.5, validators=[MinValueValidator(0.5), MaxValueValidator(100.0)],
         help_text="Distance between the centerline of the upwards and downwards u-tube legs [in]")
-    ground_thermal_conductivity_btu_per_hr_ft_f = models.FloatField(null=True, blank=True, 
+    ground_thermal_conductivity_btu_per_hr_ft_f = models.FloatField(blank=True, 
         default=1.18, validators=[MinValueValidator(0.01), MaxValueValidator(15.0)],
         help_text="Thermal conductivity of the ground surrounding the borehole field [Btu/(hr-ft-degF)]")
-    ground_mass_density_lb_per_ft3 = models.FloatField(null=True, blank=True,
+    ground_mass_density_lb_per_ft3 = models.FloatField(blank=True,
         default=162.3, validators=[MinValueValidator(10.0), MaxValueValidator(500.0)],
         help_text="Mass density of the ground surrounding the borehole field [lb/ft^3]")
-    ground_specific_heat_btu_per_lb_f = models.FloatField(null=True, blank=True, 
+    ground_specific_heat_btu_per_lb_f = models.FloatField(blank=True, 
         default=0.211, validators=[MinValueValidator(0.01), MaxValueValidator(5.0)],
         help_text="Specific heat of the ground surrounding the borehole field")
-    grout_thermal_conductivity_btu_per_hr_ft_f = models.FloatField(null=True, blank=True, 
+    grout_thermal_conductivity_btu_per_hr_ft_f = models.FloatField(blank=True, 
         default=1.0, validators=[MinValueValidator(0.01), MaxValueValidator(10.0)],
         help_text="Thermal conductivity of the grout material in a borehole [Btu/(hr-ft-degF)]")
-    ghx_fluid_specific_heat_btu_per_lb_f = models.FloatField(null=True, blank=True, 
+    ghx_fluid_specific_heat_btu_per_lb_f = models.FloatField(blank=True, 
         default=1.0, validators=[MinValueValidator(0.1), MaxValueValidator(10.0)],
         help_text="Specific heat of the fluid in the GHX (nominally water) [Btu/(lb-degF)]")
-    ghx_fluid_mass_density_lb_per_ft3 = models.FloatField(null=True, blank=True, 
+    ghx_fluid_mass_density_lb_per_ft3 = models.FloatField(blank=True, 
         default=62.4, validators=[MinValueValidator(1.0), MaxValueValidator(200.0)],
         help_text="Mass density of the fluid in the GHX (nominally water) [lb/ft^3]")
-    ghx_fluid_thermal_conductivity_btu_per_hr_ft_f = models.FloatField(null=True, blank=True, 
+    ghx_fluid_thermal_conductivity_btu_per_hr_ft_f = models.FloatField(blank=True, 
         default=0.34, validators=[MinValueValidator(0.01), MaxValueValidator(5.0)],
         help_text="Thermal conductivity of the fluid in the GHX (nominally water) [Btu/(hr-ft-degF)]")
-    ghx_fluid_dynamic_viscosity_lbm_per_ft_hr = models.FloatField(null=True, blank=True, 
+    ghx_fluid_dynamic_viscosity_lbm_per_ft_hr = models.FloatField(blank=True, 
         default=2.75, validators=[MinValueValidator(0.1), MaxValueValidator(10.0)],
         help_text="Dynamic viscosity of the fluid in the GHX (nominally water) [lb/(ft-hr)]")
-    ghx_fluid_flow_rate_gpm_per_ton = models.FloatField(null=True, blank=True, 
+    ghx_fluid_flow_rate_gpm_per_ton = models.FloatField(blank=True, 
         default=2.5, validators=[MinValueValidator(0.1), MaxValueValidator(10.0)],
         help_text="Volumetric flow rate of the fluid in the GHX per peak ton heating/cooling [GPM/ton]")
-    ghx_pump_power_watt_per_gpm = models.FloatField(null=True, blank=True, 
+    ghx_pump_power_watt_per_gpm = models.FloatField(blank=True, 
         default=15.0, validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
         help_text="Pumping power required for a given volumetric flow rate of the fluid in the GHX [Watt/GPM]")
-    ghx_pump_min_speed_fraction = models.FloatField(null=True, blank=True, 
+    ghx_pump_min_speed_fraction = models.FloatField(blank=True, 
         default=0.1, validators=[MinValueValidator(0.0), MaxValueValidator(1.0)],
         help_text="The minimum turndown fraction of the pump. 1.0 is a constant speed pump.")
-    ghx_pump_power_exponent = models.FloatField(null=True, blank=True, 
+    ghx_pump_power_exponent = models.FloatField(blank=True, 
         default=2.2, validators=[MinValueValidator(0.1), MaxValueValidator(10.0)],
         help_text="The pump power curve exponent")
-    max_eft_allowable_f = models.FloatField(null=True, blank=True, 
+    max_eft_allowable_f = models.FloatField(blank=True, 
         default=104.0, validators=[MinValueValidator(0.0), MaxValueValidator(150.0)],
         help_text="Maximum allowable entering fluid temperature (EFT) of the heat pump (used in cooling dominated loads) [degF]")
-    min_eft_allowable_f = models.FloatField(null=True, blank=True, 
+    min_eft_allowable_f = models.FloatField(blank=True, 
         default=23.0, validators=[MinValueValidator(-50.0), MaxValueValidator(100.0)],
         help_text="Minimum allowable entering fluid temperature (EFT) of the heat pump (used in heating dominated loads) [degF]")
     
@@ -133,7 +133,7 @@ class GHPGHXModel(models.Model):
     heating_fuel_load_mmbtu_per_hr = ArrayField(models.FloatField(null=True, blank=True), 
         default=list, null=True, blank=True,
         help_text="Hourly heating fuel load that GHP serves [MMBtu/hr]")
-    existing_boiler_efficiency = models.FloatField(null=True, blank=True,
+    existing_boiler_efficiency = models.FloatField(blank=True,
         default=0.8, validators=[MinValueValidator(0.01), MaxValueValidator(1.0)],
         help_text="Efficiency of the existing boiler/heater serving the heating load")
     cooling_thermal_load_ton = ArrayField(models.FloatField(null=True, blank=True), 
@@ -150,7 +150,7 @@ class GHPGHXModel(models.Model):
         return heatpump_copmap_list_of_dict
         
     cop_map_eft_heating_cooling = ArrayField(
-        PickledObjectField(null=True, editable=True), null=True,
+        PickledObjectField(editable=True), null=True,
         default=_get_cop_map,
         help_text="Heat pump coefficient of performance (COP) map: list of dictionaries, each with 3 keys: 1) EFT, 2) HeatingCOP, 3) CoolingCOP")
 
@@ -174,10 +174,10 @@ class GHPGHXModel(models.Model):
     """
 
     # Model Settings
-    simulation_years = models.IntegerField(null=True, blank=True, 
+    simulation_years = models.IntegerField(blank=True, 
         default=25, validators=[MinValueValidator(1), MaxValueValidator(50)],
         help_text="The time span for which GHX is sized to meet the entering fluid temperature constraints [year]")
-    solver_eft_tolerance_f = models.FloatField(null=True, blank=True, 
+    solver_eft_tolerance_f = models.FloatField(blank=True, 
         default=2.0, validators=[MinValueValidator(0.001), MaxValueValidator(5.0)],
         help_text="Tolerance for GHX sizing based on the entering fluid temperature limits [degF]")
     ghx_model_choices = [("TESS", "TESS"),
@@ -185,16 +185,16 @@ class GHPGHXModel(models.Model):
     ghx_model = models.TextField(blank=True,
         default="TESS", choices=ghx_model_choices,
         help_text="GHX model to use in the simulation: TESS or DST")
-    dst_ghx_timesteps_per_hour = models.IntegerField(null=True, blank=True, 
+    dst_ghx_timesteps_per_hour = models.IntegerField(blank=True, 
         default=12, validators=[MinValueValidator(1), MaxValueValidator(60)],
         help_text="Time steps per hour to use for the DST GHX model")
-    tess_ghx_minimum_timesteps_per_hour = models.IntegerField(null=True, blank=True, 
+    tess_ghx_minimum_timesteps_per_hour = models.IntegerField(blank=True, 
         default=1, validators=[MinValueValidator(1), MaxValueValidator(60)],
         help_text="Minimum time steps per hour to use for the TESS GHX model; the model will decide if more is needed each hour")
-    max_sizing_iterations = models.IntegerField(null=True, blank=True, 
+    max_sizing_iterations = models.IntegerField(blank=True, 
         default=15, validators=[MinValueValidator(1), MaxValueValidator(15)],
         help_text="Maximum number of sizing iterations before the GHPGHX model times out")
-    init_sizing_factor_ft_per_peak_ton = models.FloatField(null=True, blank=True, 
+    init_sizing_factor_ft_per_peak_ton = models.FloatField(blank=True, 
         default=246.1, validators=[MinValueValidator(1.0), MaxValueValidator(5000.0)],
         help_text="Initial guess of total feet of GHX boreholes (total feet = N bores * Length bore) based on peak ton heating/cooling [ft/ton]")
 
