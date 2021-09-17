@@ -1647,7 +1647,7 @@ function add_chp_results(m, p, r::Dict)
 		sum(m[:dvProductionToWaste][t,ts] for t in p.CHPTechs))
 	r["chp_thermal_to_waste_series"] = round.(value.(CHPThermalToWaste), digits=5)
 	@expression(m, CHPThermalToLoad[ts in p.TimeStep],
-		sum(m[:dvThermalProduction][t,ts]
+		sum(m[:dvThermalProduction][t,ts] + m[:dvSupplementaryThermalProduction][t,ts]
 			for t in p.CHPTechs) - CHPtoHotTES[ts] - CHPToSteamTurbine[ts] - CHPThermalToWaste[ts])
 	r["chp_thermal_to_load_series"] = round.(value.(CHPThermalToLoad), digits=5)
 	@expression(m, TotalCHPFuelCharges,
