@@ -44,8 +44,6 @@ from tastypie.resources import ModelResource
 from tastypie.validation import Validation
 from django.core.exceptions import ValidationError
 from ghpghx.models import GHPGHXModel, ModelManager
-#from ghpghx.run_ghpghx_sizing import run_ghpghx_sizing
-#from ghpghx.process_ghpghx_results import process_ghpghx_results
 from reo.src.pvwatts import PVWatts
 log = logging.getLogger(__name__)
 
