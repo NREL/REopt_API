@@ -26,6 +26,10 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop - 2021-09-17
+##### Added
+- `reo`: Added input 'supplementary_firing_capital_cost_per_kw' and output `chp_supplementary_firing_kw` to incorporate the capital cost of supplementary duct firing into CHP systems
+- `reopt_model.jl`: Added decision variables `dvSupplementaryFiringSize` and `binUseSupplementaryFiring` which tracks the usage of the supplementary firing system and adds the capital cost to the objective function when used
 ## v1.6.0 - 2021-06-09
 ### Minor Updates
 ##### Added
