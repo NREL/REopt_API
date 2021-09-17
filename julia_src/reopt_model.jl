@@ -102,7 +102,7 @@ end
 
 
 function add_cost_expressions(m, p)
-	if !(isempty(p.CHPTechs) || p.CHPSupplementaryFireMaxRatio <= 1.0)
+	if !isempty(p.CHPTechs)
 		m[:TotalTechCapCosts] = @expression(m, p.two_party_factor * (
 			sum( p.CapCostSlope[t,s] * m[:dvSystemSizeSegment][t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) +
 			sum( p.CapCostYInt[t,s] * m[:binSegmentSelect][t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) +
@@ -397,7 +397,7 @@ function add_thermal_production_constraints(m, p)
                     m[:dvSupplementaryThermalProduction][t,ts]
 					)
         # Supplementary firing thermal constraint
-        if p.CHPSupplementaryFireMaxRatio > 1.0
+        if (!isempty(p.CHPTechs)) && p.CHPSupplementaryFireMaxRatio > 1.0
             # Constrain upper limit of dvSupplementaryThermalProduction, using auxiliary variable for (size * useSupplementaryFiring)
             @constraint(m, CHPSupplementaryFireCon[t in p.CHPTechs, ts in p.TimeStep],
                         m[:dvSupplementaryThermalProduction][t,ts] <=
@@ -737,7 +737,7 @@ function add_tech_size_constraints(m, p)
 		end
 	end
 
-	if !(isempty(p.CHPTechs) || p.CHPSupplementaryFireMaxRatio <= 1.0)
+	if p.CHPSupplementaryFireMaxRatio > 1.0
 		##Constraint (7_supplementary_firing_size_a): size=0 if not chosen
 		@constraint(m, CHPSupplementaryFiringSize_A[t in p.CHPTechs],
 			m[:dvSupplementaryThermalSize][t] <= m[:NewMaxSize][t] * m[:binUseSupplementaryFiring][t]
