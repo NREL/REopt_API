@@ -39,7 +39,7 @@ from tastypie.exceptions import ImmediateHttpResponse, HttpResponse
 from tastypie.resources import ModelResource
 from tastypie.validation import Validation
 from job.validators import InputValidator
-from reo.src.profiler import Profiler
+# from reo.src.profiler import Profiler  # TODO use Profiler?
 from job.src.run_jump_model import run_jump_model
 from reo.exceptions import UnexpectedError, REoptError
 from job.models import Scenario
@@ -50,6 +50,7 @@ def return400(data: dict, validator: InputValidator):
     data["status"] = (
         'Invalid inputs. No optimization task has been created. See messages for details.'
     )
+    data["run_uuid"] = ""
     # TODO save BadInputs ?
     data["messages"]["error"] = "Invalid inputs. See 'input_errors'."
     data["messages"]["input_errors"] = validator.validation_errors
@@ -99,18 +100,11 @@ class Job(ModelResource):
         data = {
             "run_uuid": run_uuid,
             "api_version": 2,
-            "reopt_version": "0.9.0",
+            "reopt_version": "0.11.0",
             "messages": dict()
         }
 
-        # Setup and start profile
-        profiler = Profiler()
-        uuidFilter = UUIDFilter(run_uuid)
-        log.addFilter(uuidFilter)
-
-        # TODO finish minimum Models for REoptLite.jl
-        # TODO migrations
-        # TODO add dev URLs
+        log.addFilter(UUIDFilter(run_uuid))
 
         bundle.data.update({"Scenario": {"run_uuid": run_uuid, "status": "validating..."}})
 
@@ -156,15 +150,6 @@ class Job(ModelResource):
                                                      content_type='application/json',
                                                      status=500))  # internal server error
 
-        """
-        Have to serialize the Django Models to pass to celery task!
-        """
-
-        # data.update(input_validator.filtered_user_post)
-        # data["messages"] = input_validator.messages
-        # data['outputs']['Scenario']['Profile']['POST_validation_seconds'] = profiler.getDuration()
-        # profiler.profileEnd()
-
         try:
             input_validator.save()
         except Exception:
@@ -184,7 +169,6 @@ class Job(ModelResource):
         Scenario.objects.filter(run_uuid=run_uuid).update(status='Optimizing...')
         try:
             run_jump_model.s(data=input_validator.validated_input_dict).apply_async()
-            # TODO add BAU scenario via an input option with default to True, pass to Julia
         except Exception as e:
             if isinstance(e, REoptError):
                 pass  # handled in each task
@@ -199,15 +183,15 @@ class Job(ModelResource):
                 data['messages']['error'] = err.message
                 log.error("Internal Server error: " + err.message)
                 raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
-                                                         content_type='application/json',
-                                                         status=500))  # internal server error
+                                            content_type='application/json',
+                                            status=500))  # internal server error
 
         raise ImmediateHttpResponse(HttpResponse(json.dumps({'run_uuid': run_uuid}),
-                                                 content_type='application/json', status=201))
+                                    content_type='application/json', status=201))
+
 
 """
 NOTES
-
 1. celery tasks raise exceptions through the .get() method. So, even though we handle exceptions with the
 Task.on_failure method, they get raised again! (And again it seems. There are at least two re-raises occurring in
 celery.Task).  So for tests, that call the chain synchronously, the intentional Exception that is re-raised through
@@ -218,5 +202,4 @@ Another way to solve this problem is to remove FAILURE from PROPAGATE_STATES in 
 But, this may have unintended consequences.
 
 All in all, celery exception handling is very obscure.
-
 """
