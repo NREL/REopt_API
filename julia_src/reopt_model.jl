@@ -1609,6 +1609,7 @@ end
 function add_chp_results(m, p, r::Dict)
 	r["CHP"] = Dict()
 	r["chp_kw"] = value(sum(m[:dvSize][t] for t in p.CHPTechs))
+	r["chp_supplemental_firing_kw"] = value(sum(m[:dvSupplementaryThermalSize][t] for t in p.CHPTechs))
 	@expression(m, CHPFuelUsed, sum(m[:dvFuelUsage][t, ts] for t in p.CHPTechs, ts in p.TimeStep))
 	r["year_one_chp_fuel_used"] = round(value(CHPFuelUsed), digits=3)
 	@expression(m, Year1CHPElecProd,
