@@ -186,6 +186,9 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             # if CHP is zero then no value is written to REopt results.json
             if results_dict.get("chp_kw") is None:
                 results_dict['chp_kw'] = 0
+            
+            if results_dict.get("chp_supplemental_firing_kw") is None:
+                results_dict['chp_supplemental_firing_kw'] = 0
 
             if results_dict.get("absorpchl_kw") is None:
                 results_dict['absorpchl_kw'] = 0
@@ -249,6 +252,10 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                                 upfront_capex += cost_list[s-1] * size_list[s-1] + (chp_size - size_list[s-1]) * slope
                 elif len(cost_list) == 1:
                     upfront_capex += (cost_list[0] or 0) * (chp_size or 0)
+                #Add supplementary firing capital cost
+                chp_supp_firing_size = self.nested_outputs["Scenario"]["Site"][tech].get("size_supplementary_firing_kw")
+                chp_supp_firing_cost = self.inputs[tech].get("supplementary_firing_capital_cost_per_kw") or 0
+                upfront_capex += chp_supp_firing_size * chp_supp_firing_cost
 
             # GHP
             if len(self.dm["ghp_cost"]) >= 1:
