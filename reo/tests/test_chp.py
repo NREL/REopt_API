@@ -280,7 +280,7 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat_chp(d['outputs'])
         d_expected['chp_supplementary_firing_kw'] = 800
-        d_expected['chp_year_one_thermal_energy_produced_mmbtu'] = 3000*(kw_to_mmbtu)*8760
+        d_expected['chp_year_one_thermal_energy_produced_mmbtu'] = 122756
         try:
             check_common_outputs(self, c, d_expected)
         except:
