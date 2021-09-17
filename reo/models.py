@@ -719,6 +719,7 @@ class CHPModel(models.Model):
 
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)
+    size_supplementary_firing_kw = models.FloatField(null=True, blank=True)
     year_one_fuel_used_mmbtu = models.FloatField(null=True, blank=True)
     year_one_electric_energy_produced_kwh = models.FloatField(null=True, blank=True)
     year_one_thermal_energy_produced_mmbtu = models.FloatField(null=True, blank=True)
