@@ -25,8 +25,8 @@ RUN set -x && printf "f\nc\n\nn\n\n${XPRESS_LICENSE_HOST}\ny\n" | ./install.sh >
 RUN rm xp8.12.3_linux_x86_64.tar.gz
 
 # Install gfortran for /ghpghx
-RUN apt-get update
-RUN apt-get install -y gfortran
+RUN apt-get update && apt-get install -y \
+    gfortran
 
 # Install Julia packages
 ENV JULIA_NUM_THREADS=2
