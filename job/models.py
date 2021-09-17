@@ -198,6 +198,12 @@ class Settings(BaseModel, models.Model):
         help_text=("If True, then a small incentive to keep the battery's state of charge high is added to the "
                    "objective of the optimization.")
     )
+    run_bau = models.BooleanField(
+        default=True,
+        blank=True,
+        help_text=("If True then the Business-As-Usual scenario is also solved to provide additional outputs such as "
+                   "the LCC and BAU costs.")
+    )
 
 
 class SiteInputs(BaseModel, models.Model):
