@@ -106,7 +106,7 @@ function add_cost_expressions(m, p)
 		m[:TotalTechCapCosts] = @expression(m, p.two_party_factor * (
 			sum( p.CapCostSlope[t,s] * m[:dvSystemSizeSegment][t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) +
 			sum( p.CapCostYInt[t,s] * m[:binSegmentSelect][t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) +
-			sum( p.CapCostSupplementaryFiring[t] * dvSupplementaryThermalSize[t] for t in p.CHPTechs ) 
+			sum( p.CapCostSupplementaryFiring[t] * m[:dvSupplementaryThermalSize][t] for t in p.CHPTechs ) 
 		))
 	else
 		m[:TotalTechCapCosts] = @expression(m, p.two_party_factor * (
