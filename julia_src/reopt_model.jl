@@ -106,11 +106,11 @@ end
 
 
 function add_cost_expressions(m, p)
-	if !isempty(p.CHPTechs)
+	if !(isempty(p.CHPTechs) || p.CHPSupplementaryFireMaxRatio <= 1.0)
 		m[:TotalTechCapCosts] = @expression(m, p.two_party_factor * (
 			sum( p.CapCostSlope[t,s] * m[:dvSystemSizeSegment][t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) +
 			sum( p.CapCostYInt[t,s] * m[:binSegmentSelect][t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) +
-			sum( p.CapCostSupplementaryFiring[t] * dvSupplementaryThermalSize[t] for t in p.CHPTEchs ) 
+			sum( p.CapCostSupplementaryFiring[t] * dvSupplementaryThermalSize[t] for t in p.CHPTechs ) 
 		))
 	else
 		m[:TotalTechCapCosts] = @expression(m, p.two_party_factor * (
@@ -739,7 +739,7 @@ function add_tech_size_constraints(m, p)
 		end
 	end
 
-	if !isempty(p.CHPTechs)
+	if !(isempty(p.CHPTechs) || p.CHPSupplementaryFireMaxRatio <= 1.0)
 		##Constraint (7_supplementary_firing_size_a): size=0 if not chosen
 		@constraint(m, CHPSupplementaryFiringSize_A[t in p.CHPTechs],
 			m[:dvSupplementaryThermalSize][t] <= m[:NewMaxSize][t] * m[:binUseSupplementaryFiring][t]
@@ -754,6 +754,10 @@ function add_tech_size_constraints(m, p)
 		@constraint(m, CHPSupplementaryFiringSize_C[t in p.CHPTechs],
 			m[:dvSupplementaryThermalSize][t] <= m[:dvSize][t] + m[:NewMaxSize][t] * (1-m[:binUseSupplementaryFiring][t])
 		)
+	else
+		for t in p.CHPTechs
+			fix(m[:dvSupplementaryThermalSize][t], 0.0, force=true)
+		end
 	end
 end
 
