@@ -408,9 +408,11 @@ function add_thermal_production_constraints(m, p)
                         !m[:binTechIsOnInTS][t,ts] => {m[:dvSupplementaryThermalProduction][t,ts] == 0.0}
                         )
         else
-            for ts in p.TimeStep
-                fix(m[:dvSupplementaryThermalProduction][t,ts], 0.0, force=true)
-            end            
+			for t in p.CHPTechs
+	            for ts in p.TimeStep
+    	            fix(m[:dvSupplementaryThermalProduction][t,ts], 0.0, force=true)
+				end
+			end            
         end
 	end
 
