@@ -105,12 +105,12 @@ class InputValidator(object):
         for obj in self.objects:
             if obj == Scenario: continue  # Scenario not used in Julia
             if obj.key in raw_inputs.keys():
-
                 filtered_user_post[obj.key] = scrub_fields(obj, raw_inputs[obj.key])
-
                 self.models[obj.key] = obj.create(scenario=scenario, **filtered_user_post[obj.key])
             elif obj.key in required_object_names:
                 self.validation_errors[obj.key] = "Missing required inputs."
+            elif obj.key == "Settings":
+                self.models[obj.key] = obj.create(scenario=scenario)  # create default Settings
 
         self.scrubbed_inputs = filtered_user_post
 

@@ -153,19 +153,19 @@ def results(request, run_uuid):
 
     # We have to try for the following objects because they may or may not be defined
     try: r["inputs"]["PV"] = s.PVInputs.dict
-    except Exception as e: print(e.args)
+    except: pass
 
     try: r["inputs"]["ElectricUtility"] = s.ElectricUtilityInputs.dict
-    except Exception as e: print(e.args)
+    except: pass
 
     try: r["inputs"]["Storage"] = s.StorageInputs.dict
-    except Exception as e: print(e.args)
+    except: pass
 
     try: r["inputs"]["Generator"] = s.GeneratorInputs.dict
-    except Exception as e: print(e.args)
+    except: pass
 
     try: r["inputs"]["Wind"] = s.WindInputs.dict
-    except Exception as e: print(e.args)
+    except: pass
 
     for d in r["inputs"].values():
         d.pop("scenario_id", None)
@@ -178,13 +178,13 @@ def results(request, run_uuid):
         r["outputs"]["ElectricLoad"] = s.ElectricLoadOutputs.dict
 
         try: r["outputs"]["PV"] = s.PVOutputs.dict
-        except Exception as e: print(e.args)
+        except: pass
         try: r["outputs"]["Storage"] = s.StorageOutputs.dict
-        except Exception as e: print(e.args)
+        except: pass
         try: r["outputs"]["Generator"] = s.GeneratorOutputs.dict
-        except Exception as e: print(e.args)
+        except: pass
         try: r["outputs"]["Wind"] = s.WindOutputs.dict
-        except Exception as e: print(e.args)
+        except: pass
 
         for d in r["outputs"].values():
             d.pop("scenario_id", None)
