@@ -1,4 +1,8 @@
+"""
+    ResultsStruct
 
+This struct gets updated in the GHPGHX.jl module and is used to record the results/outputs.
+"""
 Base.@kwdef mutable struct ResultsStruct
     # These get modified by the function below
     # Some of these values are required inputs, those that do not have "= value"
@@ -45,6 +49,11 @@ Base.@kwdef mutable struct ResultsStruct
     EWT::Array{Float64, 1} = zeros(total_hours)
 end
 
+"""
+    init_sizing!(r::ResultsStruct, p::InputsStruct, size_iter::Int64)
+
+Performs the initial sizing for the GHPGHX.jl `size_borefield(p)` function.
+"""
 function init_sizing!(r::ResultsStruct, p::InputsStruct, size_iter::Int64)
     #Changes each sizing iteration
     r.N_Bores[size_iter] = floor(r.X_Now[size_iter] / p.Depth_Bores) + 1
@@ -63,7 +72,11 @@ function init_sizing!(r::ResultsStruct, p::InputsStruct, size_iter::Int64)
     nothing
 end
 
-# Extract the required results for REopt average hourly
+"""
+    get_ghpghx_results_for_reopt(r::ResultsStruct, p::InputsStruct)
+
+Extract the required results for input to REopt /job: average hourly dispatch performance and other summary performance metrics.
+"""
 function get_ghpghx_results_for_reopt(r::ResultsStruct, p::InputsStruct)
     results_dict = Dict{Any,Any}()
     results_dict["number_of_boreholes"] = r.N_Bores_Final

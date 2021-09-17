@@ -1,6 +1,10 @@
 # Using same struct type from REopt utils.jl
 # Warning: I've seen notes of Base.@kwdef not being officially supported (not documented)
+"""
+    InputsStruct
 
+This struct defines the inputs for the GHPGHX module
+"""
 Base.@kwdef struct InputsStruct
     ##### These are the exact /ghpghx POST names from the API #####
     # Parameters
@@ -100,6 +104,12 @@ Base.@kwdef struct InputsStruct
     Mdot_GHXPump::Float64
 end
 
+"""
+    InputsProcess(d::Dict)
+
+Performs unit conversions, name conversions, and additional processing of inputs.
+
+"""
 function InputsProcess(d::Dict)   
     # Converts dictionary to allow String or Symbol for keys and Any type for values
     d = convert(Dict{Union{String, Symbol}, Any}, d)
@@ -193,7 +203,12 @@ function InputsProcess(d::Dict)
     return InputsStruct(;d...) 
 end
 
-# Assist in using a Dict as an input to instantiate the struct
+"""
+    string_dictkeys_tosymbols(d::Dict)
+
+Assists in using a Dict as an input to instantiate the struct.
+
+"""
 function string_dictkeys_tosymbols(d::Dict)
     d2 = Dict()
     for (k, v) in d
@@ -202,6 +217,12 @@ function string_dictkeys_tosymbols(d::Dict)
     return d2
 end
 
+"""
+    filter_dict_to_match_struct_field_names(d::Dict, s::DataType)
+
+Filter the input dict to match the struct field names, and provide a warning if inputs are missing.
+
+"""
 function filter_dict_to_match_struct_field_names(d::Dict, s::DataType)
     f = fieldnames(s)
     d2 = Dict()
@@ -214,38 +235,3 @@ function filter_dict_to_match_struct_field_names(d::Dict, s::DataType)
     end
     return d2
 end
-
-# Playground/notes
-
-# Base.@kwdef struct A
-#   x::Int64 = 1
-#   y::Int64 = 2
-#   z::Int64 = 3
-# end
-# A
-
-# kwargs = (z = 5, y = 4)
-# (z = 5, y = 4)
-
-# A(; kwargs...)
-# A(1, 4, 5)
-# Note that you need to use the semicolon in the 
-# function call to indicate that the unpacked arguments are keyword arguments.
-
-
-# Example allowing struct to be initialized with Dict
-# struct Model
-#     trans
-#     means
-#     vars
-# end
-
-# function Model(d::Dict)
-#     h = d["hmm1"]
-#     Model(h["trans"], h["means"], h["vars"])
-# end
-
-# Creating a dictionary with option type declaration (custom struct takes the place of that need):
-#d = Dict{String, Integer}("a" => 10, "c" => 20)
-# Without type declaration:
-#d = Dict("in1" => 1.25, "in2" => 4.5, "kwarg1" => 6)
