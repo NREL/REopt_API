@@ -173,8 +173,6 @@ CELERY_IMPORTS = (
     'resilience_stats.outage_simulator_LF',
     'futurecosts.api',
     'futurecosts.tasks',
-    'ghpghx.run_ghpghx_sizing',
-    'ghpghx.process_ghpghx_results',
 )
 
 if 'test' in sys.argv:
