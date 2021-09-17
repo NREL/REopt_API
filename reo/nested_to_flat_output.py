@@ -234,6 +234,7 @@ def nested_to_flat_chp(nested_output):
     if nested_output['Scenario']['Site'].get('CHP') is not None:
         base.update({
             'chp_kw': nested_output['Scenario']['Site']['CHP']['size_kw'],
+            'chp_supplementary_firing_kw': nested_output['Scenario']['Site']['CHP']['size_supplementary_firing_kw'],
             'chp_year_one_fuel_used_mmbtu': nested_output['Scenario']['Site']['CHP']['year_one_fuel_used_mmbtu'],
             'chp_year_one_electric_energy_produced_kwh': nested_output['Scenario']['Site']['CHP'][
                 'year_one_electric_energy_produced_kwh'],
