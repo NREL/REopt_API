@@ -14,7 +14,7 @@ from reo.src.wind import WindSAMSDK, combine_wind_files
 
 post = {"Scenario": {
     "timeout_seconds": 420,
-    "optimality_tolerance_techs": 0.7,
+    "optimality_tolerance_techs": 0.05,
     "Site": {
     "latitude": 37.78, "longitude": -122.45,
     "Financial": {
@@ -30,14 +30,12 @@ post = {"Scenario": {
     "LoadProfileBoilerFuel": {
         "doe_reference_name": "LargeOffice",
     },
+    "LoadProfileChillerThermal": {
+        "doe_reference_name": "LargeOffice",
+    },    
     "ElectricTariff": {
-        "urdb_label": '5cef0a415457a33576f60fe2',
-        #"eia": '14328', # May not be setup to take this input
-        #"urdb_rate_name": "E-19 Medium General Demand TOU",
-        #"blended_monthly_rates_us_dollars_per_kwh": [0.09] * 12,
-        #"blended_monthly_demand_charges_us_dollars_per_kw": [22] * 12,
-        "net_metering_limit_kw": 1e6,
-        "wholesale_rate_us_dollars_per_kwh": 0
+        "blended_annual_rates_us_dollars_per_kwh": 0.06,
+        "blended_annual_demand_charges_us_dollars_per_kw": 0.0
     },
     "FuelTariff": {
         "existing_boiler_fuel_type": "natural_gas",
@@ -45,39 +43,18 @@ post = {"Scenario": {
         "chp_fuel_type": "natural_gas",
         "chp_fuel_blended_monthly_rates_us_dollars_per_mmbtu": [11.0]*12
     },
+    "PV": {
+        "max_kw": 0,
+    },    
     "Storage": {
         "max_kwh": 0,
-        "max_kw": 0,
-        "installed_cost_us_dollars_per_kw": 1000,
-        "installed_cost_us_dollars_per_kwh": 500,
-        "replace_cost_us_dollars_per_kw": 460,
-        "replace_cost_us_dollars_per_kwh": 230,
-        "macrs_option_years": 0,
-    },
-    "LoadProfileChillerThermal": {
-        "doe_reference_name": "LargeOffice",
+        "max_kw": 0
     },
     "ElectricChiller": {
     },
     "Boiler": {
         "boiler_efficiency": 0.8,
         "existing_boiler_production_type_steam_or_hw": "steam",
-    },
-    "ColdTES": {
-        "min_gal": 0,
-        "max_gal": 0,
-        "installed_cost_us_dollars_per_gal": 3,
-        "thermal_decay_rate_fraction": 0.004,
-        "om_cost_us_dollars_per_gal": 0,
-        "internal_efficiency_pct": 0.97,
-    },
-    "HotTES": {
-        "min_gal": 0,
-        "max_gal": 0,
-        "installed_cost_us_dollars_per_gal": 3,
-        "thermal_decay_rate_fraction": 0.004,
-        "om_cost_us_dollars_per_gal": 0,
-        "internal_efficiency_pct": 0.97,
     }
 }}}
 
