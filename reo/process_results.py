@@ -707,6 +707,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "size_kw"] = self.results_dict.get("chp_kw")
                     self.nested_outputs["Scenario"]["Site"][name][
+                        "size_supplementary_firing_kw"] = self.results_dict.get("chp_supplemental_firing_kw")
+                    self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_fuel_used_mmbtu"] = self.results_dict.get("year_one_chp_fuel_used") / MMBTU_TO_KWH
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_electric_energy_produced_kwh"] = self.results_dict.get("year_one_chp_electric_energy_produced")
