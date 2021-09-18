@@ -356,7 +356,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
         if inputs_dict["Site"]["GHP"].get("building_sqft") is not None and \
             inputs_dict["Site"]["GHP"].get("ghpghx_response") in [None, []]:
             ghpghx_response_list = []
-            # TODO running this twice causes issues? (with no time.sleep(10))
             if inputs_dict["Site"]["GHP"].get("ghpghx_inputs") in [None, []]:
                 number_of_ghpghx = 1
                 inputs_dict["Site"]["GHP"]["ghpghx_inputs"] = [{}]
@@ -400,8 +399,8 @@ def setup_scenario(self, run_uuid, data, raw_post):
             tmp = dict()
             tmp['ghpghx_response'] = ghpghx_response_list
             ModelManager.updateModel('GHPModel', tmp, run_uuid)
-            # Sleep to avoid calling julia_api for /job (reopt) too quickly after /ghpghx (only required locally and/or for debugging?)
-            time.sleep(10)
+            # Sleep to avoid calling julia_api for /job (reopt) or another /ghpghx run too quickly after /ghpghx
+            time.sleep(1)
         # If ghpghx_response is included in inputs/POST, do NOT run /ghpghx model and use already-run ghpghx
         elif inputs_dict["Site"]["GHP"].get("building_sqft") is not None and \
                 inputs_dict["Site"]["GHP"].get("ghpghx_response") not in [None, []]:
@@ -419,17 +418,9 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         if inputs_dict["Site"]["NewBoiler"]["max_mmbtu_per_hr"] > 0:
             newboiler = NewBoiler(dfm=dfm, **inputs_dict['Site']['NewBoiler'])
-            # Any parameters processed and updated?
-            tmp = dict()
-            # Assign tmp["param"] = newboiler.xyx
-            ModelManager.updateModel('NewBoilerModel', tmp, run_uuid)
         
         if inputs_dict["Site"]["SteamTurbine"]["max_kw"] > 0:
             steamturbine = SteamTurbine(dfm=dfm, **inputs_dict['Site']['SteamTurbine'])
-            # Any parameters processed and updated?
-            tmp = dict()
-            # Assign tmp["param"] = steamturbine.xyx
-            ModelManager.updateModel('SteamTurbineModel', tmp, run_uuid)
 
         dfm.finalize()
         dfm_dict = vars(dfm)  # serialize for celery

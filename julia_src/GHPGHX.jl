@@ -7,6 +7,15 @@ include("ghpghx_inputs.jl")
 
 include("ghpghx_results.jl")
 
+"""
+    ghp_model(d)
+
+Process the inputs and run the `size_borefield(p)` function.
+
+Return the processed set of inputs and the results from `size_borefield(p)`.
+
+"""
+
 function ghp_model(d)
     # Load parameters and process from input Dict, to create instance of type InputsStruct
     p = InputsProcess(d)
@@ -17,6 +26,14 @@ function ghp_model(d)
     return results, p
 end
 
+"""
+    size_borefield(p)
+
+Determine the size and dispatch of the heat pump and ground heat exchanger to serve the heating and cooling loads.
+
+Return the mutated results struct.
+
+"""
 function size_borefield(p)
     # Declare and initialize arrays which get passed and mutated by GHX model (different length arrays used for different models)
     INFO = zeros(Int32, 15)  # Used for initialization and incrementing the number of times the GHX model is called by timestep
@@ -328,6 +345,12 @@ function size_borefield(p)
     return r
 end
 
+"""
+    assign_PAR!(p, r, PAR, size_iter)
+
+Assign the `PAR` parameter array for the GHX compiled Fortran subroutine.
+
+"""
 function assign_PAR!(p, r, PAR, size_iter)
     if p.ghx_model == "DST"
         PAR[1] = r.StorageVolume
@@ -410,6 +433,12 @@ function assign_PAR!(p, r, PAR, size_iter)
     end
 end
 
+"""
+    init_ghx_calls_2x!(p, TimeArray, XIN, OUT, PAR, INFO)
+
+Run the initial two (2) GHX Fortran subroutines using initialization parameters.
+
+"""
 function init_ghx_calls_2x!(p, TimeArray, XIN, OUT, PAR, INFO)
     # Call the GHX model two times for initialization
     INFO[1] = 1

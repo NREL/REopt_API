@@ -168,7 +168,6 @@ class GHPGHXJob(ModelResource):
         data["status"] = 'Solving for GHX Size...'
 
         try:
-            # TODO Make this a celery task so we don't have to wait before getting ghp_uuid back in response
             julia_host = os.environ.get('JULIA_HOST', "julia")
             response = requests.post("http://" + julia_host + ":8081/ghpghx/", json=data["inputs"])
             results = response.json()
