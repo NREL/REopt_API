@@ -168,6 +168,9 @@ class InputValidator(object):
     def cross_clean(self):
         """
         Validation that requires comparing fields from more than one model
+        v1 validation has been transferred for:
+        - Scenario, Site, Settings
+        - PV, Wind,
         :return: None
         """
 
@@ -177,6 +180,9 @@ class InputValidator(object):
         if "PV" in self.models.keys():
             if self.models["PV"].__getattribute__("tilt") == 0.537:  # 0.537 is a dummy number, default tilt
                 self.models["PV"].__setattr__("tilt", self.models["Site"].__getattribute__("latitude"))
+            if self.models["PV"].__getattribute__("max_kw") > 0:
+                if len(self.models["PV"].__getattribute__("prod_factor_series_kw")) > 0:
+                    self.clean_time_series("PV", "prod_factor_series_kw")
 
         """
         Time series values are up or down sampled to align with Settings.time_steps_per_hour

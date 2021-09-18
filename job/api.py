@@ -106,13 +106,16 @@ class Job(ModelResource):
 
         log.addFilter(UUIDFilter(run_uuid))
 
-        bundle.data.update({"Scenario": {"run_uuid": run_uuid, "status": "validating..."}})
+        if "Scenario" in bundle.data.keys():
+            bundle.data["Scenario"].update({"run_uuid": run_uuid, "status": "validating..."})
+        else:
+            bundle.data.update({"Scenario": {"run_uuid": run_uuid, "status": "validating..."}})
 
         if bundle.request.META.get('HTTP_X_API_USER_ID', False):
             if bundle.request.META.get('HTTP_X_API_USER_ID', '') == '6f09c972-8414-469b-b3e8-a78398874103':
                 bundle.data['Scenario']['job_type'] = 'REopt Lite Web Tool'
             else:
-                bundle.data['outputs']['Scenario']['job_type'] = 'developer.nrel.gov'
+                bundle.data['Scenario']['job_type'] = 'developer.nrel.gov'
         else:
             bundle.data['Scenario']['job_type'] = 'Internal NREL'
 
@@ -121,7 +124,6 @@ class Job(ModelResource):
             bundle.data['Scenario']['job_type'] = 'Monitoring'
 
         # Validate inputs
-        # TODO transfer all v1 validators capabilities to v2
         try:
             input_validator = InputValidator(bundle.data)
             input_validator.clean_fields()  # step 1 check field values
