@@ -69,6 +69,7 @@ class InputValidatorTests(TestCase):
                 if length > 8760:  # check downsampling
                     self.assertEquals(len(validator.models["ElectricLoad"].loads_kw), 8760)
                     self.assertEquals(len(validator.models["ElectricLoad"].critical_loads_kw), 8760)
+                    assert("resampled inputs" in validator.messages)
 
             elif length in bad_lengths:
                 self.assertEquals(validator.is_valid, False)

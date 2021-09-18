@@ -66,6 +66,7 @@ def help(request):
         return JsonResponse({"Error": "Unexpected error in help endpoint: {}".format(e.args[0])}, status=500)
 
 
+# TODO document inputs and outputs endpoints in Analysis wiki once deployed
 def inputs(request):
     """
     Served at host/job/inputs
@@ -125,7 +126,6 @@ def results(request, run_uuid):
             'ElectricUtilityOutputs'
         ).get(run_uuid=run_uuid)
         # TODO: how do we get the Message's models?
-        # TODO: add to select_related args above the names of all related models that should be selected in this single database query
     except Exception as e:
         if isinstance(e, models.ObjectDoesNotExist):
             resp = {"messages": {"error": ""}}
@@ -145,6 +145,7 @@ def results(request, run_uuid):
 
     r = s.dict
     r["inputs"] = dict()
+    r["inputs"]["Scenario"] = s.dict
     r["inputs"]["Financial"] = s.FinancialInputs.dict
     r["inputs"]["ElectricLoad"] = s.ElectricLoadInputs.dict
     r["inputs"]["ElectricTariff"] = s.ElectricTariffInputs.dict
@@ -188,7 +189,7 @@ def results(request, run_uuid):
 
         for d in r["outputs"].values():
             d.pop("scenario_id", None)
-        # TODO fill out rest of out/inputs
+        # TODO fill out rest of out/inputs as they are added to REoptLite.jl
     except Exception as e:
         if 'RelatedObjectDoesNotExist' in str(type(e)):
             pass

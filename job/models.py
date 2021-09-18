@@ -2387,6 +2387,9 @@ class GeneratorInputs(BaseModel, models.Model):
     )
     # emissions_factor_lb_CO2_per_gal = models.FloatField(null=True, blank=True)
 
+    def clean(self):
+        pass  # TODO fuel_intercept_gal_per_hr and fuel_slope_gal_per_kwh from default_fuel_burn_rate
+
 
 class GeneratorOutputs(BaseModel, models.Model):
     key = "GeneratorOutputs"
