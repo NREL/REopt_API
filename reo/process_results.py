@@ -258,9 +258,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 upfront_capex += chp_supp_firing_size * chp_supp_firing_cost
 
             # GHP
-            if len(self.dm["ghp_cost"]) >= 1:
-                # TODO currently this only reports the first option cost
-                upfront_capex += self.dm["ghp_cost"][0]["installed_cost_dollars"]
+            if self.results_dict.get("GHPOptionChosen") > 0:
+                upfront_capex += self.dm["ghp_cost"][self.results_dict.get("GHPOptionChosen")-1]["installed_cost_dollars"]
 
             # storage capacity
             upfront_capex += (self.inputs["Storage"].get("installed_cost_us_dollars_per_kwh") or 0) * \
