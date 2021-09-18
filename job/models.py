@@ -27,6 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
+import math
 from django.db import models
 from django.db.models.fields import NOT_PROVIDED
 from django.contrib.postgres.fields import *
@@ -562,7 +563,8 @@ class ElectricLoadInputs(BaseModel, models.Model):
         ["loads_kw"],
         ["doe_reference_name", "monthly_totals_kwh"],
         ["annual_kwh", "doe_reference_name"],
-        ["doe_reference_name"]
+        ["doe_reference_name"],
+        ["blended_doe_reference_names", "blended_doe_reference_percents"]
     ]
 
     DOE_REFERENCE_NAME = models.TextChoices('DOE_REFERENCE_NAME', (
@@ -671,6 +673,29 @@ class ElectricLoadInputs(BaseModel, models.Model):
                   "met during an outage. Value must be between zero and one, inclusive."
 
     )
+    blended_doe_reference_names = ArrayField(
+        models.TextField(
+            choices=DOE_REFERENCE_NAME.choices,
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        help_text=("Used in concert with blended_doe_reference_percents to create a blended load profile from multiple "
+                   "DoE Commercial Reference Buildings.")
+    )
+    blended_doe_reference_percents = ArrayField(
+        models.FloatField(
+            null=True, blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1.0)
+            ],
+        ),
+        default=list,
+        blank=True,
+        help_text=("Used in concert with blended_doe_reference_names to create a blended load profile from multiple "
+                   "DoE Commercial Reference Buildings. Must sum to 1.0.")
+    )
     # outage_is_major_event = models.BooleanField(
     #     null=True,
     #     blank=True,
@@ -683,32 +708,24 @@ class ElectricLoadInputs(BaseModel, models.Model):
     #               "annually recurring outage. (Average outage durations for certain utility service areas can be "
     #               "estimated using statistics reported on EIA form 861.)"
     # )
-    # percent_share = ArrayField(
-    #     models.FloatField(
-    #         default=100,
-    #         validators=[
-    #             MinValueValidator(1),
-    #             MaxValueValidator(100)
-    #         ],
-    #         blank=True
-    #     ),
-    #     default=list,
-    #     null=True, blank=True,
-    #     help_text=("Percentage share of the types of building for creating hybrid simulated building and campus "
-    #                "profiles.")
-    # )
 
     def clean(self):
-        error_messages = []
+        error_messages = {}
 
         # possible sets for defining load profile
         if not at_least_one_set(self.dict, self.possible_sets):
-            error_messages.append((
+            error_messages["required inputs"] = \
                 "Must provide at valid at least one set of valid inputs from {}.".format(self.possible_sets)
-            ))
+
+        if len(self.blended_doe_reference_names) > 0 and self.doe_reference_name == "":
+            if len(self.blended_doe_reference_names) != len(self.blended_doe_reference_percents):
+                error_messages["blended_doe_reference_names"] = \
+                    "The number of blended_doe_reference_names must equal the number of blended_doe_reference_percents."
+            if not math.isclose(sum(self.blended_doe_reference_percents),  1.0):
+                error_messages["blended_doe_reference_percents"] = "Sum must = 1.0."
 
         if error_messages:
-            raise ValidationError(' & '.join(error_messages))
+            raise ValidationError(error_messages)
 
 
 class ElectricLoadOutputs(BaseModel, models.Model):
@@ -905,24 +922,23 @@ class ElectricTariffInputs(BaseModel, models.Model):
     # )
 
     def clean(self):
-        error_messages = []
+        error_messages = {}
 
         # possible sets for defining tariff
         if not at_least_one_set(self.dict, self.possible_sets):
-            error_messages.append((
-                "Must provide at valid at least one set of valid inputs from {}.".format(self.possible_sets)
-            ))
+            error_messages["required inputs"] = \
+                f"Must provide at valid at least one set of valid inputs from {self.possible_sets}."
 
         for possible_set in self.possible_sets:
             if len(possible_set) == 2:  # check dependencies
                 if (possible_set[0] and not possible_set[1]) or (not possible_set[0] and possible_set[1]):
-                    error_messages.append(f"Must provide both {possible_set[0]} and {possible_set[1]}")
+                    error_messages["required inputs"] = f"Must provide both {possible_set[0]} and {possible_set[1]}"
 
         if len(self.wholesale_rate) == 1:
             self.wholesale_rate = self.wholesale_rate * 8760  # upsampling handled in InputValidator.cross_clean
 
         if error_messages:
-            raise ValidationError(' & '.join(error_messages))
+            raise ValidationError(error_messages)
 
 
 class ElectricUtilityInputs(BaseModel, models.Model):
@@ -972,24 +988,23 @@ class ElectricUtilityInputs(BaseModel, models.Model):
     )
 
     def clean(self):
-        error_messages = []
+        error_messages = {}
 
         # outage start/end time step dependencies
         if self.outage_start_time_step and self.outage_end_time_step is None:
-            error_messages.append("Got outage_start_time_step but no outage_end_time_step.")
+            error_messages["outage_end_time_step"] = "Got outage_start_time_step but no outage_end_time_step."
 
         if self.outage_end_time_step and self.outage_start_time_step is None:
-            error_messages.append("Got outage_end_time_step but no outage_start_time_step.")
+            error_messages["outage_start_time_step"] = "Got outage_end_time_step but no outage_start_time_step."
 
         if self.outage_start_time_step is not None and self.outage_end_time_step is not None:
             if self.outage_start_time_step >= self.outage_end_time_step:
-                error_messages.append((
-                    'outage_end_time_step must be larger than outage_start_time_step and these inputs '
-                    'cannot be equal.'
-                ))
+                error_messages["outage start/stop time steps"] = \
+                    ('outage_end_time_step must be larger than outage_start_time_step and these inputs '
+                     'cannot be equal.')
 
         if error_messages:
-            raise ValidationError(' & '.join(error_messages))
+            raise ValidationError(error_messages)
 
 
 class ElectricUtilityOutputs(BaseModel, models.Model):

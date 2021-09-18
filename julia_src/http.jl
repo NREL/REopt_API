@@ -68,7 +68,7 @@ function reopt(req::HTTP.Request)
         @error "Something went wrong in the Julia code!" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
     end
-	if ms <: AbstractArray
+	if typeof(ms) <: AbstractArray
 		finalize(backend(ms[1]))
 		finalize(backend(ms[2]))
 	else

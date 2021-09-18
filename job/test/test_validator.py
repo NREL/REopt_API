@@ -91,23 +91,27 @@ class InputValidatorTests(TestCase):
             self.assertEquals(len(validator.models["ElectricLoad"].loads_kw), time_steps_per_hour*8760)
             self.assertEquals(len(validator.models["ElectricLoad"].critical_loads_kw), time_steps_per_hour*8760)
 
+    def test_bad_blended_profile_inputs(self):
+        post = copy.deepcopy(self.post)
+        del(post["ElectricLoad"]["doe_reference_name"])
+        post["ElectricLoad"]["blended_doe_reference_names"] = ["badname", "LargeOffice"]
+        post["ElectricLoad"]["blended_doe_reference_percents"] = [1.5]
+        validator = InputValidator(post)
+        validator.clean_fields()
 
-    # def test_warnings_for_mismatch_of_time_steps_per_hour_and_resolution_of_time_of_export_rate(self):
-    #     post = copy.deepcopy(self.post)
-    #     rates = ["wholesale_rate_us_dollars_per_kwh", "wholesale_rate_above_site_load_us_dollars_per_kwh"]
-    #     for time_steps_per_hour in [1, 2, 4]:
-    #         post["Scenario"]["time_steps_per_hour"] = time_steps_per_hour
-    #         for resolution in [1, 2, 4]:
-    #             if time_steps_per_hour == resolution:
-    #                 continue
-    #             for rate in rates:
-    #                 post["Scenario"]["Site"]["ElectricTariff"][rate] = [1.1] * 8760 * resolution
-    #             validator = InputValidator(post)
-    #             self.assertEquals(validator.is_valid, True)
-    #             up_or_down = "Upsampled"
-    #             if resolution > time_steps_per_hour:
-    #                 up_or_down = "Downsampled"
-    #             self.assertTrue(all(
-    #                 test_str in validator.warnings['Following inputs were resampled:']['ElectricTariff']
-    #                 for test_str in ["{} {}".format(up_or_down, rate) for rate in rates]
-    #             ))
+        assert("'badname' is not a valid choice"
+               in validator.validation_errors['ElectricLoad']['blended_doe_reference_names'][0])
+        assert("Ensure this value is less than or equal to 1.0" in
+               validator.validation_errors['ElectricLoad']['blended_doe_reference_percents'][0])
+
+        post["ElectricLoad"]["blended_doe_reference_names"] = ["MediumOffice", "LargeOffice"]
+        post["ElectricLoad"]["blended_doe_reference_percents"] = [0.5]
+        post["Scenario"]["run_uuid"] = uuid.uuid4()
+        validator = InputValidator(post)
+        validator.clean_fields()
+        validator.clean()
+
+        assert("The number of blended_doe_reference_names must equal the number of blended_doe_reference_percents" in
+               validator.validation_errors['ElectricLoad']['blended_doe_reference_names'][0])
+        assert("Sum must = 1.0." in
+               validator.validation_errors['ElectricLoad']['blended_doe_reference_percents'][0])
