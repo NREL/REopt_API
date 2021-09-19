@@ -84,6 +84,10 @@ class BaseModel(object):
         :return: dict
         """
         d = copy.deepcopy(self.__dict__)
+        if "coincident_peak_load_active_timesteps" in d.keys():
+            # filter out repeated values created to make the inner arrays have equal length
+            d["coincident_peak_load_active_timesteps"] = \
+                [list(set(l)) for l in d["coincident_peak_load_active_timesteps"]]
         d.pop("_state", None)
         d.pop("id", None)
         d.pop("basemodel_ptr_id", None)
@@ -288,14 +292,13 @@ class FinancialInputs(BaseModel, models.Model):
         related_name="FinancialInputs"
     )
 
-    # Inputs
     analysis_years = models.IntegerField(
         default=25,
         validators=[
             MinValueValidator(1),
             MaxValueValidator(75)
         ],
-        null=True, blank=True,
+        blank=True,
         help_text="Analysis period in years. Must be integer."
     )
     elec_cost_escalation_pct = models.FloatField(
@@ -304,7 +307,7 @@ class FinancialInputs(BaseModel, models.Model):
             MinValueValidator(-1),
             MaxValueValidator(1)
         ],
-        null=True, blank=True,
+        blank=True,
         help_text="Annual nominal utility electricity cost escalation rate."
     )
     offtaker_discount_pct = models.FloatField(
@@ -313,7 +316,7 @@ class FinancialInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(1)
         ],
-        null=True, blank=True,
+        blank=True,
         help_text=("Nominal energy offtaker discount rate. In single ownership model the offtaker is also the "
                    "generation owner.")
     )
@@ -323,7 +326,7 @@ class FinancialInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(0.999)
         ],
-        null=True, blank=True,
+        blank=True,
         help_text="Host tax rate"
     )
     om_cost_escalation_pct = models.FloatField(
@@ -332,7 +335,7 @@ class FinancialInputs(BaseModel, models.Model):
             MinValueValidator(-1),
             MaxValueValidator(1)
         ],
-        null=True, blank=True,
+        blank=True,
         help_text="Annual nominal O&M cost escalation rate"
     )
     owner_discount_pct = models.FloatField(
@@ -341,7 +344,7 @@ class FinancialInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(1)
         ],
-        null=True, blank=True,
+        blank=True,
         help_text=("Nominal generation owner discount rate. Used for two party financing model. In two party ownership "
                    "model the offtaker does not own the generator(s).")
     )
@@ -351,13 +354,13 @@ class FinancialInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(0.999)
         ],
-        null=True, blank=True,
+        blank=True,
         help_text=("Generation owner tax rate. Used for two party financing model. In two party ownership model the "
                    "offtaker does not own the generator(s).")
     )
     third_party_ownership = models.BooleanField(
         default=False,
-        null=True, blank=True,
+        blank=True,
         help_text=("Specify if ownership model is direct ownership or two party. In two party model the offtaker does "
                    "not purcharse the generation technologies, but pays the generation owner for energy from the "
                    "generator(s).")
@@ -392,7 +395,7 @@ class FinancialInputs(BaseModel, models.Model):
     #         MinValueValidator(-1),
     #         MaxValueValidator(1)
     #     ],
-    #     null=True, blank=True,
+    #     blank=True,
     #     help_text=("Annual nominal boiler fuel cost escalation rate")
     # )
     # chp_fuel_escalation_pct = models.FloatField(
@@ -401,7 +404,7 @@ class FinancialInputs(BaseModel, models.Model):
     #         MinValueValidator(-1),
     #         MaxValueValidator(1)
     #     ],
-    #     null=True, blank=True,
+    #     blank=True,
     #     help_text=("Annual nominal chp fuel cost escalation rate")
     # )
 
@@ -779,7 +782,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
     possible_sets = [
         ["urdb_response"],
         ["monthly_demand_rates", "monthly_energy_rates"],
-        ["blended_annual_energy_rate", "blended_annual_demand_charge"],
+        ["blended_annual_energy_rate", "blended_annual_demand_rate"],
         ["urdb_label"],
         ["urdb_utility_name", "urdb_rate_name"],
         ["tou_energy_rates_per_kwh"]
@@ -816,7 +819,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
         blank=True,
         help_text="Name of Utility from Utility Rate Database https://openei.org/wiki/Utility_Rate_Database"
     )
-    blended_annual_demand_charge = models.FloatField(
+    blended_annual_demand_rate = models.FloatField(
         blank=True,
         null=True,
         help_text="Annual blended demand rates (annual demand charge cost in $ divided by annual peak demand in kW)"
@@ -875,6 +878,33 @@ class ElectricTariffInputs(BaseModel, models.Model):
                    "will only be considered if a URDB rate is not provided.")
 
     )
+    coincident_peak_load_active_timesteps = ArrayField(
+        ArrayField(
+            models.IntegerField(blank=True),
+            blank=True,
+            default=list,
+            validators=[
+                MinValueValidator(1)
+            ]
+        ),
+        blank=True,
+        default=list,
+        help_text=("The optional coincident_peak_load_charge_per_kw will apply to the max grid-purchased "
+                   "power during these time steps. Note time steps are indexed to a base of 1 not 0.")
+    )
+    coincident_peak_load_charge_per_kw = ArrayField(
+        models.FloatField(
+            blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1.0e8)
+            ],
+        ),
+        null=True, blank=True,
+        default=list,
+        help_text=("Optional coincident peak demand charge that is applied to the max load during the timesteps "
+                   "specified in coincident_peak_load_active_timesteps")
+    )
     # chp_does_not_reduce_demand_charges = models.BooleanField(
     #     default=False,
     #     blank=True,
@@ -897,29 +927,6 @@ class ElectricTariffInputs(BaseModel, models.Model):
     #               "constant fraction that will be applied across all timesteps, or an annual timeseries array at an "
     #               "hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.")
     # )
-    # coincident_peak_load_active_timesteps = ArrayField(
-    #     ArrayField(
-    #         models.FloatField(blank=True),
-    #         null=True, blank=True,
-    #         default=list),
-    #     null=True, blank=True,
-    #     default=list,
-    #     help_text=("The optional coincident_peak_load_charge_per_kw will apply at the max grid-purchased "
-    #               "power during these timesteps. Note timesteps are indexed to a base of 1 not 0.")
-    # )
-    # coincident_peak_load_charge_per_kw = ArrayField(
-    #     models.FloatField(
-    #         blank=True,
-    #         validators=[
-    #             MinValueValidator(0),
-    #             MaxValueValidator(1.0e8)
-    #         ],
-    #     ),
-    #     null=True, blank=True,
-    #     default=list,
-    #     help_text=("Optional coincident peak demand charge that is applied to the max load during the timesteps "
-    #               "specified in coincident_peak_load_active_timesteps")
-    # )
 
     def clean(self):
         error_messages = {}
@@ -937,8 +944,29 @@ class ElectricTariffInputs(BaseModel, models.Model):
         if len(self.wholesale_rate) == 1:
             self.wholesale_rate = self.wholesale_rate * 8760  # upsampling handled in InputValidator.cross_clean
 
+        if len(self.coincident_peak_load_charge_per_kw) > 0:
+            if len(self.coincident_peak_load_active_timesteps) != len(self.coincident_peak_load_charge_per_kw):
+                error_messages["coincident peak"] = (
+                    "The number of rates in coincident_peak_load_charge_us_dollars_per_kw must match the number of "
+                    "timestep sets in coincident_peak_load_active_timesteps")
+
         if error_messages:
             raise ValidationError(error_messages)
+
+    def save(self, *args, **kwargs):
+        """
+        Special case for coincident_peak_load_active_timesteps: back-end database requires that
+        "multidimensional arrays must have array expressions with matching dimensions"
+        so we fill the arrays that are shorter than the longest arrays with repeats of the last value.
+        By repeating the last value we do not have to deal with a mix of data types in the arrays and it does not
+        affect the constraints in REopt.
+        """
+        max_length = max(len(inner_array) for inner_array in self.coincident_peak_load_active_timesteps)
+        for inner_array in self.coincident_peak_load_active_timesteps:
+            if len(inner_array) != max_length:
+                for _ in range(max_length - len(inner_array)):
+                    inner_array.append(inner_array[-1])
+        super(ElectricTariffInputs, self).save(*args, **kwargs)
 
 
 class ElectricUtilityInputs(BaseModel, models.Model):
