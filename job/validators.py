@@ -109,8 +109,8 @@ class InputValidator(object):
                 self.models[obj.key] = obj.create(scenario=scenario, **filtered_user_post[obj.key])
             elif obj.key in required_object_names:
                 self.validation_errors[obj.key] = "Missing required inputs."
-            elif obj.key == "Settings":
-                self.models[obj.key] = obj.create(scenario=scenario)  # create default Settings
+            elif obj.key in ["Settings", "Financial"]:
+                self.models[obj.key] = obj.create(scenario=scenario)  # create default values
 
         self.scrubbed_inputs = filtered_user_post
 
@@ -150,7 +150,12 @@ class InputValidator(object):
         """
         for model in self.models.values():
             try:
-                model.clean_fields()
+                model.clean_fields(exclude=["coincident_peak_load_active_timesteps"])
+                # coincident_peak_load_active_timesteps can have unequal inner lengths (it's an array of array),
+                # which is not allowed in the database. We fix the lengths with repeated last values by overriding the
+                # Django Model save method on ElectricTariffInputs. We then remove the repeated values to before
+                # passing coincident_peak_load_active_timesteps to Julia (b/c o.w. JuMP.constraint will raise an error
+                # for duplicate constraints)
             except ValidationError as ve:
                 self.validation_errors[model.key] = ve.message_dict
 
@@ -215,6 +220,16 @@ class InputValidator(object):
                                                   self.models["Site"].__getattribute__("longitude")):
                         self.add_validation_error("Wind", "Site",
                               "latitude/longitude not in the WindToolkit database. Cannot retrieve wind resource data.")
+
+        """
+        ElectricTariff
+        """
+        cp_ts_arrays = self.models["ElectricTariff"].__getattribute__("coincident_peak_load_active_timesteps")
+        max_ts = 8760 * self.models["Settings"].time_steps_per_hour
+        if len(cp_ts_arrays[0]) > 0:
+            if any(ts > max_ts for a in cp_ts_arrays for ts in a):
+                self.add_validation_error("ElectricTariff", "coincident_peak_load_active_timesteps"
+                                          f"At least one time step is greater than the max allowable ({max_ts})")
 
     def save(self):
         """
