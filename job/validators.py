@@ -175,7 +175,7 @@ class InputValidator(object):
         """
 
         """
-        PV tilt set to latitude if not provided
+        PV tilt set to latitude if not provided and prod_factor_series_kw validated
         """
         if "PV" in self.models.keys():
             if self.models["PV"].__getattribute__("tilt") == 0.537:  # 0.537 is a dummy number, default tilt
@@ -197,7 +197,6 @@ class InputValidator(object):
         Wind model validation
         1. If wind resource not provided, add a validation error if lat/lon not within WindToolkit data set
         2. If prod factor or resource data provided, validate_time_series for each
-        
         NOTE: if size_class is not provided it is determined in the Julia package based off of average load.
         """
         if "Wind" in self.models.keys():
