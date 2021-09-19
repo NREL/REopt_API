@@ -598,9 +598,9 @@ class ElectricLoadInputs(BaseModel, models.Model):
             MaxValueValidator(100000000)
         ],
         null=True, blank=True,
-        help_text=("Annual site energy consumption from electricity, in kWh, used to scale simulated default building load profile for the site's climate zone")
+        help_text=("Annual site energy consumption from electricity, in kWh, used to scale simulated default building "
+                   "load profile for the site's climate zone")
     )
-    # TODO make doe_reference_name ArrayField after adding blended profile capability to Julia pkg
     doe_reference_name = models.TextField(
         null=False,
         blank=True,  # TODO do we have to include "" in choices for blank=True to work?
@@ -782,7 +782,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
         ["blended_annual_energy_rate", "blended_annual_demand_charge"],
         ["urdb_label"],
         ["urdb_utility_name", "urdb_rate_name"],
-        # ["tou_energy_rates_per_kwh"]
+        ["tou_energy_rates_per_kwh"]
     ]
 
     monthly_demand_rates = ArrayField(
@@ -849,32 +849,32 @@ class ElectricTariffInputs(BaseModel, models.Model):
         ),
         default=list,
         blank=True,
-        help_text=("Price of electricity sold back to the grid above the site load, regardless of net metering.  Can be "
-                  "a scalar value, which applies for all-time, or an array with time-sensitive values. If an array is "
-                  "input then it must have a length of 8760, 17520, or 35040. The inputed array values are up/down-"
-                  "sampled using mean values to match the Scenario time_steps_per_hour.")
+        help_text=("Price of electricity sold back to the grid above the site load, regardless of net metering. Can be "
+                   "a scalar value, which applies for all-time, or an array with time-sensitive values. If an array is "
+                   "input then it must have a length of 8760, 17520, or 35040. The inputed array values are up/down-"
+                   "sampled using mean values to match the Scenario time_steps_per_hour.")
     )
-    # tou_energy_rates_per_kwh = ArrayField(
-    #     models.FloatField(blank=True),
-    #     default=list,
-    #     null=True, blank=True,
-    #     help_text=("Time-of-use energy rates, provided by user. Must be an array with length equal to number of "
-    #               "timesteps per year. Hourly or 15 minute rates allowed.")
-    # )
-    # add_blended_rates_to_urdb_rate = models.BooleanField(
-    #     blank=True,
-    #     default=False,
-    #     help_text=("Set to 'true' to add the monthly blended energy rates and demand charges to the URDB rate schedule. "
-    #               "Otherwise, blended rates will only be considered if a URDB rate is not provided. ")
-    #
-    # )
-    # add_tou_energy_rates_to_urdb_rate = models.BooleanField(
-    #     blank=True,
-    #     default=False,
-    #     help_text=("Set to 'true' to add the tou  energy rates to the URDB rate schedule. Otherwise, tou energy rates "
-    #               "will only be considered if a URDB rate is not provided. ")
-    #
-    # )
+    tou_energy_rates_per_kwh = ArrayField(
+        models.FloatField(blank=True),
+        default=list,
+        blank=True,
+        help_text=("Time-of-use energy rates, provided by user. Must be an array with length equal to number of "
+                   "time steps per year. Hourly or 15 minute rates allowed.")
+    )
+    add_monthly_rates_to_urdb_rate = models.BooleanField(
+        blank=True,
+        default=False,
+        help_text=("Set to true to add the monthly blended energy rates and demand charges to the URDB rate schedule. "
+                   "Otherwise, blended rates will only be considered if a URDB rate is not provided.")
+
+    )
+    add_tou_energy_rates_to_urdb_rate = models.BooleanField(
+        blank=True,
+        default=False,
+        help_text=("Set to true to add tou_energy_rates_per_kwh to the URDB rate schedule. Otherwise, tou energy rates "
+                   "will only be considered if a URDB rate is not provided.")
+
+    )
     # chp_does_not_reduce_demand_charges = models.BooleanField(
     #     default=False,
     #     blank=True,
