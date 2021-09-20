@@ -1323,14 +1323,14 @@ class DataManager:
 
         # GHP parameters for REopt model
         # TODO make this a separate DataManager method for keeping finalize() concise
-        force_ghp, force_ghp_bau = 0, 0
+        require_ghp_purchase, force_ghp_bau = 0, 0
         ghp_installed_cost, ghp_installed_cost_bau = [], []
         ghp_om_cost_year_one, ghp_om_cost_year_one_bau = [], []
         ghp_heating_thermal_load_served_kw, ghp_heating_thermal_load_served_kw_bau = [], [[]]
         ghp_cooling_thermal_load_served_kw, ghp_cooling_thermal_load_served_kw_bau = [], [[]]
         ghp_electric_consumption_kw, ghp_electric_consumption_kw_bau = [], [[]]
         if len(self.ghp_option_list) > 0:
-            force_ghp = self.ghp_option_list[0].force_ghp  # This does not change with the number of options
+            require_ghp_purchase = self.ghp_option_list[0].require_ghp_purchase  # This does not change with the number of options
             for i, option in enumerate(self.ghp_option_list):
                 ghp_cap_cost_slope, ghp_cap_cost_x, ghp_cap_cost_yint, ghp_n_segments = self._get_REopt_cost_curve(techs=["ghp_option_list[{}]".format(i)])
                 ghp_size_tons = option.heatpump_capacity_tons
@@ -1560,7 +1560,7 @@ class DataManager:
             'TechCanSupplySteamTurbine': techs_can_supply_steam_turbine,
             'STElecOutToThermInRatio': st_elec_out_to_therm_in_ratio,
             'STThermOutToThermInRatio': st_therm_out_to_therm_in_ratio,
-            'ForceGHP': force_ghp,
+            'ForceGHP': require_ghp_purchase,
             'GHPHeatingThermalServed': ghp_heating_thermal_load_served_kw,
             'GHPCoolingThermalServed': ghp_cooling_thermal_load_served_kw,
             'GHPElectricConsumed': ghp_electric_consumption_kw,

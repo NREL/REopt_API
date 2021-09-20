@@ -998,7 +998,7 @@ class GHPModel(models.Model):
     # Or, just make a model field for the ghp_uuid chosen (outputs), where the ghp_uuid list/options are in the ghpghx_response
     # Inputs
     run_uuid = models.UUIDField(unique=True)
-    force_ghp = models.BooleanField(null=True, blank=True)
+    require_ghp_purchase = models.BooleanField(null=True, blank=True)
     installed_cost_heatpump_us_dollars_per_ton = models.FloatField(null=True, blank=True)
     heatpump_capacity_sizing_factor_on_peak_load = models.FloatField(null=True, blank=True)
     installed_cost_ghx_us_dollars_per_ft = models.FloatField(null=True, blank=True)
