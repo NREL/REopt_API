@@ -84,10 +84,6 @@ class BaseModel(object):
         :return: dict
         """
         d = copy.deepcopy(self.__dict__)
-        if "coincident_peak_load_active_timesteps" in d.keys():
-            # filter out repeated values created to make the inner arrays have equal length
-            d["coincident_peak_load_active_timesteps"] = \
-                [list(set(l)) for l in d["coincident_peak_load_active_timesteps"]]
         d.pop("_state", None)
         d.pop("id", None)
         d.pop("basemodel_ptr_id", None)
@@ -973,6 +969,24 @@ class ElectricTariffInputs(BaseModel, models.Model):
                     for _ in range(max_length - len(inner_array)):
                         inner_array.append(inner_array[-1])
         super(ElectricTariffInputs, self).save(*args, **kwargs)
+
+    @property
+    def dict(self):
+        """
+        Serialize Django Model.__dict__, custom implementation for ElectricTariffInputs
+        NOTE: to get correct field types you must run self.clean_fields() first (eg. convert int to float)
+        :return: dict
+        """
+        d = copy.deepcopy(self.__dict__)
+        if "coincident_peak_load_active_timesteps" in d.keys():
+            # filter out repeated values created to make the inner arrays have equal length
+            d["coincident_peak_load_active_timesteps"] = \
+                [list(set(l)) for l in d["coincident_peak_load_active_timesteps"]]
+        d.pop("_state", None)
+        d.pop("id", None)
+        d.pop("basemodel_ptr_id", None)
+        d.pop("scenario_id", None)
+        return d
 
 
 class ElectricUtilityInputs(BaseModel, models.Model):
@@ -2490,7 +2504,9 @@ class Message(BaseModel, models.Model):
     """
     scenario = models.ForeignKey(
         Scenario,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        unique=False,
+        related_name="Message"
     )
     message_type = models.TextField(default='')
     message = models.TextField(default='')
