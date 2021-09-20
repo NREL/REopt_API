@@ -185,10 +185,19 @@ def results(request, run_uuid):
 
     try:
         r["outputs"] = dict()
-        r["outputs"]["Financial"] = s.FinancialOutputs.dict
-        r["outputs"]["ElectricTariff"] = s.ElectricTariffOutputs.dict
-        r["outputs"]["ElectricUtility"] = s.ElectricUtilityOutputs.dict
-        r["outputs"]["ElectricLoad"] = s.ElectricLoadOutputs.dict
+        r["messages"] = dict()
+        try:
+            msgs = s.Message.all()
+            for msg in msgs:
+                r["messages"][msg.message_type] = msg.message
+        except Exception as e: print(e.args)
+
+        try:
+            r["outputs"]["Financial"] = s.FinancialOutputs.dict
+            r["outputs"]["ElectricTariff"] = s.ElectricTariffOutputs.dict
+            r["outputs"]["ElectricUtility"] = s.ElectricUtilityOutputs.dict
+            r["outputs"]["ElectricLoad"] = s.ElectricLoadOutputs.dict
+        except: pass
 
         try:
             pvs = s.PVOutputs.all()
