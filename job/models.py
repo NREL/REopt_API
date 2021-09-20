@@ -1013,8 +1013,8 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         null=True,
         blank=True,
         validators=[
-            MinValueValidator(1),
-            MaxValueValidator(35040)
+            MinValueValidator(1)
+            # max value validated in InputValidator b/c it requires Settings.time_steps_per_hour
         ],
         help_text="Time step that grid outage starts. Must be less than outage_end."
     )
@@ -1022,8 +1022,8 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         null=True,
         blank=True,
         validators=[
-            MinValueValidator(1),
-            MaxValueValidator(35040)
+            MinValueValidator(1)
+            # max value validated in InputValidator b/c it requires Settings.time_steps_per_hour
         ],
         help_text="Time step that grid outage ends. Must be greater than outage_start."
     )

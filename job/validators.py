@@ -252,13 +252,26 @@ class InputValidator(object):
         """
         if len(self.models["ElectricTariff"].tou_energy_rates_per_kwh) > 0:
             self.clean_time_series("ElectricTariff", "tou_energy_rates_per_kwh")
+
         cp_ts_arrays = self.models["ElectricTariff"].__getattribute__("coincident_peak_load_active_timesteps")
         max_ts = 8760 * self.models["Settings"].time_steps_per_hour
         if len(cp_ts_arrays) > 0:
             if len(cp_ts_arrays[0]) > 0:
                 if any(ts > max_ts for a in cp_ts_arrays for ts in a):
-                    self.add_validation_error("ElectricTariff", "coincident_peak_load_active_timesteps"
+                    self.add_validation_error("ElectricTariff", "coincident_peak_load_active_timesteps",
                                               f"At least one time step is greater than the max allowable ({max_ts})")
+        """
+        ElectricUtility
+        """
+        if "ElectricUtility" in self.models.keys():
+            if self.models["ElectricUtility"].outage_start_time_step:
+                if self.models["ElectricUtility"].outage_start_time_step > max_ts:
+                    self.add_validation_error("ElectricUtility", "outage_start_time_step",
+                                              f"Value is greater than the max allowable ({max_ts})")
+            if self.models["ElectricUtility"].outage_end_time_step:
+                if self.models["ElectricUtility"].outage_end_time_step > max_ts:
+                    self.add_validation_error("ElectricUtility", "outage_end_time_step",
+                                              f"Value is greater than the max allowable ({max_ts})")
 
     def save(self):
         """
