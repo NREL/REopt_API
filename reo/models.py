@@ -714,7 +714,7 @@ class CHPModel(models.Model):
     can_export_beyond_site_load = models.BooleanField(null=True, blank=True)
     can_curtail = models.BooleanField(null=True, blank=True)
     cooling_thermal_factor = models.FloatField(null=True, blank=True)
-    can_supply_st = models.BooleanField(null=True, blank=True)
+    can_supply_steam_turbine = models.BooleanField(null=True, blank=True)
 
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)
@@ -790,7 +790,7 @@ class BoilerModel(models.Model):
     existing_boiler_production_type_steam_or_hw = models.TextField(null=True, blank=True)
     boiler_efficiency = models.FloatField(blank=True, default=0, null=True)
     emissions_factor_lb_CO2_per_mmbtu = models.FloatField(null=True, blank=True)
-    can_supply_st = models.BooleanField(null=True, blank=True)
+    can_supply_steam_turbine = models.BooleanField(null=True, blank=True)
 
     # Outputs
     year_one_boiler_fuel_consumption_series_mmbtu_per_hr = ArrayField(
@@ -907,7 +907,7 @@ class NewBoilerModel(models.Model):
     min_mmbtu_per_hr = models.FloatField(null=True, blank=True)
     max_mmbtu_per_hr = models.FloatField(null=True, blank=True)
     boiler_efficiency = models.FloatField(null=True, blank=True)
-    can_supply_st = models.BooleanField(null=True, blank=True)
+    can_supply_steam_turbine = models.BooleanField(null=True, blank=True)
     installed_cost_us_dollars_per_mmbtu_per_hr = models.FloatField(null=True, blank=True)
     om_cost_us_dollars_per_mmbtu_per_hr = models.FloatField(null=True, blank=True)
     om_cost_us_dollars_per_mmbtu = models.FloatField(null=True, blank=True)

@@ -1151,24 +1151,24 @@ class DataManager:
 
         return rates_by_tech, techs_by_export_tier, export_tiers, techs_cannot_curtail, filtered_export_rates
 
-    def can_supply_steam_turbine(self, techs):
+    def assign_can_supply_steam_turbine(self, techs):
         """
         Returns a list of techs which can supply the SteamTurbine with steam to drive its electric generation
         :param techs: list of string
         :returns
-            all_techs_for_steam_turbine: all possible techs which have the attribute can_supply_st, even if set to False
-            techs_can_supply_st: list of techs which are set allowed to supply steam turbine with steam heat
+            all_techs_for_steam_turbine: all possible techs which have the attribute can_supply_steam_turbine, even if set to False
+            techs_can_supply_steam_turbine: list of techs which are set allowed to supply steam turbine with steam heat
         """
         all_techs_for_steam_turbine = list()
-        techs_can_supply_st = list()
+        techs_can_supply_steam_turbine = list()
         if len(techs) > 0:
             for tech in techs:  # have to do these for loops because `any` changes the scope and can't access `self`
-                if hasattr(eval('self.' + tech.lower()), 'can_supply_st'):
+                if hasattr(eval('self.' + tech.lower()), 'can_supply_steam_turbine'):
                     all_techs_for_steam_turbine.append(tech.upper())
-                    if eval('self.' + tech.lower() + '.can_supply_st'):
-                        techs_can_supply_st.append(tech.upper())
+                    if eval('self.' + tech.lower() + '.can_supply_steam_turbine'):
+                        techs_can_supply_steam_turbine.append(tech.upper())
 
-        return all_techs_for_steam_turbine, techs_can_supply_st
+        return all_techs_for_steam_turbine, techs_can_supply_steam_turbine
 
     def finalize(self):
         """
@@ -1384,7 +1384,7 @@ class DataManager:
         steam_turbine_techs = [t for t in reopt_techs if t.lower().startswith('steamturbine')]
         steam_turbine_techs_bau = [t for t in reopt_techs_bau if t.lower().endswith('steamturbine')]
 
-        all_techs_for_steam_turbine, techs_can_supply_steam_turbine = self.can_supply_steam_turbine(heating_techs)
+        all_techs_for_steam_turbine, techs_can_supply_steam_turbine = self.assign_can_supply_steam_turbine(heating_techs)
         all_techs_for_steam_turbine_bau, techs_can_supply_steam_turbine_bau = list(), list()  # Always empty for BAU
 
         if self.steamturbine is not None:
