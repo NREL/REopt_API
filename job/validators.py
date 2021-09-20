@@ -245,6 +245,8 @@ class InputValidator(object):
         """
         ElectricTariff
         """
+        if len(self.models["ElectricTariff"].tou_energy_rates_per_kwh) > 0:
+            self.clean_time_series("ElectricTariff", "tou_energy_rates_per_kwh")
         cp_ts_arrays = self.models["ElectricTariff"].__getattribute__("coincident_peak_load_active_timesteps")
         max_ts = 8760 * self.models["Settings"].time_steps_per_hour
         if len(cp_ts_arrays) > 0:
