@@ -52,7 +52,7 @@ def return400(data: dict, validator: InputValidator):
     )
     data["run_uuid"] = ""
     # TODO save BadInputs ?
-    data["messages"]["error"] = "Invalid inputs. See 'input_errors'."
+    data["messages"]["error"] = "Invalid inputs. See input_errors."
     data["messages"]["input_errors"] = validator.validation_errors
     raise ImmediateHttpResponse(HttpResponse(json.dumps(data), content_type='application/json', status=400))
 

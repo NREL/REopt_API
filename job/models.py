@@ -49,7 +49,6 @@ Guidance:
 MAX_BIG_NUMBER = 1.0e8
 MAX_INCENTIVE = 1.0e10
 MAX_YEARS = 75
-# TODO all financial values that start with `total_` or `net_` change to `lifecyle_` (here and in Julia package)
 
 
 class MACRS_YEARS_CHOICES(models.IntegerChoices):
@@ -432,15 +431,15 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Net present value of savings realized by the project"
     )
-    net_capital_costs_plus_om = models.FloatField(
+    lifecycle_capital_costs_plus_om = models.FloatField(
         null=True, blank=True,
         help_text="Capital cost for all technologies plus present value of operations and maintenance over anlaysis period"
     )
-    net_om_costs_bau = models.FloatField(
+    lifecycle_om_costs_bau = models.FloatField(
         null=True, blank=True,
         help_text="Business-as-usual present value of operations and maintenance over analysis period",
     )
-    net_capital_costs = models.FloatField(
+    lifecycle_capital_costs = models.FloatField(
         null=True, blank=True,
         help_text="Net capital costs for all technologies, in present value, including replacement costs and incentives."
     )
@@ -466,17 +465,17 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Net O&M and replacement costs in present value, after-tax."
     )
-    total_om_costs_after_tax = models.FloatField(
+    lifecycle_om_costs_after_tax = models.FloatField(
         null=True, blank=True,
-        help_text="Total operations and maintenance cost over analysis period after tax."
+        help_text="Life cycle operations and maintenance cost over analysis period after tax."
     )
     year_one_om_costs_after_tax = models.FloatField(
         null=True, blank=True,
         help_text="Year one operations and maintenance cost after tax."
     )
-    total_om_costs_before_tax = models.FloatField(
+    lifecycle_om_costs_before_tax = models.FloatField(
         null=True, blank=True,
-        help_text="Total operations and maintenance cost over analysis period before tax."
+        help_text="Life cycle operations and maintenance cost over analysis period before tax."
     )
     year_one_om_costs_before_tax = models.FloatField(
         null=True, blank=True,
@@ -1122,129 +1121,129 @@ class ElectricTariffOutputs(BaseModel, models.Model):
     )
     year_one_energy_cost = models.FloatField(
         null=True, blank=True,
-        help_text=("Optimal year one utility energy cost")
+        help_text="Optimal year one utility energy cost"
     )
     year_one_demand_cost = models.FloatField(
         null=True, blank=True,
-        help_text=("Optimal year one utility demand cost")
+        help_text="Optimal year one utility demand cost"
     )
     year_one_fixed_cost = models.FloatField(
         null=True, blank=True,
-        help_text=("Optimal year one utility fixed cost")
+        help_text="Optimal year one utility fixed cost"
     )
     year_one_min_charge_adder = models.FloatField(
         null=True, blank=True,
-        help_text=("Optimal year one utility minimum charge adder")
+        help_text="Optimal year one utility minimum charge adder"
     )
     year_one_energy_cost_bau = models.FloatField(
         null=True, blank=True,
-        help_text=("Business as usual year one utility energy cost")
+        help_text="Business as usual year one utility energy cost"
     )
     year_one_demand_cost_bau = models.FloatField(
         null=True, blank=True,
-        help_text=("Business as usual year one utility demand cost")
+        help_text="Business as usual year one utility demand cost"
     )
     year_one_fixed_cost_bau = models.FloatField(
         null=True, blank=True,
-        help_text=("Business as usual year one utility fixed cost")
+        help_text="Business as usual year one utility fixed cost"
     )
     year_one_min_charge_adder_bau = models.FloatField(
         null=True, blank=True,
-        help_text=("Business as usual year one utility minimum charge adder")
+        help_text="Business as usual year one utility minimum charge adder"
     )
-    total_energy_cost = models.FloatField(
+    lifecycle_energy_cost = models.FloatField(
         null=True, blank=True,
-        help_text=("Optimal total utility energy cost over the analysis period, after-tax")
+        help_text="Optimal life cycle utility energy cost, after-tax"
     )
-    total_demand_cost = models.FloatField(
+    lifecycle_demand_cost = models.FloatField(
         null=True, blank=True,
-        help_text=("Optimal total lifecycle utility demand cost over the analysis period, after-tax")
+        help_text="Optimal life cycle utility demand cost, after-tax"
     )
-    total_fixed_cost = models.FloatField(
+    lifecycle_fixed_cost = models.FloatField(
         null=True, blank=True,
-        help_text=("Optimal total utility fixed cost over the analysis period, after-tax")
+        help_text="Optimal life cycle utility fixed cost, after-tax"
     )
-    total_min_charge_adder = models.FloatField(
+    lifecycle_min_charge_adder = models.FloatField(
         null=True, blank=True,
-        help_text=("Optimal total utility minimum charge adder over the analysis period, after-tax")
+        help_text="Optimal life cycle utility minimum charge adder, after-tax"
     )
-    total_energy_cost_bau = models.FloatField(
+    lifecycle_energy_cost_bau = models.FloatField(
         null=True, blank=True,
-        help_text=("Business as usual total utility energy cost over the analysis period, after-tax")
+        help_text="Business as usual life cycle utility energy cost, after-tax"
     )
-    total_demand_cost_bau = models.FloatField(
+    lifecycle_demand_cost_bau = models.FloatField(
         null=True, blank=True,
-        help_text=("Business as usual total lifecycle utility demand cost over the analysis period, after-tax")
+        help_text="Business as usual life cycle lifecycle utility demand cost, after-tax"
     )
-    total_fixed_cost_bau = models.FloatField(
+    lifecycle_fixed_cost_bau = models.FloatField(
         null=True, blank=True,
-        help_text=("Business as usual total utility fixed cost over the analysis period, after-tax")
+        help_text="Business as usual life cycle utility fixed cost, after-tax"
     )
-    total_min_charge_adder_bau = models.FloatField(
+    lifecycle_min_charge_adder_bau = models.FloatField(
         null=True, blank=True,
-        help_text=("Business as usual total utility minimum charge adder over the analysis period, after-tax")
+        help_text="Business as usual life cycle utility minimum charge adder, after-tax"
     )
-    total_export_benefit = models.FloatField(
+    lifecycle_export_benefit = models.FloatField(
         null=True, blank=True,
-        help_text=("Optimal total value of exported energy over the analysis period, after-tax")
+        help_text="Optimal life cycle value of exported energy, after-tax"
     )
-    total_export_benefit_bau = models.FloatField(
+    lifecycle_export_benefit_bau = models.FloatField(
         null=True, blank=True,
-        help_text=("Business as usual total value of exported energy over the analysis period, after-tax")
+        help_text="Business as usual life cycle value of exported energy, after-tax"
     )
     year_one_bill = models.FloatField(
         null=True, blank=True,
-        help_text=("Optimal year one total utility bill")
+        help_text="Optimal year one utility bill"
     )
     year_one_bill_bau = models.FloatField(
         null=True, blank=True,
-        help_text=("Business as usual year one total utility bill")
+        help_text="Business as usual year one utility bill"
     )
     year_one_export_benefit = models.FloatField(
         null=True, blank=True,
-        help_text=("Optimal year one value of exported energy")
+        help_text="Optimal year one value of exported energy"
     )
     year_one_export_benefit_bau = models.FloatField(
         null=True, blank=True,
-        help_text=("Business as usual year one value of exported energy")
+        help_text="Business as usual year one value of exported energy"
     )
     year_one_energy_cost_series_per_kwh = ArrayField(
         models.FloatField(
             blank=True
         ), 
         default=list, blank=True,
-        help_text=("Optimal year one hourly energy costs")
+        help_text="Optimal year one hourly energy costs"
     )
     year_one_demand_cost_series_per_kw = ArrayField(
         models.FloatField(
             blank=True
         ), 
         default=list, blank=True,
-        help_text=("Optimal year one hourly demand costs")
+        help_text="Optimal year one hourly demand costs"
     )
     year_one_coincident_peak_cost = models.FloatField(
         null=True, blank=True,
-        help_text=("Optimal year one coincident peak charges")
+        help_text="Optimal year one coincident peak charges"
     )
     year_one_coincident_peak_cost_bau = models.FloatField(
         null=True, blank=True,
-        help_text=("Business as usual year one coincident peak charges")
+        help_text="Business as usual year one coincident peak charges"
     )
-    total_coincident_peak_cost = models.FloatField(
+    lifecycle_coincident_peak_cost = models.FloatField(
         null=True, blank=True,
-        help_text=("Optimal total coincident peak charges over the analysis period, after-tax")
+        help_text="Optimal total coincident peak charges over the analysis period, after-tax"
     )
-    total_coincident_peak_cost_bau = models.FloatField(
+    lifecycle_coincident_peak_cost_bau = models.FloatField(
         null=True, blank=True,
-        help_text=("Business as usual total coincident peak charges over the analysis period, after-tax")
+        help_text="Business as usual life cycle coincident peak charges, after-tax"
     )
     year_one_chp_standby_cost = models.FloatField(
         null=True, blank=True,
-        help_text=("Optimal year one standby charge cost incurred by CHP")
+        help_text="Optimal year one standby charge cost incurred by CHP"
     )
-    total_chp_standby_cost = models.FloatField(
+    lifecycle_chp_standby_cost = models.FloatField(
         null=True, blank=True,
-        help_text=("Optimal total standby charge cost incurred by CHP over the analysis period, after-tax")
+        help_text="Optimal life cycle standby charge cost incurred by CHP, after-tax"
     )
 
 
@@ -1613,8 +1612,8 @@ class PVOutputs(BaseModel, models.Model):
         help_text="PV description for distinguishing between multiple PV models"
     )
     size_kw = models.FloatField(null=True, blank=True)
-    total_om_cost = models.FloatField(null=True, blank=True)
-    total_om_cost_bau = models.FloatField(null=True, blank=True)
+    lifecycle_om_cost = models.FloatField(null=True, blank=True)
+    lifecycle_om_cost_bau = models.FloatField(null=True, blank=True)
 #     station_latitude = models.FloatField(null=True, blank=True)
 #     station_longitude = models.FloatField(null=True, blank=True)
 #     station_distance_km = models.FloatField(null=True, blank=True)
@@ -1920,7 +1919,7 @@ class WindOutputs(BaseModel, models.Model):
     )
 
     size_kw = models.FloatField(null=True, blank=True)
-    total_om_cost = models.FloatField(null=True, blank=True)
+    lifecycle_om_cost = models.FloatField(null=True, blank=True)
     year_one_om_cost = models.FloatField(null=True, blank=True)
     average_annual_energy_produced_kwh = models.FloatField(null=True, blank=True)
     average_annual_energy_exported_kwh = models.FloatField(null=True, blank=True)
@@ -2483,12 +2482,12 @@ class GeneratorOutputs(BaseModel, models.Model):
     year_one_fuel_cost_bau = models.FloatField(null=True, blank=True)
     year_one_fixed_om_cost = models.FloatField(null=True, blank=True)
     year_one_fixed_om_cost_bau = models.FloatField(null=True, blank=True)
-    total_variable_om_cost = models.FloatField(null=True, blank=True)
-    total_variable_om_cost_bau = models.FloatField(null=True, blank=True)
-    total_fuel_cost = models.FloatField(null=True, blank=True)
-    total_fuel_cost_bau = models.FloatField(null=True, blank=True)
-    total_fixed_om_cost = models.FloatField(null=True, blank=True)
-    total_fixed_om_cost_bau = models.FloatField(null=True, blank=True)
+    lifecycle_variable_om_cost = models.FloatField(null=True, blank=True)
+    lifecycle_variable_om_cost_bau = models.FloatField(null=True, blank=True)
+    lifecycle_fuel_cost = models.FloatField(null=True, blank=True)
+    lifecycle_fuel_cost_bau = models.FloatField(null=True, blank=True)
+    lifecycle_fixed_om_cost = models.FloatField(null=True, blank=True)
+    lifecycle_fixed_om_cost_bau = models.FloatField(null=True, blank=True)
     year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
     year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
 

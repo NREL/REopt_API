@@ -145,7 +145,7 @@ class InputValidator(object):
         the Julia package then a method error will be raised in Julia because the Site struct has no address field.
         :return:
         """
-        d = {"messages": self.messages}
+        d = dict()
         for model in self.models.values():
             if model.key == "PV" and self.pvnames:
                 if "PV" not in d.keys():
@@ -261,8 +261,7 @@ class InputValidator(object):
         for model in self.models.values():
             model.save()
         for msg_type, msg in self.messages.items():
-            msg_model = Message.create(scenario=self.models["Scenario"], message_type=msg_type, message=msg)
-            msg_model.save()
+            Message.create(scenario=self.models["Scenario"], message_type=msg_type, message=msg).save()
 
     @property
     def is_valid(self):
