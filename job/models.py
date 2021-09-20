@@ -31,9 +31,10 @@ import math
 from django.db import models
 from django.db.models.fields import NOT_PROVIDED
 from django.contrib.postgres.fields import *
-from picklefield.fields import PickledObjectField
+# TODO rm picklefield from requirements.txt once v1 is retired (replaced with JSONfield)
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
+from job.urdb_rate_validator import URDB_RateValidator
 import copy
 import logging
 
@@ -805,9 +806,8 @@ class ElectricTariffInputs(BaseModel, models.Model):
         help_text=("Label attribute of utility rate structure from Utility Rate Database API "
                    "https://openei.org/services/doc/rest/util_rates/?version=8")
     )
-    urdb_response = PickledObjectField(
+    urdb_response = models.JSONField(
         null=True, blank=True,
-        editable=True,
         help_text=("Utility rate structure from Utility Rate Database API "
                    "https://openei.org/services/doc/rest/util_rates/?version=8")
     )
@@ -949,6 +949,14 @@ class ElectricTariffInputs(BaseModel, models.Model):
                 error_messages["coincident peak"] = (
                     "The number of rates in coincident_peak_load_charge_per_kw must match the number of "
                     "timestep sets in coincident_peak_load_active_timesteps")
+
+        if self.urdb_response is not None:
+            try:
+                rate_checker = URDB_RateValidator(**self.urdb_response)
+                if rate_checker.errors:
+                    error_messages["urdb_response"] = rate_checker.errors
+            except:
+                error_messages["urdb_response"] = "Error parsing urdb_response. Please check the keys and values."
 
         if error_messages:
             raise ValidationError(error_messages)
