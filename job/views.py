@@ -153,7 +153,15 @@ def results(request, run_uuid):
     r["inputs"]["Settings"] = s.Settings.dict
 
     # We have to try for the following objects because they may or may not be defined
-    try: r["inputs"]["PV"] = s.PVInputs.dict
+    try:
+        pvs = s.PVInputs.all()
+        if len(pvs) == 1:
+            r["inputs"]["PV"] = pvs[0].dict
+        elif len(pvs) > 1:
+            r["inputs"]["PV"] = []
+            for pv in pvs:
+                r["inputs"]["PV"].append(pv.dict)
+
     except: pass
 
     try: r["inputs"]["ElectricUtility"] = s.ElectricUtilityInputs.dict
@@ -169,7 +177,11 @@ def results(request, run_uuid):
     except: pass
 
     for d in r["inputs"].values():
-        d.pop("scenario_id", None)
+        if isinstance(d, dict):
+            d.pop("scenario_id", None)
+        elif isinstance(d, list):
+            for subd in d:
+                subd.pop("scenario_id", None)
 
     try:
         r["outputs"] = dict()
@@ -178,7 +190,14 @@ def results(request, run_uuid):
         r["outputs"]["ElectricUtility"] = s.ElectricUtilityOutputs.dict
         r["outputs"]["ElectricLoad"] = s.ElectricLoadOutputs.dict
 
-        try: r["outputs"]["PV"] = s.PVOutputs.dict
+        try:
+            pvs = s.PVOutputs.all()
+            if len(pvs) == 1:
+                r["outputs"]["PV"] = pvs[0].dict
+            elif len(pvs) > 1:
+                r["outputs"]["PV"] = []
+                for pv in pvs:
+                    r["outputs"]["PV"].append(pv.dict)
         except: pass
         try: r["outputs"]["Storage"] = s.StorageOutputs.dict
         except: pass
@@ -188,7 +207,11 @@ def results(request, run_uuid):
         except: pass
 
         for d in r["outputs"].values():
-            d.pop("scenario_id", None)
+            if isinstance(d, dict):
+                d.pop("scenario_id", None)
+            elif isinstance(d, list):
+                for subd in d:
+                    subd.pop("scenario_id", None)
         # TODO fill out rest of out/inputs as they are added to REoptLite.jl
     except Exception as e:
         if 'RelatedObjectDoesNotExist' in str(type(e)):

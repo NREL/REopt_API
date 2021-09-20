@@ -87,11 +87,12 @@ class InputValidator(object):
             ElectricTariffInputs,
             FinancialInputs,
             ElectricUtilityInputs,
-            PVInputs,  # TODO handle multiple PV's
+            PVInputs,
             StorageInputs,
             GeneratorInputs,
             WindInputs
         )
+        self.pvnames = []
         required_object_names = [
             "Site", "ElectricLoad", "ElectricTariff"
         ]
@@ -105,8 +106,15 @@ class InputValidator(object):
         for obj in self.objects:
             if obj == Scenario: continue  # Scenario not used in Julia
             if obj.key in raw_inputs.keys():
-                filtered_user_post[obj.key] = scrub_fields(obj, raw_inputs[obj.key])
-                self.models[obj.key] = obj.create(scenario=scenario, **filtered_user_post[obj.key])
+                if isinstance(raw_inputs[obj.key], list) and obj.key == "PV":  # only handle array of PV
+                    for (i, user_pv) in enumerate(raw_inputs["PV"]):
+                        name = user_pv.get("name", "")
+                        self.pvnames.append(name if not name == "" else "PV" + str(i))
+                        filtered_user_post[self.pvnames[-1]] = scrub_fields(obj, user_pv)
+                        self.models[self.pvnames[-1]] = obj.create(scenario=scenario, **filtered_user_post[self.pvnames[-1]])
+                else:
+                    filtered_user_post[obj.key] = scrub_fields(obj, raw_inputs[obj.key])
+                    self.models[obj.key] = obj.create(scenario=scenario, **filtered_user_post[obj.key])
             elif obj.key in required_object_names:
                 self.validation_errors[obj.key] = "Missing required inputs."
             elif obj.key in ["Settings", "Financial"]:
@@ -139,8 +147,14 @@ class InputValidator(object):
         """
         d = {"messages": self.messages}
         for model in self.models.values():
-            d[model.key] = {k: v for (k, v) in model.dict.items() if v not in [None, []]}
-            # cleaning out model attribute
+            if model.key == "PV" and self.pvnames:
+                if "PV" not in d.keys():
+                    d["PV"] = [{k: v for (k, v) in model.dict.items() if v not in [None, []]}]
+                else:
+                    d["PV"].append({k: v for (k, v) in model.dict.items() if v not in [None, []]})
+            else:
+                d[model.key] = {k: v for (k, v) in model.dict.items() if v not in [None, []]}
+                # cleaning out model attribute
         return d
 
     def clean_fields(self):
@@ -182,12 +196,19 @@ class InputValidator(object):
         """
         PV tilt set to latitude if not provided and prod_factor_series_kw validated
         """
-        if "PV" in self.models.keys():
-            if self.models["PV"].__getattribute__("tilt") == 0.537:  # 0.537 is a dummy number, default tilt
-                self.models["PV"].__setattr__("tilt", self.models["Site"].__getattribute__("latitude"))
-            if self.models["PV"].__getattribute__("max_kw") > 0:
-                if len(self.models["PV"].__getattribute__("prod_factor_series_kw")) > 0:
+        def cross_clean_pv(pvmodel):
+            if pvmodel.__getattribute__("tilt") == 0.537:  # 0.537 is a dummy number, default tilt
+                pvmodel.__setattr__("tilt", self.models["Site"].__getattribute__("latitude"))
+            if pvmodel.__getattribute__("max_kw") > 0:
+                if len(pvmodel.__getattribute__("prod_factor_series_kw")) > 0:
                     self.clean_time_series("PV", "prod_factor_series_kw")
+                    
+        if "PV" in self.models.keys():  # single PV
+            cross_clean_pv(self.models["PV"])
+
+        if len(self.pvnames) > 0:  # multiple PV
+            for pvname in self.pvnames:
+                cross_clean_pv(self.models[pvname])
 
         """
         Time series values are up or down sampled to align with Settings.time_steps_per_hour
@@ -226,10 +247,11 @@ class InputValidator(object):
         """
         cp_ts_arrays = self.models["ElectricTariff"].__getattribute__("coincident_peak_load_active_timesteps")
         max_ts = 8760 * self.models["Settings"].time_steps_per_hour
-        if len(cp_ts_arrays[0]) > 0:
-            if any(ts > max_ts for a in cp_ts_arrays for ts in a):
-                self.add_validation_error("ElectricTariff", "coincident_peak_load_active_timesteps"
-                                          f"At least one time step is greater than the max allowable ({max_ts})")
+        if len(cp_ts_arrays) > 0:
+            if len(cp_ts_arrays[0]) > 0:
+                if any(ts > max_ts for a in cp_ts_arrays for ts in a):
+                    self.add_validation_error("ElectricTariff", "coincident_peak_load_active_timesteps"
+                                              f"At least one time step is greater than the max allowable ({max_ts})")
 
     def save(self):
         """
