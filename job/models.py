@@ -728,6 +728,10 @@ class ElectricLoadInputs(BaseModel, models.Model):
             if not math.isclose(sum(self.blended_doe_reference_percents),  1.0):
                 error_messages["blended_doe_reference_percents"] = "Sum must = 1.0."
 
+        if self.doe_reference_name != "" or \
+                len(self.blended_doe_reference_names) > 1:
+            self.year = 2017  # the validator provides an "info" message regarding this
+
         if error_messages:
             raise ValidationError(error_messages)
 
