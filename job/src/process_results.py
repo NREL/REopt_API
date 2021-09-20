@@ -44,7 +44,11 @@ def process_results(results: dict, run_uuid: str) -> None:
     ElectricUtilityOutputs.create(scenario=s, **results["ElectricUtility"]).save()
     ElectricLoadOutputs.create(scenario=s, **results["ElectricLoad"]).save()
     if "PV" in results.keys():
-        PVOutputs.create(scenario=s, **results["PV"]).save()
+        if isinstance(results["PV"], dict):
+            PVOutputs.create(scenario=s, **results["PV"]).save()
+        elif isinstance(results["PV"], list):
+            for pvdict in results["PV"]:
+                PVOutputs.create(scenario=s, **pvdict).save()
     if "Storage" in results.keys():
         StorageOutputs.create(scenario=s, **results["Storage"]).save()
     if "Generator" in results.keys():

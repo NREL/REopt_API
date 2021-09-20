@@ -961,11 +961,12 @@ class ElectricTariffInputs(BaseModel, models.Model):
         By repeating the last value we do not have to deal with a mix of data types in the arrays and it does not
         affect the constraints in REopt.
         """
-        max_length = max(len(inner_array) for inner_array in self.coincident_peak_load_active_timesteps)
-        for inner_array in self.coincident_peak_load_active_timesteps:
-            if len(inner_array) != max_length:
-                for _ in range(max_length - len(inner_array)):
-                    inner_array.append(inner_array[-1])
+        if len(self.coincident_peak_load_active_timesteps) > 0:
+            max_length = max(len(inner_array) for inner_array in self.coincident_peak_load_active_timesteps)
+            for inner_array in self.coincident_peak_load_active_timesteps:
+                if len(inner_array) != max_length:
+                    for _ in range(max_length - len(inner_array)):
+                        inner_array.append(inner_array[-1])
         super(ElectricTariffInputs, self).save(*args, **kwargs)
 
 
@@ -1230,11 +1231,11 @@ class ElectricTariffOutputs(BaseModel, models.Model):
 
 class PVInputs(BaseModel, models.Model):
     key = "PV"
-    scenario = models.OneToOneField(
-        Scenario,
+    scenario = models.ForeignKey(
+        to=Scenario,
         on_delete=models.CASCADE,
         related_name="PVInputs",
-        primary_key=True
+        unique=False
     )
     
     class ARRAY_TYPE_CHOICES(models.IntegerChoices):
@@ -1254,10 +1255,6 @@ class PVInputs(BaseModel, models.Model):
         GROUND = 'ground'
         BOTH = 'both'
 
-    # number = models.IntegerField(
-    #     null=True, blank=True,
-    #     help_text="Index out of all PV system models"
-    # )
     name = models.TextField(
         blank=True,
         default="PV",
@@ -1585,10 +1582,16 @@ class PVInputs(BaseModel, models.Model):
 
 class PVOutputs(BaseModel, models.Model):
     key = "PVOutputs"
-    scenario = models.OneToOneField(
-        Scenario,
+    scenario = models.ForeignKey(
+        to=Scenario,
         on_delete=models.CASCADE,
-        related_name="PVOutputs"
+        related_name="PVOutputs",
+        unique=False
+    )
+    name = models.TextField(
+        blank=True,
+        default="PV",
+        help_text="PV description for distinguishing between multiple PV models"
     )
     size_kw = models.FloatField(null=True, blank=True)
     total_om_cost = models.FloatField(null=True, blank=True)
