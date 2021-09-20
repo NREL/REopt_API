@@ -260,6 +260,16 @@ class InputValidator(object):
                 if any(ts > max_ts for a in cp_ts_arrays for ts in a):
                     self.add_validation_error("ElectricTariff", "coincident_peak_load_active_timesteps",
                                               f"At least one time step is greater than the max allowable ({max_ts})")
+
+        if self.models["ElectricTariff"].urdb_response:
+            if "energyweekdayschedule" in self.models["ElectricTariff"].urdb_response.keys():
+                urdb_rate_timesteps_per_hour = int(len(self.models["ElectricTariff"].urdb_response[
+                                                           "energyweekdayschedule"][1]) / 24)
+                if urdb_rate_timesteps_per_hour != self.models["Settings"].time_steps_per_hour:
+                    self.add_validation_error("ElectricTariff", "urdb_response",
+                                              ("The time steps per hour in the energyweekdayschedule does not match "
+                                               "the Settings.time_steps_per_hour."))
+
         """
         ElectricUtility
         """
