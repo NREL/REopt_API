@@ -57,7 +57,7 @@ function add_continuous_variables(m, p)
 		dvElectricChillerDemand[p.TimeStep] >= 0  #X^{ec}_h: Electrical power consumption by electric chiller in time step h
 		dvOMByHourBySizeCHP[p.Tech, p.TimeStep] >= 0
         dvSupplementaryThermalProduction[p.CHPTechs, p.TimeStep] >= 0
-		dvSupplementaryThermalSize[p.CHPTechs] >= 0  #X^{\sigma db}_{t}: System size of CHP supplementary firing [kW]
+		dvSupplementaryFiringCHPSize[p.CHPTechs] >= 0  #X^{\sigma db}_{t}: System size of CHP with supplementary firing [kW]
     end
 	if !isempty(p.ExportTiers)
 		@variable(m, dvProductionToGrid[p.Tech, p.ExportTiers, p.TimeStep] >= 0)  # X^{ptg}_{tuh}: Exports from electrical production to the grid by technology t in demand tier u during time step h [kW]   (NEW)
@@ -106,7 +106,7 @@ function add_cost_expressions(m, p)
 		m[:TotalTechCapCosts] = @expression(m, p.two_party_factor * (
 			sum( p.CapCostSlope[t,s] * m[:dvSystemSizeSegment][t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) +
 			sum( p.CapCostYInt[t,s] * m[:binSegmentSelect][t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) +
-			sum( p.CapCostSupplementaryFiring[t] * m[:dvSupplementaryThermalSize][t] for t in p.CHPTechs ) 
+			sum( p.CapCostSupplementaryFiring[t] * m[:dvSupplementaryFiringCHPSize][t] for t in p.CHPTechs ) 
 		))
 	else
 		m[:TotalTechCapCosts] = @expression(m, p.two_party_factor * (
@@ -401,7 +401,7 @@ function add_thermal_production_constraints(m, p)
             # Constrain upper limit of dvSupplementaryThermalProduction, using auxiliary variable for (size * useSupplementaryFiring)
             @constraint(m, CHPSupplementaryFireCon[t in p.CHPTechs, ts in p.TimeStep],
                         m[:dvSupplementaryThermalProduction][t,ts] <=
-                        (p.CHPSupplementaryFireMaxRatio - 1.0) * p.ProductionFactor[t,ts] * (p.CHPThermalProdSlope[t] * m[:dvSupplementaryThermalSize][t] + m[:dvThermalProductionYIntercept][t,ts])
+                        (p.CHPSupplementaryFireMaxRatio - 1.0) * p.ProductionFactor[t,ts] * (p.CHPThermalProdSlope[t] * m[:dvSupplementaryFiringCHPSize][t] + m[:dvThermalProductionYIntercept][t,ts])
                         )
             # Constrain lower limit of 0 if CHP tech is off
             @constraint(m, NoCHPSupplementaryFireCon[t in p.CHPTechs, ts in p.TimeStep],
@@ -740,21 +740,21 @@ function add_tech_size_constraints(m, p)
 	if p.CHPSupplementaryFireMaxRatio > 1.0
 		##Constraint (7_supplementary_firing_size_a): size=0 if not chosen
 		@constraint(m, CHPSupplementaryFiringSize_A[t in p.CHPTechs],
-			m[:dvSupplementaryThermalSize][t] <= m[:NewMaxSize][t] * m[:binUseSupplementaryFiring][t]
+			m[:dvSupplementaryFiringCHPSize][t] <= m[:NewMaxSize][t] * m[:binUseSupplementaryFiring][t]
 		)
 		
 		##Constraint (7_supplementary_firing_size_b): size=CHP if not chosen
 		@constraint(m, CHPSupplementaryFiringSize_B[t in p.CHPTechs],
-			m[:dvSupplementaryThermalSize][t] >= m[:dvSize][t] - m[:NewMaxSize][t] * (1-m[:binUseSupplementaryFiring][t])
+			m[:dvSupplementaryFiringCHPSize][t] >= m[:dvSize][t] - m[:NewMaxSize][t] * (1-m[:binUseSupplementaryFiring][t])
 		)
 
 		##Constraint (7_supplementary_firing_size_b): size=CHP if not chosen
 		@constraint(m, CHPSupplementaryFiringSize_C[t in p.CHPTechs],
-			m[:dvSupplementaryThermalSize][t] <= m[:dvSize][t] + m[:NewMaxSize][t] * (1-m[:binUseSupplementaryFiring][t])
+			m[:dvSupplementaryFiringCHPSize][t] <= m[:dvSize][t] + m[:NewMaxSize][t] * (1-m[:binUseSupplementaryFiring][t])
 		)
 	else
 		for t in p.CHPTechs
-			fix(m[:dvSupplementaryThermalSize][t], 0.0, force=true)
+			fix(m[:dvSupplementaryFiringCHPSize][t], 0.0, force=true)
 		end
 	end
 end
@@ -1609,7 +1609,7 @@ end
 function add_chp_results(m, p, r::Dict)
 	r["CHP"] = Dict()
 	r["chp_kw"] = value(sum(m[:dvSize][t] for t in p.CHPTechs))
-	r["chp_supplemental_firing_kw"] = value(sum(m[:dvSupplementaryThermalSize][t] for t in p.CHPTechs))
+	r["chp_supplemental_firing_kw"] = value(sum(m[:dvSupplementaryFiringCHPSize][t] for t in p.CHPTechs))
 	@expression(m, CHPFuelUsed, sum(m[:dvFuelUsage][t, ts] for t in p.CHPTechs, ts in p.TimeStep))
 	r["year_one_chp_fuel_used"] = round(value(CHPFuelUsed), digits=3)
 	@expression(m, Year1CHPElecProd,
