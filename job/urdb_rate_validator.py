@@ -294,7 +294,7 @@ class URDB_RateValidator:
                 if type(item) == list:
                     if len(item) % expected_counts[level] != 0:
                         msg = 'Entry {} {}{} does not contain a number of entries divisible by {}'.format(
-                            entry, 'in sublevel ' + str(level) + ' ' if level > 0 else '', schedule_name,
+                            entry+1, 'in sublevel ' + str(level) + ' ' if level > 0 else '', schedule_name,
                             expected_counts[level]
                         )
                         self.errors.append(msg)
