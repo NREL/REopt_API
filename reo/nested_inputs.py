@@ -2060,7 +2060,7 @@ nested_input_definitions = {
         }        
       },
       "GHP": {
-        "force_ghp": {
+        "require_ghp_purchase": {
           "type": "bool",
           "default": False,
           "description": "Force one of the considered GHP design options"

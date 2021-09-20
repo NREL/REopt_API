@@ -125,7 +125,7 @@ class HybridLoadsHeatCoolTest(ResourceTestCaseMixin, TestCase):
         # Add GHP to the scenario so we can parse Space Heating (GHP-servable) Vs DHW (not GHP-servable) for hybrid loads
         post["Scenario"]["Site"]["GHP"] = {}
         post["Scenario"]["Site"]["GHP"]["building_sqft"] = 100000.0
-        post["Scenario"]["Site"]["GHP"]["force_ghp"] = True
+        post["Scenario"]["Site"]["GHP"]["require_ghp_purchase"] = True
         #post["Scenario"]["Site"]["GHP"]["ghpghx_response"] = json.load(open("ghpghx_response.json", "r"))
 
         resp = self.get_response(data=post)

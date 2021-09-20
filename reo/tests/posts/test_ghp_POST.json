@@ -39,7 +39,7 @@
                 "boiler_fuel_blended_annual_rates_us_dollars_per_mmbtu": 11.0
             } ,
             "GHP": {
-                "force_ghp": true,
+                "require_ghp_purchase": true,
                 "building_sqft": 50000.0,
                 "can_serve_dhw": false
             },
