@@ -65,7 +65,7 @@ class RunJumpModelTask(Task):
             s = Scenario.objects.get(run_uuid=exc.run_uuid)
             s.status = "An error occurred. See messages for more."
             s.save(update_fields=["status"])
-            Message.create(scenario=s, message_type="error", message=msg)
+            Message.create(scenario=s, message_type="error", message=msg).save()
 
         # TODO is it possible for non-REoptErrors to get here? if so what do we do?
 
