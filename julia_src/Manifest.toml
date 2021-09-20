@@ -370,7 +370,7 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [[REoptLite]]
 deps = ["Dates", "DelimitedFiles", "HTTP", "JSON", "JuMP", "LinDistFlow", "Logging", "MathOptInterface", "PolygonInbounds", "Roots", "Shapefile"]
-path = "/Users/nlaws/.julia/dev/REoptLite"
+git-tree-sha1 = "0ef7b99190cdca2c59bf2a2ee62b6f9cd0b5b9e7"
 uuid = "0144022d-7626-48b7-867b-06d945449d75"
 version = "0.11.0"
 
