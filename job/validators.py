@@ -135,6 +135,11 @@ class InputValidator(object):
         if self.resampling_messages:
             msg_dict["resampled inputs"] = self.resampling_messages
 
+        if self.models["ElectricLoad"].doe_reference_name != "" or \
+                len(self.models["ElectricLoad"].blended_doe_reference_names) > 1:
+            msg_dict["info"] = ("When using doe_reference_name or blended_doe_reference_names for ElectricLoad the "
+                                "year is set to 2017 because the DoE load profiles start on a Sunday.")
+
         return msg_dict
 
     @property
