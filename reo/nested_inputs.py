@@ -1709,7 +1709,7 @@ nested_input_definitions = {
           "max": 1.0,
           "description": "Knockdown factor on absorption chiller COP based on the CHP prime_mover not being able to produce as high of temp/pressure hot water/steam"
         },
-        "can_supply_st": {
+        "can_supply_steam_turbine": {
           "type": "bool", "default": False,
           "description": "If CHP can supply steam to the steam turbine for electric production"
         },        
@@ -1849,7 +1849,7 @@ nested_input_definitions = {
           "type": "float",
           "description": "Pounds of carbon dioxide emitted per gallon of fuel burned"
         },
-        "can_supply_st": {
+        "can_supply_steam_turbine": {
           "type": "bool", "default": False,
           "description": "If the boiler can supply steam to the steam turbine for electric production"
         }        
@@ -1921,7 +1921,7 @@ nested_input_definitions = {
           "type": "float", "min:": 0.0, "max:": 1.0, "default": 0.8,
           "description": "New boiler system efficiency - conversion of fuel to usable heating thermal energy"
         },
-        "can_supply_st": {
+        "can_supply_steam_turbine": {
           "type": "bool", "default": True,
           "description": "If the boiler can supply steam to the steam turbine for electric production"
         },

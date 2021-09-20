@@ -375,7 +375,7 @@ class CHP(Tech):
         self.outage_start_time_step = outage_start_time_step
         self.outage_end_time_step = outage_end_time_step
         self.year = year
-        self.can_supply_st = kwargs.get('can_supply_st')
+        self.can_supply_steam_turbine = kwargs.get('can_supply_steam_turbine')
         self.supplementary_firing_max_steam_ratio = kwargs.get('supplementary_firing_max_steam_ratio')
         self.supplementary_firing_efficiency = kwargs.get('supplementary_firing_efficiency')
 
@@ -477,7 +477,7 @@ class Boiler(Tech):
         self.max_thermal_factor_on_peak_load = kwargs.get('max_thermal_factor_on_peak_load')
         self.existing_boiler_production_type_steam_or_hw = kwargs.get('existing_boiler_production_type_steam_or_hw')
         self.boiler_efficiency = kwargs.get('boiler_efficiency')
-        self.can_supply_st = kwargs.get('can_supply_st')
+        self.can_supply_steam_turbine = kwargs.get('can_supply_steam_turbine')
         self.derate = 0
         self.n_timesteps = dfm.n_timesteps
         
@@ -652,7 +652,7 @@ class NewBoiler(Tech):
         self.min_mmbtu_per_hr = kwargs.get('min_mmbtu_per_hr')
         self.max_mmbtu_per_hr = kwargs.get('max_mmbtu_per_hr')
         self.boiler_efficiency = kwargs.get('boiler_efficiency')
-        self.can_supply_st = kwargs.get('can_supply_st')
+        self.can_supply_steam_turbine = kwargs.get('can_supply_steam_turbine')
         self.installed_cost_us_dollars_per_mmbtu_per_hr = kwargs.get('installed_cost_us_dollars_per_mmbtu_per_hr')
         self.om_cost_us_dollars_per_mmbtu_per_hr = kwargs.get('om_cost_us_dollars_per_mmbtu_per_hr')
         self.om_cost_us_dollars_per_mmbtu = kwargs.get('om_cost_us_dollars_per_mmbtu')

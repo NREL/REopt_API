@@ -9,7 +9,7 @@
         "existing_boiler_production_type_steam_or_hw": "steam",
         "boiler_efficiency": 0.8,
         "emissions_factor_lb_CO2_per_mmbtu": null,
-        "can_supply_st": true
+        "can_supply_steam_turbine": true
       },
       "FuelTariff": {
         "existing_boiler_fuel_type": "natural_gas",

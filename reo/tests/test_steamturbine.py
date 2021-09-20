@@ -127,7 +127,7 @@ class SteamTurbineTest(ResourceTestCaseMixin, TestCase):
         Validation to ensure that:
          1) Heat balance is correct with SteamTurbine (backpressure), CHP, HotTES, and AbsorptionChiller included
          2) The sum of a all thermal from techs supplying SteamTurbine is equal to SteamTurbine thermal consumption
-         3) Techs are not supplying SteamTurbine with thermal if can_supply_st = False
+         3) Techs are not supplying SteamTurbine with thermal if can_supply_steam_turbine = False
 
         :return:
         """
@@ -150,7 +150,7 @@ class SteamTurbineTest(ResourceTestCaseMixin, TestCase):
                                                   "min_kw": 250.0,
                                                   "min_allowable_kw":0.0,
                                                   "max_kw": 250.0}
-        nested_data["Scenario"]["Site"]["CHP"]["can_supply_st"] = False
+        nested_data["Scenario"]["Site"]["CHP"]["can_supply_steam_turbine"] = False
         nested_data["Scenario"]["Site"]["FuelTariff"]["chp_fuel_blended_annual_rates_us_dollars_per_mmbtu"] = 8.0
         nested_data["Scenario"]["Site"]["Financial"]["chp_fuel_escalation_pct"] = 0.034
 
@@ -203,7 +203,7 @@ class SteamTurbineTest(ResourceTestCaseMixin, TestCase):
         alltechs_thermal_to_steamturbine_total = sum([sum(tech_to_thermal_load[tech]["steamturbine"]) for tech in thermal_techs - {"SteamTurbine"}])
         self.assertAlmostEqual(alltechs_thermal_to_steamturbine_total, sum(steamturbine_thermal_in), places=3)
 
-        # Check that "thermal_to_steamturbine" is zero for each tech which has input of can_supply_st as False
+        # Check that "thermal_to_steamturbine" is zero for each tech which has input of can_supply_steam_turbine as False
         for tech in thermal_techs - {"SteamTurbine"}:
-            if d["inputs"]["Scenario"]["Site"][tech]["can_supply_st"] == False:
+            if d["inputs"]["Scenario"]["Site"][tech]["can_supply_steam_turbine"] == False:
                 self.assertEqual(sum(tech_to_thermal_load[tech]["steamturbine"]), 0.0)
