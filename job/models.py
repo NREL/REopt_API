@@ -408,6 +408,11 @@ class FinancialInputs(BaseModel, models.Model):
     #     help_text=("Annual nominal chp fuel cost escalation rate")
     # )
 
+    def clean(self):
+        if not self.third_party_ownership:
+            self.owner_tax_pct = self.offtaker_tax_pct
+            self.owner_discount_pct = self.offtaker_discount_pct
+
 
 class FinancialOutputs(BaseModel, models.Model):
     key = "FinancialOutputs"
@@ -947,7 +952,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
         if len(self.coincident_peak_load_charge_per_kw) > 0:
             if len(self.coincident_peak_load_active_timesteps) != len(self.coincident_peak_load_charge_per_kw):
                 error_messages["coincident peak"] = (
-                    "The number of rates in coincident_peak_load_charge_us_dollars_per_kw must match the number of "
+                    "The number of rates in coincident_peak_load_charge_per_kw must match the number of "
                     "timestep sets in coincident_peak_load_active_timesteps")
 
         if error_messages:
