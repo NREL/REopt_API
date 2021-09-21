@@ -47,9 +47,9 @@ version = "0.5.1"
 
 [[ChainRulesCore]]
 deps = ["Compat", "LinearAlgebra", "SparseArrays"]
-git-tree-sha1 = "4ce9393e871aca86cc457d9f66976c3da6902ea7"
+git-tree-sha1 = "bd4afa1fdeec0c8b89dad3c6e92bc6e3b0fec9ce"
 uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-version = "1.4.0"
+version = "1.6.0"
 
 [[CodecBzip2]]
 deps = ["Bzip2_jll", "Libdl", "TranscodingStreams"]
@@ -370,9 +370,9 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [[REoptLite]]
 deps = ["Dates", "DelimitedFiles", "HTTP", "JSON", "JuMP", "LinDistFlow", "Logging", "MathOptInterface", "PolygonInbounds", "Roots", "Shapefile"]
-git-tree-sha1 = "0ef7b99190cdca2c59bf2a2ee62b6f9cd0b5b9e7"
+git-tree-sha1 = "0ab0c35f545946dd9fe15b07b97268b0f0f70513"
 uuid = "0144022d-7626-48b7-867b-06d945449d75"
-version = "0.11.0"
+version = "0.12.0"
 
 [[Random]]
 deps = ["Serialization"]
