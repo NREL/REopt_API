@@ -404,9 +404,13 @@ function add_thermal_production_constraints(m, p)
                         (p.CHPSupplementaryFireMaxRatio - 1.0) * p.ProductionFactor[t,ts] * (p.CHPThermalProdSlope[t] * m[:dvSupplementaryFiringCHPSize][t] + m[:dvThermalProductionYIntercept][t,ts])
                         )
             # Constrain lower limit of 0 if CHP tech is off
-            @constraint(m, NoCHPSupplementaryFireCon[t in p.CHPTechs, ts in p.TimeStep],
-                        !m[:binTechIsOnInTS][t,ts] => {m[:dvSupplementaryThermalProduction][t,ts] == 0.0}
+            @constraint(m, NoCHPSupplementaryFireOffCon[t in p.CHPTechs, ts in p.TimeStep],
+                        !m[:binTechIsOnInTS][t,ts] => {m[:dvSupplementaryThermalProduction][t,ts] <= 0.0}
                         )
+            # Constrain lower limit of 0 if binUseSupplementaryFiring is 0
+            @constraint(m, NoCHPSupplementaryFireNotChosenCon[t in p.CHPTechs, ts in p.TimeStep],
+                        !m[:binUseSupplementaryFiring][t] => {m[:dvSupplementaryThermalProduction][t,ts] <= 0.0}
+                        )                        
         else
 			for t in p.CHPTechs
 	            for ts in p.TimeStep
