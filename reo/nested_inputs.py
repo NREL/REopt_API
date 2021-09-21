@@ -1526,7 +1526,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0,
-          "default": 0.9,
+          "default": 0.92,
           "description": "Thermal efficiency of the incremental steam production from supplementary firing. Relevant only for combustion_turbine prime_mover"
         },
         "use_default_derate": {
