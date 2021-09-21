@@ -265,10 +265,11 @@ class InputValidator(object):
             if "energyweekdayschedule" in self.models["ElectricTariff"].urdb_response.keys():
                 urdb_rate_timesteps_per_hour = int(len(self.models["ElectricTariff"].urdb_response[
                                                            "energyweekdayschedule"][1]) / 24)
-                if urdb_rate_timesteps_per_hour != self.models["Settings"].time_steps_per_hour:
+                if urdb_rate_timesteps_per_hour > self.models["Settings"].time_steps_per_hour:
+                    # do not support down-sampling tariff
                     self.add_validation_error("ElectricTariff", "urdb_response",
-                                              ("The time steps per hour in the energyweekdayschedule does not match "
-                                               "the Settings.time_steps_per_hour."))
+                                              ("The time steps per hour in the energyweekdayschedule must be no greater "
+                                               "than the Settings.time_steps_per_hour."))
 
         """
         ElectricUtility
