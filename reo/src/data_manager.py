@@ -487,7 +487,7 @@ class DataManager:
                     if u == 0 or u_cap == 0:
                         switch_rebate = True
 
-                    # TODO not true: start at second point, first is always zero
+                    # Start at second point, first is always zero
                     for point in range(1, len(xp_array_incent[region])):
 
                         # previous points
@@ -1322,7 +1322,6 @@ class DataManager:
         non_cooling_electric_load_bau = [self.load.bau_load_list[ts] - cooling_load[ts] / self.cooling_load.chiller_cop for ts in range(len(self.load.bau_load_list))]
 
         # GHP parameters for REopt model
-        # TODO make this a separate DataManager method for keeping finalize() concise
         require_ghp_purchase, force_ghp_bau = 0, 0
         ghp_installed_cost, ghp_installed_cost_bau = [], []
         ghp_om_cost_year_one, ghp_om_cost_year_one_bau = [], []
@@ -1342,7 +1341,6 @@ class DataManager:
                     for n in range(ghp_n_segments):
                         if (ghp_size_tons > ghp_cap_cost_x[n]) and (ghp_size_tons <= ghp_cap_cost_x[n+1]):
                             break
-                # TODO make sure the below is consistent with the y-int + slope * size definitions
                 ghp_installed_cost.append(ghp_cap_cost_yint[n] + ghp_size_tons * ghp_cap_cost_slope[n])
                 ghp_om_cost_year_one.append(option.om_cost_year_one)
                 if self.boiler is not None:
