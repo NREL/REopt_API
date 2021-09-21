@@ -744,17 +744,12 @@ function add_tech_size_constraints(m, p)
 	if p.CHPSupplementaryFireMaxRatio > 1.0
 		##Constraint (7_supplementary_firing_size_a): size=0 if not chosen
 		@constraint(m, CHPSupplementaryFiringSize_A[t in p.CHPTechs],
-			m[:dvSupplementaryFiringCHPSize][t] <= m[:NewMaxSize][t] * m[:binUseSupplementaryFiring][t]
+            m[:binUseSupplementaryFiring][t] => {m[:dvSupplementaryFiringCHPSize][t] <= m[:NewMaxSize][t]}
 		)
 		
 		##Constraint (7_supplementary_firing_size_b): size=CHP if not chosen
 		@constraint(m, CHPSupplementaryFiringSize_B[t in p.CHPTechs],
-			m[:dvSupplementaryFiringCHPSize][t] >= m[:dvSize][t] - m[:NewMaxSize][t] * (1-m[:binUseSupplementaryFiring][t])
-		)
-
-		##Constraint (7_supplementary_firing_size_b): size=CHP if not chosen
-		@constraint(m, CHPSupplementaryFiringSize_C[t in p.CHPTechs],
-			m[:dvSupplementaryFiringCHPSize][t] <= m[:dvSize][t] + m[:NewMaxSize][t] * (1-m[:binUseSupplementaryFiring][t])
+            m[:binUseSupplementaryFiring][t] => {m[:dvSupplementaryFiringCHPSize][t] >= m[:dvSize][t]}
 		)
 	else
 		for t in p.CHPTechs
@@ -1348,6 +1343,7 @@ end
 
 function add_null_chp_results(m, p, r::Dict)
 	r["chp_kw"] = 0.0
+    r["chp_supplemental_firing_kw"] = 0.0
 	r["year_one_chp_fuel_used"] = 0.0
 	r["year_one_chp_electric_energy_produced"] = 0.0
 	r["year_one_chp_thermal_energy_produced"] = 0.0
