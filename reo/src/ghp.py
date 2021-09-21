@@ -30,8 +30,6 @@ class GHPGHXInputs:
                                 }
 
     def __init__(self, inputs_dict, **kwargs):
-        #TODO Add ALL the input fields for the GHPGHX model
-        #   (remove all intermediate calculated fields based on inputs from here, so it's cleaner as the GHP POST)
         self.heating_thermal_mmbtu_per_hr = inputs_dict["heating_thermal_load_mmbtu_per_hr"]
         self.heating_thermal_kw = list(np.array(self.heating_thermal_mmbtu_per_hr) * MMBTU_TO_KWH)
         self.cooling_thermal_ton = inputs_dict["cooling_thermal_load_ton"]
