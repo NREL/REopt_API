@@ -1404,10 +1404,16 @@ class DataManager:
             cooling_thermal_factor = self.chp.cooling_thermal_factor
             supplementary_firing_max_steam_ratio = self.chp.supplementary_firing_max_steam_ratio
             supplementary_firing_efficiency = self.chp.supplementary_firing_efficiency
+            supplementary_firing_capital_cost_per_kw = [self.chp.supplementary_firing_capital_cost_per_kw]
+            supplementary_firing_capital_cost_per_kw_bau = [self.chp.supplementary_firing_capital_cost_per_kw for t in chp_techs_bau]
         else:
             cooling_thermal_factor = 1.0
             supplementary_firing_max_steam_ratio = 1.0
             supplementary_firing_efficiency = 0.9
+            supplementary_firing_capital_cost_per_kw = []
+            supplementary_firing_capital_cost_per_kw_bau = []
+        
+        
 
         absorp_chiller_cop = self.absorpchl.chiller_cop * cooling_thermal_factor if self.absorpchl != None else 1.0
         absorp_chiller_elec_cop = self.absorpchl.chiller_elec_cop if self.absorpchl != None else 1.0
@@ -1565,7 +1571,8 @@ class DataManager:
             'GHPInstalledCost': ghp_installed_cost,
             'GHPOMCost': ghp_om_cost_year_one,
             'CHPSupplementaryFireMaxRatio': supplementary_firing_max_steam_ratio,
-            'CHPSupplementaryFireEfficiency': supplementary_firing_efficiency
+            'CHPSupplementaryFireEfficiency': supplementary_firing_efficiency,
+            'CapCostSupplementaryFiring': supplementary_firing_capital_cost_per_kw
             }
         ## Uncomment the following and run a scenario to get an updated modelinputs.json for creating Julia system image
         # import json
@@ -1707,5 +1714,6 @@ class DataManager:
             'GHPInstalledCost': ghp_installed_cost_bau,
             'GHPOMCost': ghp_om_cost_year_one_bau,
             'CHPSupplementaryFireMaxRatio': supplementary_firing_max_steam_ratio,
-            'CHPSupplementaryFireEfficiency': supplementary_firing_efficiency
+            'CHPSupplementaryFireEfficiency': supplementary_firing_efficiency,
+            'CapCostSupplementaryFiring': supplementary_firing_capital_cost_per_kw_bau
         }

@@ -56,7 +56,8 @@ function add_continuous_variables(m, p)
 		dvAbsorptionChillerDemand[p.TimeStep] >= 0  #X^{ac}_h: Thermal power consumption by absorption chiller in time step h
 		dvElectricChillerDemand[p.TimeStep] >= 0  #X^{ec}_h: Electrical power consumption by electric chiller in time step h
 		dvOMByHourBySizeCHP[p.Tech, p.TimeStep] >= 0
-        dvSupplementaryThermalProduction[p.TimeStep] >= 0
+        dvSupplementaryThermalProduction[p.CHPTechs, p.TimeStep] >= 0
+		dvSupplementaryFiringCHPSize[p.CHPTechs] >= 0  #X^{\sigma db}_{t}: System size of CHP with supplementary firing [kW]
     end
 	if !isempty(p.ExportTiers)
 		@variable(m, dvProductionToGrid[p.Tech, p.ExportTiers, p.TimeStep] >= 0)  # X^{ptg}_{tuh}: Exports from electrical production to the grid by technology t in demand tier u during time step h [kW]   (NEW)
@@ -79,6 +80,7 @@ function add_integer_variables(m, p)
 		binEnergyTier[p.Month, p.PricingTier], Bin    #  Z^{ut}_{mu} 1 If demand tier $u$ is active in month m; 0 otherwise (NEW)
 		binNoGridPurchases[p.TimeStep], Bin  # Binary for the condition where the site load is met by on-site resources so no grid purchases
 		binGHP[p.GHPOptions], Bin  # Can be <= 1 if ForceGHP=0, and is ==1 if ForceGHP=1
+		binUseSupplementaryFiring[p.CHPTechs], Bin  #Z^{db}_{t}: 1 if supplementary firing is included with CHP system, 0 o.w.
 	end
 end
 
@@ -100,10 +102,18 @@ end
 
 
 function add_cost_expressions(m, p)
-	m[:TotalTechCapCosts] = @expression(m, p.two_party_factor * (
-		sum( p.CapCostSlope[t,s] * m[:dvSystemSizeSegment][t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) +
-		sum( p.CapCostYInt[t,s] * m[:binSegmentSelect][t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] )
-	))
+	if !isempty(p.CHPTechs)
+		m[:TotalTechCapCosts] = @expression(m, p.two_party_factor * (
+			sum( p.CapCostSlope[t,s] * m[:dvSystemSizeSegment][t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) +
+			sum( p.CapCostYInt[t,s] * m[:binSegmentSelect][t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) +
+			sum( p.CapCostSupplementaryFiring[t] * m[:dvSupplementaryFiringCHPSize][t] for t in p.CHPTechs ) 
+		))
+	else
+		m[:TotalTechCapCosts] = @expression(m, p.two_party_factor * (
+			sum( p.CapCostSlope[t,s] * m[:dvSystemSizeSegment][t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) +
+			sum( p.CapCostYInt[t,s] * m[:binSegmentSelect][t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] )
+		))
+	end
 	m[:TotalStorageCapCosts] = @expression(m, p.two_party_factor *
 		sum( p.StorageCostPerKW[b]*m[:dvStorageCapPower][b] + p.StorageCostPerKWH[b]*m[:dvStorageCapEnergy][b] for b in p.Storage )
 	)
@@ -349,7 +359,7 @@ function add_fuel_constraints(m, p)
 			m[:dvFuelUsage][t,ts]  == p.TimeStepScaling * (
 				m[:dvFuelBurnYIntercept][t,ts] +
 				p.ProductionFactor[t,ts] * p.FuelBurnSlope[t] * m[:dvRatedProduction][t,ts] + 
-                m[:dvSupplementaryThermalProduction][ts] / p.CHPSupplementaryFireEfficiency
+                m[:dvSupplementaryThermalProduction][t,ts] / p.CHPSupplementaryFireEfficiency
 			)
 		)
 
@@ -394,23 +404,29 @@ function add_thermal_production_constraints(m, p)
 		@constraint(m, CHPThermalProductionCon[t in p.CHPTechs, ts in p.TimeStep],
 					m[:dvThermalProduction][t,ts] ==
 					p.CHPThermalProdSlope[t] * p.ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts] + m[:dvThermalProductionYIntercept][t,ts] + 
-                    m[:dvSupplementaryThermalProduction][ts]
+                    m[:dvSupplementaryThermalProduction][t,ts]
 					)
         # Supplementary firing thermal constraint
-        if p.CHPSupplementaryFireMaxRatio > 1.0
-            # Constrain upper limit of dvSupplementaryThermalProduction
+        if (!isempty(p.CHPTechs)) && p.CHPSupplementaryFireMaxRatio > 1.0
+            # Constrain upper limit of dvSupplementaryThermalProduction, using auxiliary variable for (size * useSupplementaryFiring)
             @constraint(m, CHPSupplementaryFireCon[t in p.CHPTechs, ts in p.TimeStep],
-                        m[:dvSupplementaryThermalProduction][ts] <=
-                        (p.CHPSupplementaryFireMaxRatio - 1.0) * p.ProductionFactor[t,ts] * (p.CHPThermalProdSlope[t] * m[:dvSize][t] + m[:dvThermalProductionYIntercept][t,ts])
+                        m[:dvSupplementaryThermalProduction][t,ts] <=
+                        (p.CHPSupplementaryFireMaxRatio - 1.0) * p.ProductionFactor[t,ts] * (p.CHPThermalProdSlope[t] * m[:dvSupplementaryFiringCHPSize][t] + m[:dvThermalProductionYIntercept][t,ts])
                         )
             # Constrain lower limit of 0 if CHP tech is off
-            @constraint(m, NoCHPSupplementaryFireCon[t in p.CHPTechs, ts in p.TimeStep],
-                        !m[:binTechIsOnInTS][t,ts] => {m[:dvSupplementaryThermalProduction][ts] == 0.0}
+            @constraint(m, NoCHPSupplementaryFireOffCon[t in p.CHPTechs, ts in p.TimeStep],
+                        !m[:binTechIsOnInTS][t,ts] => {m[:dvSupplementaryThermalProduction][t,ts] <= 0.0}
                         )
+            # Constrain lower limit of 0 if binUseSupplementaryFiring is 0
+            @constraint(m, NoCHPSupplementaryFireNotChosenCon[t in p.CHPTechs, ts in p.TimeStep],
+                        !m[:binUseSupplementaryFiring][t] => {m[:dvSupplementaryThermalProduction][t,ts] <= 0.0}
+                        )                        
         else
-            for ts in p.TimeStep
-                fix(m[:dvSupplementaryThermalProduction][ts], 0.0, force=true)
-            end            
+			for t in p.CHPTechs
+	            for ts in p.TimeStep
+    	            fix(m[:dvSupplementaryThermalProduction][t,ts], 0.0, force=true)
+				end
+			end            
         end
 	end
 
@@ -732,6 +748,22 @@ function add_tech_size_constraints(m, p)
 			@constraint(m, GHPOptionSelect,
 				sum(m[:binGHP][g] for g in p.GHPOptions) <= 1
 			)
+		end
+	end
+
+	if p.CHPSupplementaryFireMaxRatio > 1.0
+		##Constraint (7_supplementary_firing_size_a): size=0 if not chosen
+		@constraint(m, CHPSupplementaryFiringSize_A[t in p.CHPTechs],
+            m[:binUseSupplementaryFiring][t] => {m[:dvSupplementaryFiringCHPSize][t] <= m[:NewMaxSize][t]}
+		)
+		
+		##Constraint (7_supplementary_firing_size_b): size=CHP if not chosen
+		@constraint(m, CHPSupplementaryFiringSize_B[t in p.CHPTechs],
+            m[:binUseSupplementaryFiring][t] => {m[:dvSupplementaryFiringCHPSize][t] >= m[:dvSize][t]}
+		)
+	else
+		for t in p.CHPTechs
+			fix(m[:dvSupplementaryFiringCHPSize][t], 0.0, force=true)
 		end
 	end
 end
@@ -1321,6 +1353,7 @@ end
 
 function add_null_chp_results(m, p, r::Dict)
 	r["chp_kw"] = 0.0
+    r["chp_supplemental_firing_kw"] = 0.0
 	r["year_one_chp_fuel_used"] = 0.0
 	r["year_one_chp_electric_energy_produced"] = 0.0
 	r["year_one_chp_thermal_energy_produced"] = 0.0
@@ -1586,6 +1619,7 @@ end
 function add_chp_results(m, p, r::Dict)
 	r["CHP"] = Dict()
 	r["chp_kw"] = value(sum(m[:dvSize][t] for t in p.CHPTechs))
+	r["chp_supplemental_firing_kw"] = value(sum(m[:dvSupplementaryFiringCHPSize][t] for t in p.CHPTechs))
 	@expression(m, CHPFuelUsed, sum(m[:dvFuelUsage][t, ts] for t in p.CHPTechs, ts in p.TimeStep))
 	r["year_one_chp_fuel_used"] = round(value(CHPFuelUsed), digits=3)
 	@expression(m, Year1CHPElecProd,
@@ -1593,7 +1627,7 @@ function add_chp_results(m, p, r::Dict)
 			for t in p.CHPTechs, ts in p.TimeStep))
 	r["year_one_chp_electric_energy_produced"] = round(value(Year1CHPElecProd), digits=3)
 	@expression(m, Year1CHPThermalProd,
-		p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts]-m[:dvProductionToWaste][t,ts] for t in p.CHPTechs, ts in p.TimeStep))
+		p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts]+m[:dvSupplementaryThermalProduction][t,ts]-m[:dvProductionToWaste][t,ts] for t in p.CHPTechs, ts in p.TimeStep))
 	r["year_one_chp_thermal_energy_produced"] = round(value(Year1CHPThermalProd), digits=3)
 	@expression(m, CHPElecProdTotal[ts in p.TimeStep],
 		sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] for t in p.CHPTechs))
@@ -1622,7 +1656,7 @@ function add_chp_results(m, p, r::Dict)
 		sum(m[:dvProductionToWaste][t,ts] for t in p.CHPTechs))
 	r["chp_thermal_to_waste_series"] = round.(value.(CHPThermalToWaste), digits=5)
 	@expression(m, CHPThermalToLoad[ts in p.TimeStep],
-		sum(m[:dvThermalProduction][t,ts]
+		sum(m[:dvThermalProduction][t,ts] + m[:dvSupplementaryThermalProduction][t,ts]
 			for t in p.CHPTechs) - CHPtoHotTES[ts] - CHPToSteamTurbine[ts] - CHPThermalToWaste[ts])
 	r["chp_thermal_to_load_series"] = round.(value.(CHPThermalToLoad), digits=5)
 	@expression(m, TotalCHPFuelCharges,

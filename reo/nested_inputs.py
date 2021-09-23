@@ -1515,6 +1515,13 @@ nested_input_definitions = {
           "max": 1.0,
           "description": "CHP fraction of fuel energy converted to hot-thermal energy at half electric load"
         },
+        "supplementary_firing_capital_cost_per_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e5,
+          "default": 150.0,
+          "description": "Installed CHP supplementary firing system cost in $/kW (based on rated electric power)"
+          },
         "supplementary_firing_max_steam_ratio": {
           "type": "float",
           "min": 1.0,
