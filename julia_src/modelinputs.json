@@ -123165,5 +123165,8 @@
     "GHPInstalledCost": [],
     "GHPOMCost": [],
     "CHPSupplementaryFireMaxRatio": 1.0,
-    "CHPSupplementaryFireEfficiency": 0.9
+    "CHPSupplementaryFireEfficiency": 0.9,
+    "CapCostSupplementaryFiring": [
+        150.0
+    ]
 }

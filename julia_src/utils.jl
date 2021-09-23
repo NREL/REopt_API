@@ -247,7 +247,8 @@ Base.@kwdef struct Parameter
     GHPInstalledCost::Array{Float64,1}  # Array of installed cost for GHP options
     GHPOMCost::Array{Float64,1}  # Array of O&M cost for GHP options
     CHPSupplementaryFireMaxRatio::Float64
-    CHPSupplementaryFireEfficiency::Float64        
+    CHPSupplementaryFireEfficiency::Float64
+    CapCostSupplementaryFiring::AxisArray # Array of capital cost for supplementary firing for CHP        
 end
 
 
@@ -372,6 +373,7 @@ function Parameter(d::Dict)
 	d["pwf_fuel"] = AxisArray(d["pwf_fuel"], d["Tech"])
 	d["StorageDecayRate"] = AxisArray(d["StorageDecayRate"], d["Storage"])
     d["BoilerEfficiency"] = AxisArray(d["BoilerEfficiency"], d["AllBoilerTechs"])  # Always passes both values, even if partial/none
+    d["CapCostSupplementaryFiring"] = AxisArray(d["CapCostSupplementaryFiring"],d["CHPTechs"])
 
     # Indexed Sets
     if isempty(d["FuelType"])

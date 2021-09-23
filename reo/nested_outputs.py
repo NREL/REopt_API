@@ -831,6 +831,11 @@ nested_output_definitions = {
                   "description": "Optimal CHP prime-mover rated electric size",
                   "units": "kW"
                 },
+                "size_supplementary_firing_kw": {
+                  "type": float,
+                  "description": "Optimal CHP rated electric equivalent of supplementary firing system",
+                  "units": "kW"
+                },
                 "year_one_fuel_used_mmbtu": {
                   "type": float,
                   "description": "CHP fuel used over one year",

@@ -683,6 +683,7 @@ class CHPModel(models.Model):
     min_turn_down_pct = models.FloatField(null=True, blank=True)
     thermal_effic_full_load = models.FloatField(null=True, blank=True)
     thermal_effic_half_load = models.FloatField(null=True, blank=True)
+    supplementary_firing_capital_cost_per_kw = models.FloatField(null=True, blank=True)
     supplementary_firing_max_steam_ratio = models.FloatField(null=True, blank=True)
     supplementary_firing_efficiency = models.FloatField(null=True, blank=True)
     macrs_option_years = models.IntegerField(null=True, blank=True)
@@ -718,6 +719,7 @@ class CHPModel(models.Model):
 
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)
+    size_supplementary_firing_kw = models.FloatField(null=True, blank=True)
     year_one_fuel_used_mmbtu = models.FloatField(null=True, blank=True)
     year_one_electric_energy_produced_kwh = models.FloatField(null=True, blank=True)
     year_one_thermal_energy_produced_mmbtu = models.FloatField(null=True, blank=True)
