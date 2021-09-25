@@ -165,7 +165,7 @@ class LoadProfileChillerThermal(BuiltInProfile):
         default_cooling_elec_load_profile = cool_bip.built_in_profile
         
         default_fraction_of_total_electric_profile = [default_cooling_elec_load_profile[i] / \
-                                                        default_total_elec_load_profile[i] 
+                                                        max(default_total_elec_load_profile[i], 1.0E-6) 
                                                         for i in range(len(default_total_elec_load_profile))]
 
         return default_fraction_of_total_electric_profile
