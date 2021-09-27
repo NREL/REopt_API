@@ -46,11 +46,6 @@ load_type_file_map = {"Electric": "Load8760_norm_",
                         "DHW": "DHW8760_norm_",
                         "Cooling": "Cooling8760_norm_"}
 
-space_heating_annual_loads = json.load(open(os.path.join(library_path_base, "space_heating_annual_mmbtu.json"), "rb"))
-dhw_annual_loads = json.load(open(os.path.join(library_path_base, "dhw_annual_mmbtu.json"), "rb"))
-total_heating_annual_loads = {city: {building: space_heating_annual_loads[city][building] + dhw_annual_loads[city][building] for building in space_heating_annual_loads[city].keys()} for city in space_heating_annual_loads.keys()}
-space_heating_fraction_flat_load = {city: space_heating_annual_loads[city]["flatload"] / total_heating_annual_loads[city]["flatload"] for city in space_heating_annual_loads.keys()}
-
 default_annual_electric_loads = {
       "Albuquerque": {
         "fastfoodrest": 193235,
@@ -596,13 +591,15 @@ class BuiltInProfile(object):
     @property
     def heating_fraction(self):
         if self.load_type == "SpaceHeating":
+            space_heating_fraction_flat_load = json.load(open(os.path.join(library_path_base, 'space_heating_fraction_flat_load.json'), 'rb'))
             if self.user_entered_space_heating_fraction in [None, []]:
                 heating_fraction = [space_heating_fraction_flat_load[self.city] for _ in range(12)]
             elif len(self.user_entered_space_heating_fraction) == 1:
                 heating_fraction = [self.user_entered_space_heating_fraction[0] for _ in range(12)]
             else:
                 heating_fraction = self.user_entered_space_heating_fraction
-        elif self.load_type == "DHW":            
+        elif self.load_type == "DHW":
+            space_heating_fraction_flat_load = json.load(open(os.path.join(library_path_base, 'space_heating_fraction_flat_load.json'), 'rb'))
             if self.user_entered_space_heating_fraction in [None, []]:
                 heating_fraction = [1.0 - space_heating_fraction_flat_load[self.city] for _ in range(12)]
             elif len(self.user_entered_space_heating_fraction) == 1:
