@@ -43,7 +43,8 @@ from tastypie.exceptions import ImmediateHttpResponse, HttpResponse
 from tastypie.resources import ModelResource
 from tastypie.validation import Validation
 from django.core.exceptions import ValidationError
-from ghpghx.models import GHPGHXModel, ModelManager
+from ghpghx.models import GHPGHXInputs, GHPGHXOutputs
+from django.forms.models import model_to_dict
 from reo.src.pvwatts import PVWatts
 log = logging.getLogger(__name__)
 
@@ -106,10 +107,10 @@ class GHPGHXJob(ModelResource):
         # Validate inputs
         try:
             # Instantiate a model class instance, but not yet saved to db
-            ghpghxM = GHPGHXModel(ghp_uuid=ghp_uuid, **bundle.data)
+            ghpghxInputsM = GHPGHXInputs(ghp_uuid=ghp_uuid, **bundle.data)
             try:
                 # Validate individual model fields
-                ghpghxM.clean_fields()
+                ghpghxInputsM.clean_fields()
             except ValidationError as ve:
                 validation_errors = ve.message_dict
                 return400(data, validation_errors)
@@ -121,15 +122,15 @@ class GHPGHXJob(ModelResource):
             #     return400(data, validation_errors)
             
             # If **fuel** for heating load is given, convert to thermal
-            if ghpghxM.heating_thermal_load_mmbtu_per_hr in [None, []]:
-                ghpghxM.heating_thermal_load_mmbtu_per_hr = list(np.array(ghpghxM.heating_fuel_load_mmbtu_per_hr) * \
-                                                ghpghxM.existing_boiler_efficiency)
+            if ghpghxInputsM.heating_thermal_load_mmbtu_per_hr in [None, []]:
+                ghpghxInputsM.heating_thermal_load_mmbtu_per_hr = list(np.array(ghpghxInputsM.heating_fuel_load_mmbtu_per_hr) * \
+                                                ghpghxInputsM.existing_boiler_efficiency)
             # Call PVWatts for hourly dry-bulb outdoor air temperature
-            if ghpghxM.ambient_temperature_f in [None, []]:
+            if ghpghxInputsM.ambient_temperature_f in [None, []]:
                 try:
-                    pvwatts_inst = PVWatts(tilt=45, latitude=ghpghxM.latitude, longitude=ghpghxM.longitude)
+                    pvwatts_inst = PVWatts(tilt=45, latitude=ghpghxInputsM.latitude, longitude=ghpghxInputsM.longitude)
                     amb_temp_c = pvwatts_inst.response["outputs"]["tamb"]
-                    ghpghxM.ambient_temperature_f = list(np.array(amb_temp_c) * 1.8 + 32.0)
+                    ghpghxInputsM.ambient_temperature_f = list(np.array(amb_temp_c) * 1.8 + 32.0)
                 except Exception:
                     return400(data, {"Error": "Error in PVWatts call when getting temperature for GHP model."})
         except ImmediateHttpResponse as e:
@@ -147,8 +148,8 @@ class GHPGHXJob(ModelResource):
                                                      status=500))  # internal server error
 
         try:
-            # Save the instance of the GHPGHXModel to the database
-            ghpghxM.save()
+            # Save the instance of the GHPGHXInputs model to the database
+            ghpghxInputsM.save()
         except Exception:
             log.error("Could not create and save ghp_uuid: {}\n Data: {}".format(ghp_uuid, data))
             exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -159,7 +160,7 @@ class GHPGHXJob(ModelResource):
                                                      content_type='application/json',
                                                      status=500))  # internal server error
         
-        data["inputs"] = ModelManager.make_response(ghp_uuid=ghp_uuid)["inputs"]
+        data["inputs"] = model_to_dict(ghpghxInputsM)
         # Remove extra inputs used above but not expected in ghpghx_inputs.jl
         data["inputs"].pop("latitude", None)
         data["inputs"].pop("longitude", None)
@@ -184,7 +185,9 @@ class GHPGHXJob(ModelResource):
                                                         status=500))  # internal server error
         
         try:
-            GHPGHXModel.objects.filter(ghp_uuid=ghp_uuid).update(**results)
+            #ghpghxOutputsM.objects.filter(ghp_uuid=ghp_uuid).update(**results)
+            ghpghxOutputsM = GHPGHXOutputs(ghp_uuid=ghp_uuid, **results)
+            ghpghxOutputsM.save()
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             message = "Error saving the results to the database"

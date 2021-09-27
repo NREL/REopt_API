@@ -352,7 +352,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         # GHP
         ghp_option_list = []
-        # Call /ghpghx endpoint if only ghpghx_inputs is given, otherwise
+        # Call /ghpghx endpoint if only ghpghx_inputs is given, otherwise use ghpghx_response
         if inputs_dict["Site"]["GHP"].get("building_sqft") is not None and \
             inputs_dict["Site"]["GHP"].get("ghpghx_response") in [None, []]:
             ghpghx_response_list = []
@@ -405,6 +405,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
         elif inputs_dict["Site"]["GHP"].get("building_sqft") is not None and \
                 inputs_dict["Site"]["GHP"].get("ghpghx_response") not in [None, []]:
             for i in range(len(inputs_dict["Site"]["GHP"]["ghpghx_response"])):
+                #TODO if ghpghx_response just had ghpghx_uuid, we could call db model to get data here before creating classes
                 ghp_option_list.append(ghp.GHPGHX(dfm=dfm,
                                                     response=inputs_dict["Site"]["GHP"]["ghpghx_response"][i],
                                                     **inputs_dict["Site"]["GHP"]))

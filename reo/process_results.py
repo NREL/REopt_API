@@ -42,7 +42,6 @@ from reo.utilities import annuity, TONHOUR_TO_KWHT, MMBTU_TO_KWH, GAL_DIESEL_TO_
 from reo.nested_inputs import macrs_five_year, macrs_seven_year
 from reo.src.proforma_metrics import calculate_proforma_metrics
 from reo.src.storage import HotTES, ColdTES
-from ghpghx.models import GHPGHXModel
 from ghpghx.models import ModelManager as ghpModelManager
 log = logging.getLogger(__name__)
 

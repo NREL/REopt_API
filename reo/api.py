@@ -45,7 +45,7 @@ from reo.src.profiler import Profiler
 from reo.process_results import process_results
 from reo.src.run_jump_model import run_jump_model
 from reo.exceptions import REoptError, UnexpectedError
-from ghpghx.models import GHPGHXModel
+from ghpghx.models import GHPGHXInputs
 from django.core.exceptions import ValidationError
 from celery import group, chain
 log = logging.getLogger(__name__)
@@ -124,7 +124,7 @@ class Job(ModelResource):
             bundle.data["Scenario"]["Site"]["GHP"].get("ghpghx_inputs") not in [None, []] and \
             bundle.data["Scenario"]["Site"]["GHP"].get("ghpghx_response") in [None, []]:
             for ghpghx_inputs in bundle.data["Scenario"]["Site"]["GHP"]["ghpghx_inputs"]:
-                ghpghxM = GHPGHXModel(**ghpghx_inputs)
+                ghpghxM = GHPGHXInputs(**ghpghx_inputs)
                 try:
                     # Validate individual model fields
                     ghpghxM.clean_fields()
