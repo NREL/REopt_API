@@ -96,8 +96,8 @@ class GHPTest(ResourceTestCaseMixin, TestCase):
 
         self.assertAlmostEqual(heating_served_mmbtu, expected_heating_served_mmbtu, places=3)
 
-        heating_cop_avg = d["inputs"]["Scenario"]["Site"]["GHP"]["ghpghx_response"]["outputs"]["heating_cop_avg"]
-        cooling_cop_avg = d["inputs"]["Scenario"]["Site"]["GHP"]["ghpghx_response"]["outputs"]["cooling_cop_avg"]
+        heating_cop_avg = d["outputs"]["Scenario"]["Site"]["GHP"]["ghpghx_chosen_outputs"]["heating_cop_avg"]
+        cooling_cop_avg = d["outputs"]["Scenario"]["Site"]["GHP"]["ghpghx_chosen_outputs"]["cooling_cop_avg"]
 
         # Average COP which includes pump power should be lower than Heat Pump only COP specified by the map
         self.assertLess(heating_cop_avg, 4.0)
