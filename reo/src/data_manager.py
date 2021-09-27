@@ -1322,7 +1322,7 @@ class DataManager:
         non_cooling_electric_load_bau = [self.load.bau_load_list[ts] - cooling_load[ts] / self.cooling_load.chiller_cop for ts in range(len(self.load.bau_load_list))]
 
         # GHP parameters for REopt model
-        require_ghp_purchase, force_ghp_bau = 0, 0
+        require_ghp_purchase, require_ghp_purchase_bau = 0, 0
         ghp_installed_cost, ghp_installed_cost_bau = [], []
         ghp_om_cost_year_one, ghp_om_cost_year_one_bau = [], []
         ghp_heating_thermal_load_served_kw, ghp_heating_thermal_load_served_kw_bau = [], [[]]
@@ -1564,7 +1564,7 @@ class DataManager:
             'TechCanSupplySteamTurbine': techs_can_supply_steam_turbine,
             'STElecOutToThermInRatio': st_elec_out_to_therm_in_ratio,
             'STThermOutToThermInRatio': st_therm_out_to_therm_in_ratio,
-            'ForceGHP': require_ghp_purchase,
+            'RequireGHPPurchase': require_ghp_purchase,
             'GHPHeatingThermalServed': ghp_heating_thermal_load_served_kw,
             'GHPCoolingThermalServed': ghp_cooling_thermal_load_served_kw,
             'GHPElectricConsumed': ghp_electric_consumption_kw,
@@ -1707,7 +1707,7 @@ class DataManager:
             'TechCanSupplySteamTurbine': techs_can_supply_steam_turbine_bau,
             'STElecOutToThermInRatio': st_elec_out_to_therm_in_ratio_bau,
             'STThermOutToThermInRatio': st_therm_out_to_therm_in_ratio_bau,
-            'ForceGHP': force_ghp_bau,
+            'RequireGHPPurchase': require_ghp_purchase_bau,
             'GHPHeatingThermalServed': ghp_heating_thermal_load_served_kw_bau,
             'GHPCoolingThermalServed': ghp_cooling_thermal_load_served_kw_bau,
             'GHPElectricConsumed': ghp_electric_consumption_kw_bau,
