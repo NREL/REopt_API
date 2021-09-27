@@ -40,9 +40,9 @@ import os
 log = logging.getLogger(__name__)
 
 
-class GHPGHXModel(models.Model):
+class GHPGHXInputs(models.Model):
     # Inputs
-    # user = models.ForeignKey(User, null=True, blank=True)
+
     ghp_uuid = models.UUIDField(primary_key=True, unique=True, editable=False)
     status = models.TextField(blank=True, default="")
     latitude = models.FloatField(null=True, blank=True,
@@ -52,7 +52,7 @@ class GHPGHXModel(models.Model):
         validators=[MinValueValidator(-180.0), MaxValueValidator(180.0)],
         help_text="Longitude of the site")
     
-    # Parameters
+    # Single value inputs
     borehole_depth_ft = models.FloatField(blank=True, 
         default=400.0, validators=[MinValueValidator(10.0), MaxValueValidator(600.0)],
         help_text="Vertical depth of each borehole [ft]")
@@ -198,7 +198,10 @@ class GHPGHXModel(models.Model):
         default=246.1, validators=[MinValueValidator(1.0), MaxValueValidator(5000.0)],
         help_text="Initial guess of total feet of GHX boreholes (total feet = N bores * Length bore) based on peak ton heating/cooling [ft/ton]")
 
-    # Outputs/results - need to move these from "inputs to outputs" in ModelManager.make_response
+class GHPGHXOutputs(models.Model):
+    # Outputs/results
+
+    ghp_uuid = models.UUIDField(primary_key=True, unique=True, editable=False)
     number_of_boreholes = models.FloatField(null=True, blank=True,
         help_text="Minimum required number of boreholes to meet heat pump EWT constraints")
     length_boreholes_ft = models.FloatField(null=True, blank=True,
@@ -238,7 +241,8 @@ class GHPGHXModel(models.Model):
 class ModelManager(object):
 
     def __init__(self):
-        self.ghpghxM = None
+        self.ghpghxInputsM = None
+        self.ghpghxOutputsM = None
 
     @staticmethod
     def make_response(ghp_uuid):
@@ -258,7 +262,8 @@ class ModelManager(object):
         resp["messages"] = dict()
 
         try:
-            ghpghx_model = GHPGHXModel.objects.get(ghp_uuid=ghp_uuid)
+            ghpghx_inputs_model = GHPGHXInputs.objects.get(ghp_uuid=ghp_uuid)
+            ghpghx_outputs_model = GHPGHXOutputs.objects.get(ghp_uuid=ghp_uuid)
         except Exception as e:
             if isinstance(e, models.ObjectDoesNotExist):
                 resp['messages']['error'] = (
@@ -269,31 +274,14 @@ class ModelManager(object):
                 return resp
             else:
                 raise Exception
-        #ghpghx_data = remove_ids(model_to_dict(ghpghx_model))
-        ghpghx_data = model_to_dict(ghpghx_model)
 
-        # Listed here to separate outputs from the model, so need to keep this update with added outputs to model
-        output_fields = ["number_of_boreholes",
-                        "length_boreholes_ft", 
-                        "yearly_heating_heatpump_electric_consumption_series_kw",
-                        "yearly_cooling_heatpump_electric_consumption_series_kw",
-                        "yearly_ghx_pump_electric_consumption_series_kw",
-                        "yearly_total_electric_consumption_series_kw",
-                        "yearly_total_electric_consumption_kwh",
-                        "peak_heating_heatpump_thermal_ton",
-                        "peak_cooling_heatpump_thermal_ton",
-                        "peak_combined_heatpump_thermal_ton",
-                        "max_eft_f",
-                        "min_eft_f",
-                        "heating_cop_avg",
-                        "cooling_cop_avg",
-                        "solved_eft_error_f"]
+        ghpghx_inputs_dict = model_to_dict(ghpghx_inputs_model)
+        ghpghx_outputs_dict = model_to_dict(ghpghx_outputs_model)
 
-        resp["inputs"] = ghpghx_data
+        resp["inputs"] = ghpghx_inputs_dict
+        resp["outputs"] = ghpghx_outputs_dict
+
         del resp["inputs"]["status"]
-        for out in output_fields:
-            resp["outputs"][out] = ghpghx_data[out]
-            del resp["inputs"][out]
 
         return resp
 
