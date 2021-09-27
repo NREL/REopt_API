@@ -38,7 +38,7 @@ import time
 import copy
 from reo.src.data_manager import DataManager
 from reo.src.elec_tariff import ElecTariff
-from reo.src.load_profile import LoadProfile, get_climate_zone
+from reo.src.load_profile import BuiltInProfile, LoadProfile
 from reo.src.fuel_tariff import FuelTariff
 from reo.src.load_profile_boiler_fuel import LoadProfileBoilerFuel
 from reo.src.load_profile_chiller_thermal import LoadProfileChillerThermal
@@ -51,7 +51,8 @@ from celery import shared_task, Task
 from reo.models import ModelManager
 from reo.exceptions import REoptError, UnexpectedError, LoadProfileError, WindDownloadError, PVWattsDownloadError, RequestError
 from tastypie.test import TestApiClient
-from reo.utilities import TONHOUR_TO_KWHT
+from reo.utilities import TONHOUR_TO_KWHT, get_climate_zone_and_nearest_city
+from ghpghx.models import GHPGHXInputs
 
 class ScenarioTask(Task):
     """
@@ -380,8 +381,8 @@ def setup_scenario(self, run_uuid, data, raw_post):
                 client = TestApiClient()
                 # Update ground thermal conductivity based on climate zone if not user-input
                 if not ghpghx_post.get("ground_thermal_conductivity_btu_per_hr_ft_f"):
-                    k_by_zone = copy.deepcopy(ghp.GHPGHXInputs.ground_k_by_climate_zone)
-                    climate_zone = get_climate_zone(ghpghx_post["latitude"], ghpghx_post["longitude"])
+                    k_by_zone = copy.deepcopy(GHPGHXInputs.ground_k_by_climate_zone)
+                    climate_zone, nearest_city, geometric_flag = get_climate_zone_and_nearest_city(ghpghx_post["latitude"], ghpghx_post["longitude"], BuiltInProfile.default_cities)
                     ghpghx_post["ground_thermal_conductivity_btu_per_hr_ft_f"] = k_by_zone[climate_zone]
                 # Call /ghpghx endpoint to size GHP and GHX
                 ghpghx_post_resp = client.post('/v1/ghpghx/', data=ghpghx_post)
