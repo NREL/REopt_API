@@ -53,6 +53,7 @@ from reo.exceptions import REoptError, UnexpectedError, LoadProfileError, WindDo
 from tastypie.test import TestApiClient
 from reo.utilities import TONHOUR_TO_KWHT, get_climate_zone_and_nearest_city
 from ghpghx.models import GHPGHXInputs
+from ghpghx.models import ModelManager as ghpModelManager
 
 class ScenarioTask(Task):
     """
@@ -353,10 +354,10 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         # GHP
         ghp_option_list = []
-        # Call /ghpghx endpoint if only ghpghx_inputs is given, otherwise use ghpghx_response
+        # Call /ghpghx endpoint if only ghpghx_inputs is given, otherwise use ghpghx_response_uuids
         if inputs_dict["Site"]["GHP"].get("building_sqft") is not None and \
-            inputs_dict["Site"]["GHP"].get("ghpghx_response") in [None, []]:
-            ghpghx_response_list = []
+            inputs_dict["Site"]["GHP"].get("ghpghx_response_uuids") in [None, []]:
+            ghpghx_uuid_list = []
             if inputs_dict["Site"]["GHP"].get("ghpghx_inputs") in [None, []]:
                 number_of_ghpghx = 1
                 inputs_dict["Site"]["GHP"]["ghpghx_inputs"] = [{}]
@@ -387,28 +388,26 @@ def setup_scenario(self, run_uuid, data, raw_post):
                 # Call /ghpghx endpoint to size GHP and GHX
                 ghpghx_post_resp = client.post('/v1/ghpghx/', data=ghpghx_post)
                 ghpghx_post_resp_dict = json.loads(ghpghx_post_resp.content)
-                ghp_uuid = ghpghx_post_resp_dict.get('ghp_uuid')
-                ghpghx_results_url = "/v1/ghpghx/"+ghp_uuid+"/results/"
-                ghpghx_results_resp = client.get(ghpghx_results_url)  # same as doing ghpMakeResponse(ghp_uuid)
+                ghpghx_uuid_list.append(ghpghx_post_resp_dict.get('ghp_uuid'))
+                ghpghx_results_url = "/v1/ghpghx/"+ghpghx_uuid_list[i]+"/results/"
+                ghpghx_results_resp = client.get(ghpghx_results_url)  # same as doing ghpModelManager.make_response(ghp_uuid)
                 ghpghx_results_resp_dict = json.loads(ghpghx_results_resp.content)
-                ghpghx_response_list.append(ghpghx_results_resp_dict)
-                #json.dump(ghpghx_response_list, open("ghpghx_response.json", "w"))
                 ghp_option_list.append(ghp.GHPGHX(dfm=dfm,
-                                                    response=ghpghx_response_list[i],
+                                                    response=ghpghx_results_resp_dict,
                                                     **inputs_dict["Site"]["GHP"]))
             # Update GHPModel with created ghpghx_response
             tmp = dict()
-            tmp['ghpghx_response'] = ghpghx_response_list
+            tmp['ghpghx_response_uuids'] = ghpghx_uuid_list
             ModelManager.updateModel('GHPModel', tmp, run_uuid)
             # Sleep to avoid calling julia_api for /job (reopt) or another /ghpghx run too quickly after /ghpghx
             time.sleep(1)
         # If ghpghx_response is included in inputs/POST, do NOT run /ghpghx model and use already-run ghpghx
         elif inputs_dict["Site"]["GHP"].get("building_sqft") is not None and \
-                inputs_dict["Site"]["GHP"].get("ghpghx_response") not in [None, []]:
-            for i in range(len(inputs_dict["Site"]["GHP"]["ghpghx_response"])):
-                #TODO if ghpghx_response just had ghpghx_uuid, we could call db model to get data here before creating classes
+                inputs_dict["Site"]["GHP"].get("ghpghx_response_uuids") not in [None, []]:
+            for ghp_uuid in inputs_dict["Site"]["GHP"].get("ghpghx_response_uuids"):
+                # GET ghpghx_response from ghpghx_uuid
                 ghp_option_list.append(ghp.GHPGHX(dfm=dfm,
-                                                    response=inputs_dict["Site"]["GHP"]["ghpghx_response"][i],
+                                                    response=ghpModelManager.make_response(ghp_uuid),
                                                     **inputs_dict["Site"]["GHP"]))
         
         util = Util(dfm=dfm,

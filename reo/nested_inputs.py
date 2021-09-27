@@ -2117,9 +2117,9 @@ nested_input_definitions = {
           "type": "list_of_dict",
           "description": "GHP-GHX inputs/POST to /ghpghx endpoint"
         },
-        "ghpghx_response": {
-          "type": "list_of_dict",
-          "description": "GHP-GHX response from /ghpghx endpoint, includes ghp_uuid, inputs/POST to /ghpghx, and outputs/results"
+        "ghpghx_response_uuids": {
+          "type": "list_of_str",
+          "description": "GHPGHX response UUID(s) from /ghpghx endpoint, used to get ghpghx run data"
         },
         "can_serve_dhw": {
           "type": "bool", "default": False,
