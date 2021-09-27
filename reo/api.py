@@ -122,7 +122,7 @@ class Job(ModelResource):
         ghpghx_inputs_validation_errors = []
         if bundle.data["Scenario"]["Site"].get("GHP") is not None and \
             bundle.data["Scenario"]["Site"]["GHP"].get("ghpghx_inputs") not in [None, []] and \
-            bundle.data["Scenario"]["Site"]["GHP"].get("ghpghx_response") in [None, []]:
+            bundle.data["Scenario"]["Site"]["GHP"].get("ghpghx_response_uuids") in [None, []]:
             for ghpghx_inputs in bundle.data["Scenario"]["Site"]["GHP"]["ghpghx_inputs"]:
                 ghpghxM = GHPGHXInputs(**ghpghx_inputs)
                 try:

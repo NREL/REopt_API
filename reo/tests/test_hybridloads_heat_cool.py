@@ -126,7 +126,6 @@ class HybridLoadsHeatCoolTest(ResourceTestCaseMixin, TestCase):
         post["Scenario"]["Site"]["GHP"] = {}
         post["Scenario"]["Site"]["GHP"]["building_sqft"] = 100000.0
         post["Scenario"]["Site"]["GHP"]["require_ghp_purchase"] = True
-        #post["Scenario"]["Site"]["GHP"]["ghpghx_response"] = json.load(open("ghpghx_response.json", "r"))
 
         resp = self.get_response(data=post)
         self.assertHttpCreated(resp)

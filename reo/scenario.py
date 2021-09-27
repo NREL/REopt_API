@@ -395,17 +395,16 @@ def setup_scenario(self, run_uuid, data, raw_post):
                 ghp_option_list.append(ghp.GHPGHX(dfm=dfm,
                                                     response=ghpghx_results_resp_dict,
                                                     **inputs_dict["Site"]["GHP"]))
-            # Update GHPModel with created ghpghx_response
+            # Update GHPModel with created ghpghx_response_uuids
             tmp = dict()
             tmp['ghpghx_response_uuids'] = ghpghx_uuid_list
             ModelManager.updateModel('GHPModel', tmp, run_uuid)
             # Sleep to avoid calling julia_api for /job (reopt) or another /ghpghx run too quickly after /ghpghx
             time.sleep(1)
-        # If ghpghx_response is included in inputs/POST, do NOT run /ghpghx model and use already-run ghpghx
+        # If ghpghx_response_uuids is included in inputs/POST, do NOT run /ghpghx model and use already-run ghpghx
         elif inputs_dict["Site"]["GHP"].get("building_sqft") is not None and \
                 inputs_dict["Site"]["GHP"].get("ghpghx_response_uuids") not in [None, []]:
             for ghp_uuid in inputs_dict["Site"]["GHP"].get("ghpghx_response_uuids"):
-                # GET ghpghx_response from ghpghx_uuid
                 ghp_option_list.append(ghp.GHPGHX(dfm=dfm,
                                                     response=ghpModelManager.make_response(ghp_uuid),
                                                     **inputs_dict["Site"]["GHP"]))
