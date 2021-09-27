@@ -69,8 +69,9 @@ class TestGHPGHX(ResourceTestCaseMixin, TestCase):
                             "doe_reference_name": doe_reference_name,
                             "load_type": "heating"}
         cooling_params = copy.deepcopy(heating_params)
-        cooling_params["load_type"] = "cooling"
-        
+        cooling_params["load_type"] = "electric" # actually cooling is what we want, but with no annual_tonhour we need to ping load_type=electric
+        cooling_params["cooling_doe_ref_name"] = doe_reference_name
+
         heating_load_resp = self.get_loads_response(params_dict=heating_params)  # This is FUEL-based
         heating_load_dict = json.loads(heating_load_resp.content)
         # Only need boiler_efficiency if the user inputs this, otherwise uses default 0.8
@@ -78,7 +79,7 @@ class TestGHPGHX(ResourceTestCaseMixin, TestCase):
         ghpghx_post["heating_fuel_load_mmbtu_per_hr"] = heating_load_dict["loads_mmbtu"]
         cooling_load_resp = self.get_loads_response(params_dict=cooling_params)
         cooling_load_dict = json.loads(cooling_load_resp.content)
-        ghpghx_post["cooling_thermal_load_ton"] = cooling_load_dict["loads_ton"]
+        ghpghx_post["cooling_thermal_load_ton"] = cooling_load_dict["cooling_defaults"]["loads_ton"]
 
         # Heat pump performance maps
         hp_cop_filepath = os.path.join('ghpghx', 'tests', 'posts', "heatpump_cop_map.csv" )
