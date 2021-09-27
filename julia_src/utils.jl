@@ -240,7 +240,7 @@ Base.@kwdef struct Parameter
     STThermOutToThermInRatio::Float64
     # GHP Arrays of different GHP options with index 1 being NO GHP
     GHPOptions::UnitRange{Int64}
-    ForceGHP::Int64
+    RequireGHPPurchase::Int64
     GHPHeatingThermalServed::Array{Float64,2}  # Array of heating load (thermal!) profiles served by GHP
     GHPCoolingThermalServed::Array{Float64,2}  # Array of cooling load profiles served by GHP
     GHPElectricConsumed::Array{Float64,2}  # Array of electric load profiles consumed by GHP

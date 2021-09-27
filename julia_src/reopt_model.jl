@@ -79,7 +79,7 @@ function add_integer_variables(m, p)
         binDemandMonthsTier[p.Month, p.DemandMonthsBin], Bin # 1 If tier n has allocated demand during month m; 0 otherwise
 		binEnergyTier[p.Month, p.PricingTier], Bin    #  Z^{ut}_{mu} 1 If demand tier $u$ is active in month m; 0 otherwise (NEW)
 		binNoGridPurchases[p.TimeStep], Bin  # Binary for the condition where the site load is met by on-site resources so no grid purchases
-		binGHP[p.GHPOptions], Bin  # Can be <= 1 if ForceGHP=0, and is ==1 if ForceGHP=1
+		binGHP[p.GHPOptions], Bin  # Can be <= 1 if RequireGHPPurchase=0, and is ==1 if RequireGHPPurchase=1
 		binUseSupplementaryFiring[p.CHPTechs], Bin  #Z^{db}_{t}: 1 if supplementary firing is included with CHP system, 0 o.w.
 	end
 end
@@ -740,7 +740,7 @@ function add_tech_size_constraints(m, p)
 
 	##Constraint GHP: Choose up to 1 option
 	if !isempty(p.GHPOptions)
-		if p.ForceGHP == 1
+		if p.RequireGHPPurchase == 1
 			@constraint(m, GHPOptionSelect,
 				sum(m[:binGHP][g] for g in p.GHPOptions) == 1
 			)
