@@ -82,6 +82,25 @@ class GHPGHXInputs(models.Model):
     ghx_shank_space_inch = models.FloatField(blank=True, 
         default=2.5, validators=[MinValueValidator(0.5), MaxValueValidator(100.0)],
         help_text="Distance between the centerline of the upwards and downwards u-tube legs [in]")
+    
+    ground_k_by_climate_zone = {
+                            "1A": 1.029,
+                            "2A": 1.348,
+                            "2B": 0.917,
+                            "3A": 1.243,
+                            "3B": 1.364,
+                            "3C": 1.117,
+                            "4A": 1.023,
+                            "4B": 0.972,
+                            "4C": 1.418,
+                            "5A": 1.726,
+                            "5B": 1.177,
+                            "6A": 0.977,
+                            "6B": 0.981,
+                            "7A": 1.034,
+                            "7B": 1.508
+                            }
+
     ground_thermal_conductivity_btu_per_hr_ft_f = models.FloatField(blank=True, 
         default=1.18, validators=[MinValueValidator(0.01), MaxValueValidator(15.0)],
         help_text="Thermal conductivity of the ground surrounding the borehole field [Btu/(hr-ft-degF)]")
