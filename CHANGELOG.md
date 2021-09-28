@@ -26,10 +26,16 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop - 2021-09-17
+## Develop - 2021-09-28
 ##### Added
-- `reo`: Added input 'supplementary_firing_capital_cost_per_kw' and output `chp_supplementary_firing_kw` to incorporate the capital cost of supplementary duct firing into CHP systems
-- `reopt_model.jl`: Added decision variables `dvSupplementaryFiringSize` and `binUseSupplementaryFiring` which tracks the usage of the supplementary firing system and adds the capital cost to the objective function when used
+- `reo`: The following technologies: `SteamTurbine`, `NewBoiler`, and `GHP`, and added supplmentary firing for `CHP`
+- `reopt_model.jl`: Variables and constraints for the new technologies listed above, including supplementary firing sizing and dispatch for `CHP`
+- `ghpghx`: New endpoint which serves the `GHPGHX.jl` module
+- `julia_src`: The `GHPGHX.jl` module and supporting `*.jl` scripts, served by an endpoint in `http.jl`
+- `input_files`: Reorganized the different load profile data files into folders, and split out space heating and domestic hot water from the `LoadProfileBoilerFuel` data
+##### Changed
+- `reo`: The default processing of `LoadProfileChillerThermal` with a `doe_reference_name` is now such that the user does not have to specify `annual_tonhour`, and the processing will use the building(s) fraction of total electric load that is consumed for cooling
+
 ## v1.6.0 - 2021-06-09
 ### Minor Updates
 ##### Added
