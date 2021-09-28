@@ -1574,7 +1574,7 @@ class DataManager:
             'CHPSupplementaryFireEfficiency': supplementary_firing_efficiency,
             'CapCostSupplementaryFiring': supplementary_firing_capital_cost_per_kw
             }
-        ## Uncomment the following and run a scenario to get an updated modelinputs.json for creating Julia system image
+        ## Uncomment the following for debugging
         # import json
         # json.dump(self.reopt_inputs, open("modelinputs.json", "w"))
 
