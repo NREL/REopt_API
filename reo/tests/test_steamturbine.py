@@ -33,8 +33,9 @@ from tastypie.test import ResourceTestCaseMixin
 from reo.nested_to_flat_output import nested_to_flat_chp
 from unittest import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
 from reo.models import ModelManager
-from reo.utilities import check_common_outputs, MMBTU_TO_KWH, TONHOUR_TO_KWHT
-from reo.src.load_profile import default_annual_electric_loads, total_heating_annual_loads
+from reo.utilities import check_common_outputs, MMBTU_TO_KWH
+from reo.src.load_profile import default_annual_electric_loads
+from reo.src.load_profile_boiler_fuel import LoadProfileBoilerFuel
 
 class SteamTurbineTest(ResourceTestCaseMixin, TestCase):
     REopt_tol = 1e-2
@@ -68,7 +69,7 @@ class SteamTurbineTest(ResourceTestCaseMixin, TestCase):
         nested_data["Scenario"]["Site"]["LoadProfile"]["doe_reference_name"] = building
         nested_data["Scenario"]["Site"]["LoadProfileBoilerFuel"]["doe_reference_name"] = building
         nested_data["Scenario"]["Site"]["LoadProfile"]["annual_kwh"] = elec_load_multiplier * default_annual_electric_loads[city][building.lower()]
-        nested_data["Scenario"]["Site"]["LoadProfileBoilerFuel"]["annual_mmbtu"] = heat_load_multiplier * total_heating_annual_loads[city][building.lower()]
+        nested_data["Scenario"]["Site"]["LoadProfileBoilerFuel"]["annual_mmbtu"] = heat_load_multiplier * LoadProfileBoilerFuel.total_heating_annual_loads[city][building.lower()]
 
         resp = self.get_response(data=nested_data)
         # TODO pass input_errors if bad post

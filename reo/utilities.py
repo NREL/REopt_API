@@ -34,6 +34,9 @@ import pandas as pd
 import numpy as np
 import calendar
 import datetime
+import math
+import geopandas as gpd
+from shapely import geometry as g
 
 
 def slope(x1, y1, x2, y2):
@@ -351,3 +354,32 @@ def convert_gal_to_kwh(delta_T_degF, rho_kg_per_m3, cp_kj_per_kgK):
     gal_to_kwh = m3_to_kj / M3_TO_GAL / 3600.0  # [kWh/gal]
 
     return gal_to_kwh
+
+def get_climate_zone_and_nearest_city(latitude, longitude, default_cities):
+    nearest_city = None
+    geometric_flag = False
+    gdf = gpd.read_file('reo/src/data/climate_cities.shp')
+    gdf = gdf[gdf.geometry.intersects(g.Point(longitude, latitude))]
+    if not gdf.empty:
+        nearest_city = gdf.city.values[0].replace(' ', '')
+    if nearest_city is None:
+        cities_to_search = default_cities
+    else:
+        climate_zone = [c for c in default_cities if c.name==nearest_city][0].zoneid
+        cities_to_search = [c for c in default_cities if c.zoneid==climate_zone]
+    if len(cities_to_search) > 1:
+        # else use old geometric approach, never fails...but isn't necessarily correct
+        geometric_flag = True
+        min_distance = None
+        for i, c in enumerate(cities_to_search):
+            distance = math.sqrt((latitude - c.lat) ** 2 + (longitude - c.lng) ** 2)
+            if i == 0:
+                min_distance = distance
+                nearest_city = c.name
+            elif distance < min_distance:
+                min_distance = distance
+                nearest_city = c.name
+
+    climate_zone = [c for c in default_cities if c.name==nearest_city][0].zoneid
+
+    return climate_zone, nearest_city, geometric_flag

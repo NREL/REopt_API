@@ -996,8 +996,6 @@ class SteamTurbineModel(models.Model):
         return obj
 
 class GHPModel(models.Model):
-    # TODO ManyToMany or ForeignKey for relating/linking Several GHP runs with one REopt run (and maybe adding REopt run_uuid to GHP model)
-    # Or, just make a model field for the ghp_uuid chosen (outputs), where the ghp_uuid list/options are in the ghpghx_response
     # Inputs
     run_uuid = models.UUIDField(unique=True)
     require_ghp_purchase = models.BooleanField(null=True, blank=True)
@@ -1008,7 +1006,7 @@ class GHPModel(models.Model):
     om_cost_us_dollars_per_sqft_year = models.FloatField(null=True, blank=True)
     building_sqft = models.FloatField(null=True, blank=True)
     ghpghx_inputs = ArrayField(PickledObjectField(null=True, editable=True), null=True, default=list)
-    ghpghx_response = ArrayField(PickledObjectField(null=True, editable=True), null=True, default=list)
+    ghpghx_response_uuids = ArrayField(models.TextField(null=True, blank=True), default=list, null=True)
     can_serve_dhw = models.BooleanField(null=True, blank=True)
     macrs_option_years = models.IntegerField(null=True, blank=True)
     macrs_bonus_pct = models.FloatField(null=True, blank=True)

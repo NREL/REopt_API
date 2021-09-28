@@ -1,5 +1,4 @@
-from reo.src.load_profile import library_path_base, BuiltInProfile, space_heating_annual_loads, dhw_annual_loads, \
-                                    total_heating_annual_loads, space_heating_fraction_flat_load
+from reo.src.load_profile import library_path_base, BuiltInProfile
 import json
 import os
 import copy
@@ -15,6 +14,8 @@ class LoadProfileBoilerFuel(BuiltInProfile):
     In the reopt_model.jl, the HeatingLoad is the sum of both space heating and DHW
 
     """  
+
+    total_heating_annual_loads = json.load(open(os.path.join(library_path_base, "total_heating_annual_loads.json"), "rb"))
 
     def __init__(self, load_type, dfm=None, latitude = None, longitude = None, nearest_city = None, time_steps_per_hour = None, 
                     year = None, **kwargs):
@@ -37,7 +38,7 @@ class LoadProfileBoilerFuel(BuiltInProfile):
         self.year = year
 
         # Using total/combined Space Heating plus DHW loads because the "normalized" profiles used in BuiltInProfile are based on the combined loads
-        self.annual_loads = total_heating_annual_loads
+        self.annual_loads = copy.deepcopy(LoadProfileBoilerFuel.total_heating_annual_loads)
 
         self.addressable_load_fraction = kwargs.get("addressable_load_fraction")
         self.space_heating_fraction = kwargs.get("space_heating_fraction_of_heating_load")
