@@ -1,3 +1,5 @@
+FROM reopt/xpressbase AS xpress
+
 FROM ubuntu:latest
 
 # Install Xpress solver
@@ -12,9 +14,10 @@ ENV CLASSPATH=${XPRESSDIR}/lib/xprm.jar:${CLASSPATH}
 ENV PATH=${XPRESSDIR}/bin:${PATH}
 
 WORKDIR ${XPRESS}
-COPY . .
+COPY --from=xpress  /opt/reopt/solver/ .
+COPY xpauth.xpr .
 RUN sed -i -e 's/\r$//' install.sh
 RUN printf 'f\ns\n\ny\n.\ny\n' | ./install.sh >> license_info.txt;
-RUN rm xp8.0.4_linux_x86_64.tar.gz
+RUN rm xp8.12.3_linux_x86_64.tar.gz
 
 CMD xpserver
