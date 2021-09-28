@@ -1169,7 +1169,7 @@ nested_output_definitions = {
                 },
                 "ghpghx_chosen_outputs": {
                     "type": "dict",
-                    "description": "Output fields from the ghpghx_response",
+                    "description": "Output fields from the /ghpghx make_response(ghp_chosen_uuid)",
                     "units": "none"
                 },
                 "size_heat_pump_ton": {

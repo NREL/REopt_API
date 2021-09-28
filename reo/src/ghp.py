@@ -1,52 +1,9 @@
 import numpy as np
-import pandas as pd
 import copy
 from reo.utilities import MMBTU_TO_KWH, TONHOUR_TO_KWHT
 from reo.src.incentives import Incentives, IncentivesNoProdBased
 from reo.src.data_manager import big_number
 
-
-class GHPGHXInputs:
-    """
-    Map the GHPGHX inputs to the objects in this class
-    """
-
-    ground_k_by_climate_zone = {
-                                "1A": 1.029,
-                                "2A": 1.348,
-                                "2B": 0.917,
-                                "3A": 1.243,
-                                "3B": 1.364,
-                                "3C": 1.117,
-                                "4A": 1.023,
-                                "4B": 0.972,
-                                "4C": 1.418,
-                                "5A": 1.726,
-                                "5B": 1.177,
-                                "6A": 0.977,
-                                "6B": 0.981,
-                                "7A": 1.034,
-                                "7B": 1.508
-                                }
-
-    def __init__(self, inputs_dict, **kwargs):
-        self.heating_thermal_mmbtu_per_hr = inputs_dict["heating_thermal_load_mmbtu_per_hr"]
-        self.heating_thermal_kw = list(np.array(self.heating_thermal_mmbtu_per_hr) * MMBTU_TO_KWH)
-        self.cooling_thermal_ton = inputs_dict["cooling_thermal_load_ton"]
-        self.cooling_thermal_kw = list(np.array(self.cooling_thermal_ton) * TONHOUR_TO_KWHT)
-
-class GHPGHXOutputs:
-    """
-    Define the GHPGHX response parameters that would go to REopt
-    """
-
-    def __init__(self, outputs_dict, **kwargs):           
-        
-        # Outputs/results of GHPGHX
-        self.number_of_boreholes = outputs_dict["number_of_boreholes"]
-        self.length_boreholes_ft = outputs_dict["length_boreholes_ft"]
-        self.yearly_total_electric_consumption_series_kw = outputs_dict["yearly_total_electric_consumption_series_kw"]
-        self.peak_combined_heatpump_thermal_ton = outputs_dict["peak_combined_heatpump_thermal_ton"]
 
 class GHPGHX:
         
@@ -55,9 +12,16 @@ class GHPGHX:
         # Loop through range(len(response)) in data_manager to build array inputs for REopt
         self.ghp_uuid = response["ghp_uuid"]
         # Inputs of GHPGHX, which are still needed in REopt
-        self.inputs = GHPGHXInputs(response["inputs"])   
+        self.heating_thermal_mmbtu_per_hr = response["inputs"]["heating_thermal_load_mmbtu_per_hr"]
+        self.heating_thermal_kw = list(np.array(self.heating_thermal_mmbtu_per_hr) * MMBTU_TO_KWH)
+        self.cooling_thermal_ton = response["inputs"]["cooling_thermal_load_ton"]
+        self.cooling_thermal_kw = list(np.array(self.cooling_thermal_ton) * TONHOUR_TO_KWHT)
         # Outputs of GHPGHX, such as number of bores for GHX size
-        self.outputs = GHPGHXOutputs(response["outputs"])  # This is a single dictionary where the POST is a list_of_dict
+        self.number_of_boreholes = response["outputs"]["number_of_boreholes"]
+        self.length_boreholes_ft = response["outputs"]["length_boreholes_ft"]
+        self.yearly_total_electric_consumption_series_kw = response["outputs"]["yearly_total_electric_consumption_series_kw"]
+        self.peak_combined_heatpump_thermal_ton = response["outputs"]["peak_combined_heatpump_thermal_ton"]
+
 
         if kwargs.get("require_ghp_purchase"):
             self.require_ghp_purchase = 1
@@ -72,9 +36,9 @@ class GHPGHX:
 
         # Heating and cooling loads served and electricity consumed by GHP
         # TODO with hybrid with auxiliary/supplemental heating/cooling devices, we may want to separate out/distiguish that energy
-        self.heating_thermal_load_served_kw = self.inputs.heating_thermal_kw
-        self.cooling_thermal_load_served_kw = self.inputs.cooling_thermal_kw
-        self.electric_consumption_kw = self.outputs.yearly_total_electric_consumption_series_kw
+        self.heating_thermal_load_served_kw = self.heating_thermal_kw
+        self.cooling_thermal_load_served_kw = self.cooling_thermal_kw
+        self.electric_consumption_kw = self.yearly_total_electric_consumption_series_kw
 
         # Change units basis from ton to kW to use existing Incentives class
         self.kwargs_mod = copy.deepcopy(kwargs)
@@ -90,8 +54,8 @@ class GHPGHX:
     
     def setup_installed_cost_curve(self):
         # GHX and GHP sizing metrics for cost calculations
-        self.total_ghx_ft = self.outputs.number_of_boreholes * self.outputs.length_boreholes_ft
-        self.heatpump_peak_tons = self.outputs.peak_combined_heatpump_thermal_ton
+        self.total_ghx_ft = self.number_of_boreholes * self.length_boreholes_ft
+        self.heatpump_peak_tons = self.peak_combined_heatpump_thermal_ton
         
         # Use initial cost curve to leverage existing incentives-based cost curve method in data_manager
         # The GHX and hydronic loop cost are the y-intercepts ([$]) of the cost for each design

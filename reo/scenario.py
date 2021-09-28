@@ -38,7 +38,7 @@ import time
 import copy
 from reo.src.data_manager import DataManager
 from reo.src.elec_tariff import ElecTariff
-from reo.src.load_profile import LoadProfile, get_climate_zone
+from reo.src.load_profile import BuiltInProfile, LoadProfile
 from reo.src.fuel_tariff import FuelTariff
 from reo.src.load_profile_boiler_fuel import LoadProfileBoilerFuel
 from reo.src.load_profile_chiller_thermal import LoadProfileChillerThermal
@@ -51,7 +51,9 @@ from celery import shared_task, Task
 from reo.models import ModelManager
 from reo.exceptions import REoptError, UnexpectedError, LoadProfileError, WindDownloadError, PVWattsDownloadError, RequestError
 from tastypie.test import TestApiClient
-from reo.utilities import TONHOUR_TO_KWHT
+from reo.utilities import TONHOUR_TO_KWHT, get_climate_zone_and_nearest_city
+from ghpghx.models import GHPGHXInputs
+from ghpghx.models import ModelManager as ghpModelManager
 
 class ScenarioTask(Task):
     """
@@ -352,10 +354,10 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         # GHP
         ghp_option_list = []
-        # Call /ghpghx endpoint if only ghpghx_inputs is given, otherwise
+        # Call /ghpghx endpoint if only ghpghx_inputs is given, otherwise use ghpghx_response_uuids
         if inputs_dict["Site"]["GHP"].get("building_sqft") is not None and \
-            inputs_dict["Site"]["GHP"].get("ghpghx_response") in [None, []]:
-            ghpghx_response_list = []
+            inputs_dict["Site"]["GHP"].get("ghpghx_response_uuids") in [None, []]:
+            ghpghx_uuid_list = []
             if inputs_dict["Site"]["GHP"].get("ghpghx_inputs") in [None, []]:
                 number_of_ghpghx = 1
                 inputs_dict["Site"]["GHP"]["ghpghx_inputs"] = [{}]
@@ -380,33 +382,31 @@ def setup_scenario(self, run_uuid, data, raw_post):
                 client = TestApiClient()
                 # Update ground thermal conductivity based on climate zone if not user-input
                 if not ghpghx_post.get("ground_thermal_conductivity_btu_per_hr_ft_f"):
-                    k_by_zone = copy.deepcopy(ghp.GHPGHXInputs.ground_k_by_climate_zone)
-                    climate_zone = get_climate_zone(ghpghx_post["latitude"], ghpghx_post["longitude"])
+                    k_by_zone = copy.deepcopy(GHPGHXInputs.ground_k_by_climate_zone)
+                    climate_zone, nearest_city, geometric_flag = get_climate_zone_and_nearest_city(ghpghx_post["latitude"], ghpghx_post["longitude"], BuiltInProfile.default_cities)
                     ghpghx_post["ground_thermal_conductivity_btu_per_hr_ft_f"] = k_by_zone[climate_zone]
                 # Call /ghpghx endpoint to size GHP and GHX
                 ghpghx_post_resp = client.post('/v1/ghpghx/', data=ghpghx_post)
                 ghpghx_post_resp_dict = json.loads(ghpghx_post_resp.content)
-                ghp_uuid = ghpghx_post_resp_dict.get('ghp_uuid')
-                ghpghx_results_url = "/v1/ghpghx/"+ghp_uuid+"/results/"
-                ghpghx_results_resp = client.get(ghpghx_results_url)  # same as doing ghpMakeResponse(ghp_uuid)
+                ghpghx_uuid_list.append(ghpghx_post_resp_dict.get('ghp_uuid'))
+                ghpghx_results_url = "/v1/ghpghx/"+ghpghx_uuid_list[i]+"/results/"
+                ghpghx_results_resp = client.get(ghpghx_results_url)  # same as doing ghpModelManager.make_response(ghp_uuid)
                 ghpghx_results_resp_dict = json.loads(ghpghx_results_resp.content)
-                ghpghx_response_list.append(ghpghx_results_resp_dict)
-                #json.dump(ghpghx_response_list, open("ghpghx_response.json", "w"))
                 ghp_option_list.append(ghp.GHPGHX(dfm=dfm,
-                                                    response=ghpghx_response_list[i],
+                                                    response=ghpghx_results_resp_dict,
                                                     **inputs_dict["Site"]["GHP"]))
-            # Update GHPModel with created ghpghx_response
+            # Update GHPModel with created ghpghx_response_uuids
             tmp = dict()
-            tmp['ghpghx_response'] = ghpghx_response_list
+            tmp['ghpghx_response_uuids'] = ghpghx_uuid_list
             ModelManager.updateModel('GHPModel', tmp, run_uuid)
             # Sleep to avoid calling julia_api for /job (reopt) or another /ghpghx run too quickly after /ghpghx
             time.sleep(1)
-        # If ghpghx_response is included in inputs/POST, do NOT run /ghpghx model and use already-run ghpghx
+        # If ghpghx_response_uuids is included in inputs/POST, do NOT run /ghpghx model and use already-run ghpghx
         elif inputs_dict["Site"]["GHP"].get("building_sqft") is not None and \
-                inputs_dict["Site"]["GHP"].get("ghpghx_response") not in [None, []]:
-            for i in range(len(inputs_dict["Site"]["GHP"]["ghpghx_response"])):
+                inputs_dict["Site"]["GHP"].get("ghpghx_response_uuids") not in [None, []]:
+            for ghp_uuid in inputs_dict["Site"]["GHP"].get("ghpghx_response_uuids"):
                 ghp_option_list.append(ghp.GHPGHX(dfm=dfm,
-                                                    response=inputs_dict["Site"]["GHP"]["ghpghx_response"][i],
+                                                    response=ghpModelManager.make_response(ghp_uuid),
                                                     **inputs_dict["Site"]["GHP"]))
         
         util = Util(dfm=dfm,

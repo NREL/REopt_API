@@ -37,7 +37,7 @@ from reo import views
 from django.urls import path
 from futurecosts.api import FutureCostsAPI
 from ghpghx.resources import GHPGHXJob
-from ghpghx import views
+from ghpghx import views as ghp_views
 
 v1_api = Api(api_name='v1')
 v1_api.register(Job())

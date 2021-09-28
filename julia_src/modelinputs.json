@@ -123152,7 +123152,7 @@
     "TechCanSupplySteamTurbine": [],
     "STElecOutToThermInRatio": 0.0,
     "STThermOutToThermInRatio": 0.0,
-    "ForceGHP": 0,
+    "RequireGHPPurchase": 0,
     "GHPHeatingThermalServed": [
         []
     ],

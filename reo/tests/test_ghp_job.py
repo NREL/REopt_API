@@ -78,7 +78,6 @@ class GHPTest(ResourceTestCaseMixin, TestCase):
 
         nested_data["Scenario"]["Site"]["GHP"]["ghpghx_inputs"] = [ghpghx_post]
         
-        #nested_data["Scenario"]["Site"]["GHP"]["ghpghx_response"] = json.load(open("reo/tests/posts/ghpghx_response.json", "r"))
         nested_data["Scenario"]["Site"]["LoadProfileBoilerFuel"]["doe_reference_name"] = "FlatLoad_24_5"
         nested_data["Scenario"]["Site"]["LoadProfileBoilerFuel"]["monthly_mmbtu"] = [500.0] + [1000.0]*10 + [1500.0]
 
@@ -97,8 +96,8 @@ class GHPTest(ResourceTestCaseMixin, TestCase):
 
         self.assertAlmostEqual(heating_served_mmbtu, expected_heating_served_mmbtu, places=3)
 
-        heating_cop_avg = d["inputs"]["Scenario"]["Site"]["GHP"]["ghpghx_response"]["outputs"]["heating_cop_avg"]
-        cooling_cop_avg = d["inputs"]["Scenario"]["Site"]["GHP"]["ghpghx_response"]["outputs"]["cooling_cop_avg"]
+        heating_cop_avg = d["outputs"]["Scenario"]["Site"]["GHP"]["ghpghx_chosen_outputs"]["heating_cop_avg"]
+        cooling_cop_avg = d["outputs"]["Scenario"]["Site"]["GHP"]["ghpghx_chosen_outputs"]["cooling_cop_avg"]
 
         # Average COP which includes pump power should be lower than Heat Pump only COP specified by the map
         self.assertLess(heating_cop_avg, 4.0)
