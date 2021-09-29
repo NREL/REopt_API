@@ -98,6 +98,4 @@ class TestGHPGHX(ResourceTestCaseMixin, TestCase):
         resp = self.api_client.get(results_url)
         d = json.loads(resp.content)
         
-        #d = ModelManager.make_response(ghp_uuid=ghp_uuid)
-        #json.dump(d["inputs"], open("ghpghx_post.json", "w"))
-        dummy = 3
+        #TODO make a test once GHPGHX is finalized
