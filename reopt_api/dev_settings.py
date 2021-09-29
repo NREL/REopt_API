@@ -72,7 +72,8 @@ INSTALLED_APPS = (
     'resilience_stats',
     'futurecosts',
     'django_celery_results',
-    'django_extensions'
+    'django_extensions',
+    'ghpghx'
     )
 
 MIDDLEWARE_CLASSES = (
