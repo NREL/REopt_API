@@ -172,7 +172,7 @@ class InputValidator(object):
                 model.clean_fields(exclude=["coincident_peak_load_active_timesteps"])
                 # coincident_peak_load_active_timesteps can have unequal inner lengths (it's an array of array),
                 # which is not allowed in the database. We fix the lengths with repeated last values by overriding the
-                # Django Model save method on ElectricTariffInputs. We then remove the repeated values to before
+                # Django Model save method on ElectricTariffInputs. We then remove the repeated values before
                 # passing coincident_peak_load_active_timesteps to Julia (b/c o.w. JuMP.constraint will raise an error
                 # for duplicate constraints)
             except ValidationError as ve:
@@ -390,12 +390,12 @@ def lat_lon_in_windtoolkit(lat, lon):
                     +x_0=0 +y_0=0 +ellps=sphere 
                     +units=m +no_defs """
     projectLcc = Proj(projstring)
-    origin_ll = reversed((19.624062, -123.30661))  # origin_ll = reversed(dset[0][0])  to grab origin directly from database
+    origin_ll = reversed((19.624062, -123.30661))
     origin = projectLcc(*origin_ll)
     point = projectLcc(lon, lat)
     x = int(round((point[0] - origin[0]) / 2000))
     y = int(round((point[1] - origin[1]) / 2000))
-    y_max, x_max = (1602, 2976) # dset.shape to grab shape directly from database
+    y_max, x_max = (1602, 2976)
     if (x < 0) or (y < 0) or (x >= x_max) or (y >= y_max):
         raise ValueError("Latitude/Longitude is outside of wind resource dataset bounds.")
-    return y,x
+    return y, x
