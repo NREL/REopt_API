@@ -323,7 +323,7 @@ class DataManager:
         This y-intercept ($) is not capacity-based, so only the %-based incentives are relevant (itc and ibi_pct)
         This must also apply MACRS tax-based adjustments from ITC, using existing functions
         return: y_int_cost_mod: the net adjusted y_int_cost for all regions combined
-        return: p_cap_used: the amount of p_cap used for each region, needed to reduce the p_cap for remaining segments
+        return: p_cap_used: the amount of p_cap (percentage based max incentive) used for each region, needed to reduce the p_cap for remaining segments
         """
         y_int_cost_mod = y_int_cost
         p_cap_used = {}
