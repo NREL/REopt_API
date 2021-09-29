@@ -147,6 +147,18 @@ class EmissionsCalculator:
             else:
                 data['outputs']['Scenario']['Site']['Boiler']['year_one_emissions_bau_lb_C02'] = 0
 
+        newboiler_emmissions = data['inputs']['Scenario']['Site']['NewBoiler'].get('emissions_factor_lb_CO2_per_mmbtu')
+        if newboiler_emmissions is not None:
+            data['outputs']['Scenario']['Site']['NewBoiler']['year_one_emissions_lb_C02'] = \
+                round(newboiler_emmissions * (data['outputs']['Scenario']['Site']['NewBoiler'].get("year_one_boiler_fuel_consumption_mmbtu") or 0),precision)
+            data['outputs']['Scenario']['Site']['year_one_emissions_lb_C02'] += \
+                round(data['outputs']['Scenario']['Site']['NewBoiler']['year_one_emissions_lb_C02'],precision)
+            
+        elif data['outputs']['Scenario']['Site']['NewBoiler'].get("year_one_boiler_fuel_consumption_mmbtu") or 0 > 0:
+            cannot_calc_total_emissions = True
+            missing_emissions.append('NewBoiler')
+        elif data['outputs']['Scenario']['Site']['NewBoiler'].get("year_one_boiler_fuel_consumption_mmbtu") or 0 == 0:
+            data['outputs']['Scenario']['Site']['NewBoiler']['year_one_emissions_lb_C02'] = 0
 
         if cannot_calc_total_emissions:
             data['outputs']['Scenario']['Site']['year_one_emissions_lb_C02'] = None

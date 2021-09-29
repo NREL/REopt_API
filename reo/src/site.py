@@ -39,6 +39,7 @@ class Financial(object):
                  escalation_pct,
                  boiler_fuel_escalation_pct,
                  chp_fuel_escalation_pct,
+                 newboiler_fuel_escalation_pct,
                  offtaker_tax_pct,
                  offtaker_discount_pct,
                  analysis_years,
@@ -51,6 +52,7 @@ class Financial(object):
         self.escalation_pct = escalation_pct
         self.boiler_fuel_escalation_pct = boiler_fuel_escalation_pct
         self.chp_fuel_escalation_pct = chp_fuel_escalation_pct
+        self.newboiler_fuel_escalation_pct = newboiler_fuel_escalation_pct
         self.owner_tax_pct = owner_tax_pct
         self.offtaker_tax_pct = offtaker_tax_pct
         self.owner_discount_pct = owner_discount_pct
