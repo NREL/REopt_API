@@ -215,3 +215,78 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         self.assertEqual(sum(cooling_elec_load[outage_start-1:outage_end-1]), 0.0) 
         self.assertEqual(sum(chp_total_elec_prod[unavail_2_start-1:unavail_2_end-1]), 0.0)
 
+    def test_supplementary_firing(self):
+        """
+        validation to ensure that: 
+        (1) CHP Supplementary firing option loads as intended
+        (2) CHP Supplementary firing is used to meet heating load when pricing is low relative to boiler fuel use
+        (3) CHP Supplementary firing is not used to meet heating load when capital cost it too high to justify purchase
+        (4) Capital Cost of CHP Supplementary firing is included in objective function
+        """
+        # Call API, get results in "d" dictionary
+        nested_data = json.load(open(self.test_post, 'rb'))
+        # CHP
+        nested_data["Scenario"]["timeout_seconds"] = 420
+        nested_data["Scenario"]["optimality_tolerance_bau"] = 0.001
+        nested_data["Scenario"]["optimality_tolerance_techs"] = 0.01
+        nested_data["Scenario"]["Site"]["CHP"]["prime_mover"] = "combustion_turbine"
+        nested_data["Scenario"]["Site"]["CHP"]["size_class"] = 2
+        nested_data["Scenario"]["Site"]["CHP"]["min_kw"] = 800
+        nested_data["Scenario"]["Site"]["CHP"]["max_kw"] = 800
+        #Supplementary Firing
+        nested_data["Scenario"]["Site"]["CHP"]["supplementary_firing_capital_cost_per_kw"] = 10000
+        nested_data["Scenario"]["Site"]["CHP"]["supplementary_firing_max_steam_ratio"] = 5.0
+        nested_data["Scenario"]["Site"]["CHP"]["supplementary_firing_efficiency"] = 0.9
+        #Flat Thermal and Electrical Loads
+        kw_to_mmbtu = 0.00340951064
+        nested_data["Scenario"]["Site"]["LoadProfileBoilerFuel"]["loads_mmbtu_per_hour"] = [3000*kw_to_mmbtu]*8760
+        nested_data["Scenario"]["Site"]["LoadProfile"]["loads_kw"] = [800]*8760
+        nested_data["Scenario"]["Site"]["LoadProfile"]["critical_loads_kw"] = [800]*8760
+        #Make Boiler relatively inefficient to justify use of chp supplementary firing when available  
+        nested_data["Scenario"]["Site"]["Boiler"]["boiler_efficiency"] = 0.95
+        # PV set to zero
+        nested_data["Scenario"]["Site"]["PV"]["min_kw"] = 0
+        nested_data["Scenario"]["Site"]["PV"]["max_kw"] = 0
+        # Run, and record capital cost and thermal production
+        resp = self.get_response(data=nested_data)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+        d = ModelManager.make_response(run_uuid=run_uuid)
+        # Edit capital cost to a more reasonable value
+        c = nested_to_flat_chp(d['outputs'])
+        d_expected = {}
+        d_expected['chp_kw'] = 800
+        d_expected['chp_supplementary_firing_kw'] = 0
+        d_expected['chp_year_one_electric_energy_produced_kwh'] = 800*8760
+        d_expected['chp_year_one_thermal_energy_produced_mmbtu'] = 800*(0.4418/0.3573)*(kw_to_mmbtu)*8760
+        try:
+            check_common_outputs(self, c, d_expected)
+        except:
+            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
+            print("Error message: {}".format(d['messages'].get('error')))
+            raise
+
+        # Calculate capex without supplementary firing
+        capex_no_supp_firing = 1.0*d["outputs"]["Scenario"]["Site"]["Financial"]["initial_capital_costs"]
+
+        # Rerun and record capital cost and thermal production of CHP
+        nested_data["Scenario"]["Site"]["Boiler"]["boiler_efficiency"] = 0.85
+        nested_data["Scenario"]["Site"]["CHP"]["supplementary_firing_capital_cost_per_kw"] = 10
+        resp = self.get_response(data=nested_data)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+        d = ModelManager.make_response(run_uuid=run_uuid)
+        c = nested_to_flat_chp(d['outputs'])
+        d_expected['chp_supplementary_firing_kw'] = 800
+        d_expected['chp_year_one_thermal_energy_produced_mmbtu'] = 122756
+        try:
+            check_common_outputs(self, c, d_expected)
+        except:
+            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
+            print("Error message: {}".format(d['messages'].get('error')))
+            raise
+
+        capex_with_supp_firing = d["outputs"]["Scenario"]["Site"]["Financial"]["initial_capital_costs"]
+        self.assertAlmostEqual(capex_no_supp_firing+8000, capex_with_supp_firing, delta=1.0)
