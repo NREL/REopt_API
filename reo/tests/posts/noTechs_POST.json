@@ -1,7 +1,7 @@
 {
   "Scenario": {
     "timeout_seconds": 420,
-    "optimality_tolerance_techs": 0.07,
+    "optimality_tolerance_techs": 0.05,
 	"add_soc_incentive": false,
     "Site": {
       "latitude": 37.78,
