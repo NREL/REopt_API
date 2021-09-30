@@ -303,26 +303,17 @@ function add_bigM_adjustments(m, p)
 
 	for c in p.TechClass, t in p.TechsInClass[c]
 		if t in p.ElectricTechs
-			m[:NewMaxSize][t] = maximum([sum(p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP
-										 for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month])
-			if m[:NewMaxSize][t] > p.MaxSize[t] || m[:NewMaxSize][t] < p.TechClassMinSize[c]
-				m[:NewMaxSize][t] = p.MaxSize[t]
-			end
-		end
+# 			m[:NewMaxSize][t] = maximum([sum(p.ElecLoad[ts] + p.CoolingLoad[ts] / p.ElectricChillerCOP
+# 										 for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month])
+# 			if m[:NewMaxSize][t] > p.MaxSize[t] || m[:NewMaxSize][t] < p.TechClassMinSize[c]
+# 				m[:NewMaxSize][t] = p.MaxSize[t]
+# 			end
+			m[:NewMaxSize][t] = p.MaxSize[t]											
+		end										
 	end
     for t in p.MassProducerTechs  # This will overwrite any NewMaxSize assigned above if Techs are also ElectricTechs (e.g. CHP and SteamTurbine)
 		m[:NewMaxSize][t] = p.MaxSize[t]
 	end
-
-	# NewMaxSizeByHour is designed to scale the right-hand side of the constraint limiting rated production in each hour to the production factor; in most cases this is unaffected unless the production factor is zero, in which case the right-hand side is set to zero.
-	#for t in p.ElectricTechs
-	#	for ts in p.TimeStep
-	#		NewMaxSizeByHour[t,ts] = minimum([m[:NewMaxSize][t],
-	#			sum(p.ProdFactor[t,d,ts] for d in p.Load if p.LoadProfile[d,ts] > 0)  * m[:NewMaxSize][t],
-	#			sum(p.LoadProfile[d,ts] for d in ["1R"], ts in p.TimeStep)
-	#		])
-	#	end
-	#end
 end
 
 
