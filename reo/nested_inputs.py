@@ -154,7 +154,14 @@ off_grid_defaults = {
           "max": 1.0,
           "default": 0.15,
           "description": "Nominal generation owner discount rate. Used for two party financing model. In two party ownership model the offtaker does not own the generator(s)."
-        }
+        },
+        "microgrid_upgrade_cost_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 0.0,
+          "default": 0.0,
+          "description": "Additional cost, in percent of non-islandable capital costs, to make a distributed energy system islandable from the grid and able to serve critical loads. For off-grid analyses, this should instead be provided as other_capital_costs_us_dollars or other_annual_costs_us_dollars_per_year"
+        },
       },
       "LoadProfile": {
         "critical_load_pct": {
