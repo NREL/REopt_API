@@ -511,8 +511,9 @@ function add_storage_op_constraints(m, p)
 	end
 	# Constraint (4e): Electrical production sent to storage or grid must be less than technology's rated production - no grid
 	@constraint(m, ElecTechProductionFlowNoGridCon[t in p.ElectricTechs, ts in p.TimeStepsWithoutGrid],
-		sum(m[:dvProductionToStorage][b,t,ts] for b in p.ElecStorage) + m[:dvProductionToCurtail][t, ts]  <=
-		p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts]
+		sum(m[:dvProductionToStorage][b,t,ts] for b in p.ElecStorage) 
+		+ m[:dvProductionToCurtail][t, ts]  
+		<= p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts]
 	)
 	# Constraint (4f)-1: (Hot) Thermal production sent to storage or grid must be less than technology's rated production
 	if !isempty(p.BoilerTechs)
@@ -824,73 +825,65 @@ function add_load_balance_constraints(m, p)
 		for t in p.ElectricTechs) +
         sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
         sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers )/ p.AbsorptionChillerElecCOP +
-		p.ElecLoad[ts]
-	)
-end
-
-
-function add_load_balance_constraints_offgrid(m, p)
-	##Constraint (8b): Electrical Load Balancing without Grid
-	@constraint(m, ElecLoadBalanceNoGridCon[ts in p.TimeStep],
-		sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] for t in p.ElectricTechs) +
-		sum( m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage )  ==
-		sum( sum(m[:dvProductionToStorage][b,t,ts] for b in p.ElecStorage) +
-			 m[:dvProductionToCurtail][t,ts]
-		for t in p.ElectricTechs) +
-        sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
-        sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers )/ p.AbsorptionChillerElecCOP +
 		(p.ElecLoad[ts] * m[:dvLoadServed][ts])
 	)
-	@constraint(m, [ts in p.TimeStep],
-        m[:dvLoadServed][ts] <= 1
-	)
-	@constraint(m, [ts in p.TimeStep],
-		m[:dvLoadServed][ts] >= 0
-	)
-	@constraint(m, sum(m[:dvLoadServed][ts] * p.ElecLoad[ts] for ts in p.TimeStep) >=
-		sum(p.ElecLoad) * p.MinLoadMetPct
-		# p.AnnualElecLoadkWh * p.MinLoadMetPct
-	)
+
+	if !p.OffGridFlag: # fix dvLoadServed to 100% for "on-grid" analyses 
+		for ts in p.TimeStep
+			fix(m[:dvLoadServed][ts], 1.0, force=true)
+		end
+	else:
+		@constraint(m, [ts in p.TimeStepsWithoutGrid],
+			m[:dvLoadServed][ts] <= 1
+		)
+		@constraint(m, [ts in p.TimeStepsWithoutGrid],
+			m[:dvLoadServed][ts] >= 0
+		)
+		@constraint(m, sum(m[:dvLoadServed][ts] * p.ElecLoad[ts] for ts in p.TimeStepsWithoutGrid) >=
+			sum(p.ElecLoad) * p.MinLoadMetPct
+			# p.AnnualElecLoadkWh * p.MinLoadMetPct
+		)
+	end
 end
 
 
 function add_spinning_reserve_constraints(m, p)
 	# Calculate spinning reserve required
 	# 1. Production going to load from Techs Providing SR
-	@constraint(m, [t in p.TechsProvidingSR, ts in p.TimeStep],
+	@constraint(m, [t in p.TechsProvidingSR, ts in p.TimeStepsWithoutGrid],
 		m[:dvProductionToLoad][t,ts] == p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] -
 										sum(m[:dvProductionToStorage][b, t, ts] for b in p.ElecStorage) -
 										m[:dvProductionToCurtail][t, ts]
 	)
 	# 2. Total SR required by Techs & Load
-	@constraint(m, [ts in p.TimeStep],
+	@constraint(m, [ts in p.TimeStepsWithoutGrid],
 		m[:dvSRrequired][ts] >= sum(m[:dvProductionToLoad][t,ts] * p.SRrequiredPctTechs[t] for t in p.TechsRequiringSR) +
 								p.ElecLoad[ts] * m[:dvLoadServed][ts] * p.SRrequiredPctLoad
 	)
 	# 3. Spinning reserve provided - battery
-	@constraint(m, [b in p.ElecStorage, ts in p.TimeStep],
+	@constraint(m, [b in p.ElecStorage, ts in p.TimeStepsWithoutGrid],
 		m[:dvSRbatt][b,ts] <= (m[:dvStorageSOC][b,ts-1] - p.StorageMinSOC[b] * m[:dvStorageCapEnergy][b]) / p.TimeStepScaling - (m[:dvDischargeFromStorage][b,ts] / p.DischargeEfficiency[b])
 	)
-	@constraint(m, [b in p.ElecStorage, ts in p.TimeStep],
+	@constraint(m, [b in p.ElecStorage, ts in p.TimeStepsWithoutGrid],
 		m[:dvSRbatt][b,ts] <= m[:dvStorageCapPower][b] - m[:dvDischargeFromStorage][b,ts] / p.DischargeEfficiency[b]
 	)
 	# 4. Spinning reserve provided - other technologies
-	@constraint(m, [t in p.TechsProvidingSR, ts in p.TimeStep],
+	@constraint(m, [t in p.TechsProvidingSR, ts in p.TimeStepsWithoutGrid],
 		 # Change dvRatedProd to dvSize - generator SR forces same amount to generator 1S
 		 # m[:dvSR][t,ts] <= (p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] -
 		 m[:dvSR][t,ts] <= (p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvSize][t] -
 		                   m[:dvProductionToLoad][t,ts]) * (1 - p.SRrequiredPctTechs[t])
 	)
 	# 5. Total spinning reserve provided
-	@constraint(m, [t in p.TechsProvidingSR, ts in p.TimeStep],
+	@constraint(m, [t in p.TechsProvidingSR, ts in p.TimeStepsWithoutGrid],
 		m[:dvSR][t,ts] <= m[:binTechIsOnInTS][t,ts] * m[:NewMaxSize][t]
 	)
-	@constraint(m, [ts in p.TimeStep],
+	@constraint(m, [ts in p.TimeStepsWithoutGrid],
 		m[:dvSRprovided][ts] == sum(m[:dvSR][t,ts] for t in p.TechsProvidingSR) +
 								sum(m[:dvSRbatt][b,ts] for b in p.ElecStorage)
 	)
 	# 6. SR provided must be greater than SR required
-	@constraint(m, [ts in p.TimeStep],
+	@constraint(m, [ts in p.TimeStepsWithoutGrid],
 		m[:dvSRrequired][ts] <= m[:dvSRprovided][ts]
 	)
 
@@ -1245,11 +1238,10 @@ function reopt_run(m, p::Parameter)
 	### Constraint set (8): Electrical Load Balancing and Grid Sales
 	##Constraint (8a): Electrical Load Balancing with Grid
 
+	add_load_balance_constraints(m, p)
+
 	if p.OffGridFlag
-		add_load_balance_constraints_offgrid(m, p)
 		add_spinning_reserve_constraints(m, p)
-	else
-		add_load_balance_constraints(m, p)
 	end
 
 	add_storage_grid_constraints(m, p)

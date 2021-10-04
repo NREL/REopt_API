@@ -28,6 +28,7 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
 import json
+from logging import getLogRecordFactory
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
 import pandas as pd
@@ -59,9 +60,8 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
                     "generator_fuel_escalation_pct": 0.03,
                     "offtaker_tax_pct": 0.0,
                     "offtaker_discount_pct": 0.15,
-                    "analysis_years": 20,
-                    "value_of_lost_load_us_dollars_per_kwh": 100.0,
-                    "microgrid_upgrade_cost_pct": 0.0,
+                    "analysis_years": 25,
+                    # "microgrid_upgrade_cost_pct": 0.0,
                     "other_capital_costs_us_dollars": 50000,
                     "other_annual_costs_us_dollars_per_year": 4000
                   },
@@ -69,117 +69,106 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
                     "doe_reference_name": "RetailStore",
                     "annual_kwh": 87600.0,
                     "year": 2017,
-                    "outage_start_time_step": 1,
+                    "outage_start_time_step": 2, # This should get overwritten to be 1 
                     "outage_end_time_step": 8760,
-                    "critical_load_pct": 1.0,
-                    "outage_is_major_event": False,
+                    ## "critical_load_pct": 0.05, # This returns an error if not set to 1.0
+                    # "outage_is_major_event": False,
                     "min_load_met_pct": 0.98,
                     "sr_required_pct": 0.35
-                  },
-                  "ElectricTariff": {
-                    "urdb_utility_name": "",
-                    "urdb_rate_name": "",
-                    "add_blended_rates_to_urdb_rate": False,
-                    "blended_annual_rates_us_dollars_per_kwh": 0.3,
-                    "blended_annual_demand_charges_us_dollars_per_kw": 20.0,
-                    "net_metering_limit_kw": 0.0,
-                    "interconnection_limit_kw": 100000000.0,
-                    "urdb_response": None,
-                    "urdb_label": ""
                   },
                   "PV": {
                     "existing_kw": 0.0,
                     "min_kw": 0.0,
-                    "max_kw": 0.0, # 100.0,
-                    "installed_cost_us_dollars_per_kw": 1600.0,
-                    "om_cost_us_dollars_per_kw": 16.0,
-                    "macrs_option_years": 0,
-                    "macrs_bonus_pct": 0,
-                    "macrs_itc_reduction": 0,
-                    "federal_itc_pct": 0,
-                    "state_ibi_pct": 0.0,
-                    "state_ibi_max_us_dollars": 0.0,
-                    "utility_ibi_pct": 0.0,
-                    "utility_ibi_max_us_dollars": 0.0,
-                    "federal_rebate_us_dollars_per_kw": 0.0,
-                    "state_rebate_us_dollars_per_kw": 0.0,
-                    "state_rebate_max_us_dollars": 0.0,
-                    "utility_rebate_us_dollars_per_kw": 0.0,
-                    "utility_rebate_max_us_dollars": 0.0,
-                    "pbi_us_dollars_per_kwh": 0.0,
-                    "pbi_max_us_dollars": 0.0,
-                    "pbi_years": 1.0,
-                    "pbi_system_max_kw": 0.0,
-                    "degradation_pct": 0.005,
-                    "azimuth": 180.0,
-                    "losses": 0.14,
-                    "array_type": 0,
-                    "module_type": 0,
-                    "gcr": 0.4,
-                    "dc_ac_ratio": 1.2,
-                    "inv_eff": 0.96,
-                    "radius": 0.0,
-                    "tilt": 34.5794343,
-                    "location": "ground"
+                    "max_kw": 100.0,
+                    # "installed_cost_us_dollars_per_kw": 1600.0,
+                    # "om_cost_us_dollars_per_kw": 16.0,
+                    # "macrs_option_years": 0,
+                    # "macrs_bonus_pct": 0,
+                    # "macrs_itc_reduction": 0,
+                    # "federal_itc_pct": 0,
+                    # "state_ibi_pct": 0.0,
+                    # "state_ibi_max_us_dollars": 0.0,
+                    # "utility_ibi_pct": 0.0,
+                    # "utility_ibi_max_us_dollars": 0.0,
+                    # "federal_rebate_us_dollars_per_kw": 0.0,
+                    # "state_rebate_us_dollars_per_kw": 0.0,
+                    # "state_rebate_max_us_dollars": 0.0,
+                    # "utility_rebate_us_dollars_per_kw": 0.0,
+                    # "utility_rebate_max_us_dollars": 0.0,
+                    # "pbi_us_dollars_per_kwh": 0.0,
+                    # "pbi_max_us_dollars": 0.0,
+                    # "pbi_years": 1.0,
+                    # "pbi_system_max_kw": 0.0,
+                    # "degradation_pct": 0.005,
+                    # "azimuth": 180.0,
+                    # "losses": 0.14,
+                    # "array_type": 0,
+                    # "module_type": 0,
+                    # "gcr": 0.4,
+                    # "dc_ac_ratio": 1.2,
+                    # "inv_eff": 0.96,
+                    # "radius": 0.0,
+                    # "tilt": 34.5794343,
+                    # "location": "ground"
                   },
                   "Storage": {
                     "min_kw": 0.0,
                     "max_kw": 1000.0,
                     "min_kwh": 0.0,
                     "max_kwh": 1000.0,
-                    "internal_efficiency_pct": 0.975,
-                    "inverter_efficiency_pct": 0.96,
-                    "rectifier_efficiency_pct": 0.96,
-                    "soc_min_pct": 0.2,
-                    "soc_init_pct": 1.0,
-                    "canGridCharge": False,
-                    "installed_cost_us_dollars_per_kw": 840.0,
-                    "installed_cost_us_dollars_per_kwh": 420.0,
-                    "replace_cost_us_dollars_per_kw": 410.0,
-                    "replace_cost_us_dollars_per_kwh": 200.0,
-                    "inverter_replacement_year": 10,
-                    "battery_replacement_year": 7,
-                    "macrs_option_years": 0,
-                    "macrs_bonus_pct": 0,
-                    "macrs_itc_reduction": 0,
-                    "total_itc_pct": 0.0,
-                    "total_rebate_us_dollars_per_kw": 0
+                    # "internal_efficiency_pct": 0.975,
+                    # "inverter_efficiency_pct": 0.96,
+                    # "rectifier_efficiency_pct": 0.96,
+                    # "soc_min_pct": 0.2,
+                    # "soc_init_pct": 1.0,
+                    # "canGridCharge": False,
+                    # "installed_cost_us_dollars_per_kw": 840.0,
+                    # "installed_cost_us_dollars_per_kwh": 420.0,
+                    # "replace_cost_us_dollars_per_kw": 410.0,
+                    # "replace_cost_us_dollars_per_kwh": 200.0,
+                    # "inverter_replacement_year": 10,
+                    # "battery_replacement_year": 7,
+                    # "macrs_option_years": 0,
+                    # "macrs_bonus_pct": 0,
+                    # "macrs_itc_reduction": 0,
+                    # "total_itc_pct": 0.0,
+                    # "total_rebate_us_dollars_per_kw": 0
                   },
                   "Generator": {
                     "useful_life_years": 5,
                     "existing_kw": 0.0,
-                    "min_kw": 0.0,
-                    "max_kw": 100000.0,
+                    "min_kw": 10.0,
+                    "max_kw": 10.0,
                     "installed_cost_us_dollars_per_kw": 500.0,
                     "om_cost_us_dollars_per_kw": 10.0,
                     "om_cost_us_dollars_per_kwh": 0.0,
                     "diesel_fuel_cost_us_dollars_per_gallon": 3.0,
-                    "fuel_slope_gal_per_kwh": 0.1,
-                    "fuel_intercept_gal_per_hr": 0.023,
-                    "fuel_avail_gal": 1000000000,
-                    "min_turn_down_pct": 0.0,
-                    "generator_only_runs_during_grid_outage": True,
-                    "generator_sells_energy_back_to_grid": False,
-                    "macrs_option_years": 0,
-                    "macrs_bonus_pct": 0.0,
-                    "macrs_itc_reduction": 0.0,
-                    "federal_itc_pct": 0.0,
-                    "state_ibi_pct": 0.0,
-                    "state_ibi_max_us_dollars": 0.0,
-                    "utility_ibi_pct": 0.0,
-                    "utility_ibi_max_us_dollars": 0.0,
-                    "federal_rebate_us_dollars_per_kw": 0.0,
-                    "state_rebate_us_dollars_per_kw": 0.0,
-                    "state_rebate_max_us_dollars": 0.0,
-                    "utility_rebate_us_dollars_per_kw": 0.0,
-                    "utility_rebate_max_us_dollars": 0.0,
-                    "pbi_us_dollars_per_kwh": 0.0,
-                    "pbi_max_us_dollars": 0.0,
-                    "pbi_years": 0.0,
-                    "pbi_system_max_kw": 0.0
+                    # "fuel_slope_gal_per_kwh": 0.1,
+                    # "fuel_intercept_gal_per_hr": 0.023,
+                    # "fuel_avail_gal": 1000000000,
+                    # "min_turn_down_pct": 0.0,
+                    # "generator_only_runs_during_grid_outage": True,
+                    # "generator_sells_energy_back_to_grid": False,
+                    # "macrs_option_years": 0,
+                    # "macrs_bonus_pct": 0.0,
+                    # "macrs_itc_reduction": 0.0,
+                    # "federal_itc_pct": 0.0,
+                    # "state_ibi_pct": 0.0,
+                    # "state_ibi_max_us_dollars": 0.0,
+                    # "utility_ibi_pct": 0.0,
+                    # "utility_ibi_max_us_dollars": 0.0,
+                    # "federal_rebate_us_dollars_per_kw": 0.0,
+                    # "state_rebate_us_dollars_per_kw": 0.0,
+                    # "state_rebate_max_us_dollars": 0.0,
+                    # "utility_rebate_us_dollars_per_kw": 0.0,
+                    # "utility_rebate_max_us_dollars": 0.0,
+                    # "pbi_us_dollars_per_kwh": 0.0,
+                    # "pbi_max_us_dollars": 0.0,
+                    # "pbi_years": 0.0,
+                    # "pbi_system_max_kw": 0.0
                   }
                 },
-                "timeout_seconds": 36000,
+                "timeout_seconds": 3600,
                 "user_uuid": None,
                 "description": "",
                 "time_steps_per_hour": 1,
@@ -208,11 +197,38 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
         response = self.get_response(self.post)
         pv_out = response['outputs']['Scenario']['Site']['PV']
         messages = response['messages']
+        outputs = response['outputs']['Scenario']['Site']
+        inputs = response['inputs']['Scenario']['Site']
 
         try:
-            print('PV size: ', response['outputs']['Scenario']['Site']['PV']['size_kw'])
-            print('Batt kWh: ', response['outputs']['Scenario']['Site']['Storage']['size_kwh'])
-            print('Batt kW: ', response['outputs']['Scenario']['Site']['Storage']['size_kw'])
+            print('PV size [kW]: ', outputs['PV']['size_kw'])
+            print('Battery size [kWh]: ', outputs['Storage']['size_kwh'])
+            print('Battery size [kW]: ', outputs['Storage']['size_kw'])
+            print('Generator size [kW]:', outputs['Generator']['size_kw'])
+            print('Load SR required (summed over year):', sum(outputs['LoadProfile']['total_sr_required']))
+            print('Load SR provided (summed over year):', sum(outputs['LoadProfile']['total_sr_provided']))
+
+            # Check outage start and end time step, critical load %, outage is major event
+            self.assertEqual(inputs["LoadProfile"]["outage_start_time_step"], 1,
+                             "outage_start_time_step does not equal 1. Equals {}".format(inputs["LoadProfile"]["outage_start_time_step"]))
+            self.assertEqual(inputs["LoadProfile"]["outage_end_time_step"], 8760,
+                             "outage_end_time_step does not equal 8760. Equals {}".format(inputs["LoadProfile"]["outage_end_time_step"]))
+            self.assertEqual(inputs["LoadProfile"]["critical_load_pct"], 1.0,
+                             "Critical load % does not equal 1. Equals {}".format(inputs["LoadProfile"]["critical_load_pct"]))    
+            self.assertEqual(inputs["Generator"]["generator_sells_energy_back_to_grid"], False,
+                             "generator_sells_energy_back_to_grid is not False. Equals {}".format(inputs["Generator"]["generator_sells_energy_back_to_grid"])) 
+            self.assertEqual(inputs["LoadProfile"]["outage_is_major_event"], False,
+                             "outage_is_major_event is not False. Equals {}".format(inputs["LoadProfile"]["outage_is_major_event"])) 
+
+            # Check for no interaction with grid
+            self.assertEqual(sum(outputs["Generator"]["year_one_to_grid_series_kw"]), 0.0,
+                             "Generator sum(year_one_to_grid_series_kw) does not equal 0. Equals {}".format(sum(outputs["Generator"]["year_one_to_grid_series_kw"])))
+            self.assertEqual(sum(outputs["PV"]["year_one_to_grid_series_kw"]), 0.0,
+                             "PV sum(year_one_to_grid_series_kw) does not equal 0. Equals {}".format(sum(outputs["PV"]["year_one_to_grid_series_kw"])))
+            self.assertEqual(sum(outputs["Storage"]["year_one_to_grid_series_kw"]), 0.0,
+                             "Storage sum(year_one_to_grid_series_kw) does not equal 0. Equals {}".format(sum(outputs["Storage"]["year_one_to_grid_series_kw"])))
+                      
+
 
             ## path = 'reo/tests/data/outputs/'
             ## json.dump(response, open(path+'/'+"offgrid_results.json", "w"))
