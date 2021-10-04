@@ -433,7 +433,7 @@ class ValidateNestedInput:
 
     def __init__(self, input_dict, ghpghx_inputs_validation_errors=None):
         self.list_or_dict_objects = ['PV']
-        self.nested_input_definitions = nested_input_definitions
+        self.nested_input_definitions = copy.deepcopy(nested_input_definitions)
         self.input_data_errors = []
         self.urdb_errors = []
         self.ghpghx_inputs_errors = ghpghx_inputs_validation_errors
