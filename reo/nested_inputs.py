@@ -317,15 +317,15 @@ nested_input_definitions = {
     },
     "optimality_tolerance_bau": {
       "type": "float",
-      "min": 1.0e-5,
-      "max": 10.0,
+      "min": 0.0001,
+      "max": 0.05,
       "default": 0.001,
       "description": "The threshold for the difference between the solution's objective value and the best possible value at which the solver terminates"
     },
     "optimality_tolerance_techs": {
       "type": "float",
-      "min": 1.0e-5,
-      "max": 10.0,
+      "min": 0.0001,
+      "max": 0.05,
       "default": 0.001,
       "description": "The threshold for the difference between the solution's objective value and the best possible value at which the solver terminates"
     },
@@ -418,6 +418,13 @@ nested_input_definitions = {
           "default": 0.034,
           "description": "Annual nominal chp fuel cost escalation rate"
         },
+        "newboiler_fuel_escalation_pct": {
+          "type": "float",
+          "min": -1.0,
+          "max": 1.0,
+          "default": 0.034,
+          "description": "Annual nominal boiler fuel cost escalation rate"
+        },
         "offtaker_tax_pct": {
           "type": "float",
           "min": 0.0,
@@ -498,7 +505,7 @@ nested_input_definitions = {
         "annual_kwh": {
           "type": "float",
           "min": 1.0,
-          "max": max_big_number,
+          "max": 1.0E10,
           "replacement_sets": load_profile_possible_sets,
           "depends_on": ["doe_reference_name"],
           "description": "Annual site energy consumption from electricity, in kWh, used to scale simulated default building load profile for the site's climate zone"
@@ -627,6 +634,19 @@ nested_input_definitions = {
           "min": 1.0,
           "max": 100.0,
          "description": "Percentage share of the types of building for creating hybrid simulated building and campus profiles."
+        },
+        "addressable_load_fraction": {
+         "type": ["float", "list_of_float"],
+          "min": 0.0,
+          "max": 1.0,
+          "default": 1.0,
+         "description": "Fraction of the boiler fuel load be served by heating technologies."
+        },
+        "space_heating_fraction_of_heating_load": {
+         "type": ["float", "list_of_float"],
+          "min": 0.0,
+          "max": 1.0,
+         "description": "Fraction of the total heating load (domestic hot water (DHW) plus space heating) for space heating."
         },
       },
 
@@ -835,7 +855,23 @@ nested_input_definitions = {
           "type": "list_of_float",
           "default": [0.0] * 12,
           "description": "Array (length of 12) of blended fuel rates (total monthly energy in mmbtu divided by monthly cost in $)"
-        }
+        },
+        "newboiler_fuel_type": {
+          "type": "str",
+          "default": 'natural_gas',
+          "restrict_to": ["natural_gas", "landfill_bio_gas", "propane", "diesel_oil", "uranium"],
+          "description": "Boiler fuel type one of (natural_gas, landfill_bio_gas, propane, diesel_oil)"
+        },
+        "newboiler_fuel_blended_annual_rates_us_dollars_per_mmbtu": {
+          "type": "float",
+          "default": 0.0,
+          "description": "Single/scalar blended fuel rate for the entire year"
+        },
+        "newboiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu": {
+          "type": "list_of_float",
+          "default": [0.0]*12,
+          "description": "Array (length of 12) of blended fuel rates (total monthly energy in mmbtu divided by monthly cost in $)"
+        },        
       },
 
       "Wind": {
@@ -1713,6 +1749,27 @@ nested_input_definitions = {
           "max": 1.0,
           "description": "CHP fraction of fuel energy converted to hot-thermal energy at half electric load"
         },
+        "supplementary_firing_capital_cost_per_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e5,
+          "default": 150.0,
+          "description": "Installed CHP supplementary firing system cost in $/kW (based on rated electric power)"
+          },
+        "supplementary_firing_max_steam_ratio": {
+          "type": "float",
+          "min": 1.0,
+          "max": 10.0,
+          "default": 1.0,
+          "description": "Ratio of max fired steam to un-fired steam production. Relevant only for combustion_turbine prime_mover"
+        },
+        "supplementary_firing_efficiency": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.92,
+          "description": "Thermal efficiency of the incremental steam production from supplementary firing. Relevant only for combustion_turbine prime_mover"
+        },
         "use_default_derate": {
           "type": "bool",
           "default": True,
@@ -1892,7 +1949,11 @@ nested_input_definitions = {
           "min": 0.0,
           "max": 1.0,
           "description": "Knockdown factor on absorption chiller COP based on the CHP prime_mover not being able to produce as high of temp/pressure hot water/steam"
-        }
+        },
+        "can_supply_steam_turbine": {
+          "type": "bool", "default": False,
+          "description": "If CHP can supply steam to the steam turbine for electric production"
+        },        
       },
 
       "ColdTES": {
@@ -1904,6 +1965,14 @@ nested_input_definitions = {
           "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
           "description": "Maximum TES volume (energy) size constraint for optimization. Set to zero to disable storage"
         },
+        "chilled_supply_water_temp_degF": {
+          "type": "float", "min": 0.0, "max": 100.0, "default": 44.0,
+          "description": "Chilled-side supply water temperature from ColdTES (bottom of tank) to the cooling load"
+        },
+        "warmed_return_water_temp_degF": {
+          "type": "float", "min": 6.0, "max": 120.0, "default": 56.0,
+          "description": "Warmed-side return water temperature from the cooling load to the ColdTES (top of tank)"
+        },        
         "internal_efficiency_pct": {
           "type": "float", "min": 0.0, "max": 1.0, "default": 0.999999,
           "description": "Thermal losses due to mixing from thermal power entering or leaving tank"
@@ -1952,6 +2021,14 @@ nested_input_definitions = {
           "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
           "description": "Maximum TES volume (energy) size constraint for optimization. Set to zero to disable storage"
         },
+        "hot_supply_water_temp_degF": {
+          "type": "float", "min": 40.0, "max": 210.0, "default": 180.0,
+          "description": "Hot-side supply water temperature from HotTES (top of tank) to the heating load"
+        },
+        "cooled_return_water_temp_degF": {
+          "type": "float", "min": 33.0, "max": 200.0, "default": 160.0,
+          "description": "Cold-side return water temperature from the heating load to the HotTES (bottom of tank)"
+        },        
         "internal_efficiency_pct": {
           "type": "float", "min": 0.0, "max": 1.0, "default": 0.999999,
           "description": "Thermal losses due to mixing from thermal power entering or leaving tank"
@@ -2012,7 +2089,11 @@ nested_input_definitions = {
         "emissions_factor_lb_CO2_per_mmbtu": {
           "type": "float",
           "description": "Pounds of carbon dioxide emitted per gallon of fuel burned"
-        }
+        },
+        "can_supply_steam_turbine": {
+          "type": "bool", "default": False,
+          "description": "If the boiler can supply steam to the steam turbine for electric production"
+        }        
       },
 
       "ElectricChiller": {
@@ -2066,6 +2147,307 @@ nested_input_definitions = {
           "max": 1.0,
           "default": 0.0,
           "description": "Percent of upfront project costs to depreciate under MACRS"
+        }
+      },
+      "NewBoiler": {
+        "min_mmbtu_per_hr": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "description": "Minimum thermal power size"
+          },
+        "max_mmbtu_per_hr": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "description": "Maximum thermal power size"
+        },
+        "boiler_efficiency": {
+          "type": "float", "min:": 0.0, "max:": 1.0, "default": 0.8,
+          "description": "New boiler system efficiency - conversion of fuel to usable heating thermal energy"
+        },
+        "can_supply_steam_turbine": {
+          "type": "bool", "default": True,
+          "description": "If the boiler can supply steam to the steam turbine for electric production"
+        },
+        "installed_cost_us_dollars_per_mmbtu_per_hr": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 293000.0,
+          "description": "Thermal power-based cost"
+        },
+        "om_cost_us_dollars_per_mmbtu_per_hr": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 2930.0,
+          "description": "Thermal power-based fixed O&M cost"
+        },
+        "om_cost_us_dollars_per_mmbtu": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "description": "Thermal energy-based variable O&M cost"
+        },                  
+        "emissions_factor_lb_CO2_per_mmbtu": {
+          "type": "float",
+          "description": "Pounds of carbon dioxide emitted per mmbtu of fuel burned"
+        },
+        "macrs_option_years": {
+          "type": "int",
+          "restrict_to": macrs_schedules,
+          "default": 0,
+          "description": "MACRS schedule for financial analysis. Set to zero to disable"
+        },
+        "macrs_bonus_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "description": "Percent of upfront project costs to depreciate under MACRS"
+        }        
+      },
+      "SteamTurbine": {
+        "size_class": {
+          "type": "int",
+          "restrict_to": [0, 1, 2, 3],
+          "description": "Steam turbine size class for using appropriate default inputs"
+        },
+        "min_kw": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "description": "Minimum electric power size"
+          },
+        "max_kw": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "description": "Maximum electric power size"
+        },
+        "electric_produced_to_thermal_consumed_ratio": {
+          "type": "float", "min": 0.0, "max": 1.0,
+          "description": "Simplified input as alternative to detailed calculations from inlet and outlet steam conditions"
+        },
+        "thermal_produced_to_thermal_consumed_ratio": {
+          "type": "float", "min": 0.0, "max": 1.0,
+          "description": "Simplified input as alternative to detailed calculations from condensing outlet steam"
+        },        
+        "is_condensing": {
+          "type": "bool", "default": False,
+          "description": "Steam turbine type, if it is a condensing turbine which produces no useful thermal (max electric output)"
+        },
+        "inlet_steam_pressure_psig": {
+          "type": "float", "min": 0.0, "max": 5000.0,
+          "description": "Inlet steam pressure to the steam turbine"
+        },
+        "inlet_steam_temperature_degF": {
+          "type": "float", "min": 0.0, "max": 1300.0,
+          "description": "Inlet steam temperature to the steam turbine"
+        },
+        "inlet_steam_superheat_degF": {
+          "type": "float", "min": 0.0, "max": 700.0,
+          "description": "Alternative input to inlet steam temperature, this is the superheat amount (delta from T_saturation) to the steam turbine"
+        },
+        "outlet_steam_pressure_psig": {
+          "type": "float", "min": -14.7, "max": 1000.0,
+          "description": "Outlet steam pressure from the steam turbine (to the condenser or heat recovery unit"
+        },
+        "outlet_steam_min_vapor_fraction": {
+          "type": "float", "min": 0.0, "max": 1.0, "default": 0.8,
+          "description": "Minimum vapor fraction at the outlet of the steam turbine: this serves as a check on the other inlet and outlet steam conditions to ensure that acceptable amounts of liquid are in the outlet"
+        },                         
+        "isentropic_efficiency": {
+          "type": "float", "min": 0.0, "max": 1.0,
+          "description": "Steam turbine isentropic efficiency - uses inlet T/P and outlet T/P/X to get power out"
+        },
+        "gearbox_generator_efficiency": {
+          "type": "float", "min": 0.0, "max": 1.0,
+          "description": "Conversion of steam turbine shaft power to electric power based on combined gearbox and electric generator efficiency"
+        },
+        "net_to_gross_electric_ratio": {
+          "type": "float", "min": 0.0, "max": 1.0,
+          "description": "Conversion of gross electric power to net power which can account for e.g. pump power"
+        },                
+        "installed_cost_us_dollars_per_kw": {
+          "type": "float", "min": 0.0, "max": 100000.0,
+          "description": "Electric power-based cost"
+        },
+        "om_cost_us_dollars_per_kw": {
+          "type": "float", "min": 0.0, "max": 5000.0,
+          "description": "Electric power-based fixed O&M cost"
+        },
+        "om_cost_us_dollars_per_kwh": {
+          "type": "float", "min": 0.0, "max": 100.0,
+          "description": "Electric energy-based variable O&M cost"
+        },
+        "can_net_meter": {
+          "type": "bool",
+          "default": False,
+          "description": "True/False for if technology has option to participate in net metering agreement with utility. Note that a technology can only participate in either net metering or wholesale rates (not both)."
+        },
+        "can_wholesale": {
+          "type": "bool",
+          "default": False,
+          "description": "True/False for if technology has option to export energy that is compensated at the wholesale_rate_us_dollars_per_kwh. Note that a technology can only participate in either net metering or wholesale rates (not both)."
+        },
+        "can_export_beyond_site_load": {
+          "type": "bool",
+          "default": False,
+          "description": "True/False for if technology can export energy beyond the annual site load (and be compensated for that energy at the wholesale_rate_above_site_load_us_dollars_per_kwh)."
+        },
+        "can_curtail": {
+          "type": "bool",
+          "default": False,
+          "description": "True/False for if technology can curtail energy produced."
+        },
+        "macrs_option_years": {
+          "type": "int",
+          "restrict_to": macrs_schedules,
+          "default": 0,
+          "description": "MACRS schedule for financial analysis. Set to zero to disable"
+        },
+        "macrs_bonus_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "description": "Percent of upfront project costs to depreciate under MACRS"
+        }        
+      },
+      "GHP": {
+        "require_ghp_purchase": {
+          "type": "bool",
+          "default": False,
+          "description": "Force one of the considered GHP design options"
+        },
+        "installed_cost_heatpump_us_dollars_per_ton": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e5,
+          "default": 1075.0,
+          "description": "Installed heating heat pump cost in $/ton (based on peak coincident cooling+heating thermal load)"
+        },
+        "heatpump_capacity_sizing_factor_on_peak_load": {
+          "type": "float",
+          "min": 1.0,
+          "max": 5.0,
+          "default": 1.1,
+          "description": "Factor on peak heating and cooling load served by GHP used for determining GHP installed capacity"
+        },
+        "installed_cost_ghx_us_dollars_per_ft": {
+          "type": "float",
+          "min": 0.0,
+          "max": 100.0,
+          "default": 14.0,
+          "description": "Installed cost of the ground heat exchanger (GHX) in $/ft of vertical piping"
+        },
+        "installed_cost_building_hydronic_loop_us_dollars_per_sqft": {
+          "type": "float",
+          "min": 0,
+          "max": 100.0,
+          "default": 1.70,
+          "description": "Installed cost of the building hydronic loop per floor space of the site"
+        },
+        "om_cost_us_dollars_per_sqft_year": {
+          "type": "float",
+          "min": -100,
+          "max": 100,
+          "default": -0.51,
+          "description": "Annual GHP incremental operations and maintenance costs in $/ft^2-building/year"
+        },
+        "building_sqft": {
+          "type": "float",
+          "min": 0.0,
+          "max": max_big_number,
+          "description": "Building square footage for GHP/HVAC cost calculations"
+        },
+        "ghpghx_inputs": {
+          "type": "list_of_dict",
+          "description": "GHP-GHX inputs/POST to /ghpghx endpoint"
+        },
+        "ghpghx_response_uuids": {
+          "type": "list_of_str",
+          "description": "GHPGHX response UUID(s) from /ghpghx endpoint, used to get ghpghx run data"
+        },
+        "can_serve_dhw": {
+          "type": "bool", "default": False,
+          "description": "If GHP can serve the domestic hot water (DHW) portion of the heating load"
+        },              
+        "macrs_option_years": {
+          "type": "int",
+          "restrict_to": macrs_schedules,
+          "default": 5,
+          "description": "MACRS schedule for financial analysis. Set to zero to disable"
+        },
+        "macrs_bonus_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 1.0,
+          "description": "Percent of upfront project costs to depreciate under MACRS"
+        },
+        "macrs_itc_reduction": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.5,
+          "description": "Percent of the full ITC that depreciable basis is reduced by"
+        },
+        "federal_itc_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.1,
+          "description": "Percent federal capital cost incentive"
+        },
+        "state_ibi_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "description": "Percent of upfront project costs to discount under state investment based incentives"
+        },
+        "state_ibi_max_us_dollars": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e10,
+          "default": max_incentive,
+          "description": "Maximum rebate allowed under state investment based incentives"
+        },
+        "utility_ibi_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "description": "Percent of upfront project costs to discount under utility investment based incentives"
+        },
+        "utility_ibi_max_us_dollars": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e10,
+          "default": max_incentive,
+          "description": "Maximum rebate allowed under utility investment based incentives"
+        },
+        "federal_rebate_us_dollars_per_ton": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 0.0,
+          "description": "Federal rebate based on installed capacity"
+        },
+        "state_rebate_us_dollars_per_ton": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 0.0,
+          "description": "State rebates based on installed capacity"
+        },
+        "state_rebate_max_us_dollars": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e10,
+          "default": max_incentive,
+          "description": "Maximum rebate allowed under state rebates"
+        },
+        "utility_rebate_us_dollars_per_ton": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 0.0,
+          "description": "Utility rebates based on installed capacity"
+        },
+        "utility_rebate_max_us_dollars": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e10,
+          "default": max_incentive,
+          "description": "Maximum rebate allowed under utility rebates"
         }
       }
     }

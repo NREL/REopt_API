@@ -221,7 +221,7 @@ Base.@kwdef struct Parameter
 	BoilerTechs::Array{String,1}
 	HeatingLoad::Array{Float64,1}
 	CoolingLoad::Array{Float64,1}
-	BoilerEfficiency::Float64
+	BoilerEfficiency::AxisArray
 	ElectricChillerCOP::Float64
     AbsorptionChillerCOP::Float64
     AbsorptionChillerElecCOP::Float64
@@ -232,7 +232,23 @@ Base.@kwdef struct Parameter
 	CHPStandbyCharge::Float64
 	CHPDoesNotReduceDemandCharges::Int64
 	StorageDecayRate::AxisArray
-
+    AllBoilerTechs::Array{String,1}
+    AllTechsForSteamTurbine::Array{String,1}
+    SteamTurbineTechs::Array{String,1}
+    TechCanSupplySteamTurbine::Array{String,1}
+    STElecOutToThermInRatio::Float64
+    STThermOutToThermInRatio::Float64
+    # GHP Arrays of different GHP options with index 1 being NO GHP
+    GHPOptions::UnitRange{Int64}
+    RequireGHPPurchase::Int64
+    GHPHeatingThermalServed::Array{Float64,2}  # Array of heating load (thermal!) profiles served by GHP
+    GHPCoolingThermalServed::Array{Float64,2}  # Array of cooling load profiles served by GHP
+    GHPElectricConsumed::Array{Float64,2}  # Array of electric load profiles consumed by GHP
+    GHPInstalledCost::Array{Float64,1}  # Array of installed cost for GHP options
+    GHPOMCost::Array{Float64,1}  # Array of O&M cost for GHP options
+    CHPSupplementaryFireMaxRatio::Float64
+    CHPSupplementaryFireEfficiency::Float64
+    CapCostSupplementaryFiring::AxisArray # Array of capital cost for supplementary firing for CHP
 	#Offgrid systems
 	OffGridFlag::Bool
 	TechsRequiringSR::Array{String,1}
@@ -291,6 +307,7 @@ function Parameter(d::Dict)
     n_location = length(d["MaxSizesLocation"])
     d[:Location] = 1:n_location
     d[:CPPeriod] = 1:d["CoincidentPeakPeriodCount"]
+    d[:GHPOptions] = 1:length(d["GHPInstalledCost"])
 
     # the following array manipulation may have to adapt once length(d["Subdivision"]) > 1
     seg_min_size_array = reshape(transpose(reshape(d["SegmentMinSize"], length(d[:Seg]), length(d["Tech"]))),
@@ -364,6 +381,8 @@ function Parameter(d::Dict)
 	d["CHPThermalProdFactor"] = vector_to_axisarray(d["CHPThermalProdFactor"],d["CHPTechs"],d[:TimeStep])
 	d["pwf_fuel"] = AxisArray(d["pwf_fuel"], d["Tech"])
 	d["StorageDecayRate"] = AxisArray(d["StorageDecayRate"], d["Storage"])
+    d["BoilerEfficiency"] = AxisArray(d["BoilerEfficiency"], d["AllBoilerTechs"])  # Always passes both values, even if partial/none
+    d["CapCostSupplementaryFiring"] = AxisArray(d["CapCostSupplementaryFiring"],d["CHPTechs"])
 
 	# Off-grid Modeling
 	d["SRrequiredPctTechs"] = AxisArray(d["SRrequiredPctTechs"], d["TechsProvidingSR"])
@@ -378,6 +397,10 @@ function Parameter(d::Dict)
     d["ExportTiersByTech"] = AxisArray(d["ExportTiersByTech"], d["Tech"])
 	d["TechsByExportTier"] = AxisArray(d["TechsByExportTier"], d["ExportTiers"])
     d["TechsByNMILRegime"] = AxisArray(d["TechsByNMILRegime"], d["NMILRegime"])
+
+    d["GHPHeatingThermalServed"] = array_of_array_to_2D_array(d["GHPHeatingThermalServed"])
+    d["GHPCoolingThermalServed"] = array_of_array_to_2D_array(d["GHPCoolingThermalServed"])
+    d["GHPElectricConsumed"] = array_of_array_to_2D_array(d["GHPElectricConsumed"])
 
     d = string_dictkeys_tosymbols(d)
     d = filter_dict_to_match_struct_field_names(d, Parameter)
