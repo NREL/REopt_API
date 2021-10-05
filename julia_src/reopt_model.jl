@@ -828,11 +828,11 @@ function add_load_balance_constraints(m, p)
 		(p.ElecLoad[ts] * m[:dvLoadServed][ts])
 	)
 
-	if !p.OffGridFlag: # fix dvLoadServed to 100% for "on-grid" analyses 
+	if !p.OffGridFlag # fix dvLoadServed to 100% for "on-grid" analyses 
 		for ts in p.TimeStep
 			fix(m[:dvLoadServed][ts], 1.0, force=true)
 		end
-	else:
+	else
 		@constraint(m, [ts in p.TimeStepsWithoutGrid],
 			m[:dvLoadServed][ts] <= 1
 		)
