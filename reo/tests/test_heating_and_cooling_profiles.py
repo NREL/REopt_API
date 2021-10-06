@@ -77,10 +77,12 @@ class HeatingCoolingTest(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
-        self.assertEqual(round(d['outputs']['Scenario']['Site']['LoadProfileBoilerFuel']['annual_calculated_boiler_fuel_load_mmbtu_bau'],-1), 2840)
-        self.assertEqual(round(sum(d['outputs']['Scenario']['Site']['LoadProfileBoilerFuel']['year_one_boiler_fuel_load_series_mmbtu_per_hr']),-1),2840)
-        self.assertEqual(round(d['outputs']['Scenario']['Site']['LoadProfileChillerThermal']['annual_calculated_kwh_bau'],-1),297490)
-        self.assertEqual(round(sum(d['outputs']['Scenario']['Site']['LoadProfileChillerThermal']['year_one_chiller_electric_load_series_kw_bau']),-1), 297490)
+        self.assertEqual(round(d['outputs']['Scenario']['Site']['LoadProfileBoilerFuel']['annual_calculated_boiler_fuel_load_mmbtu_bau'],-1), 2900)
+        self.assertEqual(round(sum(d['outputs']['Scenario']['Site']['LoadProfileBoilerFuel']['year_one_boiler_fuel_load_series_mmbtu_per_hr']),-1), 2900)
+        # The expected cooling load is based on the default **fraction of total electric** profile for the doe_reference_name when annual_tonhour is NOT input
+        #    the 320540.0 kWh number is from the default LargeOffice fraction of total electric profile applied to the Hospital default total electric profile
+        self.assertEqual(round(d['outputs']['Scenario']['Site']['LoadProfileChillerThermal']['annual_calculated_kwh_bau'],-1), 320540.0)
+        self.assertEqual(round(sum(d['outputs']['Scenario']['Site']['LoadProfileChillerThermal']['year_one_chiller_electric_load_series_kw_bau']),-1), 320540.0)
 
         post['Scenario']['Site']['LoadProfileBoilerFuel']['doe_reference_name'] = None
         post['Scenario']['Site']['LoadProfileChillerThermal']['doe_reference_name'] = None        

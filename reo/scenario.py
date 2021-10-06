@@ -31,21 +31,29 @@ import traceback
 import sys
 import os
 import logging
+
 log = logging.getLogger(__name__)
+import json
+import time
+import copy
 from reo.src.data_manager import DataManager
 from reo.src.elec_tariff import ElecTariff
-from reo.src.load_profile import LoadProfile
+from reo.src.load_profile import BuiltInProfile, LoadProfile
 from reo.src.fuel_tariff import FuelTariff
 from reo.src.load_profile_boiler_fuel import LoadProfileBoilerFuel
 from reo.src.load_profile_chiller_thermal import LoadProfileChillerThermal
 from reo.src.profiler import Profiler
 from reo.src.site import Site
 from reo.src.storage import Storage, HotTES, ColdTES
-from reo.src.techs import PV, Util, Wind, Generator, CHP, Boiler, ElectricChiller, AbsorptionChiller
+from reo.src.techs import PV, Util, Wind, Generator, CHP, Boiler, ElectricChiller, AbsorptionChiller, NewBoiler, SteamTurbine
+from reo.src import ghp
 from celery import shared_task, Task
 from reo.models import ModelManager
 from reo.exceptions import REoptError, UnexpectedError, LoadProfileError, WindDownloadError, PVWattsDownloadError, RequestError
-
+from tastypie.test import TestApiClient
+from reo.utilities import TONHOUR_TO_KWHT, get_climate_zone_and_nearest_city
+from ghpghx.models import GHPGHXInputs
+from ghpghx.models import ModelManager as ghpModelManager
 
 class ScenarioTask(Task):
     """
@@ -219,7 +227,18 @@ def setup_scenario(self, run_uuid, data, raw_post):
         lp.load_list = [0 if ((x > negative_load_tolerance) and (x < 0)) else x for x in lp.load_list]
 
         # Load Profile Boiler Fuel
-        lpbf = LoadProfileBoilerFuel(dfm=dfm,
+        lpbf_space = LoadProfileBoilerFuel(load_type="SpaceHeating",
+            dfm=dfm,
+            time_steps_per_hour=inputs_dict['time_steps_per_hour'],
+            latitude=inputs_dict['Site']['latitude'],
+            longitude=inputs_dict['Site']['longitude'],
+            nearest_city=lp.nearest_city,
+            year=lp.year,
+            **inputs_dict['Site']['LoadProfileBoilerFuel']
+            )
+        
+        lpbf_dhw = LoadProfileBoilerFuel(load_type="DHW",
+            dfm=dfm,
             time_steps_per_hour=inputs_dict['time_steps_per_hour'],
             latitude=inputs_dict['Site']['latitude'],
             longitude=inputs_dict['Site']['longitude'],
@@ -229,17 +248,20 @@ def setup_scenario(self, run_uuid, data, raw_post):
             )
 
         # Boiler which supplies the bau boiler fuel load, if there is a boiler fuel load
-        if lpbf.annual_mmbtu > 0.0:
-            boiler = Boiler(dfm=dfm, boiler_fuel_series_bau=lpbf.load_list, **inputs_dict['Site']['Boiler'])
+        if (lpbf_space.annual_mmbtu + lpbf_dhw.annual_mmbtu) > 0.0:
+            lpbf_total = [lpbf_space.load_list[i] + lpbf_dhw.load_list[i] for i in range(len(lpbf_space.load_list))]
+            boiler = Boiler(dfm=dfm, boiler_fuel_series_bau=lpbf_total, **inputs_dict['Site']['Boiler'])
         else:
             boiler = None
 
         # Load Profile Chiller Electric        
-        lpct = LoadProfileChillerThermal(dfm=dfm, total_electric_load_list=lp.unmodified_load_list, 
+        lpct = LoadProfileChillerThermal(load_type="Cooling",
+                                            dfm=dfm,
+                                            total_electric_load_list=lp.unmodified_load_list, 
                                             time_steps_per_hour=inputs_dict['time_steps_per_hour'],
                                             latitude=inputs_dict['Site']['latitude'], 
                                             longitude=inputs_dict['Site']['longitude'], 
-                                            nearest_city=lp.nearest_city or lpbf.nearest_city, 
+                                            nearest_city=lp.nearest_city or lpbf_space.nearest_city, 
                                             year=lp.year, max_thermal_factor_on_peak_load=
                                             inputs_dict['Site']['ElectricChiller']['max_thermal_factor_on_peak_load'],
                                             **inputs_dict['Site']['LoadProfileChillerThermal'])
@@ -317,21 +339,88 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         # Absorption chiller
         if inputs_dict["Site"]["AbsorptionChiller"]["max_ton"] > 0 and lpct.annual_kwht > 0.0:
+            try:
+                chp_prime_mover = chp.prime_mover
+            except:
+                chp_prime_mover = None
             absorpchl = AbsorptionChiller(dfm=dfm, max_cooling_load_tons=elecchl.max_cooling_load_tons,
                                           hw_or_steam=boiler.existing_boiler_production_type_steam_or_hw,
-                                          chp_prime_mover=chp.prime_mover,
+                                          chp_prime_mover=chp_prime_mover,
                                           **inputs_dict['Site']['AbsorptionChiller'])
             tmp = dict()
             tmp['installed_cost_us_dollars_per_ton'] = absorpchl.installed_cost_us_dollars_per_ton
             tmp['om_cost_us_dollars_per_ton'] = absorpchl.om_cost_us_dollars_per_ton
             ModelManager.updateModel('AbsorptionChillerModel', tmp, run_uuid)
 
+        # GHP
+        ghp_option_list = []
+        # Call /ghpghx endpoint if only ghpghx_inputs is given, otherwise use ghpghx_response_uuids
+        if inputs_dict["Site"]["GHP"].get("building_sqft") is not None and \
+            inputs_dict["Site"]["GHP"].get("ghpghx_response_uuids") in [None, []]:
+            ghpghx_uuid_list = []
+            if inputs_dict["Site"]["GHP"].get("ghpghx_inputs") in [None, []]:
+                number_of_ghpghx = 1
+                inputs_dict["Site"]["GHP"]["ghpghx_inputs"] = [{}]
+            else:
+                number_of_ghpghx = len(inputs_dict["Site"]["GHP"]["ghpghx_inputs"])
+            for i in range(number_of_ghpghx):
+                ghpghx_post = inputs_dict["Site"]["GHP"]["ghpghx_inputs"][i]
+                ghpghx_post["latitude"] = inputs_dict["Site"]["latitude"]
+                ghpghx_post["longitude"] = inputs_dict["Site"]["longitude"]
+                # Only SpaceHeating portion of Heating Load gets served by GHP, unless allowed by can_serve_dhw
+                if ghpghx_post.get("heating_thermal_load_mmbtu_per_hr") in [None, []]:
+                    if not inputs_dict["Site"]["GHP"].get("can_serve_dhw"):
+                        ghpghx_post["heating_fuel_load_mmbtu_per_hr"] = lpbf_space.load_list
+                    else:
+                        ghpghx_post["heating_fuel_load_mmbtu_per_hr"] = [lpbf_space.load_list[i] + lpbf_dhw.load_list[i] for i in range(len(lpbf_space.load_list))]
+                if dfm.boiler is not None:
+                    ghpghx_post["existing_boiler_efficiency"] = dfm.boiler.boiler_efficiency #boiler.boiler_efficiency
+                else:
+                    ghpghx_post["existing_boiler_efficiency"] = 0.8
+                if ghpghx_post.get("cooling_thermal_load_ton") in [None, []]:
+                    ghpghx_post["cooling_thermal_load_ton"] = [kwt / TONHOUR_TO_KWHT for kwt in dfm.cooling_load.load_list] #lpct.load_list
+                client = TestApiClient()
+                # Update ground thermal conductivity based on climate zone if not user-input
+                if not ghpghx_post.get("ground_thermal_conductivity_btu_per_hr_ft_f"):
+                    k_by_zone = copy.deepcopy(GHPGHXInputs.ground_k_by_climate_zone)
+                    climate_zone, nearest_city, geometric_flag = get_climate_zone_and_nearest_city(ghpghx_post["latitude"], ghpghx_post["longitude"], BuiltInProfile.default_cities)
+                    ghpghx_post["ground_thermal_conductivity_btu_per_hr_ft_f"] = k_by_zone[climate_zone]
+                # Call /ghpghx endpoint to size GHP and GHX
+                ghpghx_post_resp = client.post('/v1/ghpghx/', data=ghpghx_post)
+                ghpghx_post_resp_dict = json.loads(ghpghx_post_resp.content)
+                ghpghx_uuid_list.append(ghpghx_post_resp_dict.get('ghp_uuid'))
+                ghpghx_results_url = "/v1/ghpghx/"+ghpghx_uuid_list[i]+"/results/"
+                ghpghx_results_resp = client.get(ghpghx_results_url)  # same as doing ghpModelManager.make_response(ghp_uuid)
+                ghpghx_results_resp_dict = json.loads(ghpghx_results_resp.content)
+                ghp_option_list.append(ghp.GHPGHX(dfm=dfm,
+                                                    response=ghpghx_results_resp_dict,
+                                                    **inputs_dict["Site"]["GHP"]))
+            # Update GHPModel with created ghpghx_response_uuids
+            tmp = dict()
+            tmp['ghpghx_response_uuids'] = ghpghx_uuid_list
+            ModelManager.updateModel('GHPModel', tmp, run_uuid)
+            # Sleep to avoid calling julia_api for /job (reopt) or another /ghpghx run too quickly after /ghpghx
+            time.sleep(1)
+        # If ghpghx_response_uuids is included in inputs/POST, do NOT run /ghpghx model and use already-run ghpghx
+        elif inputs_dict["Site"]["GHP"].get("building_sqft") is not None and \
+                inputs_dict["Site"]["GHP"].get("ghpghx_response_uuids") not in [None, []]:
+            for ghp_uuid in inputs_dict["Site"]["GHP"].get("ghpghx_response_uuids"):
+                ghp_option_list.append(ghp.GHPGHX(dfm=dfm,
+                                                    response=ghpModelManager.make_response(ghp_uuid),
+                                                    **inputs_dict["Site"]["GHP"]))
+        
         util = Util(dfm=dfm,
                     outage_start_time_step=inputs_dict['Site']['LoadProfile'].get("outage_start_time_step"),
                     outage_end_time_step=inputs_dict['Site']['LoadProfile'].get("outage_end_time_step"),
                     )
-                    
+
         dfm.add_soc_incentive = inputs_dict['add_soc_incentive']
+
+        if inputs_dict["Site"]["NewBoiler"]["max_mmbtu_per_hr"] > 0:
+            newboiler = NewBoiler(dfm=dfm, **inputs_dict['Site']['NewBoiler'])
+        
+        if inputs_dict["Site"]["SteamTurbine"]["max_kw"] > 0:
+            steamturbine = SteamTurbine(dfm=dfm, **inputs_dict['Site']['SteamTurbine'])
 
         dfm.finalize()
         dfm_dict = vars(dfm)  # serialize for celery
@@ -339,7 +428,8 @@ def setup_scenario(self, run_uuid, data, raw_post):
         # delete python objects, which are not serializable
 
         for k in ['storage', 'hot_tes', 'cold_tes', 'site', 'elec_tariff', 'fuel_tariff', 'pvs', 'pvnms',
-                'load', 'util', 'heating_load', 'cooling_load'] + dfm.available_techs:
+                'load', 'util', 'heating_load', 'cooling_load', 'newboiler', 'steamturbine', 'ghp_option_list',
+                'heating_load_space_heating', 'heating_load_dhw'] + dfm.available_techs:
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
 

@@ -1,0 +1,99 @@
+{
+  "Scenario": {
+	"timeout_seconds": 420,
+    "optimality_tolerance_techs": 0.001,
+    "Site": {
+      "latitude": 37.78,
+      "longitude": -122.45,
+      "Boiler": {
+        "existing_boiler_production_type_steam_or_hw": "steam",
+        "boiler_efficiency": 0.8,
+        "emissions_factor_lb_CO2_per_mmbtu": null,
+        "can_supply_steam_turbine": false
+      },
+      "NewBoiler": {
+        "min_mmbtu_per_hr": 0.0,
+        "max_mmbtu_per_hr": 1.0E9,
+        "boiler_efficiency": 0.8,
+        "can_supply_steam_turbine": true,
+        "installed_cost_us_dollars_per_mmbtu_per_hr": 1.0,
+        "om_cost_us_dollars_per_mmbtu_per_hr": 0.1,
+        "om_cost_us_dollars_per_mmbtu": 0.1,                  
+        "emissions_factor_lb_CO2_per_mmbtu": null
+      },
+      "FuelTariff": {
+        "existing_boiler_fuel_type": "natural_gas",
+        "boiler_fuel_blended_annual_rates_us_dollars_per_mmbtu": 10.0,
+        "newboiler_fuel_type": "uranium",
+        "newboiler_fuel_blended_annual_rates_us_dollars_per_mmbtu": 0.5
+      },
+      "SteamTurbine": {
+        "min_kw": 0.0,
+        "max_kw": 20000.0,
+        "is_condensing": true,
+        "inlet_steam_pressure_psig": 1000.0,
+        "inlet_steam_temperature_degF": null,
+        "inlet_steam_superheat_degF": 10.0,
+        "outlet_steam_pressure_psig": -12.7,
+        "outlet_steam_min_vapor_fraction": 0.7,                         
+        "isentropic_efficiency": 0.7,
+        "gearbox_generator_efficiency": 0.96,
+        "net_to_gross_electric_ratio": 0.98,
+        "installed_cost_us_dollars_per_kw": 4000.0,
+        "om_cost_us_dollars_per_kw": 80.0,
+        "om_cost_us_dollars_per_kwh": 0.0,
+        "can_net_meter": false,
+        "can_wholesale": true,
+        "can_export_beyond_site_load": true,
+        "can_curtail": false        
+      },
+      "Financial": {
+        "om_cost_escalation_pct": 0.025,
+        "escalation_pct": 0.023,
+        "boiler_fuel_escalation_pct": 0.034,
+		"newboiler_fuel_escalation_pct": 0.034,
+        "offtaker_tax_pct": 0.26,
+        "offtaker_discount_pct": 0.083,
+        "third_party_ownership": false,
+        "owner_tax_pct": 0.26,
+        "owner_discount_pct": 0.083,
+        "analysis_years": 25,
+        "value_of_lost_load_us_dollars_per_kwh": 100.0,
+        "microgrid_upgrade_cost_pct": 0.0
+        },
+      "LoadProfile": {
+        "doe_reference_name": "Hospital",
+        "annual_kwh": 8760000.0
+      },
+      "LoadProfileBoilerFuel": {
+        "doe_reference_name": "Hospital",
+        "annual_mmbtu": 29897.6
+      },
+      "ElectricTariff": {
+        "urdb_utility_name": "Pacific Gas & Electric Co",
+        "urdb_rate_name": "E-20 Maximum demand of (1000 KW or more) (Secondary)",
+        "net_metering_limit_kw": 0.0,
+        "interconnection_limit_kw": 100000000.0,
+        "urdb_label": "5e1676e95457a3f87673e3b0",
+        "wholesale_rate_us_dollars_per_kwh": 0.04,
+        "wholesale_rate_above_site_load_us_dollars_per_kwh": 0.04
+      },
+      "PV": {
+        "pv_name": "",
+        "existing_kw": 0.0,
+        "min_kw": 0.0,
+        "max_kw": 0.0
+      },
+      "Storage": {
+        "min_kw": 0.0,
+        "max_kw": 0.0,
+        "min_kwh": 0.0,
+        "max_kwh": 0.0
+      }      
+    },
+    "user_uuid": null,
+    "description": "",
+    "time_steps_per_hour": 1,
+    "webtool_uuid": null
+  }
+}
