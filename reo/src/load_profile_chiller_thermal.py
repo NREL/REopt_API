@@ -1,4 +1,4 @@
-from reo.src.load_profile import BuiltInProfile
+from reo.src.load_profile import library_path_base, BuiltInProfile, default_annual_electric_loads
 import os
 import json
 import pandas as pd
@@ -12,7 +12,7 @@ class LoadProfileChillerThermal(BuiltInProfile):
     Chiller Load Profiles based on CRB defined load shapes or user-defined input
     """
     
-    with open(os.path.join(BuiltInProfile.library_path, 'reference_cooling_kwh.json'), 'r') as f:
+    with open(os.path.join(library_path_base, 'reference_cooling_kwh.json'), 'r') as f:
         annual_loads = json.loads(f.read())
 
     builtin_profile_prefix = "Cooling8760_norm_"
@@ -37,7 +37,7 @@ class LoadProfileChillerThermal(BuiltInProfile):
         else:
             return LoadProfileChillerThermal.electric_chiller_cop_defaults["greater_than_100_tons"]
 
-    def __init__(self, dfm=None, total_electric_load_list=[], latitude=None, longitude=None, nearest_city=None,
+    def __init__(self, load_type="Cooling", dfm=None, total_electric_load_list=[], latitude=None, longitude=None, nearest_city=None,
                         time_steps_per_hour=None, year=None, chiller_cop=None, max_thermal_factor_on_peak_load=None, **kwargs):
         """
         :param dfm: (object) data_manager to which this load object will be added
@@ -49,8 +49,11 @@ class LoadProfileChillerThermal(BuiltInProfile):
         :param year: (int) electric LoadProfile year
         :param chiller_cop: (float or int) Coefficient of Performance for Chiller
         :param max_thermal_factor_on_peak_load: (float or int) maximum thermal factor on peak load for the Chiller
-        :param kwargs: (dict) Chiller specific inputs as defined in reo/nested_inputs
+        :param kwargs: (dict) LoadProfileChillerThermal specific inputs as defined in reo/nested_inputs
         """
+        
+        self.load_type = load_type
+        
         self.nearest_city = nearest_city
         self.latitude = latitude
         self.longitude = longitude
@@ -79,7 +82,7 @@ class LoadProfileChillerThermal(BuiltInProfile):
                     kwargs['annual_energy'] = kwargs["annual_tonhour"]
                 
                 kwargs['annual_loads'] = self.annual_loads
-                kwargs['builtin_profile_prefix'] = self.builtin_profile_prefix
+                kwargs['load_type'] = self.load_type
                 kwargs['latitude'] = latitude
                 kwargs['longitude'] = longitude
                 kwargs['doe_reference_name'] = doe_reference_name[i]
@@ -95,19 +98,16 @@ class LoadProfileChillerThermal(BuiltInProfile):
                 combine_loadlist.append(list(partial_load_list))
 
             # In the case where the user supplies a list of doe_reference_names and percent shares
-            # for consistency we want to act as if we had scaled the partial load to the total site 
-            # load which was unknown at the start of the loop above. This scalar makes it such that
-            # when the percent shares are later applied that the total site load will be the sum
-            # of the default annual loads for this location
-            if (len(doe_reference_name) > 1) and kwargs['annual_energy'] is None:
-                total_site_load = sum([sum(l) for l in combine_loadlist])
-                for i, load in enumerate(combine_loadlist):
-                    actual_percent_of_site_load = sum(load)/total_site_load
-                    scalar = 1.0 / actual_percent_of_site_load
-                    combine_loadlist[i] = list(np.array(load)* scalar)
+            # WITHOUT an annual_energy (tonhour) value, then we use the weighted average (by percent_share)
+            #  of the fraction of total electric load
+            if kwargs.get('annual_energy') is None:
+                for i, building in enumerate(doe_reference_name):
+                    default_fraction = np.array(self.get_default_fraction_of_total_electric(building))
+                    modified_fraction = default_fraction * kwargs.get("percent_share")[i]/100.0
+                    combine_loadlist[i] = list(np.array(total_electric_load_list) * modified_fraction)
             
             #Apply the percent share of annual load to each partial load
-            if (len(doe_reference_name) > 1):
+            elif (len(doe_reference_name) > 1):
                 for i, load in enumerate(combine_loadlist):
                     combine_loadlist[i] = list(np.array(load) * (kwargs.get("percent_share")[i]/100.0))
 
@@ -151,5 +151,21 @@ class LoadProfileChillerThermal(BuiltInProfile):
         if electric_load_list is not None:            
             self.load_list = [i*self.chiller_cop for i in electric_load_list]
         self.annual_kwht = int(round(sum(self.load_list),0))
+    
         if dfm is not None:
             dfm.add_load_chiller_thermal(self)
+       
+    def get_default_fraction_of_total_electric(self, doe_reference_name):
+        elec_bip = BuiltInProfile(annual_loads=default_annual_electric_loads, load_type='Electric',
+                 latitude=self.latitude, longitude=self.longitude, doe_reference_name=doe_reference_name)
+        default_total_elec_load_profile = elec_bip.built_in_profile
+
+        cool_bip = BuiltInProfile(annual_loads=LoadProfileChillerThermal.annual_loads, load_type='Cooling',
+                 latitude=self.latitude, longitude=self.longitude, doe_reference_name=doe_reference_name)
+        default_cooling_elec_load_profile = cool_bip.built_in_profile
+        
+        default_fraction_of_total_electric_profile = [default_cooling_elec_load_profile[i] / \
+                                                        max(default_total_elec_load_profile[i], 1.0E-6) 
+                                                        for i in range(len(default_total_elec_load_profile))]
+
+        return default_fraction_of_total_electric_profile

@@ -51,13 +51,17 @@ class FuelParams:
         # Assign monthly fuel rates for boiler and chp and then convert to timestep intervals
         self.boiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu = fuel_tariff.monthly_rates('boiler')
         self.chp_fuel_blended_monthly_rates_us_dollars_per_mmbtu = fuel_tariff.monthly_rates('chp')
-        self.chp_fuel_rate_array = []
+        self.newboiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu = fuel_tariff.monthly_rates('newboiler')
         self.boiler_fuel_rate_array = []
+        self.chp_fuel_rate_array = []
+        self.newboiler_fuel_rate_array = []
         for month in range(0, 12):
             # Create full length (timestep) array of NG cost, converting $/MMBtu to $/kWh
             self.boiler_fuel_rate_array.extend([self.boiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu[month] / MMBTU_TO_KWH] * 
                                                 self.days_in_month[month] * 24 * self.time_steps_per_hour)
             self.chp_fuel_rate_array.extend([self.chp_fuel_blended_monthly_rates_us_dollars_per_mmbtu[month] / MMBTU_TO_KWH] *
+                                                self.days_in_month[month] * 24 * self.time_steps_per_hour)
+            self.newboiler_fuel_rate_array.extend([self.newboiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu[month] / MMBTU_TO_KWH] * 
                                                 self.days_in_month[month] * 24 * self.time_steps_per_hour)
         if generator is not None:
             self.generator_fuel_rate_array = [generator.diesel_fuel_cost_us_dollars_per_gallon / GAL_DIESEL_TO_KWH for
@@ -107,6 +111,14 @@ class FuelParams:
                 fuel_limit.append(self.big_number)
                 techs_by_fuel_type.append([tech.upper()])
                 fuel_types.append("CHPFUEL")
+            elif tech.lower() == 'newboiler':
+                fuel_costs = operator.add(fuel_costs, self.newboiler_fuel_rate_array)
+                # Fuel for newboiler is not handled by fuel_burn slope/intercept
+                # fuel_burn_slope.append(1 / self.newboiler.boiler_efficiency)
+                # fuel_burn_intercept.append(0.0)
+                fuel_limit.append(self.big_number)
+                techs_by_fuel_type.append([tech.upper()])
+                fuel_types.append("NEWBOILERFUEL")
 
 
         return fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type, fuel_burn_slope, fuel_burn_intercept

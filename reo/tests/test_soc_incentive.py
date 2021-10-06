@@ -35,7 +35,6 @@ from django.test import TestCase
 from reo.models import ModelManager
 from reo.utilities import check_common_outputs
 
-
 class SOCIncentiveTests(ResourceTestCaseMixin, TestCase):
     REopt_tol = 1.0e-2
 
