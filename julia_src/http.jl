@@ -84,6 +84,8 @@ function reopt(req::HTTP.Request)
         @info "An error occured in the Julia code."
         return HTTP.Response(500, JSON.json(error_response))
     end
+end
+
 function ghpghx(req::HTTP.Request)
     inputs_dict = JSON.parse(String(req.body))
     @info "Starting GHPGHX" #with timeout of $(timeout) seconds..."
