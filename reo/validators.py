@@ -41,6 +41,7 @@ import uuid
 from reo.src.techs import Generator, Boiler, CHP, AbsorptionChiller
 from reo.src.emissions_calculator import EmissionsCalculator ##, EmissionsCalculator_NOx, EmissionsCalculator_SO2, EmissionsCalculator_PM
 from reo.utilities import generate_year_profile_hourly
+from reo.src.pyeasiur import *
 
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'r'))]
@@ -1738,6 +1739,42 @@ class ValidateNestedInput:
                 self.defaults_inserted.append(['owner_discount_pct',object_name_path])
                 self.update_attribute_value(object_name_path, number, 'owner_tax_pct', real_values.get("offtaker_tax_pct"))
                 self.defaults_inserted.append(['owner_tax_pct', object_name_path])
+            
+            EASIUR_150m_pop2020_inc2020_dol2010 = get_EASIUR2005('p150', pop_year=2020, income_year=2020, dollar_year=2010)  # For keys in EASIUR: EASIUR_150m_pop2020_inc2020_dol2010.keys()
+            EASIUR_ground_pop2020_inc2020_dol2010 = get_EASIUR2005('area', pop_year=2020, income_year=2020, dollar_year=2010)
+            
+            lat=self.input_dict['Scenario']['Site']['latitude']
+            lon=self.input_dict['Scenario']['Site']['longitude']
+            # convert lon, lat to CAMx grid (x, y), specify datum. default is NAD83
+            # Note: x, y returned from g2l follows the CAMx grid convention. 
+            # x and y start from 1, not zero. (x) ranges (1, ..., 148) and (y) ranges (1, ..., 112)
+            x, y = g2l(lon, lat, datum='WGS84')
+            x = int(round(x))
+            y = int(round(y))
+
+            # Convert from 2010$ to 2020$ (source: https://www.in2013dollars.com/us/inflation/2010?amount=100)
+            convert_2010_2020_usd = 1.246
+
+            # If user has not supplied nox, so2, pm25 emissions costs, look up with EASIUR code
+            # Assumption: grid emissions occur at site at 150m; diesel fuelburn at 0m
+            if real_values.get("nox_cost_us_dollars_per_tonne_grid") is None:
+                self.update_attribute_value(object_name_path, number, "nox_cost_us_dollars_per_tonne_grid", 
+                                EASIUR_150m_pop2020_inc2020_dol2010['NOX_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
+            if real_values.get("so2_cost_us_dollars_per_tonne_grid") is None:
+                self.update_attribute_value(object_name_path, number, "so2_cost_us_dollars_per_tonne_grid", 
+                                EASIUR_150m_pop2020_inc2020_dol2010['SO2_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
+            if real_values.get("pm_cost_us_dollars_per_tonne_grid") is None:
+                self.update_attribute_value(object_name_path, number, "pm_cost_us_dollars_per_tonne_grid", 
+                                EASIUR_150m_pop2020_inc2020_dol2010['PEC_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
+            if real_values.get("nox_cost_us_dollars_per_tonne_onsite_fuelburn") is None:
+                self.update_attribute_value(object_name_path, number, "nox_cost_us_dollars_per_tonne_onsite_fuelburn", 
+                                EASIUR_150m_pop2020_inc2020_dol2010['NOX_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
+            if real_values.get("so2_cost_us_dollars_per_tonne_onsite_fuelburn") is None:
+                self.update_attribute_value(object_name_path, number, "so2_cost_us_dollars_per_tonne_onsite_fuelburn", 
+                                EASIUR_150m_pop2020_inc2020_dol2010['SO2_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
+            if real_values.get("pm_cost_us_dollars_per_tonne_onsite_fuelburn") is None:
+                self.update_attribute_value(object_name_path, number, "pm_cost_us_dollars_per_tonne_onsite_fuelburn", 
+                                EASIUR_150m_pop2020_inc2020_dol2010['PEC_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
 
     def check_min_max_restrictions(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
         """
