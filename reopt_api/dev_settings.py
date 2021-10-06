@@ -72,7 +72,7 @@ INSTALLED_APPS = (
     'futurecosts',
     'django_celery_results',
     'django_extensions',
-    'job'
+    'job',
     'ghpghx'
     )
 
