@@ -1768,13 +1768,13 @@ class ValidateNestedInput:
                                 EASIUR_150m_pop2020_inc2020_dol2010['PEC_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
             if real_values.get("nox_cost_us_dollars_per_tonne_onsite_fuelburn") is None:
                 self.update_attribute_value(object_name_path, number, "nox_cost_us_dollars_per_tonne_onsite_fuelburn", 
-                                EASIUR_150m_pop2020_inc2020_dol2010['NOX_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
+                                EASIUR_ground_pop2020_inc2020_dol2010['NOX_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
             if real_values.get("so2_cost_us_dollars_per_tonne_onsite_fuelburn") is None:
                 self.update_attribute_value(object_name_path, number, "so2_cost_us_dollars_per_tonne_onsite_fuelburn", 
-                                EASIUR_150m_pop2020_inc2020_dol2010['SO2_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
+                                EASIUR_ground_pop2020_inc2020_dol2010['SO2_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
             if real_values.get("pm_cost_us_dollars_per_tonne_onsite_fuelburn") is None:
                 self.update_attribute_value(object_name_path, number, "pm_cost_us_dollars_per_tonne_onsite_fuelburn", 
-                                EASIUR_150m_pop2020_inc2020_dol2010['PEC_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
+                                EASIUR_ground_pop2020_inc2020_dol2010['PEC_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
 
     def check_min_max_restrictions(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
         """
