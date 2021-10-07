@@ -2529,7 +2529,7 @@ class CHPInputs(BaseModel, models.Model):
         help_text="CHP prime mover type (recip_engine, micro_turbine, combustion_turbine, fuel_cell)"
     )
 
-    # following nine inputs have defaults if prime_mover is provided; otherwise user must provide them
+    # following eleven inputs have defaults if prime_mover is provided; otherwise user must provide them
     installed_cost_per_kw = ArrayField(
         models.FloatField(null=True, blank=True),
         default=list,
@@ -2601,17 +2601,6 @@ class CHPInputs(BaseModel, models.Model):
                    "keys of ['month', 'start_week_of_month', 'start_day_of_week', 'start_hour', 'duration_hours']. "
                    "All values are one-indexed and start_day_of_week uses 1 for Monday, 7 for Sunday.")
     )
-
-    # following four inputs are determined ... TODO
-    max_kw = models.FloatField(
-        null=True,   # TODO allow null?
-        validators=[
-            MinValueValidator(0),
-            MaxValueValidator(1.0e9)
-        ],
-        blank=True,
-        help_text="Maximum CHP size (based on electric) constraint for optimization. Set to zero to disable CHP"
-    )
     min_allowable_kw = models.FloatField(
         null=True,   # TODO allow null?
         validators=[
@@ -2620,6 +2609,15 @@ class CHPInputs(BaseModel, models.Model):
         ],
         blank=True,
         help_text="Minimum CHP size (based on electric) that still allows the model to choose zero (e.g. no CHP system)"
+    )
+    max_kw = models.FloatField(
+        null=True,   # TODO allow null? Why not have a default?
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Maximum CHP size (based on electric) constraint for optimization. Set to zero to disable CHP"
     )
     cooling_thermal_factor = models.FloatField(
         null=True,  # TODO allow null?
@@ -2631,6 +2629,8 @@ class CHPInputs(BaseModel, models.Model):
         help_text=("Knockdown factor on absorption chiller COP based on the CHP prime_mover not being able to produce "
                    "as high of temp/pressure hot water/steam")
     )
+
+    # TODO: emmissions, are there defaults? what happens if this is null?
     emissions_factor_lb_CO2_per_mmbtu = models.FloatField(
         null=True,
         blank=True,
