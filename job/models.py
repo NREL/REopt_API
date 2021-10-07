@@ -2508,13 +2508,13 @@ class CHPInputs(BaseModel, models.Model):
     key = "CHPInputs"
 
     class CHP_SIZE_CLASS_CHOICES(models.IntegerChoices):
-        ZERO = 0
         ONE = 1
         TWO = 2
         THREE = 3
         FOUR = 4
         FIVE = 5
         SIX = 6
+        SEVEN = 7
 
     scenario = models.OneToOneField(
         Scenario,
@@ -2639,7 +2639,7 @@ class CHPInputs(BaseModel, models.Model):
 
     # the rest of CHP inputs have default values
     size_class = models.IntegerField(
-        default=CHP_SIZE_CLASS_CHOICES.ZERO,
+        default=CHP_SIZE_CLASS_CHOICES.ONE,
         choices=CHP_SIZE_CLASS_CHOICES.choices,
         blank=True,
         help_text="CHP size class for using appropriate default inputs"
