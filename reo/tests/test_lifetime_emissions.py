@@ -128,8 +128,8 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
             "include_climate_in_objective": True,
             "include_health_in_objective": True,
             "Site": {
-              "longitude": -93.2650,
-              "latitude": 44.9778,
+              "longitude": -97.7431, # Austin TX
+              "latitude": 30.2672,
               "roof_squarefeet": None,
               "land_acres": None,
               "PV": {
@@ -179,12 +179,12 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
                 "offtaker_tax_pct": 0.26,
                 "om_cost_escalation_pct": 0.025,
                 "co2_cost_us_dollars_per_tonne": 51.0,
-                # "nox_cost_us_dollars_per_tonne_grid": 51.0, # TODO: make seasonal?
-                # "so2_cost_us_dollars_per_tonne_grid": 51.0, 
-                # "pm_cost_us_dollars_per_tonne_grid": 51.0, 
-                # "nox_cost_us_dollars_per_tonne_onsite_fuelburn": 51.0, # TODO: make seasonal?
-                # "so2_cost_us_dollars_per_tonne_onsite_fuelburn": 51.0, 
-                #"pm_cost_us_dollars_per_tonne_onsite_fuelburn": 51.0  
+                # "nox_cost_us_dollars_per_tonne_grid": 0.0, # TODO: make seasonal?
+                # "so2_cost_us_dollars_per_tonne_grid": 0.0, 
+                # "pm_cost_us_dollars_per_tonne_grid": 0.0, 
+                # "nox_cost_us_dollars_per_tonne_onsite_fuelburn": 0.0, # TODO: make seasonal?
+                # "so2_cost_us_dollars_per_tonne_onsite_fuelburn": 0.0, 
+                # "pm_cost_us_dollars_per_tonne_onsite_fuelburn": 0.0  
               },
               "Wind": {
                 "min_kw": 0.0,
@@ -209,6 +209,8 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
     def test_emissions_modeling(self):
 
         response = self.get_response(self.post_with_techs)
+        inputs = response['inputs']['Scenario']['Site']
+        outputs = response['outputs']['Scenario']['Site']
         
         pv_out = response['outputs']['Scenario']['Site']['PV']
         messages = response['messages']
@@ -226,11 +228,19 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
             print('Generator fuel use (gal): ', response['outputs']['Scenario']['Site']['Generator']["fuel_used_gal"])
             print('Generator fuel use BAU (gal): ', response['outputs']['Scenario']['Site']['Generator']["fuel_used_gal_bau"])
 
-            print('NOx cost Grid: ', response['inputs']['Scenario']['Site']['Financial']["nox_cost_us_dollars_per_tonne_grid"])
-            print('SO2 cost Grid: ', response['inputs']['Scenario']['Site']['Financial']["so2_cost_us_dollars_per_tonne_grid"])
-            print('PM cost Fuelburn: ', response['inputs']['Scenario']['Site']['Financial']["pm_cost_us_dollars_per_tonne_onsite_fuelburn"])
+            # print('NOx cost Grid: ', response['inputs']['Scenario']['Site']['Financial']["nox_cost_us_dollars_per_tonne_grid"])
+            # print('SO2 cost Grid: ', response['inputs']['Scenario']['Site']['Financial']["so2_cost_us_dollars_per_tonne_grid"])
+            # print('PM cost Fuelburn: ', response['inputs']['Scenario']['Site']['Financial']["pm_cost_us_dollars_per_tonne_onsite_fuelburn"])
             
-            
+            # Values specific to Austin, TX (30.2672, -97.7431)
+            self.assertEqual(round(inputs["Financial"]["nox_cost_us_dollars_per_tonne_grid"],3), round(4534.03247048984,3),
+                             "Unexpected nox_cost_us_dollars_per_tonne_grid output from EASIUR ")
+            self.assertEqual(inputs["Financial"]["pm_cost_us_dollars_per_tonne_grid"], 126293.11077362332,
+                             "Unexpected pm_cost_us_dollars_per_tonne_grid output from EASIUR ")
+            self.assertEqual(inputs["Financial"]["nox_cost_us_dollars_per_tonne_onsite_fuelburn"], 5965.834705734121,
+                             "Unexpected nox_cost_us_dollars_per_tonne_onsite_fuelburn output from EASIUR ")
+            self.assertEqual(inputs["Financial"]["pm_cost_us_dollars_per_tonne_onsite_fuelburn"], 240382.50164494125,
+                             "Unexpected pm_cost_us_dollars_per_tonne_onsite_fuelburn output from EASIUR ")                
 
             for item in ['CO2', 'NOx', 'SO2', 'PM']:
               print('Year 1 {}: '.format(item), response['outputs']['Scenario']['Site']['year_one_emissions_lb_{}'.format(item)])
