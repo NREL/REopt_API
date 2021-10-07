@@ -1576,14 +1576,15 @@ class PVInputs(BaseModel, models.Model):
         blank=True,
         help_text="Where PV can be deployed. One of [roof, ground, both] with default as both."
     )
-    prod_factor_series_kw = ArrayField(
+    prod_factor_series = ArrayField(
         models.FloatField(
             blank=True
         ),
         default=list, blank=True,
-        help_text=("Optional user-defined production factors. Entries have units of kWh/kW, representing the energy "
-                   "(kWh) output of a 1 kW system in each time step. Must be hourly (8,760 samples), 30 minute "
-                   "(17,520 samples), or 15 minute (35,040 samples).")
+        help_text=("Optional user-defined production factors. Must be normalized to units of kW-AC/kW-DC nameplate, "
+                   "representing the AC power (kW) output per 1 kW-DC of system capacity in each time step. "
+                   "The series must be one year (January through December) of hourly, 30-minute, or 15-minute PV "
+                   "generation data.")
     )
     can_net_meter = models.BooleanField(
         default=True,
@@ -1887,14 +1888,15 @@ class WindInputs(BaseModel, models.Model):
         blank=True,
         help_text="Maximum system size eligible for production-based incentive"
     )
-    prod_factor_series_kw = ArrayField(
+    prod_factor_series = ArrayField(
         models.FloatField(
             blank=True
         ),
         default=list, blank=True,
-        help_text=("Optional user-defined production factors. Entries have units of kWh/kW, representing the energy "
-                   "(kWh) output of a 1 kW system in each time step. Must be hourly (8,760 samples), 30 minute "
-                   "(17,520 samples), or 15 minute (35,040 samples).")
+        help_text=("Optional user-defined production factors. Must be normalized to units of kW-AC/kW-DC nameplate, "
+                   "representing the AC power (kW) output per 1 kW-DC of system capacity in each time step. "
+                   "The series must be one year (January through December) of hourly, 30-minute, or 15-minute PV "
+                   "generation data.")
     )
     can_net_meter = models.BooleanField(
         default=True,
