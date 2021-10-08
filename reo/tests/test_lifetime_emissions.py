@@ -158,6 +158,7 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
               },
               "ElectricTariff": {
                 # "emissions_factor_series_lb_CO2_per_kwh": [1.0],
+                # "emissions_factor_CO2_pct_decrease"
                 "add_blended_rates_to_urdb_rate": False,
                 "wholesale_rate_us_dollars_per_kwh": 0.0,
                 "net_metering_limit_kw": 0.0,
@@ -174,7 +175,7 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
                 "escalation_pct": 0.026,
                 "offtaker_discount_pct": 0.081,
                 "value_of_lost_load_us_dollars_per_kwh": 100.0,
-                "analysis_years": 20,
+                "analysis_years": 25,
                 "microgrid_upgrade_cost_pct": 0.3,
                 "offtaker_tax_pct": 0.26,
                 "om_cost_escalation_pct": 0.025,
@@ -243,11 +244,11 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
                              "Unexpected pm_cost_us_dollars_per_tonne_onsite_fuelburn output from EASIUR ")                
 
             for item in ['CO2', 'NOx', 'SO2', 'PM']:
-              print('Year 1 {}: '.format(item), response['outputs']['Scenario']['Site']['year_one_emissions_lb_{}'.format(item)])
-              print('Year 1 {} BAU: '.format(item), response['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_{}'.format(item)])
+              print('Year 1 {} lb: '.format(item), response['outputs']['Scenario']['Site']['year_one_emissions_lb_{}'.format(item)])
+              print('Year 1 {} lb BAU: '.format(item), response['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_{}'.format(item)])
               
-              print('Generator Year 1 {}: '.format(item), response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_{}'.format(item)])
-              print('Generator Year 1 {} BAU: '.format(item), response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_bau_lb_{}'.format(item)])
+              print('Generator Year 1 {} lb: '.format(item), response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_{}'.format(item)])
+              print('Generator Year 1 {} lb BAU: '.format(item), response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_bau_lb_{}'.format(item)])
 
             print('year_one_CO2_emissions_from_fuelburn: ', response['outputs']['Scenario']['Site']['year_one_CO2_emissions_from_fuelburn'])
 

@@ -1051,15 +1051,14 @@ end
 # TODO: account for if outage is major event! If so, shouldn't repeat fuel usage in each year
 function add_lifetime_emissions_calcs(m,p)
 	# Lifetime lbs CO2 
-	m[:Lifetime_Emissions_Lbs_CO2] = m[:EmissionsYr1_Total_LbsCO2] * p.analysis_years
+	m[:Lifetime_Emissions_Lbs_CO2] = m[:EmissionsYr1_Total_LbsCO2] * p.pwf_CO2_lbs 
 	# Lifetime cost CO2 ; 2204.62 lb / metric ton
-	# pwf: accounts for discounting (TODO: set to 3% to match SC-CO2 discount rate?) 
-	m[:Lifetime_Emissions_Cost_CO2] = p.pwf_CO2 * p.CO2_dollars_tonne * m[:EmissionsYr1_Total_LbsCO2] / 2204.62 
+	m[:Lifetime_Emissions_Cost_CO2] = p.pwf_CO2_cost * p.CO2_dollars_tonne * m[:EmissionsYr1_Total_LbsCO2] / 2204.62 
 
-	# Health calcs
-	m[:Lifetime_Emissions_Lbs_NOx] = m[:EmissionsYr1_Total_LbsNOx] * p.analysis_years
-	m[:Lifetime_Emissions_Lbs_SO2] = m[:EmissionsYr1_Total_LbsSO2] * p.analysis_years
-	m[:Lifetime_Emissions_Lbs_PM] = m[:EmissionsYr1_Total_LbsPM] * p.analysis_years
+	# Health calcs # TODO: update with emissions-specific pwf_lbs (currently assuming same % decrease as CO2)
+	m[:Lifetime_Emissions_Lbs_NOx] = m[:EmissionsYr1_Total_LbsNOx] * p.pwf_CO2_lbs
+	m[:Lifetime_Emissions_Lbs_SO2] = m[:EmissionsYr1_Total_LbsSO2] * p.pwf_CO2_lbs
+	m[:Lifetime_Emissions_Lbs_PM] = m[:EmissionsYr1_Total_LbsPM] * p.pwf_CO2_lbs
 
 	if p.IncludeExportedElecEmissionsInTotal
 		include_exported_elec_emissions_in_total = 1
@@ -1069,9 +1068,9 @@ function add_lifetime_emissions_calcs(m,p)
 
 	# TODO: Create a pwf for SO2, PM2.5, and NOx? Escalation % will be location dependent... 
 	# Current assumption is that CO2 pwf is applicable for NOx, SO2, and PM2.5
-	m[:Lifetime_Emissions_Cost_NOx] = p.pwf_CO2 * (p.NOx_dollars_tonne_grid * (m[:yr1_emissions_from_elec_grid_purchase_NOx] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_NOx]) + p.NOx_dollars_tonne_onsite_fuelburn * m[:yr1_emissions_from_fuelburn_NOx]) / 2204.62 
-	m[:Lifetime_Emissions_Cost_SO2] = p.pwf_CO2 * (p.SO2_dollars_tonne_grid * (m[:yr1_emissions_from_elec_grid_purchase_SO2] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_SO2]) + p.SO2_dollars_tonne_onsite_fuelburn * m[:yr1_emissions_from_fuelburn_SO2]) / 2204.62
-	m[:Lifetime_Emissions_Cost_PM] = p.pwf_CO2 * (p.PM_dollars_tonne_grid * (m[:yr1_emissions_from_elec_grid_purchase_PM] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_PM]) + p.PM_dollars_tonne_onsite_fuelburn * m[:yr1_emissions_from_fuelburn_PM]) / 2204.62
+	m[:Lifetime_Emissions_Cost_NOx] = p.pwf_CO2_cost * (p.NOx_dollars_tonne_grid * (m[:yr1_emissions_from_elec_grid_purchase_NOx] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_NOx]) + p.NOx_dollars_tonne_onsite_fuelburn * m[:yr1_emissions_from_fuelburn_NOx]) / 2204.62 
+	m[:Lifetime_Emissions_Cost_SO2] = p.pwf_CO2_cost * (p.SO2_dollars_tonne_grid * (m[:yr1_emissions_from_elec_grid_purchase_SO2] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_SO2]) + p.SO2_dollars_tonne_onsite_fuelburn * m[:yr1_emissions_from_fuelburn_SO2]) / 2204.62
+	m[:Lifetime_Emissions_Cost_PM] = p.pwf_CO2_cost * (p.PM_dollars_tonne_grid * (m[:yr1_emissions_from_elec_grid_purchase_PM] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_PM]) + p.PM_dollars_tonne_onsite_fuelburn * m[:yr1_emissions_from_fuelburn_PM]) / 2204.62
 
 	m[:Lifetime_Emissions_Cost_Health] = m[:Lifetime_Emissions_Cost_NOx] + m[:Lifetime_Emissions_Cost_SO2] + m[:Lifetime_Emissions_Cost_PM]
 
@@ -1366,17 +1365,17 @@ function add_site_results(m, p, r::Dict)
 
 	r["preprocessed_BAU_Yr1_emissions_from_grid_CO2"] = round(value(p.BAUYr1Emissions_grid_CO2),digits=2)
 
-	# Lifetime BAU emissions impacts 
-	r["lifetime_emissions_lb_CO2_bau"] = round(value(p.BAUYr1Emissions_CO2 * p.analysis_years),digits=2)
-	r["lifetime_emissions_lb_NOx_bau"] = round(value(p.BAUYr1Emissions_NOx * p.analysis_years),digits=2)
-	r["lifetime_emissions_lb_SO2_bau"] = round(value(p.BAUYr1Emissions_SO2 * p.analysis_years),digits=2)
-	r["lifetime_emissions_lb_PM_bau"] = round(value(p.BAUYr1Emissions_PM * p.analysis_years),digits=2)
+	# Lifetime BAU emissions impacts # TODO update with new pwfs for health emissions
+	r["lifetime_emissions_lb_CO2_bau"] = round(value(p.BAUYr1Emissions_CO2 * p.pwf_CO2_lbs),digits=2)
+	r["lifetime_emissions_lb_NOx_bau"] = round(value(p.BAUYr1Emissions_NOx * p.pwf_CO2_lbs),digits=2)
+	r["lifetime_emissions_lb_SO2_bau"] = round(value(p.BAUYr1Emissions_SO2 * p.pwf_CO2_lbs),digits=2)
+	r["lifetime_emissions_lb_PM_bau"] = round(value(p.BAUYr1Emissions_PM * p.pwf_CO2_lbs),digits=2)
 
-	r["lifetime_emissions_cost_CO2_bau"] = round(value(p.pwf_CO2 * p.CO2_dollars_tonne * p.BAUYr1Emissions_CO2 / 2204.62),digits=2) 
+	r["lifetime_emissions_cost_CO2_bau"] = round(value(p.pwf_CO2_cost * p.CO2_dollars_tonne * p.BAUYr1Emissions_CO2 / 2204.62),digits=2) 
 	# TODO: update pwf_CO2 to health emissions-specific pwf's 
-	r["lifetime_emissions_cost_Health_bau"] = round(value((p.pwf_CO2 * (p.NOx_dollars_tonne_grid * p.BAUYr1Emissions_grid_NOx + p.NOx_dollars_tonne_onsite_fuelburn * (p.BAUYr1Emissions_NOx - p.BAUYr1Emissions_grid_NOx))
-															+ p.pwf_CO2 * (p.SO2_dollars_tonne_grid * p.BAUYr1Emissions_grid_SO2 + p.SO2_dollars_tonne_onsite_fuelburn * (p.BAUYr1Emissions_SO2 - p.BAUYr1Emissions_grid_SO2))
-															+ p.pwf_CO2 * (p.PM_dollars_tonne_grid * p.BAUYr1Emissions_grid_PM + p.PM_dollars_tonne_onsite_fuelburn * (p.BAUYr1Emissions_PM - p.BAUYr1Emissions_grid_PM)))
+	r["lifetime_emissions_cost_Health_bau"] = round(value((p.pwf_CO2_cost * (p.NOx_dollars_tonne_grid * p.BAUYr1Emissions_grid_NOx + p.NOx_dollars_tonne_onsite_fuelburn * (p.BAUYr1Emissions_NOx - p.BAUYr1Emissions_grid_NOx))
+															+ p.pwf_CO2_cost * (p.SO2_dollars_tonne_grid * p.BAUYr1Emissions_grid_SO2 + p.SO2_dollars_tonne_onsite_fuelburn * (p.BAUYr1Emissions_SO2 - p.BAUYr1Emissions_grid_SO2))
+															+ p.pwf_CO2_cost * (p.PM_dollars_tonne_grid * p.BAUYr1Emissions_grid_PM + p.PM_dollars_tonne_onsite_fuelburn * (p.BAUYr1Emissions_PM - p.BAUYr1Emissions_grid_PM)))
 															/ 2204.62), digits=2) 
 
 

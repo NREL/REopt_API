@@ -621,12 +621,12 @@ nested_input_definitions = {
           "type": ["float", "list_of_float"],
           "description": "Carbon Dioxide emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.",
         },
-        "emissions_factor_series_CO2_pct_decrease": {
+        "emissions_factor_CO2_pct_decrease": {
           "type": "float",
           "min": -1.0,
           "max": 1.0,
           "default": 0.05,
-          "description": "Percent decrease in the total annual CO2 marginal emissions rate of the grid. The first year's hourly marginal emissions rates are levelized using this percent decrease.",
+          "description": "Annual percent decrease in the total annual CO2 marginal emissions rate of the grid. The first year's hourly marginal emissions rates are levelized using this percent decrease. A negative value indicates an annual increase.",
         },
         "emissions_factor_series_lb_NOx_per_kwh": {
           "type": ["list_of_float", "float"],
