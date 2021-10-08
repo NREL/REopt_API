@@ -343,7 +343,6 @@ nested_input_definitions = {
           "description": "Annual nominal Social Cost of CO2 escalation rate."
         },   
         # TODO: add in PM2.5, SO2, NOx here
-        # TODO: potentially add in CO2_discount_rate (for use in pwf_CO2)
       },
 
       "LoadProfile": {
@@ -625,8 +624,8 @@ nested_input_definitions = {
           "type": "float",
           "min": -1.0,
           "max": 1.0,
-          "default": 0.05,
-          "description": "Annual percent decrease in the total annual CO2 marginal emissions rate of the grid. The first year's hourly marginal emissions rates are levelized using this percent decrease. A negative value indicates an annual increase.",
+          "default": 0.0174, 
+          "description": "Annual percent decrease in the total annual CO2 marginal emissions rate of the grid. A negative value indicates an annual increase.",
         },
         "emissions_factor_series_lb_NOx_per_kwh": {
           "type": ["list_of_float", "float"],
