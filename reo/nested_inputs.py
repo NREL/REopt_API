@@ -303,43 +303,43 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e8,
-          "description": "Public health damage cost of NOx emissions from grid electricity in the first year of the analysis. Units are US dollars per metric ton. Default values obtained from the EASIUR model."
+          "description": "Public health damage cost of NOx emissions from grid electricity in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model."
         },
         "so2_cost_us_dollars_per_tonne_grid": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e8,
-          "description": "Social Cost of SO2 emissions from grid electricity in the first year of the analysis. Units are US dollars per metric ton. Default values obtained from the EASIUR model."
+          "description": "Social Cost of SO2 emissions from grid electricity in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model."
         },
         "pm_cost_us_dollars_per_tonne_grid": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e8,
-          "description": "Social Cost of PM2.5 emissions from grid electricity in the first year of the analysis. Units are US dollars per metric ton. Default values obtained from the EASIUR model."
+          "description": "Social Cost of PM2.5 emissions from grid electricity in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model."
         },  
         "nox_cost_us_dollars_per_tonne_onsite_fuelburn": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e8,
-          "description": "Public health damage cost of NOx from onsite fuelburn in the first year of the analysis. Units are US dollars per metric ton. Default values obtained from the EASIUR model."
+          "description": "Public health damage cost of NOx from onsite fuelburn in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model."
         },
         "so2_cost_us_dollars_per_tonne_onsite_fuelburn": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e8,
-          "description": "Social Cost of SO2 from onsite fuelburn in the first year of the analysis. Units are US dollars per metric ton. Default values obtained from the EASIUR model."
+          "description": "Social Cost of SO2 from onsite fuelburn in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model."
         },
         "pm_cost_us_dollars_per_tonne_onsite_fuelburn": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e8,
-          "description": "Social Cost of PM2.5 from onsite fuelburn in the first year of the analysis. Units are US dollars per metric ton. Default values obtained from the EASIUR model."
+          "description": "Social Cost of PM2.5 from onsite fuelburn in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model."
         }, 
         "co2_cost_escalation_pct": {
           "type": "float",
           "min": -1.0,
           "max": 1.0,
-          "default": 0.01778, 
+          "default": 0.017173, 
           "description": "Annual nominal Social Cost of CO2 escalation rate."
         },   
         # TODO: add in PM2.5, SO2, NOx here
