@@ -347,8 +347,9 @@ def get_user_summary_for_scenarios(scenarios, user_uuid, total_chunks=None, chun
                         results['batt_kw'] = batt.get('size_kw')
                         results['batt_kwh'] = batt.get('size_kwh')
 
+                # CHP Size
                 if chp is not None:
-                    if (chp.get('max_kw') or -1) > 0:
+                    if chp.get('prime_mover') is not None:
                         results['chp_kw'] = chp.get('size_kw')
 
                 # HotTES Size
