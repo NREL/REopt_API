@@ -125,7 +125,6 @@ def results(request, run_uuid):
             'ElectricTariffInputs', 'ElectricTariffOutputs',
             'ElectricUtilityOutputs'
         ).get(run_uuid=run_uuid)
-        # TODO: how do we get the Message's models?
     except Exception as e:
         if isinstance(e, models.ObjectDoesNotExist):
             resp = {"messages": {"error": ""}}
