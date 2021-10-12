@@ -2466,7 +2466,33 @@ class GeneratorInputs(BaseModel, models.Model):
     # emissions_factor_lb_CO2_per_gal = models.FloatField(null=True, blank=True)
 
     def clean(self):
-        pass  # TODO fuel_intercept_gal_per_hr and fuel_slope_gal_per_kwh from default_fuel_burn_rate
+        if self.max_kw > 0 or self.existing_kw > 0:
+            total_max = self.max_kw + self.existing_kw
+            if total_max <= 40:
+                m = 0.068
+                b = 0.0125
+            elif total_max <= 80:
+                m = 0.066
+                b = 0.0142
+            elif total_max <= 150:
+                m = 0.0644
+                b = 0.0095
+            elif total_max <= 250:
+                m = 0.0648
+                b = 0.0067
+            elif total_max <= 750:
+                m = 0.0656
+                b = 0.0048
+            elif total_max <= 1500:
+                m = 0.0657
+                b = 0.0043
+            else:
+                m = 0.0657
+                b = 0.004
+            if self.fuel_slope_gal_per_kwh == 0:
+                self.fuel_slope_gal_per_kwh = m
+            if self.fuel_intercept_gal_per_hr == 0:
+                self.fuel_intercept_gal_per_hr = b
 
 
 class GeneratorOutputs(BaseModel, models.Model):
