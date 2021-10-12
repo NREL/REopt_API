@@ -214,6 +214,7 @@ class SiteInputs(BaseModel, models.Model):
         Scenario,
         on_delete=models.CASCADE,
         related_name="SiteInputs",
+        primary_key=True
     )
 
     latitude = models.FloatField(
@@ -285,7 +286,8 @@ class FinancialInputs(BaseModel, models.Model):
     scenario = models.OneToOneField(
         Scenario,
         on_delete=models.CASCADE,
-        related_name="FinancialInputs"
+        related_name="FinancialInputs",
+        primary_key=True
     )
 
     analysis_years = models.IntegerField(
@@ -561,6 +563,7 @@ class ElectricLoadInputs(BaseModel, models.Model):
         Scenario,
         on_delete=models.CASCADE,
         related_name="ElectricLoadInputs",
+        primary_key=True
     )
 
     possible_sets = [
@@ -782,6 +785,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
         Scenario,
         on_delete=models.CASCADE,
         related_name="ElectricTariffInputs",
+        primary_key=True
     )
 
     possible_sets = [
@@ -1007,6 +1011,7 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         Scenario,
         on_delete=models.CASCADE,
         related_name="ElectricUtilityInputs",
+        primary_key=True
     )
 
     outage_start_time_step = models.IntegerField(
@@ -1073,6 +1078,7 @@ class ElectricUtilityOutputs(BaseModel, models.Model):
         Scenario,
         on_delete=models.CASCADE,
         related_name="ElectricUtilityOutputs",
+        primary_key=True
     )
 
     year_one_to_load_series_kw = ArrayField(
@@ -1125,6 +1131,7 @@ class ElectricTariffOutputs(BaseModel, models.Model):
         Scenario,
         on_delete=models.CASCADE,
         related_name="ElectricTariffOutputs",
+        primary_key=True
     )
 
     emissions_region = models.TextField(
@@ -2158,6 +2165,7 @@ class StorageOutputs(BaseModel, models.Model):
         Scenario,
         on_delete=models.CASCADE,
         related_name="StorageOutputs",
+        primary_key=True
     )
     size_kw = models.FloatField(null=True, blank=True)
     size_kwh = models.FloatField(null=True, blank=True)
@@ -2501,7 +2509,7 @@ class GeneratorOutputs(BaseModel, models.Model):
         Scenario,
         on_delete=models.CASCADE,
         related_name="GeneratorOutputs",
-        primary_key=True,
+        primary_key=True
     )
 
     fuel_used_gal = models.FloatField(null=True, blank=True)
