@@ -190,7 +190,7 @@ def results(request, run_uuid):
             msgs = s.Message.all()
             for msg in msgs:
                 r["messages"][msg.message_type] = msg.message
-        except Exception as e: print(e.args)
+        except: pass
 
         try:
             r["outputs"]["Financial"] = s.FinancialOutputs.dict
