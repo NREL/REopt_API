@@ -57,26 +57,31 @@ class TestSIADScenarios(ResourceTestCaseMixin, TestCase):
 
     def test_run_scenarios(self):
         results_dir = 'results'
-        run_BAU = False
+        run_BAU = True
+        run_costopt = True
         if run_BAU:
             post = self.post_BAU
-            post["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = 0
-            post["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"] = 1
+            # post["Scenario"]["Site"]["LoadProfile"]["outage_start_hour"] = 0
+            # post["Scenario"]["Site"]["LoadProfile"]["outage_end_hour"] = 1
             response = self.get_response(data=post)
             with open(os.path.join(results_dir,'SIAD_results_BAU_no_outage.json'), 'w') as json_file:
                 json.dump(response, json_file)
-        # response = self.get_response(data=self.post_with_PV)
-        # with open(os.path.join(results_dir,'SIAD_results_with_PV_no_resilience_newfin.json'), 'w') as json_file:
-        #     json.dump(response, json_file)
-        # response = self.get_response(data=self.post_no_PV)
-        # with open(os.path.join(results_dir,'SIAD_results_no_PV_no_resilience.json'), 'w') as json_file:
-        #     json.dump(response, json_file)
+        if run_costopt:
+            post = self.post_with_PV_no_ITC
+            response = self.get_response(data=post)
+            with open(os.path.join(results_dir,'SIAD_results_with_PV_no_ITC_no_resilience.json'), 'w') as json_file:
+                json.dump(response, json_file)
+            post = self.post_with_PV_with_ITC
+            response = self.get_response(data=post)
+            with open(os.path.join(results_dir,'SIAD_results_with_PV_with_ITC_no_resilience.json'), 'w') as json_file:
+                json.dump(response, json_file)
+
 
         def analyze_resilient_coa(FULL_RESILIENCE, post, results_filename):
             if FULL_RESILIENCE == True:
                 critical_pct = 1
             else:
-                critical_pct = 0.81
+                critical_pct = 0.8
                 
             post["Scenario"]["Site"]["LoadProfile"]["critical_load_pct"] = critical_pct
             day = 329
@@ -116,7 +121,7 @@ class TestSIADScenarios(ResourceTestCaseMixin, TestCase):
             print(response["outputs"]["Scenario"]["Site"]["Financial"]["npv_us_dollars"])
         
         FULL_RESILIENCE = False
-        analyze_resilient_coa(FULL_RESILIENCE, self.post_with_PV_no_ITC, 'SIAD_results_with_PV_no_ITC_{}.json'.format("full_resilience" if FULL_RESILIENCE else "neutral_NPV"))
+        # analyze_resilient_coa(FULL_RESILIENCE, self.post_with_PV_no_ITC, 'SIAD_results_with_PV_no_ITC_{}.json'.format("full_resilience" if FULL_RESILIENCE else "neutral_NPV"))
         # analyze_resilient_coa(FULL_RESILIENCE, self.post_with_PV_with_ITC, 'SIAD_results_with_PV_with_ITC_{}.json'.format("full_resilience" if FULL_RESILIENCE else "neutral_NPV"))
 
         # for day in range(365-14):

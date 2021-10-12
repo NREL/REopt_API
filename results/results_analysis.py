@@ -200,7 +200,7 @@ def print_max_system_sizes():
 
 
 def multi_site_summary_xlsx():
-    summary_filename = "siad_results_09152021.xlsx"
+    summary_filename = "siad_results_09282021.xlsx"
     sites = ["SIAD"]
     # df_all_sites = None
     print(site_summary_df(sites[0]))
@@ -254,8 +254,10 @@ def site_summary_df(site):
     #             }
     scenarios = {
                 "BAU_no_outage": "Business as Usual",
-                "with_PV_with_ITC_neutral_NPV": "With ITC, Neutral NPV Resilience",
+                # "with_PV_with_ITC_neutral_NPV": "With ITC, Neutral NPV Resilience",
+                "with_PV_with_ITC_no_resilience": "With ITC, Cost Savings",
                 "with_PV_with_ITC_full_resilience": "With ITC, Full Resilience",
+                "with_PV_no_ITC_no_resilience": "No ITC, Cost Savings",
                 "with_PV_no_ITC_neutral_NPV": "No ITC, Neutral NPV Resilience",
                 "with_PV_no_ITC_full_resilience": "No ITC, Full Resilience"
                 }
@@ -556,20 +558,24 @@ def resilience_main():
     y_valsRE = []
 
     scen_abrvs = [
-                "with_PV_with_ITC_neutral_NPV",
-                "with_PV_with_ITC_full_resilience",
+                # "with_PV_with_ITC_neutral_NPV",
+                # "with_PV_with_ITC_no_resilience",
+                # "with_PV_with_ITC_full_resilience",
+                # "with_PV_no_ITC_no_resilience",
                 "with_PV_no_ITC_neutral_NPV",
-                "with_PV_no_ITC_full_resilience"
+                # "with_PV_no_ITC_full_resilience"
                 ]
     scen_titles = [
-                "With ITC, Neutral NPV Resilience",
-                "With ITC, Full Resilience",
+                # "With ITC, Neutral NPV Resilience",
+                # "With ITC, Cost Savings",
+                # "With ITC, Full Resilience",
+                # "No ITC, Cost Savings",
                 "No ITC, Neutral NPV Resilience",
-                "No ITC, Full Resilience"
+                # "No ITC, Full Resilience"
                 ]
     # just for SIAD to use 100% critical load to evaluate solution found using lower % to get neutral npv
-    with open("SIAD_results_{}.json".format(scen_abrvs[1])) as f:
-        critical_load = json.load(f)["outputs"]["Scenario"]["Site"]["Storage"]["year_one_soc_series_pct"]
+    # with open("SIAD_results_{}.json".format(scen_abrvs[0])) as f:
+    #     critical_load = json.load(f)["outputs"]["Scenario"]["Site"]["LoadProfile"]["critical_load_series_kw"]
 
     for scen in scen_abrvs:#["with_PV","no_PV"]:
         # for pctl in [100,75,50]:
@@ -613,7 +619,7 @@ def resilience_main():
                 'batt_kw': battPower,
                 'pv_kw_ac_hourly': pv_kw_ac_hourly,
                 'wind_kw_ac_hourly': wind_kw_ac_hourly,
-                'critical_loads_kw': critical_load,#TODO: change back to load returned from readInputsFromREoptResultsFile() for future analysis
+                'critical_loads_kw': load,#critical_load,# TODO: change back to load returned from readInputsFromREoptResultsFile() for future analysis
                 'init_soc': soc,
                 'diesel_kw': genPower,
                 'fuel_available': fuelAvail
@@ -728,8 +734,8 @@ def resilience_main():
 if __name__ == '__main__':
 
     # print_max_system_sizes()
-    # resilience_main()
-    multi_site_summary_xlsx()
+    # multi_site_summary_xlsx()
+    resilience_main()
     # load_profiles_plot()
 
     # dir = '.'
