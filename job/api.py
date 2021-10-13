@@ -144,7 +144,6 @@ class Job(ModelResource):
             err.save_to_db()
             data["status"] = ('Internal Server Error during input validation. No optimization task has been created. '
                               'Please check your POST for bad values.')
-            # data['inputs'] = bundle.data
             data['messages'] = {}
             data['messages']['error'] = err.message  # "Unexpected Error."
             log.error("Internal Server error: " + err.message)
