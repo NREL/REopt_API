@@ -52,6 +52,7 @@ def return400(data: dict, validator: InputValidator):
     )
     data["run_uuid"] = ""
     # TODO save BadInputs ?
+    data["messages"] = dict()
     data["messages"]["error"] = "Invalid inputs. See input_errors."
     data["messages"]["input_errors"] = validator.validation_errors
     raise ImmediateHttpResponse(HttpResponse(json.dumps(data), content_type='application/json', status=400))
@@ -100,16 +101,16 @@ class Job(ModelResource):
         data = {
             "run_uuid": run_uuid,
             "api_version": 2,
-            "reopt_version": "0.11.0",
-            "messages": dict()
+            "reopt_version": "0.11.0"
         }
 
         log.addFilter(UUIDFilter(run_uuid))
 
         if "Scenario" in bundle.data.keys():
-            bundle.data["Scenario"].update({"run_uuid": run_uuid, "status": "validating..."})
+            bundle.data["Scenario"].update(data)
         else:
-            bundle.data.update({"Scenario": {"run_uuid": run_uuid, "status": "validating..."}})
+            bundle.data.update({"Scenario": data})
+        bundle.data["Scenario"]["status"] = "validating..."
 
         if bundle.request.META.get('HTTP_X_API_USER_ID', False):
             if bundle.request.META.get('HTTP_X_API_USER_ID', '') == '6f09c972-8414-469b-b3e8-a78398874103':

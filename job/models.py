@@ -133,13 +133,13 @@ class Scenario(BaseModel, models.Model):
     run_uuid = models.UUIDField(unique=True)
     api_version = models.IntegerField(default=2)
     user_uuid = models.TextField(
-        null=True,
         blank=True,
+        default="",
         help_text="The assigned unique ID of a signed in REopt user."
     )
     webtool_uuid = models.TextField(
-        null=True,
         blank=True,
+        default="",
         help_text=("The unique ID of a scenario created by the REopt Lite Webtool. Note that this ID can be shared by "
                    "several REopt Lite API Scenarios (for example when users select a 'Resilience' analysis more than "
                    "one REopt API Scenario is created).")
@@ -153,6 +153,11 @@ class Scenario(BaseModel, models.Model):
     address = models.TextField(
         blank=True,
         help_text="A user defined address as optional metadata (street address, city, state or zip code)"
+    )
+    reopt_version = models.TextField(
+        blank=True,
+        default="",
+        help_text="Version number of the Julia package for REopt that is used to solve the problem."
     )
 
 
