@@ -727,7 +727,7 @@ class ElectricLoadInputs(BaseModel, models.Model):
         # possible sets for defining load profile
         if not at_least_one_set(self.dict, self.possible_sets):
             error_messages["required inputs"] = \
-                "Must provide at valid at least one set of valid inputs from {}.".format(self.possible_sets)
+                "Must provide at least one set of valid inputs from {}.".format(self.possible_sets)
 
         if len(self.blended_doe_reference_names) > 0 and self.doe_reference_name == "":
             if len(self.blended_doe_reference_names) != len(self.blended_doe_reference_percents):
@@ -947,7 +947,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
         # possible sets for defining tariff
         if not at_least_one_set(self.dict, self.possible_sets):
             error_messages["required inputs"] = \
-                f"Must provide at valid at least one set of valid inputs from {self.possible_sets}."
+                f"Must provide at least one set of valid inputs from {self.possible_sets}."
 
         for possible_set in self.possible_sets:
             if len(possible_set) == 2:  # check dependencies
