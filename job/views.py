@@ -175,13 +175,6 @@ def results(request, run_uuid):
     try: r["inputs"]["Wind"] = s.WindInputs.dict
     except: pass
 
-    for d in r["inputs"].values():
-        if isinstance(d, dict):
-            d.pop("scenario_id", None)
-        elif isinstance(d, list):
-            for subd in d:
-                subd.pop("scenario_id", None)
-
     try:
         r["outputs"] = dict()
         r["messages"] = dict()
