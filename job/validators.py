@@ -192,9 +192,6 @@ class InputValidator(object):
     def cross_clean(self):
         """
         Validation that requires comparing fields from more than one model
-        v1 validation has been transferred for:
-        - Scenario, Site, Settings
-        - PV, Wind,
         :return: None
         """
 
