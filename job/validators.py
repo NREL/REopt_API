@@ -29,7 +29,7 @@
 # *********************************************************************************
 import logging
 import pandas as pd
-from job.models import Scenario, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
+from job.models import APIMeta, UserMeta, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
     FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, StorageInputs, GeneratorInputs, WindInputs
 from django.core.exceptions import ValidationError
 from pyproj import Proj
@@ -80,7 +80,8 @@ class InputValidator(object):
         self.resampling_messages = dict()
         self.models = dict()
         self.objects = (
-            Scenario,
+            APIMeta,
+            UserMeta,
             SiteInputs,
             Settings,
             ElectricLoadInputs,
@@ -98,27 +99,27 @@ class InputValidator(object):
         ]
         
         filtered_user_post = dict()
-        filtered_user_post[Scenario.key] = scrub_fields(Scenario, raw_inputs[Scenario.key])
-        scenario = Scenario.create(**filtered_user_post[Scenario.key])
-        self.models[Scenario.key] = scenario
-        scenario.save()  # must save the Scenario first to use it as a OneToOneField in other models
+        filtered_user_post[APIMeta.key] = scrub_fields(APIMeta, raw_inputs[APIMeta.key])
+        meta = APIMeta.create(**filtered_user_post[APIMeta.key])
+        self.models[APIMeta.key] = meta
+        meta.save()  # must save the APIMeta first to use it as a OneToOneField/ForeignKey in other models
 
         for obj in self.objects:
-            if obj == Scenario: continue  # Scenario not used in Julia
+            if obj == APIMeta: continue  # already created and saved
             if obj.key in raw_inputs.keys():
                 if isinstance(raw_inputs[obj.key], list) and obj.key == "PV":  # only handle array of PV
                     for (i, user_pv) in enumerate(raw_inputs["PV"]):
                         name = user_pv.get("name", "")
                         self.pvnames.append(name if not name == "" else "PV" + str(i))
                         filtered_user_post[self.pvnames[-1]] = scrub_fields(obj, user_pv)
-                        self.models[self.pvnames[-1]] = obj.create(scenario=scenario, **filtered_user_post[self.pvnames[-1]])
+                        self.models[self.pvnames[-1]] = obj.create(meta=meta, **filtered_user_post[self.pvnames[-1]])
                 else:
                     filtered_user_post[obj.key] = scrub_fields(obj, raw_inputs[obj.key])
-                    self.models[obj.key] = obj.create(scenario=scenario, **filtered_user_post[obj.key])
+                    self.models[obj.key] = obj.create(meta=meta, **filtered_user_post[obj.key])
             elif obj.key in required_object_names:
                 self.validation_errors[obj.key] = "Missing required inputs."
             elif obj.key in ["Settings", "Financial"]:
-                self.models[obj.key] = obj.create(scenario=scenario)  # create default values
+                self.models[obj.key] = obj.create(meta=meta)  # create default values
 
         self.scrubbed_inputs = filtered_user_post
 
@@ -126,9 +127,9 @@ class InputValidator(object):
     def messages(self):
         """
         Warnings to be passed to the user from the results endpoint (in the "messages").
-        NOTE: no need for including errors here since we do not create a Scenario when there are errors.
+        NOTE: no need for including errors here since we do not create a APIMeta when there are errors.
             The errors are returned to the user in job/api.py
-        :return: dict with str keys and values, which are saved in the Message model for each Scenario
+        :return: dict with str keys and values, which are saved in the Message model for each APIMeta
         """
         msg_dict = dict()
 
@@ -289,7 +290,7 @@ class InputValidator(object):
         for model in self.models.values():
             model.save()
         for msg_type, msg in self.messages.items():
-            Message.create(scenario=self.models["Scenario"], message_type=msg_type, message=msg).save()
+            Message.create(meta=self.models["APIMeta"], message_type=msg_type, message=msg).save()
 
     @property
     def is_valid(self):

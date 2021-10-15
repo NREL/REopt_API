@@ -87,7 +87,7 @@ class BaseModel(object):
         d.pop("_state", None)
         d.pop("id", None)
         d.pop("basemodel_ptr_id", None)
-        d.pop("scenario_id", None)
+        d.pop("meta_id", None)
         return d
 
     @classmethod
@@ -122,13 +122,14 @@ class BaseModel(object):
                 if val.limit_value not in (-2147483648, 2147483647):  # integer limits
                     d[field.attname][val.code] = val.limit_value
         return d
+    
 
-
-class Scenario(BaseModel, models.Model):
+class APIMeta(BaseModel, models.Model):
     """
-    All the values specific to API (and not used in Julia package)
+    Values created by API for each scenario (no user input values). 
+    Returned from job/<run_uuid>/results at the top level.
     """
-    key = "Scenario"
+    key = "APIMeta"
 
     run_uuid = models.UUIDField(unique=True)
     api_version = models.IntegerField(default=2)
@@ -147,13 +148,8 @@ class Scenario(BaseModel, models.Model):
     job_type = models.TextField(
         default='developer.nrel.gov'
     )
-    description = models.TextField(blank=True)
     status = models.TextField(blank=True)
     created = models.DateTimeField(auto_now_add=True)
-    address = models.TextField(
-        blank=True,
-        help_text="A user defined address as optional metadata (street address, city, state or zip code)"
-    )
     reopt_version = models.TextField(
         blank=True,
         default="",
@@ -161,11 +157,33 @@ class Scenario(BaseModel, models.Model):
     )
 
 
+class UserMeta(BaseModel, models.Model):
+    """
+    User provided values that are not necessary for running REopt
+    """
+    key = "Meta"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        primary_key=True,
+        related_name="UserMeta"
+    )
+    description = models.TextField(
+        blank=True,
+        help_text="Optional user defined description."
+    )
+    address = models.TextField(
+        blank=True,
+        help_text="Optional user defined address (street address, city, state or zip code)"
+    )
+
+
 class Settings(BaseModel, models.Model):
     key = "Settings"
 
-    scenario = models.OneToOneField(
-        Scenario,
+    meta = models.OneToOneField(
+        APIMeta,
         on_delete=models.CASCADE,
         primary_key=True,
         related_name="Settings"
@@ -215,8 +233,8 @@ class Settings(BaseModel, models.Model):
 class SiteInputs(BaseModel, models.Model):
     key = "Site"
 
-    scenario = models.OneToOneField(
-        Scenario,
+    meta = models.OneToOneField(
+        APIMeta,
         on_delete=models.CASCADE,
         related_name="SiteInputs",
         primary_key=True
@@ -260,8 +278,8 @@ class SiteInputs(BaseModel, models.Model):
 class SiteOutputs(BaseModel, models.Model):
     key = "SiteOutputs"
 
-    scenario = models.OneToOneField(
-        Scenario,
+    meta = models.OneToOneField(
+        APIMeta,
         on_delete=models.CASCADE,
         primary_key=True,
         related_name="SiteOutputs"
@@ -288,8 +306,8 @@ class SiteOutputs(BaseModel, models.Model):
 class FinancialInputs(BaseModel, models.Model):
     key = "Financial"
 
-    scenario = models.OneToOneField(
-        Scenario,
+    meta = models.OneToOneField(
+        APIMeta,
         on_delete=models.CASCADE,
         related_name="FinancialInputs",
         primary_key=True
@@ -420,8 +438,8 @@ class FinancialInputs(BaseModel, models.Model):
 class FinancialOutputs(BaseModel, models.Model):
     key = "FinancialOutputs"
 
-    scenario = models.OneToOneField(
-        Scenario,
+    meta = models.OneToOneField(
+        APIMeta,
         on_delete=models.CASCADE,
         related_name="FinancialOutputs",
         primary_key=True
@@ -513,7 +531,7 @@ class FinancialOutputs(BaseModel, models.Model):
     offtaker_annual_free_cashflows = ArrayField(
         models.FloatField(
             blank=True
-        ), 
+        ),
         default=list, blank=True,
         help_text=("Annual free cashflows for the host in the optimal case for all analysis years, "
                     "including year 0. Future years have not been discounted to account for the time value of money.")
@@ -564,8 +582,8 @@ class FinancialOutputs(BaseModel, models.Model):
 class ElectricLoadInputs(BaseModel, models.Model):
     key = "ElectricLoad"
 
-    scenario = models.OneToOneField(
-        Scenario,
+    meta = models.OneToOneField(
+        APIMeta,
         on_delete=models.CASCADE,
         related_name="ElectricLoadInputs",
         primary_key=True
@@ -747,8 +765,8 @@ class ElectricLoadInputs(BaseModel, models.Model):
 class ElectricLoadOutputs(BaseModel, models.Model):
     key = "ElectricLoadOutputs"
 
-    scenario = models.OneToOneField(
-        Scenario,
+    meta = models.OneToOneField(
+        APIMeta,
         on_delete=models.CASCADE,
         primary_key=True,
         related_name="ElectricLoadOutputs"
@@ -757,14 +775,14 @@ class ElectricLoadOutputs(BaseModel, models.Model):
     load_series_kw = ArrayField(
         models.FloatField(
             null=True, blank=True
-        ), 
+        ),
         default=list,
         help_text="Year one hourly time series of electric load"
     )
     critical_load_series_kw = ArrayField(
         models.FloatField(
             null=True, blank=True
-        ), 
+        ),
         default=list,
         help_text=("Hourly critical load for outage simulator. Values are either uploaded by user, "
                    "or determined from typical load (either uploaded or simulated) and critical_load_pct.")
@@ -786,8 +804,8 @@ class ElectricLoadOutputs(BaseModel, models.Model):
 class ElectricTariffInputs(BaseModel, models.Model):
     key = "ElectricTariff"
 
-    scenario = models.OneToOneField(
-        Scenario,
+    meta = models.OneToOneField(
+        APIMeta,
         on_delete=models.CASCADE,
         related_name="ElectricTariffInputs",
         primary_key=True
@@ -1005,15 +1023,15 @@ class ElectricTariffInputs(BaseModel, models.Model):
         d.pop("_state", None)
         d.pop("id", None)
         d.pop("basemodel_ptr_id", None)
-        d.pop("scenario_id", None)
+        d.pop("meta_id", None)
         return d
 
 
 class ElectricUtilityInputs(BaseModel, models.Model):
     key = "ElectricUtility"
 
-    scenario = models.OneToOneField(
-        Scenario,
+    meta = models.OneToOneField(
+        APIMeta,
         on_delete=models.CASCADE,
         related_name="ElectricUtilityInputs",
         primary_key=True
@@ -1079,8 +1097,8 @@ class ElectricUtilityInputs(BaseModel, models.Model):
 class ElectricUtilityOutputs(BaseModel, models.Model):
     key = "ElectricUtilityOutputs"
 
-    scenario = models.OneToOneField(
-        Scenario,
+    meta = models.OneToOneField(
+        APIMeta,
         on_delete=models.CASCADE,
         related_name="ElectricUtilityOutputs",
         primary_key=True
@@ -1132,8 +1150,8 @@ class ElectricUtilityOutputs(BaseModel, models.Model):
 class ElectricTariffOutputs(BaseModel, models.Model):
     key = "ElectricTariffOutputs"
 
-    scenario = models.OneToOneField(
-        Scenario,
+    meta = models.OneToOneField(
+        APIMeta,
         on_delete=models.CASCADE,
         related_name="ElectricTariffOutputs",
         primary_key=True
@@ -1234,14 +1252,14 @@ class ElectricTariffOutputs(BaseModel, models.Model):
     year_one_energy_cost_series_per_kwh = ArrayField(
         models.FloatField(
             blank=True
-        ), 
+        ),
         default=list, blank=True,
         help_text="Optimal year one hourly energy costs"
     )
     year_one_demand_cost_series_per_kw = ArrayField(
         models.FloatField(
             blank=True
-        ), 
+        ),
         default=list, blank=True,
         help_text="Optimal year one hourly demand costs"
     )
@@ -1273,13 +1291,13 @@ class ElectricTariffOutputs(BaseModel, models.Model):
 
 class PVInputs(BaseModel, models.Model):
     key = "PV"
-    scenario = models.ForeignKey(
-        to=Scenario,
+    meta = models.ForeignKey(
+        to=APIMeta,
         on_delete=models.CASCADE,
         related_name="PVInputs",
         unique=False
     )
-    
+
     class ARRAY_TYPE_CHOICES(models.IntegerChoices):
         GROUND_MOUNT_FIXED_OPEN_RACK = 0
         ROOFTOP_FIXED = 1
@@ -1625,8 +1643,8 @@ class PVInputs(BaseModel, models.Model):
 
 class PVOutputs(BaseModel, models.Model):
     key = "PVOutputs"
-    scenario = models.ForeignKey(
-        to=Scenario,
+    meta = models.ForeignKey(
+        to=APIMeta,
         on_delete=models.CASCADE,
         related_name="PVOutputs",
         unique=False
@@ -1669,8 +1687,8 @@ class PVOutputs(BaseModel, models.Model):
 class WindInputs(BaseModel, models.Model):
     key = "Wind"
 
-    scenario = models.OneToOneField(
-        Scenario,
+    meta = models.OneToOneField(
+        APIMeta,
         on_delete=models.CASCADE,
         related_name="WindInputs",
         primary_key=True
@@ -1937,8 +1955,8 @@ class WindInputs(BaseModel, models.Model):
 
 class WindOutputs(BaseModel, models.Model):
     key = "WindOutputs"
-    scenario = models.OneToOneField(
-        Scenario,
+    meta = models.OneToOneField(
+        APIMeta,
         on_delete=models.CASCADE,
         related_name="WindOutputs",
         primary_key=True
@@ -1964,8 +1982,8 @@ class WindOutputs(BaseModel, models.Model):
 class StorageInputs(BaseModel, models.Model):
     key = "Storage"
 
-    scenario = models.OneToOneField(
-        Scenario,
+    meta = models.OneToOneField(
+        APIMeta,
         on_delete=models.CASCADE,
         related_name="StorageInputs",
         primary_key=True
@@ -2166,8 +2184,8 @@ class StorageInputs(BaseModel, models.Model):
 
 class StorageOutputs(BaseModel, models.Model):
     key = "StorageOutputs"
-    scenario = models.OneToOneField(
-        Scenario,
+    meta = models.OneToOneField(
+        APIMeta,
         on_delete=models.CASCADE,
         related_name="StorageOutputs",
         primary_key=True
@@ -2187,8 +2205,8 @@ class StorageOutputs(BaseModel, models.Model):
 class GeneratorInputs(BaseModel, models.Model):
     key = "Generator"
 
-    scenario = models.OneToOneField(
-        Scenario,
+    meta = models.OneToOneField(
+        APIMeta,
         on_delete=models.CASCADE,
         related_name="GeneratorInputs",
         primary_key=True
@@ -2510,8 +2528,8 @@ class GeneratorInputs(BaseModel, models.Model):
 
 class GeneratorOutputs(BaseModel, models.Model):
     key = "GeneratorOutputs"
-    scenario = models.OneToOneField(
-        Scenario,
+    meta = models.OneToOneField(
+        APIMeta,
         on_delete=models.CASCADE,
         related_name="GeneratorOutputs",
         primary_key=True
@@ -2554,8 +2572,8 @@ class Message(BaseModel, models.Model):
                 }
     }
     """
-    scenario = models.ForeignKey(
-        Scenario,
+    meta = models.ForeignKey(
+        APIMeta,
         on_delete=models.CASCADE,
         unique=False,
         related_name="Message"
