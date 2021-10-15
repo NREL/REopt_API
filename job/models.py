@@ -2267,12 +2267,12 @@ class GeneratorInputs(BaseModel, models.Model):
         help_text="Generator fuel burn rate in gallons/kWh."
     )
     fuel_intercept_gal_per_hr = models.FloatField(
-        default=0.0,
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(10.0)
         ],
         blank=True,
+        null=True,
         help_text="Generator fuel consumption curve y-intercept in gallons per hour."
     )
     fuel_avail_gal = models.FloatField(
@@ -2480,23 +2480,23 @@ class GeneratorInputs(BaseModel, models.Model):
 
     def clean(self):
         if self.max_kw > 0 or self.existing_kw > 0:
-            total_max = self.max_kw + self.existing_kw
-            if total_max <= 40:
+            total_kw = self.min_kw + self.existing_kw
+            if total_kw <= 40:
                 m = 0.068
                 b = 0.0125
-            elif total_max <= 80:
+            elif total_kw <= 80:
                 m = 0.066
                 b = 0.0142
-            elif total_max <= 150:
+            elif total_kw <= 150:
                 m = 0.0644
                 b = 0.0095
-            elif total_max <= 250:
+            elif total_kw <= 250:
                 m = 0.0648
                 b = 0.0067
-            elif total_max <= 750:
+            elif total_kw <= 750:
                 m = 0.0656
                 b = 0.0048
-            elif total_max <= 1500:
+            elif total_kw <= 1500:
                 m = 0.0657
                 b = 0.0043
             else:
@@ -2504,7 +2504,7 @@ class GeneratorInputs(BaseModel, models.Model):
                 b = 0.004
             if self.fuel_slope_gal_per_kwh == 0:
                 self.fuel_slope_gal_per_kwh = m
-            if self.fuel_intercept_gal_per_hr == 0:
+            if self.fuel_intercept_gal_per_hr is None:
                 self.fuel_intercept_gal_per_hr = b
 
 
