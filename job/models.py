@@ -157,7 +157,7 @@ class APIMeta(BaseModel, models.Model):
     )
 
 
-class UserMeta(BaseModel, models.Model):
+class UserProvidedMeta(BaseModel, models.Model):
     """
     User provided values that are not necessary for running REopt
     """
@@ -167,7 +167,7 @@ class UserMeta(BaseModel, models.Model):
         APIMeta,
         on_delete=models.CASCADE,
         primary_key=True,
-        related_name="UserMeta"
+        related_name="UserProvidedMeta"
     )
     description = models.TextField(
         blank=True,
