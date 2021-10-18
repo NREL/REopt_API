@@ -158,7 +158,7 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
               },
               "ElectricTariff": {
                 # "emissions_factor_series_lb_CO2_per_kwh": [1.0],
-                # "emissions_factor_CO2_pct_decrease"
+                "emissions_factor_CO2_pct_decrease": 0.01174, 
                 "add_blended_rates_to_urdb_rate": False,
                 "wholesale_rate_us_dollars_per_kwh": 0.0,
                 "net_metering_limit_kw": 0.0,
@@ -173,13 +173,15 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
               },
               "Financial": {
                 "escalation_pct": 0.026,
-                "offtaker_discount_pct": 0.081,
-                "value_of_lost_load_us_dollars_per_kwh": 100.0,
+                "offtaker_discount_pct": 0.083,
+                "value_of_lost_load_us_dollars_per_kwh": 0.0,
                 "analysis_years": 25,
-                "microgrid_upgrade_cost_pct": 0.3,
+                "microgrid_upgrade_cost_pct": 0.0,
                 "offtaker_tax_pct": 0.26,
                 "om_cost_escalation_pct": 0.025,
                 "co2_cost_us_dollars_per_tonne": 51.0,
+                "co2_cost_escalation_pct": 0.017173, 
+                # "nox_cost_escalation_pct": , 
                 # "nox_cost_us_dollars_per_tonne_grid": 0.0, # TODO: make seasonal?
                 # "so2_cost_us_dollars_per_tonne_grid": 0.0, 
                 # "pm_cost_us_dollars_per_tonne_grid": 0.0, 

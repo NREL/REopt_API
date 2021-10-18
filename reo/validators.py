@@ -1740,6 +1740,7 @@ class ValidateNestedInput:
                 self.update_attribute_value(object_name_path, number, 'owner_tax_pct', real_values.get("offtaker_tax_pct"))
                 self.defaults_inserted.append(['owner_tax_pct', object_name_path])
             
+            # Calculated social cost of emissions
             EASIUR_150m_pop2020_inc2020_dol2010 = get_EASIUR2005('p150', pop_year=2020, income_year=2020, dollar_year=2010)  # For keys in EASIUR: EASIUR_150m_pop2020_inc2020_dol2010.keys()
             EASIUR_ground_pop2020_inc2020_dol2010 = get_EASIUR2005('area', pop_year=2020, income_year=2020, dollar_year=2010)
             
@@ -1775,6 +1776,17 @@ class ValidateNestedInput:
             if real_values.get("pm_cost_us_dollars_per_tonne_onsite_fuelburn") is None:
                 self.update_attribute_value(object_name_path, number, "pm_cost_us_dollars_per_tonne_onsite_fuelburn", 
                                 EASIUR_ground_pop2020_inc2020_dol2010['PEC_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
+            
+            # TODO: If user has not supplied nox, so2, pm25 cost escalation rates, calculate using EASIUR 
+            avg_inflation_2020_2024 = 0.023
+            if real_values.get("nox_cost_escalation_pct") is None:
+                dollar2010_per_tonne_in_2020 = EASIUR_150m_pop2020_inc2020_dol2010['NOX_Annual'][x - 1, y - 1]
+                EASIUR_150m_pop2024_inc2024_dol2010 = get_EASIUR2005('p150', pop_year=2024, income_year=2024, dollar_year=2010)
+                dollar2010_per_tonne_in_2024 = EASIUR_150m_pop2024_inc2024_dol2010['NOX_Annual'][x - 1, y - 1]
+                cagr_real = (dollar2010_per_tonne_in_2024/dollar2010_per_tonne_in_2020)**(1/4)-1 # real compound annual growth rate
+                cagr_nominal = cagr_real + avg_inflation_2020_2024
+                
+
 
     def check_min_max_restrictions(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
         """

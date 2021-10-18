@@ -30,7 +30,7 @@
 import copy
 from reo.src.urdb_parse import UrdbParse
 from reo.src.fuel_params import FuelParams
-from reo.utilities import annuity, degradation_factor, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
+from reo.utilities import annuity, annuity_two_escalation_rates, degradation_factor, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
     insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, annuity_escalation, MMBTU_TO_KWH, GAL_DIESEL_TO_KWH
 import numpy as np
 max_incentive = 1.0e10
@@ -211,8 +211,9 @@ class DataManager:
         pwf_e = annuity(sf.analysis_years, sf.escalation_pct, sf.offtaker_discount_pct)
         pwf_boiler_fuel = annuity(sf.analysis_years, sf.boiler_fuel_escalation_pct, sf.offtaker_discount_pct)
         pwf_chp_fuel = annuity(sf.analysis_years, sf.chp_fuel_escalation_pct, sf.offtaker_discount_pct)
-        pwf_CO2_cost = annuity(sf.analysis_years, sf.co2_cost_escalation_pct - self.elec_tariff.emissions_factor_CO2_pct_decrease, sf.offtaker_discount_pct) 
-        pwf_CO2_lbs = annuity(sf.analysis_years, -1 * self.elec_tariff.emissions_factor_CO2_pct_decrease, 0.0) # used to calculate total CO2 lbs 
+        pwf_CO2_cost = annuity_two_escalation_rates(sf.analysis_years, sf.co2_cost_escalation_pct, -1 * self.elec_tariff.emissions_factor_CO2_pct_decrease, sf.offtaker_discount_pct) 
+        pwf_CO2_lbs = annuity(sf.analysis_years, -1 * self.elec_tariff.emissions_factor_CO2_pct_decrease, 0.0) # used to calculate total grid CO2 lbs 
+        pwf_CO2_cost_onsite_fuelburn = annuity(sf.analysis_years, sf.co2_cost_escalation_pct, sf.offtaker_discount_pct)
         self.pwf_e = pwf_e
         # pwf_op = annuity(sf.analysis_years, sf.escalation_pct, sf.owner_discount_pct)
 
@@ -248,7 +249,7 @@ class DataManager:
                 else:
                     pwf_fuel_by_tech.append(round(pwf_e, 5))
 
-        return levelization_factor, pwf_e, pwf_om, two_party_factor, pwf_boiler_fuel, pwf_chp_fuel, pwf_fuel_by_tech, pwf_CO2_cost, pwf_CO2_lbs
+        return levelization_factor, pwf_e, pwf_om, two_party_factor, pwf_boiler_fuel, pwf_chp_fuel, pwf_fuel_by_tech, pwf_CO2_cost, pwf_CO2_lbs, pwf_CO2_cost_onsite_fuelburn
 
     def _get_REopt_production_incentives(self, techs):
         sf = self.site.financial
@@ -1210,9 +1211,9 @@ class DataManager:
             self.bau_techs, bau=True)
 
         levelization_factor, pwf_e, pwf_om, two_party_factor, \
-        pwf_boiler_fuel, pwf_chp_fuel, pwf_fuel_by_tech, pwf_CO2_cost, pwf_CO2_lbs = self._get_REopt_pwfs(self.available_techs)
+        pwf_boiler_fuel, pwf_chp_fuel, pwf_fuel_by_tech, pwf_CO2_cost, pwf_CO2_lbs, pwf_CO2_cost_onsite_fuelburn = self._get_REopt_pwfs(self.available_techs)
         levelization_factor_bau, pwf_e_bau, pwf_om_bau, two_party_factor_bau, \
-        pwf_boiler_fuel_bau, pwf_chp_fuel_bau, pwf_fuel_by_tech_bau, pwf_CO2_cost_bau, pwf_CO2_lbs_bau = self._get_REopt_pwfs(self.bau_techs)
+        pwf_boiler_fuel_bau, pwf_chp_fuel_bau, pwf_fuel_by_tech_bau, pwf_CO2_cost_bau, pwf_CO2_lbs_bau, pwf_CO2_cost_onsite_fuelburn_bau = self._get_REopt_pwfs(self.bau_techs)
 
         pwf_prod_incent, max_prod_incent, max_size_for_prod_incent, production_incentive_rate \
             = self._get_REopt_production_incentives(self.available_techs)
@@ -1393,6 +1394,7 @@ class DataManager:
             'pwf_fuel': pwf_fuel_by_tech,
             'pwf_CO2_cost': pwf_CO2_cost,
             'pwf_CO2_lbs': pwf_CO2_lbs,
+            'pwf_CO2_cost_onsite_fuelburn': pwf_CO2_cost_onsite_fuelburn,
             'two_party_factor': two_party_factor,
             'pwf_prod_incent': pwf_prod_incent,
             'MaxProdIncent': max_prod_incent,
@@ -1549,6 +1551,7 @@ class DataManager:
             'pwf_fuel': pwf_fuel_by_tech_bau,
             'pwf_CO2_cost': pwf_CO2_cost_bau,
             'pwf_CO2_lbs': pwf_CO2_lbs_bau,
+            'pwf_CO2_cost_onsite_fuelburn': pwf_CO2_cost_onsite_fuelburn_bau,
             'two_party_factor': two_party_factor_bau,
             'pwf_prod_incent': pwf_prod_incent_bau,
             'MaxProdIncent': max_prod_incent_bau,
