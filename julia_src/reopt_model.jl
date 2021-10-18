@@ -988,8 +988,9 @@ function add_emissions_calcs(m,p)
 	else
 		include_exported_elec_emissions_in_total = 0
 	end
-	## TODO: levelize grid emissions to account for greening of grid
-	m[:EmissionsYr1_Total_LbsCO2] = m[:yr1_emissions_from_fuelburn_CO2] + m[:yr1_emissions_from_elec_grid_purchase_CO2] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_CO2]
+	m[:yr1_emissions_from_elec_grid_net_CO2] = m[:yr1_emissions_from_elec_grid_purchase_CO2] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_CO2]
+	# TODO: add :yr1_emissions_from_elec_grid_net_NOx, etc. 
+	m[:EmissionsYr1_Total_LbsCO2] = m[:yr1_emissions_from_fuelburn_CO2] + m[:yr1_emissions_from_elec_grid_net_CO2]
 	m[:EmissionsYr1_Total_LbsNOx] = m[:yr1_emissions_from_fuelburn_NOx] + m[:yr1_emissions_from_elec_grid_purchase_NOx] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_NOx]
 	m[:EmissionsYr1_Total_LbsSO2] = m[:yr1_emissions_from_fuelburn_SO2] + m[:yr1_emissions_from_elec_grid_purchase_SO2] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_SO2]
 	m[:EmissionsYr1_Total_LbsPM] = m[:yr1_emissions_from_fuelburn_PM] + m[:yr1_emissions_from_elec_grid_purchase_PM] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_PM]
@@ -1050,21 +1051,24 @@ end
 ### Lifetime emissions calculations
 # TODO: account for if outage is major event! If so, shouldn't repeat fuel usage in each year
 function add_lifetime_emissions_calcs(m,p)
-	# Lifetime lbs CO2 
-	m[:Lifetime_Emissions_Lbs_CO2] = m[:EmissionsYr1_Total_LbsCO2] * p.pwf_CO2_lbs 
-	# Lifetime cost CO2 ; 2204.62 lb / metric ton
-	m[:Lifetime_Emissions_Cost_CO2] = p.pwf_CO2_cost * p.CO2_dollars_tonne * m[:EmissionsYr1_Total_LbsCO2] / 2204.62 
-
-	# Health calcs # TODO: update with emissions-specific pwf_lbs (currently assuming same % decrease as CO2)
-	m[:Lifetime_Emissions_Lbs_NOx] = m[:EmissionsYr1_Total_LbsNOx] * p.pwf_CO2_lbs
-	m[:Lifetime_Emissions_Lbs_SO2] = m[:EmissionsYr1_Total_LbsSO2] * p.pwf_CO2_lbs
-	m[:Lifetime_Emissions_Lbs_PM] = m[:EmissionsYr1_Total_LbsPM] * p.pwf_CO2_lbs
 
 	if p.IncludeExportedElecEmissionsInTotal
 		include_exported_elec_emissions_in_total = 1
 	else
 		include_exported_elec_emissions_in_total = 0
 	end
+
+	# Lifetime lbs CO2 
+	m[:Lifetime_Emissions_Lbs_CO2_grid] = p.pwf_CO2_lbs * m[:yr1_emissions_from_elec_grid_net_CO2]
+	m[:Lifetime_Emissions_Lbs_CO2_fuelburn] = p.analysis_years *  m[:yr1_emissions_from_fuelburn_CO2] # not assuming an annual decrease in on-site fuel burn emissions
+	m[:Lifetime_Emissions_Lbs_CO2] = m[:Lifetime_Emissions_Lbs_CO2_grid] + m[:Lifetime_Emissions_Lbs_CO2_fuelburn]
+	# Lifetime cost CO2 ; 2204.62 lb / metric ton 
+	m[:Lifetime_Emissions_Cost_CO2] = p.CO2_dollars_tonne / 2204.62 * (p.pwf_CO2_cost * m[:yr1_emissions_from_elec_grid_net_CO2] + p.pwf_CO2_cost_onsite_fuelburn * m[:yr1_emissions_from_fuelburn_CO2]) 
+
+	# Health calcs # TODO: update with emissions-specific pwf_lbs (currently assuming same % decrease as CO2) & mirror 2-pwf approach above 
+	m[:Lifetime_Emissions_Lbs_NOx] = m[:EmissionsYr1_Total_LbsNOx] * p.pwf_CO2_lbs
+	m[:Lifetime_Emissions_Lbs_SO2] = m[:EmissionsYr1_Total_LbsSO2] * p.pwf_CO2_lbs
+	m[:Lifetime_Emissions_Lbs_PM] = m[:EmissionsYr1_Total_LbsPM] * p.pwf_CO2_lbs
 
 	# TODO: Create a pwf for SO2, PM2.5, and NOx? Escalation % will be location dependent... 
 	# Current assumption is that CO2 pwf is applicable for NOx, SO2, and PM2.5

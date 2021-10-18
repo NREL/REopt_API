@@ -339,9 +339,16 @@ nested_input_definitions = {
           "type": "float",
           "min": -1.0,
           "max": 1.0,
-          "default": 0.017173, 
-          "description": "Annual nominal Social Cost of CO2 escalation rate."
-        },   
+          "default": 0.0176590, 
+          "description": "Annual nominal Social Cost of CO2 escalation rate (as a decimal)."
+        },
+        "nox_cost_escalation_pct": {
+          "type": "float",
+          "min": -1.0,
+          "max": 1.0,
+          "description": "Annual nominal escalation rate of the public health cost of 1 tonne of NOx emissions (as a decimal). The default value is calculated from the EASIUR model for a height of 150m."
+        },
+
         # TODO: add in PM2.5, SO2, NOx here
       },
 
@@ -624,7 +631,7 @@ nested_input_definitions = {
           "type": "float",
           "min": -1.0,
           "max": 1.0,
-          "default": 0.0174, 
+          "default": 0.01174,
           "description": "Annual percent decrease in the total annual CO2 marginal emissions rate of the grid. A negative value indicates an annual increase.",
         },
         "emissions_factor_series_lb_NOx_per_kwh": {

@@ -84,6 +84,18 @@ def annuity_escalation(analysis_period, rate_escalation, rate_discount):
         pwf += (1 + rate_escalation) ** (yr - 1) / (1 + rate_discount) ** yr
     return pwf
 
+def annuity_two_escalation_rates(analysis_period, rate_escalation1, rate_escalation2, rate_discount):
+    """
+        this formulation assumes cost growth in first period
+        i.e. it is a geometric sum of (1+rate_escalation)^n / (1+rate_discount)^n
+        for n = 1,..., analysis_period
+    """
+    x = (1 + rate_escalation1 + rate_escalation2 + rate_escalation1 * rate_escalation2) / (1 + rate_discount)
+    if x != 1:
+        pwf = round(x * (1 - x ** analysis_period) / (1 - x), 5)
+    else:
+        pwf = analysis_period
+    return pwf
 
 def insert_u_bp(xp_array_incent, yp_array_incent, region, u_xbp, u_ybp, p, u_cap):
 
