@@ -231,6 +231,8 @@ class FinancialModel(models.Model):
     pm_cost_us_dollars_per_tonne_onsite_fuelburn = models.FloatField(null=True, blank=True)
     co2_cost_escalation_pct = models.FloatField(null=True, blank=True)
     nox_cost_escalation_pct = models.FloatField(null=True, blank=True)
+    so2_cost_escalation_pct = models.FloatField(null=True, blank=True)
+    pm25_cost_escalation_pct = models.FloatField(null=True, blank=True)
 
     # Outputs
     lcc_us_dollars = models.FloatField(null=True, blank=True)

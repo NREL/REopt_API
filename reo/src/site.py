@@ -53,6 +53,9 @@ class Financial(object):
                  so2_cost_us_dollars_per_tonne_onsite_fuelburn,
                  pm_cost_us_dollars_per_tonne_onsite_fuelburn,
                  co2_cost_escalation_pct,
+                 nox_cost_escalation_pct,
+                 so2_cost_escalation_pct,
+                 pm25_cost_escalation_pct,
                  **kwargs
                  ):
         self.om_cost_escalation_pct = om_cost_escalation_pct
@@ -73,6 +76,9 @@ class Financial(object):
         self.so2_cost_us_dollars_per_tonne_onsite_fuelburn = so2_cost_us_dollars_per_tonne_onsite_fuelburn
         self.pm_cost_us_dollars_per_tonne_onsite_fuelburn = pm_cost_us_dollars_per_tonne_onsite_fuelburn
         self.co2_cost_escalation_pct = co2_cost_escalation_pct
+        self.nox_cost_escalation_pct = nox_cost_escalation_pct
+        self.so2_cost_escalation_pct = so2_cost_escalation_pct
+        self.pm25_cost_escalation_pct = pm25_cost_escalation_pct
 
         # set-up direct ownership
         if self.third_party_ownership is False:
