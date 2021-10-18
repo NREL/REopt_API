@@ -1071,10 +1071,10 @@ function add_lifetime_emissions_calcs(m,p)
 	m[:Lifetime_Emissions_Lbs_PM] = m[:EmissionsYr1_Total_LbsPM] * p.pwf_CO2_lbs
 
 	# TODO: Create a pwf for SO2, PM2.5, and NOx? Escalation % will be location dependent... 
-	# Current assumption is that CO2 pwf is applicable for NOx, SO2, and PM2.5
-	m[:Lifetime_Emissions_Cost_NOx] = p.pwf_CO2_cost * (p.NOx_dollars_tonne_grid * (m[:yr1_emissions_from_elec_grid_purchase_NOx] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_NOx]) + p.NOx_dollars_tonne_onsite_fuelburn * m[:yr1_emissions_from_fuelburn_NOx]) / 2204.62 
-	m[:Lifetime_Emissions_Cost_SO2] = p.pwf_CO2_cost * (p.SO2_dollars_tonne_grid * (m[:yr1_emissions_from_elec_grid_purchase_SO2] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_SO2]) + p.SO2_dollars_tonne_onsite_fuelburn * m[:yr1_emissions_from_fuelburn_SO2]) / 2204.62
-	m[:Lifetime_Emissions_Cost_PM] = p.pwf_CO2_cost * (p.PM_dollars_tonne_grid * (m[:yr1_emissions_from_elec_grid_purchase_PM] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_PM]) + p.PM_dollars_tonne_onsite_fuelburn * m[:yr1_emissions_from_fuelburn_PM]) / 2204.62
+	# Current assumption is that CO2 pwf is applicable for NOx, SO2, and PM2.5 
+	m[:Lifetime_Emissions_Cost_NOx] = (p.pwf_NOx_cost * p.NOx_dollars_tonne_grid * (m[:yr1_emissions_from_elec_grid_purchase_NOx] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_NOx]) + p.pwf_NOx_cost_onsite_fuelburn * p.NOx_dollars_tonne_onsite_fuelburn * m[:yr1_emissions_from_fuelburn_NOx]) / 2204.62 
+	m[:Lifetime_Emissions_Cost_SO2] = (p.pwf_SO2_cost * p.SO2_dollars_tonne_grid * (m[:yr1_emissions_from_elec_grid_purchase_SO2] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_SO2]) + p.pwf_SO2_cost_onsite_fuelburn * p.SO2_dollars_tonne_onsite_fuelburn * m[:yr1_emissions_from_fuelburn_SO2]) / 2204.62
+	m[:Lifetime_Emissions_Cost_PM] =  (p.pwf_PM25_cost * p.PM_dollars_tonne_grid * (m[:yr1_emissions_from_elec_grid_purchase_PM] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_PM]) + p.pwf_PM25_cost_onsite_fuelburn * p.PM_dollars_tonne_onsite_fuelburn * m[:yr1_emissions_from_fuelburn_PM]) / 2204.62
 
 	m[:Lifetime_Emissions_Cost_Health] = m[:Lifetime_Emissions_Cost_NOx] + m[:Lifetime_Emissions_Cost_SO2] + m[:Lifetime_Emissions_Cost_PM]
 

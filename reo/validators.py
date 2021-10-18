@@ -1785,7 +1785,21 @@ class ValidateNestedInput:
                 dollar2010_per_tonne_in_2024 = EASIUR_150m_pop2024_inc2024_dol2010['NOX_Annual'][x - 1, y - 1]
                 cagr_real = (dollar2010_per_tonne_in_2024/dollar2010_per_tonne_in_2020)**(1/4)-1 # real compound annual growth rate
                 cagr_nominal = cagr_real + avg_inflation_2020_2024
-                
+                self.update_attribute_value(object_name_path, number, "nox_cost_escalation_pct", cagr_nominal)
+            if real_values.get("so2_cost_escalation_pct") is None:
+                dollar2010_per_tonne_in_2020 = EASIUR_150m_pop2020_inc2020_dol2010['SO2_Annual'][x - 1, y - 1]
+                EASIUR_150m_pop2024_inc2024_dol2010 = get_EASIUR2005('p150', pop_year=2024, income_year=2024, dollar_year=2010)
+                dollar2010_per_tonne_in_2024 = EASIUR_150m_pop2024_inc2024_dol2010['SO2_Annual'][x - 1, y - 1]
+                cagr_real = (dollar2010_per_tonne_in_2024/dollar2010_per_tonne_in_2020)**(1/4)-1 # real compound annual growth rate
+                cagr_nominal = cagr_real + avg_inflation_2020_2024
+                self.update_attribute_value(object_name_path, number, "so2_cost_escalation_pct", cagr_nominal)
+            if real_values.get("pm25_cost_escalation_pct") is None:
+                dollar2010_per_tonne_in_2020 = EASIUR_150m_pop2020_inc2020_dol2010['PEC_Annual'][x - 1, y - 1]
+                EASIUR_150m_pop2024_inc2024_dol2010 = get_EASIUR2005('p150', pop_year=2024, income_year=2024, dollar_year=2010)
+                dollar2010_per_tonne_in_2024 = EASIUR_150m_pop2024_inc2024_dol2010['PEC_Annual'][x - 1, y - 1]
+                cagr_real = (dollar2010_per_tonne_in_2024/dollar2010_per_tonne_in_2020)**(1/4)-1 # real compound annual growth rate
+                cagr_nominal = cagr_real + avg_inflation_2020_2024
+                self.update_attribute_value(object_name_path, number, "pm25_cost_escalation_pct", cagr_nominal)    
 
 
     def check_min_max_restrictions(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):

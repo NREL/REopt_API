@@ -348,8 +348,18 @@ nested_input_definitions = {
           "max": 1.0,
           "description": "Annual nominal escalation rate of the public health cost of 1 tonne of NOx emissions (as a decimal). The default value is calculated from the EASIUR model for a height of 150m."
         },
-
-        # TODO: add in PM2.5, SO2, NOx here
+        "so2_cost_escalation_pct": {
+          "type": "float",
+          "min": -1.0,
+          "max": 1.0,
+          "description": "Annual nominal escalation rate of the public health cost of 1 tonne of SO2 emissions (as a decimal). The default value is calculated from the EASIUR model for a height of 150m."
+        },
+        "pm25_cost_escalation_pct": {
+          "type": "float",
+          "min": -1.0,
+          "max": 1.0,
+          "description": "Annual nominal escalation rate of the public health cost of 1 tonne of PM2.5 emissions (as a decimal). The default value is calculated from the EASIUR model for a height of 150m."
+        },
       },
 
       "LoadProfile": {
