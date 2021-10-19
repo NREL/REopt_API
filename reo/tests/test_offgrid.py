@@ -60,10 +60,12 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
                     "generator_fuel_escalation_pct": 0.03,
                     "offtaker_tax_pct": 0.0,
                     "offtaker_discount_pct": 0.15,
+                    "owner_discount_pct":0.083,
                     "analysis_years": 25,
                     # "microgrid_upgrade_cost_pct": 0.0,
                     "other_capital_costs_us_dollars": 50000,
-                    "other_annual_costs_us_dollars_per_year": 4000
+                    "other_annual_costs_us_dollars_per_year": 4000,
+                    "third_party_ownership": True,
                   },
                   "LoadProfile": {
                     "doe_reference_name": "RetailStore",
@@ -73,7 +75,7 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
                     "outage_end_time_step": 8760,
                     ## "critical_load_pct": 0.05, # This returns an error if not set to 1.0
                     # "outage_is_major_event": False,
-                    "min_load_met_pct": 0.98,
+                    "min_load_met_pct": 0.98, # 1.0, # 0.98
                     "sr_required_pct": 0.35
                   },
                   "PV": {
@@ -201,6 +203,7 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
         inputs = response['inputs']['Scenario']['Site']
 
         try:
+            print('LCOE [$/kWh', outputs['Financial']['microgrid_lcoe_us_dollars_per_kwh'])
             print('PV size [kW]: ', outputs['PV']['size_kw'])
             print('Battery size [kWh]: ', outputs['Storage']['size_kwh'])
             print('Battery size [kW]: ', outputs['Storage']['size_kw'])

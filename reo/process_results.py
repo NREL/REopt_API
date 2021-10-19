@@ -342,7 +342,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 discount_rate = self.inputs["Financial"]["owner_discount_pct"]
                 diesel_unit_cost = setup_capital_cost_offgrid(analysis_period, discount_rate,
                                    self.inputs["Generator"]["installed_cost_us_dollars_per_kw"],
-                                   self.inputs["Generator"]["installed_cost_us_dollars_per_kw"],
+                                   self.inputs["Generator"]["installed_cost_us_dollars_per_kw"], # Replacement cost for generator assumed to be equal to installed cost
                                    self.inputs["Generator"]["useful_life_years"])
                 inverter_unit_cost = setup_capital_cost_offgrid(analysis_period, discount_rate,
                                    self.inputs["Storage"]["installed_cost_us_dollars_per_kw"],
@@ -606,7 +606,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         pv["station_latitude"] = pv_model.station_latitude
                         pv["station_longitude"] = pv_model.station_longitude
                         pv["station_distance_km"] = pv_model.station_distance_km
-                        pv['lcoe_us_dollars_per_kwh'] = self.calculate_lcoe(pv, pv_model.__dict__, financials)
+                        pv['lcoe_us_dollars_per_kwh'] = self.calculate_lcoe(pv, pv_model.__dict__, financials) # I don't think this gets reported
                         self.nested_outputs['Scenario']["Site"][name].append(pv)
                 elif name == "Wind":
                     self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("wind_kw", 0)
