@@ -8,6 +8,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ('reo', '0117_financialmodel_generator_fuel_escalation_pct'),
         ('reo', '0120_auto_20210927_2046'),
+        ('reo', '0121_auto_20211012_0305')
     ]
 
     operations = [
