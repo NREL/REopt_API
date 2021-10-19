@@ -1535,9 +1535,12 @@ class ValidateNestedInput:
                     self.defaults_inserted.append(['loads_mmbtu_per_hour', object_name_path])
                 # If a dictionary comes in with vaues and no doe reference name then use the electric load profile building type by default
                 if not no_values_given and real_values.get('doe_reference_name') is None:
-                    self.update_attribute_value(object_name_path, number, 'doe_reference_name',
-                                                self.input_dict['Scenario']['Site']['LoadProfile'].get(
-                                                    'doe_reference_name'))
+                    if self.input_dict['Scenario']['Site']['LoadProfile'].get('doe_reference_name') is not None:
+                        self.update_attribute_value(object_name_path, number, 'doe_reference_name',
+                                                self.input_dict['Scenario']['Site']['LoadProfile'].get('doe_reference_name'))
+                    else:
+                        self.input_data_errors.append(
+                        'The doe_reference_name must be provided for LoadProfileBoilerFuel')                                           
                 if real_values.get('doe_reference_name') is not None:
                     if type(real_values['doe_reference_name']) is not list:
                         self.update_attribute_value(object_name_path, number, 'doe_reference_name', [real_values['doe_reference_name']])
