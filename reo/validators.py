@@ -498,10 +498,9 @@ class ValidateNestedInput:
 
             if self.off_grid_flag:
                 self.input_dict["Scenario"]["Site"]["LoadProfile"]["outage_start_time_step"] = 1
-                # Currently not modeling tax incentives in offgrid scenarios
+                # Currently not modeling tax incentives in offgrid scenarios #TODO: Update this (ADF)
                 self.input_dict["Scenario"]["Site"]["Financial"]["offtaker_tax_pct"] = 0.0
                 self.input_dict["Scenario"]["Site"]["Financial"]["owner_tax_pct"] = 0.0
-                self.input_dict["Scenario"]["Site"]["LoadProfile"]["critical_load_pct"] = 1.0
                 if self.input_dict["Scenario"]["time_steps_per_hour"] == 4:
                     self.input_dict["Scenario"]["Site"]["LoadProfile"]["outage_end_time_step"] = 35040
                 elif self.input_dict["Scenario"]["time_steps_per_hour"] == 2:

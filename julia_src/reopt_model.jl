@@ -841,7 +841,7 @@ function add_load_balance_constraints(m, p)
 		)
 		@constraint(m, sum(m[:dvLoadServed][ts] * p.ElecLoad[ts] for ts in p.TimeStepsWithoutGrid) >=
 			sum(p.ElecLoad) * p.MinLoadMetPct
-			# p.AnnualElecLoadkWh * p.MinLoadMetPct
+			# p.AnnualElecLoadkWh * p.MinLoadMetPct 
 		)
 	end
 end
@@ -1539,7 +1539,13 @@ function add_offgrid_financial_results(m, p, r::Dict)
 	@expression(m, AnnualkWhServed, sum(p.ElecLoad[ts] * value(m[:dvLoadServed][ts]) for  ts in p.TimeStep))
 	r["total_other_cap_costs"] = p.OtherCapitalCosts
 	r["total_annual_costs"] = p.OtherAnnualCosts
-	r["microgrid_lcoe"] = round(lcc / p.pwf_om / value(AnnualkWhServed), digits=4)
+
+	if p.two_party_factor == 1  # Direct ownership (two_party_factor = 1 if third_party_ownership is False)
+		pwf = p.pwf_offtaker
+	else
+		pwf = p.pwf_owner
+	end
+	r["microgrid_lcoe"] = round(lcc / pwf / value(AnnualkWhServed), digits=4)
 	nothing
 end
 

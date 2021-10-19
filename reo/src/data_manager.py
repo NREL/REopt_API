@@ -276,7 +276,7 @@ class DataManager:
                 else:
                     pwf_fuel_by_tech.append(round(pwf_e, 5))
 
-        return levelization_factor, pwf_e, pwf_om, two_party_factor, pwf_fuel_by_tech
+        return levelization_factor, pwf_e, pwf_om, two_party_factor, pwf_fuel_by_tech, pwf_owner, pwf_offtaker
 
     def _get_REopt_production_incentives(self, techs):
         sf = self.site.financial
@@ -1251,8 +1251,8 @@ class DataManager:
         max_sizes_bau, min_turn_down_bau, max_sizes_location_bau, min_allowable_size_bau = self._get_REopt_tech_max_sizes_min_turn_down(
             self.bau_techs, bau=True)
 
-        levelization_factor, pwf_e, pwf_om, two_party_factor, pwf_fuel_by_tech = self._get_REopt_pwfs(self.available_techs)
-        levelization_factor_bau, pwf_e_bau, pwf_om_bau, two_party_factor_bau, pwf_fuel_by_tech_bau = self._get_REopt_pwfs(self.bau_techs)
+        levelization_factor, pwf_e, pwf_om, two_party_factor, pwf_fuel_by_tech, pwf_owner, pwf_offtaker = self._get_REopt_pwfs(self.available_techs)
+        levelization_factor_bau, pwf_e_bau, pwf_om_bau, two_party_factor_bau, pwf_fuel_by_tech_bau, pwf_owner_bau, pwf_offtaker_bau = self._get_REopt_pwfs(self.bau_techs)
 
         pwf_prod_incent, max_prod_incent, max_size_for_prod_incent, production_incentive_rate \
             = self._get_REopt_production_incentives(self.available_techs)
@@ -1506,6 +1506,8 @@ class DataManager:
             'pwf_e': pwf_e,
             'pwf_om': pwf_om,
             'pwf_fuel': pwf_fuel_by_tech,
+            'pwf_owner': pwf_owner,
+            'pwf_offtaker': pwf_offtaker,
             'two_party_factor': two_party_factor,
             'pwf_prod_incent': pwf_prod_incent,
             'MaxProdIncent': max_prod_incent,
@@ -1664,6 +1666,8 @@ class DataManager:
             'pwf_e': pwf_e_bau,
             'pwf_om': pwf_om_bau,
             'pwf_fuel': pwf_fuel_by_tech_bau,
+            'pwf_owner': pwf_owner_bau,
+            'pwf_offtaker': pwf_offtaker_bau,
             'two_party_factor': two_party_factor_bau,
             'pwf_prod_incent': pwf_prod_incent_bau,
             'MaxProdIncent': max_prod_incent_bau,
