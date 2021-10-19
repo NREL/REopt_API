@@ -265,6 +265,11 @@ nested_output_definitions = {
                   "description": "Total operations and maintenance cost over analysis period.",
                   "units": "$"
                 },
+                "total_om_costs_bau_us_dollars": {
+                  "type": "float",
+                  "description": "Total operations and maintenance cost over analysis period in the business-as-usual case.",
+                  "units": "$"
+                },                
                 "year_one_om_costs_us_dollars": {
                   "type": "float",
                   "description": "Year one operations and maintenance cost after tax.",
@@ -275,6 +280,11 @@ nested_output_definitions = {
                   "description": "Year one operations and maintenance cost before tax.",
                   "units": "$"
                 },
+                "year_one_om_costs_before_tax_bau_us_dollars": {
+                  "type": "float",
+                  "description": "Year one operations and maintenance cost before tax in the business-as-usual case.",
+                  "units": "$"
+                },                
                 "simple_payback_years": {
                   "type": "float",
                   "description": ("Number of years until the cumulative annual cashflow turns positive. "

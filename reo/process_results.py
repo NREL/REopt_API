@@ -117,6 +117,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "gen_year_one_variable_om_costs",
             "year_one_boiler_fuel_cost",
             "total_boiler_fuel_cost",
+            "total_om_costs_after_tax",
+            "year_one_om_costs_before_tax",
             "julia_input_construction_seconds",
             "julia_reopt_preamble_seconds",
             "julia_reopt_variables_seconds",
@@ -548,6 +550,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         self.results_dict.get("net_capital_costs") * financials.microgrid_upgrade_cost_pct
                     self.nested_outputs["Scenario"]["Site"][name]["total_om_costs_us_dollars"] = self.results_dict.get(
                         "total_om_costs_after_tax")
+                    self.nested_outputs["Scenario"]["Site"][name]["total_om_costs_bau_us_dollars"] = self.results_dict.get(
+                        "total_om_costs_after_tax_bau")                        
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_om_costs_us_dollars"] = self.results_dict.get(
                         "year_one_om_costs_after_tax")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_om_costs_before_tax_us_dollars"] = \
@@ -558,6 +562,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "total_annual_cost_us_dollars"] = self.results_dict.get("total_annual_costs")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "microgrid_lcoe_us_dollars_per_kwh"] = self.results_dict.get("microgrid_lcoe")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_om_costs_before_tax_bau_us_dollars"] = \
+                        self.results_dict.get("year_one_om_costs_before_tax_bau")
                 elif name == "PV":
                     pv_models = list(PVModel.objects.filter(run_uuid=meta['run_uuid']).order_by('pv_number'))
                     template_pv = copy.deepcopy(self.nested_outputs['Scenario']["Site"][name])
