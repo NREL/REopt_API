@@ -498,9 +498,9 @@ class ValidateNestedInput:
 
             if self.off_grid_flag:
                 self.input_dict["Scenario"]["Site"]["LoadProfile"]["outage_start_time_step"] = 1
-                # Currently not modeling tax incentives in offgrid scenarios #TODO: Update this (ADF)
-                self.input_dict["Scenario"]["Site"]["Financial"]["offtaker_tax_pct"] = 0.0
-                self.input_dict["Scenario"]["Site"]["Financial"]["owner_tax_pct"] = 0.0
+                # Previously was not modeling tax incentives in offgrid scenarios 
+                # self.input_dict["Scenario"]["Site"]["Financial"]["offtaker_tax_pct"] = 0.0
+                # self.input_dict["Scenario"]["Site"]["Financial"]["owner_tax_pct"] = 0.0
                 if self.input_dict["Scenario"]["time_steps_per_hour"] == 4:
                     self.input_dict["Scenario"]["Site"]["LoadProfile"]["outage_end_time_step"] = 35040
                 elif self.input_dict["Scenario"]["time_steps_per_hour"] == 2:
@@ -509,7 +509,7 @@ class ValidateNestedInput:
                     self.input_dict["Scenario"]["Site"]["LoadProfile"]["outage_end_time_step"] = 8760
             else:
                 # Sets diesel fuel escalation to the electricity escalation rate
-                # TODO: remove after diesel fuel cost escalation is exposed as an input
+                # TODO: remove after diesel fuel cost escalation is exposed as an input for on-grid
                 self.input_dict["Scenario"]["Site"]["Financial"]["generator_fuel_escalation_pct"] = \
                     self.input_dict["Scenario"]["Site"]["Financial"]["escalation_pct"]
     @property
