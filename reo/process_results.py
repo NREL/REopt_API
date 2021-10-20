@@ -38,7 +38,7 @@ from reo.exceptions import REoptError, UnexpectedError
 from reo.models import ModelManager, PVModel, FinancialModel, WindModel, AbsorptionChillerModel
 from reo.src.profiler import Profiler
 from reo.src.emissions_calculator import EmissionsCalculator
-from reo.utilities import annuity, TONHOUR_TO_KWHT, MMBTU_TO_KWH, GAL_DIESEL_TO_KWH, setup_capital_cost_offgrid
+from reo.utilities import annuity, TONHOUR_TO_KWHT, MMBTU_TO_KWH, GAL_DIESEL_TO_KWH, setup_capital_cost_offgrid, setup_capital_cost_incentive
 from reo.nested_inputs import macrs_five_year, macrs_seven_year
 from reo.src.proforma_metrics import calculate_proforma_metrics
 from ghpghx.models import ModelManager as ghpModelManager
@@ -339,39 +339,47 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 other_annual_costs = (self.nested_outputs["Scenario"]["Site"]["Financial"]["total_annual_cost_us_dollars"] or 0)
                 
                 analysis_period = self.inputs["Financial"]["analysis_years"]
-                discount_rate = self.inputs["Financial"]["owner_discount_pct"]
-                diesel_unit_cost = setup_capital_cost_offgrid(analysis_period, discount_rate,
-                                   self.inputs["Generator"]["installed_cost_us_dollars_per_kw"],
-                                   self.inputs["Generator"]["installed_cost_us_dollars_per_kw"], # Replacement cost for generator assumed to be equal to installed cost
-                                   self.inputs["Generator"]["useful_life_years"])
-                inverter_unit_cost = setup_capital_cost_offgrid(analysis_period, discount_rate,
-                                   self.inputs["Storage"]["installed_cost_us_dollars_per_kw"],
-                                   self.inputs["Storage"]["replace_cost_us_dollars_per_kw"],
-                                   self.inputs["Storage"]["inverter_replacement_year"])
-                battery_unit_cost = setup_capital_cost_offgrid(analysis_period, discount_rate,
-                                   self.inputs["Storage"]["installed_cost_us_dollars_per_kwh"],
-                                   self.inputs["Storage"]["replace_cost_us_dollars_per_kwh"],
-                                   self.inputs["Storage"]["battery_replacement_year"])
-                pv_om = 0.0
-                for i in range(len(self.nested_outputs['Scenario']['Site']['PV'])):
-                    pv_om += (self.nested_outputs['Scenario']['Site']['PV'][i]['total_fixed_om_cost_us_dollars'] or 0.0)
+                discount_rate = self.inputs["Financial"]["owner_discount_pct"] # This is set to offtaker_disc_pct if third_party is false
+                # diesel_unit_cost = setup_capital_cost_offgrid(analysis_period, discount_rate,
+                #                    self.inputs["Generator"]["installed_cost_us_dollars_per_kw"],
+                #                    self.inputs["Generator"]["installed_cost_us_dollars_per_kw"], # Replacement cost for generator assumed to be equal to installed cost
+                #                    self.inputs["Generator"]["useful_life_years"])
+                                   
+                # inverter_unit_cost = setup_capital_cost_offgrid(analysis_period, discount_rate,
+                #                    self.inputs["Storage"]["installed_cost_us_dollars_per_kw"],
+                #                    self.inputs["Storage"]["replace_cost_us_dollars_per_kw"],
+                #                    self.inputs["Storage"]["inverter_replacement_year"])
+                # battery_unit_cost = setup_capital_cost_offgrid(analysis_period, discount_rate,
+                #                    self.inputs["Storage"]["installed_cost_us_dollars_per_kwh"],
+                #                    self.inputs["Storage"]["replace_cost_us_dollars_per_kwh"],
+                #                    self.inputs["Storage"]["battery_replacement_year"])
 
-                diesel_variable_om = (self.nested_outputs['Scenario']['Site']['Generator']['total_variable_om_cost_us_dollars'] or 0)
-                diesel_fixed_om = (self.nested_outputs['Scenario']['Site']['Generator']['total_fixed_om_cost_us_dollars'] or 0)
-                total_om = pv_om + diesel_variable_om + diesel_fixed_om
+                total_capex = self.results_dict.get("net_capital_costs")  # 38418.59
+                diesel_capex = self.results_dict.get("total_generator_capital_costs") # 14806.15 
+                re_capex = total_capex - diesel_capex # may need to adjust if GHP can be used in off-grid # 23612.439999999 
 
-                diesel_capex = max(diesel_unit_cost * (self.nested_outputs["Scenario"]["Site"]["Generator"]["size_kw"]
-                                   - self.inputs["Generator"]["existing_kw"]), 0)
-                re_capex = 0
-                for pv in self.inputs["PV"]:
-                    re_capex += max(pv["installed_cost_us_dollars_per_kw"]
-                                    * (self.nested_outputs["Scenario"]["Site"]["PV"][pv["pv_number"]-1]["size_kw"]
-                                    - pv["existing_kw"]), 0)
-                for tech in ["Storage"]:
-                    re_capex += inverter_unit_cost * (self.nested_outputs["Scenario"]["Site"][tech].get("size_kw") or 0)
+                # pv_om = 0.0
+                # for i in range(len(self.nested_outputs['Scenario']['Site']['PV'])):
+                #     pv_om += (self.nested_outputs['Scenario']['Site']['PV'][i]['total_fixed_om_cost_us_dollars'] or 0.0) # for both existing and new PV
 
-                # storage capacity
-                re_capex += battery_unit_cost * (self.nested_outputs["Scenario"]["Site"]["Storage"].get("size_kwh") or 0)
+                # diesel_variable_om = (self.nested_outputs['Scenario']['Site']['Generator']['total_variable_om_cost_us_dollars'] or 0)
+                # diesel_fixed_om = (self.nested_outputs['Scenario']['Site']['Generator']['total_fixed_om_cost_us_dollars'] or 0)
+                # total_om = pv_om + diesel_variable_om + diesel_fixed_om 
+
+                total_om = self.results_dict.get( "total_om_costs_after_tax" )  
+
+                # diesel_capex = max(diesel_unit_cost * (self.nested_outputs["Scenario"]["Site"]["Generator"]["size_kw"]
+                #                    - self.inputs["Generator"]["existing_kw"]), 0)
+                # re_capex = 0
+                # for pv in self.inputs["PV"]:
+                #     re_capex += max(pv["installed_cost_us_dollars_per_kw"]
+                #                     * (self.nested_outputs["Scenario"]["Site"]["PV"][pv["pv_number"]-1]["size_kw"]
+                #                     - pv["existing_kw"]), 0)
+                # for tech in ["Storage"]:
+                #     re_capex += inverter_unit_cost * (self.nested_outputs["Scenario"]["Site"][tech].get("size_kw") or 0)
+
+                # # storage capacity
+                # re_capex += battery_unit_cost * (self.nested_outputs["Scenario"]["Site"]["Storage"].get("size_kwh") or 0)
             
                 lcoe_component_fuel = round((fuel/lcc) * lcoe, 4)
                 lcoe_component_re_capex = round((re_capex/lcc) * lcoe, 4)
@@ -606,7 +614,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         pv["station_latitude"] = pv_model.station_latitude
                         pv["station_longitude"] = pv_model.station_longitude
                         pv["station_distance_km"] = pv_model.station_distance_km
-                        pv['lcoe_us_dollars_per_kwh'] = self.calculate_lcoe(pv, pv_model.__dict__, financials) # I don't think this gets reported
+                        pv['lcoe_us_dollars_per_kwh'] = self.calculate_lcoe(pv, pv_model.__dict__, financials) 
                         self.nested_outputs['Scenario']["Site"][name].append(pv)
                 elif name == "Wind":
                     self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("wind_kw", 0)

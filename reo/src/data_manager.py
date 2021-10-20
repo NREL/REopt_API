@@ -628,22 +628,38 @@ class DataManager:
                         raise Exception('Invalid cost curve for {}. Value at index {} ({}) cannot be less than or equal to 0'.format(tech, s, cost_curve_bp_x[s + 1]))
 
                     sf = self.site.financial
-                    if self.off_grid_flag:
-                        replacement_cost = eval('self.' + tech + '.installed_cost_us_dollars_per_kw')
+                    if self.off_grid_flag: 
+                        replacement_cost = 0.0
                         useful_life = sf.analysis_years
 
-                        if hasattr(eval('self.' + tech), 'replace_cost_us_dollars_per_kw'):
+                        if hasattr(eval('self.' + tech), 'replace_cost_us_dollars_per_kw'): # does not currently apply for PV or Generator
                             replacement_cost = eval('self.' + tech + '.replace_cost_us_dollars_per_kw')
-                        if hasattr(eval('self.' + tech), 'useful_life_years'):
+                        if hasattr(eval('self.' + tech), 'useful_life_years'): # applies for generator
                             useful_life = eval('self.' + tech + '.useful_life_years')
+                            replacement_cost = eval('self.' + tech + '.installed_cost_us_dollars_per_kw')
 
-                        updated_slope = setup_capital_cost_offgrid(
-                            sf.analysis_years,
-                            sf.owner_discount_pct,
-                            eval('self.' + tech + '.installed_cost_us_dollars_per_kw'),
-                            replacement_cost,
-                            useful_life
+                        # Not currently considering multiple replacements or salvage value
+                        # updated_slope = setup_capital_cost_offgrid(
+                        #     sf.analysis_years,
+                        #     sf.owner_discount_pct,
+                        #     eval('self.' + tech + '.installed_cost_us_dollars_per_kw'),
+                        #     replacement_cost,
+                        #     useful_life
+                        # )
+                        
+                        updated_slope = setup_capital_cost_incentive(
+                            itc_basis=itc_unit_basis,  # input tech cost with incentives, but no ITC
+                            replacement_cost=replacement_cost,
+                            replacement_year=useful_life,
+                            discount_rate=sf.owner_discount_pct,
+                            tax_rate=sf.owner_tax_pct,
+                            itc=itc,
+                            macrs_schedule=eval('self.' + tech + '.incentives.macrs_schedule'),
+                            macrs_bonus_pct=eval('self.' + tech + '.incentives.macrs_bonus_pct'),
+                            macrs_itc_reduction=eval('self.' + tech + '.incentives.macrs_itc_reduction')
                         )
+                        # The way REopt incentives currently work, the federal rebate is the only incentive that doesn't reduce ITC basis
+                        updated_slope -= rebate_federal
                     else:
                         updated_slope = setup_capital_cost_incentive(
                             itc_basis=itc_unit_basis,  # input tech cost with incentives, but no ITC
@@ -1031,21 +1047,47 @@ class DataManager:
         # Obtain storage costs and params
         sf = self.site.financial
 
-        if self.off_grid_flag:
-            StorageCostPerKW = setup_capital_cost_offgrid(
-                sf.analysis_years,
-                sf.owner_discount_pct,
-                self.storage.installed_cost_us_dollars_per_kw,
+        if self.off_grid_flag: 
+            # Using on-grid capital cost slope for now
+            # StorageCostPerKW = setup_capital_cost_offgrid(
+            #     sf.analysis_years,
+            #     sf.owner_discount_pct,
+            #     self.storage.installed_cost_us_dollars_per_kw,
+            #     self.storage.replace_cost_us_dollars_per_kw,
+            #     self.storage.inverter_replacement_year
+            # )
+            # StorageCostPerKWH = setup_capital_cost_offgrid(
+            #     sf.analysis_years,
+            #     sf.owner_discount_pct,
+            #     self.storage.installed_cost_us_dollars_per_kwh,  # there are no cash incentives for kwh
+            #     self.storage.replace_cost_us_dollars_per_kwh,
+            #     self.storage.battery_replacement_year
+            # )
+            StorageCostPerKW = setup_capital_cost_incentive(
+                self.storage.installed_cost_us_dollars_per_kw,  # use full cost as basis
                 self.storage.replace_cost_us_dollars_per_kw,
-                self.storage.inverter_replacement_year
-            )
-            StorageCostPerKWH = setup_capital_cost_offgrid(
-                sf.analysis_years,
+                self.storage.inverter_replacement_year,
                 sf.owner_discount_pct,
+                sf.owner_tax_pct,
+                self.storage.incentives.itc_pct,
+                self.storage.incentives.macrs_schedule,
+                self.storage.incentives.macrs_bonus_pct,
+                self.storage.incentives.macrs_itc_reduction
+            )
+            StorageCostPerKW -= self.storage.incentives.rebate
+            StorageCostPerKWH = setup_capital_cost_incentive(
                 self.storage.installed_cost_us_dollars_per_kwh,  # there are no cash incentives for kwh
                 self.storage.replace_cost_us_dollars_per_kwh,
-                self.storage.battery_replacement_year
+                self.storage.battery_replacement_year,
+                sf.owner_discount_pct,
+                sf.owner_tax_pct,
+                self.storage.incentives.itc_pct,
+                self.storage.incentives.macrs_schedule,
+                self.storage.incentives.macrs_bonus_pct,
+                self.storage.incentives.macrs_itc_reduction
             )
+            StorageCostPerKWH -= self.storage.incentives.rebate_kwh
+
         else:
             StorageCostPerKW = setup_capital_cost_incentive(
                 self.storage.installed_cost_us_dollars_per_kw,  # use full cost as basis
