@@ -117,42 +117,42 @@ off_grid_defaults = {
           "type": "float",
           "min": -1.0,
           "max": 1.0,
-          "default": 0.0,
+          "default": 0.025,
           "description": "Annual nominal O&M cost escalation rate"
         },
         "generator_fuel_escalation_pct": {
           "type": "float",
           "min": -1.0,
           "max": 1.0,
-          "default": 0.03,
+          "default": 0.027,
           "description": "Annual nominal diesel generator fuel cost escalation rate"
         },
         "offtaker_tax_pct": {
           "type": "float",
           "min": 0.0,
           "max": 0.999,
-          "default": 0,
+          "default": 0.26,
           "description": "Host tax rate"
         },
         "offtaker_discount_pct": {
           "type": "float",
           "min": 0.0,
           "max": 1.0,
-          "default": 0.15,
+          "default": 0.083,
           "description": "Nominal energy offtaker discount rate. In single ownership model the offtaker is also the generation owner."
         },
         "owner_tax_pct": {
           "type": "float",
           "min": 0.0,
           "max": 0.999,
-          "default": 0,
+          "default": 0.26,
           "description": "Generation owner tax rate. Used for two party financing model. In two party ownership model the offtaker does not own the generator(s)."
         },
         "owner_discount_pct": {
           "type": "float",
           "min": 0.0,
           "max": 1.0,
-          "default": 0.15,
+          "default": 0.083,
           "description": "Nominal generation owner discount rate. Used for two party financing model. In two party ownership model the offtaker does not own the generator(s)."
         },
         "microgrid_upgrade_cost_pct": {
@@ -182,7 +182,7 @@ off_grid_defaults = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e5,
-          "default": 1044.0,
+          "default": 1600.0,
           "description": "Installed PV cost in $/kW"
         },
         "om_cost_us_dollars_per_kw": {
@@ -199,7 +199,7 @@ off_grid_defaults = {
           "description": "Battery state of charge at first hour of optimization"
         },
         "installed_cost_us_dollars_per_kw": {
-          "type": "float", "min": 0.0, "max": 1.0e4, "default": 505.0,
+          "type": "float", "min": 0.0, "max": 1.0e4, "default": 840.0,
           "description": "Total upfront battery power capacity costs (e.g. inverter and balance of power systems)"
         },
         "installed_cost_us_dollars_per_kwh": {
@@ -207,19 +207,19 @@ off_grid_defaults = {
           "description": "Total upfront battery costs"
         },
         "replace_cost_us_dollars_per_kw": {
-          "type": "float", "min": 0.0, "max": 1.0e4, "default": 505.0,
+          "type": "float", "min": 0.0, "max": 1.0e4, "default": 410.0,
           "description": "Battery power capacity replacement cost at time of replacement year"
         },
         "replace_cost_us_dollars_per_kwh": {
-          "type": "float", "min": 0.0, "max": 1.0e4, "default": 400.0,
+          "type": "float", "min": 0.0, "max": 1.0e4, "default": 200.0,
           "description": "Battery energy capacity replacement cost at time of replacement year"
         },
         "inverter_replacement_year": {
-          "type": "float", "min": 0.0, "max": max_years, "default": 15.0,
+          "type": "float", "min": 0.0, "max": max_years, "default": 10.0,
           "description": "Number of years from start of analysis period to replace inverter"
         },
         "battery_replacement_year": {
-          "type": "float", "min": 0.0, "max": max_years, "default": 7.0,
+          "type": "float", "min": 0.0, "max": max_years, "default": 10.0,
           "description": "Number of years from start of analysis period to replace battery"
         }
       },
@@ -228,21 +228,21 @@ off_grid_defaults = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e5,
-          "default": 282.0,
+          "default": 500.0,
           "description": "Installed diesel generator cost in $/kW"
         },
         "om_cost_us_dollars_per_kw": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e3,
-          "default": 25.0,
+          "default": 20.0,
           "description": "Annual diesel generator fixed operations and maintenance costs in $/kW"
         },
         "om_cost_us_dollars_per_kwh": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e3,
-          "default": 0.023,
+          "default": 0.01,
           "description": "diesel generator per unit production (variable) operations and maintenance costs in $/kWh"
         },
         "diesel_fuel_cost_us_dollars_per_gallon": {
@@ -287,7 +287,7 @@ off_grid_defaults = {
         },
         "useful_life_years": {
           "type": "float", "min": 0.0, "max": max_years, "default": 10,
-          "description": "Number of years asset can be used for before replacement"
+          "description": "Number of years asset can be used for before replacement. A single replacement is considered for off-grid generators."
         }
       }
     }
@@ -408,7 +408,7 @@ nested_input_definitions = {
           "type": "float",
           "min": -1.0,
           "max": 1.0,
-          "default": 0.03,
+          "default": 0.027,
           "description": "Annual nominal diesel generator fuel cost escalation rate"
         },
         "boiler_fuel_escalation_pct": {
@@ -491,14 +491,14 @@ nested_input_definitions = {
           "min": 0.0,
           "max": max_big_number,
           "default": 0,
-          "description": "Other capital costs."
+          "description": "Other capital costs associated with the distributed energy system project. These can include land purchase costs, distribution network costs, powerhouse or battery container structure costs, and pre-operating expenses. These costs will be incorporated in the life cycle cost and levelized cost of electricity calculations."
         },
         "other_annual_costs_us_dollars_per_year": {
           "type": "float",
           "min": 0.0,
           "max": max_big_number,
           "default": 0,
-          "description": "Other annual costs."
+          "description": "Other annual costs associated with the distributed energy system project. These can include labor costs, land lease costs, software costs, and any other ongoing expenses not included in other cost inputs. These costs will be incorporated in the life cycle cost and levelized cost of electricity calculations."
         }
       },
 
@@ -602,7 +602,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0,
-          "default": 1.0,
+          "default": 0.999,
           "description": "Fraction of the load that must be met on an annual energy basis. Value must be between zero and one, inclusive."
         },
         "sr_required_pct": {
