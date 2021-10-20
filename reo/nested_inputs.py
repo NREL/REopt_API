@@ -1662,7 +1662,7 @@ nested_input_definitions = {
         },
         "useful_life_years": {
           "type": "float", "min": 0.0, "max": max_years, "default": analysis_years,
-          "description": "Number of years asset can be used for before replacement"
+          "description": "Number of years asset can be used for before replacement. Generator replacements are only considered in off-grid analyses."
         }
       },
       "CHP": {
