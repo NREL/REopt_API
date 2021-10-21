@@ -1906,19 +1906,19 @@ nested_input_definitions = {
         },
         "emissions_factor_lb_CO2_per_mmbtu": {
           "type": "float",
-          "description": "Pounds of carbon dioxide emitted per gallon of fuel burned"
+          "description": "Pounds of carbon dioxide emitted per MMBtu of fuel burned"
         },
         "emissions_factor_lb_NOx_per_mmbtu": {
           "type": "float",
-          "description": "Pounds of NOx emitted per gallon of fuel burned"
+          "description": "Pounds of NOx emitted per MMBtu of fuel burned"
         },
         "emissions_factor_lb_SO2_per_mmbtu": {
           "type": "float",
-          "description": "Pounds of SO2 emitted per gallon of fuel burned"
+          "description": "Pounds of SO2 emitted per MMBtu of fuel burned"
         },
         "emissions_factor_lb_PM_per_mmbtu": {
           "type": "float",
-          "description": "Pounds of PM2.5 emitted per gallon of fuel burned"
+          "description": "Pounds of PM2.5 emitted per MMBtu of fuel burned"
         }
       },
 
