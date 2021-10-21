@@ -355,7 +355,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 #                    self.inputs["Storage"]["battery_replacement_year"])
 
                 total_capex = self.results_dict.get("net_capital_costs")  # 38418.59
-                diesel_capex = self.results_dict.get("total_generator_capital_costs") # 14806.15 
+                diesel_capex = (self.results_dict.get("total_generator_capital_costs") or 0) # 14806.15 
                 re_capex = total_capex - diesel_capex # may need to adjust if GHP can be used in off-grid # 23612.439999999 
 
                 # pv_om = 0.0

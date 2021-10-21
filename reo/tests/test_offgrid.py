@@ -58,9 +58,9 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
                     "om_cost_escalation_pct": 0.0,
                     "escalation_pct": 0.023,
                     "generator_fuel_escalation_pct": 0.03,
-                    "offtaker_tax_pct": 0.0,
-                    "offtaker_discount_pct": 0.15,
-                    "owner_discount_pct":0.083,
+                    #"offtaker_tax_pct": 0.0,
+                    #"offtaker_discount_pct": 0.15,
+                    #"owner_discount_pct":0.083,
                     "analysis_years": 25,
                     # "microgrid_upgrade_cost_pct": 0.0,
                     "other_capital_costs_us_dollars": 50000,
@@ -75,13 +75,14 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
                     "outage_end_time_step": 8760,
                     ## "critical_load_pct": 0.05, # This returns an error if not set to 1.0
                     # "outage_is_major_event": False,
-                    "min_load_met_pct": 0.98, # 1.0, # 0.98
+                    "min_load_met_pct": 0.9999, # 1.0, # 0.98
                     "sr_required_pct": 0.35
                   },
                   "PV": {
-                    "existing_kw": 0.0,
-                    "min_kw": 0.0,
-                    "max_kw": 100.0,
+                    "existing_kw": 20.0,
+                    "min_kw": 1000.0,
+                    "max_kw": 1000.0,
+                    "sr_required_pct": 0.0,
                     # "installed_cost_us_dollars_per_kw": 1600.0,
                     # "om_cost_us_dollars_per_kw": 16.0,
                     # "macrs_option_years": 0,
@@ -139,8 +140,8 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
                   "Generator": {
                     "useful_life_years": 5,
                     "existing_kw": 0.0,
-                    "min_kw": 10.0,
-                    "max_kw": 10.0,
+                    "min_kw": 0.0, # 10.0,
+                    "max_kw": 0.0, # 100.0,
                     "installed_cost_us_dollars_per_kw": 500.0,
                     "om_cost_us_dollars_per_kw": 10.0,
                     "om_cost_us_dollars_per_kwh": 0.0,
@@ -203,13 +204,30 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
         inputs = response['inputs']['Scenario']['Site']
 
         try:
-            print('LCOE [$/kWh', outputs['Financial']['microgrid_lcoe_us_dollars_per_kwh'])
-            print('PV size [kW]: ', outputs['PV']['size_kw'])
+            print('LCOE [$/kWh]: ', outputs['Financial']['microgrid_lcoe_us_dollars_per_kwh'])
+            print('\nLCOE Breakdown:')
+            print('Fuel:', outputs["Financial"]["lcoe_component_fuel_us_dollars_per_kwh"])
+            print('RE Capex:', outputs["Financial"]["lcoe_component_re_capex_us_dollars_per_kwh"])
+            print('Generator Capex:', outputs["Financial"]["lcoe_component_diesel_capex_us_dollars_per_kwh"])
+            print('O&M:', outputs["Financial"]["lcoe_component_om_us_dollars_per_kwh"])
+            print('Other Capex:', outputs["Financial"]["lcoe_component_other_capex_us_dollars_per_kwh"])
+            print('Other Annual Costs:', outputs["Financial"]["lcoe_component_other_annual_costs_us_dollars_per_kwh"])
+
+            print('\nPV size [kW]: ', outputs['PV']['size_kw'])
             print('Battery size [kWh]: ', outputs['Storage']['size_kwh'])
             print('Battery size [kW]: ', outputs['Storage']['size_kw'])
             print('Generator size [kW]:', outputs['Generator']['size_kw'])
             print('Load SR required (summed over year):', sum(outputs['LoadProfile']['total_sr_required']))
             print('Load SR provided (summed over year):', sum(outputs['LoadProfile']['total_sr_provided']))
+
+            # Load Met constraint: 
+            print('Input Min Load Met [%]: ', inputs['LoadProfile']["min_load_met_pct"])
+            print('Load met [kWh]: ', sum(outputs['LoadProfile']["load_met_series_kw"]))
+            print('Load [kWh]: ', sum(outputs['LoadProfile']["year_one_electric_load_series_kw"]) )
+            print('Output Load met [%]: ', sum(outputs['LoadProfile']["load_met_series_kw"]) / sum(outputs['LoadProfile']["year_one_electric_load_series_kw"]) )
+
+
+            # print('year_one_to_load_series_kw', response['outputs']['Scenario']['Site']['PV']['year_one_to_load_series_kw'])
 
             # Check outage start and end time step, critical load %, outage is major event
             self.assertEqual(inputs["LoadProfile"]["outage_start_time_step"], 1,
@@ -217,7 +235,7 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
             self.assertEqual(inputs["LoadProfile"]["outage_end_time_step"], 8760,
                              "outage_end_time_step does not equal 8760. Equals {}".format(inputs["LoadProfile"]["outage_end_time_step"]))
             self.assertEqual(inputs["LoadProfile"]["critical_load_pct"], 1.0,
-                             "Critical load % does not equal 1. Equals {}".format(inputs["LoadProfile"]["critical_load_pct"]))    
+                             "Critical load pct does not equal 1. Equals {}".format(inputs["LoadProfile"]["critical_load_pct"]))    
             self.assertEqual(inputs["Generator"]["generator_sells_energy_back_to_grid"], False,
                              "generator_sells_energy_back_to_grid is not False. Equals {}".format(inputs["Generator"]["generator_sells_energy_back_to_grid"])) 
             self.assertEqual(inputs["LoadProfile"]["outage_is_major_event"], False,
@@ -231,7 +249,7 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
             self.assertEqual(sum(outputs["Storage"]["year_one_to_grid_series_kw"]), 0.0,
                              "Storage sum(year_one_to_grid_series_kw) does not equal 0. Equals {}".format(sum(outputs["Storage"]["year_one_to_grid_series_kw"])))
                       
-
+            # TODO: check that lcoe components add up to 100%  
 
             ## path = 'reo/tests/data/outputs/'
             ## json.dump(response, open(path+'/'+"offgrid_results.json", "w"))
