@@ -193,6 +193,7 @@ def setup_capital_cost_offgrid(analysis_period, discount_rate, init_cost, replac
 
     # Find salvage value if any
     salvage_value = 0 
+    #  Future TODO: add flag to turn off salvage value here 
     if analysis_period % useful_life != 0:
         salvage_years = useful_life - (analysis_period - max(replacement_years))
         salvage_value = (salvage_years/useful_life) * replacement_cost * ((1 + discount_rate)**(-1*analysis_period))

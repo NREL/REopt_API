@@ -120,11 +120,6 @@ function add_cost_expressions(m, p)
 			sum( p.CapCostSlope[t,s] * m[:dvSystemSizeSegment][t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) +
 			sum( p.CapCostYInt[t,s] * m[:binSegmentSelect][t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] )
 		))
-		# This is just for the off-grid microgrid LCOE 
-		m[:TotalGeneratorCapCosts] = @expression(m, p.two_party_factor * (
-			sum( p.CapCostSlope[t,s] * m[:dvSystemSizeSegment][t,"CapCost",s] for t in m[:GeneratorTechs], s in 1:p.SegByTechSubdivision["CapCost",t] ) +
-			sum( p.CapCostYInt[t,s] * m[:binSegmentSelect][t,"CapCost",s] for t in m[:GeneratorTechs], s in 1:p.SegByTechSubdivision["CapCost",t] )
-		))
 	end
 	m[:TotalStorageCapCosts] = @expression(m, p.two_party_factor *
 		sum( p.StorageCostPerKW[b]*m[:dvStorageCapPower][b] + p.StorageCostPerKWH[b]*m[:dvStorageCapEnergy][b] for b in p.Storage )
@@ -1668,6 +1663,13 @@ function add_generator_results(m, p, r::Dict)
 			for t in m[:GeneratorTechs], ts in p.TimeStep)
 	)
 	r["average_yearly_gen_energy_produced"] = round(value(m[:AverageGenProd]), digits=0)
+	
+	# This is for the off-grid microgrid LCOE 
+	m[:TotalGeneratorCapCosts] = @expression(m, p.two_party_factor * (
+		sum( p.CapCostSlope[t,s] * m[:dvSystemSizeSegment][t,"CapCost",s] for t in m[:GeneratorTechs], s in 1:p.SegByTechSubdivision["CapCost",t] ) +
+		sum( p.CapCostYInt[t,s] * m[:binSegmentSelect][t,"CapCost",s] for t in m[:GeneratorTechs], s in 1:p.SegByTechSubdivision["CapCost",t] )
+	))
+	r["total_generator_capital_costs"] = round(value(m[:TotalGeneratorCapCosts]), digits=2)
 
 	#Offgrid
 	if p.OffGridFlag
@@ -2051,7 +2053,6 @@ function add_util_results(m, p, r::Dict)
 						"average_annual_energy_curtailed_wind" => round(value(m[:CurtailedElecWIND]), digits=0),
                         "average_annual_energy_exported_gen" => round(value(m[:ExportedElecGEN]), digits=0),
 						"net_capital_costs" => round(value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts] + m[:GHPCapCosts]), digits=2),
-						"total_generator_capital_costs" => round(value(m[:TotalGeneratorCapCosts]), digits=2),   
 						"total_om_costs_after_tax" => round(total_om_costs_after_tax, digits=0),
 						"year_one_om_costs_after_tax" => round(year_one_om_costs_after_tax, digits=0),
 						"year_one_om_costs_before_tax" => round(year_one_om_costs_after_tax / m[:r_tax_fraction_owner], digits=0)
