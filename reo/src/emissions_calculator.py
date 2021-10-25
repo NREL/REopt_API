@@ -241,6 +241,5 @@ class EmissionsCalculator:
                     self._emmissions_profile = list(np.concatenate([[i] * self.time_steps_per_hour for i in self._emmissions_profile]))
             else:
                 raise AttributeError("Emissions error. Cannnot find hourly emmissions for region {} ({},{}) \
-                    ".format(self.region, self.latitude,self.longitude))
-            ## TODO: Levelize profile using emissions_factor_series_CO2_pct_decrease 
+                    ".format(self.region, self.latitude,self.longitude)) 
         return self._emmissions_profile
