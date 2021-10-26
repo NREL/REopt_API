@@ -737,7 +737,7 @@ class ElectricLoadInputs(BaseModel, models.Model):
                 error_messages["blended_doe_reference_percents"] = "Sum must = 1.0."
 
         if self.doe_reference_name != "" or \
-                len(self.blended_doe_reference_names) > 1:
+                len(self.blended_doe_reference_names) > 0:
             self.year = 2017  # the validator provides an "info" message regarding this
 
         if error_messages:
@@ -970,7 +970,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
                     error_messages["urdb_response"] = rate_checker.errors
             except:
                 error_messages["urdb_response"] = "Error parsing urdb_response. Please check the keys and values."
-
+        
         if error_messages:
             raise ValidationError(error_messages)
 
