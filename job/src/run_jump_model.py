@@ -34,7 +34,7 @@ import time
 import requests
 from celery import shared_task, Task
 from reo.exceptions import REoptError, OptimizationTimeout, UnexpectedError, NotOptimal, REoptFailedToStartError
-from job.models import Scenario, Message
+from job.models import APIMeta, Message
 from reo.src.profiler import Profiler
 from job.src.process_results import process_results
 from celery.utils.log import get_task_logger
@@ -51,7 +51,7 @@ class RunJumpModelTask(Task):
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         """
         log a bunch of stuff for debugging
-        save message: error and outputs: Scenario: status
+        save message: error and outputs: APIMeta: status
         :param exc: The exception raised by the task.
         :param task_id: Unique id of the failed task. (not the run_uuid)
         :param args: Original arguments for the task that failed.
@@ -62,10 +62,10 @@ class RunJumpModelTask(Task):
         if isinstance(exc, REoptError):
             exc.save_to_db()
             msg = exc.message
-            s = Scenario.objects.get(run_uuid=exc.run_uuid)
-            s.status = "An error occurred. See messages for more."
-            s.save(update_fields=["status"])
-            Message.create(scenario=s, message_type="error", message=msg).save()
+            meta = APIMeta.objects.get(run_uuid=exc.run_uuid)
+            meta.status = "An error occurred. See messages for more."
+            meta.save(update_fields=["status"])
+            Message.create(meta=meta, message_type="error", message=msg).save()
 
         # TODO is it possible for non-REoptErrors to get here? if so what do we do?
 
@@ -75,12 +75,12 @@ class RunJumpModelTask(Task):
 
 
 @shared_task(base=RunJumpModelTask)
-def run_jump_model(data, bau=False):
+def run_jump_model(data):
     profiler = Profiler()
     time_dict = dict()
-    name = 'reopt' if not bau else 'reopt_bau'
-    run_uuid = data['Scenario']['run_uuid']
-    user_uuid = data['Scenario'].get('user_uuid')
+    name = 'run_jump_model'
+    run_uuid = data['APIMeta']['run_uuid']
+    user_uuid = data['APIMeta'].get('user_uuid')
 
     logger.info("Running JuMP model ...")
     try:
@@ -101,7 +101,7 @@ def run_jump_model(data, bau=False):
             raise REoptFailedToStartError(task=name, message="Julia server is down.", run_uuid=run_uuid, user_uuid=user_uuid)
 
         if "DimensionMismatch" in e.args[0]:  # JuMP may mishandle a timeout when no feasible solution is returned
-            msg = "Optimization exceeded timeout: {} seconds.".format(data["inputs"]["Scenario"]["timeout_seconds"])
+            msg = "Optimization exceeded timeout: {} seconds.".format(data["Settings"]["timeout_seconds"])
             logger.info(msg)
             raise OptimizationTimeout(task=name, message=msg, run_uuid=run_uuid, user_uuid=user_uuid)
 
@@ -114,7 +114,7 @@ def run_jump_model(data, bau=False):
         logger.info("REopt run successful. Status {}".format(status))
 
         if status.strip().lower() == 'timed-out':
-            msg = "Optimization exceeded timeout: {} seconds.".format(data["inputs"]["Scenario"]["timeout_seconds"])
+            msg = "Optimization exceeded timeout: {} seconds.".format(data["Settings"]["timeout_seconds"])
             logger.info(msg)
             raise OptimizationTimeout(task=name, message=msg, run_uuid=run_uuid, user_uuid=user_uuid)
         elif status.strip().lower() != 'optimal':

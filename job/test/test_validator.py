@@ -55,7 +55,7 @@ class InputValidatorTests(TestCase):
 
         for length in bad_lengths + good_lengths:
             post = copy.deepcopy(self.post)
-            post["Scenario"]["run_uuid"] = uuid.uuid4()
+            post["APIMeta"]["run_uuid"] = uuid.uuid4()
             post['ElectricLoad']['loads_kw'] = list(range(length))
             post['ElectricLoad']['critical_loads_kw'] = list(range(length))
             validator = InputValidator(post)
@@ -79,7 +79,7 @@ class InputValidatorTests(TestCase):
         # check upsampling
         for time_steps_per_hour in [2, 4]:
             post = copy.deepcopy(self.post)
-            post["Scenario"]["run_uuid"] = uuid.uuid4()
+            post["APIMeta"]["run_uuid"] = uuid.uuid4()
             post['ElectricLoad']['loads_kw'] = list(range(8760))
             post['ElectricLoad']['critical_loads_kw'] = list(range(8760))
             post['Settings']['time_steps_per_hour'] = time_steps_per_hour
@@ -106,7 +106,7 @@ class InputValidatorTests(TestCase):
 
         post["ElectricLoad"]["blended_doe_reference_names"] = ["MediumOffice", "LargeOffice"]
         post["ElectricLoad"]["blended_doe_reference_percents"] = [0.5]
-        post["Scenario"]["run_uuid"] = uuid.uuid4()
+        post["APIMeta"]["run_uuid"] = uuid.uuid4()
         validator = InputValidator(post)
         validator.clean_fields()
         validator.clean()
