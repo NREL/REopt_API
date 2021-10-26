@@ -33,9 +33,9 @@ import sys
 import traceback as tb
 from django.http import JsonResponse
 from reo.exceptions import UnexpectedError
-from job.models import Scenario, Settings, PVInputs, StorageInputs, WindInputs, GeneratorInputs, ElectricLoadInputs,\
+from job.models import Settings, PVInputs, StorageInputs, WindInputs, GeneratorInputs, ElectricLoadInputs,\
     ElectricTariffInputs, ElectricUtilityInputs, PVOutputs, StorageOutputs, WindOutputs, GeneratorOutputs, \
-    ElectricTariffOutputs, ElectricUtilityOutputs, ElectricLoadOutputs
+    ElectricTariffOutputs, ElectricUtilityOutputs, ElectricLoadOutputs, APIMeta, UserProvidedMeta
 
 
 def make_error_resp(msg):
@@ -51,7 +51,7 @@ def help(request):
     """
     try:
         d = dict()
-        d["Scenario"] = Scenario.info_dict(Scenario)
+        d["Meta"] = UserProvidedMeta.info_dict(UserProvidedMeta)
         d["Settings"] = Settings.info_dict(Settings)
         d["ElectricLoad"] = ElectricLoadInputs.info_dict(ElectricLoadInputs)
         d["ElectricTariff"] = ElectricTariffInputs.info_dict(ElectricTariffInputs)
@@ -117,8 +117,8 @@ def results(request, run_uuid):
 
     try:
         # get all required inputs/outputs
-        s = Scenario.objects.select_related(
-            "Settings",
+        meta = APIMeta.objects.select_related(
+                "Settings",
             'FinancialInputs', 'FinancialOutputs',
             'SiteInputs',
             'ElectricLoadInputs',
@@ -142,57 +142,58 @@ def results(request, run_uuid):
             resp = make_error_resp(err.message)
             return JsonResponse(resp, status=500)
 
-    r = s.dict
+    r = meta.dict
     r["inputs"] = dict()
-    r["inputs"]["Scenario"] = s.dict
-    r["inputs"]["Financial"] = s.FinancialInputs.dict
-    r["inputs"]["ElectricLoad"] = s.ElectricLoadInputs.dict
-    r["inputs"]["ElectricTariff"] = s.ElectricTariffInputs.dict
-    r["inputs"]["Site"] = s.SiteInputs.dict
-    r["inputs"]["Settings"] = s.Settings.dict
+    r["inputs"]["Financial"] = meta.FinancialInputs.dict
+    r["inputs"]["ElectricLoad"] = meta.ElectricLoadInputs.dict
+    r["inputs"]["ElectricTariff"] = meta.ElectricTariffInputs.dict
+    r["inputs"]["Site"] = meta.SiteInputs.dict
+    r["inputs"]["Settings"] = meta.Settings.dict
 
     # We have to try for the following objects because they may or may not be defined
     try:
-        pvs = s.PVInputs.all()
+        pvs = meta.PVInputs.all()
         if len(pvs) == 1:
             r["inputs"]["PV"] = pvs[0].dict
         elif len(pvs) > 1:
             r["inputs"]["PV"] = []
             for pv in pvs:
                 r["inputs"]["PV"].append(pv.dict)
-
     except: pass
 
-    try: r["inputs"]["ElectricUtility"] = s.ElectricUtilityInputs.dict
+    try: r["inputs"]["Meta"] = meta.UserProvidedMeta.dict
     except: pass
 
-    try: r["inputs"]["Storage"] = s.StorageInputs.dict
+    try: r["inputs"]["ElectricUtility"] = meta.ElectricUtilityInputs.dict
     except: pass
 
-    try: r["inputs"]["Generator"] = s.GeneratorInputs.dict
+    try: r["inputs"]["Storage"] = meta.StorageInputs.dict
     except: pass
 
-    try: r["inputs"]["Wind"] = s.WindInputs.dict
+    try: r["inputs"]["Generator"] = meta.GeneratorInputs.dict
+    except: pass
+
+    try: r["inputs"]["Wind"] = meta.WindInputs.dict
     except: pass
 
     try:
         r["outputs"] = dict()
         r["messages"] = dict()
         try:
-            msgs = s.Message.all()
+            msgs = meta.Message.all()
             for msg in msgs:
                 r["messages"][msg.message_type] = msg.message
         except: pass
 
         try:
-            r["outputs"]["Financial"] = s.FinancialOutputs.dict
-            r["outputs"]["ElectricTariff"] = s.ElectricTariffOutputs.dict
-            r["outputs"]["ElectricUtility"] = s.ElectricUtilityOutputs.dict
-            r["outputs"]["ElectricLoad"] = s.ElectricLoadOutputs.dict
+            r["outputs"]["Financial"] = meta.FinancialOutputs.dict
+            r["outputs"]["ElectricTariff"] = meta.ElectricTariffOutputs.dict
+            r["outputs"]["ElectricUtility"] = meta.ElectricUtilityOutputs.dict
+            r["outputs"]["ElectricLoad"] = meta.ElectricLoadOutputs.dict
         except: pass
 
         try:
-            pvs = s.PVOutputs.all()
+            pvs = meta.PVOutputs.all()
             if len(pvs) == 1:
                 r["outputs"]["PV"] = pvs[0].dict
             elif len(pvs) > 1:
@@ -200,19 +201,19 @@ def results(request, run_uuid):
                 for pv in pvs:
                     r["outputs"]["PV"].append(pv.dict)
         except: pass
-        try: r["outputs"]["Storage"] = s.StorageOutputs.dict
+        try: r["outputs"]["Storage"] = meta.StorageOutputs.dict
         except: pass
-        try: r["outputs"]["Generator"] = s.GeneratorOutputs.dict
+        try: r["outputs"]["Generator"] = meta.GeneratorOutputs.dict
         except: pass
-        try: r["outputs"]["Wind"] = s.WindOutputs.dict
+        try: r["outputs"]["Wind"] = meta.WindOutputs.dict
         except: pass
 
         for d in r["outputs"].values():
             if isinstance(d, dict):
-                d.pop("scenario_id", None)
+                d.pop("meta_id", None)
             elif isinstance(d, list):
                 for subd in d:
-                    subd.pop("scenario_id", None)
+                    subd.pop("meta_id", None)
         # TODO fill out rest of out/inputs as they are added to REoptLite.jl
     except Exception as e:
         if 'RelatedObjectDoesNotExist' in str(type(e)):

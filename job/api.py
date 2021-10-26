@@ -42,7 +42,7 @@ from job.validators import InputValidator
 # from reo.src.profiler import Profiler  # TODO use Profiler?
 from job.src.run_jump_model import run_jump_model
 from reo.exceptions import UnexpectedError, REoptError
-from job.models import Scenario
+from job.models import APIMeta
 log = logging.getLogger(__name__)
 
 
@@ -98,44 +98,40 @@ class Job(ModelResource):
 
     def obj_create(self, bundle, **kwargs):
         run_uuid = str(uuid.uuid4())
-        data = {
+        meta = {
             "run_uuid": run_uuid,
             "api_version": 2,
-            "reopt_version": "0.11.0"
+            "reopt_version": "0.11.0",
+            "status": "validating..."
         }
+        bundle.data.update({"APIMeta": meta})
 
         log.addFilter(UUIDFilter(run_uuid))
 
-        if "Scenario" in bundle.data.keys():
-            bundle.data["Scenario"].update(data)
-        else:
-            bundle.data.update({"Scenario": data})
-        bundle.data["Scenario"]["status"] = "validating..."
-
         if bundle.request.META.get('HTTP_X_API_USER_ID', False):
             if bundle.request.META.get('HTTP_X_API_USER_ID', '') == '6f09c972-8414-469b-b3e8-a78398874103':
-                bundle.data['Scenario']['job_type'] = 'REopt Lite Web Tool'
+                bundle.data['APIMeta']['job_type'] = 'REopt Lite Web Tool'
             else:
-                bundle.data['Scenario']['job_type'] = 'developer.nrel.gov'
+                bundle.data['APIMeta']['job_type'] = 'developer.nrel.gov'
         else:
-            bundle.data['Scenario']['job_type'] = 'Internal NREL'
+            bundle.data['APIMeta']['job_type'] = 'Internal NREL'
 
         test_case = bundle.request.META.get('HTTP_USER_AGENT') or ''
         if test_case.startswith('check_http/'):
-            bundle.data['Scenario']['job_type'] = 'Monitoring'
+            bundle.data['APIMeta']['job_type'] = 'Monitoring'
 
         # Validate inputs
         try:
             input_validator = InputValidator(bundle.data)
             input_validator.clean_fields()  # step 1 check field values
             if not input_validator.is_valid:
-                return400(data, input_validator)
+                return400(meta, input_validator)
             input_validator.clean()  # step 2 check requirements that include more than one field (in one model)
             if not input_validator.is_valid:
-                return400(data, input_validator)
+                return400(meta, input_validator)
             input_validator.cross_clean()  # step 3 check requirements that include more than one model
             if not input_validator.is_valid:
-                return400(data, input_validator)
+                return400(meta, input_validator)
         except ImmediateHttpResponse as e:
             raise e  # returns the response from return400
         except Exception:
@@ -143,32 +139,32 @@ class Job(ModelResource):
             err = UnexpectedError(exc_type, exc_value.args[0], traceback.format_tb(exc_traceback),
                                   task='InputValidator', run_uuid=run_uuid)
             err.save_to_db()
-            data["status"] = ('Internal Server Error during input validation. No optimization task has been created. '
+            meta["status"] = ('Internal Server Error during input validation. No optimization task has been created. '
                               'Please check your POST for bad values.')
-            data['messages'] = {}
-            data['messages']['error'] = err.message  # "Unexpected Error."
+            meta['messages'] = {}
+            meta['messages']['error'] = err.message  # "Unexpected Error."
             log.error("Internal Server error: " + err.message)
-            raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
+            raise ImmediateHttpResponse(HttpResponse(json.dumps(meta),
                                                      content_type='application/json',
                                                      status=500))  # internal server error
 
         try:
             input_validator.save()
         except Exception:
-            log.error("Could not create and save run_uuid: {}\n Data: {}".format(run_uuid, data))
+            log.error("Could not create and save run_uuid: {}\n Data: {}".format(run_uuid, meta))
             exc_type, exc_value, exc_traceback = sys.exc_info()
             err = UnexpectedError(exc_type, exc_value.args[0], traceback.format_tb(exc_traceback),
                                   task='create_and_save',
                                   run_uuid=run_uuid)
             # err.save_to_db()
-            data["status"] = "Internal Server Error during saving of inputs. Please see messages."
-            data['messages'] = err.message  # "Unexpected Error."
+            meta["status"] = "Internal Server Error during saving of inputs. Please see messages."
+            meta['messages'] = err.message  # "Unexpected Error."
             log.error("Internal Server error: " + err.message)
-            raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
+            raise ImmediateHttpResponse(HttpResponse(json.dumps(meta),
                                                      content_type='application/json',
                                                      status=500))  # internal server error
 
-        Scenario.objects.filter(run_uuid=run_uuid).update(status='Optimizing...')
+        APIMeta.objects.filter(run_uuid=run_uuid).update(status='Optimizing...')
         try:
             run_jump_model.s(data=input_validator.validated_input_dict).apply_async()
         except Exception as e:
@@ -179,12 +175,12 @@ class Job(ModelResource):
                 err = UnexpectedError(exc_type, exc_value.args[0], traceback.format_tb(exc_traceback), task='api.py',
                                       run_uuid=run_uuid)
                 err.save_to_db()
-                data["status"] = 'Internal Server Error. See messages for more.'
-                if 'messages' not in data.keys():
-                    data['messages'] = {}
-                data['messages']['error'] = err.message
+                meta["status"] = 'Internal Server Error. See messages for more.'
+                if 'messages' not in meta.keys():
+                    meta['messages'] = {}
+                meta['messages']['error'] = err.message
                 log.error("Internal Server error: " + err.message)
-                raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
+                raise ImmediateHttpResponse(HttpResponse(json.dumps(meta),
                                             content_type='application/json',
                                             status=500))  # internal server error
 

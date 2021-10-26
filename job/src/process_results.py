@@ -27,7 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-from job.models import FinancialOutputs, Scenario, PVOutputs, StorageOutputs, ElectricTariffOutputs,\
+from job.models import FinancialOutputs, APIMeta, PVOutputs, StorageOutputs, ElectricTariffOutputs,\
     ElectricUtilityOutputs, GeneratorOutputs, ElectricLoadOutputs, WindOutputs
 
 
@@ -36,23 +36,23 @@ def process_results(results: dict, run_uuid: str) -> None:
     Saves the results returned from the Julia API in the backend database.
     Called in job/run_jump_model (a celery task)
     """
-    s = Scenario.objects.get(run_uuid=run_uuid)
-    s.status = results.get("status")
-    s.save(update_fields=["status"])
-    FinancialOutputs.create(scenario=s, **results["Financial"]).save()
-    ElectricTariffOutputs.create(scenario=s, **results["ElectricTariff"]).save()
-    ElectricUtilityOutputs.create(scenario=s, **results["ElectricUtility"]).save()
-    ElectricLoadOutputs.create(scenario=s, **results["ElectricLoad"]).save()
+    meta = APIMeta.objects.get(run_uuid=run_uuid)
+    meta.status = results.get("status")
+    meta.save(update_fields=["status"])
+    FinancialOutputs.create(meta=meta, **results["Financial"]).save()
+    ElectricTariffOutputs.create(meta=meta, **results["ElectricTariff"]).save()
+    ElectricUtilityOutputs.create(meta=meta, **results["ElectricUtility"]).save()
+    ElectricLoadOutputs.create(meta=meta, **results["ElectricLoad"]).save()
     if "PV" in results.keys():
         if isinstance(results["PV"], dict):
-            PVOutputs.create(scenario=s, **results["PV"]).save()
+            PVOutputs.create(meta=meta, **results["PV"]).save()
         elif isinstance(results["PV"], list):
             for pvdict in results["PV"]:
-                PVOutputs.create(scenario=s, **pvdict).save()
+                PVOutputs.create(meta=meta, **pvdict).save()
     if "Storage" in results.keys():
-        StorageOutputs.create(scenario=s, **results["Storage"]).save()
+        StorageOutputs.create(meta=meta, **results["Storage"]).save()
     if "Generator" in results.keys():
-        GeneratorOutputs.create(scenario=s, **results["Generator"]).save()
+        GeneratorOutputs.create(meta=meta, **results["Generator"]).save()
     if "Wind" in results.keys():
-        WindOutputs.create(scenario=s, **results["Wind"]).save()
+        WindOutputs.create(meta=meta, **results["Wind"]).save()
     # TODO process rest of results

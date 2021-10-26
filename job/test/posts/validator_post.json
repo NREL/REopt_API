@@ -1,6 +1,10 @@
 {
-  "Scenario": {
+  "APIMeta": {
     "run_uuid": "2b7f737e-4e92-4bc7-9509-9714d8c10c43"
+  },
+  "Meta": {
+    "description": "test description",
+    "address": "test address"
   },
   "Settings": {
     "timeout_seconds": 290,
