@@ -84,8 +84,19 @@ hard_problem_labels = [
     "59b0752e682bea2157b91d5a",
 ]
 
+class URDB_LabelValidator:
+    def __init__(self, label):
+        self.errors = []  # Catch Errors - write to output file
+        self.label = label
+        self.validate()  # Validate attributes
 
-class URDB_RateValidator:
+    def validate(self):
+        # Check if in known hard problems
+        if self.label in hard_problem_labels:
+            self.errors.append(
+                "URDB Rate (label={}) is currently restricted due to performance limitations".format(self.label))
+
+class URDB_RateValidator(URDB_LabelValidator):
 
     # map to tell if a field requires one or more other fields
     dependencies = {
@@ -170,9 +181,7 @@ class URDB_RateValidator:
 
     def validate(self):
         # Check if in known hard problems
-        if self.label in hard_problem_labels:
-            self.errors.append(
-                "URDB Rate (label={}) is currently restricted due to performance limitations".format(self.label))
+        super(URDB_RateValidator, self).validate()
 
         # Validate each attribute with custom valdidate function
         required_fields = ['energyweekdayschedule', 'energyweekendschedule', 'energyratestructure']

@@ -34,7 +34,7 @@ from django.contrib.postgres.fields import *
 # TODO rm picklefield from requirements.txt once v1 is retired (replaced with JSONfield)
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
-from job.urdb_rate_validator import URDB_RateValidator
+from job.urdb_rate_validator import URDB_RateValidator,URDB_LabelValidator
 import copy
 import logging
 
@@ -981,6 +981,10 @@ class ElectricTariffInputs(BaseModel, models.Model):
                     "The number of rates in coincident_peak_load_charge_per_kw must match the number of "
                     "timestep sets in coincident_peak_load_active_timesteps")
 
+        if self.urdb_label is not None:
+            label_checker = URDB_LabelValidator(self.urdb_label)
+            if label_checker.errors:
+                error_messages["urdb_label"] = label_checker.errors
         if self.urdb_response is not None:
             try:
                 rate_checker = URDB_RateValidator(**self.urdb_response)
