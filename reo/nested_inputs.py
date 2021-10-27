@@ -609,7 +609,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0,
-          "default": 0.2,
+          "default": 0.1,
           "description": "Spinning reserve requirement for changes in load in off-grid analyses. Value must be between zero and one, inclusive."
         }
       },
@@ -1334,7 +1334,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0,
-          "default": 0.5,
+          "default": 0.25,
           "description": "Spinning reserve requirement for PV serving load in off-grid analyses. Value must be between zero and one, inclusive."
         }
       },
