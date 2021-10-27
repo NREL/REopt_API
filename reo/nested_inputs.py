@@ -203,7 +203,7 @@ off_grid_defaults = {
           "description": "Total upfront battery power capacity costs (e.g. inverter and balance of power systems)"
         },
         "installed_cost_us_dollars_per_kwh": {
-          "type": "float", "min": 0.0, "max": 1.0e4, "default": 400.0,
+          "type": "float", "min": 0.0, "max": 1.0e4, "default": 420.0,
           "description": "Total upfront battery costs"
         },
         "replace_cost_us_dollars_per_kw": {
@@ -243,14 +243,14 @@ off_grid_defaults = {
           "min": 0.0,
           "max": 1.0e3,
           "default": 0.01,
-          "description": "diesel generator per unit production (variable) operations and maintenance costs in $/kWh"
+          "description": "Diesel generator per unit production (variable) operations and maintenance costs in $/kWh"
         },
         "diesel_fuel_cost_us_dollars_per_gallon": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e2,
           "default": 3.0,
-          "description": "diesel cost in $/gallon"
+          "description": "Diesel cost in $/gallon"
         },
         "fuel_slope_gal_per_kwh": {
           "type": "float",

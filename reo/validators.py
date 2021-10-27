@@ -507,7 +507,7 @@ class ValidateNestedInput:
                     self.input_dict["Scenario"]["Site"]["LoadProfile"]["outage_end_time_step"] = 17520
                 else:
                     self.input_dict["Scenario"]["Site"]["LoadProfile"]["outage_end_time_step"] = 8760
-            else:
+            # else:
                 # Sets diesel fuel escalation to the electricity escalation rate
                 # Removed because diesel fuel cost escalation will be exposed as an input for on-grid
                 # self.input_dict["Scenario"]["Site"]["Financial"]["generator_fuel_escalation_pct"] = \
