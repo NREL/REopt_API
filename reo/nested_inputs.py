@@ -242,7 +242,7 @@ off_grid_defaults = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e3,
-          "default": 0.01,
+          "default": 0.0,
           "description": "Diesel generator per unit production (variable) operations and maintenance costs in $/kWh"
         },
         "diesel_fuel_cost_us_dollars_per_gallon": {
