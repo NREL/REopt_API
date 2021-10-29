@@ -48,10 +48,10 @@ class Financial(object):
                  co2_cost_us_dollars_per_tonne,
                  nox_cost_us_dollars_per_tonne_grid,
                  so2_cost_us_dollars_per_tonne_grid,
-                 pm_cost_us_dollars_per_tonne_grid,
+                 pm25_cost_us_dollars_per_tonne_grid,
                  nox_cost_us_dollars_per_tonne_onsite_fuelburn,
                  so2_cost_us_dollars_per_tonne_onsite_fuelburn,
-                 pm_cost_us_dollars_per_tonne_onsite_fuelburn,
+                 pm25_cost_us_dollars_per_tonne_onsite_fuelburn,
                  co2_cost_escalation_pct,
                  nox_cost_escalation_pct,
                  so2_cost_escalation_pct,
@@ -71,10 +71,10 @@ class Financial(object):
         self.co2_cost_us_dollars_per_tonne = co2_cost_us_dollars_per_tonne
         self.nox_cost_us_dollars_per_tonne_grid = nox_cost_us_dollars_per_tonne_grid
         self.so2_cost_us_dollars_per_tonne_grid = so2_cost_us_dollars_per_tonne_grid
-        self.pm_cost_us_dollars_per_tonne_grid = pm_cost_us_dollars_per_tonne_grid
+        self.pm25_cost_us_dollars_per_tonne_grid = pm25_cost_us_dollars_per_tonne_grid
         self.nox_cost_us_dollars_per_tonne_onsite_fuelburn = nox_cost_us_dollars_per_tonne_onsite_fuelburn
         self.so2_cost_us_dollars_per_tonne_onsite_fuelburn = so2_cost_us_dollars_per_tonne_onsite_fuelburn
-        self.pm_cost_us_dollars_per_tonne_onsite_fuelburn = pm_cost_us_dollars_per_tonne_onsite_fuelburn
+        self.pm25_cost_us_dollars_per_tonne_onsite_fuelburn = pm25_cost_us_dollars_per_tonne_onsite_fuelburn
         self.co2_cost_escalation_pct = co2_cost_escalation_pct
         self.nox_cost_escalation_pct = nox_cost_escalation_pct
         self.so2_cost_escalation_pct = so2_cost_escalation_pct

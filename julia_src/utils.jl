@@ -151,15 +151,17 @@ Base.@kwdef struct Parameter
 	 pwf_fuel::AxisArray
 	 r_tax_owner::Float64      # f^{tow}: Tax rate factor for owner [fraction]
      r_tax_offtaker::Float64   # f^{tot}: Tax rate factor for offtaker [fraction]
-     pwf_CO2_cost::Float64 # Cost of CO2 present worth factor for grid emissions [unitless] 
-     pwf_CO2_lbs::Float64 # CO2 emissions present worth factor [unitless]
-     pwf_CO2_cost_onsite_fuelburn::Float64 # Cost of CO2 present worth factor for on-site fuelburn [unitless]
-     pwf_NOx_cost::Float64 # Cost of NOx present worth factor for grid emissions [unitless] 
-     pwf_NOx_cost_onsite_fuelburn::Float64 # Cost of NOx present worth factor for on-site fuelburn [unitless]
-     pwf_SO2_cost::Float64 # Cost of SO2 present worth factor for grid emissions [unitless] 
-     pwf_SO2_cost_onsite_fuelburn::Float64 # Cost of SO2 present worth factor for on-site fuelburn [unitless]
-     pwf_PM25_cost::Float64 # Cost of PM25 present worth factor for grid emissions [unitless] 
-     pwf_PM25_cost_onsite_fuelburn::Float64 # Cost of PM25 present worth factor for on-site fuelburn [unitless]
+    #  pwf_CO2_cost::Float64 # Cost of CO2 present worth factor for grid emissions [unitless] 
+    #  pwf_CO2_lbs::Float64 # CO2 emissions present worth factor [unitless]
+    #  pwf_CO2_cost_onsite_fuelburn::Float64 # Cost of CO2 present worth factor for on-site fuelburn [unitless]
+    #  pwf_NOx_cost::Float64 # Cost of NOx present worth factor for grid emissions [unitless] 
+    #  pwf_NOx_cost_onsite_fuelburn::Float64 # Cost of NOx present worth factor for on-site fuelburn [unitless]
+    #  pwf_SO2_cost::Float64 # Cost of SO2 present worth factor for grid emissions [unitless] 
+    #  pwf_SO2_cost_onsite_fuelburn::Float64 # Cost of SO2 present worth factor for on-site fuelburn [unitless]
+    #  pwf_PM25_cost::Float64 # Cost of PM25 present worth factor for grid emissions [unitless] 
+    #  pwf_PM25_cost_onsite_fuelburn::Float64 # Cost of PM25 present worth factor for on-site fuelburn [unitless]
+     pwfs_emissions_cost::Dict{String, Any} # Cost of emissions present worth factors for grid and onsite fuelburn emissions [unitless]
+     pwfs_emissions_lbs::Dict{String, Any} # Emissions [lbs] present worth factors for grid emissions [unitless]
 
 	 ###  System Size and Fuel Limit Parameters ###
 	 TechClassMinSize::AxisArray   #  \ubar{b}^{\sigma}_{c}: Minimum system size for technology class c [kW]
@@ -232,26 +234,26 @@ Base.@kwdef struct Parameter
      BAUYr1Emissions_CO2::Float64
      BAUYr1Emissions_NOx::Float64
      BAUYr1Emissions_SO2::Float64
-     BAUYr1Emissions_PM::Float64
+     BAUYr1Emissions_PM25::Float64
      BAUYr1Emissions_grid_CO2::Float64
      BAUYr1Emissions_grid_NOx::Float64
      BAUYr1Emissions_grid_SO2::Float64
-     BAUYr1Emissions_grid_PM::Float64
+     BAUYr1Emissions_grid_PM25::Float64
      GridEmissionsFactor_CO2::Array{Float64,1}
      GridEmissionsFactor_NOx::Array{Float64,1}
      GridEmissionsFactor_SO2::Array{Float64,1}
-     GridEmissionsFactor_PM::Array{Float64,1}
+     GridEmissionsFactor_PM25::Array{Float64,1}
      TechEmissionsFactors_CO2::AxisArray
      TechEmissionsFactors_NOx::AxisArray
      TechEmissionsFactors_SO2::AxisArray
-     TechEmissionsFactors_PM::AxisArray
+     TechEmissionsFactors_PM25::AxisArray
      CO2_dollars_tonne::Float64
      NOx_dollars_tonne_grid::Float64
      SO2_dollars_tonne_grid::Float64
-     PM_dollars_tonne_grid::Float64
+     PM25_dollars_tonne_grid::Float64
      NOx_dollars_tonne_onsite_fuelburn::Float64
      SO2_dollars_tonne_onsite_fuelburn::Float64
-     PM_dollars_tonne_onsite_fuelburn::Float64
+     PM25_dollars_tonne_onsite_fuelburn::Float64
      Include_climate_in_objective::Bool
      Include_health_in_objective::Bool
 
@@ -362,7 +364,7 @@ function Parameter(d::Dict)
     d["TechEmissionsFactors_CO2"] = AxisArray(d["TechEmissionsFactors_CO2"], d["Tech"])
     d["TechEmissionsFactors_NOx"] = AxisArray(d["TechEmissionsFactors_NOx"], d["Tech"])
     d["TechEmissionsFactors_SO2"] = AxisArray(d["TechEmissionsFactors_SO2"], d["Tech"])
-    d["TechEmissionsFactors_PM"] = AxisArray(d["TechEmissionsFactors_PM"], d["Tech"])
+    d["TechEmissionsFactors_PM25"] = AxisArray(d["TechEmissionsFactors_PM25"], d["Tech"])
     ##d["TechPercentRE"] = AxisArray(d["TechPercentRE"], d["Tech"])
 
     if !isempty(d["CoincidentPeakLoadTimeSteps"])

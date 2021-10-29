@@ -39,7 +39,7 @@ from reo.src.urdb_rate import Rate
 import re
 import uuid
 from reo.src.techs import Generator, Boiler, CHP, AbsorptionChiller
-from reo.src.emissions_calculator import EmissionsCalculator ##, EmissionsCalculator_NOx, EmissionsCalculator_SO2, EmissionsCalculator_PM
+from reo.src.emissions_calculator import EmissionsCalculator ##, EmissionsCalculator_NOx, EmissionsCalculator_SO2, EmissionsCalculator_PM25
 from reo.utilities import generate_year_profile_hourly
 from reo.src.pyeasiur import *
 
@@ -465,7 +465,7 @@ class ValidateNestedInput:
 
     # PM2.5 fuel conversion
     # TODO: validate
-    fuel_conversion_lb_PM_per_mmbtu = {
+    fuel_conversion_lb_PM25_per_mmbtu = {
                 "natural_gas":0.007328833,
                 "landfill_bio_gas":0.02484,
                 "propane":0.009906836,
@@ -474,7 +474,7 @@ class ValidateNestedInput:
 
     # PM2.5 fuel conversion
     # # TODO: validate
-    fuel_conversion_lb_PM_per_gal = {
+    fuel_conversion_lb_PM25_per_gal = {
                 'diesel_oil':0.0
             }
 
@@ -1215,10 +1215,10 @@ class ValidateNestedInput:
                                         user_supplied_chp_inputs = True
                             
                             # check the special case default for PM2.5 emissions 
-                            elif k == 'emissions_factor_lb_PM_per_mmbtu':
+                            elif k == 'emissions_factor_lb_PM25_per_mmbtu':
                                 fuel = self.input_dict['Scenario']['Site']['FuelTariff'].get('chp_fuel_type')
                                 if fuel is not None:
-                                    if v != self.fuel_conversion_lb_PM_per_mmbtu[fuel]:
+                                    if v != self.fuel_conversion_lb_PM25_per_mmbtu[fuel]:
                                         user_supplied_chp_inputs = True
 
                             # check that the value is not None, or setting max_kw to 0 to deactivate CHP
@@ -1265,9 +1265,9 @@ class ValidateNestedInput:
                 if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_SO2_per_gal') is None:
                     self.update_attribute_value(object_name_path, number, 'emissions_factor_lb_SO2_per_gal', self.fuel_conversion_lb_SO2_per_gal.get('diesel_oil'))
                 
-                # If user has not supplied PM emissions rate
-                if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_PM_per_gal') is None:
-                    self.update_attribute_value(object_name_path, number, 'emissions_factor_lb_PM_per_gal', self.fuel_conversion_lb_PM_per_gal.get('diesel_oil'))
+                # If user has not supplied PM25 emissions rate
+                if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_PM25_per_gal') is None:
+                    self.update_attribute_value(object_name_path, number, 'emissions_factor_lb_PM25_per_gal', self.fuel_conversion_lb_PM25_per_gal.get('diesel_oil'))
                 
                 if (real_values["max_kw"] > 0 or real_values["existing_kw"] > 0):
                     # then replace zeros in default burn rate and slope, and set min/max kw values appropriately for
@@ -1346,7 +1346,7 @@ class ValidateNestedInput:
             
             
             for key_name in ['emissions_factor_series_lb_CO2_per_kwh', 'emissions_factor_series_lb_NOx_per_kwh',
-            'emissions_factor_series_lb_SO2_per_kwh', 'emissions_factor_series_lb_PM_per_kwh']:
+            'emissions_factor_series_lb_SO2_per_kwh', 'emissions_factor_series_lb_PM25_per_kwh']:
                 
                 # If user supplies single emissions rate
                 if type(electric_tariff.get(key_name)) == list:
@@ -1366,8 +1366,8 @@ class ValidateNestedInput:
                             pollutant = 'NOx'
                         elif 'SO2' in key_name:
                             pollutant = 'SO2'
-                        elif 'PM' in key_name:
-                            pollutant = 'PM'
+                        elif 'PM25' in key_name:
+                            pollutant = 'PM25'
                         ec = EmissionsCalculator(   latitude=self.input_dict['Scenario']['Site']['latitude'], 
                                                         longitude=self.input_dict['Scenario']['Site']['longitude'],
                                                         pollutant = pollutant,
@@ -1680,21 +1680,21 @@ class ValidateNestedInput:
                     self.update_attribute_value(object_name_path[:-1] + ['Generator'],  number, \
                         'emissions_factor_lb_SO2_per_gal', self.fuel_conversion_lb_SO2_per_gal.get('diesel_oil'))
 
-            # If user has not supplied a PM emissions factor
-            if self.input_dict['Scenario']['Site']['CHP'].get('emissions_factor_lb_PM_per_mmbtu') is None:
+            # If user has not supplied a PM25 emissions factor
+            if self.input_dict['Scenario']['Site']['CHP'].get('emissions_factor_lb_PM25_per_mmbtu') is None:
                 chp_fuel = real_values.get('chp_fuel_type')
                 # Then use default fuel emissions value (in fuel_conversion_per_mmbtu)
                 self.update_attribute_value(object_name_path[:-1] + ['CHP'], number,
-                                            'emissions_factor_lb_PM_per_mmbtu',
-                                            self.fuel_conversion_lb_PM_per_mmbtu.get(chp_fuel))
-            if self.input_dict['Scenario']['Site']['Boiler'].get('emissions_factor_lb_PM_per_mmbtu') is None:
+                                            'emissions_factor_lb_PM25_per_mmbtu',
+                                            self.fuel_conversion_lb_PM25_per_mmbtu.get(chp_fuel))
+            if self.input_dict['Scenario']['Site']['Boiler'].get('emissions_factor_lb_PM25_per_mmbtu') is None:
                 boiler_fuel = real_values.get('existing_boiler_fuel_type')
                 self.update_attribute_value(object_name_path[:-1] + ['Boiler'], number,
-                                            'emissions_factor_lb_PM_per_mmbtu',
-                                            self.fuel_conversion_lb_PM_per_mmbtu.get(boiler_fuel))
-            if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_PM_per_gal') is None:
+                                            'emissions_factor_lb_PM25_per_mmbtu',
+                                            self.fuel_conversion_lb_PM25_per_mmbtu.get(boiler_fuel))
+            if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_PM25_per_gal') is None:
                     self.update_attribute_value(object_name_path[:-1] + ['Generator'],  number, \
-                        'emissions_factor_lb_PM_per_gal', self.fuel_conversion_lb_PM_per_gal.get('diesel_oil'))
+                        'emissions_factor_lb_PM25_per_gal', self.fuel_conversion_lb_PM25_per_gal.get('diesel_oil'))
 
         if object_name_path[-1] == "Boiler":
                 if self.isValid:
@@ -1764,8 +1764,8 @@ class ValidateNestedInput:
             if real_values.get("so2_cost_us_dollars_per_tonne_grid") is None:
                 self.update_attribute_value(object_name_path, number, "so2_cost_us_dollars_per_tonne_grid", 
                                 EASIUR_150m_pop2020_inc2020_dol2010['SO2_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
-            if real_values.get("pm_cost_us_dollars_per_tonne_grid") is None:
-                self.update_attribute_value(object_name_path, number, "pm_cost_us_dollars_per_tonne_grid", 
+            if real_values.get("pm25_cost_us_dollars_per_tonne_grid") is None:
+                self.update_attribute_value(object_name_path, number, "pm25_cost_us_dollars_per_tonne_grid", 
                                 EASIUR_150m_pop2020_inc2020_dol2010['PEC_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
             if real_values.get("nox_cost_us_dollars_per_tonne_onsite_fuelburn") is None:
                 self.update_attribute_value(object_name_path, number, "nox_cost_us_dollars_per_tonne_onsite_fuelburn", 
@@ -1773,8 +1773,8 @@ class ValidateNestedInput:
             if real_values.get("so2_cost_us_dollars_per_tonne_onsite_fuelburn") is None:
                 self.update_attribute_value(object_name_path, number, "so2_cost_us_dollars_per_tonne_onsite_fuelburn", 
                                 EASIUR_ground_pop2020_inc2020_dol2010['SO2_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
-            if real_values.get("pm_cost_us_dollars_per_tonne_onsite_fuelburn") is None:
-                self.update_attribute_value(object_name_path, number, "pm_cost_us_dollars_per_tonne_onsite_fuelburn", 
+            if real_values.get("pm25_cost_us_dollars_per_tonne_onsite_fuelburn") is None:
+                self.update_attribute_value(object_name_path, number, "pm25_cost_us_dollars_per_tonne_onsite_fuelburn", 
                                 EASIUR_ground_pop2020_inc2020_dol2010['PEC_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
             
             # TODO: If user has not supplied nox, so2, pm25 cost escalation rates, calculate using EASIUR 

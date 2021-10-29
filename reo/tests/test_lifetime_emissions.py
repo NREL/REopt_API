@@ -109,10 +109,10 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
                 "co2_cost_us_dollars_per_tonne": 51.0,
                 "nox_cost_us_dollars_per_tonne_grid": 51.0, # TODO: change to values from EASIUR! (and also make seasonal?)
                 "so2_cost_us_dollars_per_tonne_grid": 51.0, # TODO: change to values from EASIUR! 
-                "pm_cost_us_dollars_per_tonne_grid": 51.0, # TODO: change to values from EASIUR! 
+                "pm25_cost_us_dollars_per_tonne_grid": 51.0, # TODO: change to values from EASIUR! 
                 "nox_cost_us_dollars_per_tonne_onsite_fuelburn": 51.0, # TODO: change to values from EASIUR! (and also make seasonal?)
                 "so2_cost_us_dollars_per_tonne_onsite_fuelburn": 51.0, # TODO: change to values from EASIUR! 
-                "pm_cost_us_dollars_per_tonne_onsite_fuelburn": 51.0 # TODO: change to values from EASIUR! 
+                "pm25_cost_us_dollars_per_tonne_onsite_fuelburn": 51.0 # TODO: change to values from EASIUR! 
               },
               "Wind": {
                 "max_kw": 0.0,
@@ -184,10 +184,10 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
                 # "nox_cost_escalation_pct": , 
                 # "nox_cost_us_dollars_per_tonne_grid": 0.0, # TODO: make seasonal?
                 # "so2_cost_us_dollars_per_tonne_grid": 0.0, 
-                # "pm_cost_us_dollars_per_tonne_grid": 0.0, 
+                # "pm25_cost_us_dollars_per_tonne_grid": 0.0, 
                 # "nox_cost_us_dollars_per_tonne_onsite_fuelburn": 0.0, # TODO: make seasonal?
                 # "so2_cost_us_dollars_per_tonne_onsite_fuelburn": 0.0, 
-                # "pm_cost_us_dollars_per_tonne_onsite_fuelburn": 0.0  
+                # "pm25_cost_us_dollars_per_tonne_onsite_fuelburn": 0.0  
               },
               "Wind": {
                 "min_kw": 0.0,
@@ -233,19 +233,19 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
 
             # print('NOx cost Grid: ', response['inputs']['Scenario']['Site']['Financial']["nox_cost_us_dollars_per_tonne_grid"])
             # print('SO2 cost Grid: ', response['inputs']['Scenario']['Site']['Financial']["so2_cost_us_dollars_per_tonne_grid"])
-            # print('PM cost Fuelburn: ', response['inputs']['Scenario']['Site']['Financial']["pm_cost_us_dollars_per_tonne_onsite_fuelburn"])
+            # print('PM25 cost Fuelburn: ', response['inputs']['Scenario']['Site']['Financial']["pm25_cost_us_dollars_per_tonne_onsite_fuelburn"])
             
             # Values specific to Austin, TX (30.2672, -97.7431)
             self.assertEqual(round(inputs["Financial"]["nox_cost_us_dollars_per_tonne_grid"],3), round(4534.03247048984,3),
                              "Unexpected nox_cost_us_dollars_per_tonne_grid output from EASIUR ")
-            self.assertEqual(inputs["Financial"]["pm_cost_us_dollars_per_tonne_grid"], 126293.11077362332,
-                             "Unexpected pm_cost_us_dollars_per_tonne_grid output from EASIUR ")
+            self.assertEqual(inputs["Financial"]["pm25_cost_us_dollars_per_tonne_grid"], 126293.11077362332,
+                             "Unexpected pm25_cost_us_dollars_per_tonne_grid output from EASIUR ")
             self.assertEqual(inputs["Financial"]["nox_cost_us_dollars_per_tonne_onsite_fuelburn"], 5965.834705734121,
                              "Unexpected nox_cost_us_dollars_per_tonne_onsite_fuelburn output from EASIUR ")
-            self.assertEqual(inputs["Financial"]["pm_cost_us_dollars_per_tonne_onsite_fuelburn"], 240382.50164494125,
-                             "Unexpected pm_cost_us_dollars_per_tonne_onsite_fuelburn output from EASIUR ")                
+            self.assertEqual(inputs["Financial"]["pm25_cost_us_dollars_per_tonne_onsite_fuelburn"], 240382.50164494125,
+                             "Unexpected pm25_cost_us_dollars_per_tonne_onsite_fuelburn output from EASIUR ")                
 
-            for item in ['CO2', 'NOx', 'SO2', 'PM']:
+            for item in ['CO2', 'NOx', 'SO2', 'PM25']:
               print('Year 1 {} lb: '.format(item), response['outputs']['Scenario']['Site']['year_one_emissions_lb_{}'.format(item)])
               print('Year 1 {} lb BAU: '.format(item), response['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_{}'.format(item)])
               
@@ -270,8 +270,8 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
             # self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_NOx_bau"] = self.results_dict.get("lifetime_emissions_lb_NOx_bau")
             # self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_SO2"] = self.results_dict.get("lifetime_emissions_lb_SO2")
             # self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_SO2_bau"] = self.results_dict.get("lifetime_emissions_lb_SO2_bau")
-            # self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_PM"] = self.results_dict.get("lifetime_emissions_lb_PM")
-            # self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_PM_bau"] = self.results_dict.get("lifetime_emissions_lb_PM_bau")
+            # self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_PM25"] = self.results_dict.get("lifetime_emissions_lb_PM25")
+            # self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_PM25_bau"] = self.results_dict.get("lifetime_emissions_lb_PM25_bau")
             # "lifetime_emissions_cost_Health_bau" 
             # "lifetime_emissions_cost_Health" 
             
@@ -334,7 +334,7 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
     #         print('Year 1 kWh from grid BAU: ', response['outputs']['Scenario']['Site']["ElectricTariff"]["year_one_energy_supplied_kwh_bau"])
             
 
-    #         for item in ['CO2', 'NOx', 'SO2', 'PM']:
+    #         for item in ['CO2', 'NOx', 'SO2', 'PM25']:
     #           print('Year 1 {}: '.format(item), response['outputs']['Scenario']['Site']['year_one_emissions_lb_{}'.format(item)])
     #           # print('Year 1 {} BAU: '.format(item), response['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_{}'.format(item)])
               
