@@ -46,7 +46,7 @@ from reo.exceptions import UnexpectedError  #, RequestError  # should we save ba
 import logging
 log = logging.getLogger(__name__)
 from reo.src.techs import Generator, CHP, AbsorptionChiller, Boiler
-from reo.src.emissions_calculator import EmissionsCalculator ##, EmissionsCalculator_NOx, EmissionsCalculator_SO2, EmissionsCalculator_PM
+from reo.src.emissions_calculator import EmissionsCalculator ##, EmissionsCalculator_NOx, EmissionsCalculator_SO2, EmissionsCalculator_PM25
 from django.http import HttpResponse
 from django.template import  loader
 import pandas as pd
@@ -296,21 +296,21 @@ def emissions_profile_SO2(request):
         log.error(debug_msg)
         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
 
-def emissions_profile_PM(request):
+def emissions_profile_PM25(request):
     try:
         latitude = float(request.GET['latitude'])  # need float to convert unicode
         longitude = float(request.GET['longitude'])
 
-        ec_PM = EmissionsCalculator(latitude=latitude,longitude=longitude, pollutant='PM')
+        ec_PM25 = EmissionsCalculator(latitude=latitude,longitude=longitude, pollutant='PM25')
 
         try:
             response = JsonResponse({
-                    'region_abbr': ec_PM.region_abbr,
-                    'region': ec_PM.region,
-                    'emissions_series_lb_PM_per_kWh': ec_PM.emissions_series,
-                    'units': 'Pounds PM',
-                    'description': 'PM Regional hourly grid emissions factor for EPA AVERT regions.',
-                    'meters_to_region': ec_PM.meters_to_region
+                    'region_abbr': ec_PM25.region_abbr,
+                    'region': ec_PM25.region,
+                    'emissions_series_lb_PM25_per_kWh': ec_PM25.emissions_series,
+                    'units': 'Pounds PM25',
+                    'description': 'PM25 Regional hourly grid emissions factor for EPA AVERT regions.',
+                    'meters_to_region': ec_PM25.meters_to_region
                 })
             return response
         except AttributeError as e:

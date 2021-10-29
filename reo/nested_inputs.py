@@ -311,7 +311,7 @@ nested_input_definitions = {
           "max": 1.0e8,
           "description": "Social Cost of SO2 emissions from grid electricity in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model."
         },
-        "pm_cost_us_dollars_per_tonne_grid": {
+        "pm25_cost_us_dollars_per_tonne_grid": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e8,
@@ -329,7 +329,7 @@ nested_input_definitions = {
           "max": 1.0e8,
           "description": "Social Cost of SO2 from onsite fuelburn in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model."
         },
-        "pm_cost_us_dollars_per_tonne_onsite_fuelburn": {
+        "pm25_cost_us_dollars_per_tonne_onsite_fuelburn": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e8,
@@ -648,17 +648,35 @@ nested_input_definitions = {
           "type": ["list_of_float", "float"],
           "description": "NOx emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.",
         },
-        # TODO: pct decrease NOx? 
+        "emissions_factor_NOx_pct_decrease": {
+          "type": "float",
+          "min": -1.0,
+          "max": 1.0,
+          "default": 0.01174,
+          "description": "Annual percent decrease in the total annual NOx marginal emissions rate of the grid. A negative value indicates an annual increase.",
+        },
         "emissions_factor_series_lb_SO2_per_kwh": {
           "type": ["list_of_float", "float"],
           "description": "SO2 emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.",
         },
-        # TODO: pct decrease SO2?
-        "emissions_factor_series_lb_PM_per_kwh": {
+        "emissions_factor_SO2_pct_decrease": {
+          "type": "float",
+          "min": -1.0,
+          "max": 1.0,
+          "default": 0.01174,
+          "description": "Annual percent decrease in the total annual SO2 marginal emissions rate of the grid. A negative value indicates an annual increase.",
+        },
+        "emissions_factor_series_lb_PM25_per_kwh": {
           "type": ["list_of_float", "float"],
           "description": "PM2.5 emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.",
         },
-        # TODO: pct decrease PM2.5? 
+        "emissions_factor_PM25_pct_decrease": {
+          "type": "float",
+          "min": -1.0,
+          "max": 1.0,
+          "default": 0.01174,
+          "description": "Annual percent decrease in the total annual PM2.5 marginal emissions rate of the grid. A negative value indicates an annual increase.",
+        },
         "chp_standby_rate_us_dollars_per_kw_per_month": {
           "type": "float",
           "min": 0.0,
@@ -1480,7 +1498,7 @@ nested_input_definitions = {
           "type": "float",
           "description": "Pounds of SO2 emitted per gallon of fuel burned"
         },
-        "emissions_factor_lb_PM_per_gal": {
+        "emissions_factor_lb_PM25_per_gal": {
           "type": "float",
           "description": "Pounds of PM2.5 emitted per gallon of fuel burned"
         },
@@ -1758,7 +1776,7 @@ nested_input_definitions = {
           "type": "float",
           "description": "Average SO2 emissions factor"
         },
-        "emissions_factor_lb_PM_per_mmbtu": {
+        "emissions_factor_lb_PM25_per_mmbtu": {
           "type": "float",
           "description": "Average PM2.5 emissions factor"
         },
@@ -1916,7 +1934,7 @@ nested_input_definitions = {
           "type": "float",
           "description": "Pounds of SO2 emitted per MMBtu of fuel burned"
         },
-        "emissions_factor_lb_PM_per_mmbtu": {
+        "emissions_factor_lb_PM25_per_mmbtu": {
           "type": "float",
           "description": "Pounds of PM2.5 emitted per MMBtu of fuel burned"
         }
