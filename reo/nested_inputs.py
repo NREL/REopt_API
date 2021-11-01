@@ -475,7 +475,7 @@ nested_input_definitions = {
           },
         "chiller_cop": {
           "type": "float",
-          "min:": 0.0,
+          "min:": 0.01,
           "max:": 20.0,
           "description": "Existing electric chiller system coefficient of performance - conversion of electricity to "
                          "usable cooling thermal energy"
@@ -1712,7 +1712,7 @@ nested_input_definitions = {
         },
         "cooling_thermal_factor": {
           "type": "float",
-          "min": 0.0,
+          "min": 0.01,
           "max": 1.0,
           "description": "Knockdown factor on absorption chiller COP based on the CHP prime_mover not being able to produce as high of temp/pressure hot water/steam"
         },
@@ -1880,14 +1880,14 @@ nested_input_definitions = {
         },
         "chiller_cop": {
           "type": "float",
-          "min:": 0.0,
+          "min:": 0.01,
           "max:": 20.0,
           "description": "Absorption chiller system coefficient of performance - conversion of hot thermal power input "
                          "to usable cooling thermal energy output"
         },
         "chiller_elec_cop": {
           "type": "float",
-          "min:": 0.0,
+          "min:": 0.01,
           "max:": 100.0,
           "default": 14.1,
           "description": "Absorption chiller electric consumption CoP from cooling tower heat rejection - conversion of electric power input "
