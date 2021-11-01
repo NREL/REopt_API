@@ -26,11 +26,11 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop - 2021-09-28
+## v1.7.0 - 2021-09-29
 ##### Added
 - `reo`: The following technologies: `SteamTurbine`, `NewBoiler`, and `GHP`, and added supplmentary firing for `CHP`
 - `reopt_model.jl`: Variables and constraints for the new technologies listed above, including supplementary firing sizing and dispatch for `CHP`
-- `ghpghx`: New endpoint which serves the `GHPGHX.jl` module
+- `ghpghx`: New app which serves the `GHPGHX.jl` module using a POST-style endpoint similar to the `/reo Job` endpoint. There is also a `ground_conductivity` endpoint in this app for GETting the default GHX ground conductivity by location.
 - `julia_src`: The `GHPGHX.jl` module and supporting `*.jl` scripts, served by an endpoint in `http.jl`
 - `input_files`: Reorganized the different load profile data files into folders, and split out space heating and domestic hot water from the `LoadProfileBoilerFuel` data
 ##### Changed
