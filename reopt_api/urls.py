@@ -35,6 +35,7 @@ from resilience_stats.api import OutageSimJob
 from tastypie.api import Api
 from reo import views
 from django.urls import path
+from job.api import Job as DevJob
 from futurecosts.api import FutureCostsAPI
 from ghpghx.resources import GHPGHXJob
 from ghpghx import views as ghp_views
@@ -49,7 +50,8 @@ stable_api.register(Job())
 stable_api.register(OutageSimJob())
 stable_api.register(GHPGHXJob())
 
-dev_api = Api(api_name="dev")
+dev_api = Api(api_name='dev')
+dev_api.register(DevJob())
 dev_api.register(FutureCostsAPI())
 
 
@@ -85,6 +87,9 @@ urlpatterns = [
     path('stable/', include('ghpghx.urls')),
     url(r'', include(stable_api.urls), name='job'),
     url(r'', include(stable_api.urls), name='outagesimjob'),
+
+    path('dev/', include('job.urls')),
+    url(r'', include(dev_api.urls), name='job'),
 
     path('dev/', include('futurecosts.urls')),
     url(r'', include(dev_api.urls), name='futurecosts'),

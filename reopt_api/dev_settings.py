@@ -56,7 +56,6 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
-
 # Application definition
 
 INSTALLED_APPS = (
@@ -73,6 +72,7 @@ INSTALLED_APPS = (
     'futurecosts',
     'django_celery_results',
     'django_extensions',
+    'job',
     'ghpghx'
     )
 
@@ -108,9 +108,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'reopt_api.wsgi.application'
 
-# Database
-# https://docs.djangoproject.com/en/2.2/ref/settings/#databases
-
 ROLLBAR = {
     'access_token': rollbar_access_token,
     'environment': 'development',
@@ -118,6 +115,7 @@ ROLLBAR = {
     'enabled':True
 }
 
+# Database
 if 'test' in sys.argv or os.environ.get('APP_ENV') == 'local':
     ROLLBAR['enabled'] = False
     DATABASES = {
@@ -173,6 +171,8 @@ CELERY_IMPORTS = (
     'resilience_stats.outage_simulator_LF',
     'futurecosts.api',
     'futurecosts.tasks',
+    'job.api',
+    'job.src.run_jump_model'
 )
 
 if 'test' in sys.argv:
