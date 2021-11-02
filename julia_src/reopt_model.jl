@@ -464,12 +464,13 @@ function add_binTechIsOnInTS_constraints(m, p)
 		m[:dvRatedProduction][t,ts] <= m[:NewMaxSize][t] * m[:binTechIsOnInTS][t,ts]
 	)
 	if p.OffGridFlag
-		#Constraint (3b): Technologies that are turned on must not be turned down below minimum, except during outage
-		@constraint(m, MinTurndownCon[t in p.FuelBurningTechs, ts in p.TimeStep],
+		# Technologies that are turned on must not be turned down below the MinTurndown
+		@constraint(m, MinTurndownCon[t in p.FuelBurningTechs, ts in p.TimeStepsWithoutGrid],
 		p.MinTurndown[t] * m[:dvSize][t] - m[:dvRatedProduction][t,ts] <= m[:NewMaxSize][t] * (1-m[:binTechIsOnInTS][t,ts])
 		)
 	else
-		#Constraint (3b): Technologies that are turned on must not be turned down below minimum, except during outage
+        # distinct grid outage model 
+		# Constraint (3b): Technologies that are turned on must not be turned down below the MinTurndown while grid connected
 		@constraint(m, MinTurndownCon[t in p.FuelBurningTechs, ts in p.TimeStepsWithGrid],
 		p.MinTurndown[t] * m[:dvSize][t] - m[:dvRatedProduction][t,ts] <= m[:NewMaxSize][t] * (1-m[:binTechIsOnInTS][t,ts])
 		)
