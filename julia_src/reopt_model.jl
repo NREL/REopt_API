@@ -59,7 +59,7 @@ function add_continuous_variables(m, p)
         dvSupplementaryThermalProduction[p.CHPTechs, p.TimeStep] >= 0
 		dvSupplementaryFiringCHPSize[p.CHPTechs] >= 0  #X^{\sigma db}_{t}: System size of CHP with supplementary firing [kW]
 		#Offgrid analyses
-		dvLoadServed[p.TimeStep] >= 0
+		1 >= dvLoadServed[p.TimeStep] >= 0
 		dvSRbatt[p.ElecStorage, p.TimeStep] >= 0
 		dvSRrequired[p.TimeStep]>= 0
 		dvSRprovided[p.TimeStep] >= 0
@@ -833,12 +833,6 @@ function add_load_balance_constraints(m, p)
 			fix(m[:dvLoadServed][ts], 1.0, force=true)
 		end
 	else
-		@constraint(m, [ts in p.TimeStepsWithoutGrid],
-			m[:dvLoadServed][ts] <= 1
-		)
-		@constraint(m, [ts in p.TimeStepsWithoutGrid],
-			m[:dvLoadServed][ts] >= 0
-		)
 		@constraint(m, sum(m[:dvLoadServed][ts] * p.ElecLoad[ts] for ts in p.TimeStepsWithoutGrid) >=
 			sum(p.ElecLoad) * p.MinLoadMetPct
 			# p.AnnualElecLoadkWh * p.MinLoadMetPct 
