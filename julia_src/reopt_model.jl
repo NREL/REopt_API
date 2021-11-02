@@ -64,7 +64,6 @@ function add_continuous_variables(m, p)
 		dvSRrequired[p.TimeStep]>= 0
 		dvSRprovided[p.TimeStep] >= 0
 		dvSR[p.TechsProvidingSR, p.TimeStep] >= 0
-		dvProductionToLoad[p.TechsProvidingSR, p.TimeStep] >= 0
     end
 	if !isempty(p.ExportTiers)
 		@variable(m, dvProductionToGrid[p.Tech, p.ExportTiers, p.TimeStep] >= 0)  # X^{ptg}_{tuh}: Exports from electrical production to the grid by technology t in demand tier u during time step h [kW]   (NEW)
@@ -844,10 +843,10 @@ end
 function add_spinning_reserve_constraints(m, p)
 	# Calculate spinning reserve required
 	# 1. Production going to load from Techs Providing SR
-	@constraint(m, [t in p.TechsProvidingSR, ts in p.TimeStepsWithoutGrid],
-		m[:dvProductionToLoad][t,ts] == p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] -
-										sum(m[:dvProductionToStorage][b, t, ts] for b in p.ElecStorage) -
-										m[:dvProductionToCurtail][t, ts]
+	m[:dvProductionToLoad] = @expression(m, [t in p.TechsProvidingSR, ts in p.TimeStepsWithoutGrid],
+		p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] -
+        sum(m[:dvProductionToStorage][b, t, ts] for b in p.ElecStorage) -
+        m[:dvProductionToCurtail][t, ts]
 	)
 	# 2. Total SR required by Techs & Load
 	@constraint(m, [ts in p.TimeStepsWithoutGrid],
@@ -1765,7 +1764,9 @@ function add_pv_results(m, p, r::Dict)
 
 			#Offgrid
 			if p.OffGridFlag
-				PVrequiredSR = @expression(m, [ts in p.TimeStep], sum(m[:dvProductionToLoad][t,ts] * p.SRrequiredPctTechs[t] for t in PVtechs_in_class_noNEM))
+				PVrequiredSR = @expression(m, [ts in p.TimeStepsWithoutGrid], 
+                    sum(m[:dvProductionToLoad][t,ts] * p.SRrequiredPctTechs[t] for t in PVtechs_in_class_noNEM)
+                )
 				r[string("SRrequired", PVclass)] = round.(value.(PVrequiredSR), digits=3)
 
 				PVprovidedSR = @expression(m, [ts in p.TimeStep], sum(m[:dvSR][t,ts] for t in PVtechs_in_class_noNEM))
