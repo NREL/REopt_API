@@ -59,10 +59,8 @@ function add_continuous_variables(m, p)
         dvSupplementaryThermalProduction[p.CHPTechs, p.TimeStep] >= 0
 		dvSupplementaryFiringCHPSize[p.CHPTechs] >= 0  #X^{\sigma db}_{t}: System size of CHP with supplementary firing [kW]
 		#Offgrid analyses
-		1 >= dvLoadServed[p.TimeStepsWithoutGrid] >= 0
+		1 >= dvOffgridLoadServedFraction[p.TimeStepsWithoutGrid] >= 0
 		dvSRbatt[p.ElecStorage, p.TimeStepsWithoutGrid] >= 0
-		dvSRrequired[p.TimeStepsWithoutGrid]>= 0
-		dvSRprovided[p.TimeStepsWithoutGrid] >= 0
 		dvSR[p.TechsProvidingSR, p.TimeStepsWithoutGrid] >= 0
     end
 	if !isempty(p.ExportTiers)
@@ -825,15 +823,15 @@ function add_load_balance_constraints(m, p)
 		for t in p.ElectricTechs) +
         sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
         sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers )/ p.AbsorptionChillerElecCOP +
-		(p.ElecLoad[ts] * m[:dvLoadServed][ts])
+		(p.ElecLoad[ts] * m[:dvOffgridLoadServedFraction][ts])
 	)
 
-	if !p.OffGridFlag # fix dvLoadServed to 100% for "on-grid" analyses 
+	if !p.OffGridFlag # fix dvOffgridLoadServedFraction to 100% for "on-grid" analyses 
 		for ts in p.TimeStepsWithoutGrid
-			fix(m[:dvLoadServed][ts], 1.0, force=true)
+			fix(m[:dvOffgridLoadServedFraction][ts], 1.0, force=true)
 		end
 	else
-		@constraint(m, sum(m[:dvLoadServed][ts] * p.ElecLoad[ts] for ts in p.TimeStepsWithoutGrid) >=
+		@constraint(m, sum(m[:dvOffgridLoadServedFraction][ts] * p.ElecLoad[ts] for ts in p.TimeStepsWithoutGrid) >=
 			sum(p.ElecLoad) * p.MinLoadMetPct
 			# p.AnnualElecLoadkWh * p.MinLoadMetPct 
 		)
@@ -844,15 +842,15 @@ end
 function add_spinning_reserve_constraints(m, p)
 	# Calculate spinning reserve required
 	# 1. Production going to load from Techs Providing SR
-	m[:dvProductionToLoad] = @expression(m, [t in p.TechsProvidingSR, ts in p.TimeStepsWithoutGrid],
+	m[:ProductionToLoadSR] = @expression(m, [t in p.TechsProvidingSR, ts in p.TimeStepsWithoutGrid],
 		p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] -
         sum(m[:dvProductionToStorage][b, t, ts] for b in p.ElecStorage) -
         m[:dvProductionToCurtail][t, ts]
 	)
-	# 2. Total SR required by Techs & Load
-	@constraint(m, [ts in p.TimeStepsWithoutGrid],
-		m[:dvSRrequired][ts] >= sum(m[:dvProductionToLoad][t,ts] * p.SRrequiredPctTechs[t] for t in p.TechsRequiringSR) +
-								p.ElecLoad[ts] * m[:dvLoadServed][ts] * p.SRrequiredPctLoad
+	# 2. Total SR required by TechsRequiringSR & Load
+	m[:SRrequired] = @expression(m, [ts in p.TimeStepsWithoutGrid],
+		 sum(m[:ProductionToLoadSR][t,ts] * p.SRrequiredPctTechs[t] for t in p.TechsRequiringSR) 
+         + p.ElecLoad[ts] * m[:dvOffgridLoadServedFraction][ts] * p.SRrequiredPctLoad
 	)
 	# 3. Spinning reserve provided - battery
 	@constraint(m, [b in p.ElecStorage, ts in p.TimeStepsWithoutGrid],
@@ -861,24 +859,22 @@ function add_spinning_reserve_constraints(m, p)
 	@constraint(m, [b in p.ElecStorage, ts in p.TimeStepsWithoutGrid],
 		m[:dvSRbatt][b,ts] <= m[:dvStorageCapPower][b] - m[:dvDischargeFromStorage][b,ts] / p.DischargeEfficiency[b]
 	)
-	# 4. Spinning reserve provided - other technologies
+	# 4. Spinning reserve provided - TechsProvidingSR
 	@constraint(m, [t in p.TechsProvidingSR, ts in p.TimeStepsWithoutGrid],
-		 # Change dvRatedProd to dvSize - generator SR forces same amount to generator 1S
-		 # m[:dvSR][t,ts] <= (p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] -
 		 m[:dvSR][t,ts] <= (p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvSize][t] -
-		                   m[:dvProductionToLoad][t,ts]) * (1 - p.SRrequiredPctTechs[t])
+		                   m[:ProductionToLoadSR][t,ts]) * (1 - p.SRrequiredPctTechs[t])
 	)
-	# 5. Total spinning reserve provided
+	# 5. Upper bound on dvSR
 	@constraint(m, [t in p.TechsProvidingSR, ts in p.TimeStepsWithoutGrid],
 		m[:dvSR][t,ts] <= m[:binTechIsOnInTS][t,ts] * m[:NewMaxSize][t]
 	)
-	@constraint(m, [ts in p.TimeStepsWithoutGrid],
-		m[:dvSRprovided][ts] == sum(m[:dvSR][t,ts] for t in p.TechsProvidingSR) +
-								sum(m[:dvSRbatt][b,ts] for b in p.ElecStorage)
+	m[:SRprovided] = @expression(m, [ts in p.TimeStepsWithoutGrid],
+		sum(m[:dvSR][t,ts] for t in p.TechsProvidingSR) 
+        + sum(m[:dvSRbatt][b,ts] for b in p.ElecStorage)
 	)
 	# 6. SR provided must be greater than SR required
 	@constraint(m, [ts in p.TimeStepsWithoutGrid],
-		m[:dvSRrequired][ts] <= m[:dvSRprovided][ts]
+        m[:SRprovided][ts] >= m[:SRrequired][ts]
 	)
 
 end
@@ -1515,26 +1511,26 @@ function add_null_offgrid_financial_results(m, p, r::Dict)
 end
 
 function add_load_results(m, p, r::Dict)
-	@expression(m, LoadMet[ts in p.TimeStepsWithoutGrid], p.ElecLoad[ts] * m[:dvLoadServed][ts])
+	@expression(m, LoadMet[ts in p.TimeStepsWithoutGrid], p.ElecLoad[ts] * m[:dvOffgridLoadServedFraction][ts])
 	r["load_met"] = round.(value.(LoadMet), digits=6)
-	@expression(m, LoadMetPct, sum(m[:dvLoadServed][ts] * p.ElecLoad[ts] for ts in p.TimeStepsWithoutGrid) /
+	@expression(m, LoadMetPct, sum(m[:dvOffgridLoadServedFraction][ts] * p.ElecLoad[ts] for ts in p.TimeStepsWithoutGrid) /
 	 		sum(p.ElecLoad))
 	r["load_met_pct"] = round(value(LoadMetPct), digits=6)
 
-	@expression(m, SRrequiredLoad[ts in p.TimeStepsWithoutGrid], p.ElecLoad[ts] * m[:dvLoadServed][ts] * p.SRrequiredPctLoad)
+	@expression(m, SRrequiredLoad[ts in p.TimeStepsWithoutGrid], p.ElecLoad[ts] * m[:dvOffgridLoadServedFraction][ts] * p.SRrequiredPctLoad)
 	r["sr_required_load"] = round.(value.(SRrequiredLoad), digits=3)
 
 	#Debug outputs
-	@expression(m, TotSRrequired[ts in p.TimeStepsWithoutGrid], m[:dvSRrequired][ts])
+	@expression(m, TotSRrequired[ts in p.TimeStepsWithoutGrid], m[:SRrequired][ts])
 	r["tot_sr_required"] = round.(value.(TotSRrequired), digits=3)
-	@expression(m, TotSRprovided[ts in p.TimeStepsWithoutGrid], m[:dvSRprovided][ts])
+	@expression(m, TotSRprovided[ts in p.TimeStepsWithoutGrid], m[:SRprovided][ts])
 	r["tot_sr_provided"] = round.(value.(TotSRprovided), digits=3)
 	nothing
 end
 
 function add_offgrid_financial_results(m, p, r::Dict)
 	lcc = round(value(m[:REcosts]) + p.OtherCapitalCosts + p.OtherAnnualCosts)
-	@expression(m, AnnualkWhServed, sum(p.ElecLoad[ts] * value(m[:dvLoadServed][ts]) for  ts in p.TimeStepsWithoutGrid))
+	@expression(m, AnnualkWhServed, sum(p.ElecLoad[ts] * value(m[:dvOffgridLoadServedFraction][ts]) for  ts in p.TimeStepsWithoutGrid))
 	r["total_other_cap_costs"] = p.OtherCapitalCosts
 	r["total_annual_costs"] = p.OtherAnnualCosts
 
@@ -1770,7 +1766,7 @@ function add_pv_results(m, p, r::Dict)
 			#Offgrid
 			if p.OffGridFlag
 				PVrequiredSR = @expression(m, [ts in p.TimeStepsWithoutGrid], 
-                    sum(m[:dvProductionToLoad][t,ts] * p.SRrequiredPctTechs[t] for t in PVtechs_in_class_noNEM)
+                    sum(m[:ProductionToLoadSR][t,ts] * p.SRrequiredPctTechs[t] for t in PVtechs_in_class_noNEM)
                 )
 				r[string("SRrequired", PVclass)] = round.(value.(PVrequiredSR), digits=3)
 
