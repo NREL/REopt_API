@@ -340,6 +340,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 
                 analysis_period = self.inputs["Financial"]["analysis_years"]
                 discount_rate = self.inputs["Financial"]["owner_discount_pct"] # This is set to offtaker_disc_pct if third_party is false
+
+                # Previous capital cost slope allowed for multiple replacements and accounted for salvage value. This capability may be incorporated in future REopt releases
                 # diesel_unit_cost = setup_capital_cost_offgrid(analysis_period, discount_rate,
                 #                    self.inputs["Generator"]["installed_cost_us_dollars_per_kw"],
                 #                    self.inputs["Generator"]["installed_cost_us_dollars_per_kw"], # Replacement cost for generator assumed to be equal to installed cost
