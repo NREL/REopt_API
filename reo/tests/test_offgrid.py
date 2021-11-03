@@ -53,36 +53,36 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
                   "longitude": -118.11646129999997,
                   "address": "Palmdale CA",
                   "land_acres": 10000,
-                  "roof_squarefeet": 1000.0,
+                  "roof_squarefeet": 0.0,
                   "Financial": {
-                    "om_cost_escalation_pct": 0.0,
-                    "escalation_pct": 0.023,
-                    "generator_fuel_escalation_pct": 0.03,
-                    #"offtaker_tax_pct": 0.0,
-                    #"offtaker_discount_pct": 0.15,
+                    "om_cost_escalation_pct": 0.025,
+                    # "escalation_pct": 0.023,
+                    "generator_fuel_escalation_pct": 0.027,
+                    "offtaker_tax_pct": 0.26,
+                    "offtaker_discount_pct": 0.083,
                     #"owner_discount_pct":0.083,
                     "analysis_years": 25,
                     # "microgrid_upgrade_cost_pct": 0.0,
                     "other_capital_costs_us_dollars": 50000,
                     "other_annual_costs_us_dollars_per_year": 4000,
-                    "third_party_ownership": True,
+                    "third_party_ownership": False,
                   },
                   "LoadProfile": {
                     "doe_reference_name": "RetailStore",
                     "annual_kwh": 87600.0,
                     "year": 2017,
-                    "outage_start_time_step": 2, # This should get overwritten to be 1 
+                    "outage_start_time_step": 1, # This should get overwritten to be 1 
                     "outage_end_time_step": 8760,
                     ## "critical_load_pct": 0.05, # This returns an error if not set to 1.0
                     # "outage_is_major_event": False,
-                    "min_load_met_pct": 0.9999, # 1.0, # 0.98
-                    "sr_required_pct": 0.35
+                    "min_load_met_pct": 0.9999, # 0.9999, # 1.0, # 0.98
+                    "sr_required_pct": 0.1
                   },
                   "PV": {
-                    "existing_kw": 20.0,
-                    "min_kw": 1000.0,
-                    "max_kw": 1000.0,
-                    "sr_required_pct": 0.0,
+                    "existing_kw": 0.0,
+                    "min_kw": 0.0,
+                    "max_kw": 1.0e5,
+                    "sr_required_pct": 0.25,
                     # "installed_cost_us_dollars_per_kw": 1600.0,
                     # "om_cost_us_dollars_per_kw": 16.0,
                     # "macrs_option_years": 0,
@@ -140,8 +140,8 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
                   "Generator": {
                     "useful_life_years": 5,
                     "existing_kw": 0.0,
-                    "min_kw": 0.0, # 10.0,
-                    "max_kw": 0.0, # 100.0,
+                    "min_kw": 0.0,
+                    "max_kw": 10000.0, # 100.0,
                     "installed_cost_us_dollars_per_kw": 500.0,
                     "om_cost_us_dollars_per_kw": 10.0,
                     "om_cost_us_dollars_per_kwh": 0.0,
@@ -149,7 +149,7 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
                     # "fuel_slope_gal_per_kwh": 0.1,
                     # "fuel_intercept_gal_per_hr": 0.023,
                     # "fuel_avail_gal": 1000000000,
-                    # "min_turn_down_pct": 0.0,
+                    "min_turn_down_pct": 0.15,
                     # "generator_only_runs_during_grid_outage": True,
                     # "generator_sells_energy_back_to_grid": False,
                     # "macrs_option_years": 0,
@@ -217,6 +217,9 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
             print('Battery size [kWh]: ', outputs['Storage']['size_kwh'])
             print('Battery size [kW]: ', outputs['Storage']['size_kw'])
             print('Generator size [kW]:', outputs['Generator']['size_kw'])
+
+            print('\nnet_capital_costs:', outputs['Financial']["net_capital_costs"])
+
             print('Load SR required (summed over year):', sum(outputs['LoadProfile']['total_sr_required']))
             print('Load SR provided (summed over year):', sum(outputs['LoadProfile']['total_sr_provided']))
 
@@ -224,7 +227,8 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
             print('Input Min Load Met [%]: ', inputs['LoadProfile']["min_load_met_pct"])
             print('Load met [kWh]: ', sum(outputs['LoadProfile']["load_met_series_kw"]))
             print('Load [kWh]: ', sum(outputs['LoadProfile']["year_one_electric_load_series_kw"]) )
-            print('Output Load met [%]: ', sum(outputs['LoadProfile']["load_met_series_kw"]) / sum(outputs['LoadProfile']["year_one_electric_load_series_kw"]) )
+            # print('Output Load met, calculated [%]: ', sum(outputs['LoadProfile']["load_met_series_kw"]) / sum(outputs['LoadProfile']["year_one_electric_load_series_kw"]) )
+            print('Output Load met, in nested_outputs [%]: ', outputs['LoadProfile']["load_met_pct"])
 
 
             # print('year_one_to_load_series_kw', response['outputs']['Scenario']['Site']['PV']['year_one_to_load_series_kw'])
@@ -248,6 +252,11 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
                              "PV sum(year_one_to_grid_series_kw) does not equal 0. Equals {}".format(sum(outputs["PV"]["year_one_to_grid_series_kw"])))
             self.assertEqual(sum(outputs["Storage"]["year_one_to_grid_series_kw"]), 0.0,
                              "Storage sum(year_one_to_grid_series_kw) does not equal 0. Equals {}".format(sum(outputs["Storage"]["year_one_to_grid_series_kw"])))
+
+            # Check that Load met % is greater than requirement
+            self.assertGreaterEqual(outputs["LoadProfile"]["load_met_pct"],
+                                    inputs['LoadProfile']["min_load_met_pct"],
+                                    "Load met pct is less than required pct.")
                       
             # TODO: check that lcoe components add up to 100%  
 

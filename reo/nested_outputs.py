@@ -142,8 +142,13 @@ nested_output_definitions = {
                 },
                 "load_met_series_kw": {
                   "type": "list_of_float",
-                  "description": "Spinning reserve requirement for changes in load in each time step",
+                  "description": "Total load served (or total generation) in each time step",
                   "units": "kW"
+                },
+                "load_met_pct": {
+                  "type": "float",
+                  "description": "Annual load met divided by annual total load",
+                  "units": "%"
                 },
                 "sr_required_series_kw": {
                   "type": "list_of_float",

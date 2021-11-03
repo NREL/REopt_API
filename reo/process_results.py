@@ -523,6 +523,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["bau_sustained_time_steps"] = self.dm["LoadProfile"].get("bau_sustained_time_steps")
                     self.nested_outputs["Scenario"]["Site"][name]['loads_kw'] = self.dm["LoadProfile"].get("year_one_electric_load_series_kw")
                     self.nested_outputs["Scenario"]["Site"][name]["load_met_series_kw"] = self.results_dict.get("load_met")
+                    self.nested_outputs["Scenario"]["Site"][name]["load_met_pct"] = self.results_dict.get("load_met_pct")
                     self.nested_outputs["Scenario"]["Site"][name]["sr_required_series_kw"] = self.results_dict.get("sr_required_load")
                     #Debug variables
                     self.nested_outputs["Scenario"]["Site"][name]["total_sr_required"] = self.results_dict.get("tot_sr_required")

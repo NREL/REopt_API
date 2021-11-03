@@ -252,6 +252,7 @@ class LoadProfileModel(models.Model):
     bau_sustained_time_steps = models.IntegerField(null=True, blank=True)
     resilience_check_flag = models.BooleanField(null=True, blank=True)
     load_met_series_kw = ArrayField(models.FloatField(blank=True), default=list, null=True)
+    load_met_pct = models.FloatField(null=True, blank=True)
     sr_required_series_kw = ArrayField(models.FloatField(blank=True), default=list, null=True)
     total_sr_required = ArrayField(models.FloatField(blank=True), default=list, null=True)
     total_sr_provided = ArrayField(models.FloatField(blank=True), default=list, null=True)
