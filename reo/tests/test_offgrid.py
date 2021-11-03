@@ -28,11 +28,10 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
 import json
-from logging import getLogRecordFactory
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
-import pandas as pd
-import os
+
+
 class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
     """
     Test off-grid analyses
@@ -171,7 +170,6 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
                     # "pbi_system_max_kw": 0.0
                   }
                 },
-                "timeout_seconds": 3600,
                 "user_uuid": None,
                 "description": "",
                 "time_steps_per_hour": 1, # 2, # 
@@ -182,21 +180,10 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
     def get_response(self, data):
         initial_post = self.api_client.post(self.submit_url, format='json', data=data)
         uuid = json.loads(initial_post.content)['run_uuid']
-
         response = json.loads(self.api_client.get(self.results_url.replace('<run_uuid>', str(uuid))).content)
-        # # the following is not needed b/c we test the app with Celery tasks in "eager" mode
-        # # i.e. asynchronously. If we move to testing the API, then the while loop is needed
-        # status = response['outputs']['Scenario']['status']
-        # while status == "Optimizing...":
-        #     time.sleep(2)
-        #     response = json.loads(self.api_client.get(self.results_url + uuid).content)
-        #     status = response['outputs']['Scenario']['status']
-
         return response
 
     def test_off_grid_modeling(self):
-        ## expected_pv_size = 42 #41.6667
-
         response = self.get_response(self.post)
         pv_out = response['outputs']['Scenario']['Site']['PV']
         messages = response['messages']
