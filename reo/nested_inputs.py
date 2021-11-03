@@ -256,7 +256,7 @@ off_grid_defaults = {
           "type": "float",
           "min": 0.0,
           "max": 10,
-          "default": 0.1,
+          "default": 0.076,
           "description": "Generator fuel burn rate in gallons/kWh."
         },
         "fuel_intercept_gal_per_hr": {
