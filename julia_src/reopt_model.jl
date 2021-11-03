@@ -1516,7 +1516,11 @@ end
 
 function add_load_results(m, p, r::Dict)
 	@expression(m, LoadMet[ts in p.TimeStep], p.ElecLoad[ts] * m[:dvLoadServed][ts])
-	r["load_met"] = round.(value.(LoadMet), digits=3)
+	r["load_met"] = round.(value.(LoadMet), digits=6)
+	@expression(m, LoadMetPct, sum(m[:dvLoadServed][ts] * p.ElecLoad[ts] for ts in p.TimeStepsWithoutGrid) /
+	 		sum(p.ElecLoad))
+	r["load_met_pct"] = round(value(LoadMetPct), digits=6)
+
 	@expression(m, SRrequiredLoad[ts in p.TimeStep], p.ElecLoad[ts] * m[:dvLoadServed][ts] * p.SRrequiredPctLoad)
 	r["sr_required_load"] = round.(value.(SRrequiredLoad), digits=3)
 
