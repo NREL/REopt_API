@@ -1021,23 +1021,13 @@ class DataManager:
             time_steps_without_grid -- list of ints indicating outage time
                 steps
         """
-        if self.off_grid_flag:
-            time_steps_with_grid = []
-                    time_steps_with_grid = list()
+        time_steps_with_grid = list()
         time_steps_without_grid = list()
         for i, pf in enumerate(self.util.prod_factor):
             if pf > 0.5:
                 time_steps_with_grid.append(i+1)
             else:
                 time_steps_without_grid.append(i+1)
-        else:
-            time_steps_with_grid = list()
-            time_steps_without_grid = list()
-            for i, pf in enumerate(self.util.prod_factor):
-                if pf > 0.5:
-                    time_steps_with_grid.append(i+1)
-                else:
-                    time_steps_without_grid.append(i+1)
         return time_steps_with_grid, time_steps_without_grid
 
     def _get_REopt_storage_techs_and_params(self):
