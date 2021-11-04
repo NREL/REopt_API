@@ -638,14 +638,7 @@ class DataManager:
                             useful_life = eval('self.' + tech + '.useful_life_years')
                             replacement_cost = eval('self.' + tech + '.installed_cost_us_dollars_per_kw')
 
-                        # Not currently considering multiple replacements or salvage value
-                        # updated_slope = setup_capital_cost_offgrid(
-                        #     sf.analysis_years,
-                        #     sf.owner_discount_pct,
-                        #     eval('self.' + tech + '.installed_cost_us_dollars_per_kw'),
-                        #     replacement_cost,
-                        #     useful_life
-                        # )
+                        # Not currently considering multiple replacements or salvage value, last available in commit c7699790a50f063cfd8e4981c778bd7d3751ae42
                         
                         updated_slope = setup_capital_cost_incentive(
                             itc_basis=itc_unit_basis,  # input tech cost with incentives, but no ITC
@@ -1045,20 +1038,6 @@ class DataManager:
 
         if self.off_grid_flag: 
             # Using on-grid capital cost slope for now
-            # StorageCostPerKW = setup_capital_cost_offgrid(
-            #     sf.analysis_years,
-            #     sf.owner_discount_pct,
-            #     self.storage.installed_cost_us_dollars_per_kw,
-            #     self.storage.replace_cost_us_dollars_per_kw,
-            #     self.storage.inverter_replacement_year
-            # )
-            # StorageCostPerKWH = setup_capital_cost_offgrid(
-            #     sf.analysis_years,
-            #     sf.owner_discount_pct,
-            #     self.storage.installed_cost_us_dollars_per_kwh,  # there are no cash incentives for kwh
-            #     self.storage.replace_cost_us_dollars_per_kwh,
-            #     self.storage.battery_replacement_year
-            # )
             StorageCostPerKW = setup_capital_cost_incentive(
                 self.storage.installed_cost_us_dollars_per_kw,  # use full cost as basis
                 self.storage.replace_cost_us_dollars_per_kw,
