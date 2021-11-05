@@ -208,6 +208,11 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
             self.assertGreaterEqual(outputs["LoadProfile"]["load_met_pct"],
                                     inputs['LoadProfile']["min_load_met_pct"],
                                     "Load met pct is less than required pct.")
+            
+            # Check that SR provided is greater than SR required 
+            self.assertGreaterEqual(sum(outputs['LoadProfile']['total_sr_provided']),
+                                    sum(outputs['LoadProfile']['total_sr_required']),
+                                    "Total SR provided is less than required SR.")
                       
             # TODO: check that lcoe components add up to 100%
         except Exception as e:
