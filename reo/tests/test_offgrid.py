@@ -142,7 +142,7 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
                     "min_kw": 0.0,
                     "max_kw": 10000.0, # 100.0,
                     "installed_cost_us_dollars_per_kw": 500.0,
-                    "om_cost_us_dollars_per_kw": 10.0,
+                    "om_cost_us_dollars_per_kw": 20.0,
                     "om_cost_us_dollars_per_kwh": 0.0,
                     "diesel_fuel_cost_us_dollars_per_gallon": 3.0,
                     # "fuel_slope_gal_per_kwh": 0.1,
@@ -172,11 +172,11 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
                 },
                 "user_uuid": None,
                 "description": "",
-                "time_steps_per_hour": 1, # 2, # 
+                "time_steps_per_hour": 1,
                 "webtool_uuid": None
               }
             }
-
+        
     def get_response(self, data):
         initial_post = self.api_client.post(self.submit_url, format='json', data=data)
         uuid = json.loads(initial_post.content)['run_uuid']
@@ -205,6 +205,9 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
             print('Battery size [kW]: ', outputs['Storage']['size_kw'])
             print('Generator size [kW]:', outputs['Generator']['size_kw'])
 
+            print('Fuel used [gal]:', outputs['Generator']['fuel_used_gal'])
+            print('Fuel used as sum of 1-year series [gal]:', sum(outputs['Generator']['fuel_used_series_gal']))
+
             print('\nnet_capital_costs:', outputs['Financial']["net_capital_costs"])
 
             print('Load SR required (summed over year):', sum(outputs['LoadProfile']['total_sr_required']))
@@ -223,8 +226,6 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
             # Check outage start and end time step, critical load %, outage is major event
             self.assertEqual(inputs["LoadProfile"]["outage_start_time_step"], 1,
                              "outage_start_time_step does not equal 1. Equals {}".format(inputs["LoadProfile"]["outage_start_time_step"]))
-            # self.assertEqual(inputs["LoadProfile"]["outage_end_time_step"], 8760,
-            #                  "outage_end_time_step does not equal 8760. Equals {}".format(inputs["LoadProfile"]["outage_end_time_step"]))
             self.assertEqual(inputs["LoadProfile"]["critical_load_pct"], 1.0,
                              "Critical load pct does not equal 1. Equals {}".format(inputs["LoadProfile"]["critical_load_pct"]))    
             self.assertEqual(inputs["Generator"]["generator_sells_energy_back_to_grid"], False,

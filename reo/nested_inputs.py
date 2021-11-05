@@ -113,48 +113,6 @@ off_grid_defaults = {
     },
     "Site": {
       "Financial": {
-        "om_cost_escalation_pct": {
-          "type": "float",
-          "min": -1.0,
-          "max": 1.0,
-          "default": 0.025,
-          "description": "Annual nominal O&M cost escalation rate"
-        },
-        "generator_fuel_escalation_pct": {
-          "type": "float",
-          "min": -1.0,
-          "max": 1.0,
-          "default": 0.027,
-          "description": "Annual nominal diesel generator fuel cost escalation rate"
-        },
-        "offtaker_tax_pct": {
-          "type": "float",
-          "min": 0.0,
-          "max": 0.999,
-          "default": 0.26,
-          "description": "Host tax rate"
-        },
-        "offtaker_discount_pct": {
-          "type": "float",
-          "min": 0.0,
-          "max": 1.0,
-          "default": 0.083,
-          "description": "Nominal energy offtaker discount rate. In single ownership model the offtaker is also the generation owner."
-        },
-        "owner_tax_pct": {
-          "type": "float",
-          "min": 0.0,
-          "max": 0.999,
-          "default": 0.26,
-          "description": "Generation owner tax rate. Used for two party financing model. In two party ownership model the offtaker does not own the generator(s)."
-        },
-        "owner_discount_pct": {
-          "type": "float",
-          "min": 0.0,
-          "max": 1.0,
-          "default": 0.083,
-          "description": "Nominal generation owner discount rate. Used for two party financing model. In two party ownership model the offtaker does not own the generator(s)."
-        },
         "microgrid_upgrade_cost_pct": {
           "type": "float",
           "min": 0.0,
@@ -177,60 +135,13 @@ off_grid_defaults = {
           "description": "Boolean value for if outage is a major event, which affects the avoided_outage_costs_us_dollars. If True, the avoided outage costs are calculated for a single outage occurring in the first year of the analysis_years. If False, the outage event is assumed to be an average outage event that occurs every year of the analysis period. In the latter case, the avoided outage costs for one year are escalated and discounted using the escalation_pct and offtaker_discount_pct to account for an annually recurring outage. (Average outage durations for certain utility service areas can be estimated using statistics reported on EIA form 861.)"
         }
       },
-      "PV": {
-        "installed_cost_us_dollars_per_kw": {
-          "type": "float",
-          "min": 0.0,
-          "max": 1.0e5,
-          "default": 1600.0,
-          "description": "Installed PV cost in $/kW"
-        },
-        "om_cost_us_dollars_per_kw": {
-          "type": "float",
-          "min": 0.0,
-          "max": 1.0e3,
-          "default": 16.0,
-          "description": "Annual PV operations and maintenance costs in $/kW"
-        }
-      },
       "Storage": {
         "soc_init_pct": {
           "type": "float", "min": 0.0, "max": 1.0, "default": 1.0,
           "description": "Battery state of charge at first hour of optimization"
-        },
-        "installed_cost_us_dollars_per_kw": {
-          "type": "float", "min": 0.0, "max": 1.0e4, "default": 840.0,
-          "description": "Total upfront battery power capacity costs (e.g. inverter and balance of power systems)"
-        },
-        "installed_cost_us_dollars_per_kwh": {
-          "type": "float", "min": 0.0, "max": 1.0e4, "default": 420.0,
-          "description": "Total upfront battery costs"
-        },
-        "replace_cost_us_dollars_per_kw": {
-          "type": "float", "min": 0.0, "max": 1.0e4, "default": 410.0,
-          "description": "Battery power capacity replacement cost at time of replacement year"
-        },
-        "replace_cost_us_dollars_per_kwh": {
-          "type": "float", "min": 0.0, "max": 1.0e4, "default": 200.0,
-          "description": "Battery energy capacity replacement cost at time of replacement year"
-        },
-        "inverter_replacement_year": {
-          "type": "float", "min": 0.0, "max": max_years, "default": 10.0,
-          "description": "Number of years from start of analysis period to replace inverter"
-        },
-        "battery_replacement_year": {
-          "type": "float", "min": 0.0, "max": max_years, "default": 10.0,
-          "description": "Number of years from start of analysis period to replace battery"
         }
       },
       "Generator": {
-        "installed_cost_us_dollars_per_kw": {
-          "type": "float",
-          "min": 0.0,
-          "max": 1.0e5,
-          "default": 500.0,
-          "description": "Installed diesel generator cost in $/kW"
-        },
         "om_cost_us_dollars_per_kw": {
           "type": "float",
           "min": 0.0,
@@ -238,40 +149,12 @@ off_grid_defaults = {
           "default": 20.0,
           "description": "Annual diesel generator fixed operations and maintenance costs in $/kW"
         },
-        "om_cost_us_dollars_per_kwh": {
-          "type": "float",
-          "min": 0.0,
-          "max": 1.0e3,
-          "default": 0.0,
-          "description": "Diesel generator per unit production (variable) operations and maintenance costs in $/kWh"
-        },
-        "diesel_fuel_cost_us_dollars_per_gallon": {
-          "type": "float",
-          "min": 0.0,
-          "max": 1.0e2,
-          "default": 3.0,
-          "description": "Diesel cost in $/gallon"
-        },
-        "fuel_slope_gal_per_kwh": {
-          "type": "float",
-          "min": 0.0,
-          "max": 10,
-          "default": 0.1,
-          "description": "Generator fuel burn rate in gallons/kWh."
-        },
-        "fuel_intercept_gal_per_hr": {
-          "type": "float",
-          "min": 0.0,
-          "max": 10,
-          "default": 0.0,
-          "description": "Generator fuel consumption curve y-intercept in gallons per hour."
-        },
         "fuel_avail_gal": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e9,
           "default": 1.0e9,
-          "description": "On-site generator fuel available in gallons."
+          "description": "Annual on-site generator fuel available in gallons."
         },
         "min_turn_down_pct": {
           "type": "float",
@@ -1499,7 +1382,7 @@ nested_input_definitions = {
           "min": 0.0,
           "max": 1.0e9,
           "default": 660.0,
-          "description": "On-site generator fuel available in gallons."
+          "description": "Annual on-site generator fuel available in gallons."
         },
         "min_turn_down_pct": {
           "type": "float",
