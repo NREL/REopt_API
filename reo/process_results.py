@@ -492,7 +492,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["load_met_series_kw"] = self.results_dict.get("load_met")
                     self.nested_outputs["Scenario"]["Site"][name]["load_met_pct"] = self.results_dict.get("load_met_pct")
                     self.nested_outputs["Scenario"]["Site"][name]["sr_required_series_kw"] = self.results_dict.get("sr_required_load")
-                    #Debug variables
                     self.nested_outputs["Scenario"]["Site"][name]["total_sr_required"] = self.results_dict.get("tot_sr_required")
                     self.nested_outputs["Scenario"]["Site"][name]["total_sr_provided"] = self.results_dict.get("tot_sr_provided")
                 elif name == "LoadProfileBoilerFuel":
