@@ -70,11 +70,7 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
                     "doe_reference_name": "RetailStore",
                     "annual_kwh": 87600.0,
                     "year": 2017,
-                    "outage_start_time_step": 1, # This should get overwritten to be 1 
-                    "outage_end_time_step": 8760,
-                    ## "critical_load_pct": 0.05, # This returns an error if not set to 1.0
-                    # "outage_is_major_event": False,
-                    "min_load_met_pct": 0.9999, # 0.9999, # 1.0, # 0.98
+                    "min_load_met_pct": 1.0,
                     "sr_required_pct": 0.1
                   },
                   "PV": {
