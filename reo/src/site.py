@@ -89,11 +89,18 @@ class Financial(object):
 class Site(object):
 
     def __init__(self, dfm, land_acres=None, roof_squarefeet=None,
-    include_exported_elec_emissions_in_total=None,
+    renewable_electricity_min_pct=None, renewable_electricity_max_pct=None,
+    co2_emissions_reduction_min_pct=None, co2_emissions_reduction_max_pct=None,
+    include_exported_elec_emissions_in_total=None,include_exported_renewable_electricity_in_total=None,
      **kwargs):
 
         self.land_acres = land_acres
         self.roof_squarefeet = roof_squarefeet
         self.financial = Financial(**kwargs['Financial'])
+        self.renewable_electricity_min_pct = renewable_electricity_min_pct
+        self.renewable_electricity_max_pct = renewable_electricity_max_pct
+        self.co2_emissions_reduction_min_pct = co2_emissions_reduction_min_pct
+        self.co2_emissions_reduction_max_pct = co2_emissions_reduction_max_pct
         self.include_exported_elec_emissions_in_total = include_exported_elec_emissions_in_total
+        self.include_exported_renewable_electricity_in_total = include_exported_renewable_electricity_in_total
         dfm.add_site(self)

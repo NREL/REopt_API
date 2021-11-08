@@ -34,17 +34,19 @@ class FuelTariff(object):
     """
 
     def __init__(self, dfm, time_steps_per_hour, existing_boiler_fuel_type=None,
-                 boiler_fuel_blended_annual_rates_us_dollars_per_mmbtu=None,
+                 boiler_fuel_percent_RE=None, boiler_fuel_blended_annual_rates_us_dollars_per_mmbtu=None,
                  boiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu=None,
-                 chp_fuel_type=None, chp_fuel_blended_annual_rates_us_dollars_per_mmbtu=None,
+                 chp_fuel_type=None, chp_fuel_percent_RE=None, chp_fuel_blended_annual_rates_us_dollars_per_mmbtu=None,
                  chp_fuel_blended_monthly_rates_us_dollars_per_mmbtu=None, **kwargs):
 
         self.time_steps_per_hour = time_steps_per_hour
         self.existing_boiler_fuel_type = existing_boiler_fuel_type
+        self.boiler_fuel_percent_RE = boiler_fuel_percent_RE
         self.boiler_fuel_blended_annual_rates_us_dollars_per_mmbtu = boiler_fuel_blended_annual_rates_us_dollars_per_mmbtu
         self.boiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu = boiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu
 
         self.chp_fuel_type = chp_fuel_type
+        self.chp_fuel_percent_RE = chp_fuel_percent_RE
         self.chp_fuel_blended_annual_rates_us_dollars_per_mmbtu = chp_fuel_blended_annual_rates_us_dollars_per_mmbtu
         self.chp_fuel_blended_monthly_rates_us_dollars_per_mmbtu = chp_fuel_blended_monthly_rates_us_dollars_per_mmbtu
 
