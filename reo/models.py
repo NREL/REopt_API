@@ -144,33 +144,32 @@ class SiteModel(models.Model):
     outdoor_air_temp_degF = ArrayField(models.FloatField(blank=True, null=True), default=list, null=True)
     elevation_ft = models.FloatField(null=True, blank=True)
     renewable_electricity_energy_pct = models.FloatField(null=True, blank=True)
+    
+    preprocessed_year_one_emissions_bau_lb_CO2 = models.FloatField(null=True, blank=True)
+    renewable_electricity_min_pct = models.FloatField(null=True, blank=True)
+    renewable_electricity_max_pct = models.FloatField(null=True, blank=True)
+    co2_emissions_reduction_min_pct = models.FloatField(null=True, blank=True)
+    co2_emissions_reduction_max_pct = models.FloatField(null=True, blank=True)
+    include_exported_renewable_electricity_in_total = models.BooleanField(null=True, blank=True)
     include_exported_elec_emissions_in_total = models.BooleanField(null=True, blank=True)
-
-    ## preprocessed_year_one_emissions_bau_lb_CO2 = models.FloatField(null=True, blank=True)
-    ## renewable_electricity_min_pct = models.FloatField(null=True, blank=True)
-    ## renewable_electricity_max_pct = models.FloatField(null=True, blank=True)
-    ## emissions_reduction_min_pct = models.FloatField(null=True, blank=True)
-    ## emissions_reduction_max_pct = models.FloatField(null=True, blank=True)
-    ## include_exported_renewable_electricity_in_total = models.BooleanField(null=True, blank=True)
-    include_exported_elec_emissions_in_total = models.BooleanField(null=True, blank=True)
-    ## include_outage_emissions_in_total = models.BooleanField(null=True, blank=True)
-
+    include_outage_emissions_in_total = models.BooleanField(null=True, blank=True)
+    
     #outputs
-    ## year_one_renewable_electricity_pct = models.FloatField(null=True, blank=True)
-    ## year_one_renewable_electricity_kwh = models.FloatField(null=True, blank=True)
-    ## year_one_renewable_heat_pct = models.FloatField(null=True, blank=True)
-    ## year_one_renewable_heat_mmbtu = models.FloatField(null=True, blank=True)
-    ## year_one_emissions_reduction_pct = models.FloatField(null=True, blank=True)
+    year_one_renewable_electricity_pct = models.FloatField(null=True, blank=True)
+    year_one_renewable_electricity_kwh = models.FloatField(null=True, blank=True)
+    year_one_renewable_heat_pct = models.FloatField(null=True, blank=True)
+    year_one_renewable_heat_mmbtu = models.FloatField(null=True, blank=True)
+    year_one_CO2_emissions_reduction_pct = models.FloatField(null=True, blank=True)
     year_one_emissions_lb_CO2 = models.FloatField(null=True, blank=True)
     year_one_CO2_emissions_from_fuelburn = models.FloatField(null=True, blank=True)
     year_one_CO2_emissions_from_elec_grid_purchase = models.FloatField(null=True, blank=True)
     year_one_CO2_emissions_offset_from_elec_exports = models.FloatField(null=True, blank=True)
-    ## year_one_cost_of_emissions_reduction_us_dollars_per_ton_CO2 = models.FloatField(null=True, blank=True)
+    breakeven_cost_of_emissions_reduction_us_dollars_per_ton_CO2 = models.FloatField(null=True, blank=True)
 
-    ## year_one_renewable_electricity_bau_pct = models.FloatField(null=True, blank=True)
-    ## year_one_renewable_electricity_bau_kwh = models.FloatField(null=True, blank=True)
-    ## year_one_renewable_heat_bau_pct = models.FloatField(null=True, blank=True)
-    ## year_one_renewable_heat_bau_mmbtu = models.FloatField(null=True, blank=True)
+    year_one_renewable_electricity_bau_pct = models.FloatField(null=True, blank=True)
+    year_one_renewable_electricity_bau_kwh = models.FloatField(null=True, blank=True)
+    year_one_renewable_heat_bau_pct = models.FloatField(null=True, blank=True)
+    year_one_renewable_heat_bau_mmbtu = models.FloatField(null=True, blank=True)
     year_one_emissions_bau_lb_CO2 = models.FloatField(null=True, blank=True)
     year_one_CO2_emissions_from_fuelburn_bau = models.FloatField(null=True, blank=True)
     year_one_CO2_emissions_from_elec_grid_purchase_bau = models.FloatField(null=True, blank=True)
@@ -450,9 +449,11 @@ class FuelTariffModel(models.Model):
     # Inputs
     run_uuid = models.UUIDField(unique=True)
     existing_boiler_fuel_type = models.TextField(null=True, blank=True)
+    boiler_fuel_percent_RE = models.FloatField(null=True, blank=True)
     boiler_fuel_blended_annual_rates_us_dollars_per_mmbtu = models.FloatField(null=True, blank=True)
     boiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True)
     chp_fuel_type = models.TextField(null=True, blank=True)
+    chp_fuel_percent_RE = models.FloatField(null=True, blank=True)
     chp_fuel_blended_annual_rates_us_dollars_per_mmbtu = models.FloatField(null=True, blank=True)
     chp_fuel_blended_monthly_rates_us_dollars_per_mmbtu = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True)
 
@@ -541,8 +542,7 @@ class PVModel(models.Model):
             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
     existing_pv_om_cost_us_dollars = models.FloatField(null=True, blank=True)
     lcoe_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
-    ## year_one_exported_emissions_offset_lb_CO2 = models.FloatField(null=True, blank=True)
-    ## year_one_exported_emissions_offset_bau_lb_CO2 = models.FloatField(null=True, blank=True)
+
 
     @classmethod
     def create(cls, **kwargs):
@@ -608,8 +608,6 @@ class WindModel(models.Model):
     lcoe_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
     year_one_curtailed_production_series_kw = ArrayField(
             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
-    ## year_one_exported_emissions_offset_lb_CO2 = models.FloatField(null=True, blank=True)
-    ## year_one_exported_emissions_offset_bau_lb_CO2 = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -696,6 +694,7 @@ class GeneratorModel(models.Model):
     pbi_max_us_dollars = models.FloatField(null=True, blank=True)
     pbi_years = models.FloatField(null=True, blank=True)
     pbi_system_max_kw = models.FloatField(null=True, blank=True)
+    generator_fuel_percent_RE = models.FloatField(null=True, blank=True)
     emissions_factor_lb_CO2_per_gal = models.FloatField(null=True, blank=True)
     emissions_factor_lb_NOx_per_gal = models.FloatField(null=True, blank=True)
     emissions_factor_lb_SO2_per_gal = models.FloatField(null=True, blank=True)

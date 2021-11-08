@@ -203,11 +203,35 @@ nested_input_definitions = {
         "default": 0.0,
         "description": "Site elevation (above sea sevel), units of feet"
       },
+      "renewable_electricity_min_pct": {
+        "type": "float",
+        "min": 0,
+        "description": "Minumum acceptable percent of total energy consumption provided by renewable energy annually."
+      },
+      "renewable_electricity_max_pct": {
+        "type": "float",
+        "min": 0,
+        "description": "Maximum acceptable percent of total energy consumption provided by renewable energy annually."
+      },
+      "co2_emissions_reduction_min_pct": {
+        "type": "float",
+        "description": "Minumum acceptable percent of carbon emissions reduction relative to the business-as-usual case, in Year 1."
+      },
+      "co2_emissions_reduction_max_pct": {
+        "type": "float",
+        "description": "Maximum acceptable percent of carbon emissions reduction relative to the business-as-usual case, in Year 1."
+      },
       "include_exported_elec_emissions_in_total": {
         "type": "bool",
         "default": False,
         "description": "Include the emissions reductions (or increases) in grid emissions associated with exported onsite electrical generation in the calculation of Year 1 emissions."  
       },
+      "include_exported_renewable_electricity_in_total": {
+        "type": "bool",
+        "default": True,
+        "description": "True indicates site retains credits for exported electricity derived from renewable resources."
+      },
+
 
       "Financial": {
         "om_cost_escalation_pct": {
@@ -720,6 +744,13 @@ nested_input_definitions = {
           "default": [0.0]*12,
           "description": "Array (length of 12) of blended fuel rates (total monthly energy in mmbtu divided by monthly cost in $)"
         },
+        "boiler_fuel_percent_RE": {
+          "type": "float",
+          "default": 0.0,
+          "min": 0.0,
+          "max": 1.0,
+          "description": "Fraction of boiler fuel, on an energy basis, that is classified as renewable; for RE accounting purposes."
+        },
         "chp_fuel_type": {
           "type": "str",
           "default": 'natural_gas',
@@ -735,6 +766,13 @@ nested_input_definitions = {
           "type": "list_of_float",
           "default": [0.0] * 12,
           "description": "Array (length of 12) of blended fuel rates (total monthly energy in mmbtu divided by monthly cost in $)"
+        },
+        "chp_fuel_percent_RE": {
+          "type": "float",
+          "default": 0.0,
+          "min": 0.0,
+          "max": 1.0,
+          "description": "Fraction of CHP fuel, on an energy basis, that is classified as renewable; for RE accounting purposes."
         }
       },
 
@@ -1357,6 +1395,13 @@ nested_input_definitions = {
           "max": 1.0,
           "default": 0.0,
           "description": "Minimum generator loading in percent of capacity (size_kw)."
+        },
+        "generator_fuel_percent_RE": {
+          "type": "float",
+          "default": 0.0,
+          "min": 0.0,
+          "max": 1.0,
+          "description": "Fraction of generator fuel, on an energy basis, that is classified as renewable; for RE accounting purposes."
         },
         "generator_only_runs_during_grid_outage": {
           "default": True,

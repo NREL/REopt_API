@@ -221,16 +221,16 @@ Base.@kwdef struct Parameter
 	 AddSOCIncentive::Int64
 
     # Annual RE parameters
-     ## IncludeExportedREElecinTotal::Bool
-     ##TechPercentRE::AxisArray
-     ##MinAnnualPercentREElec::Union{Float64,Nothing} 
-     ##MaxAnnualPercentREElec::Union{Float64,Nothing} 
+     TechPercentRE::AxisArray
+     MinAnnualPercentREElec::Union{Float64,Nothing} 
+     MaxAnnualPercentREElec::Union{Float64,Nothing} 
+     IncludeExportedREElecinTotal::Bool
 
     # Emissions parameters
      IncludeExportedElecEmissionsInTotal::Bool
      ##IncludeOutageEmissionsInTotal::Bool
-     ##MinPercentEmissionsReduction::Union{Float64,Nothing} 
-     ##MaxPercentEmissionsReduction::Union{Float64,Nothing} 
+     MinPercentCO2EmissionsReduction::Union{Float64,Nothing} 
+     MaxPercentCO2EmissionsReduction::Union{Float64,Nothing} 
      BAUYr1Emissions_CO2::Float64
      BAUYr1Emissions_NOx::Float64
      BAUYr1Emissions_SO2::Float64
@@ -302,11 +302,7 @@ function Parameter(d::Dict)
 		"NMILRegime",
 		"TechsByNMILRegime",
 		"TechsByFuelType",
-		"FuelCost",
-        ##"MinAnnualPercentREElec",
-        ##"MaxAnnualPercentREElec",
-        ##"MinPercentEmissionsReduction",
-        ##"MaxPercentEmissionsReduction",
+		"FuelCost"
      )
 	for x in ["Tech","FuelType","CHPTechs"]
 		if typeof(d[x]) === Array{Any, 1}  # came from Python as empty array
@@ -365,7 +361,7 @@ function Parameter(d::Dict)
     d["TechEmissionsFactors_NOx"] = AxisArray(d["TechEmissionsFactors_NOx"], d["Tech"])
     d["TechEmissionsFactors_SO2"] = AxisArray(d["TechEmissionsFactors_SO2"], d["Tech"])
     d["TechEmissionsFactors_PM25"] = AxisArray(d["TechEmissionsFactors_PM25"], d["Tech"])
-    ##d["TechPercentRE"] = AxisArray(d["TechPercentRE"], d["Tech"])
+    d["TechPercentRE"] = AxisArray(d["TechPercentRE"], d["Tech"])
 
     if !isempty(d["CoincidentPeakLoadTimeSteps"])
         d["CoincidentPeakRates"] = AxisArray(d["CoincidentPeakRates"], d[:CPPeriod])

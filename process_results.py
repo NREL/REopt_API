@@ -37,7 +37,7 @@ from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
 from reo.models import ModelManager, PVModel, FinancialModel, WindModel, AbsorptionChillerModel
 from reo.src.profiler import Profiler
-from reo.src.emissions_calculator import EmissionsCalculator ##, EmissionsCalculator_NOx, EmissionsCalculator_SO2, EmissionsCalculator_PM25
+from reo.src.emissions_calculator import EmissionsCalculator ##, EmissionsCalculator_NOx, EmissionsCalculator_SO2, EmissionsCalculator_PM
 from reo.utilities import annuity, TONHOUR_TO_KWHT, MMBTU_TO_KWH, GAL_DIESEL_TO_KWH
 from reo.nested_inputs import macrs_five_year, macrs_seven_year
 from reo.src.proforma_metrics import calculate_proforma_metrics
@@ -140,11 +140,14 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "yr1_CO2_emissions_offset_from_elec_exports",
             "year_one_emissions_lb_NOx",
             "year_one_emissions_lb_SO2",
-            "year_one_emissions_lb_PM25",
+            "year_one_emissions_lb_PM",
             "year_one_generator_emissions_lb_CO2",
             "year_one_generator_emissions_lb_NOx",
             "year_one_generator_emissions_lb_SO2",
-            "year_one_generator_emissions_lb_PM25",
+            "year_one_generator_emissions_lb_PM",
+            "year_one_boiler_emissions_lb_CO2",
+            "year_one_chp_emissions_lb_CO2",
+            "year_one_elec_grid_emissions_lb_CO2", #isn't this the same as yr1_CO2_emissions_from_elec_grid_purchase?
             ## TODO: Kk- individual tech emission vars up here for BAU case too? 
             #           PV is covered in unique structure below. no wind in bau. but actually the bau is listed as an output.
             #           gen is covered above. Boiler will need to be here. no CHP in bau but as with wind perhaps include as 0.
@@ -185,6 +188,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                                "average_yearly_PV{}_energy_produced".format(i),
                                "year_one_PV{}_energy_produced".format(i),
                                "average_yearly_energy_produced_PV{}".format(i),
+                               "year_one_PV{}_exported_emissions_offset_lb_CO2".format(i),
                               ]
                 for k in pv_bau_keys:
                     if results_dict_bau.get(k) is None:
@@ -482,10 +486,10 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             # Health-related emissions results
             self.nested_outputs["Scenario"]["Site"]["year_one_emissions_lb_NOx"] = self.results_dict.get("year_one_emissions_lb_NOx")
             self.nested_outputs["Scenario"]["Site"]["year_one_emissions_lb_SO2"] = self.results_dict.get("year_one_emissions_lb_SO2")
-            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_lb_PM25"] = self.results_dict.get("year_one_emissions_lb_PM25")
+            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_lb_PM"] = self.results_dict.get("year_one_emissions_lb_PM")
             self.nested_outputs["Scenario"]["Site"]["year_one_emissions_bau_lb_NOx"] = self.results_dict.get("preprocessed_BAU_Yr1_emissions_NOx")
             self.nested_outputs["Scenario"]["Site"]["year_one_emissions_bau_lb_SO2"] = self.results_dict.get("preprocessed_BAU_Yr1_emissions_SO2")
-            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_bau_lb_PM25"] = self.results_dict.get("preprocessed_BAU_Yr1_emissions_PM25")
+            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_bau_lb_PM"] = self.results_dict.get("preprocessed_BAU_Yr1_emissions_PM")
 
             ##### Lifetime emissions results ## TODO add bau?
             self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_CO2"] = self.results_dict.get("lifetime_emissions_lb_CO2")
@@ -495,14 +499,13 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_NOx_bau"] = self.results_dict.get("lifetime_emissions_lb_NOx_bau")
             self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_SO2"] = self.results_dict.get("lifetime_emissions_lb_SO2")
             self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_SO2_bau"] = self.results_dict.get("lifetime_emissions_lb_SO2_bau")
-            self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_PM25"] = self.results_dict.get("lifetime_emissions_lb_PM25")
-            self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_PM25_bau"] = self.results_dict.get("lifetime_emissions_lb_PM25_bau")
+            self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_PM"] = self.results_dict.get("lifetime_emissions_lb_PM")
+            self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_PM_bau"] = self.results_dict.get("lifetime_emissions_lb_PM_bau")
 
             self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_cost_CO2"] = self.results_dict.get("lifetime_emissions_cost_CO2")
             self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_cost_CO2_bau"] = self.results_dict.get("lifetime_emissions_cost_CO2_bau")
             self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_cost_Health"] = self.results_dict.get("lifetime_emissions_cost_Health")
             self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_cost_Health_bau"] = self.results_dict.get("lifetime_emissions_cost_Health_bau")
-            test_adf = self.results_dict.get("pwfs_emissions_cost_CO2_grid") # TODO ADF remove! 
             
             # TODO: add lifetime health cost 
 
@@ -595,6 +598,12 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         pv['lcoe_us_dollars_per_kwh'] = self.calculate_lcoe(pv, pv_model.__dict__, financials)
                         self.nested_outputs['Scenario']["Site"][name].append(pv)
 
+                        pv["year_one_exported_emissions_offset_lb_CO2"] = self.results_dict.get(
+                            "year_one_PV{}_exported_emissions_offset_lb_CO2".format(i))
+                        if not pv["average_yearly_energy_produced_bau_kwh"] is 0:
+                            pv["year_one_exported_emissions_offset_bau_lb_CO2"] = self.results_dict.get(
+                                "year_one_PV{}_exported_emissions_offset_lb_CO2_bau".format(i))
+
                 elif name == "Wind":
                     self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("wind_kw", 0)
                     self.nested_outputs["Scenario"]["Site"][name][
@@ -614,6 +623,10 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_curtailed_production_series_kw"] = self.results_dict.get("WINDtoCurtail")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_power_production_series_kw"] = self.compute_total_power(name)
+
+                    self.nested_outputs["Scenario"]["Site"][name][
+                         "year_one_exported_emissions_offset_lb_CO2"] = self.results_dict.get(
+                         "year_one_wind_exported_emissions_offset_lb_CO2")
                         
                     if self.nested_outputs["Scenario"]["Site"][name]["size_kw"] > 0: #setting up
                         wind_model = WindModel.objects.get(run_uuid=meta['run_uuid'])
@@ -727,10 +740,10 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_elec_grid_emissions_lb_SO2_bau")
                         
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_lb_PM25"] = self.results_dict.get("year_one_elec_grid_emissions_lb_PM25")
+                        "year_one_emissions_lb_PM"] = self.results_dict.get("year_one_elec_grid_emissions_lb_PM")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_bau_lb_PM25"] = self.results_dict.get(
-                        "year_one_elec_grid_emissions_lb_PM25_bau")
+                        "year_one_emissions_bau_lb_PM"] = self.results_dict.get(
+                        "year_one_elec_grid_emissions_lb_PM_bau")
 
                 elif name == "FuelTariff":
                     self.nested_outputs["Scenario"]["Site"][name][
@@ -826,12 +839,12 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                             "year_one_generator_emissions_lb_SO2_bau")
                     
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_lb_PM25"] = self.results_dict.get(
-                        "year_one_generator_emissions_lb_PM25")
+                        "year_one_emissions_lb_PM"] = self.results_dict.get(
+                        "year_one_generator_emissions_lb_PM")
                     if not self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal_bau"] is 0:
                         self.nested_outputs["Scenario"]["Site"][name][
-                            "year_one_emissions_bau_lb_PM25"] = self.results_dict.get(
-                            "year_one_generator_emissions_lb_PM25_bau")
+                            "year_one_emissions_bau_lb_PM"] = self.results_dict.get(
+                            "year_one_generator_emissions_lb_PM_bau")
 
                 elif name == "CHP":
                     self.nested_outputs["Scenario"]["Site"][name][
@@ -859,6 +872,9 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_emissions_lb_CO2"] = self.results_dict.get(
                         "year_one_chp_emissions_lb_CO2")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_emissions_bau_lb_CO2"] = self.results_dict.get(
+                        "year_one_chp_emissions_lb_CO2_bau")
                     # Health
                     ## TODO: Update ! 
                     self.nested_outputs["Scenario"]["Site"][name][
@@ -870,7 +886,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_chp_emissions_lb_CO2")
 
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_lb_PM25"] = self.results_dict.get(
+                        "year_one_emissions_lb_PM"] = self.results_dict.get(
                         "year_one_chp_emissions_lb_CO2")
 
                 elif name == "Boiler":
@@ -914,10 +930,10 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
 
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_emissions_lb_CO2"] = self.results_dict.get(
-                        "year_one_boiler_emissions_lb_PM25")
+                        "year_one_boiler_emissions_lb_PM")
                     if not self.nested_outputs["Scenario"]["Site"][name]["year_one_boiler_fuel_consumption_mmbtu_bau"] is 0:
                         self.nested_outputs["Scenario"]["Site"][name][
-                            "year_one_emissions_bau_lb_PM25"] = self.results_dict.get(
+                            "year_one_emissions_bau_lb_PM"] = self.results_dict.get(
                             "year_one_boiler_emissions_lb_CO2_bau")
 
                 elif name == "ElectricChiller":
@@ -976,7 +992,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     "developer_om_and_replacement_present_cost_after_tax_us_dollars"] = \
                     self.nested_outputs["Scenario"]["Site"]["Financial"][
                         "om_and_replacement_present_cost_after_tax_us_dollars"] / self.third_party_factor
-            if self.nested_outputs["Scenario"]["Site"]["LoadProfile"]["annual_calculated_kwh"] > 0:
                 
             time_outputs = [k for k in self.bau_attributes if (k.startswith("julia") or k.startswith("pyjulia"))]
 
@@ -1039,7 +1054,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
         data = EmissionsCalculator.add_to_data(data)
         data = EmissionsCalculator_NOx.add_to_data(data)
         data = EmissionsCalculator_SO2.add_to_data(data)
-        data = EmissionsCalculator_PM25.add_to_data(data)
+        data = EmissionsCalculator_PM.add_to_data(data)
         '''
 
         pv_watts_station_check = data['outputs']['Scenario']['Site']['PV'][0].get('station_distance_km') or 0
@@ -1062,7 +1077,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
         data = EmissionsCalculator.add_to_data(data)
         data = EmissionsCalculator_NOx.add_to_data(data)
         data = EmissionsCalculator_SO2.add_to_data(data)
-        data = EmissionsCalculator_PM25.add_to_data(data)
+        data = EmissionsCalculator_PM.add_to_data(data)
         '''
         
         if len(data['outputs']['Scenario']['Site']['PV']) == 1:

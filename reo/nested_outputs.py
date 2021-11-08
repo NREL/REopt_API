@@ -112,7 +112,13 @@ nested_output_definitions = {
                 },
               "year_one_emissions_bau_lb_CO2": {
                   "type": "int",
-                  "description": "Total equivalent pounds of carbon dioxide emitted from the site use in the first year in the BAU case.",
+                  "description": "Total equivalent pounds of carbon dioxide emitted from the site in the first year in the BAU case.",
+                  "units": "lb CO2"
+                },
+              "preprocessed_year_one_emissions_bau_lb_CO2": {
+                  "type": "int",
+                  "description": ("Total equivalent pounds of carbon dioxide emitted fin the first year in the BAU case. Preprocessed before optimization for use in emissions reductions scenarios,"
+                                  "Included as an output for testing purposes."),
                   "units": "lb CO2"
                 },
               "year_one_emissions_bau_lb_NOx": {
@@ -130,18 +136,82 @@ nested_output_definitions = {
                   "description": "Total pounds of PM2.5 emitted from the site use in the first year in the BAU case.",
                   "units": "lb PM2.5"
                 },
-              "renewable_electricity_energy_pct": {
+              "year_one_renewable_electricity_pct": {
                 "type": float,
                 "description": (
                   "Portion of electrictrity use that is derived from on-site renewable resource generation in year one."
-                  "Calculated as total PV and Wind generation in year one (including exports), "
+                  "Calculated as total RE electric generation in year one, minus storage losses, with the user selecting whether exported renewable generation is included), "
                   "divided by the total annual load in year one."
                   ),
                 "units": "%"
                 },
+              "year_one_renewable_electricity_kwh": {
+                "type": float,
+                "description": (
+                  "Electrictrity use that is derived from on-site renewable resource generation in year one."
+                  "Calculated as total RE electric generation in year one, minus storage losses, with the user selecting whether exported renewable generation is included). "
+                  ),
+                "units": "kwh"
+                },
+              "year_one_renewable_electricity_bau_pct": {
+                "type": float,
+                "description": (
+                  "Portion of electrictrity use that is derived from on-site renewable resource generation in year one in the BAU scenario."
+                  "Calculated as total RE electric generation in year one, minus storage losses, with the user selecting whether exported renewable generation is included), "
+                  "divided by the total annual load in year one."
+                  ),
+                "units": "%"
+                },
+              "year_one_renewable_electricity_bau_kwh": {
+                "type": float,
+                "description": (
+                  "Electrictrity use that is derived from on-site renewable resource generation in year one in the BAU scenario."
+                  "Calculated as total RE electric generation in year one, minus storage losses, with the user selecting whether exported renewable generation is included). "
+                  ),
+                "units": "kwh"
+                },
+              "year_one_renewable_heat_pct": {
+                "type": float,
+                "description": (
+                  "Portion of heat that is derived from on-site renewable resource generation in year one."
+                  "Calculated as total RE heat generation in year one, minus storage losses."
+                  "divided by the total annual load in year one."
+                  ),
+                "units": "%"
+                },
+              "year_one_renewable_heat_mmbtu": {
+                "type": float,
+                "description": (
+                  "Electrictrity use that is derived from on-site renewable resource generation in year one."
+                  "Calculated as total RE heat generation in year one, minus storage losses."
+                  ),
+                "units": "mmbtu"
+                },
+              "year_one_renewable_heat_bau_pct": {
+                "type": float,
+                "description": (
+                  "Portion of electrictrity use that is derived from on-site renewable resource generation in year one in the BAU scenario."
+                  "Calculated as total RE heat generation in year one, minus storage losses."
+                  "divided by the total annual load in year one."
+                  ),
+                "units": "%"
+                },
+              "year_one_renewable_heat_bau_mmbtu": {
+                "type": float,
+                "description": (
+                  "Electrictrity use that is derived from on-site renewable resource generation in year one in the BAU scenario."
+                  "Calculated as total RE heat generation in year one, minus storage losses."
+                  ),
+                "units": "mmbtu"
+                },
               "year_one_CO2_emissions_from_fuelburn": {
                   "type": int,
                   "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption in the first year.",
+                  "units": "lb CO2"
+                },
+              "year_one_CO2_emissions_from_fuelburn_bau": {
+                  "type": int,
+                  "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption in the first year in the BAU case.",
                   "units": "lb CO2"
                 },
               "year_one_CO2_emissions_from_elec_grid_purchase": {
@@ -159,10 +229,20 @@ nested_output_definitions = {
                   "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption in the first year.",
                   "units": "lb CO2"
                 },
+              "year_one_CO2_emissions_offset_from_elec_exports_bau": {
+                  "type": int,
+                  "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption in the first year.",
+                  "units": "lb CO2"
+                },
               "year_one_CO2_emissions_reduction_pct": {
                   "type": float,
                   "description": "Percent reduction in total pounds of carbon dioxide emissions in the optimal case relative to the BAU case to the ",
                   "units": "%"
+                },
+              "breakeven_cost_of_emissions_reduction_us_dollars_per_ton_CO2": {
+                  "type": float,
+                  "description": "Cost, or value, of emissions required to breakeven (NPV = 0) with the BAU case LCC",
+                  "units": "$/tCO2"
                 },
               "lifetime_emissions_lb_CO2": {
                   "type": int,

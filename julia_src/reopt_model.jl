@@ -940,7 +940,7 @@ function add_cost_function(m, p)
 
 end
 
-#=
+
 # Renewable electricity calculation
 function add_re_elec_calcs(m,p)
 	if p.IncludeExportedREElecinTotal
@@ -974,10 +974,9 @@ function add_re_heat_calcs(m,p)
 		(sum((p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvThermalProduction][t,ts]-m[:dvProductionToWaste][t,ts]) * p.TechPercentRE[t] for t in p.HeatingTechs, ts in p.TimeStep) #total heat generation minus waste heat
 		- sum(m[:dvProductionToStorage][b,t,ts]*p.TechPercentRE[t]*(1-p.ChargeEfficiency[t,b]*p.DischargeEfficiency[b]) for t in p.HeatingTechs, b in p.HotTES, ts in p.TimeStep))) #minus thermal storage losses 
 end
-=#
 
 ### Year 1 Emissions Calculations
-function add_emissions_calcs(m,p)
+function add_yr1_emissions_calcs(m,p)
 	# Components:
 	m[:yr1_emissions_from_fuelburn_CO2], m[:yr1_emissions_from_fuelburn_NOx], m[:yr1_emissions_from_fuelburn_SO2], m[:yr1_emissions_from_fuelburn_PM25] = calc_yr1_emissions_from_fuelburn(m,p; tech_array=p.FuelBurningTechs)
 	m[:yr1_emissions_from_elec_grid_purchase_CO2], m[:yr1_emissions_from_elec_grid_purchase_NOx], m[:yr1_emissions_from_elec_grid_purchase_SO2], m[:yr1_emissions_from_elec_grid_purchase_PM25]  = calc_yr1_emissions_from_elec_grid_purchase(m,p)
@@ -1091,16 +1090,15 @@ function add_lifetime_emissions_calcs(m,p)
 
 end 
 
-#=
 function add_emissions_constraints(m,p)
-	if !isnothing(p.MinPercentEmissionsReduction)
-		@constraint(m, MinEmissionsReductionCon, m[:EmissionsYr1_Total_LbsCO2] <= (1-p.MinPercentEmissionsReduction)*p.BAUYr1Emissions_CO2)
+	## TODO: switch to (or add?) lifecycle emissions; m[:Lifetime_Emissions_Lbs_CO2] 
+	if !isnothing(p.MinPercentCO2EmissionsReduction)
+		@constraint(m, MinEmissionsReductionCon, m[:EmissionsYr1_Total_LbsCO2] <= (1-p.MinPercentCO2EmissionsReduction)*p.BAUYr1Emissions_CO2)
 	end
-	if !isnothing(p.MaxPercentEmissionsReduction)
-		@constraint(m, MaxEmissionsReductionCon, m[:EmissionsYr1_Total_LbsCO2] >= (1-p.MaxPercentEmissionsReduction)*p.BAUYr1Emissions_CO2)
+	if !isnothing(p.MaxPercentCO2EmissionsReduction)
+		@constraint(m, MaxEmissionsReductionCon, m[:EmissionsYr1_Total_LbsCO2] >= (1-p.MaxPercentCO2EmissionsReduction)*p.BAUYr1Emissions_CO2)
 	end
 end
-=#
 
 function add_yearone_expressions(m, p)
     m[:Year1UtilityEnergy] = @expression(m,  p.TimeStepScaling * sum(
@@ -1244,20 +1242,14 @@ function reopt_run(m, p::Parameter)
 	add_export_expressions(m, p)
 	add_util_fixed_and_min_charges(m, p)
 
-	add_emissions_calcs(m,p) ## TODO: Check?
+	# include RE & emissions calcs & constraints now. could add some logic here (such as below) to help with solve time in future
+	#if !isnothing(p.MinAnnualPercentREElec) || !isnothing(p.MaxAnnualPercentREElec) 
+	add_re_elec_calcs(m,p)
+	add_re_elec_constraints(m,p)
+	#if !isnothing(p.MinPercentCO2EmissionsReduction) || !isnothing(p.MaxPercentCO2EmissionsReduction)
+	add_yr1_emissions_calcs(m,p)
 	add_lifetime_emissions_calcs(m,p)
-
-	#=
-	#if RE and/or emissions constraints apply, include calcs & constraints now. otherwise save calcs for add_site_results
-	if !isnothing(p.MinAnnualPercentREElec) || !isnothing(p.MaxAnnualPercentREElec) 
-		add_re_elec_calcs(m,p)
-		add_re_elec_constraints(m,p)
-	end
-	if !isnothing(p.MinPercentEmissionsReduction) || !isnothing(p.MaxPercentEmissionsReduction)
-		add_emissions_calcs(m,p)
-		add_emissions_constraints(m,p)
-	end
-	=#
+	add_emissions_constraints(m,p)
 
 	if !isempty(p.CHPTechs)
 		add_chp_hourly_om_charges(m, p)
@@ -1360,24 +1352,14 @@ function reopt_results(m, p, r::Dict)
 end
 
 function add_site_results(m, p, r::Dict)
-	#=
-	# renewable electricity 
-	# if haven't already added RE and emissions calcs (e.g. these constraints were not part of the model formulation)
-	if isnothing(p.MinAnnualPercentREElec) && isnothing(p.MaxAnnualPercentREElec) 
-		add_re_elec_calcs(m,p)
-	end
-	if isnothing(p.MinPercentEmissionsReduction) && isnothing(p.MaxPercentEmissionsReduction)
-		add_emissions_calcs(m,p)
-	end
+	
 	r["pwf_om"] = round(value(p.pwf_om),digits=4)
-	=#
 
 	# Year 1 BAU emissions impacts  
 	r["preprocessed_BAU_Yr1_emissions_CO2"] = round(value(p.BAUYr1Emissions_CO2),digits=2)
 	r["preprocessed_BAU_Yr1_emissions_NOx"] = round(value(p.BAUYr1Emissions_NOx),digits=2) 
 	r["preprocessed_BAU_Yr1_emissions_SO2"] = round(value(p.BAUYr1Emissions_SO2),digits=2) 
 	r["preprocessed_BAU_Yr1_emissions_PM25"] = round(value(p.BAUYr1Emissions_PM25),digits=2) 
-
 	r["preprocessed_BAU_Yr1_emissions_from_grid_CO2"] = round(value(p.BAUYr1Emissions_grid_CO2),digits=2)
 
 	# Lifetime BAU emissions impacts # TODO update with new pwfs for health emissions
@@ -1392,14 +1374,11 @@ function add_site_results(m, p, r::Dict)
 															+ p.pwfs_emissions_cost["SO2_grid"] * p.SO2_dollars_tonne_grid * p.BAUYr1Emissions_grid_SO2 + p.pwfs_emissions_cost["SO2_onsite"] * p.SO2_dollars_tonne_onsite_fuelburn * (p.BAUYr1Emissions_SO2 - p.BAUYr1Emissions_grid_SO2)
 															+ p.pwfs_emissions_cost["PM25_grid"] *p.PM25_dollars_tonne_grid * p.BAUYr1Emissions_grid_PM25 + p.pwfs_emissions_cost["PM25_onsite"] * p.PM25_dollars_tonne_onsite_fuelburn * (p.BAUYr1Emissions_PM25 - p.BAUYr1Emissions_grid_PM25))
 															/ 2204.62), digits=2) 
-
-
-	#=
+	# renewable elec
 	r["annual_re_elec_kwh"] = round(value(m[:AnnualREEleckWh]), digits=2)
 	m[:AnnualREElecPercent] = @expression(m, m[:AnnualREEleckWh]/(sum(p.ElecLoad[ts] for ts in p.TimeStep)))
 	r["annual_re_elec_percent"] = round(value(m[:AnnualREElecPercent]), digits=4)
 	
-
 	# renewable heat
 	if !isempty(p.HeatingTechs)
 		add_re_heat_calcs(m,p)
@@ -1410,14 +1389,14 @@ function add_site_results(m, p, r::Dict)
 		r["annual_re_heat_mmbtu"] = 0
 		r["annual_re_heat_percent"] = 0
 	end 
-	=#
 
 	# Year 1 Emissions results at Site level
 	r["year_one_emissions_lb_CO2"] = round(value(m[:EmissionsYr1_Total_LbsCO2]), digits=2) 
 	r["yr1_CO2_emissions_from_fuelburn"] = round(value(m[:yr1_emissions_from_fuelburn_CO2]), digits=2) 
 	r["yr1_CO2_emissions_from_elec_grid_purchase"] = round(value(m[:yr1_emissions_from_elec_grid_purchase_CO2]), digits=2) 
 	r["yr1_CO2_emissions_offset_from_elec_exports"] = round(value(m[:yr1_emissions_offset_from_elec_exports_CO2]), digits=2) 
-	## r["year_one_emissionsreduction_percent"] = round(value(1-m[:EmissionsYr1_Total_LbsCO2]/p.BAUYr1Emissions_CO2), digits=4)
+    r["year_one_CO2_emissionsreduction_percent"] = round(value(1-m[:EmissionsYr1_Total_LbsCO2]/p.BAUYr1Emissions_CO2), digits=4)
+	# ^^ kk delete this, include as a calculation in process_results.py
 
 	# NOx results 
 	r["year_one_emissions_lb_NOx"] = round(value(m[:EmissionsYr1_Total_LbsNOx]), digits=2) 
@@ -1640,8 +1619,8 @@ function add_wind_results(m, p, r::Dict)
 	)
 	r["average_wind_energy_produced"] = round(value(m[:AverageWindProd]), digits=0)
 
-	##EmissionsYr1_ExportedOffset_LbsCO2_WIND = calc_yr1_emissions_offset_from_elec_exports(m,p; tech_array = m[:WindTechs])
-	##r["year_one_wind_exported_emissions_offset_lb_CO2"] = round(value(EmissionsYr1_ExportedOffset_LbsCO2_WIND), digits=2)
+	##kk- EmissionsYr1_ExportedOffset_LbsCO2_WIND = calc_yr1_emissions_offset_from_elec_exports(m,p; tech_array = m[:WindTechs])
+	##kk- r["year_one_wind_exported_emissions_offset_lb_CO2"] = round(value(EmissionsYr1_ExportedOffset_LbsCO2_WIND), digits=2)
 
 	nothing
 end
@@ -1698,8 +1677,8 @@ function add_pv_results(m, p, r::Dict)
             PVPerUnitSizeOMCosts = @expression(m, sum(p.OMperUnitSize[t] * p.pwf_om * m[:dvSize][t] for t in PVtechs_in_class))
             r[string(PVclass, "_net_fixed_om_costs")] = round(value(PVPerUnitSizeOMCosts) * m[:r_tax_fraction_owner], digits=0)
 
-			##EmissionsYr1_ExportedOffset_LbsCO2_PV = calc_yr1_emissions_offset_from_elec_exports(m,p; tech_array = PVtechs_in_class)
-			##r[string("year_one_",PVclass,"_exported_emissions_offset_lb_CO2")] = round(value(EmissionsYr1_ExportedOffset_LbsCO2_PV), digits=2)
+			##kk- EmissionsYr1_ExportedOffset_LbsCO2_PV = calc_yr1_emissions_offset_from_elec_exports(m,p; tech_array = PVtechs_in_class)
+			##kk- r[string("year_one_",PVclass,"_exported_emissions_offset_lb_CO2")] = round(value(EmissionsYr1_ExportedOffset_LbsCO2_PV), digits=2)
 
         end
 	end
