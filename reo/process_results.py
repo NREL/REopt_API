@@ -976,7 +976,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     "developer_om_and_replacement_present_cost_after_tax_us_dollars"] = \
                     self.nested_outputs["Scenario"]["Site"]["Financial"][
                         "om_and_replacement_present_cost_after_tax_us_dollars"] / self.third_party_factor
-            if self.nested_outputs["Scenario"]["Site"]["LoadProfile"]["annual_calculated_kwh"] > 0:
                 
             time_outputs = [k for k in self.bau_attributes if (k.startswith("julia") or k.startswith("pyjulia"))]
 
