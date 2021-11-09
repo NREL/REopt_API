@@ -711,7 +711,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_emissions_lb_CO2"] = self.results_dict.get("year_one_elec_grid_emissions_lb_CO2")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_emissions_bau_lb_CO2"] = self.results_dict.get(
-                        "year_one_elec_grid_emissions_lb_CO2_bau")
+                        "preprocessed_BAU_Yr1_emissions_from_grid_CO2")
                     # health
                     ## TODO: Update to correct calcs (check if this gets used? )
                     self.nested_outputs["Scenario"]["Site"][name][
