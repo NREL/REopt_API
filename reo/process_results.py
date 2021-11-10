@@ -873,15 +873,15 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     ## TODO: Update ! 
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_emissions_lb_NOx"] = self.results_dict.get(
-                        "year_one_chp_emissions_lb_CO2")
+                        "year_one_chp_emissions_lb_NOx")
 
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_emissions_lb_SO2"] = self.results_dict.get(
-                        "year_one_chp_emissions_lb_CO2")
+                        "year_one_chp_emissions_lb_SO2")
 
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_emissions_lb_PM25"] = self.results_dict.get(
-                        "year_one_chp_emissions_lb_CO2")
+                        "year_one_chp_emissions_lb_PM25")
 
                 elif name == "Boiler":
                     self.nested_outputs["Scenario"]["Site"][name][
@@ -908,27 +908,27 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     ## TODO: Update! 
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_emissions_lb_NOx"] = self.results_dict.get(
-                        "year_one_boiler_emissions_lb_CO2")
+                        "year_one_boiler_emissions_lb_NOx")
                     if not self.nested_outputs["Scenario"]["Site"][name]["year_one_boiler_fuel_consumption_mmbtu_bau"] is 0:
                         self.nested_outputs["Scenario"]["Site"][name][
                             "year_one_emissions_bau_lb_NOx"] = self.results_dict.get(
-                            "year_one_boiler_emissions_lb_CO2_bau")
+                            "year_one_boiler_emissions_lb_NOx_bau")
                     
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_emissions_lb_SO2"] = self.results_dict.get(
-                        "year_one_boiler_emissions_lb_CO2")
+                        "year_one_boiler_emissions_lb_SO2")
                     if not self.nested_outputs["Scenario"]["Site"][name]["year_one_boiler_fuel_consumption_mmbtu_bau"] is 0:
                         self.nested_outputs["Scenario"]["Site"][name][
                             "year_one_emissions_bau_lb_SO2"] = self.results_dict.get(
-                            "year_one_boiler_emissions_lb_CO2_bau")
+                            "year_one_boiler_emissions_lb_SO2_bau")
 
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_lb_CO2"] = self.results_dict.get(
+                        "year_one_emissions_lb_PM25"] = self.results_dict.get(
                         "year_one_boiler_emissions_lb_PM25")
                     if not self.nested_outputs["Scenario"]["Site"][name]["year_one_boiler_fuel_consumption_mmbtu_bau"] is 0:
                         self.nested_outputs["Scenario"]["Site"][name][
                             "year_one_emissions_bau_lb_PM25"] = self.results_dict.get(
-                            "year_one_boiler_emissions_lb_CO2_bau")
+                            "year_one_boiler_emissions_lb_PM25_bau")
 
                 elif name == "ElectricChiller":
                     self.nested_outputs["Scenario"]["Site"][name][
