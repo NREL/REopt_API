@@ -940,7 +940,6 @@ function add_cost_function(m, p)
 
 end
 
-
 # Renewable electricity calculation
 function add_re_elec_calcs(m,p)
 	if p.IncludeExportedREElecinTotal
@@ -987,6 +986,7 @@ function add_yr1_emissions_calcs(m,p)
 	else
 		include_exported_elec_emissions_in_total = 0
 	end
+	#"net" indicates net of what is getting counted, based on user selection of whether or not to include 
 	m[:yr1_emissions_from_elec_grid_net_CO2] = m[:yr1_emissions_from_elec_grid_purchase_CO2] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_CO2]
 	m[:yr1_emissions_from_elec_grid_net_NOx] = m[:yr1_emissions_from_elec_grid_purchase_NOx] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_NOx]
 	m[:yr1_emissions_from_elec_grid_net_SO2] = m[:yr1_emissions_from_elec_grid_purchase_SO2] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_SO2]
@@ -1060,23 +1060,26 @@ function add_lifetime_emissions_calcs(m,p)
 		include_exported_elec_emissions_in_total = 0
 	end
 
+	# BAU Lifetime lbs CO2
+	m[:Lifetime_Emissions_Lbs_CO2_BAU] = p.BAUYr1Emissions_grid_CO2 * p.pwfs_grid_emissions_lbs["CO2"] + p.analysis_years * (p.BAUYr1Emissions_CO2 - p.BAUYr1Emissions_grid_CO2) # no annual decrease for on-site fuel burn 
+
 	# Lifetime lbs CO2 
-	m[:Lifetime_Emissions_Lbs_CO2_grid] = p.pwfs_emissions_lbs["CO2"] * m[:yr1_emissions_from_elec_grid_net_CO2]
+	m[:Lifetime_Emissions_Lbs_CO2_grid] = p.pwfs_grid_emissions_lbs["CO2"] * m[:yr1_emissions_from_elec_grid_net_CO2]
 	m[:Lifetime_Emissions_Lbs_CO2_fuelburn] = p.analysis_years *  m[:yr1_emissions_from_fuelburn_CO2] # not assuming an annual decrease in on-site fuel burn emissions
 	m[:Lifetime_Emissions_Lbs_CO2] = m[:Lifetime_Emissions_Lbs_CO2_grid] + m[:Lifetime_Emissions_Lbs_CO2_fuelburn]
 	# Lifetime cost CO2 ; 2204.62 lb / metric ton 
 	m[:Lifetime_Emissions_Cost_CO2] = p.CO2_dollars_tonne / 2204.62 * ( p.pwfs_emissions_cost["CO2_grid"] * m[:yr1_emissions_from_elec_grid_net_CO2] + p.pwfs_emissions_cost["CO2_onsite"] * m[:yr1_emissions_from_fuelburn_CO2]) 
 
 	# Health calcs 
-	m[:Lifetime_Emissions_Lbs_NOx_grid] = p.pwfs_emissions_lbs["NOx"] * m[:yr1_emissions_from_elec_grid_net_NOx]
+	m[:Lifetime_Emissions_Lbs_NOx_grid] = p.pwfs_grid_emissions_lbs["NOx"] * m[:yr1_emissions_from_elec_grid_net_NOx]
 	m[:Lifetime_Emissions_Lbs_NOx_fuelburn] = p.analysis_years *  m[:yr1_emissions_from_fuelburn_NOx] # not assuming an annual decrease in on-site fuel burn emissions
 	m[:Lifetime_Emissions_Lbs_NOx] = m[:Lifetime_Emissions_Lbs_NOx_grid] + m[:Lifetime_Emissions_Lbs_NOx_fuelburn]
 
-	m[:Lifetime_Emissions_Lbs_SO2_grid] = p.pwfs_emissions_lbs["SO2"] * m[:yr1_emissions_from_elec_grid_net_SO2]
+	m[:Lifetime_Emissions_Lbs_SO2_grid] = p.pwfs_grid_emissions_lbs["SO2"] * m[:yr1_emissions_from_elec_grid_net_SO2]
 	m[:Lifetime_Emissions_Lbs_SO2_fuelburn] = p.analysis_years *  m[:yr1_emissions_from_fuelburn_SO2] # not assuming an annual decrease in on-site fuel burn emissions
 	m[:Lifetime_Emissions_Lbs_SO2] = m[:Lifetime_Emissions_Lbs_SO2_grid] + m[:Lifetime_Emissions_Lbs_SO2_fuelburn]
 
-	m[:Lifetime_Emissions_Lbs_PM25_grid] = p.pwfs_emissions_lbs["PM25"] * m[:yr1_emissions_from_elec_grid_net_PM25]
+	m[:Lifetime_Emissions_Lbs_PM25_grid] = p.pwfs_grid_emissions_lbs["PM25"] * m[:yr1_emissions_from_elec_grid_net_PM25]
 	m[:Lifetime_Emissions_Lbs_PM25_fuelburn] = p.analysis_years *  m[:yr1_emissions_from_fuelburn_PM25] # not assuming an annual decrease in on-site fuel burn emissions
 	m[:Lifetime_Emissions_Lbs_PM25] = m[:Lifetime_Emissions_Lbs_PM25_grid] + m[:Lifetime_Emissions_Lbs_PM25_fuelburn]
 
@@ -1091,12 +1094,11 @@ function add_lifetime_emissions_calcs(m,p)
 end 
 
 function add_emissions_constraints(m,p)
-	## TODO: switch to (or add?) lifecycle emissions; m[:Lifetime_Emissions_Lbs_CO2] 
 	if !isnothing(p.MinPercentCO2EmissionsReduction)
-		@constraint(m, MinEmissionsReductionCon, m[:EmissionsYr1_Total_LbsCO2] <= (1-p.MinPercentCO2EmissionsReduction)*p.BAUYr1Emissions_CO2)
+		@constraint(m, MinEmissionsReductionCon, m[:Lifetime_Emissions_Lbs_CO2] <= (1-p.MinPercentCO2EmissionsReduction)*m[:Lifetime_Emissions_Lbs_CO2_BAU])
 	end
 	if !isnothing(p.MaxPercentCO2EmissionsReduction)
-		@constraint(m, MaxEmissionsReductionCon, m[:EmissionsYr1_Total_LbsCO2] >= (1-p.MaxPercentCO2EmissionsReduction)*p.BAUYr1Emissions_CO2)
+		@constraint(m, MaxEmissionsReductionCon, m[:Lifetime_Emissions_Lbs_CO2] >= (1-p.MaxPercentCO2EmissionsReduction)*m[:Lifetime_Emissions_Lbs_CO2_BAU])
 	end
 end
 
@@ -1353,38 +1355,27 @@ end
 
 function add_site_results(m, p, r::Dict)
 	
+	r["annual_elec_kwh_for_testing"] = round(value(sum(p.ElecLoad)))
 	r["pwf_om"] = round(value(p.pwf_om),digits=4)
 
 	# Year 1 BAU emissions impacts  
-	r["preprocessed_BAU_Yr1_emissions_CO2"] = round(value(p.BAUYr1Emissions_CO2),digits=2)
-	r["preprocessed_BAU_Yr1_emissions_NOx"] = round(value(p.BAUYr1Emissions_NOx),digits=2) 
-	r["preprocessed_BAU_Yr1_emissions_SO2"] = round(value(p.BAUYr1Emissions_SO2),digits=2) 
-	r["preprocessed_BAU_Yr1_emissions_PM25"] = round(value(p.BAUYr1Emissions_PM25),digits=2) 
-	r["preprocessed_BAU_Yr1_emissions_from_grid_CO2"] = round(value(p.BAUYr1Emissions_grid_CO2),digits=2)
-
-	# Lifetime BAU emissions impacts # TODO update with new pwfs for health emissions
-	r["lifetime_emissions_lb_CO2_bau"] = round(value(p.BAUYr1Emissions_grid_CO2 * p.pwfs_emissions_lbs["CO2"]) + p.analysis_years * (p.BAUYr1Emissions_CO2 - p.BAUYr1Emissions_grid_CO2) ,digits=2) # no annual decrease for on-site fuel burn 
-	r["lifetime_emissions_lb_NOx_bau"] = round(value(p.BAUYr1Emissions_grid_NOx * p.pwfs_emissions_lbs["NOx"]) + p.analysis_years * (p.BAUYr1Emissions_NOx - p.BAUYr1Emissions_grid_NOx) ,digits=2) # no annual decrease for on-site fuel burn 
-	r["lifetime_emissions_lb_SO2_bau"] = round(value(p.BAUYr1Emissions_grid_SO2 * p.pwfs_emissions_lbs["SO2"]) + p.analysis_years * (p.BAUYr1Emissions_SO2 - p.BAUYr1Emissions_grid_SO2) ,digits=2) # no annual decrease for on-site fuel burn 
-	r["lifetime_emissions_lb_PM25_bau"] = round(value(p.BAUYr1Emissions_grid_PM25 * p.pwfs_emissions_lbs["PM25"]) + p.analysis_years * (p.BAUYr1Emissions_PM25 - p.BAUYr1Emissions_grid_PM25) ,digits=2) # no annual decrease for on-site fuel burn 
-
-	r["lifetime_emissions_cost_CO2_bau"] = round(value(p.CO2_dollars_tonne / 2204.62 * (p.pwfs_emissions_cost["CO2_grid"] * p.BAUYr1Emissions_grid_CO2 + p.pwfs_emissions_cost["CO2_onsite"] * (p.BAUYr1Emissions_CO2 - p.BAUYr1Emissions_grid_CO2) ) ),digits=2) 
+	r["preprocessed_BAU_Yr1_emissions_CO2_for_testing"] = round(value(p.BAUYr1Emissions_CO2),digits=2)
+	r["preprocessed_BAU_Yr1_emissions_from_grid_CO2"] = round(value(p.BAUYr1Emissions_grid_CO2),digits=2) #delete?
 	
-	r["lifetime_emissions_cost_Health_bau"] = round(value((p.pwfs_emissions_cost["NOx_grid"] * p.NOx_dollars_tonne_grid * p.BAUYr1Emissions_grid_NOx + p.pwfs_emissions_cost["NOx_onsite"] * p.NOx_dollars_tonne_onsite_fuelburn * (p.BAUYr1Emissions_NOx - p.BAUYr1Emissions_grid_NOx)
-															+ p.pwfs_emissions_cost["SO2_grid"] * p.SO2_dollars_tonne_grid * p.BAUYr1Emissions_grid_SO2 + p.pwfs_emissions_cost["SO2_onsite"] * p.SO2_dollars_tonne_onsite_fuelburn * (p.BAUYr1Emissions_SO2 - p.BAUYr1Emissions_grid_SO2)
-															+ p.pwfs_emissions_cost["PM25_grid"] *p.PM25_dollars_tonne_grid * p.BAUYr1Emissions_grid_PM25 + p.pwfs_emissions_cost["PM25_onsite"] * p.PM25_dollars_tonne_onsite_fuelburn * (p.BAUYr1Emissions_PM25 - p.BAUYr1Emissions_grid_PM25))
-															/ 2204.62), digits=2) 
+	# Lifetime BAU emissions impacts
+	r["preprocessed_BAU_lifetime_emissions_CO2"] = round(value(p.BAUYr1Emissions_grid_CO2 * p.pwfs_grid_emissions_lbs["CO2"]) + p.analysis_years * (p.BAUYr1Emissions_CO2 - p.BAUYr1Emissions_grid_CO2) ,digits=2) # no annual decrease for on-site fuel burn 
+	
 	# renewable elec
 	r["annual_re_elec_kwh"] = round(value(m[:AnnualREEleckWh]), digits=2)
 	m[:AnnualREElecPercent] = @expression(m, m[:AnnualREEleckWh]/(sum(p.ElecLoad[ts] for ts in p.TimeStep)))
-	r["annual_re_elec_percent"] = round(value(m[:AnnualREElecPercent]), digits=4)
+	r["annual_re_elec_percent"] = round(value(m[:AnnualREElecPercent]), digits=6)
 	
 	# renewable heat
 	if !isempty(p.HeatingTechs)
 		add_re_heat_calcs(m,p)
 		r["annual_re_heat_mmbtu"] = round(value(m[:AnnualREHeatMMBTU]), digits=2)
 		m[:AnnualREHeatPercent] = @expression(m, m[:AnnualREHeatMMBTU]/(sum(p.HeatingLoad[ts] for ts in p.TimeStep)))
-		r["annual_re_heat_percent"] = round(value(m[:AnnualREHeatPercent]), digits=4)
+		r["annual_re_heat_percent"] = round(value(m[:AnnualREHeatPercent]), digits=6)
 	else
 		r["annual_re_heat_mmbtu"] = 0
 		r["annual_re_heat_percent"] = 0
@@ -1395,8 +1386,6 @@ function add_site_results(m, p, r::Dict)
 	r["yr1_CO2_emissions_from_fuelburn"] = round(value(m[:yr1_emissions_from_fuelburn_CO2]), digits=2) 
 	r["yr1_CO2_emissions_from_elec_grid_purchase"] = round(value(m[:yr1_emissions_from_elec_grid_purchase_CO2]), digits=2) 
 	r["yr1_CO2_emissions_offset_from_elec_exports"] = round(value(m[:yr1_emissions_offset_from_elec_exports_CO2]), digits=2) 
-    r["year_one_CO2_emissionsreduction_percent"] = round(value(1-m[:EmissionsYr1_Total_LbsCO2]/p.BAUYr1Emissions_CO2), digits=4)
-	# ^^ kk delete this, include as a calculation in process_results.py
 
 	# NOx results 
 	r["year_one_emissions_lb_NOx"] = round(value(m[:EmissionsYr1_Total_LbsNOx]), digits=2) 
@@ -1410,6 +1399,7 @@ function add_site_results(m, p, r::Dict)
 
 	# Lifetime emissions results at Site level
 	r["lifetime_emissions_lb_CO2"] = round(value(m[:Lifetime_Emissions_Lbs_CO2]), digits=2)
+    r["lifecycle_CO2_emissions_reduction_percent"] = round(value(1-m[:Lifetime_Emissions_Lbs_CO2]/m[:Lifetime_Emissions_Lbs_CO2_BAU]), digits=6)
 	r["lifetime_emissions_lb_NOx"] = round(value(m[:Lifetime_Emissions_Lbs_NOx]), digits=2)
 	r["lifetime_emissions_lb_SO2"] = round(value(m[:Lifetime_Emissions_Lbs_SO2]), digits=2)
 	r["lifetime_emissions_lb_PM25"] = round(value(m[:Lifetime_Emissions_Lbs_PM25]), digits=2)

@@ -146,20 +146,20 @@ class SiteModel(models.Model):
     renewable_electricity_energy_pct = models.FloatField(null=True, blank=True)
     
     preprocessed_year_one_emissions_bau_lb_CO2 = models.FloatField(null=True, blank=True)
+    preprocessed_lifetime_emissions_bau_lb_CO2 = models.FloatField(null=True, blank=True)
     renewable_electricity_min_pct = models.FloatField(null=True, blank=True)
     renewable_electricity_max_pct = models.FloatField(null=True, blank=True)
     co2_emissions_reduction_min_pct = models.FloatField(null=True, blank=True)
     co2_emissions_reduction_max_pct = models.FloatField(null=True, blank=True)
     include_exported_renewable_electricity_in_total = models.BooleanField(null=True, blank=True)
     include_exported_elec_emissions_in_total = models.BooleanField(null=True, blank=True)
-    include_outage_emissions_in_total = models.BooleanField(null=True, blank=True)
     
     #outputs
     year_one_renewable_electricity_pct = models.FloatField(null=True, blank=True)
     year_one_renewable_electricity_kwh = models.FloatField(null=True, blank=True)
     year_one_renewable_heat_pct = models.FloatField(null=True, blank=True)
     year_one_renewable_heat_mmbtu = models.FloatField(null=True, blank=True)
-    year_one_CO2_emissions_reduction_pct = models.FloatField(null=True, blank=True)
+    lifecycle_CO2_emissions_reduction_pct = models.FloatField(null=True, blank=True)
     year_one_emissions_lb_CO2 = models.FloatField(null=True, blank=True)
     year_one_CO2_emissions_from_fuelburn = models.FloatField(null=True, blank=True)
     year_one_CO2_emissions_from_elec_grid_purchase = models.FloatField(null=True, blank=True)
