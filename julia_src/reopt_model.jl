@@ -1749,6 +1749,9 @@ function add_boiler_results(m, p, r::Dict)
 
 	EmissionsYr1_LbsCO2_boiler, EmissionsYr1_LbsNOx_boiler, EmissionsYr1_LbsSO2_boiler, EmissionsYr1_LbsPM25_boiler = calc_yr1_emissions_from_fuelburn(m,p; tech_array = ["BOILER"])
 	r["year_one_boiler_emissions_lb_CO2"] = round(value(EmissionsYr1_LbsCO2_boiler), digits=2)
+	r["year_one_boiler_emissions_lb_NOx"] = round(value(EmissionsYr1_LbsNOx_boiler), digits=2)
+	r["year_one_boiler_emissions_lb_SO2"] = round(value(EmissionsYr1_LbsSO2_boiler), digits=2)
+	r["year_one_boiler_emissions_lb_PM25"] = round(value(EmissionsYr1_LbsPM25_boiler), digits=2)
 
 
 	nothing
@@ -1875,9 +1878,6 @@ function add_util_results(m, p, r::Dict)
                 sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) - m[:dvGridToStorage][ts] )
     r["GridToLoad"] = round.(value.(GridToLoad), digits=3)
 
-	## yr1_emissions_from_elec_grid_purchase_CO2 = calc_yr1_emissions_from_elec_grid_purchase(m,p)
-	## r["year_one_elec_grid_emissions_lb_CO2"] = round(value(yr1_emissions_from_elec_grid_purchase), digits=2)
-	## I think these results are repeats of "yr1_CO2_emissions_from_elec_grid_purchase" 
 	r["year_one_elec_grid_emissions_lb_CO2"] = round(value(m[:yr1_emissions_from_elec_grid_purchase_CO2]), digits=2)
 	r["year_one_elec_grid_emissions_lb_NOx"] = round(value(m[:yr1_emissions_from_elec_grid_purchase_NOx]), digits=2)
 	r["year_one_elec_grid_emissions_lb_SO2"] = round(value(m[:yr1_emissions_from_elec_grid_purchase_SO2]), digits=2)

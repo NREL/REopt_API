@@ -58,7 +58,7 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
         include_exported_elec_emissions_totest = [True,False]
         include_battery_totest = [True,False] 
         net_metering_limit_totest = [0,1000]
-        elec_only_totest = [True,False] #True = elec only, False = add thermal loads and test CHP w/ TES-HW
+        elec_only_totest = [True] #,False] #True = elec only, False = add thermal loads and test CHP w/ TES-HW
         resilience_scenarios_totest = ['no_outage','no_gen','new_gen','existing_gen'] 
         # Note resilience scenarios eliminate the upper limit on RE or ER target, so it's "at least" _% RE or ER, rather than "exactly" (which yields infeasibilities)
 
