@@ -161,7 +161,7 @@ Base.@kwdef struct Parameter
     #  pwf_PM25_cost::Float64 # Cost of PM25 present worth factor for grid emissions [unitless] 
     #  pwf_PM25_cost_onsite_fuelburn::Float64 # Cost of PM25 present worth factor for on-site fuelburn [unitless]
      pwfs_emissions_cost::Dict{String, Any} # Cost of emissions present worth factors for grid and onsite fuelburn emissions [unitless]
-     pwfs_emissions_lbs::Dict{String, Any} # Emissions [lbs] present worth factors for grid emissions [unitless]
+     pwfs_grid_emissions_lbs::Dict{String, Any} # Emissions [lbs] present worth factors for grid emissions [unitless]
 
 	 ###  System Size and Fuel Limit Parameters ###
 	 TechClassMinSize::AxisArray   #  \ubar{b}^{\sigma}_{c}: Minimum system size for technology class c [kW]
@@ -228,7 +228,6 @@ Base.@kwdef struct Parameter
 
     # Emissions parameters
      IncludeExportedElecEmissionsInTotal::Bool
-     ##IncludeOutageEmissionsInTotal::Bool
      MinPercentCO2EmissionsReduction::Union{Float64,Nothing} 
      MaxPercentCO2EmissionsReduction::Union{Float64,Nothing} 
      BAUYr1Emissions_CO2::Float64

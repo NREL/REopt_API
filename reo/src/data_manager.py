@@ -227,7 +227,7 @@ class DataManager:
             'PM25_onsite': annuity(sf.analysis_years, sf.pm25_cost_escalation_pct, sf.offtaker_discount_pct)
         }
 
-        pwfs_emissions_lbs = {
+        pwfs_grid_emissions_lbs = {
             'CO2': annuity(sf.analysis_years, -1 * self.elec_tariff.emissions_factor_CO2_pct_decrease, 0.0), # used to calculate total grid CO2 lbs
             'NOx': annuity(sf.analysis_years, -1 * self.elec_tariff.emissions_factor_NOx_pct_decrease, 0.0),
             'SO2': annuity(sf.analysis_years, -1 * self.elec_tariff.emissions_factor_SO2_pct_decrease, 0.0),
@@ -266,7 +266,7 @@ class DataManager:
                 else:
                     pwf_fuel_by_tech.append(round(pwf_e, 5))
 
-        return levelization_factor, pwf_e, pwf_om, two_party_factor, pwf_boiler_fuel, pwf_chp_fuel, pwf_fuel_by_tech, pwfs_emissions_cost, pwfs_emissions_lbs
+        return levelization_factor, pwf_e, pwf_om, two_party_factor, pwf_boiler_fuel, pwf_chp_fuel, pwf_fuel_by_tech, pwfs_emissions_cost, pwfs_grid_emissions_lbs
 
     def _get_REopt_production_incentives(self, techs):
         sf = self.site.financial
@@ -965,9 +965,11 @@ class DataManager:
         
         ## Grid emissions 
 
-        # bau load list is non-net so must remove exising PV to get to the load served by the grid
-        grid_to_load_kw = np.array(self.load.bau_load_list) 
-
+        # bau_load_list includes full load during normal grid-connected operations and critical load for whatever duration can be sustained with existing onsite generation
+        bau_grid_to_load_kw = np.array(self.load.bau_load_list) 
+        
+        # bau load list is non-net so must remove existing PV to get to the load served by the grid
+        # (for both normal grid-connected operations and critical load during outage)
         years = self.site.financial.analysis_years
         for pv in self.pvs:
             """
@@ -979,31 +981,29 @@ class DataManager:
             multiplying the pv.prod_factor by the levelization_factor we are modeling the average pv production.
             """
             levelization_factor = round(degradation_factor(years, pv.degradation_pct), 5)
-            grid_to_load_kw -= np.array([pv.existing_kw * x * levelization_factor for x in pv.prod_factor])
-        
-        #Ensure that existing PV cannot export/get emissions reductions credits during an outage 
+            bau_grid_to_load_kw -= np.array([pv.existing_kw * x * levelization_factor for x in pv.prod_factor])
+               
+        #No grid emissions, or pv exporting to grid, during an outage
         for i in range((self.load.outage_start_time_step or 1) -1, (self.load.outage_end_time_step or 1) -1):
-            if grid_to_load_kw[i] < 0:
-                grid_to_load_kw[i] = 0
+            bau_grid_to_load_kw[i] = 0
 
         #If no net emissions accounting, no credit for RE grid exports:
         if self.site.include_exported_elec_emissions_in_total is False:
-            grid_to_load_kw = np.array([i if i > 0 else 0 for i in grid_to_load_kw])
+            bau_grid_to_load_kw = np.array([i if i > 0 else 0 for i in bau_grid_to_load_kw])
             
-        # Might need to add additional logic to match reopt.jl curtailment approach...
-        grid_emissions_lb_CO2_per_year = self.steplength*sum(np.array(self.elec_tariff.emissions_factor_series_lb_CO2_per_kwh) * grid_to_load_kw)
+        grid_emissions_lb_CO2_per_year = self.steplength*sum(np.array(self.elec_tariff.emissions_factor_series_lb_CO2_per_kwh) * bau_grid_to_load_kw)
         total_emissions_lb_CO2_per_year += grid_emissions_lb_CO2_per_year
         
-        grid_emissions_lb_NOx_per_year = self.steplength*sum(np.array(self.elec_tariff.emissions_factor_series_lb_NOx_per_kwh) * grid_to_load_kw)
+        grid_emissions_lb_NOx_per_year = self.steplength*sum(np.array(self.elec_tariff.emissions_factor_series_lb_NOx_per_kwh) * bau_grid_to_load_kw)
         total_emissions_lb_NOx_per_year += grid_emissions_lb_NOx_per_year
-
-        grid_emissions_lb_SO2_per_year = self.steplength*sum(np.array(self.elec_tariff.emissions_factor_series_lb_SO2_per_kwh) * grid_to_load_kw)
+        
+        grid_emissions_lb_SO2_per_year = self.steplength*sum(np.array(self.elec_tariff.emissions_factor_series_lb_SO2_per_kwh) * bau_grid_to_load_kw)
         total_emissions_lb_SO2_per_year += grid_emissions_lb_SO2_per_year
-
-        grid_emissions_lb_PM25_per_year = self.steplength*sum(np.array(self.elec_tariff.emissions_factor_series_lb_PM25_per_kwh) * grid_to_load_kw)
+        
+        grid_emissions_lb_PM25_per_year = self.steplength*sum(np.array(self.elec_tariff.emissions_factor_series_lb_PM25_per_kwh) * bau_grid_to_load_kw)
         total_emissions_lb_PM25_per_year += grid_emissions_lb_PM25_per_year
-
-        ## Generator emissions
+        
+        ## Generator emissions (during outages)
         if self.generator is not None:
             total_emissions_lb_CO2_per_year += self.load.generator_fuel_use_gal * self.generator.emissions_factor_lb_CO2_per_gal
             total_emissions_lb_NOx_per_year += self.load.generator_fuel_use_gal * self.generator.emissions_factor_lb_NOx_per_gal
@@ -1236,9 +1236,9 @@ class DataManager:
             self.bau_techs, bau=True)
 
         levelization_factor, pwf_e, pwf_om, two_party_factor, \
-        pwf_boiler_fuel, pwf_chp_fuel, pwf_fuel_by_tech, pwfs_emissions_cost, pwfs_emissions_lbs = self._get_REopt_pwfs(self.available_techs)
+        pwf_boiler_fuel, pwf_chp_fuel, pwf_fuel_by_tech, pwfs_emissions_cost, pwfs_grid_emissions_lbs = self._get_REopt_pwfs(self.available_techs)
         levelization_factor_bau, pwf_e_bau, pwf_om_bau, two_party_factor_bau, \
-        pwf_boiler_fuel_bau, pwf_chp_fuel_bau, pwf_fuel_by_tech_bau, pwfs_emissions_cost_bau, pwfs_emissions_lbs_bau = self._get_REopt_pwfs(self.bau_techs)
+        pwf_boiler_fuel_bau, pwf_chp_fuel_bau, pwf_fuel_by_tech_bau, pwfs_emissions_cost_bau, pwfs_grid_emissions_lbs_bau = self._get_REopt_pwfs(self.bau_techs)
 
         pwf_prod_incent, max_prod_incent, max_size_for_prod_incent, production_incentive_rate \
             = self._get_REopt_production_incentives(self.available_techs)
@@ -1418,7 +1418,7 @@ class DataManager:
             'pwf_om': pwf_om,
             'pwf_fuel': pwf_fuel_by_tech,
             'pwfs_emissions_cost' : pwfs_emissions_cost,
-            'pwfs_emissions_lbs' : pwfs_emissions_lbs,
+            'pwfs_grid_emissions_lbs' : pwfs_grid_emissions_lbs,
             'two_party_factor': two_party_factor,
             'pwf_prod_incent': pwf_prod_incent,
             'MaxProdIncent': max_prod_incent,
@@ -1579,7 +1579,7 @@ class DataManager:
             'pwf_om': pwf_om_bau,
             'pwf_fuel': pwf_fuel_by_tech_bau,
             'pwfs_emissions_cost': pwfs_emissions_cost_bau,
-            'pwfs_emissions_lbs': pwfs_emissions_lbs_bau,
+            'pwfs_grid_emissions_lbs': pwfs_grid_emissions_lbs_bau,
             'two_party_factor': two_party_factor_bau,
             'pwf_prod_incent': pwf_prod_incent_bau,
             'MaxProdIncent': max_prod_incent_bau,
