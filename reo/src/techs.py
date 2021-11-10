@@ -269,7 +269,7 @@ class Generator(Tech):
         self.min_kw = min_kw
         self.max_kw = max_kw
         self.existing_kw = existing_kw
-        self.generator_fuel_percent_RE - generator_fuel_percent_RE
+        self.generator_fuel_percent_RE = generator_fuel_percent_RE
         self.emissions_factor_lb_CO2_per_gal = emissions_factor_lb_CO2_per_gal
         self.emissions_factor_lb_NOx_per_gal = emissions_factor_lb_NOx_per_gal
         self.emissions_factor_lb_SO2_per_gal = emissions_factor_lb_SO2_per_gal

@@ -234,7 +234,7 @@ nested_output_definitions = {
                   "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption in the first year.",
                   "units": "lb CO2"
                 },
-              "year_one_CO2_emissions_reduction_pct": {
+              "lifecycle_CO2_emissions_reduction_pct": {
                   "type": float,
                   "description": "Percent reduction in total pounds of carbon dioxide emissions in the optimal case relative to the BAU case to the ",
                   "units": "%"
@@ -269,6 +269,11 @@ nested_output_definitions = {
                   "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption over the analysis period in the BAU case.",
                   "units": "lb CO2"
                 },
+              "preprocessed_lifetime_emissions_bau_lb_CO2": {
+                  "type": int,
+                  "description": "PREPROCESSED total pounds of carbon dioxide emissions associated with the site's energy consumption over the analysis period in the BAU case.",
+                  "units": "lb CO2"
+              },
               "lifetime_emissions_lb_NOx_bau": {
                   "type": int,
                   "description": "Total pounds of NOx emissions associated with the site's energy consumption over the analysis period in the BAU case.",
