@@ -153,7 +153,6 @@ class SiteModel(models.Model):
     co2_emissions_reduction_max_pct = models.FloatField(null=True, blank=True)
     include_exported_renewable_electricity_in_total = models.BooleanField(null=True, blank=True)
     include_exported_elec_emissions_in_total = models.BooleanField(null=True, blank=True)
-    include_outage_emissions_in_total = models.BooleanField(null=True, blank=True)
     
     #outputs
     year_one_renewable_electricity_pct = models.FloatField(null=True, blank=True)
