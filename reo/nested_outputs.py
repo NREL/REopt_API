@@ -244,67 +244,67 @@ nested_output_definitions = {
                   "description": "Cost, or value, of emissions required to breakeven (NPV = 0) with the BAU case LCC",
                   "units": "$/tCO2"
                 },
-              "lifetime_emissions_lb_CO2": {
+              "lifecycle_emissions_lb_CO2": {
                   "type": int,
                   "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption over the analysis period.",
                   "units": "lb CO2"
                 },
-              "lifetime_emissions_lb_NOx": {
+              "lifecycle_emissions_lb_NOx": {
                   "type": int,
                   "description": "Total pounds of NOx emissions associated with the site's energy consumption over the analysis period.",
                   "units": "lb NOx"
                 },
-              "lifetime_emissions_lb_SO2": {
+              "lifecycle_emissions_lb_SO2": {
                   "type": int,
                   "description": "Total pounds of SO2 emissions associated with the site's energy consumption over the analysis period.",
                   "units": "lb SO2"
                 },
-              "lifetime_emissions_lb_PM25": {
+              "lifecycle_emissions_lb_PM25": {
                   "type": int,
                   "description": "Total pounds of PM2.5 emissions associated with the site's energy consumption over the analysis period.",
                   "units": "lb PM2.5"
                 },
-              "lifetime_emissions_lb_CO2_bau": {
+              "lifecycle_emissions_lb_CO2_bau": {
                   "type": int,
                   "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption over the analysis period in the BAU case.",
                   "units": "lb CO2"
                 },
-              "preprocessed_lifetime_emissions_bau_lb_CO2": {
+              "preprocessed_lifecycle_emissions_bau_lb_CO2": {
                   "type": int,
                   "description": "PREPROCESSED total pounds of carbon dioxide emissions associated with the site's energy consumption over the analysis period in the BAU case.",
                   "units": "lb CO2"
               },
-              "lifetime_emissions_lb_NOx_bau": {
+              "lifecycle_emissions_lb_NOx_bau": {
                   "type": int,
                   "description": "Total pounds of NOx emissions associated with the site's energy consumption over the analysis period in the BAU case.",
                   "units": "lb NOx"
                 },
-              "lifetime_emissions_lb_SO2_bau": {
+              "lifecycle_emissions_lb_SO2_bau": {
                   "type": int,
                   "description": "Total pounds of SO2 emissions associated with the site's energy consumption over the analysis period in the BAU case.",
                   "units": "lb SO2"
                 },
-              "lifetime_emissions_lb_PM25_bau": {
+              "lifecycle_emissions_lb_PM25_bau": {
                   "type": int,
                   "description": "Total pounds of PM2.5 emissions associated with the site's energy consumption over the analysis period in the BAU case.",
                   "units": "lb PM2.5"
                 },
-              "lifetime_emissions_cost_CO2": {
+              "lifecycle_emissions_cost_CO2": {
                   "type": int,
                   "description": "Total cost of carbon dioxide emissions associated with the site's energy consumption over the analysis period.",
                   "units": "dollars"
                 },
-              "lifetime_emissions_cost_CO2_bau": {
+              "lifecycle_emissions_cost_CO2_bau": {
                   "type": int,
                   "description": "Total cost of carbon dioxide emissions associated with the site's energy consumption over the analysis period in the BAU case.",
                   "units": "dollars"
                 },
-              "lifetime_emissions_cost_Health": {
+              "lifecycle_emissions_cost_Health": {
                   "type": int,
                   "description": "Total cost of NOx, SO2, and PM2.5 emissions associated with the site's energy consumption over the analysis period.",
                   "units": "dollars"
                 },
-              "lifetime_emissions_cost_Health_bau": {
+              "lifecycle_emissions_cost_Health_bau": {
                   "type": int,
                   "description": "Total cost of NOx, SO2, and PM2.5 emissions associated with the site's energy consumption over the analysis period in the BAU case.",
                   "units": "dollars"
@@ -570,7 +570,7 @@ nested_output_definitions = {
                 },
                 "existing_pv_om_cost_us_dollars": {
                   "type": "float",
-                  "description": "Lifetime O&M cost for existing PV system.",
+                  "description": "Lifecycle O&M cost for existing PV system.",
                   "units": "$"
                 },
                 "station_latitude": {
@@ -986,12 +986,12 @@ nested_output_definitions = {
                 },
                 "existing_gen_total_fixed_om_cost_us_dollars": {
                   "type": "float",
-                  "description": "Lifetime fixed O&M cost for existing diesel generator system in bau case.",
+                  "description": "Lifecycle fixed O&M cost for existing diesel generator system in bau case.",
                   "units": "$"
                 },
                 "existing_gen_total_variable_om_cost_us_dollars": {
                   "type": "float",
-                  "description": "Lifetime variable (based on kwh produced) O&M cost for existing diesel generator system.",
+                  "description": "Lifecycle variable (based on kwh produced) O&M cost for existing diesel generator system.",
                   "units": "$"
                 },
                 "existing_gen_year_one_variable_om_cost_us_dollars": {
