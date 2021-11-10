@@ -41,7 +41,7 @@ class ClassAttributes:
 
 class TestEmissions(ResourceTestCaseMixin, TestCase):
     """
-    Test lifetime climate and health emissions calculations
+    Test lifecycle climate and health emissions calculations
     """
 
     def setUp(self):
@@ -257,26 +257,26 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
             print('year_one_CO2_emissions_from_elec_grid_purchase: ', response['outputs']["Scenario"]["Site"]["year_one_CO2_emissions_from_elec_grid_purchase"] )
             print('year_one_CO2_emissions_from_elec_grid_purchase_bau: ', response['outputs']["Scenario"]["Site"]["year_one_CO2_emissions_from_elec_grid_purchase_bau"] )
             
-            print('Lifetime lbs CO2: ', response['outputs']['Scenario']['Site']['lifetime_emissions_lb_CO2'])
-            print('Lifetime lbs CO2 BAU: ', response['outputs']['Scenario']['Site']['lifetime_emissions_lb_CO2_bau'])
-            print('Lifetime cost CO2: ', response['outputs']['Scenario']['Site']['lifetime_emissions_cost_CO2'])
-            print('Lifetime cost CO2 BAU: ', response['outputs']['Scenario']['Site']['lifetime_emissions_cost_CO2_bau'])
+            print('Lifecycle lbs CO2: ', response['outputs']['Scenario']['Site']['lifecycle_emissions_lb_CO2'])
+            print('Lifecycle lbs CO2 BAU: ', response['outputs']['Scenario']['Site']['lifecycle_emissions_lb_CO2_bau'])
+            print('Lifecycle cost CO2: ', response['outputs']['Scenario']['Site']['lifecycle_emissions_cost_CO2'])
+            print('Lifecycle cost CO2 BAU: ', response['outputs']['Scenario']['Site']['lifecycle_emissions_cost_CO2_bau'])
 
-            print('Lifetime cost Health: ', response['outputs']['Scenario']['Site']['lifetime_emissions_cost_Health'])
-            print('Lifetime cost Health BAU: ', response['outputs']['Scenario']['Site']['lifetime_emissions_cost_Health_bau'])
+            print('Lifecycle cost Health: ', response['outputs']['Scenario']['Site']['lifecycle_emissions_cost_Health'])
+            print('Lifecycle cost Health BAU: ', response['outputs']['Scenario']['Site']['lifecycle_emissions_cost_Health_bau'])
 
             ## TODO: add these results 
-            # self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_NOx"] = self.results_dict.get("lifetime_emissions_lb_NOx")
-            # self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_NOx_bau"] = self.results_dict.get("lifetime_emissions_lb_NOx_bau")
-            # self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_SO2"] = self.results_dict.get("lifetime_emissions_lb_SO2")
-            # self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_SO2_bau"] = self.results_dict.get("lifetime_emissions_lb_SO2_bau")
-            # self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_PM25"] = self.results_dict.get("lifetime_emissions_lb_PM25")
-            # self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_PM25_bau"] = self.results_dict.get("lifetime_emissions_lb_PM25_bau")
-            # "lifetime_emissions_cost_Health_bau" 
-            # "lifetime_emissions_cost_Health" 
+            # self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_NOx"] = self.results_dict.get("lifecycle_emissions_lb_NOx")
+            # self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_NOx_bau"] = self.results_dict.get("lifecycle_emissions_lb_NOx_bau")
+            # self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_SO2"] = self.results_dict.get("lifecycle_emissions_lb_SO2")
+            # self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_SO2_bau"] = self.results_dict.get("lifecycle_emissions_lb_SO2_bau")
+            # self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_PM25"] = self.results_dict.get("lifecycle_emissions_lb_PM25")
+            # self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_PM25_bau"] = self.results_dict.get("lifecycle_emissions_lb_PM25_bau")
+            # "lifecycle_emissions_cost_Health_bau" 
+            # "lifecycle_emissions_cost_Health" 
             
             ## path = 'reo/tests/outputs/'
-            ## json.dump(response, open(path+'/'+"lifetime_emissions_results.json", "w"))
+            ## json.dump(response, open(path+'/'+"lifecycle_emissions_results.json", "w"))
 
             # output_df = pd.DataFrame()
             # output_df['load'] = response['outputs']['Scenario']['Site']['LoadProfile']['year_one_electric_load_series_kw']
@@ -340,16 +340,16 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
               
     #         print('fuel_used_gal: ', response['outputs']['Scenario']['Site']['Generator']['fuel_used_gal'])
     #         print('year_one_CO2_emissions_from_fuelburn: ', response['outputs']['Scenario']['Site']['year_one_CO2_emissions_from_fuelburn'])
-    #         print('Lifetime lbs CO2: ', response['outputs']['Scenario']['Site']['lifetime_emissions_lb_CO2'])
-    #         # print('Lifetime lbs CO2 BAU: ', response['outputs']['Scenario']['Site']['lifetime_emissions_lb_CO2_bau'])
-    #         print('Lifetime cost CO2: ', response['outputs']['Scenario']['Site']['lifetime_emissions_cost_CO2'])
-    #         # print('Lifetime cost CO2 BAU: ', response['outputs']['Scenario']['Site']['lifetime_emissions_cost_CO2_bau'])
+    #         print('Lifecycle lbs CO2: ', response['outputs']['Scenario']['Site']['lifecycle_emissions_lb_CO2'])
+    #         # print('Lifecycle lbs CO2 BAU: ', response['outputs']['Scenario']['Site']['lifecycle_emissions_lb_CO2_bau'])
+    #         print('Lifecycle cost CO2: ', response['outputs']['Scenario']['Site']['lifecycle_emissions_cost_CO2'])
+    #         # print('Lifecycle cost CO2 BAU: ', response['outputs']['Scenario']['Site']['lifecycle_emissions_cost_CO2_bau'])
 
-    #         print('Lifetime cost Health: ', response['outputs']['Scenario']['Site']['lifetime_emissions_cost_Health'])
-    #         # print('Lifetime cost Health BAU: ', response['outputs']['Scenario']['Site']['lifetime_emissions_cost_Health_bau'])
+    #         print('Lifecycle cost Health: ', response['outputs']['Scenario']['Site']['lifecycle_emissions_cost_Health'])
+    #         # print('Lifecycle cost Health BAU: ', response['outputs']['Scenario']['Site']['lifecycle_emissions_cost_Health_bau'])
             
     #         ## path = 'reo/tests/outputs/'
-    #         ## json.dump(response, open(path+'/'+"lifetime_emissions_results.json", "w"))
+    #         ## json.dump(response, open(path+'/'+"lifecycle_emissions_results.json", "w"))
 
     #         # output_df = pd.DataFrame()
     #         # output_df['load'] = response['outputs']['Scenario']['Site']['LoadProfile']['year_one_electric_load_series_kw']
