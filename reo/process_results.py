@@ -145,16 +145,19 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "year_one_generator_emissions_lb_NOx",
             "year_one_generator_emissions_lb_SO2",
             "year_one_generator_emissions_lb_PM25",
-            "lifetime_emissions_lb_CO2",
+            "year_one_boiler_emissions_lb_CO2",
+            "year_one_boiler_emissions_lb_NOx",
+            "year_one_boiler_emissions_lb_SO2",
+            "year_one_boiler_emissions_lb_PM25",
+            "lifecycle_emissions_lb_CO2",
             "year_one_emissions_lb_NOx", 
             "year_one_emissions_lb_SO2",
             "year_one_emissions_lb_PM25",
-            "lifetime_emissions_lb_NOx",
-            "lifetime_emissions_lb_SO2",            
-            "lifetime_emissions_lb_PM25",
-            "lifetime_emissions_cost_CO2",            
-            "lifetime_emissions_cost_Health",
-            ## TODO: Kk- add Boiler emissions here
+            "lifecycle_emissions_lb_NOx",
+            "lifecycle_emissions_lb_SO2",            
+            "lifecycle_emissions_lb_PM25",
+            "lifecycle_emissions_cost_CO2",            
+            "lifecycle_emissions_cost_Health"
         ]
 
         def __init__(self, results_dict, results_dict_bau, dm, inputs):
@@ -493,25 +496,25 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             self.nested_outputs["Scenario"]["Site"]["year_one_emissions_bau_lb_SO2"] = self.results_dict.get("year_one_emissions_lb_SO2_bau")
             self.nested_outputs["Scenario"]["Site"]["year_one_emissions_bau_lb_PM25"] = self.results_dict.get("year_one_emissions_lb_PM25_bau")
 
-            ##### Lifetime emissions results 
-            self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_CO2"] = self.results_dict.get("lifetime_emissions_lb_CO2")
-            self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_CO2_bau"] = self.results_dict.get("lifetime_emissions_lb_CO2_bau")
-            self.nested_outputs["Scenario"]["Site"]["preprocessed_lifetime_emissions_bau_lb_CO2"] = self.results_dict.get("preprocessed_BAU_lifetime_emissions_CO2")
+            ##### Lifecycle emissions results 
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_CO2"] = self.results_dict.get("lifecycle_emissions_lb_CO2")
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_CO2_bau"] = self.results_dict.get("lifecycle_emissions_lb_CO2_bau")
+            self.nested_outputs["Scenario"]["Site"]["preprocessed_lifecycle_emissions_bau_lb_CO2"] = self.results_dict.get("preprocessed_BAU_lifecycle_emissions_CO2")
 
-            self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_NOx"] = self.results_dict.get("lifetime_emissions_lb_NOx")
-            self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_NOx_bau"] = self.results_dict.get("lifetime_emissions_lb_NOx_bau")
-            self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_SO2"] = self.results_dict.get("lifetime_emissions_lb_SO2")
-            self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_SO2_bau"] = self.results_dict.get("lifetime_emissions_lb_SO2_bau")
-            self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_PM25"] = self.results_dict.get("lifetime_emissions_lb_PM25")
-            self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_lb_PM25_bau"] = self.results_dict.get("lifetime_emissions_lb_PM25_bau")
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_NOx"] = self.results_dict.get("lifecycle_emissions_lb_NOx")
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_NOx_bau"] = self.results_dict.get("lifecycle_emissions_lb_NOx_bau")
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_SO2"] = self.results_dict.get("lifecycle_emissions_lb_SO2")
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_SO2_bau"] = self.results_dict.get("lifecycle_emissions_lb_SO2_bau")
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_PM25"] = self.results_dict.get("lifecycle_emissions_lb_PM25")
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_PM25_bau"] = self.results_dict.get("lifecycle_emissions_lb_PM25_bau")
 
-            self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_cost_CO2"] = self.results_dict.get("lifetime_emissions_cost_CO2")
-            self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_cost_CO2_bau"] = self.results_dict.get("lifetime_emissions_cost_CO2_bau")
-            self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_cost_Health"] = self.results_dict.get("lifetime_emissions_cost_Health")
-            self.nested_outputs["Scenario"]["Site"]["lifetime_emissions_cost_Health_bau"] = self.results_dict.get("lifetime_emissions_cost_Health_bau")
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_cost_CO2"] = self.results_dict.get("lifecycle_emissions_cost_CO2")
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_cost_CO2_bau"] = self.results_dict.get("lifecycle_emissions_cost_CO2_bau")
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_cost_Health"] = self.results_dict.get("lifecycle_emissions_cost_Health")
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_cost_Health_bau"] = self.results_dict.get("lifecycle_emissions_cost_Health_bau")
             test_adf = self.results_dict.get("pwfs_emissions_cost_CO2_grid") # TODO ADF remove! 
             
-            # TODO: add lifetime health cost 
+            # TODO: add lifecycle health cost 
 
             self.nested_outputs["Scenario"]["lower_bound"] = self.results_dict.get("lower_bound")
             self.nested_outputs["Scenario"]["optimality_gap"] = self.results_dict.get("optimality_gap")
