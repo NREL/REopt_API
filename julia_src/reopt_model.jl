@@ -959,10 +959,10 @@ end
 #Renewable electricity constraints
 function add_re_elec_constraints(m,p)
 	if !isnothing(p.MinAnnualPercentREElec)
-		@constraint(m, MinREElecCon, m[:AnnualREEleckWh] >= p.MinAnnualPercentREElec[1]*p.TimeStepScaling*(sum(p.ElecLoad[ts] for ts in p.TimeStep)))
+		@constraint(m, MinREElecCon, m[:AnnualREEleckWh] >= p.MinAnnualPercentREElec*p.TimeStepScaling*(sum(p.ElecLoad[ts] for ts in p.TimeStep)))
 	end
 	if !isnothing(p.MaxAnnualPercentREElec) 
-		@constraint(m, MaxREElecCon, m[:AnnualREEleckWh] <= p.MaxAnnualPercentREElec[1]*p.TimeStepScaling*(sum(p.ElecLoad[ts] for ts in p.TimeStep)))
+		@constraint(m, MaxREElecCon, m[:AnnualREEleckWh] <= p.MaxAnnualPercentREElec*p.TimeStepScaling*(sum(p.ElecLoad[ts] for ts in p.TimeStep)))
 	end
 end
 
@@ -1083,8 +1083,7 @@ function add_lifecycle_emissions_calcs(m,p)
 	m[:Lifecycle_Emissions_Lbs_PM25_fuelburn] = p.analysis_years *  m[:yr1_emissions_from_fuelburn_PM25] # not assuming an annual decrease in on-site fuel burn emissions
 	m[:Lifecycle_Emissions_Lbs_PM25] = m[:Lifecycle_Emissions_Lbs_PM25_grid] + m[:Lifecycle_Emissions_Lbs_PM25_fuelburn]
 
-	# TODO: Create a pwf for SO2, PM2.5, and NOx? Escalation % will be location dependent... 
-	# Current assumption is that CO2 pwf is applicable for NOx, SO2, and PM2.5 
+	# Health costs 
 	m[:Lifecycle_Emissions_Cost_NOx] = (p.pwfs_emissions_cost["NOx_grid"] * p.NOx_dollars_tonne_grid * (m[:yr1_emissions_from_elec_grid_purchase_NOx] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_NOx]) + p.pwfs_emissions_cost["NOx_onsite"] * p.NOx_dollars_tonne_onsite_fuelburn * m[:yr1_emissions_from_fuelburn_NOx]) / 2204.62 
 	m[:Lifecycle_Emissions_Cost_SO2] = (p.pwfs_emissions_cost["SO2_grid"] * p.SO2_dollars_tonne_grid * (m[:yr1_emissions_from_elec_grid_purchase_SO2] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_SO2]) + p.pwfs_emissions_cost["SO2_onsite"] * p.SO2_dollars_tonne_onsite_fuelburn * m[:yr1_emissions_from_fuelburn_SO2]) / 2204.62
 	m[:Lifecycle_Emissions_Cost_PM25] =  (p.pwfs_emissions_cost["PM25_grid"] * p.PM25_dollars_tonne_grid * (m[:yr1_emissions_from_elec_grid_purchase_PM25] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_PM25]) + p.pwfs_emissions_cost["PM25_onsite"] * p.PM25_dollars_tonne_onsite_fuelburn * m[:yr1_emissions_from_fuelburn_PM25]) / 2204.62
