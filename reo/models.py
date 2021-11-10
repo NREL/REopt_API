@@ -146,7 +146,7 @@ class SiteModel(models.Model):
     renewable_electricity_energy_pct = models.FloatField(null=True, blank=True)
     
     preprocessed_year_one_emissions_bau_lb_CO2 = models.FloatField(null=True, blank=True)
-    preprocessed_lifetime_emissions_bau_lb_CO2 = models.FloatField(null=True, blank=True)
+    preprocessed_lifecycle_emissions_bau_lb_CO2 = models.FloatField(null=True, blank=True)
     renewable_electricity_min_pct = models.FloatField(null=True, blank=True)
     renewable_electricity_max_pct = models.FloatField(null=True, blank=True)
     co2_emissions_reduction_min_pct = models.FloatField(null=True, blank=True)
@@ -182,20 +182,20 @@ class SiteModel(models.Model):
     year_one_emissions_lb_PM25 = models.FloatField(null=True, blank=True)
     year_one_emissions_bau_lb_PM25 = models.FloatField(null=True, blank=True)
 
-    lifetime_emissions_lb_CO2 = models.FloatField(null=True, blank=True) 
-    lifetime_emissions_lb_CO2_bau = models.FloatField(null=True, blank=True)
-    lifetime_emissions_cost_CO2 = models.FloatField(null=True, blank=True) 
-    lifetime_emissions_cost_CO2_bau = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_lb_CO2 = models.FloatField(null=True, blank=True) 
+    lifecycle_emissions_lb_CO2_bau = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_cost_CO2 = models.FloatField(null=True, blank=True) 
+    lifecycle_emissions_cost_CO2_bau = models.FloatField(null=True, blank=True)
 
-    lifetime_emissions_lb_NOx = models.FloatField(null=True, blank=True) 
-    lifetime_emissions_lb_NOx_bau = models.FloatField(null=True, blank=True)
-    lifetime_emissions_lb_SO2 = models.FloatField(null=True, blank=True) 
-    lifetime_emissions_lb_SO2_bau = models.FloatField(null=True, blank=True)
-    lifetime_emissions_lb_PM25 = models.FloatField(null=True, blank=True) 
-    lifetime_emissions_lb_PM25_bau = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_lb_NOx = models.FloatField(null=True, blank=True) 
+    lifecycle_emissions_lb_NOx_bau = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_lb_SO2 = models.FloatField(null=True, blank=True) 
+    lifecycle_emissions_lb_SO2_bau = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_lb_PM25 = models.FloatField(null=True, blank=True) 
+    lifecycle_emissions_lb_PM25_bau = models.FloatField(null=True, blank=True)
 
-    lifetime_emissions_cost_Health = models.FloatField(null=True, blank=True) 
-    lifetime_emissions_cost_Health_bau = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_cost_Health = models.FloatField(null=True, blank=True) 
+    lifecycle_emissions_cost_Health_bau = models.FloatField(null=True, blank=True)
 
 
     @classmethod
