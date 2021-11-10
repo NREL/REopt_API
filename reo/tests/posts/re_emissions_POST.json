@@ -1504,6 +1504,28 @@
         "min_kw": 0.0,
         "macrs_itc_reduction": 0.5,
         "federal_rebate_us_dollars_per_kw": 0.0
+      },
+      "LoadProfileBoilerFuel": {
+        "doe_reference_name": "MidriseApartment",
+        "annual_mmbtu": 0
+      },
+      "FuelTariff": {
+        "existing_boiler_fuel_type": "natural_gas",
+        "boiler_fuel_blended_annual_rates_us_dollars_per_mmbtu": 5.55,
+        "boiler_fuel_percent_RE": 0.0,
+        "chp_fuel_type": "natural_gas",
+        "chp_fuel_blended_annual_rates_us_dollars_per_mmbtu": 5.55,
+        "chp_fuel_percent_RE": 0.50
+      },
+      "CHP": {
+        "prime_mover": "recip_engine",
+        "max_kw": 0.0
+      },
+      "HotTES": {
+        "max_gal":0
+      },
+      "Boiler": {
+        "existing_boiler_production_type_steam_or_hw": "hot_water"
       }
     },
     "time_steps_per_hour": 1,

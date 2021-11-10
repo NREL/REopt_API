@@ -145,6 +145,10 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "year_one_generator_emissions_lb_NOx",
             "year_one_generator_emissions_lb_SO2",
             "year_one_generator_emissions_lb_PM25",
+            "year_one_boiler_emissions_lb_CO2",
+            "year_one_boiler_emissions_lb_NOx",
+            "year_one_boiler_emissions_lb_SO2",
+            "year_one_boiler_emissions_lb_PM25",
             "lifecycle_emissions_lb_CO2",
             "year_one_emissions_lb_NOx", 
             "year_one_emissions_lb_SO2",
@@ -153,8 +157,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "lifecycle_emissions_lb_SO2",            
             "lifecycle_emissions_lb_PM25",
             "lifecycle_emissions_cost_CO2",            
-            "lifecycle_emissions_cost_Health",
-            ## TODO: Kk- add Boiler emissions here
+            "lifecycle_emissions_cost_Health"
         ]
 
         def __init__(self, results_dict, results_dict_bau, dm, inputs):
