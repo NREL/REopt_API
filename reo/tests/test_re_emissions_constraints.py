@@ -53,13 +53,13 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
         Runs a sweep of various scenarios () and checks logic of calculations and application of constraints.
         '''
         ## inputs
-        RE_target_totest = [None, 0.8] ##used for min and max #for test, if RE_target = None, then ER target = 0.4
+        RE_target_totest = [None,0.8] ##used for min and max #for test, if RE_target = None, then ER target = 0.4
         include_exported_RE_in_total_totest = [True,False] 
         include_exported_elec_emissions_totest = [True,False]
         include_battery_totest = [True,False] 
         net_metering_limit_totest = [0,1000]
         elec_only_totest = [True] #True = elec only, False = add thermal loads and test CHP w/ TES-HW
-        resilience_scenarios_totest = ['existing_gen'] #['no_outage','no_gen','new_gen','existing_gen'] 
+        resilience_scenarios_totest = ['no_outage','no_gen','new_gen','existing_gen'] 
         # Note resilience scenarios eliminate the upper limit on RE or ER target, so it's "at least" _% RE or ER, rather than "exactly" (which yields infeasibilities)
 
         ## runs
