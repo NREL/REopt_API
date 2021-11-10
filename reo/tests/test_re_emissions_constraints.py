@@ -217,10 +217,10 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                                     year_one_emissions_bau_preprocess_pct_diff = (year_one_emissions_bau_lbCO2_out-year_one_emissions_bau_lbCO2_in)/year_one_emissions_bau_lbCO2_out
                                     self.assertAlmostEquals(year_one_emissions_bau_preprocess_pct_diff,0.0,places=2) #(<0.5% error) 
                                     # check pre-processed lifecycle bau CO2 emissions calcs vs lifecycle bau CO2 emissions output
-                                    lifetime_emissions_bau_lbCO2_out = d['outputs']['Scenario']['Site']['lifetime_emissions_lb_CO2_bau']
-                                    lifetime_emissions_bau_lbCO2_in = d['outputs']['Scenario']['Site']['preprocessed_lifetime_emissions_bau_lb_CO2']
-                                    lifetime_emissions_bau_preprocess_pct_diff = (lifetime_emissions_bau_lbCO2_out-lifetime_emissions_bau_lbCO2_in)/lifetime_emissions_bau_lbCO2_out
-                                    self.assertAlmostEquals(lifetime_emissions_bau_preprocess_pct_diff,0.0,places=2) #(<0.5% error) 
+                                    lifecycle_emissions_bau_lbCO2_out = d['outputs']['Scenario']['Site']['lifecycle_emissions_lb_CO2_bau']
+                                    lifecycle_emissions_bau_lbCO2_in = d['outputs']['Scenario']['Site']['preprocessed_lifecycle_emissions_bau_lb_CO2']
+                                    lifecycle_emissions_bau_preprocess_pct_diff = (lifecycle_emissions_bau_lbCO2_out-lifecycle_emissions_bau_lbCO2_in)/lifecycle_emissions_bau_lbCO2_out
+                                    self.assertAlmostEquals(lifecycle_emissions_bau_preprocess_pct_diff,0.0,places=2) #(<0.5% error) 
                                     # Emissions reductions:
                                     ER_pct_out = d['outputs']['Scenario']['Site']['lifecycle_CO2_emissions_reduction_pct']
                                     if ER_target is not None:
@@ -228,9 +228,9 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                                             self.assertAlmostEquals(ER_pct_out,ER_target,places=3)
                                         else:
                                             self.assertFalse(ER_pct_out < ER_target) # ER_pct_out should be >= ER_target
-                                    lifetime_emissions_lbCO2_out = d['outputs']['Scenario']['Site']['lifetime_emissions_lb_CO2']
-                                    lifetime_emissions_bau_lbCO2_out = d['outputs']['Scenario']['Site']['lifetime_emissions_lb_CO2_bau']
-                                    ER_pct_calced_out = (lifetime_emissions_bau_lbCO2_out-lifetime_emissions_lbCO2_out)/lifetime_emissions_bau_lbCO2_out
+                                    lifecycle_emissions_lbCO2_out = d['outputs']['Scenario']['Site']['lifecycle_emissions_lb_CO2']
+                                    lifecycle_emissions_bau_lbCO2_out = d['outputs']['Scenario']['Site']['lifecycle_emissions_lb_CO2_bau']
+                                    ER_pct_calced_out = (lifecycle_emissions_bau_lbCO2_out-lifecycle_emissions_lbCO2_out)/lifecycle_emissions_bau_lbCO2_out
                                     ER_pct_diff = abs(ER_pct_calced_out-ER_pct_out)
                                     self.assertAlmostEquals(ER_pct_diff,0.0,places=2) #within 1% of each other
                                     # Year 1 emissions - non-BAU case:
