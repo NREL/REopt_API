@@ -152,12 +152,12 @@ nested_input_definitions = {
     "include_climate_in_objective": {
       "type": "bool",
       "default": False,
-      "description": "If True, then the lifetime cost of CO2 emissions will be included in the objective function. Lifetime CO2 impacts will be calculated regardless."
+      "description": "If True, then the lifecycle cost of CO2 emissions will be included in the objective function. Lifecycle CO2 impacts will be calculated regardless."
     },
     "include_health_in_objective": {
       "type": "bool",
       "default": False,
-      "description": "If True, then the lifetime cost of SO2, NOx, and PM2.5 emissions will be included in the objective function. Lifetime health impacts will be calculated regardless, but you must provide marginal health costs for each pollutant."
+      "description": "If True, then the lifecycle cost of SO2, NOx, and PM2.5 emissions will be included in the objective function. Lifecycle health impacts will be calculated regardless, but you must provide marginal health costs for each pollutant."
     },
 
     "Site": {
