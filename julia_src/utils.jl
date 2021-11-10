@@ -228,7 +228,6 @@ Base.@kwdef struct Parameter
 
     # Emissions parameters
      IncludeExportedElecEmissionsInTotal::Bool
-     ##IncludeOutageEmissionsInTotal::Bool
      MinPercentCO2EmissionsReduction::Union{Float64,Nothing} 
      MaxPercentCO2EmissionsReduction::Union{Float64,Nothing} 
      BAUYr1Emissions_CO2::Float64
