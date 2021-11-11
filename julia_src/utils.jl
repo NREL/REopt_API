@@ -151,6 +151,8 @@ Base.@kwdef struct Parameter
 	 pwf_fuel::AxisArray
 	 r_tax_owner::Float64      # f^{tow}: Tax rate factor for owner [fraction]
      r_tax_offtaker::Float64   # f^{tot}: Tax rate factor for offtaker [fraction]
+     pwf_owner::Float64    # Annuity with zero escalation and owner's discount rate 
+     pwf_offtaker::Float64 # Annuity with zero escalation and offtaker's discount rate
 
 	 ###  System Size and Fuel Limit Parameters ###
 	 TechClassMinSize::AxisArray   #  \ubar{b}^{\sigma}_{c}: Minimum system size for technology class c [kW]
@@ -248,7 +250,16 @@ Base.@kwdef struct Parameter
     GHPOMCost::Array{Float64,1}  # Array of O&M cost for GHP options
     CHPSupplementaryFireMaxRatio::Float64
     CHPSupplementaryFireEfficiency::Float64
-    CapCostSupplementaryFiring::AxisArray # Array of capital cost for supplementary firing for CHP        
+    CapCostSupplementaryFiring::AxisArray # Array of capital cost for supplementary firing for CHP
+	#Offgrid systems
+	OffGridFlag::Bool
+	TechsRequiringSR::Array{String,1}
+	TechsProvidingSR::Array{String,1}
+	MinLoadMetPct::Float64
+	SRrequiredPctLoad::Float64
+	SRrequiredPctTechs::AxisArray
+    OtherCapitalCosts::Float64
+    OtherAnnualCosts::Float64
 end
 
 
@@ -375,6 +386,9 @@ function Parameter(d::Dict)
     d["BoilerEfficiency"] = AxisArray(d["BoilerEfficiency"], d["AllBoilerTechs"])  # Always passes both values, even if partial/none
     d["CapCostSupplementaryFiring"] = AxisArray(d["CapCostSupplementaryFiring"],d["CHPTechs"])
 
+	# Off-grid Modeling
+	d["SRrequiredPctTechs"] = AxisArray(d["SRrequiredPctTechs"], d["TechsProvidingSR"])
+
     # Indexed Sets
     if isempty(d["FuelType"])
         d["TechsByFuelType"] = []  # array of arrays is not empty, but needs to be for AxisArray conversion
@@ -385,7 +399,7 @@ function Parameter(d::Dict)
     d["ExportTiersByTech"] = AxisArray(d["ExportTiersByTech"], d["Tech"])
 	d["TechsByExportTier"] = AxisArray(d["TechsByExportTier"], d["ExportTiers"])
     d["TechsByNMILRegime"] = AxisArray(d["TechsByNMILRegime"], d["NMILRegime"])
-    
+
     d["GHPHeatingThermalServed"] = array_of_array_to_2D_array(d["GHPHeatingThermalServed"])
     d["GHPCoolingThermalServed"] = array_of_array_to_2D_array(d["GHPCoolingThermalServed"])
     d["GHPElectricConsumed"] = array_of_array_to_2D_array(d["GHPElectricConsumed"])
