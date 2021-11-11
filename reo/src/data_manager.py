@@ -753,12 +753,14 @@ class DataManager:
                     tech_emissions_factors_SO2.append(float(eval('self.' + tech + '.emissions_factor_lb_SO2_per_mmbtu') / MMBTU_TO_KWH))
                     tech_emissions_factors_PM25.append(float(eval('self.' + tech + '.emissions_factor_lb_PM25_per_mmbtu') / MMBTU_TO_KWH))
                 elif tech.lower() == 'boiler': 
+                    om_cost_us_dollars_per_kwh.append(0.0)
+                    om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
                     tech_percent_RE.append(float(eval('self.fuel_tariff.boiler_fuel_percent_RE')))
                     tech_emissions_factors_CO2.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_mmbtu') / MMBTU_TO_KWH))
                     tech_emissions_factors_NOx.append(float(eval('self.' + tech + '.emissions_factor_lb_NOx_per_mmbtu') / MMBTU_TO_KWH))
                     tech_emissions_factors_SO2.append(float(eval('self.' + tech + '.emissions_factor_lb_SO2_per_mmbtu') / MMBTU_TO_KWH))
                     tech_emissions_factors_PM25.append(float(eval('self.' + tech + '.emissions_factor_lb_PM25_per_mmbtu') / MMBTU_TO_KWH))
-                else: # KK come back to this / check it. pv, wind. need to separate out the ElectricChiller AbsorptionChiller Util
+                else: 
                     om_cost_us_dollars_per_kwh.append(0.0)
                     om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
                     tech_percent_RE.append(1.0) 
