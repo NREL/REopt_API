@@ -508,8 +508,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_PM25"] = self.results_dict.get("lifecycle_emissions_lb_PM25")
             self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_PM25_bau"] = self.results_dict.get("lifecycle_emissions_lb_PM25_bau")
 
-            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_cost_CO2"] = self.results_dict.get("lifecycle_emissions_cost_CO2")
-            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_cost_CO2_bau"] = self.results_dict.get("lifecycle_emissions_cost_CO2_bau")
             self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_cost_Health"] = self.results_dict.get("lifecycle_emissions_cost_Health")
             self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_cost_Health_bau"] = self.results_dict.get("lifecycle_emissions_cost_Health_bau")
             test_adf = self.results_dict.get("pwfs_emissions_cost_CO2_grid") # TODO ADF remove! 
