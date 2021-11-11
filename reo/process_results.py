@@ -870,7 +870,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_emissions_lb_CO2"] = self.results_dict.get(
                         "year_one_chp_emissions_lb_CO2")
                     # Health
-                    ## TODO: Update ! 
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_emissions_lb_NOx"] = self.results_dict.get(
                         "year_one_chp_emissions_lb_NOx")
@@ -905,7 +904,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                             "year_one_boiler_emissions_lb_CO2_bau")
 
                     # Health
-                    ## TODO: Update! 
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_emissions_lb_NOx"] = self.results_dict.get(
                         "year_one_boiler_emissions_lb_NOx")
