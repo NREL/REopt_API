@@ -970,7 +970,8 @@ end
 function add_re_heat_calcs(m,p)
 	# Renewable heat 
 	m[:AnnualREHeatMMBTU] = @expression(m,p.TimeStepScaling*
-		(sum((p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvThermalProduction][t,ts]-m[:dvProductionToWaste][t,ts]) * p.TechPercentRE[t] for t in p.HeatingTechs, ts in p.TimeStep) #total heat generation minus waste heat
+		(sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvThermalProduction][t,ts] * p.TechPercentRE[t] for t in p.HeatingTechs, ts in p.TimeStep) #total heat generation 
+		- sum(m[:dvProductionToWaste][t,ts]* p.TechPercentRE[t] for t in p.CHPTechs, ts in p.TimeStep) #minus CHP waste heat
 		- sum(m[:dvProductionToStorage][b,t,ts]*p.TechPercentRE[t]*(1-p.ChargeEfficiency[t,b]*p.DischargeEfficiency[b]) for t in p.HeatingTechs, b in p.HotTES, ts in p.TimeStep))) #minus thermal storage losses 
 end
 
@@ -1719,6 +1720,9 @@ function add_chp_results(m, p, r::Dict)
 
 	EmissionsYr1_LbsCO2_CHP, EmissionsYr1_LbsNOx_CHP, EmissionsYr1_LbsSO2_CHP, EmissionsYr1_LbsPM25_CHP = calc_yr1_emissions_from_fuelburn(m,p; tech_array = p.CHPTechs)
 	r["year_one_chp_emissions_lb_CO2"] = round(value(EmissionsYr1_LbsCO2_CHP), digits=2)
+	r["year_one_chp_emissions_lb_NOx"] = round(value(EmissionsYr1_LbsNOx_CHP), digits=2)
+	r["year_one_chp_emissions_lb_SO2"] = round(value(EmissionsYr1_LbsSO2_CHP), digits=2)
+	r["year_one_chp_emissions_lb_PM25"] = round(value(EmissionsYr1_LbsPM25_CHP), digits=2)
 
 	nothing
 end
@@ -1878,6 +1882,9 @@ function add_util_results(m, p, r::Dict)
                 sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) - m[:dvGridToStorage][ts] )
     r["GridToLoad"] = round.(value.(GridToLoad), digits=3)
 
+	## yr1_emissions_from_elec_grid_purchase_CO2 = calc_yr1_emissions_from_elec_grid_purchase(m,p)
+	## r["year_one_elec_grid_emissions_lb_CO2"] = round(value(yr1_emissions_from_elec_grid_purchase), digits=2)
+	## I think these results are repeats of "yr1_CO2_emissions_from_elec_grid_purchase" 
 	r["year_one_elec_grid_emissions_lb_CO2"] = round(value(m[:yr1_emissions_from_elec_grid_purchase_CO2]), digits=2)
 	r["year_one_elec_grid_emissions_lb_NOx"] = round(value(m[:yr1_emissions_from_elec_grid_purchase_NOx]), digits=2)
 	r["year_one_elec_grid_emissions_lb_SO2"] = round(value(m[:yr1_emissions_from_elec_grid_purchase_SO2]), digits=2)
