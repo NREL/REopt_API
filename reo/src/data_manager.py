@@ -955,10 +955,15 @@ class DataManager:
                 time_steps_without_grid.append(i+1)
         return time_steps_with_grid, time_steps_without_grid
 
-    def bau_emissions(self):
+    def bau_year_one_emissions(self):
         
         """
         Pre-processing of the BAU emissions to use in determining emissions reductions in the optimal case
+        Include BAU grid emissions, existing backup generator emissions, boiler emissions
+
+        Note if existing generation does not sustain a simulated outage, the BAU load and therefore emissions 
+        are 0 during unsurvived outage hours
+        
         """
         total_emissions_lb_CO2_per_year = 0 
         total_emissions_lb_NOx_per_year = 0 
@@ -1222,7 +1227,7 @@ class DataManager:
         grid_emissions_factor_SO2 = self.elec_tariff.emissions_factor_series_lb_SO2_per_kwh
         grid_emissions_factor_PM25 = self.elec_tariff.emissions_factor_series_lb_PM25_per_kwh
 
-        bau_emissions_CO2, bau_emissions_NOx, bau_emissions_SO2, bau_emissions_PM25, bau_grid_emissions_CO2, bau_grid_emissions_NOx, bau_grid_emissions_SO2, bau_grid_emissions_PM25 = self.bau_emissions()
+        bau_year_one_emissions_CO2, bau_year_one_emissions_NOx, bau_year_one_emissions_SO2, bau_year_one_emissions_PM25, bau_year_one_grid_emissions_CO2, bau_year_one_grid_emissions_NOx, bau_year_one_grid_emissions_SO2, bau_year_one_grid_emissions_PM25 = self.bau_year_one_emissions()
         co2_cost_us_dollars_per_tonne = self.site.financial.co2_cost_us_dollars_per_tonne
         nox_cost_us_dollars_per_tonne_grid = self.site.financial.nox_cost_us_dollars_per_tonne_grid
         so2_cost_us_dollars_per_tonne_grid = self.site.financial.so2_cost_us_dollars_per_tonne_grid
@@ -1521,14 +1526,14 @@ class DataManager:
             "MaxPercentCO2EmissionsReduction": self.site.co2_emissions_reduction_max_pct,
             "IncludeExportedREElecinTotal": self.site.include_exported_renewable_electricity_in_total,
             "IncludeExportedElecEmissionsInTotal": self.site.include_exported_elec_emissions_in_total,
-            "BAUYr1Emissions_CO2": bau_emissions_CO2, 
-            "BAUYr1Emissions_NOx": bau_emissions_NOx, 
-            "BAUYr1Emissions_SO2": bau_emissions_SO2, 
-            "BAUYr1Emissions_PM25": bau_emissions_PM25, 
-            "BAUYr1Emissions_grid_CO2": bau_grid_emissions_CO2, 
-            "BAUYr1Emissions_grid_NOx": bau_grid_emissions_NOx, 
-            "BAUYr1Emissions_grid_SO2": bau_grid_emissions_SO2, 
-            "BAUYr1Emissions_grid_PM25": bau_grid_emissions_PM25, 
+            "BAUYr1Emissions_CO2": bau_year_one_emissions_CO2, 
+            "BAUYr1Emissions_NOx": bau_year_one_emissions_NOx, 
+            "BAUYr1Emissions_SO2": bau_year_one_emissions_SO2, 
+            "BAUYr1Emissions_PM25": bau_year_one_emissions_PM25, 
+            "BAUYr1Emissions_grid_CO2": bau_year_one_grid_emissions_CO2, 
+            "BAUYr1Emissions_grid_NOx": bau_year_one_grid_emissions_NOx, 
+            "BAUYr1Emissions_grid_SO2": bau_year_one_grid_emissions_SO2, 
+            "BAUYr1Emissions_grid_PM25": bau_year_one_grid_emissions_PM25, 
             'HeatingLoad': heating_load,
             'CoolingLoad': cooling_load,
             'ThermalStorage': thermal_storage_techs,
@@ -1705,14 +1710,14 @@ class DataManager:
             'MaxPercentCO2EmissionsReduction': None,  
             'IncludeExportedREElecinTotal': self.site.include_exported_renewable_electricity_in_total,
             "IncludeExportedElecEmissionsInTotal": self.site.include_exported_elec_emissions_in_total,
-            "BAUYr1Emissions_CO2": bau_emissions_CO2,
-            "BAUYr1Emissions_NOx": bau_emissions_NOx,
-            "BAUYr1Emissions_SO2": bau_emissions_SO2,
-            "BAUYr1Emissions_PM25": bau_emissions_PM25,
-            "BAUYr1Emissions_grid_CO2": bau_grid_emissions_CO2, 
-            "BAUYr1Emissions_grid_NOx": bau_grid_emissions_NOx, 
-            "BAUYr1Emissions_grid_SO2": bau_grid_emissions_SO2, 
-            "BAUYr1Emissions_grid_PM25": bau_grid_emissions_PM25, 
+            "BAUYr1Emissions_CO2": bau_year_one_emissions_CO2,
+            "BAUYr1Emissions_NOx": bau_year_one_emissions_NOx,
+            "BAUYr1Emissions_SO2": bau_year_one_emissions_SO2,
+            "BAUYr1Emissions_PM25": bau_year_one_emissions_PM25,
+            "BAUYr1Emissions_grid_CO2": bau_year_one_grid_emissions_CO2, 
+            "BAUYr1Emissions_grid_NOx": bau_year_one_grid_emissions_NOx, 
+            "BAUYr1Emissions_grid_SO2": bau_year_one_grid_emissions_SO2, 
+            "BAUYr1Emissions_grid_PM25": bau_year_one_grid_emissions_PM25, 
             'CO2_dollars_tonne': co2_cost_us_dollars_per_tonne,
             'NOx_dollars_tonne_grid': nox_cost_us_dollars_per_tonne_grid,
             'SO2_dollars_tonne_grid': so2_cost_us_dollars_per_tonne_grid,
