@@ -327,37 +327,37 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e8,
-          "description": "Public health damage cost of NOx emissions from grid electricity in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model."
+          "description": "Public health cost of NOx emissions from grid electricity in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model."
         },
         "so2_cost_us_dollars_per_tonne_grid": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e8,
-          "description": "Social Cost of SO2 emissions from grid electricity in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model."
+          "description": "Public health cost of SO2 emissions from grid electricity in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model."
         },
         "pm25_cost_us_dollars_per_tonne_grid": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e8,
-          "description": "Social Cost of PM2.5 emissions from grid electricity in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model."
+          "description": "Public health cost of PM2.5 emissions from grid electricity in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model."
         },  
         "nox_cost_us_dollars_per_tonne_onsite_fuelburn": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e8,
-          "description": "Public health damage cost of NOx from onsite fuelburn in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model."
+          "description": "Public health cost of NOx from onsite fuelburn in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model."
         },
         "so2_cost_us_dollars_per_tonne_onsite_fuelburn": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e8,
-          "description": "Social Cost of SO2 from onsite fuelburn in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model."
+          "description": "Public health cost of SO2 from onsite fuelburn in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model."
         },
         "pm25_cost_us_dollars_per_tonne_onsite_fuelburn": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e8,
-          "description": "Social Cost of PM2.5 from onsite fuelburn in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model."
+          "description": "Public health cost of PM2.5 from onsite fuelburn in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model."
         }, 
         "co2_cost_escalation_pct": {
           "type": "float",
@@ -749,7 +749,7 @@ nested_input_definitions = {
           "default": 0.0,
           "min": 0.0,
           "max": 1.0,
-          "description": "Fraction of boiler fuel, on an energy basis, that is classified as renewable; for RE accounting purposes."
+          "description": "Fraction of boiler fuel, on an energy basis, that is classified as renewable; used for RE accounting purposes."
         },
         "chp_fuel_type": {
           "type": "str",
@@ -772,7 +772,7 @@ nested_input_definitions = {
           "default": 0.0,
           "min": 0.0,
           "max": 1.0,
-          "description": "Fraction of CHP fuel, on an energy basis, that is classified as renewable; for RE accounting purposes."
+          "description": "Fraction of CHP fuel, on an energy basis, that is classified as renewable; used for RE accounting purposes."
         }
       },
 
@@ -1401,7 +1401,7 @@ nested_input_definitions = {
           "default": 0.0,
           "min": 0.0,
           "max": 1.0,
-          "description": "Fraction of generator fuel, on an energy basis, that is classified as renewable; for RE accounting purposes."
+          "description": "Fraction of generator fuel, on an energy basis, that is classified as renewable; used for RE accounting purposes."
         },
         "generator_only_runs_during_grid_outage": {
           "default": True,
@@ -1811,19 +1811,19 @@ nested_input_definitions = {
         },
         "emissions_factor_lb_CO2_per_mmbtu": {
           "type": "float",
-          "description": "Average carbon dioxide emissions factor"
+          "description": "Pounds of carbon dioxide emitted per mmbtu of fuel burned"
         },
         "emissions_factor_lb_NOx_per_mmbtu": {
           "type": "float",
-          "description": "Average NOx emissions factor"
+          "description": "Pounds of NOx emitted per mmbtu of fuel burned"
         },
         "emissions_factor_lb_SO2_per_mmbtu": {
           "type": "float",
-          "description": "Average SO2 emissions factor"
+          "description": "Pounds of SO2 emitted per mmbtu of fuel burned"
         },
         "emissions_factor_lb_PM25_per_mmbtu": {
           "type": "float",
-          "description": "Average PM2.5 emissions factor"
+          "description": "Pounds of PM2.5 emitted per mmbtu of fuel burned"
         },
         "can_net_meter": {
           "type": "bool",
@@ -1969,19 +1969,19 @@ nested_input_definitions = {
         },
         "emissions_factor_lb_CO2_per_mmbtu": {
           "type": "float",
-          "description": "Pounds of carbon dioxide emitted per MMBtu of fuel burned"
+          "description": "Pounds of carbon dioxide emitted per mmbtu of fuel burned"
         },
         "emissions_factor_lb_NOx_per_mmbtu": {
           "type": "float",
-          "description": "Pounds of NOx emitted per MMBtu of fuel burned"
+          "description": "Pounds of NOx emitted per mmbtu of fuel burned"
         },
         "emissions_factor_lb_SO2_per_mmbtu": {
           "type": "float",
-          "description": "Pounds of SO2 emitted per MMBtu of fuel burned"
+          "description": "Pounds of SO2 emitted per mmbtu of fuel burned"
         },
         "emissions_factor_lb_PM25_per_mmbtu": {
           "type": "float",
-          "description": "Pounds of PM2.5 emitted per MMBtu of fuel burned"
+          "description": "Pounds of PM2.5 emitted per mmbtu of fuel burned"
         }
       },
 
