@@ -1,5 +1,4 @@
 using HTTP, JSON, JuMP
-import Xpress
 include("REopt.jl")
 import REoptLite
 include("GHPGHX.jl")
@@ -19,10 +18,8 @@ function job(req::HTTP.Request)
 		@error "Something went wrong in the Julia code!" exception=(e, catch_backtrace())
 		error_response["error"] = sprint(showerror, e)
 	end
-    optimizer = backend(m)
-	finalize(optimizer)
+	finalize(backend(m))
 	GC.gc()
-    Xpress.postsolve(optimizer.inner)
 	if isempty(error_response)
     	@info "REopt model solved with status $(results["status"])."
     	return HTTP.Response(200, JSON.json(results))
