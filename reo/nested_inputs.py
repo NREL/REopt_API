@@ -1169,7 +1169,7 @@ nested_input_definitions = {
           },
           "macrs_option_years": {
             "type": "int", "restrict_to": macrs_schedules, "default": 7.0,
-            "description": "Duration over which accelerated depreciation will occur. Set to zero by default"
+            "description": "Duration over which accelerated depreciation will occur. Set to zero to disable"
           },
           "macrs_bonus_pct": {
             "type": "float", "min": 0.0, "max": 1.0, "default": 1.0,
