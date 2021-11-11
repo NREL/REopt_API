@@ -129,19 +129,20 @@ class PV(Tech):
         self.location = location
         self.station = None
         self.pvwatts = None
+        self.sr_required_pct = kwargs.get("sr_required_pct")
 
         # if user hasn't entered the tilt (default value is 0.537), tilt value gets assigned based on array_type
         if self.tilt == 0.537:
             if kwargs.get('array_type') == 0:  # 0 are Ground Mount Fixed (Open Rack) arrays, we assume an optimal tilt
                 """
-                start assuming the site is in the northern hemisphere, set the tilt to the latitude and leave the 
+                start assuming the site is in the northern hemisphere, set the tilt to the latitude and leave the
                 default azimuth of 180 (unless otherwise specified)
                 """
                 self.tilt = kwargs.get('latitude')
                 if kwargs.get('latitude') < 0:
                     """
-                    if the site is in the southern hemisphere, now set the tilt to the positive latitude value and 
-                    change the azimuth to 0. Also update kwargs going forward so they get saved to the database later 
+                    if the site is in the southern hemisphere, now set the tilt to the positive latitude value and
+                    change the azimuth to 0. Also update kwargs going forward so they get saved to the database later
                     show up in final results
                     """
                     self.tilt = -1 * self.tilt
@@ -209,6 +210,7 @@ class Wind(Tech):
         self.incentives = Incentives(**kwargs)
         self.installed_cost_us_dollars_per_kw = kwargs.get('installed_cost_us_dollars_per_kw')
         self.prod_factor_series_kw = prod_factor_series_kw
+        self.sr_required_pct = kwargs.get("sr_required_pct")
 
         # if user hasn't entered the federal itc, itc value gets assigned based on size_class
         if self.incentives.federal.itc == 0.3:
@@ -246,7 +248,7 @@ class Generator(Tech):
         """
         super class init for generator is not unique anymore as we are now allowing users to define min/max sizes;
         and include diesel generator's size as optimization decision variable.
-        
+
         Note that default burn rate, slope, and min/max sizes are handled in ValidateNestedInput.
         """
         self.fuel_slope = fuel_slope_gal_per_kwh
@@ -270,6 +272,7 @@ class Generator(Tech):
         self.max_kw = max_kw
         self.existing_kw = existing_kw
         self.emissions_factor_lb_CO2_per_gal = emissions_factor_lb_CO2_per_gal
+        self.useful_life_years = kwargs['useful_life_years']
 
         dfm.add_generator(self)
 
@@ -481,10 +484,10 @@ class Boiler(Tech):
         self.can_supply_steam_turbine = kwargs.get('can_supply_steam_turbine')
         self.derate = 0
         self.n_timesteps = dfm.n_timesteps
-        
+
         # Assign boiler max size equal to the peak load multiplied by the thermal_factor
-        self.max_kw = max(boiler_fuel_series_bau) * self.boiler_efficiency * self.max_thermal_factor_on_peak_load * MMBTU_TO_KWH        
-        
+        self.max_kw = max(boiler_fuel_series_bau) * self.boiler_efficiency * self.max_thermal_factor_on_peak_load * MMBTU_TO_KWH
+
         dfm.add_boiler(self)
 
     @property

@@ -25,6 +25,12 @@ Classify the change according to the following categories:
     ##### Deprecated
     ##### Removed
     ### Patches
+## Develop - 2021-11-11
+### Minor Updates
+##### Added
+- `reo`: Added capability to model off-grid systems with `PV`, `Storage`, and/or `Generator`; added off-grid-specific default values in `nested_inputs.py`; added off-grid specific outputs in `nested_outputs.py`. 
+- `reopt_model.jl`: Included additional constraints for off-grid runs for minimum load met and load and PV operating reserve constraints; add `p.OtherCapitalCosts` and `p.OtherAnnualCosts` to model objective for off-grid runs. 
+- `utils.jl` added off-grid specific parameters 
 
 ## v1.7.0 - 2021-09-29
 ##### Added

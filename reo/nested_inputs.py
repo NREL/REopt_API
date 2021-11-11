@@ -102,6 +102,81 @@ def list_of_dict(input):
     result.append(dict(i))
   return result
 
+off_grid_defaults = {
+  "Scenario": {
+    "optimality_tolerance_techs": {
+      "type": "float",
+      "min": 1.0e-5,
+      "max": 10.0,
+      "default": 0.05,
+      "description": "The threshold for the difference between the solution's objective value and the best possible value at which the solver terminates"
+    },
+    "Site": {
+      "Financial": {
+        "microgrid_upgrade_cost_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 0.0,
+          "default": 0.0,
+          "description": "Additional cost, in percent of non-islandable capital costs, to make a distributed energy system islandable from the grid and able to serve critical loads. For off-grid analyses, this should instead be provided as other_capital_costs_us_dollars or other_annual_costs_us_dollars_per_year"
+        },
+      },
+      "LoadProfile": {
+        "critical_load_pct": {
+          "type": "float",
+          "min": 1.0,
+          "max": 1.0,
+          "default": 1.0,
+          "description": "In off-grid scenarios, 100 percent of the typical load is assumed to be critical from a modeling standpoint (a 8760 hour outage is modeled). To adjust the 'critical load', change the typical load or the min_load_met_pct inputs."
+        },  
+        "outage_is_major_event": {
+          "type": "bool",
+          "default": False,
+          "description": "Boolean value for if outage is a major event, which affects the avoided_outage_costs_us_dollars. If True, the avoided outage costs are calculated for a single outage occurring in the first year of the analysis_years. If False, the outage event is assumed to be an average outage event that occurs every year of the analysis period. In the latter case, the avoided outage costs for one year are escalated and discounted using the escalation_pct and offtaker_discount_pct to account for an annually recurring outage. (Average outage durations for certain utility service areas can be estimated using statistics reported on EIA form 861.)"
+        }
+      },
+      "Storage": {
+        "soc_init_pct": {
+          "type": "float", "min": 0.0, "max": 1.0, "default": 1.0,
+          "description": "Battery state of charge at first hour of optimization"
+        }
+      },
+      "Generator": {
+        "om_cost_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e3,
+          "default": 20.0,
+          "description": "Annual diesel generator fixed operations and maintenance costs in $/kW"
+        },
+        "fuel_avail_gal": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 1.0e9,
+          "description": "Annual on-site generator fuel available in gallons."
+        },
+        "min_turn_down_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.15,
+          "description": "Minimum generator loading in percent of capacity (size_kw)."
+        },
+        "generator_only_runs_during_grid_outage": {
+          "default": False,
+          "type": "bool",
+          "description": "If there is existing diesel generator, must specify whether it should run only during grid outage or all the time in the bau case."
+        },
+        "useful_life_years": {
+          "type": "float", "min": 0.0, "max": max_years, "default": 10,
+          "description": "Number of years asset can be used for before replacement. A single replacement is considered for off-grid generators."
+        }
+      }
+    }
+  }
+}
+
 nested_input_definitions = {
 
   "Scenario": {
@@ -114,7 +189,7 @@ nested_input_definitions = {
     },
     "user_uuid": {
       "type": "str",
-      "description": "The assigned unique ID of a signed in REOpt user"
+      "description": "The assigned unique ID of a signed in REopt user"
     },
     "description": {
       "type": "str",
@@ -130,14 +205,14 @@ nested_input_definitions = {
       "type": "str",
       "description": "The unique ID of a scenario created by the REopt Lite Webtool. Note that this ID can be shared by several REopt Lite API Scenarios (for example when users select a 'Resilience' analysis more than one REopt API Scenario is created)."
     },
-  "optimality_tolerance_bau": {
+    "optimality_tolerance_bau": {
       "type": "float",
       "min": 0.0001,
       "max": 0.05,
       "default": 0.001,
       "description": "The threshold for the difference between the solution's objective value and the best possible value at which the solver terminates"
     },
-  "optimality_tolerance_techs": {
+    "optimality_tolerance_techs": {
       "type": "float",
       "min": 0.0001,
       "max": 0.05,
@@ -149,7 +224,11 @@ nested_input_definitions = {
       "default": True,
       "description": "If True, then a small incentive to keep the battery's state of charge high is added to the objective of the optimization."
     },
-
+    "off_grid_flag": {
+      "type": "bool",
+      "default": False,
+      "description": "Set to True to enable off-grid analyses."
+    },
     "Site": {
       "latitude": {
         "type": "float",
@@ -193,7 +272,6 @@ nested_input_definitions = {
         "default": 0.0,
         "description": "Site elevation (above sea sevel), units of feet"
       },
-
       "Financial": {
         "om_cost_escalation_pct": {
           "type": "float",
@@ -208,6 +286,13 @@ nested_input_definitions = {
           "max": 1.0,
           "default": 0.023,
           "description": "Annual nominal utility electricity cost escalation rate"
+        },
+        "generator_fuel_escalation_pct": {
+          "type": "float",
+          "min": -1.0,
+          "max": 1.0,
+          "default": 0.027,
+          "description": "Annual nominal diesel generator fuel cost escalation rate"
         },
         "boiler_fuel_escalation_pct": {
           "type": "float",
@@ -283,6 +368,20 @@ nested_input_definitions = {
           "max": 1.0,
           "default": 0.3,
           "description": "Additional cost, in percent of non-islandable capital costs, to make a distributed energy system islandable from the grid and able to serve critical loads. Includes all upgrade costs such as additional laber and critical load panels."
+        },
+        "other_capital_costs_us_dollars": {
+          "type": "float",
+          "min": 0.0,
+          "max": max_big_number,
+          "default": 0,
+          "description": "Other capital costs associated with the distributed energy system project. These can include land purchase costs, distribution network costs, powerhouse or battery container structure costs, and pre-operating expenses. These costs will be incorporated in the life cycle cost and levelized cost of electricity calculations."
+        },
+        "other_annual_costs_us_dollars_per_year": {
+          "type": "float",
+          "min": 0.0,
+          "max": max_big_number,
+          "default": 0,
+          "description": "Other annual costs associated with the distributed energy system project. These can include labor costs, land lease costs, software costs, and any other ongoing expenses not included in other cost inputs. These costs will be incorporated in the life cycle cost and levelized cost of electricity calculations."
         }
       },
 
@@ -382,6 +481,20 @@ nested_input_definitions = {
           "default": True,
           "description": "Boolean value for if outage is a major event, which affects the avoided_outage_costs_us_dollars. If True, the avoided outage costs are calculated for a single outage occurring in the first year of the analysis_years. If False, the outage event is assumed to be an average outage event that occurs every year of the analysis period. In the latter case, the avoided outage costs for one year are escalated and discounted using the escalation_pct and offtaker_discount_pct to account for an annually recurring outage. (Average outage durations for certain utility service areas can be estimated using statistics reported on EIA form 861.)"
         },
+        "min_load_met_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.999,
+          "description": "Fraction of the load that must be met on an annual energy basis. Value must be between zero and one, inclusive."
+        },
+        "sr_required_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.1,
+          "description": "Spinning reserve requirement for changes in load in off-grid analyses. Value must be between zero and one, inclusive."
+        }
       },
 
       "LoadProfileBoilerFuel": {
@@ -1099,6 +1212,13 @@ nested_input_definitions = {
           "type": "bool",
           "default": True,
           "description": "True/False for if technology can curtail energy produced."
+        },
+        "sr_required_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.25,
+          "description": "Spinning reserve requirement for PV serving load in off-grid analyses. Value must be between zero and one, inclusive."
         }
       },
 
@@ -1190,7 +1310,7 @@ nested_input_definitions = {
           "total_rebate_us_dollars_per_kwh": {
             "type": "float", "min": 0, "max": 1e9, "default": 0,
             "description": "Rebate based on installed energy capacity"
-           }             
+          }
         },
 
       "Generator": {
@@ -1262,7 +1382,7 @@ nested_input_definitions = {
           "min": 0.0,
           "max": 1.0e9,
           "default": 660.0,
-          "description": "On-site generator fuel available in gallons."
+          "description": "Annual on-site generator fuel available in gallons."
         },
         "min_turn_down_pct": {
           "type": "float",
@@ -1422,6 +1542,10 @@ nested_input_definitions = {
           "type": "bool",
           "default": False,
           "description": "True/False for if technology can curtail energy produced."
+        },
+        "useful_life_years": {
+          "type": "float", "min": 0.0, "max": max_years, "default": analysis_years,
+          "description": "Number of years asset can be used for before replacement. Generator replacements are only considered in off-grid analyses."
         }
       },
       "CHP": {
