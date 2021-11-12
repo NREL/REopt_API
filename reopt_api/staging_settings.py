@@ -72,6 +72,7 @@ INSTALLED_APPS = (
     'futurecosts',
     'django_celery_results',
     'django_extensions',
+    'job',
     'ghpghx'
 )
 
@@ -159,6 +160,8 @@ CELERY_IMPORTS = (
     'futurecosts.api',
     'futurecosts.tasks',
     'django_extensions',
+    'job.api',
+    'job.src.run_jump_model',
     'ghpghx'
 )
 
