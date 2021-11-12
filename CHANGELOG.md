@@ -25,7 +25,7 @@ Classify the change according to the following categories:
     ##### Deprecated
     ##### Removed
     ### Patches
-## Develop - 2021-11-11
+## v1.8.0 - 2021-11-11
 ### Minor Updates
 ##### Added
 - `reo`: Added capability to model off-grid systems with `PV`, `Storage`, and/or `Generator`; added off-grid-specific default values in `nested_inputs.py`; added off-grid specific outputs in `nested_outputs.py`. 
