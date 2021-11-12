@@ -151,15 +151,6 @@ Base.@kwdef struct Parameter
 	 pwf_fuel::AxisArray
 	 r_tax_owner::Float64      # f^{tow}: Tax rate factor for owner [fraction]
      r_tax_offtaker::Float64   # f^{tot}: Tax rate factor for offtaker [fraction]
-    #  pwf_CO2_cost::Float64 # Cost of CO2 present worth factor for grid emissions [unitless] 
-    #  pwf_CO2_lbs::Float64 # CO2 emissions present worth factor [unitless]
-    #  pwf_CO2_cost_onsite_fuelburn::Float64 # Cost of CO2 present worth factor for on-site fuelburn [unitless]
-    #  pwf_NOx_cost::Float64 # Cost of NOx present worth factor for grid emissions [unitless] 
-    #  pwf_NOx_cost_onsite_fuelburn::Float64 # Cost of NOx present worth factor for on-site fuelburn [unitless]
-    #  pwf_SO2_cost::Float64 # Cost of SO2 present worth factor for grid emissions [unitless] 
-    #  pwf_SO2_cost_onsite_fuelburn::Float64 # Cost of SO2 present worth factor for on-site fuelburn [unitless]
-    #  pwf_PM25_cost::Float64 # Cost of PM25 present worth factor for grid emissions [unitless] 
-    #  pwf_PM25_cost_onsite_fuelburn::Float64 # Cost of PM25 present worth factor for on-site fuelburn [unitless]
      pwfs_emissions_cost::Dict{String, Any} # Cost of emissions present worth factors for grid and onsite fuelburn emissions [unitless]
      pwfs_grid_emissions_lbs::Dict{String, Any} # Emissions [lbs] present worth factors for grid emissions [unitless]
 

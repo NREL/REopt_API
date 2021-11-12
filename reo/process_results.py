@@ -134,30 +134,64 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "annual_re_elec_kwh", 
             "annual_re_heat_percent", 
             "annual_re_heat_mmbtu", 
-            "year_one_emissions_lb_CO2",
-            "year_one_CO2_emissions_from_fuelburn",
-            "year_one_CO2_emissions_from_elec_grid_purchase",
-            "year_one_CO2_emissions_offset_from_elec_exports",
-            "year_one_emissions_lb_NOx",
-            "year_one_emissions_lb_SO2",
-            "year_one_emissions_lb_PM25",
-            "year_one_generator_emissions_lb_CO2",
-            "year_one_generator_emissions_lb_NOx",
-            "year_one_generator_emissions_lb_SO2",
-            "year_one_generator_emissions_lb_PM25",
-            "year_one_boiler_emissions_lb_CO2",
-            "year_one_boiler_emissions_lb_NOx",
-            "year_one_boiler_emissions_lb_SO2",
-            "year_one_boiler_emissions_lb_PM25",
-            "lifecycle_emissions_lb_CO2",
-            "year_one_emissions_lb_NOx", 
-            "year_one_emissions_lb_SO2",
-            "year_one_emissions_lb_PM25",
-            "lifecycle_emissions_lb_NOx",
-            "lifecycle_emissions_lb_SO2",            
-            "lifecycle_emissions_lb_PM25",
+            "year_one_emissions_tCO2",
+            "year_one_emissions_tNOx",
+            "year_one_emissions_tSO2",
+            "year_one_emissions_tPM25",
+            "year_one_emissions_from_fuelburn_tCO2",
+            "year_one_emissions_from_fuelburn_tNOx",
+            "year_one_emissions_from_fuelburn_tSO2",
+            "year_one_emissions_from_fuelburn_tPM25",
+            "year_one_emissions_from_elec_grid_tCO2",
+            "year_one_emissions_from_elec_grid_tNOx",
+            "year_one_emissions_from_elec_grid_tSO2",
+            "year_one_emissions_from_elec_grid_tPM25",
+            "year_one_emissions_offset_from_elec_exports_tCO2",
+            "year_one_emissions_offset_from_elec_exports_tNOx",
+            "year_one_emissions_offset_from_elec_exports_tSO2",
+            "year_one_emissions_offset_from_elec_exports_tPM25",
+            "year_one_emissions_from_elec_grid_net_if_selected_tCO2",
+            "year_one_emissions_from_elec_grid_net_if_selected_tNOx",
+            "year_one_emissions_from_elec_grid_net_if_selected_tSO2",
+            "year_one_emissions_from_elec_grid_net_if_selected_tPM25",
+            "year_one_generator_emissions_tCO2",
+            "year_one_generator_emissions_tNOx",
+            "year_one_generator_emissions_tSO2",
+            "year_one_generator_emissions_tPM25",
+            "year_one_boiler_emissions_tCO2",
+            "year_one_boiler_emissions_tNOx",
+            "year_one_boiler_emissions_tSO2",
+            "year_one_boiler_emissions_tPM25",
             "lifecycle_emissions_cost_CO2",            
-            "lifecycle_emissions_cost_Health"
+            "lifecycle_emissions_cost_Health",
+            "lifecycle_emissions_tCO2",
+            "lifecycle_emissions_tNOx",
+            "lifecycle_emissions_tSO2",
+            "lifecycle_emissions_tPM25",
+            "lifecycle_emissions_from_fuelburn_tCO2",
+            "lifecycle_emissions_from_fuelburn_tNOx",
+            "lifecycle_emissions_from_fuelburn_tSO2",
+            "lifecycle_emissions_from_fuelburn_tPM25",
+            "lifecycle_emissions_from_elec_grid_tCO2",
+            "lifecycle_emissions_from_elec_grid_tNOx",
+            "lifecycle_emissions_from_elec_grid_tSO2",
+            "lifecycle_emissions_from_elec_grid_tPM25",
+            "lifecycle_emissions_offset_from_elec_exports_tCO2",
+            "lifecycle_emissions_offset_from_elec_exports_tNOx",
+            "lifecycle_emissions_offset_from_elec_exports_tSO2",
+            "lifecycle_emissions_offset_from_elec_exports_tPM25",
+            "lifecycle_emissions_from_elec_grid_net_if_selected_tCO2",
+            "lifecycle_emissions_from_elec_grid_net_if_selected_tNOx",
+            "lifecycle_emissions_from_elec_grid_net_if_selected_tSO2",
+            "lifecycle_emissions_from_elec_grid_net_if_selected_tPM25",
+            "lifecycle_generator_emissions_tCO2",
+            "lifecycle_generator_emissions_tNOx",
+            "lifecycle_generator_emissions_tSO2",
+            "lifecycle_generator_emissions_tPM25",
+            "lifecycle_boiler_emissions_tCO2",
+            "lifecycle_boiler_emissions_tNOx",
+            "lifecycle_boiler_emissions_tSO2",
+            "lifecycle_boiler_emissions_tPM25"
         ]
 
         def __init__(self, results_dict, results_dict_bau, dm, inputs):
@@ -456,64 +490,138 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             self.nested_outputs["Scenario"]["status"] = self.results_dict["status"]
 
             #Parse RE/Emissions Results
-            # Year One Site totals
-            # RE elec & heat
-            self.nested_outputs["Scenario"]["Site"]["year_one_renewable_electricity_pct"] = self.results_dict.get("annual_re_elec_percent")
-            self.nested_outputs["Scenario"]["Site"]["year_one_renewable_electricity_kwh"] = self.results_dict.get("annual_re_elec_kwh") 
-            self.nested_outputs["Scenario"]["Site"]["year_one_renewable_heat_pct"] = self.results_dict.get("annual_re_heat_percent")
-            self.nested_outputs["Scenario"]["Site"]["year_one_renewable_heat_mmbtu"] = self.results_dict.get("annual_re_heat_mmbtu")
-            # emissions 
-            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_lb_CO2"] = self.results_dict.get("year_one_emissions_lb_CO2")
-            self.nested_outputs["Scenario"]["Site"]["year_one_CO2_emissions_from_fuelburn"] = self.results_dict.get("year_one_CO2_emissions_from_fuelburn")
-            self.nested_outputs["Scenario"]["Site"]["year_one_CO2_emissions_from_elec_grid_purchase"] = self.results_dict.get("year_one_CO2_emissions_from_elec_grid_purchase")
-            self.nested_outputs["Scenario"]["Site"]["year_one_CO2_emissions_offset_from_elec_exports"] = self.results_dict.get("year_one_CO2_emissions_offset_from_elec_exports")
-            # RE elec & heat - BAU
-            self.nested_outputs["Scenario"]["Site"]["year_one_renewable_electricity_bau_pct"] = self.results_dict.get("annual_re_elec_percent_bau")
-            self.nested_outputs["Scenario"]["Site"]["year_one_renewable_electricity_bau_kwh"] = self.results_dict.get("annual_re_elec_kwh_bau")
-            self.nested_outputs["Scenario"]["Site"]["year_one_renewable_heat_bau_pct"] = self.results_dict.get("annual_re_heat_percent_bau")
-            self.nested_outputs["Scenario"]["Site"]["year_one_renewable_heat_bau_mmbtu"] = self.results_dict.get("annual_re_heat_mmbtu_bau")
-            # emissions - BAU
-            self.nested_outputs["Scenario"]["Site"]["preprocessed_year_one_emissions_bau_lb_CO2"] = self.results_dict.get("preprocessed_BAU_year_one_emissions_CO2")
-            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_bau_lb_CO2"] = self.results_dict.get("year_one_emissions_lb_CO2_bau")
-            self.nested_outputs["Scenario"]["Site"]["year_one_CO2_emissions_from_fuelburn_bau"] = self.results_dict.get("year_one_CO2_emissions_from_fuelburn_bau")
-            self.nested_outputs["Scenario"]["Site"]["year_one_CO2_emissions_from_elec_grid_purchase_bau"] = self.results_dict.get("year_one_CO2_emissions_from_elec_grid_purchase_bau")
-            self.nested_outputs["Scenario"]["Site"]["year_one_CO2_emissions_offset_from_elec_exports_bau"] = self.results_dict.get("year_one_CO2_emissions_offset_from_elec_exports_bau")
+            # BAU preprocessed - year one and lifecycle
+            self.nested_outputs["Scenario"]["Site"]["preprocessed_BAU_year_one_emissions_tCO2"] = self.results_dict.get("preprocessed_BAU_year_one_emissions_tCO2")
+            self.nested_outputs["Scenario"]["Site"]["preprocessed_BAU_lifecycle_emissions_tCO2"] = self.results_dict.get("preprocessed_BAU_lifecycle_emissions_tCO2")
             # emissions reductions & breakeven cost of emissions reductions
-            self.nested_outputs["Scenario"]["Site"]["lifecycle_CO2_emissions_reduction_pct"] = self.results_dict.get("lifecycle_CO2_emissions_reduction_percent")
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_reduction_CO2_pct"] = self.results_dict.get("lifecycle_emissions_reduction_CO2_pct")
             # TODO: Update $/tCO2 equation for lifecycle rather than year one emissions. also add "breakeven" indicator in variable name
-            self.nested_outputs["Scenario"]["Site"]["breakeven_cost_of_emissions_reduction_us_dollars_per_ton_CO2"] = 0
+            self.nested_outputs["Scenario"]["Site"]["breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2"] = 0
             #self.nested_outputs["Scenario"]["Site"]["year_one_cost_of_emissions_reduction_us_dollars_per_ton_CO2"] = \
             #    self.results_dict.get("npv")/self.results_dict.get("pwf_om")/ \
             #    ((self.results_dict.get("year_one_emissions_lb_CO2")-self.results_dict.get("year_one_emissions_lb_CO2_bau"))/2000) \
             #    if (self.results_dict.get("year_one_emissions_lb_CO2")-self.results_dict.get("year_one_emissions_lb_CO2_bau")) \
             #    else 0.0
+            ## Renewable energy
+            # RE elec & heat (non-BAU)
+            self.nested_outputs["Scenario"]["Site"]["year_one_renewable_electricity_pct"] = self.results_dict.get("annual_re_elec_percent")
+            self.nested_outputs["Scenario"]["Site"]["year_one_renewable_electricity_kwh"] = self.results_dict.get("annual_re_elec_kwh") 
+            self.nested_outputs["Scenario"]["Site"]["year_one_renewable_heat_pct"] = self.results_dict.get("annual_re_heat_percent")
+            self.nested_outputs["Scenario"]["Site"]["year_one_renewable_heat_mmbtu"] = self.results_dict.get("annual_re_heat_mmbtu")
+            # RE elec & heat (BAU)
+            self.nested_outputs["Scenario"]["Site"]["year_one_renewable_electricity_pct_bau"] = self.results_dict.get("annual_re_elec_percent_bau")
+            self.nested_outputs["Scenario"]["Site"]["year_one_renewable_electricity_kwh_bau"] = self.results_dict.get("annual_re_elec_kwh_bau")
+            self.nested_outputs["Scenario"]["Site"]["year_one_renewable_heat_pct_bau"] = self.results_dict.get("annual_re_heat_percent_bau")
+            self.nested_outputs["Scenario"]["Site"]["year_one_renewable_heat_mmbtu_bau"] = self.results_dict.get("annual_re_heat_mmbtu_bau")
+            
+            ## Year 1 Emissions
+            # total emissions - year one (non-BAU)
+            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_tCO2"] = self.results_dict.get("year_one_emissions_tCO2")
+            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_tNOx"] = self.results_dict.get("year_one_emissions_tNOx")
+            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_tSO2"] = self.results_dict.get("year_one_emissions_tSO2")
+            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_PM25"] = self.results_dict.get("year_one_emissions_PM25")
+            # total emissions - year one (BAU)
+            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_tCO2_bau"] = self.results_dict.get("year_one_emissions_tCO2_bau")
+            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_tNOx_bau"] = self.results_dict.get("year_one_emissions_tNOx_bau")
+            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_tSO2_bau"] = self.results_dict.get("year_one_emissions_tSO2_bau")
+            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_tPM25_bau"] = self.results_dict.get("year_one_emissions_tPM25_bau")
+            # fuel burn emissions - year one (non-BAU)
+            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_from_fuelburn_tCO2"] = self.results_dict.get("year_one_emissions_from_fuelburn_tCO2")
+            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_from_fuelburn_tNOx"] = self.results_dict.get("year_one_emissions_from_fuelburn_tNOx")
+            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_from_fuelburn_tSO2"] = self.results_dict.get("year_one_emissions_from_fuelburn_tSO2")
+            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_from_fuelburn_tPM25"] = self.results_dict.get("year_one_emissions_from_fuelburn_tPM25")
+            # fuel burn emissions - year one (BAU)
+            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_from_fuelburn_tCO2_bau"] = self.results_dict.get("year_one_emissions_from_fuelburn_tCO2_bau")
+            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_from_fuelburn_tNOx_bau"] = self.results_dict.get("year_one_emissions_from_fuelburn_tNOx_bau")
+            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_from_fuelburn_tSO2_bau"] = self.results_dict.get("year_one_emissions_from_fuelburn_tSO2_bau")
+            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_from_fuelburn_tPM25_bau"] = self.results_dict.get("year_one_emissions_from_fuelburn_tPM25_bau")
+            # grid emissions - year one (non-BAU)
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_gross_tCO2"] = self.results_dict.get("year_one_emissions_from_elec_grid_tCO2") 
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_gross_tNOx"] = self.results_dict.get("year_one_emissions_from_elec_grid_tNOx")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_gross_tSO2"] = self.results_dict.get("year_one_emissions_from_elec_grid_tSO2")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_gross_tPM25"] = self.results_dict.get("year_one_emissions_from_elec_grid_tPM25")
+            # grid emissions - year one (BAU)
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_gross_tCO2_bau"] = self.results_dict.get("year_one_emissions_from_elec_grid_tCO2_bau")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_gross_tNOx_bau"] = self.results_dict.get("year_one_emissions_from_elec_grid_tNOx_bau")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_gross_tSO2_bau"] = self.results_dict.get("year_one_emissions_from_elec_grid_tSO2_bau")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_gross_tPM25_bau"] = self.results_dict.get("year_one_emissions_from_elec_grid_tPM25_bau")
+            # grid emissions offset - year one (non-BAU) 
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_offset_from_elec_exports_tCO2"] = self.results_dict.get("year_one_emissions_offset_from_elec_exports_tCO2")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_offset_from_elec_exports_tNOx"] = self.results_dict.get("year_one_emissions_offset_from_elec_exports_tNOx")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_offset_from_elec_exports_tSO2"] = self.results_dict.get("year_one_emissions_offset_from_elec_exports_tSO2")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_offset_from_elec_exports_tPM25"] = self.results_dict.get("year_one_emissions_offset_from_elec_exports_tPM25")
+            # grid emissions offset - year one (BAU)
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_offset_from_elec_exports_tCO2_bau"] = self.results_dict.get("year_one_emissions_offset_from_elec_exports_tCO2_bau")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_offset_from_elec_exports_tNOx_bau"] = self.results_dict.get("year_one_emissions_offset_from_elec_exports_tNOx_bau")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_offset_from_elec_exports_tSO2_bau"] = self.results_dict.get("year_one_emissions_offset_from_elec_exports_tSO2_bau")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_offset_from_elec_exports_tPM25_bau"] = self.results_dict.get("year_one_emissions_offset_from_elec_exports_tPM25_bau")
+            # net grid emissions, if net is selected (otherwise = grid emissions) - year one (non-BAU)
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_net_if_selected_tCO2"] = self.results_dict.get("year_one_emissions_from_elec_grid_net_if_selected_tCO2")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_net_if_selected_tNOx"] = self.results_dict.get("year_one_emissions_from_elec_grid_net_if_selected_tNOx")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_net_if_selected_tSO2"] = self.results_dict.get("year_one_emissions_from_elec_grid_net_if_selected_tSO2")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_net_if_selected_tPM25"] = self.results_dict.get("year_one_emissions_from_elec_grid_net_if_selected_tPM25")
+            # net grid emissions, if net is selected (otherwise = grid emissions) - year one (BAU)
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_net_if_selected_tCO2_bau"] = self.results_dict.get("year_one_emissions_from_elec_grid_net_if_selected_tCO2_bau")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_net_if_selected_tNOx_bau"] = self.results_dict.get("year_one_emissions_from_elec_grid_net_if_selected_tNOx_bau")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_net_if_selected_tSO2_bau"] = self.results_dict.get("year_one_emissions_from_elec_grid_net_if_selected_tSO2_bau")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_net_if_selected_tPM25_bau"] = self.results_dict.get("year_one_emissions_from_elec_grid_net_if_selected_tPM25_bau")
 
-            # Health-related emissions results
-            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_lb_NOx"] = self.results_dict.get("year_one_emissions_lb_NOx")
-            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_lb_SO2"] = self.results_dict.get("year_one_emissions_lb_SO2")
-            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_lb_PM25"] = self.results_dict.get("year_one_emissions_lb_PM25")
-            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_bau_lb_NOx"] = self.results_dict.get("year_one_emissions_lb_NOx_bau")
-            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_bau_lb_SO2"] = self.results_dict.get("year_one_emissions_lb_SO2_bau")
-            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_bau_lb_PM25"] = self.results_dict.get("year_one_emissions_lb_PM25_bau")
-
-            ##### Lifecycle emissions results 
-            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_CO2"] = self.results_dict.get("lifecycle_emissions_lb_CO2")
-            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_CO2_bau"] = self.results_dict.get("lifecycle_emissions_lb_CO2_bau")
-            self.nested_outputs["Scenario"]["Site"]["preprocessed_lifecycle_emissions_bau_lb_CO2"] = self.results_dict.get("preprocessed_BAU_lifecycle_emissions_CO2")
-
-            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_NOx"] = self.results_dict.get("lifecycle_emissions_lb_NOx")
-            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_NOx_bau"] = self.results_dict.get("lifecycle_emissions_lb_NOx_bau")
-            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_SO2"] = self.results_dict.get("lifecycle_emissions_lb_SO2")
-            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_SO2_bau"] = self.results_dict.get("lifecycle_emissions_lb_SO2_bau")
-            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_PM25"] = self.results_dict.get("lifecycle_emissions_lb_PM25")
-            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_PM25_bau"] = self.results_dict.get("lifecycle_emissions_lb_PM25_bau")
-
+            ## Lifecycle Emissions
+            # lifecycle emissions costs - CO2 & health (BAU & non-BAU)
             self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_cost_CO2"] = self.results_dict.get("lifecycle_emissions_cost_CO2")
             self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_cost_CO2_bau"] = self.results_dict.get("lifecycle_emissions_cost_CO2_bau")
             self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_cost_Health"] = self.results_dict.get("lifecycle_emissions_cost_Health")
             self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_cost_Health_bau"] = self.results_dict.get("lifecycle_emissions_cost_Health_bau")
-            
-            # TODO: add lifecycle health cost 
+            # total emissions - lifecycle (non-BAU)
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_tCO2"] = self.results_dict.get("lifecycle_emissions_tCO2")
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_tNOx"] = self.results_dict.get("lifecycle_emissions_tNOx")
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_tSO2"] = self.results_dict.get("lifecycle_emissions_tSO2")
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_PM25"] = self.results_dict.get("lifecycle_emissions_PM25")
+            # total emissions - lifecycle (BAU)
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_tCO2_bau"] = self.results_dict.get("lifecycle_emissions_tCO2_bau")
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_tNOx_bau"] = self.results_dict.get("lifecycle_emissions_tNOx_bau")
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_tSO2_bau"] = self.results_dict.get("lifecycle_emissions_tSO2_bau")
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_tPM25_bau"] = self.results_dict.get("lifecycle_emissions_tPM25_bau")
+            # fuel burn emissions - lifecycle (non-BAU)
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_from_fuelburn_tCO2"] = self.results_dict.get("lifecycle_emissions_from_fuelburn_tCO2")
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_from_fuelburn_tNOx"] = self.results_dict.get("lifecycle_emissions_from_fuelburn_tNOx")
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_from_fuelburn_tSO2"] = self.results_dict.get("lifecycle_emissions_from_fuelburn_tSO2")
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_from_fuelburn_tPM25"] = self.results_dict.get("lifecycle_emissions_from_fuelburn_tPM25")
+            # fuel burn emissions - lifecycle (BAU)
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_from_fuelburn_tCO2_bau"] = self.results_dict.get("lifecycle_emissions_from_fuelburn_tCO2_bau")
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_from_fuelburn_tNOx_bau"] = self.results_dict.get("lifecycle_emissions_from_fuelburn_tNOx_bau")
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_from_fuelburn_tSO2_bau"] = self.results_dict.get("lifecycle_emissions_from_fuelburn_tSO2_bau")
+            self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_from_fuelburn_tPM25_bau"] = self.results_dict.get("lifecycle_emissions_from_fuelburn_tPM25_bau")
+            # grid emissions - lifecycle (non-BAU)
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_gross_tCO2"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_tCO2") 
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_gross_tNOx"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_tNOx")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_gross_tSO2"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_tSO2")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_gross_tPM25"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_tPM25")
+            # grid emissions - lifecycle (BAU)
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_gross_tCO2_bau"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_tCO2_bau")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_gross_tNOx_bau"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_tNOx_bau")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_gross_tSO2_bau"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_tSO2_bau")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_gross_tPM25_bau"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_tPM25_bau")
+            # grid emissions offset - lifecycle (non-BAU) 
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_offset_from_elec_exports_tCO2"] = self.results_dict.get("lifecycle_emissions_offset_from_elec_exports_tCO2")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_offset_from_elec_exports_tNOx"] = self.results_dict.get("lifecycle_emissions_offset_from_elec_exports_tNOx")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_offset_from_elec_exports_tSO2"] = self.results_dict.get("lifecycle_emissions_offset_from_elec_exports_tSO2")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_offset_from_elec_exports_tPM25"] = self.results_dict.get("lifecycle_emissions_offset_from_elec_exports_tPM25")
+            # grid emissions offset - lifecycle (BAU)
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_offset_from_elec_exports_tCO2_bau"] = self.results_dict.get("lifecycle_emissions_offset_from_elec_exports_tCO2_bau")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_offset_from_elec_exports_tNOx_bau"] = self.results_dict.get("lifecycle_emissions_offset_from_elec_exports_tNOx_bau")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_offset_from_elec_exports_tSO2_bau"] = self.results_dict.get("lifecycle_emissions_offset_from_elec_exports_tSO2_bau")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_offset_from_elec_exports_tPM25_bau"] = self.results_dict.get("lifecycle_emissions_offset_from_elec_exports_tPM25_bau")
+            # net grid emissions, if net is selected (otherwise = grid emissions) - lifecycle (non-BAU)
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_net_if_selected_tCO2"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_net_if_selected_tCO2")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_net_if_selected_tNOx"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_net_if_selected_tNOx")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_net_if_selected_tSO2"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_net_if_selected_tSO2")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_net_if_selected_tPM25"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_net_if_selected_tPM25")
+            # net grid emissions, if net is selected (otherwise = grid emissions) - lifecycle (BAU)
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_net_if_selected_tCO2_bau"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_net_if_selected_tCO2_bau")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_net_if_selected_tNOx_bau"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_net_if_selected_tNOx_bau")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_net_if_selected_tSO2_bau"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_net_if_selected_tSO2_bau")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_net_if_selected_tPM25_bau"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_net_if_selected_tPM25_bau")
 
             self.nested_outputs["Scenario"]["lower_bound"] = self.results_dict.get("lower_bound")
             self.nested_outputs["Scenario"]["optimality_gap"] = self.results_dict.get("optimality_gap")
@@ -716,28 +824,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_chp_standby_cost_us_dollars"] = self.results_dict.get("year_one_chp_standby_cost")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "total_chp_standby_cost_us_dollars"] = self.results_dict.get("total_chp_standby_cost")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_lb_CO2"] = self.results_dict.get("year_one_elec_grid_emissions_lb_CO2")
-                    # health
-                    ## TODO: Update to correct calcs (check if this gets used? )
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_lb_NOx"] = self.results_dict.get("year_one_elec_grid_emissions_lb_NOx")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_bau_lb_NOx"] = self.results_dict.get(
-                        "year_one_elec_grid_emissions_lb_NOx_bau")
-
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_lb_SO2"] = self.results_dict.get("year_one_elec_grid_emissions_lb_SO2")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_bau_lb_SO2"] = self.results_dict.get(
-                        "year_one_elec_grid_emissions_lb_SO2_bau")
-                        
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_lb_PM25"] = self.results_dict.get("year_one_elec_grid_emissions_lb_PM25")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_bau_lb_PM25"] = self.results_dict.get(
-                        "year_one_elec_grid_emissions_lb_PM25_bau")
-
                 elif name == "FuelTariff":
                     self.nested_outputs["Scenario"]["Site"][name][
                         "total_boiler_fuel_cost_us_dollars"] = self.results_dict.get("total_boiler_fuel_cost")
@@ -805,39 +891,64 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "existing_gen_year_one_fuel_cost_us_dollars"] = self.results_dict.get(
                         "gen_year_one_fuel_cost_bau")
-                    # Climate
+                    # Year 1 Emissions
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_lb_CO2"] = self.results_dict.get(
-                        "year_one_generator_emissions_lb_CO2")
+                        "year_one_emissions_tCO2"] = self.results_dict.get(
+                        "year_one_generator_emissions_tCO2")
                     if not self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal_bau"] is 0:
                         self.nested_outputs["Scenario"]["Site"][name][
-                            "year_one_emissions_bau_lb_CO2"] = self.results_dict.get(
-                            "year_one_generator_emissions_lb_CO2_bau")
-                    # Health
-                    ## TODO: update to correct values
+                            "year_one_emissions_tCO2_bau"] = self.results_dict.get(
+                            "year_one_generator_emissions_tCO2_bau")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_lb_NOx"] = self.results_dict.get(
-                        "year_one_generator_emissions_lb_NOx")
+                        "year_one_emissions_tNOx"] = self.results_dict.get(
+                        "year_one_generator_emissions_tNOx")
                     if not self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal_bau"] is 0:
                         self.nested_outputs["Scenario"]["Site"][name][
-                            "year_one_emissions_bau_lb_NOx"] = self.results_dict.get(
-                            "year_one_generator_emissions_lb_NOx_bau")
-                    
+                            "year_one_emissions_tNOx_bau"] = self.results_dict.get(
+                            "year_one_generator_emissions_tNOx_bau")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_lb_SO2"] = self.results_dict.get(
-                        "year_one_generator_emissions_lb_SO2")
+                        "year_one_emissions_tSO2"] = self.results_dict.get(
+                        "year_one_generator_emissions_tSO2")
                     if not self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal_bau"] is 0:
                         self.nested_outputs["Scenario"]["Site"][name][
-                            "year_one_emissions_bau_lb_SO2"] = self.results_dict.get(
-                            "year_one_generator_emissions_lb_SO2_bau")
-                    
+                            "year_one_emissions_tSO2_bau"] = self.results_dict.get(
+                            "year_one_generator_emissions_tSO2_bau")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_lb_PM25"] = self.results_dict.get(
-                        "year_one_generator_emissions_lb_PM25")
+                        "year_one_emissions_tPM25"] = self.results_dict.get(
+                        "year_one_generator_emissions_tPM25")
                     if not self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal_bau"] is 0:
                         self.nested_outputs["Scenario"]["Site"][name][
-                            "year_one_emissions_bau_lb_PM25"] = self.results_dict.get(
-                            "year_one_generator_emissions_lb_PM25_bau")
+                            "year_one_emissions_tPM25_bau"] = self.results_dict.get(
+                            "year_one_generator_emissions_tPM25_bau")
+                    # Lifecycle emissions
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "lifecycle_emissions_tCO2"] = self.results_dict.get(
+                        "lifecycle_generator_emissions_tCO2")
+                    if not self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal_bau"] is 0:
+                        self.nested_outputs["Scenario"]["Site"][name][
+                            "lifecycle_emissions_tCO2_bau"] = self.results_dict.get(
+                            "lifecycle_generator_emissions_tCO2_bau")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "lifecycle_emissions_tNOx"] = self.results_dict.get(
+                        "lifecycle_generator_emissions_tNOx")
+                    if not self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal_bau"] is 0:
+                        self.nested_outputs["Scenario"]["Site"][name][
+                            "lifecycle_emissions_tNOx_bau"] = self.results_dict.get(
+                            "lifecycle_generator_emissions_tNOx_bau")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "lifecycle_emissions_tSO2"] = self.results_dict.get(
+                        "lifecycle_generator_emissions_tSO2")
+                    if not self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal_bau"] is 0:
+                        self.nested_outputs["Scenario"]["Site"][name][
+                            "lifecycle_emissions_tSO2_bau"] = self.results_dict.get(
+                            "lifecycle_generator_emissions_tSO2_bau")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "lifecycle_emissions_tPM25"] = self.results_dict.get(
+                        "lifecycle_generator_emissions_tPM25")
+                    if not self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal_bau"] is 0:
+                        self.nested_outputs["Scenario"]["Site"][name][
+                            "lifecycle_emissions_tPM25_bau"] = self.results_dict.get(
+                            "lifecycle_generator_emissions_tPM25_bau")
 
                 elif name == "CHP":
                     self.nested_outputs["Scenario"]["Site"][name][
@@ -862,21 +973,32 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_thermal_to_tes_series_mmbtu_per_hour"] = [x / MMBTU_TO_KWH for x in self.results_dict.get("chp_thermal_to_tes_series")]
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_thermal_to_waste_series_mmbtu_per_hour"] = [x / MMBTU_TO_KWH for x in self.results_dict.get("chp_thermal_to_waste_series")]
+                    # Year 1 Emissions
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_lb_CO2"] = self.results_dict.get(
-                        "year_one_chp_emissions_lb_CO2")
-                    # Health
+                        "year_one_emissions_tCO2"] = self.results_dict.get(
+                        "year_one_chp_emissions_tCO2")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_lb_NOx"] = self.results_dict.get(
-                        "year_one_chp_emissions_lb_NOx")
-
+                        "year_one_emissions_tNOx"] = self.results_dict.get(
+                        "year_one_chp_emissions_tNOx")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_lb_SO2"] = self.results_dict.get(
-                        "year_one_chp_emissions_lb_SO2")
-
+                        "year_one_emissions_tSO2"] = self.results_dict.get(
+                        "year_one_chp_emissions_tSO2")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_lb_PM25"] = self.results_dict.get(
-                        "year_one_chp_emissions_lb_PM25")
+                        "year_one_emissions_tPM25"] = self.results_dict.get(
+                        "year_one_chp_emissions_tPM25")
+                    # Lifecycle emissions
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "lifecycle_emissions_tCO2"] = self.results_dict.get(
+                        "lifecycle_chp_emissions_tCO2")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "lifecycle_emissions_tNOx"] = self.results_dict.get(
+                        "lifecycle_chp_emissions_tNOx")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "lifecycle_emissions_tSO2"] = self.results_dict.get(
+                        "lifecycle_chp_emissions_tSO2")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "lifecycle_emissions_tPM25"] = self.results_dict.get(
+                        "lifecycle_chp_emissions_tPM25")
 
                 elif name == "Boiler":
                     self.nested_outputs["Scenario"]["Site"][name][
@@ -891,38 +1013,56 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_boiler_fuel_consumption_mmbtu"] = self.results_dict.get("year_one_fuel_to_boiler_kwh") / MMBTU_TO_KWH
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_boiler_thermal_production_mmbtu"] = self.results_dict.get("year_one_boiler_thermal_production_kwh") / MMBTU_TO_KWH
+                    # Year 1 Emissions
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_lb_CO2"] = self.results_dict.get(
-                        "year_one_boiler_emissions_lb_CO2")
-                    if not self.nested_outputs["Scenario"]["Site"][name]["year_one_boiler_fuel_consumption_mmbtu_bau"] is 0:
-                        self.nested_outputs["Scenario"]["Site"][name][
-                            "year_one_emissions_bau_lb_CO2"] = self.results_dict.get(
-                            "year_one_boiler_emissions_lb_CO2_bau")
-
-                    # Health
+                        "year_one_emissions_tCO2"] = self.results_dict.get(
+                        "year_one_boiler_emissions_tCO2")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_lb_NOx"] = self.results_dict.get(
-                        "year_one_boiler_emissions_lb_NOx")
-                    if not self.nested_outputs["Scenario"]["Site"][name]["year_one_boiler_fuel_consumption_mmbtu_bau"] is 0:
-                        self.nested_outputs["Scenario"]["Site"][name][
-                            "year_one_emissions_bau_lb_NOx"] = self.results_dict.get(
-                            "year_one_boiler_emissions_lb_NOx_bau")
-                    
+                        "year_one_emissions_tCO2_bau"] = self.results_dict.get(
+                        "year_one_boiler_emissions_tCO2_bau")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_lb_SO2"] = self.results_dict.get(
-                        "year_one_boiler_emissions_lb_SO2")
-                    if not self.nested_outputs["Scenario"]["Site"][name]["year_one_boiler_fuel_consumption_mmbtu_bau"] is 0:
-                        self.nested_outputs["Scenario"]["Site"][name][
-                            "year_one_emissions_bau_lb_SO2"] = self.results_dict.get(
-                            "year_one_boiler_emissions_lb_SO2_bau")
-
+                        "year_one_emissions_tNOx"] = self.results_dict.get(
+                        "year_one_boiler_emissions_tNOx")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_lb_PM25"] = self.results_dict.get(
-                        "year_one_boiler_emissions_lb_PM25")
-                    if not self.nested_outputs["Scenario"]["Site"][name]["year_one_boiler_fuel_consumption_mmbtu_bau"] is 0:
-                        self.nested_outputs["Scenario"]["Site"][name][
-                            "year_one_emissions_bau_lb_PM25"] = self.results_dict.get(
-                            "year_one_boiler_emissions_lb_PM25_bau")
+                        "year_one_emissions_tNOx_bau"] = self.results_dict.get(
+                        "year_one_boiler_emissions_tNOx_bau")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_emissions_tSO2"] = self.results_dict.get(
+                        "year_one_boiler_emissions_tSO2")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_emissions_tSO2_bau"] = self.results_dict.get(
+                        "year_one_boiler_emissions_tSO2_bau")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_emissions_tPM25"] = self.results_dict.get(
+                        "year_one_boiler_emissions_tPM25")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_emissions_tPM25_bau"] = self.results_dict.get(
+                        "year_one_boiler_emissions_tPM25_bau")
+                    # Lifecycle emissions
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "lifecycle_emissions_tCO2"] = self.results_dict.get(
+                        "lifecycle_boiler_emissions_tCO2")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "lifecycle_emissions_tCO2_bau"] = self.results_dict.get(
+                        "lifecycle_boiler_emissions_tCO2_bau")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "lifecycle_emissions_tNOx"] = self.results_dict.get(
+                        "lifecycle_boiler_emissions_tNOx")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "lifecycle_emissions_tNOx_bau"] = self.results_dict.get(
+                        "lifecycle_boiler_emissions_tNOx_bau")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "lifecycle_emissions_tSO2"] = self.results_dict.get(
+                        "lifecycle_boiler_emissions_tSO2")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "lifecycle_emissions_tSO2_bau"] = self.results_dict.get(
+                        "lifecycle_boiler_emissions_tSO2_bau")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "lifecycle_emissions_tPM25"] = self.results_dict.get(
+                        "lifecycle_boiler_emissions_tPM25")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "lifecycle_emissions_tPM25_bau"] = self.results_dict.get(
+                        "lifecycle_boiler_emissions_tPM25_bau")
 
                 elif name == "ElectricChiller":
                     self.nested_outputs["Scenario"]["Site"][name][
