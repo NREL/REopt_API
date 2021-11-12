@@ -1374,8 +1374,8 @@ function add_re_emissions_results(m, p, r::Dict)
 
 	# BAU preprocessed emissions (used for emissions reduction target calculations; output for testing purposes)   
 	r["preprocessed_BAU_year_one_emissions_tCO2"] = round(value(p.BAUYr1Emissions_CO2)/2204.62,digits=2)
-	r["preprocessed_BAU_lifecycle_emissions_tCO2"] = round(value(m[:Lifecycle_Emissions_Lbs_CO2_BAU]/2204.62),digits=2) # no annual decrease for on-site fuel burn 
-
+	r["preprocessed_BAU_lifecycle_emissions_tCO2"] = round(value(m[:Lifecycle_Emissions_Lbs_CO2_BAU]/2204.62),digits=2) 
+	
 	# Year 1 Emissions results at Site level
 	r["year_one_emissions_tCO2"] = round(value(m[:EmissionsYr1_Total_LbsCO2]/2204.62), digits=2) 
 	r["year_one_emissions_tNOx"] = round(value(m[:EmissionsYr1_Total_LbsNOx]/2204.62), digits=2) 
