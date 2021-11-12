@@ -293,10 +293,12 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                                         # Year 1 RE heat calcs - BAU case
                                         RE_heat_bau_pct_out = d['outputs']['Scenario']['Site']['year_one_renewable_heat_pct_bau']
                                         RE_heat_bau_mmbtu_out = d['outputs']['Scenario']['Site']['year_one_renewable_heat_mmbtu_bau']
-                                        #self.assertAlmostEquals(annual_heat_load_mmbtu*RE_heat_bau_pct_out,RE_heat_bau_mmbtu_out,places=-1)
+                                        total_heat_bau_mmbtu_out = d['outputs']['Scenario']['Site']['year_one_heat_load_mmbtu_bau']
+                                        self.assertAlmostEquals(total_heat_bau_mmbtu_out*RE_heat_bau_pct_out,RE_heat_bau_mmbtu_out,places=-1)
                                         # Year 1 RE heat - non-BAU case
                                         RE_heat_pct_out = d['outputs']['Scenario']['Site']['year_one_renewable_heat_pct']
                                         RE_heat_mmbtu_out = d['outputs']['Scenario']['Site']['year_one_renewable_heat_mmbtu']
-                                        #self.assertAlmostEquals(annual_heat_load_mmbtu*RE_heat_pct_out,RE_heat_mmbtu_out,places=-1)
+                                        total_heat_mmbtu_out = d['outputs']['Scenario']['Site']['year_one_heat_load_mmbtu']
+                                        self.assertAlmostEquals(total_heat_mmbtu_out*RE_heat_pct_out,RE_heat_mmbtu_out,places=-1)
                                         
 
