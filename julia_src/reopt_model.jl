@@ -970,17 +970,10 @@ end
 function add_re_heat_calcs(m,p)
 	# Renewable heat 
 	m[:AnnualREHeatMMBTU] = @expression(m,p.TimeStepScaling*
-		(sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvThermalProduction][t,ts] * p.TechPercentRE[t] for t in p.HeatingTechs, ts in p.TimeStep) #total heat generation (need to see how GHP fits into this)
+		(sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvThermalProduction][t,ts] * p.TechPercentRE[t] for t in p.HeatingTechs, ts in p.TimeStep) #total heat generation 
 		- sum(m[:dvProductionToWaste][t,ts]* p.TechPercentRE[t] for t in p.CHPTechs, ts in p.TimeStep) #minus CHP waste heat
 		- sum(m[:dvProductionToStorage][b,t,ts]*p.TechPercentRE[t]*(1-p.ChargeEfficiency[t,b]*p.DischargeEfficiency[b]) for t in p.HeatingTechs, b in p.HotTES, ts in p.TimeStep))) #minus thermal storage losses 
-	# Total heat - same equation without p.TechPercentRE factor
-	m[:AnnualHeatMMBTU] = @expression(m,p.TimeStepScaling*
-		(sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvThermalProduction][t,ts] for t in p.HeatingTechs, ts in p.TimeStep) #total heat generation (need to see how GHP fits into this)
-		- sum(m[:dvProductionToWaste][t,ts] for t in p.CHPTechs, ts in p.TimeStep) #minus CHP waste heat
-		- sum(m[:dvProductionToStorage][b,t,ts](1-p.ChargeEfficiency[t,b]*p.DischargeEfficiency[b]) for t in p.HeatingTechs, b in p.HotTES, ts in p.TimeStep))) #minus thermal storage losses 
-	# percent RE heat
-	#m[:AnnualREHeatPercent] = @expression(m, m[:AnnualREHeatMMBTU] / m[:AnnualHeatMMBTU])
-	end
+end
 
 ### Year 1 Emissions Calculations
 function add_yr1_emissions_calcs(m,p)
@@ -1367,10 +1360,11 @@ function add_re_emissions_results(m, p, r::Dict)
 	if !isempty(p.HeatingTechs)
 		add_re_heat_calcs(m,p)
 		r["annual_re_heat_mmbtu"] = round(value(m[:AnnualREHeatMMBTU]), digits=2)
+		m[:AnnualREHeatPercent] = @expression(m, m[:AnnualREHeatMMBTU]/(sum(p.HeatingLoad[ts] for ts in p.TimeStep)))
 		r["annual_re_heat_percent"] = round(value(m[:AnnualREHeatPercent]), digits=6)
 	else
-		r["annual_re_heat_mmbtu"] = 0.0
-		r["annual_re_heat_percent"] = 0.0
+		r["annual_re_heat_mmbtu"] = 0
+		r["annual_re_heat_percent"] = 0
 	end 
 
 	# BAU preprocessed emissions (used for emissions reduction target calculations; output for testing purposes)   
