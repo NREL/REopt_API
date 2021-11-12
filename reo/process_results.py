@@ -134,6 +134,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "annual_re_elec_kwh", 
             "annual_re_heat_percent", 
             "annual_re_heat_mmbtu", 
+            "annual_heat_mmbtu",
             "year_one_emissions_tCO2",
             "year_one_emissions_tNOx",
             "year_one_emissions_tSO2",
@@ -508,11 +509,13 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             self.nested_outputs["Scenario"]["Site"]["year_one_renewable_electricity_kwh"] = self.results_dict.get("annual_re_elec_kwh") 
             self.nested_outputs["Scenario"]["Site"]["year_one_renewable_heat_pct"] = self.results_dict.get("annual_re_heat_percent")
             self.nested_outputs["Scenario"]["Site"]["year_one_renewable_heat_mmbtu"] = self.results_dict.get("annual_re_heat_mmbtu")
+            self.nested_outputs["Scenario"]["Site"]["year_one_heat_load_mmbtu"] = self.results_dict.get("annual_heat_mmbtu")
             # RE elec & heat (BAU)
             self.nested_outputs["Scenario"]["Site"]["year_one_renewable_electricity_pct_bau"] = self.results_dict.get("annual_re_elec_percent_bau")
             self.nested_outputs["Scenario"]["Site"]["year_one_renewable_electricity_kwh_bau"] = self.results_dict.get("annual_re_elec_kwh_bau")
             self.nested_outputs["Scenario"]["Site"]["year_one_renewable_heat_pct_bau"] = self.results_dict.get("annual_re_heat_percent_bau")
             self.nested_outputs["Scenario"]["Site"]["year_one_renewable_heat_mmbtu_bau"] = self.results_dict.get("annual_re_heat_mmbtu_bau")
+            self.nested_outputs["Scenario"]["Site"]["year_one_heat_load_mmbtu_bau"] = self.results_dict.get("annual_heat_mmbtu_bau")
             
             ## Year 1 Emissions
             # total emissions - year one (non-BAU)
