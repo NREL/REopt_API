@@ -163,6 +163,14 @@ nested_output_definitions = {
                   ),
                 "units": "mmbtu"
                 },
+              "year_one_heat_load_mmbtu": {
+                "type": float,
+                "description": (
+                  "Electrictrity use that is derived from on-site renewable resource generation in year one."
+                  "Calculated as total RE heat generation in year one, minus storage losses."
+                  ),
+                "units": "mmbtu"
+                },
               "year_one_renewable_heat_pct_bau": {
                 "type": float,
                 "description": (
@@ -176,6 +184,14 @@ nested_output_definitions = {
                 "type": float,
                 "description": (
                   "Electrictrity use that is derived from on-site renewable resource generation in year one in the BAU scenario."
+                  "Calculated as total RE heat generation in year one, minus storage losses."
+                  ),
+                "units": "mmbtu"
+                },
+              "year_one_heat_load_mmbtu_bau": {
+                "type": float,
+                "description": (
+                  "Electrictrity use that is derived from on-site renewable resource generation in year one."
                   "Calculated as total RE heat generation in year one, minus storage losses."
                   ),
                 "units": "mmbtu"
