@@ -246,19 +246,19 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
                              "Unexpected pm25_cost_us_dollars_per_tonne_onsite_fuelburn output from EASIUR ")                
 
             for item in ['CO2', 'NOx', 'SO2', 'PM25']:
-              print('Year 1 {} lb: '.format(item), response['outputs']['Scenario']['Site']['year_one_emissions_lb_{}'.format(item)])
-              print('Year 1 {} lb BAU: '.format(item), response['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_{}'.format(item)])
+              print('Year 1 {} lb: '.format(item), response['outputs']['Scenario']['Site']['year_one_emissions_t{}'.format(item)])
+              print('Year 1 {} lb BAU: '.format(item), response['outputs']['Scenario']['Site']['year_one_emissions_t{}_bau'.format(item)])
               
-              print('Generator Year 1 {} lb: '.format(item), response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_{}'.format(item)])
-              print('Generator Year 1 {} lb BAU: '.format(item), response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_bau_lb_{}'.format(item)])
+              print('Generator Year 1 {} lb: '.format(item), response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_t{}'.format(item)])
+              print('Generator Year 1 {} lb BAU: '.format(item), response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_t{}_bau'.format(item)])
 
-            print('year_one_CO2_emissions_from_fuelburn: ', response['outputs']['Scenario']['Site']['year_one_CO2_emissions_from_fuelburn'])
+            #print('year_one_CO2_emissions_from_fuelburn: ', response['outputs']['Scenario']['Site']['year_one_CO2_emissions_from_fuelburn'])
 
-            print('year_one_CO2_emissions_from_elec_grid_purchase: ', response['outputs']["Scenario"]["Site"]["year_one_CO2_emissions_from_elec_grid_purchase"] )
-            print('year_one_CO2_emissions_from_elec_grid_purchase_bau: ', response['outputs']["Scenario"]["Site"]["year_one_CO2_emissions_from_elec_grid_purchase_bau"] )
+            #print('year_one_CO2_emissions_from_elec_grid_purchase: ', response['outputs']["Scenario"]["Site"]["year_one_CO2_emissions_from_elec_grid_purchase"] )
+            #print('year_one_CO2_emissions_from_elec_grid_purchase_bau: ', response['outputs']["Scenario"]["Site"]["year_one_CO2_emissions_from_elec_grid_purchase_bau"] )
             
-            print('Lifecycle lbs CO2: ', response['outputs']['Scenario']['Site']['lifecycle_emissions_lb_CO2'])
-            print('Lifecycle lbs CO2 BAU: ', response['outputs']['Scenario']['Site']['lifecycle_emissions_lb_CO2_bau'])
+            print('Lifecycle tonne CO2: ', response['outputs']['Scenario']['Site']['lifecycle_emissions_tCO2'])
+            print('Lifecycle tonne CO2 BAU: ', response['outputs']['Scenario']['Site']['lifecycle_emissions_tCO2_bau'])
             print('Lifecycle cost CO2: ', response['outputs']['Scenario']['Site']['lifecycle_emissions_cost_CO2'])
             print('Lifecycle cost CO2 BAU: ', response['outputs']['Scenario']['Site']['lifecycle_emissions_cost_CO2_bau'])
 
@@ -266,12 +266,12 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
             print('Lifecycle cost Health BAU: ', response['outputs']['Scenario']['Site']['lifecycle_emissions_cost_Health_bau'])
 
             ## TODO: add these results 
-            # self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_NOx"] = self.results_dict.get("lifecycle_emissions_lb_NOx")
-            # self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_NOx_bau"] = self.results_dict.get("lifecycle_emissions_lb_NOx_bau")
-            # self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_SO2"] = self.results_dict.get("lifecycle_emissions_lb_SO2")
-            # self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_SO2_bau"] = self.results_dict.get("lifecycle_emissions_lb_SO2_bau")
-            # self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_PM25"] = self.results_dict.get("lifecycle_emissions_lb_PM25")
-            # self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_lb_PM25_bau"] = self.results_dict.get("lifecycle_emissions_lb_PM25_bau")
+            # self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_tNOx"] = self.results_dict.get("lifecycle_emissions_tNOx")
+            # self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_tNOx_bau"] = self.results_dict.get("lifecycle_emissions_tNOx_bau")
+            # self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_tSO2"] = self.results_dict.get("lifecycle_emissions_tSO2")
+            # self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_tSO2_bau"] = self.results_dict.get("lifecycle_emissions_tSO2_bau")
+            # self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_tPM25"] = self.results_dict.get("lifecycle_emissions_tPM25")
+            # self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_tPM25_bau"] = self.results_dict.get("lifecycle_emissions_tPM25_bau")
             # "lifecycle_emissions_cost_Health_bau" 
             # "lifecycle_emissions_cost_Health" 
             
@@ -302,12 +302,12 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
     #     response = self.get_response(self.post_no_techs)
         
     #     region_expected = 'Upper Midwest' # lat long is Minneapolis
-    #     CO2_lb_yr1_expected = 16962.85 
-    #     NOx_lb_yr1_expected = 11.66
+    #     CO2_t_yr1_expected = 16962.85 / 2204.62 
+    #     NOx_t_yr1_expected = 11.66 / 2204.62
 
     #     region_out = response['outputs']['Scenario']['Site']['ElectricTariff']['emissions_region']
-    #     CO2_lb_yr1_out = response['outputs']['Scenario']['Site']['year_one_emissions_lb_CO2']
-    #     NOx_lb_yr1_out = response['outputs']['Scenario']['Site']['year_one_emissions_lb_NOx']
+    #     CO2_t_yr1_out = response['outputs']['Scenario']['Site']['year_one_emissions_tCO2']
+    #     NOx_t_yr1_out = response['outputs']['Scenario']['Site']['year_one_emissions_tNOx']
         
     #     messages = response['messages']
 
@@ -316,13 +316,13 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
     #                          "Region ({}) does not equal expected Region ({})."
     #                          .format(region_out, region_expected))
             
-    #         self.assertEqual(CO2_lb_yr1_out, CO2_lb_yr1_expected,
-    #                          "lb CO2 in yr 1 ({}) expected lb CO2 in yr 1 ({})."
-    #                          .format(CO2_lb_yr1_out, CO2_lb_yr1_expected))
+    #         self.assertEqual(CO2_t_yr1_out, CO2_t_yr1_expected,
+    #                          "tonne CO2 in yr 1 ({}) expected tonne CO2 in yr 1 ({})."
+    #                          .format(CO2_t_yr1_out, CO2_t_yr1_expected))
             
-    #         self.assertEqual(NOx_lb_yr1_out, NOx_lb_yr1_expected,
-    #                          "lb NOx in yr 1 ({}) expected lb NOx in yr 1 ({})."
-    #                          .format(NOx_lb_yr1_out, NOx_lb_yr1_expected))
+    #         self.assertEqual(NOx_t_yr1_out, NOx_t_yr1_expected,
+    #                          "tonne NOx in yr 1 ({}) expected tonne NOx in yr 1 ({})."
+    #                          .format(NOx_t_yr1_out, NOx_t_yr1_expected))
 
     #         print('Emissions Region: ', response['outputs']['Scenario']['Site']['ElectricTariff']['emissions_region'])
     #         print('PV size: ', response['outputs']['Scenario']['Site']['PV']['size_kw'])
@@ -335,13 +335,13 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
             
 
     #         for item in ['CO2', 'NOx', 'SO2', 'PM25']:
-    #           print('Year 1 {}: '.format(item), response['outputs']['Scenario']['Site']['year_one_emissions_lb_{}'.format(item)])
-    #           # print('Year 1 {} BAU: '.format(item), response['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_{}'.format(item)])
+    #           print('Year 1 {}: '.format(item), response['outputs']['Scenario']['Site']['year_one_emissions_t{}'.format(item)])
+    #           # print('Year 1 {} BAU: '.format(item), response['outputs']['Scenario']['Site']['year_one_emissions_bau_t{}'.format(item)])
               
     #         print('fuel_used_gal: ', response['outputs']['Scenario']['Site']['Generator']['fuel_used_gal'])
     #         print('year_one_CO2_emissions_from_fuelburn: ', response['outputs']['Scenario']['Site']['year_one_CO2_emissions_from_fuelburn'])
-    #         print('Lifecycle lbs CO2: ', response['outputs']['Scenario']['Site']['lifecycle_emissions_lb_CO2'])
-    #         # print('Lifecycle lbs CO2 BAU: ', response['outputs']['Scenario']['Site']['lifecycle_emissions_lb_CO2_bau'])
+    #         print('Lifecycle tonne CO2: ', response['outputs']['Scenario']['Site']['lifecycle_emissions_tCO2'])
+    #         # print('Lifecycle tonne CO2 BAU: ', response['outputs']['Scenario']['Site']['lifecycle_emissions_tCO2_bau'])
     #         print('Lifecycle cost CO2: ', response['outputs']['Scenario']['Site']['lifecycle_emissions_cost_CO2'])
     #         # print('Lifecycle cost CO2 BAU: ', response['outputs']['Scenario']['Site']['lifecycle_emissions_cost_CO2_bau'])
 
