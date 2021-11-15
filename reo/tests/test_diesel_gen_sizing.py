@@ -83,12 +83,12 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat(d['outputs'])
-        c['year_one_emissions_lb_CO2'] = d['outputs']['Scenario']['Site']['year_one_emissions_lb_CO2']
-        c['year_one_emissions_bau_lb_CO2'] = d['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_CO2']
-        c['utility_year_one_emissions_lb_CO2'] = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_lb_CO2']
-        c['utility_year_one_emissions_bau_lb_CO2'] = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_bau_lb_CO2']
-        c['generator_year_one_emissions_lb_CO2'] = d['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_CO2']
-        c['generator_year_one_emissions_bau_lb_CO2'] = d['outputs']['Scenario']['Site']['Generator']['year_one_emissions_bau_lb_CO2']
+        c['year_one_emissions_tCO2'] = d['outputs']['Scenario']['Site']['year_one_emissions_tCO2']
+        c['year_one_emissions_tCO2_bau'] = d['outputs']['Scenario']['Site']['year_one_emissions_tCO2_bau']
+        c['utility_year_one_emissions_tCO2'] = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_gross_tCO2']
+        c['utility_year_one_emissions_tCO2_bau'] = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_gross_tCO2_bau']
+        c['generator_year_one_emissions_tCO2'] = d['outputs']['Scenario']['Site']['Generator']['year_one_emissions_tCO2']
+        c['generator_year_one_emissions_tCO2_bau'] = d['outputs']['Scenario']['Site']['Generator']['year_one_emissions_tCO2_bau']
 
         d_expected = dict()
         d_expected['lcc'] = 242935.0
@@ -103,12 +103,12 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         d_expected['gen_total_variable_om_cost_us_dollars'] = 1.0
         d_expected['existing_pv_om_cost_us_dollars'] = 11507.0
         d_expected['net_capital_costs_plus_om'] = 15470.0
-        d_expected['year_one_emissions_lb_CO2'] = 421693.1
-        d_expected['year_one_emissions_bau_lb_CO2'] = 421672.6
-        d_expected['utility_year_one_emissions_lb_CO2'] = 421672.6
-        d_expected['utility_year_one_emissions_bau_lb_CO2'] = 421672.6
-        d_expected['generator_year_one_emissions_lb_CO2'] = 20.5
-        d_expected['generator_year_one_emissions_bau_lb_CO2'] = 0
+        d_expected['year_one_emissions_tCO2'] = 421693.1 / 2204.62
+        d_expected['year_one_emissions_bau_lb_CO2'] = 421672.6 / 2204.62
+        d_expected['utility_year_one_emissions_tCO2'] = 421672.6 / 2204.62
+        d_expected['utility_year_one_emissions_tCO2_bau'] = 421672.6 / 2204.62
+        d_expected['generator_year_one_emissions_tCO2'] = round(20.5 / 2204.62, 2)
+        d_expected['generator_year_one_emissions_tCO2_bau'] = 0 / 2204.62
 
         try:
             self.assertEqual(d['outputs']['Scenario']['Site']['ElectricTariff']['emissions_region'], 'Southeast')
