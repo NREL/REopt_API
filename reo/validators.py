@@ -1349,12 +1349,11 @@ class ValidateNestedInput:
             'emissions_factor_series_lb_SO2_per_kwh', 'emissions_factor_series_lb_PM25_per_kwh']:
                 
                 # If user supplies single emissions rate
-                if type(electric_tariff.get(key_name)) == list:
-                    if len(electric_tariff.get(key_name)) == 1:
-                        emissions_series = electric_tariff.get(key_name) * 8760 * ts_per_hour
-                            
-                        electric_tariff[key_name] = emissions_series
-                        self.update_attribute_value(object_name_path, number, key_name, emissions_series)
+                if len(electric_tariff.get(key_name) or []) == 1:
+                    emissions_series = electric_tariff.get(key_name) * 8760 * ts_per_hour
+                        
+                    electric_tariff[key_name] = emissions_series
+                    self.update_attribute_value(object_name_path, number, key_name, emissions_series)
 
                 # If user has not supplied emissions rates, use Emissions calculator
                 elif (len(electric_tariff.get(key_name) or []) == 0):
