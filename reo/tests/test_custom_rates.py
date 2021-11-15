@@ -278,5 +278,3 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
         tariff = ClassAttributes(response['outputs']['Scenario']['Site']['ElectricTariff'])
         self.assertAlmostEqual(tariff.year_one_bill_us_dollars, 1.0e5 + baseline_bill, places=1)
         self.assertAlmostEqual(tariff.year_one_bill_bau_us_dollars, 1.0e5 + baseline_bill, places=1)
-
-        print(response['outputs']['Scenario']['Site']['year_one_emissions_lb_CO2'])
