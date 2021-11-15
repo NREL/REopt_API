@@ -211,7 +211,7 @@ nested_output_definitions = {
                   "description": "Total pounds of SO2 emitted from the site in the first year.",
                   "units": "tSO2"
                 },
-              "year_one_emissions_PM25": {
+              "year_one_emissions_tPM25": {
                   "type": "int",
                   "description": "Total pounds of PM2.5 emitted from the site in the first year.",
                   "units": "tPM2.5"
@@ -311,7 +311,7 @@ nested_output_definitions = {
                   "description": "Total pounds of SO2 emissions associated with the site's energy consumption over the analysis period.",
                   "units": "tSO2"
                 },
-              "lifecycle_emissions_PM25": {
+              "lifecycle_emissions_tPM25": {
                   "type": int,
                   "description": "Total pounds of PM2.5 emissions associated with the site's energy consumption over the analysis period.",
                   "units": "tPM2.5"
@@ -883,54 +883,6 @@ nested_output_definitions = {
                   "type": "float",
                   "description": "Year one energy supplied from grid to load in the business-as-usual scenario",
                   "units": "kWh"
-                },
-                "year_one_emissions_lb_CO2": {
-                  "type": "int",
-                  "description": ("Total equivalent pounds of carbon dioxide emitted from utility electricity use "
-                                  "in the first year. Calculated from EPA AVERT region hourly grid emissions factor series for the continental US."
-                                  "In AK and HI, the best available data are EPA eGRID annual averages."),
-                  "units": "lb CO2"
-                },
-                "year_one_emissions_lb_NOx": {
-                  "type": "int",
-                  "description": ("Total pounds of NOx emitted from utility electricity use "
-                                  "in the first year. Calculated from EPA AVERT region hourly grid emissions factor series for the continental US."
-                                  "In AK and HI, the best available data are EPA eGRID annual averages."),
-                  "units": "lb NOx"
-                },
-                "year_one_emissions_lb_SO2": {
-                  "type": "int",
-                  "description": ("Total pounds of SO2 emitted from utility electricity use "
-                                  "in the first year. Calculated from EPA AVERT region hourly grid emissions factor series for the continental US."
-                                  "In AK and HI, the best available data are EPA eGRID annual averages."),
-                  "units": "lb SO2"
-                },
-                "year_one_emissions_lb_PM25": {
-                  "type": "int",
-                  "description": ("Total pounds of PM2.5 emitted from utility electricity use "
-                                  "in the first year. Calculated from EPA AVERT region hourly grid emissions factor series for the continental US."
-                                  "In AK and HI, the best available data are EPA eGRID annual averages."),
-                  "units": "lb PM2.5"
-                },
-                "year_one_emissions_bau_lb_CO2": {
-                  "type": "int",
-                  "description": "Total equivalent pounds of carbon dioxide emitted from BAU utility electricity use in the first year. Calculated by default from hourly emissions estimates except in AK and HI.",
-                  "units": "lb CO2"
-                },
-                "year_one_emissions_bau_lb_NOx": {
-                  "type": "int",
-                  "description": "Total pounds of NOx emitted from BAU utility electricity use in the first year. Calculated by default from hourly emissions estimates except in AK and HI.",
-                  "units": "lb NOx"
-                },
-                "year_one_emissions_bau_lb_SO2": {
-                  "type": "int",
-                  "description": "Total pounds of SO2 emitted from BAU utility electricity use in the first year. Calculated by default from hourly emissions estimates except in AK and HI.",
-                  "units": "lb SO2"
-                },
-                "year_one_emissions_bau_lb_PM25": {
-                  "type": "int",
-                  "description": "Total pounds of PM2.5 emitted from BAU utility electricity use in the first year. Calculated by default from hourly emissions estimates except in AK and HI.",
-                  "units": "lb PM2.5"
                 },
                 "year_one_coincident_peak_cost_us_dollars": {
                   "type": "float",
