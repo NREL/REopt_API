@@ -2012,7 +2012,7 @@ class DataManager:
             'SRrequiredPctLoad': self.load.sr_required_pct,
             'SRrequiredPctTechs': sr_required_pct,
             'OtherCapitalCosts': sf.other_capital_costs_us_dollars,
-            'OtherAnnualCosts': sf.other_annual_costs_us_dollars_per_year * pwf_om
+            'OtherAnnualCosts': sf.other_annual_costs_us_dollars_per_year * pwf_om,
             # Emissions
             'GridEmissionsFactor_CO2': grid_emissions_factor_CO2,
             "GridEmissionsFactor_NOx": grid_emissions_factor_NOx,
