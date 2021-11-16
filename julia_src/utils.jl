@@ -151,6 +151,8 @@ Base.@kwdef struct Parameter
 	 pwf_fuel::AxisArray
 	 r_tax_owner::Float64      # f^{tow}: Tax rate factor for owner [fraction]
      r_tax_offtaker::Float64   # f^{tot}: Tax rate factor for offtaker [fraction]
+     pwf_owner::Float64    # Annuity with zero escalation and owner's discount rate
+     pwf_offtaker::Float64 # Annuity with zero escalation and offtaker's discount rate
      pwfs_emissions_cost::Dict{String, Any} # Cost of emissions present worth factors for grid and onsite fuelburn emissions [unitless]
      pwfs_grid_emissions_lbs::Dict{String, Any} # Emissions [lbs] present worth factors for grid emissions [unitless]
 
@@ -213,14 +215,14 @@ Base.@kwdef struct Parameter
 
     # Annual RE parameters
      TechPercentRE::AxisArray
-     MinAnnualPercentREElec::Union{Float64,Nothing} 
-     MaxAnnualPercentREElec::Union{Float64,Nothing} 
+     MinAnnualPercentREElec::Union{Float64,Nothing}
+     MaxAnnualPercentREElec::Union{Float64,Nothing}
      IncludeExportedREElecinTotal::Bool
 
     # Emissions parameters
      IncludeExportedElecEmissionsInTotal::Bool
-     MinPercentCO2EmissionsReduction::Union{Float64,Nothing} 
-     MaxPercentCO2EmissionsReduction::Union{Float64,Nothing} 
+     MinPercentCO2EmissionsReduction::Union{Float64,Nothing}
+     MaxPercentCO2EmissionsReduction::Union{Float64,Nothing}
      BAUYr1Emissions_CO2::Float64
      BAUYr1Emissions_NOx::Float64
      BAUYr1Emissions_SO2::Float64
@@ -259,7 +261,7 @@ Base.@kwdef struct Parameter
 	BoilerTechs::Array{String,1}
 	HeatingLoad::Array{Float64,1}
 	CoolingLoad::Array{Float64,1}
-	BoilerEfficiency::Float64
+	BoilerEfficiency::AxisArray
 	ElectricChillerCOP::Float64
     AbsorptionChillerCOP::Float64
     AbsorptionChillerElecCOP::Float64
@@ -270,6 +272,32 @@ Base.@kwdef struct Parameter
 	CHPStandbyCharge::Float64
 	CHPDoesNotReduceDemandCharges::Int64
 	StorageDecayRate::AxisArray
+    AllBoilerTechs::Array{String,1}
+    AllTechsForSteamTurbine::Array{String,1}
+    SteamTurbineTechs::Array{String,1}
+    TechCanSupplySteamTurbine::Array{String,1}
+    STElecOutToThermInRatio::Float64
+    STThermOutToThermInRatio::Float64
+    # GHP Arrays of different GHP options with index 1 being NO GHP
+    GHPOptions::UnitRange{Int64}
+    RequireGHPPurchase::Int64
+    GHPHeatingThermalServed::Array{Float64,2}  # Array of heating load (thermal!) profiles served by GHP
+    GHPCoolingThermalServed::Array{Float64,2}  # Array of cooling load profiles served by GHP
+    GHPElectricConsumed::Array{Float64,2}  # Array of electric load profiles consumed by GHP
+    GHPInstalledCost::Array{Float64,1}  # Array of installed cost for GHP options
+    GHPOMCost::Array{Float64,1}  # Array of O&M cost for GHP options
+    CHPSupplementaryFireMaxRatio::Float64
+    CHPSupplementaryFireEfficiency::Float64
+    CapCostSupplementaryFiring::AxisArray # Array of capital cost for supplementary firing for CHP
+	#Offgrid systems
+	OffGridFlag::Bool
+	TechsRequiringSR::Array{String,1}
+	TechsProvidingSR::Array{String,1}
+	MinLoadMetPct::Float64
+	SRrequiredPctLoad::Float64
+	SRrequiredPctTechs::AxisArray
+    OtherCapitalCosts::Float64
+    OtherAnnualCosts::Float64
 end
 
 
@@ -319,6 +347,7 @@ function Parameter(d::Dict)
     n_location = length(d["MaxSizesLocation"])
     d[:Location] = 1:n_location
     d[:CPPeriod] = 1:d["CoincidentPeakPeriodCount"]
+    d[:GHPOptions] = 1:length(d["GHPInstalledCost"])
 
     # the following array manipulation may have to adapt once length(d["Subdivision"]) > 1
     seg_min_size_array = reshape(transpose(reshape(d["SegmentMinSize"], length(d[:Seg]), length(d["Tech"]))),
@@ -399,6 +428,11 @@ function Parameter(d::Dict)
 	d["CHPThermalProdFactor"] = vector_to_axisarray(d["CHPThermalProdFactor"],d["CHPTechs"],d[:TimeStep])
 	d["pwf_fuel"] = AxisArray(d["pwf_fuel"], d["Tech"])
 	d["StorageDecayRate"] = AxisArray(d["StorageDecayRate"], d["Storage"])
+    d["BoilerEfficiency"] = AxisArray(d["BoilerEfficiency"], d["AllBoilerTechs"])  # Always passes both values, even if partial/none
+    d["CapCostSupplementaryFiring"] = AxisArray(d["CapCostSupplementaryFiring"],d["CHPTechs"])
+
+	# Off-grid Modeling
+	d["SRrequiredPctTechs"] = AxisArray(d["SRrequiredPctTechs"], d["TechsProvidingSR"])
 
     # Indexed Sets
     if isempty(d["FuelType"])
@@ -410,6 +444,10 @@ function Parameter(d::Dict)
     d["ExportTiersByTech"] = AxisArray(d["ExportTiersByTech"], d["Tech"])
 	d["TechsByExportTier"] = AxisArray(d["TechsByExportTier"], d["ExportTiers"])
     d["TechsByNMILRegime"] = AxisArray(d["TechsByNMILRegime"], d["NMILRegime"])
+
+    d["GHPHeatingThermalServed"] = array_of_array_to_2D_array(d["GHPHeatingThermalServed"])
+    d["GHPCoolingThermalServed"] = array_of_array_to_2D_array(d["GHPCoolingThermalServed"])
+    d["GHPElectricConsumed"] = array_of_array_to_2D_array(d["GHPElectricConsumed"])
 
     d = string_dictkeys_tosymbols(d)
     d = filter_dict_to_match_struct_field_names(d, Parameter)

@@ -406,6 +406,31 @@ nested_output_definitions = {
                   "type": "int",
                   "description": "Number of time steps the existing system can sustain the critical load",
                   "units": "time steps"
+                },
+                "load_met_series_kw": {
+                  "type": "list_of_float",
+                  "description": "Total load served (or total generation) in each time step",
+                  "units": "kW"
+                },
+                "load_met_pct": {
+                  "type": "float",
+                  "description": "Annual load met divided by annual total load",
+                  "units": "%"
+                },
+                "sr_required_series_kw": {
+                  "type": "list_of_float",
+                  "description": "Spinning reserve requirement for changes in load in each time step",
+                  "units": "kW"
+                },
+                "total_sr_required": {
+                  "type": "list_of_float",
+                  "description": "Total spinning reserve required",
+                  "units": "kW"
+                },
+                "total_sr_provided": {
+                  "type": "list_of_float",
+                  "description": "Total spinning reserve provided",
+                  "units": "kW"
                 }
               },
 
@@ -470,7 +495,7 @@ nested_output_definitions = {
                 },
                 "net_capital_costs_plus_om_us_dollars": {
                   "type": "float",
-                  "description": "Capital cost for all technologies plus present value of operations and maintenance over anlaysis period",
+                  "description": "Capital cost for all technologies plus present value of operations and maintenance (including fuel purchases) over anlaysis period",
                   "units": "$"
                 },
                 "net_om_us_dollars_bau": {
@@ -512,6 +537,11 @@ nested_output_definitions = {
                   "description": "Total operations and maintenance cost over analysis period.",
                   "units": "$"
                 },
+                "total_om_costs_bau_us_dollars": {
+                  "type": "float",
+                  "description": "Total operations and maintenance cost over analysis period in the business-as-usual case.",
+                  "units": "$"
+                },
                 "year_one_om_costs_us_dollars": {
                   "type": "float",
                   "description": "Year one operations and maintenance cost after tax.",
@@ -520,6 +550,11 @@ nested_output_definitions = {
                 "year_one_om_costs_before_tax_us_dollars": {
                   "type": "float",
                   "description": "Year one operations and maintenance cost before tax.",
+                  "units": "$"
+                },
+                "year_one_om_costs_before_tax_bau_us_dollars": {
+                  "type": "float",
+                  "description": "Year one operations and maintenance cost before tax in the business-as-usual case.",
                   "units": "$"
                 },
                 "simple_payback_years": {
@@ -577,7 +612,52 @@ nested_output_definitions = {
                   "description": ("Net O&M and replacement costs in present value, after-tax for the third-party "
                                   "developer. Only calculated in the third-party case."),
                   "units": "$"
-                 }
+                 },
+                "additional_cap_costs_us_dollars": {
+                  "type": "float",
+                  "description": ("Additional capital costs as specified by the user."),
+                  "units": "$"
+                },
+                "total_annual_cost_us_dollars": {
+                  "type": "float",
+                  "description": ("Life-cycle sum of all annual costs."),
+                  "units": "$"
+                },
+                "microgrid_lcoe_us_dollars_per_kwh": {
+                  "type": "float",
+                  "description": ("Cost reflective tariff of the off-grid system in USD/kWh. In off-grid analyses only."),
+                  "units": "$"
+                },
+                "lcoe_component_fuel_us_dollars_per_kwh": {
+                  "type": "float",
+                  "description": ("Fuel component of the LCOE in USD/kWh. In off-grid analyses only."),
+                  "units": "$"
+                },
+                "lcoe_component_re_capex_us_dollars_per_kwh": {
+                  "type": "float",
+                  "description": ("Renewable energy CAPEX component of the LCOE in USD/kWh. In off-grid analyses only."),
+                  "units": "$"
+                },
+                "lcoe_component_diesel_capex_us_dollars_per_kwh": {
+                  "type": "float",
+                  "description": ("Diesel CAPEX component of the LCOE in USD/kWh. In off-grid analyses only."),
+                  "units": "$"
+                },
+                "lcoe_component_other_capex_us_dollars_per_kwh": {
+                  "type": "float",
+                  "description": ("Other CAPEX component of the LCOE in USD/kWh. In off-grid analyses only."),
+                  "units": "$"
+                },
+                "lcoe_component_om_us_dollars_per_kwh": {
+                  "type": "float",
+                  "description": ("O&M cost component of the LCOE in USD/kWh. In off-grid analyses only."),
+                  "units": "$"
+                },
+                "lcoe_component_other_annual_costs_us_dollars_per_kwh": {
+                  "type": "float",
+                  "description": ("Other annual cost component of the LCOE in USD/kWh. In off-grid analyses only."),
+                  "units": "$"
+                }
               },
 
               "PV": {
@@ -660,6 +740,16 @@ nested_output_definitions = {
                   "description": "Year one PV power curtailed during outage time series",
                   "units": "kW"
                 },
+                "sr_required_series_kw": {
+                  "type": "list_of_float",
+                  "description": "Spinning reserve requirement for PV serving load in each time step",
+                  "units": "kW"
+                },
+                "sr_provided_series_kw": {
+                  "type": "list_of_float",
+                  "description": "Spinning reserve provided by the PV system in each time step",
+                  "units": "kW"
+                }
               },
 
               "Wind": {
@@ -707,7 +797,7 @@ nested_output_definitions = {
                   "type": "list_of_float",
                   "description": "Year one Wind power curtailed during outage time series",
                   "units": "kW"
-                },
+                }
               },
 
               "Storage": {
@@ -735,6 +825,11 @@ nested_output_definitions = {
                   "type": "list_of_float",
                   "description": "Year one hourly time series of battery state of charge",
                   "units": "%"
+                },
+                "sr_provided_series_kw": {
+                  "type": "list_of_float",
+                  "description": "Spinning reserve provided by the battery in each time step",
+                  "units": "kW"
                 }
               },
 
@@ -1109,6 +1204,16 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Business as usual total boiler fuel cost over the lifecycle, after-tax",
                   "units": "$"
+                },
+                "total_newboiler_fuel_cost_us_dollars": {
+                  "type": float,
+                  "description": "Total NewBoiler fuel cost over the lifecycle, after-tax",
+                  "units": "$"
+                },
+                "year_one_newboiler_fuel_cost_us_dollars": {
+                  "type": float,
+                  "description": "Year one NewBoiler fuel cost, before-tax",
+                  "units": "$"
                 }
               },
 
@@ -1218,6 +1323,16 @@ nested_output_definitions = {
                   "description": "Year one fuel cost for existing diesel generator system",
                   "units": "$"
                 },
+                "sr_provided_series_kw": {
+                  "type": "list_of_float",
+                  "description": "Spinning reserve provided by the generator in each time step",
+                  "units": "kW"
+                },
+                "fuel_used_series_gal": {
+                  "type": "list_of_float",
+                  "description": "Temp variable for fuel usage at each hour",
+                  "units": "US gallons"
+                },
                 "year_one_emissions_tCO2": {
                   "type": "int",
                   "description": "Total equivalent pounds of carbon dioxide emitted from generator use in the first year.",
@@ -1306,6 +1421,11 @@ nested_output_definitions = {
                   "description": "Optimal CHP prime-mover rated electric size",
                   "units": "kW"
                 },
+                "size_supplementary_firing_kw": {
+                  "type": float,
+                  "description": "Optimal CHP rated electric equivalent of supplementary firing system",
+                  "units": "kW"
+                },
                 "year_one_fuel_used_mmbtu": {
                   "type": float,
                   "description": "CHP fuel used over one year",
@@ -1349,6 +1469,11 @@ nested_output_definitions = {
                 "year_one_thermal_to_tes_series_mmbtu_per_hour": {
                   "type": list_of_float,
                   "description": "Year one hourly time series of CHP thermal to Hot TES",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_thermal_to_steamturbine_series_mmbtu_per_hour": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of CHP thermal to SteamTurbine",
                   "units": "MMBtu/hr"
                 },
                 "year_one_thermal_to_waste_series_mmbtu_per_hour": {
@@ -1426,12 +1551,17 @@ nested_output_definitions = {
                 },
                 "year_one_thermal_to_load_series_mmbtu_per_hour": {
                   "type": list_of_float,
-                  "description": "Year one hourly time series of CHP thermal to hot thermal load",
+                  "description": "Year one hourly time series of boiler thermal to hot thermal load",
                   "units": "MMBtu/hr"
                 },
                 "year_one_thermal_to_tes_series_mmbtu_per_hour": {
                   "type": list_of_float,
-                  "description": "Year one hourly time series of CHP thermal to Hot TES",
+                  "description": "Year one hourly time series of boiler thermal to Hot TES",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_thermal_to_steamturbine_series_mmbtu_per_hour": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of CHP thermal to SteamTurbine",
                   "units": "MMBtu/hr"
                 },
                 "year_one_emissions_tCO2": {
@@ -1591,7 +1721,7 @@ nested_output_definitions = {
                 "size_gal": {
                   "type": float,
                   "description": "Optimal cold TES power capacity",
-                  "units": "Ton"
+                  "units": "gal"
                 },
                 "year_one_thermal_from_cold_tes_series_ton": {
                   "type": list_of_float,
@@ -1609,7 +1739,7 @@ nested_output_definitions = {
                 "size_gal": {
                   "type": float,
                   "description": "Optimal hot TES power capacity",
-                  "units": "MMBtu/hr"
+                  "units": "gal"
                 },
                 "year_one_thermal_from_hot_tes_series_mmbtu_per_hr": {
                   "type": list_of_float,
@@ -1621,10 +1751,131 @@ nested_output_definitions = {
                   "description": "Year one hourly time series of hot TES state of charge",
                   "units": "%"
                 }
-            }
-          }
-        }
-      },
+            	},
+              "NewBoiler": {
+                "size_mmbtu_per_hr": {
+                  "type": float,
+                  "description": "Optimal NewBoiler thermal power capacity",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_boiler_fuel_consumption_series_mmbtu_per_hr": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of NewBoiler fuel consumption",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_boiler_thermal_production_series_mmbtu_per_hr": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of NewBoiler thermal production",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_boiler_fuel_consumption_mmbtu": {
+                  "type": float,
+                  "description": "Annual average NewBoiler fuel consumption",
+                  "units": "MMBtu"
+                },
+                "year_one_boiler_thermal_production_mmbtu": {
+                  "type": float,
+                  "description": "Annual average NewBoiler thermal production",
+                  "units": "MMBtu"
+                },
+                "year_one_thermal_to_load_series_mmbtu_per_hour": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of NewBoiler thermal to hot thermal load",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_thermal_to_tes_series_mmbtu_per_hour": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of NewBoiler thermal to Hot TES",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_thermal_to_steamturbine_series_mmbtu_per_hour": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of NewBoiler thermal to SteamTurbine",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_emissions_lb_C02": {
+                  "type": int,
+                  "description": "Total equivalent pounds of carbon dioxide emitted from NewBoiler fuels consumed on site use in the first year.",
+                  "units": "hours"
+                }
+            	},
+              "SteamTurbine": {
+                "size_kw": {
+                  "type": float,
+                  "description": "Optimal SteamTurbine rated electric size",
+                  "units": "kW"
+                },
+                "year_one_thermal_consumption_mmbtu": {
+                  "type": float,
+                  "description": "SteamTurbine thermal consumed used over one year",
+                  "units": "MMBtu"
+                },
+                "year_one_electric_energy_produced_kwh": {
+                  "type": float,
+                  "description": "Year one electric energy produced by SteamTurbine",
+                  "units": "kWh"
+                },
+                "year_one_thermal_energy_produced_mmbtu": {
+                  "type": float,
+                  "description": "Year one thermal energy produced by SteamTurbine",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_thermal_consumption_series_mmbtu_per_hr": {
+                  "type": float,
+                  "description": "Year one SteamTurbine thermal production time series",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_electric_production_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one SteamTurbine electric production time series",
+                  "units": "kW"
+                },
+                "year_one_to_battery_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of SteamTurbine charging battery",
+                  "units": "kW"
+                },
+                "year_one_to_load_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one SteamTurbine to electric load time series.",
+                  "units": "kW"
+                },
+                "year_one_to_grid_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of SteamTurbine exporting to grid",
+                  "units": "kW"
+                },
+                "year_one_thermal_to_load_series_mmbtu_per_hour": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of SteamTurbine thermal to hot thermal load",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_thermal_to_tes_series_mmbtu_per_hour": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of SteamTurbine thermal to Hot TES",
+                  "units": "MMBtu/hr"
+                }
+            	},
+              "GHP": {
+                "ghp_chosen_uuid": {
+                  "type": "str",
+                  "description": "Unique id",
+                  "units": "none"
+                },
+                "ghpghx_chosen_outputs": {
+                    "type": "dict",
+                    "description": "Output fields from the /ghpghx make_response(ghp_chosen_uuid)",
+                    "units": "none"
+                },
+                "size_heat_pump_ton": {
+                  "type": float,
+                  "description": "Size of the aggregated heat pump based on coincident peak heating plus cooling, including a sizing factor",
+                  "units": "ton"
+                },
+              }
+          	}
+        	}
+    },
 
     "messages": {
         "warnings": {'type': "list_of_string", "description": "Warnings generated by simulation"},

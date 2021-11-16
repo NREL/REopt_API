@@ -30,6 +30,7 @@
 from reo.src.data_manager import big_number
 from reo.nested_inputs import macrs_five_year, macrs_seven_year
 from reo.utilities import convert_gal_to_kwh
+import CoolProp.CoolProp as CP
 
 
 class StorageIncentives(object):
@@ -120,21 +121,21 @@ class HotTES(object):
     All default values in kwargs set by validator using nested_input_definitions.
     """
 
-    # Convert units based on gal to kWht (kWh "thermal), assumes a delta-T in the tank of 20F
-    delta_T_degF = 180.0 - 160.0  # [F]        
-    avg_cp_kj_per_kgK = 4.194  # [kJ/kg-K] Estimate at 170 degF
-    avg_rho_kg_per_m3 = 973.728  # [kg/m^3] Estimate at 170 degF
-    gal_to_kwh_conversion = convert_gal_to_kwh(delta_T_degF = delta_T_degF,
-                                                rho_kg_per_m3 = avg_rho_kg_per_m3,
-                                                cp_kj_per_kgK = avg_cp_kj_per_kgK)
-
     def __init__(self, dfm, **kwargs):
 
         # Assign all items in kwargs explicitly to the class
         for key, value in kwargs.items():
             setattr(self, key, value) 
- 
-        self.gal_to_kwh_conversion = HotTES.gal_to_kwh_conversion
+        
+        # Convert units based on gal to kWht (kWh "thermal)
+        delta_T_degF = self.hot_supply_water_temp_degF - self.cooled_return_water_temp_degF  # [F]
+        avg_cp_kj_per_kgK = (CP.PropsSI("CPMASS","P",101325.0,"T",(self.hot_supply_water_temp_degF-32)*5.0/9.0+273.15,"Water") + \
+                                CP.PropsSI("CPMASS","P",101325.0,"T",(self.cooled_return_water_temp_degF-32)*5.0/9.0+273.15,"Water")) / 2.0 / 1000.0  # [kJ/kg-K]
+        avg_rho_kg_per_m3 = (CP.PropsSI("DMASS","P",101325.0,"T",(self.hot_supply_water_temp_degF-32)*5.0/9.0+273.15,"Water") + \
+                                CP.PropsSI("DMASS","P",101325.0,"T",(self.cooled_return_water_temp_degF-32)*5.0/9.0+273.15,"Water")) / 2.0 # [kg/m^3]
+        self.gal_to_kwh_conversion = convert_gal_to_kwh(delta_T_degF = delta_T_degF,
+                                                    rho_kg_per_m3 = avg_rho_kg_per_m3,
+                                                    cp_kj_per_kgK = avg_cp_kj_per_kgK)        
 
         self.min_kwh = self.min_gal * self.gal_to_kwh_conversion
         self.max_kwh = self.max_gal * self.gal_to_kwh_conversion
@@ -152,21 +153,21 @@ class ColdTES(object):
     All default values in kwargs set by validator using nested_input_definitions.
     """
 
-    # Convert units based on gal to kWht (kWh "thermal), assumes a delta-T in the tank of 12F
-    delta_T_degF = 56.0 - 44.0  # [F]
-    avg_cp_kj_per_kgK = 4.195  # [kJ/kg-K] Estimate at 50 degF
-    avg_rho_kg_per_m3 = 999.702  # [kg/m^3] Estimate at 50 degF
-    gal_to_kwh_conversion = convert_gal_to_kwh(delta_T_degF = delta_T_degF,
-                                                rho_kg_per_m3 = avg_rho_kg_per_m3,
-                                                cp_kj_per_kgK = avg_cp_kj_per_kgK) 
-
     def __init__(self, dfm, **kwargs):
 
         # Assign all items in kwargs explicitly to the class
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-        self.gal_to_kwh_conversion = ColdTES.gal_to_kwh_conversion
+        # Convert units based on gal to kWht (kWh "thermal)
+        delta_T_degF = self.warmed_return_water_temp_degF - self.chilled_supply_water_temp_degF  # [F]
+        avg_cp_kj_per_kgK = (CP.PropsSI("CPMASS","P",101325.0,"T",(self.warmed_return_water_temp_degF-32)*5.0/9.0+273.15,"Water") + \
+                                CP.PropsSI("CPMASS","P",101325.0,"T",(self.chilled_supply_water_temp_degF-32)*5.0/9.0+273.15,"Water")) / 2.0 / 1000.0  # [kJ/kg-K]
+        avg_rho_kg_per_m3 = (CP.PropsSI("DMASS","P",101325.0,"T",(self.warmed_return_water_temp_degF-32)*5.0/9.0+273.15,"Water") + \
+                                CP.PropsSI("DMASS","P",101325.0,"T",(self.chilled_supply_water_temp_degF-32)*5.0/9.0+273.15,"Water")) / 2.0 # [kg/m^3]
+        self.gal_to_kwh_conversion = convert_gal_to_kwh(delta_T_degF = delta_T_degF,
+                                                    rho_kg_per_m3 = avg_rho_kg_per_m3,
+                                                    cp_kj_per_kgK = avg_cp_kj_per_kgK) 
 
         self.min_kwht = self.min_gal * self.gal_to_kwh_conversion
         self.max_kwht = self.max_gal * self.gal_to_kwh_conversion

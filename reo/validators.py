@@ -30,7 +30,7 @@
 import numpy as np
 import pandas as pd
 from .urdb_logger import log_urdb_errors
-from .nested_inputs import nested_input_definitions, list_of_float, list_of_str, list_of_int, list_of_list, list_of_dict
+from .nested_inputs import nested_input_definitions, list_of_float, list_of_str, list_of_int, list_of_list, list_of_dict, off_grid_defaults
 #Note: list_of_float is actually needed
 import os
 import csv
@@ -38,8 +38,8 @@ import copy
 from reo.src.urdb_rate import Rate
 import re
 import uuid
-from reo.src.techs import Generator, Boiler, CHP, AbsorptionChiller
-from reo.src.emissions_calculator import EmissionsCalculator ##, EmissionsCalculator_NOx, EmissionsCalculator_SO2, EmissionsCalculator_PM25
+from reo.src.techs import Generator, Boiler, CHP, AbsorptionChiller, SteamTurbine
+from reo.src.emissions_calculator import EmissionsCalculator
 from reo.utilities import generate_year_profile_hourly
 from reo.src.pyeasiur import *
 
@@ -425,14 +425,15 @@ class ValidateNestedInput:
                 "natural_gas":116.9,
                 "landfill_bio_gas":114.8,
                 "propane":138.6,
-                "diesel_oil": 163.1
+                "diesel_oil": 163.1,
+                "uranium": 0.0
             }
 
     # lbs CO2 per gallon
     fuel_conversion_lb_CO2_per_gal = {
                 'diesel_oil':22.51
             }
-    
+
     # NOx fuel conversion
     fuel_conversion_lb_NOx_per_mmbtu = {
                 "natural_gas":0.09139,
@@ -472,27 +473,47 @@ class ValidateNestedInput:
                 'diesel_oil':0.0
             }
 
-    def __init__(self, input_dict):
+    def __init__(self, input_dict, ghpghx_inputs_validation_errors=None):
         self.list_or_dict_objects = ['PV']
-        self.nested_input_definitions = nested_input_definitions
+        self.nested_input_definitions = copy.deepcopy(nested_input_definitions)
         self.input_data_errors = []
         self.urdb_errors = []
+        self.ghpghx_inputs_errors = ghpghx_inputs_validation_errors
         self.input_as_none = []
         self.invalid_inputs = []
         self.resampled_inputs = []
-        self.emission_warning = [] ## I defined this the same way for NOx, might cause an error 
+        self.emission_warning = [] ## I defined this the same way for NOx, might cause an error
         self.defaults_inserted = []
         self.emission_warning = []
         self.general_warnings = []
         self.input_dict = dict()
+        self.off_grid_flag = False
         if type(input_dict) is not dict:
             self.input_data_errors.append(("POST must contain a valid JSON formatted according to format described in "
                                            "https://developer.nrel.gov/docs/energy-optimization/reopt-v1/"))
         else:        
             self.input_dict['Scenario'] = input_dict.get('Scenario') or {}
+            self.off_grid_flag = input_dict['Scenario'].get('off_grid_flag') or False
             for k,v in input_dict.items():
                 if k != 'Scenario':
                     self.invalid_inputs.append([k, ["Top Level"]])
+
+            # Replace defaults with offgrid inputs if an offgrid run is selected
+            if self.off_grid_flag:
+                for i in off_grid_defaults.keys(): # Scenario
+                    for j in off_grid_defaults[i].keys(): # Site
+                        if self.isAttribute(j):
+                            self.nested_input_definitions[i][j] = off_grid_defaults[i][j]
+                        else:
+                            for k in off_grid_defaults[i][j].keys():
+                                if self.isAttribute(k):
+                                    self.nested_input_definitions[i][j][k] = off_grid_defaults[i][j][k]
+                                else:
+                                    for l in off_grid_defaults[i][j][k].keys():
+                                        if self.isAttribute(l):
+                                            self.nested_input_definitions[i][j][k][l] = off_grid_defaults[i][j][k][l]
+                                        else:
+                                            self.input_data_errors.append('Error with offgrid default values definition.')
 
             self.check_object_types(self.input_dict)
         if self.isValid:
@@ -517,9 +538,22 @@ class ValidateNestedInput:
             self.input_dict["Scenario"]["Site"]["LoadProfile"].pop("outage_start_hour", None)
             self.input_dict["Scenario"]["Site"]["LoadProfile"].pop("outage_end_hour", None)
 
+            if self.off_grid_flag:
+                self.input_dict["Scenario"]["Site"]["LoadProfile"]["outage_start_time_step"] = 1
+                if self.input_dict["Scenario"]["time_steps_per_hour"] == 4:
+                    self.input_dict["Scenario"]["Site"]["LoadProfile"]["outage_end_time_step"] = 35040
+                elif self.input_dict["Scenario"]["time_steps_per_hour"] == 2:
+                    self.input_dict["Scenario"]["Site"]["LoadProfile"]["outage_end_time_step"] = 17520
+                else:
+                    self.input_dict["Scenario"]["Site"]["LoadProfile"]["outage_end_time_step"] = 8760
+            # else:
+                # Sets diesel fuel escalation to the electricity escalation rate
+                # TODO: remove with next major UI update
+                self.input_dict["Scenario"]["Site"]["Financial"]["generator_fuel_escalation_pct"] = \
+                    self.input_dict["Scenario"]["Site"]["Financial"]["escalation_pct"]
     @property
     def isValid(self):
-        if self.input_data_errors or self.urdb_errors:
+        if self.input_data_errors or self.urdb_errors or self.ghpghx_inputs_errors:
             return False
 
         return True
@@ -555,16 +589,19 @@ class ValidateNestedInput:
     def errors(self):
         output = {}
 
-        if self.input_data_errors:
+        if self.input_data_errors or self.urdb_errors or self.ghpghx_inputs_errors:
             output["error"] = "Invalid inputs. See 'input_errors'."
-            output["input_errors"] = self.input_data_errors
+            if self.input_data_errors:
+                output["input_errors"] = self.input_data_errors
+            else:
+                output["input_errors"] = []
 
-        if self.urdb_errors and self.input_data_errors:
-            output["input_errors"] += ['URDB Rate: ' + ' '.join(self.urdb_errors)]
+            inner_error_map = [("URDB Rate: ","urdb_errors"),
+                               ("GHPGHX Inputs: ","ghpghx_inputs_errors")]
 
-        elif self.urdb_errors:
-            output["error"] = "Invalid inputs. See 'input_errors'."
-            output["input_errors"] = ['URDB Rate: ' + ' '.join(self.urdb_errors)]
+            for error in inner_error_map:
+                if eval("self." + error[1]):
+                    output["input_errors"] += [error[0] + " ".join(eval("self." + error[1]))]
 
         return output
 
@@ -1187,28 +1224,28 @@ class ValidateNestedInput:
                                 if template_values[k]['default'] != v:
                                     user_supplied_chp_inputs = True
 
-                            # check the special case default for CO2 emissions 
+                            # check the special case default for CO2 emissions
                             elif k == 'emissions_factor_lb_CO2_per_mmbtu':
                                 fuel = self.input_dict['Scenario']['Site']['FuelTariff'].get('chp_fuel_type')
                                 if fuel is not None:
                                     if v != self.fuel_conversion_lb_CO2_per_mmbtu[fuel]:
                                         user_supplied_chp_inputs = True
 
-                            # check the special case default for NOx emissions 
+                            # check the special case default for NOx emissions
                             elif k == 'emissions_factor_lb_NOx_per_mmbtu':
                                 fuel = self.input_dict['Scenario']['Site']['FuelTariff'].get('chp_fuel_type')
                                 if fuel is not None:
                                     if v != self.fuel_conversion_lb_NOx_per_mmbtu[fuel]:
                                         user_supplied_chp_inputs = True
 
-                            # check the special case default for SO2 emissions 
+                            # check the special case default for SO2 emissions
                             elif k == 'emissions_factor_lb_SO2_per_mmbtu':
                                 fuel = self.input_dict['Scenario']['Site']['FuelTariff'].get('chp_fuel_type')
                                 if fuel is not None:
                                     if v != self.fuel_conversion_lb_SO2_per_mmbtu[fuel]:
                                         user_supplied_chp_inputs = True
-                            
-                            # check the special case default for PM2.5 emissions 
+
+                            # check the special case default for PM2.5 emissions
                             elif k == 'emissions_factor_lb_PM25_per_mmbtu':
                                 fuel = self.input_dict['Scenario']['Site']['FuelTariff'].get('chp_fuel_type')
                                 if fuel is not None:
@@ -1250,15 +1287,15 @@ class ValidateNestedInput:
                 # If user has not supplied CO2 emissions rate
                 if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_CO2_per_gal') is None:
                     self.update_attribute_value(object_name_path, number, 'emissions_factor_lb_CO2_per_gal', self.fuel_conversion_lb_CO2_per_gal.get('diesel_oil'))
-                
+
                 # If user has not supplied NOx emissions rate
                 if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_NOx_per_gal') is None:
                     self.update_attribute_value(object_name_path, number, 'emissions_factor_lb_NOx_per_gal', self.fuel_conversion_lb_NOx_per_gal.get('diesel_oil'))
-                
+
                 # If user has not supplied SO2 emissions rate
                 if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_SO2_per_gal') is None:
                     self.update_attribute_value(object_name_path, number, 'emissions_factor_lb_SO2_per_gal', self.fuel_conversion_lb_SO2_per_gal.get('diesel_oil'))
-                
+
                 # If user has not supplied PM25 emissions rate
                 if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_PM25_per_gal') is None:
                     self.update_attribute_value(object_name_path, number, 'emissions_factor_lb_PM25_per_gal', self.fuel_conversion_lb_PM25_per_gal.get('diesel_oil'))
@@ -1337,15 +1374,15 @@ class ValidateNestedInput:
 
             ts_per_hour = self.input_dict['Scenario'].get('time_steps_per_hour') or \
                                     self.nested_input_definitions['Scenario']['time_steps_per_hour']['default']
-            
-            
+
+
             for key_name in ['emissions_factor_series_lb_CO2_per_kwh', 'emissions_factor_series_lb_NOx_per_kwh',
             'emissions_factor_series_lb_SO2_per_kwh', 'emissions_factor_series_lb_PM25_per_kwh']:
-                
+
                 # If user supplies single emissions rate
                 if len(electric_tariff.get(key_name) or []) == 1:
                     emissions_series = electric_tariff.get(key_name) * 8760 * ts_per_hour
-                        
+
                     electric_tariff[key_name] = emissions_series
                     self.update_attribute_value(object_name_path, number, key_name, emissions_series)
 
@@ -1353,7 +1390,7 @@ class ValidateNestedInput:
                 elif (len(electric_tariff.get(key_name) or []) == 0):
                     if (self.input_dict['Scenario']['Site'].get('latitude') is not None) and \
                         (self.input_dict['Scenario']['Site'].get('longitude') is not None):
-                        if 'CO2' in key_name: 
+                        if 'CO2' in key_name:
                             pollutant = 'CO2'
                         elif 'NOx' in key_name:
                             pollutant = 'NOx'
@@ -1361,7 +1398,7 @@ class ValidateNestedInput:
                             pollutant = 'SO2'
                         elif 'PM25' in key_name:
                             pollutant = 'PM25'
-                        ec = EmissionsCalculator(   latitude=self.input_dict['Scenario']['Site']['latitude'], 
+                        ec = EmissionsCalculator(   latitude=self.input_dict['Scenario']['Site']['latitude'],
                                                         longitude=self.input_dict['Scenario']['Site']['longitude'],
                                                         pollutant = pollutant,
                                                         time_steps_per_hour = ts_per_hour)
@@ -1372,19 +1409,19 @@ class ValidateNestedInput:
                         except AttributeError as e:
                             # Emissions warning is a specific type of warning that we check for and display to the users when it occurs
                             # since at this point the emissions are not required to do a run it simply
-                            # tells the user why we could not get an emission series and results in emissions not being 
+                            # tells the user why we could not get an emission series and results in emissions not being
                             # calculated, but does not prevent the run from optimizing
                             self.emission_warning = str(e.args[0])
 
                         if emissions_series is not None:
-                            self.update_attribute_value(object_name_path, number, key_name, 
+                            self.update_attribute_value(object_name_path, number, key_name,
                                 emissions_series)
-                            self.update_attribute_value(object_name_path, number, 'emissions_region', 
+                            self.update_attribute_value(object_name_path, number, 'emissions_region',
                                 emissions_region)
                 else:
-                    self.validate_8760(electric_tariff[key_name], 
-                        "ElectricTariff", 
-                        key_name, 
+                    self.validate_8760(electric_tariff[key_name],
+                        "ElectricTariff",
+                        key_name,
                         self.input_dict['Scenario']['time_steps_per_hour'])
 
             if electric_tariff.get('urdb_response') is not None:
@@ -1476,7 +1513,7 @@ class ValidateNestedInput:
                     self.input_data_errors.append((
                         'add_blended_rates_to_urdb_rate is set to "true" yet missing valid entries for the '
                         'following inputs: {}').format(', '.join(missing_keys)))
-            
+
             for key_name in ['wholesale_rate_us_dollars_per_kwh',
                                 'wholesale_rate_above_site_load_us_dollars_per_kwh']:
                 if type(electric_tariff.get(key_name)) == list:
@@ -1578,7 +1615,7 @@ class ValidateNestedInput:
                 # If an empty dictionary comes in - assume no load by default
                 no_values_given = True
                 for k, v in real_values.items():
-                    if v not in [None, []] and v != template_values[k].get('default'):
+                    if v not in [None, []] and v not in [template_values[k].get('default'), [template_values[k].get('default')]]:
                         no_values_given = False
                 if no_values_given:
                     self.update_attribute_value(object_name_path, number, 'loads_mmbtu_per_hour', list(np.concatenate(
@@ -1586,9 +1623,12 @@ class ValidateNestedInput:
                     self.defaults_inserted.append(['loads_mmbtu_per_hour', object_name_path])
                 # If a dictionary comes in with vaues and no doe reference name then use the electric load profile building type by default
                 if not no_values_given and real_values.get('doe_reference_name') is None:
-                    self.update_attribute_value(object_name_path, number, 'doe_reference_name',
-                                                self.input_dict['Scenario']['Site']['LoadProfile'].get(
-                                                    'doe_reference_name'))
+                    if self.input_dict['Scenario']['Site']['LoadProfile'].get('doe_reference_name') is not None:
+                        self.update_attribute_value(object_name_path, number, 'doe_reference_name',
+                                                self.input_dict['Scenario']['Site']['LoadProfile'].get('doe_reference_name'))
+                    else:
+                        self.input_data_errors.append(
+                        'The doe_reference_name must be provided for LoadProfileBoilerFuel')
                 if real_values.get('doe_reference_name') is not None:
                     if type(real_values['doe_reference_name']) is not list:
                         self.update_attribute_value(object_name_path, number, 'doe_reference_name', [real_values['doe_reference_name']])
@@ -1640,7 +1680,7 @@ class ValidateNestedInput:
             if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_CO2_per_gal') is None:
                     self.update_attribute_value(object_name_path[:-1] + ['Generator'],  number, \
                         'emissions_factor_lb_CO2_per_gal', self.fuel_conversion_lb_CO2_per_gal.get('diesel_oil'))
-            
+
             # If user has not supplied a NOx emissions factor
             if self.input_dict['Scenario']['Site']['CHP'].get('emissions_factor_lb_NOx_per_mmbtu') is None:
                 chp_fuel = real_values.get('chp_fuel_type')
@@ -1690,39 +1730,42 @@ class ValidateNestedInput:
                         'emissions_factor_lb_PM25_per_gal', self.fuel_conversion_lb_PM25_per_gal.get('diesel_oil'))
 
         if object_name_path[-1] == "Boiler":
-                if self.isValid:
-                    # Set default boiler efficiency based on CHP prime mover value or boiler type, if not defined by user
-                    boiler_effic_by_type_defaults = copy.deepcopy(Boiler.boiler_efficiency_defaults)
-                    boiler_type_by_chp_pm_defaults = copy.deepcopy(Boiler.boiler_type_by_chp_prime_mover_defaults)
-                    hw_or_steam_user_input = real_values.get('existing_boiler_production_type_steam_or_hw')
-                    boiler_effic_user_input = real_values.get('boiler_efficiency')
-                    chp_prime_mover = self.input_dict['Scenario']['Site']['CHP'].get("prime_mover")
-                    if boiler_effic_user_input is None:
-                        if hw_or_steam_user_input is not None:
-                            hw_or_steam = hw_or_steam_user_input
-                            boiler_effic = boiler_effic_by_type_defaults[hw_or_steam]
-                            self.update_attribute_value(object_name_path, number,
-                                                        'boiler_efficiency',
-                                                        boiler_effic)
-                        elif chp_prime_mover is not None:
+            if self.isValid:
+                # Set default boiler efficiency based on CHP prime mover value or boiler type, if not defined by user
+                boiler_effic_by_type_defaults = copy.deepcopy(Boiler.boiler_efficiency_defaults)
+                boiler_type_by_chp_pm_defaults = copy.deepcopy(Boiler.boiler_type_by_chp_prime_mover_defaults)
+                hw_or_steam_user_input = real_values.get('existing_boiler_production_type_steam_or_hw')
+                boiler_effic_user_input = real_values.get('boiler_efficiency')
+                chp_prime_mover = self.input_dict['Scenario']['Site']['CHP'].get("prime_mover")
+                if boiler_effic_user_input is None:
+                    if hw_or_steam_user_input is not None:
+                        hw_or_steam = hw_or_steam_user_input
+                        boiler_effic = boiler_effic_by_type_defaults[hw_or_steam]
+                        self.update_attribute_value(object_name_path, number,
+                                                    'boiler_efficiency',
+                                                    boiler_effic)
+                    else:
+                        if chp_prime_mover is not None:
                             hw_or_steam = boiler_type_by_chp_pm_defaults[chp_prime_mover]
-                            boiler_effic = boiler_effic_by_type_defaults[hw_or_steam]
-                            self.update_attribute_value(object_name_path, number,
-                                                        'existing_boiler_production_type_steam_or_hw',
-                                                        hw_or_steam)
-                            self.update_attribute_value(object_name_path, number,
-                                                        'boiler_efficiency',
-                                                        boiler_effic)
+                        else:
+                            hw_or_steam = "hot_water"
+                        boiler_effic = boiler_effic_by_type_defaults[hw_or_steam]
+                        self.update_attribute_value(object_name_path, number,
+                                                    'existing_boiler_production_type_steam_or_hw',
+                                                    hw_or_steam)
+                        self.update_attribute_value(object_name_path, number,
+                                                    'boiler_efficiency',
+                                                    boiler_effic)
 
         if object_name_path[-1] == "AbsorptionChiller":
-                if self.isValid:
-                    # Set default absorption chiller cost and performance based on boiler type or chp prime mover
-                    hw_or_steam_user_input = self.input_dict['Scenario']['Site']['Boiler'].get('existing_boiler_production_type_steam_or_hw')
-                    chp_prime_mover = self.input_dict['Scenario']['Site']['CHP'].get("prime_mover")
-                    if real_values.get('chiller_cop') is None:
-                        absorp_chiller_cop = AbsorptionChiller.get_absorp_chiller_cop(hot_water_or_steam=hw_or_steam_user_input,
-                                                                                        chp_prime_mover=chp_prime_mover)
-                        self.update_attribute_value(object_name_path, number, 'chiller_cop', absorp_chiller_cop)
+            if self.isValid:
+                # Set default absorption chiller cost and performance based on boiler type or chp prime mover
+                hw_or_steam_user_input = self.input_dict['Scenario']['Site']['Boiler'].get('existing_boiler_production_type_steam_or_hw')
+                chp_prime_mover = self.input_dict['Scenario']['Site']['CHP'].get("prime_mover")
+                if real_values.get('chiller_cop') is None:
+                    absorp_chiller_cop = AbsorptionChiller.get_absorp_chiller_cop(hot_water_or_steam=hw_or_steam_user_input,
+                                                                                    chp_prime_mover=chp_prime_mover)
+                    self.update_attribute_value(object_name_path, number, 'chiller_cop', absorp_chiller_cop)
 
         if object_name_path[-1] == "Financial":
             # Making sure discount and tax rates are correct when saved to the database later in non-third party cases, 
@@ -1732,15 +1775,15 @@ class ValidateNestedInput:
                 self.defaults_inserted.append(['owner_discount_pct',object_name_path])
                 self.update_attribute_value(object_name_path, number, 'owner_tax_pct', real_values.get("offtaker_tax_pct"))
                 self.defaults_inserted.append(['owner_tax_pct', object_name_path])
-            
+
             # Calculated social cost of emissions
             EASIUR_150m_pop2020_inc2020_dol2010 = get_EASIUR2005('p150', pop_year=2020, income_year=2020, dollar_year=2010)  # For keys in EASIUR: EASIUR_150m_pop2020_inc2020_dol2010.keys()
             EASIUR_ground_pop2020_inc2020_dol2010 = get_EASIUR2005('area', pop_year=2020, income_year=2020, dollar_year=2010)
-            
+
             lat=self.input_dict['Scenario']['Site']['latitude']
             lon=self.input_dict['Scenario']['Site']['longitude']
             # convert lon, lat to CAMx grid (x, y), specify datum. default is NAD83
-            # Note: x, y returned from g2l follows the CAMx grid convention. 
+            # Note: x, y returned from g2l follows the CAMx grid convention.
             # x and y start from 1, not zero. (x) ranges (1, ..., 148) and (y) ranges (1, ..., 112)
             x, y = g2l(lon, lat, datum='WGS84')
             x = int(round(x))
@@ -1752,25 +1795,25 @@ class ValidateNestedInput:
             # If user has not supplied nox, so2, pm25 emissions costs, look up with EASIUR code
             # Assumption: grid emissions occur at site at 150m; diesel fuelburn at 0m
             if real_values.get("nox_cost_us_dollars_per_tonne_grid") is None:
-                self.update_attribute_value(object_name_path, number, "nox_cost_us_dollars_per_tonne_grid", 
+                self.update_attribute_value(object_name_path, number, "nox_cost_us_dollars_per_tonne_grid",
                                 EASIUR_150m_pop2020_inc2020_dol2010['NOX_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
             if real_values.get("so2_cost_us_dollars_per_tonne_grid") is None:
-                self.update_attribute_value(object_name_path, number, "so2_cost_us_dollars_per_tonne_grid", 
+                self.update_attribute_value(object_name_path, number, "so2_cost_us_dollars_per_tonne_grid",
                                 EASIUR_150m_pop2020_inc2020_dol2010['SO2_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
             if real_values.get("pm25_cost_us_dollars_per_tonne_grid") is None:
-                self.update_attribute_value(object_name_path, number, "pm25_cost_us_dollars_per_tonne_grid", 
+                self.update_attribute_value(object_name_path, number, "pm25_cost_us_dollars_per_tonne_grid",
                                 EASIUR_150m_pop2020_inc2020_dol2010['PEC_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
             if real_values.get("nox_cost_us_dollars_per_tonne_onsite_fuelburn") is None:
-                self.update_attribute_value(object_name_path, number, "nox_cost_us_dollars_per_tonne_onsite_fuelburn", 
+                self.update_attribute_value(object_name_path, number, "nox_cost_us_dollars_per_tonne_onsite_fuelburn",
                                 EASIUR_ground_pop2020_inc2020_dol2010['NOX_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
             if real_values.get("so2_cost_us_dollars_per_tonne_onsite_fuelburn") is None:
-                self.update_attribute_value(object_name_path, number, "so2_cost_us_dollars_per_tonne_onsite_fuelburn", 
+                self.update_attribute_value(object_name_path, number, "so2_cost_us_dollars_per_tonne_onsite_fuelburn",
                                 EASIUR_ground_pop2020_inc2020_dol2010['SO2_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
             if real_values.get("pm25_cost_us_dollars_per_tonne_onsite_fuelburn") is None:
-                self.update_attribute_value(object_name_path, number, "pm25_cost_us_dollars_per_tonne_onsite_fuelburn", 
+                self.update_attribute_value(object_name_path, number, "pm25_cost_us_dollars_per_tonne_onsite_fuelburn",
                                 EASIUR_ground_pop2020_inc2020_dol2010['PEC_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
-            
-            # TODO: If user has not supplied nox, so2, pm25 cost escalation rates, calculate using EASIUR 
+
+            # TODO: If user has not supplied nox, so2, pm25 cost escalation rates, calculate using EASIUR
             avg_inflation_2020_2024 = 0.023
             if real_values.get("nox_cost_escalation_pct") is None:
                 dollar2010_per_tonne_in_2020 = EASIUR_150m_pop2020_inc2020_dol2010['NOX_Annual'][x - 1, y - 1]
@@ -1792,8 +1835,30 @@ class ValidateNestedInput:
                 dollar2010_per_tonne_in_2024 = EASIUR_150m_pop2024_inc2024_dol2010['PEC_Annual'][x - 1, y - 1]
                 cagr_real = (dollar2010_per_tonne_in_2024/dollar2010_per_tonne_in_2020)**(1/4)-1 # real compound annual growth rate
                 cagr_nominal = cagr_real + avg_inflation_2020_2024
-                self.update_attribute_value(object_name_path, number, "pm25_cost_escalation_pct", cagr_nominal)    
+                self.update_attribute_value(object_name_path, number, "pm25_cost_escalation_pct", cagr_nominal)
 
+        if object_name_path[-1] == "SteamTurbine":
+            if self.isValid:
+                # Fill in steam turbine defaults, if considered with size_class and/or max_kw
+                size_class = real_values.get('size_class')
+                hw_or_steam = self.input_dict['Scenario']['Site']['Boiler'].get('existing_boiler_production_type_steam_or_hw')
+                if size_class is not None:
+                    eval_st = True
+                elif real_values.get('max_kw') or 0 > 0:
+                    size_class = 0
+                    eval_st = True
+                else:
+                    eval_st = False
+                if eval_st:
+                    prime_mover_defaults = SteamTurbine.get_steam_turbine_defaults(size_class=size_class)
+                    # create an updated attribute set to check invalid combinations of input data later
+                    prime_mover_defaults.update({"size_class": size_class})
+                    updated_set = copy.deepcopy(prime_mover_defaults)
+                    for param, value in prime_mover_defaults.items():
+                        if real_values.get(param) is None or param == "max_kw":
+                            self.update_attribute_value(object_name_path, number, param, value)
+                        else:
+                            updated_set[param] = real_values.get(param)
 
     def check_min_max_restrictions(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
         """
@@ -2134,7 +2199,10 @@ class ValidateNestedInput:
                     message = '(' + ' OR '.join(
                         [' and '.join(missing_set) for missing_set in missing_attribute_sets]) + ')'
                     if message not in all_missing_attribute_sets:
-                        all_missing_attribute_sets.append(message)
+                        if self.off_grid_flag and 'urdb' in message:
+                            pass
+                        else:
+                            all_missing_attribute_sets.append(message)
 
         if len(all_missing_attribute_sets) > 0:
             final_message = " AND ".join(all_missing_attribute_sets)

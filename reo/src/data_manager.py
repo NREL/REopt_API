@@ -32,7 +32,7 @@ import copy
 from reo.src.urdb_parse import UrdbParse
 from reo.src.fuel_params import FuelParams
 from reo.utilities import annuity, annuity_two_escalation_rates, degradation_factor, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
-    insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, annuity_escalation, MMBTU_TO_KWH, GAL_DIESEL_TO_KWH
+    insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, setup_capital_cost_offgrid, annuity_escalation, MMBTU_TO_KWH, GAL_DIESEL_TO_KWH
 import numpy as np
 max_incentive = 1.0e10
 
@@ -72,11 +72,19 @@ class DataManager:
         self.elec_tariff = None
         self.fuel_tariff = None
         self.load = None
+        self.heating_load_space_heating = None
+        self.heating_load_dhw = None
         self.heating_load = None
         self.cooling_load = None
         self.reopt_inputs = None
         self.reopt_inputs_bau = None
         self.add_soc_incentive = None
+        self.newboiler = None
+        self.steamturbine = None
+        self.ghp_option_list = []  # Not adding to the Tech list
+        self.ghp_cost = []
+        self.tes_kwh_to_gal = {}
+        self.off_grid_flag = None
         self.include_climate_in_objective = None
         self.include_health_in_objective = None
 
@@ -89,12 +97,13 @@ class DataManager:
         self.year_one_demand_cost_series_us_dollars_per_kw = []
 
         self.available_techs = ['pv1', 'pv1nm', 'wind', 'windnm', 'generator', 'chp', 'boiler',
-                                'elecchl', 'absorpchl']  # order is critical for REopt! Note these are passed to reopt.jl as uppercase
+                                'elecchl', 'absorpchl', 'newboiler', 'steamturbine']  # order is critical for REopt! Note these are passed to reopt.jl as uppercase
         self.available_tech_classes = ['PV1', 'WIND', 'GENERATOR', 'CHP', 'BOILER',
-                                       'ELECCHL', 'ABSORPCHL']  # this is a REopt 'class', not a python class
+                                       'ELECCHL', 'ABSORPCHL', 'NEWBOILER', 'STEAMTURBINE']  # this is a REopt 'class', not a python class
         self.bau_techs = []
         self.NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
         self.fuel_burning_techs = ['GENERATOR', 'CHP']
+        self.ghp_uuid_list = []
 
         self.run_id = run_id
         self.user_id = user_id
@@ -110,10 +119,11 @@ class DataManager:
         self.LoadProfile["annual_kwh"] = load.annual_kwh
         self.load = load
 
-    def add_load_boiler_fuel(self, load):
-        self.LoadProfile["year_one_boiler_fuel_load_series_mmbtu_per_hr"] = load.load_list
-        self.LoadProfile["annual_heating_mmbtu"] = load.annual_mmbtu
-        self.heating_load = load
+    def add_load_boiler_fuel_space_heating(self, load):
+        self.heating_load_space_heating = load
+
+    def add_load_boiler_fuel_dhw(self, load):
+        self.heating_load_dhw = load
 
     def add_load_chiller_thermal(self, load):
         self.LoadProfile["year_one_chiller_electric_load_series_kw"] = list(np.array(load.load_list) / load.chiller_cop)
@@ -192,10 +202,12 @@ class DataManager:
 
     def add_hot_tes(self, hot_tes):
         self.hot_tes = hot_tes
+        self.tes_kwh_to_gal["HotTES"] = 1.0 / self.hot_tes.gal_to_kwh_conversion
         # All attributes are written in finalize method because they are stacked 1..2 for hot_tes..cold_tes storages
 
     def add_cold_tes(self, cold_tes):
         self.cold_tes = cold_tes
+        self.tes_kwh_to_gal["ColdTES"] = 1.0 / self.cold_tes.gal_to_kwh_conversion
         # All attributes are written in finalize method because they are stacked 1..2 for hot_tes..cold_tes storages
 
     def add_elec_tariff(self, elec_tariff):
@@ -204,17 +216,33 @@ class DataManager:
     def add_fuel_tariff(self, fuel_tariff):
         self.fuel_tariff = fuel_tariff
 
+    def add_newboiler(self, newboiler):
+        self.newboiler = newboiler
+
+    def add_steamturbine(self, steamturbine):
+        self.steamturbine = steamturbine
+
+    def add_ghp(self, ghp):
+        self.ghp_option_list.append(ghp)
+        self.ghp_uuid_list.append(ghp.ghp_uuid)
+        self.ghp_cost.append({"installed_cost_dollars": ghp.installed_cost_us_dollars_per_kw[0] +
+                                                        ghp.installed_cost_us_dollars_per_kw[1] *
+                                                        ghp.heatpump_capacity_tons,
+                              "om_cost_year_one_dollars": ghp.om_cost_year_one})
+
     def _get_REopt_pwfs(self, techs):
         sf = self.site.financial
         pwf_owner = annuity(sf.analysis_years, 0, sf.owner_discount_pct) # not used in REopt
         pwf_offtaker = annuity(sf.analysis_years, 0, sf.offtaker_discount_pct)  # not used in REopt
         pwf_om = annuity(sf.analysis_years, sf.om_cost_escalation_pct, sf.owner_discount_pct)
         pwf_e = annuity(sf.analysis_years, sf.escalation_pct, sf.offtaker_discount_pct)
+        pwf_generator_fuel = annuity(sf.analysis_years, sf.generator_fuel_escalation_pct, sf.offtaker_discount_pct)
         pwf_boiler_fuel = annuity(sf.analysis_years, sf.boiler_fuel_escalation_pct, sf.offtaker_discount_pct)
         pwf_chp_fuel = annuity(sf.analysis_years, sf.chp_fuel_escalation_pct, sf.offtaker_discount_pct)
+        pwf_newboiler_fuel = annuity(sf.analysis_years, sf.newboiler_fuel_escalation_pct, sf.offtaker_discount_pct)
         self.pwf_e = pwf_e
         # pwf_op = annuity(sf.analysis_years, sf.escalation_pct, sf.owner_discount_pct)
-        
+
         # Emissions pwfs
         pwfs_emissions_cost = {
             'CO2_grid': annuity_two_escalation_rates(sf.analysis_years, sf.co2_cost_escalation_pct, -1 * self.elec_tariff.emissions_factor_CO2_pct_decrease, sf.offtaker_discount_pct),
@@ -261,12 +289,17 @@ class DataManager:
                 # Assign pwf_fuel_by_tech
                 if tech in ['chp', 'chpnm']:
                     pwf_fuel_by_tech.append(round(pwf_chp_fuel, 5))
+                elif tech == 'generator':
+                    pwf_fuel_by_tech.append(round(pwf_generator_fuel, 5))
                 elif tech == 'boiler':
                     pwf_fuel_by_tech.append(round(pwf_boiler_fuel, 5))
+                elif tech == 'newboiler':
+                    pwf_fuel_by_tech.append(round(pwf_newboiler_fuel, 5))
                 else:
                     pwf_fuel_by_tech.append(round(pwf_e, 5))
 
-        return levelization_factor, pwf_e, pwf_om, two_party_factor, pwf_boiler_fuel, pwf_chp_fuel, pwf_fuel_by_tech, pwfs_emissions_cost, pwfs_grid_emissions_lbs
+        return levelization_factor, pwf_e, pwf_om, two_party_factor, pwf_boiler_fuel, pwf_chp_fuel, pwf_fuel_by_tech, \
+               pwfs_emissions_cost, pwfs_grid_emissions_lbs, pwf_owner, pwf_offtaker
 
     def _get_REopt_production_incentives(self, techs):
         sf = self.site.financial
@@ -280,7 +313,7 @@ class DataManager:
 
             if eval('self.' + tech) is not None:
 
-                if tech not in ['generator', 'boiler', 'elecchl', 'absorpchl']:
+                if tech not in ['generator', 'boiler', 'elecchl', 'absorpchl', 'newboiler', 'steamturbine']:
 
                     # prod incentives don't need escalation
                     if tech.startswith("pv"):  # PV has degradation
@@ -311,6 +344,52 @@ class DataManager:
 
         return pwf_prod_incent, max_prod_incent, max_size_for_prod_incent, production_incentive_rate
 
+    def _get_cost_intercept(self, tech, y_int_cost, regions):
+        """
+        Helper function in case there is a non-zero y-intercept cost for the **first** cost segment (typically zero)
+        This y-intercept ($) is not capacity-based, so only the %-based incentives are relevant (itc and ibi_pct)
+        This must also apply MACRS tax-based adjustments from ITC, using existing functions
+        return: y_int_cost_mod: the net adjusted y_int_cost for all regions combined
+        return: p_cap_used: the amount of p_cap (percentage based max incentive) used for each region, needed to reduce the p_cap for remaining segments
+        """
+        y_int_cost_mod = y_int_cost
+        p_cap_used = {}
+
+        for region in regions[:-1]:
+            if region == 'federal':
+                region_pct = eval('self.' + tech + '.incentives.' + region + '.itc')
+                max_incent = eval('self.' + tech + '.incentives.' + region + '.itc_max')  # [$]
+            else:  # region == 'state' or region == 'utility'
+                region_pct = eval('self.' + tech + '.incentives.' + region + '.ibi')
+                max_incent = eval('self.' + tech + '.incentives.' + region + '.ibi_max')  # [$]
+
+            incent = min(y_int_cost_mod * region_pct, max_incent)
+            y_int_cost_mod -= incent
+            p_cap_used[region] = incent
+
+        # Remove federal incentives for ITC basis and tax benefit (MACRS) calculations
+        itc = eval('self.' + tech.lower() + '.incentives.federal.itc')
+        if itc is None:
+            itc = 0.0
+        if itc == 1:
+            itc_unit_basis = 0
+        else:
+            itc_unit_basis = y_int_cost_mod / (1 - itc)
+        sf = self.site.financial
+        updated_y_int_cost_mod = setup_capital_cost_incentive(
+            itc_basis=itc_unit_basis,  # input tech cost with incentives, but no ITC
+            replacement_cost=0,
+            replacement_year=sf.analysis_years,
+            discount_rate=sf.owner_discount_pct,
+            tax_rate=sf.owner_tax_pct,
+            itc=itc,
+            macrs_schedule=eval('self.' + tech + '.incentives.macrs_schedule'),
+            macrs_bonus_pct=eval('self.' + tech + '.incentives.macrs_bonus_pct'),
+            macrs_itc_reduction=eval('self.' + tech + '.incentives.macrs_itc_reduction')
+        )
+
+        return updated_y_int_cost_mod, p_cap_used
+
     def _get_REopt_cost_curve(self, techs):
         regions = ['utility', 'state', 'federal', 'combined']
         cap_cost_slope = list()
@@ -319,7 +398,6 @@ class DataManager:
         n_segments_max = 0  # tracking the maximum number of cost curve segments
         n_segments = 1
         n_segments_list = list()
-        tech_to_size = float(big_number)
 
         for tech in techs:
 
@@ -336,68 +414,72 @@ class DataManager:
                 for region in regions[:-1]:
                     tech_incentives[region] = dict()
 
-                    if tech not in ['generator', 'absorpchl']:
+                    if tech not in ['generator', 'absorpchl', 'newboiler', 'steamturbine']:
 
-                        if region == 'federal' or region == 'total':
+                        if region == 'federal':
                             tech_incentives[region]['%'] = eval('self.' + tech + '.incentives.' + region + '.itc')
-                            tech_incentives[region]['%_max'] = eval('self.' + tech + '.incentives.' + region + '.itc_max')
+                            tech_incentives[region]['%_max'] = eval('self.' + tech + '.incentives.' + region + '.itc_max')  # [$]
                         else:  # region == 'state' or region == 'utility'
                             tech_incentives[region]['%'] = eval('self.' + tech + '.incentives.' + region + '.ibi')
-                            tech_incentives[region]['%_max'] = eval('self.' + tech + '.incentives.' + region + '.ibi_max')
+                            tech_incentives[region]['%_max'] = eval('self.' + tech + '.incentives.' + region + '.ibi_max')  # [$]
 
-                        tech_incentives[region]['rebate'] = eval('self.' + tech + '.incentives.' + region + '.rebate')
-                        tech_incentives[region]['rebate_max'] = eval('self.' + tech + '.incentives.' + region + '.rebate_max')
+                        tech_incentives[region]['rebate'] = eval('self.' + tech + '.incentives.' + region + '.rebate')  # [$/kW]
+                        tech_incentives[region]['rebate_max'] = eval('self.' + tech + '.incentives.' + region + '.rebate_max')  # [$]
 
                         # Workaround to consider fact that REopt incentive calculation works best if "unlimited" incentives are entered as 0
                         if tech_incentives[region]['%_max'] == max_incentive:
-                            tech_incentives[region]['%_max'] = 0.0
+                            tech_incentives[region]['%_max'] = 0.0  # [$]
                         if tech_incentives[region]['rebate_max'] == max_incentive:
-                            tech_incentives[region]['rebate_max'] = 0.0
+                            tech_incentives[region]['rebate_max'] = 0.0  # [$]
 
                     else:  # for generator and absorption chiller, there are no incentives
                         tech_incentives[region]['%'] = 0.0
-                        tech_incentives[region]['%_max'] = 0.0
-                        tech_incentives[region]['rebate'] = 0.0
-                        tech_incentives[region]['rebate_max'] = 0.0
+                        tech_incentives[region]['%_max'] = 0.0  # [$]
+                        tech_incentives[region]['rebate'] = 0.0  # [$/kW]
+                        tech_incentives[region]['rebate_max'] = 0.0  # [$]
 
                 # Intermediate Cost curve
                 # New input of tech_size_for_cost_curve to be associated with tech_cost (installed_cost_us_dollars_per_kw) with same type and length
                 if hasattr(eval('self.' + tech), 'tech_size_for_cost_curve'):
                     if eval('self.' + tech + '.tech_size_for_cost_curve') not in [None, []]:
-                        tech_size = eval('self.' + tech + '.tech_size_for_cost_curve')
+                        tech_size = eval('self.' + tech + '.tech_size_for_cost_curve')  # [kW]
                     else:
-                        tech_size = [float(big_number)]
+                        tech_size = [float(big_number)]  # [kW]
                 else:
-                    tech_size = [float(big_number)]
+                    tech_size = [float(big_number)]  # [kW]
 
                 xp_array_incent = dict()
                 if len(tech_size) > 1:
                     xp_array_incent['utility'] = []
-                    if tech_size[0] != 0: # Append a 0 to the front of the list if not included(we'll assume that it has a 0 y-intercept below)
+                    if tech_size[0] != 0: # Append a 0 to the front of the list if not included (we'll assume that it has a 0 y-intercept below)
                         xp_array_incent['utility'] += [0]
                     xp_array_incent['utility'] += [tech_size[i] for i in range(len(tech_size))]  # [$]  # Append list of sizes for cost curve [kW]
-                    xp_array_incent['utility'] += [float(big_number)]  # Append big number size to assume same cost as last input point
+                    if tech_size[-1] < (float(big_number) - 1.0):  # -1 just to make sure it's ~=big_number
+                        xp_array_incent['utility'] += [float(big_number)]  # Append big number size to assume same cost as last input point
                 else:
-                    xp_array_incent['utility'] = [0.0, float(big_number)]
+                    xp_array_incent['utility'] = [0.0, float(big_number)]  # [kW]
 
                 yp_array_incent = dict()
                 if len(tech_size) > 1:
-                    if tech_size[0] == 0:
-                        yp_array_incent['utility'] = [tech_cost[0]]  # tech_cost[0] is assumed to be in units of $, if there is tech_size[0]=0 point
+                    if (tech_size[0] == 0) and (tech_cost[0] != 0):
+                        # Special handling for non-zero y-intercept of first segment
+                        y_int_cost_mod, p_cap_used = self._get_cost_intercept(tech, tech_cost[0], regions)
+                        yp_array_incent['utility'] = [y_int_cost_mod]  # tech_cost[0] is assumed to be in units of $, if there is tech_size[0]=0 point
                         yp_array_incent['utility'] += [tech_size[i] * tech_cost[i] for i in range(1, len(tech_cost))]  # [$]
                     else:
                         yp_array_incent['utility'] = [0]
                         yp_array_incent['utility'] += [tech_size[i] * tech_cost[i] for i in range(len(tech_cost))]  # [$]
-                    yp_array_incent['utility'] += [float(big_number) * tech_cost[-1]]  # Last cost assumed for big_number size
+                    if tech_size[-1] < (float(big_number) - 1.0):
+                        yp_array_incent['utility'] += [float(big_number) * tech_cost[-1]]  # Last cost assumed for big_number size
                     # Final cost curve
-                    cost_curve_bp_y = [yp_array_incent['utility'][0]]
+                    cost_curve_bp_y = [yp_array_incent['utility'][0]]  # [$]
                 else:
                     if isinstance(tech_cost, list):
                         yp_array_incent['utility'] = [0.0, float(big_number) * tech_cost[0]]  # [$]
                     else:
                         yp_array_incent['utility'] = [0.0, float(big_number) * tech_cost]  # [$]
                     # Final cost curve
-                    cost_curve_bp_y = [0.0]
+                    cost_curve_bp_y = [0.0]  # [$]
 
                 # Final cost curve
                 cost_curve_bp_x = [0.0]
@@ -408,16 +490,20 @@ class DataManager:
                     next_region = regions[r + 1]
 
                     # Apply incentives, initialize first value
-                    xp_array_incent[next_region] = [0.0]
-                    yp_array_incent[next_region] = [0.0]
+                    xp_array_incent[next_region] = [0.0]  # [kW]
+                    yp_array_incent[next_region] = [0.0]  # [$]
 
                     # percentage based incentives
                     p = float(tech_incentives[region]['%'])
-                    p_cap = float(tech_incentives[region]['%_max'])
+                    p_cap = float(tech_incentives[region]['%_max'])  # [$]
 
                     # rebates, for some reason called 'u' in REopt
-                    u = float(tech_incentives[region]['rebate'])
-                    u_cap = float(tech_incentives[region]['rebate_max'])
+                    u = float(tech_incentives[region]['rebate'])   # [$/kW]
+                    u_cap = float(tech_incentives[region]['rebate_max'])  # [$]
+
+                    # If non-zero y-int cost for segment 1 (cost curve), adjust p_cap based on that used by intercept
+                    if cost_curve_bp_y[0] != 0 and p_cap > 0.0:
+                        p_cap = max(0.0, p_cap - p_cap_used[region])  # [$]
 
                     # reset switches and break point counter
                     switch_percentage = False
@@ -428,16 +514,16 @@ class DataManager:
                     if u == 0 or u_cap == 0:
                         switch_rebate = True
 
-                    # start at second point, first is always zero
+                    # Start at second point, first is always zero
                     for point in range(1, len(xp_array_incent[region])):
 
                         # previous points
-                        xp_prev = xp_array_incent[region][point - 1]
-                        yp_prev = yp_array_incent[region][point - 1]
+                        xp_prev = xp_array_incent[region][point - 1]  # [kW]
+                        yp_prev = yp_array_incent[region][point - 1]  # [$]
 
                         # current, unadjusted points
-                        xp = xp_array_incent[region][point]
-                        yp = yp_array_incent[region][point]
+                        xp = xp_array_incent[region][point]  # [kW]
+                        yp = yp_array_incent[region][point]  # [$]
 
                         # initialize the adjusted points on cost curve
                         xa = xp
@@ -450,12 +536,12 @@ class DataManager:
                         p_ybp = 0.0
 
                         if not switch_rebate:
-                            u_xbp = u_cap / u
-                            u_ybp = slope(xp_prev, yp_prev, xp, yp) * u_xbp + intercept(xp_prev, yp_prev, xp, yp)
+                            u_xbp = u_cap / u  # [$ / ($/kw)] = [kW]
+                            u_ybp = slope(xp_prev, yp_prev, xp, yp) * u_xbp + intercept(xp_prev, yp_prev, xp, yp)  # [$]
 
                         if not switch_percentage:
-                            p_xbp = (p_cap / p - intercept(xp_prev, yp_prev, xp, yp)) / slope(xp_prev, yp_prev, xp, yp)
-                            p_ybp = p_cap / p
+                            p_ybp = p_cap / p  # [$ / %] = [$]
+                            p_xbp = (p_ybp - intercept(xp_prev, yp_prev, xp, yp)) / slope(xp_prev, yp_prev, xp, yp)  # [$ / ($/kW)] = [$]
 
                         if ((p * yp) < p_cap or p_cap == 0) and ((u * xp) < u_cap or u_cap == 0):
                             ya = yp - (p * yp + u * xp)
@@ -551,8 +637,8 @@ class DataManager:
 
                     if cost_curve_bp_x[s + 1] > 0:
                         # Remove federal incentives for ITC basis and tax benefit calculations
-                        itc = eval('self.' + tech + '.incentives.federal.itc')
-                        rebate_federal = eval('self.' + tech + '.incentives.federal.rebate')
+                        itc = eval('self.' + tech.lower() + '.incentives.federal.itc')
+                        rebate_federal = eval('self.' + tech.lower() + '.incentives.federal.rebate')
                         if itc is None or rebate_federal is None:
                             itc = 0.0
                             rebate_federal = 0.0
@@ -565,19 +651,45 @@ class DataManager:
                         raise Exception('Invalid cost curve for {}. Value at index {} ({}) cannot be less than or equal to 0'.format(tech, s, cost_curve_bp_x[s + 1]))
 
                     sf = self.site.financial
-                    updated_slope = setup_capital_cost_incentive(
-                        itc_basis=itc_unit_basis,  # input tech cost with incentives, but no ITC
-                        replacement_cost=0,
-                        replacement_year=sf.analysis_years,
-                        discount_rate=sf.owner_discount_pct,
-                        tax_rate=sf.owner_tax_pct,
-                        itc=itc,
-                        macrs_schedule=eval('self.' + tech + '.incentives.macrs_schedule'),
-                        macrs_bonus_pct=eval('self.' + tech + '.incentives.macrs_bonus_pct'),
-                        macrs_itc_reduction=eval('self.' + tech + '.incentives.macrs_itc_reduction')
-                    )
-                    # The way REopt incentives currently work, the federal rebate is the only incentive that doesn't reduce ITC basis
-                    updated_slope -= rebate_federal
+                    if self.off_grid_flag:
+                        replacement_cost = 0.0
+                        useful_life = sf.analysis_years
+
+                        if hasattr(eval('self.' + tech), 'replace_cost_us_dollars_per_kw'): # does not currently apply for PV or Generator
+                            replacement_cost = eval('self.' + tech + '.replace_cost_us_dollars_per_kw')
+                        if hasattr(eval('self.' + tech), 'useful_life_years'): # applies for generator
+                            useful_life = eval('self.' + tech + '.useful_life_years')
+                            replacement_cost = eval('self.' + tech + '.installed_cost_us_dollars_per_kw')
+
+                        # Not currently considering multiple replacements or salvage value, last available in commit c7699790a50f063cfd8e4981c778bd7d3751ae42
+
+                        updated_slope = setup_capital_cost_incentive(
+                            itc_basis=itc_unit_basis,  # input tech cost with incentives, but no ITC
+                            replacement_cost=replacement_cost,
+                            replacement_year=useful_life,
+                            discount_rate=sf.owner_discount_pct,
+                            tax_rate=sf.owner_tax_pct,
+                            itc=itc,
+                            macrs_schedule=eval('self.' + tech + '.incentives.macrs_schedule'),
+                            macrs_bonus_pct=eval('self.' + tech + '.incentives.macrs_bonus_pct'),
+                            macrs_itc_reduction=eval('self.' + tech + '.incentives.macrs_itc_reduction')
+                        )
+                        # The way REopt incentives currently work, the federal rebate is the only incentive that doesn't reduce ITC basis
+                        updated_slope -= rebate_federal
+                    else:
+                        updated_slope = setup_capital_cost_incentive(
+                            itc_basis=itc_unit_basis,  # input tech cost with incentives, but no ITC
+                            replacement_cost=0,
+                            replacement_year=sf.analysis_years,
+                            discount_rate=sf.owner_discount_pct,
+                            tax_rate=sf.owner_tax_pct,
+                            itc=itc,
+                            macrs_schedule=eval('self.' + tech + '.incentives.macrs_schedule'),
+                            macrs_bonus_pct=eval('self.' + tech + '.incentives.macrs_bonus_pct'),
+                            macrs_itc_reduction=eval('self.' + tech + '.incentives.macrs_itc_reduction')
+                        )
+                        # The way REopt incentives currently work, the federal rebate is the only incentive that doesn't reduce ITC basis
+                        updated_slope -= rebate_federal
                     updated_cap_cost_slope.append(updated_slope)
 
                 for p in range(1, n_segments + 1):
@@ -733,8 +845,8 @@ class DataManager:
                 else:
                     om_cost_us_dollars_per_kw.append(eval('self.' + tech + '.om_cost_us_dollars_per_kw'))
 
-                # variable om and emissions/RE
-                # only generator and chp techs have variable o&m cost
+                # Variable O&M and emissions/RE
+                # Only certain techs have variable o&m cost, and CHP also has a unique hourly-operating O&M
                 if tech.lower() == 'generator':
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.kwargs["om_cost_us_dollars_per_kwh"]')))
                     om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
@@ -752,7 +864,7 @@ class DataManager:
                     tech_emissions_factors_NOx.append(float(eval('self.' + tech + '.emissions_factor_lb_NOx_per_mmbtu') / MMBTU_TO_KWH))
                     tech_emissions_factors_SO2.append(float(eval('self.' + tech + '.emissions_factor_lb_SO2_per_mmbtu') / MMBTU_TO_KWH))
                     tech_emissions_factors_PM25.append(float(eval('self.' + tech + '.emissions_factor_lb_PM25_per_mmbtu') / MMBTU_TO_KWH))
-                elif tech.lower() == 'boiler': 
+                elif tech.lower() == 'boiler':
                     om_cost_us_dollars_per_kwh.append(0.0)
                     om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
                     tech_percent_RE.append(float(eval('self.fuel_tariff.boiler_fuel_percent_RE')))
@@ -760,10 +872,19 @@ class DataManager:
                     tech_emissions_factors_NOx.append(float(eval('self.' + tech + '.emissions_factor_lb_NOx_per_mmbtu') / MMBTU_TO_KWH))
                     tech_emissions_factors_SO2.append(float(eval('self.' + tech + '.emissions_factor_lb_SO2_per_mmbtu') / MMBTU_TO_KWH))
                     tech_emissions_factors_PM25.append(float(eval('self.' + tech + '.emissions_factor_lb_PM25_per_mmbtu') / MMBTU_TO_KWH))
-                else: 
+                elif tech.lower in ['newboiler', 'steamturbine']:
+                    om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.kwargs["om_cost_us_dollars_per_kwh"]')))
+                    om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
+                    # TODO add RE and emissions inputs for NewBoiler and SteamTurbine
+                    tech_percent_RE.append(0.0)
+                    tech_emissions_factors_CO2.append(0.0)
+                    tech_emissions_factors_NOx.append(0.0)
+                    tech_emissions_factors_SO2.append(0.0)
+                    tech_emissions_factors_PM25.append(0.0)
+                else:
                     om_cost_us_dollars_per_kwh.append(0.0)
                     om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
-                    tech_percent_RE.append(1.0) 
+                    tech_percent_RE.append(1.0)
                     tech_emissions_factors_CO2.append(0.0)
                     tech_emissions_factors_NOx.append(0.0)
                     tech_emissions_factors_SO2.append(0.0)
@@ -790,7 +911,7 @@ class DataManager:
                production_factor, charge_efficiency, discharge_efficiency, \
                electric_derate, chp_thermal_prod_factor, \
                tech_percent_RE, tech_emissions_factors_CO2, \
-               tech_emissions_factors_NOx, tech_emissions_factors_SO2, tech_emissions_factors_PM25 
+               tech_emissions_factors_NOx, tech_emissions_factors_SO2, tech_emissions_factors_PM25
 
     def _get_REopt_techs(self, techs):
         reopt_techs = list()
@@ -931,6 +1052,18 @@ class DataManager:
             tech_subdivisions.append(tech_sub)
         return tech_subdivisions
 
+    def _get_sr_required_pct(self, techs):
+        if self.off_grid_flag:
+            sr_required_pct = []
+            for tech in techs:
+                if tech.startswith("PV"):
+                    sr_required_pct.append(eval('self.' + tech.lower() + '.sr_required_pct'))
+                else:
+                    sr_required_pct.append(0.0)
+        else:
+            sr_required_pct = [0.0]*len(techs)
+        return sr_required_pct
+
     def _get_time_steps_with_grid(self):
         """
         Obtains the subdivision of time steps with a grid connection and those
@@ -956,25 +1089,25 @@ class DataManager:
         return time_steps_with_grid, time_steps_without_grid
 
     def bau_year_one_emissions(self):
-        
+
         """
         Pre-processing of the BAU emissions to use in determining emissions reductions in the optimal case
         Include BAU grid emissions, existing backup generator emissions, boiler emissions
 
-        Note if existing generation does not sustain a simulated outage, the BAU load and therefore emissions 
+        Note if existing generation does not sustain a simulated outage, the BAU load and therefore emissions
         are 0 during unsurvived outage hours
-        
+
         """
-        total_emissions_lb_CO2_per_year = 0 
-        total_emissions_lb_NOx_per_year = 0 
-        total_emissions_lb_SO2_per_year = 0 
-        total_emissions_lb_PM25_per_year = 0 
-        
-        ## Grid emissions 
+        total_emissions_lb_CO2_per_year = 0
+        total_emissions_lb_NOx_per_year = 0
+        total_emissions_lb_SO2_per_year = 0
+        total_emissions_lb_PM25_per_year = 0
+
+        ## Grid emissions
 
         # bau_load_list includes full load during normal grid-connected operations and critical load for whatever duration can be sustained with existing onsite generation
-        bau_grid_to_load_kw = np.array(self.load.bau_load_list) 
-        
+        bau_grid_to_load_kw = np.array(self.load.bau_load_list)
+
         # bau load list is non-net so must remove existing PV to get to the load served by the grid
         # (for both normal grid-connected operations and critical load during outage)
         years = self.site.financial.analysis_years
@@ -989,7 +1122,7 @@ class DataManager:
             """
             levelization_factor = round(degradation_factor(years, pv.degradation_pct), 5)
             bau_grid_to_load_kw -= np.array([pv.existing_kw * x * levelization_factor for x in pv.prod_factor])
-               
+
         #No grid emissions, or pv exporting to grid, during an outage
         for i in range((self.load.outage_start_time_step or 1) -1, (self.load.outage_end_time_step or 1) -1):
             bau_grid_to_load_kw[i] = 0
@@ -997,26 +1130,26 @@ class DataManager:
         #If no net emissions accounting, no credit for RE grid exports:
         if self.site.include_exported_elec_emissions_in_total is False:
             bau_grid_to_load_kw = np.array([i if i > 0 else 0 for i in bau_grid_to_load_kw])
-            
+
         grid_emissions_lb_CO2_per_year = self.steplength*sum(np.array(self.elec_tariff.emissions_factor_series_lb_CO2_per_kwh) * bau_grid_to_load_kw)
         total_emissions_lb_CO2_per_year += grid_emissions_lb_CO2_per_year
-        
+
         grid_emissions_lb_NOx_per_year = self.steplength*sum(np.array(self.elec_tariff.emissions_factor_series_lb_NOx_per_kwh) * bau_grid_to_load_kw)
         total_emissions_lb_NOx_per_year += grid_emissions_lb_NOx_per_year
-        
+
         grid_emissions_lb_SO2_per_year = self.steplength*sum(np.array(self.elec_tariff.emissions_factor_series_lb_SO2_per_kwh) * bau_grid_to_load_kw)
         total_emissions_lb_SO2_per_year += grid_emissions_lb_SO2_per_year
-        
+
         grid_emissions_lb_PM25_per_year = self.steplength*sum(np.array(self.elec_tariff.emissions_factor_series_lb_PM25_per_kwh) * bau_grid_to_load_kw)
         total_emissions_lb_PM25_per_year += grid_emissions_lb_PM25_per_year
-        
+
         ## Generator emissions (during outages)
         if self.generator is not None:
             total_emissions_lb_CO2_per_year += self.load.generator_fuel_use_gal * self.generator.emissions_factor_lb_CO2_per_gal
             total_emissions_lb_NOx_per_year += self.load.generator_fuel_use_gal * self.generator.emissions_factor_lb_NOx_per_gal
             total_emissions_lb_SO2_per_year += self.load.generator_fuel_use_gal * self.generator.emissions_factor_lb_SO2_per_gal
             total_emissions_lb_PM25_per_year += self.load.generator_fuel_use_gal * self.generator.emissions_factor_lb_PM25_per_gal
-                
+
         ## Boiler emissions
         if self.boiler is not None:
             total_emissions_lb_CO2_per_year += self.heating_load.annual_mmbtu * self.boiler.emissions_factor_lb_CO2_per_mmbtu
@@ -1038,34 +1171,64 @@ class DataManager:
 
         # Obtain storage costs and params
         sf = self.site.financial
-        StorageCostPerKW = setup_capital_cost_incentive(
-            self.storage.installed_cost_us_dollars_per_kw,  # use full cost as basis
-            self.storage.replace_cost_us_dollars_per_kw,
-            self.storage.inverter_replacement_year,
-            sf.owner_discount_pct,
-            sf.owner_tax_pct,
-            self.storage.incentives.itc_pct,
-            self.storage.incentives.macrs_schedule,
-            self.storage.incentives.macrs_bonus_pct,
-            self.storage.incentives.macrs_itc_reduction
-        )
-        StorageCostPerKW -= self.storage.incentives.rebate
-        StorageCostPerKWH = setup_capital_cost_incentive(
-            self.storage.installed_cost_us_dollars_per_kwh,  # there are no cash incentives for kwh
-            self.storage.replace_cost_us_dollars_per_kwh,
-            self.storage.battery_replacement_year,
-            sf.owner_discount_pct,
-            sf.owner_tax_pct,
-            self.storage.incentives.itc_pct,
-            self.storage.incentives.macrs_schedule,
-            self.storage.incentives.macrs_bonus_pct,
-            self.storage.incentives.macrs_itc_reduction
-        )
-        StorageCostPerKWH -= self.storage.incentives.rebate_kwh
+
+        if self.off_grid_flag:
+            # Using on-grid capital cost slope for now
+            StorageCostPerKW = setup_capital_cost_incentive(
+                self.storage.installed_cost_us_dollars_per_kw,  # use full cost as basis
+                self.storage.replace_cost_us_dollars_per_kw,
+                self.storage.inverter_replacement_year,
+                sf.owner_discount_pct,
+                sf.owner_tax_pct,
+                self.storage.incentives.itc_pct,
+                self.storage.incentives.macrs_schedule,
+                self.storage.incentives.macrs_bonus_pct,
+                self.storage.incentives.macrs_itc_reduction
+            )
+            StorageCostPerKW -= self.storage.incentives.rebate
+            StorageCostPerKWH = setup_capital_cost_incentive(
+                self.storage.installed_cost_us_dollars_per_kwh,  # there are no cash incentives for kwh
+                self.storage.replace_cost_us_dollars_per_kwh,
+                self.storage.battery_replacement_year,
+                sf.owner_discount_pct,
+                sf.owner_tax_pct,
+                self.storage.incentives.itc_pct,
+                self.storage.incentives.macrs_schedule,
+                self.storage.incentives.macrs_bonus_pct,
+                self.storage.incentives.macrs_itc_reduction
+            )
+            StorageCostPerKWH -= self.storage.incentives.rebate_kwh
+
+        else:
+            StorageCostPerKW = setup_capital_cost_incentive(
+                self.storage.installed_cost_us_dollars_per_kw,  # use full cost as basis
+                self.storage.replace_cost_us_dollars_per_kw,
+                self.storage.inverter_replacement_year,
+                sf.owner_discount_pct,
+                sf.owner_tax_pct,
+                self.storage.incentives.itc_pct,
+                self.storage.incentives.macrs_schedule,
+                self.storage.incentives.macrs_bonus_pct,
+                self.storage.incentives.macrs_itc_reduction
+            )
+            StorageCostPerKW -= self.storage.incentives.rebate
+            StorageCostPerKWH = setup_capital_cost_incentive(
+                self.storage.installed_cost_us_dollars_per_kwh,  # there are no cash incentives for kwh
+                self.storage.replace_cost_us_dollars_per_kwh,
+                self.storage.battery_replacement_year,
+                sf.owner_discount_pct,
+                sf.owner_tax_pct,
+                self.storage.incentives.itc_pct,
+                self.storage.incentives.macrs_schedule,
+                self.storage.incentives.macrs_bonus_pct,
+                self.storage.incentives.macrs_itc_reduction
+            )
+            StorageCostPerKWH -= self.storage.incentives.rebate_kwh
 
         storage_power_cost.append(StorageCostPerKW)
         storage_energy_cost.append(StorageCostPerKWH)
         if self.hot_tes is not None:
+            #TODO speedup possible: self.hot_tes and self.cold_tes (below) are ALWAYS created in scenario.py
             HotTESCostPerKWH = setup_capital_cost_incentive(
                 self.hot_tes.installed_cost_us_dollars_per_kwh,  # use full cost as basis
                 0,
@@ -1195,6 +1358,25 @@ class DataManager:
 
         return rates_by_tech, techs_by_export_tier, export_tiers, techs_cannot_curtail, filtered_export_rates
 
+    def assign_can_supply_steam_turbine(self, techs):
+        """
+        Returns a list of techs which can supply the SteamTurbine with steam to drive its electric generation
+        :param techs: list of string
+        :returns
+            all_techs_for_steam_turbine: all possible techs which have the attribute can_supply_steam_turbine, even if set to False
+            techs_can_supply_steam_turbine: list of techs which are set allowed to supply steam turbine with steam heat
+        """
+        all_techs_for_steam_turbine = list()
+        techs_can_supply_steam_turbine = list()
+        if len(techs) > 0:
+            for tech in techs:  # have to do these for loops because `any` changes the scope and can't access `self`
+                if hasattr(eval('self.' + tech.lower()), 'can_supply_steam_turbine'):
+                    all_techs_for_steam_turbine.append(tech.upper())
+                    if eval('self.' + tech.lower() + '.can_supply_steam_turbine'):
+                        techs_can_supply_steam_turbine.append(tech.upper())
+
+        return all_techs_for_steam_turbine, techs_can_supply_steam_turbine
+
     def finalize(self):
         """
         necessary for writing out parameters that depend on which Techs are defined
@@ -1213,15 +1395,15 @@ class DataManager:
             charge_efficiency, discharge_efficiency, \
             electric_derate, chp_thermal_prod_factor, \
             tech_pct_RE, tech_emissions_factors_CO2, \
-            tech_emissions_factors_NOx, tech_emissions_factors_SO2, tech_emissions_factors_PM25 = self._get_REopt_array_tech_load(self.available_techs) 
+            tech_emissions_factors_NOx, tech_emissions_factors_SO2, tech_emissions_factors_PM25 = self._get_REopt_array_tech_load(self.available_techs)
         tech_to_location_bau, derate_bau, om_cost_us_dollars_per_kw_bau, \
             om_cost_us_dollars_per_kwh_bau, om_cost_us_dollars_per_hr_per_kw_rated_bau, production_factor_bau, \
             charge_efficiency_bau, discharge_efficiency_bau, \
             electric_derate_bau, chp_thermal_prod_factor_bau, \
             tech_pct_RE_bau, tech_emissions_factors_CO2_bau, \
-            tech_emissions_factors_NOx_bau, tech_emissions_factors_SO2_bau, tech_emissions_factors_PM25_bau = self._get_REopt_array_tech_load(self.bau_techs) 
-        
-        # RE & Emissions inputs 
+            tech_emissions_factors_NOx_bau, tech_emissions_factors_SO2_bau, tech_emissions_factors_PM25_bau = self._get_REopt_array_tech_load(self.bau_techs)
+
+        # RE & Emissions inputs
         grid_emissions_factor_CO2 = self.elec_tariff.emissions_factor_series_lb_CO2_per_kwh
         grid_emissions_factor_NOx = self.elec_tariff.emissions_factor_series_lb_NOx_per_kwh
         grid_emissions_factor_SO2 = self.elec_tariff.emissions_factor_series_lb_SO2_per_kwh
@@ -1243,9 +1425,11 @@ class DataManager:
             self.bau_techs, bau=True)
 
         levelization_factor, pwf_e, pwf_om, two_party_factor, \
-        pwf_boiler_fuel, pwf_chp_fuel, pwf_fuel_by_tech, pwfs_emissions_cost, pwfs_grid_emissions_lbs = self._get_REopt_pwfs(self.available_techs)
+            pwf_boiler_fuel, pwf_chp_fuel, pwf_fuel_by_tech, pwfs_emissions_cost, pwfs_grid_emissions_lbs, \
+            pwf_owner, pwf_offtaker = self._get_REopt_pwfs(self.available_techs)
         levelization_factor_bau, pwf_e_bau, pwf_om_bau, two_party_factor_bau, \
-        pwf_boiler_fuel_bau, pwf_chp_fuel_bau, pwf_fuel_by_tech_bau, pwfs_emissions_cost_bau, pwfs_grid_emissions_lbs_bau = self._get_REopt_pwfs(self.bau_techs)
+            pwf_boiler_fuel_bau, pwf_chp_fuel_bau, pwf_fuel_by_tech_bau, pwfs_emissions_cost_bau, pwfs_grid_emissions_lbs_bau, \
+            pwf_owner_bau, pwf_offtaker_bau = self._get_REopt_pwfs(self.bau_techs)
 
         pwf_prod_incent, max_prod_incent, max_size_for_prod_incent, production_incentive_rate \
             = self._get_REopt_production_incentives(self.available_techs)
@@ -1328,8 +1512,8 @@ class DataManager:
         techs_no_turndown = [t for t in reopt_techs if t.startswith("PV") or t.startswith("WIND")]
         techs_no_turndown_bau = [t for t in reopt_techs_bau if t.startswith("PV") or t.startswith("WIND")]
 
-        electric_techs = [t for t in reopt_techs if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR") or t.startswith("CHP")]
-        electric_techs_bau = [t for t in reopt_techs_bau if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR") or t.startswith("CHP")]
+        electric_techs = [t for t in reopt_techs if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR") or t.startswith("CHP") or t.lower().startswith('steamturbine')]
+        electric_techs_bau = [t for t in reopt_techs_bau if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR") or t.startswith("CHP") or t.lower().startswith('steamturbine')]
 
         time_steps_with_grid, time_steps_without_grid = self._get_time_steps_with_grid()
 
@@ -1341,8 +1525,15 @@ class DataManager:
                                                 self.elec_tariff.net_metering_limit_kw)
 
         # Populate heating (convert to kw/kwh) and cooling loads with zeros if not included in model.
+        # Combine heating load for space heating and DHW
+        if self.heating_load_space_heating != None:
+            self.heating_load = [self.heating_load_space_heating.load_list[i] +
+                                    self.heating_load_dhw.load_list[i] for i in range(len(self.heating_load_space_heating.load_list))]
+            self.LoadProfile["year_one_boiler_fuel_load_series_mmbtu_per_hr"] = self.heating_load
+            self.LoadProfile["annual_heating_mmbtu"] = self.heating_load_space_heating.annual_mmbtu + self.heating_load_dhw.annual_mmbtu
+
         if self.heating_load != None:
-            heating_load = [self.heating_load.load_list[i] * MMBTU_TO_KWH for i in range(len(self.heating_load.load_list))]
+            heating_load = [self.heating_load[i] * MMBTU_TO_KWH for i in range(len(self.heating_load))]
         else:
             heating_load = [0.0 for _ in self.load.load_list]
         if self.LoadProfile["annual_cooling_kwh"] > 0.0:
@@ -1361,6 +1552,40 @@ class DataManager:
         non_cooling_electric_load = [self.load.load_list[ts] - cooling_load[ts] / self.cooling_load.chiller_cop for ts in range(len(self.load.load_list))]
         non_cooling_electric_load_bau = [self.load.bau_load_list[ts] - cooling_load[ts] / self.cooling_load.chiller_cop for ts in range(len(self.load.bau_load_list))]
 
+        # GHP parameters for REopt model
+        require_ghp_purchase, require_ghp_purchase_bau = 0, 0
+        ghp_installed_cost, ghp_installed_cost_bau = [], []
+        ghp_om_cost_year_one, ghp_om_cost_year_one_bau = [], []
+        ghp_heating_thermal_load_served_kw, ghp_heating_thermal_load_served_kw_bau = [], [[]]
+        ghp_cooling_thermal_load_served_kw, ghp_cooling_thermal_load_served_kw_bau = [], [[]]
+        ghp_electric_consumption_kw, ghp_electric_consumption_kw_bau = [], [[]]
+        if len(self.ghp_option_list) > 0:
+            require_ghp_purchase = self.ghp_option_list[0].require_ghp_purchase  # This does not change with the number of options
+            for i, option in enumerate(self.ghp_option_list):
+                ghp_cap_cost_slope, ghp_cap_cost_x, ghp_cap_cost_yint, ghp_n_segments = self._get_REopt_cost_curve(techs=["ghp_option_list[{}]".format(i)])
+                ghp_size_tons = option.heatpump_capacity_tons
+                if ghp_size_tons <= ghp_cap_cost_x[1]:
+                    n = 0
+                elif ghp_size_tons > ghp_cap_cost_x[-1]:
+                    n = ghp_n_segments - 1
+                else:
+                    for n in range(ghp_n_segments):
+                        if (ghp_size_tons > ghp_cap_cost_x[n]) and (ghp_size_tons <= ghp_cap_cost_x[n+1]):
+                            break
+                ghp_installed_cost.append(ghp_cap_cost_yint[n] + ghp_size_tons * ghp_cap_cost_slope[n])
+                ghp_om_cost_year_one.append(option.om_cost_year_one)
+                if self.boiler is not None:
+                    heating_thermal_load = np.array(heating_load) * self.boiler_efficiency
+                else:
+                    heating_thermal_load = np.array(heating_load) * 0.8
+                ghp_heating_thermal_load_served_kw.append(list(np.minimum(option.heating_thermal_load_served_kw, heating_thermal_load)))
+                ghp_cooling_thermal_load_served_kw.append(list(np.minimum(option.cooling_thermal_load_served_kw, cooling_load)))
+                ghp_electric_consumption_kw.append(option.electric_consumption_kw)
+        else:
+            ghp_heating_thermal_load_served_kw.append([])
+            ghp_cooling_thermal_load_served_kw.append([])
+            ghp_electric_consumption_kw.append([])
+
         sf = self.site.financial
 
         ### Populate CHP, heating, cooling technologies and efficiencies
@@ -1376,19 +1601,50 @@ class DataManager:
         cooling_techs = [t for t in reopt_techs if t.lower().startswith('elecchl') or t.lower().startswith('absorpchl')]
         cooling_techs_bau = [t for t in reopt_techs_bau if t.lower().startswith('elecchl') or t.lower().startswith('absorpchl')]
 
-        heating_techs = [t for t in reopt_techs if t.lower().startswith('chp') or t.lower().startswith('boiler')]
-        heating_techs_bau = [t for t in reopt_techs_bau if t.lower().startswith('chp') or t.lower().startswith('boiler')]
+        heating_techs = [t for t in reopt_techs if t.lower().startswith('chp') or t.lower().endswith('boiler') or t.lower().startswith('steamturbine')]
+        heating_techs_bau = [t for t in reopt_techs_bau if t.lower().startswith('chp') or t.lower().endswith('boiler') or t.lower().startswith('steamturbine')]
 
-        boiler_techs = [t for t in reopt_techs if t.lower().startswith('boiler')]
-        boiler_techs_bau = [t for t in reopt_techs_bau if t.lower().startswith('boiler')]
+        boiler_techs = [t for t in reopt_techs if t.lower().endswith('boiler')]
+        boiler_techs_bau = [t for t in reopt_techs_bau if t.lower().endswith('boiler')]
 
-        boiler_efficiency = self.boiler.boiler_efficiency if self.boiler != None else 1.0
+        all_boiler_techs = ["BOILER", "NEWBOILER"]
+        all_boiler_techs_bau = ["BOILER", "NEWBOILER"]  # Needs to be the same size as boiler_efficiency (below) which is length=2
+
+        steam_turbine_techs = [t for t in reopt_techs if t.lower().startswith('steamturbine')]
+        steam_turbine_techs_bau = [t for t in reopt_techs_bau if t.lower().endswith('steamturbine')]
+
+        all_techs_for_steam_turbine, techs_can_supply_steam_turbine = self.assign_can_supply_steam_turbine(heating_techs)
+        all_techs_for_steam_turbine_bau, techs_can_supply_steam_turbine_bau = list(), list()  # Always empty for BAU
+
+        if self.steamturbine is not None:
+            st_elec_out_to_therm_in_ratio, st_therm_out_to_therm_in_ratio = \
+                self.steamturbine.st_elec_out_to_therm_in_ratio, self.steamturbine.st_therm_out_to_therm_in_ratio
+        else:
+            st_elec_out_to_therm_in_ratio, st_therm_out_to_therm_in_ratio = 0.0, 0.0
+        st_elec_out_to_therm_in_ratio_bau, st_therm_out_to_therm_in_ratio_bau = 0.0, 0.0
+
+        # Must always create boiler_efficiency, even if no boiler techs (to handle scenario with heating_techs and no heating_load)
+        boiler_efficiency = [1.0, 1.0]
+        for i, tech in enumerate([t for t in self.available_techs if t.lower().endswith('boiler')]):
+            if eval('self.' + tech.lower()) != None:
+                boiler_efficiency[i] = eval('self.' + tech.lower() + '.boiler_efficiency')
+
         elec_chiller_cop = self.elecchl.chiller_cop if self.elecchl != None else 1.0
         
         if self.chp is not None:
             cooling_thermal_factor = self.chp.cooling_thermal_factor
+            supplementary_firing_max_steam_ratio = self.chp.supplementary_firing_max_steam_ratio
+            supplementary_firing_efficiency = self.chp.supplementary_firing_efficiency
+            supplementary_firing_capital_cost_per_kw = [self.chp.supplementary_firing_capital_cost_per_kw]
+            supplementary_firing_capital_cost_per_kw_bau = [self.chp.supplementary_firing_capital_cost_per_kw for t in chp_techs_bau]
         else:
             cooling_thermal_factor = 1.0
+            supplementary_firing_max_steam_ratio = 1.0
+            supplementary_firing_efficiency = 0.9
+            supplementary_firing_capital_cost_per_kw = []
+            supplementary_firing_capital_cost_per_kw_bau = []
+
+
 
         absorp_chiller_cop = self.absorpchl.chiller_cop * cooling_thermal_factor if self.absorpchl != None else 1.0
         absorp_chiller_elec_cop = self.absorpchl.chiller_elec_cop if self.absorpchl != None else 1.0
@@ -1409,6 +1665,9 @@ class DataManager:
         chp_fuel_burn_intercept_bau, chp_thermal_prod_slope_bau, chp_thermal_prod_intercept_bau, chp_derate_bau \
             = fuel_params._get_chp_unique_params(chp_techs_bau, chp=eval('self.chp'))
 
+        techs_requiring_sr = [t for t in reopt_techs if (t.startswith("PV") and t.endswith("NM"))]
+        techs_providing_sr = [t for t in reopt_techs if (t.startswith("PV") and t.endswith("NM")) or t.startswith("GENERATOR")]
+        sr_required_pct = self._get_sr_required_pct(techs_providing_sr)
 
         self.reopt_inputs = {
             'Tech': reopt_techs,
@@ -1424,6 +1683,8 @@ class DataManager:
             'pwf_e': pwf_e,
             'pwf_om': pwf_om,
             'pwf_fuel': pwf_fuel_by_tech,
+            'pwf_owner': pwf_owner,
+            'pwf_offtaker': pwf_offtaker,
             'pwfs_emissions_cost' : pwfs_emissions_cost,
             'pwfs_grid_emissions_lbs' : pwfs_grid_emissions_lbs,
             'two_party_factor': two_party_factor,
@@ -1520,20 +1781,20 @@ class DataManager:
             "TechEmissionsFactors_SO2": tech_emissions_factors_SO2,
             "TechEmissionsFactors_PM25": tech_emissions_factors_PM25,
             "TechPercentRE": tech_pct_RE,
-            "MinAnnualPercentREElec": self.site.renewable_electricity_min_pct, 
+            "MinAnnualPercentREElec": self.site.renewable_electricity_min_pct,
             "MaxAnnualPercentREElec": self.site.renewable_electricity_max_pct,
             "MinPercentCO2EmissionsReduction": self.site.co2_emissions_reduction_min_pct,
             "MaxPercentCO2EmissionsReduction": self.site.co2_emissions_reduction_max_pct,
             "IncludeExportedREElecinTotal": self.site.include_exported_renewable_electricity_in_total,
             "IncludeExportedElecEmissionsInTotal": self.site.include_exported_elec_emissions_in_total,
-            "BAUYr1Emissions_CO2": bau_year_one_emissions_CO2, 
-            "BAUYr1Emissions_NOx": bau_year_one_emissions_NOx, 
-            "BAUYr1Emissions_SO2": bau_year_one_emissions_SO2, 
-            "BAUYr1Emissions_PM25": bau_year_one_emissions_PM25, 
-            "BAUYr1Emissions_grid_CO2": bau_year_one_grid_emissions_CO2, 
-            "BAUYr1Emissions_grid_NOx": bau_year_one_grid_emissions_NOx, 
-            "BAUYr1Emissions_grid_SO2": bau_year_one_grid_emissions_SO2, 
-            "BAUYr1Emissions_grid_PM25": bau_year_one_grid_emissions_PM25, 
+            "BAUYr1Emissions_CO2": bau_year_one_emissions_CO2,
+            "BAUYr1Emissions_NOx": bau_year_one_emissions_NOx,
+            "BAUYr1Emissions_SO2": bau_year_one_emissions_SO2,
+            "BAUYr1Emissions_PM25": bau_year_one_emissions_PM25,
+            "BAUYr1Emissions_grid_CO2": bau_year_one_grid_emissions_CO2,
+            "BAUYr1Emissions_grid_NOx": bau_year_one_grid_emissions_NOx,
+            "BAUYr1Emissions_grid_SO2": bau_year_one_grid_emissions_SO2,
+            "BAUYr1Emissions_grid_PM25": bau_year_one_grid_emissions_PM25,
             'HeatingLoad': heating_load,
             'CoolingLoad': cooling_load,
             'ThermalStorage': thermal_storage_techs,
@@ -1557,6 +1818,31 @@ class DataManager:
             'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month,
             'StorageDecayRate': storage_decay_rate,
             'AddSOCIncentive': self.add_soc_incentive,
+            'AllBoilerTechs': all_boiler_techs,
+            'AllTechsForSteamTurbine': all_techs_for_steam_turbine,
+            'SteamTurbineTechs': steam_turbine_techs,
+            'TechCanSupplySteamTurbine': techs_can_supply_steam_turbine,
+            'STElecOutToThermInRatio': st_elec_out_to_therm_in_ratio,
+            'STThermOutToThermInRatio': st_therm_out_to_therm_in_ratio,
+            'RequireGHPPurchase': require_ghp_purchase,
+            'GHPHeatingThermalServed': ghp_heating_thermal_load_served_kw,
+            'GHPCoolingThermalServed': ghp_cooling_thermal_load_served_kw,
+            'GHPElectricConsumed': ghp_electric_consumption_kw,
+            'GHPInstalledCost': ghp_installed_cost,
+            'GHPOMCost': ghp_om_cost_year_one,
+            'CHPSupplementaryFireMaxRatio': supplementary_firing_max_steam_ratio,
+            'CHPSupplementaryFireEfficiency': supplementary_firing_efficiency,
+            'CapCostSupplementaryFiring': supplementary_firing_capital_cost_per_kw,
+            # Offgrid
+            'OffGridFlag': self.off_grid_flag,
+            'TechsRequiringSR': techs_requiring_sr,
+            'TechsProvidingSR': techs_providing_sr,
+            'MinLoadMetPct': self.load.min_load_met_pct,
+            'SRrequiredPctLoad': self.load.sr_required_pct,
+            'SRrequiredPctTechs': sr_required_pct,
+            'OtherCapitalCosts': sf.other_capital_costs_us_dollars,
+            'OtherAnnualCosts': sf.other_annual_costs_us_dollars_per_year * pwf_om
+            # Emissions
             'CO2_dollars_tonne': co2_cost_us_dollars_per_tonne,
             'NOx_dollars_tonne_grid': nox_cost_us_dollars_per_tonne_grid,
             'SO2_dollars_tonne_grid': so2_cost_us_dollars_per_tonne_grid,
@@ -1567,9 +1853,15 @@ class DataManager:
             'Include_climate_in_objective': self.include_climate_in_objective,
             'Include_health_in_objective': self.include_health_in_objective
             }
-        ## Uncomment the following and run a scenario to get an updated modelinputs.json for creating Julia system image
+        ## Uncomment the following for debugging
         # import json
         # json.dump(self.reopt_inputs, open("modelinputs.json", "w"))
+
+        # import pandas as pd
+        # df = pd.DataFrame()
+        # df['prod_factor'] = production_factor
+        # df.to_csv('C:/Users/xli1/Documents/PROJECTS/_FY21/Haiti/debug_api/prod_factor.csv')
+        # # json.dump(test_xl, open("C:/Users/xli1/Documents/PROJECTS/_FY21/Nova/debug/modelinputs.json", "w"))
 
         self.reopt_inputs_bau = {
             'Tech': reopt_techs_bau,
@@ -1585,6 +1877,8 @@ class DataManager:
             'pwf_e': pwf_e_bau,
             'pwf_om': pwf_om_bau,
             'pwf_fuel': pwf_fuel_by_tech_bau,
+            'pwf_owner': pwf_owner_bau,
+            'pwf_offtaker': pwf_offtaker_bau,
             'pwfs_emissions_cost': pwfs_emissions_cost_bau,
             'pwfs_grid_emissions_lbs': pwfs_grid_emissions_lbs_bau,
             'two_party_factor': two_party_factor_bau,
@@ -1695,6 +1989,31 @@ class DataManager:
             'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month,
             'StorageDecayRate': storage_decay_rate,
             'AddSOCIncentive': self.add_soc_incentive,
+            'AllBoilerTechs': all_boiler_techs_bau,
+            'AllTechsForSteamTurbine': all_techs_for_steam_turbine_bau,
+            'SteamTurbineTechs': steam_turbine_techs_bau,
+            'TechCanSupplySteamTurbine': techs_can_supply_steam_turbine_bau,
+            'STElecOutToThermInRatio': st_elec_out_to_therm_in_ratio_bau,
+            'STThermOutToThermInRatio': st_therm_out_to_therm_in_ratio_bau,
+            'RequireGHPPurchase': require_ghp_purchase_bau,
+            'GHPHeatingThermalServed': ghp_heating_thermal_load_served_kw_bau,
+            'GHPCoolingThermalServed': ghp_cooling_thermal_load_served_kw_bau,
+            'GHPElectricConsumed': ghp_electric_consumption_kw_bau,
+            'GHPInstalledCost': ghp_installed_cost_bau,
+            'GHPOMCost': ghp_om_cost_year_one_bau,
+            'CHPSupplementaryFireMaxRatio': supplementary_firing_max_steam_ratio,
+            'CHPSupplementaryFireEfficiency': supplementary_firing_efficiency,
+            'CapCostSupplementaryFiring': supplementary_firing_capital_cost_per_kw_bau,
+            # Offgrid
+            'OffGridFlag': False, #self.off_grid_flag,
+            'TechsRequiringSR': techs_requiring_sr,
+            'TechsProvidingSR': techs_providing_sr,
+            'MinLoadMetPct': self.load.min_load_met_pct,
+            'SRrequiredPctLoad': self.load.sr_required_pct,
+            'SRrequiredPctTechs': sr_required_pct,
+            'OtherCapitalCosts': sf.other_capital_costs_us_dollars,
+            'OtherAnnualCosts': sf.other_annual_costs_us_dollars_per_year * pwf_om
+            # Emissions
             'GridEmissionsFactor_CO2': grid_emissions_factor_CO2,
             "GridEmissionsFactor_NOx": grid_emissions_factor_NOx,
             "GridEmissionsFactor_SO2": grid_emissions_factor_SO2,
@@ -1704,20 +2023,20 @@ class DataManager:
             "TechEmissionsFactors_SO2": tech_emissions_factors_SO2_bau,
             "TechEmissionsFactors_PM25": tech_emissions_factors_PM25_bau,
             'TechPercentRE': tech_pct_RE_bau,
-            'MinAnnualPercentREElec': None, 
+            'MinAnnualPercentREElec': None,
             'MaxAnnualPercentREElec': None,
             'MinPercentCO2EmissionsReduction': None,
-            'MaxPercentCO2EmissionsReduction': None,  
+            'MaxPercentCO2EmissionsReduction': None,
             'IncludeExportedREElecinTotal': self.site.include_exported_renewable_electricity_in_total,
             "IncludeExportedElecEmissionsInTotal": self.site.include_exported_elec_emissions_in_total,
             "BAUYr1Emissions_CO2": bau_year_one_emissions_CO2,
             "BAUYr1Emissions_NOx": bau_year_one_emissions_NOx,
             "BAUYr1Emissions_SO2": bau_year_one_emissions_SO2,
             "BAUYr1Emissions_PM25": bau_year_one_emissions_PM25,
-            "BAUYr1Emissions_grid_CO2": bau_year_one_grid_emissions_CO2, 
-            "BAUYr1Emissions_grid_NOx": bau_year_one_grid_emissions_NOx, 
-            "BAUYr1Emissions_grid_SO2": bau_year_one_grid_emissions_SO2, 
-            "BAUYr1Emissions_grid_PM25": bau_year_one_grid_emissions_PM25, 
+            "BAUYr1Emissions_grid_CO2": bau_year_one_grid_emissions_CO2,
+            "BAUYr1Emissions_grid_NOx": bau_year_one_grid_emissions_NOx,
+            "BAUYr1Emissions_grid_SO2": bau_year_one_grid_emissions_SO2,
+            "BAUYr1Emissions_grid_PM25": bau_year_one_grid_emissions_PM25,
             'CO2_dollars_tonne': co2_cost_us_dollars_per_tonne,
             'NOx_dollars_tonne_grid': nox_cost_us_dollars_per_tonne_grid,
             'SO2_dollars_tonne_grid': so2_cost_us_dollars_per_tonne_grid,
@@ -1728,4 +2047,3 @@ class DataManager:
             'Include_climate_in_objective': self.include_climate_in_objective,
             'Include_health_in_objective': self.include_health_in_objective
         }
-        

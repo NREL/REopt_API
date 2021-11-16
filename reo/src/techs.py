@@ -35,6 +35,7 @@ from reo.utilities import TONHOUR_TO_KWHT, generate_year_profile_hourly, MMBTU_T
 import os
 import json
 import copy
+import CoolProp.CoolProp as CP
 
 
 class Tech(object):
@@ -128,19 +129,20 @@ class PV(Tech):
         self.location = location
         self.station = None
         self.pvwatts = None
+        self.sr_required_pct = kwargs.get("sr_required_pct")
 
         # if user hasn't entered the tilt (default value is 0.537), tilt value gets assigned based on array_type
         if self.tilt == 0.537:
             if kwargs.get('array_type') == 0:  # 0 are Ground Mount Fixed (Open Rack) arrays, we assume an optimal tilt
                 """
-                start assuming the site is in the northern hemisphere, set the tilt to the latitude and leave the 
+                start assuming the site is in the northern hemisphere, set the tilt to the latitude and leave the
                 default azimuth of 180 (unless otherwise specified)
                 """
                 self.tilt = kwargs.get('latitude')
                 if kwargs.get('latitude') < 0:
                     """
-                    if the site is in the southern hemisphere, now set the tilt to the positive latitude value and 
-                    change the azimuth to 0. Also update kwargs going forward so they get saved to the database later 
+                    if the site is in the southern hemisphere, now set the tilt to the positive latitude value and
+                    change the azimuth to 0. Also update kwargs going forward so they get saved to the database later
                     show up in final results
                     """
                     self.tilt = -1 * self.tilt
@@ -208,6 +210,7 @@ class Wind(Tech):
         self.incentives = Incentives(**kwargs)
         self.installed_cost_us_dollars_per_kw = kwargs.get('installed_cost_us_dollars_per_kw')
         self.prod_factor_series_kw = prod_factor_series_kw
+        self.sr_required_pct = kwargs.get("sr_required_pct")
 
         # if user hasn't entered the federal itc, itc value gets assigned based on size_class
         if self.incentives.federal.itc == 0.3:
@@ -247,7 +250,7 @@ class Generator(Tech):
         """
         super class init for generator is not unique anymore as we are now allowing users to define min/max sizes;
         and include diesel generator's size as optimization decision variable.
-        
+
         Note that default burn rate, slope, and min/max sizes are handled in ValidateNestedInput.
         """
         self.fuel_slope = fuel_slope_gal_per_kwh
@@ -262,6 +265,7 @@ class Generator(Tech):
         self.fuel_avail_before_outage_pct = fuel_avail_before_outage_pct
         self.generator_sells_energy_back_to_grid = kwargs['generator_sells_energy_back_to_grid']
         self.diesel_fuel_cost_us_dollars_per_gallon = kwargs['diesel_fuel_cost_us_dollars_per_gallon']
+        self.om_cost_us_dollars_per_kwh = kwargs['om_cost_us_dollars_per_kwh']
         self.derate = 0.0
         self.incentives = Incentives(**kwargs)
         if max_kw < min_kw:
@@ -270,6 +274,7 @@ class Generator(Tech):
         self.max_kw = max_kw
         self.existing_kw = existing_kw
         self.generator_fuel_percent_RE = generator_fuel_percent_RE
+        self.useful_life_years = kwargs['useful_life_years']
         self.emissions_factor_lb_CO2_per_gal = emissions_factor_lb_CO2_per_gal
         self.emissions_factor_lb_NOx_per_gal = emissions_factor_lb_NOx_per_gal
         self.emissions_factor_lb_SO2_per_gal = emissions_factor_lb_SO2_per_gal
@@ -335,7 +340,7 @@ class CHP(Tech):
                     "micro_turbine": [(30, 1290), (30, 60), (60, 190), (190, 950), (950, 1290)],
                     "combustion_turbine": [(950, 20000), (950, 1800), (1800, 3300), (3300, 5400), (5400, 7500),
                                            (7500, 14000), (14000, 20000)],
-                    "fuel_cell": [(30, 9300), (30, 320), (320, 1400), (1400, 9300)]}
+                    "fuel_cell": [(440, 9300), (440, 1400), (1400, 9300)]}
 
     # The default CHP size class, currently set to size_class 0 which is the average values across the entire range of data (i.e. all size classes)
     default_chp_size_class = {"recip_engine": 0,
@@ -343,7 +348,7 @@ class CHP(Tech):
                               "combustion_turbine": 0,
                               "fuel_cell": 0}
 
-    def __init__(self, dfm, run_uuid, existing_boiler_production_type_steam_or_hw, oa_temp_degF, site_elevation_ft, 
+    def __init__(self, dfm, run_uuid, existing_boiler_production_type_steam_or_hw, oa_temp_degF, site_elevation_ft,
                  emissions_factor_lb_CO2_per_mmbtu=None, emissions_factor_lb_NOx_per_mmbtu=None,
                  emissions_factor_lb_SO2_per_mmbtu=None, emissions_factor_lb_PM25_per_mmbtu=None,
                  outage_start_time_step=None, outage_end_time_step=None, time_steps_per_hour=1, year=None, **kwargs):
@@ -381,6 +386,10 @@ class CHP(Tech):
         self.outage_start_time_step = outage_start_time_step
         self.outage_end_time_step = outage_end_time_step
         self.year = year
+        self.can_supply_steam_turbine = kwargs.get('can_supply_steam_turbine')
+        self.supplementary_firing_max_steam_ratio = kwargs.get('supplementary_firing_max_steam_ratio')
+        self.supplementary_firing_efficiency = kwargs.get('supplementary_firing_efficiency')
+        self.supplementary_firing_capital_cost_per_kw = kwargs.get('supplementary_firing_capital_cost_per_kw')
         self.emissions_factor_lb_CO2_per_mmbtu = emissions_factor_lb_CO2_per_mmbtu
         self.emissions_factor_lb_NOx_per_mmbtu = emissions_factor_lb_NOx_per_mmbtu
         self.emissions_factor_lb_SO2_per_mmbtu = emissions_factor_lb_SO2_per_mmbtu
@@ -485,16 +494,17 @@ class Boiler(Tech):
         self.max_thermal_factor_on_peak_load = kwargs.get('max_thermal_factor_on_peak_load')
         self.existing_boiler_production_type_steam_or_hw = kwargs.get('existing_boiler_production_type_steam_or_hw')
         self.boiler_efficiency = kwargs.get('boiler_efficiency')
+        self.can_supply_steam_turbine = kwargs.get('can_supply_steam_turbine')
         self.derate = 0
         self.n_timesteps = dfm.n_timesteps
         self.emissions_factor_lb_CO2_per_mmbtu = emissions_factor_lb_CO2_per_mmbtu
         self.emissions_factor_lb_NOx_per_mmbtu = emissions_factor_lb_NOx_per_mmbtu
         self.emissions_factor_lb_SO2_per_mmbtu = emissions_factor_lb_SO2_per_mmbtu
         self.emissions_factor_lb_PM25_per_mmbtu = emissions_factor_lb_PM25_per_mmbtu
-        
+
         # Assign boiler max size equal to the peak load multiplied by the thermal_factor
-        self.max_kw = max(boiler_fuel_series_bau) * self.boiler_efficiency * self.max_thermal_factor_on_peak_load * MMBTU_TO_KWH        
-        
+        self.max_kw = max(boiler_fuel_series_bau) * self.boiler_efficiency * self.max_thermal_factor_on_peak_load * MMBTU_TO_KWH
+
         dfm.add_boiler(self)
 
     @property
@@ -541,8 +551,12 @@ class AbsorptionChiller(Tech):
                                        "steam": 1.42}
 
     # Data format for cost is (ton, $/ton, $/ton/yr); less than 1st or greater than last size uses constant, otherwise lin-interp
-    absorption_chiller_cost_defaults = {"hot_water": [(50, 6000.0, 42.0), (440, 2250.0, 14.0), (1320, 2000.0, 7.0)],
-                                        "steam": [(330, 3300.0, 21.0), (1000, 2000.0, 7.0)]}
+    absorption_chiller_cost_defaults = {"hot_water": [(10, 7000.0, 300.0), (50, 3066.0, 80.0), (200, 2027.0, 36.0), (300, 1587.0, 32.0),
+                                                      (400, 1527.0, 31.0), (500, 1426.0, 30.0), (600, 1365.0, 28.0), (700, 1313.0, 26.0),
+                                                      (800, 1312.0, 23.0), (900, 1277.0, 20.0), (1000, 1248.0, 18.0)],
+                                        "steam": [(50, 3723.0, 80.0), (200, 2461.0, 36.0), (300, 1960.0, 32.0),
+                                                      (400, 1855.0, 31.0), (500, 1709.0, 30.0), (600, 1623.0, 28.0), (700, 1547.0, 26.0),
+                                                      (800, 1520.0, 23.0), (900, 1470.0, 20.0), (1000, 1427.0, 18.0)]}
 
     def __init__(self, dfm, max_cooling_load_tons, hw_or_steam, chp_prime_mover, chiller_cop, **kwargs):
         super(AbsorptionChiller, self).__init__(**kwargs)
@@ -579,7 +593,7 @@ class AbsorptionChiller(Tech):
         self.installed_cost_us_dollars_per_kw = self.installed_cost_us_dollars_per_ton / TONHOUR_TO_KWHT
         self.om_cost_us_dollars_per_kw = self.om_cost_us_dollars_per_ton / TONHOUR_TO_KWHT
 
-        kwargs['macrs_itc_reduction'] = None
+        kwargs['macrs_itc_reduction'] = 0.0
         self.incentives = IncentivesNoProdBased(**kwargs)
 
         dfm.add_absorption_chiller(self)
@@ -643,3 +657,164 @@ class AbsorptionChiller(Tech):
             absorp_chiller_cop = AbsorptionChiller.absorption_chiller_cop_defaults["hot_water"]
 
         return absorp_chiller_cop
+
+
+class NewBoiler(Tech):
+
+    boiler_efficiency_defaults = {"hot_water": 0.90,
+                                  "steam_lp": 0.80,
+                                  "steam_hp": 0.75}
+
+    def __init__(self, dfm, **kwargs):
+        super(NewBoiler, self).__init__(**kwargs)
+
+        self.is_hot = True
+        self.reopt_class = 'NEWBOILER'
+        self.min_mmbtu_per_hr = kwargs.get('min_mmbtu_per_hr')
+        self.max_mmbtu_per_hr = kwargs.get('max_mmbtu_per_hr')
+        self.boiler_efficiency = kwargs.get('boiler_efficiency')
+        self.can_supply_steam_turbine = kwargs.get('can_supply_steam_turbine')
+        self.installed_cost_us_dollars_per_mmbtu_per_hr = kwargs.get('installed_cost_us_dollars_per_mmbtu_per_hr')
+        self.om_cost_us_dollars_per_mmbtu_per_hr = kwargs.get('om_cost_us_dollars_per_mmbtu_per_hr')
+        self.om_cost_us_dollars_per_mmbtu = kwargs.get('om_cost_us_dollars_per_mmbtu')
+
+        # Convert cost basis of mmbtu/mmbtu_per_hr to kwh/kw
+        self.installed_cost_us_dollars_per_kw = self.installed_cost_us_dollars_per_mmbtu_per_hr / MMBTU_TO_KWH
+        self.om_cost_us_dollars_per_kw = self.om_cost_us_dollars_per_mmbtu_per_hr / MMBTU_TO_KWH
+        self.om_cost_us_dollars_per_kwh = self.om_cost_us_dollars_per_mmbtu / MMBTU_TO_KWH
+
+        self.derate = 0  # TODO remove this from data_manager and *.jl model
+        self.n_timesteps = dfm.n_timesteps
+
+        kwargs['macrs_itc_reduction'] = None
+        self.incentives = IncentivesNoProdBased(**kwargs)
+
+        dfm.add_newboiler(self)
+
+    @property
+    def prod_factor(self):
+        """
+        NewBoiler ProdFactor is where we can account for unavailability
+           and/or ambient temperature affects
+        :return: prod_factor
+        """
+        newboiler_prod_factor = [1.0 for _ in range(self.n_timesteps)]
+
+        return newboiler_prod_factor
+
+class SteamTurbine(Tech):
+
+    # Default data, created from input_files.CHP.steam_turbine_Default_data.json
+    # Data points for steam turbine are 500 kW, 3000 kW, and 15000 kW; class bounds span above and below the data point sizes
+    class_bounds = [(0.0, 25000.0), (0, 1000.0), (1000.0, 5000.0), (5000.0, 250000.0)]
+    steam_turbine_defaults_all = json.load(open(os.path.join("input_files","CHP","steam_turbine_default_data.json")))
+
+    def __init__(self, dfm, **kwargs):
+        super(SteamTurbine, self).__init__(**kwargs)
+
+        self.reopt_class = 'STEAMTURBINE'
+        self.electric_produced_to_thermal_consumed_ratio = kwargs.get('electric_produced_to_thermal_consumed_ratio')
+        self.thermal_produced_to_thermal_consumed_ratio = kwargs.get('thermal_produced_to_thermal_consumed_ratio')
+        self.is_condensing = kwargs.get('is_condensing')
+        self.inlet_steam_pressure_psig = kwargs.get('inlet_steam_pressure_psig')
+        self.inlet_steam_temperature_degF = kwargs.get('inlet_steam_temperature_degF')
+        self.inlet_steam_superheat_degF = kwargs.get('inlet_steam_superheat_degF')
+        self.outlet_steam_pressure_psig = kwargs.get('outlet_steam_pressure_psig')
+        self.outlet_steam_min_vapor_fraction = kwargs.get('outlet_steam_min_vapor_fraction')
+        self.isentropic_efficiency = kwargs.get('isentropic_efficiency')
+        self.gearbox_generator_efficiency = kwargs.get('gearbox_generator_efficiency')
+        self.net_to_gross_electric_ratio = kwargs.get('net_to_gross_electric_ratio')
+        self.om_cost_us_dollars_per_kwh = kwargs.get('om_cost_us_dollars_per_kwh')
+
+        self.derate = 0  # TODO remove this from data_manager and *.jl model
+        self.n_timesteps = dfm.n_timesteps
+
+        self.st_elec_out_to_therm_in_ratio, self.st_therm_out_to_therm_in_ratio = self.st_elec_and_therm_prod_ratios()
+
+        kwargs['macrs_itc_reduction'] = 0.0
+        self.incentives = IncentivesNoProdBased(**kwargs)
+
+        dfm.add_steamturbine(self)
+
+    @property
+    def prod_factor(self):
+        """
+        SteamTurbine ProdFactor is where we can account for unavailability
+           and/or ambient temperature affects for condensing ST
+        :return: prod_factor
+        """
+        st_prod_factor = [1.0 for _ in range(self.n_timesteps)]
+
+        return st_prod_factor
+
+    def st_elec_and_therm_prod_ratios(self):
+        """
+        Calculate steam turbine (ST) electric output to thermal input ratio based on inlet and outlet steam conditions and ST performance.
+           Units of [kWe_net / kWt_in]
+        :return: st_elec_out_to_therm_in_ratio, st_therm_out_to_therm_in_ratio
+        """
+
+        # Convert input steam conditions to SI (absolute pressures, not gauge)
+        # ST Inlet
+        self.p_in_pa = (self.inlet_steam_pressure_psig / 14.5038 + 1.01325) * 1.0E5
+        if self.inlet_steam_temperature_degF is None:
+            self.t_in_sat_k = CP.PropsSI("T","P",self.p_in_pa,"Q",1.0,"Water")
+            self.t_superheat_in_k = (self.inlet_steam_superheat_degF - 32.0) * 5.0 / 9.0 + 273.15
+            self.t_in_k = self.t_in_sat_k + self.t_superheat_in_k
+        else:
+            self.t_in_k = (self.inlet_steam_temperature_degF - 32.0) * 5.0 / 9.0 + 273.15
+        self.h_in_j_per_kg = CP.PropsSI("H","P",self.p_in_pa,"T",self.t_in_k,"Water")
+        self.s_in_j_per_kgK = CP.PropsSI("S","P",self.p_in_pa,"T",self.t_in_k,"Water")
+
+        # ST Outlet
+        self.p_out_pa = (self.outlet_steam_pressure_psig / 14.5038 + 1.01325) * 1.0E5
+        self.h_out_ideal_j_per_kg = CP.PropsSI("H","P",self.p_out_pa,"S",self.s_in_j_per_kgK,"Water")
+        self.h_out_j_per_kg = self.h_in_j_per_kg - self.isentropic_efficiency * (self.h_in_j_per_kg - self.h_out_ideal_j_per_kg)
+        self.x_out = CP.PropsSI("Q","P",self.p_out_pa,"H",self.h_out_j_per_kg,"Water")
+
+        # ST Power
+        self.st_shaft_power_kwh_per_kg = (self.h_in_j_per_kg - self.h_out_j_per_kg) / 1000.0 / 3600.0
+        self.st_net_elec_power_kwh_per_kg = self.st_shaft_power_kwh_per_kg * self.gearbox_generator_efficiency * self.net_to_gross_electric_ratio
+
+        # Condenser heat rejection or heat recovery if ST is back-pressure
+        if self.is_condensing:
+            self.heat_recovered_kwh_per_kg = 0.0
+        else:
+            self.h_out_sat_liq_j_per_kg = CP.PropsSI("H","P",self.p_out_pa,"Q",0.0,"Water")
+            self.heat_recovered_kwh_per_kg = (self.h_out_j_per_kg - self.h_out_sat_liq_j_per_kg) / 1000.0 / 3600.0
+
+        # Boiler Thermal Power - assume enthalpy at saturated liquid condition (ignore delta H of pump)
+        self.h_boiler_in_j_per_kg = CP.PropsSI("H","P",self.p_out_pa,"Q",0.0,"Water")
+        self.boiler_therm_power_kwh_per_kg = (self.h_in_j_per_kg - self.h_boiler_in_j_per_kg) / 1000.0 / 3600.0
+
+        # Calculate output ratios
+        if self.electric_produced_to_thermal_consumed_ratio is None:
+            st_elec_out_to_therm_in_ratio = self.st_net_elec_power_kwh_per_kg / self.boiler_therm_power_kwh_per_kg
+        else:
+            st_elec_out_to_therm_in_ratio = self.electric_produced_to_thermal_consumed_ratio
+
+        if self.thermal_produced_to_thermal_consumed_ratio is None:
+            st_therm_out_to_therm_in_ratio = self.heat_recovered_kwh_per_kg / self.boiler_therm_power_kwh_per_kg
+        else:
+            st_therm_out_to_therm_in_ratio = self.thermal_produced_to_thermal_consumed_ratio
+
+        return st_elec_out_to_therm_in_ratio, st_therm_out_to_therm_in_ratio
+
+    @staticmethod
+    def get_steam_turbine_defaults(size_class=None):
+        """
+        Parse the default steam turbine cost and performance parameters
+        :return: dictionary of default cost and performance parameters
+        """
+
+        # Default to average parameter values across all size classes (size_class = 0) if None is input
+        if size_class is None:
+            size_class = 0
+
+        # Get default steam turbine parameters based on size_class
+        steam_turbine_defaults_all = copy.deepcopy(SteamTurbine.steam_turbine_defaults_all)
+        steam_turbine_defaults = {}
+        for param in steam_turbine_defaults_all.keys():
+            steam_turbine_defaults[param] = steam_turbine_defaults_all[param][size_class]
+
+        return steam_turbine_defaults

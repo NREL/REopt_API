@@ -1,0 +1,55 @@
+{
+    "Scenario": {
+        "timeout_seconds": 400,
+        "optimality_tolerance_techs": 0.01,
+        "Site": {
+            "latitude": 37.78 ,
+            "longitude": -122.45 ,
+            "land_acres": null ,
+            "roof_squarefeet": null ,
+            "Financial": {
+                "om_cost_escalation_pct": 0.01 ,
+                "escalation_pct": 0.006 ,
+                "boiler_fuel_escalation_pct": 0.034 ,
+                "owner_tax_pct": 0.26 ,
+                "owner_discount_pct": 0.083 ,
+                "analysis_years": 25
+            } ,
+            "LoadProfile": {
+                "doe_reference_name": "Hospital"
+            } ,
+            "LoadProfileBoilerFuel": {
+                "addressable_load_fraction": 0.9,
+                "space_heating_fraction_of_heating_load": 0.7
+            } ,
+            "Boiler": {
+                "existing_boiler_production_type_steam_or_hw": "hot_water" ,
+                "boiler_efficiency": 0.8
+            } ,
+            "LoadProfileChillerThermal": {
+                "doe_reference_name": "Hospital"
+            } ,
+            "ElectricTariff": {
+                "urdb_label": "5cef0a415457a33576f60fe2",
+                "net_metering_limit_kw": 0.0 ,
+                "interconnection_limit_kw": 100000000.0
+            } ,
+            "FuelTariff": {
+                "existing_boiler_fuel_type": "natural_gas" ,
+                "boiler_fuel_blended_annual_rates_us_dollars_per_mmbtu": 11.0
+            } ,
+            "GHP": {
+                "require_ghp_purchase": true,
+                "building_sqft": 50000.0,
+                "can_serve_dhw": false
+            },
+            "PV":{
+                "max_kw": 0.0
+            },
+            "Storage":{
+                "max_kw": 0.0,
+                "max_kwh": 0.0
+            }
+        }
+    }
+}

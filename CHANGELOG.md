@@ -25,6 +25,22 @@ Classify the change according to the following categories:
     ##### Deprecated
     ##### Removed
     ### Patches
+## Develop - 2021-11-11
+### Minor Updates
+##### Added
+- `reo`: Added capability to model off-grid systems with `PV`, `Storage`, and/or `Generator`; added off-grid-specific default values in `nested_inputs.py`; added off-grid specific outputs in `nested_outputs.py`. 
+- `reopt_model.jl`: Included additional constraints for off-grid runs for minimum load met and load and PV operating reserve constraints; add `p.OtherCapitalCosts` and `p.OtherAnnualCosts` to model objective for off-grid runs. 
+- `utils.jl` added off-grid specific parameters 
+
+## v1.7.0 - 2021-09-29
+##### Added
+- `reo`: The following technologies: `SteamTurbine`, `NewBoiler`, and `GHP`, and added supplmentary firing for `CHP`
+- `reopt_model.jl`: Variables and constraints for the new technologies listed above, including supplementary firing sizing and dispatch for `CHP`
+- `ghpghx`: New app which serves the `GHPGHX.jl` module using a POST-style endpoint similar to the `/reo Job` endpoint. There is also a `ground_conductivity` endpoint in this app for GETting the default GHX ground conductivity by location.
+- `julia_src`: The `GHPGHX.jl` module and supporting `*.jl` scripts, served by an endpoint in `http.jl`
+- `input_files`: Reorganized the different load profile data files into folders, and split out space heating and domestic hot water from the `LoadProfileBoilerFuel` data
+##### Changed
+- `reo`: The default processing of `LoadProfileChillerThermal` with a `doe_reference_name` is now such that the user does not have to specify `annual_tonhour`, and the processing will use the building(s) fraction of total electric load that is consumed for cooling
 
 ## v1.6.0 - 2021-06-09
 ### Minor Updates
