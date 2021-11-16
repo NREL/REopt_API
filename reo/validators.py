@@ -549,8 +549,8 @@ class ValidateNestedInput:
             # else:
                 # Sets diesel fuel escalation to the electricity escalation rate
                 # TODO: remove with next major UI update
-                self.input_dict["Scenario"]["Site"]["Financial"]["generator_fuel_escalation_pct"] = \
-                    self.input_dict["Scenario"]["Site"]["Financial"]["escalation_pct"]
+                # self.input_dict["Scenario"]["Site"]["Financial"]["generator_fuel_escalation_pct"] = \
+                #     self.input_dict["Scenario"]["Site"]["Financial"]["escalation_pct"]
     @property
     def isValid(self):
         if self.input_data_errors or self.urdb_errors or self.ghpghx_inputs_errors:
@@ -1813,8 +1813,8 @@ class ValidateNestedInput:
                 self.update_attribute_value(object_name_path, number, "pm25_cost_us_dollars_per_tonne_onsite_fuelburn",
                                 EASIUR_ground_pop2020_inc2020_dol2010['PEC_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
 
-            # TODO: If user has not supplied nox, so2, pm25 cost escalation rates, calculate using EASIUR
-            avg_inflation_2020_2024 = 0.023
+            # If user has not supplied nox, so2, pm25 cost escalation rates, calculate using EASIUR
+            avg_inflation_2020_2024 = 0.023 # TODO update to "om_cost_escalation_pct"
             if real_values.get("nox_cost_escalation_pct") is None:
                 dollar2010_per_tonne_in_2020 = EASIUR_150m_pop2020_inc2020_dol2010['NOX_Annual'][x - 1, y - 1]
                 EASIUR_150m_pop2024_inc2024_dol2010 = get_EASIUR2005('p150', pop_year=2024, income_year=2024, dollar_year=2010)
