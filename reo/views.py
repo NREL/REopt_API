@@ -46,7 +46,7 @@ from reo.exceptions import UnexpectedError  #, RequestError  # should we save ba
 import logging
 log = logging.getLogger(__name__)
 from reo.src.techs import Generator, CHP, AbsorptionChiller, Boiler
-from reo.src.emissions_calculator import EmissionsCalculator ##, EmissionsCalculator_NOx, EmissionsCalculator_SO2, EmissionsCalculator_PM25
+from reo.src.emissions_calculator import EmissionsCalculator 
 from django.http import HttpResponse
 from django.template import  loader
 import pandas as pd
@@ -206,8 +206,8 @@ def emissions_profile(request):
                     'region_abbr': ec.region_abbr,
                     'region': ec.region,
                     'emissions_series_lb_CO2_per_kWh': ec.emissions_series,
-                    'units': 'Pounds Carbon Dioxide Equivalent',
-                    'description': 'Regional hourly grid emissions factor for EPA AVERT regions.',
+                    'units': 'Pounds Carbon Dioxide per kWh',
+                    'description': 'Regional hourly CO2 grid emissions factor for EPA AVERT regions.',
                     'meters_to_region': ec.meters_to_region
                 })
             return response

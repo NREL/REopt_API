@@ -421,7 +421,7 @@ class ValidateNestedInput:
     #     }
 
     # lbs CO2 per mmbtu
-    fuel_conversion_per_mmbtu = {
+    fuel_conversion_lb_CO2_per_mmbtu = {
                 "natural_gas":116.9,
                 "landfill_bio_gas":114.8,
                 "propane":138.6,
@@ -429,12 +429,11 @@ class ValidateNestedInput:
             }
 
     # lbs CO2 per gallon
-    fuel_conversion_per_gal = {
+    fuel_conversion_lb_CO2_per_gal = {
                 'diesel_oil':22.51
             }
     
     # NOx fuel conversion
-    # TODO: validate
     fuel_conversion_lb_NOx_per_mmbtu = {
                 "natural_gas":0.09139,
                 "landfill_bio_gas":0.14,
@@ -443,13 +442,11 @@ class ValidateNestedInput:
             }
 
     # NOx fuel conversion
-    # # TODO: validate
     fuel_conversion_lb_NOx_per_gal = {
                 'diesel_oil':0.0775544
             }
 
     # SO2 fuel conversion
-    # TODO: validate
     fuel_conversion_lb_SO2_per_mmbtu = {
                 "natural_gas":0.000578592,
                 "landfill_bio_gas":0.045,
@@ -458,13 +455,11 @@ class ValidateNestedInput:
             }
 
     # SO2 fuel conversion
-    # TODO: validate
     fuel_conversion_lb_SO2_per_gal = {
                 'diesel_oil':0.040020476
             }
 
     # PM2.5 fuel conversion
-    # TODO: validate
     fuel_conversion_lb_PM25_per_mmbtu = {
                 "natural_gas":0.007328833,
                 "landfill_bio_gas":0.02484,
@@ -473,7 +468,6 @@ class ValidateNestedInput:
             }
 
     # PM2.5 fuel conversion
-    # # TODO: validate
     fuel_conversion_lb_PM25_per_gal = {
                 'diesel_oil':0.0
             }
@@ -1197,7 +1191,7 @@ class ValidateNestedInput:
                             elif k == 'emissions_factor_lb_CO2_per_mmbtu':
                                 fuel = self.input_dict['Scenario']['Site']['FuelTariff'].get('chp_fuel_type')
                                 if fuel is not None:
-                                    if v != self.fuel_conversion_per_mmbtu[fuel]:
+                                    if v != self.fuel_conversion_lb_CO2_per_mmbtu[fuel]:
                                         user_supplied_chp_inputs = True
 
                             # check the special case default for NOx emissions 
@@ -1255,7 +1249,7 @@ class ValidateNestedInput:
 
                 # If user has not supplied CO2 emissions rate
                 if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_CO2_per_gal') is None:
-                    self.update_attribute_value(object_name_path, number, 'emissions_factor_lb_CO2_per_gal', self.fuel_conversion_per_gal.get('diesel_oil'))
+                    self.update_attribute_value(object_name_path, number, 'emissions_factor_lb_CO2_per_gal', self.fuel_conversion_lb_CO2_per_gal.get('diesel_oil'))
                 
                 # If user has not supplied NOx emissions rate
                 if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_NOx_per_gal') is None:
@@ -1634,23 +1628,23 @@ class ValidateNestedInput:
             # If user has not supplied a CO2 emissions factor
             if self.input_dict['Scenario']['Site']['CHP'].get('emissions_factor_lb_CO2_per_mmbtu') is None:
                 chp_fuel = real_values.get('chp_fuel_type')
-                # Then use default fuel emissions value (in fuel_conversion_per_mmbtu)
+                # Then use default fuel emissions value (in fuel_conversion_lb_CO2_per_mmbtu)
                 self.update_attribute_value(object_name_path[:-1] + ['CHP'], number,
                                             'emissions_factor_lb_CO2_per_mmbtu',
-                                            self.fuel_conversion_per_mmbtu.get(chp_fuel))
+                                            self.fuel_conversion_lb_CO2_per_mmbtu.get(chp_fuel))
             if self.input_dict['Scenario']['Site']['Boiler'].get('emissions_factor_lb_CO2_per_mmbtu') is None:
                 boiler_fuel = real_values.get('existing_boiler_fuel_type')
                 self.update_attribute_value(object_name_path[:-1] + ['Boiler'], number,
                                             'emissions_factor_lb_CO2_per_mmbtu',
-                                            self.fuel_conversion_per_mmbtu.get(boiler_fuel))
+                                            self.fuel_conversion_lb_CO2_per_mmbtu.get(boiler_fuel))
             if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_CO2_per_gal') is None:
                     self.update_attribute_value(object_name_path[:-1] + ['Generator'],  number, \
-                        'emissions_factor_lb_CO2_per_gal', self.fuel_conversion_per_gal.get('diesel_oil'))
+                        'emissions_factor_lb_CO2_per_gal', self.fuel_conversion_lb_CO2_per_gal.get('diesel_oil'))
             
             # If user has not supplied a NOx emissions factor
             if self.input_dict['Scenario']['Site']['CHP'].get('emissions_factor_lb_NOx_per_mmbtu') is None:
                 chp_fuel = real_values.get('chp_fuel_type')
-                # Then use default fuel emissions value (in fuel_conversion_per_mmbtu)
+                # Then use default fuel emissions value (in fuel_conversion_lb_CO2_per_mmbtu)
                 self.update_attribute_value(object_name_path[:-1] + ['CHP'], number,
                                             'emissions_factor_lb_NOx_per_mmbtu',
                                             self.fuel_conversion_lb_NOx_per_mmbtu.get(chp_fuel))
@@ -1666,7 +1660,7 @@ class ValidateNestedInput:
             # If user has not supplied a SO2 emissions factor
             if self.input_dict['Scenario']['Site']['CHP'].get('emissions_factor_lb_SO2_per_mmbtu') is None:
                 chp_fuel = real_values.get('chp_fuel_type')
-                # Then use default fuel emissions value (in fuel_conversion_per_mmbtu)
+                # Then use default fuel emissions value (in fuel_conversion_lb_CO2_per_mmbtu)
                 self.update_attribute_value(object_name_path[:-1] + ['CHP'], number,
                                             'emissions_factor_lb_SO2_per_mmbtu',
                                             self.fuel_conversion_lb_SO2_per_mmbtu.get(chp_fuel))
@@ -1682,7 +1676,7 @@ class ValidateNestedInput:
             # If user has not supplied a PM25 emissions factor
             if self.input_dict['Scenario']['Site']['CHP'].get('emissions_factor_lb_PM25_per_mmbtu') is None:
                 chp_fuel = real_values.get('chp_fuel_type')
-                # Then use default fuel emissions value (in fuel_conversion_per_mmbtu)
+                # Then use default fuel emissions value (in fuel_conversion_lb_CO2_per_mmbtu)
                 self.update_attribute_value(object_name_path[:-1] + ['CHP'], number,
                                             'emissions_factor_lb_PM25_per_mmbtu',
                                             self.fuel_conversion_lb_PM25_per_mmbtu.get(chp_fuel))

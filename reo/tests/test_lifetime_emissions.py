@@ -246,11 +246,11 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
                              "Unexpected pm25_cost_us_dollars_per_tonne_onsite_fuelburn output from EASIUR ")                
 
             for item in ['CO2', 'NOx', 'SO2', 'PM25']:
-              print('Year 1 {} lb: '.format(item), response['outputs']['Scenario']['Site']['year_one_emissions_t{}'.format(item)])
-              print('Year 1 {} lb BAU: '.format(item), response['outputs']['Scenario']['Site']['year_one_emissions_t{}_bau'.format(item)])
+              print('Year 1 {} t: '.format(item), response['outputs']['Scenario']['Site']['year_one_emissions_t{}'.format(item)])
+              print('Year 1 {} t BAU: '.format(item), response['outputs']['Scenario']['Site']['year_one_emissions_t{}_bau'.format(item)])
               
-              print('Generator Year 1 {} lb: '.format(item), response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_t{}'.format(item)])
-              print('Generator Year 1 {} lb BAU: '.format(item), response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_t{}_bau'.format(item)])
+              print('Generator Year 1 {} t: '.format(item), response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_t{}'.format(item)])
+              print('Generator Year 1 {} t BAU: '.format(item), response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_t{}_bau'.format(item)])
 
             #print('year_one_CO2_emissions_from_fuelburn: ', response['outputs']['Scenario']['Site']['year_one_CO2_emissions_from_fuelburn'])
 
