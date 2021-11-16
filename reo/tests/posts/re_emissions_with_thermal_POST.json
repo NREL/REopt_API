@@ -2,9 +2,10 @@
   "Scenario": {
     "webtool_uuid": null,
     "description": "",
-    "timeout_seconds": 1000,
+    "timeout_seconds": 420,
+    "optimality_tolerance_techs": 0.05,
+    "optimality_tolerance_bau": 0.05,
     "Site": {
-      "optimality_tolerance_techs": 0.03,
       "PV": {
         "pbi_years": 1.0,
         "macrs_bonus_pct": 0.4,
