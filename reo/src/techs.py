@@ -677,6 +677,10 @@ class NewBoiler(Tech):
         self.installed_cost_us_dollars_per_mmbtu_per_hr = kwargs.get('installed_cost_us_dollars_per_mmbtu_per_hr')
         self.om_cost_us_dollars_per_mmbtu_per_hr = kwargs.get('om_cost_us_dollars_per_mmbtu_per_hr')
         self.om_cost_us_dollars_per_mmbtu = kwargs.get('om_cost_us_dollars_per_mmbtu')
+        self.emissions_factor_lb_CO2_per_mmbtu = kwargs.get('emissions_factor_lb_CO2_per_mmbtu')
+        self.emissions_factor_lb_NOx_per_mmbtu = kwargs.get('emissions_factor_lb_NOx_per_mmbtu')
+        self.emissions_factor_lb_SO2_per_mmbtu = kwargs.get('emissions_factor_lb_SO2_per_mmbtu')
+        self.emissions_factor_lb_PM25_per_mmbtu = kwargs.get('emissions_factor_lb_PM25_per_mmbtu')
 
         # Convert cost basis of mmbtu/mmbtu_per_hr to kwh/kw
         self.installed_cost_us_dollars_per_kw = self.installed_cost_us_dollars_per_mmbtu_per_hr / MMBTU_TO_KWH
