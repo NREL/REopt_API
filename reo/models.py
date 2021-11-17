@@ -1106,7 +1106,6 @@ class NewBoilerModel(models.Model):
             models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
     year_one_boiler_fuel_consumption_mmbtu = models.FloatField(null=True, blank=True)
     year_one_boiler_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
-    year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
