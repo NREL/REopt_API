@@ -294,11 +294,11 @@ nested_input_definitions = {
       },
       "co2_emissions_reduction_min_pct": {
         "type": "float",
-        "description": "Minumum acceptable percent of carbon emissions reduction relative to the business-as-usual case, in Year 1."
+        "description": "Minumum acceptable percent of carbon emissions reduction relative to the business-as-usual case, over the financial lifecycle of the project."
       },
       "co2_emissions_reduction_max_pct": {
         "type": "float",
-        "description": "Maximum acceptable percent of carbon emissions reduction relative to the business-as-usual case, in Year 1."
+        "description": "Maximum acceptable percent of carbon emissions reduction relative to the business-as-usual case, over the financial lifecycle of the project."
       },
       "include_exported_elec_emissions_in_total": {
         "type": "bool",

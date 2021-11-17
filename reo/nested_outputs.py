@@ -1016,82 +1016,82 @@ nested_output_definitions = {
                 },
                 "year_one_emissions_tCO2": {
                   "type": "float",
-                  "description": "Total tons of CO2 emissions associated with the site's grid purchases in year one.",
+                  "description": "Total tons of CO2 emissions associated with the site's grid-purchased electricity in year one. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
                   "units": "metric tons"
                 },
                 "year_one_emissions_tNOx": {
                   "type": "float",
-                  "description": "Total tons of NOx emissions associated with the site's grid purchases in year one.",
+                  "description": "Total tons of NOx emissions associated with the site's grid-purchased electricity in year one. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
                   "units": "metric tons"
                 },
                 "year_one_emissions_tSO2": {
                   "type": "float",
-                  "description": "Total tons of SO2 emissions associated with the site's grid purchases in year one.",
+                  "description": "Total tons of SO2 emissions associated with the site's grid-purchased electricity in year one. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
                   "units": "metric tons"
                 },
                 "year_one_emissions_tPM25": {
                   "type": "float",
-                  "description": "Total tons of PM2.5 emissions associated with the site's grid purchases in year one.",
+                  "description": "Total tons of PM2.5 emissions associated with the site's grid-purchased electricity in year one. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
                   "units": "metric tons"
                 },
                 "year_one_emissions_tCO2_bau": {
                   "type": "float",
-                  "description": "Total tons of CO2 emissions associated with the site's grid purchases in year one in the BAU case.",
+                  "description": "Total tons of CO2 emissions associated with the site's grid-purchased electricity in year one in the BAU case. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
                   "units": "metric tons"
                 },
                 "year_one_emissions_tNOx_bau": {
                   "type": "float",
-                  "description": "Total tons of NOx emissions associated with the site's grid purchases in year one in the BAU case.",
+                  "description": "Total tons of NOx emissions associated with the site's grid-purchased electricity in year one in the BAU case. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
                   "units": "metric tons"
                 },
                 "year_one_emissions_tSO2_bau": {
                   "type": "float",
-                  "description": "Total tons of SO2 emissions associated with the site's grid purchases in year one in the BAU case.",
+                  "description": "Total tons of SO2 emissions associated with the site's grid-purchased electricity in year one in the BAU case. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
                   "units": "metric tons"
                 },
                 "year_one_emissions_tPM25_bau": {
                   "type": "float",
-                  "description": "Total tons of PM2.5 emissions associated with the site's grid purchases in year one in the BAU case.",
+                  "description": "Total tons of PM2.5 emissions associated with the site's grid-purchased electricity in year one in the BAU case. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
                   "units": "metric tons"
                 },
                 "lifecycle_emissions_tCO2": {
                   "type": "float",
-                  "description": "Total tons of CO2 emissions associated with the site's grid purchases over the analysis period.",
+                  "description": "Total tons of CO2 emissions associated with the site's grid-purchased electricity over the analysis period. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
                   "units": "metric tons"
                 },
                 "lifecycle_emissions_tNOx": {
                   "type": "float",
-                  "description": "Total tons of NOx emissions associated with the site's grid purchases over the analysis period.",
+                  "description": "Total tons of NOx emissions associated with the site's grid-purchased electricity over the analysis period. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
                   "units": "metric tons"
                 },
                 "lifecycle_emissions_tSO2": {
                   "type": "float",
-                  "description": "Total tons of SO2 emissions associated with the site's grid purchases over the analysis period.",
+                  "description": "Total tons of SO2 emissions associated with the site's grid-purchased electricity over the analysis period. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
                   "units": "metric tons"
                 },
                 "lifecycle_emissions_tPM25": {
                   "type": "float",
-                  "description": "Total tons of PM2.5 emissions associated with the site's grid purchases over the analysis period.",
+                  "description": "Total tons of PM2.5 emissions associated with the site's grid-purchased electricity over the analysis period. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
                   "units": "metric tons"
                 },
                 "lifecycle_emissions_tCO2_bau": {
                   "type": "float",
-                  "description": "Total tons of CO2 emissions associated with the site's grid purchases over the analysis period in the BAU scenario.",
+                  "description": "Total tons of CO2 emissions associated with the site's grid-purchased electricity over the analysis period. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
                   "units": "metric tons"
                 },
                 "lifecycle_emissions_tNOx_bau": {
                   "type": "float",
-                  "description": "Total tons of NOx emissions associated with the site's grid purchases over the analysis period in the BAU scenario.",
+                  "description": "Total tons of NOx emissions associated with the site's grid-purchased electricity over the analysis period. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
                   "units": "metric tons"
                 },
                 "lifecycle_emissions_tSO2_bau": {
                   "type": "float",
-                  "description": "Total tons of SO2 emissions associated with the site's grid purchases over the analysis period in the BAU scenario.",
+                  "description": "Total tons of SO2 emissions associated with the site's grid-purchased electricity over the analysis period in the BAU scenario. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
                   "units": "metric tons"
                 },
                 "lifecycle_emissions_tPM25_bau": {
                   "type": "float",
-                  "description": "Total tons of PM2.5 emissions associated with the site's grid purchases over the analysis period in the BAU scenario.",
+                  "description": "Total tons of PM2.5 emissions associated with the site's grid-purchased electricity over the analysis period in the BAU scenario. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
                   "units": "metric tons"
                 }
               },
