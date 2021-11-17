@@ -872,7 +872,7 @@ class DataManager:
                     tech_emissions_factors_NOx.append(float(eval('self.' + tech + '.emissions_factor_lb_NOx_per_mmbtu') / MMBTU_TO_KWH))
                     tech_emissions_factors_SO2.append(float(eval('self.' + tech + '.emissions_factor_lb_SO2_per_mmbtu') / MMBTU_TO_KWH))
                     tech_emissions_factors_PM25.append(float(eval('self.' + tech + '.emissions_factor_lb_PM25_per_mmbtu') / MMBTU_TO_KWH))
-                elif tech.lower in ['newboiler', 'steamturbine']:
+                elif tech.lower() in ['newboiler', 'steamturbine']:
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.kwargs["om_cost_us_dollars_per_kwh"]')))
                     om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
                     # TODO add RE and emissions inputs for NewBoiler and SteamTurbine
@@ -1152,10 +1152,11 @@ class DataManager:
 
         ## Boiler emissions
         if self.boiler is not None:
-            total_emissions_lb_CO2_per_year += self.heating_load.annual_mmbtu * self.boiler.emissions_factor_lb_CO2_per_mmbtu
-            total_emissions_lb_NOx_per_year += self.heating_load.annual_mmbtu * self.boiler.emissions_factor_lb_NOx_per_mmbtu
-            total_emissions_lb_SO2_per_year += self.heating_load.annual_mmbtu * self.boiler.emissions_factor_lb_SO2_per_mmbtu
-            total_emissions_lb_PM25_per_year += self.heating_load.annual_mmbtu * self.boiler.emissions_factor_lb_PM25_per_mmbtu
+            for heat_type in ["space_heating", "dhw"]:
+                total_emissions_lb_CO2_per_year += eval("self.heating_load_"+heat_type+".annual_mmbtu") * self.boiler.emissions_factor_lb_CO2_per_mmbtu
+                total_emissions_lb_NOx_per_year += eval("self.heating_load_"+heat_type+".annual_mmbtu") * self.boiler.emissions_factor_lb_NOx_per_mmbtu
+                total_emissions_lb_SO2_per_year += eval("self.heating_load_"+heat_type+".annual_mmbtu") * self.boiler.emissions_factor_lb_SO2_per_mmbtu
+                total_emissions_lb_PM25_per_year += eval("self.heating_load_"+heat_type+".annual_mmbtu") * self.boiler.emissions_factor_lb_PM25_per_mmbtu
 
         return total_emissions_lb_CO2_per_year, total_emissions_lb_NOx_per_year, total_emissions_lb_SO2_per_year, total_emissions_lb_PM25_per_year, grid_emissions_lb_CO2_per_year, grid_emissions_lb_NOx_per_year, grid_emissions_lb_SO2_per_year, grid_emissions_lb_PM25_per_year
 
@@ -1426,7 +1427,7 @@ class DataManager:
 
         levelization_factor, pwf_e, pwf_om, two_party_factor, \
             pwf_boiler_fuel, pwf_chp_fuel, pwf_fuel_by_tech, pwfs_emissions_cost, pwfs_grid_emissions_lbs, \
-            pwf_owner, pwf_offtaker = self._get_REopt_pwfs(self.available_techs)
+            pwf_owner, pwf_offtaker = self._get_REopt_pwfs(self.available_techs) 
         levelization_factor_bau, pwf_e_bau, pwf_om_bau, two_party_factor_bau, \
             pwf_boiler_fuel_bau, pwf_chp_fuel_bau, pwf_fuel_by_tech_bau, pwfs_emissions_cost_bau, pwfs_grid_emissions_lbs_bau, \
             pwf_owner_bau, pwf_offtaker_bau = self._get_REopt_pwfs(self.bau_techs)
