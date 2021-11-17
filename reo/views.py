@@ -243,7 +243,7 @@ def easiur_costs(request):
 
         easiur = EASIURCalculator( latitude=latitude, 
                     longitude=longitude,
-                    inflation=inflation
+                    inflation=avg_inflation
                     )
 
         try:
@@ -254,13 +254,13 @@ def easiur_costs(request):
                     'nox_cost_us_dollars_per_tonne_onsite_fuelburn': easiur.onsite_costs['NOx'],
                     'so2_cost_us_dollars_per_tonne_onsite_fuelburn': easiur.onsite_costs['SO2'],
                     'pm25_cost_us_dollars_per_tonne_onsite_fuelburn': easiur.onsite_costs['PM25'],
-                    'units': 'US dollars per metric ton.',
-                    'description': 'Health costs of emissions from the grid and on-site fuel burn, as reported by the EASIUR model.',
+                    'units_costs': 'US dollars per metric ton.',
+                    'description_costs': 'Health costs of emissions from the grid and on-site fuel burn, as reported by the EASIUR model.',
                     'nox_cost_escalation_pct': easiur.escalation_rates['NOx'],
                     'so2_cost_escalation_pct': easiur.escalation_rates['SO2'],
                     'pm25_cost_escalation_pct': easiur.escalation_rates['PM25'],
-                    'units': 'nominal annual percent',
-                    'description': 'Annual nominal escalation rate (as a decimal) of public health costs of emissions.',
+                    'units_escalation': 'nominal annual percent',
+                    'description_escalation': 'Annual nominal escalation rate (as a decimal) of public health costs of emissions.',
                 })
             return response
         except AttributeError as e:

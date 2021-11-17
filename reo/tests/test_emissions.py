@@ -41,6 +41,10 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
         test = self.api_client.get('/v1/emissions_profile/',data={"latitude":1,"longitude":1})
         self.assertTrue("Your site location (1.0,1.0) is more than 5 miles from the nearest emission region." in str(test.content))
 
+    def test_easiur_costs_url(self):
+        test = self.api_client.get('/v1/easiur_costs/',data={"latitude":30.2672,"longitude":-97.7431,"inflation":0.025})
+        self.assertEqual(round(json.loads(test.content)['nox_cost_us_dollars_per_tonne_grid'],3), round(4534.03247048984,3))
+
     def test_bad_grid_emissions_profile(self):
         """
         Tests that a poorly formatted utility emissions factor profile does not validate 
