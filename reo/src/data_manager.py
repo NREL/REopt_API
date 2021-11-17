@@ -873,7 +873,7 @@ class DataManager:
                     tech_emissions_factors_SO2.append(float(eval('self.' + tech + '.emissions_factor_lb_SO2_per_mmbtu') / MMBTU_TO_KWH))
                     tech_emissions_factors_PM25.append(float(eval('self.' + tech + '.emissions_factor_lb_PM25_per_mmbtu') / MMBTU_TO_KWH))
                 elif tech.lower() in ['newboiler', 'steamturbine']:
-                    om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.kwargs["om_cost_us_dollars_per_kwh"]')))
+                    om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kwh')))
                     om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
                     # TODO add RE and emissions inputs for NewBoiler and SteamTurbine
                     tech_percent_RE.append(0.0)
