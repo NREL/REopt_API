@@ -872,16 +872,25 @@ class DataManager:
                     tech_emissions_factors_NOx.append(float(eval('self.' + tech + '.emissions_factor_lb_NOx_per_mmbtu') / MMBTU_TO_KWH))
                     tech_emissions_factors_SO2.append(float(eval('self.' + tech + '.emissions_factor_lb_SO2_per_mmbtu') / MMBTU_TO_KWH))
                     tech_emissions_factors_PM25.append(float(eval('self.' + tech + '.emissions_factor_lb_PM25_per_mmbtu') / MMBTU_TO_KWH))
-                elif tech.lower() in ['newboiler', 'steamturbine']:
+                elif tech.lower() == 'newboiler':
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kwh')))
                     om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
-                    # TODO add RE and emissions inputs for NewBoiler and SteamTurbine
-                    tech_percent_RE.append(0.0)
+                    tech_percent_RE.append(float(eval('self.fuel_tariff.newboiler_fuel_percent_RE')))
+                    tech_emissions_factors_CO2.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_mmbtu') / MMBTU_TO_KWH))
+                    tech_emissions_factors_NOx.append(float(eval('self.' + tech + '.emissions_factor_lb_NOx_per_mmbtu') / MMBTU_TO_KWH))
+                    tech_emissions_factors_SO2.append(float(eval('self.' + tech + '.emissions_factor_lb_SO2_per_mmbtu') / MMBTU_TO_KWH))
+                    tech_emissions_factors_PM25.append(float(eval('self.' + tech + '.emissions_factor_lb_PM25_per_mmbtu') / MMBTU_TO_KWH))
+                elif tech.lower() == 'steamturbine':
+                    om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kwh')))
+                    om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
+                    # steam turbine percent RE will depend on source of steam and percent RE of fuel used to generate it- structured as a decision variable in reopt_model.jl
+                    tech_percent_RE.append(0.0) 
+                    # no additional emissions associated with steam turbine; emissions used to generate the steam used to power it are accounted for in respective heating techs
                     tech_emissions_factors_CO2.append(0.0)
                     tech_emissions_factors_NOx.append(0.0)
                     tech_emissions_factors_SO2.append(0.0)
                     tech_emissions_factors_PM25.append(0.0)
-                else:
+                else: #pv, wind, TODO: GHP?
                     om_cost_us_dollars_per_kwh.append(0.0)
                     om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
                     tech_percent_RE.append(1.0)

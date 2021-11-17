@@ -498,6 +498,7 @@ class FuelTariffModel(models.Model):
     chp_fuel_blended_annual_rates_us_dollars_per_mmbtu = models.FloatField(null=True, blank=True)
     chp_fuel_blended_monthly_rates_us_dollars_per_mmbtu = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True)
     newboiler_fuel_type = models.TextField(null=True, blank=True)
+    newboiler_fuel_percent_RE = models.FloatField(null=True, blank=True)
     newboiler_fuel_blended_annual_rates_us_dollars_per_mmbtu = models.FloatField(null=True, blank=True)
     newboiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True)
 
@@ -1085,6 +1086,9 @@ class NewBoilerModel(models.Model):
     om_cost_us_dollars_per_mmbtu_per_hr = models.FloatField(null=True, blank=True)
     om_cost_us_dollars_per_mmbtu = models.FloatField(null=True, blank=True)
     emissions_factor_lb_CO2_per_mmbtu = models.FloatField(null=True, blank=True)
+    emissions_factor_lb_NOx_per_mmbtu = models.FloatField(null=True, blank=True)
+    emissions_factor_lb_SO2_per_mmbtu = models.FloatField(null=True, blank=True)
+    emissions_factor_lb_PM25_per_mmbtu = models.FloatField(null=True, blank=True)
     macrs_option_years = models.IntegerField(null=True, blank=True)
     macrs_bonus_pct = models.FloatField(null=True, blank=True)
 

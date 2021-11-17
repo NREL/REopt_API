@@ -905,6 +905,13 @@ nested_input_definitions = {
           "restrict_to": ["natural_gas", "landfill_bio_gas", "propane", "diesel_oil", "uranium"],
           "description": "Boiler fuel type one of (natural_gas, landfill_bio_gas, propane, diesel_oil)"
         },
+        "newboiler_fuel_percent_RE": {
+          "type": "float",
+          "default": 0.0,
+          "min": 0.0,
+          "max": 1.0,
+          "description": "Fraction of boiler fuel, on an energy basis, that is classified as renewable; used for RE accounting purposes."
+        },
         "newboiler_fuel_blended_annual_rates_us_dollars_per_mmbtu": {
           "type": "float",
           "default": 0.0,
@@ -2273,6 +2280,18 @@ nested_input_definitions = {
         "emissions_factor_lb_CO2_per_mmbtu": {
           "type": "float",
           "description": "Pounds of carbon dioxide emitted per mmbtu of fuel burned"
+        },
+        "emissions_factor_lb_NOx_per_mmbtu": {
+          "type": "float",
+          "description": "Pounds of NOx emitted per mmbtu of fuel burned"
+        },
+        "emissions_factor_lb_SO2_per_mmbtu": {
+          "type": "float",
+          "description": "Pounds of SO2 emitted per mmbtu of fuel burned"
+        },
+        "emissions_factor_lb_PM25_per_mmbtu": {
+          "type": "float",
+          "description": "Pounds of PM2.5 emitted per mmbtu of fuel burned"
         },
         "macrs_option_years": {
           "type": "int",
