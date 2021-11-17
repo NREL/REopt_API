@@ -1254,86 +1254,6 @@ nested_output_definitions = {
                   "type": "list_of_float",
                   "description": "Temp variable for fuel usage at each hour",
                   "units": "US gallons"
-                },
-                "year_one_emissions_tCO2": {
-                  "type": "int",
-                  "description": "Total tons of CO2 emitted from generator use in year one.",
-                  "units": "metric tons"
-                },
-                "year_one_emissions_tNOx": {
-                  "type": "int",
-                  "description": "Total tons of NOx emitted from generator use in year one.",
-                  "units": "metric tons"
-                },
-                "year_one_emissions_tSO2": {
-                  "type": "int",
-                  "description": "Total tons of SO2 emitted from generator use in year one.",
-                  "units": "metric tons"
-                },
-                "year_one_emissions_tPM25": {
-                  "type": "int",
-                  "description": "Total tons of CO2 emitted from generator use in year one.",
-                  "units": "metric tons"
-                },
-                "year_one_emissions_tCO2_bau": {
-                  "type": "int",
-                  "description": "Total tons of CO2 emitted from generator use in year one in the BAU case.",
-                  "units": "metric tons"
-                },
-                "year_one_emissions_tNOx_bau": {
-                  "type": "int",
-                  "description": "Total tons of NOx emitted from generator use in year one in the BAU case.",
-                  "units": "metric tons"
-                },
-                "year_one_emissions_tSO2_bau": {
-                  "type": "int",
-                  "description": "Total tons of SO2 emitted from generator use in year one in the BAU case.",
-                  "units": "metric tons"
-                },
-                "year_one_emissions_tPM25_bau": {
-                  "type": "int",
-                  "description": "Total tons of PM2.5 emitted from generator use in year one in the BAU case.",
-                  "units": "metric tons"
-                },
-                "lifecycle_emissions_tCO2": {
-                  "type": "int",
-                  "description": "Total tons of CO2 emitted from generator use over the analysis period.",
-                  "units": "metric tons"
-                },
-                "lifecycle_emissions_tNOx": {
-                  "type": "int",
-                  "description": "Total tons of NOx emitted from generator use over the analysis period.",
-                  "units": "metric tons"
-                },
-                "lifecycle_emissions_tSO2": {
-                  "type": "int",
-                  "description": "Total tons of SO2 emitted from generator use over the analysis period.",
-                  "units": "metric tons"
-                },
-                "lifecycle_emissions_tPM25": {
-                  "type": "int",
-                  "description": "Total tons of PM2.5 emitted from generator use over the analysis period.",
-                  "units": "metric tons"
-                },
-                "lifecycle_emissions_tCO2_bau": {
-                  "type": "int",
-                  "description": "Total tons of CO2 emitted from generator use over the analysis period in the BAU case.",
-                  "units": "metric tons"
-                },
-                "lifecycle_emissions_tNOx_bau": {
-                  "type": "int",
-                  "description": "Total tons of NOx emitted from generator use over the analysis period in the BAU case.",
-                  "units": "metric tons"
-                },
-                "lifecycle_emissions_tSO2_bau": {
-                  "type": "int",
-                  "description": "Total tons of SO2 emitted from generator use over the analysis period in the BAU case.",
-                  "units": "metric tons"
-                },
-                "lifecycle_emissions_tPM25_bau": {
-                  "type": "int",
-                  "description": "Total tons of PM2.5 emitted from generator use over the analysis period in the BAU case.",
-                  "units": "metric tons"
                 }
               },
 
@@ -1403,46 +1323,6 @@ nested_output_definitions = {
                   "description": "Year one hourly time series of CHP thermal to waste heat",
                   "units": "MMBtu/hr"
                 },
-                "year_one_emissions_tCO2": {
-                  "type": int,
-                  "description": "Total tons of CO2 emitted from CHP fuel consumed onsite in year one.",
-                  "units": "metric tons"
-                },
-                "year_one_emissions_tNOx": {
-                  "type": int,
-                  "description": "Total tons of NOx emitted from CHP fuel consumed onsite in year one.",
-                  "units": "metric tons"
-                },
-                "year_one_emissions_tSO2": {
-                  "type": int,
-                  "description": "Total tons of SO2 emitted from CHP fuel consumed onsite in year one.",
-                  "units": "metric tons"
-                },
-                "year_one_emissions_tPM25": {
-                  "type": int,
-                  "description": "Total tons of PM2.5 emitted from CHP fuel consumed onsite in year one.",
-                  "units": "metric tons"
-                },
-                "lifecycle_emissions_tCO2": {
-                  "type": int,
-                  "description": "Total tons of CO2 emitted from CHP fuel consumed onsite over the analysis period.",
-                  "units": "metric tons"
-                },
-                "lifecycle_emissions_tNOx": {
-                  "type": int,
-                  "description": "Total tons of NOx emitted from CHP fuel consumed onsite over the analysis period.",
-                  "units": "metric tons"
-                },
-                "lifecycle_emissions_tSO2": {
-                  "type": int,
-                  "description": "Total tons of SO2 emitted from CHP fuel consumed onsite over the analysis period.",
-                  "units": "metric tons"
-                },
-                "lifecycle_emissions_tPM25": {
-                  "type": int,
-                  "description": "Total tons of PM2.5 emitted from CHP fuel consumed onsite over the analysis period.",
-                  "units": "metric tons"
-                }
               },
 
               "Boiler": {
@@ -1485,86 +1365,6 @@ nested_output_definitions = {
                   "type": list_of_float,
                   "description": "Year one hourly time series of CHP thermal to SteamTurbine",
                   "units": "MMBtu/hr"
-                },
-                "year_one_emissions_tCO2": {
-                  "type": int,
-                  "description": "Total tons of CO2 emitted from boiler fuel consumed onsite in year one.",
-                  "units": "metric tons"
-                },
-                "year_one_emissions_tNOx": {
-                  "type": int,
-                  "description": "Total tons of NOx emitted from boiler fuel consumed onsite in year one.",
-                  "units": "metric tons"
-                },
-                "year_one_emissions_tSO2": {
-                  "type": int,
-                  "description": "Total tons of SO2 emitted from boiler fuel consumed onsite in year one.",
-                  "units": "metric tons"
-                },
-                "year_one_emissions_tPM25": {
-                  "type": int,
-                  "description": "Total tons of PM2.5 emitted from boiler fuel consumed onsite in year one.",
-                  "units": "metric tons"
-                },
-                "year_one_emissions_tCO2_bau": {
-                  "type": int,
-                  "description": "Total tons of CO2 emitted from boiler fuel consumed onsite in year one in the BAU case.",
-                  "units": "metric tons"
-                },
-                "year_one_emissions_tNOx_bau": {
-                  "type": int,
-                  "description": "Total tons of NOx emitted from boiler fuel consumed onsite in year one in the BAU case.",
-                  "units": "metric tons"
-                },
-                "year_one_emissions_tSO2_bau": {
-                  "type": int,
-                  "description": "Total tons of SO2 emitted from boiler fuel consumed onsite in year one in the BAU case.",
-                  "units": "metric tons"
-                },
-                "year_one_emissions_tPM25_bau": {
-                  "type": int,
-                  "description": "Total tons of PM2.5 emitted from boiler fuel consumed onsite in year one in the BAU case.",
-                  "units": "metric tons"
-                },
-                "lifecycle_emissions_tCO2": {
-                  "type": int,
-                  "description": "Total tons of CO2 emitted from boiler fuel consumed onsite over the analysis period.",
-                  "units": "metric tons"
-                },
-                "lifecycle_emissions_tNOx": {
-                  "type": int,
-                  "description": "Total tons of NOx emitted from boiler fuel consumed onsite over the analysis period.",
-                  "units": "metric tons"
-                },
-                "lifecycle_emissions_tSO2": {
-                  "type": int,
-                  "description": "Total tons of SO2 emitted from boiler fuel consumed onsite over the analysis period.",
-                  "units": "metric tons"
-                },
-                "lifecycle_emissions_tPM25": {
-                  "type": int,
-                  "description": "Total tons of PM2.5 emitted from boiler fuel consumed onsite over the analysis period.",
-                  "units": "metric tons"
-                },
-                "lifecycle_emissions_tCO2_bau": {
-                  "type": int,
-                  "description": "Total tons of CO2 emitted from boiler fuel consumed onsite over the analysis period in the BAU case.",
-                  "units": "metric tons"
-                },
-                "lifecycle_emissions_tNOx_bau": {
-                  "type": int,
-                  "description": "Total tons of NOx emitted from boiler fuel consumed onsite over the analysis period in the BAU case.",
-                  "units": "metric tons"
-                },
-                "lifecycle_emissions_tSO2_bau": {
-                  "type": int,
-                  "description": "Total tons of SO2 emitted from boiler fuel consumed onsite over the analysis period in the BAU case.",
-                  "units": "metric tons"
-                },
-                "lifecycle_emissions_tPM25_bau": {
-                  "type": int,
-                  "description": "Total tons of PM2.5 emitted from boiler fuel consumed onsite over the analysis period in the BAU case.",
-                  "units": "metric tons"
                 }
               },
 
@@ -1714,11 +1514,6 @@ nested_output_definitions = {
                   "type": list_of_float,
                   "description": "Year one hourly time series of NewBoiler thermal to SteamTurbine",
                   "units": "MMBtu/hr"
-                },
-                "year_one_emissions_lb_C02": {
-                  "type": int,
-                  "description": "Total equivalent pounds of carbon dioxide emitted from NewBoiler fuels consumed on site use in the first year.",
-                  "units": "hours"
                 }
             	},
               "SteamTurbine": {

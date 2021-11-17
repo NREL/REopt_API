@@ -149,14 +149,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "year_one_emissions_from_elec_grid_tNOx",
             "year_one_emissions_from_elec_grid_tSO2",
             "year_one_emissions_from_elec_grid_tPM25",
-            "year_one_generator_emissions_tCO2",
-            "year_one_generator_emissions_tNOx",
-            "year_one_generator_emissions_tSO2",
-            "year_one_generator_emissions_tPM25",
-            "year_one_boiler_emissions_tCO2",
-            "year_one_boiler_emissions_tNOx",
-            "year_one_boiler_emissions_tSO2",
-            "year_one_boiler_emissions_tPM25",
             "lifecycle_emissions_cost_CO2",
             "lifecycle_emissions_cost_Health",
             "lifecycle_emissions_tCO2",
@@ -170,15 +162,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "lifecycle_emissions_from_elec_grid_tCO2",
             "lifecycle_emissions_from_elec_grid_tNOx",
             "lifecycle_emissions_from_elec_grid_tSO2",
-            "lifecycle_emissions_from_elec_grid_tPM25",
-            "lifecycle_generator_emissions_tCO2",
-            "lifecycle_generator_emissions_tNOx",
-            "lifecycle_generator_emissions_tSO2",
-            "lifecycle_generator_emissions_tPM25",
-            "lifecycle_boiler_emissions_tCO2",
-            "lifecycle_boiler_emissions_tNOx",
-            "lifecycle_boiler_emissions_tSO2",
-            "lifecycle_boiler_emissions_tPM25"
+            "lifecycle_emissions_from_elec_grid_tPM25"
         ]
 
         def __init__(self, results_dict, results_dict_bau, dm, inputs):
@@ -920,64 +904,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "sr_provided_series_kw"] = self.results_dict.get(
                         "sr_provided_gen")
-                    # Year 1 Emissions
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_tCO2"] = self.results_dict.get(
-                        "year_one_generator_emissions_tCO2")
-                    if not self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal_bau"] is 0:
-                        self.nested_outputs["Scenario"]["Site"][name][
-                            "year_one_emissions_tCO2_bau"] = self.results_dict.get(
-                            "year_one_generator_emissions_tCO2_bau")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_tNOx"] = self.results_dict.get(
-                        "year_one_generator_emissions_tNOx")
-                    if not self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal_bau"] is 0:
-                        self.nested_outputs["Scenario"]["Site"][name][
-                            "year_one_emissions_tNOx_bau"] = self.results_dict.get(
-                            "year_one_generator_emissions_tNOx_bau")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_tSO2"] = self.results_dict.get(
-                        "year_one_generator_emissions_tSO2")
-                    if not self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal_bau"] is 0:
-                        self.nested_outputs["Scenario"]["Site"][name][
-                            "year_one_emissions_tSO2_bau"] = self.results_dict.get(
-                            "year_one_generator_emissions_tSO2_bau")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_tPM25"] = self.results_dict.get(
-                        "year_one_generator_emissions_tPM25")
-                    if not self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal_bau"] is 0:
-                        self.nested_outputs["Scenario"]["Site"][name][
-                            "year_one_emissions_tPM25_bau"] = self.results_dict.get(
-                            "year_one_generator_emissions_tPM25_bau")
-                    # Lifecycle emissions
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "lifecycle_emissions_tCO2"] = self.results_dict.get(
-                        "lifecycle_generator_emissions_tCO2")
-                    if not self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal_bau"] is 0:
-                        self.nested_outputs["Scenario"]["Site"][name][
-                            "lifecycle_emissions_tCO2_bau"] = self.results_dict.get(
-                            "lifecycle_generator_emissions_tCO2_bau")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "lifecycle_emissions_tNOx"] = self.results_dict.get(
-                        "lifecycle_generator_emissions_tNOx")
-                    if not self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal_bau"] is 0:
-                        self.nested_outputs["Scenario"]["Site"][name][
-                            "lifecycle_emissions_tNOx_bau"] = self.results_dict.get(
-                            "lifecycle_generator_emissions_tNOx_bau")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "lifecycle_emissions_tSO2"] = self.results_dict.get(
-                        "lifecycle_generator_emissions_tSO2")
-                    if not self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal_bau"] is 0:
-                        self.nested_outputs["Scenario"]["Site"][name][
-                            "lifecycle_emissions_tSO2_bau"] = self.results_dict.get(
-                            "lifecycle_generator_emissions_tSO2_bau")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "lifecycle_emissions_tPM25"] = self.results_dict.get(
-                        "lifecycle_generator_emissions_tPM25")
-                    if not self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal_bau"] is 0:
-                        self.nested_outputs["Scenario"]["Site"][name][
-                            "lifecycle_emissions_tPM25_bau"] = self.results_dict.get(
-                            "lifecycle_generator_emissions_tPM25_bau")
 
                 elif name == "CHP":
                     self.nested_outputs["Scenario"]["Site"][name][
@@ -1006,32 +932,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_thermal_to_waste_series_mmbtu_per_hour"] = [x / MMBTU_TO_KWH for x in self.results_dict.get("chp_thermal_to_waste_series")]
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_thermal_to_steamturbine_series_mmbtu_per_hour"] = [x / MMBTU_TO_KWH for x in self.results_dict.get("chp_thermal_to_steamturbine_series")]
-                    # Year 1 Emissions
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_tCO2"] = self.results_dict.get(
-                        "year_one_chp_emissions_tCO2")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_tNOx"] = self.results_dict.get(
-                        "year_one_chp_emissions_tNOx")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_tSO2"] = self.results_dict.get(
-                        "year_one_chp_emissions_tSO2")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_tPM25"] = self.results_dict.get(
-                        "year_one_chp_emissions_tPM25")
-                    # Lifecycle emissions
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "lifecycle_emissions_tCO2"] = self.results_dict.get(
-                        "lifecycle_chp_emissions_tCO2")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "lifecycle_emissions_tNOx"] = self.results_dict.get(
-                        "lifecycle_chp_emissions_tNOx")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "lifecycle_emissions_tSO2"] = self.results_dict.get(
-                        "lifecycle_chp_emissions_tSO2")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "lifecycle_emissions_tPM25"] = self.results_dict.get(
-                        "lifecycle_chp_emissions_tPM25")
 
                 elif name == "Boiler":
                     self.nested_outputs["Scenario"]["Site"][name][
@@ -1048,56 +948,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_boiler_fuel_consumption_mmbtu"] = self.results_dict.get("year_one_fuel_to_boiler_kwh") / MMBTU_TO_KWH
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_boiler_thermal_production_mmbtu"] = self.results_dict.get("year_one_boiler_thermal_production_kwh") / MMBTU_TO_KWH
-                    # Year 1 Emissions
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_tCO2"] = self.results_dict.get(
-                        "year_one_boiler_emissions_tCO2")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_tCO2_bau"] = self.results_dict.get(
-                        "year_one_boiler_emissions_tCO2_bau")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_tNOx"] = self.results_dict.get(
-                        "year_one_boiler_emissions_tNOx")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_tNOx_bau"] = self.results_dict.get(
-                        "year_one_boiler_emissions_tNOx_bau")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_tSO2"] = self.results_dict.get(
-                        "year_one_boiler_emissions_tSO2")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_tSO2_bau"] = self.results_dict.get(
-                        "year_one_boiler_emissions_tSO2_bau")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_tPM25"] = self.results_dict.get(
-                        "year_one_boiler_emissions_tPM25")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_emissions_tPM25_bau"] = self.results_dict.get(
-                        "year_one_boiler_emissions_tPM25_bau")
-                    # Lifecycle emissions
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "lifecycle_emissions_tCO2"] = self.results_dict.get(
-                        "lifecycle_boiler_emissions_tCO2")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "lifecycle_emissions_tCO2_bau"] = self.results_dict.get(
-                        "lifecycle_boiler_emissions_tCO2_bau")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "lifecycle_emissions_tNOx"] = self.results_dict.get(
-                        "lifecycle_boiler_emissions_tNOx")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "lifecycle_emissions_tNOx_bau"] = self.results_dict.get(
-                        "lifecycle_boiler_emissions_tNOx_bau")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "lifecycle_emissions_tSO2"] = self.results_dict.get(
-                        "lifecycle_boiler_emissions_tSO2")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "lifecycle_emissions_tSO2_bau"] = self.results_dict.get(
-                        "lifecycle_boiler_emissions_tSO2_bau")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "lifecycle_emissions_tPM25"] = self.results_dict.get(
-                        "lifecycle_boiler_emissions_tPM25")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "lifecycle_emissions_tPM25_bau"] = self.results_dict.get(
-                        "lifecycle_boiler_emissions_tPM25_bau")
 
                 elif name == "ElectricChiller":
                     self.nested_outputs["Scenario"]["Site"][name][
