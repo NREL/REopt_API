@@ -149,14 +149,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "year_one_emissions_from_elec_grid_tNOx",
             "year_one_emissions_from_elec_grid_tSO2",
             "year_one_emissions_from_elec_grid_tPM25",
-            "year_one_emissions_offset_from_elec_exports_tCO2",
-            "year_one_emissions_offset_from_elec_exports_tNOx",
-            "year_one_emissions_offset_from_elec_exports_tSO2",
-            "year_one_emissions_offset_from_elec_exports_tPM25",
-            "year_one_emissions_from_elec_grid_net_if_selected_tCO2",
-            "year_one_emissions_from_elec_grid_net_if_selected_tNOx",
-            "year_one_emissions_from_elec_grid_net_if_selected_tSO2",
-            "year_one_emissions_from_elec_grid_net_if_selected_tPM25",
             "year_one_generator_emissions_tCO2",
             "year_one_generator_emissions_tNOx",
             "year_one_generator_emissions_tSO2",
@@ -179,14 +171,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "lifecycle_emissions_from_elec_grid_tNOx",
             "lifecycle_emissions_from_elec_grid_tSO2",
             "lifecycle_emissions_from_elec_grid_tPM25",
-            "lifecycle_emissions_offset_from_elec_exports_tCO2",
-            "lifecycle_emissions_offset_from_elec_exports_tNOx",
-            "lifecycle_emissions_offset_from_elec_exports_tSO2",
-            "lifecycle_emissions_offset_from_elec_exports_tPM25",
-            "lifecycle_emissions_from_elec_grid_net_if_selected_tCO2",
-            "lifecycle_emissions_from_elec_grid_net_if_selected_tNOx",
-            "lifecycle_emissions_from_elec_grid_net_if_selected_tSO2",
-            "lifecycle_emissions_from_elec_grid_net_if_selected_tPM25",
             "lifecycle_generator_emissions_tCO2",
             "lifecycle_generator_emissions_tNOx",
             "lifecycle_generator_emissions_tSO2",
@@ -590,36 +574,15 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             self.nested_outputs["Scenario"]["Site"]["year_one_emissions_from_fuelburn_tSO2_bau"] = self.results_dict.get("year_one_emissions_from_fuelburn_tSO2_bau")
             self.nested_outputs["Scenario"]["Site"]["year_one_emissions_from_fuelburn_tPM25_bau"] = self.results_dict.get("year_one_emissions_from_fuelburn_tPM25_bau")
             # grid emissions - year one (non-BAU)
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_gross_tCO2"] = self.results_dict.get("year_one_emissions_from_elec_grid_tCO2")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_gross_tNOx"] = self.results_dict.get("year_one_emissions_from_elec_grid_tNOx")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_gross_tSO2"] = self.results_dict.get("year_one_emissions_from_elec_grid_tSO2")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_gross_tPM25"] = self.results_dict.get("year_one_emissions_from_elec_grid_tPM25")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_tCO2"] = self.results_dict.get("year_one_emissions_from_elec_grid_tCO2")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_tNOx"] = self.results_dict.get("year_one_emissions_from_elec_grid_tNOx")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_tSO2"] = self.results_dict.get("year_one_emissions_from_elec_grid_tSO2")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_tPM25"] = self.results_dict.get("year_one_emissions_from_elec_grid_tPM25")
             # grid emissions - year one (BAU)
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_gross_tCO2_bau"] = self.results_dict.get("year_one_emissions_from_elec_grid_tCO2_bau")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_gross_tNOx_bau"] = self.results_dict.get("year_one_emissions_from_elec_grid_tNOx_bau")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_gross_tSO2_bau"] = self.results_dict.get("year_one_emissions_from_elec_grid_tSO2_bau")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_gross_tPM25_bau"] = self.results_dict.get("year_one_emissions_from_elec_grid_tPM25_bau")
-            # grid emissions offset - year one (non-BAU)
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_offset_from_elec_exports_tCO2"] = self.results_dict.get("year_one_emissions_offset_from_elec_exports_tCO2")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_offset_from_elec_exports_tNOx"] = self.results_dict.get("year_one_emissions_offset_from_elec_exports_tNOx")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_offset_from_elec_exports_tSO2"] = self.results_dict.get("year_one_emissions_offset_from_elec_exports_tSO2")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_offset_from_elec_exports_tPM25"] = self.results_dict.get("year_one_emissions_offset_from_elec_exports_tPM25")
-            # grid emissions offset - year one (BAU)
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_offset_from_elec_exports_tCO2_bau"] = self.results_dict.get("year_one_emissions_offset_from_elec_exports_tCO2_bau")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_offset_from_elec_exports_tNOx_bau"] = self.results_dict.get("year_one_emissions_offset_from_elec_exports_tNOx_bau")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_offset_from_elec_exports_tSO2_bau"] = self.results_dict.get("year_one_emissions_offset_from_elec_exports_tSO2_bau")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_offset_from_elec_exports_tPM25_bau"] = self.results_dict.get("year_one_emissions_offset_from_elec_exports_tPM25_bau")
-            # net grid emissions, if net is selected (otherwise = grid emissions) - year one (non-BAU)
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_net_if_selected_tCO2"] = self.results_dict.get("year_one_emissions_from_elec_grid_net_if_selected_tCO2")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_net_if_selected_tNOx"] = self.results_dict.get("year_one_emissions_from_elec_grid_net_if_selected_tNOx")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_net_if_selected_tSO2"] = self.results_dict.get("year_one_emissions_from_elec_grid_net_if_selected_tSO2")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_net_if_selected_tPM25"] = self.results_dict.get("year_one_emissions_from_elec_grid_net_if_selected_tPM25")
-            # net grid emissions, if net is selected (otherwise = grid emissions) - year one (BAU)
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_net_if_selected_tCO2_bau"] = self.results_dict.get("year_one_emissions_from_elec_grid_net_if_selected_tCO2_bau")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_net_if_selected_tNOx_bau"] = self.results_dict.get("year_one_emissions_from_elec_grid_net_if_selected_tNOx_bau")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_net_if_selected_tSO2_bau"] = self.results_dict.get("year_one_emissions_from_elec_grid_net_if_selected_tSO2_bau")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_net_if_selected_tPM25_bau"] = self.results_dict.get("year_one_emissions_from_elec_grid_net_if_selected_tPM25_bau")
-
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_tCO2_bau"] = self.results_dict.get("year_one_emissions_from_elec_grid_tCO2_bau")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_tNOx_bau"] = self.results_dict.get("year_one_emissions_from_elec_grid_tNOx_bau")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_tSO2_bau"] = self.results_dict.get("year_one_emissions_from_elec_grid_tSO2_bau")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["year_one_emissions_tPM25_bau"] = self.results_dict.get("year_one_emissions_from_elec_grid_tPM25_bau")
             ## Lifecycle Emissions
             # lifecycle emissions costs - CO2 & health (BAU & non-BAU)
             self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_cost_CO2"] = self.results_dict.get("lifecycle_emissions_cost_CO2")
@@ -646,36 +609,16 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_from_fuelburn_tNOx_bau"] = self.results_dict.get("lifecycle_emissions_from_fuelburn_tNOx_bau")
             self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_from_fuelburn_tSO2_bau"] = self.results_dict.get("lifecycle_emissions_from_fuelburn_tSO2_bau")
             self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_from_fuelburn_tPM25_bau"] = self.results_dict.get("lifecycle_emissions_from_fuelburn_tPM25_bau")
-            # grid emissions - lifecycle (non-BAU)
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_gross_tCO2"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_tCO2")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_gross_tNOx"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_tNOx")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_gross_tSO2"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_tSO2")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_gross_tPM25"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_tPM25")
-            # grid emissions - lifecycle (BAU)
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_gross_tCO2_bau"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_tCO2_bau")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_gross_tNOx_bau"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_tNOx_bau")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_gross_tSO2_bau"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_tSO2_bau")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_gross_tPM25_bau"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_tPM25_bau")
-            # grid emissions offset - lifecycle (non-BAU)
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_offset_from_elec_exports_tCO2"] = self.results_dict.get("lifecycle_emissions_offset_from_elec_exports_tCO2")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_offset_from_elec_exports_tNOx"] = self.results_dict.get("lifecycle_emissions_offset_from_elec_exports_tNOx")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_offset_from_elec_exports_tSO2"] = self.results_dict.get("lifecycle_emissions_offset_from_elec_exports_tSO2")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_offset_from_elec_exports_tPM25"] = self.results_dict.get("lifecycle_emissions_offset_from_elec_exports_tPM25")
-            # grid emissions offset - lifecycle (BAU)
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_offset_from_elec_exports_tCO2_bau"] = self.results_dict.get("lifecycle_emissions_offset_from_elec_exports_tCO2_bau")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_offset_from_elec_exports_tNOx_bau"] = self.results_dict.get("lifecycle_emissions_offset_from_elec_exports_tNOx_bau")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_offset_from_elec_exports_tSO2_bau"] = self.results_dict.get("lifecycle_emissions_offset_from_elec_exports_tSO2_bau")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_offset_from_elec_exports_tPM25_bau"] = self.results_dict.get("lifecycle_emissions_offset_from_elec_exports_tPM25_bau")
-            # net grid emissions, if net is selected (otherwise = grid emissions) - lifecycle (non-BAU)
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_net_if_selected_tCO2"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_net_if_selected_tCO2")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_net_if_selected_tNOx"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_net_if_selected_tNOx")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_net_if_selected_tSO2"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_net_if_selected_tSO2")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_net_if_selected_tPM25"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_net_if_selected_tPM25")
-            # net grid emissions, if net is selected (otherwise = grid emissions) - lifecycle (BAU)
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_net_if_selected_tCO2_bau"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_net_if_selected_tCO2_bau")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_net_if_selected_tNOx_bau"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_net_if_selected_tNOx_bau")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_net_if_selected_tSO2_bau"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_net_if_selected_tSO2_bau")
-            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_net_if_selected_tPM25_bau"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_net_if_selected_tPM25_bau")
+            # grid emissions, net if selected - lifecycle (non-BAU)
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_tCO2"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_tCO2")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_tNOx"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_tNOx")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_tSO2"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_tSO2")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_tPM25"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_tPM25")
+            # grid emissions, net if selected - lifecycle (BAU)
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_tCO2_bau"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_tCO2_bau")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_tNOx_bau"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_tNOx_bau")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_tSO2_bau"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_tSO2_bau")
+            self.nested_outputs["Scenario"]["Site"]["ElectricTariff"]["lifecycle_emissions_tPM25_bau"] = self.results_dict.get("lifecycle_emissions_from_elec_grid_tPM25_bau")
 
             self.nested_outputs["Scenario"]["lower_bound"] = self.results_dict.get("lower_bound")
             self.nested_outputs["Scenario"]["optimality_gap"] = self.results_dict.get("optimality_gap")

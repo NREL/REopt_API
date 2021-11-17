@@ -91,290 +91,292 @@ nested_output_definitions = {
 
             "Site": {
               "preprocessed_BAU_year_one_emissions_tCO2": {
-                  "type": "int",
+                  "type": "float",
                   "description": ("Total equivalent pounds of carbon dioxide emitted in the first year in the BAU case. Preprocessed before optimization for use in emissions reductions scenarios,"
                                   "Included as an output for testing purposes."),
-                  "units": "tCO2"
+                  "units": "metric tons"
                 },
               "preprocessed_BAU_lifecycle_emissions_tCO2": {
                   "type": "int",
                   "description": ("Total equivalent pounds of carbon dioxide emitted over the project lifecycle in the BAU case. Preprocessed before optimization for use in emissions reductions scenarios,"
                                   "Included as an output for testing purposes."),
-                  "units": "tCO2"
+                  "units": "metric tons"
                 },
               "lifecycle_emissions_reduction_CO2_pct": {
                   "type": float,
-                  "description": "Percent reduction in total pounds of carbon dioxide emissions in the optimal case relative to the BAU case to the ",
+                  "description": "Percent reduction in total pounds of carbon dioxide emissions in the optimal case relative to the BAU case",
                   "units": "%"
                 },
               "breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2": {
                   "type": float,
-                  "description": "Cost, or value, of emissions required to breakeven (NPV = 0) with the BAU case LCC",
+                  "description": ("Cost of emissions required to breakeven (NPV = 0) with the BAU case LCC."
+                                  "If the cost of health emissions were included in the objective function," 
+                                  "calculation of this output value keeps the cost of those emissions at the values input by the user."),
                   "units": "$/tCO2"
                 },
               "year_one_renewable_electricity_pct": {
                 "type": float,
                 "description": (
-                  "Portion of electrictrity use that is derived from on-site renewable resource generation in year one."
-                  "Calculated as total RE electric generation in year one, minus storage losses, with the user selecting whether exported renewable generation is included), "
-                  "divided by the total annual load in year one."
+                  "Portion of electricity consumption (incl. electric heating/cooling loads) that is derived from on-site renewable resource generation in year one."
+                  "Calculated as total RE electric generation in year one, minus storage losses and curtailment, with the user selecting whether exported renewable generation is included, "
+                  "divided by the total annual electric load in year one."
                   ),
                 "units": "%"
                 },
               "year_one_renewable_electricity_kwh": {
                 "type": float,
                 "description": (
-                  "Electrictrity use that is derived from on-site renewable resource generation in year one."
-                  "Calculated as total RE electric generation in year one, minus storage losses, with the user selecting whether exported renewable generation is included). "
+                  "Electricity consumption (incl. electric heating/cooling loads) that is derived from on-site renewable resource generation in year one."
+                  "Calculated as total RE electric generation in year one, minus storage losses and curtailment, with the user selecting whether exported renewable generation is included). "
                   ),
                 "units": "kwh"
                 },
               "year_one_renewable_electricity_pct_bau": {
                 "type": float,
                 "description": (
-                  "Portion of electrictrity use that is derived from on-site renewable resource generation in year one in the BAU scenario."
-                  "Calculated as total RE electric generation in year one, minus storage losses, with the user selecting whether exported renewable generation is included), "
-                  "divided by the total annual load in year one."
+                  "Portion of electricity consumption (incl. electric heating/cooling loads) that is derived from on-site renewable resource generation in year one in the BAU case."
+                  "Calculated as total RE electric generation in year one, minus storage losses and curtailment, with the user selecting whether exported renewable generation is included, "
+                  "divided by the total annual electric load in year one."
                   ),
                 "units": "%"
                 },
               "year_one_renewable_electricity_kwh_bau": {
                 "type": float,
                 "description": (
-                  "Electrictrity use that is derived from on-site renewable resource generation in year one in the BAU scenario."
-                  "Calculated as total RE electric generation in year one, minus storage losses, with the user selecting whether exported renewable generation is included). "
+                  "Electricity consumption (incl. electric heating/cooling loads) that is derived from on-site renewable resource generation in year one in the BAU case."
+                  "Calculated as total RE electric generation in year one, minus storage losses and curtailment, with the user selecting whether exported renewable generation is included). "
                   ),
                 "units": "kwh"
                 },
               "year_one_renewable_heat_pct": {
                 "type": float,
                 "description": (
-                  "Portion of heat that is derived from on-site renewable resource generation in year one."
-                  "Calculated as total RE heat generation in year one, minus storage losses."
-                  "divided by the total annual load in year one."
+                  "Portion of heat consumption that is derived from on-site renewable resource generation in year one."
+                  "Calculated as total RE heat generation in year one, minus storage losses and waste heat."
+                  "divided by the total annual heating load in year one."
                   ),
                 "units": "%"
                 },
               "year_one_renewable_heat_mmbtu": {
                 "type": float,
                 "description": (
-                  "Electrictrity use that is derived from on-site renewable resource generation in year one."
-                  "Calculated as total RE heat generation in year one, minus storage losses."
+                  "Heat consumption that is derived from on-site renewable resource generation in year one."
+                  "Calculated as total RE heat generation in year one, minus storage losses and waste heat. "
                   ),
                 "units": "mmbtu"
                 },
               "year_one_heat_load_mmbtu": {
                 "type": float,
                 "description": (
-                  "Electrictrity use that is derived from on-site renewable resource generation in year one."
-                  "Calculated as total RE heat generation in year one, minus storage losses."
+                  "Heat consumption in year one."
+                  "Calculated as total heat generation in year one, minus storage losses and waste heat. "
                   ),
                 "units": "mmbtu"
                 },
               "year_one_renewable_heat_pct_bau": {
                 "type": float,
                 "description": (
-                  "Portion of electrictrity use that is derived from on-site renewable resource generation in year one in the BAU scenario."
-                  "Calculated as total RE heat generation in year one, minus storage losses."
-                  "divided by the total annual load in year one."
+                  "Portion of heat consumption that is derived from on-site renewable resource generation in year one in the BAU case."
+                  "Calculated as total RE heat generation in year one, minus storage losses and waste heat."
+                  "divided by the total annual heating load in year one in the BAU case."
                   ),
                 "units": "%"
                 },
               "year_one_renewable_heat_mmbtu_bau": {
                 "type": float,
                 "description": (
-                  "Electrictrity use that is derived from on-site renewable resource generation in year one in the BAU scenario."
-                  "Calculated as total RE heat generation in year one, minus storage losses."
+                  "Heat consumption that is derived from on-site renewable resource generation in year one in the BAU case."
+                  "Calculated as total RE heat generation in year one in the BAU case, minus storage losses and waste heat. "
                   ),
                 "units": "mmbtu"
                 },
               "year_one_heat_load_mmbtu_bau": {
                 "type": float,
                 "description": (
-                  "Electrictrity use that is derived from on-site renewable resource generation in year one."
-                  "Calculated as total RE heat generation in year one, minus storage losses."
+                  "Heat consumption in year one in the BAU case."
+                  "Calculated as total heat generation in year one, minus storage losses and waste heat. "
                   ),
                 "units": "mmbtu"
                 },
               "year_one_emissions_tCO2": {
-                  "type": "int",
-                  "description": "Total equivalent pounds of carbon dioxide emitted from the site in the first year.",
-                  "units": "tCO2"
+                  "type": float,
+                  "description": "Total tons of CO2 emissions associated with the site's energy consumption in year one.",
+                  "units": "metric tons"
                 },
               "year_one_emissions_tNOx": {
-                  "type": "int",
-                  "description": "Total pounds of NOx emitted from the site in the first year.",
-                  "units": "tNOx"
+                  "type": float,
+                  "description": "Total tons of NOx emissions associated with the site's energy consumption in year one.",
+                  "units": "metric tons"
                 },
               "year_one_emissions_tSO2": {
-                  "type": "int",
-                  "description": "Total pounds of SO2 emitted from the site in the first year.",
-                  "units": "tSO2"
+                  "type": "float",
+                  "description": "Total tons of SO2 emissions associated with the site's energy consumption in year one.",
+                  "units": "metric tons"
                 },
               "year_one_emissions_tPM25": {
-                  "type": "int",
-                  "description": "Total pounds of PM2.5 emitted from the site in the first year.",
-                  "units": "tPM2.5"
+                  "type": "float",
+                  "description": "Total tons of PM2.5 emissions associated with the site's energy consumption in year one.",
+                  "units": "metric tons"
                 },
               "year_one_emissions_tCO2_bau": {
-                  "type": "int",
-                  "description": "Total equivalent pounds of carbon dioxide emitted from the site in the first year in the BAU case.",
-                  "units": "tCO2"
+                  "type": "float",
+                  "description": "Total tons of CO2 emissions associated with the site's energy consumption in year one in the BAU case.",
+                  "units": "metric tons"
                 },
               "year_one_emissions_tNOx_bau": {
-                  "type": "int",
-                  "description": "Total pounds of NOx emitted from the site use in the first year in the BAU case.",
-                  "units": "tNOx"
+                  "type": "float",
+                  "description": "Total tons of NOx emissions associated with the site's energy consumption in year one in the BAU case.",
+                  "units": "metric tons"
                 },
               "year_one_emissions_tSO2_bau": {
-                  "type": "int",
-                  "description": "Total pounds of SO2 emitted from the site use in the first year in the BAU case.",
-                  "units": "tSO2"
+                  "type": "float",
+                  "description": "Total tons of SO2 emissions associated with the site's energy consumption in year one in the BAU case.",
+                  "units": "metric tons"
                 },
               "year_one_emissions_tPM25_bau": {
-                  "type": "int",
-                  "description": "Total pounds of PM2.5 emitted from the site use in the first year in the BAU case.",
-                  "units": "tPM2.5"
+                  "type": "float",
+                  "description": "Total tons of PM2.5 emissions associated with the site's energy consumption in year one in the BAU case.",
+                  "units": "metric tons"
                 },
               "year_one_emissions_from_fuelburn_tCO2": {
-                  "type": int,
-                  "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption in the first year.",
-                  "units": "tCO2"
+                  "type": float,
+                  "description": "Total tons of CO2 emissions associated with the site's onsite fuel burn in year one.",
+                  "units": "metric tons"
                 },
               "year_one_emissions_from_fuelburn_tNOx": {
-                  "type": int,
-                  "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption in the first year.",
-                  "units": "tNOx"
+                  "type": float,
+                  "description": "Total tons of NOx emissions associated with the site's onsite fuel burn in year one.",
+                  "units": "metric tons"
                 },
               "year_one_emissions_from_fuelburn_tSO2": {
-                  "type": int,
-                  "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption in the first year.",
-                  "units": "tSO2"
+                  "type": float,
+                  "description": "Total tons of SO2 emissions associated with the site's onsite fuel burn in year one.",
+                  "units": "metric tons"
                 },
               "year_one_emissions_from_fuelburn_tPM25": {
-                  "type": int,
-                  "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption in the first year.",
-                  "units": "tPM25"
+                  "type": float,
+                  "description": "Total tons of PM2.5 emissions associated with the site's onsite fuel burn in year one.",
+                  "units": "metric tons"
                 },
               "year_one_emissions_from_fuelburn_tCO2_bau": {
-                  "type": int,
-                  "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption in the first year in the BAU case.",
-                  "units": "tCO2"
+                  "type": float,
+                  "description": "Total tons of CO2 emissions associated with the site's onsite fuel burn in year one in the BAU case.",
+                  "units": "metric tons"
                 },
               "year_one_emissions_from_fuelburn_tNOx_bau": {
-                  "type": int,
-                  "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption in the first year in the BAU case.",
-                  "units": "tNOx"
+                  "type": float,
+                  "description": "Total tons of NOx emissions associated with the site's onsite fuel burn in year one in the BAU case.",
+                  "units": "metric tons"
                 },
               "year_one_emissions_from_fuelburn_tSO2_bau": {
-                  "type": int,
-                  "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption in the first year in the BAU case.",
-                  "units": "tSO2"
+                  "type": float,
+                  "description": "Total tons of SO2 emissions associated with the site's onsite fuel burn in year one in the BAU case.",
+                  "units": "metric tons"
                 },
               "year_one_emissions_from_fuelburn_tPM25_bau": {
-                  "type": int,
-                  "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption in the first year in the BAU case.",
-                  "units": "tPM25"
+                  "type": float,
+                  "description": "Total tons of PM2.5 emissions associated with the site's onsite fuel burn in year one in the BAU case.",
+                  "units": "metric tons"
                 },
               "lifecycle_emissions_cost_CO2": {
-                  "type": int,
-                  "description": "Total cost of carbon dioxide emissions associated with the site's energy consumption over the analysis period.",
+                  "type": float,
+                  "description": "Total cost of CO2 emissions associated with the site's energy consumption over the analysis period.",
                   "units": "dollars"
                 },
               "lifecycle_emissions_cost_CO2_bau": {
-                  "type": int,
-                  "description": "Total cost of carbon dioxide emissions associated with the site's energy consumption over the analysis period in the BAU case.",
+                  "type": float,
+                  "description": "Total cost of CO2 emissions associated with the site's energy consumption over the analysis period in the BAU case.",
                   "units": "dollars"
                 },
               "lifecycle_emissions_cost_Health": {
-                  "type": int,
+                  "type": float,
                   "description": "Total cost of NOx, SO2, and PM2.5 emissions associated with the site's energy consumption over the analysis period.",
                   "units": "dollars"
                 },
               "lifecycle_emissions_cost_Health_bau": {
-                  "type": int,
+                  "type": float,
                   "description": "Total cost of NOx, SO2, and PM2.5 emissions associated with the site's energy consumption over the analysis period in the BAU case.",
                   "units": "dollars"
                 },
               "lifecycle_emissions_tCO2": {
-                  "type": int,
-                  "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption over the analysis period.",
-                  "units": "tCO2"
+                  "type": float,
+                  "description": "Total tons of CO2 emissions associated with the site's energy consumption over the analysis period.",
+                  "units": "metric tons"
                 },
               "lifecycle_emissions_tNOx": {
-                  "type": int,
-                  "description": "Total pounds of NOx emissions associated with the site's energy consumption over the analysis period.",
-                  "units": "tNOx"
+                  "type": float,
+                  "description": "Total tons of NOx emissions associated with the site's energy consumption over the analysis period.",
+                  "units": "metric tons"
                 },
               "lifecycle_emissions_tSO2": {
-                  "type": int,
-                  "description": "Total pounds of SO2 emissions associated with the site's energy consumption over the analysis period.",
-                  "units": "tSO2"
+                  "type": float,
+                  "description": "Total tons of SO2 emissions associated with the site's energy consumption over the analysis period.",
+                  "units": "metric tons"
                 },
               "lifecycle_emissions_tPM25": {
-                  "type": int,
-                  "description": "Total pounds of PM2.5 emissions associated with the site's energy consumption over the analysis period.",
-                  "units": "tPM2.5"
+                  "type": float,
+                  "description": "Total tons of PM2.5 emissions associated with the site's energy consumption over the analysis period.",
+                  "units": "metric tons"
                 },
               "lifecycle_emissions_tCO2_bau": {
-                  "type": int,
-                  "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption over the analysis period in the BAU case.",
-                  "units": "tCO2"
+                  "type": float,
+                  "description": "Total tons of CO2 emissions associated with the site's energy consumption over the analysis period in the BAU case.",
+                  "units": "metric tons"
                 },
               "lifecycle_emissions_tNOx_bau": {
-                  "type": int,
-                  "description": "Total pounds of NOx emissions associated with the site's energy consumption over the analysis period in the BAU case.",
-                  "units": "tNOx"
+                  "type": float,
+                  "description": "Total tons of NOx emissions associated with the site's energy consumption over the analysis period in the BAU case.",
+                  "units": "metric tons"
                 },
               "lifecycle_emissions_tSO2_bau": {
-                  "type": int,
-                  "description": "Total pounds of SO2 emissions associated with the site's energy consumption over the analysis period in the BAU case.",
-                  "units": "tSO2"
+                  "type": float,
+                  "description": "Total tons of SO2 emissions associated with the site's energy consumption over the analysis period in the BAU case.",
+                  "units": "metric tons"
                 },
               "lifecycle_emissions_tPM25_bau": {
-                  "type": int,
-                  "description": "Total pounds of PM2.5 emissions associated with the site's energy consumption over the analysis period in the BAU case.",
-                  "units": "tPM2.5"
+                  "type": float,
+                  "description": "Total tons of PM2.5 emissions associated with the site's energy consumption over the analysis period in the BAU case.",
+                  "units": "metric tons"
                 },
               "lifecycle_emissions_from_fuelburn_tCO2": {
-                  "type": int,
-                  "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption in the first year.",
-                  "units": "tCO2"
+                  "type": float,
+                  "description": "Total tons of CO2 emissions associated with the site's onsite fuel burn over the analysis period.",
+                  "units": "metric tons"
                 },
               "lifecycle_emissions_from_fuelburn_tNOx": {
-                  "type": int,
-                  "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption in the first year.",
-                  "units": "tNOx"
+                  "type": float,
+                  "description": "Total tons of NOx emissions associated with the site's onsite fuel burn over the analysis period.",
+                  "units": "metric tons"
                 },
               "lifecycle_emissions_from_fuelburn_tSO2": {
-                  "type": int,
-                  "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption in the first year.",
-                  "units": "tSO2"
+                  "type": float,
+                  "description": "Total tons of SO2 emissions associated with the site's onsite fuel burn over the analysis period.",
+                  "units": "metric tons"
                 },
               "lifecycle_emissions_from_fuelburn_tPM25": {
-                  "type": int,
-                  "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption in the first year.",
-                  "units": "tPM25"
+                  "type": float,
+                  "description": "Total tons of PM2.5 emissions associated with the site's onsite fuel burn over the analysis period.",
+                  "units": "metric tons"
                 },
               "lifecycle_emissions_from_fuelburn_tCO2_bau": {
-                  "type": int,
-                  "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption in the first year in the BAU case.",
-                  "units": "tCO2"
+                  "type": float,
+                  "description": "Total tons of CO2 emissions associated with the site's onsite fuel burn over the analysis period in the BAU case.",
+                  "units": "metric tons"
                 },
               "lifecycle_emissions_from_fuelburn_tNOx_bau": {
-                  "type": int,
-                  "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption in the first year in the BAU case.",
-                  "units": "tNOx"
+                  "type": float,
+                  "description": "Total tons of NOx emissions associated with the site's onsite fuel burn over the analysis period in the BAU case.",
+                  "units": "metric tons"
                 },
               "lifecycle_emissions_from_fuelburn_tSO2_bau": {
-                  "type": int,
-                  "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption in the first year in the BAU case.",
-                  "units": "tSO2"
+                  "type": float,
+                  "description": "Total tons of SO2 emissions associated with the site's onsite fuel burn over the analysis period in the BAU case.",
+                  "units": "metric tons"
                 },
               "lifecycle_emissions_from_fuelburn_tPM25_bau": {
-                  "type": int,
-                  "description": "Total pounds of carbon dioxide emissions associated with the site's energy consumption in the first year in the BAU case.",
-                  "units": "tPM25"
+                  "type": float,
+                  "description": "Total tons of PM2.5 emissions associated with the site's onsite fuel burn over the analysis period in the BAU case.",
+                  "units": "metric tons"
                 },
 
               "LoadProfile": {
@@ -1012,165 +1014,85 @@ nested_output_definitions = {
                   "type": "str",
                   "description": "Description of region for emissions_factor_series_lb_CO2_per_kwh (and health-related emissions). Filled by default with the EPA AVERT region of the site."
                 },
-                "year_one_emissions_gross_tCO2": {
-                  "type": "int",
-                  "description": "Total equivalent pounds of carbon dioxide emitted from generator use in the first year.",
-                  "units": "tCO2"
+                "year_one_emissions_tCO2": {
+                  "type": "float",
+                  "description": "Total tons of CO2 emissions associated with the site's grid purchases in year one.",
+                  "units": "metric tons"
                 },
-                "year_one_emissions_gross_tNOx": {
-                  "type": "int",
-                  "description": "Total pounds of NOx emitted from generator use in the first year.",
-                  "units": "tNOx"
+                "year_one_emissions_tNOx": {
+                  "type": "float",
+                  "description": "Total tons of NOx emissions associated with the site's grid purchases in year one.",
+                  "units": "metric tons"
                 },
-                "year_one_emissions_gross_tSO2": {
-                  "type": "int",
-                  "description": "Total pounds of SO2 emitted from generator use in the first year.",
-                  "units": "tSO2"
+                "year_one_emissions_tSO2": {
+                  "type": "float",
+                  "description": "Total tons of SO2 emissions associated with the site's grid purchases in year one.",
+                  "units": "metric tons"
                 },
-                "year_one_emissions_gross_tPM25": {
-                  "type": "int",
-                  "description": "Total pounds of PM2.5 emitted from generator use in the first year.",
-                  "units": "tPM2.5"
+                "year_one_emissions_tPM25": {
+                  "type": "float",
+                  "description": "Total tons of PM2.5 emissions associated with the site's grid purchases in year one.",
+                  "units": "metric tons"
                 },
-                "year_one_emissions_gross_tCO2_bau": {
-                  "type": "int",
-                  "description": "Total equivalent pounds of carbon dioxide emitted from BAU generator use in the first year.",
-                  "units": "tCO2"
+                "year_one_emissions_tCO2_bau": {
+                  "type": "float",
+                  "description": "Total tons of CO2 emissions associated with the site's grid purchases in year one in the BAU case.",
+                  "units": "metric tons"
                 },
-                "year_one_emissions_gross_tNOx_bau": {
-                  "type": "int",
-                  "description": "Total pounds of NOx emitted from BAU generator use in the first year.",
-                  "units": "tNOx"
+                "year_one_emissions_tNOx_bau": {
+                  "type": "float",
+                  "description": "Total tons of NOx emissions associated with the site's grid purchases in year one in the BAU case.",
+                  "units": "metric tons"
                 },
-                "year_one_emissions_gross_tSO2_bau": {
-                  "type": "int",
-                  "description": "Total pounds of SO2 emitted from BAU generator use in the first year.",
-                  "units": "tSO2"
+                "year_one_emissions_tSO2_bau": {
+                  "type": "float",
+                  "description": "Total tons of SO2 emissions associated with the site's grid purchases in year one in the BAU case.",
+                  "units": "metric tons"
                 },
-                "year_one_emissions_gross_tPM25_bau": {
-                  "type": "int",
-                  "description": "Total pounds of PM2.5 emitted from BAU generator use in the first year.",
-                  "units": "tPM2.5"
+                "year_one_emissions_tPM25_bau": {
+                  "type": "float",
+                  "description": "Total tons of PM2.5 emissions associated with the site's grid purchases in year one in the BAU case.",
+                  "units": "metric tons"
                 },
-                "year_one_emissions_offset_from_elec_exports_tCO2": {
-                  "type": "int",
-                  "description": "Total equivalent pounds of carbon dioxide emitted from generator use in the first year.",
-                  "units": "tCO2"
+                "lifecycle_emissions_tCO2": {
+                  "type": "float",
+                  "description": "Total tons of CO2 emissions associated with the site's grid purchases over the analysis period.",
+                  "units": "metric tons"
                 },
-                "year_one_emissions_offset_from_elec_exports_tNOx": {
-                  "type": "int",
-                  "description": "Total pounds of NOx emitted from generator use in the first year.",
-                  "units": "tNOx"
+                "lifecycle_emissions_tNOx": {
+                  "type": "float",
+                  "description": "Total tons of NOx emissions associated with the site's grid purchases over the analysis period.",
+                  "units": "metric tons"
                 },
-                "year_one_emissions_offset_from_elec_exports_tSO2": {
-                  "type": "int",
-                  "description": "Total pounds of SO2 emitted from generator use in the first year.",
-                  "units": "tSO2"
+                "lifecycle_emissions_tSO2": {
+                  "type": "float",
+                  "description": "Total tons of SO2 emissions associated with the site's grid purchases over the analysis period.",
+                  "units": "metric tons"
                 },
-                "year_one_emissions_offset_from_elec_exports_tPM25": {
-                  "type": "int",
-                  "description": "Total pounds of PM2.5 emitted from generator use in the first year.",
-                  "units": "tPM2.5"
+                "lifecycle_emissions_tPM25": {
+                  "type": "float",
+                  "description": "Total tons of PM2.5 emissions associated with the site's grid purchases over the analysis period.",
+                  "units": "metric tons"
                 },
-                "year_one_emissions_offset_from_elec_exports_tCO2_bau": {
-                  "type": "int",
-                  "description": "Total equivalent pounds of carbon dioxide emitted from BAU generator use in the first year.",
-                  "units": "tCO2"
+                "lifecycle_emissions_tCO2_bau": {
+                  "type": "float",
+                  "description": "Total tons of CO2 emissions associated with the site's grid purchases over the analysis period in the BAU scenario.",
+                  "units": "metric tons"
                 },
-                "year_one_emissions_offset_from_elec_exports_tNOx_bau": {
-                  "type": "int",
-                  "description": "Total pounds of NOx emitted from BAU generator use in the first year.",
-                  "units": "tNOx"
+                "lifecycle_emissions_tNOx_bau": {
+                  "type": "float",
+                  "description": "Total tons of NOx emissions associated with the site's grid purchases over the analysis period in the BAU scenario.",
+                  "units": "metric tons"
                 },
-                "year_one_emissions_offset_from_elec_exports_tSO2_bau": {
-                  "type": "int",
-                  "description": "Total pounds of SO2 emitted from BAU generator use in the first year.",
-                  "units": "tSO2"
+                "lifecycle_emissions_tSO2_bau": {
+                  "type": "float",
+                  "description": "Total tons of SO2 emissions associated with the site's grid purchases over the analysis period in the BAU scenario.",
+                  "units": "metric tons"
                 },
-                "year_one_emissions_offset_from_elec_exports_tPM25_bau": {
-                  "type": "int",
-                  "description": "Total pounds of PM2.5 emitted from BAU generator use in the first year.",
-                  "units": "tPM2.5"
-                },
-                "lifecycle_emissions_offset_from_elec_exports_tCO2": {
-                  "type": "int",
-                  "description": "Total equivalent pounds of carbon dioxide emitted from generator use over the project lifecycle.",
-                  "units": "tCO2"
-                },
-                "lifecycle_emissions_offset_from_elec_exports_tNOx": {
-                  "type": "int",
-                  "description": "Total pounds of NOx emitted from generator use over the project lifecycle.",
-                  "units": "tNOx"
-                },
-                "lifecycle_emissions_offset_from_elec_exports_tSO2": {
-                  "type": "int",
-                  "description": "Total pounds of SO2 emitted from generator use over the project lifecycle.",
-                  "units": "tSO2"
-                },
-                "lifecycle_emissions_offset_from_elec_exports_tPM25": {
-                  "type": "int",
-                  "description": "Total pounds of PM2.5 emitted from generator use over the project lifecycle.",
-                  "units": "tPM2.5"
-                },
-                "lifecycle_emissions_offset_from_elec_exports_tCO2_bau": {
-                  "type": "int",
-                  "description": "Total equivalent pounds of carbon dioxide emitted from BAU generator use over the project lifecycle.",
-                  "units": "tCO2"
-                },
-                "lifecycle_emissions_offset_from_elec_exports_tNOx_bau": {
-                  "type": "int",
-                  "description": "Total pounds of NOx emitted from BAU generator use over the project lifecycle.",
-                  "units": "tNOx"
-                },
-                "lifecycle_emissions_offset_from_elec_exports_tSO2_bau": {
-                  "type": "int",
-                  "description": "Total pounds of SO2 emitted from BAU generator use over the project lifecycle.",
-                  "units": "tSO2"
-                },
-                "lifecycle_emissions_offset_from_elec_exports_tPM25_bau": {
-                  "type": "int",
-                  "description": "Total pounds of PM2.5 emitted from BAU generator use over the project lifecycle.",
-                  "units": "tPM2.5"
-                },
-                "lifecycle_emissions_net_if_selected_tCO2": {
-                  "type": "int",
-                  "description": "Total equivalent pounds of carbon dioxide emitted from generator use over the project lifecycle.",
-                  "units": "tCO2"
-                },
-                "lifecycle_emissions_net_if_selected_tNOx": {
-                  "type": "int",
-                  "description": "Total pounds of NOx emitted from generator use over the project lifecycle.",
-                  "units": "tNOx"
-                },
-                "lifecycle_emissions_net_if_selected_tSO2": {
-                  "type": "int",
-                  "description": "Total pounds of SO2 emitted from generator use over the project lifecycle.",
-                  "units": "tSO2"
-                },
-                "lifecycle_emissions_net_if_selected_tPM25": {
-                  "type": "int",
-                  "description": "Total pounds of PM2.5 emitted from generator use over the project lifecycle.",
-                  "units": "tPM2.5"
-                },
-                "lifecycle_emissions_net_if_selected_tCO2_bau": {
-                  "type": "int",
-                  "description": "Total equivalent pounds of carbon dioxide emitted from BAU generator use over the project lifecycle.",
-                  "units": "tCO2"
-                },
-                "lifecycle_emissions_net_if_selected_tNOx_bau": {
-                  "type": "int",
-                  "description": "Total pounds of NOx emitted from BAU generator use over the project lifecycle.",
-                  "units": "tNOx"
-                },
-                "lifecycle_emissions_net_if_selected_tSO2_bau": {
-                  "type": "int",
-                  "description": "Total pounds of SO2 emitted from BAU generator use over the project lifecycle.",
-                  "units": "tSO2"
-                },
-                "lifecycle_emissions_net_if_selected_tPM25_bau": {
-                  "type": "int",
-                  "description": "Total pounds of PM2.5 emitted from BAU generator use over the project lifecycle.",
-                  "units": "tPM2.5"
+                "lifecycle_emissions_tPM25_bau": {
+                  "type": "float",
+                  "description": "Total tons of PM2.5 emissions associated with the site's grid purchases over the analysis period in the BAU scenario.",
+                  "units": "metric tons"
                 }
               },
 
@@ -1335,83 +1257,83 @@ nested_output_definitions = {
                 },
                 "year_one_emissions_tCO2": {
                   "type": "int",
-                  "description": "Total equivalent pounds of carbon dioxide emitted from generator use in the first year.",
-                  "units": "tCO2"
+                  "description": "Total tons of CO2 emitted from generator use in year one.",
+                  "units": "metric tons"
                 },
                 "year_one_emissions_tNOx": {
                   "type": "int",
-                  "description": "Total pounds of NOx emitted from generator use in the first year.",
-                  "units": "tNOx"
+                  "description": "Total tons of NOx emitted from generator use in year one.",
+                  "units": "metric tons"
                 },
                 "year_one_emissions_tSO2": {
                   "type": "int",
-                  "description": "Total pounds of SO2 emitted from generator use in the first year.",
-                  "units": "tSO2"
+                  "description": "Total tons of SO2 emitted from generator use in year one.",
+                  "units": "metric tons"
                 },
                 "year_one_emissions_tPM25": {
                   "type": "int",
-                  "description": "Total pounds of PM2.5 emitted from generator use in the first year.",
-                  "units": "tPM2.5"
+                  "description": "Total tons of CO2 emitted from generator use in year one.",
+                  "units": "metric tons"
                 },
                 "year_one_emissions_tCO2_bau": {
                   "type": "int",
-                  "description": "Total equivalent pounds of carbon dioxide emitted from BAU generator use in the first year.",
-                  "units": "tCO2"
+                  "description": "Total tons of CO2 emitted from generator use in year one in the BAU case.",
+                  "units": "metric tons"
                 },
                 "year_one_emissions_tNOx_bau": {
                   "type": "int",
-                  "description": "Total pounds of NOx emitted from BAU generator use in the first year.",
-                  "units": "tNOx"
+                  "description": "Total tons of NOx emitted from generator use in year one in the BAU case.",
+                  "units": "metric tons"
                 },
                 "year_one_emissions_tSO2_bau": {
                   "type": "int",
-                  "description": "Total pounds of SO2 emitted from BAU generator use in the first year.",
-                  "units": "tSO2"
+                  "description": "Total tons of SO2 emitted from generator use in year one in the BAU case.",
+                  "units": "metric tons"
                 },
                 "year_one_emissions_tPM25_bau": {
                   "type": "int",
-                  "description": "Total pounds of PM2.5 emitted from BAU generator use in the first year.",
-                  "units": "tPM2.5"
+                  "description": "Total tons of PM2.5 emitted from generator use in year one in the BAU case.",
+                  "units": "metric tons"
                 },
                 "lifecycle_emissions_tCO2": {
                   "type": "int",
-                  "description": "Total equivalent pounds of carbon dioxide emitted from generator use over the project lifecycle.",
-                  "units": "tCO2"
+                  "description": "Total tons of CO2 emitted from generator use over the analysis period.",
+                  "units": "metric tons"
                 },
                 "lifecycle_emissions_tNOx": {
                   "type": "int",
-                  "description": "Total pounds of NOx emitted from generator use over the project lifecycle.",
-                  "units": "tNOx"
+                  "description": "Total tons of NOx emitted from generator use over the analysis period.",
+                  "units": "metric tons"
                 },
                 "lifecycle_emissions_tSO2": {
                   "type": "int",
-                  "description": "Total pounds of SO2 emitted from generator use over the project lifecycle.",
-                  "units": "tSO2"
+                  "description": "Total tons of SO2 emitted from generator use over the analysis period.",
+                  "units": "metric tons"
                 },
                 "lifecycle_emissions_tPM25": {
                   "type": "int",
-                  "description": "Total pounds of PM2.5 emitted from generator use over the project lifecycle.",
-                  "units": "tPM2.5"
+                  "description": "Total tons of PM2.5 emitted from generator use over the analysis period.",
+                  "units": "metric tons"
                 },
                 "lifecycle_emissions_tCO2_bau": {
                   "type": "int",
-                  "description": "Total equivalent pounds of carbon dioxide emitted from BAU generator use over the project lifecycle.",
-                  "units": "tCO2"
+                  "description": "Total tons of CO2 emitted from generator use over the analysis period in the BAU case.",
+                  "units": "metric tons"
                 },
                 "lifecycle_emissions_tNOx_bau": {
                   "type": "int",
-                  "description": "Total pounds of NOx emitted from BAU generator use over the project lifecycle.",
-                  "units": "tNOx"
+                  "description": "Total tons of NOx emitted from generator use over the analysis period in the BAU case.",
+                  "units": "metric tons"
                 },
                 "lifecycle_emissions_tSO2_bau": {
                   "type": "int",
-                  "description": "Total pounds of SO2 emitted from BAU generator use over the project lifecycle.",
-                  "units": "tSO2"
+                  "description": "Total tons of SO2 emitted from generator use over the analysis period in the BAU case.",
+                  "units": "metric tons"
                 },
                 "lifecycle_emissions_tPM25_bau": {
                   "type": "int",
-                  "description": "Total pounds of PM2.5 emitted from BAU generator use over the project lifecycle.",
-                  "units": "tPM2.5"
+                  "description": "Total tons of PM2.5 emitted from generator use over the analysis period in the BAU case.",
+                  "units": "metric tons"
                 }
               },
 
@@ -1483,43 +1405,43 @@ nested_output_definitions = {
                 },
                 "year_one_emissions_tCO2": {
                   "type": int,
-                  "description": "Total equivalent pounds of carbon dioxide emitted from CHP fuels consumed on site use in the first year.",
-                  "units": "tCO2"
+                  "description": "Total tons of CO2 emitted from CHP fuel consumed onsite in year one.",
+                  "units": "metric tons"
                 },
                 "year_one_emissions_tNOx": {
                   "type": int,
-                  "description": "Total pounds of NOx emitted from CHP fuels consumed on site use in the first year.",
-                  "units": "tNOx"
+                  "description": "Total tons of NOx emitted from CHP fuel consumed onsite in year one.",
+                  "units": "metric tons"
                 },
                 "year_one_emissions_tSO2": {
                   "type": int,
-                  "description": "Total pounds of SO2 emitted from CHP fuels consumed on site use in the first year.",
-                  "units": "tSO2"
+                  "description": "Total tons of SO2 emitted from CHP fuel consumed onsite in year one.",
+                  "units": "metric tons"
                 },
                 "year_one_emissions_tPM25": {
                   "type": int,
-                  "description": "Total pounds of PM2.5 emitted from CHP fuels consumed on site use in the first year.",
-                  "units": "tPM2.5"
+                  "description": "Total tons of PM2.5 emitted from CHP fuel consumed onsite in year one.",
+                  "units": "metric tons"
                 },
                 "lifecycle_emissions_tCO2": {
                   "type": int,
-                  "description": "Total equivalent pounds of carbon dioxide emitted from CHP fuels consumed on site use in the first year.",
-                  "units": "tCO2"
+                  "description": "Total tons of CO2 emitted from CHP fuel consumed onsite over the analysis period.",
+                  "units": "metric tons"
                 },
                 "lifecycle_emissions_tNOx": {
                   "type": int,
-                  "description": "Total pounds of NOx emitted from CHP fuels consumed on site use in the first year.",
-                  "units": "tNOx"
+                  "description": "Total tons of NOx emitted from CHP fuel consumed onsite over the analysis period.",
+                  "units": "metric tons"
                 },
                 "lifecycle_emissions_tSO2": {
                   "type": int,
-                  "description": "Total pounds of SO2 emitted from CHP fuels consumed on site use in the first year.",
-                  "units": "tSO2"
+                  "description": "Total tons of SO2 emitted from CHP fuel consumed onsite over the analysis period.",
+                  "units": "metric tons"
                 },
                 "lifecycle_emissions_tPM25": {
                   "type": int,
-                  "description": "Total pounds of PM2.5 emitted from CHP fuels consumed on site use in the first year.",
-                  "units": "tPM2.5"
+                  "description": "Total tons of PM2.5 emitted from CHP fuel consumed onsite over the analysis period.",
+                  "units": "metric tons"
                 }
               },
 
@@ -1566,83 +1488,83 @@ nested_output_definitions = {
                 },
                 "year_one_emissions_tCO2": {
                   "type": int,
-                  "description": "Total equivalent pounds of carbon dioxide emitted from boiler fuels consumed on site use in the first year.",
-                  "units": "tCO2"
+                  "description": "Total tons of CO2 emitted from boiler fuel consumed onsite in year one.",
+                  "units": "metric tons"
                 },
                 "year_one_emissions_tNOx": {
                   "type": int,
-                  "description": "Total pounds of NOx emitted from boiler fuels consumed on site use in the first year.",
-                  "units": "tNOx"
+                  "description": "Total tons of NOx emitted from boiler fuel consumed onsite in year one.",
+                  "units": "metric tons"
                 },
                 "year_one_emissions_tSO2": {
                   "type": int,
-                  "description": "Total pounds of SO2 emitted from boiler fuels consumed on site use in the first year.",
-                  "units": "tSO2"
+                  "description": "Total tons of SO2 emitted from boiler fuel consumed onsite in year one.",
+                  "units": "metric tons"
                 },
                 "year_one_emissions_tPM25": {
                   "type": int,
-                  "description": "Total pounds of PM2.5 emitted from boiler fuels consumed on site use in the first year.",
-                  "units": "tPM2.5"
+                  "description": "Total tons of PM2.5 emitted from boiler fuel consumed onsite in year one.",
+                  "units": "metric tons"
                 },
                 "year_one_emissions_tCO2_bau": {
                   "type": int,
-                  "description": "Total equivalent pounds of carbon dioxide emitted from boiler fuels consumed on site use in the first year in the BAU case.",
-                  "units": "tCO2"
+                  "description": "Total tons of CO2 emitted from boiler fuel consumed onsite in year one in the BAU case.",
+                  "units": "metric tons"
                 },
                 "year_one_emissions_tNOx_bau": {
                   "type": int,
-                  "description": "Total pounds of NOx emitted from boiler fuels consumed on site use in the first year in the BAU case.",
-                  "units": "tNOx"
+                  "description": "Total tons of NOx emitted from boiler fuel consumed onsite in year one in the BAU case.",
+                  "units": "metric tons"
                 },
                 "year_one_emissions_tSO2_bau": {
                   "type": int,
-                  "description": "Total pounds of SO2 emitted from boiler fuels consumed on site use in the first year in the BAU case.",
-                  "units": "tSO2"
+                  "description": "Total tons of SO2 emitted from boiler fuel consumed onsite in year one in the BAU case.",
+                  "units": "metric tons"
                 },
                 "year_one_emissions_tPM25_bau": {
                   "type": int,
-                  "description": "Total pounds of PM2.5 emitted from boiler fuels consumed on site use in the first year in the BAU case.",
-                  "units": "tPM2.5"
+                  "description": "Total tons of PM2.5 emitted from boiler fuel consumed onsite in year one in the BAU case.",
+                  "units": "metric tons"
                 },
                 "lifecycle_emissions_tCO2": {
                   "type": int,
-                  "description": "Total equivalent pounds of carbon dioxide emitted from boiler fuels consumed on site use over the project lifecycle.",
-                  "units": "tCO2"
+                  "description": "Total tons of CO2 emitted from boiler fuel consumed onsite over the analysis period.",
+                  "units": "metric tons"
                 },
                 "lifecycle_emissions_tNOx": {
                   "type": int,
-                  "description": "Total pounds of NOx emitted from boiler fuels consumed on site use over the project lifecycle.",
-                  "units": "tNOx"
+                  "description": "Total tons of NOx emitted from boiler fuel consumed onsite over the analysis period.",
+                  "units": "metric tons"
                 },
                 "lifecycle_emissions_tSO2": {
                   "type": int,
-                  "description": "Total pounds of SO2 emitted from boiler fuels consumed on site use over the project lifecycle.",
-                  "units": "tSO2"
+                  "description": "Total tons of SO2 emitted from boiler fuel consumed onsite over the analysis period.",
+                  "units": "metric tons"
                 },
                 "lifecycle_emissions_tPM25": {
                   "type": int,
-                  "description": "Total pounds of PM2.5 emitted from boiler fuels consumed on site use over the project lifecycle.",
-                  "units": "tPM2.5"
+                  "description": "Total tons of PM2.5 emitted from boiler fuel consumed onsite over the analysis period.",
+                  "units": "metric tons"
                 },
                 "lifecycle_emissions_tCO2_bau": {
                   "type": int,
-                  "description": "Total equivalent pounds of carbon dioxide emitted from boiler fuels consumed on site use over the project lifecycle in the BAU case.",
-                  "units": "tCO2"
+                  "description": "Total tons of CO2 emitted from boiler fuel consumed onsite over the analysis period in the BAU case.",
+                  "units": "metric tons"
                 },
                 "lifecycle_emissions_tNOx_bau": {
                   "type": int,
-                  "description": "Total pounds of NOx emitted from boiler fuels consumed on site use over the project lifecycle in the BAU case.",
-                  "units": "tNOx"
+                  "description": "Total tons of NOx emitted from boiler fuel consumed onsite over the analysis period in the BAU case.",
+                  "units": "metric tons"
                 },
                 "lifecycle_emissions_tSO2_bau": {
                   "type": int,
-                  "description": "Total pounds of SO2 emitted from boiler fuels consumed on site use over the project lifecycle in the BAU case.",
-                  "units": "tSO2"
+                  "description": "Total tons of SO2 emitted from boiler fuel consumed onsite over the analysis period in the BAU case.",
+                  "units": "metric tons"
                 },
                 "lifecycle_emissions_tPM25_bau": {
                   "type": int,
-                  "description": "Total pounds of PM2.5 emitted from boiler fuels consumed on site use over the project lifecycle in the BAU case.",
-                  "units": "tPM2.5"
+                  "description": "Total tons of PM2.5 emitted from boiler fuel consumed onsite over the analysis period in the BAU case.",
+                  "units": "metric tons"
                 }
               },
 
