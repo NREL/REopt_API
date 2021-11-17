@@ -87,8 +87,8 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         c['year_one_emissions_tCO2_bau'] = d['outputs']['Scenario']['Site']['year_one_emissions_tCO2_bau']
         c['utility_year_one_emissions_tCO2'] = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_tCO2']
         c['utility_year_one_emissions_tCO2_bau'] = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_tCO2_bau']
-        c['generator_year_one_emissions_tCO2'] = d['outputs']['Scenario']['Site']['Generator']['year_one_emissions_tCO2']
-        c['generator_year_one_emissions_tCO2_bau'] = d['outputs']['Scenario']['Site']['Generator']['year_one_emissions_tCO2_bau']
+        #c['generator_year_one_emissions_tCO2'] = d['outputs']['Scenario']['Site']['Generator']['year_one_emissions_tCO2']
+        #c['generator_year_one_emissions_tCO2_bau'] = d['outputs']['Scenario']['Site']['Generator']['year_one_emissions_tCO2_bau']
 
         d_expected = dict()
         d_expected['lcc'] = 242935.0
@@ -107,8 +107,8 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         d_expected['year_one_emissions_tCO2_bau'] = 421672.6 / 2204.62
         d_expected['utility_year_one_emissions_tCO2'] = 421672.6 / 2204.62
         d_expected['utility_year_one_emissions_tCO2_bau'] = 421672.6 / 2204.62
-        d_expected['generator_year_one_emissions_tCO2'] = round(20.5 / 2204.62, 2)
-        d_expected['generator_year_one_emissions_tCO2_bau'] = 0 / 2204.62
+        #d_expected['generator_year_one_emissions_tCO2'] = round(20.5 / 2204.62, 2)
+        #d_expected['generator_year_one_emissions_tCO2_bau'] = 0 / 2204.62
 
         try:
             self.assertEqual(d['outputs']['Scenario']['Site']['ElectricTariff']['emissions_region'], 'Southeast')
