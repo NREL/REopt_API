@@ -39,7 +39,7 @@ from reo.src.urdb_rate import Rate
 import re
 import uuid
 from reo.src.techs import Generator, Boiler, CHP, AbsorptionChiller, SteamTurbine
-from reo.src.emissions_calculator import EmissionsCalculator
+from reo.src.emissions_calculator import EmissionsCalculator, EASIURCalculator
 from reo.utilities import generate_year_profile_hourly
 from reo.src.pyeasiur import *
 
@@ -1402,17 +1402,26 @@ class ValidateNestedInput:
                                                         longitude=self.input_dict['Scenario']['Site']['longitude'],
                                                         pollutant = pollutant,
                                                         time_steps_per_hour = ts_per_hour)
+                        # If user applies CO2 emissions constraint or includes CO2 costs in objective 
+                        must_include_CO2 = self.input_dict['Scenario']['include_climate_in_objective'] or ('co2_emissions_reduction_min_pct' in self.input_dict['Scenario']['Site']) \
+                            or ('co2_emissions_reduction_max_pct' in self.input_dict['Scenario']['Site'])
+                        # If user includes health in objective
+                        must_include_health = self.input_dict['Scenario']['include_health_in_objective'] 
                         emissions_series = None
                         try:
                             emissions_series = ec.emissions_series
                             emissions_region = ec.region
                         except AttributeError as e:
                             # Emissions warning is a specific type of warning that we check for and display to the users when it occurs
-                            # since at this point the emissions are not required to do a run it simply
-                            # tells the user why we could not get an emission series and results in emissions not being
-                            # calculated, but does not prevent the run from optimizing
+                            # If emissions are not required to do a run it tells the user why we could not get an emission series 
+                            # and sets emissions factors to zero 
                             self.emission_warning = str(e.args[0])
-
+                            emissions_series = [0.0]*(8760*ts_per_hour) # Set emissions to 0 and return error
+                            emissions_region = 'None'
+                            if must_include_CO2 and pollutant=='CO2':
+                                self.input_data_errors.append('To include climate emissions in the optimization model, you must either: enter a custom emissions_factor_series_lb_CO2_per_kwh or a site location within the continental U.S.')
+                            if must_include_health and (pollutant=='NOx' or pollutant=='SO2' or pollutant=='PM25'):
+                                self.input_data_errors.append('To include health emissions in the optimization model, you must either: enter a custom emissions_factor_series for health emissions or a site location within the continental U.S.')
                         if emissions_series is not None:
                             self.update_attribute_value(object_name_path, number, key_name,
                                 emissions_series)
@@ -1776,66 +1785,60 @@ class ValidateNestedInput:
                 self.update_attribute_value(object_name_path, number, 'owner_tax_pct', real_values.get("offtaker_tax_pct"))
                 self.defaults_inserted.append(['owner_tax_pct', object_name_path])
 
-            # Calculated social cost of emissions
-            EASIUR_150m_pop2020_inc2020_dol2010 = get_EASIUR2005('p150', pop_year=2020, income_year=2020, dollar_year=2010)  # For keys in EASIUR: EASIUR_150m_pop2020_inc2020_dol2010.keys()
-            EASIUR_ground_pop2020_inc2020_dol2010 = get_EASIUR2005('area', pop_year=2020, income_year=2020, dollar_year=2010)
+            # If user has not supplied NOx, SO2, or PM25 emissions costs, look up with EASIUR code
+            easiur = EASIURCalculator( latitude=self.input_dict['Scenario']['Site']['latitude'], 
+                    longitude=self.input_dict['Scenario']['Site']['longitude'],
+                    inflation=self.input_dict['Scenario']['Site']['Financial']['om_cost_escalation_pct']
+                    )
+            
+            # If health values must be included and any health input is missing, check if lat long are in CAMx grid 
+            ## If not, set health costs to zero for now, with warning message?
+            must_include_health = self.input_dict['Scenario']['include_health_in_objective'] 
+            health_inputs = ["nox_cost_us_dollars_per_tonne_grid", "so2_cost_us_dollars_per_tonne_grid", "pm25_cost_us_dollars_per_tonne_grid",
+            "nox_cost_us_dollars_per_tonne_onsite_fuelburn", "so2_cost_us_dollars_per_tonne_onsite_fuelburn", "pm25_cost_us_dollars_per_tonne_onsite_fuelburn",
+            "nox_cost_escalation_pct", "so2_cost_escalation_pct", "pm25_cost_escalation_pct"
+            ]
+            missing_health_input = False
+            for item in health_inputs: 
+                if real_values.get(item) is None:
+                    missing_health_input = True 
+            # If just missing health costs, pass Attribute error if outside of CAMx grid. If also trying to include health in obj, pass input error
+            if missing_health_input: 
+                try: 
+                    if real_values.get("nox_cost_us_dollars_per_tonne_grid") is None:
+                        self.update_attribute_value(object_name_path, number, "nox_cost_us_dollars_per_tonne_grid",
+                                        easiur.grid_costs['NOx'])
+                    if real_values.get("so2_cost_us_dollars_per_tonne_grid") is None:
+                        self.update_attribute_value(object_name_path, number, "so2_cost_us_dollars_per_tonne_grid",
+                                        easiur.grid_costs['SO2'])
+                    if real_values.get("pm25_cost_us_dollars_per_tonne_grid") is None:
+                        self.update_attribute_value(object_name_path, number, "pm25_cost_us_dollars_per_tonne_grid",
+                                        easiur.grid_costs['PM25'])
+                    if real_values.get("nox_cost_us_dollars_per_tonne_onsite_fuelburn") is None:
+                        self.update_attribute_value(object_name_path, number, "nox_cost_us_dollars_per_tonne_onsite_fuelburn",
+                                        easiur.onsite_costs['NOx'])
+                    if real_values.get("so2_cost_us_dollars_per_tonne_onsite_fuelburn") is None:
+                        self.update_attribute_value(object_name_path, number, "so2_cost_us_dollars_per_tonne_onsite_fuelburn",
+                                        easiur.onsite_costs['SO2'])
+                    if real_values.get("pm25_cost_us_dollars_per_tonne_onsite_fuelburn") is None:
+                        self.update_attribute_value(object_name_path, number, "pm25_cost_us_dollars_per_tonne_onsite_fuelburn",
+                                        easiur.onsite_costs['PM25'])
 
-            lat=self.input_dict['Scenario']['Site']['latitude']
-            lon=self.input_dict['Scenario']['Site']['longitude']
-            # convert lon, lat to CAMx grid (x, y), specify datum. default is NAD83
-            # Note: x, y returned from g2l follows the CAMx grid convention.
-            # x and y start from 1, not zero. (x) ranges (1, ..., 148) and (y) ranges (1, ..., 112)
-            x, y = g2l(lon, lat, datum='WGS84')
-            x = int(round(x))
-            y = int(round(y))
+                    # If user has not supplied nox, so2, pm25 cost escalation rates, calculate using EASIUR
+                    if real_values.get("nox_cost_escalation_pct") is None:
+                        self.update_attribute_value(object_name_path, number, "nox_cost_escalation_pct", easiur.escalation_rates['NOx'])
+                    if real_values.get("so2_cost_escalation_pct") is None:
+                        self.update_attribute_value(object_name_path, number, "so2_cost_escalation_pct", easiur.escalation_rates['SO2'])
+                    if real_values.get("pm25_cost_escalation_pct") is None:
+                        self.update_attribute_value(object_name_path, number, "pm25_cost_escalation_pct", easiur.escalation_rates['PM25'])
+                except AttributeError as e:
+                    self.emission_warning = str(e.args[0])
+                    for item in health_inputs: # If any one health input returns an error, they all will. Update all with values of 0.0 and return a warning.
+                        self.update_attribute_value(object_name_path, number, item, 0.0)
+                    if must_include_health:
+                        self.input_data_errors.append('To include health costs in the objective function model, you must either: enter custom emissions costs and escalation rates or a site location within the CAMx grid')
 
-            # Convert from 2010$ to 2020$ (source: https://www.in2013dollars.com/us/inflation/2010?amount=100)
-            convert_2010_2020_usd = 1.246
-
-            # If user has not supplied nox, so2, pm25 emissions costs, look up with EASIUR code
-            # Assumption: grid emissions occur at site at 150m; diesel fuelburn at 0m
-            if real_values.get("nox_cost_us_dollars_per_tonne_grid") is None:
-                self.update_attribute_value(object_name_path, number, "nox_cost_us_dollars_per_tonne_grid",
-                                EASIUR_150m_pop2020_inc2020_dol2010['NOX_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
-            if real_values.get("so2_cost_us_dollars_per_tonne_grid") is None:
-                self.update_attribute_value(object_name_path, number, "so2_cost_us_dollars_per_tonne_grid",
-                                EASIUR_150m_pop2020_inc2020_dol2010['SO2_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
-            if real_values.get("pm25_cost_us_dollars_per_tonne_grid") is None:
-                self.update_attribute_value(object_name_path, number, "pm25_cost_us_dollars_per_tonne_grid",
-                                EASIUR_150m_pop2020_inc2020_dol2010['PEC_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
-            if real_values.get("nox_cost_us_dollars_per_tonne_onsite_fuelburn") is None:
-                self.update_attribute_value(object_name_path, number, "nox_cost_us_dollars_per_tonne_onsite_fuelburn",
-                                EASIUR_ground_pop2020_inc2020_dol2010['NOX_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
-            if real_values.get("so2_cost_us_dollars_per_tonne_onsite_fuelburn") is None:
-                self.update_attribute_value(object_name_path, number, "so2_cost_us_dollars_per_tonne_onsite_fuelburn",
-                                EASIUR_ground_pop2020_inc2020_dol2010['SO2_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
-            if real_values.get("pm25_cost_us_dollars_per_tonne_onsite_fuelburn") is None:
-                self.update_attribute_value(object_name_path, number, "pm25_cost_us_dollars_per_tonne_onsite_fuelburn",
-                                EASIUR_ground_pop2020_inc2020_dol2010['PEC_Annual'][x - 1, y - 1] * convert_2010_2020_usd)
-
-            # If user has not supplied nox, so2, pm25 cost escalation rates, calculate using EASIUR
-            avg_inflation_2020_2024 = 0.023 # TODO update to "om_cost_escalation_pct"
-            if real_values.get("nox_cost_escalation_pct") is None:
-                dollar2010_per_tonne_in_2020 = EASIUR_150m_pop2020_inc2020_dol2010['NOX_Annual'][x - 1, y - 1]
-                EASIUR_150m_pop2024_inc2024_dol2010 = get_EASIUR2005('p150', pop_year=2024, income_year=2024, dollar_year=2010)
-                dollar2010_per_tonne_in_2024 = EASIUR_150m_pop2024_inc2024_dol2010['NOX_Annual'][x - 1, y - 1]
-                cagr_real = (dollar2010_per_tonne_in_2024/dollar2010_per_tonne_in_2020)**(1/4)-1 # real compound annual growth rate
-                cagr_nominal = cagr_real + avg_inflation_2020_2024
-                self.update_attribute_value(object_name_path, number, "nox_cost_escalation_pct", cagr_nominal)
-            if real_values.get("so2_cost_escalation_pct") is None:
-                dollar2010_per_tonne_in_2020 = EASIUR_150m_pop2020_inc2020_dol2010['SO2_Annual'][x - 1, y - 1]
-                EASIUR_150m_pop2024_inc2024_dol2010 = get_EASIUR2005('p150', pop_year=2024, income_year=2024, dollar_year=2010)
-                dollar2010_per_tonne_in_2024 = EASIUR_150m_pop2024_inc2024_dol2010['SO2_Annual'][x - 1, y - 1]
-                cagr_real = (dollar2010_per_tonne_in_2024/dollar2010_per_tonne_in_2020)**(1/4)-1 # real compound annual growth rate
-                cagr_nominal = cagr_real + avg_inflation_2020_2024
-                self.update_attribute_value(object_name_path, number, "so2_cost_escalation_pct", cagr_nominal)
-            if real_values.get("pm25_cost_escalation_pct") is None:
-                dollar2010_per_tonne_in_2020 = EASIUR_150m_pop2020_inc2020_dol2010['PEC_Annual'][x - 1, y - 1]
-                EASIUR_150m_pop2024_inc2024_dol2010 = get_EASIUR2005('p150', pop_year=2024, income_year=2024, dollar_year=2010)
-                dollar2010_per_tonne_in_2024 = EASIUR_150m_pop2024_inc2024_dol2010['PEC_Annual'][x - 1, y - 1]
-                cagr_real = (dollar2010_per_tonne_in_2024/dollar2010_per_tonne_in_2020)**(1/4)-1 # real compound annual growth rate
-                cagr_nominal = cagr_real + avg_inflation_2020_2024
-                self.update_attribute_value(object_name_path, number, "pm25_cost_escalation_pct", cagr_nominal)
+            
 
         if object_name_path[-1] == "SteamTurbine":
             if self.isValid:

@@ -182,18 +182,13 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
                 "co2_cost_us_dollars_per_tonne": 51.0,
                 "co2_cost_escalation_pct": 0.017173, 
                 # "nox_cost_escalation_pct": , 
-                # "nox_cost_us_dollars_per_tonne_grid": 0.0, # TODO: make seasonal?
+                # "nox_cost_us_dollars_per_tonne_grid": 0.0, 
                 # "so2_cost_us_dollars_per_tonne_grid": 0.0, 
                 # "pm25_cost_us_dollars_per_tonne_grid": 0.0, 
-                # "nox_cost_us_dollars_per_tonne_onsite_fuelburn": 0.0, # TODO: make seasonal?
+                # "nox_cost_us_dollars_per_tonne_onsite_fuelburn": 0.0, 
                 # "so2_cost_us_dollars_per_tonne_onsite_fuelburn": 0.0, 
                 # "pm25_cost_us_dollars_per_tonne_onsite_fuelburn": 0.0  
               },
-              "Wind": {
-                "min_kw": 0.0,
-                "max_kw": 0.0 # currently getting WindDownloadError 
-                
-              }
             }
           }
         }
@@ -293,7 +288,7 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
             error_msg = None
             if hasattr(messages, "error"):
                 error_msg = messages.error
-            print("test_flex_tech API error message: {}".format(error_msg))
+            print("API error message: {}".format(error_msg))
             print("Run uuid: {}".format(response['outputs']['Scenario']['run_uuid']))
             raise e
 

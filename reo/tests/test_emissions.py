@@ -53,19 +53,34 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
 
         self.assertTrue('emissions_factor_series_lb_CO2_per_kwh' in response['messages']['input_errors'][0])
 
-    def test_bad_grid_emissions_profile_location(self):
+    def test_bad_grid_emissions_profile_location_with_health_in_obj(self):
         """
         Tests that a location 5 miles outside the AVERT boundaries does not return an emission
         factor profile - optimization is not stopped and emissions are not calculated
         """
         data = self.post
         data['Scenario']['Site']['latitude'] = 1
-        data['Scenario']['Site']['longitude'] = 1
+        data['Scenario']['Site']['longitude'] = 2
         data['Scenario']['timeout_seconds'] = 1
+        data['Scenario']['include_health_in_objective'] = True
+
+        response = json.loads(self.api_client.post(self.submit_url, format='json', data=data).content)
+
+        input_error_to_check = 'To include health emissions in the optimization model, you must either: enter a custom emissions_factor_series for health emissions or a site location within the continental U.S.'
+        self.assertTrue(input_error_to_check in response['messages']['input_errors'][1])
+
+    def test_bad_grid_emissions_profile_location(self):
+        """
+        Tests that a location 5 miles outside the AVERT boundaries and outside of the CAMx grid does not return an emission
+        factor profile - optimization is not stopped and grid emissions are set to zero
+        """
+        data = self.post
+        data['Scenario']['Site']['latitude'] = 1
+        data['Scenario']['Site']['longitude'] = 1
 
         response = self.get_response(data)
 
         text_to_check = "'Emissions Warning': {'error': 'Your site location (1.0,1.0) is more than 5 miles from the nearest emission region. Cannot calculate emissions.'"
         self.assertTrue(text_to_check in response['messages']['warnings'])
-        self.assertTrue(response['outputs']['Scenario']['Site']['year_one_emissions_tCO2'] is None)
-        self.assertTrue(response['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_gross_tCO2'] is None)
+        self.assertEqual(response['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_gross_tCO2'], 0.0)
+
