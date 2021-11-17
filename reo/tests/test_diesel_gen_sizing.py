@@ -85,8 +85,8 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         c = nested_to_flat(d['outputs'])
         c['year_one_emissions_tCO2'] = d['outputs']['Scenario']['Site']['year_one_emissions_tCO2']
         c['year_one_emissions_tCO2_bau'] = d['outputs']['Scenario']['Site']['year_one_emissions_tCO2_bau']
-        c['utility_year_one_emissions_tCO2'] = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_gross_tCO2']
-        c['utility_year_one_emissions_tCO2_bau'] = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_gross_tCO2_bau']
+        c['utility_year_one_emissions_tCO2'] = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_tCO2']
+        c['utility_year_one_emissions_tCO2_bau'] = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_tCO2_bau']
         c['generator_year_one_emissions_tCO2'] = d['outputs']['Scenario']['Site']['Generator']['year_one_emissions_tCO2']
         c['generator_year_one_emissions_tCO2_bau'] = d['outputs']['Scenario']['Site']['Generator']['year_one_emissions_tCO2_bau']
 
@@ -104,7 +104,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         d_expected['existing_pv_om_cost_us_dollars'] = 11507.0
         d_expected['net_capital_costs_plus_om'] = 15470.0
         d_expected['year_one_emissions_tCO2'] = 421693.1 / 2204.62
-        d_expected['year_one_emissions_bau_lb_CO2'] = 421672.6 / 2204.62
+        d_expected['year_one_emissions_tCO2_bau'] = 421672.6 / 2204.62
         d_expected['utility_year_one_emissions_tCO2'] = 421672.6 / 2204.62
         d_expected['utility_year_one_emissions_tCO2_bau'] = 421672.6 / 2204.62
         d_expected['generator_year_one_emissions_tCO2'] = round(20.5 / 2204.62, 2)

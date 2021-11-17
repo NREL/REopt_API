@@ -82,5 +82,5 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
 
         text_to_check = "'Emissions Warning': {'error': 'Your site location (1.0,1.0) is more than 5 miles from the nearest emission region. Cannot calculate emissions.'"
         self.assertTrue(text_to_check in response['messages']['warnings'])
-        self.assertEqual(response['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_gross_tCO2'], 0.0)
+        self.assertEqual(response['outputs']['Scenario']['Site']['ElectricTariff']['lifecycle_emissions_tCO2'], 0.0)
 
