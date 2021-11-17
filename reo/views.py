@@ -46,7 +46,7 @@ from reo.exceptions import UnexpectedError  #, RequestError  # should we save ba
 import logging
 log = logging.getLogger(__name__)
 from reo.src.techs import Generator, CHP, AbsorptionChiller, Boiler, SteamTurbine
-from reo.src.emissions_calculator import EmissionsCalculator
+from reo.src.emissions_calculator import EmissionsCalculator, EASIURCalculator
 from django.http import HttpResponse
 from django.template import  loader
 import pandas as pd
@@ -234,6 +234,52 @@ def emissions_profile(request):
                                                                             tb.format_tb(exc_traceback))
         log.error(debug_msg)
         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
+
+def easiur_costs(request):
+    try:
+        latitude = float(request.GET['latitude'])  # need float to convert unicode
+        longitude = float(request.GET['longitude'])
+        avg_inflation = float(request.GET['inflation'])
+
+        easiur = EASIURCalculator( latitude=latitude, 
+                    longitude=longitude,
+                    inflation=avg_inflation
+                    )
+
+        try:
+            response = JsonResponse({
+                    'nox_cost_us_dollars_per_tonne_grid': easiur.grid_costs['NOx'],
+                    'so2_cost_us_dollars_per_tonne_grid': easiur.grid_costs['SO2'],
+                    'pm25_cost_us_dollars_per_tonne_grid': easiur.grid_costs['PM25'],
+                    'nox_cost_us_dollars_per_tonne_onsite_fuelburn': easiur.onsite_costs['NOx'],
+                    'so2_cost_us_dollars_per_tonne_onsite_fuelburn': easiur.onsite_costs['SO2'],
+                    'pm25_cost_us_dollars_per_tonne_onsite_fuelburn': easiur.onsite_costs['PM25'],
+                    'units_costs': 'US dollars per metric ton.',
+                    'description_costs': 'Health costs of emissions from the grid and on-site fuel burn, as reported by the EASIUR model.',
+                    'nox_cost_escalation_pct': easiur.escalation_rates['NOx'],
+                    'so2_cost_escalation_pct': easiur.escalation_rates['SO2'],
+                    'pm25_cost_escalation_pct': easiur.escalation_rates['PM25'],
+                    'units_escalation': 'nominal annual percent',
+                    'description_escalation': 'Annual nominal escalation rate (as a decimal) of public health costs of emissions.',
+                })
+            return response
+        except AttributeError as e:
+            return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing Parameter": str(e.args[0])}, status=500)
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except Exception:
+
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.error(debug_msg)
+        return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
+
 
 def simulated_load(request):
     try:

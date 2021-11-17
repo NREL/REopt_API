@@ -278,12 +278,12 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                                         yr1_fuel_emissions_tCO2 += d['outputs']['Scenario']['Site']['Boiler']['year_one_emissions_tCO2'] or 0.0
                                     yr1_fuel_emissions_output_total_tCO2 = d['outputs']['Scenario']['Site']['year_one_emissions_from_fuelburn_tCO2'] or 0.0
                                     self.assertAlmostEquals(yr1_fuel_emissions_tCO2,yr1_fuel_emissions_output_total_tCO2,places=-1)
-                                    yr1_grid_emissions_tCO2 = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_gross_tCO2'] or 0.0
+                                    yr1_grid_emissions_tCO2 = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_tCO2'] or 0.0
                                     yr1_total_emissions_calced_tCO2 = yr1_fuel_emissions_tCO2 + yr1_grid_emissions_tCO2 
-                                    yr1_RE_exported_emissions_offset_tCO2 = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_offset_from_elec_exports_tCO2'] or 0.0
-                                    if include_exported_elec_emissions_in_total:
-                                        yr1_total_emissions_calced_tCO2 += -1*yr1_RE_exported_emissions_offset_tCO2
-                                    self.assertAlmostEquals(year_one_emissions_tCO2_out,yr1_total_emissions_calced_tCO2,places=-1)
+                                    # yr1_RE_exported_emissions_offset_tCO2 = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_offset_from_elec_exports_tCO2'] or 0.0
+                                    # if include_exported_elec_emissions_in_total:
+                                    #     yr1_total_emissions_calced_tCO2 += -1*yr1_RE_exported_emissions_offset_tCO2
+                                    # self.assertAlmostEquals(year_one_emissions_tCO2_out,yr1_total_emissions_calced_tCO2,places=-1)
                                     # Breakeven cost of emissions reductions 
                                     # TODO: update test on breakeven cost of emissions reduction, pending finalizing that calculation with PWFs
                                     yr1_cost_ER_usd_per_tCO2_out = d['outputs']['Scenario']['Site']['breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2'] 
