@@ -1631,7 +1631,7 @@ class ValidateNestedInput:
                         [[0] * self.input_dict['Scenario']['time_steps_per_hour'] for _ in range(8760)]).astype(list)))
                     self.defaults_inserted.append(['loads_mmbtu_per_hour', object_name_path])
                 # If a dictionary comes in with vaues and no doe reference name then use the electric load profile building type by default
-                if not no_values_given and real_values.get('doe_reference_name') is None:
+                if not no_values_given and real_values.get('doe_reference_name') is None and real_values.get('loads_mmbtu_per_hour') is None:
                     if self.input_dict['Scenario']['Site']['LoadProfile'].get('doe_reference_name') is not None:
                         self.update_attribute_value(object_name_path, number, 'doe_reference_name',
                                                 self.input_dict['Scenario']['Site']['LoadProfile'].get('doe_reference_name'))
