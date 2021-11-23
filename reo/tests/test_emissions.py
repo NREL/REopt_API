@@ -1,7 +1,6 @@
 import json
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
-from unittest import skip
 
 
 class ClassAttributes:
