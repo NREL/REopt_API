@@ -29,15 +29,10 @@
 # *********************************************************************************
 import json
 import os
-import copy
-import time
-import numpy as np
 import pandas as pd
 from tastypie.test import ResourceTestCaseMixin
-from unittest import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
+from django.test import TestCase
 from reo.models import ModelManager
-from ghpghx.models import ModelManager as gModelManager
-from reo.utilities import MMBTU_TO_KWH, TONHOUR_TO_KWHT
 
 class GHPTest(ResourceTestCaseMixin, TestCase):
     REopt_tol = 1e-2
