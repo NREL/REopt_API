@@ -368,10 +368,10 @@ def bau_outage_check(critical_loads_kw, existing_pv_kw_list, gen_existing_kw, ge
     :param time_steps_per_hour: int
     :return: bool, int for number of time steps the existing generator and PV can meet the critical load, and
         boolean for if the entire critical load is met
-    ## TODO: add generator_fuel_use_gal 
+    :return generator_fuel_use_gal: float, gallons, fuel use during outage 
     """
 
-    generator_fuel_use_gal = 0 ## Check 
+    generator_fuel_use_gal = 0.0 
 
     if gen_existing_kw == 0 and existing_pv_kw_list in [None, []]:
         return False, 0, generator_fuel_use_gal
@@ -388,7 +388,7 @@ def bau_outage_check(critical_loads_kw, existing_pv_kw_list, gen_existing_kw, ge
                 gen_output = max(min(unmet, gen_avail), gen_min_turn_down * gen_existing_kw) # output = the greater of either the unmet load or available generation based on fuel and the min loading 
                 fuel_needed = fuel_intercept + fuel_slope * gen_output
                 fuel_gal -= fuel_needed
-                generator_fuel_use_gal += fuel_needed ## max(min(fuel_needed,fuel_gal), 0) # previous logic, check new value
+                generator_fuel_use_gal += fuel_needed # previous logic: max(min(fuel_needed,fuel_gal), 0) 
 
                 if gen_output < unmet: # if the generator cannot meet the full load, still assume it runs during the outage
                     return False, i, generator_fuel_use_gal 
