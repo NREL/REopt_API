@@ -1286,7 +1286,6 @@ function calc_yr1_emissions_offset_from_elec_exports(m,p; tech_array=p.ElectricT
 end
 
 ### Lifecycle emissions calculations
-# TODO: account for if outage is major event! If so, shouldn't repeat fuel usage in each year
 function add_lifecycle_emissions_calcs(m,p)
 
 	# BAU Lifecycle lbs CO2
