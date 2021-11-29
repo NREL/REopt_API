@@ -1119,7 +1119,7 @@ function add_chp_hourly_om_charges(m, p)
 end
 
 function add_cost_function(m, p)
-	m[:REcosts] = @expression(m, Costs,
+	m[:REcosts] = @expression(m,
 
 		# Capital Costs
 		m[:TotalTechCapCosts] + m[:TotalStorageCapCosts] + m[:GHPCapCosts] +
@@ -1148,12 +1148,12 @@ function add_cost_function(m, p)
 
 	# Add climate costs
 	if p.Include_climate_in_objective # if user selects to include climate in objective
-		add_to_expression!(Costs, m[:Lifecycle_Emissions_Cost_CO2])
+		add_to_expression!(m[:REcosts], m[:Lifecycle_Emissions_Cost_CO2]) 
 	end
 
 	# Add Health costs (NOx, SO2, PM2.5)
 	if p.Include_health_in_objective
-		add_to_expression!(Costs, m[:Lifecycle_Emissions_Cost_Health])
+		add_to_expression!(m[:REcosts], m[:Lifecycle_Emissions_Cost_Health])
 	end
 
 end
