@@ -1308,10 +1308,10 @@ function add_lifecycle_emissions_calcs(m,p)
 	m[:Lifecycle_Emissions_Lbs_PM25] = m[:Lifecycle_Emissions_Lbs_PM25_grid_net_if_selected] + m[:Lifecycle_Emissions_Lbs_PM25_fuelburn]
 
 	# Emissions costs
-	m[:Lifecycle_Emissions_Cost_CO2] = p.CO2_dollars_tonne / 2204.62 * ( p.pwfs_emissions_cost["CO2_grid"] * m[:yr1_emissions_from_elec_grid_net_if_selected_CO2] + p.pwfs_emissions_cost["CO2_onsite"] * m[:yr1_emissions_onsite_fuel_CO2])
-	m[:Lifecycle_Emissions_Cost_NOx] = (p.pwfs_emissions_cost["NOx_grid"] * p.NOx_dollars_tonne_grid * m[:yr1_emissions_from_elec_grid_net_if_selected_NOx] + p.pwfs_emissions_cost["NOx_onsite"] * p.NOx_dollars_tonne_onsite_fuelburn * m[:yr1_emissions_onsite_fuel_NOx]) / 2204.62
-	m[:Lifecycle_Emissions_Cost_SO2] = (p.pwfs_emissions_cost["SO2_grid"] * p.SO2_dollars_tonne_grid * m[:yr1_emissions_from_elec_grid_net_if_selected_SO2] + p.pwfs_emissions_cost["SO2_onsite"] * p.SO2_dollars_tonne_onsite_fuelburn * m[:yr1_emissions_onsite_fuel_SO2]) / 2204.62
-	m[:Lifecycle_Emissions_Cost_PM25] =  (p.pwfs_emissions_cost["PM25_grid"] * p.PM25_dollars_tonne_grid * m[:yr1_emissions_from_elec_grid_net_if_selected_PM25] + p.pwfs_emissions_cost["PM25_onsite"] * p.PM25_dollars_tonne_onsite_fuelburn * m[:yr1_emissions_onsite_fuel_PM25]) / 2204.62
+	m[:Lifecycle_Emissions_Cost_CO2] = p.CO2_dollars_tonne / p.Lbs_per_tonne * ( p.pwfs_emissions_cost["CO2_grid"] * m[:yr1_emissions_from_elec_grid_net_if_selected_CO2] + p.pwfs_emissions_cost["CO2_onsite"] * m[:yr1_emissions_onsite_fuel_CO2])
+	m[:Lifecycle_Emissions_Cost_NOx] = (p.pwfs_emissions_cost["NOx_grid"] * p.NOx_dollars_tonne_grid * m[:yr1_emissions_from_elec_grid_net_if_selected_NOx] + p.pwfs_emissions_cost["NOx_onsite"] * p.NOx_dollars_tonne_onsite_fuelburn * m[:yr1_emissions_onsite_fuel_NOx]) / p.Lbs_per_tonne
+	m[:Lifecycle_Emissions_Cost_SO2] = (p.pwfs_emissions_cost["SO2_grid"] * p.SO2_dollars_tonne_grid * m[:yr1_emissions_from_elec_grid_net_if_selected_SO2] + p.pwfs_emissions_cost["SO2_onsite"] * p.SO2_dollars_tonne_onsite_fuelburn * m[:yr1_emissions_onsite_fuel_SO2]) / p.Lbs_per_tonne
+	m[:Lifecycle_Emissions_Cost_PM25] =  (p.pwfs_emissions_cost["PM25_grid"] * p.PM25_dollars_tonne_grid * m[:yr1_emissions_from_elec_grid_net_if_selected_PM25] + p.pwfs_emissions_cost["PM25_onsite"] * p.PM25_dollars_tonne_onsite_fuelburn * m[:yr1_emissions_onsite_fuel_PM25]) / p.Lbs_per_tonne
 	m[:Lifecycle_Emissions_Cost_Health] = m[:Lifecycle_Emissions_Cost_NOx] + m[:Lifecycle_Emissions_Cost_SO2] + m[:Lifecycle_Emissions_Cost_PM25]
 
 end
@@ -1631,44 +1631,44 @@ function add_re_emissions_results(m, p, r::Dict)
 	end
 
 	# BAU preprocessed emissions (used for emissions reduction target calculations; output for testing purposes)
-	r["preprocessed_BAU_year_one_emissions_tCO2"] = round(value(p.BAUYr1Emissions_CO2)/2204.62,digits=2)
-	r["preprocessed_BAU_lifecycle_emissions_tCO2"] = round(value(m[:Lifecycle_Emissions_Lbs_CO2_BAU]/2204.62),digits=2) # no annual decrease for on-site fuel burn
+	r["preprocessed_BAU_year_one_emissions_tCO2"] = round(value(p.BAUYr1Emissions_CO2)/p.Lbs_per_tonne,digits=2)
+	r["preprocessed_BAU_lifecycle_emissions_tCO2"] = round(value(m[:Lifecycle_Emissions_Lbs_CO2_BAU]/p.Lbs_per_tonne),digits=2) # no annual decrease for on-site fuel burn
 
 	# Year 1 Emissions results at Site level
-	r["year_one_emissions_tCO2"] = round(value(m[:EmissionsYr1_Total_LbsCO2]/2204.62), digits=2)
-	r["year_one_emissions_tNOx"] = round(value(m[:EmissionsYr1_Total_LbsNOx]/2204.62), digits=2)
-	r["year_one_emissions_tSO2"] = round(value(m[:EmissionsYr1_Total_LbsSO2]/2204.62), digits=2)
-	r["year_one_emissions_tPM25"] = round(value(m[:EmissionsYr1_Total_LbsPM25]/2204.62), digits=2)
+	r["year_one_emissions_tCO2"] = round(value(m[:EmissionsYr1_Total_LbsCO2]/p.Lbs_per_tonne), digits=2)
+	r["year_one_emissions_tNOx"] = round(value(m[:EmissionsYr1_Total_LbsNOx]/p.Lbs_per_tonne), digits=2)
+	r["year_one_emissions_tSO2"] = round(value(m[:EmissionsYr1_Total_LbsSO2]/p.Lbs_per_tonne), digits=2)
+	r["year_one_emissions_tPM25"] = round(value(m[:EmissionsYr1_Total_LbsPM25]/p.Lbs_per_tonne), digits=2)
 
-	r["year_one_emissions_from_fuelburn_tCO2"] = round(value(m[:yr1_emissions_onsite_fuel_CO2]/2204.62), digits=2)
-	r["year_one_emissions_from_fuelburn_tNOx"] = round(value(m[:yr1_emissions_onsite_fuel_NOx]/2204.62), digits=2)
-	r["year_one_emissions_from_fuelburn_tSO2"] = round(value(m[:yr1_emissions_onsite_fuel_SO2]/2204.62), digits=2)
-	r["year_one_emissions_from_fuelburn_tPM25"] = round(value(m[:yr1_emissions_onsite_fuel_PM25]/2204.62), digits=2)
+	r["year_one_emissions_from_fuelburn_tCO2"] = round(value(m[:yr1_emissions_onsite_fuel_CO2]/p.Lbs_per_tonne), digits=2)
+	r["year_one_emissions_from_fuelburn_tNOx"] = round(value(m[:yr1_emissions_onsite_fuel_NOx]/p.Lbs_per_tonne), digits=2)
+	r["year_one_emissions_from_fuelburn_tSO2"] = round(value(m[:yr1_emissions_onsite_fuel_SO2]/p.Lbs_per_tonne), digits=2)
+	r["year_one_emissions_from_fuelburn_tPM25"] = round(value(m[:yr1_emissions_onsite_fuel_PM25]/p.Lbs_per_tonne), digits=2)
 
-	r["year_one_emissions_from_elec_grid_tCO2"] = round(value(m[:yr1_emissions_from_elec_grid_net_if_selected_CO2]/2204.62), digits=2)
-	r["year_one_emissions_from_elec_grid_tNOx"] = round(value(m[:yr1_emissions_from_elec_grid_net_if_selected_NOx]/2204.62), digits=2)
-	r["year_one_emissions_from_elec_grid_tSO2"] = round(value(m[:yr1_emissions_from_elec_grid_net_if_selected_SO2]/2204.62), digits=2)
-	r["year_one_emissions_from_elec_grid_tPM25"] = round(value(m[:yr1_emissions_from_elec_grid_net_if_selected_PM25]/2204.62), digits=2)
+	r["year_one_emissions_from_elec_grid_tCO2"] = round(value(m[:yr1_emissions_from_elec_grid_net_if_selected_CO2]/p.Lbs_per_tonne), digits=2)
+	r["year_one_emissions_from_elec_grid_tNOx"] = round(value(m[:yr1_emissions_from_elec_grid_net_if_selected_NOx]/p.Lbs_per_tonne), digits=2)
+	r["year_one_emissions_from_elec_grid_tSO2"] = round(value(m[:yr1_emissions_from_elec_grid_net_if_selected_SO2]/p.Lbs_per_tonne), digits=2)
+	r["year_one_emissions_from_elec_grid_tPM25"] = round(value(m[:yr1_emissions_from_elec_grid_net_if_selected_PM25]/p.Lbs_per_tonne), digits=2)
 
 	# Lifecycle emissions results at Site level
 	r["lifecycle_emissions_reduction_CO2_pct"] = round(value(1-m[:Lifecycle_Emissions_Lbs_CO2]/m[:Lifecycle_Emissions_Lbs_CO2_BAU]), digits=6)
 	r["lifecycle_emissions_cost_CO2"] = round(value(m[:Lifecycle_Emissions_Cost_CO2]), digits=2)
 	r["lifecycle_emissions_cost_Health"] = round(value(m[:Lifecycle_Emissions_Cost_Health]), digits=2)
 
-	r["lifecycle_emissions_tCO2"] = round(value(m[:Lifecycle_Emissions_Lbs_CO2]/2204.62), digits=2)
-	r["lifecycle_emissions_tNOx"] = round(value(m[:Lifecycle_Emissions_Lbs_NOx]/2204.62), digits=2)
-	r["lifecycle_emissions_tSO2"] = round(value(m[:Lifecycle_Emissions_Lbs_SO2]/2204.62), digits=2)
-	r["lifecycle_emissions_tPM25"] = round(value(m[:Lifecycle_Emissions_Lbs_PM25]/2204.62), digits=2)
+	r["lifecycle_emissions_tCO2"] = round(value(m[:Lifecycle_Emissions_Lbs_CO2]/p.Lbs_per_tonne), digits=2)
+	r["lifecycle_emissions_tNOx"] = round(value(m[:Lifecycle_Emissions_Lbs_NOx]/p.Lbs_per_tonne), digits=2)
+	r["lifecycle_emissions_tSO2"] = round(value(m[:Lifecycle_Emissions_Lbs_SO2]/p.Lbs_per_tonne), digits=2)
+	r["lifecycle_emissions_tPM25"] = round(value(m[:Lifecycle_Emissions_Lbs_PM25]/p.Lbs_per_tonne), digits=2)
 
-	r["lifecycle_emissions_from_fuelburn_tCO2"] = round(value(m[:Lifecycle_Emissions_Lbs_CO2_fuelburn]/2204.62), digits=2)
-	r["lifecycle_emissions_from_fuelburn_tNOx"] = round(value(m[:Lifecycle_Emissions_Lbs_NOx_fuelburn]/2204.62), digits=2)
-	r["lifecycle_emissions_from_fuelburn_tSO2"] = round(value(m[:Lifecycle_Emissions_Lbs_SO2_fuelburn]/2204.62), digits=2)
-	r["lifecycle_emissions_from_fuelburn_tPM25"] = round(value(m[:Lifecycle_Emissions_Lbs_PM25_fuelburn]/2204.62), digits=2)
+	r["lifecycle_emissions_from_fuelburn_tCO2"] = round(value(m[:Lifecycle_Emissions_Lbs_CO2_fuelburn]/p.Lbs_per_tonne), digits=2)
+	r["lifecycle_emissions_from_fuelburn_tNOx"] = round(value(m[:Lifecycle_Emissions_Lbs_NOx_fuelburn]/p.Lbs_per_tonne), digits=2)
+	r["lifecycle_emissions_from_fuelburn_tSO2"] = round(value(m[:Lifecycle_Emissions_Lbs_SO2_fuelburn]/p.Lbs_per_tonne), digits=2)
+	r["lifecycle_emissions_from_fuelburn_tPM25"] = round(value(m[:Lifecycle_Emissions_Lbs_PM25_fuelburn]/p.Lbs_per_tonne), digits=2)
 
-	r["lifecycle_emissions_from_elec_grid_tCO2"] = round(value(m[:yr1_emissions_from_elec_grid_net_if_selected_CO2]/2204.62*p.pwfs_grid_emissions_lbs["CO2"]), digits=2)
-	r["lifecycle_emissions_from_elec_grid_tNOx"] = round(value(m[:yr1_emissions_from_elec_grid_net_if_selected_NOx]/2204.62*p.pwfs_grid_emissions_lbs["NOx"]), digits=2)
-	r["lifecycle_emissions_from_elec_grid_tSO2"] = round(value(m[:yr1_emissions_from_elec_grid_net_if_selected_SO2]/2204.62*p.pwfs_grid_emissions_lbs["SO2"]), digits=2)
-	r["lifecycle_emissions_from_elec_grid_tPM25"] = round(value(m[:yr1_emissions_from_elec_grid_net_if_selected_PM25]/2204.62*p.pwfs_grid_emissions_lbs["PM25"]), digits=2)
+	r["lifecycle_emissions_from_elec_grid_tCO2"] = round(value(m[:yr1_emissions_from_elec_grid_net_if_selected_CO2]/p.Lbs_per_tonne*p.pwfs_grid_emissions_lbs["CO2"]), digits=2)
+	r["lifecycle_emissions_from_elec_grid_tNOx"] = round(value(m[:yr1_emissions_from_elec_grid_net_if_selected_NOx]/p.Lbs_per_tonne*p.pwfs_grid_emissions_lbs["NOx"]), digits=2)
+	r["lifecycle_emissions_from_elec_grid_tSO2"] = round(value(m[:yr1_emissions_from_elec_grid_net_if_selected_SO2]/p.Lbs_per_tonne*p.pwfs_grid_emissions_lbs["SO2"]), digits=2)
+	r["lifecycle_emissions_from_elec_grid_tPM25"] = round(value(m[:yr1_emissions_from_elec_grid_net_if_selected_PM25]/p.Lbs_per_tonne*p.pwfs_grid_emissions_lbs["PM25"]), digits=2)
 
 end
 
