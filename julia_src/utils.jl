@@ -248,6 +248,7 @@ Base.@kwdef struct Parameter
      PM25_dollars_tonne_onsite_fuelburn::Float64
      Include_climate_in_objective::Bool
      Include_health_in_objective::Bool
+     Lbs_per_tonne::Float64
 
 	# Added for CHP
 	HotTES::Array{String,1}
