@@ -787,22 +787,6 @@ class GeneratorModel(models.Model):
             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
     fuel_used_series_gal = ArrayField(
             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
-    year_one_emissions_tCO2 = models.FloatField(null=True, blank=True)
-    year_one_emissions_tCO2_bau = models.FloatField(null=True, blank=True)
-    year_one_emissions_tNOx = models.FloatField(null=True, blank=True)
-    year_one_emissions_tNOx_bau = models.FloatField(null=True, blank=True)
-    year_one_emissions_tSO2 = models.FloatField(null=True, blank=True)
-    year_one_emissions_tSO2_bau = models.FloatField(null=True, blank=True)
-    year_one_emissions_tPM25 = models.FloatField(null=True, blank=True)
-    year_one_emissions_tPM25_bau = models.FloatField(null=True, blank=True)
-    lifecycle_emissions_tCO2 = models.FloatField(null=True, blank=True)
-    lifecycle_emissions_tCO2_bau = models.FloatField(null=True, blank=True)
-    lifecycle_emissions_tNOx = models.FloatField(null=True, blank=True)
-    lifecycle_emissions_tNOx_bau = models.FloatField(null=True, blank=True)
-    lifecycle_emissions_tSO2 = models.FloatField(null=True, blank=True)
-    lifecycle_emissions_tSO2_bau = models.FloatField(null=True, blank=True)
-    lifecycle_emissions_tPM25 = models.FloatField(null=True, blank=True)
-    lifecycle_emissions_tPM25_bau = models.FloatField(null=True, blank=True)
     @classmethod
     def create(cls, **kwargs):
         obj = cls(**kwargs)
@@ -890,14 +874,6 @@ class CHPModel(models.Model):
         models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
     year_one_thermal_to_waste_series_mmbtu_per_hour = ArrayField(
             models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
-    year_one_emissions_tCO2 = models.FloatField(null=True, blank=True)
-    year_one_emissions_tNOx = models.FloatField(null=True, blank=True)
-    year_one_emissions_tSO2 = models.FloatField(null=True, blank=True)
-    year_one_emissions_tPM25 = models.FloatField(null=True, blank=True)
-    lifecycle_emissions_tCO2 = models.FloatField(null=True, blank=True)
-    lifecycle_emissions_tNOx = models.FloatField(null=True, blank=True)
-    lifecycle_emissions_tSO2 = models.FloatField(null=True, blank=True)
-    lifecycle_emissions_tPM25 = models.FloatField(null=True, blank=True)
     @classmethod
     def create(cls, **kwargs):
         obj = cls(**kwargs)
@@ -965,22 +941,6 @@ class BoilerModel(models.Model):
             models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
     year_one_boiler_fuel_consumption_mmbtu = models.FloatField(null=True, blank=True)
     year_one_boiler_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
-    year_one_emissions_tCO2 = models.FloatField(null=True, blank=True)
-    year_one_emissions_tCO2_bau = models.FloatField(null=True, blank=True)
-    year_one_emissions_tNOx = models.FloatField(null=True, blank=True)
-    year_one_emissions_tNOx_bau = models.FloatField(null=True, blank=True)
-    year_one_emissions_tSO2 = models.FloatField(null=True, blank=True)
-    year_one_emissions_tSO2_bau = models.FloatField(null=True, blank=True)
-    year_one_emissions_tPM25 = models.FloatField(null=True, blank=True)
-    year_one_emissions_tPM25_bau = models.FloatField(null=True, blank=True)
-    lifecycle_emissions_tCO2 = models.FloatField(null=True, blank=True)
-    lifecycle_emissions_tCO2_bau = models.FloatField(null=True, blank=True)
-    lifecycle_emissions_tNOx = models.FloatField(null=True, blank=True)
-    lifecycle_emissions_tNOx_bau = models.FloatField(null=True, blank=True)
-    lifecycle_emissions_tSO2 = models.FloatField(null=True, blank=True)
-    lifecycle_emissions_tSO2_bau = models.FloatField(null=True, blank=True)
-    lifecycle_emissions_tPM25 = models.FloatField(null=True, blank=True)
-    lifecycle_emissions_tPM25_bau = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
