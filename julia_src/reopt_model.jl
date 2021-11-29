@@ -1266,20 +1266,20 @@ function calc_yr1_emissions_from_elec_grid_purchase(m,p)
 end
 function calc_yr1_emissions_offset_from_elec_exports(m,p; tech_array=p.ElectricTechs)
 	yr1_emissions_offset_from_elec_exports_CO2 = @expression(m,p.TimeStepScaling*
-		sum(m[:dvProductionToGrid][t,u,ts]  * (p.GridEmissionsFactor_CO2[ts] - p.TechEmissionsFactors_CO2[t])
+		sum(m[:dvProductionToGrid][t,u,ts]  * p.GridEmissionsFactor_CO2[ts] 
 		for t in tech_array, ts in p.TimeStep, u in p.ExportTiersByTech[t]))
 		# if battery ends up being able to discharge to grid, need to incorporate here- might require complex tracking of what's charging battery
 
 	yr1_emissions_offset_from_elec_exports_NOx = @expression(m,p.TimeStepScaling*
-		sum(m[:dvProductionToGrid][t,u,ts]  * (p.GridEmissionsFactor_NOx[ts] - p.TechEmissionsFactors_NOx[t])
+		sum(m[:dvProductionToGrid][t,u,ts]  * p.GridEmissionsFactor_NOx[ts] 
 		for t in tech_array, ts in p.TimeStep, u in p.ExportTiersByTech[t]))
 
 	yr1_emissions_offset_from_elec_exports_SO2 = @expression(m,p.TimeStepScaling*
-		sum(m[:dvProductionToGrid][t,u,ts]  * (p.GridEmissionsFactor_SO2[ts] - p.TechEmissionsFactors_SO2[t])
+		sum(m[:dvProductionToGrid][t,u,ts]  * p.GridEmissionsFactor_SO2[ts] 
 		for t in tech_array, ts in p.TimeStep, u in p.ExportTiersByTech[t]))
 
 	yr1_emissions_offset_from_elec_exports_PM25 = @expression(m,p.TimeStepScaling*
-		sum(m[:dvProductionToGrid][t,u,ts]  * (p.GridEmissionsFactor_PM25[ts] - p.TechEmissionsFactors_PM25[t])
+		sum(m[:dvProductionToGrid][t,u,ts]  * p.GridEmissionsFactor_PM25[ts] 
 		for t in tech_array, ts in p.TimeStep, u in p.ExportTiersByTech[t]))
 
 	return yr1_emissions_offset_from_elec_exports_CO2, yr1_emissions_offset_from_elec_exports_NOx, yr1_emissions_offset_from_elec_exports_SO2, yr1_emissions_offset_from_elec_exports_PM25
