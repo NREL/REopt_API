@@ -659,7 +659,11 @@ class DataManager:
                             replacement_cost = eval('self.' + tech + '.replace_cost_us_dollars_per_kw')
                         if hasattr(eval('self.' + tech), 'useful_life_years'): # applies for generator
                             useful_life = eval('self.' + tech + '.useful_life_years')
-                            replacement_cost = eval('self.' + tech + '.installed_cost_us_dollars_per_kw')
+                            # if useful life >= analysis period, assume no replacement cost
+                            if useful_life >= sf.analysis_years:
+                                replacement_cost = 0.0
+                            else: 
+                                replacement_cost = eval('self.' + tech + '.installed_cost_us_dollars_per_kw')
 
                         # Not currently considering multiple replacements or salvage value, last available in commit c7699790a50f063cfd8e4981c778bd7d3751ae42
 
@@ -676,7 +680,7 @@ class DataManager:
                         )
                         # The way REopt incentives currently work, the federal rebate is the only incentive that doesn't reduce ITC basis
                         updated_slope -= rebate_federal
-                    else:
+                    else: 
                         updated_slope = setup_capital_cost_incentive(
                             itc_basis=itc_unit_basis,  # input tech cost with incentives, but no ITC
                             replacement_cost=0,
