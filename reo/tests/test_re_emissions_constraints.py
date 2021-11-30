@@ -56,19 +56,20 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
         and checks logic of calculations and application of constraints.
         '''
         ## inputs
-        RE_target_totest = [None, 0.4] 
+        RE_target_totest = [None] #, 0.8] 
         include_exported_RE_in_total_totest = [True,False] 
         include_exported_elec_emissions_totest = [True,False]
-        include_battery_totest = [True,False] 
-        net_metering_limit_totest = [0,1000]
+        include_battery_totest = [True] # [True,False] 
+        net_metering_limit_totest = [0] # [0, 1000]
         elec_only_totest = [False] #True = elec only, False = add thermal loads and test CHP w/ TES-HW
+        # Note: tests with thermal techs only test calculations, not constraints (due to timeouts)
         resilience_scenarios_totest = ['no_outage','no_gen','new_gen','existing_gen'] 
-        # Note resilience scenarios eliminate the upper limit on RE or ER target, so it's "at least" _% RE or ER, rather than "exactly" (which yields infeasibilities)
+        # Note: resilience scenarios eliminate the upper limit on RE or ER target, so it's "at least" _% RE or ER, rather than "exactly" (which yields infeasibilities)
 
         ## runs
         for RE_target in RE_target_totest:
             if RE_target is None:
-                ER_target = None #0.8 # note tests with thermal techs use lower ER target (5%) due to limited options to reduce
+                ER_target = 0.8
             else:
                 ER_target = None
             for resilience_scenario in resilience_scenarios_totest:
@@ -77,6 +78,9 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                         for include_battery in include_battery_totest:
                             for net_metering_limit in net_metering_limit_totest:
                                 for elec_only in elec_only_totest:
+                                    if elec_only is False:
+                                        RE_target = None
+                                        ER_target = None
                                     print("RE_target: ",RE_target,", ",\
                                         "ER_target: ",ER_target,", ",\
                                         "resilience_scenario: ",resilience_scenario,", "\
@@ -95,7 +99,7 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
 
                                     # test posts  
                                     # techs and load profiles  
-                                    if elec_only == True: 
+                                    if elec_only is True: 
                                         nested_data = json.load(open(self.test_post_elec_only, 'rb'))
                                         nested_data['Scenario']['Site']['Wind']['max_kw'] = 100
                                     else:
@@ -105,9 +109,11 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                                         nested_data['Scenario']['Site']['FuelTariff']['chp_fuel_blended_annual_rates_us_dollars_per_mmbtu'] = nat_gas_dollars_per_mmbtu
                                         nested_data['Scenario']['Site']['FuelTariff']['boiler_fuel_percent_RE'] = boiler_fuel_pct_RE_input
                                         nested_data['Scenario']['Site']['FuelTariff']['chp_fuel_percent_RE'] = chp_fuel_pct_RE_input
-                                        nested_data['Scenario']['Site']['CHP']['min_kw'] = 50
-                                        nested_data['Scenario']['Site']['CHP']['max_kw'] = 50
-                                        nested_data['Scenario']['Site']['HotTES']['max_gal'] = 0
+                                        nested_data['Scenario']['Site']['CHP']['min_kw'] = 10
+                                        nested_data['Scenario']['Site']['CHP']['max_kw'] = 10
+                                        #nested_data['Scenario']['Site']['SteamTurbine']['min_kw'] = 0
+                                        #nested_data['Scenario']['Site']['SteamTurbine']['max_kw'] = 0
+                                        #nested_data['Scenario']['Site']['HotTES']['max_gal'] = 0
                                         nested_data['Scenario']['Site']['Wind']['max_kw'] = 0
                                     
                                     nested_data['Scenario']['Site']['LoadProfile']['annual_kwh'] = annual_typical_elec_load_kwh
@@ -116,26 +122,21 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                                     nested_data['Scenario']['Site']['ElectricTariff']['net_metering_limit_kw'] = net_metering_limit
                                     nested_data['Scenario']['Site']['PV']['existing_kw'] = 10.0
                                     
-                                    if include_battery == True:
+                                    if include_battery is True:
                                         nested_data['Scenario']['Site']['Storage']['max_kw'] = 10000.0
                                         nested_data['Scenario']['Site']['Storage']['max_kwh'] = 100000.0
-                                    elif include_battery == False:
+                                    elif include_battery is False:
                                         nested_data['Scenario']['Site']['Storage']['max_kw'] = 0
                                         nested_data['Scenario']['Site']['Storage']['max_kwh'] = 0                                    
                                     
                                     # add RE/ER targets
                                     if RE_target is not None:
                                         nested_data['Scenario']['Site']['renewable_electricity_min_pct'] = RE_target
-                                        if elec_only == True:
-                                            nested_data['Scenario']['Site']['renewable_electricity_max_pct'] = RE_target
+                                        nested_data['Scenario']['Site']['renewable_electricity_max_pct'] = RE_target
                                     if ER_target is not None:
-                                        if elec_only == True:
-                                            nested_data['Scenario']['Site']['co2_emissions_reduction_min_pct'] = ER_target
-                                            if resilience_scenario == 'no_outage': 
-                                                nested_data['Scenario']['Site']['co2_emissions_reduction_max_pct'] = ER_target
-                                        elif elec_only == False:
-                                            nested_data['Scenario']['Site']['co2_emissions_reduction_min_pct'] = 0.05 
-                                            #using lower ER target for scenarios with thermal techs due to lack of options (until GHP is added) for reducing thermal emissions 
+                                        nested_data['Scenario']['Site']['co2_emissions_reduction_min_pct'] = ER_target
+                                        if resilience_scenario == 'no_outage': 
+                                            nested_data['Scenario']['Site']['co2_emissions_reduction_max_pct'] = ER_target
                                     
                                     # add outage for resilience scenarios
                                     if resilience_scenario != 'no_outage': 
@@ -185,7 +186,7 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                                         annual_elec_load_kwh_bau = sum(loads_kw) - sum(loads_kw[outage_start_hour-1:outage_start_hour+outage_duration-1]) + \
                                             sum(critical_loads_kw[outage_start_hour-1:outage_start_hour-1+min(bau_sustained_time_steps,outage_duration)])
                                     
-                                    ## RE tests
+                                    ## RE elec tests
                                     # Year 1 RE elec - BAU case:
                                     RE_elec_bau_pct_out = d['outputs']['Scenario']['Site']['year_one_renewable_electricity_pct_bau'] or 0.0
                                     RE_elec_bau_kwh_out = d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh_bau'] or 0.0
@@ -223,14 +224,20 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                                     Wind_avg_annual_kwh_to_batt = Wind_year_one_to_avg_annual*sum(d['outputs']['Scenario']['Site']['Wind']['year_one_to_battery_series_kw'])
                                     Wind_avg_annual_kwh_curtailed = Wind_year_one_to_avg_annual*sum(d['outputs']['Scenario']['Site']['Wind']['year_one_curtailed_production_series_kw'])
                                     
-                                    CHP_fuel_percent_RE_check = d['inputs']['Scenario']['Site']['FuelTariff']['chp_fuel_percent_RE']
-                                    boiler_fuel_percent_RE_check = d['inputs']['Scenario']['Site']['FuelTariff']['boiler_fuel_percent_RE']
+                                    if elec_only is False:
+                                        CHP_fuel_percent_RE_check = d['inputs']['Scenario']['Site']['FuelTariff']['chp_fuel_percent_RE'] 
+                                        boiler_fuel_percent_RE_check = d['inputs']['Scenario']['Site']['FuelTariff']['boiler_fuel_percent_RE']
+                                    else:
+                                        CHP_fuel_percent_RE_check = 0.0
+                                        boiler_fuel_percent_RE_check = 0.0
+                                        chp_fuel_pct_RE_input = 0.0
+                                        boiler_fuel_pct_RE_input = 0.0
                                     self.assertAlmostEquals(CHP_fuel_percent_RE_check,chp_fuel_pct_RE_input,places=3) 
                                     self.assertAlmostEquals(boiler_fuel_percent_RE_check,boiler_fuel_pct_RE_input,places=3)  
                                     CHP_annual_elec_kwh = d['outputs']['Scenario']['Site']['CHP']['year_one_electric_energy_produced_kwh']
                                     CHP_annual_elec_kwh_to_batt = sum(d['outputs']['Scenario']['Site']['CHP']['year_one_to_battery_series_kw'])
-                                    CHP_annual_RE_elec_kwh = CHP_fuel_percent_RE_check*CHP_annual_elec_kwh
-                                    CHP_annual_RE_elec_kwh_to_batt = CHP_fuel_percent_RE_check*CHP_annual_elec_kwh_to_batt 
+                                    CHP_annual_RE_elec_kwh = CHP_fuel_percent_RE_check*CHP_annual_elec_kwh 
+                                    CHP_annual_RE_elec_kwh_to_batt = CHP_fuel_percent_RE_check*CHP_annual_elec_kwh_to_batt
 
                                     Batt_eff = d['inputs']['Scenario']['Site']['Storage']['rectifier_efficiency_pct'] \
                                         * d['inputs']['Scenario']['Site']['Storage']['inverter_efficiency_pct'] \
@@ -245,6 +252,19 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                                     RE_tot_kwh_pct_diff = (RE_tot_kwh_calced - RE_elec_kwh_out)/RE_tot_kwh_calced
                                     self.assertAlmostEquals(RE_tot_kwh_pct_diff,0.0,places=1) #(<5% error) 
 
+                                    ## RE heat calcs- annual_calculated_boiler_fuel_load_mmbtu_bau
+                                    if elec_only is False:
+                                        # Year 1 RE heat calcs - BAU case
+                                        RE_heat_bau_pct_out = d['outputs']['Scenario']['Site']['year_one_renewable_heat_pct_bau']
+                                        RE_heat_bau_mmbtu_out = d['outputs']['Scenario']['Site']['year_one_renewable_heat_mmbtu_bau']
+                                        total_heat_bau_mmbtu_out = d['outputs']['Scenario']['Site']['year_one_heat_load_mmbtu_bau']
+                                        self.assertAlmostEquals(total_heat_bau_mmbtu_out*RE_heat_bau_pct_out,RE_heat_bau_mmbtu_out,places=-1)
+                                        # Year 1 RE heat - non-BAU case
+                                        RE_heat_pct_out = d['outputs']['Scenario']['Site']['year_one_renewable_heat_pct']
+                                        RE_heat_mmbtu_out = d['outputs']['Scenario']['Site']['year_one_renewable_heat_mmbtu']
+                                        total_heat_mmbtu_out = d['outputs']['Scenario']['Site']['year_one_heat_load_mmbtu']
+                                        self.assertAlmostEquals(total_heat_mmbtu_out*RE_heat_pct_out,RE_heat_mmbtu_out,places=-1)
+                                        
                                     ## Emissions tests
                                     # BAU emissions:
                                     # check pre-processed year 1 bau CO2 emissions calcs vs year 1 bau CO2 emissions output
@@ -272,14 +292,9 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                                     self.assertAlmostEquals(ER_pct_diff,0.0,places=2) #within 1% of each other
                                     # Year 1 emissions - non-BAU case:
                                     year_one_emissions_tCO2_out = d['outputs']['Scenario']['Site']['year_one_emissions_tCO2']
-                                    yr1_fuel_emissions_tCO2 = d['outputs']['Scenario']['Site']['Generator']['year_one_emissions_tCO2'] or 0.0
-                                    if elec_only == 0:
-                                        yr1_fuel_emissions_tCO2 += d['outputs']['Scenario']['Site']['CHP']['year_one_emissions_tCO2'] or 0.0
-                                        yr1_fuel_emissions_tCO2 += d['outputs']['Scenario']['Site']['Boiler']['year_one_emissions_tCO2'] or 0.0
-                                    yr1_fuel_emissions_output_total_tCO2 = d['outputs']['Scenario']['Site']['year_one_emissions_from_fuelburn_tCO2'] or 0.0
-                                    self.assertAlmostEquals(yr1_fuel_emissions_tCO2,yr1_fuel_emissions_output_total_tCO2,places=-1)
-                                    yr1_grid_emissions_tCO2 = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_tCO2'] or 0.0
-                                    yr1_total_emissions_calced_tCO2 = yr1_fuel_emissions_tCO2 + yr1_grid_emissions_tCO2 
+                                    yr1_fuel_emissions_tCO2_out = d['outputs']['Scenario']['Site']['year_one_emissions_from_fuelburn_tCO2'] or 0.0
+                                    yr1_grid_emissions_tCO2_out = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_tCO2'] or 0.0
+                                    yr1_total_emissions_calced_tCO2 = yr1_fuel_emissions_tCO2_out + yr1_grid_emissions_tCO2_out 
                                     # yr1_RE_exported_emissions_offset_tCO2 = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_offset_from_elec_exports_tCO2'] or 0.0
                                     # if include_exported_elec_emissions_in_total:
                                     #     yr1_total_emissions_calced_tCO2 += -1*yr1_RE_exported_emissions_offset_tCO2
@@ -288,17 +303,5 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                                     # TODO: update test on breakeven cost of emissions reduction, pending finalizing that calculation with PWFs
                                     yr1_cost_ER_usd_per_tCO2_out = d['outputs']['Scenario']['Site']['breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2'] 
                                     self.assertAlmostEquals(yr1_cost_ER_usd_per_tCO2_out,0.0,places=1)
-                                    # RE heat calcs- annual_calculated_boiler_fuel_load_mmbtu_bau
-                                    if elec_only == False:
-                                        # Year 1 RE heat calcs - BAU case
-                                        RE_heat_bau_pct_out = d['outputs']['Scenario']['Site']['year_one_renewable_heat_pct_bau']
-                                        RE_heat_bau_mmbtu_out = d['outputs']['Scenario']['Site']['year_one_renewable_heat_mmbtu_bau']
-                                        total_heat_bau_mmbtu_out = d['outputs']['Scenario']['Site']['year_one_heat_load_mmbtu_bau']
-                                        self.assertAlmostEquals(total_heat_bau_mmbtu_out*RE_heat_bau_pct_out,RE_heat_bau_mmbtu_out,places=-1)
-                                        # Year 1 RE heat - non-BAU case
-                                        RE_heat_pct_out = d['outputs']['Scenario']['Site']['year_one_renewable_heat_pct']
-                                        RE_heat_mmbtu_out = d['outputs']['Scenario']['Site']['year_one_renewable_heat_mmbtu']
-                                        total_heat_mmbtu_out = d['outputs']['Scenario']['Site']['year_one_heat_load_mmbtu']
-                                        self.assertAlmostEquals(total_heat_mmbtu_out*RE_heat_pct_out,RE_heat_mmbtu_out,places=-1)
-                                        
-
+                                    
+                                    
