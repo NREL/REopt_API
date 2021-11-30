@@ -40,6 +40,7 @@ class FuelTariff(object):
                  chp_fuel_blended_annual_rates_us_dollars_per_mmbtu=None,
                  chp_fuel_blended_monthly_rates_us_dollars_per_mmbtu=None,
                  newboiler_fuel_type=None,
+                 newboiler_fuel_percent_RE=None,
                  newboiler_fuel_blended_annual_rates_us_dollars_per_mmbtu=None,
                  newboiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu=None,
                  **kwargs):
@@ -56,6 +57,7 @@ class FuelTariff(object):
         self.chp_fuel_blended_monthly_rates_us_dollars_per_mmbtu = chp_fuel_blended_monthly_rates_us_dollars_per_mmbtu
 
         self.newboiler_fuel_type = newboiler_fuel_type
+        self.newboiler_fuel_percent_RE = newboiler_fuel_percent_RE
         self.newboiler_fuel_blended_annual_rates_us_dollars_per_mmbtu = newboiler_fuel_blended_annual_rates_us_dollars_per_mmbtu
         self.newboiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu = newboiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu
 

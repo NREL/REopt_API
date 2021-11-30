@@ -439,7 +439,8 @@ class ValidateNestedInput:
                 "natural_gas":0.09139,
                 "landfill_bio_gas":0.14,
                 "propane":0.15309,
-                "diesel_oil": 0.56
+                "diesel_oil": 0.56,
+                "uranium": 0.0
             }
 
     # NOx fuel conversion
@@ -452,7 +453,8 @@ class ValidateNestedInput:
                 "natural_gas":0.000578592,
                 "landfill_bio_gas":0.045,
                 "propane":0.0,
-                "diesel_oil": 0.28897737
+                "diesel_oil": 0.28897737,
+                "uranium": 0.0
             }
 
     # SO2 fuel conversion
@@ -465,7 +467,8 @@ class ValidateNestedInput:
                 "natural_gas":0.007328833,
                 "landfill_bio_gas":0.02484,
                 "propane":0.009906836,
-                "diesel_oil": 0.0
+                "diesel_oil": 0.0,
+                "uranium": 0.0
             }
 
     # PM2.5 fuel conversion
@@ -546,11 +549,7 @@ class ValidateNestedInput:
                     self.input_dict["Scenario"]["Site"]["LoadProfile"]["outage_end_time_step"] = 17520
                 else:
                     self.input_dict["Scenario"]["Site"]["LoadProfile"]["outage_end_time_step"] = 8760
-            # else:
-                # Sets diesel fuel escalation to the electricity escalation rate
-                # TODO: remove with next major UI update
-                # self.input_dict["Scenario"]["Site"]["Financial"]["generator_fuel_escalation_pct"] = \
-                #     self.input_dict["Scenario"]["Site"]["Financial"]["escalation_pct"]
+
     @property
     def isValid(self):
         if self.input_data_errors or self.urdb_errors or self.ghpghx_inputs_errors:
@@ -1686,6 +1685,11 @@ class ValidateNestedInput:
                 self.update_attribute_value(object_name_path[:-1] + ['Boiler'], number,
                                             'emissions_factor_lb_CO2_per_mmbtu',
                                             self.fuel_conversion_lb_CO2_per_mmbtu.get(boiler_fuel))
+            if self.input_dict['Scenario']['Site']['NewBoiler'].get('emissions_factor_lb_CO2_per_mmbtu') is None:
+                newboiler_fuel = real_values.get('newboiler_fuel_type')
+                self.update_attribute_value(object_name_path[:-1] + ['NewBoiler'], number,
+                                            'emissions_factor_lb_CO2_per_mmbtu',
+                                            self.fuel_conversion_lb_CO2_per_mmbtu.get(newboiler_fuel))
             if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_CO2_per_gal') is None:
                     self.update_attribute_value(object_name_path[:-1] + ['Generator'],  number, \
                         'emissions_factor_lb_CO2_per_gal', self.fuel_conversion_lb_CO2_per_gal.get('diesel_oil'))
@@ -1702,6 +1706,11 @@ class ValidateNestedInput:
                 self.update_attribute_value(object_name_path[:-1] + ['Boiler'], number,
                                             'emissions_factor_lb_NOx_per_mmbtu',
                                             self.fuel_conversion_lb_NOx_per_mmbtu.get(boiler_fuel))
+            if self.input_dict['Scenario']['Site']['NewBoiler'].get('emissions_factor_lb_NOx_per_mmbtu') is None:
+                newboiler_fuel = real_values.get('newboiler_fuel_type')
+                self.update_attribute_value(object_name_path[:-1] + ['NewBoiler'], number,
+                                            'emissions_factor_lb_NOx_per_mmbtu',
+                                            self.fuel_conversion_lb_NOx_per_mmbtu.get(newboiler_fuel))
             if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_NOx_per_gal') is None:
                     self.update_attribute_value(object_name_path[:-1] + ['Generator'],  number, \
                         'emissions_factor_lb_NOx_per_gal', self.fuel_conversion_lb_NOx_per_gal.get('diesel_oil'))
@@ -1718,6 +1727,11 @@ class ValidateNestedInput:
                 self.update_attribute_value(object_name_path[:-1] + ['Boiler'], number,
                                             'emissions_factor_lb_SO2_per_mmbtu',
                                             self.fuel_conversion_lb_SO2_per_mmbtu.get(boiler_fuel))
+            if self.input_dict['Scenario']['Site']['NewBoiler'].get('emissions_factor_lb_SO2_per_mmbtu') is None:
+                newboiler_fuel = real_values.get('newboiler_fuel_type')
+                self.update_attribute_value(object_name_path[:-1] + ['NewBoiler'], number,
+                                            'emissions_factor_lb_SO2_per_mmbtu',
+                                            self.fuel_conversion_lb_SO2_per_mmbtu.get(newboiler_fuel))
             if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_SO2_per_gal') is None:
                     self.update_attribute_value(object_name_path[:-1] + ['Generator'],  number, \
                         'emissions_factor_lb_SO2_per_gal', self.fuel_conversion_lb_SO2_per_gal.get('diesel_oil'))
@@ -1734,6 +1748,11 @@ class ValidateNestedInput:
                 self.update_attribute_value(object_name_path[:-1] + ['Boiler'], number,
                                             'emissions_factor_lb_PM25_per_mmbtu',
                                             self.fuel_conversion_lb_PM25_per_mmbtu.get(boiler_fuel))
+            if self.input_dict['Scenario']['Site']['NewBoiler'].get('emissions_factor_lb_PM25_per_mmbtu') is None:
+                newboiler_fuel = real_values.get('newboiler_fuel_type')
+                self.update_attribute_value(object_name_path[:-1] + ['NewBoiler'], number,
+                                            'emissions_factor_lb_PM25_per_mmbtu',
+                                            self.fuel_conversion_lb_PM25_per_mmbtu.get(newboiler_fuel))
             if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_PM25_per_gal') is None:
                     self.update_attribute_value(object_name_path[:-1] + ['Generator'],  number, \
                         'emissions_factor_lb_PM25_per_gal', self.fuel_conversion_lb_PM25_per_gal.get('diesel_oil'))

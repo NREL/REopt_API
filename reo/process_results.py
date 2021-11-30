@@ -37,7 +37,7 @@ from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
 from reo.models import ModelManager, PVModel, FinancialModel, WindModel, AbsorptionChillerModel
 from reo.src.profiler import Profiler
-from reo.src.emissions_calculator import EmissionsCalculator ##, EmissionsCalculator_NOx, EmissionsCalculator_SO2, EmissionsCalculator_PM25
+from reo.src.emissions_calculator import EmissionsCalculator
 from reo.utilities import annuity, TONHOUR_TO_KWHT, MMBTU_TO_KWH, GAL_DIESEL_TO_KWH
 from reo.nested_inputs import macrs_five_year, macrs_seven_year
 from reo.src.proforma_metrics import calculate_proforma_metrics
@@ -515,7 +515,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             self.nested_outputs["Scenario"]["Site"]["preprocessed_BAU_lifecycle_emissions_tCO2"] = self.results_dict.get("preprocessed_BAU_lifecycle_emissions_tCO2")
             # emissions reductions & breakeven cost of emissions reductions
             self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_reduction_CO2_pct"] = self.results_dict.get("lifecycle_emissions_reduction_CO2_pct")
-            # TODO: Update $/tCO2 equation for lifecycle rather than year one emissions. also add "breakeven" indicator in variable name
             self.nested_outputs["Scenario"]["Site"]["breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2"] = 0
             #self.nested_outputs["Scenario"]["Site"]["year_one_cost_of_emissions_reduction_us_dollars_per_ton_CO2"] = \
             #    self.results_dict.get("npv")/self.results_dict.get("pwf_om")/ \
