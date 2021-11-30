@@ -1861,7 +1861,8 @@ class DataManager:
             'SO2_dollars_tonne_onsite_fuelburn': so2_cost_us_dollars_per_tonne_onsite_fuelburn,
             'PM25_dollars_tonne_onsite_fuelburn': pm25_cost_us_dollars_per_tonne_onsite_fuelburn,
             'Include_climate_in_objective': self.include_climate_in_objective,
-            'Include_health_in_objective': self.include_health_in_objective
+            'Include_health_in_objective': self.include_health_in_objective,
+            'Lbs_per_tonne': 2204.62
             }
         ## Uncomment the following for debugging
         # import json
@@ -2055,5 +2056,6 @@ class DataManager:
             'SO2_dollars_tonne_onsite_fuelburn': so2_cost_us_dollars_per_tonne_onsite_fuelburn,
             'PM25_dollars_tonne_onsite_fuelburn': pm25_cost_us_dollars_per_tonne_onsite_fuelburn,
             'Include_climate_in_objective': self.include_climate_in_objective,
-            'Include_health_in_objective': self.include_health_in_objective
+            'Include_health_in_objective': self.include_health_in_objective,
+            'Lbs_per_tonne': 2204.62
         }

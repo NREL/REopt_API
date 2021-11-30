@@ -55,6 +55,7 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
             "time_steps_per_hour": 1,
             "include_climate_in_objective": True,
             "include_health_in_objective": True,
+            "add_soc_incentive": True,
             "Site": {
               "longitude": -97.7431, # Austin TX
               "latitude": 30.2672,
@@ -140,6 +141,8 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
                              "Unexpected PV Size")
             self.assertEqual(response['outputs']['Scenario']['Site']['lifecycle_emissions_cost_CO2'], 1245.53,
                              "Unexpected ['Site']['lifecycle_emissions_cost_CO2']")
+            self.assertEqual(response['outputs']['Scenario']['Site']['lifecycle_emissions_cost_Health'], 337.2,
+                             "Unexpected ['Site']['lifecycle_emissions_cost_Health']")
 
             # Values specific to Austin, TX (30.2672, -97.7431)
             self.assertEqual(response['outputs']['Scenario']['Site']['ElectricTariff']['emissions_region'], 'Texas',
