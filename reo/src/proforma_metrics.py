@@ -79,6 +79,10 @@ def calculate_proforma_metrics(data):
     cold_tes.update(data['inputs']['Scenario']['Site']['ColdTES'])
     fuel_tariff = copy.deepcopy(data['outputs']['Scenario']['Site']['FuelTariff'])
     fuel_tariff.update(data['inputs']['Scenario']['Site']['FuelTariff'])
+    ghp = copy.deepcopy(data['outputs']['Scenario']['Site']['GHP'])
+    ghp.update(data['inputs']['Scenario']['Site']['GHP'])
+    steam_turbine = copy.deepcopy(data['outputs']['Scenario']['Site']['SteamTurbine'])
+    steam_turbine.update(data['inputs']['Scenario']['Site']['SteamTurbine'])
 
     # Create placeholder variables to store summed totals across all relevant techs
     federal_itc = 0
@@ -271,6 +275,7 @@ def calculate_proforma_metrics(data):
     # calculate CHP capital costs, o+m costs, incentives, and depreciation
     if (chp['size_kw'] or 0) > 0:
         total_kw = chp.get('size_kw') or 0
+        total_supp_fire_kw = chp.get('size_supplementary_firing_kw') or 0
         total_kwh = chp.get('year_one_electric_energy_produced_kwh') or 0
         total_runtime = sum(np.array(chp.get('year_one_electric_production_series_kw') or []) > 0) / float(
             time_steps_per_hour)
@@ -292,6 +297,7 @@ def calculate_proforma_metrics(data):
                         capital_costs += cost_list[s - 1] * size_list[s - 1] + (chp_size - size_list[s - 1]) * slope
         else:
             capital_costs = (cost_list[0] or 0) * (chp_size or 0)
+        capital_costs += total_supp_fire_kw * chp.get('supplementary_firing_capital_cost_per_kw')
         annual_om = (-1 * total_kw * chp['om_cost_us_dollars_per_kw']) + \
                     (-1 * total_kwh * chp['om_cost_us_dollars_per_kwh']) + \
                     (-1 * total_runtime * total_kw * chp['om_cost_us_dollars_per_hr_per_kw_rated'])
@@ -343,22 +349,15 @@ def calculate_proforma_metrics(data):
             depreciation_schedule[0] += (chp['macrs_bonus_pct'] * macrs_bonus_basis)
             total_depreciation += depreciation_schedule
 
-    # calculate Wind capital costs, o+m costs, incentives, and depreciation
+    # calculate Absorption Chiller capital costs, o+m costs, incentives, and depreciation
     if (absorption_chiller['size_ton'] or 0) > 0:
         total_kw = absorption_chiller.get('size_ton') or 0
         capital_costs = total_kw * absorption_chiller['installed_cost_us_dollars_per_ton']
         annual_om = -1 * total_kw * absorption_chiller['om_cost_us_dollars_per_ton']
         om_series += np.array(
             [annual_om * (1 + financials['om_cost_escalation_pct']) ** yr for yr in range(1, years + 1)])
-        # utility_ibi = min(capital_costs * absorption_chiller['utility_ibi_pct'], absorption_chiller['utility_ibi_max_us_dollars'])
-        # utility_cbi = min(total_kw * absorption_chiller['utility_rebate_us_dollars_per_kw'], absorption_chiller['utility_rebate_max_us_dollars'])
-        # state_ibi = min((capital_costs - utility_ibi - utility_cbi) * absorption_chiller['state_ibi_pct'], absorption_chiller['state_ibi_max_us_dollars'])
-        # state_cbi = min(total_kw * absorption_chiller['state_rebate_us_dollars_per_kw'], absorption_chiller['state_rebate_max_us_dollars'])
-        # federal_cbi = total_kw * absorption_chiller['federal_rebate_us_dollars_per_kw']
-        # ibi = utility_ibi + state_ibi
-        # cbi = utility_cbi + federal_cbi + state_cbi
-        # total_ibi_and_cbi += (ibi + cbi)
-        # Complex incentives have been removed for Absorption Chiller
+
+        # Absorption Chiller does not have complex incentives, only MACRS
         ibi = 0
         cbi = 0
         total_ibi_and_cbi = 0
@@ -371,15 +370,7 @@ def calculate_proforma_metrics(data):
                 schedule = macrs_seven_year
             else:
                 schedule = []
-            # Complex incentives have been removed for Absorption Chiller
-            # federal_itc_basis = capital_costs - state_ibi - utility_ibi - state_cbi - utility_cbi - federal_cbi
-            # federal_itc_amount = absorption_chiller['federal_itc_pct']*federal_itc_basis
-            # federal_itc += federal_itc_amount
-
-            # Complex incentives have been removed for Absorption Chiller
-            # macrs_bonus_basis = federal_itc_basis - (federal_itc_basis * absorption_chiller['federal_itc_pct'] * absorption_chiller['macrs_itc_reduction'])
             macrs_bonus_basis = capital_costs
-
             macrs_basis = macrs_bonus_basis * (1 - absorption_chiller['macrs_bonus_pct'])
             depreciation_schedule = np.array([0.0 for _ in range(years)])
             for i, r in enumerate(schedule):
@@ -387,7 +378,7 @@ def calculate_proforma_metrics(data):
             depreciation_schedule[0] += (absorption_chiller['macrs_bonus_pct'] * macrs_bonus_basis)
             total_depreciation += depreciation_schedule
 
-    # calculate Wind capital costs, o+m costs, incentives, and depreciation
+    # calculate Hot TES capital costs, o+m costs, incentives, and depreciation
     if (hot_tes['size_gal'] or 0) > 0:
         total_gal = hot_tes.get('size_gal')
         capital_costs = total_gal * hot_tes['installed_cost_us_dollars_per_gal']
@@ -410,7 +401,7 @@ def calculate_proforma_metrics(data):
             depreciation_schedule[0] += (hot_tes['macrs_bonus_pct'] * macrs_bonus_basis)
             total_depreciation += depreciation_schedule
 
-    # calculate Wind capital costs, o+m costs, incentives, and depreciation
+    # calculate Cold TES capital costs, o+m costs, incentives, and depreciation
     if (cold_tes['size_gal'] or 0) > 0:
         total_gal = cold_tes.get('size_gal')
         capital_costs = total_gal * cold_tes['installed_cost_us_dollars_per_gal']
@@ -431,6 +422,82 @@ def calculate_proforma_metrics(data):
             for i, r in enumerate(schedule):
                 depreciation_schedule[i] = macrs_basis * r
             depreciation_schedule[0] += (cold_tes['macrs_bonus_pct'] * macrs_bonus_basis)
+            total_depreciation += depreciation_schedule
+
+    # calculate GHP capital costs, o+m costs, incentives, and depreciation
+    if (ghp['size_heat_pump_ton'] or 0) > 0:
+        total_ton = ghp.get('size_heat_pump_ton') or 0
+        total_ghx_feet = ghp["ghpghx_chosen_outputs"].get("length_boreholes_ft") or 0
+        building_sqft = ghp["building_sqft"]
+        capital_costs = total_ton * ghp['installed_cost_heatpump_us_dollars_per_ton'] + \
+                        total_ghx_feet * ghp["installed_cost_ghx_us_dollars_per_ft"] + \
+                        building_sqft * ghp["installed_cost_building_hydronic_loop_us_dollars_per_sqft"]
+        annual_om = -1 * building_sqft * ghp['om_cost_us_dollars_per_sqft_year']
+        om_series += np.array(
+            [annual_om * (1 + financials['om_cost_escalation_pct']) ** yr for yr in range(1, years + 1)])
+        utility_ibi = min(capital_costs * ghp['utility_ibi_pct'], ghp['utility_ibi_max_us_dollars'])
+        utility_cbi = min(total_ton * ghp['utility_rebate_us_dollars_per_ton'], ghp['utility_rebate_max_us_dollars'])
+        state_ibi = min((capital_costs - utility_ibi - utility_cbi) * ghp['state_ibi_pct'], ghp['state_ibi_max_us_dollars'])
+        state_cbi = min(total_ton * ghp['state_rebate_us_dollars_per_ton'], ghp['state_rebate_max_us_dollars'])
+        federal_cbi = total_ton * ghp['federal_rebate_us_dollars_per_ton']
+        ibi = utility_ibi + state_ibi
+        cbi = utility_cbi + federal_cbi + state_cbi
+        total_ibi_and_cbi += (ibi + cbi)
+
+        # Depreciation
+        if ghp['macrs_option_years'] in [5, 7]:
+            if ghp['macrs_option_years'] == 5:
+                schedule = macrs_five_year
+            elif ghp['macrs_option_years'] == 7:
+                schedule = macrs_seven_year
+            else:
+                schedule = []
+            federal_itc_basis = capital_costs - state_ibi - utility_ibi - state_cbi - utility_cbi - federal_cbi
+            federal_itc_amount = ghp['federal_itc_pct'] * federal_itc_basis
+            federal_itc += federal_itc_amount
+
+            macrs_bonus_basis = federal_itc_basis - (federal_itc_basis * ghp['federal_itc_pct'] * ghp['macrs_itc_reduction'])
+            macrs_bonus_basis = capital_costs
+
+            macrs_basis = macrs_bonus_basis * (1 - ghp['macrs_bonus_pct'])
+            depreciation_schedule = np.array([0.0 for _ in range(years)])
+            for i, r in enumerate(schedule):
+                depreciation_schedule[i] = macrs_basis * r
+            depreciation_schedule[0] += (ghp['macrs_bonus_pct'] * macrs_bonus_basis)
+            total_depreciation += depreciation_schedule
+
+    # calculate SteamTurbine capital costs, o+m costs, incentives, and depreciation
+    if (steam_turbine['size_kw'] or 0) > 0:
+        total_kw = steam_turbine.get('size_kw') or 0
+        total_kwh = steam_turbine.get('year_one_electric_energy_produced_kwh') or 0
+        capital_costs = total_kw * steam_turbine['installed_cost_us_dollars_per_kw']
+        annual_om = -1 * total_kw * steam_turbine['om_cost_us_dollars_per_kw'] + \
+                    -1 * total_kwh * steam_turbine['om_cost_us_dollars_per_kwh']
+        om_series += np.array(
+            [annual_om * (1 + financials['om_cost_escalation_pct']) ** yr for yr in range(1, years + 1)])
+        if not third_party:
+            om_series += np.array([-1 * (fuel_tariff.get("year_one_boiler_fuel_cost_us_dollars") or 0) * (
+                        1 + financials['boiler_fuel_escalation_pct']) ** yr for yr in range(1, years + 1)])
+            om_series_bau += np.array([-1 * (fuel_tariff.get("year_one_boiler_fuel_cost_bau_us_dollars") or 0) * (
+                        1 + financials['boiler_fuel_escalation_pct']) ** yr for yr in range(1, years + 1)])
+        # Steam turbine does not have complex incentives, just MACRS
+        ibi = 0
+        cbi = 0
+        total_ibi_and_cbi = 0
+
+        # Depreciation
+        if steam_turbine['macrs_option_years'] in [5, 7]:
+            if steam_turbine['macrs_option_years'] == 5:
+                schedule = macrs_five_year
+            elif steam_turbine['macrs_option_years'] == 7:
+                schedule = macrs_seven_year
+            else:
+                schedule = []
+            macrs_bonus_basis = capital_costs
+            depreciation_schedule = np.array([0.0 for _ in range(years)])
+            for i, r in enumerate(schedule):
+                depreciation_schedule[i] = macrs_basis * r
+            depreciation_schedule[0] += (steam_turbine['macrs_bonus_pct'] * macrs_bonus_basis)
             total_depreciation += depreciation_schedule
 
     # Optimal Case calculations
