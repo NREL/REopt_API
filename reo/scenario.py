@@ -400,6 +400,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
                 ghp_option_list.append(ghp.GHPGHX(dfm=dfm,
                                                     response=ghpghx_results_resp_dict,
                                                     **inputs_dict["Site"]["GHP"]))
+            #json.dump(ghpghx_results_resp_dict, open("ghpghx_response.json", "w"))                                                    
             # Update GHPModel with created ghpghx_response_uuids
             tmp = dict()
             tmp['ghpghx_response_uuids'] = ghpghx_uuid_list
