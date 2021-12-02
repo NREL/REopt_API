@@ -534,8 +534,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             self.nested_outputs["Scenario"]["Site"]["year_one_renewable_heat_pct_bau"] = self.results_dict.get("annual_re_heat_percent_bau")
             self.nested_outputs["Scenario"]["Site"]["year_one_renewable_heat_mmbtu_bau"] = self.results_dict.get("annual_re_heat_mmbtu_bau")
             self.nested_outputs["Scenario"]["Site"]["year_one_heat_load_mmbtu_bau"] = self.results_dict.get("annual_heat_mmbtu_bau")
-            # Steam Turbine percent RE (for testing)
-            steam_turbine_percent_RE = self.results_dict.get("steamturbine_percent_re") #kk delete after testing
 
             ## Year 1 Emissions
             # total emissions - year one (non-BAU)
