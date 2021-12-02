@@ -659,8 +659,7 @@ class DataManager:
                             replacement_cost = eval('self.' + tech + '.replace_cost_us_dollars_per_kw')
                         if hasattr(eval('self.' + tech), 'useful_life_years'): # applies for generator
                             useful_life = eval('self.' + tech + '.useful_life_years')
-                            # if useful life >= analysis period, assume no replacement cost
-                            if useful_life >= sf.analysis_years:
+                            if useful_life >= sf.analysis_years: # if useful life >= analysis period, assume no replacement cost
                                 replacement_cost = 0.0
                             else: 
                                 replacement_cost = eval('self.' + tech + '.installed_cost_us_dollars_per_kw')
