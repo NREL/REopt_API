@@ -1158,14 +1158,6 @@ function add_cost_function(m, p)
 
 end
 
-
-function add_steamturbine_re_calcs(m,p)
-	## kk TODO: finish this
-	m[:SteamTurbinePercentRE] =  0 #@expression(m,sum(m[:dvThermalToSteamTurbine][tst,ts]*p.TechPercentRE[tst] for ts in p.TimeStep, tst in p.TechCanSupplySteamTurbine) 
-	#	/ sum(m[:dvThermalToSteamTurbine][tst,ts] for ts in p.TimeStep, tst in p.TechCanSupplySteamTurbine))
-end
-
-
 # Renewable electricity calculation
 function add_re_elec_calcs(m,p)
 	if p.IncludeExportedREElecinTotal
@@ -1489,7 +1481,6 @@ function reopt_run(m, p::Parameter)
 	add_export_expressions(m, p)
 	add_util_fixed_and_min_charges(m, p)
 
-	add_steamturbine_re_calcs(m,p)
 	add_re_elec_calcs(m,p)
 	add_re_elec_constraints(m,p)
 	add_yr1_emissions_calcs(m,p)
