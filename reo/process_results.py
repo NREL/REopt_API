@@ -903,7 +903,10 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     if self.results_dict.get("GHPOptionChosen") >= 1:
                         ghp_uuid = self.dm.get("ghp_uuid_list")[self.results_dict.get("GHPOptionChosen")-1] # -1 is right
                         self.nested_outputs["Scenario"]["Site"][name]["ghp_chosen_uuid"] = ghp_uuid
-                        ghpghx_chosen = ghpModelManager.make_response(ghp_uuid=ghp_uuid)
+                        if data['inputs']['Scenario']["Site"]["GHP"].get("ghpghx_responses") not in [None, []]:
+                            ghpghx_chosen = data['inputs']['Scenario']["Site"]["GHP"]["ghpghx_responses"][self.results_dict.get("GHPOptionChosen")-1]
+                        else:
+                            ghpghx_chosen = ghpModelManager.make_response(ghp_uuid=ghp_uuid)
                         self.nested_outputs["Scenario"]["Site"][name]["ghpghx_chosen_outputs"] = ghpghx_chosen["outputs"]
                         self.nested_outputs["Scenario"]["Site"][name]["ghpghx_chosen_outputs"]["heating_thermal_load_mmbtu_per_hr"] = ghpghx_chosen["inputs"]["heating_thermal_load_mmbtu_per_hr"]
                         self.nested_outputs["Scenario"]["Site"][name]["ghpghx_chosen_outputs"]["cooling_thermal_load_ton"] = ghpghx_chosen["inputs"]["cooling_thermal_load_ton"]
