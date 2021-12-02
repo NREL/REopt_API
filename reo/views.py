@@ -280,6 +280,46 @@ def easiur_costs(request):
         log.error(debug_msg)
         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
 
+def fuel_emissions_rates(request):
+    try:
+
+        try:
+            response = JsonResponse({
+                'CO2': {
+                    'generator_lb_per_gal': ValidateNestedInput.fuel_conversion_lb_CO2_per_gal,
+                    'lb_per_mmbtu': ValidateNestedInput.fuel_conversion_lb_CO2_per_mmbtu
+                    },
+                'NOx': {
+                    'generator_lb_per_gal': ValidateNestedInput.fuel_conversion_lb_NOx_per_gal,
+                    'lb_per_mmbtu': ValidateNestedInput.fuel_conversion_lb_NOx_per_mmbtu
+                    },
+                'SO2': {
+                    'generator_lb_per_gal': ValidateNestedInput.fuel_conversion_lb_SO2_per_gal,
+                    'lb_per_mmbtu': ValidateNestedInput.fuel_conversion_lb_SO2_per_mmbtu
+                    },
+                'PM25': {
+                    'generator_lb_per_gal': ValidateNestedInput.fuel_conversion_lb_PM25_per_gal,
+                    'lb_per_mmbtu': ValidateNestedInput.fuel_conversion_lb_PM25_per_mmbtu
+                    }
+                })
+            return response
+        except AttributeError as e:
+            return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except KeyError as e:
+        return JsonResponse({"No parameters required."}, status=500)
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except Exception:
+
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.error(debug_msg)
+        return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
+
 
 def simulated_load(request):
     try:
