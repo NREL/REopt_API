@@ -241,7 +241,15 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                                  self.nested_outputs["Scenario"]["Site"]["Storage"]["size_kw"]
             future_cost_storage = self.inputs["Storage"]["replace_cost_us_dollars_per_kwh"] * \
                                  self.nested_outputs["Scenario"]["Site"]["Storage"]["size_kwh"]
-            future_cost = future_cost_inverter + future_cost_storage
+            generator_useful_life = self.inputs["Generator"]["useful_life_years"]
+
+            if generator_useful_life >= self.inputs['Financial']['analysis_years']: # if useful life >= analysis period, assume no replacement cost
+                future_cost_generator = 0.0
+            else:
+                future_cost_generator = self.inputs["Generator"]["installed_cost_us_dollars_per_kw"] * \
+                                 self.nested_outputs["Scenario"]["Site"]["Generator"]["size_kw"]
+
+            future_cost = future_cost_inverter + future_cost_storage + future_cost_generator
 
             tax_rate = self.inputs["Financial"]["owner_tax_pct"]
             discount_rate = self.inputs["Financial"]["owner_discount_pct"]
@@ -250,6 +258,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                                                                     self.inputs["Storage"]["inverter_replacement_year"])
             present_cost += future_cost_storage * (1 - tax_rate) / ((1 + discount_rate) **
                                                                     self.inputs["Storage"]["battery_replacement_year"])
+            present_cost += future_cost_generator * (1 - tax_rate) / ((1 + discount_rate) **
+                                                                    self.inputs["Generator"]["useful_life_years"])
             return round(future_cost, 2), round(present_cost, 2)
 
         @property
