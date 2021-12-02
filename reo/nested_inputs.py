@@ -302,7 +302,7 @@ nested_input_definitions = {
       },
       "include_exported_elec_emissions_in_total": {
         "type": "bool",
-        "default": False,
+        "default": True,
         "description": "Include the emissions reductions (or increases) in grid emissions associated with exported onsite electrical generation in the calculation of Year 1 emissions."
       },
       "include_exported_renewable_electricity_in_total": {
