@@ -239,7 +239,7 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                     self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['size_kw'],59.1891,places=1)
                     self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Wind']['size_kw'],23.0474,places=1)
                     self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Storage']['size_kw'],12.532,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Storage']['size_kwh'],80.817,places=1)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Storage']['size_kwh'],80.817,places=0)
                     self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Generator']['size_kw'],0.0,places=1)
                     # NPV
                     self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Financial']['npv_us_dollars'],-198934.0,places=1)

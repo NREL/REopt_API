@@ -214,7 +214,50 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
                                     sum(outputs['LoadProfile']['total_sr_required']),
                                     "Total SR provided is less than required SR.")
                       
-            # TODO: check that lcoe components add up to 100%
+        except Exception as e:
+            error_msg = None
+            if hasattr(messages, "error"):
+                error_msg = messages.error
+            print("test_flex_tech API error message: {}".format(error_msg))
+            print("Run uuid: {}".format(response['outputs']['Scenario']['run_uuid']))
+            raise e
+
+    def test_off_grid_emissions(self):
+        self.post['Scenario']['include_climate_in_objective'] = True
+        self.post['Scenario']['include_health_in_objective'] = True
+        self.post['Scenario']['Site']['Storage']['max_kw'] = 0.0
+        self.post['Scenario']['Site']['Storage']['max_kwh'] = 0.0
+        self.post['Scenario']['Site']['LoadProfile']['annual_kwh'] = 100.0
+        self.post['Scenario']['Site']['LoadProfile']['sr_required_pct'] = 0.0
+        self.post['Scenario']['Site']['PV']['sr_required_pct'] = 0.0
+        self.post['Scenario']['Site']['LoadProfile']['min_load_met_pct'] = 0.99
+        self.post['Scenario']['Site']['Generator']['min_kw'] = 20.0
+        self.post['Scenario']['Site']['Generator']['max_kw'] = 20.0
+        self.post['Scenario']['Site']['Generator']['min_turn_down_pct'] = 0.0
+        
+
+        response = self.get_response(self.post)
+        messages = response['messages']
+        outputs = response['outputs']['Scenario']['Site']
+        inputs = response['inputs']['Scenario']['Site']
+
+        try:
+
+            # Check for no interaction with grid
+            self.assertEqual(sum(outputs["Generator"]["year_one_to_grid_series_kw"]), 0.0,
+                             "Generator sum(year_one_to_grid_series_kw) does not equal 0. Equals {}".format(sum(outputs["Generator"]["year_one_to_grid_series_kw"])))
+            self.assertEqual(sum(outputs["PV"]["year_one_to_grid_series_kw"]), 0.0,
+                             "PV sum(year_one_to_grid_series_kw) does not equal 0. Equals {}".format(sum(outputs["PV"]["year_one_to_grid_series_kw"])))
+            self.assertEqual(sum(outputs["Storage"]["year_one_to_grid_series_kw"]), 0.0,
+                             "Storage sum(year_one_to_grid_series_kw) does not equal 0. Equals {}".format(sum(outputs["Storage"]["year_one_to_grid_series_kw"])))
+            
+            # Check for no grid emissions 
+            self.assertEqual(outputs["ElectricTariff"]["lifecycle_emissions_tCO2"], 0.0,
+                             "Electric grid emissions (ElectricTariff.lifecycle_emissions_tCO2) do not equal 0. Equals {}".format(outputs["ElectricTariff"]["lifecycle_emissions_tCO2"]))
+            pv_to_load = sum(outputs["PV"]["year_one_to_load_series_kw"])
+            self.assertAlmostEqual(outputs["year_one_renewable_electricity_kwh"], pv_to_load,delta=.75)
+            
+                      
         except Exception as e:
             error_msg = None
             if hasattr(messages, "error"):
