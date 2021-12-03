@@ -34,7 +34,8 @@ from reo.nested_to_flat_output import nested_to_flat
 from django.test import TestCase
 from reo.models import ModelManager
 from reo.utilities import check_common_outputs
-
+from reo.src.load_profile import default_annual_electric_loads
+from reo.src.load_profile_boiler_fuel import LoadProfileBoilerFuel
 
 class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
     REopt_tol = 1e-2
@@ -68,7 +69,7 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
         #       set min and max %ER constraint/target
         #       no outage or backup gens
         ## Scenario 3: 
-        #       elec + thermal techs
+        #       elec + thermal techs, fixed capacities
         #       include RE and ER from exported elec in calcs
         #       no RE or ER targets (perhaps consider setting a min for both once we get it passing)
         #       no outage or backup gens (perhasp consider adding in)
@@ -81,8 +82,10 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
         resilience_scenario = ['yes_outage','no_outage','no_outage']
 
         for i in range(2):
-            if i == 1:
+            if i <= 1:
                 nested_data = json.load(open(self.test_post_elec_only, 'rb'))
+            elif i == 2:
+                nested_data = json.load(open(self.test_post_with_thermal, 'rb')) #originated from test_steamturbine.py test post
                 # include/exclude RE and ER from exported elec in calcs
                 nested_data['Scenario']['Site']['include_exported_renewable_electricity_in_total'] = include_exported_RE_in_total[i]
                 nested_data['Scenario']['Site']['include_exported_elec_emissions_in_total'] = include_exported_ER_in_total[i]
@@ -110,14 +113,14 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
 
                 ### run automated tests:                         
                 ## calculate BAU and non-BAU annual load:
-                loads_kw = d['outputs']['Scenario']['Site']['LoadProfile']['year_one_electric_load_series_kw']
-                annual_elec_load_kwh = sum(loads_kw)
-                annual_elec_load_kwh_bau = sum(loads_kw) 
+                elec_loads_kw = d['outputs']['Scenario']['Site']['LoadProfile']['year_one_electric_load_series_kw']
+                annual_elec_load_kwh = sum(elec_loads_kw)
+                annual_elec_load_kwh_bau = sum(elec_loads_kw) 
                 if resilience_scenario[i] == 'yes_outage':
                     bau_sustained_time_steps = d['outputs']['Scenario']['Site']['LoadProfile']['bau_sustained_time_steps'] # note hourly timesteps for this test
-                    critical_loads_kw = d['outputs']['Scenario']['Site']['LoadProfile']['critical_load_series_kw']
-                    annual_elec_load_kwh_bau -= sum(loads_kw[outage_start_hour-1:outage_start_hour+outage_duration-1]) + \
-                        sum(critical_loads_kw[outage_start_hour-1:outage_start_hour-1+min(bau_sustained_time_steps,outage_duration)])
+                    critical_elec_loads_kw = d['outputs']['Scenario']['Site']['LoadProfile']['critical_load_series_kw']
+                    annual_elec_load_kwh_bau -= sum(elec_loads_kw[outage_start_hour-1:outage_start_hour+outage_duration-1]) + \
+                        sum(critical_elec_loads_kw[outage_start_hour-1:outage_start_hour-1+min(bau_sustained_time_steps,outage_duration)])
                                             
                 ## RE elec tests
                 # Year 1 RE elec - BAU case:
@@ -133,9 +136,9 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                 RE_elec_kwh_pct_diff = (annual_elec_load_kwh*RE_elec_pct_out - RE_elec_kwh_out)/RE_elec_kwh_out
                 self.assertAlmostEquals(RE_elec_kwh_pct_diff,0.0,places=2)
                 # check RE elec export credit accounting
-                PV_avg_annual_kwh = d['outputs']['Scenario']['Site']['PV']['average_yearly_energy_produced_kwh']
-                PV_avg_annual_kwh_exports = d['outputs']['Scenario']['Site']['PV']['average_yearly_energy_exported_kwh']
-                PV_year_one_kwh = d['outputs']['Scenario']['Site']['PV']['year_one_energy_produced_kwh']
+                PV_avg_annual_kwh = d['outputs']['Scenario']['Site']['PV']['average_yearly_energy_produced_kwh'] or 0.0
+                PV_avg_annual_kwh_exports = d['outputs']['Scenario']['Site']['PV']['average_yearly_energy_exported_kwh'] or 0.0
+                PV_year_one_kwh = d['outputs']['Scenario']['Site']['PV']['year_one_energy_produced_kwh'] or 0.0
                 if PV_year_one_kwh > 0:
                     PV_year_one_to_avg_annual = PV_avg_annual_kwh/PV_year_one_kwh
                 else:
@@ -144,8 +147,8 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                 PV_avg_annual_kwh_curtailed = PV_year_one_to_avg_annual*sum(d['outputs']['Scenario']['Site']['PV']['year_one_curtailed_production_series_kw'])
 
                 Wind_avg_annual_kwh = d['outputs']['Scenario']['Site']['Wind']['average_yearly_energy_produced_kwh'] or 0.0
-                Wind_avg_annual_kwh_exports = d['outputs']['Scenario']['Site']['Wind']['average_yearly_energy_exported_kwh']
-                Wind_year_one_kwh = d['outputs']['Scenario']['Site']['Wind']['year_one_energy_produced_kwh']
+                Wind_avg_annual_kwh_exports = d['outputs']['Scenario']['Site']['Wind']['average_yearly_energy_exported_kwh'] or 0.0
+                Wind_year_one_kwh = d['outputs']['Scenario']['Site']['Wind']['year_one_energy_produced_kwh'] or 0.0
                 Wind_year_one_to_avg_annual = 1
                 if Wind_year_one_kwh is None:
                     Wind_avg_annual_kwh = 0
@@ -154,18 +157,41 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                 Wind_avg_annual_kwh_to_batt = Wind_year_one_to_avg_annual*sum(d['outputs']['Scenario']['Site']['Wind']['year_one_to_battery_series_kw'])
                 Wind_avg_annual_kwh_curtailed = Wind_year_one_to_avg_annual*sum(d['outputs']['Scenario']['Site']['Wind']['year_one_curtailed_production_series_kw'])
                 
+                chp_fuel_pct_RE_input = d['inputs']['Scenario']['Site']['FuelTariff']['chp_fuel_percent_RE'] or 0.0
+                chp_annual_elec_total_kwh = d['outputs']['Scenario']['Site']['CHP']['year_one_electric_energy_produced_kwh'] or 0.0
+                chp_annual_elec_to_batt_kwh = sum(d['outputs']['Scenario']['Site']['CHP']['year_one_to_battery_series_kw']) or 0.0
+                chp_annual_elec_to_grid_kwh = sum(d['outputs']['Scenario']['Site']['CHP']['year_one_to_grid_series_kw']) or 0.0
+                chp_annual_RE_elec_total_kwh = chp_fuel_pct_RE_input * chp_annual_elec_total_kwh or 0.0
+                chp_annual_RE_elec_to_batt_kwh = chp_fuel_pct_RE_input * chp_annual_elec_to_batt_kwh or 0.0
+                
+                chp_therm_to_steamturbine = sum(d['outputs']['Scenario']['Site']['CHP']['year_one_thermal_to_steamturbine_series_mmbtu_per_hour']) or 0.0
+                newboiler_therm_to_steamturbine = sum(d['outputs']['Scenario']['Site']['NewBoiler']['year_one_thermal_to_steamturbine_series_mmbtu_per_hour']) or 0.0
+                newboiler_fuel_pct_RE_input = d['inputs']['Scenario']['Site']['FuelTariff']['newboiler_fuel_percent_RE'] or 0.0
+                steamturbine_pct_RE_actual = (chp_fuel_pct_RE_input * chp_therm_to_steamturbine \
+                    + newboiler_fuel_pct_RE_input*newboiler_therm_to_steamturbine) \
+                    / (chp_therm_to_steamturbine + newboiler_therm_to_steamturbine)
+                steamturbine_pct_RE_estimated = (newboiler_fuel_pct_RE_input + chp_fuel_pct_RE_input)/2 #steamturbine pct RE estimated as average of all techs that feed steam to steamturbine
+                steamturbine_annual_elec_total_kwh = d['outputs']['Scenario']['Site']['SteamTurbine']['year_one_electric_energy_produced_kwh'] or 0.0
+                steamturbine_annual_elec_to_batt_kwh = sum(d['outputs']['Scenario']['Site']['SteamTurbine']['year_one_to_battery_series_kw']) or 0.0
+                steamturbine_annual_elec_to_grid_kwh = sum(d['outputs']['Scenario']['Site']['SteamTurbine']['year_one_to_grid_series_kw']) or 0.0
+                steamturbine_annual_RE_elec_total_kwh = steamturbine_pct_RE_actual * steamturbine_annual_elec_total_kwh or 0.0
+                steamturbine_annual_RE_elec_to_batt_kwh = steamturbine_pct_RE_estimated * steamturbine_annual_elec_to_batt_kwh or 0.0
+
                 Batt_eff = d['inputs']['Scenario']['Site']['Storage']['rectifier_efficiency_pct'] \
                     * d['inputs']['Scenario']['Site']['Storage']['inverter_efficiency_pct'] \
                     * d['inputs']['Scenario']['Site']['Storage']['internal_efficiency_pct'] 
                                             
-                RE_tot_kwh_calced = PV_avg_annual_kwh + Wind_avg_annual_kwh \
-                    - (1-Batt_eff)*(PV_avg_annual_kwh_to_batt+Wind_avg_annual_kwh_to_batt) \
-                    - (PV_avg_annual_kwh_curtailed + Wind_avg_annual_kwh_curtailed)
+                RE_tot_kwh_calced = PV_avg_annual_kwh + Wind_avg_annual_kwh + chp_annual_RE_elec_total_kwh + steamturbine_annual_RE_elec_total_kwh \
+                    - (1-Batt_eff)*(PV_avg_annual_kwh_to_batt + Wind_avg_annual_kwh_to_batt + chp_annual_RE_elec_to_batt_kwh + steamturbine_annual_RE_elec_to_batt_kwh) \
+                    - (PV_avg_annual_kwh_curtailed + Wind_avg_annual_kwh_curtailed) \
+                    
                 if include_exported_RE_in_total[i] is False:
-                    RE_tot_kwh_calced -= PV_avg_annual_kwh_exports + Wind_avg_annual_kwh_exports
+                    RE_tot_kwh_calced -= PV_avg_annual_kwh_exports + Wind_avg_annual_kwh_exports + chp_annual_elec_to_grid_kwh + steamturbine_annual_elec_to_grid_kwh
 
-                RE_tot_kwh_pct_diff = (RE_tot_kwh_calced - RE_elec_kwh_out)/RE_tot_kwh_calced
+                RE_tot_kwh_pct_diff = (RE_tot_kwh_calced - RE_tot_kwh_calced)/RE_tot_kwh_calced
                 self.assertAlmostEquals(RE_tot_kwh_pct_diff,0.0,places=1) #(<5% error) 
+
+                ## RE Heat tests
 
                 ## Emissions tests
                 # BAU emissions:
@@ -203,102 +229,102 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                 ### test specific values:                         
                 if i ==0: # Scenario 1
                     # system sizes
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['size_kw'],46.2788,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Wind']['size_kw'],10.0,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Storage']['size_kw'],2.4303,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Storage']['size_kwh'],6.062,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Generator']['size_kw'],22.0,places=1)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['size_kw'],46.2788,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Wind']['size_kw'],10.0,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Storage']['size_kw'],2.4303,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Storage']['size_kwh'],6.062,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Generator']['size_kw'],22.0,places=0)
                     # NPV
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Financial']['npv_us_dollars'],-101278.0,places=1)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Financial']['npv_us_dollars'],-101278.0,places=0)
                     # Renewable energy
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_pct'],0.8,places=2)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh'],75140.37,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_pct_bau'],0.146395,places=2)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh_bau'],10193.12,places=1)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_pct'],0.8,places=3)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh'],75140.37,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_pct_bau'],0.146395,places=3)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh_bau'],10193.12,places=0)
                     # CO2 emissions - totals, from grid, from fuelburn, ER, $/tCO2 breakeven
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['preprocessed_BAU_year_one_emissions_tCO2'],40.54,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['preprocessed_BAU_lifecycle_emissions_tCO2'],717.86,places=1)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['preprocessed_BAU_year_one_emissions_tCO2'],40.54,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['preprocessed_BAU_lifecycle_emissions_tCO2'],717.86,places=0)
                     self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_reduction_CO2_pct'],0.660013,places=3)
                     self.assertAlmostEquals(d['outputs']['Scenario']['Site']['breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2'],0.0,places=3)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_tCO2'],12.79,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_tCO2_bau'],40.54,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_from_fuelburn_tCO2'],7.65,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_from_fuelburn_tCO2_bau'],0.0,places=1)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_tCO2'],12.79,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_tCO2_bau'],40.54,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_from_fuelburn_tCO2'],7.65,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_from_fuelburn_tCO2_bau'],0.0,places=0)
                     self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_cost_CO2'],7070.97,places=0)
                     self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_cost_CO2_bau'],21098.48,places=0)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_tCO2'],244.06,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_tCO2_bau'],717.86,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_from_fuelburn_tCO2'],152.97,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_from_fuelburn_tCO2_bau'],0.0,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_tCO2'],5.14,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_tCO2_bau'],40.54,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['lifecycle_emissions_tCO2'],91.09,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['lifecycle_emissions_tCO2_bau'],717.86,places=1)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_tCO2'],244.06,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_tCO2_bau'],717.86,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_from_fuelburn_tCO2'],152.97,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_from_fuelburn_tCO2_bau'],0.0,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_tCO2'],5.14,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_tCO2_bau'],40.54,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['lifecycle_emissions_tCO2'],91.09,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['lifecycle_emissions_tCO2_bau'],717.86,places=0)
                 if i ==1: # Scenario 2
                     # system sizes
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['size_kw'],59.1891,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Wind']['size_kw'],23.0474,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Storage']['size_kw'],12.532,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Storage']['size_kwh'],80.817,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Generator']['size_kw'],0.0,places=1)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['size_kw'],59.1891,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Wind']['size_kw'],23.0474,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Storage']['size_kw'],12.532,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Storage']['size_kwh'],80.817,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Generator']['size_kw'],0.0,places=0)
                     # NPV
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Financial']['npv_us_dollars'],-198934.0,places=1)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Financial']['npv_us_dollars'],-198934.0,places=0)
                     # Renewable energy
                     self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_pct'],0.78984,places=3)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh'],78984.01,places=1)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh'],78984.01,places=0)
                     self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_pct_bau'],0.135426,places=3)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh_bau'],13542.62,places=1)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh_bau'],13542.62,places=0)
                     # CO2 emissions - totals, from grid, from fuelburn, ER, $/tCO2 breakeven
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['preprocessed_BAU_year_one_emissions_tCO2'],57.97,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['preprocessed_BAU_lifecycle_emissions_tCO2'],1026.65,places=1)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['preprocessed_BAU_year_one_emissions_tCO2'],57.97,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['preprocessed_BAU_lifecycle_emissions_tCO2'],1026.65,places=0)
                     self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_reduction_CO2_pct'],0.8,places=3)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2'],0.0,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_tCO2'],11.59,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_tCO2_bau'],57.97,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_from_fuelburn_tCO2'],0.0,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_from_fuelburn_tCO2_bau'],0.0,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_cost_CO2'],6034.79,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_cost_CO2_bau'],30173.96,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_tCO2'],205.33,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_tCO2_bau'],1026.65,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_from_fuelburn_tCO2'],0.0,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_from_fuelburn_tCO2_bau'],0.0,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_tCO2'],11.59,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_tCO2_bau'],57.97,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['lifecycle_emissions_tCO2'],205.33,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['lifecycle_emissions_tCO2_bau'],1026.65,places=1)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2'],0.0,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_tCO2'],11.59,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_tCO2_bau'],57.97,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_from_fuelburn_tCO2'],0.0,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_from_fuelburn_tCO2_bau'],0.0,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_cost_CO2'],6034.79,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_cost_CO2_bau'],30173.96,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_tCO2'],205.33,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_tCO2_bau'],1026.65,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_from_fuelburn_tCO2'],0.0,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_from_fuelburn_tCO2_bau'],0.0,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_tCO2'],11.59,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_tCO2_bau'],57.97,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['lifecycle_emissions_tCO2'],205.33,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['lifecycle_emissions_tCO2_bau'],1026.65,places=0)
                 if i ==2: # Scenario 3
                     # system sizes
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['size_kw'],46.2788,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Wind']['size_kw'],10.0,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Storage']['size_kw'],2.4303,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Storage']['size_kwh'],6.062,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Generator']['size_kw'],22.0,places=1)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['PV']['size_kw'],46.2788,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Wind']['size_kw'],10.0,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Storage']['size_kw'],2.4303,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Storage']['size_kwh'],6.062,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Generator']['size_kw'],22.0,places=0)
                     # NPV
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Financial']['npv_us_dollars'],-101278.0,places=1)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Financial']['npv_us_dollars'],-101278.0,places=0)
                     # Renewable energy
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_pct'],0.8,places=2)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh'],75140.37,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_pct_bau'],0.146395,places=2)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh_bau'],10193.12,places=1)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_pct'],0.8,places=3)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh'],75140.37,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_pct_bau'],0.146395,places=3)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh_bau'],10193.12,places=0)
                     # CO2 emissions - totals, from grid, from fuelburn, ER, $/tCO2 breakeven
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['preprocessed_BAU_year_one_emissions_tCO2'],40.54,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['preprocessed_BAU_lifecycle_emissions_tCO2'],717.86,places=1)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['preprocessed_BAU_year_one_emissions_tCO2'],40.54,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['preprocessed_BAU_lifecycle_emissions_tCO2'],717.86,places=0)
                     self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_reduction_CO2_pct'],0.660013,places=3)
                     self.assertAlmostEquals(d['outputs']['Scenario']['Site']['breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2'],0.0,places=3)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_tCO2'],12.79,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_tCO2_bau'],40.54,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_from_fuelburn_tCO2'],7.65,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_from_fuelburn_tCO2_bau'],0.0,places=1)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_tCO2'],12.79,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_tCO2_bau'],40.54,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_from_fuelburn_tCO2'],7.65,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_from_fuelburn_tCO2_bau'],0.0,places=0)
                     self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_cost_CO2'],7070.97,places=0)
                     self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_cost_CO2_bau'],21098.48,places=0)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_tCO2'],244.06,places=1)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_tCO2'],244.06,places=0)
                     self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_tCO2_bau'],717.86,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_from_fuelburn_tCO2'],152.97,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_from_fuelburn_tCO2_bau'],0.0,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_tCO2'],5.14,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_tCO2_bau'],40.54,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['lifecycle_emissions_tCO2'],91.09,places=1)
-                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['lifecycle_emissions_tCO2_bau'],717.86,places=1)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_from_fuelburn_tCO2'],152.97,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_from_fuelburn_tCO2_bau'],0.0,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_tCO2'],5.14,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_tCO2_bau'],40.54,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['lifecycle_emissions_tCO2'],91.09,places=0)
+                    self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['lifecycle_emissions_tCO2_bau'],717.86,places=0)
                                             
                                             
