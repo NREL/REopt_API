@@ -253,12 +253,12 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Storage']['size_kwh'],6.062,places=0)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Generator']['size_kw'],22.0,places=0)
                 # NPV
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Financial']['npv_us_dollars'],-101278.0,places=0)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Financial']['npv_us_dollars'],-101278.0,places=-1)
                 # Renewable energy
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_pct'],0.8,places=3)
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh'],75140.37,places=0)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh'],75140.37,places=-1)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_pct_bau'],0.146395,places=3)
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh_bau'],10193.12,places=0)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh_bau'],10193.12,places=-1)
                 # CO2 emissions - totals, from grid, from fuelburn, ER, $/tCO2 breakeven
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['preprocessed_BAU_year_one_emissions_tCO2'],40.54,places=0)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['preprocessed_BAU_lifecycle_emissions_tCO2'],717.86,places=0)
@@ -286,12 +286,12 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Storage']['size_kwh'],80.817,places=0)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Generator']['size_kw'],0.0,places=0)
                 # NPV
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Financial']['npv_us_dollars'],-198934.0,places=0)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Financial']['npv_us_dollars'],-198934.0,places=-1)
                 # Renewable energy
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_pct'],0.78984,places=3)
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh'],78984.01,places=0)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh'],78984.01,places=-1)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_pct_bau'],0.135426,places=3)
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh_bau'],13542.62,places=0)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh_bau'],13542.62,places=-1)
                 # CO2 emissions - totals, from grid, from fuelburn, ER, $/tCO2 breakeven
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['preprocessed_BAU_year_one_emissions_tCO2'],57.97,places=0)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['preprocessed_BAU_lifecycle_emissions_tCO2'],1026.65,places=0)
@@ -322,16 +322,16 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['SteamTurbine']['size_kw'],1411.081,places=0)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['NewBoiler']['size_mmbtu_per_hr'],25.088,places=0)
                 # NPV
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Financial']['npv_us_dollars'],10814436.0,places=0)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Financial']['npv_us_dollars'],10814436.0,places=-1)
                 # Renewable energy
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_pct'],0.707555,places=3)
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh'],6207700.8,places=0)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh'],6207700.8,places=-1)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_pct_bau'],0.001534,places=3)
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh_bau'],13454.22,places=0)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh_bau'],13454.22,places=-1)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_heat_pct'],0.499801,places=3)
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_heat_mmbtu'],29751251.13,places=0)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_heat_mmbtu'],29751251.13,places=-1)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_heat_pct_bau'],0.0,places=3)
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_heat_mmbtu_bau'],0.0,places=0)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_heat_mmbtu_bau'],0.0,places=-1)
                 # CO2 emissions - totals, from grid, from fuelburn, ER, $/tCO2 breakeven
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['preprocessed_BAU_year_one_emissions_tCO2'],5931.31,places=0)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['preprocessed_BAU_lifecycle_emissions_tCO2'],133158.25,places=0)
