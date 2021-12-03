@@ -1730,7 +1730,7 @@ nested_input_definitions = {
           "description": "True/False for if technology can curtail energy produced."
         },
         "useful_life_years": {
-          "type": "float", "min": 0.0, "max": max_years, "default": analysis_years,
+          "type": "float", "min": analysis_years, "max": analysis_years, "default": analysis_years,
           "description": "Number of years asset can be used for before replacement. Generator replacements are only considered in off-grid analyses."
         }
       },
