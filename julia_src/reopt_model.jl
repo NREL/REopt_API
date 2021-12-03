@@ -1181,7 +1181,7 @@ function add_re_elec_calcs(m,p)
         - sum(m[:dvProductionToStorage][b,t,ts] * (1-p.ChargeEfficiency[t,b]*p.DischargeEfficiency[b]) * sum(p.TechPercentRE[tst] for tst in p.TechCanSupplySteamTurbine) / length(p.TechCanSupplySteamTurbine) for t in p.SteamTurbineTechs, b in p.ElecStorage, ts in p.TimeStep) # minus battery storage losses from RE from steam turbine
         - (1-include_exported_re_elec_in_total)*sum(m[:dvProductionToGrid][t,u,ts]*sum(p.TechPercentRE[tst] for tst in p.TechCanSupplySteamTurbine) / length(p.TechCanSupplySteamTurbine) for t in p.SteamTurbineTechs,  u in p.ExportTiersByTech[t], ts in p.TimeStep))) # minus exported RE from steam turbine, if RE accounting method = 0.
 	end
-    # Note: Steam turbine battery losses term is only accurate if all techs that can supply ST have equal RE%, otherwise it is an approximation because the general equation is non linear. Curtailment from ST is not considered.
+    # Note: Steam turbine battery losses and exported RE terms are only accurate if all techs that can supply ST have equal RE%, otherwise it is an approximation because the general equation is non linear. Curtailment from ST is not considered.
     # Note: if battery ends up being allowed to discharge to grid, need to make sure only RE that is being consumed onsite is counted so battery doesn't become a back door for RE to grid.
 end
 
@@ -2280,7 +2280,6 @@ function add_steamturbine_results(m, p, r::Dict)
 	@expression(m, SteamTurbineThermalToLoad[ts in p.TimeStep],
 		sum(m[:dvThermalProduction][t,ts] for t in p.SteamTurbineTechs) - SteamTurbinetoHotTES[ts])
 	r["steamturbine_thermal_to_load_series"] = round.(value.(SteamTurbineThermalToLoad), digits=3)
-	r["steamturbine_percent_re"] = round(value(m[:SteamTurbinePercentRE]),digits=6)
 	nothing
 end
 
