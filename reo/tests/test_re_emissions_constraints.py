@@ -256,7 +256,7 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Financial']['npv_us_dollars'],-101278.0,places=-1)
                 # Renewable energy
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_pct'],0.8,places=3)
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh'],75140.37,places=-1)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh'],75140.37,places=-3)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_pct_bau'],0.146395,places=3)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh_bau'],10193.12,places=-1)
                 # CO2 emissions - totals, from grid, from fuelburn, ER, $/tCO2 breakeven
@@ -325,7 +325,7 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Financial']['npv_us_dollars'],10814436.0,places=-1)
                 # Renewable energy
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_pct'],0.707555,places=3)
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh'],6207700.8,places=-1)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh'],6207736.33,places=-2)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_pct_bau'],0.001534,places=3)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh_bau'],13454.22,places=-1)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_heat_pct'],0.499801,places=3)
