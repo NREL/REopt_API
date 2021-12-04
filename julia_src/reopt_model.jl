@@ -1505,6 +1505,8 @@ function reopt_run(m, p::Parameter)
 	add_export_expressions(m, p)
 	add_util_fixed_and_min_charges(m, p)
 
+	## Constraint set (15): renewable energy and emissions calculations and constraints
+	# Note: renewable heat calculations are currently added in post-optimization
 	add_re_elec_calcs(m,p)
 	add_re_elec_constraints(m,p)
 	add_yr1_emissions_calcs(m,p)
