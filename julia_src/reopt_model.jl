@@ -1365,22 +1365,6 @@ function add_yearone_expressions(m, p)
     m[:Year1EnergyCost] = m[:TotalEnergyChargesUtil] / p.pwf_e
     m[:Year1DemandCost] = m[:TotalDemandCharges] / p.pwf_e
     m[:Year1DemandTOUCost] = m[:DemandTOUCharges] / p.pwf_e
-    m[:Year1DemandFlatCost] = m[:DemandFlatCharges] / p.pwf_e
-    m[:Year1FixedCharges] = m[:TotalFixedCharges] / p.pwf_e
-    m[:Year1MinCharges] = m[:MinChargeAdder] / p.pwf_e
-	m[:Year1CHPStandbyCharges] = m[:TotalCHPStandbyCharges] / p.pwf_e
-    m[:Year1Bill] = m[:Year1EnergyCost] + m[:Year1DemandCost] + m[:Year1FixedCharges] + m[:Year1MinCharges]
-end
-
-
-
-function add_yearone_expressions(m, p)
-    m[:Year1UtilityEnergy] = @expression(m,  p.TimeStepScaling * sum(
-		m[:dvGridPurchase][u,ts] for ts in p.TimeStep, u in p.PricingTier)
-	)
-    m[:Year1EnergyCost] = m[:TotalEnergyChargesUtil] / p.pwf_e
-    m[:Year1DemandCost] = m[:TotalDemandCharges] / p.pwf_e
-    m[:Year1DemandTOUCost] = m[:DemandTOUCharges] / p.pwf_e
 	m[:Year1DemandFlatCost] = m[:DemandFlatCharges] / p.pwf_e
 	m[:Year1CPCost] = m[:TotalCPCharges] / p.pwf_e
     m[:Year1FixedCharges] = m[:TotalFixedCharges] / p.pwf_e
