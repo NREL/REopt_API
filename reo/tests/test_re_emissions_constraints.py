@@ -212,17 +212,6 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                     self.assertAlmostEquals(RE_heat_diff,0.0,places=1)
                                     
             ## Emissions tests
-            # BAU emissions:
-            # check pre-processed year 1 bau CO2 emissions calcs vs year 1 bau CO2 emissions output
-            year_one_emissions_bau_tCO2_out = d['outputs']['Scenario']['Site']['year_one_emissions_tCO2_bau']
-            year_one_emissions_bau_tCO2_in = d['outputs']['Scenario']['Site']['preprocessed_BAU_year_one_emissions_tCO2']
-            year_one_emissions_bau_preprocess_pct_diff = (year_one_emissions_bau_tCO2_out-year_one_emissions_bau_tCO2_in)/year_one_emissions_bau_tCO2_out
-            self.assertAlmostEquals(year_one_emissions_bau_preprocess_pct_diff,0.0,places=2) #(<0.5% error) 
-            # check pre-processed lifecycle bau CO2 emissions calcs vs lifecycle bau CO2 emissions output
-            lifecycle_emissions_bau_tCO2_out = d['outputs']['Scenario']['Site']['lifecycle_emissions_tCO2_bau']
-            lifecycle_emissions_bau_tCO2_in = d['outputs']['Scenario']['Site']['preprocessed_BAU_lifecycle_emissions_tCO2']
-            lifecycle_emissions_bau_preprocess_pct_diff = (lifecycle_emissions_bau_tCO2_out-lifecycle_emissions_bau_tCO2_in)/lifecycle_emissions_bau_tCO2_out
-            self.assertAlmostEquals(lifecycle_emissions_bau_preprocess_pct_diff,0.0,places=2) #(<0.5% error) 
             # Emissions reductions:
             ER_pct_out = d['outputs']['Scenario']['Site']['lifecycle_emissions_reduction_CO2_pct']
             if ER_target[i] is not None:
@@ -240,10 +229,9 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
             yr1_total_emissions_calced_tCO2 = yr1_fuel_emissions_tCO2_out + yr1_grid_emissions_tCO2_out 
             self.assertAlmostEquals(year_one_emissions_tCO2_out,yr1_total_emissions_calced_tCO2,places=-1)
             # Breakeven cost of emissions reductions 
-            # TODO: update test on breakeven cost of emissions reduction, pending finalizing that calculation with PWFs
             yr1_cost_ER_usd_per_tCO2_out = d['outputs']['Scenario']['Site']['breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2'] 
-            self.assertAlmostEquals(yr1_cost_ER_usd_per_tCO2_out,0.0,places=1)
-            
+            self.assertTrue(yr1_cost_ER_usd_per_tCO2_out>=0.0)
+
             ### test specific values:                         
             if i ==0: # Scenario 1
                 # system sizes
@@ -260,10 +248,8 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_pct_bau'],0.146395,places=3)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh_bau'],10193.12,places=-1)
                 # CO2 emissions - totals, from grid, from fuelburn, ER, $/tCO2 breakeven
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['preprocessed_BAU_year_one_emissions_tCO2'],40.54,places=0)
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['preprocessed_BAU_lifecycle_emissions_tCO2'],717.86,places=0)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_reduction_CO2_pct'],0.660013,places=3)
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2'],0.0,places=3)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2'],368.15,places=1)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_tCO2'],12.79,places=0)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_tCO2_bau'],40.54,places=0)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_from_fuelburn_tCO2'],7.65,places=0)
@@ -293,10 +279,8 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_pct_bau'],0.135426,places=3)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh_bau'],13542.62,places=-1)
                 # CO2 emissions - totals, from grid, from fuelburn, ER, $/tCO2 breakeven
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['preprocessed_BAU_year_one_emissions_tCO2'],57.97,places=0)
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['preprocessed_BAU_lifecycle_emissions_tCO2'],1026.65,places=0)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_reduction_CO2_pct'],0.8,places=3)
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2'],0.0,places=0)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2'],420.293,places=1)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_tCO2'],11.59,places=0)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_tCO2_bau'],57.97,places=0)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_from_fuelburn_tCO2'],0.0,places=0)
@@ -333,8 +317,6 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_heat_pct_bau'],0.0,places=3)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_heat_mmbtu_bau'],0.0,places=-1)
                 # CO2 emissions - totals, from grid, from fuelburn, ER, $/tCO2 breakeven
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['preprocessed_BAU_year_one_emissions_tCO2'],5931.31,places=0)
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['preprocessed_BAU_lifecycle_emissions_tCO2'],133158.25,places=0)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_reduction_CO2_pct'],1.282582,places=3)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2'],0.0,places=3)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_tCO2'],-1758.06,places=0)

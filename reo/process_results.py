@@ -523,14 +523,22 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             # BAU preprocessed - year one and lifecycle
             self.nested_outputs["Scenario"]["Site"]["preprocessed_BAU_year_one_emissions_tCO2"] = self.results_dict.get("preprocessed_BAU_year_one_emissions_tCO2")
             self.nested_outputs["Scenario"]["Site"]["preprocessed_BAU_lifecycle_emissions_tCO2"] = self.results_dict.get("preprocessed_BAU_lifecycle_emissions_tCO2")
-            # emissions reductions & breakeven cost of emissions reductions
+            # emissions reductions 
             self.nested_outputs["Scenario"]["Site"]["lifecycle_emissions_reduction_CO2_pct"] = self.results_dict.get("lifecycle_emissions_reduction_CO2_pct")
-            self.nested_outputs["Scenario"]["Site"]["breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2"] = 0
-            #self.nested_outputs["Scenario"]["Site"]["year_one_cost_of_emissions_reduction_us_dollars_per_ton_CO2"] = \
-            #    self.results_dict.get("npv")/self.results_dict.get("pwf_om")/ \
-            #    ((self.results_dict.get("year_one_emissions_lb_CO2")-self.results_dict.get("year_one_emissions_lb_CO2_bau"))/2000) \
-            #    if (self.results_dict.get("year_one_emissions_lb_CO2")-self.results_dict.get("year_one_emissions_lb_CO2_bau")) \
-            #    else 0.0
+            # breakeven cost of CO2 (for NPV = 0)
+            # first, remove climate costs from the output NPV, if they were previously included in LCC/NPV calcs:
+            npv_without_modeled_climate_costs = self.results_dict.get("npv")
+            if self.results_dict.get("include_climate_in_objective") == True:
+                npv_without_modeled_climate_costs -= (self.results_dict.get("lifecycle_emissions_cost_CO2_bau") - self.results_dict.get("lifecycle_emissions_cost_CO2"))
+            # we want to calculate the breakeven  year 1 cost of CO2 (usd per tonne) that would yield an npv of 0, holding all other inputs cost
+            # (back-calculating using the equation for m[:Lifecycle_Emissions_Cost_CO2] in "add_lifecycle_emissions_calcs" in reopt_model.jl)
+            if npv_without_modeled_climate_costs >= 0: # if the system is cost effective (NPV > 0) without considering any cost of CO2, no cost of carbon 
+                self.nested_outputs["Scenario"]["Site"]["breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2"] = 0
+            else:
+                self.nested_outputs["Scenario"]["Site"]["breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2"] = -1 * npv_without_modeled_climate_costs \
+                    / ( self.results_dict.get("pwfs_emissions_cost_CO2_grid") * (self.results_dict.get("year_one_emissions_from_elec_grid_tCO2_bau") - self.results_dict.get("year_one_emissions_from_elec_grid_tCO2")  ) \
+                    +  self.results_dict.get("pwfs_emissions_cost_CO2_onsite") * (self.results_dict.get("year_one_emissions_from_fuelburn_tCO2_bau") - self.results_dict.get("year_one_emissions_from_fuelburn_tCO2") ) ) 
+                
             ## Renewable energy
             # RE elec & heat (non-BAU)
             self.nested_outputs["Scenario"]["Site"]["year_one_renewable_electricity_pct"] = self.results_dict.get("annual_re_elec_percent")

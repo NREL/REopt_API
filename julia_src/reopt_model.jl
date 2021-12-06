@@ -1652,6 +1652,11 @@ function add_re_emissions_results(m, p, r::Dict)
 	# BAU preprocessed emissions (used for emissions reduction target calculations; output for testing purposes)
 	r["preprocessed_BAU_year_one_emissions_tCO2"] = round(value(p.BAUYr1Emissions_CO2)/p.Lbs_per_tonne,digits=2)
 	r["preprocessed_BAU_lifecycle_emissions_tCO2"] = round(value(m[:Lifecycle_Emissions_Lbs_CO2_BAU]/p.Lbs_per_tonne),digits=2) # no annual decrease for on-site fuel burn
+	# pass through for breakeven cost of CO2 calculation:
+	r["include_climate_in_objective"] = p.Include_climate_in_objective
+	r["pwfs_emissions_cost_CO2_grid"] = p.pwfs_emissions_cost["CO2_grid"]
+	r["pwfs_emissions_cost_CO2_onsite"] = p.pwfs_emissions_cost["CO2_onsite"]
+	r["lbs_per_tonne"] = p.Lbs_per_tonne
 
 	# Year 1 Emissions results at Site level
 	r["year_one_emissions_tCO2"] = round(value(m[:EmissionsYr1_Total_LbsCO2]/p.Lbs_per_tonne), digits=2)
