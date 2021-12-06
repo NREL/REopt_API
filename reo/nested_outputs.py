@@ -90,18 +90,6 @@ nested_output_definitions = {
             },
 
             "Site": {
-              "preprocessed_BAU_year_one_emissions_tCO2": {
-                  "type": "float",
-                  "description": ("Total equivalent pounds of carbon dioxide emitted in the first year in the BAU case. Preprocessed before optimization for use in emissions reductions scenarios,"
-                                  "Included as an output for testing purposes."),
-                  "units": "metric tons"
-                },
-              "preprocessed_BAU_lifecycle_emissions_tCO2": {
-                  "type": "int",
-                  "description": ("Total equivalent pounds of carbon dioxide emitted over the project lifecycle in the BAU case. Preprocessed before optimization for use in emissions reductions scenarios,"
-                                  "Included as an output for testing purposes."),
-                  "units": "metric tons"
-                },
               "lifecycle_emissions_reduction_CO2_pct": {
                   "type": float,
                   "description": "Percent reduction in total pounds of carbon dioxide emissions in the optimal case relative to the BAU case",

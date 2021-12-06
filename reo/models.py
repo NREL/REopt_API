@@ -154,8 +154,6 @@ class SiteModel(models.Model):
     include_exported_elec_emissions_in_total = models.BooleanField(null=True, blank=True)
 
     #outputs
-    preprocessed_BAU_year_one_emissions_tCO2 = models.FloatField(null=True, blank=True)
-    preprocessed_BAU_lifecycle_emissions_tCO2 = models.FloatField(null=True, blank=True)
     lifecycle_emissions_reduction_CO2_pct = models.FloatField(null=True, blank=True)
     breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2 = models.FloatField(null=True, blank=True)
     year_one_renewable_electricity_pct = models.FloatField(null=True, blank=True)
