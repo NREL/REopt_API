@@ -84,11 +84,13 @@ function get_ghpghx_results_for_reopt(r::ResultsStruct, p::InputsStruct)
     results_dict["yearly_heating_heatpump_electric_consumption_series_kw"] = zeros(8760)
     results_dict["yearly_cooling_heatpump_electric_consumption_series_kw"] = zeros(8760)
     results_dict["yearly_ghx_pump_electric_consumption_series_kw"] = zeros(8760)
+    results_dict["yearly_heat_pump_eft_series_f"] = zeros(8760)
     # Get average electric consumption
     for yr in 1:p.simulation_years
         results_dict["yearly_heating_heatpump_electric_consumption_series_kw"] += round.(r.P_WSHPh_Hourly[(yr-1)*8760+1:yr*8760] / p.simulation_years, digits=3)
         results_dict["yearly_cooling_heatpump_electric_consumption_series_kw"] += round.(r.P_WSHPc_Hourly[(yr-1)*8760+1:yr*8760] / p.simulation_years, digits=3)
         results_dict["yearly_ghx_pump_electric_consumption_series_kw"] += round.(r.P_GHXPump_Hourly[(yr-1)*8760+1:yr*8760] / p.simulation_years, digits=3)
+        results_dict["yearly_heat_pump_eft_series_f"] += round.((r.EWT[(yr-1)*8760+1:yr*8760] * 1.8 + 32.0) / p.simulation_years, digits=3)
     end
     results_dict["yearly_total_electric_consumption_series_kw"] = 
         results_dict["yearly_heating_heatpump_electric_consumption_series_kw"] + 
