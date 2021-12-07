@@ -1231,6 +1231,7 @@ function add_re_heat_calcs(m,p)
 	m[:AnnualREHeatMMBTU] = @expression(m,p.TimeStepScaling*
 		(sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvThermalProduction][t,ts] * p.TechPercentRE[t] for t in p.HeatingTechs, ts in p.TimeStep) #total RE heat generation (excl steam turbine, GHP)
 		- sum(m[:dvProductionToWaste][t,ts]* p.TechPercentRE[t] for t in p.CHPTechs, ts in p.TimeStep) #minus CHP waste heat
+		+ sum(m[:dvSupplementaryThermalProduction][t,ts] / p.CHPSupplementaryFireEfficiency * p.TechPercentRE[t] for t in p.CHPTechs, ts in p.TimeStep) # plus CHP supplemental firing thermal generation
 		- sum(m[:dvProductionToStorage][b,t,ts]*p.TechPercentRE[t]*(1-p.ChargeEfficiency[t,b]*p.DischargeEfficiency[b]) for t in p.HeatingTechs, b in p.HotTES, ts in p.TimeStep) ) #minus thermal storage losses
 		- AnnualRESteamToSteamTurbine # minus RE steam feeding steam turbine, adjusted by p.TimeStepScaling 
 		+ AnnualSteamTurbineREThermOut) #plus steam turbine RE generation, adjusted for storage losses, adjusted by p.TimeStepScaling (not included in first line because p.TechPercentRE for SteamTurbine is 0)
@@ -1239,6 +1240,7 @@ function add_re_heat_calcs(m,p)
 	m[:AnnualHeatMMBTU] = @expression(m,p.TimeStepScaling*
 		(sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvThermalProduction][t,ts] for t in p.HeatingTechs, ts in p.TimeStep) #total heat generation (need to see how GHP fits into this)
 		- sum(m[:dvProductionToWaste][t,ts] for t in p.CHPTechs, ts in p.TimeStep) #minus CHP waste heat
+		+ sum(m[:dvSupplementaryThermalProduction][t,ts] / p.CHPSupplementaryFireEfficiency for t in p.CHPTechs, ts in p.TimeStep) # plus CHP supplemental firing thermal generation
 		- sum(m[:dvProductionToStorage][b,t,ts]*(1-p.ChargeEfficiency[t,b]*p.DischargeEfficiency[b]) for t in p.HeatingTechs, b in p.HotTES, ts in p.TimeStep)) #minus thermal storage losses
 		- AnnualSteamToSteamTurbine) # minus steam going to SteamTurbine; already adjusted by p.TimeStepScaling
 	
