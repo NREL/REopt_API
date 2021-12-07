@@ -1677,7 +1677,6 @@ function add_re_emissions_results(m, p, r::Dict)
 	r["include_climate_in_objective"] = p.Include_climate_in_objective
 	r["pwfs_emissions_cost_CO2_grid"] = p.pwfs_emissions_cost["CO2_grid"]
 	r["pwfs_emissions_cost_CO2_onsite"] = p.pwfs_emissions_cost["CO2_onsite"]
-	r["lbs_per_tonne"] = p.Lbs_per_tonne
 
 	# Year 1 Emissions results at Site level
 	r["year_one_emissions_tCO2"] = round(value(m[:EmissionsYr1_Total_LbsCO2]/p.Lbs_per_tonne), digits=2)
