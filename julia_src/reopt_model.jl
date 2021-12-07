@@ -514,19 +514,27 @@ function add_storage_op_constraints(m, p)
 		<= p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts]
 	)
 	# Constraint (4f)-1: (Hot) Thermal production sent to storage or grid must be less than technology's rated production
+	# Constraint (4f)-1a: BoilerTechs
 	if !isempty(p.BoilerTechs)
 		if !isempty(p.SteamTurbineTechs)
-            @constraint(m, HeatingTechProductionFlowCon[b in p.HotTES, t in p.BoilerTechs, ts in p.TimeStep],
+            @constraint(m, BoilerTechProductionFlowCon[b in p.HotTES, t in p.BoilerTechs, ts in p.TimeStep],
                     m[:dvProductionToStorage][b,t,ts] + m[:dvThermalToSteamTurbine][t,ts]  <=
                     p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts]
                     )
         else
-            @constraint(m, HeatingTechProductionFlowCon[b in p.HotTES, t in p.BoilerTechs, ts in p.TimeStep],
+            @constraint(m, BoilerTechProductionFlowCon[b in p.HotTES, t in p.BoilerTechs, ts in p.TimeStep],
                     m[:dvProductionToStorage][b,t,ts]  <=
                     p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts]
                     )
         end
     end
+	# Constraint (4f)-1b: SteamTurbineTechs
+	if !isempty(p.SteamTurbineTechs)
+		@constraint(m, SteamTurbineTechProductionFlowCon[b in p.HotTES, t in p.SteamTurbineTechs, ts in p.TimeStep],
+			m[:dvProductionToStorage][b,t,ts] <= 
+			p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts]
+			)
+	end
 	# Constraint (4f)-2: (Cold) Thermal production sent to storage or grid must be less than technology's rated production
 	if !isempty(p.CoolingTechs)
 		@constraint(m, CoolingTechProductionFlowCon[b in p.ColdTES, t in p.CoolingTechs, ts in p.TimeStep],
@@ -1220,7 +1228,7 @@ function add_re_heat_calcs(m,p)
 			sum(p.TechPercentRE[tst] for tst in p.TechCanSupplySteamTurbine) / length(p.TechCanSupplySteamTurbine))
 		AnnualSteamTurbineREThermOut = @expression(m,p.TimeStepScaling *
 			p.STThermOutToThermInRatio * sum(m[:dvThermalToSteamTurbine][tst,ts]*p.TechPercentRE[tst] for ts in p.TimeStep, tst in p.TechCanSupplySteamTurbine) # plus steam turbine RE generation 
-			- sum(m[:dvProductionToStorage][b,t,ts] * SteamTurbinePercentREEstimate * (1-p.ChargeEfficiency[t,b]*p.DischargeEfficiency[b]) for t in p.SteamTurbineTechs, b in p.HotTES, ts in p.TimeStep)) # minus battery storage losses from RE heat from steam turbine
+			- sum(m[:dvProductionToStorage][b,t,ts] * SteamTurbinePercentREEstimate * (1-p.ChargeEfficiency[t,b]*p.DischargeEfficiency[b]) for t in p.SteamTurbineTechs, b in p.HotTES, ts in p.TimeStep)) # minus battery storage losses from RE heat from steam turbine; note does not account for p.DecayRate
 		AnnualRESteamToSteamTurbine = @expression(m,p.TimeStepScaling *
 			sum(m[:dvThermalToSteamTurbine][tst,ts]*p.TechPercentRE[tst] for ts in p.TimeStep, tst in p.TechCanSupplySteamTurbine)) # steam to steam turbine from other techs- need to subtract this out from the total 	
 		AnnualSteamToSteamTurbine = @expression(m,p.TimeStepScaling *
@@ -1232,7 +1240,7 @@ function add_re_heat_calcs(m,p)
 		(sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvThermalProduction][t,ts] * p.TechPercentRE[t] for t in p.HeatingTechs, ts in p.TimeStep) #total RE heat generation (excl steam turbine, GHP)
 		- sum(m[:dvProductionToWaste][t,ts]* p.TechPercentRE[t] for t in p.CHPTechs, ts in p.TimeStep) #minus CHP waste heat
 		+ sum(m[:dvSupplementaryThermalProduction][t,ts] / p.CHPSupplementaryFireEfficiency * p.TechPercentRE[t] for t in p.CHPTechs, ts in p.TimeStep) # plus CHP supplemental firing thermal generation
-		- sum(m[:dvProductionToStorage][b,t,ts]*p.TechPercentRE[t]*(1-p.ChargeEfficiency[t,b]*p.DischargeEfficiency[b]) for t in p.HeatingTechs, b in p.HotTES, ts in p.TimeStep) ) #minus thermal storage losses
+		- sum(m[:dvProductionToStorage][b,t,ts]*p.TechPercentRE[t]*(1-p.ChargeEfficiency[t,b]*p.DischargeEfficiency[b]) for t in p.HeatingTechs, b in p.HotTES, ts in p.TimeStep) ) #minus thermal storage losses, note does not account for p.DecayRate
 		- AnnualRESteamToSteamTurbine # minus RE steam feeding steam turbine, adjusted by p.TimeStepScaling 
 		+ AnnualSteamTurbineREThermOut) #plus steam turbine RE generation, adjusted for storage losses, adjusted by p.TimeStepScaling (not included in first line because p.TechPercentRE for SteamTurbine is 0)
 
