@@ -1236,7 +1236,7 @@ function add_re_heat_calcs(m,p)
 	end
 
 	# Renewable heat
-	m[:AnnualREHeatMMBTU] = @expression(m,p.TimeStepScaling*
+	m[:AnnualREHeatkWh] = @expression(m,p.TimeStepScaling*
 		(sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvThermalProduction][t,ts] * p.TechPercentRE[t] for t in p.HeatingTechs, ts in p.TimeStep) #total RE heat generation (excl steam turbine, GHP)
 		- sum(m[:dvProductionToWaste][t,ts]* p.TechPercentRE[t] for t in p.CHPTechs, ts in p.TimeStep) #minus CHP waste heat
 		+ sum(m[:dvSupplementaryThermalProduction][t,ts] * p.TechPercentRE[t] for t in p.CHPTechs, ts in p.TimeStep) # plus CHP supplemental firing thermal generation
@@ -1245,7 +1245,7 @@ function add_re_heat_calcs(m,p)
 		+ AnnualSteamTurbineREThermOut) #plus steam turbine RE generation, adjusted for storage losses, adjusted by p.TimeStepScaling (not included in first line because p.TechPercentRE for SteamTurbine is 0)
 
 	# Total heat - same equation without p.TechPercentRE factor
-	m[:AnnualHeatMMBTU] = @expression(m,p.TimeStepScaling*
+	m[:AnnualHeatkWh] = @expression(m,p.TimeStepScaling*
 		(sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvThermalProduction][t,ts] for t in p.HeatingTechs, ts in p.TimeStep) #total heat generation (need to see how GHP fits into this)
 		- sum(m[:dvProductionToWaste][t,ts] for t in p.CHPTechs, ts in p.TimeStep) #minus CHP waste heat
 		+ sum(m[:dvSupplementaryThermalProduction][t,ts] for t in p.CHPTechs, ts in p.TimeStep) # plus CHP supplemental firing thermal generation
@@ -1658,14 +1658,15 @@ function add_re_emissions_results(m, p, r::Dict)
 	r["annual_re_elec_percent"] = round(value(m[:AnnualREElecPercent]), digits=6)
 
 	# renewable thermal
-	if !isempty(p.HeatingTechs) # TODO: check p.HeatingTechs- does this include BoilerTechs?
+	if !isempty(p.HeatingTechs)
 		add_re_heat_calcs(m,p)
 		# TODO: add total RE calcs
-		r["annual_re_heat_mmbtu"] = round(value(m[:AnnualREHeatMMBTU]), digits=2)
-		r["annual_heat_mmbtu"] = round(value(m[:AnnualHeatMMBTU]), digits=2)
-		r["annual_re_heat_percent"] = round(value(m[:AnnualREHeatMMBTU])/value(m[:AnnualHeatMMBTU]),digits=6)
+		r["annual_re_heat_kwh"] = round(value(m[:AnnualREHeatkWh]), digits=2)
+		r["annual_heat_kwh"] = round(value(m[:AnnualHeatkWh]), digits=2)
+		r["annual_re_heat_percent"] = round(value(m[:AnnualREHeatkWh])/value(m[:AnnualHeatkWh]),digits=6)
 	else
-		r["annual_re_heat_mmbtu"] = 0.0
+		r["annual_re_heat_kwh"] = 0.0
+		r["annual_heat_kwh"] = 0.0
 		r["annual_re_heat_percent"] = 0.0
 	end
 
