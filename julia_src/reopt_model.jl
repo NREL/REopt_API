@@ -1204,9 +1204,9 @@ function add_re_elec_calcs(m,p)
 
 	m[:AnnualEleckWh] = @expression(m,p.TimeStepScaling*
 		(sum(p.ElecLoad[ts] for ts in p.TimeStep) # input elec load
-		+ sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP # electric chiller elec load
-		+ sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers )/ p.AbsorptionChillerElecCOP # absorportion chiller elec load
-		+ sum(p.GHPElectricConsumed[g,ts] * m[:binGHP][g] for g in p.GHPOptions))) # GHP elec load
+		+ sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers, ts in p.TimeStep )/ p.ElectricChillerCOP # electric chiller elec load
+		+ sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers, ts in p.TimeStep )/ p.AbsorptionChillerElecCOP # absorportion chiller elec load
+		+ sum(p.GHPElectricConsumed[g,ts] * m[:binGHP][g] for g in p.GHPOptions, ts in p.TimeStep))) # GHP elec load
 
 end
 
