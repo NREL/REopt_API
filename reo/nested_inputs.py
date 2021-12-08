@@ -468,7 +468,7 @@ nested_input_definitions = {
           "type": "float",
           "min": -1.0,
           "max": 1.0,
-          "default": 0.0176590,
+          "default": 0.040173,
           "description": "Annual nominal Social Cost of CO2 escalation rate (as a decimal)."
         },
         "nox_cost_escalation_pct": {
