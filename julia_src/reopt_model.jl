@@ -1662,8 +1662,7 @@ function add_re_emissions_results(m, p, r::Dict)
 
 	# renewable elec
 	r["annual_re_elec_kwh"] = round(value(m[:AnnualREEleckWh]), digits=2)
-	m[:AnnualREElecPercent] = @expression(m, m[:AnnualREEleckWh]/m[:AnnualEleckWh])
-	r["annual_re_elec_percent"] = round(value(m[:AnnualREElecPercent]), digits=6)
+	r["annual_re_elec_percent"] = round(value(m[:AnnualREEleckWh])/value(m[:AnnualEleckWh]), digits=6)
 
 	# renewable thermal
 	if !isempty(p.HeatingTechs)
