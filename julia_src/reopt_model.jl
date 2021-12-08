@@ -1200,15 +1200,23 @@ function add_re_elec_calcs(m,p)
 		+ SteamTurbineAnnualREEleckWh ) # SteamTurbine RE Elec, already adjusted for p.TimeStepScaling
 		
     # Note: if battery ends up being allowed to discharge to grid, need to make sure only RE that is being consumed onsite is counted so battery doesn't become a back door for RE to grid.
+	# Note: calculations currently do not ascribe any renewable energy attribute to grid-purchased electricity
+
+	m[:AnnualEleckWh] = @expression(m,p.TimeStepScaling*
+		(sum(p.ElecLoad[ts] for ts in p.TimeStep) # input elec load
+		+ sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP # electric chiller elec load
+		+ sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers )/ p.AbsorptionChillerElecCOP # absorportion chiller elec load
+		+ sum(p.GHPElectricConsumed[g,ts] * m[:binGHP][g] for g in p.GHPOptions))) # GHP elec load
+
 end
 
 #Renewable electricity constraints
 function add_re_elec_constraints(m,p)
 	if !isnothing(p.MinAnnualPercentREElec)
-		@constraint(m, MinREElecCon, m[:AnnualREEleckWh] >= p.MinAnnualPercentREElec*p.TimeStepScaling*(sum(p.ElecLoad[ts] for ts in p.TimeStep)))
+		@constraint(m, MinREElecCon, m[:AnnualREEleckWh] >= p.MinAnnualPercentREElec*m[:AnnualEleckWh])
 	end
 	if !isnothing(p.MaxAnnualPercentREElec)
-		@constraint(m, MaxREElecCon, m[:AnnualREEleckWh] <= p.MaxAnnualPercentREElec*p.TimeStepScaling*(sum(p.ElecLoad[ts] for ts in p.TimeStep)))
+		@constraint(m, MaxREElecCon, m[:AnnualREEleckWh] <= p.MaxAnnualPercentREElec*m[:AnnualEleckWh])
 	end
 end
 
@@ -1654,7 +1662,7 @@ function add_re_emissions_results(m, p, r::Dict)
 
 	# renewable elec
 	r["annual_re_elec_kwh"] = round(value(m[:AnnualREEleckWh]), digits=2)
-	m[:AnnualREElecPercent] = @expression(m, m[:AnnualREEleckWh]/(sum(p.ElecLoad[ts] for ts in p.TimeStep)))
+	m[:AnnualREElecPercent] = @expression(m, m[:AnnualREEleckWh]/m[:AnnualEleckWh])
 	r["annual_re_elec_percent"] = round(value(m[:AnnualREElecPercent]), digits=6)
 
 	# renewable thermal
