@@ -135,7 +135,7 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
             RE_elec_kwh_out = d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh'] or 0.0
             RE_elec_kwh_pct_diff = (annual_elec_load_kwh*RE_elec_pct_out - RE_elec_kwh_out)/RE_elec_kwh_out
             self.assertAlmostEquals(RE_elec_kwh_pct_diff,0.0,places=2)
-            # check RE elec export credit accounting
+            # check RE elec generation and export credit accounting
             PV_avg_annual_kwh = d['outputs']['Scenario']['Site']['PV']['average_yearly_energy_produced_kwh'] or 0.0
             PV_avg_annual_kwh_exports = d['outputs']['Scenario']['Site']['PV']['average_yearly_energy_exported_kwh'] or 0.0
             PV_year_one_kwh = d['outputs']['Scenario']['Site']['PV']['year_one_energy_produced_kwh'] or 0.0
@@ -172,7 +172,7 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                     + newboiler_fuel_pct_RE_input*newboiler_therm_to_steamturbine) \
                     / (chp_therm_to_steamturbine + newboiler_therm_to_steamturbine)
             else:
-                steamturbine_pct_RE_actual = 0.0
+                steamturbine_pct_RE_actual = 0.0 
             steamturbine_pct_RE_estimated = (newboiler_fuel_pct_RE_input + chp_fuel_pct_RE_input)/2 #steamturbine pct RE estimated as average of all techs that feed steam to steamturbine
             steamturbine_annual_elec_total_kwh = d['outputs']['Scenario']['Site']['SteamTurbine']['year_one_electric_energy_produced_kwh'] or 0.0
             steamturbine_annual_elec_to_batt_kwh = sum(d['outputs']['Scenario']['Site']['SteamTurbine']['year_one_to_battery_series_kw']) or 0.0
@@ -195,7 +195,7 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
             self.assertAlmostEquals(RE_elec_tot_kwh_pct_diff,0.0,places=1) #(<5% error) 
 
             ## RE Heat tests
-            if i ==2: # only test RE heat for 
+            if i ==2: # only test RE heat for scenarios with thermal techs
                 # Year 1 RE heat calcs - BAU case
                 RE_heat_bau_pct_out = d['outputs']['Scenario']['Site']['year_one_renewable_heat_pct_bau'] 
                 RE_heat_bau_mmbtu_out = d['outputs']['Scenario']['Site']['year_one_renewable_heat_mmbtu_bau']
@@ -210,7 +210,46 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                 if RE_heat_mmbtu_out != 0:
                     RE_heat_diff = (RE_heat_mmbtu_out - total_heat_mmbtu_out*RE_heat_pct_out)/RE_heat_mmbtu_out
                     self.assertAlmostEquals(RE_heat_diff,0.0,places=1)
-                                    
+                # check RE heat generation to load
+                boiler_tech_percent_re = d['inputs']['Scenario']['Site']['FuelTariff']['boiler_fuel_percent_RE']
+                newboiler_tech_percent_re = d['inputs']['Scenario']['Site']['FuelTariff']['newboiler_fuel_percent_RE']
+                chp_tech_percent_re = d['inputs']['Scenario']['Site']['FuelTariff']['chp_fuel_percent_RE']
+
+                boiler_thermal_to_load_mmbtu = sum(d['outputs']['Scenario']['Site']['Boiler']['year_one_thermal_to_load_series_mmbtu_per_hour']) # boiler thermal to load
+                newboiler_thermal_to_load_mmbtu = sum(d['outputs']['Scenario']['Site']['NewBoiler']['year_one_thermal_to_load_series_mmbtu_per_hour']) # newboiler thermal to load
+                chp_thermal_to_load_mmbtu = sum(d['outputs']['Scenario']['Site']['CHP']['year_one_thermal_to_load_series_mmbtu_per_hour']) # chp thermal to load
+                steamturbine_thermal_to_load_mmbtu = sum(d['outputs']['Scenario']['Site']['SteamTurbine']['year_one_thermal_to_load_series_mmbtu_per_hour']) # steamturbine thermal to load
+
+                boiler_thermal_RE_to_load_mmbtu = boiler_thermal_to_load_mmbtu * boiler_tech_percent_re # boiler RE thermal to load
+                newboiler_thermal_RE_to_load_mmbtu = newboiler_thermal_to_load_mmbtu * newboiler_tech_percent_re # newboiler RE thermal to load
+                chp_thermal_RE_to_load_mmbtu = chp_thermal_to_load_mmbtu * chp_tech_percent_re # chp RE thermal to load
+                steamturbine_thermal_RE_to_load_mmbtu = steamturbine_thermal_to_load_mmbtu * steamturbine_pct_RE_actual  # steamturbine RE thermal to load
+
+                boiler_thermal_to_HWTES_mmbtu = sum(d['outputs']['Scenario']['Site']['Boiler']['year_one_thermal_to_tes_series_mmbtu_per_hour']) # boiler to HW-TES * storage losses
+                newboiler_thermal_to_HWTES_mmbtu = sum(d['outputs']['Scenario']['Site']['NewBoiler']['year_one_thermal_to_tes_series_mmbtu_per_hour']) # newboiler to HW-TES * storage losses
+                chp_thermal_to_HWTES_mmbtu = sum(d['outputs']['Scenario']['Site']['CHP']['year_one_thermal_to_tes_series_mmbtu_per_hour']) # chp to HW-TES * storage losses
+                steamturbine_thermal_to_HWTES_mmbtu = sum(d['outputs']['Scenario']['Site']['SteamTurbine']['year_one_thermal_to_tes_series_mmbtu_per_hour']) # steamturbine to HW-TES * storage losses
+
+                HWTES_efficiency = d['inputs']['Scenario']['Site']['HotTES']['internal_efficiency_pct']
+                boiler_thermal_RE_to_HWTES_mmbtu_after_losses = boiler_thermal_to_HWTES_mmbtu*boiler_tech_percent_re*HWTES_efficiency # boiler to HW-TES * storage losses
+                newboiler_thermal_RE_to_HWTES_mmbtu_after_losses = newboiler_thermal_to_HWTES_mmbtu*newboiler_tech_percent_re*HWTES_efficiency # boiler to HW-TES * storage losses
+                chp_thermal_RE_to_HWTES_mmbtu_after_losses = chp_thermal_to_HWTES_mmbtu*chp_tech_percent_re*HWTES_efficiency # boiler to HW-TES * storage losses
+                steamturbine_thermal_RE_to_HWTES_mmbtu_after_losses = steamturbine_thermal_to_HWTES_mmbtu*steamturbine_pct_RE_actual*HWTES_efficiency # boiler to HW-TES * storage losses
+
+                HWTES_thermal_to_load = sum(d['outputs']['Scenario']['Site']['HotTES']['year_one_thermal_from_hot_tes_series_mmbtu_per_hr'])
+                HWTES_RE_thermal_after_losses = boiler_thermal_RE_to_HWTES_mmbtu_after_losses + newboiler_thermal_RE_to_HWTES_mmbtu_after_losses + chp_thermal_RE_to_HWTES_mmbtu_after_losses + steamturbine_thermal_RE_to_HWTES_mmbtu_after_losses
+
+                total_thermal_gen = boiler_thermal_to_load_mmbtu + newboiler_thermal_to_load_mmbtu + chp_thermal_to_load_mmbtu + steamturbine_thermal_to_load_mmbtu + HWTES_thermal_to_load# total thermal load
+                total_thermal_RE_gen = boiler_thermal_RE_to_load_mmbtu + newboiler_thermal_RE_to_load_mmbtu + chp_thermal_RE_to_load_mmbtu + steamturbine_thermal_RE_to_load_mmbtu + HWTES_RE_thermal_after_losses # total RE serving thermal load
+                thermal_RE_pct_calced = total_thermal_RE_gen/total_thermal_gen # percent thermal load served by RE
+
+                total_thermal_gen_calc_pct_error = (total_thermal_gen - total_heat_mmbtu_out) / total_heat_mmbtu_out
+                total_RE_thermal_gen_calc_pct_error = (total_thermal_RE_gen - RE_heat_mmbtu_out) / RE_heat_mmbtu_out
+                total_RE_thermal_pct_calc_pct_error = (thermal_RE_pct_calced - RE_heat_pct_out) / RE_heat_pct_out
+                self.assertAlmostEquals(total_thermal_gen_calc_pct_error,0.0,places=2)
+                self.assertAlmostEquals(total_RE_thermal_gen_calc_pct_error,0.0,places=2)
+                self.assertAlmostEquals(total_RE_thermal_pct_calc_pct_error,0.0,places=2)
+                
             ## Emissions tests
             # Emissions reductions:
             ER_pct_out = d['outputs']['Scenario']['Site']['lifecycle_emissions_reduction_CO2_pct']
@@ -303,17 +342,17 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Storage']['size_kwh'],0.0,places=0)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Generator']['size_kw'],0.0,places=0)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['CHP']['size_kw'],200.0,places=0)
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['SteamTurbine']['size_kw'],1411.081,places=0)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['SteamTurbine']['size_kw'],1411.081,places=-1)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['NewBoiler']['size_mmbtu_per_hr'],25.088,places=0)
                 # NPV
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Financial']['npv_us_dollars'],10814436.0,places=-1)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Financial']['npv_us_dollars'],10814436.0,places=-3)
                 # Renewable energy
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_pct'],0.707555,places=3)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh'],6207736.33,places=-2)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_pct_bau'],0.001534,places=3)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_electricity_kwh_bau'],13454.22,places=-1)
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_heat_pct'],0.499801,places=3)
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_heat_mmbtu'],29751251.13,places=-1)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_heat_pct'],0.499814,places=3)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_heat_mmbtu'],11967.228,places=-1)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_heat_pct_bau'],0.0,places=3)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_renewable_heat_mmbtu_bau'],0.0,places=-1)
                 # CO2 emissions - totals, from grid, from fuelburn, ER, $/tCO2 breakeven
