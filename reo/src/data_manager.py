@@ -1594,6 +1594,11 @@ class DataManager:
                 ghp_heating_thermal_load_served_kw.append(list(np.minimum(option.heating_thermal_load_served_kw, heating_thermal_load)))
                 ghp_cooling_thermal_load_served_kw.append(list(np.minimum(option.cooling_thermal_load_served_kw, cooling_load)))
                 ghp_electric_consumption_kw.append(option.electric_consumption_kw)
+                # GHP electric consumption is omitted from the electric load balance during an outage, and cooling load has been zeroed out above for outages
+                # So here we also have to zero out heating thermal production from GHP during an outage
+                if time_steps_without_grid not in [None, []]:
+                    for outage_time_step in time_steps_without_grid:
+                        ghp_heating_thermal_load_served_kw[outage_time_step-1] = 0.0
         else:
             ghp_heating_thermal_load_served_kw.append([])
             ghp_cooling_thermal_load_served_kw.append([])
