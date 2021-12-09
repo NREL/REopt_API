@@ -295,3 +295,40 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
             print("test_flex_tech API error message: {}".format(error_msg))
             print("Run uuid: {}".format(response['outputs']['Scenario']['run_uuid']))
             raise e
+    
+    def test_off_grid_international(self):
+        self.post['Scenario']['Site']['latitude'] = 5.6037
+        self.post['Scenario']['Site']['longitude'] = -0.1870
+        self.post['Scenario']['Site']['LoadProfile']["doe_reference_name"] = None
+        self.post['Scenario']['Site']['LoadProfile']["annual_kwh"] = None
+        self.post['Scenario']['Site']['LoadProfile']['loads_kw'] = [3.0]*8760
+        self.post['Scenario']['Site']['PV']['pv_prod_factor_series'] = [0, 0, 0, 0, 0, 0.008, 0.0619, 0.1611, 0.2365, 0.3455, 0.3836, 0.3961, 0.3724, 0.2767, 0.215, 0.1328, 0.0231, 0, 0, 0, 0, 0, 0, 0]*365
+
+        response = self.get_response(self.post)
+        messages = response['messages']
+        outputs = response['outputs']['Scenario']['Site']
+        inputs = response['inputs']['Scenario']['Site']
+
+        try:
+
+            # Check for no interaction with grid
+            self.assertEqual(sum(outputs["PV"]["year_one_to_grid_series_kw"]), 0.0,
+                             "PV sum(year_one_to_grid_series_kw) does not equal 0. Equals {}".format(sum(outputs["PV"]["year_one_to_grid_series_kw"])))
+            self.assertEqual(sum(outputs["Storage"]["year_one_to_grid_series_kw"]), 0.0,
+                             "Storage sum(year_one_to_grid_series_kw) does not equal 0. Equals {}".format(sum(outputs["Storage"]["year_one_to_grid_series_kw"])))
+            
+            # Check for no grid emissions 
+            self.assertEqual(outputs["ElectricTariff"]["lifecycle_emissions_tCO2"], 0.0,
+                             "Electric grid emissions (ElectricTariff.lifecycle_emissions_tCO2) do not equal 0. Equals {}".format(outputs["ElectricTariff"]["lifecycle_emissions_tCO2"]))
+
+            # Check emissions 
+            self.assertEqual(response['outputs']['Scenario']['Site']['lifecycle_emissions_cost_Health'], 0.0,
+                             "Unexpected ['Site']['lifecycle_emissions_cost_Health']")
+
+        except Exception as e:
+            error_msg = None
+            if hasattr(messages, "error"):
+                error_msg = messages.error
+            print("test_flex_tech API error message: {}".format(error_msg))
+            print("Run uuid: {}".format(response['outputs']['Scenario']['run_uuid']))
+            raise e
