@@ -265,3 +265,33 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
             print("test_flex_tech API error message: {}".format(error_msg))
             print("Run uuid: {}".format(response['outputs']['Scenario']['run_uuid']))
             raise e
+
+    def test_off_grid_no_generator(self):
+        self.post['Scenario']['Site']['Generator']['min_kw'] = 0.0
+        self.post['Scenario']['Site']['Generator']['max_kw'] = 0.0
+        
+
+        response = self.get_response(self.post)
+        messages = response['messages']
+        outputs = response['outputs']['Scenario']['Site']
+        inputs = response['inputs']['Scenario']['Site']
+
+        try:
+
+            # Check for no interaction with grid
+            self.assertEqual(sum(outputs["PV"]["year_one_to_grid_series_kw"]), 0.0,
+                             "PV sum(year_one_to_grid_series_kw) does not equal 0. Equals {}".format(sum(outputs["PV"]["year_one_to_grid_series_kw"])))
+            self.assertEqual(sum(outputs["Storage"]["year_one_to_grid_series_kw"]), 0.0,
+                             "Storage sum(year_one_to_grid_series_kw) does not equal 0. Equals {}".format(sum(outputs["Storage"]["year_one_to_grid_series_kw"])))
+            
+            # Check for no grid emissions 
+            self.assertEqual(outputs["ElectricTariff"]["lifecycle_emissions_tCO2"], 0.0,
+                             "Electric grid emissions (ElectricTariff.lifecycle_emissions_tCO2) do not equal 0. Equals {}".format(outputs["ElectricTariff"]["lifecycle_emissions_tCO2"]))      
+                      
+        except Exception as e:
+            error_msg = None
+            if hasattr(messages, "error"):
+                error_msg = messages.error
+            print("test_flex_tech API error message: {}".format(error_msg))
+            print("Run uuid: {}".format(response['outputs']['Scenario']['run_uuid']))
+            raise e
