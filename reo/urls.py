@@ -39,6 +39,8 @@ urlpatterns = [
     re_path(r'^job/(?P<run_uuid>[0-9a-f-]+)/results/?$', views.results),
     re_path(r'^simulated_load/?$', views.simulated_load),
     re_path(r'^emissions_profile/?$', views.emissions_profile),
+    re_path(r'^easiur_costs/?$', views.easiur_costs),
+    re_path(r'^fuel_emissions_rates/?$', views.fuel_emissions_rates),
     re_path('^generator_efficiency/?$', views.generator_efficiency),
     re_path(r'^chp_defaults/?$', views.chp_defaults),
     re_path(r'^loadprofile_chillerthermal_chiller_cop/?$', views.loadprofile_chillerthermal_chiller_cop),

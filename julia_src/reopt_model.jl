@@ -49,7 +49,7 @@ function add_continuous_variables(m, p)
 		MinChargeAdder >= 0   #to be removed
 		#UtilityMinChargeAdder[p.Month] >= 0   #X^{mc}_m: Annual utility minimum charge adder in month m [\$]
 		#CHP and Fuel-burning variables
-		dvFuelUsage[p.Tech, p.TimeStep] >= 0  # Fuel burned by technology t in time step h
+		dvFuelUsage[p.Tech, p.TimeStep] >= 0  # Fuel burned by technology t in time step h (units=kWh)
 		dvFuelBurnYIntercept[p.Tech, p.TimeStep] >= 0  #X^{fb}_{th}: Y-intercept of fuel burned by technology t in time step h
 		dvThermalProduction[p.Tech, p.TimeStep] >= 0  #X^{tp}_{th}: Thermal production by technology t in time step h
 		dvThermalProductionYIntercept[p.Tech, p.TimeStep] >= 0  #X^{tp}_{th}: Thermal production by technology t in time step h
@@ -467,7 +467,7 @@ function add_binTechIsOnInTS_constraints(m, p)
 		p.MinTurndown[t] * m[:dvSize][t] - m[:dvRatedProduction][t,ts] <= m[:NewMaxSize][t] * (1-m[:binTechIsOnInTS][t,ts])
 		)
 	else
-        # distinct grid outage model 
+        # distinct grid outage model
 		# Constraint (3b): Technologies that are turned on must not be turned down below the MinTurndown while grid connected
 		@constraint(m, MinTurndownCon[t in p.FuelBurningTechs, ts in p.TimeStepsWithGrid],
 		p.MinTurndown[t] * m[:dvSize][t] - m[:dvRatedProduction][t,ts] <= m[:NewMaxSize][t] * (1-m[:binTechIsOnInTS][t,ts])
@@ -509,24 +509,32 @@ function add_storage_op_constraints(m, p)
 	end
 	# Constraint (4e): Electrical production sent to storage or grid must be less than technology's rated production - no grid
 	@constraint(m, ElecTechProductionFlowNoGridCon[t in p.ElectricTechs, ts in p.TimeStepsWithoutGrid],
-		sum(m[:dvProductionToStorage][b,t,ts] for b in p.ElecStorage) 
-		+ m[:dvProductionToCurtail][t, ts]  
+		sum(m[:dvProductionToStorage][b,t,ts] for b in p.ElecStorage)
+		+ m[:dvProductionToCurtail][t, ts]
 		<= p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts]
 	)
 	# Constraint (4f)-1: (Hot) Thermal production sent to storage or grid must be less than technology's rated production
+	# Constraint (4f)-1a: BoilerTechs
 	if !isempty(p.BoilerTechs)
 		if !isempty(p.SteamTurbineTechs)
-            @constraint(m, HeatingTechProductionFlowCon[b in p.HotTES, t in p.BoilerTechs, ts in p.TimeStep],
+            @constraint(m, BoilerTechProductionFlowCon[b in p.HotTES, t in p.BoilerTechs, ts in p.TimeStep],
                     m[:dvProductionToStorage][b,t,ts] + m[:dvThermalToSteamTurbine][t,ts]  <=
                     p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts]
                     )
         else
-            @constraint(m, HeatingTechProductionFlowCon[b in p.HotTES, t in p.BoilerTechs, ts in p.TimeStep],
+            @constraint(m, BoilerTechProductionFlowCon[b in p.HotTES, t in p.BoilerTechs, ts in p.TimeStep],
                     m[:dvProductionToStorage][b,t,ts]  <=
                     p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts]
                     )
         end
     end
+	# Constraint (4f)-1b: SteamTurbineTechs
+	if !isempty(p.SteamTurbineTechs)
+		@constraint(m, SteamTurbineTechProductionFlowCon[b in p.HotTES, t in p.SteamTurbineTechs, ts in p.TimeStep],
+			m[:dvProductionToStorage][b,t,ts] <= 
+			p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts]
+			)
+	end
 	# Constraint (4f)-2: (Cold) Thermal production sent to storage or grid must be less than technology's rated production
 	if !isempty(p.CoolingTechs)
 		@constraint(m, CoolingTechProductionFlowCon[b in p.ColdTES, t in p.CoolingTechs, ts in p.TimeStep],
@@ -826,14 +834,14 @@ function add_load_balance_constraints(m, p)
 		(p.ElecLoad[ts] * m[:dvOffgridLoadServedFraction][ts])
 	)
 
-	if !p.OffGridFlag # fix dvOffgridLoadServedFraction to 100% for "on-grid" analyses 
+	if !p.OffGridFlag # fix dvOffgridLoadServedFraction to 100% for "on-grid" analyses
 		for ts in p.TimeStepsWithoutGrid
 			fix(m[:dvOffgridLoadServedFraction][ts], 1.0, force=true)
 		end
 	else
 		@constraint(m, sum(m[:dvOffgridLoadServedFraction][ts] * p.ElecLoad[ts] for ts in p.TimeStepsWithoutGrid) >=
 			sum(p.ElecLoad) * p.MinLoadMetPct
-			# p.AnnualElecLoadkWh * p.MinLoadMetPct 
+			# p.AnnualElecLoadkWh * p.MinLoadMetPct
 		)
 	end
 end
@@ -849,7 +857,7 @@ function add_spinning_reserve_constraints(m, p)
 	)
 	# 2. Total SR required by TechsRequiringSR & Load
 	m[:SRrequired] = @expression(m, [ts in p.TimeStepsWithoutGrid],
-		 sum(m[:ProductionToLoadSR][t,ts] * p.SRrequiredPctTechs[t] for t in p.TechsRequiringSR) 
+		 sum(m[:ProductionToLoadSR][t,ts] * p.SRrequiredPctTechs[t] for t in p.TechsRequiringSR)
          + p.ElecLoad[ts] * m[:dvOffgridLoadServedFraction][ts] * p.SRrequiredPctLoad
 	)
 	# 3. Spinning reserve provided - battery
@@ -869,7 +877,7 @@ function add_spinning_reserve_constraints(m, p)
 		m[:dvSR][t,ts] <= m[:binTechIsOnInTS][t,ts] * m[:NewMaxSize][t]
 	)
 	m[:SRprovided] = @expression(m, [ts in p.TimeStepsWithoutGrid],
-		sum(m[:dvSR][t,ts] for t in p.TechsProvidingSR) 
+		sum(m[:dvSR][t,ts] for t in p.TechsProvidingSR)
         + sum(m[:dvSRbatt][b,ts] for b in p.ElecStorage)
 	)
 	# 6. SR provided must be greater than SR required
@@ -1145,8 +1153,237 @@ function add_cost_function(m, p)
     #= Note: 0.9999*m[:MinChargeAdder] in Obj b/c when m[:TotalMinCharge] > (TotalEnergyCharges + m[:TotalDemandCharges] + TotalExportBenefit + m[:TotalFixedCharges])
 		it is arbitrary where the min charge ends up (eg. could be in m[:TotalDemandCharges] or m[:MinChargeAdder]).
 		0.0001*m[:MinChargeAdder] is added back into LCC when writing to results.  =#
+
+	# Add climate costs
+	if p.Include_climate_in_objective # if user selects to include climate in objective
+		add_to_expression!(m[:REcosts], m[:Lifecycle_Emissions_Cost_CO2]) 
+	end
+
+	# Add Health costs (NOx, SO2, PM2.5)
+	if p.Include_health_in_objective
+		add_to_expression!(m[:REcosts], m[:Lifecycle_Emissions_Cost_Health])
+	end
+
 end
 
+# Renewable electricity calculation
+function add_re_elec_calcs(m,p)
+	
+	# User-selected RE electricity accounting methodology:
+	if p.IncludeExportedREElecinTotal
+		include_exported_re_elec_in_total = 1
+	else
+		include_exported_re_elec_in_total = 0
+	end
+
+	# Steam turbine RE elec calculations 
+	if isempty(p.SteamTurbineTechs)
+		SteamTurbineAnnualREEleckWh = 0 
+    else  
+		# Note: SteamTurbine's input p.TechPercentRE = 0 because it is actually a decision variable dependent on fraction of steam generated by RE fuel
+		SteamTurbinePercentREEstimate = @expression(m,
+			sum(p.TechPercentRE[tst] for tst in p.TechCanSupplySteamTurbine) / length(p.TechCanSupplySteamTurbine))
+		# Note: Steam turbine battery losses, curtailment, and exported RE terms are only accurate if all techs that can supply ST 
+		#		have equal RE%, otherwise it is an approximation because the general equation is non linear. 
+		SteamTurbineAnnualREEleckWh = @expression(m,p.TimeStepScaling *
+			p.STElecOutToThermInRatio * sum(m[:dvThermalToSteamTurbine][tst,ts]*p.TechPercentRE[tst] for ts in p.TimeStep, tst in p.TechCanSupplySteamTurbine) # plus steam turbine RE generation 
+			- sum(m[:dvProductionToStorage][b,t,ts] * SteamTurbinePercentREEstimate * (1-p.ChargeEfficiency[t,b]*p.DischargeEfficiency[b]) for t in p.SteamTurbineTechs, b in p.ElecStorage, ts in p.TimeStep) # minus battery storage losses from RE from steam turbine
+			- sum(m[:dvProductionToCurtail][t,ts] * SteamTurbinePercentREEstimate for t in p.SteamTurbineTechs, ts in p.TimeStep) # minus curtailment.
+			- (1-include_exported_re_elec_in_total)*sum(m[:dvProductionToGrid][t,u,ts]*SteamTurbinePercentREEstimate for t in p.SteamTurbineTechs,  u in p.ExportTiersByTech[t], ts in p.TimeStep)) # minus exported RE from steam turbine, if RE accounting method = 0.
+	end
+
+	m[:AnnualREEleckWh] = @expression(m,p.TimeStepScaling*
+        (sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] * p.TechPercentRE[t] for t in p.ElectricTechs, ts in p.TimeStep) #total RE elec generation, excl steam turbine
+        - sum(m[:dvProductionToStorage][b,t,ts]*p.TechPercentRE[t]*(1-p.ChargeEfficiency[t,b]*p.DischargeEfficiency[b]) for t in p.ElectricTechs, b in p.ElecStorage, ts in p.TimeStep) #minus battery efficiency losses
+        - sum(m[:dvProductionToCurtail][t,ts]*p.TechPercentRE[t] for t in p.ElectricTechs, ts in p.TimeStep) # minus curtailment.
+        - (1-include_exported_re_elec_in_total)*sum(m[:dvProductionToGrid][t,u,ts]*p.TechPercentRE[t] for t in p.ElectricTechs,  u in p.ExportTiersByTech[t], ts in p.TimeStep)) # minus exported RE, if RE accounting method = 0.
+		+ SteamTurbineAnnualREEleckWh ) # SteamTurbine RE Elec, already adjusted for p.TimeStepScaling
+		
+    # Note: if battery ends up being allowed to discharge to grid, need to make sure only RE that is being consumed onsite is counted so battery doesn't become a back door for RE to grid.
+	# Note: calculations currently do not ascribe any renewable energy attribute to grid-purchased electricity
+
+	m[:AnnualEleckWh] = @expression(m,p.TimeStepScaling*
+		(sum(p.ElecLoad[ts] for ts in p.TimeStep) # input elec load
+		+ sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers, ts in p.TimeStep )/ p.ElectricChillerCOP # electric chiller elec load
+		+ sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers, ts in p.TimeStep )/ p.AbsorptionChillerElecCOP # absorportion chiller elec load
+		+ sum(p.GHPElectricConsumed[g,ts] * m[:binGHP][g] for g in p.GHPOptions, ts in p.TimeStep))) # GHP elec load
+
+end
+
+#Renewable electricity constraints
+function add_re_elec_constraints(m,p)
+	if !isnothing(p.MinAnnualPercentREElec)
+		@constraint(m, MinREElecCon, m[:AnnualREEleckWh] >= p.MinAnnualPercentREElec*m[:AnnualEleckWh])
+	end
+	if !isnothing(p.MaxAnnualPercentREElec)
+		@constraint(m, MaxREElecCon, m[:AnnualREEleckWh] <= p.MaxAnnualPercentREElec*m[:AnnualEleckWh])
+	end
+end
+
+#Renewable heat calculations
+function add_re_heat_calcs(m,p)
+
+	# Steam turbine RE heat calculations 
+	if isempty(p.SteamTurbineTechs)
+		AnnualSteamTurbineREThermOut = 0 
+		AnnualRESteamToSteamTurbine = 0
+		AnnualSteamToSteamTurbine = 0
+    else  
+		# Note: SteamTurbine's input p.TechPercentRE = 0 because it is actually a decision variable dependent on fraction of steam generated by RE fuel
+		# SteamTurbine RE battery losses, RE curtailment, and exported RE terms are based on an approximation of percent RE because the general equation is nonlinear
+		# Thus, SteamTurbine %RE is only accurate if all techs that can supply ST have equal %RE fuel or provide equal quantities of steam to the steam turbine
+		SteamTurbinePercentREEstimate = @expression(m,
+			sum(p.TechPercentRE[tst] for tst in p.TechCanSupplySteamTurbine) / length(p.TechCanSupplySteamTurbine))
+		AnnualSteamTurbineREThermOut = @expression(m,p.TimeStepScaling *
+			p.STThermOutToThermInRatio * sum(m[:dvThermalToSteamTurbine][tst,ts]*p.TechPercentRE[tst] for ts in p.TimeStep, tst in p.TechCanSupplySteamTurbine) # plus steam turbine RE generation 
+			- sum(m[:dvProductionToStorage][b,t,ts] * SteamTurbinePercentREEstimate * (1-p.ChargeEfficiency[t,b]*p.DischargeEfficiency[b]) for t in p.SteamTurbineTechs, b in p.HotTES, ts in p.TimeStep)) # minus battery storage losses from RE heat from steam turbine; note does not account for p.DecayRate
+		AnnualRESteamToSteamTurbine = @expression(m,p.TimeStepScaling *
+			sum(m[:dvThermalToSteamTurbine][tst,ts]*p.TechPercentRE[tst] for ts in p.TimeStep, tst in p.TechCanSupplySteamTurbine)) # steam to steam turbine from other techs- need to subtract this out from the total 	
+		AnnualSteamToSteamTurbine = @expression(m,p.TimeStepScaling *
+			sum(m[:dvThermalToSteamTurbine][tst,ts] for ts in p.TimeStep, tst in p.TechCanSupplySteamTurbine)) # steam to steam turbine from other techs- need to subtract this out from the total 	
+	end
+
+	# Renewable heat
+	m[:AnnualREHeatkWh] = @expression(m,p.TimeStepScaling*
+		(sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvThermalProduction][t,ts] * p.TechPercentRE[t] for t in p.HeatingTechs, ts in p.TimeStep) #total RE heat generation (excl steam turbine, GHP)
+		- sum(m[:dvProductionToWaste][t,ts]* p.TechPercentRE[t] for t in p.CHPTechs, ts in p.TimeStep) #minus CHP waste heat
+		+ sum(m[:dvSupplementaryThermalProduction][t,ts] * p.TechPercentRE[t] for t in p.CHPTechs, ts in p.TimeStep) # plus CHP supplemental firing thermal generation
+		- sum(m[:dvProductionToStorage][b,t,ts]*p.TechPercentRE[t]*(1-p.ChargeEfficiency[t,b]*p.DischargeEfficiency[b]) for t in p.HeatingTechs, b in p.HotTES, ts in p.TimeStep) ) #minus thermal storage losses, note does not account for p.DecayRate
+		- AnnualRESteamToSteamTurbine # minus RE steam feeding steam turbine, adjusted by p.TimeStepScaling 
+		+ AnnualSteamTurbineREThermOut) #plus steam turbine RE generation, adjusted for storage losses, adjusted by p.TimeStepScaling (not included in first line because p.TechPercentRE for SteamTurbine is 0)
+
+	# Total heat - same equation without p.TechPercentRE factor
+	m[:AnnualHeatkWh] = @expression(m,p.TimeStepScaling*
+		(sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvThermalProduction][t,ts] for t in p.HeatingTechs, ts in p.TimeStep) #total heat generation (need to see how GHP fits into this)
+		- sum(m[:dvProductionToWaste][t,ts] for t in p.CHPTechs, ts in p.TimeStep) #minus CHP waste heat
+		+ sum(m[:dvSupplementaryThermalProduction][t,ts] for t in p.CHPTechs, ts in p.TimeStep) # plus CHP supplemental firing thermal generation
+		- sum(m[:dvProductionToStorage][b,t,ts]*(1-p.ChargeEfficiency[t,b]*p.DischargeEfficiency[b]) for t in p.HeatingTechs, b in p.HotTES, ts in p.TimeStep)) #minus thermal storage losses
+		- AnnualSteamToSteamTurbine) # minus steam going to SteamTurbine; already adjusted by p.TimeStepScaling
+	
+end
+ 
+### Year 1 Emissions Calculations
+function add_yr1_emissions_calcs(m,p)
+	# Components:
+	yr1_emissions_from_fuelburningtechs_lbs_CO2, yr1_emissions_from_fuelburningtechs_lbs_NOx, yr1_emissions_from_fuelburningtechs_lbs_SO2, yr1_emissions_from_fuelburningtechs_lbs_PM25 = calc_yr1_emissions_from_onsite_fuel(m,p; tech_array=p.FuelBurningTechs)
+	yr1_emissions_from_boilertechs_lbs_CO2, yr1_emissions_from_boilertechs_lbs_NOx, yr1_emissions_from_boilertechs_lbs_SO2, yr1_emissions_from_boilertechs_lbs_PM25 = calc_yr1_emissions_from_onsite_fuel(m,p; tech_array=p.BoilerTechs)
+	m[:yr1_emissions_onsite_fuel_lbs_CO2] = yr1_emissions_from_fuelburningtechs_lbs_CO2 + yr1_emissions_from_boilertechs_lbs_CO2
+	m[:yr1_emissions_onsite_fuel_lbs_NOx] = yr1_emissions_from_fuelburningtechs_lbs_NOx + yr1_emissions_from_boilertechs_lbs_NOx
+	m[:yr1_emissions_onsite_fuel_lbs_SO2] = yr1_emissions_from_fuelburningtechs_lbs_SO2 + yr1_emissions_from_boilertechs_lbs_SO2
+	m[:yr1_emissions_onsite_fuel_lbs_PM25] = yr1_emissions_from_fuelburningtechs_lbs_PM25 + yr1_emissions_from_boilertechs_lbs_PM25
+
+	m[:yr1_emissions_from_elec_grid_lbs_CO2], m[:yr1_emissions_from_elec_grid_lbs_NOx], m[:yr1_emissions_from_elec_grid_lbs_SO2], m[:yr1_emissions_from_elec_grid_lbs_PM25]  = calc_yr1_emissions_from_elec_grid_purchase(m,p)
+	m[:yr1_emissions_offset_from_elec_exports_lbs_CO2], m[:yr1_emissions_offset_from_elec_exports_lbs_NOx], m[:yr1_emissions_offset_from_elec_exports_lbs_SO2], m[:yr1_emissions_offset_from_elec_exports_lbs_PM25] = calc_yr1_emissions_offset_from_elec_exports(m,p;tech_array=p.ElectricTechs)
+
+	# Total:
+	if p.IncludeExportedElecEmissionsInTotal
+		include_exported_elec_emissions_in_total = 1
+	else
+		include_exported_elec_emissions_in_total = 0
+	end
+	#"net" indicates net of what is getting counted, based on user selection of whether or not to include
+	m[:yr1_emissions_from_elec_grid_net_if_selected_lbs_CO2] = m[:yr1_emissions_from_elec_grid_lbs_CO2] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_lbs_CO2]
+	m[:yr1_emissions_from_elec_grid_net_if_selected_lbs_NOx] = m[:yr1_emissions_from_elec_grid_lbs_NOx] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_lbs_NOx]
+	m[:yr1_emissions_from_elec_grid_net_if_selected_lbs_SO2] = m[:yr1_emissions_from_elec_grid_lbs_SO2] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_lbs_SO2]
+	m[:yr1_emissions_from_elec_grid_net_if_selected_lbs_PM25] = m[:yr1_emissions_from_elec_grid_lbs_PM25] - include_exported_elec_emissions_in_total*m[:yr1_emissions_offset_from_elec_exports_lbs_PM25]
+
+	m[:EmissionsYr1_Total_LbsCO2] = m[:yr1_emissions_onsite_fuel_lbs_CO2] + m[:yr1_emissions_from_elec_grid_net_if_selected_lbs_CO2]
+	m[:EmissionsYr1_Total_LbsNOx] = m[:yr1_emissions_onsite_fuel_lbs_NOx] + m[:yr1_emissions_from_elec_grid_net_if_selected_lbs_NOx]
+	m[:EmissionsYr1_Total_LbsSO2] = m[:yr1_emissions_onsite_fuel_lbs_SO2] + m[:yr1_emissions_from_elec_grid_net_if_selected_lbs_SO2]
+	m[:EmissionsYr1_Total_LbsPM25] = m[:yr1_emissions_onsite_fuel_lbs_PM25] + m[:yr1_emissions_from_elec_grid_net_if_selected_lbs_PM25]
+
+end
+
+function calc_yr1_emissions_from_onsite_fuel(m,p; tech_array=p.FuelBurningTechs) # also run this with p.BoilerTechs
+	yr1_emissions_onsite_fuel_lbs_CO2 = @expression(m,p.TimeStepScaling*
+		sum(m[:dvFuelUsage][t,ts]*p.TechEmissionsFactors_CO2[t] for t in tech_array, ts in p.TimeStep))
+
+	yr1_emissions_onsite_fuel_lbs_NOx = @expression(m,p.TimeStepScaling*
+		sum(m[:dvFuelUsage][t,ts]*p.TechEmissionsFactors_NOx[t] for t in tech_array, ts in p.TimeStep))
+
+	yr1_emissions_onsite_fuel_lbs_SO2 = @expression(m,p.TimeStepScaling*
+		sum(m[:dvFuelUsage][t,ts]*p.TechEmissionsFactors_SO2[t] for t in tech_array, ts in p.TimeStep))
+
+	yr1_emissions_onsite_fuel_lbs_PM25 = @expression(m,p.TimeStepScaling*
+		sum(m[:dvFuelUsage][t,ts]*p.TechEmissionsFactors_PM25[t] for t in tech_array, ts in p.TimeStep))
+
+	return yr1_emissions_onsite_fuel_lbs_CO2, yr1_emissions_onsite_fuel_lbs_NOx, yr1_emissions_onsite_fuel_lbs_SO2, yr1_emissions_onsite_fuel_lbs_PM25
+end
+function calc_yr1_emissions_from_elec_grid_purchase(m,p)
+	yr1_emissions_from_elec_grid_lbs_CO2 = @expression(m,p.TimeStepScaling*
+		sum(m[:dvGridPurchase][u,ts]*p.GridEmissionsFactor_CO2[ts] for ts in p.TimeStep, u in p.PricingTier))
+
+	yr1_emissions_from_elec_grid_lbs_NOx = @expression(m,p.TimeStepScaling*
+		sum(m[:dvGridPurchase][u,ts]*p.GridEmissionsFactor_NOx[ts] for ts in p.TimeStep, u in p.PricingTier))
+
+	yr1_emissions_from_elec_grid_lbs_SO2 = @expression(m,p.TimeStepScaling*
+		sum(m[:dvGridPurchase][u,ts]*p.GridEmissionsFactor_SO2[ts] for ts in p.TimeStep, u in p.PricingTier))
+
+	yr1_emissions_from_elec_grid_lbs_PM25 = @expression(m,p.TimeStepScaling*
+		sum(m[:dvGridPurchase][u,ts]*p.GridEmissionsFactor_PM25[ts] for ts in p.TimeStep, u in p.PricingTier))
+
+	return yr1_emissions_from_elec_grid_lbs_CO2, yr1_emissions_from_elec_grid_lbs_NOx, yr1_emissions_from_elec_grid_lbs_SO2, yr1_emissions_from_elec_grid_lbs_PM25
+end
+function calc_yr1_emissions_offset_from_elec_exports(m,p; tech_array=p.ElectricTechs)
+	yr1_emissions_offset_from_elec_exports_lbs_CO2 = @expression(m,p.TimeStepScaling*
+		sum(m[:dvProductionToGrid][t,u,ts]  * (p.GridEmissionsFactor_CO2[ts])
+		for t in tech_array, ts in p.TimeStep, u in p.ExportTiersByTech[t]))
+		# if battery ends up being able to discharge to grid, need to incorporate here- might require complex tracking of what's charging battery
+
+	yr1_emissions_offset_from_elec_exports_lbs_NOx = @expression(m,p.TimeStepScaling*
+		sum(m[:dvProductionToGrid][t,u,ts]  * (p.GridEmissionsFactor_NOx[ts])
+		for t in tech_array, ts in p.TimeStep, u in p.ExportTiersByTech[t]))
+
+	yr1_emissions_offset_from_elec_exports_lbs_SO2 = @expression(m,p.TimeStepScaling*
+		sum(m[:dvProductionToGrid][t,u,ts]  * (p.GridEmissionsFactor_SO2[ts])
+		for t in tech_array, ts in p.TimeStep, u in p.ExportTiersByTech[t]))
+
+	yr1_emissions_offset_from_elec_exports_lbs_PM25 = @expression(m,p.TimeStepScaling*
+		sum(m[:dvProductionToGrid][t,u,ts]  * (p.GridEmissionsFactor_PM25[ts])
+		for t in tech_array, ts in p.TimeStep, u in p.ExportTiersByTech[t]))
+
+	return yr1_emissions_offset_from_elec_exports_lbs_CO2, yr1_emissions_offset_from_elec_exports_lbs_NOx, yr1_emissions_offset_from_elec_exports_lbs_SO2, yr1_emissions_offset_from_elec_exports_lbs_PM25
+end
+
+### Lifecycle emissions calculations
+function add_lifecycle_emissions_calcs(m,p)
+
+	# BAU Lifecycle lbs CO2
+	m[:Lifecycle_Emissions_Lbs_CO2_BAU] = p.BAUYr1Emissions_grid_CO2 * p.pwfs_grid_emissions_lbs["CO2"] + p.analysis_years * (p.BAUYr1Emissions_CO2 - p.BAUYr1Emissions_grid_CO2) # no annual decrease for on-site fuel burn
+
+	# Lifecycle lbs CO2
+	m[:Lifecycle_Emissions_Lbs_CO2_grid_net_if_selected] = p.pwfs_grid_emissions_lbs["CO2"] * m[:yr1_emissions_from_elec_grid_net_if_selected_lbs_CO2]
+	m[:Lifecycle_Emissions_Lbs_NOx_grid_net_if_selected] = p.pwfs_grid_emissions_lbs["NOx"] * m[:yr1_emissions_from_elec_grid_net_if_selected_lbs_NOx]
+	m[:Lifecycle_Emissions_Lbs_SO2_grid_net_if_selected] = p.pwfs_grid_emissions_lbs["SO2"] * m[:yr1_emissions_from_elec_grid_net_if_selected_lbs_SO2]
+	m[:Lifecycle_Emissions_Lbs_PM25_grid_net_if_selected] = p.pwfs_grid_emissions_lbs["PM25"] * m[:yr1_emissions_from_elec_grid_net_if_selected_lbs_PM25]
+
+	m[:Lifecycle_Emissions_Lbs_CO2_fuelburn] = p.analysis_years *  m[:yr1_emissions_onsite_fuel_lbs_CO2] # not assuming an annual decrease in on-site fuel burn emissions
+	m[:Lifecycle_Emissions_Lbs_NOx_fuelburn] = p.analysis_years *  m[:yr1_emissions_onsite_fuel_lbs_NOx] # not assuming an annual decrease in on-site fuel burn emissions
+	m[:Lifecycle_Emissions_Lbs_SO2_fuelburn] = p.analysis_years *  m[:yr1_emissions_onsite_fuel_lbs_SO2] # not assuming an annual decrease in on-site fuel burn emissions
+	m[:Lifecycle_Emissions_Lbs_PM25_fuelburn] = p.analysis_years *  m[:yr1_emissions_onsite_fuel_lbs_PM25] # not assuming an annual decrease in on-site fuel burn emissions
+
+	m[:Lifecycle_Emissions_Lbs_CO2] = m[:Lifecycle_Emissions_Lbs_CO2_grid_net_if_selected] + m[:Lifecycle_Emissions_Lbs_CO2_fuelburn]
+	m[:Lifecycle_Emissions_Lbs_NOx] = m[:Lifecycle_Emissions_Lbs_NOx_grid_net_if_selected] + m[:Lifecycle_Emissions_Lbs_NOx_fuelburn]
+	m[:Lifecycle_Emissions_Lbs_SO2] = m[:Lifecycle_Emissions_Lbs_SO2_grid_net_if_selected] + m[:Lifecycle_Emissions_Lbs_SO2_fuelburn]
+	m[:Lifecycle_Emissions_Lbs_PM25] = m[:Lifecycle_Emissions_Lbs_PM25_grid_net_if_selected] + m[:Lifecycle_Emissions_Lbs_PM25_fuelburn]
+
+	# Emissions costs
+	m[:Lifecycle_Emissions_Cost_CO2] = p.CO2_dollars_tonne / p.Lbs_per_tonne * ( p.pwfs_emissions_cost["CO2_grid"] * m[:yr1_emissions_from_elec_grid_net_if_selected_lbs_CO2] + p.pwfs_emissions_cost["CO2_onsite"] * m[:yr1_emissions_onsite_fuel_lbs_CO2])
+	m[:Lifecycle_Emissions_Cost_NOx] = (p.pwfs_emissions_cost["NOx_grid"] * p.NOx_dollars_tonne_grid * m[:yr1_emissions_from_elec_grid_net_if_selected_lbs_NOx] + p.pwfs_emissions_cost["NOx_onsite"] * p.NOx_dollars_tonne_onsite_fuelburn * m[:yr1_emissions_onsite_fuel_lbs_NOx]) / p.Lbs_per_tonne
+	m[:Lifecycle_Emissions_Cost_SO2] = (p.pwfs_emissions_cost["SO2_grid"] * p.SO2_dollars_tonne_grid * m[:yr1_emissions_from_elec_grid_net_if_selected_lbs_SO2] + p.pwfs_emissions_cost["SO2_onsite"] * p.SO2_dollars_tonne_onsite_fuelburn * m[:yr1_emissions_onsite_fuel_lbs_SO2]) / p.Lbs_per_tonne
+	m[:Lifecycle_Emissions_Cost_PM25] =  (p.pwfs_emissions_cost["PM25_grid"] * p.PM25_dollars_tonne_grid * m[:yr1_emissions_from_elec_grid_net_if_selected_lbs_PM25] + p.pwfs_emissions_cost["PM25_onsite"] * p.PM25_dollars_tonne_onsite_fuelburn * m[:yr1_emissions_onsite_fuel_lbs_PM25]) / p.Lbs_per_tonne
+	m[:Lifecycle_Emissions_Cost_Health] = m[:Lifecycle_Emissions_Cost_NOx] + m[:Lifecycle_Emissions_Cost_SO2] + m[:Lifecycle_Emissions_Cost_PM25]
+
+end
+
+function add_emissions_constraints(m,p)
+	if !isnothing(p.MinPercentCO2EmissionsReduction)
+		@constraint(m, MinEmissionsReductionCon, m[:Lifecycle_Emissions_Lbs_CO2] <= (1-p.MinPercentCO2EmissionsReduction)*m[:Lifecycle_Emissions_Lbs_CO2_BAU])
+	end
+	if !isnothing(p.MaxPercentCO2EmissionsReduction)
+		@constraint(m, MaxEmissionsReductionCon, m[:Lifecycle_Emissions_Lbs_CO2] >= (1-p.MaxPercentCO2EmissionsReduction)*m[:Lifecycle_Emissions_Lbs_CO2_BAU])
+	end
+end
 
 function add_yearone_expressions(m, p)
     m[:Year1UtilityEnergy] = @expression(m,  p.TimeStepScaling * sum(
@@ -1279,6 +1516,14 @@ function reopt_run(m, p::Parameter)
 	add_export_expressions(m, p)
 	add_util_fixed_and_min_charges(m, p)
 
+	## Constraint set (15): renewable energy and emissions calculations and constraints
+	# Note: renewable heat calculations are currently added in post-optimization
+	add_re_elec_calcs(m,p)
+	add_re_elec_constraints(m,p)
+	add_yr1_emissions_calcs(m,p)
+	add_lifecycle_emissions_calcs(m,p)
+	add_emissions_constraints(m,p)
+
 	if !isempty(p.CHPTechs)
 		add_chp_hourly_om_charges(m, p)
 	end
@@ -1336,6 +1581,7 @@ end
 
 
 function reopt_results(m, p, r::Dict)
+	add_re_emissions_results(m, p, r)
 	add_storage_results(m, p, r)
 	add_pv_results(m, p, r)
 	if !isempty(m[:GeneratorTechs])
@@ -1410,6 +1656,72 @@ function reopt_results(m, p, r::Dict)
 	return r
 end
 
+function add_re_emissions_results(m, p, r::Dict)
+
+	r["pwf_om"] = round(value(p.pwf_om),digits=4)
+
+	# renewable elec
+	r["annual_re_elec_kwh"] = round(value(m[:AnnualREEleckWh]), digits=2)
+	r["annual_re_elec_percent"] = round(value(m[:AnnualREEleckWh])/value(m[:AnnualEleckWh]), digits=6)
+
+	# renewable thermal
+	if !isempty(p.HeatingTechs)
+		add_re_heat_calcs(m,p)
+		# TODO: add total RE calcs
+		r["annual_re_heat_kwh"] = round(value(m[:AnnualREHeatkWh]), digits=2)
+		r["annual_heat_kwh"] = round(value(m[:AnnualHeatkWh]), digits=2)
+		r["annual_re_heat_percent"] = round(value(m[:AnnualREHeatkWh])/value(m[:AnnualHeatkWh]),digits=6)
+	else
+		r["annual_re_heat_kwh"] = 0.0
+		r["annual_heat_kwh"] = 0.0
+		r["annual_re_heat_percent"] = 0.0
+	end
+
+	# BAU preprocessed emissions (used for emissions reduction target calculations; output for testing purposes)
+	r["preprocessed_BAU_year_one_emissions_tCO2"] = round(value(p.BAUYr1Emissions_CO2)/p.Lbs_per_tonne,digits=2)
+	r["preprocessed_BAU_lifecycle_emissions_tCO2"] = round(value(m[:Lifecycle_Emissions_Lbs_CO2_BAU]/p.Lbs_per_tonne),digits=2) # no annual decrease for on-site fuel burn
+	# pass through for breakeven cost of CO2 calculation:
+	r["include_climate_in_objective"] = p.Include_climate_in_objective
+	r["pwfs_emissions_cost_CO2_grid"] = p.pwfs_emissions_cost["CO2_grid"]
+	r["pwfs_emissions_cost_CO2_onsite"] = p.pwfs_emissions_cost["CO2_onsite"]
+
+	# Year 1 Emissions results at Site level
+	r["year_one_emissions_tCO2"] = round(value(m[:EmissionsYr1_Total_LbsCO2]/p.Lbs_per_tonne), digits=2)
+	r["year_one_emissions_tNOx"] = round(value(m[:EmissionsYr1_Total_LbsNOx]/p.Lbs_per_tonne), digits=2)
+	r["year_one_emissions_tSO2"] = round(value(m[:EmissionsYr1_Total_LbsSO2]/p.Lbs_per_tonne), digits=2)
+	r["year_one_emissions_tPM25"] = round(value(m[:EmissionsYr1_Total_LbsPM25]/p.Lbs_per_tonne), digits=2)
+
+	r["year_one_emissions_from_fuelburn_tCO2"] = round(value(m[:yr1_emissions_onsite_fuel_lbs_CO2]/p.Lbs_per_tonne), digits=2)
+	r["year_one_emissions_from_fuelburn_tNOx"] = round(value(m[:yr1_emissions_onsite_fuel_lbs_NOx]/p.Lbs_per_tonne), digits=2)
+	r["year_one_emissions_from_fuelburn_tSO2"] = round(value(m[:yr1_emissions_onsite_fuel_lbs_SO2]/p.Lbs_per_tonne), digits=2)
+	r["year_one_emissions_from_fuelburn_tPM25"] = round(value(m[:yr1_emissions_onsite_fuel_lbs_PM25]/p.Lbs_per_tonne), digits=2)
+
+	r["year_one_emissions_from_elec_grid_tCO2"] = round(value(m[:yr1_emissions_from_elec_grid_net_if_selected_lbs_CO2]/p.Lbs_per_tonne), digits=2)
+	r["year_one_emissions_from_elec_grid_tNOx"] = round(value(m[:yr1_emissions_from_elec_grid_net_if_selected_lbs_NOx]/p.Lbs_per_tonne), digits=2)
+	r["year_one_emissions_from_elec_grid_tSO2"] = round(value(m[:yr1_emissions_from_elec_grid_net_if_selected_lbs_SO2]/p.Lbs_per_tonne), digits=2)
+	r["year_one_emissions_from_elec_grid_tPM25"] = round(value(m[:yr1_emissions_from_elec_grid_net_if_selected_lbs_PM25]/p.Lbs_per_tonne), digits=2)
+
+	# Lifecycle emissions results at Site level
+	r["lifecycle_emissions_reduction_CO2_pct"] = round(value(1-m[:Lifecycle_Emissions_Lbs_CO2]/m[:Lifecycle_Emissions_Lbs_CO2_BAU]), digits=6)
+	r["lifecycle_emissions_cost_CO2"] = round(value(m[:Lifecycle_Emissions_Cost_CO2]), digits=2)
+	r["lifecycle_emissions_cost_Health"] = round(value(m[:Lifecycle_Emissions_Cost_Health]), digits=2)
+
+	r["lifecycle_emissions_tCO2"] = round(value(m[:Lifecycle_Emissions_Lbs_CO2]/p.Lbs_per_tonne), digits=2)
+	r["lifecycle_emissions_tNOx"] = round(value(m[:Lifecycle_Emissions_Lbs_NOx]/p.Lbs_per_tonne), digits=2)
+	r["lifecycle_emissions_tSO2"] = round(value(m[:Lifecycle_Emissions_Lbs_SO2]/p.Lbs_per_tonne), digits=2)
+	r["lifecycle_emissions_tPM25"] = round(value(m[:Lifecycle_Emissions_Lbs_PM25]/p.Lbs_per_tonne), digits=2)
+
+	r["lifecycle_emissions_from_fuelburn_tCO2"] = round(value(m[:Lifecycle_Emissions_Lbs_CO2_fuelburn]/p.Lbs_per_tonne), digits=2)
+	r["lifecycle_emissions_from_fuelburn_tNOx"] = round(value(m[:Lifecycle_Emissions_Lbs_NOx_fuelburn]/p.Lbs_per_tonne), digits=2)
+	r["lifecycle_emissions_from_fuelburn_tSO2"] = round(value(m[:Lifecycle_Emissions_Lbs_SO2_fuelburn]/p.Lbs_per_tonne), digits=2)
+	r["lifecycle_emissions_from_fuelburn_tPM25"] = round(value(m[:Lifecycle_Emissions_Lbs_PM25_fuelburn]/p.Lbs_per_tonne), digits=2)
+
+	r["lifecycle_emissions_from_elec_grid_tCO2"] = round(value(m[:yr1_emissions_from_elec_grid_net_if_selected_lbs_CO2]/p.Lbs_per_tonne*p.pwfs_grid_emissions_lbs["CO2"]), digits=2)
+	r["lifecycle_emissions_from_elec_grid_tNOx"] = round(value(m[:yr1_emissions_from_elec_grid_net_if_selected_lbs_NOx]/p.Lbs_per_tonne*p.pwfs_grid_emissions_lbs["NOx"]), digits=2)
+	r["lifecycle_emissions_from_elec_grid_tSO2"] = round(value(m[:yr1_emissions_from_elec_grid_net_if_selected_lbs_SO2]/p.Lbs_per_tonne*p.pwfs_grid_emissions_lbs["SO2"]), digits=2)
+	r["lifecycle_emissions_from_elec_grid_tPM25"] = round(value(m[:yr1_emissions_from_elec_grid_net_if_selected_lbs_PM25]/p.Lbs_per_tonne*p.pwfs_grid_emissions_lbs["PM25"]), digits=2)
+
+end
 
 function add_null_generator_results(m, p, r::Dict)
 	r["gen_net_fixed_om_costs"] = 0
@@ -1657,8 +1969,8 @@ function add_generator_results(m, p, r::Dict)
 			for t in m[:GeneratorTechs], ts in p.TimeStep)
 	)
 	r["average_yearly_gen_energy_produced"] = round(value(m[:AverageGenProd]), digits=0)
-	
-	# This is for the off-grid microgrid LCOE 
+
+	# This is for the off-grid microgrid LCOE
 	m[:TotalGeneratorCapCosts] = @expression(m, p.two_party_factor * (
 		sum( p.CapCostSlope[t,s] * m[:dvSystemSizeSegment][t,"CapCost",s] for t in m[:GeneratorTechs], s in 1:p.SegByTechSubdivision["CapCost",t] ) +
 		sum( p.CapCostYInt[t,s] * m[:binSegmentSelect][t,"CapCost",s] for t in m[:GeneratorTechs], s in 1:p.SegByTechSubdivision["CapCost",t] )
@@ -1707,6 +2019,7 @@ function add_wind_results(m, p, r::Dict)
 			for t in m[:WindTechs], ts in p.TimeStep)
 	)
 	r["average_wind_energy_produced"] = round(value(m[:AverageWindProd]), digits=0)
+
 	nothing
 end
 
@@ -1765,7 +2078,7 @@ function add_pv_results(m, p, r::Dict)
 
 			#Offgrid
 			if p.OffGridFlag
-				PVrequiredSR = @expression(m, [ts in p.TimeStepsWithoutGrid], 
+				PVrequiredSR = @expression(m, [ts in p.TimeStepsWithoutGrid],
                     sum(m[:ProductionToLoadSR][t,ts] * p.SRrequiredPctTechs[t] for t in PVtechs_in_class_noNEM)
                 )
 				r[string("SRrequired", PVclass)] = round.(value.(PVrequiredSR), digits=3)
@@ -1831,6 +2144,7 @@ function add_chp_results(m, p, r::Dict)
 	r["year_one_chp_fuel_cost"] = round(value(TotalCHPFuelCharges / p.pwf_fuel["CHP"]), digits=3)
 	r["year_one_chp_standby_cost"] = round(value(m[:Year1CHPStandbyCharges]), digits=0)
 	r["total_chp_standby_cost"] = round(value(m[:TotalCHPStandbyCharges] * m[:r_tax_fraction_offtaker]), digits=0)
+
 	nothing
 end
 
@@ -1863,6 +2177,7 @@ function add_boiler_results(m, p, r::Dict)
 			for ts in p.TimeStep))
 	r["total_boiler_fuel_cost"] = round(value(TotalBoilerFuelCharges * m[:r_tax_fraction_offtaker]), digits=3)
 	r["year_one_boiler_fuel_cost"] = round(value(TotalBoilerFuelCharges / p.pwf_fuel["BOILER"]), digits=3)
+
 	nothing
 end
 
@@ -2051,10 +2366,12 @@ function add_util_results(m, p, r::Dict)
 						"net_capital_costs" => round(value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts] + m[:GHPCapCosts]), digits=2),
 						"total_om_costs_after_tax" => round(total_om_costs_after_tax, digits=0),
 						"year_one_om_costs_after_tax" => round(year_one_om_costs_after_tax, digits=0),
-						"year_one_om_costs_before_tax" => round(year_one_om_costs_after_tax / m[:r_tax_fraction_owner], digits=0)
+						"year_one_om_costs_before_tax" => round(year_one_om_costs_after_tax / m[:r_tax_fraction_owner], digits=0),
+						"off_grid_flag" => p.OffGridFlag
 					)...)
 
     @expression(m, GridToLoad[ts in p.TimeStep],
                 sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) - m[:dvGridToStorage][ts] )
     r["GridToLoad"] = round.(value.(GridToLoad), digits=3)
+
 end
