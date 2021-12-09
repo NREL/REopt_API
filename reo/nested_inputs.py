@@ -2466,6 +2466,10 @@ nested_input_definitions = {
           "type": "list_of_str",
           "description": "GHPGHX response UUID(s) from /ghpghx endpoint, used to get ghpghx run data"
         },
+        "ghpghx_responses": {
+          "type": "list_of_dict",
+          "description": "GHPGHX response(s) to re-use a previous /ghpghx run without relying on a database entry"
+        },        
         "can_serve_dhw": {
           "type": "bool", "default": False,
           "description": "If GHP can serve the domestic hot water (DHW) portion of the heating load"
