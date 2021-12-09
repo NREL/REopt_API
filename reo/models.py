@@ -1139,6 +1139,7 @@ class GHPModel(models.Model):
     building_sqft = models.FloatField(null=True, blank=True)
     ghpghx_inputs = ArrayField(PickledObjectField(null=True, editable=True), null=True, default=list)
     ghpghx_response_uuids = ArrayField(models.TextField(null=True, blank=True), default=list, null=True)
+    ghpghx_responses = ArrayField(PickledObjectField(null=True, editable=True), null=True, default=list)
     can_serve_dhw = models.BooleanField(null=True, blank=True)
     macrs_option_years = models.IntegerField(null=True, blank=True)
     macrs_bonus_pct = models.FloatField(null=True, blank=True)

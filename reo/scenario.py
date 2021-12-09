@@ -361,7 +361,8 @@ def setup_scenario(self, run_uuid, data, raw_post):
         ghp_option_list = []
         # Call /ghpghx endpoint if only ghpghx_inputs is given, otherwise use ghpghx_response_uuids
         if inputs_dict["Site"]["GHP"].get("building_sqft") is not None and \
-            inputs_dict["Site"]["GHP"].get("ghpghx_response_uuids") in [None, []]:
+            inputs_dict["Site"]["GHP"].get("ghpghx_response_uuids") in [None, []] and \
+            inputs_dict["Site"]["GHP"].get("ghpghx_responses") in [None, []]:
             ghpghx_uuid_list = []
             if inputs_dict["Site"]["GHP"].get("ghpghx_inputs") in [None, []]:
                 number_of_ghpghx = 1
@@ -400,21 +401,29 @@ def setup_scenario(self, run_uuid, data, raw_post):
                 ghp_option_list.append(ghp.GHPGHX(dfm=dfm,
                                                     response=ghpghx_results_resp_dict,
                                                     **inputs_dict["Site"]["GHP"]))
-            #json.dump(ghpghx_results_resp_dict, open("ghpghx_response.json", "w"))                                                    
+                #json.dump(ghpghx_results_resp_dict, open("ghpghx_response.json", "w"))
             # Update GHPModel with created ghpghx_response_uuids
             tmp = dict()
             tmp['ghpghx_response_uuids'] = ghpghx_uuid_list
             ModelManager.updateModel('GHPModel', tmp, run_uuid)
             # Sleep to avoid calling julia_api for /job (reopt) or another /ghpghx run too quickly after /ghpghx
             time.sleep(1)
+        # If ghpghx_responses is included in inputs/POST, do NOT run /ghpghx model and use already-run ghpghx
+        # Note, this will ignore ghpghx_response_uuids (next elif clause) for ghpghx_response if they are ALSO provided
+        elif inputs_dict["Site"]["GHP"].get("building_sqft") is not None and \
+            inputs_dict["Site"]["GHP"].get("ghpghx_responses") not in [None, []]:
+            for ghpghx_response in inputs_dict["Site"]["GHP"].get("ghpghx_responses"):
+                ghp_option_list.append(ghp.GHPGHX(dfm=dfm,
+                                                    response=ghpghx_response,
+                                                    **inputs_dict["Site"]["GHP"]))
         # If ghpghx_response_uuids is included in inputs/POST, do NOT run /ghpghx model and use already-run ghpghx
         elif inputs_dict["Site"]["GHP"].get("building_sqft") is not None and \
-                inputs_dict["Site"]["GHP"].get("ghpghx_response_uuids") not in [None, []]:
+            inputs_dict["Site"]["GHP"].get("ghpghx_response_uuids") not in [None, []]:
             for ghp_uuid in inputs_dict["Site"]["GHP"].get("ghpghx_response_uuids"):
                 ghp_option_list.append(ghp.GHPGHX(dfm=dfm,
                                                     response=ghpModelManager.make_response(ghp_uuid),
                                                     **inputs_dict["Site"]["GHP"]))
-
+        
         util = Util(dfm=dfm,
                     outage_start_time_step=inputs_dict['Site']['LoadProfile'].get("outage_start_time_step"),
                     outage_end_time_step=inputs_dict['Site']['LoadProfile'].get("outage_end_time_step"),
