@@ -236,7 +236,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
             year=lp.year,
             **inputs_dict['Site']['LoadProfileBoilerFuel']
             )
-        
+
         lpbf_dhw = LoadProfileBoilerFuel(load_type="DHW",
             dfm=dfm,
             time_steps_per_hour=inputs_dict['time_steps_per_hour'],
@@ -257,11 +257,11 @@ def setup_scenario(self, run_uuid, data, raw_post):
         # Load Profile Chiller Electric        
         lpct = LoadProfileChillerThermal(load_type="Cooling",
                                             dfm=dfm,
-                                            total_electric_load_list=lp.unmodified_load_list, 
+                                            total_electric_load_list=lp.unmodified_load_list,
                                             time_steps_per_hour=inputs_dict['time_steps_per_hour'],
                                             latitude=inputs_dict['Site']['latitude'], 
                                             longitude=inputs_dict['Site']['longitude'], 
-                                            nearest_city=lp.nearest_city or lpbf_space.nearest_city, 
+                                            nearest_city=lp.nearest_city or lpbf_space.nearest_city,
                                             year=lp.year, max_thermal_factor_on_peak_load=
                                             inputs_dict['Site']['ElectricChiller']['max_thermal_factor_on_peak_load'],
                                             **inputs_dict['Site']['LoadProfileChillerThermal'])
@@ -414,7 +414,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
                 ghp_option_list.append(ghp.GHPGHX(dfm=dfm,
                                                     response=ghpModelManager.make_response(ghp_uuid),
                                                     **inputs_dict["Site"]["GHP"]))
-        
+
         util = Util(dfm=dfm,
                     outage_start_time_step=inputs_dict['Site']['LoadProfile'].get("outage_start_time_step"),
                     outage_end_time_step=inputs_dict['Site']['LoadProfile'].get("outage_end_time_step"),
@@ -425,9 +425,12 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         if inputs_dict["Site"]["NewBoiler"]["max_mmbtu_per_hr"] > 0:
             newboiler = NewBoiler(dfm=dfm, **inputs_dict['Site']['NewBoiler'])
-        
+
         if inputs_dict["Site"]["SteamTurbine"]["max_kw"] > 0:
             steamturbine = SteamTurbine(dfm=dfm, **inputs_dict['Site']['SteamTurbine'])
+
+        dfm.include_climate_in_objective = inputs_dict['include_climate_in_objective']
+        dfm.include_health_in_objective = inputs_dict['include_health_in_objective']
 
         dfm.finalize()
         dfm_dict = vars(dfm)  # serialize for celery

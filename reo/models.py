@@ -124,6 +124,9 @@ class ScenarioModel(models.Model):
     lower_bound = models.FloatField(null=True, blank=True)
     optimality_gap = models.FloatField(null=True, blank=True)
 
+    include_climate_in_objective = models.BooleanField(null=True, blank=True)
+    include_health_in_objective = models.BooleanField(null=True, blank=True)
+
     @classmethod
     def create(cls, **kwargs):
         obj = cls(**kwargs)
@@ -139,11 +142,66 @@ class SiteModel(models.Model):
     longitude = models.FloatField(null=True, blank=True)
     land_acres = models.FloatField(null=True, blank=True)
     roof_squarefeet = models.FloatField(null=True, blank=True)
-    year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
-    year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
     outdoor_air_temp_degF = ArrayField(models.FloatField(blank=True, null=True), default=list, null=True)
     elevation_ft = models.FloatField(null=True, blank=True)
     renewable_electricity_energy_pct = models.FloatField(null=True, blank=True)
+
+    renewable_electricity_min_pct = models.FloatField(null=True, blank=True)
+    renewable_electricity_max_pct = models.FloatField(null=True, blank=True)
+    co2_emissions_reduction_min_pct = models.FloatField(null=True, blank=True)
+    co2_emissions_reduction_max_pct = models.FloatField(null=True, blank=True)
+    include_exported_renewable_electricity_in_total = models.BooleanField(null=True, blank=True)
+    include_exported_elec_emissions_in_total = models.BooleanField(null=True, blank=True)
+
+    #outputs
+    lifecycle_emissions_reduction_CO2_pct = models.FloatField(null=True, blank=True)
+    breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2 = models.FloatField(null=True, blank=True)
+    year_one_renewable_electricity_pct = models.FloatField(null=True, blank=True)
+    year_one_renewable_electricity_kwh = models.FloatField(null=True, blank=True)
+    year_one_renewable_electricity_pct_bau = models.FloatField(null=True, blank=True)
+    year_one_renewable_electricity_kwh_bau = models.FloatField(null=True, blank=True)
+    year_one_renewable_heat_pct = models.FloatField(null=True, blank=True)
+    year_one_renewable_heat_mmbtu = models.FloatField(null=True, blank=True)
+    year_one_heat_load_mmbtu = models.FloatField(null=True, blank=True)
+    year_one_renewable_heat_pct_bau = models.FloatField(null=True, blank=True)
+    year_one_renewable_heat_mmbtu_bau = models.FloatField(null=True, blank=True)
+    year_one_heat_load_mmbtu_bau = models.FloatField(null=True, blank=True)
+    year_one_emissions_tCO2 = models.FloatField(null=True, blank=True)
+    year_one_emissions_tNOx = models.FloatField(null=True, blank=True)
+    year_one_emissions_tSO2 = models.FloatField(null=True, blank=True)
+    year_one_emissions_tPM25 = models.FloatField(null=True, blank=True)
+    year_one_emissions_tCO2_bau = models.FloatField(null=True, blank=True)
+    year_one_emissions_tNOx_bau = models.FloatField(null=True, blank=True)
+    year_one_emissions_tSO2_bau = models.FloatField(null=True, blank=True)
+    year_one_emissions_tPM25_bau = models.FloatField(null=True, blank=True)
+    year_one_emissions_from_fuelburn_tCO2 = models.FloatField(null=True, blank=True)
+    year_one_emissions_from_fuelburn_tNOx = models.FloatField(null=True, blank=True)
+    year_one_emissions_from_fuelburn_tSO2 = models.FloatField(null=True, blank=True)
+    year_one_emissions_from_fuelburn_tPM25 = models.FloatField(null=True, blank=True)
+    year_one_emissions_from_fuelburn_tCO2_bau = models.FloatField(null=True, blank=True)
+    year_one_emissions_from_fuelburn_tNOx_bau = models.FloatField(null=True, blank=True)
+    year_one_emissions_from_fuelburn_tSO2_bau = models.FloatField(null=True, blank=True)
+    year_one_emissions_from_fuelburn_tPM25_bau = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_cost_CO2 = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_cost_CO2_bau = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_cost_Health = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_cost_Health_bau = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_tCO2 = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_tNOx = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_tSO2 = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_tPM25 = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_tCO2_bau = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_tNOx_bau = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_tSO2_bau = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_tPM25_bau = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_from_fuelburn_tCO2 = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_from_fuelburn_tNOx = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_from_fuelburn_tSO2 = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_from_fuelburn_tPM25 = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_from_fuelburn_tCO2_bau = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_from_fuelburn_tNOx_bau = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_from_fuelburn_tSO2_bau = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_from_fuelburn_tPM25_bau = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -172,6 +230,17 @@ class FinancialModel(models.Model):
     owner_tax_pct = models.FloatField(null=True, blank=True)
     other_capital_costs_us_dollars = models.FloatField(null=True, blank=True)
     other_annual_costs_us_dollars_per_year = models.FloatField(null=True, blank=True)
+    co2_cost_us_dollars_per_tonne = models.FloatField(null=True, blank=True)
+    nox_cost_us_dollars_per_tonne_grid = models.FloatField(null=True, blank=True)
+    so2_cost_us_dollars_per_tonne_grid = models.FloatField(null=True, blank=True)
+    pm25_cost_us_dollars_per_tonne_grid = models.FloatField(null=True, blank=True)
+    nox_cost_us_dollars_per_tonne_onsite_fuelburn = models.FloatField(null=True, blank=True)
+    so2_cost_us_dollars_per_tonne_onsite_fuelburn = models.FloatField(null=True, blank=True)
+    pm25_cost_us_dollars_per_tonne_onsite_fuelburn = models.FloatField(null=True, blank=True)
+    co2_cost_escalation_pct = models.FloatField(null=True, blank=True)
+    nox_cost_escalation_pct = models.FloatField(null=True, blank=True)
+    so2_cost_escalation_pct = models.FloatField(null=True, blank=True)
+    pm25_cost_escalation_pct = models.FloatField(null=True, blank=True)
 
     # Outputs
     lcc_us_dollars = models.FloatField(null=True, blank=True)
@@ -339,11 +408,18 @@ class ElectricTariffModel(models.Model):
     add_tou_energy_rates_to_urdb_rate = models.BooleanField(null=True, blank=True)
     tou_energy_rates_us_dollars_per_kwh = ArrayField(models.FloatField(null=True, blank=True), null=True, default=list)
     emissions_factor_series_lb_CO2_per_kwh = ArrayField(models.FloatField(null=True, blank=True), null=True, default=list)
+    emissions_factor_series_lb_NOx_per_kwh = ArrayField(models.FloatField(null=True, blank=True), null=True, default=list)
+    emissions_factor_series_lb_SO2_per_kwh = ArrayField(models.FloatField(null=True, blank=True), null=True, default=list)
+    emissions_factor_series_lb_PM25_per_kwh = ArrayField(models.FloatField(null=True, blank=True), null=True, default=list)
     chp_standby_rate_us_dollars_per_kw_per_month = models.FloatField(blank=True, null=True)
     chp_does_not_reduce_demand_charges = models.BooleanField(null=True, blank=True)
     emissions_region = models.TextField(null=True, blank=True)
     coincident_peak_load_active_timesteps = ArrayField(ArrayField(models.FloatField(null=True, blank=True), null=True, default=list), null=True, default=list)
     coincident_peak_load_charge_us_dollars_per_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, default=list)
+    emissions_factor_CO2_pct_decrease = models.FloatField(null=True, blank=True)
+    emissions_factor_NOx_pct_decrease = models.FloatField(null=True, blank=True)
+    emissions_factor_SO2_pct_decrease = models.FloatField(null=True, blank=True)
+    emissions_factor_PM25_pct_decrease = models.FloatField(null=True, blank=True)
 
     # Ouptuts
     year_one_energy_cost_us_dollars = models.FloatField(null=True, blank=True)
@@ -375,8 +451,24 @@ class ElectricTariffModel(models.Model):
     year_one_to_battery_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
     year_one_energy_supplied_kwh = models.FloatField(null=True, blank=True)
     year_one_energy_supplied_kwh_bau = models.FloatField(null=True, blank=True)
-    year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
-    year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
+
+    year_one_emissions_tCO2 = models.FloatField(null=True, blank=True)
+    year_one_emissions_tNOx = models.FloatField(null=True, blank=True)
+    year_one_emissions_tSO2 = models.FloatField(null=True, blank=True)
+    year_one_emissions_tPM25 = models.FloatField(null=True, blank=True)
+    year_one_emissions_tCO2_bau = models.FloatField(null=True, blank=True)
+    year_one_emissions_tNOx_bau = models.FloatField(null=True, blank=True)
+    year_one_emissions_tSO2_bau = models.FloatField(null=True, blank=True)
+    year_one_emissions_tPM25_bau = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_tCO2 = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_tNOx = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_tSO2 = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_tPM25 = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_tCO2_bau = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_tNOx_bau = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_tSO2_bau = models.FloatField(null=True, blank=True)
+    lifecycle_emissions_tPM25_bau = models.FloatField(null=True, blank=True)
+
     year_one_coincident_peak_cost_us_dollars = models.FloatField(null=True, blank=True)
     year_one_coincident_peak_cost_bau_us_dollars = models.FloatField(null=True, blank=True)
     total_coincident_peak_cost_us_dollars = models.FloatField(null=True, blank=True)
@@ -396,12 +488,15 @@ class FuelTariffModel(models.Model):
     # Inputs
     run_uuid = models.UUIDField(unique=True)
     existing_boiler_fuel_type = models.TextField(null=True, blank=True)
+    boiler_fuel_percent_RE = models.FloatField(null=True, blank=True)
     boiler_fuel_blended_annual_rates_us_dollars_per_mmbtu = models.FloatField(null=True, blank=True)
     boiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True)
     chp_fuel_type = models.TextField(null=True, blank=True)
+    chp_fuel_percent_RE = models.FloatField(null=True, blank=True)
     chp_fuel_blended_annual_rates_us_dollars_per_mmbtu = models.FloatField(null=True, blank=True)
     chp_fuel_blended_monthly_rates_us_dollars_per_mmbtu = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True)
     newboiler_fuel_type = models.TextField(null=True, blank=True)
+    newboiler_fuel_percent_RE = models.FloatField(null=True, blank=True)
     newboiler_fuel_blended_annual_rates_us_dollars_per_mmbtu = models.FloatField(null=True, blank=True)
     newboiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True)
 
@@ -495,6 +590,7 @@ class PVModel(models.Model):
     lcoe_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
     sr_required_series_kw = ArrayField(models.FloatField(blank=True), default=list, null=True)
     sr_provided_series_kw = ArrayField(models.FloatField(blank=True), default=list, null=True)
+
 
     @classmethod
     def create(cls, **kwargs):
@@ -648,7 +744,11 @@ class GeneratorModel(models.Model):
     pbi_max_us_dollars = models.FloatField(null=True, blank=True)
     pbi_years = models.FloatField(null=True, blank=True)
     pbi_system_max_kw = models.FloatField(null=True, blank=True)
+    generator_fuel_percent_RE = models.FloatField(null=True, blank=True)
     emissions_factor_lb_CO2_per_gal = models.FloatField(null=True, blank=True)
+    emissions_factor_lb_NOx_per_gal = models.FloatField(null=True, blank=True)
+    emissions_factor_lb_SO2_per_gal = models.FloatField(null=True, blank=True)
+    emissions_factor_lb_PM25_per_gal = models.FloatField(null=True, blank=True)
     can_net_meter = models.BooleanField(null=True, blank=True)
     can_wholesale = models.BooleanField(null=True, blank=True)
     can_export_beyond_site_load = models.BooleanField(null=True, blank=True)
@@ -681,13 +781,10 @@ class GeneratorModel(models.Model):
     existing_gen_total_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
     existing_gen_total_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
     existing_gen_total_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-    year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
-    year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
     sr_provided_series_kw = ArrayField(
             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
     fuel_used_series_gal = ArrayField(
             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
-    
     @classmethod
     def create(cls, **kwargs):
         obj = cls(**kwargs)
@@ -736,6 +833,9 @@ class CHPModel(models.Model):
     pbi_years = models.FloatField(null=True, blank=True)
     pbi_system_max_kw = models.FloatField(null=True, blank=True)
     emissions_factor_lb_CO2_per_mmbtu = models.FloatField(null=True, blank=True)
+    emissions_factor_lb_NOx_per_mmbtu = models.FloatField(null=True, blank=True)
+    emissions_factor_lb_SO2_per_mmbtu = models.FloatField(null=True, blank=True)
+    emissions_factor_lb_PM25_per_mmbtu = models.FloatField(null=True, blank=True)
     use_default_derate = models.BooleanField(null=True, blank=True)
     max_derate_factor = models.FloatField(null=True, blank=True)
     derate_start_temp_degF = models.FloatField(null=True, blank=True)
@@ -772,9 +872,6 @@ class CHPModel(models.Model):
         models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
     year_one_thermal_to_waste_series_mmbtu_per_hour = ArrayField(
             models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
-    year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
-    year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
-
     @classmethod
     def create(cls, **kwargs):
         obj = cls(**kwargs)
@@ -823,8 +920,11 @@ class BoilerModel(models.Model):
     max_thermal_factor_on_peak_load = models.FloatField(null=True, blank=True)
     existing_boiler_production_type_steam_or_hw = models.TextField(null=True, blank=True)
     boiler_efficiency = models.FloatField(blank=True, default=0, null=True)
-    emissions_factor_lb_CO2_per_mmbtu = models.FloatField(null=True, blank=True)
     can_supply_steam_turbine = models.BooleanField(null=True, blank=True)
+    emissions_factor_lb_CO2_per_mmbtu = models.FloatField(null=True, blank=True)
+    emissions_factor_lb_NOx_per_mmbtu = models.FloatField(null=True, blank=True)
+    emissions_factor_lb_SO2_per_mmbtu = models.FloatField(null=True, blank=True)
+    emissions_factor_lb_PM25_per_mmbtu = models.FloatField(null=True, blank=True)
 
     # Outputs
     year_one_boiler_fuel_consumption_series_mmbtu_per_hr = ArrayField(
@@ -836,11 +936,9 @@ class BoilerModel(models.Model):
     year_one_thermal_to_tes_series_mmbtu_per_hour = ArrayField(
             models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
     year_one_thermal_to_steamturbine_series_mmbtu_per_hour = ArrayField(
-            models.FloatField(null=True, blank=True), default=list, null=True, blank=True)            
+            models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
     year_one_boiler_fuel_consumption_mmbtu = models.FloatField(null=True, blank=True)
     year_one_boiler_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
-    year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
-    year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -879,7 +977,7 @@ class ColdTESModel(models.Model):
     min_gal = models.FloatField(null=True, blank=True)
     max_gal = models.FloatField(null=True, blank=True)
     chilled_supply_water_temp_degF = models.FloatField(null=True, blank=True)
-    warmed_return_water_temp_degF = models.FloatField(null=True, blank=True)    
+    warmed_return_water_temp_degF = models.FloatField(null=True, blank=True)
     internal_efficiency_pct = models.FloatField(null=True, blank=True)
     soc_min_pct = models.FloatField(null=True, blank=True)
     soc_init_pct = models.FloatField(null=True, blank=True)
@@ -946,11 +1044,14 @@ class NewBoilerModel(models.Model):
     om_cost_us_dollars_per_mmbtu_per_hr = models.FloatField(null=True, blank=True)
     om_cost_us_dollars_per_mmbtu = models.FloatField(null=True, blank=True)
     emissions_factor_lb_CO2_per_mmbtu = models.FloatField(null=True, blank=True)
+    emissions_factor_lb_NOx_per_mmbtu = models.FloatField(null=True, blank=True)
+    emissions_factor_lb_SO2_per_mmbtu = models.FloatField(null=True, blank=True)
+    emissions_factor_lb_PM25_per_mmbtu = models.FloatField(null=True, blank=True)
     macrs_option_years = models.IntegerField(null=True, blank=True)
-    macrs_bonus_pct = models.FloatField(null=True, blank=True)    
+    macrs_bonus_pct = models.FloatField(null=True, blank=True)
 
     # Outputs
-    size_mmbtu_per_hr = models.FloatField(null=True, blank=True)    
+    size_mmbtu_per_hr = models.FloatField(null=True, blank=True)
     year_one_boiler_fuel_consumption_series_mmbtu_per_hr = ArrayField(
             models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
     year_one_boiler_thermal_production_series_mmbtu_per_hr = ArrayField(
@@ -963,7 +1064,6 @@ class NewBoilerModel(models.Model):
             models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
     year_one_boiler_fuel_consumption_mmbtu = models.FloatField(null=True, blank=True)
     year_one_boiler_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
-    year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -981,7 +1081,7 @@ class SteamTurbineModel(models.Model):
     max_kw = models.FloatField(null=True, blank=True)
     electric_produced_to_thermal_consumed_ratio = models.FloatField(null=True, blank=True)
     thermal_produced_to_thermal_consumed_ratio = models.FloatField(null=True, blank=True)
-    is_condensing = models.BooleanField(null=True, blank=True)    
+    is_condensing = models.BooleanField(null=True, blank=True)
     inlet_steam_pressure_psig = models.FloatField(null=True, blank=True)
     inlet_steam_temperature_degF = models.FloatField(blank=True, null=True)
     inlet_steam_superheat_degF = models.FloatField(null=True, blank=True)
@@ -1192,8 +1292,8 @@ class ModelManager(object):
                                            **attribute_inputs(d['Site']['NewBoiler']))
         self.steam_turbineM = SteamTurbineModel.create(run_uuid=self.scenarioM.run_uuid,
                                            **attribute_inputs(d['Site']['SteamTurbine']))
-        self.ghpM = GHPModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['GHP']))                                           
-        
+        self.ghpM = GHPModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['GHP']))
+
         for message_type, message in data['messages'].items():
             MessageModel.create(run_uuid=self.scenarioM.run_uuid, message_type=message_type, message=message)
 

@@ -243,7 +243,9 @@ class Generator(Tech):
 
     def __init__(self, dfm, min_kw, max_kw, existing_kw, fuel_slope_gal_per_kwh, fuel_intercept_gal_per_hr,
                  fuel_avail_gal, min_turn_down_pct, outage_start_time_step=None, outage_end_time_step=None, time_steps_per_hour=1,
-                 fuel_avail_before_outage_pct=1, emissions_factor_lb_CO2_per_gal=None, **kwargs):
+                 fuel_avail_before_outage_pct=1, generator_fuel_percent_RE=None, emissions_factor_lb_CO2_per_gal=None, emissions_factor_lb_NOx_per_gal=None,
+                 emissions_factor_lb_SO2_per_gal=None, emissions_factor_lb_PM25_per_gal=None, **kwargs):
+
         super(Generator, self).__init__(min_kw=min_kw, max_kw=max_kw, **kwargs)
         """
         super class init for generator is not unique anymore as we are now allowing users to define min/max sizes;
@@ -271,8 +273,12 @@ class Generator(Tech):
         self.min_kw = min_kw
         self.max_kw = max_kw
         self.existing_kw = existing_kw
-        self.emissions_factor_lb_CO2_per_gal = emissions_factor_lb_CO2_per_gal
+        self.generator_fuel_percent_RE = generator_fuel_percent_RE
         self.useful_life_years = kwargs['useful_life_years']
+        self.emissions_factor_lb_CO2_per_gal = emissions_factor_lb_CO2_per_gal
+        self.emissions_factor_lb_NOx_per_gal = emissions_factor_lb_NOx_per_gal
+        self.emissions_factor_lb_SO2_per_gal = emissions_factor_lb_SO2_per_gal
+        self.emissions_factor_lb_PM25_per_gal = emissions_factor_lb_PM25_per_gal
 
         dfm.add_generator(self)
 
@@ -343,6 +349,8 @@ class CHP(Tech):
                               "fuel_cell": 0}
 
     def __init__(self, dfm, run_uuid, existing_boiler_production_type_steam_or_hw, oa_temp_degF, site_elevation_ft,
+                 emissions_factor_lb_CO2_per_mmbtu=None, emissions_factor_lb_NOx_per_mmbtu=None,
+                 emissions_factor_lb_SO2_per_mmbtu=None, emissions_factor_lb_PM25_per_mmbtu=None,
                  outage_start_time_step=None, outage_end_time_step=None, time_steps_per_hour=1, year=None, **kwargs):
         super(CHP, self).__init__(**kwargs)
 
@@ -382,6 +390,10 @@ class CHP(Tech):
         self.supplementary_firing_max_steam_ratio = kwargs.get('supplementary_firing_max_steam_ratio')
         self.supplementary_firing_efficiency = kwargs.get('supplementary_firing_efficiency')
         self.supplementary_firing_capital_cost_per_kw = kwargs.get('supplementary_firing_capital_cost_per_kw')
+        self.emissions_factor_lb_CO2_per_mmbtu = emissions_factor_lb_CO2_per_mmbtu
+        self.emissions_factor_lb_NOx_per_mmbtu = emissions_factor_lb_NOx_per_mmbtu
+        self.emissions_factor_lb_SO2_per_mmbtu = emissions_factor_lb_SO2_per_mmbtu
+        self.emissions_factor_lb_PM25_per_mmbtu = emissions_factor_lb_PM25_per_mmbtu
 
         self.fuel_burn_slope, self.fuel_burn_intercept, self.thermal_prod_slope, self.thermal_prod_intercept = \
             self.convert_performance_params(self.elec_effic_full_load, self.elec_effic_half_load,
@@ -473,7 +485,8 @@ class Boiler(Tech):
                                                "combustion_turbine": "steam",
                                                "fuel_cell": "hot_water"}
 
-    def __init__(self, dfm, boiler_fuel_series_bau, **kwargs):
+    def __init__(self, dfm, boiler_fuel_series_bau, emissions_factor_lb_CO2_per_mmbtu=None, emissions_factor_lb_NOx_per_mmbtu=None,
+                 emissions_factor_lb_SO2_per_mmbtu=None, emissions_factor_lb_PM25_per_mmbtu=None, **kwargs):
         super(Boiler, self).__init__(**kwargs)
 
         self.is_hot = True
@@ -484,6 +497,10 @@ class Boiler(Tech):
         self.can_supply_steam_turbine = kwargs.get('can_supply_steam_turbine')
         self.derate = 0
         self.n_timesteps = dfm.n_timesteps
+        self.emissions_factor_lb_CO2_per_mmbtu = emissions_factor_lb_CO2_per_mmbtu
+        self.emissions_factor_lb_NOx_per_mmbtu = emissions_factor_lb_NOx_per_mmbtu
+        self.emissions_factor_lb_SO2_per_mmbtu = emissions_factor_lb_SO2_per_mmbtu
+        self.emissions_factor_lb_PM25_per_mmbtu = emissions_factor_lb_PM25_per_mmbtu
 
         # Assign boiler max size equal to the peak load multiplied by the thermal_factor
         self.max_kw = max(boiler_fuel_series_bau) * self.boiler_efficiency * self.max_thermal_factor_on_peak_load * MMBTU_TO_KWH
@@ -640,7 +657,7 @@ class AbsorptionChiller(Tech):
             absorp_chiller_cop = AbsorptionChiller.absorption_chiller_cop_defaults["hot_water"]
 
         return absorp_chiller_cop
-    
+
 
 class NewBoiler(Tech):
 
@@ -652,7 +669,7 @@ class NewBoiler(Tech):
         super(NewBoiler, self).__init__(**kwargs)
 
         self.is_hot = True
-        self.reopt_class = 'NEWBOILER' 
+        self.reopt_class = 'NEWBOILER'
         self.min_mmbtu_per_hr = kwargs.get('min_mmbtu_per_hr')
         self.max_mmbtu_per_hr = kwargs.get('max_mmbtu_per_hr')
         self.boiler_efficiency = kwargs.get('boiler_efficiency')
@@ -660,12 +677,16 @@ class NewBoiler(Tech):
         self.installed_cost_us_dollars_per_mmbtu_per_hr = kwargs.get('installed_cost_us_dollars_per_mmbtu_per_hr')
         self.om_cost_us_dollars_per_mmbtu_per_hr = kwargs.get('om_cost_us_dollars_per_mmbtu_per_hr')
         self.om_cost_us_dollars_per_mmbtu = kwargs.get('om_cost_us_dollars_per_mmbtu')
+        self.emissions_factor_lb_CO2_per_mmbtu = kwargs.get('emissions_factor_lb_CO2_per_mmbtu')
+        self.emissions_factor_lb_NOx_per_mmbtu = kwargs.get('emissions_factor_lb_NOx_per_mmbtu')
+        self.emissions_factor_lb_SO2_per_mmbtu = kwargs.get('emissions_factor_lb_SO2_per_mmbtu')
+        self.emissions_factor_lb_PM25_per_mmbtu = kwargs.get('emissions_factor_lb_PM25_per_mmbtu')
 
         # Convert cost basis of mmbtu/mmbtu_per_hr to kwh/kw
         self.installed_cost_us_dollars_per_kw = self.installed_cost_us_dollars_per_mmbtu_per_hr / MMBTU_TO_KWH
         self.om_cost_us_dollars_per_kw = self.om_cost_us_dollars_per_mmbtu_per_hr / MMBTU_TO_KWH
         self.om_cost_us_dollars_per_kwh = self.om_cost_us_dollars_per_mmbtu / MMBTU_TO_KWH
-        
+
         self.derate = 0  # TODO remove this from data_manager and *.jl model
         self.n_timesteps = dfm.n_timesteps
 
@@ -697,8 +718,8 @@ class SteamTurbine(Tech):
 
         self.reopt_class = 'STEAMTURBINE'
         self.electric_produced_to_thermal_consumed_ratio = kwargs.get('electric_produced_to_thermal_consumed_ratio')
-        self.thermal_produced_to_thermal_consumed_ratio = kwargs.get('thermal_produced_to_thermal_consumed_ratio') 
-        self.is_condensing = kwargs.get('is_condensing') 
+        self.thermal_produced_to_thermal_consumed_ratio = kwargs.get('thermal_produced_to_thermal_consumed_ratio')
+        self.is_condensing = kwargs.get('is_condensing')
         self.inlet_steam_pressure_psig = kwargs.get('inlet_steam_pressure_psig')
         self.inlet_steam_temperature_degF = kwargs.get('inlet_steam_temperature_degF')
         self.inlet_steam_superheat_degF = kwargs.get('inlet_steam_superheat_degF')
@@ -748,13 +769,13 @@ class SteamTurbine(Tech):
             self.t_in_k = (self.inlet_steam_temperature_degF - 32.0) * 5.0 / 9.0 + 273.15
         self.h_in_j_per_kg = CP.PropsSI("H","P",self.p_in_pa,"T",self.t_in_k,"Water")
         self.s_in_j_per_kgK = CP.PropsSI("S","P",self.p_in_pa,"T",self.t_in_k,"Water")
-        
+
         # ST Outlet
         self.p_out_pa = (self.outlet_steam_pressure_psig / 14.5038 + 1.01325) * 1.0E5
         self.h_out_ideal_j_per_kg = CP.PropsSI("H","P",self.p_out_pa,"S",self.s_in_j_per_kgK,"Water")
         self.h_out_j_per_kg = self.h_in_j_per_kg - self.isentropic_efficiency * (self.h_in_j_per_kg - self.h_out_ideal_j_per_kg)
         self.x_out = CP.PropsSI("Q","P",self.p_out_pa,"H",self.h_out_j_per_kg,"Water")
-        
+
         # ST Power
         self.st_shaft_power_kwh_per_kg = (self.h_in_j_per_kg - self.h_out_j_per_kg) / 1000.0 / 3600.0
         self.st_net_elec_power_kwh_per_kg = self.st_shaft_power_kwh_per_kg * self.gearbox_generator_efficiency * self.net_to_gross_electric_ratio
@@ -775,7 +796,7 @@ class SteamTurbine(Tech):
             st_elec_out_to_therm_in_ratio = self.st_net_elec_power_kwh_per_kg / self.boiler_therm_power_kwh_per_kg
         else:
             st_elec_out_to_therm_in_ratio = self.electric_produced_to_thermal_consumed_ratio
-        
+
         if self.thermal_produced_to_thermal_consumed_ratio is None:
             st_therm_out_to_therm_in_ratio = self.heat_recovered_kwh_per_kg / self.boiler_therm_power_kwh_per_kg
         else:
@@ -801,4 +822,3 @@ class SteamTurbine(Tech):
             steam_turbine_defaults[param] = steam_turbine_defaults_all[param][size_class]
 
         return steam_turbine_defaults
-    

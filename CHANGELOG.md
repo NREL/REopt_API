@@ -193,6 +193,8 @@ Classify the change according to the following categories:
      - **emissions_region** (Site Only)
      - **year_one_emissions_lb_C02**
      - **year_one_emissions_bau_lb_C02**
+     - **year_one_emissions_lb_NOx**
+     - **year_one_emissions_bau_lb_NOx**
 - `reo`: LCOE API output added for PV and Wind:
      - **lcoe_us_dollars_per_kwh**
 - `reo`: Simple Payback/IRR API outputs added for Site:

@@ -90,25 +90,282 @@ nested_output_definitions = {
             },
 
             "Site": {
-              "year_one_emissions_lb_C02": {
-                  "type": "int",
-                  "description": "Total equivalent pounds of carbon dioxide emitted from the site in the first year.",
-                  "units": "lb CO2"
+              "lifecycle_emissions_reduction_CO2_pct": {
+                  "type": float,
+                  "description": "Percent reduction in total pounds of carbon dioxide emissions in the optimal case relative to the BAU case",
+                  "units": "%"
                 },
-              "year_one_emissions_bau_lb_C02": {
-                  "type": "int",
-                  "description": "Total equivalent pounds of carbon dioxide emitted from the site use in the first year in the BAU case.",
-                  "units": "lb CO2"
+              "breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2": {
+                  "type": float,
+                  "description": ("Cost of emissions required to breakeven (NPV = 0) with the BAU case LCC."
+                                  "If the cost of health emissions were included in the objective function," 
+                                  "calculation of this output value keeps the cost of those emissions at the values input by the user."),
+                  "units": "$/tCO2"
                 },
-              "renewable_electricity_energy_pct": {
+              "year_one_renewable_electricity_pct": {
                 "type": float,
                 "description": (
-                  "Portion of electrictrity use that is derived from on-site renewable resource generation in year one."
-                  "Calculated as total PV and Wind generation in year one (including exports), "
-                  "divided by the total annual load in year one."
+                  "Portion of electricity consumption (incl. electric heating/cooling loads) that is derived from on-site renewable resource generation in year one."
+                  "Calculated as total RE electric generation in year one, minus storage losses and curtailment, with the user selecting whether exported renewable generation is included, "
+                  "divided by the total annual electric load in year one."
                   ),
                 "units": "%"
-              },
+                },
+              "year_one_renewable_electricity_kwh": {
+                "type": float,
+                "description": (
+                  "Electricity consumption (incl. electric heating/cooling loads) that is derived from on-site renewable resource generation in year one."
+                  "Calculated as total RE electric generation in year one, minus storage losses and curtailment, with the user selecting whether exported renewable generation is included). "
+                  ),
+                "units": "kwh"
+                },
+              "year_one_renewable_electricity_pct_bau": {
+                "type": float,
+                "description": (
+                  "Portion of electricity consumption (incl. electric heating/cooling loads) that is derived from on-site renewable resource generation in year one in the BAU case."
+                  "Calculated as total RE electric generation in year one, minus storage losses and curtailment, with the user selecting whether exported renewable generation is included, "
+                  "divided by the total annual electric load in year one."
+                  ),
+                "units": "%"
+                },
+              "year_one_renewable_electricity_kwh_bau": {
+                "type": float,
+                "description": (
+                  "Electricity consumption (incl. electric heating/cooling loads) that is derived from on-site renewable resource generation in year one in the BAU case."
+                  "Calculated as total RE electric generation in year one, minus storage losses and curtailment, with the user selecting whether exported renewable generation is included). "
+                  ),
+                "units": "kwh"
+                },
+              "year_one_renewable_heat_pct": {
+                "type": float,
+                "description": (
+                  "Portion of heat consumption that is derived from on-site renewable resource generation in year one."
+                  "Calculated as total RE heat generation in year one, minus storage losses and waste heat."
+                  "divided by the total annual heating load in year one."
+                  ),
+                "units": "%"
+                },
+              "year_one_renewable_heat_mmbtu": {
+                "type": float,
+                "description": (
+                  "Heat consumption that is derived from on-site renewable resource generation in year one."
+                  "Calculated as total RE heat generation in year one, minus storage losses and waste heat. "
+                  ),
+                "units": "mmbtu"
+                },
+              "year_one_heat_load_mmbtu": {
+                "type": float,
+                "description": (
+                  "Heat consumption in year one."
+                  "Calculated as total heat generation in year one, minus storage losses and waste heat. "
+                  ),
+                "units": "mmbtu"
+                },
+              "year_one_renewable_heat_pct_bau": {
+                "type": float,
+                "description": (
+                  "Portion of heat consumption that is derived from on-site renewable resource generation in year one in the BAU case."
+                  "Calculated as total RE heat generation in year one, minus storage losses and waste heat."
+                  "divided by the total annual heating load in year one in the BAU case."
+                  ),
+                "units": "%"
+                },
+              "year_one_renewable_heat_mmbtu_bau": {
+                "type": float,
+                "description": (
+                  "Heat consumption that is derived from on-site renewable resource generation in year one in the BAU case."
+                  "Calculated as total RE heat generation in year one in the BAU case, minus storage losses and waste heat. "
+                  ),
+                "units": "mmbtu"
+                },
+              "year_one_heat_load_mmbtu_bau": {
+                "type": float,
+                "description": (
+                  "Heat consumption in year one in the BAU case."
+                  "Calculated as total heat generation in year one, minus storage losses and waste heat. "
+                  ),
+                "units": "mmbtu"
+                },
+              "year_one_emissions_tCO2": {
+                  "type": float,
+                  "description": "Total tons of CO2 emissions associated with the site's energy consumption in year one.",
+                  "units": "metric tons"
+                },
+              "year_one_emissions_tNOx": {
+                  "type": float,
+                  "description": "Total tons of NOx emissions associated with the site's energy consumption in year one.",
+                  "units": "metric tons"
+                },
+              "year_one_emissions_tSO2": {
+                  "type": "float",
+                  "description": "Total tons of SO2 emissions associated with the site's energy consumption in year one.",
+                  "units": "metric tons"
+                },
+              "year_one_emissions_tPM25": {
+                  "type": "float",
+                  "description": "Total tons of PM2.5 emissions associated with the site's energy consumption in year one.",
+                  "units": "metric tons"
+                },
+              "year_one_emissions_tCO2_bau": {
+                  "type": "float",
+                  "description": "Total tons of CO2 emissions associated with the site's energy consumption in year one in the BAU case.",
+                  "units": "metric tons"
+                },
+              "year_one_emissions_tNOx_bau": {
+                  "type": "float",
+                  "description": "Total tons of NOx emissions associated with the site's energy consumption in year one in the BAU case.",
+                  "units": "metric tons"
+                },
+              "year_one_emissions_tSO2_bau": {
+                  "type": "float",
+                  "description": "Total tons of SO2 emissions associated with the site's energy consumption in year one in the BAU case.",
+                  "units": "metric tons"
+                },
+              "year_one_emissions_tPM25_bau": {
+                  "type": "float",
+                  "description": "Total tons of PM2.5 emissions associated with the site's energy consumption in year one in the BAU case.",
+                  "units": "metric tons"
+                },
+              "year_one_emissions_from_fuelburn_tCO2": {
+                  "type": float,
+                  "description": "Total tons of CO2 emissions associated with the site's onsite fuel burn in year one.",
+                  "units": "metric tons"
+                },
+              "year_one_emissions_from_fuelburn_tNOx": {
+                  "type": float,
+                  "description": "Total tons of NOx emissions associated with the site's onsite fuel burn in year one.",
+                  "units": "metric tons"
+                },
+              "year_one_emissions_from_fuelburn_tSO2": {
+                  "type": float,
+                  "description": "Total tons of SO2 emissions associated with the site's onsite fuel burn in year one.",
+                  "units": "metric tons"
+                },
+              "year_one_emissions_from_fuelburn_tPM25": {
+                  "type": float,
+                  "description": "Total tons of PM2.5 emissions associated with the site's onsite fuel burn in year one.",
+                  "units": "metric tons"
+                },
+              "year_one_emissions_from_fuelburn_tCO2_bau": {
+                  "type": float,
+                  "description": "Total tons of CO2 emissions associated with the site's onsite fuel burn in year one in the BAU case.",
+                  "units": "metric tons"
+                },
+              "year_one_emissions_from_fuelburn_tNOx_bau": {
+                  "type": float,
+                  "description": "Total tons of NOx emissions associated with the site's onsite fuel burn in year one in the BAU case.",
+                  "units": "metric tons"
+                },
+              "year_one_emissions_from_fuelburn_tSO2_bau": {
+                  "type": float,
+                  "description": "Total tons of SO2 emissions associated with the site's onsite fuel burn in year one in the BAU case.",
+                  "units": "metric tons"
+                },
+              "year_one_emissions_from_fuelburn_tPM25_bau": {
+                  "type": float,
+                  "description": "Total tons of PM2.5 emissions associated with the site's onsite fuel burn in year one in the BAU case.",
+                  "units": "metric tons"
+                },
+              "lifecycle_emissions_cost_CO2": {
+                  "type": float,
+                  "description": "Total cost of CO2 emissions associated with the site's energy consumption over the analysis period.",
+                  "units": "dollars"
+                },
+              "lifecycle_emissions_cost_CO2_bau": {
+                  "type": float,
+                  "description": "Total cost of CO2 emissions associated with the site's energy consumption over the analysis period in the BAU case.",
+                  "units": "dollars"
+                },
+              "lifecycle_emissions_cost_Health": {
+                  "type": float,
+                  "description": "Total cost of NOx, SO2, and PM2.5 emissions associated with the site's energy consumption over the analysis period.",
+                  "units": "dollars"
+                },
+              "lifecycle_emissions_cost_Health_bau": {
+                  "type": float,
+                  "description": "Total cost of NOx, SO2, and PM2.5 emissions associated with the site's energy consumption over the analysis period in the BAU case.",
+                  "units": "dollars"
+                },
+              "lifecycle_emissions_tCO2": {
+                  "type": float,
+                  "description": "Total tons of CO2 emissions associated with the site's energy consumption over the analysis period.",
+                  "units": "metric tons"
+                },
+              "lifecycle_emissions_tNOx": {
+                  "type": float,
+                  "description": "Total tons of NOx emissions associated with the site's energy consumption over the analysis period.",
+                  "units": "metric tons"
+                },
+              "lifecycle_emissions_tSO2": {
+                  "type": float,
+                  "description": "Total tons of SO2 emissions associated with the site's energy consumption over the analysis period.",
+                  "units": "metric tons"
+                },
+              "lifecycle_emissions_tPM25": {
+                  "type": float,
+                  "description": "Total tons of PM2.5 emissions associated with the site's energy consumption over the analysis period.",
+                  "units": "metric tons"
+                },
+              "lifecycle_emissions_tCO2_bau": {
+                  "type": float,
+                  "description": "Total tons of CO2 emissions associated with the site's energy consumption over the analysis period in the BAU case.",
+                  "units": "metric tons"
+                },
+              "lifecycle_emissions_tNOx_bau": {
+                  "type": float,
+                  "description": "Total tons of NOx emissions associated with the site's energy consumption over the analysis period in the BAU case.",
+                  "units": "metric tons"
+                },
+              "lifecycle_emissions_tSO2_bau": {
+                  "type": float,
+                  "description": "Total tons of SO2 emissions associated with the site's energy consumption over the analysis period in the BAU case.",
+                  "units": "metric tons"
+                },
+              "lifecycle_emissions_tPM25_bau": {
+                  "type": float,
+                  "description": "Total tons of PM2.5 emissions associated with the site's energy consumption over the analysis period in the BAU case.",
+                  "units": "metric tons"
+                },
+              "lifecycle_emissions_from_fuelburn_tCO2": {
+                  "type": float,
+                  "description": "Total tons of CO2 emissions associated with the site's onsite fuel burn over the analysis period.",
+                  "units": "metric tons"
+                },
+              "lifecycle_emissions_from_fuelburn_tNOx": {
+                  "type": float,
+                  "description": "Total tons of NOx emissions associated with the site's onsite fuel burn over the analysis period.",
+                  "units": "metric tons"
+                },
+              "lifecycle_emissions_from_fuelburn_tSO2": {
+                  "type": float,
+                  "description": "Total tons of SO2 emissions associated with the site's onsite fuel burn over the analysis period.",
+                  "units": "metric tons"
+                },
+              "lifecycle_emissions_from_fuelburn_tPM25": {
+                  "type": float,
+                  "description": "Total tons of PM2.5 emissions associated with the site's onsite fuel burn over the analysis period.",
+                  "units": "metric tons"
+                },
+              "lifecycle_emissions_from_fuelburn_tCO2_bau": {
+                  "type": float,
+                  "description": "Total tons of CO2 emissions associated with the site's onsite fuel burn over the analysis period in the BAU case.",
+                  "units": "metric tons"
+                },
+              "lifecycle_emissions_from_fuelburn_tNOx_bau": {
+                  "type": float,
+                  "description": "Total tons of NOx emissions associated with the site's onsite fuel burn over the analysis period in the BAU case.",
+                  "units": "metric tons"
+                },
+              "lifecycle_emissions_from_fuelburn_tSO2_bau": {
+                  "type": float,
+                  "description": "Total tons of SO2 emissions associated with the site's onsite fuel burn over the analysis period in the BAU case.",
+                  "units": "metric tons"
+                },
+              "lifecycle_emissions_from_fuelburn_tPM25_bau": {
+                  "type": float,
+                  "description": "Total tons of PM2.5 emissions associated with the site's onsite fuel burn over the analysis period in the BAU case.",
+                  "units": "metric tons"
+                },
 
               "LoadProfile": {
                 "year_one_electric_load_series_kw": {
@@ -274,7 +531,7 @@ nested_output_definitions = {
                   "type": "float",
                   "description": "Total operations and maintenance cost over analysis period in the business-as-usual case.",
                   "units": "$"
-                },                
+                },
                 "year_one_om_costs_us_dollars": {
                   "type": "float",
                   "description": "Year one operations and maintenance cost after tax.",
@@ -289,7 +546,7 @@ nested_output_definitions = {
                   "type": "float",
                   "description": "Year one operations and maintenance cost before tax in the business-as-usual case.",
                   "units": "$"
-                },                
+                },
                 "simple_payback_years": {
                   "type": "float",
                   "description": ("Number of years until the cumulative annual cashflow turns positive. "
@@ -450,7 +707,7 @@ nested_output_definitions = {
                 },
                 "existing_pv_om_cost_us_dollars": {
                   "type": "float",
-                  "description": "Lifetime O&M cost for existing PV system.",
+                  "description": "Lifecycle O&M cost for existing PV system.",
                   "units": "$"
                 },
                 "station_latitude": {
@@ -712,18 +969,6 @@ nested_output_definitions = {
                   "description": "Year one energy supplied from grid to load in the business-as-usual scenario",
                   "units": "kWh"
                 },
-                "year_one_emissions_lb_C02": {
-                  "type": "int",
-                  "description": ("Total equivalent pounds of carbon dioxide emitted from utility electricity use "
-                                  "in the first year. Calculated from EPA AVERT region hourly grid emissions factor series for the continental US."
-                                  "In AK and HI, the best available data are EPA eGRID annual averages."),
-                  "units": "lb CO2"
-                },
-                "year_one_emissions_bau_lb_C02": {
-                  "type": "int",
-                  "description": "Total equivalent pounds of carbon dioxide emitted from BAU utility electricity use in the first year. Calculated by default from hourly emissions estimates except in AK and HI.",
-                  "units": "lb CO2"
-                },
                 "year_one_coincident_peak_cost_us_dollars": {
                   "type": "float",
                   "description": "Optimal year one coincident peak charges",
@@ -755,8 +1000,88 @@ nested_output_definitions = {
                 },
                 "emissions_region": {
                   "type": "str",
-                  "description": "Description of region for emissions_factor_series_lb_CO2_per_kwh. Filled by default with the EPA AVERT region of the site."
+                  "description": "Description of region for emissions_factor_series_lb_CO2_per_kwh (and health-related emissions). Filled by default with the EPA AVERT region of the site."
                 },
+                "year_one_emissions_tCO2": {
+                  "type": "float",
+                  "description": "Total tons of CO2 emissions associated with the site's grid-purchased electricity in year one. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
+                  "units": "metric tons"
+                },
+                "year_one_emissions_tNOx": {
+                  "type": "float",
+                  "description": "Total tons of NOx emissions associated with the site's grid-purchased electricity in year one. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
+                  "units": "metric tons"
+                },
+                "year_one_emissions_tSO2": {
+                  "type": "float",
+                  "description": "Total tons of SO2 emissions associated with the site's grid-purchased electricity in year one. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
+                  "units": "metric tons"
+                },
+                "year_one_emissions_tPM25": {
+                  "type": "float",
+                  "description": "Total tons of PM2.5 emissions associated with the site's grid-purchased electricity in year one. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
+                  "units": "metric tons"
+                },
+                "year_one_emissions_tCO2_bau": {
+                  "type": "float",
+                  "description": "Total tons of CO2 emissions associated with the site's grid-purchased electricity in year one in the BAU case. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
+                  "units": "metric tons"
+                },
+                "year_one_emissions_tNOx_bau": {
+                  "type": "float",
+                  "description": "Total tons of NOx emissions associated with the site's grid-purchased electricity in year one in the BAU case. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
+                  "units": "metric tons"
+                },
+                "year_one_emissions_tSO2_bau": {
+                  "type": "float",
+                  "description": "Total tons of SO2 emissions associated with the site's grid-purchased electricity in year one in the BAU case. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
+                  "units": "metric tons"
+                },
+                "year_one_emissions_tPM25_bau": {
+                  "type": "float",
+                  "description": "Total tons of PM2.5 emissions associated with the site's grid-purchased electricity in year one in the BAU case. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
+                  "units": "metric tons"
+                },
+                "lifecycle_emissions_tCO2": {
+                  "type": "float",
+                  "description": "Total tons of CO2 emissions associated with the site's grid-purchased electricity over the analysis period. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
+                  "units": "metric tons"
+                },
+                "lifecycle_emissions_tNOx": {
+                  "type": "float",
+                  "description": "Total tons of NOx emissions associated with the site's grid-purchased electricity over the analysis period. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
+                  "units": "metric tons"
+                },
+                "lifecycle_emissions_tSO2": {
+                  "type": "float",
+                  "description": "Total tons of SO2 emissions associated with the site's grid-purchased electricity over the analysis period. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
+                  "units": "metric tons"
+                },
+                "lifecycle_emissions_tPM25": {
+                  "type": "float",
+                  "description": "Total tons of PM2.5 emissions associated with the site's grid-purchased electricity over the analysis period. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
+                  "units": "metric tons"
+                },
+                "lifecycle_emissions_tCO2_bau": {
+                  "type": "float",
+                  "description": "Total tons of CO2 emissions associated with the site's grid-purchased electricity over the analysis period. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
+                  "units": "metric tons"
+                },
+                "lifecycle_emissions_tNOx_bau": {
+                  "type": "float",
+                  "description": "Total tons of NOx emissions associated with the site's grid-purchased electricity over the analysis period. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
+                  "units": "metric tons"
+                },
+                "lifecycle_emissions_tSO2_bau": {
+                  "type": "float",
+                  "description": "Total tons of SO2 emissions associated with the site's grid-purchased electricity over the analysis period in the BAU scenario. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
+                  "units": "metric tons"
+                },
+                "lifecycle_emissions_tPM25_bau": {
+                  "type": "float",
+                  "description": "Total tons of PM2.5 emissions associated with the site's grid-purchased electricity over the analysis period in the BAU scenario. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
+                  "units": "metric tons"
+                }
               },
 
               "FuelTariff": {
@@ -799,7 +1124,7 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Year one NewBoiler fuel cost, before-tax",
                   "units": "$"
-                }                
+                }
               },
 
               "Generator": {
@@ -855,12 +1180,12 @@ nested_output_definitions = {
                 },
                 "existing_gen_total_fixed_om_cost_us_dollars": {
                   "type": "float",
-                  "description": "Lifetime fixed O&M cost for existing diesel generator system in bau case.",
+                  "description": "Lifecycle fixed O&M cost for existing diesel generator system in bau case.",
                   "units": "$"
                 },
                 "existing_gen_total_variable_om_cost_us_dollars": {
                   "type": "float",
-                  "description": "Lifetime variable (based on kwh produced) O&M cost for existing diesel generator system.",
+                  "description": "Lifecycle variable (based on kwh produced) O&M cost for existing diesel generator system.",
                   "units": "$"
                 },
                 "existing_gen_year_one_variable_om_cost_us_dollars": {
@@ -907,16 +1232,6 @@ nested_output_definitions = {
                   "type": "float",
                   "description": "Year one fuel cost for existing diesel generator system",
                   "units": "$"
-                },
-                "year_one_emissions_lb_C02": {
-                  "type": "int",
-                  "description": "Total equivalent pounds of carbon dioxide emitted from generator use in the first year.",
-                  "units": "lb CO2"
-                },
-                "year_one_emissions_bau_lb_C02": {
-                  "type": "int",
-                  "description": "Total equivalent pounds of carbon dioxide emitted from BAU generator use in the first year.",
-                  "units": "lb CO2"
                 },
                 "sr_provided_series_kw": {
                   "type": "list_of_float",
@@ -990,21 +1305,11 @@ nested_output_definitions = {
                   "type": list_of_float,
                   "description": "Year one hourly time series of CHP thermal to SteamTurbine",
                   "units": "MMBtu/hr"
-                },								
+                },
                 "year_one_thermal_to_waste_series_mmbtu_per_hour": {
                   "type": list_of_float,
                   "description": "Year one hourly time series of CHP thermal to waste heat",
                   "units": "MMBtu/hr"
-                },
-                "year_one_emissions_lb_C02": {
-                  "type": int,
-                  "description": "Total equivalent pounds of carbon dioxide emitted from CHP fuels consumed on site use in the first year.",
-                  "units": "hours"
-                },
-                "year_one_emissions_bau_lb_C02": {
-                  "type": int,
-                  "description": "Total equivalent pounds of carbon dioxide emitted from CHP fuels consumed on site use in the first year in the BAU case.",
-                  "units": "hours"
                 },
               },
 
@@ -1022,6 +1327,11 @@ nested_output_definitions = {
                 "year_one_boiler_fuel_consumption_mmbtu": {
                   "type": float,
                   "description": "Annual average boiler fuel consumption",
+                  "units": "MMBtu"
+                },
+                "year_one_boiler_fuel_consumption_mmbtu_bau": {
+                  "type": float,
+                  "description": "Annual average boiler fuel consumption in the BAU case",
                   "units": "MMBtu"
                 },
                 "year_one_boiler_thermal_production_mmbtu": {
@@ -1043,16 +1353,6 @@ nested_output_definitions = {
                   "type": list_of_float,
                   "description": "Year one hourly time series of CHP thermal to SteamTurbine",
                   "units": "MMBtu/hr"
-                },						
-                "year_one_emissions_lb_C02": {
-                  "type": int,
-                  "description": "Total equivalent pounds of carbon dioxide emitted from boiler fuels consumed on site use in the first year.",
-                  "units": "hours"
-                },
-                "year_one_emissions_bau_lb_C02": {
-                  "type": int,
-                  "description": "Total equivalent pounds of carbon dioxide emitted from boiler fuels consumed on site use in the first year in the BAU case.",
-                  "units": "hours"
                 }
               },
 
@@ -1167,7 +1467,7 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Optimal NewBoiler thermal power capacity",
                   "units": "MMBtu/hr"
-                },                  
+                },
                 "year_one_boiler_fuel_consumption_series_mmbtu_per_hr": {
                   "type": list_of_float,
                   "description": "Year one hourly time series of NewBoiler fuel consumption",
@@ -1202,12 +1502,7 @@ nested_output_definitions = {
                   "type": list_of_float,
                   "description": "Year one hourly time series of NewBoiler thermal to SteamTurbine",
                   "units": "MMBtu/hr"
-                },                
-                "year_one_emissions_lb_C02": {
-                  "type": int,
-                  "description": "Total equivalent pounds of carbon dioxide emitted from NewBoiler fuels consumed on site use in the first year.",
-                  "units": "hours"
-                }              
+                }
             	},
               "SteamTurbine": {
                 "size_kw": {
@@ -1234,7 +1529,7 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Year one SteamTurbine thermal production time series",
                   "units": "MMBtu/hr"
-                },								
+                },
                 "year_one_electric_production_series_kw": {
                   "type": list_of_float,
                   "description": "Year one SteamTurbine electric production time series",
