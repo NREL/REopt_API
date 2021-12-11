@@ -210,7 +210,7 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Storage']['size_kwh'],0.0,places=0)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['Generator']['size_kw'],0.0,places=0)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['CHP']['size_kw'],200.0,places=0)
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['SteamTurbine']['size_kw'],1254.938,places=-1)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['SteamTurbine']['size_kw'],1254.938,places=-2)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['NewBoiler']['size_mmbtu_per_hr'],28.04,places=0)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['AbsorptionChiller']['size_ton'],400.0,places=0)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['HotTES']['size_gal'],50000,places=0)
@@ -221,9 +221,9 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                 self.assertAlmostEquals(npv_diff_pct,0.0,places=3)
                 # Renewable energy
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['annual_renewable_electricity_pct'],0.733551,places=3)
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['annual_renewable_electricity_kwh'],5540064.64,places=-2)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['annual_renewable_electricity_kwh'],5540064.64,places=-3)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['annual_renewable_electricity_pct_bau'],0.001534,places=3)
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['annual_renewable_electricity_kwh_bau'],13454.22,places=-1)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['annual_renewable_electricity_kwh_bau'],13454.22,places=-2)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['annual_total_renewable_energy_pct'],0.572143,places=3)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['annual_total_renewable_energy_pct_bau'],0.000852,places=3)
                 # CO2 emissions - totals, from grid, from fuelburn, ER, $/tCO2 breakeven
