@@ -72,7 +72,7 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
         #       elec + thermal techs, fixed capacities
         #       include RE and ER from exported elec in calcs
         #       no RE or ER targets (perhaps consider setting a min for both once we get it passing)
-        #       no outage or backup gens (perhasp consider adding in)
+        #       no outage or backup gens (perhaps consider adding in)
 
         # for each of the following input variables, the first value corresponds to scenario 1, second value to scenario 2:
         include_exported_RE_in_total = [True,False,True]
@@ -233,15 +233,15 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_tCO2_bau'],5931.29,places=0)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_from_fuelburn_tCO2'],33.89,places=0)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_from_fuelburn_tCO2_bau'],1585.32,places=0)
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_cost_CO2'],-1212459.92,places=0)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_cost_CO2'],-1212513.34,places=0)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_cost_CO2_bau'],4350968.52,places=0)
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_tCO2'],-36835.36,places=0)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_tCO2'],-36837.04,places=0)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_tCO2_bau'],133157.72,places=1)
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_from_fuelburn_tCO2'],847.34,places=0)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_from_fuelburn_tCO2'],844.66,places=0)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_from_fuelburn_tCO2_bau'],39633.01,places=0)
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_tCO2'],-1751.07,places=0)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_tCO2'],-1751.02,places=0)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_tCO2_bau'],4345.97,places=0)
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['lifecycle_emissions_tCO2'],-37682.7,places=0)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['lifecycle_emissions_tCO2'],-37681.7,places=0)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['ElectricTariff']['lifecycle_emissions_tCO2_bau'],93524.7,places=0)
                                         
                                         
