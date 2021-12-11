@@ -255,7 +255,7 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
             self.assertEqual(outputs["ElectricTariff"]["lifecycle_emissions_tCO2"], 0.0,
                              "Electric grid emissions (ElectricTariff.lifecycle_emissions_tCO2) do not equal 0. Equals {}".format(outputs["ElectricTariff"]["lifecycle_emissions_tCO2"]))
             pv_to_load = sum(outputs["PV"]["year_one_to_load_series_kw"])
-            self.assertAlmostEqual(outputs["year_one_renewable_electricity_kwh"], pv_to_load,delta=.75)
+            self.assertAlmostEqual(outputs["annual_renewable_electricity_kwh"], pv_to_load,delta=.75)
             
                       
         except Exception as e:
