@@ -2272,6 +2272,7 @@ function add_newboiler_results(m, p, r::Dict)
         @expression(m, NewBoilerToSteamTurbine[ts in p.TimeStep], m[:dvThermalToSteamTurbine]["NEWBOILER",ts])
         r["newboiler_thermal_to_steamturbine_series"] = round.(value.(NewBoilerToSteamTurbine), digits=3)
     else
+		@expression(m, NewBoilerToSteamTurbine[ts in p.TimeStep], 0.0)
         r["newboiler_thermal_to_steamturbine_series"] = round.(zeros(p.TimeStepCount), digits=3)
     end
 	@expression(m, NewBoilerToLoad[ts in p.TimeStep],
