@@ -102,66 +102,56 @@ nested_output_definitions = {
                                   "calculation of this output value keeps the cost of those emissions at the values input by the user."),
                   "units": "$/tCO2"
                 },
-              "year_one_renewable_electricity_pct": {
+              "annual_renewable_electricity_pct": {
                 "type": float,
                 "description": (
-                  "Portion of electricity consumption (incl. electric heating/cooling loads) that is derived from on-site renewable resource generation in year one."
-                  "Calculated as total RE electric generation in year one, minus storage losses and curtailment, with the user selecting whether exported renewable generation is included, "
-                  "divided by the total annual electric load in year one."
+                  "Portion of electricity consumption (incl. electric heating/cooling loads) that is derived from on-site renewable resource generation."
+                  "Calculated as total annual RE electric generation, minus storage losses and curtailment, with the user selecting whether exported renewable generation is included, "
+                  "divided by total annual electric consumption."
                   ),
                 "units": "%"
                 },
-              "year_one_renewable_electricity_kwh": {
+              "annual_renewable_electricity_kwh": {
                 "type": float,
                 "description": (
-                  "Electricity consumption (incl. electric heating/cooling loads) that is derived from on-site renewable resource generation in year one."
-                  "Calculated as total RE electric generation in year one, minus storage losses and curtailment, with the user selecting whether exported renewable generation is included). "
+                  "Electricity consumption (incl. electric heating/cooling loads) that is derived from on-site renewable resource generation."
+                  "Calculated as total annual RE electric generation, minus storage losses and curtailment, with the user selecting whether exported renewable generation is included). "
                   ),
                 "units": "kwh"
                 },
-              "year_one_renewable_electricity_pct_bau": {
+              "annual_renewable_electricity_pct_bau": {
                 "type": float,
                 "description": (
-                  "Portion of electricity consumption (incl. electric heating/cooling loads) that is derived from on-site renewable resource generation in year one in the BAU case."
-                  "Calculated as total RE electric generation in year one, minus storage losses and curtailment, with the user selecting whether exported renewable generation is included, "
-                  "divided by the total annual electric load in year one."
+                  "Electricity consumption (incl. electric heating/cooling loads) that is derived from on-site renewable resource generation in the BAU case."
+                  "Calculated as total annual RE electric generation in the BAU case, minus storage losses and curtailment, with the user selecting whether exported renewable generation is included, "
+                  "divided by total annual electric consumption."
                   ),
                 "units": "%"
                 },
-              "year_one_renewable_electricity_kwh_bau": {
+              "annual_renewable_electricity_kwh_bau": {
                 "type": float,
                 "description": (
-                  "Electricity consumption (incl. electric heating/cooling loads) that is derived from on-site renewable resource generation in year one in the BAU case."
-                  "Calculated as total RE electric generation in year one, minus storage losses and curtailment, with the user selecting whether exported renewable generation is included). "
+                  "Electricity consumption (incl. electric heating/cooling loads) that is derived from on-site renewable resource generation in the BAU case."
+                  "Calculated as total RE electric generation in the BAU case, minus storage losses and curtailment, with the user selecting whether exported renewable generation is included). "
                   ),
                 "units": "kwh"
                 },
-              "year_one_renewable_heat_pct": {
+              "annual_total_renewable_energy_pct": {
                 "type": float,
                 "description": (
-                  "Portion of heat consumption that is derived from on-site renewable resource generation in year one."
-                  "Calculated as total RE heat generation in year one, minus storage losses and waste heat."
-                  "divided by the total annual heating load in year one."
+                  "Portion of annual total energy consumption that is derived from on-site renewable resource generation."
+                  "The numerator is calculated as total annual RE electricity consumption (calculation described for annual_renewable_electricity_kwh output;"
+                  "includes electrified heating and cooling), plus total annual heat consumption coming from renewable fuels."
+                  "The annual RE heat portion of this calculation is total thermal heat consumption from RE fuels, "
+                  "minus waste heat generated by RE fuels, minus efficiency losses applied to RE heat generation passing through HW-TES, "
+                  "minus steam used to power the steam turbine, and "
+                  "excluding heating load met by GHP, which is considered electrified heat and already included in the annual RE electricity load. "
+                  "The denominator is calculated as total annual electricity consumption and total annual heat consumption, where "
+                  "the total annual heat consumption calculation mirrors that of the numerator but without considering what fraction of the heat comes from RE fuels."
                   ),
                 "units": "%"
                 },
-              "year_one_renewable_heat_mmbtu": {
-                "type": float,
-                "description": (
-                  "Heat consumption that is derived from on-site renewable resource generation in year one."
-                  "Calculated as total RE heat generation in year one, minus storage losses and waste heat. "
-                  ),
-                "units": "mmbtu"
-                },
-              "year_one_heat_load_mmbtu": {
-                "type": float,
-                "description": (
-                  "Heat consumption in year one."
-                  "Calculated as total heat generation in year one, minus storage losses and waste heat. "
-                  ),
-                "units": "mmbtu"
-                },
-              "year_one_renewable_heat_pct_bau": {
+              "annual_total_renewable_energy_pct_bau": {
                 "type": float,
                 "description": (
                   "Portion of heat consumption that is derived from on-site renewable resource generation in year one in the BAU case."
@@ -169,22 +159,6 @@ nested_output_definitions = {
                   "divided by the total annual heating load in year one in the BAU case."
                   ),
                 "units": "%"
-                },
-              "year_one_renewable_heat_mmbtu_bau": {
-                "type": float,
-                "description": (
-                  "Heat consumption that is derived from on-site renewable resource generation in year one in the BAU case."
-                  "Calculated as total RE heat generation in year one in the BAU case, minus storage losses and waste heat. "
-                  ),
-                "units": "mmbtu"
-                },
-              "year_one_heat_load_mmbtu_bau": {
-                "type": float,
-                "description": (
-                  "Heat consumption in year one in the BAU case."
-                  "Calculated as total heat generation in year one, minus storage losses and waste heat. "
-                  ),
-                "units": "mmbtu"
                 },
               "year_one_emissions_tCO2": {
                   "type": float,
