@@ -40,8 +40,9 @@ import re
 import uuid
 from reo.src.techs import Generator, Boiler, CHP, AbsorptionChiller, SteamTurbine
 from reo.src.emissions_calculator import EmissionsCalculator, EASIURCalculator
-from reo.utilities import generate_year_profile_hourly
+from reo.utilities import generate_year_profile_hourly, get_climate_zone_and_nearest_city
 from reo.src.pyeasiur import *
+from reo.src.load_profile import BuiltInProfile
 
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'r'))]
@@ -1884,28 +1885,30 @@ class ValidateNestedInput:
 
         if object_name_path[-1] == "GHP":
             if self.isValid:
-                vav_building_list = ["LargeOffice", "MediumOffice"]  # TODO complete this
-                # Check the load if there is VAV HVAC input parameters
+                # Look up default GHP effciency thermal factors if not input
                 eval_ghp = False
                 if real_values.get("building_sqft") is not None:
                     eval_ghp = True
                 if eval_ghp:
                     heating_factor = real_values.get("space_heating_efficiency_thermal_factor")
                     cooling_factor = real_values.get("cooling_efficiency_thermal_factor")
+                    if heating_factor in [[], None] or cooling_factor in [[], None]:
+                        climate_zone, nearest_city, geometric_flag = get_climate_zone_and_nearest_city(latitude, longitude, BuiltInProfile.default_cities)
+                        heating_factor_data = pd.read_csv(os.path.join('input_files', 'LoadProfiles', 'ghp_heating_efficiency_thermal_factors.csv'), index_col="Building Type")
+                        cooling_factor_data = pd.read_csv(os.path.join('input_files', 'LoadProfiles', 'ghp_cooling_efficiency_thermal_factors.csv'), index_col="Building Type")
+                        building_type_heating = self.input_dict['Scenario']['Site']['LoadProfileBoilerFuel'].get('doe_reference_name')
+                        building_type_cooling = self.input_dict['Scenario']['Site']['LoadProfileChillerThermal'].get('doe_reference_name')
+
+                    # TODO handle campus/building-mix? Extra check on that, and Weighted average of percent_share?           
                     if heating_factor in [[], None]:
-                        # Check if doe_reference_name is used for heating and/or cooling
-                        if self.input_dict['Scenario']['Site']['LoadProfileBoilerFuel'].get('doe_reference_name') in vav_building_list:
-                            # TODO look up heating factor based on building type and climate zone, serve by view for UI
-                            # TODO handle campus/building-mix? Extra check on that, and Weighted average of percent_share?
-                            heating_factor = 0.8
+                        if building_type_heating in heating_factor_data.index:
+                            heating_factor = heating_factor_data[climate_zone][building_type_heating]
                         else:
                             heating_factor = 1.0
                         self.update_attribute_value(object_name_path, number, "space_heating_efficiency_thermal_factor", heating_factor)
                     if cooling_factor in [[], None]:
-                        if self.input_dict['Scenario']['Site']['LoadProfileChillerThermal'].get('doe_reference_name') in vav_building_list:
-                            # TODO look up cooling factor based on building type and climate zone, server by view for UI
-                            # TODO handle campus/building-mix? Extra check on that, and Weighted average of percent_share?
-                            cooling_factor = 0.8
+                        if building_type_cooling in cooling_factor_data.index:
+                            cooling_factor = cooling_factor_data[climate_zone][building_type_cooling]
                         else:
                             cooling_factor = 1.0
                         self.update_attribute_value(object_name_path, number, "cooling_efficiency_thermal_factor", cooling_factor)                       
