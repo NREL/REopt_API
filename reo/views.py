@@ -1075,7 +1075,7 @@ def ghp_efficiency_thermal_factors(request):
             {
                 "building_type": doe_reference_name,
                 "climate_zone": climate_zone,
-                "heating_efficiency_thermal_factor": heating_factor,
+                "space_heating_efficiency_thermal_factor": heating_factor,
                 "cooling_efficiency_thermal_factor": cooling_factor
             }
         )
