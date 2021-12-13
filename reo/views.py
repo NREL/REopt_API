@@ -1064,7 +1064,7 @@ def ghp_efficiency_thermal_factors(request):
         heating_factor_data = pd.read_csv(os.path.join('input_files', 'LoadProfiles', 'ghp_heating_efficiency_thermal_factors.csv'), index_col="Building Type")
         cooling_factor_data = pd.read_csv(os.path.join('input_files', 'LoadProfiles', 'ghp_cooling_efficiency_thermal_factors.csv'), index_col="Building Type")
         
-        if doe_reference_name in heating_factor_data.index:
+        if doe_reference_name in list(heating_factor_data.index):
             heating_factor = heating_factor_data[climate_zone][doe_reference_name]
             cooling_factor = cooling_factor_data[climate_zone][doe_reference_name]
         else:
