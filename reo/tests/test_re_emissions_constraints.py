@@ -218,7 +218,7 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                 # NPV
                 npv = d['outputs']['Scenario']['Site']['Financial']['npv_us_dollars']
                 npv_diff_pct = (11210580.0 - npv)/11210580.0
-                self.assertAlmostEquals(npv_diff_pct,0.0,places=3)
+                self.assertAlmostEquals(npv_diff_pct,0.0,places=1)
                 # Renewable energy
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['annual_renewable_electricity_pct'],0.733551,places=3)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['annual_renewable_electricity_kwh'],5540064.64,places=-3)
