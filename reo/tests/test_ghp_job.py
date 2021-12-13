@@ -76,7 +76,7 @@ class GHPTest(ResourceTestCaseMixin, TestCase):
         nested_data["Scenario"]["Site"]["LoadProfileBoilerFuel"]["doe_reference_name"] = "FlatLoad_24_5"
         nested_data["Scenario"]["Site"]["LoadProfileBoilerFuel"]["monthly_mmbtu"] = [500.0] + [1000.0]*10 + [1500.0]
 
-        nested_data["Scenario"]["Site"]["GHP"]["ghpghx_responses"] = [json.load(open("ghpghx_response.json", 'rb'))]
+        #nested_data["Scenario"]["Site"]["GHP"]["ghpghx_responses"] = [json.load(open("ghpghx_response.json", 'rb'))]
 
         # Call REopt
         resp = self.get_reopt_response(data=nested_data)
