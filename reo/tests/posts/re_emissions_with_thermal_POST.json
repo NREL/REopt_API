@@ -32,9 +32,13 @@
         "chp_fuel_blended_annual_rates_us_dollars_per_mmbtu": 8.0,
         "chp_fuel_percent_RE": 0.3
       },
+      "LoadProfileChillerThermal": {
+        "doe_reference_name": "Hospital" ,
+        "chiller_cop": 3.4
+      } ,
       "SteamTurbine": {
         "min_kw": 30.0,
-        "max_kw": 30.0,
+        "max_kw": 2500.0,
         "is_condensing": true,
         "inlet_steam_pressure_psig": 1000.0,
         "inlet_steam_temperature_degF": null,
@@ -94,6 +98,30 @@
         "max_kw": 0.0,
         "min_kwh": 0.0,
         "max_kwh": 0.0
+      },
+      "ColdTES": {
+        "min_gal": 30000.0 ,
+        "max_gal": 30000.0 ,
+        "internal_efficiency_pct": 0.97 ,
+        "soc_min_pct": 0.1 ,
+        "soc_init_pct": 0.5 ,
+        "installed_cost_us_dollars_per_gal": 3.0 ,
+        "thermal_decay_rate_fraction": 0.004 ,
+        "om_cost_us_dollars_per_gal": 0.0 ,
+        "macrs_option_years": 0 ,
+        "macrs_bonus_pct": 0.0
+      } ,
+      "ElectricChiller": {
+      } ,
+      "AbsorptionChiller": {
+        "min_ton": 400.0 ,
+        "max_ton": 400.0 ,
+        "chiller_cop": 0.7 ,
+        "installed_cost_us_dollars_per_ton": 500.0 ,
+        "om_cost_us_dollars_per_ton": 0.5 ,
+        "macrs_option_years": 0 ,
+        "macrs_bonus_pct": 0.0 ,
+        "macrs_itc_reduction": 0.0
       },
       "CHP": {
         "prime_mover": "recip_engine",
