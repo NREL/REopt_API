@@ -220,14 +220,14 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
                 npv_diff_pct = (11210580.0 - npv)/11210580.0
                 self.assertAlmostEquals(npv_diff_pct,0.0,places=1)
                 # Renewable energy
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['annual_renewable_electricity_pct'],0.733551,places=3)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['annual_renewable_electricity_pct'],0.733551,places=2)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['annual_renewable_electricity_kwh'],5540064.64,places=-3)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['annual_renewable_electricity_pct_bau'],0.001534,places=3)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['annual_renewable_electricity_kwh_bau'],13454.22,places=-2)
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['annual_total_renewable_energy_pct'],0.572143,places=3)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['annual_total_renewable_energy_pct'],0.572143,places=2)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['annual_total_renewable_energy_pct_bau'],0.000852,places=3)
                 # CO2 emissions - totals, from grid, from fuelburn, ER, $/tCO2 breakeven
-                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_reduction_CO2_pct'],1.276628,places=3)
+                self.assertAlmostEquals(d['outputs']['Scenario']['Site']['lifecycle_emissions_reduction_CO2_pct'],1.276628,places=2)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2'],0.0,places=3)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_tCO2'],-1717.17,places=0)
                 self.assertAlmostEquals(d['outputs']['Scenario']['Site']['year_one_emissions_tCO2_bau'],5931.29,places=0)
