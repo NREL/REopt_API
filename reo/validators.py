@@ -1882,6 +1882,35 @@ class ValidateNestedInput:
                         else:
                             updated_set[param] = real_values.get(param)
 
+        if object_name_path[-1] == "GHP":
+            if self.isValid:
+                vav_building_list = ["LargeOffice", "MediumOffice"]  # TODO complete this
+                # Check the load if there is VAV HVAC input parameters
+                eval_ghp = False
+                if real_values.get("building_sqft") is not None:
+                    eval_ghp = True
+                if eval_ghp:
+                    heating_factor = real_values.get("space_heating_efficiency_thermal_factor")
+                    cooling_factor = real_values.get("cooling_efficiency_thermal_factor")
+                    if heating_factor in [[], None]:
+                        # Check if doe_reference_name is used for heating and/or cooling
+                        if self.input_dict['Scenario']['Site']['LoadProfileBoilerFuel'].get('doe_reference_name') in vav_building_list:
+                            # TODO look up heating factor based on building type and climate zone, serve by view for UI
+                            # TODO handle campus/building-mix? Extra check on that, and Weighted average of percent_share?
+                            heating_factor = 0.8
+                        else:
+                            heating_factor = 1.0
+                        self.update_attribute_value(object_name_path, number, "space_heating_efficiency_thermal_factor", heating_factor)
+                    if cooling_factor in [[], None]:
+                        if self.input_dict['Scenario']['Site']['LoadProfileChillerThermal'].get('doe_reference_name') in vav_building_list:
+                            # TODO look up cooling factor based on building type and climate zone, server by view for UI
+                            # TODO handle campus/building-mix? Extra check on that, and Weighted average of percent_share?
+                            cooling_factor = 0.8
+                        else:
+                            cooling_factor = 1.0
+                        self.update_attribute_value(object_name_path, number, "cooling_efficiency_thermal_factor", cooling_factor)                       
+                        
+
     def check_min_max_restrictions(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
         """
         comparison_function for recursively_check_input_dict.
