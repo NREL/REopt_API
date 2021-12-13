@@ -637,7 +637,8 @@ function add_thermal_load_constraints(m, p)
 				sum(p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts] for t in p.CoolingTechs) +
 				sum(m[:dvDischargeFromStorage][b,ts] for b in p.ColdTES) ==
 				p.CoolingLoad[ts] -
-				sum(p.GHPCoolingThermalServed[g,ts] * m[:binGHP][g] for g in p.GHPOptions) +
+				sum(p.GHPCoolingThermalServed[g,ts] * m[:binGHP][g] for g in p.GHPOptions) -
+                sum(p.CoolingThermalReductionWithGHP[g,ts] * m[:binGHP][g] for g in p.GHPOptions) +
 				sum(m[:dvProductionToStorage][b,t,ts] for b in p.ColdTES, t in p.CoolingTechs)
 		)
 	end
@@ -651,7 +652,8 @@ function add_thermal_load_constraints(m, p)
                     sum(p.ProductionFactor[t,ts] * (m[:dvThermalProduction][t,ts] - m[:dvThermalToSteamTurbine][t,ts]) for t in p.BoilerTechs) +
                     sum(m[:dvDischargeFromStorage][b,ts] for b in p.HotTES) ==
                     p.HeatingLoad[ts] * p.BoilerEfficiency["BOILER"] -
-					sum(p.GHPHeatingThermalServed[g,ts] * m[:binGHP][g] for g in p.GHPOptions) +
+					sum(p.GHPHeatingThermalServed[g,ts] * m[:binGHP][g] for g in p.GHPOptions) -
+                    sum(p.HeatingThermalReductionWithGHP[g,ts] * m[:binGHP][g] for g in p.GHPOptions) +
                     sum(m[:dvProductionToWaste][t,ts] for t in p.CHPTechs) +
                     sum(m[:dvProductionToStorage][b,t,ts] for b in p.HotTES, t in p.HeatingTechs)  +
                     sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers) / p.AbsorptionChillerCOP
@@ -662,7 +664,8 @@ function add_thermal_load_constraints(m, p)
                     sum(p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts] for t in p.BoilerTechs) +
                     sum(m[:dvDischargeFromStorage][b,ts] for b in p.HotTES) ==
                     p.HeatingLoad[ts] * p.BoilerEfficiency["BOILER"] -
-					sum(p.GHPHeatingThermalServed[g,ts] * m[:binGHP][g] for g in p.GHPOptions) +
+					sum(p.GHPHeatingThermalServed[g,ts] * m[:binGHP][g] for g in p.GHPOptions) -
+                    sum(p.HeatingThermalReductionWithGHP[g,ts] * m[:binGHP][g] for g in p.GHPOptions) +
                     sum(m[:dvProductionToWaste][t,ts] for t in p.CHPTechs) +
                     sum(m[:dvProductionToStorage][b,t,ts] for b in p.HotTES, t in p.HeatingTechs)  +
                     sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers) / p.AbsorptionChillerCOP
