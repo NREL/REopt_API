@@ -1893,6 +1893,8 @@ class ValidateNestedInput:
                     heating_factor = real_values.get("space_heating_efficiency_thermal_factor")
                     cooling_factor = real_values.get("cooling_efficiency_thermal_factor")
                     if heating_factor in [[], None] or cooling_factor in [[], None]:
+                        latitude = self.input_dict['Scenario']['Site']['latitude']
+                        longitude = self.input_dict['Scenario']['Site']['longitude']
                         climate_zone, nearest_city, geometric_flag = get_climate_zone_and_nearest_city(latitude, longitude, BuiltInProfile.default_cities)
                         heating_factor_data = pd.read_csv(os.path.join('input_files', 'LoadProfiles', 'ghp_heating_efficiency_thermal_factors.csv'), index_col="Building Type")
                         cooling_factor_data = pd.read_csv(os.path.join('input_files', 'LoadProfiles', 'ghp_cooling_efficiency_thermal_factors.csv'), index_col="Building Type")
