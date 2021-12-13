@@ -1137,6 +1137,8 @@ class GHPModel(models.Model):
     installed_cost_building_hydronic_loop_us_dollars_per_sqft = models.FloatField(null=True, blank=True)
     om_cost_us_dollars_per_sqft_year = models.FloatField(null=True, blank=True)
     building_sqft = models.FloatField(null=True, blank=True)
+    space_heating_efficiency_thermal_factor = models.FloatField(null=True, blank=True)
+    cooling_efficiency_thermal_factor = models.FloatField(null=True, blank=True)
     ghpghx_inputs = ArrayField(PickledObjectField(null=True, editable=True), null=True, default=list)
     ghpghx_response_uuids = ArrayField(models.TextField(null=True, blank=True), default=list, null=True)
     ghpghx_responses = ArrayField(PickledObjectField(null=True, editable=True), null=True, default=list)

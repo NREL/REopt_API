@@ -2458,6 +2458,18 @@ nested_input_definitions = {
           "max": max_big_number,
           "description": "Building square footage for GHP/HVAC cost calculations"
         },
+        "space_heating_efficiency_thermal_factor": {
+          "type": "float",
+          "min": 0.001,
+          "max": 1.0,
+          "description": "Heating efficiency factor (annual average) to account for reduced space heating thermal load from GHP retrofit (e.g. reduced reheat)"
+        },
+        "cooling_efficiency_thermal_factor": {
+          "type": "float",
+          "min": 0.001,
+          "max": 1.0,
+          "description": "Cooling efficiency factor (annual average) to account for reduced cooling thermal load from GHP retrofit (e.g. reduced reheat)"
+        },       
         "ghpghx_inputs": {
           "type": "list_of_dict",
           "description": "GHP-GHX inputs/POST to /ghpghx endpoint"
