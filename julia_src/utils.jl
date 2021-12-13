@@ -284,6 +284,8 @@ Base.@kwdef struct Parameter
     RequireGHPPurchase::Int64
     GHPHeatingThermalServed::Array{Float64,2}  # Array of heating load (thermal!) profiles served by GHP
     GHPCoolingThermalServed::Array{Float64,2}  # Array of cooling load profiles served by GHP
+    HeatingThermalReductionWithGHP::Array{Float64,2}  # Array of heating load reduction (thermal!) profile from GHP retrofit
+    CoolingThermalReductionWithGHP::Array{Float64,2}  # Array of cooling load reduction (thermal!) profile from GHP retrofit
     GHPElectricConsumed::Array{Float64,2}  # Array of electric load profiles consumed by GHP
     GHPInstalledCost::Array{Float64,1}  # Array of installed cost for GHP options
     GHPOMCost::Array{Float64,1}  # Array of O&M cost for GHP options
@@ -448,6 +450,8 @@ function Parameter(d::Dict)
 
     d["GHPHeatingThermalServed"] = array_of_array_to_2D_array(d["GHPHeatingThermalServed"])
     d["GHPCoolingThermalServed"] = array_of_array_to_2D_array(d["GHPCoolingThermalServed"])
+    d["HeatingThermalReductionWithGHP"] = array_of_array_to_2D_array(d["HeatingThermalReductionWithGHP"])
+    d["CoolingThermalReductionWithGHP"] = array_of_array_to_2D_array(d["CoolingThermalReductionWithGHP"])
     d["GHPElectricConsumed"] = array_of_array_to_2D_array(d["GHPElectricConsumed"])
 
     d = string_dictkeys_tosymbols(d)
