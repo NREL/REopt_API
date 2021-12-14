@@ -485,9 +485,8 @@ class ValidateNestedInput:
         self.input_as_none = []
         self.invalid_inputs = []
         self.resampled_inputs = []
-        self.emission_warning = [] ## I defined this the same way for NOx, might cause an error
+        self.emission_warning = [] 
         self.defaults_inserted = []
-        self.emission_warning = []
         self.general_warnings = []
         self.input_dict = dict()
         self.off_grid_flag = False
@@ -1260,7 +1259,7 @@ class ValidateNestedInput:
 
                     # check if user intended to run CHP and supplied sufficient pararmeters to run CHP
                     if user_supplied_chp_inputs:
-                        required_keys = prime_mover_defaults_all['recip_engine'].keys() # TODO: Check this for NOx rate
+                        required_keys = prime_mover_defaults_all['recip_engine'].keys()
                         filtered_values = {k: real_values.get(k) for k in required_keys if k not in ['prime_mover', 'size_class']}
                         missing_defaults = []
                         for k,v in filtered_values.items():
@@ -1811,7 +1810,7 @@ class ValidateNestedInput:
                     )
             
             # If health values must be included and any health input is missing, check if lat long are in CAMx grid 
-            ## If not, set health costs to zero for now, with warning message?
+            # If not, set health costs to zero for now, with warning message
             must_include_health = self.input_dict['Scenario']['include_health_in_objective'] 
             health_inputs = ["nox_cost_us_dollars_per_tonne_grid", "so2_cost_us_dollars_per_tonne_grid", "pm25_cost_us_dollars_per_tonne_grid",
             "nox_cost_us_dollars_per_tonne_onsite_fuelburn", "so2_cost_us_dollars_per_tonne_onsite_fuelburn", "pm25_cost_us_dollars_per_tonne_onsite_fuelburn",
