@@ -7,14 +7,14 @@ import pandas as pd
 import numpy as np
 from functools import partial
 import pyproj
+from reo.src.pyeasiur import *
 
 from shapely import geometry as g
 from shapely.ops import transform
 
-
 class EmissionsCalculator:
 
-    def __init__(self, latitude=None, longitude=None, **kwargs):
+    def __init__(self, latitude=None, longitude=None, pollutant=None, **kwargs):
         """
         :param latitude: float
         :param longitude: float
@@ -24,6 +24,7 @@ class EmissionsCalculator:
         self.library_path = os.path.join('reo', 'src', 'data')
         self.latitude = float(latitude) if latitude is not None else None
         self.longitude = float(longitude) if longitude is not None else None
+        self.pollutant = pollutant
         self._region_abbr = None
         self._emmissions_profile = None
         self._transmission_and_distribution_losses = None
@@ -32,160 +33,6 @@ class EmissionsCalculator:
         proj102008 = pyproj.Proj("+proj=aea +lat_1=20 +lat_2=60 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs")
         self.project4326_to_102008 = partial(pyproj.transform,pyproj.Proj(init='epsg:4326'),proj102008)
     
-    @staticmethod
-    def add_to_data(data):
-
-        precision = 1
-        cannot_calc_total_emissions = False
-        cannot_calc_bau_total_emissions = False
-        missing_emissions = []
-
-        
-        data['outputs']['Scenario']['Site']['year_one_emissions_lb_C02'] = 0
-        data['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_C02'] = 0
-
-        hourly_emissions = np.array(data['inputs']['Scenario']['Site']['ElectricTariff'].get('emissions_factor_series_lb_CO2_per_kwh') or [])
-        from_utility_series = np.array(data['outputs']['Scenario']['Site']['ElectricTariff'].get('year_one_to_load_series_kw') \
-            or [0 for _ in range(8760 *self.time_steps_per_hour)]) + \
-            np.array(data['outputs']['Scenario']['Site']['ElectricTariff'].get('year_one_to_battery_series_kw') or \
-            [0 for _ in range(8760 * self.time_steps_per_hour)]) 
-
-        if hourly_emissions.shape[0] > 0:
-            data['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_lb_C02'] = \
-            round((hourly_emissions * from_utility_series).sum(),precision)
-            
-            data['outputs']['Scenario']['Site']['year_one_emissions_lb_C02'] += \
-            round(data['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_lb_C02'],precision)
-
-            loads_kw = np.array(data['outputs']['Scenario']['Site']['ElectricTariff']['year_one_to_load_series_bau_kw'] or [])
-            if len(loads_kw) == 0:
-                loads_kw = 0
-            data['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_bau_lb_C02'] = \
-                round((hourly_emissions * loads_kw).sum(),precision)
-            data['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_C02'] += \
-                round(data['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_bau_lb_C02'],precision)
-        else:
-            if (sum(from_utility_series) > 0):
-                cannot_calc_total_emissions = True
-                missing_emissions.append('ElectricTariff')
-            else:
-                data['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_lb_C02'] = 0
-
-            if (sum(data['outputs']['Scenario']['Site']['ElectricTariff'].get('year_one_to_load_bau_series_kw') or [0]) > 0):
-                cannot_calc_bau_total_emissions = True
-                missing_emissions.append('ElectricTariff')
-            else:
-                data['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_bau_lb_C02'] = 0
-
-        generator_emmissions = data['inputs']['Scenario']['Site']['Generator'].get('emissions_factor_lb_CO2_per_gal')
-        if generator_emmissions is not None:
-            data['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_C02'] = \
-                round(generator_emmissions * (data['outputs']['Scenario']['Site']['Generator'].get("fuel_used_gal") or 0),precision)
-            data['outputs']['Scenario']['Site']['year_one_emissions_lb_C02'] += \
-                round(data['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_C02'],precision)
-            
-            data['outputs']['Scenario']['Site']['Generator']['year_one_emissions_bau_lb_C02'] = \
-                round(generator_emmissions *  (data['outputs']['Scenario']['Site']['Generator'].get("fuel_used_gal_bau") or 0),precision)
-            data['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_C02'] += \
-                round(data['outputs']['Scenario']['Site']['Generator']['year_one_emissions_bau_lb_C02'],precision)
-                        
-        else:
-            if data['outputs']['Scenario']['Site']['Generator'].get("fuel_used_gal") or 0 > 0:
-                cannot_calc_total_emissions = True
-                missing_emissions.append('Generator')
-            else:
-                data['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_C02'] = 0
-
-            if data['outputs']['Scenario']['Site']['Generator'].get('fuel_used_gal_bau') or 0 > 0:
-                cannot_calc_bau_total_emissions = True
-                missing_emissions.append('Generator')
-            else:
-                data['outputs']['Scenario']['Site']['Generator']['year_one_emissions_bau_lb_C02'] = 0
-        
-        chp_emmissions = data['inputs']['Scenario']['Site']['CHP'].get('emissions_factor_lb_CO2_per_mmbtu')
-        if chp_emmissions is not None:
-            data['outputs']['Scenario']['Site']['CHP']['year_one_emissions_lb_C02'] = \
-                round(chp_emmissions * (data['outputs']['Scenario']['Site']['CHP'].get("year_one_fuel_used_mmbtu") or 0),precision)
-            data['outputs']['Scenario']['Site']['year_one_emissions_lb_C02'] += \
-                round(data['outputs']['Scenario']['Site']['CHP']['year_one_emissions_lb_C02'],precision)
-            
-        elif data['outputs']['Scenario']['Site']['CHP'].get("year_one_fuel_used_mmbtu") or 0 > 0:
-            cannot_calc_total_emissions = True
-            missing_emissions.append('CHP')
-        elif data['outputs']['Scenario']['Site']['CHP'].get("year_one_fuel_used_mmbtu") or 0 == 0:
-            data['outputs']['Scenario']['Site']['CHP']['year_one_emissions_lb_C02'] = 0
-        
-        data['outputs']['Scenario']['Site']['CHP']['year_one_emissions_bau_lb_C02'] = 0
-
-        boiler_emmissions = data['inputs']['Scenario']['Site']['Boiler'].get('emissions_factor_lb_CO2_per_mmbtu')
-        if boiler_emmissions is not None:
-            data['outputs']['Scenario']['Site']['Boiler']['year_one_emissions_lb_C02'] = \
-                round(boiler_emmissions * (data['outputs']['Scenario']['Site']['Boiler'].get("year_one_boiler_fuel_consumption_mmbtu") or 0)\
-                ,precision)
-            
-            data['outputs']['Scenario']['Site']['year_one_emissions_lb_C02'] += \
-                round(data['outputs']['Scenario']['Site']['Boiler']['year_one_emissions_lb_C02'],precision)
-            
-            data['outputs']['Scenario']['Site']['Boiler']['year_one_emissions_bau_lb_C02'] = \
-                round(boiler_emmissions * \
-                (data['outputs']['Scenario']['Site']['LoadProfileBoilerFuel'].get("annual_calculated_boiler_fuel_load_mmbtu_bau") or 0)\
-                ,precision)
-
-            data['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_C02'] += \
-            round(data['outputs']['Scenario']['Site']['Boiler']['year_one_emissions_bau_lb_C02'],precision)
-        
-        else:
-            if data['outputs']['Scenario']['Site']['Boiler'].get("year_one_boiler_fuel_consumption_mmbtu") or 0 > 0:
-                cannot_calc_total_emissions = True
-                missing_emissions.append('Boiler')
-            else:
-                data['outputs']['Scenario']['Site']['Boiler']['year_one_emissions_lb_C02'] = 0
-            
-            if data['outputs']['Scenario']['Site']['LoadProfileBoilerFuel'].get("annual_calculated_boiler_fuel_load_mmbtu_bau") or 0 > 0:
-                cannot_calc_bau_total_emissions = True
-                missing_emissions.append('Boiler')
-            else:
-                data['outputs']['Scenario']['Site']['Boiler']['year_one_emissions_bau_lb_C02'] = 0
-
-        newboiler_emmissions = data['inputs']['Scenario']['Site']['NewBoiler'].get('emissions_factor_lb_CO2_per_mmbtu')
-        if newboiler_emmissions is not None:
-            data['outputs']['Scenario']['Site']['NewBoiler']['year_one_emissions_lb_C02'] = \
-                round(newboiler_emmissions * (data['outputs']['Scenario']['Site']['NewBoiler'].get("year_one_boiler_fuel_consumption_mmbtu") or 0),precision)
-            data['outputs']['Scenario']['Site']['year_one_emissions_lb_C02'] += \
-                round(data['outputs']['Scenario']['Site']['NewBoiler']['year_one_emissions_lb_C02'],precision)
-            
-        elif data['outputs']['Scenario']['Site']['NewBoiler'].get("year_one_boiler_fuel_consumption_mmbtu") or 0 > 0:
-            cannot_calc_total_emissions = True
-            missing_emissions.append('NewBoiler')
-        elif data['outputs']['Scenario']['Site']['NewBoiler'].get("year_one_boiler_fuel_consumption_mmbtu") or 0 == 0:
-            data['outputs']['Scenario']['Site']['NewBoiler']['year_one_emissions_lb_C02'] = 0
-
-        if cannot_calc_total_emissions:
-            data['outputs']['Scenario']['Site']['year_one_emissions_lb_C02'] = None
-
-        if cannot_calc_bau_total_emissions:
-            data['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_C02'] = None
-        
-        if cannot_calc_bau_total_emissions or cannot_calc_total_emissions:
-            
-            message  = 'Could not calculate Site level emissions'
-            if cannot_calc_total_emissions:
-                message += ' for optimized results'
-            if cannot_calc_bau_total_emissions:
-                if cannot_calc_total_emissions:
-                    message += ' or'
-                message += ' for BAU case'
-            
-            message += '. Missing an emission factor for the following: {}'.format(','.join(set(missing_emissions)))
-
-            if 'messages' not in data.keys():
-                data['messages'] = {"warnings":{}}
-            if 'warnings' not in data['messages'].keys():
-                data['messages']["warnings"] = {}
-            data['messages']['warnings']['Emissions Calculation Warning'] = message
-
-        return data
-
     @property
     def region(self):
         lookup = {  'AK':'Alaska',
@@ -221,7 +68,7 @@ class EmissionsCalculator:
                 try:
                     lookup = transform(self.project4326_to_102008, g.Point(self.longitude, self.latitude))
                 except:
-                    raise AttributeError("Could look up AVERT emissions region from point ({},{}). Location is\
+                    raise AttributeError("Could not look up AVERT emissions region from point ({},{}). Location is\
                         likely invalid or well outside continental US, AK and HI".format(self.longitude, self.latitude))
                 distances_meter = gdf.geometry.apply(lambda x : x.distance(lookup)).values
                 min_idx = list(distances_meter).index(min(distances_meter))
@@ -235,12 +82,111 @@ class EmissionsCalculator:
     @property
     def emissions_series(self):
         if self._emmissions_profile is None:
-            df = pd.read_csv(os.path.join(self.library_path,'AVERT_hourly_emissions.csv'))
+            df = pd.read_csv(os.path.join(self.library_path,'AVERT_hourly_emissions_{}.csv'.format(self.pollutant)), dtype='float64', float_precision='high')
             if self.region_abbr in df.columns:
-                self._emmissions_profile = list(df[self.region_abbr].round(3).values)
+                self._emmissions_profile = list(df[self.region_abbr].round(6).values)
                 if self.time_steps_per_hour > 1:
                     self._emmissions_profile = list(np.concatenate([[i] * self.time_steps_per_hour for i in self._emmissions_profile]))
             else:
                 raise AttributeError("Emissions error. Cannnot find hourly emmissions for region {} ({},{}) \
-                    ".format(self.region, self.latitude,self.longitude))
+                    ".format(self.region, self.latitude,self.longitude)) 
         return self._emmissions_profile
+
+
+class EASIURCalculator:
+
+    def __init__(self, latitude=None, longitude=None, **kwargs):
+        """
+        :param latitude: float
+        :param longitude: float
+        :param kwargs:
+        """
+        self.library_path = os.path.join('reo', 'src', 'data')
+        self.latitude = float(latitude) if latitude is not None else None
+        self.longitude = float(longitude) if longitude is not None else None
+        self.inflation = kwargs.get('inflation') or None
+        self._grid_costs_per_tonne = None
+        self._onsite_costs_per_tonne = None
+        self._escalation_rates = None 
+        
+    
+    @property
+    def grid_costs(self):
+        if self._grid_costs_per_tonne is None:
+            # Assumption: grid emissions occur at site at 150m above ground;
+            EASIUR_150m = get_EASIUR2005('p150', pop_year=2020, income_year=2020, dollar_year=2010)  # For keys in EASIUR: EASIUR_150m_pop2020_inc2020_dol2010.keys()
+
+            # convert lon, lat to CAMx grid (x, y), specify datum. default is NAD83
+            # Note: x, y returned from g2l follows the CAMx grid convention.
+            # x and y start from 1, not zero. (x) ranges (1, ..., 148) and (y) ranges (1, ..., 112)
+            x, y = g2l(self.longitude, self.latitude, datum='NAD83')
+            x = int(round(x))
+            y = int(round(y))
+
+            # Convert from 2010$ to 2020$ (source: https://www.in2013dollars.com/us/inflation/2010?amount=100)
+            convert_2010_2020_usd = 1.246
+            try:
+                self._grid_costs_per_tonne = {
+                    'NOx': EASIUR_150m['NOX_Annual'][x - 1, y - 1] * convert_2010_2020_usd,
+                    'SO2': EASIUR_150m['SO2_Annual'][x - 1, y - 1] * convert_2010_2020_usd,
+                    'PM25': EASIUR_150m['PEC_Annual'][x - 1, y - 1] * convert_2010_2020_usd,
+                }
+            except:
+                raise AttributeError("Could not look up EASIUR health costs from point ({},{}). Location is \
+                    likely invalid or outside the CAMx grid".format(self.latitude, self.longitude))
+        return self._grid_costs_per_tonne
+
+    @property
+    def onsite_costs(self):
+        if self._onsite_costs_per_tonne is None:
+            # Assumption: on-site fuelburn emissions occur at site at 0m above ground;
+            EASIUR_0m = get_EASIUR2005('area', pop_year=2020, income_year=2020, dollar_year=2010)  # For keys in EASIUR: EASIUR_150m_pop2020_inc2020_dol2010.keys()
+
+            # convert lon, lat to CAMx grid (x, y), specify datum. default is NAD83
+            # Note: x, y returned from g2l follows the CAMx grid convention.
+            # x and y start from 1, not zero. (x) ranges (1, ..., 148) and (y) ranges (1, ..., 112)
+            x, y = g2l(self.longitude, self.latitude, datum='NAD83')
+            x = int(round(x))
+            y = int(round(y))
+
+            # Convert from 2010$ to 2020$ (source: https://www.in2013dollars.com/us/inflation/2010?amount=100)
+            convert_2010_2020_usd = 1.246
+            try:
+                self._onsite_costs_per_tonne = {
+                    'NOx': EASIUR_0m['NOX_Annual'][x - 1, y - 1] * convert_2010_2020_usd,
+                    'SO2': EASIUR_0m['SO2_Annual'][x - 1, y - 1] * convert_2010_2020_usd,
+                    'PM25': EASIUR_0m['PEC_Annual'][x - 1, y - 1] * convert_2010_2020_usd,
+                }
+            except:
+                raise AttributeError("Could not look up EASIUR health costs from point ({},{}). Location is \
+                    likely invalid or outside the CAMx grid".format(self.latitude, self.longitude))
+        return self._onsite_costs_per_tonne
+
+    @property
+    def escalation_rates(self):
+        if self._escalation_rates is None:
+            EASIUR_150m_yr2020 = get_EASIUR2005('p150', pop_year=2020, income_year=2020, dollar_year=2010) 
+            EASIUR_150m_yr2024 = get_EASIUR2005('p150', pop_year=2024, income_year=2024, dollar_year=2010) 
+
+            # convert lon, lat to CAMx grid (x, y), specify datum. default is NAD83
+            x, y = g2l(self.longitude, self.latitude, datum='NAD83')
+            x = int(round(x))
+            y = int(round(y))
+
+            try:
+                # real compound annual growth rate
+                cagr_real = { 
+                    'NOx': (EASIUR_150m_yr2024['NOX_Annual'][x - 1, y - 1]/EASIUR_150m_yr2020['NOX_Annual'][x - 1, y - 1])**(1/4)-1,
+                    'SO2': (EASIUR_150m_yr2024['SO2_Annual'][x - 1, y - 1]/EASIUR_150m_yr2020['SO2_Annual'][x - 1, y - 1])**(1/4)-1,
+                    'PM25': (EASIUR_150m_yr2024['PEC_Annual'][x - 1, y - 1]/EASIUR_150m_yr2020['PEC_Annual'][x - 1, y - 1])**(1/4)-1,
+                }
+                # nominal compound annual growth rate (real + inflation)
+                self._escalation_rates = {
+                    'NOx': cagr_real['NOx'] + self.inflation,
+                    'SO2': cagr_real['SO2'] + self.inflation,
+                    'PM25': cagr_real['PM25'] + self.inflation,
+                }
+            except:
+                raise AttributeError("Could not look up EASIUR health costs from point ({},{}). Location is \
+                    likely invalid or outside the CAMx grid".format(self.latitude, self.longitude))
+        return self._escalation_rates
