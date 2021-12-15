@@ -40,9 +40,18 @@ class ElecTariff(object):
                  blended_monthly_rates_us_dollars_per_kwh=None, blended_monthly_demand_charges_us_dollars_per_kw=None,
                  urdb_response=None, add_blended_rates_to_urdb_rate=None, blended_annual_rates_us_dollars_per_kwh=None,
                  blended_annual_demand_charges_us_dollars_per_kw=None, add_tou_energy_rates_to_urdb_rate=None,
-                 tou_energy_rates_us_dollars_per_kwh=None, emissions_factor_series_lb_CO2_per_kwh=None,
+                 tou_energy_rates_us_dollars_per_kwh=None, 
+                 emissions_factor_series_lb_CO2_per_kwh=None,
+                 emissions_factor_series_lb_NOx_per_kwh=None,
+                 emissions_factor_series_lb_SO2_per_kwh=None,
+                 emissions_factor_series_lb_PM25_per_kwh=None,
                  coincident_peak_load_active_timesteps=None, coincident_peak_load_charge_us_dollars_per_kw=None,
-                 chp_allowed_to_export=None, **kwargs):
+                 chp_allowed_to_export=None,
+                 emissions_factor_CO2_pct_decrease=None, 
+                 emissions_factor_NOx_pct_decrease=None, 
+                 emissions_factor_SO2_pct_decrease=None, 
+                 emissions_factor_PM25_pct_decrease=None, 
+                 **kwargs):
         """
         Electricity Tariff object for creating inputs to REopt
         :param dfm: Object, DataManager
@@ -114,6 +123,13 @@ class ElecTariff(object):
         self.net_metering_limit_kw = net_metering_limit_kw
         self.interconnection_limit_kw = interconnection_limit_kw
         self.emissions_factor_series_lb_CO2_per_kwh = emissions_factor_series_lb_CO2_per_kwh
+        self.emissions_factor_series_lb_NOx_per_kwh = emissions_factor_series_lb_NOx_per_kwh
+        self.emissions_factor_series_lb_SO2_per_kwh = emissions_factor_series_lb_SO2_per_kwh
+        self.emissions_factor_series_lb_PM25_per_kwh = emissions_factor_series_lb_PM25_per_kwh
+        self.emissions_factor_CO2_pct_decrease = emissions_factor_CO2_pct_decrease
+        self.emissions_factor_NOx_pct_decrease = emissions_factor_NOx_pct_decrease
+        self.emissions_factor_SO2_pct_decrease = emissions_factor_SO2_pct_decrease
+        self.emissions_factor_PM25_pct_decrease = emissions_factor_PM25_pct_decrease 
 
         # Standby charges for CHP
         self.chp_standby_rate_us_dollars_per_kw_per_month = kwargs['chp_standby_rate_us_dollars_per_kw_per_month']

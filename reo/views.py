@@ -46,7 +46,7 @@ from reo.exceptions import UnexpectedError  #, RequestError  # should we save ba
 import logging
 log = logging.getLogger(__name__)
 from reo.src.techs import Generator, CHP, AbsorptionChiller, Boiler, SteamTurbine
-from reo.src.emissions_calculator import EmissionsCalculator
+from reo.src.emissions_calculator import EmissionsCalculator, EASIURCalculator
 from django.http import HttpResponse
 from django.template import  loader
 import pandas as pd
@@ -200,16 +200,22 @@ def emissions_profile(request):
         latitude = float(request.GET['latitude'])  # need float to convert unicode
         longitude = float(request.GET['longitude'])
 
-        ec = EmissionsCalculator(latitude=latitude,longitude=longitude)
+        ec_CO2 = EmissionsCalculator(latitude=latitude,longitude=longitude, pollutant='CO2')
+        ec_NOx = EmissionsCalculator(latitude=latitude,longitude=longitude, pollutant='NOx')
+        ec_SO2 = EmissionsCalculator(latitude=latitude,longitude=longitude, pollutant='SO2')
+        ec_PM25 = EmissionsCalculator(latitude=latitude,longitude=longitude, pollutant='PM25')
 
         try:
             response = JsonResponse({
-                    'region_abbr': ec.region_abbr,
-                    'region': ec.region,
-                    'emissions_series_lb_CO2_per_kWh': ec.emissions_series,
-                    'units': 'Pounds Carbon Dioxide Equivalent',
-                    'description': 'Regional hourly grid emissions factor for EPA AVERT regions.',
-                    'meters_to_region': ec.meters_to_region
+                    'region_abbr': ec_CO2.region_abbr,
+                    'region': ec_CO2.region,
+                    'emissions_factor_series_lb_CO2_per_kwh': ec_CO2.emissions_series,
+                    'emissions_factor_series_lb_NOx_per_kwh': ec_NOx.emissions_series,
+                    'emissions_factor_series_lb_SO2_per_kwh': ec_SO2.emissions_series,
+                    'emissions_factor_series_lb_PM25_per_kwh': ec_PM25.emissions_series,
+                    'units': 'Pounds emission species per kWh',
+                    'description': 'Regional hourly grid emissions factors for applicable EPA AVERT region.',
+                    'meters_to_region': ec_CO2.meters_to_region
                 })
             return response
         except AttributeError as e:
@@ -217,6 +223,91 @@ def emissions_profile(request):
 
     except KeyError as e:
         return JsonResponse({"Error. Missing Parameter": str(e.args[0])}, status=500)
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except Exception:
+
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.error(debug_msg)
+        return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
+
+def easiur_costs(request):
+    try:
+        latitude = float(request.GET['latitude'])  # need float to convert unicode
+        longitude = float(request.GET['longitude'])
+        avg_inflation = float(request.GET['inflation'])
+
+        easiur = EASIURCalculator( latitude=latitude, 
+                    longitude=longitude,
+                    inflation=avg_inflation
+                    )
+
+        try:
+            response = JsonResponse({
+                    'nox_cost_us_dollars_per_tonne_grid': easiur.grid_costs['NOx'],
+                    'so2_cost_us_dollars_per_tonne_grid': easiur.grid_costs['SO2'],
+                    'pm25_cost_us_dollars_per_tonne_grid': easiur.grid_costs['PM25'],
+                    'nox_cost_us_dollars_per_tonne_onsite_fuelburn': easiur.onsite_costs['NOx'],
+                    'so2_cost_us_dollars_per_tonne_onsite_fuelburn': easiur.onsite_costs['SO2'],
+                    'pm25_cost_us_dollars_per_tonne_onsite_fuelburn': easiur.onsite_costs['PM25'],
+                    'units_costs': 'US dollars per metric ton.',
+                    'description_costs': 'Health costs of emissions from the grid and on-site fuel burn, as reported by the EASIUR model.',
+                    'nox_cost_escalation_pct': easiur.escalation_rates['NOx'],
+                    'so2_cost_escalation_pct': easiur.escalation_rates['SO2'],
+                    'pm25_cost_escalation_pct': easiur.escalation_rates['PM25'],
+                    'units_escalation': 'nominal annual percent',
+                    'description_escalation': 'Annual nominal escalation rate (as a decimal) of public health costs of emissions.',
+                })
+            return response
+        except AttributeError as e:
+            return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing Parameter": str(e.args[0])}, status=500)
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except Exception:
+
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.error(debug_msg)
+        return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
+
+def fuel_emissions_rates(request):
+    try:
+
+        try:
+            response = JsonResponse({
+                'CO2': {
+                    'generator_lb_per_gal': ValidateNestedInput.fuel_conversion_lb_CO2_per_gal,
+                    'lb_per_mmbtu': ValidateNestedInput.fuel_conversion_lb_CO2_per_mmbtu
+                    },
+                'NOx': {
+                    'generator_lb_per_gal': ValidateNestedInput.fuel_conversion_lb_NOx_per_gal,
+                    'lb_per_mmbtu': ValidateNestedInput.fuel_conversion_lb_NOx_per_mmbtu
+                    },
+                'SO2': {
+                    'generator_lb_per_gal': ValidateNestedInput.fuel_conversion_lb_SO2_per_gal,
+                    'lb_per_mmbtu': ValidateNestedInput.fuel_conversion_lb_SO2_per_mmbtu
+                    },
+                'PM25': {
+                    'generator_lb_per_gal': ValidateNestedInput.fuel_conversion_lb_PM25_per_gal,
+                    'lb_per_mmbtu': ValidateNestedInput.fuel_conversion_lb_PM25_per_mmbtu
+                    }
+                })
+            return response
+        except AttributeError as e:
+            return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except KeyError as e:
+        return JsonResponse({"No parameters required."}, status=500)
 
     except ValueError as e:
         return JsonResponse({"Error": str(e.args[0])}, status=500)
@@ -278,7 +369,7 @@ def simulated_load(request):
                 idx += 1
         else:
             cooling_doe_ref_name = None
-        
+
         if doe_reference_name is None and cooling_doe_ref_name is not None:
             doe_reference_name = cooling_doe_ref_name
             percent_share_list = cooling_pct_share_list
@@ -313,7 +404,7 @@ def simulated_load(request):
         if 'max_thermal_factor_on_peak_load' in request.GET.keys():
             max_thermal_factor_on_peak_load = float(request.GET.get('max_thermal_factor_on_peak_load'))
         else:
-            max_thermal_factor_on_peak_load = nested_input_definitions['Scenario']['Site']['ElectricChiller']['max_thermal_factor_on_peak_load']['default'] 
+            max_thermal_factor_on_peak_load = nested_input_definitions['Scenario']['Site']['ElectricChiller']['max_thermal_factor_on_peak_load']['default']
 
         if load_type == "electric":
             for key in request.GET.keys():
@@ -341,7 +432,7 @@ def simulated_load(request):
 
             b = LoadProfile(dfm=None, latitude=latitude, longitude=longitude, doe_reference_name=doe_reference_name,
                            annual_kwh=annual_kwh, monthly_totals_kwh=monthly_totals_kwh, critical_load_pct=0,
-                           percent_share=percent_share_list)                                      
+                           percent_share=percent_share_list)
 
             # Get the default cooling portion of the total electric load (used when we want cooling load without annual_tonhour input)
             if cooling_doe_ref_name is not None:
@@ -419,14 +510,14 @@ def simulated_load(request):
                     raise ValueError("addressable_load_fraction must contain a value for each month. {} is null".format('addressable_load_fraction[{}]'.format(bad_index)))
                 addressable_load_fraction = [float(i) for i in addressable_load_fraction]
             else:
-                addressable_load_fraction = addressable_load_fraction = [nested_input_definitions["Scenario"]["Site"]["LoadProfileBoilerFuel"]["addressable_load_fraction"]["default"]]            
-            
+                addressable_load_fraction = addressable_load_fraction = [nested_input_definitions["Scenario"]["Site"]["LoadProfileBoilerFuel"]["addressable_load_fraction"]["default"]]
+
             kwargs_heating = {}
             kwargs_heating["addressable_load_fraction"] = addressable_load_fraction
 
             if 'space_heating_fraction_of_heating_load' in request.GET.keys():
                 space_heating_fraction_of_heating_load = [float(request.GET.get('space_heating_fraction_of_heating_load'))]
-                kwargs_heating["space_heating_fraction_of_heating_load"] = space_heating_fraction_of_heating_load            
+                kwargs_heating["space_heating_fraction_of_heating_load"] = space_heating_fraction_of_heating_load
 
             b_space = LoadProfileBoilerFuel(load_type="SpaceHeating", dfm=None, latitude=latitude, longitude=longitude, doe_reference_name=doe_reference_name,
                            annual_mmbtu=annual_mmbtu, monthly_mmbtu=monthly_mmbtu, time_steps_per_hour=1,
@@ -434,7 +525,7 @@ def simulated_load(request):
 
             b_dhw = LoadProfileBoilerFuel(load_type="DHW", dfm=None, latitude=latitude, longitude=longitude, doe_reference_name=doe_reference_name,
                            annual_mmbtu=annual_mmbtu, monthly_mmbtu=monthly_mmbtu, time_steps_per_hour=1,
-                           percent_share=percent_share_list, **kwargs_heating)            
+                           percent_share=percent_share_list, **kwargs_heating)
 
             lp = [b_space.load_list[i] + b_dhw.load_list[i] for i in range(len(b_space.load_list))]
 
@@ -530,7 +621,7 @@ def simulated_load(request):
                     monthly_tonhour = [float(i) for i in monthly_tonhour]
                 else:
                     monthly_tonhour = None
-                
+
                 if not annual_tonhour and not monthly_tonhour:
                     raise ValueError('Use load_type=electric to get cooling load for buildings with no annual_tonhour or monthly_tonhour input (response.cooling_defaults)')
 
@@ -629,7 +720,7 @@ def chp_defaults(request):
     If steam and > 2 MWe chp_size_based_on_avg_heating_load_kw --> prime_mover = combustion_turbine of size_class X
 
     Boiler efficiency is assumed for calculating chp_size_based_on_avg_heating_load_kw and may not be consistent with actual input value.
-    
+
     Steam turbine defaults are provided if prime_mover = steam_turbine, and that bypasses much of the above logic
     """
 
@@ -670,9 +761,9 @@ def chp_defaults(request):
             else:
                 size_class = 0
                 chp_elec_size_heuristic_kw = None
-            
+
             prime_mover_defaults = SteamTurbine.get_steam_turbine_defaults(size_class=size_class)
-                
+
 
             response = JsonResponse(
                 {"prime_mover": prime_mover,
@@ -688,7 +779,7 @@ def chp_defaults(request):
                 if hw_or_steam is None:  # Use default hw_or_steam based on prime_mover
                     hw_or_steam = Boiler.boiler_type_by_chp_prime_mover_defaults[prime_mover]
             elif hw_or_steam is not None and avg_boiler_fuel_load_mmbtu_per_hr is not None:  # Option 1, determine prime_mover based on inputs
-                if hw_or_steam not in ["hot_water", "steam"]:  # Validate user-entered hw_or_steam 
+                if hw_or_steam not in ["hot_water", "steam"]:  # Validate user-entered hw_or_steam
                     raise ValueError("Invalid argument for existing_boiler_production_type_steam_or_hw; must be 'hot_water' or 'steam'")
             else:
                 ValueError("Must provide either existing_boiler_production_type_steam_or_hw or prime_mover")
@@ -718,7 +809,7 @@ def chp_defaults(request):
                 chp_elec_size_heuristic_kw = chp_fuel_rate_mmbtu_per_hr * elec_effic * 1.0E6 / 3412.0
             else:
                 chp_elec_size_heuristic_kw = None
-            
+
             # If size class is specified use that and ignore heuristic CHP sizing for determining size class
             if size_class is not None:
                 size_class = int(size_class)
@@ -742,7 +833,7 @@ def chp_defaults(request):
                             size_class = sc
             else:
                 size_class = CHP.default_chp_size_class[prime_mover]
-            
+
             prime_mover_defaults = CHP.get_chp_defaults(prime_mover, hw_or_steam, size_class)
 
             response = JsonResponse(
