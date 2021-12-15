@@ -26,7 +26,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop - 2021-12-15
+## v1.9.0 - 2021-12-15
 ### Minor Updates
 ##### Added
 - `reo`: Added capability to estimate year 1 and lifecycle emissions and climate and health costs of CO2, NOx, SO2, and PM2.5 from on-site fuel burn and grid-purchased electricity. Added total renewable energy calculations. User options to include climate and/or health costs in the objective function. User options to set emissions and/or renewable electricity constraints. User options to include or exclude exported electricity in renewable energy and emissions calculations. New emissions and renewable energy inputs (and defaults) in `nested_inputs.py` and outputs in `nested_outputs.py`. Added default emissions data for NOx, PM2.5, and SO2 in `src/data`. Default marginal health costs in `src/data/EASIUR_Data`. In `views.py` and `urls.py` added `easiur_costs` and `fuel_emissions_rates` urls. Default fuel emissions rates for NOx, SO2, and PM2.5 in `validators.py`. Added calculation of breakeven CO2 cost (when NPV is negative).
