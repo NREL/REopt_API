@@ -27,11 +27,12 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
+
 import copy
 from reo.src.urdb_parse import UrdbParse
 from reo.src.fuel_params import FuelParams
-from reo.utilities import annuity, degradation_factor, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
-    insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, setup_capital_cost_offgrid, annuity_escalation, MMBTU_TO_KWH
+from reo.utilities import annuity, annuity_two_escalation_rates, degradation_factor, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
+    insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, setup_capital_cost_offgrid, annuity_escalation, MMBTU_TO_KWH, GAL_DIESEL_TO_KWH
 import numpy as np
 max_incentive = 1.0e10
 
@@ -84,6 +85,8 @@ class DataManager:
         self.ghp_cost = []
         self.tes_kwh_to_gal = {}
         self.off_grid_flag = None
+        self.include_climate_in_objective = None
+        self.include_health_in_objective = None
 
         # following attributes used to pass data to process_results.py
         # If we serialize the python classes then we could pass the objects between Celery tasks
@@ -240,6 +243,25 @@ class DataManager:
         self.pwf_e = pwf_e
         # pwf_op = annuity(sf.analysis_years, sf.escalation_pct, sf.owner_discount_pct)
 
+        # Emissions pwfs
+        pwfs_emissions_cost = {
+            'CO2_grid': annuity_two_escalation_rates(sf.analysis_years, sf.co2_cost_escalation_pct, -1 * self.elec_tariff.emissions_factor_CO2_pct_decrease, sf.offtaker_discount_pct),
+            'CO2_onsite': annuity(sf.analysis_years, sf.co2_cost_escalation_pct, sf.offtaker_discount_pct),
+            'NOx_grid': annuity_two_escalation_rates(sf.analysis_years, sf.nox_cost_escalation_pct, -1 * self.elec_tariff.emissions_factor_NOx_pct_decrease, sf.offtaker_discount_pct),
+            'NOx_onsite': annuity(sf.analysis_years, sf.nox_cost_escalation_pct, sf.offtaker_discount_pct),
+            'SO2_grid': annuity_two_escalation_rates(sf.analysis_years, sf.so2_cost_escalation_pct, -1 * self.elec_tariff.emissions_factor_SO2_pct_decrease, sf.offtaker_discount_pct),
+            'SO2_onsite': annuity(sf.analysis_years, sf.so2_cost_escalation_pct, sf.offtaker_discount_pct),
+            'PM25_grid': annuity_two_escalation_rates(sf.analysis_years, sf.pm25_cost_escalation_pct, -1 * self.elec_tariff.emissions_factor_PM25_pct_decrease, sf.offtaker_discount_pct),
+            'PM25_onsite': annuity(sf.analysis_years, sf.pm25_cost_escalation_pct, sf.offtaker_discount_pct)
+        }
+
+        pwfs_grid_emissions_lbs = {
+            'CO2': annuity(sf.analysis_years, -1 * self.elec_tariff.emissions_factor_CO2_pct_decrease, 0.0), # used to calculate total grid CO2 lbs
+            'NOx': annuity(sf.analysis_years, -1 * self.elec_tariff.emissions_factor_NOx_pct_decrease, 0.0),
+            'SO2': annuity(sf.analysis_years, -1 * self.elec_tariff.emissions_factor_SO2_pct_decrease, 0.0),
+            'PM25': annuity(sf.analysis_years, -1 * self.elec_tariff.emissions_factor_PM25_pct_decrease, 0.0),
+        }
+
         if sf.third_party_ownership:
             two_party_factor = (pwf_offtaker * (1 - sf.offtaker_tax_pct)) \
                                 / (pwf_owner * (1 - sf.owner_tax_pct))
@@ -276,7 +298,8 @@ class DataManager:
                 else:
                     pwf_fuel_by_tech.append(round(pwf_e, 5))
 
-        return levelization_factor, pwf_e, pwf_om, two_party_factor, pwf_fuel_by_tech, pwf_owner, pwf_offtaker
+        return levelization_factor, pwf_e, pwf_om, two_party_factor, pwf_boiler_fuel, pwf_chp_fuel, pwf_fuel_by_tech, \
+               pwfs_emissions_cost, pwfs_grid_emissions_lbs, pwf_owner, pwf_offtaker
 
     def _get_REopt_production_incentives(self, techs):
         sf = self.site.financial
@@ -628,7 +651,7 @@ class DataManager:
                         raise Exception('Invalid cost curve for {}. Value at index {} ({}) cannot be less than or equal to 0'.format(tech, s, cost_curve_bp_x[s + 1]))
 
                     sf = self.site.financial
-                    if self.off_grid_flag: 
+                    if self.off_grid_flag:
                         replacement_cost = 0.0
                         useful_life = sf.analysis_years
 
@@ -636,10 +659,13 @@ class DataManager:
                             replacement_cost = eval('self.' + tech + '.replace_cost_us_dollars_per_kw')
                         if hasattr(eval('self.' + tech), 'useful_life_years'): # applies for generator
                             useful_life = eval('self.' + tech + '.useful_life_years')
-                            replacement_cost = eval('self.' + tech + '.installed_cost_us_dollars_per_kw')
+                            if useful_life >= sf.analysis_years: # if useful life >= analysis period, assume no replacement cost
+                                replacement_cost = 0.0
+                            else: 
+                                replacement_cost = eval('self.' + tech + '.installed_cost_us_dollars_per_kw')
 
                         # Not currently considering multiple replacements or salvage value, last available in commit c7699790a50f063cfd8e4981c778bd7d3751ae42
-                        
+
                         updated_slope = setup_capital_cost_incentive(
                             itc_basis=itc_unit_basis,  # input tech cost with incentives, but no ITC
                             replacement_cost=replacement_cost,
@@ -653,7 +679,7 @@ class DataManager:
                         )
                         # The way REopt incentives currently work, the federal rebate is the only incentive that doesn't reduce ITC basis
                         updated_slope -= rebate_federal
-                    else:
+                    else: 
                         updated_slope = setup_capital_cost_incentive(
                             itc_basis=itc_unit_basis,  # input tech cost with incentives, but no ITC
                             replacement_cost=0,
@@ -788,6 +814,12 @@ class DataManager:
         chp_thermal_prod_factor = list()
         om_cost_us_dollars_per_hr_per_kw_rated = list()
 
+        tech_percent_RE = list()
+        tech_emissions_factors_CO2 = list()
+        tech_emissions_factors_NOx = list()
+        tech_emissions_factors_SO2 = list()
+        tech_emissions_factors_PM25 = list()
+
         charge_efficiency = list()
         discharge_efficiency = list()
 
@@ -816,16 +848,59 @@ class DataManager:
                 else:
                     om_cost_us_dollars_per_kw.append(eval('self.' + tech + '.om_cost_us_dollars_per_kw'))
 
+                # Variable O&M and emissions/RE
                 # Only certain techs have variable o&m cost, and CHP also has a unique hourly-operating O&M
-                if tech.lower() in ['generator', 'newboiler', 'steamturbine']:
-                    om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kwh')))
+                if tech.lower() == 'generator':
+                    om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.kwargs["om_cost_us_dollars_per_kwh"]')))
                     om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
+                    # NOTE: tech_emissions_factors in lb / kWh (gets multiplied by kWh of fuel burned, not kWh electricity consumption, ergo the use of the HHV instead of fuel slope)
+                    tech_percent_RE.append(float(eval('self.generator.generator_fuel_percent_RE')))
+                    tech_emissions_factors_CO2.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_gal') / GAL_DIESEL_TO_KWH)) # lb/gal * gal/kWh
+                    tech_emissions_factors_NOx.append(float(eval('self.' + tech + '.emissions_factor_lb_NOx_per_gal') / GAL_DIESEL_TO_KWH))
+                    tech_emissions_factors_SO2.append(float(eval('self.' + tech + '.emissions_factor_lb_SO2_per_gal') / GAL_DIESEL_TO_KWH))
+                    tech_emissions_factors_PM25.append(float(eval('self.' + tech + '.emissions_factor_lb_PM25_per_gal') / GAL_DIESEL_TO_KWH))
                 elif tech.lower() == 'chp':
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kwh')))
-                    om_cost_us_dollars_per_hr_per_kw_rated.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_hr_per_kw_rated')))
-                else:
+                    om_cost_us_dollars_per_hr_per_kw_rated.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_hr_per_kw_rated') / MMBTU_TO_KWH))
+                    tech_percent_RE.append(float(eval('self.fuel_tariff.chp_fuel_percent_RE')))
+                    tech_emissions_factors_CO2.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_mmbtu') / MMBTU_TO_KWH))
+                    tech_emissions_factors_NOx.append(float(eval('self.' + tech + '.emissions_factor_lb_NOx_per_mmbtu') / MMBTU_TO_KWH))
+                    tech_emissions_factors_SO2.append(float(eval('self.' + tech + '.emissions_factor_lb_SO2_per_mmbtu') / MMBTU_TO_KWH))
+                    tech_emissions_factors_PM25.append(float(eval('self.' + tech + '.emissions_factor_lb_PM25_per_mmbtu') / MMBTU_TO_KWH))
+                elif tech.lower() == 'boiler':
                     om_cost_us_dollars_per_kwh.append(0.0)
                     om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
+                    tech_percent_RE.append(float(eval('self.fuel_tariff.boiler_fuel_percent_RE')))
+                    tech_emissions_factors_CO2.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_mmbtu') / MMBTU_TO_KWH))
+                    tech_emissions_factors_NOx.append(float(eval('self.' + tech + '.emissions_factor_lb_NOx_per_mmbtu') / MMBTU_TO_KWH))
+                    tech_emissions_factors_SO2.append(float(eval('self.' + tech + '.emissions_factor_lb_SO2_per_mmbtu') / MMBTU_TO_KWH))
+                    tech_emissions_factors_PM25.append(float(eval('self.' + tech + '.emissions_factor_lb_PM25_per_mmbtu') / MMBTU_TO_KWH))
+                elif tech.lower() == 'newboiler':
+                    om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kwh')))
+                    om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
+                    tech_percent_RE.append(float(eval('self.fuel_tariff.newboiler_fuel_percent_RE')))
+                    tech_emissions_factors_CO2.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_mmbtu') / MMBTU_TO_KWH))
+                    tech_emissions_factors_NOx.append(float(eval('self.' + tech + '.emissions_factor_lb_NOx_per_mmbtu') / MMBTU_TO_KWH))
+                    tech_emissions_factors_SO2.append(float(eval('self.' + tech + '.emissions_factor_lb_SO2_per_mmbtu') / MMBTU_TO_KWH))
+                    tech_emissions_factors_PM25.append(float(eval('self.' + tech + '.emissions_factor_lb_PM25_per_mmbtu') / MMBTU_TO_KWH))
+                elif tech.lower() == 'steamturbine':
+                    om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kwh')))
+                    om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
+                    # steam turbine percent RE will depend on source of steam and percent RE of fuel used to generate it- structured as a decision variable in reopt_model.jl
+                    tech_percent_RE.append(0.0) 
+                    # no additional emissions associated with steam turbine; emissions used to generate the steam used to power it are accounted for in respective heating techs
+                    tech_emissions_factors_CO2.append(0.0)
+                    tech_emissions_factors_NOx.append(0.0)
+                    tech_emissions_factors_SO2.append(0.0)
+                    tech_emissions_factors_PM25.append(0.0)
+                else: #pv, wind, TODO: GHP?
+                    om_cost_us_dollars_per_kwh.append(0.0)
+                    om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
+                    tech_percent_RE.append(1.0)
+                    tech_emissions_factors_CO2.append(0.0)
+                    tech_emissions_factors_NOx.append(0.0)
+                    tech_emissions_factors_SO2.append(0.0)
+                    tech_emissions_factors_PM25.append(0.0)
 
                 for location in ['roof', 'ground', 'both']:
                     if tech.startswith('pv'):
@@ -846,7 +921,9 @@ class DataManager:
         return tech_to_location, derate, \
                om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, om_cost_us_dollars_per_hr_per_kw_rated, \
                production_factor, charge_efficiency, discharge_efficiency, \
-               electric_derate, chp_thermal_prod_factor
+               electric_derate, chp_thermal_prod_factor, \
+               tech_percent_RE, tech_emissions_factors_CO2, \
+               tech_emissions_factors_NOx, tech_emissions_factors_SO2, tech_emissions_factors_PM25
 
     def _get_REopt_techs(self, techs):
         reopt_techs = list()
@@ -1023,6 +1100,78 @@ class DataManager:
                 time_steps_without_grid.append(i+1)
         return time_steps_with_grid, time_steps_without_grid
 
+    def bau_year_one_emissions(self):
+
+        """
+        Pre-processing of the BAU emissions to use in determining emissions reductions in the optimal case
+        Include BAU grid emissions, existing backup generator emissions, boiler emissions
+
+        Note if existing generation does not sustain a simulated outage, the BAU load and therefore emissions
+        are 0 during unsurvived outage hours
+
+        """
+        total_emissions_lb_CO2_per_year = 0
+        total_emissions_lb_NOx_per_year = 0
+        total_emissions_lb_SO2_per_year = 0
+        total_emissions_lb_PM25_per_year = 0
+
+        ## Grid emissions
+
+        # bau_load_list includes full load during normal grid-connected operations and critical load for whatever duration can be sustained with existing onsite generation
+        bau_grid_to_load_kw = np.array(self.load.bau_load_list)
+
+        # bau load list is non-net so must remove existing PV to get to the load served by the grid
+        # (for both normal grid-connected operations and critical load during outage)
+        years = self.site.financial.analysis_years
+        for pv in self.pvs:
+            """
+            This comes from reo/load_profile.py 
+            
+            Must account for levelization factor to align with how PV is modeled in REopt:
+            Because we only model one year, we multiply the "year 1" PV production by a levelization_factor
+            that accounts for the PV capacity degradation over the analysis_years. In other words, by
+            multiplying the pv.prod_factor by the levelization_factor we are modeling the average pv production.
+            """
+            levelization_factor = round(degradation_factor(years, pv.degradation_pct), 5)
+            bau_grid_to_load_kw -= np.array([pv.existing_kw * x * levelization_factor for x in pv.prod_factor])
+
+        #No grid emissions, or pv exporting to grid, during an outage
+        for i in range((self.load.outage_start_time_step or 1) -1, (self.load.outage_end_time_step or 1) -1):
+            bau_grid_to_load_kw[i] = 0
+
+        #If no net emissions accounting, no credit for RE grid exports:
+        if self.site.include_exported_elec_emissions_in_total is False:
+            bau_grid_to_load_kw = np.array([i if i > 0 else 0 for i in bau_grid_to_load_kw])
+
+        grid_emissions_lb_CO2_per_year = self.steplength*sum(np.array(self.elec_tariff.emissions_factor_series_lb_CO2_per_kwh) * bau_grid_to_load_kw)
+        total_emissions_lb_CO2_per_year += grid_emissions_lb_CO2_per_year
+
+        grid_emissions_lb_NOx_per_year = self.steplength*sum(np.array(self.elec_tariff.emissions_factor_series_lb_NOx_per_kwh) * bau_grid_to_load_kw)
+        total_emissions_lb_NOx_per_year += grid_emissions_lb_NOx_per_year
+
+        grid_emissions_lb_SO2_per_year = self.steplength*sum(np.array(self.elec_tariff.emissions_factor_series_lb_SO2_per_kwh) * bau_grid_to_load_kw)
+        total_emissions_lb_SO2_per_year += grid_emissions_lb_SO2_per_year
+
+        grid_emissions_lb_PM25_per_year = self.steplength*sum(np.array(self.elec_tariff.emissions_factor_series_lb_PM25_per_kwh) * bau_grid_to_load_kw)
+        total_emissions_lb_PM25_per_year += grid_emissions_lb_PM25_per_year
+
+        ## Generator emissions (during outages)
+        if self.generator is not None:
+            total_emissions_lb_CO2_per_year += self.load.generator_fuel_use_gal * self.generator.emissions_factor_lb_CO2_per_gal
+            total_emissions_lb_NOx_per_year += self.load.generator_fuel_use_gal * self.generator.emissions_factor_lb_NOx_per_gal
+            total_emissions_lb_SO2_per_year += self.load.generator_fuel_use_gal * self.generator.emissions_factor_lb_SO2_per_gal
+            total_emissions_lb_PM25_per_year += self.load.generator_fuel_use_gal * self.generator.emissions_factor_lb_PM25_per_gal
+
+        ## Boiler emissions
+        if self.boiler is not None:
+            for heat_type in ["space_heating", "dhw"]:
+                total_emissions_lb_CO2_per_year += eval("self.heating_load_"+heat_type+".annual_mmbtu") * self.boiler.emissions_factor_lb_CO2_per_mmbtu
+                total_emissions_lb_NOx_per_year += eval("self.heating_load_"+heat_type+".annual_mmbtu") * self.boiler.emissions_factor_lb_NOx_per_mmbtu
+                total_emissions_lb_SO2_per_year += eval("self.heating_load_"+heat_type+".annual_mmbtu") * self.boiler.emissions_factor_lb_SO2_per_mmbtu
+                total_emissions_lb_PM25_per_year += eval("self.heating_load_"+heat_type+".annual_mmbtu") * self.boiler.emissions_factor_lb_PM25_per_mmbtu
+
+        return total_emissions_lb_CO2_per_year, total_emissions_lb_NOx_per_year, total_emissions_lb_SO2_per_year, total_emissions_lb_PM25_per_year, grid_emissions_lb_CO2_per_year, grid_emissions_lb_NOx_per_year, grid_emissions_lb_SO2_per_year, grid_emissions_lb_PM25_per_year
+
     def _get_REopt_storage_techs_and_params(self):
         storage_techs = ['Elec']
         storage_power_cost = list()
@@ -1036,7 +1185,7 @@ class DataManager:
         # Obtain storage costs and params
         sf = self.site.financial
 
-        if self.off_grid_flag: 
+        if self.off_grid_flag:
             # Using on-grid capital cost slope for now
             StorageCostPerKW = setup_capital_cost_incentive(
                 self.storage.installed_cost_us_dollars_per_kw,  # use full cost as basis
@@ -1257,19 +1406,43 @@ class DataManager:
         tech_to_location, derate, om_cost_us_dollars_per_kw, \
             om_cost_us_dollars_per_kwh, om_cost_us_dollars_per_hr_per_kw_rated, production_factor, \
             charge_efficiency, discharge_efficiency, \
-            electric_derate, chp_thermal_prod_factor = self._get_REopt_array_tech_load(self.available_techs)
+            electric_derate, chp_thermal_prod_factor, \
+            tech_pct_RE, tech_emissions_factors_CO2, \
+            tech_emissions_factors_NOx, tech_emissions_factors_SO2, tech_emissions_factors_PM25 = self._get_REopt_array_tech_load(self.available_techs)
         tech_to_location_bau, derate_bau, om_cost_us_dollars_per_kw_bau, \
             om_cost_us_dollars_per_kwh_bau, om_cost_us_dollars_per_hr_per_kw_rated_bau, production_factor_bau, \
             charge_efficiency_bau, discharge_efficiency_bau, \
-            electric_derate_bau, chp_thermal_prod_factor_bau = self._get_REopt_array_tech_load(self.bau_techs)
+            electric_derate_bau, chp_thermal_prod_factor_bau, \
+            tech_pct_RE_bau, tech_emissions_factors_CO2_bau, \
+            tech_emissions_factors_NOx_bau, tech_emissions_factors_SO2_bau, tech_emissions_factors_PM25_bau = self._get_REopt_array_tech_load(self.bau_techs)
+
+        # RE & Emissions inputs
+        grid_emissions_factor_CO2 = self.elec_tariff.emissions_factor_series_lb_CO2_per_kwh
+        grid_emissions_factor_NOx = self.elec_tariff.emissions_factor_series_lb_NOx_per_kwh
+        grid_emissions_factor_SO2 = self.elec_tariff.emissions_factor_series_lb_SO2_per_kwh
+        grid_emissions_factor_PM25 = self.elec_tariff.emissions_factor_series_lb_PM25_per_kwh
+
+        bau_year_one_emissions_CO2, bau_year_one_emissions_NOx, bau_year_one_emissions_SO2, bau_year_one_emissions_PM25, bau_year_one_grid_emissions_CO2, bau_year_one_grid_emissions_NOx, bau_year_one_grid_emissions_SO2, bau_year_one_grid_emissions_PM25 = self.bau_year_one_emissions()
+        co2_cost_us_dollars_per_tonne = self.site.financial.co2_cost_us_dollars_per_tonne
+        nox_cost_us_dollars_per_tonne_grid = self.site.financial.nox_cost_us_dollars_per_tonne_grid
+        so2_cost_us_dollars_per_tonne_grid = self.site.financial.so2_cost_us_dollars_per_tonne_grid
+        pm25_cost_us_dollars_per_tonne_grid = self.site.financial.pm25_cost_us_dollars_per_tonne_grid
+        nox_cost_us_dollars_per_tonne_onsite_fuelburn = self.site.financial.nox_cost_us_dollars_per_tonne_onsite_fuelburn
+        so2_cost_us_dollars_per_tonne_onsite_fuelburn = self.site.financial.so2_cost_us_dollars_per_tonne_onsite_fuelburn
+        pm25_cost_us_dollars_per_tonne_onsite_fuelburn = self.site.financial.pm25_cost_us_dollars_per_tonne_onsite_fuelburn
+
 
         max_sizes, min_turn_down, max_sizes_location, min_allowable_size = self._get_REopt_tech_max_sizes_min_turn_down(
             self.available_techs)
         max_sizes_bau, min_turn_down_bau, max_sizes_location_bau, min_allowable_size_bau = self._get_REopt_tech_max_sizes_min_turn_down(
             self.bau_techs, bau=True)
 
-        levelization_factor, pwf_e, pwf_om, two_party_factor, pwf_fuel_by_tech, pwf_owner, pwf_offtaker = self._get_REopt_pwfs(self.available_techs)
-        levelization_factor_bau, pwf_e_bau, pwf_om_bau, two_party_factor_bau, pwf_fuel_by_tech_bau, pwf_owner_bau, pwf_offtaker_bau = self._get_REopt_pwfs(self.bau_techs)
+        levelization_factor, pwf_e, pwf_om, two_party_factor, \
+            pwf_boiler_fuel, pwf_chp_fuel, pwf_fuel_by_tech, pwfs_emissions_cost, pwfs_grid_emissions_lbs, \
+            pwf_owner, pwf_offtaker = self._get_REopt_pwfs(self.available_techs) 
+        levelization_factor_bau, pwf_e_bau, pwf_om_bau, two_party_factor_bau, \
+            pwf_boiler_fuel_bau, pwf_chp_fuel_bau, pwf_fuel_by_tech_bau, pwfs_emissions_cost_bau, pwfs_grid_emissions_lbs_bau, \
+            pwf_owner_bau, pwf_offtaker_bau = self._get_REopt_pwfs(self.bau_techs)
 
         pwf_prod_incent, max_prod_incent, max_size_for_prod_incent, production_incentive_rate \
             = self._get_REopt_production_incentives(self.available_techs)
@@ -1421,6 +1594,11 @@ class DataManager:
                 ghp_heating_thermal_load_served_kw.append(list(np.minimum(option.heating_thermal_load_served_kw, heating_thermal_load)))
                 ghp_cooling_thermal_load_served_kw.append(list(np.minimum(option.cooling_thermal_load_served_kw, cooling_load)))
                 ghp_electric_consumption_kw.append(option.electric_consumption_kw)
+                # GHP electric consumption is omitted from the electric load balance during an outage, and cooling load has been zeroed out above for outages
+                # So here we also have to zero out heating thermal production from GHP during an outage
+                if time_steps_without_grid not in [None, []]:
+                    for outage_time_step in time_steps_without_grid:
+                        ghp_heating_thermal_load_served_kw[i][outage_time_step-1] = 0.0
         else:
             ghp_heating_thermal_load_served_kw.append([])
             ghp_cooling_thermal_load_served_kw.append([])
@@ -1525,6 +1703,8 @@ class DataManager:
             'pwf_fuel': pwf_fuel_by_tech,
             'pwf_owner': pwf_owner,
             'pwf_offtaker': pwf_offtaker,
+            'pwfs_emissions_cost' : pwfs_emissions_cost,
+            'pwfs_grid_emissions_lbs' : pwfs_grid_emissions_lbs,
             'two_party_factor': two_party_factor,
             'pwf_prod_incent': pwf_prod_incent,
             'MaxProdIncent': max_prod_incent,
@@ -1610,7 +1790,29 @@ class DataManager:
             'ElectricDerate': electric_derate,
             'TechsByNMILRegime': TechsByNMILRegime,
             'TechsCannotCurtail': techs_cannot_curtail,
-            'TechsByNMILRegime': TechsByNMILRegime,
+            "GridEmissionsFactor_CO2": grid_emissions_factor_CO2,
+            "GridEmissionsFactor_NOx": grid_emissions_factor_NOx,
+            "GridEmissionsFactor_SO2": grid_emissions_factor_SO2,
+            "GridEmissionsFactor_PM25": grid_emissions_factor_PM25,
+            "TechEmissionsFactors_CO2": tech_emissions_factors_CO2,
+            "TechEmissionsFactors_NOx": tech_emissions_factors_NOx,
+            "TechEmissionsFactors_SO2": tech_emissions_factors_SO2,
+            "TechEmissionsFactors_PM25": tech_emissions_factors_PM25,
+            "TechPercentRE": tech_pct_RE,
+            "MinAnnualPercentREElec": self.site.renewable_electricity_min_pct,
+            "MaxAnnualPercentREElec": self.site.renewable_electricity_max_pct,
+            "MinPercentCO2EmissionsReduction": self.site.co2_emissions_reduction_min_pct,
+            "MaxPercentCO2EmissionsReduction": self.site.co2_emissions_reduction_max_pct,
+            "IncludeExportedREElecinTotal": self.site.include_exported_renewable_electricity_in_total,
+            "IncludeExportedElecEmissionsInTotal": self.site.include_exported_elec_emissions_in_total,
+            "BAUYr1Emissions_CO2": bau_year_one_emissions_CO2,
+            "BAUYr1Emissions_NOx": bau_year_one_emissions_NOx,
+            "BAUYr1Emissions_SO2": bau_year_one_emissions_SO2,
+            "BAUYr1Emissions_PM25": bau_year_one_emissions_PM25,
+            "BAUYr1Emissions_grid_CO2": bau_year_one_grid_emissions_CO2,
+            "BAUYr1Emissions_grid_NOx": bau_year_one_grid_emissions_NOx,
+            "BAUYr1Emissions_grid_SO2": bau_year_one_grid_emissions_SO2,
+            "BAUYr1Emissions_grid_PM25": bau_year_one_grid_emissions_PM25,
             'HeatingLoad': heating_load,
             'CoolingLoad': cooling_load,
             'ThermalStorage': thermal_storage_techs,
@@ -1649,7 +1851,7 @@ class DataManager:
             'CHPSupplementaryFireMaxRatio': supplementary_firing_max_steam_ratio,
             'CHPSupplementaryFireEfficiency': supplementary_firing_efficiency,
             'CapCostSupplementaryFiring': supplementary_firing_capital_cost_per_kw,
-            #Offgrid
+            # Offgrid
             'OffGridFlag': self.off_grid_flag,
             'TechsRequiringSR': techs_requiring_sr,
             'TechsProvidingSR': techs_providing_sr,
@@ -1657,7 +1859,18 @@ class DataManager:
             'SRrequiredPctLoad': self.load.sr_required_pct,
             'SRrequiredPctTechs': sr_required_pct,
             'OtherCapitalCosts': sf.other_capital_costs_us_dollars,
-            'OtherAnnualCosts': sf.other_annual_costs_us_dollars_per_year * pwf_om
+            'OtherAnnualCosts': sf.other_annual_costs_us_dollars_per_year * pwf_om,
+            # Emissions
+            'CO2_dollars_tonne': co2_cost_us_dollars_per_tonne,
+            'NOx_dollars_tonne_grid': nox_cost_us_dollars_per_tonne_grid,
+            'SO2_dollars_tonne_grid': so2_cost_us_dollars_per_tonne_grid,
+            'PM25_dollars_tonne_grid': pm25_cost_us_dollars_per_tonne_grid,
+            'NOx_dollars_tonne_onsite_fuelburn': nox_cost_us_dollars_per_tonne_onsite_fuelburn,
+            'SO2_dollars_tonne_onsite_fuelburn': so2_cost_us_dollars_per_tonne_onsite_fuelburn,
+            'PM25_dollars_tonne_onsite_fuelburn': pm25_cost_us_dollars_per_tonne_onsite_fuelburn,
+            'Include_climate_in_objective': self.include_climate_in_objective,
+            'Include_health_in_objective': self.include_health_in_objective,
+            'Lbs_per_tonne': 2204.62
             }
         ## Uncomment the following for debugging
         # import json
@@ -1685,6 +1898,8 @@ class DataManager:
             'pwf_fuel': pwf_fuel_by_tech_bau,
             'pwf_owner': pwf_owner_bau,
             'pwf_offtaker': pwf_offtaker_bau,
+            'pwfs_emissions_cost': pwfs_emissions_cost_bau,
+            'pwfs_grid_emissions_lbs': pwfs_grid_emissions_lbs_bau,
             'two_party_factor': two_party_factor_bau,
             'pwf_prod_incent': pwf_prod_incent_bau,
             'MaxProdIncent': max_prod_incent_bau,
@@ -1770,7 +1985,6 @@ class DataManager:
             'ElectricDerate': electric_derate_bau,
             'TechsByNMILRegime': TechsByNMILRegime_bau,
             'TechsCannotCurtail': techs_cannot_curtail_bau,
-            'TechsByNMILRegime': TechsByNMILRegime_bau,
             'HeatingLoad': heating_load,
             'CoolingLoad': cooling_load,
             'ThermalStorage': thermal_storage_techs,
@@ -1817,5 +2031,39 @@ class DataManager:
             'SRrequiredPctLoad': self.load.sr_required_pct,
             'SRrequiredPctTechs': sr_required_pct,
             'OtherCapitalCosts': sf.other_capital_costs_us_dollars,
-            'OtherAnnualCosts': sf.other_annual_costs_us_dollars_per_year * pwf_om
+            'OtherAnnualCosts': sf.other_annual_costs_us_dollars_per_year * pwf_om,
+            # Emissions
+            'GridEmissionsFactor_CO2': grid_emissions_factor_CO2,
+            "GridEmissionsFactor_NOx": grid_emissions_factor_NOx,
+            "GridEmissionsFactor_SO2": grid_emissions_factor_SO2,
+            "GridEmissionsFactor_PM25": grid_emissions_factor_PM25,
+            "TechEmissionsFactors_CO2": tech_emissions_factors_CO2_bau,
+            "TechEmissionsFactors_NOx": tech_emissions_factors_NOx_bau,
+            "TechEmissionsFactors_SO2": tech_emissions_factors_SO2_bau,
+            "TechEmissionsFactors_PM25": tech_emissions_factors_PM25_bau,
+            'TechPercentRE': tech_pct_RE_bau,
+            'MinAnnualPercentREElec': None,
+            'MaxAnnualPercentREElec': None,
+            'MinPercentCO2EmissionsReduction': None,
+            'MaxPercentCO2EmissionsReduction': None,
+            'IncludeExportedREElecinTotal': self.site.include_exported_renewable_electricity_in_total,
+            "IncludeExportedElecEmissionsInTotal": self.site.include_exported_elec_emissions_in_total,
+            "BAUYr1Emissions_CO2": bau_year_one_emissions_CO2,
+            "BAUYr1Emissions_NOx": bau_year_one_emissions_NOx,
+            "BAUYr1Emissions_SO2": bau_year_one_emissions_SO2,
+            "BAUYr1Emissions_PM25": bau_year_one_emissions_PM25,
+            "BAUYr1Emissions_grid_CO2": bau_year_one_grid_emissions_CO2,
+            "BAUYr1Emissions_grid_NOx": bau_year_one_grid_emissions_NOx,
+            "BAUYr1Emissions_grid_SO2": bau_year_one_grid_emissions_SO2,
+            "BAUYr1Emissions_grid_PM25": bau_year_one_grid_emissions_PM25,
+            'CO2_dollars_tonne': co2_cost_us_dollars_per_tonne,
+            'NOx_dollars_tonne_grid': nox_cost_us_dollars_per_tonne_grid,
+            'SO2_dollars_tonne_grid': so2_cost_us_dollars_per_tonne_grid,
+            'PM25_dollars_tonne_grid': pm25_cost_us_dollars_per_tonne_grid,
+            'NOx_dollars_tonne_onsite_fuelburn': nox_cost_us_dollars_per_tonne_onsite_fuelburn,
+            'SO2_dollars_tonne_onsite_fuelburn': so2_cost_us_dollars_per_tonne_onsite_fuelburn,
+            'PM25_dollars_tonne_onsite_fuelburn': pm25_cost_us_dollars_per_tonne_onsite_fuelburn,
+            'Include_climate_in_objective': self.include_climate_in_objective,
+            'Include_health_in_objective': self.include_health_in_objective,
+            'Lbs_per_tonne': 2204.62
         }

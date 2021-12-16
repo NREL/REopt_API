@@ -151,8 +151,10 @@ Base.@kwdef struct Parameter
 	 pwf_fuel::AxisArray
 	 r_tax_owner::Float64      # f^{tow}: Tax rate factor for owner [fraction]
      r_tax_offtaker::Float64   # f^{tot}: Tax rate factor for offtaker [fraction]
-     pwf_owner::Float64    # Annuity with zero escalation and owner's discount rate 
+     pwf_owner::Float64    # Annuity with zero escalation and owner's discount rate
      pwf_offtaker::Float64 # Annuity with zero escalation and offtaker's discount rate
+     pwfs_emissions_cost::Dict{String, Any} # Cost of emissions present worth factors for grid and onsite fuelburn emissions [unitless]
+     pwfs_grid_emissions_lbs::Dict{String, Any} # Emissions [lbs] present worth factors for grid emissions [unitless]
 
 	 ###  System Size and Fuel Limit Parameters ###
 	 TechClassMinSize::AxisArray   #  \ubar{b}^{\sigma}_{c}: Minimum system size for technology class c [kW]
@@ -210,6 +212,43 @@ Base.@kwdef struct Parameter
      MaxSizesLocation::Array{Float64, 1}
      Location::UnitRange
 	 AddSOCIncentive::Int64
+
+    # Annual RE parameters
+     TechPercentRE::AxisArray
+     MinAnnualPercentREElec::Union{Float64,Nothing}
+     MaxAnnualPercentREElec::Union{Float64,Nothing}
+     IncludeExportedREElecinTotal::Bool
+
+    # Emissions parameters
+     IncludeExportedElecEmissionsInTotal::Bool
+     MinPercentCO2EmissionsReduction::Union{Float64,Nothing}
+     MaxPercentCO2EmissionsReduction::Union{Float64,Nothing}
+     BAUYr1Emissions_CO2::Float64
+     BAUYr1Emissions_NOx::Float64
+     BAUYr1Emissions_SO2::Float64
+     BAUYr1Emissions_PM25::Float64
+     BAUYr1Emissions_grid_CO2::Float64
+     BAUYr1Emissions_grid_NOx::Float64
+     BAUYr1Emissions_grid_SO2::Float64
+     BAUYr1Emissions_grid_PM25::Float64
+     GridEmissionsFactor_CO2::Array{Float64,1}
+     GridEmissionsFactor_NOx::Array{Float64,1}
+     GridEmissionsFactor_SO2::Array{Float64,1}
+     GridEmissionsFactor_PM25::Array{Float64,1}
+     TechEmissionsFactors_CO2::AxisArray
+     TechEmissionsFactors_NOx::AxisArray
+     TechEmissionsFactors_SO2::AxisArray
+     TechEmissionsFactors_PM25::AxisArray
+     CO2_dollars_tonne::Float64
+     NOx_dollars_tonne_grid::Float64
+     SO2_dollars_tonne_grid::Float64
+     PM25_dollars_tonne_grid::Float64
+     NOx_dollars_tonne_onsite_fuelburn::Float64
+     SO2_dollars_tonne_onsite_fuelburn::Float64
+     PM25_dollars_tonne_onsite_fuelburn::Float64
+     Include_climate_in_objective::Bool
+     Include_health_in_objective::Bool
+     Lbs_per_tonne::Float64
 
 	# Added for CHP
 	HotTES::Array{String,1}
@@ -337,6 +376,13 @@ function Parameter(d::Dict)
     d["TechToNMILMapping"] = vector_to_axisarray(d["TechToNMILMapping"], d["Tech"], d["NMILRegime"])
     d["OMcostPerUnitProd"] = AxisArray(d["OMcostPerUnitProd"], d["Tech"])
     d["OMcostPerUnitHourPerSize"] = AxisArray(d["OMcostPerUnitHourPerSize"], d["Tech"])
+
+    d["TechEmissionsFactors_CO2"] = AxisArray(d["TechEmissionsFactors_CO2"], d["Tech"])
+    d["TechEmissionsFactors_NOx"] = AxisArray(d["TechEmissionsFactors_NOx"], d["Tech"])
+    d["TechEmissionsFactors_SO2"] = AxisArray(d["TechEmissionsFactors_SO2"], d["Tech"])
+    d["TechEmissionsFactors_PM25"] = AxisArray(d["TechEmissionsFactors_PM25"], d["Tech"])
+    d["TechPercentRE"] = AxisArray(d["TechPercentRE"], d["Tech"])
+
     if !isempty(d["CoincidentPeakLoadTimeSteps"])
         d["CoincidentPeakRates"] = AxisArray(d["CoincidentPeakRates"], d[:CPPeriod])
         d["CoincidentPeakLoadTimeSteps"] = permutedims(hcat(d["CoincidentPeakLoadTimeSteps"]...), (2,1))
