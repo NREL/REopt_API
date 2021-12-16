@@ -1898,19 +1898,23 @@ class ValidateNestedInput:
                         climate_zone, nearest_city, geometric_flag = get_climate_zone_and_nearest_city(latitude, longitude, BuiltInProfile.default_cities)
                         heating_factor_data = pd.read_csv(os.path.join('input_files', 'LoadProfiles', 'ghp_heating_efficiency_thermal_factors.csv'), index_col="Building Type")
                         cooling_factor_data = pd.read_csv(os.path.join('input_files', 'LoadProfiles', 'ghp_cooling_efficiency_thermal_factors.csv'), index_col="Building Type")
-                        building_type_heating = self.input_dict['Scenario']['Site']['LoadProfileBoilerFuel'].get('doe_reference_name')
-                        building_type_cooling = self.input_dict['Scenario']['Site']['LoadProfileChillerThermal'].get('doe_reference_name')
+                        building_type_heating = self.input_dict['Scenario']['Site']['LoadProfileBoilerFuel'].get('doe_reference_name') or []
+                        building_type_cooling = self.input_dict['Scenario']['Site']['LoadProfileChillerThermal'].get('doe_reference_name') or []
 
-                    # TODO handle campus/building-mix? Extra check on that, and Weighted average of percent_share?                               
+                    # Default thermal factors are assigned for certain building types and not for campuses (multiple buildings)
                     if heating_factor in [[], None]:
-                        if building_type_heating in list(heating_factor_data.index):
-                            heating_factor = heating_factor_data[climate_zone][building_type_heating]
+                        if len(building_type_heating) != 1:
+                            heating_factor = 1.0
+                        elif building_type_heating[0] in list(heating_factor_data.index):
+                            heating_factor = heating_factor_data[climate_zone][building_type_heating[0]]
                         else:
                             heating_factor = 1.0
                         self.update_attribute_value(object_name_path, number, "space_heating_efficiency_thermal_factor", heating_factor)
                     if cooling_factor in [[], None]:
-                        if building_type_cooling in list(cooling_factor_data.index):
-                            cooling_factor = cooling_factor_data[climate_zone][building_type_cooling]
+                        if len(building_type_cooling) != 1:
+                            heating_factor = 1.0
+                        elif building_type_cooling[0] in list(cooling_factor_data.index):
+                            cooling_factor = cooling_factor_data[climate_zone][building_type_cooling[0]]
                         else:
                             cooling_factor = 1.0
                         self.update_attribute_value(object_name_path, number, "cooling_efficiency_thermal_factor", cooling_factor)                       
