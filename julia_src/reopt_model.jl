@@ -1916,6 +1916,8 @@ end
 
 function add_null_ghp_results(m, p, r::Dict)
 	r["GHPOptionChosen"] = 0
+    r["HeatingThermalReductionWithGHP"] = []
+    r["CoolingThermalReductionWithGHP"] = []
 	nothing
 end
 
@@ -2330,7 +2332,18 @@ end
 function add_ghp_results(m, p, r::Dict)
 	@expression(m, GHPOptionChosen, sum(g * m[:binGHP][g] for g in p.GHPOptions))
 	r["GHPOptionChosen"] = convert(Int64, value(GHPOptionChosen))
-	nothing
+    if r["GHPOptionChosen"] > 0
+        @expression(m, HeatingThermalReductionWithGHP[ts in p.TimeStep],
+		    sum(p.HeatingThermalReductionWithGHP[g,ts] * m[:binGHP][g] for g in p.GHPOptions))
+        r["HeatingThermalReductionWithGHP"] = round.(value.(HeatingThermalReductionWithGHP), digits=3)
+        @expression(m, CoolingThermalReductionWithGHP[ts in p.TimeStep],
+		    sum(p.CoolingThermalReductionWithGHP[g,ts] * m[:binGHP][g] for g in p.GHPOptions))
+        r["CoolingThermalReductionWithGHP"] = round.(value.(CoolingThermalReductionWithGHP), digits=3)
+    else
+        r["HeatingThermalReductionWithGHP"] = zeros(length(p.TimeStep))
+        r["CoolingThermalReductionWithGHP"] = zeros(length(p.TimeStep))
+    end
+    nothing
 end
 
 function add_util_results(m, p, r::Dict)
