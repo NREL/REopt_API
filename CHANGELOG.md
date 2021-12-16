@@ -25,6 +25,16 @@ Classify the change according to the following categories:
     ##### Deprecated
     ##### Removed
     ### Patches
+
+## v1.9.0 - 2021-12-15
+### Minor Updates
+##### Added
+- `reo`: Added capability to estimate year 1 and lifecycle emissions and climate and health costs of CO2, NOx, SO2, and PM2.5 from on-site fuel burn and grid-purchased electricity. Added total renewable energy calculations. User options to include climate and/or health costs in the objective function. User options to set emissions and/or renewable electricity constraints. User options to include or exclude exported electricity in renewable energy and emissions calculations. New emissions and renewable energy inputs (and defaults) in `nested_inputs.py` and outputs in `nested_outputs.py`. Added default emissions data for NOx, PM2.5, and SO2 in `src/data`. Default marginal health costs in `src/data/EASIUR_Data`. In `views.py` and `urls.py` added `easiur_costs` and `fuel_emissions_rates` urls. Default fuel emissions rates for NOx, SO2, and PM2.5 in `validators.py`. Added calculation of breakeven CO2 cost (when NPV is negative).
+- `reopt_model.jl`: Included additional optional constraints for emissions reductions (as compared to BAU) and renewable electricity percentage. Added optional inclusion of climate and health costs to the model objective and associated life cycle cost calculation. Added calculations of life cycle emissions and costs for CO2, NOx, SO2, and PM2.5. Added calculation of renewable energy (% and kWh), which includes electric and thermal end uses. Emissions and renewable energy calculations account for all technologies.   
+- `utils.jl` added emissions- and renewable energy-specific parameters.
+##### Changed 
+- `reo`: Changed default value for `generator_fuel_escalation_pct` for on-grid runs; was previously defaulted to `escalation_pct`. In `views.py`, changed `emissions_profile` view to additionally include grid emissions factors for NOx, SO2, and PM2.5 (in addition to CO2). Changed several emissions and renewable energy-related input and output names in `nested_inputs.py` and `nested_outputs.py`.  
+- `reopt_model.jl`: Changed calculation of renewable electricity % to be based on consumption rather than generation, accounting for battery storage losses, curtailment, and the option to include or exclude exported renewable electricity. Renewable electricity % additionally accounts for renewable fuels that power electricity generation. Changed year one emissions calculations to optionally include or exclude emissions offsets from exported electricity.  
 ## v1.8.0 - 2021-11-11
 ### Minor Updates
 ##### Added
@@ -193,6 +203,8 @@ Classify the change according to the following categories:
      - **emissions_region** (Site Only)
      - **year_one_emissions_lb_C02**
      - **year_one_emissions_bau_lb_C02**
+     - **year_one_emissions_lb_NOx**
+     - **year_one_emissions_bau_lb_NOx**
 - `reo`: LCOE API output added for PV and Wind:
      - **lcoe_us_dollars_per_kwh**
 - `reo`: Simple Payback/IRR API outputs added for Site:

@@ -28,4 +28,4 @@ jobs:
         with:
           time: '150s'
       - name: test
-        run: docker exec reopt_lite_api_celery_1 python manage.py test -v 2 --failfast --no-input
+        run: docker exec reopt_lite_api_celery_1 python manage.py test -v 2 --no-input
