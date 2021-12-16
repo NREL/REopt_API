@@ -32,7 +32,7 @@ import copy
 from reo.src.urdb_parse import UrdbParse
 from reo.src.fuel_params import FuelParams
 from reo.utilities import annuity, annuity_two_escalation_rates, degradation_factor, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
-    insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, setup_capital_cost_offgrid, annuity_escalation, MMBTU_TO_KWH, GAL_DIESEL_TO_KWH
+    insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, setup_capital_cost_offgrid, annuity_escalation, MMBTU_TO_KWH, GAL_DIESEL_TO_KWH, TONHOUR_TO_KWHT
 import numpy as np
 max_incentive = 1.0e10
 
@@ -83,6 +83,7 @@ class DataManager:
         self.steamturbine = None
         self.ghp_option_list = []  # Not adding to the Tech list
         self.ghp_cost = []
+        self.ghp_thermal_reduction = {}  # Two keys for heating and cooling
         self.tes_kwh_to_gal = {}
         self.off_grid_flag = None
         self.include_climate_in_objective = None
@@ -1571,6 +1572,9 @@ class DataManager:
         ghp_om_cost_year_one, ghp_om_cost_year_one_bau = [], []
         ghp_heating_thermal_load_served_kw, ghp_heating_thermal_load_served_kw_bau = [], [[]]
         ghp_cooling_thermal_load_served_kw, ghp_cooling_thermal_load_served_kw_bau = [], [[]]
+        heating_thermal_load_reduction_with_ghp_kw, heating_thermal_load_reduction_with_ghp_kw_bau = [], [[]]
+        cooling_thermal_load_reduction_with_ghp_kw, cooling_thermal_load_reduction_with_ghp_kw_bau = [], [[]]
+        ghp_cooling_thermal_load_served_kw, ghp_cooling_thermal_load_served_kw_bau = [], [[]]        
         ghp_electric_consumption_kw, ghp_electric_consumption_kw_bau = [], [[]]
         if len(self.ghp_option_list) > 0:
             require_ghp_purchase = self.ghp_option_list[0].require_ghp_purchase  # This does not change with the number of options
@@ -1591,8 +1595,16 @@ class DataManager:
                     heating_thermal_load = np.array(heating_load) * self.boiler_efficiency
                 else:
                     heating_thermal_load = np.array(heating_load) * 0.8
-                ghp_heating_thermal_load_served_kw.append(list(np.minimum(option.heating_thermal_load_served_kw, heating_thermal_load)))
-                ghp_cooling_thermal_load_served_kw.append(list(np.minimum(option.cooling_thermal_load_served_kw, cooling_load)))
+                    self.boiler_efficiency = 0.8
+                heating_thermal_reduction_kw = [self.ghp_thermal_reduction["heating_fuel_mmbtu_per_hr"][i] * self.boiler_efficiency * \
+                                                MMBTU_TO_KWH for i in range(self.n_timesteps)]
+                heating_thermal_load_reduction_with_ghp_kw.append(list(np.minimum(heating_thermal_reduction_kw, heating_thermal_load)))
+                cooling_thermal_reduction_kw = [self.ghp_thermal_reduction["cooling_thermal_ton"][i] * TONHOUR_TO_KWHT for i in range(self.n_timesteps)]
+                cooling_thermal_load_reduction_with_ghp_kw.append(list(np.minimum(cooling_thermal_reduction_kw, cooling_load)))                
+                ghp_heating_thermal_load_served_kw.append(list(np.minimum(option.heating_thermal_load_served_kw, 
+                                                                            [heating_thermal_load[j] - heating_thermal_load_reduction_with_ghp_kw[i][j] for j in range(len(heating_thermal_load))])))
+                ghp_cooling_thermal_load_served_kw.append(list(np.minimum(option.cooling_thermal_load_served_kw, 
+                                                                            [cooling_load[j] - cooling_thermal_load_reduction_with_ghp_kw[i][j] for j in range(len(cooling_load))])))
                 ghp_electric_consumption_kw.append(option.electric_consumption_kw)
                 # GHP electric consumption is omitted from the electric load balance during an outage, and cooling load has been zeroed out above for outages
                 # So here we also have to zero out heating thermal production from GHP during an outage
@@ -1602,6 +1614,8 @@ class DataManager:
         else:
             ghp_heating_thermal_load_served_kw.append([])
             ghp_cooling_thermal_load_served_kw.append([])
+            heating_thermal_load_reduction_with_ghp_kw.append([])
+            cooling_thermal_load_reduction_with_ghp_kw.append([])
             ghp_electric_consumption_kw.append([])
 
         sf = self.site.financial
@@ -1845,6 +1859,8 @@ class DataManager:
             'RequireGHPPurchase': require_ghp_purchase,
             'GHPHeatingThermalServed': ghp_heating_thermal_load_served_kw,
             'GHPCoolingThermalServed': ghp_cooling_thermal_load_served_kw,
+            'HeatingThermalReductionWithGHP': heating_thermal_load_reduction_with_ghp_kw,
+            'CoolingThermalReductionWithGHP': cooling_thermal_load_reduction_with_ghp_kw,
             'GHPElectricConsumed': ghp_electric_consumption_kw,
             'GHPInstalledCost': ghp_installed_cost,
             'GHPOMCost': ghp_om_cost_year_one,
@@ -2017,6 +2033,8 @@ class DataManager:
             'RequireGHPPurchase': require_ghp_purchase_bau,
             'GHPHeatingThermalServed': ghp_heating_thermal_load_served_kw_bau,
             'GHPCoolingThermalServed': ghp_cooling_thermal_load_served_kw_bau,
+            'HeatingThermalReductionWithGHP': heating_thermal_load_reduction_with_ghp_kw_bau,
+            'CoolingThermalReductionWithGHP': cooling_thermal_load_reduction_with_ghp_kw_bau,            
             'GHPElectricConsumed': ghp_electric_consumption_kw_bau,
             'GHPInstalledCost': ghp_installed_cost_bau,
             'GHPOMCost': ghp_om_cost_year_one_bau,

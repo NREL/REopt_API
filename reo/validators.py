@@ -40,8 +40,9 @@ import re
 import uuid
 from reo.src.techs import Generator, Boiler, CHP, AbsorptionChiller, SteamTurbine
 from reo.src.emissions_calculator import EmissionsCalculator, EASIURCalculator
-from reo.utilities import generate_year_profile_hourly
+from reo.utilities import generate_year_profile_hourly, get_climate_zone_and_nearest_city
 from reo.src.pyeasiur import *
+from reo.src.load_profile import BuiltInProfile
 
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'r'))]
@@ -1880,6 +1881,43 @@ class ValidateNestedInput:
                             self.update_attribute_value(object_name_path, number, param, value)
                         else:
                             updated_set[param] = real_values.get(param)
+
+        if object_name_path[-1] == "GHP":
+            if self.isValid:
+                # Look up default GHP effciency thermal factors if not input
+                eval_ghp = False
+                if real_values.get("building_sqft") is not None:
+                    eval_ghp = True
+                if eval_ghp:
+                    heating_factor = real_values.get("space_heating_efficiency_thermal_factor")
+                    cooling_factor = real_values.get("cooling_efficiency_thermal_factor")
+                    if heating_factor in [[], None] or cooling_factor in [[], None]:
+                        latitude = self.input_dict['Scenario']['Site']['latitude']
+                        longitude = self.input_dict['Scenario']['Site']['longitude']
+                        climate_zone, nearest_city, geometric_flag = get_climate_zone_and_nearest_city(latitude, longitude, BuiltInProfile.default_cities)
+                        heating_factor_data = pd.read_csv(os.path.join('input_files', 'LoadProfiles', 'ghp_heating_efficiency_thermal_factors.csv'), index_col="Building Type")
+                        cooling_factor_data = pd.read_csv(os.path.join('input_files', 'LoadProfiles', 'ghp_cooling_efficiency_thermal_factors.csv'), index_col="Building Type")
+                        building_type_heating = self.input_dict['Scenario']['Site']['LoadProfileBoilerFuel'].get('doe_reference_name') or []
+                        building_type_cooling = self.input_dict['Scenario']['Site']['LoadProfileChillerThermal'].get('doe_reference_name') or []
+
+                    # Default thermal factors are assigned for certain building types and not for campuses (multiple buildings)
+                    if heating_factor in [[], None]:
+                        if len(building_type_heating) != 1:
+                            heating_factor = 1.0
+                        elif building_type_heating[0] in list(heating_factor_data.index):
+                            heating_factor = heating_factor_data[climate_zone][building_type_heating[0]]
+                        else:
+                            heating_factor = 1.0
+                        self.update_attribute_value(object_name_path, number, "space_heating_efficiency_thermal_factor", heating_factor)
+                    if cooling_factor in [[], None]:
+                        if len(building_type_cooling) != 1:
+                            cooling_factor = 1.0
+                        elif building_type_cooling[0] in list(cooling_factor_data.index):
+                            cooling_factor = cooling_factor_data[climate_zone][building_type_cooling[0]]
+                        else:
+                            cooling_factor = 1.0
+                        self.update_attribute_value(object_name_path, number, "cooling_efficiency_thermal_factor", cooling_factor)                       
+                        
 
     def check_min_max_restrictions(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
         """
