@@ -2,7 +2,8 @@ import os
 import numpy as np
 from openpyxl.styles import PatternFill, Border, Font, Side, Alignment
 from reo.models import SiteModel, LoadProfileModel, PVModel, WindModel, GeneratorModel, StorageModel, FinancialModel, \
-    ElectricTariffModel, CHPModel, AbsorptionChillerModel, HotTESModel, ColdTESModel, FuelTariffModel, BoilerModel
+    ElectricTariffModel, CHPModel, AbsorptionChillerModel, HotTESModel, ColdTESModel, FuelTariffModel, BoilerModel, \
+    SteamTurbineModel, GHPModel
 from openpyxl import load_workbook
 from reo.src.data_manager import big_number
 from reo.nested_inputs import macrs_five_year, macrs_seven_year
@@ -50,10 +51,12 @@ def generate_proforma(scenariomodel, output_file_path):
     load = LoadProfileModel.objects.filter(run_uuid=scenario.run_uuid).first() or empty_record()
     chp = CHPModel.objects.filter(run_uuid=scenario.run_uuid).first() or empty_record()
     absorption_chiller = AbsorptionChillerModel.objects.filter(run_uuid=scenario.run_uuid).first() or empty_record()
-    cold_tes = HotTESModel.objects.filter(run_uuid=scenario.run_uuid).first() or empty_record()
-    hot_tes = ColdTESModel.objects.filter(run_uuid=scenario.run_uuid).first() or empty_record()
+    cold_tes = ColdTESModel.objects.filter(run_uuid=scenario.run_uuid).first() or empty_record()
+    hot_tes = HotTESModel.objects.filter(run_uuid=scenario.run_uuid).first() or empty_record()
     fuel_tariff = FuelTariffModel.objects.filter(run_uuid=scenario.run_uuid).first() or empty_record()
     boiler = BoilerModel.objects.filter(run_uuid=scenario.run_uuid).first() or empty_record()
+    steam_turbine = SteamTurbineModel.objects.filter(run_uuid=scenario.run_uuid).first() or empty_record()
+    ghp = GHPModel.objects.filter(run_uuid=scenario.run_uuid).first() or empty_record()
 
     # Open file for reading
     if financial.third_party_ownership is True:
@@ -348,6 +351,27 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['B{}'.format(current_row)] = hot_tes.size_gal or 0
     hot_tes_size_gal_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row, alignment=right_align)
+    
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Steam turbine capacity (kW)"
+    ws['B{}'.format(current_row)] = steam_turbine.size_kw or 0
+    steam_turbine_size_kw_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    make_attribute_row(ws, current_row, alignment=right_align)
+    
+    current_row += 1
+    ws['A{}'.format(current_row)] = "GHP heat pump capacity (ton)"
+    ws['B{}'.format(current_row)] = ghp.size_heat_pump_ton or 0
+    ghp_size_heat_pump_ton_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    make_attribute_row(ws, current_row, alignment=right_align)
+
+    ghp_ghx_total_length = (ghp.ghpghx_chosen_outputs.get("number_of_boreholes") or 0) * \
+                            (ghp.ghpghx_chosen_outputs.get("length_boreholes_ft") or 0)
+    current_row += 1
+    ws['A{}'.format(current_row)] = "GHP ground heat exchanger size (ft)"
+    ws['B{}'.format(current_row)] = ghp_ghx_total_length
+    ghp_ghx_total_length_ft_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    make_attribute_row(ws, current_row, alignment=right_align)
+    
     current_row += 1
     current_row += 1
 
@@ -420,7 +444,6 @@ def generate_proforma(scenariomodel, output_file_path):
     chp_electric_energy_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
-
     current_row += 1
     ws['A{}'.format(current_row)] = "CHP annual runtime (hours/year)"
     ws['B{}'.format(current_row)] = sum(np.array(chp.year_one_electric_production_series_kw or []) > 0) / (scenario.time_steps_per_hour or 1)
@@ -428,8 +451,15 @@ def generate_proforma(scenariomodel, output_file_path):
     make_attribute_row(ws, current_row, alignment=right_align)
 
     current_row += 1
+    ws['A{}'.format(current_row)] = "Steam turbine annual optimal electricity produced (kWh/year)"
+    ws['B{}'.format(current_row)] = steam_turbine.year_one_electric_energy_produced_kwh or 0
+    steam_turbine_electric_energy_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    make_attribute_row(ws, current_row)
+
+    current_row += 1
     ws['A{}'.format(current_row)] = "Total optimal electricity produced (kWh/year)"
-    ws['B{}'.format(current_row)] = wind_energy + generator_energy + sum([pv['pv_energy'] for pv in pv_data]) + (chp.year_one_electric_energy_produced_kwh or 0)
+    ws['B{}'.format(current_row)] = wind_energy + generator_energy + sum([pv['pv_energy'] for pv in pv_data]) + \
+        (chp.year_one_electric_energy_produced_kwh or 0) + (steam_turbine.year_one_electric_energy_produced_kwh or 0)
     make_attribute_row(ws, current_row)
 
     current_row += 1
@@ -455,6 +485,12 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['B{}'.format(current_row)] = chp.year_one_thermal_energy_produced_mmbtu or 0
     chp_thermal_energy_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
+
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Steam turbine annual optimal thermal energy produced (MMBtu/year)"
+    ws['B{}'.format(current_row)] = steam_turbine.year_one_thermal_energy_produced_mmbtu or 0
+    steam_turbine_thermal_energy_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    make_attribute_row(ws, current_row)    
 
     current_row += 1
     ws['A{}'.format(current_row)] = "Percent electricity from on-site renewable resources"
@@ -667,6 +703,21 @@ def generate_proforma(scenariomodel, output_file_path):
     make_attribute_row(ws, current_row)
 
     current_row += 1
+    ws['A{}'.format(current_row)] = "Steam turbine Installed Cost ($)"
+    ws['B{}'.format(current_row)] = (steam_turbine.installed_cost_us_dollars_per_kw or 0) * (steam_turbine.size_kw or 0)
+    steam_turbine_cost_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    make_attribute_row(ws, current_row)    
+
+    ghp_cost = (ghp.size_heat_pump_ton or 0) * (ghp.installed_cost_heatpump_us_dollars_per_ton or 0) + \
+                ghp_ghx_total_length * (ghp.installed_cost_ghx_us_dollars_per_ft or 0) + \
+                (ghp.building_sqft or 0) * (ghp.installed_cost_building_hydronic_loop_us_dollars_per_sqft or 0)
+    current_row += 1
+    ws['A{}'.format(current_row)] = "GHP Installed Cost ($)"
+    ws['B{}'.format(current_row)] = ghp_cost
+    ghp_cost_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    make_attribute_row(ws, current_row)   
+
+    current_row += 1
     ws['A{}'.format(current_row)] = "Operation and Maintenance (O&M)"
     make_attribute_row(ws, current_row)
     ws['A{}'.format(current_row)].font = bold_font
@@ -784,6 +835,31 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['B{}'.format(current_row)] = hot_tes.om_cost_us_dollars_per_gal or 0
     hot_tes_om_cost_us_dollars_per_gal_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
+    
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Fixed Steam Turbine O&M ($/kW-yr)"
+    ws['A{}'.format(current_row)].alignment = one_tab_indent
+    ws['B{}'.format(current_row)] = (steam_turbine.om_cost_us_dollars_per_kw or 0) * \
+                                    (steam_turbine.size_kw or 0)
+    steam_turbine_om_cost_us_dollars_per_kw_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    make_attribute_row(ws, current_row)
+
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Variable Steam Turbine O&M ($/kWh)"
+    ws['A{}'.format(current_row)].alignment = one_tab_indent
+    ws['B{}'.format(current_row)] = (steam_turbine.om_cost_us_dollars_per_kwh or 0) * \
+                                    (steam_turbine.year_one_electric_energy_produced_kwh or 0)
+    steam_turbine_om_cost_us_dollars_per_kwh_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    make_attribute_row(ws, current_row)    
+    
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Fixed GHP O&M ($/yr)"
+    ws['A{}'.format(current_row)].alignment = one_tab_indent
+    ws['B{}'.format(current_row)] = (ghp.om_cost_us_dollars_per_sqft_year or 0) * \
+                                    (ghp.building_sqft or 0)
+    ghp_om_cost_us_dollars_per_yr_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    make_attribute_row(ws, current_row)
+
     current_row += 1
     current_row += 1
 
@@ -1471,6 +1547,167 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
 
     ####################################################################################################################
+    # GHP
+    ####################################################################################################################
+
+    ws['A{}'.format(current_row)] = "GHP TAX CREDITS"
+    make_title_row(ws, current_row, length=4)
+
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Investment tax credit (ITC)"
+    ws['A{}'.format(current_row)].font = bold_font
+    ws['D{}'.format(current_row)] = "Reduces depreciation and ITC basis"
+    ws['D{}'.format(current_row)].border = attribute_border_left
+    ws['D{}'.format(current_row)].font = attribute_font
+
+    current_row += 1
+    ws['A{}'.format(current_row)] = "As percentage"
+    ws['A{}'.format(current_row)].alignment = one_tab_indent
+    ws['B{}'.format(current_row)] = "%"
+    ws['C{}'.format(current_row)] = "Maximum"
+    ws['D{}'.format(current_row)] = "Federal"
+    make_attribute_row(ws, current_row, length=4)
+
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Federal"
+    ws['A{}'.format(current_row)].alignment = two_tab_indent
+    ws['B{}'.format(current_row)] = (ghp.federal_itc_pct or 0) * 100
+    ghp_federal_itc_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    ws['C{}'.format(current_row)] = big_number
+    ghp_itc_fed_percent_maxvalue_cell = "\'{}\'!C{}".format(inandout_sheet_name, current_row)
+    ws['D{}'.format(current_row)] = 'Yes'
+    ghp_itc_fed_percent_deprbas_fed_cell = "\'{}\'!D{}".format(inandout_sheet_name, current_row)
+    make_attribute_row(ws, current_row, length=4)
+    current_row += 1
+    current_row += 1
+
+    ws['A{}'.format(current_row)] = "GHP DIRECT CASH INCENTIVES"
+    make_title_row(ws, current_row, length=5)
+
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Investment based incentive (IBI)"
+    ws['D{}'.format(current_row)] = "Incentive is taxable"
+    ws['E{}'.format(current_row)] = "Reduces depreciation and ITC basis"
+    make_attribute_row(ws, current_row, length=5, bold_cols=[0])
+
+    current_row += 1
+    ws['A{}'.format(current_row)] = "As percentage"
+    ws['A{}'.format(current_row)].alignment = one_tab_indent
+    ws['B{}'.format(current_row)] = "%"
+    ws['C{}'.format(current_row)] = "Maximum ($)"
+    ws['D{}'.format(current_row)] = "Federal"
+    ws['E{}'.format(current_row)] = "Federal"
+    make_attribute_row(ws, current_row, length=5)
+
+    current_row += 1
+    ws['A{}'.format(current_row)] = "State (% of total installed cost)"
+    ws['A{}'.format(current_row)].alignment = two_tab_indent
+    ws['B{}'.format(current_row)] = ghp.state_ibi_pct
+    ghp_state_ibi_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    ws['C{}'.format(current_row)] = big_number
+    ghp_state_ibi_max_cell = "\'{}\'!C{}".format(inandout_sheet_name, current_row)
+    ws['D{}'.format(current_row)] = "No"
+    ghp_ibi_sta_percent_tax_fed_cell = "\'{}\'!D{}".format(inandout_sheet_name, current_row)
+    ws['E{}'.format(current_row)] = "No"
+    ghp_ibi_sta_percent_deprbas_fed_cell = "\'{}\'!E{}".format(inandout_sheet_name, current_row)
+    make_attribute_row(ws, current_row, length=5)
+
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Utility (% of total installed cost)"
+    ws['A{}'.format(current_row)].alignment = two_tab_indent
+    ws['B{}'.format(current_row)] = ghp.utility_ibi_pct
+    ghp_utility_ibi_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    ws['C{}'.format(current_row)] = big_number
+    ghp_utility_ibi_max_cell = "\'{}\'!C{}".format(inandout_sheet_name, current_row)
+    ws['D{}'.format(current_row)] = "No"
+    ghp_ibi_uti_percent_tax_fed_cell = "\'{}\'!D{}".format(inandout_sheet_name, current_row)
+    ws['E{}'.format(current_row)] = "No"
+    ghp_ibi_uti_percent_deprbas_fed_cell = "\'{}\'!E{}".format(inandout_sheet_name, current_row)
+    make_attribute_row(ws, current_row, length=5)
+
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Capacity based incentive (CBI)"
+    ws['A{}'.format(current_row)].font = bold_font
+    ws['B{}'.format(current_row)] = "Amount ($/W)"
+    ws['B{}'.format(current_row)].border = attribute_border_left_and_right
+    ws['C{}'.format(current_row)] = "Maximum ($)"
+    ws['C{}'.format(current_row)].border = attribute_border_left_and_right
+    make_attribute_row(ws, current_row, length=5, bold_cols=[0])
+
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Federal ($/ton)"
+    ws['A{}'.format(current_row)].alignment = two_tab_indent
+    ws['B{}'.format(current_row)] = ghp.federal_rebate_us_dollars_per_ton or 0
+    ghp_federal_cbi_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    ws['C{}'.format(current_row)] = big_number
+    ghp_federal_cbi_max_cell = "\'{}\'!C{}".format(inandout_sheet_name, current_row)
+    ws['D{}'.format(current_row)] = "No"
+    ghp_cbi_sta_tax_fed_cell = "\'{}\'!D{}".format(inandout_sheet_name, current_row)
+    ws['E{}'.format(current_row)] = "No"
+    ghp_cbi_fed_deprbas_fed_cell = "\'{}\'!E{}".format(inandout_sheet_name, current_row)
+    make_attribute_row(ws, current_row, length=5)
+
+    current_row += 1
+    ws['A{}'.format(current_row)] = "State  ($/ton)"
+    ws['A{}'.format(current_row)].alignment = two_tab_indent
+    ws['B{}'.format(current_row)] = ghp.state_rebate_us_dollars_per_ton or 0
+    ghp_state_cbi_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    ws['C{}'.format(current_row)] = ghp.state_rebate_max_us_dollars
+    ghp_state_cbi_max_cell = "\'{}\'!C{}".format(inandout_sheet_name, current_row)
+    ws['D{}'.format(current_row)] = "No"
+    ghp_cbi_fed_tax_fed_cell = "\'{}\'!D{}".format(inandout_sheet_name, current_row)
+    ws['E{}'.format(current_row)] = "Yes"
+    ghp_cbi_sta_deprbas_fed_cell = "\'{}\'!E{}".format(inandout_sheet_name, current_row)
+    make_attribute_row(ws, current_row, length=5)
+
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Utility  ($/ton)"
+    ws['A{}'.format(current_row)].alignment = two_tab_indent
+    ws['B{}'.format(current_row)] = ghp.utility_rebate_us_dollars_per_ton or 0
+    ghp_utility_cbi_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    ws['C{}'.format(current_row)] = ghp.utility_rebate_max_us_dollars
+    ghp_utility_cbi_max_cell = "\'{}\'!C{}".format(inandout_sheet_name, current_row)
+    ws['D{}'.format(current_row)] = "No"
+    ghp_cbi_uti_tax_fed_cell = "\'{}\'!D{}".format(inandout_sheet_name, current_row)
+    ws['E{}'.format(current_row)] = "Yes"
+    ghp_cbi_uti_deprbas_fed_cell = "\'{}\'!E{}".format(inandout_sheet_name, current_row)
+    make_attribute_row(ws, current_row, length=5)
+
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Production based incentive (PBI)"
+    ws['A{}'.format(current_row)].font = bold_font
+    ws['B{}'.format(current_row)] = "Amount ($/kWh)"
+    ws['B{}'.format(current_row)].border = attribute_border_left_and_right
+    ws['C{}'.format(current_row)] = "Maximum ($/year)"
+    ws['C{}'.format(current_row)].border = attribute_border_left_and_right
+    ws['D{}'.format(current_row)] = "Federal Taxable"
+    ws['D{}'.format(current_row)].border = attribute_border_left_and_right
+    ws['E{}'.format(current_row)] = "Term (years)"
+    ws['E{}'.format(current_row)].border = attribute_border_left_and_right
+    ws['F{}'.format(current_row)] = "System Size Limit (kW)"
+    ws['F{}'.format(current_row)].border = attribute_border_left_and_right
+    make_attribute_row(ws, current_row, length=6, bold_cols=[0])
+
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Combined ($/kWh)"
+    ws['A{}'.format(current_row)].alignment = two_tab_indent
+    ws['B{}'.format(current_row)] = 0.0
+    ghp_pbi_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    ws['C{}'.format(current_row)] = 0.0
+    ghp_pbi_max_cell = "\'{}\'!C{}".format(inandout_sheet_name, current_row)
+    ws['D{}'.format(current_row)] = "Yes"
+    ghp_pbi_combined_tax_fed_cell = "\'{}\'!D{}".format(inandout_sheet_name, current_row)
+    ws['E{}'.format(current_row)] = 0
+    ghp_pbi_years_cell = "\'{}\'!E{}".format(inandout_sheet_name, current_row)
+    ws['F{}'.format(current_row)] = 0.0
+    ghp_pbi_max_kw_cell = "\'{}\'!F{}".format(inandout_sheet_name, current_row)
+    make_attribute_row(ws, current_row, length=6)
+    
+    current_row += 1
+    current_row += 1
+
+
+    ####################################################################################################################
     # Depreciation
     ####################################################################################################################
 
@@ -1490,6 +1727,10 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['{}{}'.format(upper_case_letters[col_idx], current_row)] = "Hot TES"
     col_idx += 1
     ws['{}{}'.format(upper_case_letters[col_idx], current_row)] = "Cold TES"
+    col_idx += 1
+    ws['{}{}'.format(upper_case_letters[col_idx], current_row)] = "Steam Turbine"
+    col_idx += 1
+    ws['{}{}'.format(upper_case_letters[col_idx], current_row)] = "GHP"
     col_idx += 1
     make_title_row(ws, current_row, length=col_idx)
     col_idx += 1
@@ -1525,6 +1766,12 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['{}{}'.format(upper_case_letters[col_idx], current_row)] = cold_tes.macrs_option_years
     cold_tes_macrs_option_cell = "\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[col_idx], current_row)
     col_idx += 1
+    ws['{}{}'.format(upper_case_letters[col_idx], current_row)] = steam_turbine.macrs_option_years
+    steam_turbine_macrs_option_cell = "\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[col_idx], current_row)
+    col_idx += 1
+    ws['{}{}'.format(upper_case_letters[col_idx], current_row)] = ghp.macrs_option_years
+    ghp_macrs_option_cell = "\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[col_idx], current_row)        
+    col_idx += 1
     make_attribute_row(ws, current_row, length=col_idx, alignment=center_align)
     ws['{}{}'.format(upper_case_letters[macrs_table_start_col], current_row)] = "Year"
 
@@ -1559,6 +1806,12 @@ def generate_proforma(scenariomodel, output_file_path):
     col_idx += 1
     ws['{}{}'.format(upper_case_letters[col_idx], current_row)] = cold_tes.macrs_bonus_pct
     cold_tes_bonus_fraction_cell = "\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[col_idx], current_row)
+    col_idx += 1
+    ws['{}{}'.format(upper_case_letters[col_idx], current_row)] = steam_turbine.macrs_bonus_pct
+    steam_turbine_bonus_fraction_cell = "\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[col_idx], current_row)    
+    col_idx += 1
+    ws['{}{}'.format(upper_case_letters[col_idx], current_row)] = ghp.macrs_bonus_pct
+    ghp_bonus_fraction_cell = "\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[col_idx], current_row)    
     col_idx += 1
     make_attribute_row(ws, current_row, length=col_idx, alignment=center_align)
     col_idx += 1
@@ -1678,6 +1931,28 @@ def generate_proforma(scenariomodel, output_file_path):
     for year in range(1, financial.analysis_years + 1):
         ws['{}{}'.format(upper_case_letters[year+1], current_row)] = '={}'.format(chp_thermal_energy_cell)
         chp_thermal_production_series.append("\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[year+1],
+                                                                current_row))
+    fill_in_annual_values(current_row)
+
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Steam Turbine Annual electricity (kWh)"
+    ws['B{}'.format(current_row)] = 0
+    steam_turbine_annual_kwh_cells = ["\'{}\'!C{}".format(inandout_sheet_name, current_row)]
+
+    for year in range(1, financial.analysis_years + 1):
+        ws['{}{}'.format(upper_case_letters[year+1], current_row)] = '={}'.format(steam_turbine_electric_energy_cell)
+        steam_turbine_annual_kwh_cells.append("\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[year+1],
+                                                                current_row))
+    fill_in_annual_values(current_row)
+
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Steam Turbine Annual heat (MMBtu)"
+    ws['B{}'.format(current_row)] = 0
+    steam_turbine_thermal_production_series = ["\'{}\'!C{}".format(inandout_sheet_name, current_row)]
+
+    for year in range(1, financial.analysis_years + 1):
+        ws['{}{}'.format(upper_case_letters[year+1], current_row)] = '={}'.format(steam_turbine_thermal_energy_cell)
+        steam_turbine_thermal_production_series.append("\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[year+1],
                                                                 current_row))
     fill_in_annual_values(current_row)
 
@@ -1811,6 +2086,44 @@ def generate_proforma(scenariomodel, output_file_path):
     for i in range(start_number+ 1, financial.analysis_years):
         ws[upper_case_letters[2 + i] + str(current_row)] = 0
         cold_tes_macrs_cells.append("\'{}\'!".format(inandout_sheet_name) + upper_case_letters[2 + i] + str(current_row))
+    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align, number_format='0.0')
+    fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
+    fill_cols(ws, range(1, 2), current_row, grey_fill)
+
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Steam turbine Federal depreciation percentages (fraction)"
+    ws['B{}'.format(current_row)] = 0
+    steam_turbine_macrs_cells = []
+
+    for i, c in enumerate(macrs_cells[steam_turbine.macrs_option_years or 0]):
+        ws[upper_case_letters[2 + i] + str(current_row)] = '=' + c
+        steam_turbine_macrs_cells.append("\'{}\'!".format(inandout_sheet_name) + upper_case_letters[2 + i] + str(current_row))
+
+    start_number = steam_turbine.macrs_option_years or 0
+    if start_number == 0:
+        start_number = -1
+    for i in range(start_number+ 1, financial.analysis_years):
+        ws[upper_case_letters[2 + i] + str(current_row)] = 0
+        steam_turbine_macrs_cells.append("\'{}\'!".format(inandout_sheet_name) + upper_case_letters[2 + i] + str(current_row))
+    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align, number_format='0.0')
+    fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
+    fill_cols(ws, range(1, 2), current_row, grey_fill)
+
+    current_row += 1
+    ws['A{}'.format(current_row)] = "GHP Federal depreciation percentages (fraction)"
+    ws['B{}'.format(current_row)] = 0
+    ghp_macrs_cells = []
+
+    for i, c in enumerate(macrs_cells[ghp.macrs_option_years or 0]):
+        ws[upper_case_letters[2 + i] + str(current_row)] = '=' + c
+        ghp_macrs_cells.append("\'{}\'!".format(inandout_sheet_name) + upper_case_letters[2 + i] + str(current_row))
+
+    start_number = ghp.macrs_option_years or 0
+    if start_number == 0:
+        start_number = -1
+    for i in range(start_number+ 1, financial.analysis_years):
+        ws[upper_case_letters[2 + i] + str(current_row)] = 0
+        ghp_macrs_cells.append("\'{}\'!".format(inandout_sheet_name) + upper_case_letters[2 + i] + str(current_row))
     make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align, number_format='0.0')
     fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
     fill_cols(ws, range(1, 2), current_row, grey_fill)
@@ -2058,6 +2371,33 @@ def generate_proforma(scenariomodel, output_file_path):
     for year in range(1, financial.analysis_years + 1):
         dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * {} * (1+{}/100)^{}'.format(
             hot_tes_om_cost_us_dollars_per_gal_cell, hot_tes_size_gal_cell, om_escalation_rate_cell, year)
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Steam turbine fixed O&M cost"
+    dcs['A{}'.format(current_row)].alignment = one_tab_indent
+    for year in range(1, financial.analysis_years + 1):
+        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * {} * (1+{}/100)^{}'.format(
+                steam_turbine_om_cost_us_dollars_per_kw_cell, steam_turbine_size_kw_cell, om_escalation_rate_cell, year)
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Steam turbine variable generation O&M cost"
+    dcs['A{}'.format(current_row)].alignment = one_tab_indent
+    for year in range(1, financial.analysis_years + 1):
+        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * {} * (1+{}/100)^{}'.format(
+                steam_turbine_om_cost_us_dollars_per_kwh_cell, steam_turbine_electric_energy_cell, om_escalation_rate_cell, year)
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "GHP fixed O&M cost"
+    dcs['A{}'.format(current_row)].alignment = one_tab_indent
+    for year in range(1, financial.analysis_years + 1):
+        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1+{}/100)^{}'.format(
+                ghp_om_cost_us_dollars_per_yr_cell, om_escalation_rate_cell, year)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
 
@@ -2382,7 +2722,81 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
     current_row += 1
 
+    ####################################################################################################################
+    # GHP
+    ####################################################################################################################
 
+    dcs['A{}'.format(current_row)] = "GHP Investment-based incentives (IBI)"
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "State IBI"
+    dcs['A{}'.format(current_row)].alignment = one_tab_indent
+    dcs['B{}'.format(current_row)] = "=MIN(({}/100)*({}-B{}-B{}),{})".format(
+        ghp_state_ibi_cell, ghp_cost_cell, current_row + 1, current_row + 6, ghp_state_ibi_max_cell)
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    ghp_state_ibi_row = current_row
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Utility IBI"
+    dcs['A{}'.format(current_row)].alignment = one_tab_indent
+    dcs['B{}'.format(current_row)] = "=MIN(({}/100)*{},{})".format(
+        ghp_utility_ibi_cell, ghp_cost_cell, ghp_utility_ibi_max_cell)
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    ghp_utility_ibi_row = current_row
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Total"
+    dcs['A{}'.format(current_row)].alignment = one_tab_indent
+    dcs['B{}'.format(current_row)] = "=SUM(B{},B{})".format(ghp_state_ibi_row, ghp_utility_ibi_row)
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    ghp_total_ibi_cell = "\'{}\'!B{}".format(third_party_cashflow_sheet_name, current_row)
+    ibi_and_cbi_totals_rows.append(current_row)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "GHP Capacity-based incentives (CBI)"
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Federal CBI"
+    dcs['A{}'.format(current_row)].alignment = one_tab_indent
+    dcs['B{}'.format(current_row)] = "=MIN({}*{},{})".format(
+        ghp_federal_cbi_cell, ghp_size_heat_pump_ton_cell, ghp_federal_cbi_max_cell)
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    ghp_federal_cbi_row = current_row
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "State CBI"
+    dcs['A{}'.format(current_row)].alignment = one_tab_indent
+    dcs['B{}'.format(current_row)] = "=MIN({}*{},{})".format(
+        ghp_state_cbi_cell, ghp_size_heat_pump_ton_cell, ghp_state_cbi_max_cell)
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    ghp_state_cbi_row = current_row
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Utility CBI"
+    dcs['A{}'.format(current_row)].alignment = one_tab_indent
+    dcs['B{}'.format(current_row)] = "=MIN({}*{},{})".format(
+        ghp_utility_cbi_cell, ghp_size_heat_pump_ton_cell, ghp_utility_cbi_max_cell)
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    ghp_utility_cbi_row = current_row
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Total"
+    dcs['A{}'.format(current_row)].alignment = one_tab_indent
+    dcs['B{}'.format(current_row)] = "=SUM(B{},B{},B{})".format(ghp_federal_cbi_row, ghp_state_cbi_row,
+                                                                ghp_utility_cbi_row)
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    ghp_total_cbi_cell = "\'{}\'!B{}".format(third_party_cashflow_sheet_name, current_row)
+    ibi_and_cbi_totals_rows.append(current_row)
+    current_row += 1
+    current_row += 1
+
+
+    dcs['A{}'.format(current_row)] = "Total CBI and IBI"
+    dcs['B{}'.format(current_row)] = '=SUM(' + ','.join(['B{}'.format(r) for r in ibi_and_cbi_totals_rows]) + ')'
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    current_row += 1
+    current_row += 1
 
     ####################################################################################################################
     # PBI
@@ -2531,6 +2945,11 @@ def generate_proforma(scenariomodel, output_file_path):
                 '+IF({chp_cbi_fed_tax_fed_cell}="Yes", {col}{chp_federal_cbi_row}, 0)'
                 '+IF({chp_cbi_sta_tax_fed_cell}="Yes", {col}{chp_state_cbi_row}, 0)'
                 '+IF({chp_cbi_uti_tax_fed_cell}="Yes", {col}{chp_utility_cbi_row}, 0)'
+                '+IF({ghp_ibi_sta_percent_tax_fed_cell}="Yes", {col}{ghp_state_ibi_row}, 0)'
+                '+IF({ghp_ibi_uti_percent_tax_fed_cell}="Yes", {col}{ghp_utility_ibi_row}, 0)'
+                '+IF({ghp_cbi_fed_tax_fed_cell}="Yes", {col}{ghp_federal_cbi_row}, 0)'
+                '+IF({ghp_cbi_sta_tax_fed_cell}="Yes", {col}{ghp_state_cbi_row}, 0)'
+                '+IF({ghp_cbi_uti_tax_fed_cell}="Yes", {col}{ghp_utility_cbi_row}, 0)'                
             ).format(
                 col=upper_case_letters[i + 1],
                 pv_string=pv_string,
@@ -2561,7 +2980,17 @@ def generate_proforma(scenariomodel, output_file_path):
                 chp_cbi_sta_tax_fed_cell=chp_cbi_sta_tax_fed_cell,
                 chp_state_cbi_row=chp_state_cbi_row,
                 chp_cbi_uti_tax_fed_cell=chp_cbi_uti_tax_fed_cell,
-                chp_utility_cbi_row=chp_utility_cbi_row
+                chp_utility_cbi_row=chp_utility_cbi_row,
+                ghp_ibi_sta_percent_tax_fed_cell=ghp_ibi_sta_percent_tax_fed_cell,
+                ghp_state_ibi_row=ghp_state_ibi_row,
+                ghp_ibi_uti_percent_tax_fed_cell=ghp_ibi_uti_percent_tax_fed_cell,
+                ghp_utility_ibi_row=ghp_utility_ibi_row,
+                ghp_cbi_fed_tax_fed_cell=ghp_cbi_fed_tax_fed_cell,
+                ghp_federal_cbi_row=ghp_federal_cbi_row,
+                ghp_cbi_sta_tax_fed_cell=ghp_cbi_sta_tax_fed_cell,
+                ghp_state_cbi_row=ghp_state_cbi_row,
+                ghp_cbi_uti_tax_fed_cell=ghp_cbi_uti_tax_fed_cell,
+                ghp_utility_cbi_row=ghp_utility_cbi_row                
             )
         else:
             for idx in range(len(pv_data)):  # could be multiple PVs
@@ -2643,6 +3072,11 @@ def generate_proforma(scenariomodel, output_file_path):
                 '+IF({chp_cbi_sta_tax_fed_cell}="No", {col}{chp_state_cbi_row}, 0)'
                 '+IF({chp_cbi_uti_tax_fed_cell}="No", {col}{chp_utility_cbi_row}, 0)'
                 '+IF({chp_pbi_combined_tax_fed_cell}="No", {col}{chp_pbi_total_row}, 0)'
+                '+IF({ghp_ibi_sta_percent_tax_fed_cell}="No", {col}{ghp_state_ibi_row}, 0)'
+                '+IF({ghp_ibi_uti_percent_tax_fed_cell}="No", {col}{ghp_utility_ibi_row}, 0)'
+                '+IF({ghp_cbi_fed_tax_fed_cell}="No", {col}{ghp_federal_cbi_row}, 0)'
+                '+IF({ghp_cbi_sta_tax_fed_cell}="No", {col}{ghp_state_cbi_row}, 0)'
+                '+IF({ghp_cbi_uti_tax_fed_cell}="No", {col}{ghp_utility_cbi_row}, 0)'               
             ).format(
                 col=upper_case_letters[i + 1],
                 pv_string=pv_string,
@@ -2677,7 +3111,17 @@ def generate_proforma(scenariomodel, output_file_path):
                 chp_cbi_uti_tax_fed_cell=chp_cbi_uti_tax_fed_cell,
                 chp_utility_cbi_row=chp_utility_cbi_row,
                 chp_pbi_combined_tax_fed_cell=chp_pbi_combined_tax_fed_cell,
-                chp_pbi_total_row=chp_pbi_total_row
+                chp_pbi_total_row=chp_pbi_total_row,
+                ghp_ibi_sta_percent_tax_fed_cell=ghp_ibi_sta_percent_tax_fed_cell,
+                ghp_state_ibi_row=ghp_state_ibi_row,
+                ghp_ibi_uti_percent_tax_fed_cell=ghp_ibi_uti_percent_tax_fed_cell,
+                ghp_utility_ibi_row=ghp_utility_ibi_row,
+                ghp_cbi_fed_tax_fed_cell=ghp_cbi_fed_tax_fed_cell,
+                ghp_federal_cbi_row=ghp_federal_cbi_row,
+                ghp_cbi_sta_tax_fed_cell=ghp_cbi_sta_tax_fed_cell,
+                ghp_state_cbi_row=ghp_state_cbi_row,
+                ghp_cbi_uti_tax_fed_cell=ghp_cbi_uti_tax_fed_cell,
+                ghp_utility_cbi_row=ghp_utility_cbi_row               
              )
         else:
             pv_cells = list()
@@ -3099,6 +3543,109 @@ def generate_proforma(scenariomodel, output_file_path):
                        number_format='#,##0', border=no_border)
     cold_tes_fed_income_total = current_row
     current_row += 1
+
+    ####################################################################################################################
+    # Steam Turbine depreciation
+    ####################################################################################################################
+
+    dcs['A{}'.format(current_row)] = "Steam Turbine Depreciation, Commercial only"
+    dcs['A{}'.format(current_row)].alignment = one_tab_indent
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Percentage"
+    dcs['A{}'.format(current_row)].alignment = two_tab_indent
+    for i in range(len(steam_turbine_macrs_cells)):
+        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(steam_turbine_macrs_cells[i])
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0.0000', border=no_border)
+    steam_turbine_macrs_percent_row = current_row
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Bonus Basis"
+    dcs['A{}'.format(current_row)].alignment = two_tab_indent
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    steam_turbine_bonus_basis_cell = 'B{}'.format(current_row)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Basis"
+    dcs['A{}'.format(current_row)].alignment = two_tab_indent
+    dcs['B{}'.format(current_row)] = '={}*(1-{})'.format(steam_turbine_bonus_basis_cell, steam_turbine_bonus_fraction_cell)
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    steam_turbine_basis_cell = 'B{}'.format(current_row)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Amount"
+    dcs['A{}'.format(current_row)].alignment = two_tab_indent
+    steam_turbine_depreciation_benefit = list()
+    for i in range(financial.analysis_years):
+        steam_turbine_depreciation_benefit.append("\'{}\'!{}{}".format(
+            third_party_cashflow_sheet_name, upper_case_letters[i+2], current_row))
+
+        if i == 0:
+            dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = \
+                '={basis_cell}*{col}{macrs_row} + ({bonus_basis_cell}*{bonus_basis_pct_cell})'.format(
+                    basis_cell=steam_turbine_basis_cell, col=upper_case_letters[i + 2], macrs_row=steam_turbine_macrs_percent_row,
+                    bonus_basis_cell=steam_turbine_bonus_basis_cell, bonus_basis_pct_cell=steam_turbine_bonus_fraction_cell)
+        else:
+            dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={basis_cell}*{col}{macrs_row}'.format(
+                basis_cell=steam_turbine_basis_cell, col=upper_case_letters[i + 2], macrs_row=steam_turbine_macrs_percent_row)
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    steam_turbine_fed_income_total = current_row
+    current_row += 1
+
+    ####################################################################################################################
+    # GHP depreciation
+    ####################################################################################################################
+
+    dcs['A{}'.format(current_row)] = "GHP Depreciation, Commercial only"
+    dcs['A{}'.format(current_row)].alignment = one_tab_indent
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Percentage"
+    dcs['A{}'.format(current_row)].alignment = two_tab_indent
+    for i in range(len(ghp_macrs_cells)):
+        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(ghp_macrs_cells[i])
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0.0000', border=no_border)
+    ghp_macrs_percent_row = current_row
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Bonus Basis"
+    dcs['A{}'.format(current_row)].alignment = two_tab_indent
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    ghp_bonus_basis_cell = 'B{}'.format(current_row)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Basis"
+    dcs['A{}'.format(current_row)].alignment = two_tab_indent
+    dcs['B{}'.format(current_row)] = '={}*(1-{})'.format(ghp_bonus_basis_cell, ghp_bonus_fraction_cell)
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    ghp_basis_cell = 'B{}'.format(current_row)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Amount"
+    dcs['A{}'.format(current_row)].alignment = two_tab_indent
+    ghp_depreciation_benefit = list()
+    for i in range(financial.analysis_years):
+        ghp_depreciation_benefit.append("\'{}\'!{}{}".format(
+            third_party_cashflow_sheet_name, upper_case_letters[i+2], current_row))
+
+        if i == 0:
+            dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = \
+                '={basis_cell}*{col}{macrs_row} + ({bonus_basis_cell}*{bonus_basis_pct_cell})'.format(
+                    basis_cell=ghp_basis_cell, col=upper_case_letters[i + 2], macrs_row=ghp_macrs_percent_row,
+                    bonus_basis_cell=ghp_bonus_basis_cell, bonus_basis_pct_cell=ghp_bonus_fraction_cell)
+        else:
+            dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={basis_cell}*{col}{macrs_row}'.format(
+                basis_cell=ghp_basis_cell, col=upper_case_letters[i + 2], macrs_row=ghp_macrs_percent_row)
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    ghp_fed_income_total = current_row
+    current_row += 1
+
     ####################################################################################################################
     # Total depreciation
     ####################################################################################################################
@@ -3111,11 +3658,12 @@ def generate_proforma(scenariomodel, output_file_path):
             col=upper_case_letters[i + 2],
             pv=pv_cell_locations[idx]["pv_fed_income_total"]) for idx in range(len(pv_data))])
         dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = \
-            '=SUM({pv_string},{col}{wind},{col}{batt},{col}{chp},{col}{absorption_chiller},{col}{hot_tes},{col}{cold_tes})'.format(
+            '=SUM({pv_string},{col}{wind},{col}{batt},{col}{chp},{col}{absorption_chiller},{col}{hot_tes},{col}{cold_tes},{col}{steam_turbine},{col}{ghp})'.format(
                 col=upper_case_letters[i + 2], pv_string=pv_string,
                 wind=wind_fed_income_total, batt=batt_fed_income_total,
                 chp=chp_fed_income_total, absorption_chiller=absorption_chiller_fed_income_total,
-                hot_tes=hot_tes_fed_income_total, cold_tes=cold_tes_fed_income_total)
+                hot_tes=hot_tes_fed_income_total, cold_tes=cold_tes_fed_income_total,
+                steam_turbine=steam_turbine_fed_income_total, ghp=ghp_fed_income_total)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
@@ -3371,6 +3919,57 @@ def generate_proforma(scenariomodel, output_file_path):
                 third_party_cashflow_sheet_name, current_row)
 
     current_row += 1
+    dcs['A{}'.format(current_row)] = "Federal ITC basis: GHP"
+    dcs['B{}'.format(current_row)] = (
+        '={ghp_cost_cell}-IF({ghp_ibi_sta_percent_deprbas_fed_cell}="Yes",'
+        '{col}{ghp_state_ibi_row},0)-IF({ghp_ibi_uti_percent_deprbas_fed_cell}="Yes",'
+        '{col}{ghp_utility_ibi_row},0)-IF({ghp_cbi_fed_deprbas_fed_cell}="Yes",'
+        '{col}{ghp_federal_cbi_row},0)-IF({ghp_cbi_sta_deprbas_fed_cell}="Yes",'
+        '{col}{ghp_state_cbi_row},0)-IF({ghp_cbi_uti_deprbas_fed_cell}="Yes",'
+        '{col}{ghp_utility_cbi_row},0)'
+    ).format(
+        ghp_cost_cell=ghp_cost_cell,
+        ghp_ibi_sta_percent_deprbas_fed_cell=ghp_ibi_sta_percent_deprbas_fed_cell,
+        col='B',
+        ghp_state_ibi_row=ghp_state_ibi_row,
+        ghp_ibi_uti_percent_deprbas_fed_cell=ghp_ibi_uti_percent_deprbas_fed_cell,
+        ghp_utility_ibi_row=ghp_utility_ibi_row,
+        ghp_cbi_fed_deprbas_fed_cell=ghp_cbi_fed_deprbas_fed_cell,
+        ghp_federal_cbi_row=ghp_federal_cbi_row,
+        ghp_cbi_sta_deprbas_fed_cell=ghp_cbi_sta_deprbas_fed_cell,
+        ghp_state_cbi_row=ghp_state_cbi_row,
+        ghp_cbi_uti_deprbas_fed_cell=ghp_cbi_uti_deprbas_fed_cell,
+        ghp_utility_cbi_row=ghp_utility_cbi_row
+    )
+    dcs[ghp_bonus_basis_cell] = (
+        '=IF(OR({ghp_macrs_option_cell}=5,{ghp_macrs_option_cell}=7),'
+        '({ghp_itc_basis_cell}-IF({ghp_itc_fed_percent_deprbas_fed_cell}="Yes",'
+        '0.5*MIN({ghp_federal_itc_cell}/100*{ghp_itc_basis_cell},{ghp_itc_fed_percent_maxvalue_cell}),0)),0)'
+    ).format(
+        ghp_macrs_option_cell=ghp_macrs_option_cell,
+        ghp_itc_basis_cell='B{}'.format(current_row),
+        ghp_itc_fed_percent_deprbas_fed_cell=ghp_itc_fed_percent_deprbas_fed_cell,
+        ghp_federal_itc_cell=ghp_federal_itc_cell,
+        ghp_itc_fed_percent_maxvalue_cell=ghp_itc_fed_percent_maxvalue_cell
+    )
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    ghp_federal_itc_basis_cell = 'B{}'.format(current_row)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Federal ITC amount: GHP"
+    dcs['C{}'.format(current_row)] = (
+        '=MIN({ghp_federal_itc_cell}/100*{ghp_federal_itc_basis_cell},{ghp_itc_fed_percent_maxvalue_cell})'
+    ).format(
+        ghp_federal_itc_cell=ghp_federal_itc_cell,
+        ghp_federal_itc_basis_cell=ghp_federal_itc_basis_cell,
+        ghp_itc_fed_percent_maxvalue_cell=ghp_itc_fed_percent_maxvalue_cell
+    )
+    make_attribute_row(dcs, current_row, length=3, alignment=right_align, number_format='#,##0', border=no_border)
+    ghp_federal_itc_amount_row = current_row
+    ghp_federal_itc_amount_cell = "\'{}\'!C{}".format(
+                third_party_cashflow_sheet_name, current_row)
+
+    current_row += 1
     dcs['A{}'.format(current_row)] = "Total Federal ITC"
     dcs['A{}'.format(current_row)].font = bold_font
     fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
@@ -3381,18 +3980,20 @@ def generate_proforma(scenariomodel, output_file_path):
     ])
     dcs['C{}'.format(current_row)] = (
         '=SUM({pv_string}, {col}{wind_federal_itc_amount_row}, '
-        '{col}{batt_federal_itc_amount_row}, {col}{chp_federal_itc_amount_row})'
+        '{col}{batt_federal_itc_amount_row}, {col}{chp_federal_itc_amount_row}, {col}{ghp_federal_itc_amount_row})'
     ).format(
         col=upper_case_letters[0 + 2],
         pv_string=pv_string,
         wind_federal_itc_amount_row=wind_federal_itc_amount_row,
         batt_federal_itc_amount_row=batt_federal_itc_amount_row,
-        chp_federal_itc_amount_row=chp_federal_itc_amount_row
+        chp_federal_itc_amount_row=chp_federal_itc_amount_row,
+        ghp_federal_itc_amount_row=ghp_federal_itc_amount_row
     )
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
     total_fed_itc_row = current_row
+    
     current_row += 1
     current_row += 1
 

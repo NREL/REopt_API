@@ -245,6 +245,9 @@ class GHPGHXOutputs(models.Model):
         help_text="Peak cooling heat pump thermal load served [ton]")
     peak_combined_heatpump_thermal_ton = models.FloatField(null=True, blank=True, 
         help_text="Peak combined heating/cooling heat pump thermal load served [ton]")
+    yearly_heat_pump_eft_series_f = ArrayField(models.FloatField(null=True, blank=True), 
+        default=list, null=True, blank=True,
+        help_text="Hourly heat pump entering fluid temperature (eft), average across simulation years [kW]")    
     max_eft_f = models.FloatField(null=True, blank=True, 
         help_text="Maximum entering fluid temperature (to heat pump, from ghx) throughout the GHPGHX simulation period")
     min_eft_f = models.FloatField(null=True, blank=True, 
