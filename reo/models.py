@@ -1158,6 +1158,10 @@ class GHPModel(models.Model):
     ghp_chosen_uuid = models.TextField(null=True, blank=True)
     ghpghx_chosen_outputs = PickledObjectField(null=True, editable=True)
     size_heat_pump_ton = models.FloatField(null=True, blank=True)  # This includes a factor on the peak coincident heating+cooling load
+    space_heating_thermal_reduction_series_mmbtu_per_hr = ArrayField(
+            models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
+    cooling_thermal_reduction_series_ton = ArrayField(
+            models.FloatField(null=True, blank=True), default=list, null=True, blank=True)            
 
     @classmethod
     def create(cls, **kwargs):
