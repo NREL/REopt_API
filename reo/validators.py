@@ -1911,7 +1911,7 @@ class ValidateNestedInput:
                         self.update_attribute_value(object_name_path, number, "space_heating_efficiency_thermal_factor", heating_factor)
                     if cooling_factor in [[], None]:
                         if len(building_type_cooling) != 1:
-                            heating_factor = 1.0
+                            cooling_factor = 1.0
                         elif building_type_cooling[0] in list(cooling_factor_data.index):
                             cooling_factor = cooling_factor_data[climate_zone][building_type_cooling[0]]
                         else:
