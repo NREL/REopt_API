@@ -1070,6 +1070,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         self.nested_outputs["Scenario"]["Site"][name]["ghpghx_chosen_outputs"]["cooling_thermal_load_ton"] = ghpghx_chosen["inputs"]["cooling_thermal_load_ton"]
                         self.nested_outputs["Scenario"]["Site"][name]["size_heat_pump_ton"] = ghpghx_chosen["outputs"]["peak_combined_heatpump_thermal_ton"] * \
                                                                                                 data['inputs']['Scenario']["Site"]["GHP"]["heatpump_capacity_sizing_factor_on_peak_load"]
+                        self.nested_outputs["Scenario"]["Site"][name]["space_heating_thermal_reduction_series_mmbtu_per_hr"] = [x / MMBTU_TO_KWH for x in self.results_dict.get("HeatingThermalReductionWithGHP")]
+                        self.nested_outputs["Scenario"]["Site"][name]["cooling_thermal_reduction_series_ton"] = [x / TONHOUR_TO_KWHT for x in self.results_dict.get("CoolingThermalReductionWithGHP")]
 
             # outputs that depend on multiple object results:
             future_replacement_cost, present_replacement_cost = self.replacement_costs_future_and_present

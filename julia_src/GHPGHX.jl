@@ -99,8 +99,8 @@ function size_borefield(p)
                 Tons_HeatPump_C = Q_Cool / 1.055 / 12000.0
                 GPM_GHX = max(p.fMin_VSP_GHXPump * p.GPM_GHXPump, (Tons_HeatPump_H + Tons_HeatPump_C) * p.GPMperTon_WSHP)
                 Mdot_GHX = GPM_GHX * 60.0 / 264.172 * p.Rho_GHXFluid
-                Mdot_Circuit = Mdot_GHX / r.N_Bores[size_iter] * p.N_Series
-                Circuit_Time = r.Mass_Circuit / max(0.001, Mdot_Circuit)
+                Mdot_Circuit = max(Mdot_GHX / r.N_Bores[size_iter] * p.N_Series, 0.001)
+                Circuit_Time = max(r.Mass_Circuit / Mdot_Circuit, 0.001)
              
                 # TESS GHX model, Model = 3, uses variable time step per hour; DST uses fixed p.dst_ghx_timesteps_per_hour
                 if p.ghx_model == "TESS"

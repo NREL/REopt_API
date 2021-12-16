@@ -57,7 +57,7 @@ Performs the initial sizing for the GHPGHX.jl `size_borefield(p)` function.
 function init_sizing!(r::ResultsStruct, p::InputsStruct, size_iter::Int64)
     #Changes each sizing iteration
     r.N_Bores[size_iter] = floor(r.X_Now[size_iter] / p.Depth_Bores) + 1
-    r.Length_Boreholes = r.X_Now[size_iter] / r.N_Bores[size_iter]
+    r.Length_Boreholes = max(r.X_Now[size_iter] / r.N_Bores[size_iter], 0.001)
     if p.SpacingType == 1
         r.StorageVolume = r.Length_Boreholes * r.N_Bores[size_iter] * pi * (p.BoreSpacing * 0.525)^2
     else
