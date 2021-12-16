@@ -76,6 +76,8 @@ class GHPTest(ResourceTestCaseMixin, TestCase):
         nested_data["Scenario"]["Site"]["LoadProfileBoilerFuel"]["doe_reference_name"] = "FlatLoad_24_5"
         nested_data["Scenario"]["Site"]["LoadProfileBoilerFuel"]["monthly_mmbtu"] = [500.0] + [1000.0]*10 + [1500.0]
 
+        #nested_data["Scenario"]["Site"]["GHP"]["ghpghx_responses"] = [json.load(open("ghpghx_response.json", 'rb'))]
+
         # Call REopt
         resp = self.get_reopt_response(data=nested_data)
         self.assertHttpCreated(resp)
@@ -86,14 +88,24 @@ class GHPTest(ResourceTestCaseMixin, TestCase):
         ghp_uuid = d["outputs"]["Scenario"]["Site"]["GHP"]["ghp_chosen_uuid"]
         print("GHP uuid chosen = ", ghp_uuid)
 
+        # Test GHP serving addressable fraction of space heating with VAV efficiency thermal knockdown
         heating_served_mmbtu = sum(d["outputs"]["Scenario"]["Site"]["GHP"]["ghpghx_chosen_outputs"]["heating_thermal_load_mmbtu_per_hr"])
-        expected_heating_served_mmbtu = 12000 * 0.8 * 0.9 * 0.7  # (fuel_mmbtu * boiler_effic * addressable_load * space_heat_frac)
+        expected_heating_served_mmbtu = 12000 * 0.8 * 0.9 * 0.7 * 0.85  # (fuel_mmbtu * boiler_effic * addressable_load * space_heat_frac * space_heating_efficiency_thermal_factor)
+        self.assertAlmostEqual(heating_served_mmbtu, expected_heating_served_mmbtu, places=2)
 
-        self.assertAlmostEqual(heating_served_mmbtu, expected_heating_served_mmbtu, places=3)
+        # Boiler serves all of the DHW load, no DHW thermal reduction due to GHP retrofit
+        boiler_served_mmbtu = sum(d["outputs"]["Scenario"]["Site"]["Boiler"]["year_one_boiler_thermal_production_series_mmbtu_per_hr"])
+        expected_boiler_served_mmbtu = 12000 * 0.8 * 0.9 * (1 - 0.7)
+        self.assertAlmostEqual(boiler_served_mmbtu, expected_boiler_served_mmbtu, places=2)
 
+        # LoadProfileChillerThermal cooling thermal is 1/cooling_efficiency_thermal_factor of GHP cooling thermal production
+        bau_chiller_thermal_tonhour = sum(d["outputs"]["Scenario"]["Site"]["LoadProfileChillerThermal"]["year_one_chiller_thermal_load_series_ton"])
+        ghp_cooling_thermal_tonhour = sum(d["outputs"]["Scenario"]["Site"]["GHP"]["ghpghx_chosen_outputs"]["cooling_thermal_load_ton"])
+        self.assertAlmostEqual(bau_chiller_thermal_tonhour, ghp_cooling_thermal_tonhour/0.6, places=2)
+
+        # Custom heat pump COP map is used properly
         heating_cop_avg = d["outputs"]["Scenario"]["Site"]["GHP"]["ghpghx_chosen_outputs"]["heating_cop_avg"]
         cooling_cop_avg = d["outputs"]["Scenario"]["Site"]["GHP"]["ghpghx_chosen_outputs"]["cooling_cop_avg"]
-
         # Average COP which includes pump power should be lower than Heat Pump only COP specified by the map
         self.assertLess(heating_cop_avg, 4.0)
         self.assertLess(cooling_cop_avg, 8.0)

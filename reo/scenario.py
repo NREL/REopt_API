@@ -359,9 +359,27 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         # GHP
         ghp_option_list = []
-        # Call /ghpghx endpoint if only ghpghx_inputs is given, otherwise use ghpghx_response_uuids
-        if inputs_dict["Site"]["GHP"].get("building_sqft") is not None and \
-            inputs_dict["Site"]["GHP"].get("ghpghx_response_uuids") in [None, []]:
+        eval_ghp = False
+        if inputs_dict["Site"]["GHP"].get("building_sqft"):
+            eval_ghp = True
+        get_ghpghx_from_input = False            
+        get_ghpghx_from_database = False
+        if inputs_dict["Site"]["GHP"].get("ghpghx_responses") not in [None, []]:
+            get_ghpghx_from_input = True        
+        elif inputs_dict["Site"]["GHP"].get("ghpghx_response_uuids") not in [None, []]:
+            get_ghpghx_from_database = True
+        
+        # Modify Heating and Cooling loads for GHP retrofit to account for HVAC VAV efficiency gains
+        if eval_ghp:
+            heating_factor = inputs_dict["Site"]["GHP"]["space_heating_efficiency_thermal_factor"]
+            cooling_factor = inputs_dict["Site"]["GHP"]["cooling_efficiency_thermal_factor"]
+            heating_load_fuel_reduction_mmbtu_per_hr = [lpbf_space.load_list[i] * (1.0 - heating_factor) for i in range(len(lpbf_space.load_list))]
+            cooling_load_thermal_reduction_ton = [kwt * (1.0 - cooling_factor) / TONHOUR_TO_KWHT for kwt in dfm.cooling_load.load_list]
+            dfm.ghp_thermal_reduction["heating_fuel_mmbtu_per_hr"] = heating_load_fuel_reduction_mmbtu_per_hr
+            dfm.ghp_thermal_reduction["cooling_thermal_ton"] = cooling_load_thermal_reduction_ton
+
+        # Call /ghpghx endpoint if only ghpghx_inputs is given, otherwise use ghpghx_response_uuids or ghpghx_responses
+        if eval_ghp and not (get_ghpghx_from_database or get_ghpghx_from_input):
             ghpghx_uuid_list = []
             if inputs_dict["Site"]["GHP"].get("ghpghx_inputs") in [None, []]:
                 number_of_ghpghx = 1
@@ -375,15 +393,16 @@ def setup_scenario(self, run_uuid, data, raw_post):
                 # Only SpaceHeating portion of Heating Load gets served by GHP, unless allowed by can_serve_dhw
                 if ghpghx_post.get("heating_thermal_load_mmbtu_per_hr") in [None, []]:
                     if not inputs_dict["Site"]["GHP"].get("can_serve_dhw"):
-                        ghpghx_post["heating_fuel_load_mmbtu_per_hr"] = lpbf_space.load_list
+                        ghpghx_post["heating_fuel_load_mmbtu_per_hr"] = [lpbf_space.load_list[i] - heating_load_fuel_reduction_mmbtu_per_hr[i] for i in range(len(lpbf_space.load_list))]
                     else:
-                        ghpghx_post["heating_fuel_load_mmbtu_per_hr"] = [lpbf_space.load_list[i] + lpbf_dhw.load_list[i] for i in range(len(lpbf_space.load_list))]
+                        ghpghx_post["heating_fuel_load_mmbtu_per_hr"] = [lpbf_space.load_list[i] + lpbf_dhw.load_list[i] - \
+                                                                            heating_load_fuel_reduction_mmbtu_per_hr[i] for i in range(len(lpbf_space.load_list))]
                 if dfm.boiler is not None:
                     ghpghx_post["existing_boiler_efficiency"] = dfm.boiler.boiler_efficiency #boiler.boiler_efficiency
                 else:
                     ghpghx_post["existing_boiler_efficiency"] = 0.8
                 if ghpghx_post.get("cooling_thermal_load_ton") in [None, []]:
-                    ghpghx_post["cooling_thermal_load_ton"] = [kwt / TONHOUR_TO_KWHT for kwt in dfm.cooling_load.load_list] #lpct.load_list
+                    ghpghx_post["cooling_thermal_load_ton"] = [kwt / TONHOUR_TO_KWHT - cooling_load_thermal_reduction_ton[i] for i, kwt in enumerate(dfm.cooling_load.load_list)] #lpct.load_list
                 client = TestApiClient()
                 # Update ground thermal conductivity based on climate zone if not user-input
                 if not ghpghx_post.get("ground_thermal_conductivity_btu_per_hr_ft_f"):
@@ -400,20 +419,27 @@ def setup_scenario(self, run_uuid, data, raw_post):
                 ghp_option_list.append(ghp.GHPGHX(dfm=dfm,
                                                     response=ghpghx_results_resp_dict,
                                                     **inputs_dict["Site"]["GHP"]))
+                #json.dump(ghpghx_results_resp_dict, open("ghpghx_response.json", "w"))
             # Update GHPModel with created ghpghx_response_uuids
             tmp = dict()
             tmp['ghpghx_response_uuids'] = ghpghx_uuid_list
             ModelManager.updateModel('GHPModel', tmp, run_uuid)
             # Sleep to avoid calling julia_api for /job (reopt) or another /ghpghx run too quickly after /ghpghx
             time.sleep(1)
+        # If ghpghx_responses is included in inputs/POST, do NOT run /ghpghx model and use already-run ghpghx
+        # Note, this will ignore ghpghx_response_uuids (next elif clause) for ghpghx_response if they are ALSO provided
+        elif eval_ghp and get_ghpghx_from_input:
+            for ghpghx_response in inputs_dict["Site"]["GHP"].get("ghpghx_responses"):
+                ghp_option_list.append(ghp.GHPGHX(dfm=dfm,
+                                                    response=ghpghx_response,
+                                                    **inputs_dict["Site"]["GHP"]))
         # If ghpghx_response_uuids is included in inputs/POST, do NOT run /ghpghx model and use already-run ghpghx
-        elif inputs_dict["Site"]["GHP"].get("building_sqft") is not None and \
-                inputs_dict["Site"]["GHP"].get("ghpghx_response_uuids") not in [None, []]:
+        elif eval_ghp and get_ghpghx_from_database:
             for ghp_uuid in inputs_dict["Site"]["GHP"].get("ghpghx_response_uuids"):
                 ghp_option_list.append(ghp.GHPGHX(dfm=dfm,
                                                     response=ghpModelManager.make_response(ghp_uuid),
                                                     **inputs_dict["Site"]["GHP"]))
-
+        
         util = Util(dfm=dfm,
                     outage_start_time_step=inputs_dict['Site']['LoadProfile'].get("outage_start_time_step"),
                     outage_end_time_step=inputs_dict['Site']['LoadProfile'].get("outage_end_time_step"),

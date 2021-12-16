@@ -50,7 +50,7 @@ from reo.src.emissions_calculator import EmissionsCalculator, EASIURCalculator
 from django.http import HttpResponse
 from django.template import  loader
 import pandas as pd
-from reo.utilities import MMBTU_TO_KWH, generate_year_profile_hourly, TONHOUR_TO_KWHT, get_weekday_weekend_total_hours_by_month
+from reo.utilities import MMBTU_TO_KWH, generate_year_profile_hourly, TONHOUR_TO_KWHT, get_weekday_weekend_total_hours_by_month, get_climate_zone_and_nearest_city
 from reo.validators import ValidateNestedInput
 from datetime import datetime, timedelta
 import numpy as np
@@ -1044,3 +1044,52 @@ def schedule_stats(request):
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in schedule_stats endpoint. Check log for more."}, status=500)
+
+def ghp_efficiency_thermal_factors(request):
+    """
+    GET default GHP heating and cooling thermal efficiency factors based on the climate zone from the lat/long input
+    param: latitude: latitude of the site location
+    param: longitude: longitude of the site location
+    param: doe_reference_name: commercial reference building name
+    return: climate_zone: climate zone of the site location
+    return: heating_efficiency_thermal_factor: default value for GHP.heating_efficiency_thermal_factor
+    return: cooling_efficiency_thermal_factor: default value for GHP.cooling_efficiency_thermal_factor
+    """
+    try:
+        latitude = float(request.GET['latitude'])  # need float to convert unicode
+        longitude = float(request.GET['longitude'])
+        doe_reference_name = request.GET['doe_reference_name']
+
+        climate_zone, nearest_city, geometric_flag = get_climate_zone_and_nearest_city(latitude, longitude, BuiltInProfile.default_cities)
+        heating_factor_data = pd.read_csv(os.path.join('input_files', 'LoadProfiles', 'ghp_heating_efficiency_thermal_factors.csv'), index_col="Building Type")
+        cooling_factor_data = pd.read_csv(os.path.join('input_files', 'LoadProfiles', 'ghp_cooling_efficiency_thermal_factors.csv'), index_col="Building Type")
+        
+        if doe_reference_name in list(heating_factor_data.index):
+            heating_factor = heating_factor_data[climate_zone][doe_reference_name]
+            cooling_factor = cooling_factor_data[climate_zone][doe_reference_name]
+        else:
+            heating_factor = 1.0
+            cooling_factor = 1.0
+
+        response = JsonResponse(
+            {
+                "building_type": doe_reference_name,
+                "climate_zone": climate_zone,
+                "space_heating_efficiency_thermal_factor": heating_factor,
+                "cooling_efficiency_thermal_factor": cooling_factor
+            }
+        )
+        return response
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=400)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=400)
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected error in ghp_efficiency_thermal_factors endpoint. Check log for more."}, status=500)

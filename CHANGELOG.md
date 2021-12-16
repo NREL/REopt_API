@@ -26,6 +26,12 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v1.9.1 - 2021-12-16
+### Minor Updates
+##### Added
+- `reo`: `GHP` heating and cooling HVAC efficiency thermal factor inputs and defaults to account for a reduction in heating and/or cooling loads with GHP retrofits
+- `*.jl`: Reduction in heating and cooling loads due to the thermal factors (described above) if `GHP` is chosen.  
+
 ## v1.9.0 - 2021-12-15
 ### Minor Updates
 ##### Added
