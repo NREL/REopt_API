@@ -1551,6 +1551,16 @@ nested_output_definitions = {
                   "description": "Size of the aggregated heat pump based on coincident peak heating plus cooling, including a sizing factor",
                   "units": "ton"
                 },
+                "space_heating_thermal_reduction_series_mmbtu_per_hr": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of thermal reduction of space heating load",
+                  "units": "MMBtu/hr"
+                },
+                "cooling_thermal_reduction_series_ton": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of thermal reduction of cooling load",
+                  "units": "ton"
+                },                
               }
           	}
         	}
