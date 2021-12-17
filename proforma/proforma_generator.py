@@ -517,32 +517,32 @@ def generate_proforma(scenariomodel, output_file_path):
     make_attribute_row(ws, current_row, alignment=right_align,
                            number_format='##%')
     current_row += 1
-    ws['A{}'.format(current_row)] = "Year one total site carbon dioxide emissions (ton CO2 equivalent)"
+    ws['A{}'.format(current_row)] = "Year one total site carbon dioxide emissions (ton CO2)"
     ws['B{}'.format(current_row)] = site.year_one_emissions_tCO2
     make_attribute_row(ws, current_row)
     current_row += 1
 
-    ws['A{}'.format(current_row)] = "Year one total site carbon dioxide emissions BAU (ton CO2 equivalent)"
+    ws['A{}'.format(current_row)] = "Year one total site carbon dioxide emissions BAU (ton CO2)"
     ws['B{}'.format(current_row)] = site.year_one_emissions_tCO2_bau
     make_attribute_row(ws, current_row)
     current_row += 1
     
-    ws['A{}'.format(current_row)] = "Year one total carbon dioxide emissions from electric utility purchases (ton CO2 equivalent)"
+    ws['A{}'.format(current_row)] = "Year one total carbon dioxide emissions from electric utility purchases (ton CO2)"
     ws['B{}'.format(current_row)] = electric_tariff.year_one_emissions_tCO2
     make_attribute_row(ws, current_row)
     current_row += 1
     
-    ws['A{}'.format(current_row)] = "Year one total carbon dioxide emissions from electric utility purchases BAU (ton CO2 equivalent)"
+    ws['A{}'.format(current_row)] = "Year one total carbon dioxide emissions from electric utility purchases BAU (ton CO2)"
     ws['B{}'.format(current_row)] = electric_tariff.year_one_emissions_tCO2_bau
     make_attribute_row(ws, current_row)
     current_row += 1
 
-    ws['A{}'.format(current_row)] = "Year one total carbon dioxide emissions from on-site fuel burn (ton CO2 equivalent)"
+    ws['A{}'.format(current_row)] = "Year one total carbon dioxide emissions from on-site fuel burn (ton CO2)"
     ws['B{}'.format(current_row)] = site.year_one_emissions_from_fuelburn_tCO2
     make_attribute_row(ws, current_row)
     current_row += 1
     
-    ws['A{}'.format(current_row)] = "Year one total carbon dioxide emissions from on-site fuel burn BAU (ton CO2 equivalent)"
+    ws['A{}'.format(current_row)] = "Year one total carbon dioxide emissions from on-site fuel burn BAU (ton CO2)"
     ws['B{}'.format(current_row)] = site.year_one_emissions_from_fuelburn_tCO2_bau
     make_attribute_row(ws, current_row)
     current_row += 1
