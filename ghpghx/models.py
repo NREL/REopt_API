@@ -97,8 +97,8 @@ class GHPGHXInputs(models.Model):
                             "5B": 1.177,
                             "6A": 0.977,
                             "6B": 0.981,
-                            "7A": 1.034,
-                            "7B": 1.508
+                            "7": 1.034,
+                            "8": 1.508
                             }
 
     ground_thermal_conductivity_btu_per_hr_ft_f = models.FloatField(blank=True, 
