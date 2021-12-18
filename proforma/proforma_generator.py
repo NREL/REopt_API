@@ -364,8 +364,11 @@ def generate_proforma(scenariomodel, output_file_path):
     ghp_size_heat_pump_ton_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row, alignment=right_align)
 
-    ghp_ghx_total_length = (ghp.ghpghx_chosen_outputs.get("number_of_boreholes") or 0) * \
-                            (ghp.ghpghx_chosen_outputs.get("length_boreholes_ft") or 0)
+    if ghp.ghpghx_chosen_outputs not in [[], None]:
+        ghp_ghx_total_length = (ghp.ghpghx_chosen_outputs.get("number_of_boreholes") or 0) * \
+                                (ghp.ghpghx_chosen_outputs.get("length_boreholes_ft") or 0)
+    else:
+        ghp_ghx_total_length = 0
     current_row += 1
     ws['A{}'.format(current_row)] = "GHP ground heat exchanger size (ft)"
     ws['B{}'.format(current_row)] = ghp_ghx_total_length
