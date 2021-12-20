@@ -579,12 +579,12 @@ nested_output_definitions = {
                  },
                 "additional_cap_costs_us_dollars": {
                   "type": "float",
-                  "description": ("Additional capital costs as specified by the user."),
+                  "description": ("Additional capital costs as specified by the user in Financial 'other_capital_costs_us_dollars."),
                   "units": "$"
                 },
-                "total_annual_cost_us_dollars": {
+                "total_other_annual_cost_us_dollars": {
                   "type": "float",
-                  "description": ("Life-cycle sum of all annual costs."),
+                  "description": ("Present value of all additional annual costs as specified by the user in Financial 'other_annual_costs_us_dollars_per_year'."),
                   "units": "$"
                 },
                 "microgrid_lcoe_us_dollars_per_kwh": {

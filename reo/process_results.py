@@ -375,7 +375,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
 
                 fuel = (self.nested_outputs["Scenario"]['Site']['Generator']['total_fuel_cost_us_dollars'] or 0)
                 other_capex = (self.nested_outputs["Scenario"]["Site"]["Financial"]["additional_cap_costs_us_dollars"] or 0)
-                other_annual_costs = (self.nested_outputs["Scenario"]["Site"]["Financial"]["total_annual_cost_us_dollars"] or 0)
+                other_annual_costs = (self.nested_outputs["Scenario"]["Site"]["Financial"]["total_other_annual_cost_us_dollars"] or 0)
 
                 analysis_period = self.inputs["Financial"]["analysis_years"]
                 discount_rate = self.inputs["Financial"]["owner_discount_pct"] # This is set to offtaker_disc_pct if third_party is false
@@ -687,7 +687,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "additional_cap_costs_us_dollars"] = self.results_dict.get("total_other_cap_costs")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "total_annual_cost_us_dollars"] = self.results_dict.get("total_annual_costs")
+                        "total_other_annual_cost_us_dollars"] = self.results_dict.get("total_other_annual_costs")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "microgrid_lcoe_us_dollars_per_kwh"] = self.results_dict.get("microgrid_lcoe")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_om_costs_before_tax_bau_us_dollars"] = \

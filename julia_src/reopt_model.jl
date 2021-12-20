@@ -1845,7 +1845,7 @@ function add_offgrid_financial_results(m, p, r::Dict)
 	lcc = round(value(m[:REcosts]) + p.OtherCapitalCosts + p.OtherAnnualCosts)
 	@expression(m, AnnualkWhServed, sum(p.ElecLoad[ts] * value(m[:dvOffgridLoadServedFraction][ts]) for  ts in p.TimeStepsWithoutGrid))
 	r["total_other_cap_costs"] = p.OtherCapitalCosts
-	r["total_annual_costs"] = p.OtherAnnualCosts
+	r["total_other_annual_costs"] = p.OtherAnnualCosts
 
 	if p.two_party_factor == 1  # Direct ownership (two_party_factor = 1 if third_party_ownership is False)
 		pwf = p.pwf_offtaker
