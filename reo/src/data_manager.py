@@ -32,7 +32,7 @@ import copy
 from reo.src.urdb_parse import UrdbParse
 from reo.src.fuel_params import FuelParams
 from reo.utilities import annuity, annuity_two_escalation_rates, degradation_factor, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
-    insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, setup_capital_cost_offgrid, annuity_escalation, MMBTU_TO_KWH, GAL_DIESEL_TO_KWH, TONHOUR_TO_KWHT
+    insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, annuity_escalation, MMBTU_TO_KWH, GAL_DIESEL_TO_KWH, TONHOUR_TO_KWHT
 import numpy as np
 max_incentive = 1.0e10
 
