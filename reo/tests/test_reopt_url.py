@@ -32,7 +32,7 @@ from tastypie.test import ResourceTestCaseMixin
 from reo.nested_inputs import nested_input_definitions
 from reo.validators import ValidateNestedInput
 from reo.nested_to_flat_output import nested_to_flat
-from django.test import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
+from django.test import TestCase
 from reo.models import ModelManager, ScenarioModel
 from reo.utilities import check_common_outputs
 from functools import reduce  # forward compatibility for Python 3

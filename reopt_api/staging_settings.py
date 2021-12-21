@@ -71,7 +71,9 @@ INSTALLED_APPS = (
     'resilience_stats',
     'futurecosts',
     'django_celery_results',
-    'django_extensions'
+    'django_extensions',
+    'job',
+    'ghpghx'
 )
 
 MIDDLEWARE_CLASSES = (
@@ -157,6 +159,10 @@ CELERY_IMPORTS = (
     'resilience_stats.outage_simulator_LF',
     'futurecosts.api',
     'futurecosts.tasks',
+    'django_extensions',
+    'job.api',
+    'job.src.run_jump_model',
+    'ghpghx'
 )
 
 # Static files (CSS, JavaScript, Images)

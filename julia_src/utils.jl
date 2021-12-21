@@ -151,7 +151,10 @@ Base.@kwdef struct Parameter
 	 pwf_fuel::AxisArray
 	 r_tax_owner::Float64      # f^{tow}: Tax rate factor for owner [fraction]
      r_tax_offtaker::Float64   # f^{tot}: Tax rate factor for offtaker [fraction]
-     pwf_CO2::Float64 # Cost of CO2 present worth factor [unitless]
+     pwf_owner::Float64    # Annuity with zero escalation and owner's discount rate
+     pwf_offtaker::Float64 # Annuity with zero escalation and offtaker's discount rate
+     pwfs_emissions_cost::Dict{String, Any} # Cost of emissions present worth factors for grid and onsite fuelburn emissions [unitless]
+     pwfs_grid_emissions_lbs::Dict{String, Any} # Emissions [lbs] present worth factors for grid emissions [unitless]
 
 	 ###  System Size and Fuel Limit Parameters ###
 	 TechClassMinSize::AxisArray   #  \ubar{b}^{\sigma}_{c}: Minimum system size for technology class c [kW]
@@ -223,41 +226,41 @@ Base.@kwdef struct Parameter
 	 AddSOCIncentive::Int64
 
     # Annual RE parameters
-     ## IncludeExportedREElecinTotal::Bool
-     ##TechPercentRE::AxisArray
-     ##MinAnnualPercentREElec::Union{Float64,Nothing} 
-     ##MaxAnnualPercentREElec::Union{Float64,Nothing} 
+     TechPercentRE::AxisArray
+     MinAnnualPercentREElec::Union{Float64,Nothing}
+     MaxAnnualPercentREElec::Union{Float64,Nothing}
+     IncludeExportedREElecinTotal::Bool
 
     # Emissions parameters
      IncludeExportedElecEmissionsInTotal::Bool
-     ##IncludeOutageEmissionsInTotal::Bool
-     ##MinPercentEmissionsReduction::Union{Float64,Nothing} 
-     ##MaxPercentEmissionsReduction::Union{Float64,Nothing} 
+     MinPercentCO2EmissionsReduction::Union{Float64,Nothing}
+     MaxPercentCO2EmissionsReduction::Union{Float64,Nothing}
      BAUYr1Emissions_CO2::Float64
      BAUYr1Emissions_NOx::Float64
      BAUYr1Emissions_SO2::Float64
-     BAUYr1Emissions_PM::Float64
+     BAUYr1Emissions_PM25::Float64
      BAUYr1Emissions_grid_CO2::Float64
      BAUYr1Emissions_grid_NOx::Float64
      BAUYr1Emissions_grid_SO2::Float64
-     BAUYr1Emissions_grid_PM::Float64
+     BAUYr1Emissions_grid_PM25::Float64
      GridEmissionsFactor_CO2::Array{Float64,1}
      GridEmissionsFactor_NOx::Array{Float64,1}
      GridEmissionsFactor_SO2::Array{Float64,1}
-     GridEmissionsFactor_PM::Array{Float64,1}
+     GridEmissionsFactor_PM25::Array{Float64,1}
      TechEmissionsFactors_CO2::AxisArray
      TechEmissionsFactors_NOx::AxisArray
      TechEmissionsFactors_SO2::AxisArray
-     TechEmissionsFactors_PM::AxisArray
+     TechEmissionsFactors_PM25::AxisArray
      CO2_dollars_tonne::Float64
      NOx_dollars_tonne_grid::Float64
      SO2_dollars_tonne_grid::Float64
-     PM_dollars_tonne_grid::Float64
+     PM25_dollars_tonne_grid::Float64
      NOx_dollars_tonne_onsite_fuelburn::Float64
      SO2_dollars_tonne_onsite_fuelburn::Float64
-     PM_dollars_tonne_onsite_fuelburn::Float64
+     PM25_dollars_tonne_onsite_fuelburn::Float64
      Include_climate_in_objective::Bool
      Include_health_in_objective::Bool
+     Lbs_per_tonne::Float64
 
 	# Added for CHP
 	HotTES::Array{String,1}
@@ -271,7 +274,7 @@ Base.@kwdef struct Parameter
 	BoilerTechs::Array{String,1}
 	HeatingLoad::Array{Float64,1}
 	CoolingLoad::Array{Float64,1}
-	BoilerEfficiency::Float64
+	BoilerEfficiency::AxisArray
 	ElectricChillerCOP::Float64
     AbsorptionChillerCOP::Float64
     AbsorptionChillerElecCOP::Float64
@@ -328,6 +331,34 @@ Base.@kwdef struct Parameter
     SonnenFlag::Bool
     SonnenFullTS::Array{Int64, 1}
     SonnenEmptyTS::Array{Int64, 1}
+    AllBoilerTechs::Array{String,1}
+    AllTechsForSteamTurbine::Array{String,1}
+    SteamTurbineTechs::Array{String,1}
+    TechCanSupplySteamTurbine::Array{String,1}
+    STElecOutToThermInRatio::Float64
+    STThermOutToThermInRatio::Float64
+    # GHP Arrays of different GHP options with index 1 being NO GHP
+    GHPOptions::UnitRange{Int64}
+    RequireGHPPurchase::Int64
+    GHPHeatingThermalServed::Array{Float64,2}  # Array of heating load (thermal!) profiles served by GHP
+    GHPCoolingThermalServed::Array{Float64,2}  # Array of cooling load profiles served by GHP
+    HeatingThermalReductionWithGHP::Array{Float64,2}  # Array of heating load reduction (thermal!) profile from GHP retrofit
+    CoolingThermalReductionWithGHP::Array{Float64,2}  # Array of cooling load reduction (thermal!) profile from GHP retrofit
+    GHPElectricConsumed::Array{Float64,2}  # Array of electric load profiles consumed by GHP
+    GHPInstalledCost::Array{Float64,1}  # Array of installed cost for GHP options
+    GHPOMCost::Array{Float64,1}  # Array of O&M cost for GHP options
+    CHPSupplementaryFireMaxRatio::Float64
+    CHPSupplementaryFireEfficiency::Float64
+    CapCostSupplementaryFiring::AxisArray # Array of capital cost for supplementary firing for CHP
+	#Offgrid systems
+	OffGridFlag::Bool
+	TechsRequiringSR::Array{String,1}
+	TechsProvidingSR::Array{String,1}
+	MinLoadMetPct::Float64
+	SRrequiredPctLoad::Float64
+	SRrequiredPctTechs::AxisArray
+    OtherCapitalCosts::Float64
+    OtherAnnualCosts::Float64
 end
 
 
@@ -354,10 +385,6 @@ function Parameter(d::Dict)
 		"SHR",
 		"InitTemperatures",
 		"InitTemperaturesWH",
-        ##"MinAnnualPercentREElec",
-        ##"MaxAnnualPercentREElec",
-        ##"MinPercentEmissionsReduction",
-        ##"MaxPercentEmissionsReduction",
      )
 	for x in ["Tech","FuelType","CHPTechs","FlexTechs","WaterHeaterTechs"]
 		if typeof(d[x]) === Array{Any, 1}  # came from Python as empty array
@@ -384,6 +411,7 @@ function Parameter(d::Dict)
     n_location = length(d["MaxSizesLocation"])
     d[:Location] = 1:n_location
     d[:CPPeriod] = 1:d["CoincidentPeakPeriodCount"]
+    d[:GHPOptions] = 1:length(d["GHPInstalledCost"])
 
     #Flex loads
 	d[:TempNodes] = 1:d["TempNodesCount"]
@@ -422,8 +450,8 @@ function Parameter(d::Dict)
     d["TechEmissionsFactors_CO2"] = AxisArray(d["TechEmissionsFactors_CO2"], d["Tech"])
     d["TechEmissionsFactors_NOx"] = AxisArray(d["TechEmissionsFactors_NOx"], d["Tech"])
     d["TechEmissionsFactors_SO2"] = AxisArray(d["TechEmissionsFactors_SO2"], d["Tech"])
-    d["TechEmissionsFactors_PM"] = AxisArray(d["TechEmissionsFactors_PM"], d["Tech"])
-    ##d["TechPercentRE"] = AxisArray(d["TechPercentRE"], d["Tech"])
+    d["TechEmissionsFactors_PM25"] = AxisArray(d["TechEmissionsFactors_PM25"], d["Tech"])
+    d["TechPercentRE"] = AxisArray(d["TechPercentRE"], d["Tech"])
 
     if !isempty(d["CoincidentPeakLoadTimeSteps"])
         d["CoincidentPeakRates"] = AxisArray(d["CoincidentPeakRates"], d[:CPPeriod])
@@ -471,6 +499,11 @@ function Parameter(d::Dict)
 	d["CHPThermalProdFactor"] = vector_to_axisarray(d["CHPThermalProdFactor"],d["CHPTechs"],d[:TimeStep])
 	d["pwf_fuel"] = AxisArray(d["pwf_fuel"], d["Tech"])
 	d["StorageDecayRate"] = AxisArray(d["StorageDecayRate"], d["Storage"])
+    d["BoilerEfficiency"] = AxisArray(d["BoilerEfficiency"], d["AllBoilerTechs"])  # Always passes both values, even if partial/none
+    d["CapCostSupplementaryFiring"] = AxisArray(d["CapCostSupplementaryFiring"],d["CHPTechs"])
+
+	# Off-grid Modeling
+	d["SRrequiredPctTechs"] = AxisArray(d["SRrequiredPctTechs"], d["TechsProvidingSR"])
 
 	# Flexible load additions
 	d["AMatrix"] = reshape(d["AMatrix"],d["TempNodesCount"],d["TempNodesCount"])
@@ -494,6 +527,12 @@ function Parameter(d::Dict)
     d["ExportTiersByTech"] = AxisArray(d["ExportTiersByTech"], d["Tech"])
 	d["TechsByExportTier"] = AxisArray(d["TechsByExportTier"], d["ExportTiers"])
     d["TechsByNMILRegime"] = AxisArray(d["TechsByNMILRegime"], d["NMILRegime"])
+
+    d["GHPHeatingThermalServed"] = array_of_array_to_2D_array(d["GHPHeatingThermalServed"])
+    d["GHPCoolingThermalServed"] = array_of_array_to_2D_array(d["GHPCoolingThermalServed"])
+    d["HeatingThermalReductionWithGHP"] = array_of_array_to_2D_array(d["HeatingThermalReductionWithGHP"])
+    d["CoolingThermalReductionWithGHP"] = array_of_array_to_2D_array(d["CoolingThermalReductionWithGHP"])
+    d["GHPElectricConsumed"] = array_of_array_to_2D_array(d["GHPElectricConsumed"])
 
     d = string_dictkeys_tosymbols(d)
     d = filter_dict_to_match_struct_field_names(d, Parameter)

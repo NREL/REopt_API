@@ -27,17 +27,11 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-from openpyxl import load_workbook
 import tzlocal
 import json
 import datetime
-import os
-from collections import defaultdict
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
-from unittest import skip
-from proforma.models import ProForma
-from reo.models import ScenarioModel
 
 
 def now():

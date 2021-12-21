@@ -102,19 +102,94 @@ def list_of_dict(input):
     result.append(dict(i))
   return result
 
+off_grid_defaults = {
+  "Scenario": {
+    "optimality_tolerance_techs": {
+      "type": "float",
+      "min": 1.0e-5,
+      "max": 10.0,
+      "default": 0.05,
+      "description": "The threshold for the difference between the solution's objective value and the best possible value at which the solver terminates"
+    },
+    "Site": {
+      "Financial": {
+        "microgrid_upgrade_cost_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 0.0,
+          "default": 0.0,
+          "description": "Additional cost, in percent of non-islandable capital costs, to make a distributed energy system islandable from the grid and able to serve critical loads. For off-grid analyses, this should instead be provided as other_capital_costs_us_dollars or other_annual_costs_us_dollars_per_year"
+        },
+      },
+      "LoadProfile": {
+        "critical_load_pct": {
+          "type": "float",
+          "min": 1.0,
+          "max": 1.0,
+          "default": 1.0,
+          "description": "In off-grid scenarios, 100 percent of the typical load is assumed to be critical from a modeling standpoint (a 8760 hour outage is modeled). To adjust the 'critical load', change the typical load or the min_load_met_pct inputs."
+        },
+        "outage_is_major_event": {
+          "type": "bool",
+          "default": False,
+          "description": "Boolean value for if outage is a major event, which affects the avoided_outage_costs_us_dollars. If True, the avoided outage costs are calculated for a single outage occurring in the first year of the analysis_years. If False, the outage event is assumed to be an average outage event that occurs every year of the analysis period. In the latter case, the avoided outage costs for one year are escalated and discounted using the escalation_pct and offtaker_discount_pct to account for an annually recurring outage. (Average outage durations for certain utility service areas can be estimated using statistics reported on EIA form 861.)"
+        }
+      },
+      "Storage": {
+        "soc_init_pct": {
+          "type": "float", "min": 0.0, "max": 1.0, "default": 1.0,
+          "description": "Battery state of charge at first hour of optimization"
+        }
+      },
+      "Generator": {
+        "om_cost_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e3,
+          "default": 20.0,
+          "description": "Annual diesel generator fixed operations and maintenance costs in $/kW"
+        },
+        "fuel_avail_gal": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 1.0e9,
+          "description": "Annual on-site generator fuel available in gallons."
+        },
+        "min_turn_down_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.15,
+          "description": "Minimum generator loading in percent of capacity (size_kw)."
+        },
+        "generator_only_runs_during_grid_outage": {
+          "default": False,
+          "type": "bool",
+          "description": "If there is existing diesel generator, must specify whether it should run only during grid outage or all the time in the bau case."
+        },
+        "useful_life_years": {
+          "type": "float", "min": 0.0, "max": max_years, "default": 10,
+          "description": "Number of years asset can be used for before replacement. A single replacement is considered for off-grid generators."
+        }
+      }
+    }
+  }
+}
+
 nested_input_definitions = {
 
   "Scenario": {
     "timeout_seconds": {
       "type": "int",
       "min": 1,
-      "max": 100000,
-      "default": 4200,
+      "max": 420,
+      "default": 420,
       "description": "The number of seconds allowed before the optimization times out"
     },
     "user_uuid": {
       "type": "str",
-      "description": "The assigned unique ID of a signed in REOpt user"
+      "description": "The assigned unique ID of a signed in REopt user"
     },
     "description": {
       "type": "str",
@@ -130,17 +205,17 @@ nested_input_definitions = {
       "type": "str",
       "description": "The unique ID of a scenario created by the REopt Lite Webtool. Note that this ID can be shared by several REopt Lite API Scenarios (for example when users select a 'Resilience' analysis more than one REopt API Scenario is created)."
     },
-  "optimality_tolerance_bau": {
+    "optimality_tolerance_bau": {
       "type": "float",
-      "min": 1.0e-5,
-      "max": 10.0,
+      "min": 0.0001,
+      "max": 0.05,
       "default": 0.001,
       "description": "The threshold for the difference between the solution's objective value and the best possible value at which the solver terminates"
     },
-  "optimality_tolerance_techs": {
+    "optimality_tolerance_techs": {
       "type": "float",
-      "min": 1.0e-5,
-      "max": 10.0,
+      "min": 0.0001,
+      "max": 0.05,
       "default": 0.001,
       "description": "The threshold for the difference between the solution's objective value and the best possible value at which the solver terminates"
     },
@@ -149,17 +224,21 @@ nested_input_definitions = {
       "default": True,
       "description": "If True, then a small incentive to keep the battery's state of charge high is added to the objective of the optimization."
     },
+    "off_grid_flag": {
+      "type": "bool",
+      "default": False,
+      "description": "Set to True to enable off-grid analyses."
+    },
     "include_climate_in_objective": {
       "type": "bool",
       "default": False,
-      "description": "If True, then the lifetime cost of CO2 emissions will be included in the objective function. Lifetime CO2 impacts will be calculated regardless."
+      "description": "If True, then the lifecycle cost of CO2 emissions will be included in the objective function. Lifecycle CO2 impacts will be calculated regardless."
     },
     "include_health_in_objective": {
       "type": "bool",
       "default": False,
-      "description": "If True, then the lifetime cost of SO2, NOx, and PM2.5 emissions will be included in the objective function. Lifetime health impacts will be calculated regardless, but you must provide marginal health costs for each pollutant."
+      "description": "If True, then the lifecycle cost of SO2, NOx, and PM2.5 emissions will be included in the objective function. Lifecycle health impacts will be calculated regardless, but you must provide marginal health costs for each pollutant."
     },
-
     "Site": {
       "latitude": {
         "type": "float",
@@ -203,12 +282,34 @@ nested_input_definitions = {
         "default": 0.0,
         "description": "Site elevation (above sea sevel), units of feet"
       },
+      "renewable_electricity_min_pct": {
+        "type": "float",
+        "min": 0,
+        "description": "Minumum acceptable percent of total energy consumption provided by renewable energy annually."
+      },
+      "renewable_electricity_max_pct": {
+        "type": "float",
+        "min": 0,
+        "description": "Maximum acceptable percent of total energy consumption provided by renewable energy annually."
+      },
+      "co2_emissions_reduction_min_pct": {
+        "type": "float",
+        "description": "Minumum acceptable percent of carbon emissions reduction relative to the business-as-usual case, over the financial lifecycle of the project."
+      },
+      "co2_emissions_reduction_max_pct": {
+        "type": "float",
+        "description": "Maximum acceptable percent of carbon emissions reduction relative to the business-as-usual case, over the financial lifecycle of the project."
+      },
       "include_exported_elec_emissions_in_total": {
         "type": "bool",
-        "default": False,
-        "description": "Include the emissions reductions (or increases) in grid emissions associated with exported onsite electrical generation in the calculation of Year 1 emissions."  
+        "default": True,
+        "description": "Include the emissions reductions (or increases) in grid emissions associated with exported onsite electrical generation in the calculation of Year 1 emissions."
       },
-
+      "include_exported_renewable_electricity_in_total": {
+        "type": "bool",
+        "default": True,
+        "description": "True indicates site retains credits for exported electricity derived from renewable resources."
+      },
       "Financial": {
         "om_cost_escalation_pct": {
           "type": "float",
@@ -224,6 +325,13 @@ nested_input_definitions = {
           "default": 0.023,
           "description": "Annual nominal utility electricity cost escalation rate"
         },
+        "generator_fuel_escalation_pct": {
+          "type": "float",
+          "min": -1.0,
+          "max": 1.0,
+          "default": 0.027,
+          "description": "Annual nominal diesel generator fuel cost escalation rate"
+        },
         "boiler_fuel_escalation_pct": {
           "type": "float",
           "min": -1.0,
@@ -237,6 +345,13 @@ nested_input_definitions = {
           "max": 1,
           "default": 0.034,
           "description": "Annual nominal chp fuel cost escalation rate"
+        },
+        "newboiler_fuel_escalation_pct": {
+          "type": "float",
+          "min": -1.0,
+          "max": 1.0,
+          "default": 0.034,
+          "description": "Annual nominal boiler fuel cost escalation rate"
         },
         "offtaker_tax_pct": {
           "type": "float",
@@ -292,64 +407,88 @@ nested_input_definitions = {
           "default": 0.3,
           "description": "Additional cost, in percent of non-islandable capital costs, to make a distributed energy system islandable from the grid and able to serve critical loads. Includes all upgrade costs such as additional laber and critical load panels."
         },
+        "other_capital_costs_us_dollars": {
+          "type": "float",
+          "min": 0.0,
+          "max": max_big_number,
+          "default": 0,
+          "description": "Other capital costs associated with the distributed energy system project. These can include land purchase costs, distribution network costs, powerhouse or battery container structure costs, and pre-operating expenses. These costs will be incorporated in the life cycle cost and levelized cost of electricity calculations."
+        },
+        "other_annual_costs_us_dollars_per_year": {
+          "type": "float",
+          "min": 0.0,
+          "max": max_big_number,
+          "default": 0,
+          "description": "Other annual costs associated with the distributed energy system project. These can include labor costs, land lease costs, software costs, and any other ongoing expenses not included in other cost inputs. These costs will be incorporated in the life cycle cost and levelized cost of electricity calculations."
+        },
         "co2_cost_us_dollars_per_tonne": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e5,
           "default": 51.0,
           "description": "Social Cost of CO2 in the first year of the analysis. Units are US dollars per metric ton of CO2. The default of $51/t is the 2020 value (using a 3 pct discount rate) estimated by the U.S. Interagency Working Group on Social Cost of Greenhouse Gases."
-        }, 
+        },
         "nox_cost_us_dollars_per_tonne_grid": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e8,
-          "default": 0.0,
-          "description": "Public health damage cost of NOx emissions from grid electricity in the first year of the analysis. Units are US dollars per metric ton. Must provide value if considering health damages in objective."
+          "description": "Public health cost of NOx emissions from grid electricity in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model."
         },
         "so2_cost_us_dollars_per_tonne_grid": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e8,
-          "default": 0.0,
-          "description": "Social Cost of SO2 emissions from grid electricity in the first year of the analysis. Units are US dollars per metric ton. Must provide value if considering health damages in objective."
+          "description": "Public health cost of SO2 emissions from grid electricity in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model."
         },
-        "pm_cost_us_dollars_per_tonne_grid": {
+        "pm25_cost_us_dollars_per_tonne_grid": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e8,
-          "default": 0.0,
-          "description": "Social Cost of PM2.5 emissions from grid electricity in the first year of the analysis. Units are US dollars per metric ton. Must provide value if considering health damages in objective."
-        },  
+          "description": "Public health cost of PM2.5 emissions from grid electricity in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model."
+        },
         "nox_cost_us_dollars_per_tonne_onsite_fuelburn": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e8,
-          "default": 0.0,
-          "description": "Public health damage cost of NOx from onsite fuelburn in the first year of the analysis. Units are US dollars per metric ton. Must provide value if considering health damages in objective."
+          "description": "Public health cost of NOx from onsite fuelburn in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model."
         },
         "so2_cost_us_dollars_per_tonne_onsite_fuelburn": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e8,
-          "default": 0.0,
-          "description": "Social Cost of SO2 from onsite fuelburn in the first year of the analysis. Units are US dollars per metric ton. Must provide value if considering health damages in objective."
+          "description": "Public health cost of SO2 from onsite fuelburn in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model."
         },
-        "pm_cost_us_dollars_per_tonne_onsite_fuelburn": {
+        "pm25_cost_us_dollars_per_tonne_onsite_fuelburn": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e8,
-          "default": 0.0,
-          "description": "Social Cost of PM2.5 from onsite fuelburn in the first year of the analysis. Units are US dollars per metric ton. Must provide value if considering health damages in objective."
-        }, 
+          "description": "Public health cost of PM2.5 from onsite fuelburn in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model."
+        },
         "co2_cost_escalation_pct": {
           "type": "float",
           "min": -1.0,
           "max": 1.0,
-          "default": 0.01778, 
-          "description": "Annual nominal Social Cost of CO2 escalation rate."
-        },   
-        # TODO: add in PM2.5, SO2, NOx here
-        # TODO: potentially add in CO2_discount_rate (for use in pwf_CO2)
+          "default": 0.042173,
+          "description": "Annual nominal Social Cost of CO2 escalation rate (as a decimal)."
+        },
+        "nox_cost_escalation_pct": {
+          "type": "float",
+          "min": -1.0,
+          "max": 1.0,
+          "description": "Annual nominal escalation rate of the public health cost of 1 tonne of NOx emissions (as a decimal). The default value is calculated from the EASIUR model for a height of 150m."
+        },
+        "so2_cost_escalation_pct": {
+          "type": "float",
+          "min": -1.0,
+          "max": 1.0,
+          "description": "Annual nominal escalation rate of the public health cost of 1 tonne of SO2 emissions (as a decimal). The default value is calculated from the EASIUR model for a height of 150m."
+        },
+        "pm25_cost_escalation_pct": {
+          "type": "float",
+          "min": -1.0,
+          "max": 1.0,
+          "description": "Annual nominal escalation rate of the public health cost of 1 tonne of PM2.5 emissions (as a decimal). The default value is calculated from the EASIUR model for a height of 150m."
+        },
       },
 
       "LoadProfile": {
@@ -362,7 +501,7 @@ nested_input_definitions = {
         "annual_kwh": {
           "type": "float",
           "min": 1.0,
-          "max": max_big_number,
+          "max": 1.0E10,
           "replacement_sets": load_profile_possible_sets,
           "depends_on": ["doe_reference_name"],
           "description": "Annual site energy consumption from electricity, in kWh, used to scale simulated default building load profile for the site's climate zone"
@@ -448,6 +587,20 @@ nested_input_definitions = {
           "default": True,
           "description": "Boolean value for if outage is a major event, which affects the avoided_outage_costs_us_dollars. If True, the avoided outage costs are calculated for a single outage occurring in the first year of the analysis_years. If False, the outage event is assumed to be an average outage event that occurs every year of the analysis period. In the latter case, the avoided outage costs for one year are escalated and discounted using the escalation_pct and offtaker_discount_pct to account for an annually recurring outage. (Average outage durations for certain utility service areas can be estimated using statistics reported on EIA form 861.)"
         },
+        "min_load_met_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.999,
+          "description": "Fraction of the load that must be met on an annual energy basis. Value must be between zero and one, inclusive."
+        },
+        "sr_required_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.1,
+          "description": "Spinning reserve requirement for changes in load in off-grid analyses. Value must be between zero and one, inclusive."
+        }
       },
 
       "LoadProfileBoilerFuel": {
@@ -477,6 +630,19 @@ nested_input_definitions = {
           "min": 1.0,
           "max": 100.0,
          "description": "Percentage share of the types of building for creating hybrid simulated building and campus profiles."
+        },
+        "addressable_load_fraction": {
+         "type": ["float", "list_of_float"],
+          "min": 0.0,
+          "max": 1.0,
+          "default": 1.0,
+         "description": "Fraction of the boiler fuel load be served by heating technologies."
+        },
+        "space_heating_fraction_of_heating_load": {
+         "type": ["float", "list_of_float"],
+          "min": 0.0,
+          "max": 1.0,
+         "description": "Fraction of the total heating load (domestic hot water (DHW) plus space heating) for space heating."
         },
       },
 
@@ -528,7 +694,7 @@ nested_input_definitions = {
           },
         "chiller_cop": {
           "type": "float",
-          "min:": 0.0,
+          "min:": 0.01,
           "max:": 20.0,
           "description": "Existing electric chiller system coefficient of performance - conversion of electricity to "
                          "usable cooling thermal energy"
@@ -627,28 +793,46 @@ nested_input_definitions = {
           "type": ["float", "list_of_float"],
           "description": "Carbon Dioxide emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.",
         },
-        "emissions_factor_series_CO2_pct_decrease": {
+        "emissions_factor_CO2_pct_decrease": {
           "type": "float",
           "min": -1.0,
           "max": 1.0,
-          "default": 0.05,
-          "description": "Percent decrease in the total annual CO2 marginal emissions rate of the grid. The first year's hourly marginal emissions rates are levelized using this percent decrease.",
+          "default": 0.01174,
+          "description": "Annual percent decrease in the total annual CO2 marginal emissions rate of the grid. A negative value indicates an annual increase.",
         },
         "emissions_factor_series_lb_NOx_per_kwh": {
           "type": ["list_of_float", "float"],
           "description": "NOx emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.",
         },
-        # TODO: pct decrease NOx? 
+        "emissions_factor_NOx_pct_decrease": {
+          "type": "float",
+          "min": -1.0,
+          "max": 1.0,
+          "default": 0.01174,
+          "description": "Annual percent decrease in the total annual NOx marginal emissions rate of the grid. A negative value indicates an annual increase.",
+        },
         "emissions_factor_series_lb_SO2_per_kwh": {
           "type": ["list_of_float", "float"],
           "description": "SO2 emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.",
         },
-        # TODO: pct decrease SO2?
-        "emissions_factor_series_lb_PM_per_kwh": {
+        "emissions_factor_SO2_pct_decrease": {
+          "type": "float",
+          "min": -1.0,
+          "max": 1.0,
+          "default": 0.01174,
+          "description": "Annual percent decrease in the total annual SO2 marginal emissions rate of the grid. A negative value indicates an annual increase.",
+        },
+        "emissions_factor_series_lb_PM25_per_kwh": {
           "type": ["list_of_float", "float"],
           "description": "PM2.5 emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.",
         },
-        # TODO: pct decrease PM2.5? 
+        "emissions_factor_PM25_pct_decrease": {
+          "type": "float",
+          "min": -1.0,
+          "max": 1.0,
+          "default": 0.01174,
+          "description": "Annual percent decrease in the total annual PM2.5 marginal emissions rate of the grid. A negative value indicates an annual increase.",
+        },
         "chp_standby_rate_us_dollars_per_kw_per_month": {
           "type": "float",
           "min": 0.0,
@@ -715,6 +899,13 @@ nested_input_definitions = {
           "default": [0.0]*12,
           "description": "Array (length of 12) of blended fuel rates (total monthly energy in mmbtu divided by monthly cost in $)"        
         },
+        "boiler_fuel_percent_RE": {
+          "type": "float",
+          "default": 0.0,
+          "min": 0.0,
+          "max": 1.0,
+          "description": "Fraction of boiler fuel, on an energy basis, that is classified as renewable; used for RE accounting purposes."
+        },
         "chp_fuel_type": {
           "type": "str",
           "default": 'natural_gas',
@@ -730,7 +921,37 @@ nested_input_definitions = {
           "type": "list_of_float",
           "default": [0.0] * 12,
           "description": "Array (length of 12) of blended fuel rates (total monthly energy in mmbtu divided by monthly cost in $)"
-        }
+        },
+        "newboiler_fuel_type": {
+          "type": "str",
+          "default": 'natural_gas',
+          "restrict_to": ["natural_gas", "landfill_bio_gas", "propane", "diesel_oil", "uranium"],
+          "description": "Boiler fuel type one of (natural_gas, landfill_bio_gas, propane, diesel_oil)"
+        },
+        "newboiler_fuel_percent_RE": {
+          "type": "float",
+          "default": 0.0,
+          "min": 0.0,
+          "max": 1.0,
+          "description": "Fraction of boiler fuel, on an energy basis, that is classified as renewable; used for RE accounting purposes."
+        },
+        "newboiler_fuel_blended_annual_rates_us_dollars_per_mmbtu": {
+          "type": "float",
+          "default": 0.0,
+          "description": "Single/scalar blended fuel rate for the entire year"
+        },
+        "newboiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu": {
+          "type": "list_of_float",
+          "default": [0.0]*12,
+          "description": "Array (length of 12) of blended fuel rates (total monthly energy in mmbtu divided by monthly cost in $)"
+        },
+        "chp_fuel_percent_RE": {
+          "type": "float",
+          "default": 0.0,
+          "min": 0.0,
+          "max": 1.0,
+          "description": "Fraction of CHP fuel, on an energy basis, that is classified as renewable; used for RE accounting purposes."
+        },
       },
 
       "Wind": {
@@ -1181,6 +1402,13 @@ nested_input_definitions = {
           "type": "bool",
           "default": True,
           "description": "True/False for if technology can curtail energy produced."
+        },
+        "sr_required_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.25,
+          "description": "Spinning reserve requirement for PV serving load in off-grid analyses. Value must be between zero and one, inclusive."
         }
       },
 
@@ -1251,7 +1479,7 @@ nested_input_definitions = {
           },
           "macrs_option_years": {
             "type": "int", "restrict_to": macrs_schedules, "default": 7.0,
-            "description": "Duration over which accelerated depreciation will occur. Set to zero by default"
+            "description": "Duration over which accelerated depreciation will occur. Set to zero to disable"
           },
           "macrs_bonus_pct": {
             "type": "float", "min": 0.0, "max": 1.0, "default": 1.0,
@@ -1272,7 +1500,7 @@ nested_input_definitions = {
           "total_rebate_us_dollars_per_kwh": {
             "type": "float", "min": 0, "max": 1e9, "default": 0,
             "description": "Rebate based on installed energy capacity"
-           }
+          }
         },
 
       "Generator": {
@@ -1344,7 +1572,7 @@ nested_input_definitions = {
           "min": 0.0,
           "max": 1.0e9,
           "default": 660.0,
-          "description": "On-site generator fuel available in gallons."
+          "description": "Annual on-site generator fuel available in gallons."
         },
         "min_turn_down_pct": {
           "type": "float",
@@ -1352,6 +1580,13 @@ nested_input_definitions = {
           "max": 1.0,
           "default": 0.0,
           "description": "Minimum generator loading in percent of capacity (size_kw)."
+        },
+        "generator_fuel_percent_RE": {
+          "type": "float",
+          "default": 0.0,
+          "min": 0.0,
+          "max": 1.0,
+          "description": "Fraction of generator fuel, on an energy basis, that is classified as renewable; used for RE accounting purposes."
         },
         "generator_only_runs_during_grid_outage": {
           "default": True,
@@ -1493,7 +1728,7 @@ nested_input_definitions = {
           "type": "float",
           "description": "Pounds of SO2 emitted per gallon of fuel burned"
         },
-        "emissions_factor_lb_PM_per_gal": {
+        "emissions_factor_lb_PM25_per_gal": {
           "type": "float",
           "description": "Pounds of PM2.5 emitted per gallon of fuel burned"
         },
@@ -1516,6 +1751,10 @@ nested_input_definitions = {
           "type": "bool",
           "default": False,
           "description": "True/False for if technology can curtail energy produced."
+        },
+        "useful_life_years": {
+          "type": "float", "min": analysis_years, "max": analysis_years, "default": analysis_years,
+          "description": "Number of years asset can be used for before replacement. Generator replacements are only considered in off-grid analyses."
         }
       },
       "CHP": {
@@ -1608,6 +1847,27 @@ nested_input_definitions = {
           "min": 0.0,
           "max": 1.0,
           "description": "CHP fraction of fuel energy converted to hot-thermal energy at half electric load"
+        },
+        "supplementary_firing_capital_cost_per_kw": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e5,
+          "default": 150.0,
+          "description": "Installed CHP supplementary firing system cost in $/kW (based on rated electric power)"
+          },
+        "supplementary_firing_max_steam_ratio": {
+          "type": "float",
+          "min": 1.0,
+          "max": 10.0,
+          "default": 1.0,
+          "description": "Ratio of max fired steam to un-fired steam production. Relevant only for combustion_turbine prime_mover"
+        },
+        "supplementary_firing_efficiency": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.92,
+          "description": "Thermal efficiency of the incremental steam production from supplementary firing. Relevant only for combustion_turbine prime_mover"
         },
         "use_default_derate": {
           "type": "bool",
@@ -1761,19 +2021,19 @@ nested_input_definitions = {
         },
         "emissions_factor_lb_CO2_per_mmbtu": {
           "type": "float",
-          "description": "Average carbon dioxide emissions factor"
+          "description": "Pounds of carbon dioxide emitted per mmbtu of fuel burned"
         },
         "emissions_factor_lb_NOx_per_mmbtu": {
           "type": "float",
-          "description": "Average NOx emissions factor"
+          "description": "Pounds of NOx emitted per mmbtu of fuel burned"
         },
         "emissions_factor_lb_SO2_per_mmbtu": {
           "type": "float",
-          "description": "Average SO2 emissions factor"
+          "description": "Pounds of SO2 emitted per mmbtu of fuel burned"
         },
-        "emissions_factor_lb_PM_per_mmbtu": {
+        "emissions_factor_lb_PM25_per_mmbtu": {
           "type": "float",
-          "description": "Average PM2.5 emissions factor"
+          "description": "Pounds of PM2.5 emitted per mmbtu of fuel burned"
         },
         "can_net_meter": {
           "type": "bool",
@@ -1797,10 +2057,14 @@ nested_input_definitions = {
         },
         "cooling_thermal_factor": {
           "type": "float",
-          "min": 0.0,
+          "min": 0.01,
           "max": 1.0,
           "description": "Knockdown factor on absorption chiller COP based on the CHP prime_mover not being able to produce as high of temp/pressure hot water/steam"
-        }
+        },
+        "can_supply_steam_turbine": {
+          "type": "bool", "default": False,
+          "description": "If CHP can supply steam to the steam turbine for electric production"
+        },
       },
 
       "ColdTES": {
@@ -1811,6 +2075,14 @@ nested_input_definitions = {
         "max_gal": {
           "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
           "description": "Maximum TES volume (energy) size constraint for optimization. Set to zero to disable storage"
+        },
+        "chilled_supply_water_temp_degF": {
+          "type": "float", "min": 0.0, "max": 100.0, "default": 44.0,
+          "description": "Chilled-side supply water temperature from ColdTES (bottom of tank) to the cooling load"
+        },
+        "warmed_return_water_temp_degF": {
+          "type": "float", "min": 6.0, "max": 120.0, "default": 56.0,
+          "description": "Warmed-side return water temperature from the cooling load to the ColdTES (top of tank)"
         },
         "internal_efficiency_pct": {
           "type": "float", "min": 0.0, "max": 1.0, "default": 0.999999,
@@ -1860,6 +2132,14 @@ nested_input_definitions = {
           "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
           "description": "Maximum TES volume (energy) size constraint for optimization. Set to zero to disable storage"
         },
+        "hot_supply_water_temp_degF": {
+          "type": "float", "min": 40.0, "max": 210.0, "default": 180.0,
+          "description": "Hot-side supply water temperature from HotTES (top of tank) to the heating load"
+        },
+        "cooled_return_water_temp_degF": {
+          "type": "float", "min": 33.0, "max": 200.0, "default": 160.0,
+          "description": "Cold-side return water temperature from the heating load to the HotTES (bottom of tank)"
+        },
         "internal_efficiency_pct": {
           "type": "float", "min": 0.0, "max": 1.0, "default": 0.999999,
           "description": "Thermal losses due to mixing from thermal power entering or leaving tank"
@@ -1906,7 +2186,6 @@ nested_input_definitions = {
         },
         "existing_boiler_production_type_steam_or_hw": {
           "type": "str",
-          "description": "Boiler production type (hot_water, steam)",
           "restrict_to": ["hot_water", "steam"],
           "description": "Boiler thermal production type, hot water or steam"
         },
@@ -1917,21 +2196,25 @@ nested_input_definitions = {
           "description": "Existing boiler system efficiency - conversion of fuel to usable heating thermal energy. "
                          "Default value depends on existing_boiler_production_steam_or_hw input"
         },
+        "can_supply_steam_turbine": {
+          "type": "bool", "default": False,
+          "description": "If the boiler can supply steam to the steam turbine for electric production"
+        },
         "emissions_factor_lb_CO2_per_mmbtu": {
           "type": "float",
-          "description": "Pounds of carbon dioxide emitted per gallon of fuel burned"
+          "description": "Pounds of carbon dioxide emitted per mmbtu of fuel burned"
         },
         "emissions_factor_lb_NOx_per_mmbtu": {
           "type": "float",
-          "description": "Pounds of NOx emitted per gallon of fuel burned"
+          "description": "Pounds of NOx emitted per mmbtu of fuel burned"
         },
         "emissions_factor_lb_SO2_per_mmbtu": {
           "type": "float",
-          "description": "Pounds of SO2 emitted per gallon of fuel burned"
+          "description": "Pounds of SO2 emitted per mmbtu of fuel burned"
         },
-        "emissions_factor_lb_PM_per_mmbtu": {
+        "emissions_factor_lb_PM25_per_mmbtu": {
           "type": "float",
-          "description": "Pounds of PM2.5 emitted per gallon of fuel burned"
+          "description": "Pounds of PM2.5 emitted per mmbtu of fuel burned"
         }
       },
 
@@ -1953,14 +2236,14 @@ nested_input_definitions = {
         },
         "chiller_cop": {
           "type": "float",
-          "min:": 0.0,
+          "min:": 0.01,
           "max:": 20.0,
           "description": "Absorption chiller system coefficient of performance - conversion of hot thermal power input "
                          "to usable cooling thermal energy output"
         },
         "chiller_elec_cop": {
           "type": "float",
-          "min:": 0.0,
+          "min:": 0.01,
           "max:": 100.0,
           "default": 14.1,
           "description": "Absorption chiller electric consumption CoP from cooling tower heat rejection - conversion of electric power input "
@@ -2276,6 +2559,335 @@ nested_input_definitions = {
           "type": "list_of_float",
           "default": [1.0] * 8760,
           "description": "HPWH COP. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+        }
+      },
+      "NewBoiler": {
+        "min_mmbtu_per_hr": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "description": "Minimum thermal power size"
+          },
+        "max_mmbtu_per_hr": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "description": "Maximum thermal power size"
+        },
+        "boiler_efficiency": {
+          "type": "float", "min:": 0.0, "max:": 1.0, "default": 0.8,
+          "description": "New boiler system efficiency - conversion of fuel to usable heating thermal energy"
+        },
+        "can_supply_steam_turbine": {
+          "type": "bool", "default": True,
+          "description": "If the boiler can supply steam to the steam turbine for electric production"
+        },
+        "installed_cost_us_dollars_per_mmbtu_per_hr": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 293000.0,
+          "description": "Thermal power-based cost"
+        },
+        "om_cost_us_dollars_per_mmbtu_per_hr": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 2930.0,
+          "description": "Thermal power-based fixed O&M cost"
+        },
+        "om_cost_us_dollars_per_mmbtu": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "description": "Thermal energy-based variable O&M cost"
+        },
+        "emissions_factor_lb_CO2_per_mmbtu": {
+          "type": "float",
+          "description": "Pounds of carbon dioxide emitted per mmbtu of fuel burned"
+        },
+        "emissions_factor_lb_NOx_per_mmbtu": {
+          "type": "float",
+          "description": "Pounds of NOx emitted per mmbtu of fuel burned"
+        },
+        "emissions_factor_lb_SO2_per_mmbtu": {
+          "type": "float",
+          "description": "Pounds of SO2 emitted per mmbtu of fuel burned"
+        },
+        "emissions_factor_lb_PM25_per_mmbtu": {
+          "type": "float",
+          "description": "Pounds of PM2.5 emitted per mmbtu of fuel burned"
+        },
+        "macrs_option_years": {
+          "type": "int",
+          "restrict_to": macrs_schedules,
+          "default": 0,
+          "description": "MACRS schedule for financial analysis. Set to zero to disable"
+        },
+        "macrs_bonus_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "description": "Percent of upfront project costs to depreciate under MACRS"
+        }
+      },
+      "SteamTurbine": {
+        "size_class": {
+          "type": "int",
+          "restrict_to": [0, 1, 2, 3],
+          "description": "Steam turbine size class for using appropriate default inputs"
+        },
+        "min_kw": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "description": "Minimum electric power size"
+          },
+        "max_kw": {
+          "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
+          "description": "Maximum electric power size"
+        },
+        "electric_produced_to_thermal_consumed_ratio": {
+          "type": "float", "min": 0.0, "max": 1.0,
+          "description": "Simplified input as alternative to detailed calculations from inlet and outlet steam conditions"
+        },
+        "thermal_produced_to_thermal_consumed_ratio": {
+          "type": "float", "min": 0.0, "max": 1.0,
+          "description": "Simplified input as alternative to detailed calculations from condensing outlet steam"
+        },
+        "is_condensing": {
+          "type": "bool", "default": False,
+          "description": "Steam turbine type, if it is a condensing turbine which produces no useful thermal (max electric output)"
+        },
+        "inlet_steam_pressure_psig": {
+          "type": "float", "min": 0.0, "max": 5000.0,
+          "description": "Inlet steam pressure to the steam turbine"
+        },
+        "inlet_steam_temperature_degF": {
+          "type": "float", "min": 0.0, "max": 1300.0,
+          "description": "Inlet steam temperature to the steam turbine"
+        },
+        "inlet_steam_superheat_degF": {
+          "type": "float", "min": 0.0, "max": 700.0,
+          "description": "Alternative input to inlet steam temperature, this is the superheat amount (delta from T_saturation) to the steam turbine"
+        },
+        "outlet_steam_pressure_psig": {
+          "type": "float", "min": -14.7, "max": 1000.0,
+          "description": "Outlet steam pressure from the steam turbine (to the condenser or heat recovery unit"
+        },
+        "outlet_steam_min_vapor_fraction": {
+          "type": "float", "min": 0.0, "max": 1.0, "default": 0.8,
+          "description": "Minimum vapor fraction at the outlet of the steam turbine: this serves as a check on the other inlet and outlet steam conditions to ensure that acceptable amounts of liquid are in the outlet"
+        },
+        "isentropic_efficiency": {
+          "type": "float", "min": 0.0, "max": 1.0,
+          "description": "Steam turbine isentropic efficiency - uses inlet T/P and outlet T/P/X to get power out"
+        },
+        "gearbox_generator_efficiency": {
+          "type": "float", "min": 0.0, "max": 1.0,
+          "description": "Conversion of steam turbine shaft power to electric power based on combined gearbox and electric generator efficiency"
+        },
+        "net_to_gross_electric_ratio": {
+          "type": "float", "min": 0.0, "max": 1.0,
+          "description": "Conversion of gross electric power to net power which can account for e.g. pump power"
+        },
+        "installed_cost_us_dollars_per_kw": {
+          "type": "float", "min": 0.0, "max": 100000.0,
+          "description": "Electric power-based cost"
+        },
+        "om_cost_us_dollars_per_kw": {
+          "type": "float", "min": 0.0, "max": 5000.0,
+          "description": "Electric power-based fixed O&M cost"
+        },
+        "om_cost_us_dollars_per_kwh": {
+          "type": "float", "min": 0.0, "max": 100.0,
+          "description": "Electric energy-based variable O&M cost"
+        },
+        "can_net_meter": {
+          "type": "bool",
+          "default": False,
+          "description": "True/False for if technology has option to participate in net metering agreement with utility. Note that a technology can only participate in either net metering or wholesale rates (not both)."
+        },
+        "can_wholesale": {
+          "type": "bool",
+          "default": False,
+          "description": "True/False for if technology has option to export energy that is compensated at the wholesale_rate_us_dollars_per_kwh. Note that a technology can only participate in either net metering or wholesale rates (not both)."
+        },
+        "can_export_beyond_site_load": {
+          "type": "bool",
+          "default": False,
+          "description": "True/False for if technology can export energy beyond the annual site load (and be compensated for that energy at the wholesale_rate_above_site_load_us_dollars_per_kwh)."
+        },
+        "can_curtail": {
+          "type": "bool",
+          "default": False,
+          "description": "True/False for if technology can curtail energy produced."
+        },
+        "macrs_option_years": {
+          "type": "int",
+          "restrict_to": macrs_schedules,
+          "default": 0,
+          "description": "MACRS schedule for financial analysis. Set to zero to disable"
+        },
+        "macrs_bonus_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "description": "Percent of upfront project costs to depreciate under MACRS"
+        }
+      },
+      "GHP": {
+        "require_ghp_purchase": {
+          "type": "bool",
+          "default": False,
+          "description": "Force one of the considered GHP design options"
+        },
+        "installed_cost_heatpump_us_dollars_per_ton": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e5,
+          "default": 1075.0,
+          "description": "Installed heating heat pump cost in $/ton (based on peak coincident cooling+heating thermal load)"
+        },
+        "heatpump_capacity_sizing_factor_on_peak_load": {
+          "type": "float",
+          "min": 1.0,
+          "max": 5.0,
+          "default": 1.1,
+          "description": "Factor on peak heating and cooling load served by GHP used for determining GHP installed capacity"
+        },
+        "installed_cost_ghx_us_dollars_per_ft": {
+          "type": "float",
+          "min": 0.0,
+          "max": 100.0,
+          "default": 14.0,
+          "description": "Installed cost of the ground heat exchanger (GHX) in $/ft of vertical piping"
+        },
+        "installed_cost_building_hydronic_loop_us_dollars_per_sqft": {
+          "type": "float",
+          "min": 0,
+          "max": 100.0,
+          "default": 1.70,
+          "description": "Installed cost of the building hydronic loop per floor space of the site"
+        },
+        "om_cost_us_dollars_per_sqft_year": {
+          "type": "float",
+          "min": -100,
+          "max": 100,
+          "default": -0.51,
+          "description": "Annual GHP incremental operations and maintenance costs in $/ft^2-building/year"
+        },
+        "building_sqft": {
+          "type": "float",
+          "min": 0.0,
+          "max": max_big_number,
+          "description": "Building square footage for GHP/HVAC cost calculations"
+        },
+        "space_heating_efficiency_thermal_factor": {
+          "type": "float",
+          "min": 0.001,
+          "max": 1.0,
+          "description": "Heating efficiency factor (annual average) to account for reduced space heating thermal load from GHP retrofit (e.g. reduced reheat)"
+        },
+        "cooling_efficiency_thermal_factor": {
+          "type": "float",
+          "min": 0.001,
+          "max": 1.0,
+          "description": "Cooling efficiency factor (annual average) to account for reduced cooling thermal load from GHP retrofit (e.g. reduced reheat)"
+        },       
+        "ghpghx_inputs": {
+          "type": "list_of_dict",
+          "description": "GHP-GHX inputs/POST to /ghpghx endpoint"
+        },
+        "ghpghx_response_uuids": {
+          "type": "list_of_str",
+          "description": "GHPGHX response UUID(s) from /ghpghx endpoint, used to get ghpghx run data"
+        },
+        "ghpghx_responses": {
+          "type": "list_of_dict",
+          "description": "GHPGHX response(s) to re-use a previous /ghpghx run without relying on a database entry"
+        },        
+        "can_serve_dhw": {
+          "type": "bool", "default": False,
+          "description": "If GHP can serve the domestic hot water (DHW) portion of the heating load"
+        },
+        "macrs_option_years": {
+          "type": "int",
+          "restrict_to": macrs_schedules,
+          "default": 5,
+          "description": "MACRS schedule for financial analysis. Set to zero to disable"
+        },
+        "macrs_bonus_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 1.0,
+          "description": "Percent of upfront project costs to depreciate under MACRS"
+        },
+        "macrs_itc_reduction": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.5,
+          "description": "Percent of the full ITC that depreciable basis is reduced by"
+        },
+        "federal_itc_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.1,
+          "description": "Percent federal capital cost incentive"
+        },
+        "state_ibi_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "description": "Percent of upfront project costs to discount under state investment based incentives"
+        },
+        "state_ibi_max_us_dollars": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e10,
+          "default": max_incentive,
+          "description": "Maximum rebate allowed under state investment based incentives"
+        },
+        "utility_ibi_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "description": "Percent of upfront project costs to discount under utility investment based incentives"
+        },
+        "utility_ibi_max_us_dollars": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e10,
+          "default": max_incentive,
+          "description": "Maximum rebate allowed under utility investment based incentives"
+        },
+        "federal_rebate_us_dollars_per_ton": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 0.0,
+          "description": "Federal rebate based on installed capacity"
+        },
+        "state_rebate_us_dollars_per_ton": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 0.0,
+          "description": "State rebates based on installed capacity"
+        },
+        "state_rebate_max_us_dollars": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e10,
+          "default": max_incentive,
+          "description": "Maximum rebate allowed under state rebates"
+        },
+        "utility_rebate_us_dollars_per_ton": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e9,
+          "default": 0.0,
+          "description": "Utility rebates based on installed capacity"
+        },
+        "utility_rebate_max_us_dollars": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e10,
+          "default": max_incentive,
+          "description": "Maximum rebate allowed under utility rebates"
         }
       }
 
