@@ -677,11 +677,11 @@ nested_input_definitions = {
           "type": "list_of_float",
           "min": -1000,
           "max": 10000,
-          "description": "8760 of pricing for energy portion of RA (must be same year as the load year)"
+          "description": "8760 of pricing for energy portion of resource adequacy (RA) (must be same year as the load year)"
         },
         "ra_demand_pricing_us_dollars_per_kw": {
           "type": "list_of_float",
-          "description": "Array (length of 12) of monthly value for RA provision based on $/kW"
+          "description": "Array (length of 12) of monthly value for resource adequacy (RA) provision based on $/kW"
         },
         "ra_event_day_flags_boolean": {
           "type": "list_of_float", #TODO change to list_of_int when that's implemented in validators
