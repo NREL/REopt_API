@@ -199,11 +199,11 @@ class GHPGHXInputs(models.Model):
     solver_eft_tolerance_f = models.FloatField(blank=True, 
         default=2.0, validators=[MinValueValidator(0.001), MaxValueValidator(5.0)],
         help_text="Tolerance for GHX sizing based on the entering fluid temperature limits [degF]")
-    ghx_model_choices = [("TESS", "TESS"),
-                         ("DST", "DST")]
+    ghx_model_choices = [("TESS", "TESS")]#,
+                         #("DST", "DST")] # DST is currently not available, pending license agreement
     ghx_model = models.TextField(blank=True,
         default="TESS", choices=ghx_model_choices,
-        help_text="GHX model to use in the simulation: TESS or DST")
+        help_text="GHX model to use in the simulation: 'TESS' is the only option currently") # or DST")
     dst_ghx_timesteps_per_hour = models.IntegerField(blank=True, 
         default=12, validators=[MinValueValidator(1), MaxValueValidator(60)],
         help_text="Time steps per hour to use for the DST GHX model")
