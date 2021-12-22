@@ -206,7 +206,7 @@ function size_borefield(p)
                         XIN[2] = Mdot_GHX
                         XIN[3] = p.AmbientTemperature[hr]
                         XIN[4] = p.AmbientTemperature[hr]
-                        ccall((:type1373_, "/opt/julia_src/tess.so"), Cvoid, 
+                        ccall((:type1373_, "/opt/julia_src/GHX-Model-REopt/tess.so"), Cvoid, 
                         (Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Int64}, Ptr{Int64}), 
                         TimeArray, XIN, OUT, PAR, INFO, ErrorFound)
                     end
@@ -257,7 +257,7 @@ function size_borefield(p)
                         (Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Int64}, Ptr{Int64}), 
                         TimeArray, XIN, OUT, PAR, INFO, ErrorFound)
                     elseif p.ghx_model == "TESS"
-                        ccall((:type1373_, "/opt/julia_src/tess.so"), Cvoid, 
+                        ccall((:type1373_, "/opt/julia_src/GHX-Model-REopt/tess.so"), Cvoid, 
                         (Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Int64}, Ptr{Int64}), 
                         TimeArray, XIN, OUT, PAR, INFO, ErrorFound)
                     end 
@@ -473,7 +473,7 @@ function init_ghx_calls_2x!(p, TimeArray, XIN, OUT, PAR, INFO)
         XIN[4] = 20.0
 
         # First time
-        ccall((:type1373_, "/opt/julia_src/tess.so"), Cvoid,
+        ccall((:type1373_, "/opt/julia_src/GHX-Model-REopt/tess.so"), Cvoid,
         (Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Int64}, Ptr{Int64}), 
         TimeArray, XIN, OUT, PAR, INFO, ErrorFound)        
 
@@ -481,7 +481,7 @@ function init_ghx_calls_2x!(p, TimeArray, XIN, OUT, PAR, INFO)
         INFO[8] = 3
 
         # Second time
-        ccall((:type1373_, "/opt/julia_src/tess.so"), Cvoid,
+        ccall((:type1373_, "/opt/julia_src/GHX-Model-REopt/tess.so"), Cvoid,
         (Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Int64}, Ptr{Int64}), 
         TimeArray, XIN, OUT, PAR, INFO, ErrorFound)         
     end
