@@ -180,6 +180,7 @@ function add_cost_expressions(m, p)
 			sum(m[:dvHVACComfortCost][ts]*p.HVACComfortValue for ts in p.TimeStep))
 	else
 		m[:TotalHVACComfortCost] = @expression(m, 0.0)
+	end
 	# TODO is this if else statement necessary or will model value m[:GHPCap/OMCosts] = 0 if isempty(p.GHPOptions)?
 	if !isempty(p.GHPOptions)
 		m[:GHPCapCosts] = @expression(m, p.two_party_factor *
@@ -272,16 +273,16 @@ function add_bigM_adjustments(m, p)
 		for mth in p.Month
 			if n > 1
 				m[:NewMaxDemandMonthsInTier][mth,n] = minimum([p.MaxDemandMonthsInTier[n],
-					added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] + p.MaxElecPenalty[ts]
-                    + add_ghp_heating_elec * p.HeatingLoad[ts]
-					for ts in p.TimeStepRatchetsMonth[mth]])  -
+					added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] + p.MaxElecPenalty[ts] + 
+					add_ghp_heating_elec * p.HeatingLoad[ts]
+						for ts in p.TimeStepRatchetsMonth[mth]])  -
 					sum(m[:NewMaxDemandMonthsInTier][mth,np] for np in 1:(n-1))]
 				)
 			else
 				m[:NewMaxDemandMonthsInTier][mth,n] = minimum([p.MaxDemandMonthsInTier[n],
-					added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] + p.MaxElecPenalty[ts]
-                    + add_ghp_heating_elec * p.HeatingLoad[ts]
-					for ts in p.TimeStepRatchetsMonth[mth]])]
+					added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] + p.MaxElecPenalty[ts] + 
+					add_ghp_heating_elec * p.HeatingLoad[ts]
+						for ts in p.TimeStepRatchetsMonth[mth]])]
                 )
 			end
 		end
@@ -314,13 +315,13 @@ function add_bigM_adjustments(m, p)
 				m[:NewMaxUsageInTier][mth,u] = minimum([p.MaxUsageInTier[u],
 					added_energy + 2*sum(p.ElecLoad[ts] + p.CoolingLoad[ts] + p.MaxElecPenalty[ts] +
                     add_ghp_heating_elec * p.HeatingLoad[ts]
-					for ts in p.TimeStepRatchetsMonth[mth]) - sum(m[:NewMaxUsageInTier][mth,up] for up in 1:(u-1))
+						for ts in p.TimeStepRatchetsMonth[mth]) - sum(m[:NewMaxUsageInTier][mth,up] for up in 1:(u-1))
 				])
 			else
 				m[:NewMaxUsageInTier][mth,u] = minimum([p.MaxUsageInTier[u],
 					added_energy + 2*sum(p.ElecLoad[ts] + p.CoolingLoad[ts] + p.MaxElecPenalty[ts] +
                     add_ghp_heating_elec * p.HeatingLoad[ts]
-					for ts in p.TimeStepRatchetsMonth[mth])
+						for ts in p.TimeStepRatchetsMonth[mth])
 				])
 			end
 		end
@@ -820,6 +821,7 @@ function add_tech_size_constraints(m, p)
 		@constraint(m, FlexTechProductionCon[t in p.FlexTechs, ts in p.TimeStep],
 			m[:dvRatedProduction][t,ts] <= m[:dvSize][t]
 		)
+	end
 
 	##Constraint GHP: Choose up to 1 option
 	if !isempty(p.GHPOptions)
@@ -1889,7 +1891,6 @@ function reopt_results(m, p, r::Dict)
 	else
 		add_null_water_heater_results(m, p, r)
 	end
-	add_util_results(m, p, r)
 
 	#resource adequacy results
 	if p.RaLookbackDays != 0
