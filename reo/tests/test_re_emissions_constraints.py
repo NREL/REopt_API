@@ -130,7 +130,7 @@ class REandEmissionsContraintTests(ResourceTestCaseMixin, TestCase):
             self.assertAlmostEquals(year_one_emissions_tCO2_out,yr1_total_emissions_calced_tCO2,places=-1)
             # Breakeven cost of emissions reductions 
             yr1_cost_ER_usd_per_tCO2_out = d['outputs']['Scenario']['Site']['breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2'] 
-            self.assertTrue(yr1_cost_ER_usd_per_tCO2_out>=0.0)
+            self.assertTrue(yr1_cost_ER_usd_per_tCO2_out is None or yr1_cost_ER_usd_per_tCO2_out>=0.0)
 
             ### test expected values for each scenario:                         
             if i ==0: # Scenario 1
