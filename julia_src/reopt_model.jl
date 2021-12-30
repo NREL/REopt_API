@@ -61,7 +61,7 @@ function add_continuous_variables(m, p)
 		dvTemperatures[p.TempNodes, p.TimeStep] #>= 0
 		dvTemperaturesWH[p.TempNodesWH, p.TimeStep] #>= 0
 		dvWHFractions[p.WaterHeaterTechs, p.TimeStep] >= 0
-		dvWHComfortCost[p.TimeStep] >= 0
+		dvWHComfortCost_degC[p.TimeStep] >= 0
 		dvHVACComfortCost[p.TimeStep] >= 0
         dvSupplementaryThermalProduction[p.CHPTechs, p.TimeStep] >= 0
 		dvSupplementaryFiringCHPSize[p.CHPTechs] >= 0  #X^{\sigma db}_{t}: System size of CHP with supplementary firing [kW]
@@ -171,7 +171,7 @@ function add_cost_expressions(m, p)
 	end
 	if !isempty(p.WaterHeaterTechs)
 		m[:TotalWHComfortCost] = @expression(m,
-			sum(m[:dvWHComfortCost][ts]*p.WHComfortValue for ts in p.TimeStep))
+			sum(m[:dvWHComfortCost_degC][ts]*p.WHComfortValue for ts in p.TimeStep))
 	else
 		m[:TotalWHComfortCost] = @expression(m, 0.0)
 	end
@@ -329,7 +329,7 @@ function add_bigM_adjustments(m, p)
 
 	#Adds monthly Big M for RA
 	if p.RaLookbackDays != 0
-		#Monthly upper bound on RA payments
+		#Monthly upper bound on RA payments (ADF: Is this over the project lifetime?)
 		m[:MaxMonthlyRa] = 1000000 #[p.pwf_e * (p.RaMonthlyPrice[mth] + (p.RaMooHours * length(p.RaEventStartTimes[mth])) * maximum(p.RaEnergyPrice[ts] for ts in p.TimeStepRatchetsMonth[mth])) * maximum(p.ElecLoad[ts] for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month]
 	end
 
@@ -1172,7 +1172,7 @@ function add_resource_adequacy(m, p)
     @constraint(m, [mth in keys(p.RaEventStartTimes), i in 1:length(p.RaEventStartTimes[mth])],
 		m[:dvMonthlyRA][mth] <= calculate_average_daily_reduction(m, p, mth, i))
 
-	#Calculate monthly values if RA is acitve
+	#Calculate monthly values if RA is acitve (ADF: monthly values over project lifetime?)
     m[:MonthlyRaDr] = @expression(m, [mth in keys(p.RaEventStartTimes)],
 		p.pwf_e * p.RaMonthlyPrice[mth] * m[:dvMonthlyRA][mth])
 
@@ -1327,7 +1327,7 @@ function add_water_heater_constraints(m, p)
         sum(m[:dvWHFractions][t, ts] for t in p.WaterHeaterTechs) <= 1
     )
 	@constraint(m, [ts in p.TimeStep],
-		m[:dvWHComfortCost][ts] >= p.ComfortTempLimitWH - m[:dvTemperaturesWH][p.WaterNode, ts]
+		m[:dvWHComfortCost_degC][ts] >= p.ComfortTempLimitWH - m[:dvTemperaturesWH][p.WaterNode, ts]
     )
 
 end
@@ -1352,7 +1352,7 @@ function add_cost_function(m, p)
 		# CHP Standby Charges
 		m[:TotalCHPStandbyCharges] * m[:r_tax_fraction_offtaker] +
 
-        ## Total Generator Fuel Costs, tax deductible for offtaker
+        ## Total Fuel Costs for all fuel-burning techs, tax deductible for offtaker
         m[:TotalFuelCharges] * m[:r_tax_fraction_offtaker] -
 
         # Subtract Incentives, which are taxable
@@ -2077,13 +2077,15 @@ function add_null_flex_load_results(m, p, r::Dict)
 	r["hp_size_kw"] = 0.0
 	r["hp_production_series"] = []
 	r["hp_consumption_series"] = []
-	r["hvac_comfort_penalty"] = []
+	r["hvac_comfort_penalty_degC"] = []
+	r["hvac_comfort_cost_total"] = []
 	nothing
 end
 
 function add_null_water_heater_results(m, p, r::Dict)
 	r["water_temperatures"] = []
-	r["wh_comfort_penalty"] = []
+	r["wh_comfort_penalty_degC"] = []
+	r["wh_comfort_cost_total"] = []
 	r["erwh_production_series"] = []
 	r["erwh_consumption_series"] = []
 	r["hpwh_production_series"] = []
@@ -2563,15 +2565,17 @@ function add_flex_load_results(m, p, r::Dict)
 				)
 	r["hp_consumption_series"] = round.(value.(HPConsumption), digits=4)
 	@expression(m, HVACComfortPenalty[ts in p.TimeStep], m[:dvHVACComfortCost][ts])
-	r["hvac_comfort_penalty"] = round.(value.(HVACComfortPenalty), digits=4)
+	r["hvac_comfort_penalty_degC"] = round.(value.(HVACComfortPenalty), digits=4)
+	r["hvac_comfort_cost_total"] = round(value(m[:TotalHVACComfortCost]), digits=2)
 	nothing
 end
 
 function add_water_heater_results(m, p, r::Dict)
 	@expression(m, WaterTemperatures[ts in p.TimeStep], m[:dvTemperaturesWH][p.WaterNode, ts])
 	r["water_temperatures"] = round.(value.(WaterTemperatures), digits=4)
-	@expression(m, WHComfortPenalty[ts in p.TimeStep], m[:dvWHComfortCost][ts])
-	r["wh_comfort_penalty"] = round.(value.(WHComfortPenalty), digits=4)
+	@expression(m, WHComfortPenalty[ts in p.TimeStep], m[:dvWHComfortCost_degC][ts])
+	r["wh_comfort_penalty_degC"] = round.(value.(WHComfortPenalty), digits=4)
+	r["wh_comfort_cost_total"] = round(value(m[:TotalWHComfortCost]), digits=2)
 	if "WHER" in p.WaterHeaterTechs
 		@expression(m, WHERProduction[ts in p.TimeStep],
 				sum(m[:dvWHFractions][t, ts] * p.ProductionFactor[t, ts] * p.MaxSize[t] * p.FlexTechsCOP[t,ts] * p.LevelizationFactor[t] for t in ["WHER"])
@@ -2744,6 +2748,12 @@ function add_util_results(m, p, r::Dict)
 
 	@expression(m, PeakDemandByRatchet[r in p.Ratchets, e in p.DemandBin], m[:dvPeakDemandE][r, e])
 	r["peak_demand_by_ratchet"] = value.(PeakDemandByRatchet).data
+
+	# LCC components not yet reported
+	r["total_fuel_charges_after_tax"] = round(value(m[:TotalFuelCharges]) * m[:r_tax_fraction_offtaker], digits=2)
+	r["total_production_incentive_after_tax"] = round(value(m[:TotalProductionIncentive]) * m[:r_tax_fraction_owner], digits=2)
+	r["total_ra_value_after_tax"] = round(value(m[:TotalRaValue]) * m[:r_tax_fraction_owner], digits=2)
+	
 end
 
 

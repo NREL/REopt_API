@@ -280,6 +280,7 @@ class FinancialModel(models.Model):
     lcoe_component_other_capex_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
     lcoe_component_om_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
     lcoe_component_other_annual_costs_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
+    total_production_incentive_after_tax = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -455,12 +456,13 @@ class ElectricTariffModel(models.Model):
     year_one_energy_supplied_kwh = models.FloatField(null=True, blank=True)
     year_one_energy_supplied_kwh_bau = models.FloatField(null=True, blank=True)
 	#Resource Adequacy Outputs
-    monthly_ra_reduction = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    monthly_ra_energy = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    monthly_ra_dr = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    monthly_ra_value = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    monthly_ra_reduction_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    monthly_ra_energy_total_value = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    monthly_ra_dr_total_value = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    monthly_ra_total_value = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     event_hours = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    hourly_reductions = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    hourly_reductions_kWh = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    total_ra_value_after_tax = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
 
     year_one_emissions_tCO2 = models.FloatField(null=True, blank=True)
     year_one_emissions_tNOx = models.FloatField(null=True, blank=True)
@@ -521,6 +523,7 @@ class FuelTariffModel(models.Model):
     total_boiler_fuel_cost_bau_us_dollars = models.FloatField(null=True, blank=True)
     total_newboiler_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
     year_one_newboiler_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
+    total_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -1066,6 +1069,7 @@ class RCModel(models.Model):
     # Outputs
     temperatures_degree_C = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     comfort_penalty_degC = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    wh_comfort_cost_total = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -1239,6 +1243,7 @@ class HotWaterTankModel(models.Model):
     # Output
     year_one_temperature_series_degC = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     comfort_penalty_degC = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    hvac_comfort_cost_total = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):

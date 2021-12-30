@@ -692,6 +692,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "microgrid_lcoe_us_dollars_per_kwh"] = self.results_dict.get("microgrid_lcoe")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_om_costs_before_tax_bau_us_dollars"] = \
                         self.results_dict.get("year_one_om_costs_before_tax_bau")
+                    self.nested_outputs["Scenario"]["Site"][name]["total_production_incentive_after_tax"] = \
+                        self.results_dict.get("total_production_incentive_after_tax")
                 elif name == "PV":
                     pv_models = list(PVModel.objects.filter(run_uuid=meta['run_uuid']).order_by('pv_number'))
                     template_pv = copy.deepcopy(self.nested_outputs['Scenario']["Site"][name])
@@ -852,12 +854,14 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_chp_standby_cost_us_dollars"] = self.results_dict.get("year_one_chp_standby_cost")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "total_chp_standby_cost_us_dollars"] = self.results_dict.get("total_chp_standby_cost")
-                    self.nested_outputs["Scenario"]["Site"][name]["monthly_ra_reduction"] = self.results_dict.get("monthly_ra_reduction", 0)
-                    self.nested_outputs["Scenario"]["Site"][name]["monthly_ra_energy"] = self.results_dict.get("monthly_ra_energy")
-                    self.nested_outputs["Scenario"]["Site"][name]["monthly_ra_dr"] = self.results_dict.get("monthly_ra_dr")
-                    self.nested_outputs["Scenario"]["Site"][name]["monthly_ra_value"] = self.results_dict.get("monthly_ra_value")
+                    self.nested_outputs["Scenario"]["Site"][name]["monthly_ra_reduction_kw"] = self.results_dict.get("monthly_ra_reduction", 0)
+                    self.nested_outputs["Scenario"]["Site"][name]["monthly_ra_energy_total_value"] = self.results_dict.get("monthly_ra_energy")
+                    self.nested_outputs["Scenario"]["Site"][name]["monthly_ra_dr_total_value"] = self.results_dict.get("monthly_ra_dr")
+                    self.nested_outputs["Scenario"]["Site"][name]["monthly_ra_total_value"] = self.results_dict.get("monthly_ra_value")
                     self.nested_outputs["Scenario"]["Site"][name]["event_hours"] = self.results_dict.get("event_hours")
-                    self.nested_outputs["Scenario"]["Site"][name]["hourly_reductions"] = self.results_dict.get("hourly_reductions")
+                    self.nested_outputs["Scenario"]["Site"][name]["hourly_reductions_kwh"] = self.results_dict.get("hourly_reductions")
+                    self.nested_outputs["Scenario"]["Site"][name]["total_ra_value_after_tax"] = self.results_dict.get("total_ra_value_after_tax")
+
 
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_demand_cost_by_ratchet_us_dollars_per_kw"] = [item for sublist in self.results_dict.get("demand_cost_by_ratchet") for item in sublist]
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_peak_demand_by_ratchet_kw"] = [item for sublist in self.results_dict.get("peak_demand_by_ratchet") for item in sublist]
@@ -879,6 +883,9 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "total_newboiler_fuel_cost_us_dollars"] = self.results_dict.get("total_newboiler_fuel_cost")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_newboiler_fuel_cost_us_dollars"] = self.results_dict.get("year_one_newboiler_fuel_cost")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "total_fuel_cost_us_dollars"] = self.results_dict.get("total_fuel_charges_after_tax")
+
                 elif name == "Generator":
                     self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("generator_kw", 0)
                     self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal"] = self.results_dict.get(
@@ -1032,7 +1039,9 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["temperatures_degree_C"] = self.results_dict.get(
                         "indoor_temperatures")
                     self.nested_outputs["Scenario"]["Site"][name]["comfort_penalty_degC"] = self.results_dict.get(
-                        "hvac_comfort_penalty")
+                        "hvac_comfort_penalty_degC")
+                    self.nested_outputs["Scenario"]["Site"][name]["hvac_comfort_cost_total"] = self.results_dict.get(
+                        "hvac_comfort_cost_total")
                 elif name == "FlexTechAC":
                     self.nested_outputs["Scenario"]["Site"][name][
                         "size_kw"] = self.results_dict.get("ac_size_kw")
@@ -1053,7 +1062,9 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_temperature_series_degC"] = self.results_dict.get("water_temperatures")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "comfort_penalty_degC"] = self.results_dict.get("wh_comfort_penalty")
+                        "comfort_penalty_degC"] = self.results_dict.get("wh_comfort_penalty_degC")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "wh_comfort_cost_total"] = self.results_dict.get("wh_comfort_cost_total")
                 elif name == "FlexTechERWH":
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_power_production_series_kw"] = self.results_dict.get("erwh_production_series")

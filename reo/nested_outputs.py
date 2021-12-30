@@ -621,6 +621,11 @@ nested_output_definitions = {
                   "type": "float",
                   "description": ("Other annual cost component of the LCOE in USD/kWh. In off-grid analyses only."),
                   "units": "$"
+                },
+                "total_production_incentive_after_tax": {
+                  "type": "float",
+                  "description": ("Present value of all production-based incentives, after tax."),
+                  "units": "$"
                 }
               },
 
@@ -1075,7 +1080,43 @@ nested_output_definitions = {
                   "type": "float",
                   "description": "Total tons of PM2.5 emissions associated with the site's grid-purchased electricity over the analysis period in the BAU scenario. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
                   "units": "metric tons"
-                }
+                },
+                "monthly_ra_reduction_kw": {
+                  "type": "list_of_float",
+                  "decription": "Amount of Resource Adequacy (RA) reduction (kW) which occurs in each month where RA is called. Monthly RA is the minimum of the reductions across all events in a month.",
+                  "units": "kW by month"
+                },
+                "monthly_ra_energy_total_value" : {
+                  "type": "list_of_float",
+                  "description": "Total (over project lifetime) monthly RA payments from participation in wholesale energy market. Does not consider whether participation occurs in a given month",
+                  "units" : "$"
+                },
+                "monthly_ra_dr_total_value" : {
+                  "type": "list_of_float",
+                  "description": "Total (over project lifetime) monthly RA payments from providing capacity. Does not consider whether participation occurs in given month",
+                  "units" : "$"
+                }, 
+                "monthly_ra_total_value" : {
+                  "type" : "list_of_float",
+                  "description" : "Total (over project lifetime) monthly Resource Adequacy (RA) value from providing capacity and energy. Is zero for months where participation does not occur",
+                  "units" : "$"
+                },
+                "event_hours" : {
+                  "type" : "list_of_int",
+                  "description" : "Each hour which is a Resource Adequacy (RA) event hour",
+                  "units" : "hour index"
+                }, 
+                "hourly_reductions_kwh" : {
+                  "type" : "list_of_float",
+                  "description" : "Resource Adequacy (RA) load reduction (kWh) by event hour",
+                  "units" : "kWh"
+                },
+                "total_ra_value_after_tax" : {
+                  "type" : "list_of_float",
+                  "description" : "Total Resource Adequacy (RA) value after tax.",
+                  "units" : "$"
+                },
+
               },
 
               "FuelTariff": {
@@ -1118,7 +1159,12 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Year one NewBoiler fuel cost, before-tax",
                   "units": "$"
-                }
+                },
+                "total_fuel_cost_us_dollars": {
+                  "type": float,
+                  "description": "Total fuel cost of all fuels burned over the lifecycle, after-tax",
+                  "units": "$"
+                },
               },
 
               "Generator": {
@@ -1226,36 +1272,6 @@ nested_output_definitions = {
                   "type": "float",
                   "description": "Year one fuel cost for existing diesel generator system",
                   "units": "$"
-                },
-                "monthly_ra_reduction": {
-                  "type": "list_of_float",
-                  "decription": "Amount of RA reduction which occurs in each month where RA is called",
-                  "units": "kW by month"
-                },
-                "monthly_ra_energy" : {
-                  "type": "list_of_float",
-                  "description": "RA payments from participation in wholesale energy market. Does not consider whether participation occurs in a given month",
-                  "units" : "$"
-                },
-                "monthly_ra_dr" : {
-                  "type": "list_of_float",
-                  "description": "RA payments from providing capacity. Does not consider whether participation occurs in given month",
-                  "units" : "$"
-                }, 
-                "monthly_ra_value" : {
-                  "type" : "list_of_float",
-                  "description" : "Total monthly ra value. Is zero for months where participation does not occur",
-                  "units" : "$"
-                },
-                "event_hours" : {
-                  "type" : "list_of_int",
-                  "description" : "Each hour which is an event hour",
-                  "units" : "hour index"
-                }, 
-                "hourly_reductions" : {
-                  "type" : "list_of_float",
-                  "description" : "Load reduction by event hour",
-                  "units" : "kWh"
                 },
                 "fuel_used_series_gal": {
                   "type": "list_of_float",
@@ -1492,6 +1508,11 @@ nested_output_definitions = {
                   "type": list_of_float,
                   "description": "HVAC comfort penalty",
                   "units": "degrees"
+                },
+                "hvac_comfort_cost_total": {
+                  "type": float,
+                  "description": "HVAC comfort penalty cost",
+                  "units": "dollars"
                 }
               },
               "FlexTechAC": {
@@ -1538,7 +1559,13 @@ nested_output_definitions = {
                   "type": list_of_float,
                   "description": "WH comfort penalty",
                   "units": "degrees"
-                }
+                },
+                "wh_comfort_cost_total": {
+                  "type": float,
+                  "description": "WH comfort penalty cost",
+                  "units": "dollars"
+                },
+
               },
               "FlexTechERWH": {
                 "year_one_power_production_series_kw": {
