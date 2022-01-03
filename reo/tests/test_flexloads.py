@@ -12040,7 +12040,7 @@ class TestFlexLoads(ResourceTestCaseMixin, TestCase):
             "Scenario": {
                 "webtool_uuid": None,
                 "description": "",
-                "timeout_seconds": 4200,
+                "timeout_seconds": 420,
                 "optimality_tolerance_techs": 0.03,
                 "add_soc_incentive": False,
                 "Site": {
@@ -12167,7 +12167,7 @@ class TestFlexLoads(ResourceTestCaseMixin, TestCase):
         return response
 
     def test_flex_tech(self):
-        expected_ac_size = 0.817
+        expected_ac_size = 0.8193
 
         resp = self.api_client.post(self.submit_url, format='json', data=self.post)
         uuid = json.loads(resp.content)['run_uuid']
