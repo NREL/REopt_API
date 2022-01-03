@@ -2078,14 +2078,14 @@ function add_null_flex_load_results(m, p, r::Dict)
 	r["hp_production_series"] = []
 	r["hp_consumption_series"] = []
 	r["hvac_comfort_penalty_degC"] = []
-	r["hvac_comfort_cost_total"] = []
+	r["hvac_comfort_cost_total"] = 0.0
 	nothing
 end
 
 function add_null_water_heater_results(m, p, r::Dict)
 	r["water_temperatures"] = []
 	r["wh_comfort_penalty_degC"] = []
-	r["wh_comfort_cost_total"] = []
+	r["wh_comfort_cost_total"] = 0.0
 	r["erwh_production_series"] = []
 	r["erwh_consumption_series"] = []
 	r["hpwh_production_series"] = []
@@ -2752,7 +2752,7 @@ function add_util_results(m, p, r::Dict)
 	# LCC components not yet reported
 	r["total_fuel_charges_after_tax"] = round(value(m[:TotalFuelCharges]) * m[:r_tax_fraction_offtaker], digits=2)
 	r["total_production_incentive_after_tax"] = round(value(m[:TotalProductionIncentive]) * m[:r_tax_fraction_owner], digits=2)
-	r["total_ra_value_after_tax"] = round(value(m[:TotalRaValue]) * m[:r_tax_fraction_owner], digits=2)
+	r["total_ra_value_after_tax"] = round(m[:TotalRaValue] * m[:r_tax_fraction_owner], digits=1)
 	
 end
 

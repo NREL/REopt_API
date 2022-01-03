@@ -462,7 +462,7 @@ class ElectricTariffModel(models.Model):
     monthly_ra_total_value = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     event_hours = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     hourly_reductions_kWh = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    total_ra_value_after_tax = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    total_ra_value = models.FloatField(null=True, blank=True)
 
     year_one_emissions_tCO2 = models.FloatField(null=True, blank=True)
     year_one_emissions_tNOx = models.FloatField(null=True, blank=True)
@@ -1069,7 +1069,7 @@ class RCModel(models.Model):
     # Outputs
     temperatures_degree_C = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     comfort_penalty_degC = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    wh_comfort_cost_total = models.FloatField(null=True, blank=True)
+    hvac_comfort_cost_total = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -1243,7 +1243,7 @@ class HotWaterTankModel(models.Model):
     # Output
     year_one_temperature_series_degC = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     comfort_penalty_degC = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    hvac_comfort_cost_total = models.FloatField(null=True, blank=True)
+    wh_comfort_cost_total = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):

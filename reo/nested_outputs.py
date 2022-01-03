@@ -1111,8 +1111,8 @@ nested_output_definitions = {
                   "description" : "Resource Adequacy (RA) load reduction (kWh) by event hour",
                   "units" : "kWh"
                 },
-                "total_ra_value_after_tax" : {
-                  "type" : "list_of_float",
+                "total_ra_value" : {
+                  "type" : float,
                   "description" : "Total Resource Adequacy (RA) value after tax.",
                   "units" : "$"
                 },
