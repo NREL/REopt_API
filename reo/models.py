@@ -461,7 +461,7 @@ class ElectricTariffModel(models.Model):
     monthly_ra_dr_total_value = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     monthly_ra_total_value = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     event_hours = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    hourly_reductions_kwh = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    hourly_reductions = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     total_ra_value = models.FloatField(null=True, blank=True)
 
     year_one_emissions_tCO2 = models.FloatField(null=True, blank=True)

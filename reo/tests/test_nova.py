@@ -17683,9 +17683,10 @@ class TestNova(ResourceTestCaseMixin, TestCase):
 
         
         try:
-          print('Expected PV Generation:', sum(inputs['PV']["prod_factor_series_kw"])*
+          print('Load [kWh]', inputs['LoadProfile']["annual_kwh"])
+          print('Expected PV Generation [kWh]:', sum(inputs['PV']["prod_factor_series_kw"])*
             inputs['PV']["existing_kw"])
-          print('Year 1 PV Generation:', pv_out["year_one_energy_produced_kwh"])
+          print('Year 1 PV Generation [kWh]:', pv_out["year_one_energy_produced_kwh"])
           print('Sum of "year_one_power_production_series_kw":', sum(pv_out["year_one_power_production_series_kw"]))
           print('PV curtailed [kWh]:', sum(pv_out["year_one_curtailed_production_series_kw"]))
 

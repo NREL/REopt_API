@@ -861,7 +861,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["monthly_ra_dr_total_value"] = self.results_dict.get("monthly_ra_dr")
                     self.nested_outputs["Scenario"]["Site"][name]["monthly_ra_total_value"] = self.results_dict.get("monthly_ra_value")
                     self.nested_outputs["Scenario"]["Site"][name]["event_hours"] = self.results_dict.get("event_hours")
-                    self.nested_outputs["Scenario"]["Site"][name]["hourly_reductions_kwh"] = self.results_dict.get("hourly_reductions")
+                    self.nested_outputs["Scenario"]["Site"][name]["hourly_reductions"] = self.results_dict.get("hourly_reductions")
                     self.nested_outputs["Scenario"]["Site"][name]["total_ra_value"] = self.results_dict.get("total_ra_value_after_tax")
 
 

@@ -1106,7 +1106,7 @@ nested_output_definitions = {
                   "description" : "Each hour which is a Resource Adequacy (RA) event hour",
                   "units" : "hour index"
                 }, 
-                "hourly_reductions_kwh" : {
+                "hourly_reductions" : {
                   "type" : "list_of_float",
                   "description" : "Resource Adequacy (RA) load reduction (kWh) by event hour",
                   "units" : "kWh"
