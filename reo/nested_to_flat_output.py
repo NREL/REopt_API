@@ -96,10 +96,10 @@ def nested_to_flat(nested_output):
         'year_one_coincident_peak_cost_bau': nested_output['Scenario']['Site']['ElectricTariff']['year_one_coincident_peak_cost_bau_us_dollars'],
         'total_coincident_peak_cost': nested_output['Scenario']['Site']['ElectricTariff']['total_coincident_peak_cost_us_dollars'],
         'total_coincident_peak_cost_bau': nested_output['Scenario']['Site']['ElectricTariff']['total_coincident_peak_cost_bau_us_dollars'],
-        'monthly_ra_reduction':nested_output['Scenario']['Site']['ElectricTariff']['monthly_ra_reduction'],
-        'monthly_ra_energy':nested_output['Scenario']['Site']['ElectricTariff']['monthly_ra_energy'],
-        'monthly_ra_dr': nested_output['Scenario']['Site']['ElectricTariff']['monthly_ra_dr'],
-        'monthly_ra_value': nested_output['Scenario']['Site']['ElectricTariff']['monthly_ra_value'],
+        'monthly_ra_reduction_kw':nested_output['Scenario']['Site']['ElectricTariff']['monthly_ra_reduction_kw'],
+        'monthly_ra_energy_total_value':nested_output['Scenario']['Site']['ElectricTariff']['monthly_ra_energy_total_value'],
+        'monthly_ra_dr_total_value': nested_output['Scenario']['Site']['ElectricTariff']['monthly_ra_dr_total_value'],
+        'monthly_ra_total_value': nested_output['Scenario']['Site']['ElectricTariff']['monthly_ra_total_value'],
         'event_hours': nested_output['Scenario']['Site']['ElectricTariff']['event_hours'],
         'hourly_reductions': nested_output['Scenario']['Site']['ElectricTariff']['hourly_reductions']
     }
