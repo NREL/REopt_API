@@ -37,8 +37,6 @@ class ClassAttributes:
     def __init__(self, dictionary):
         for k, v in dictionary.items():
             setattr(self, k, v)
-
-
 class TestNova(ResourceTestCaseMixin, TestCase):
     """
     Test Nova analysis workflow
@@ -50,7 +48,8 @@ class TestNova(ResourceTestCaseMixin, TestCase):
         self.submit_url = '/v1/job/'
         self.results_url = '/v1/job/<run_uuid>/results/'
 
-        self.post_with_techs = {
+        # load and pv case with battery charge and dischare split. 
+        self.post = { 
           "Scenario": {
             "Site": {
               "latitude": 44.15,
@@ -8850,12 +8849,13 @@ class TestNova(ResourceTestCaseMixin, TestCase):
                 "net_metering_limit_kw": 500.0,
                 "interconnection_limit_kw": 100000000.0,
                 "urdb_label": "5d3f1f715457a3d71ddc8c3b",
+                "wholesale_rate_above_site_load_us_dollars_per_kwh": 0.000000000000001
               },
               "PV": {
                 "pv_name": None,
-                "existing_kw": 6.0,
-                "min_kw": 0.0,
-                "max_kw": 0.0,
+                "existing_kw": 0.0, # 6.0,
+                "min_kw": 6, # 0.0,
+                "max_kw": 6, # 0.0,
                 "installed_cost_us_dollars_per_kw": 1600.0,
                 "om_cost_us_dollars_per_kw": 16.0,
                 "macrs_option_years": 5,
@@ -17638,13 +17638,13 @@ class TestNova(ResourceTestCaseMixin, TestCase):
                 "can_net_meter": True,
                 "can_wholesale": True,
                 "can_export_beyond_site_load": True,
-                "can_curtail": True
+                "can_curtail": False, # True 
               },
               "Storage": {
-                "min_kw": 0.0,
-                "max_kw": 0.0,
-                "min_kwh": 0.0,
-                "max_kwh": 0.0,
+                "min_kw": 4.0,
+                "max_kw": 4.0,
+                "min_kwh": 6.0,
+                "max_kwh": 6.0,
               },
             },
             "timeout_seconds": 420,
@@ -17674,7 +17674,7 @@ class TestNova(ResourceTestCaseMixin, TestCase):
 
     def test_pv_curtailment(self): ## TODO update, want to test out PV can curtail
 
-        response = self.get_response(self.post_with_techs)
+        response = self.get_response(self.post)
         inputs = response['inputs']['Scenario']['Site']
         outputs = response['outputs']['Scenario']['Site']
         
@@ -17683,12 +17683,18 @@ class TestNova(ResourceTestCaseMixin, TestCase):
 
         
         try:
-          print('Load [kWh]', inputs['LoadProfile']["annual_kwh"])
+          print('Load [kWh]', sum(inputs['LoadProfile']["loads_kw"]))
           print('Expected PV Generation [kWh]:', sum(inputs['PV']["prod_factor_series_kw"])*
             inputs['PV']["existing_kw"])
+          print('Average PV production [kWh]:', pv_out["average_yearly_energy_produced_kwh"])
           print('Year 1 PV Generation [kWh]:', pv_out["year_one_energy_produced_kwh"])
           print('Sum of "year_one_power_production_series_kw":', sum(pv_out["year_one_power_production_series_kw"]))
           print('PV curtailed [kWh]:', sum(pv_out["year_one_curtailed_production_series_kw"]))
+          print('Is this total pv?:', sum(pv_out["year_one_curtailed_production_series_kw"]) + 
+            sum(pv_out["year_one_to_battery_series_kw"]) +
+            sum(pv_out["year_one_to_load_series_kw"]) +
+            sum(pv_out["year_one_to_grid_series_kw"]) 
+          )
 
             
         except Exception as e:
