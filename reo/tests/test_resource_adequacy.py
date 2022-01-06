@@ -65,7 +65,7 @@ ra_post = {"Scenario": {"Site": {
                 },
                 "ElectricTariff": {
                     "blended_monthly_demand_charges_us_dollars_per_kw": [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0],
-                    "blended_monthly_rates_us_dollars_per_kwh": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2] #,
+                    "blended_monthly_rates_us_dollars_per_kwh": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2], #,
                     "ra_event_day_flags_boolean": event_day_flags,
                     "ra_demand_pricing_us_dollars_per_kw": [0, 0, 0, 23, 21, 21, 21, 21, 21, 21, 0, 0],
                     "ra_energy_pricing_us_dollars_per_kwh": energy_pricing

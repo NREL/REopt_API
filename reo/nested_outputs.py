@@ -991,16 +991,16 @@ nested_output_definitions = {
                   "type": "str",
                   "description": "Description of region for emissions_factor_series_lb_CO2_per_kwh (and health-related emissions). Filled by default with the EPA AVERT region of the site."
                 },
-                "year_one_demand_cost_by_ratchet_us_dollars_per_kw": {
-                  "type": "list_of_float",
-                  "description": "Temporarily read out demand costs by ratchet",
-                  "units": "$/kW"
-                },
-                "year_one_peak_demand_by_ratchet_kw": {
-                  "type": "list_of_float",
-                  "description": "Temporarily read out the peak demand of each ratchet",
-                  "units": "kW"
-                },
+                # "year_one_demand_cost_by_ratchet_us_dollars_per_kw": {
+                #   "type": "list_of_float",
+                #   "description": "Temporarily read out demand costs by ratchet",
+                #   "units": "$/kW"
+                # },
+                # "year_one_peak_demand_by_ratchet_kw": {
+                #   "type": "list_of_float",
+                #   "description": "Temporarily read out the peak demand of each ratchet",
+                #   "units": "kW"
+                # },
                 "year_one_emissions_tCO2": {
                   "type": "float",
                   "description": "Total tons of CO2 emissions associated with the site's grid-purchased electricity in year one. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",

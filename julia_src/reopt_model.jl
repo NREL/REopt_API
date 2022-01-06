@@ -1172,7 +1172,7 @@ function add_resource_adequacy(m, p)
     @constraint(m, [mth in keys(p.RaEventStartTimes), i in 1:length(p.RaEventStartTimes[mth])],
 		m[:dvMonthlyRA][mth] <= calculate_average_daily_reduction(m, p, mth, i))
 
-	#Calculate monthly values if RA is acitve (ADF: monthly values over project lifetime?)
+	#Calculate monthly values if RA is acitve (monthly values over project lifetime)
     m[:MonthlyRaDr] = @expression(m, [mth in keys(p.RaEventStartTimes)],
 		p.pwf_e * p.RaMonthlyPrice[mth] * m[:dvMonthlyRA][mth])
 
@@ -2743,16 +2743,16 @@ function add_util_results(m, p, r::Dict)
     r["GridToLoad"] = round.(value.(GridToLoad), digits=3)
 	
 	#XL - Sonnen demand charge 
-	@expression(m, DemandCostByRatchet[r in p.Ratchets, e in p.DemandBin], p.DemandRates[r, e])
-	r["demand_cost_by_ratchet"] = value.(DemandCostByRatchet).data
+	#@expression(m, DemandCostByRatchet[r in p.Ratchets, e in p.DemandBin], p.DemandRates[r, e])
+	#r["demand_cost_by_ratchet"] = value.(DemandCostByRatchet) # .data
 
-	@expression(m, PeakDemandByRatchet[r in p.Ratchets, e in p.DemandBin], m[:dvPeakDemandE][r, e])
-	r["peak_demand_by_ratchet"] = value.(PeakDemandByRatchet).data
+	#@expression(m, PeakDemandByRatchet[r in p.Ratchets, e in p.DemandBin], m[:dvPeakDemandE][r, e])
+	#r["peak_demand_by_ratchet"] = value.(PeakDemandByRatchet) #.data
 
 	# LCC components not yet reported
 	r["total_fuel_charges_after_tax"] = round(value(m[:TotalFuelCharges]) * m[:r_tax_fraction_offtaker], digits=2)
 	r["total_production_incentive_after_tax"] = round(value(m[:TotalProductionIncentive]) * m[:r_tax_fraction_owner], digits=2)
-	r["total_ra_value_after_tax"] = round(m[:TotalRaValue] * m[:r_tax_fraction_owner], digits=1)
+	r["total_ra_value_after_tax"] = round(value(m[:TotalRaValue]) * m[:r_tax_fraction_owner], digits=1)
 	
 end
 
@@ -2763,23 +2763,23 @@ function add_ra_results(m, p, r::Dict)
 
 	if sum(p.RaMonthlyPrice[k] for k in keys(p.RaMonthlyPrice))==0
 		r["monthly_ra_reduction"] = [] #value.(m[:dvMonthlyRA]).data
-		r["monthly_ra_energy"] = value.(m[:MonthlyRaEnergy]).data
+		r["monthly_ra_energy"] = value.(m[:MonthlyRaEnergy]) #.data 
 		r["monthly_ra_dr"] = [] #value.(m[:MonthlyRaDr]).data
-		r["monthly_ra_value"] = value.(m[:dvMonthlyRaValue]).data
+		r["monthly_ra_value"] = value.(m[:dvMonthlyRaValue]) #.data
 	else
-		r["monthly_ra_reduction"] = value.(m[:dvMonthlyRA]).data
-		r["monthly_ra_energy"] = value.(m[:MonthlyRaEnergy]).data
-		r["monthly_ra_dr"] = value.(m[:MonthlyRaDr]).data
-		r["monthly_ra_value"] = value.(m[:dvMonthlyRaValue]).data
+		r["monthly_ra_reduction"] = value.(m[:dvMonthlyRA]) #.data
+		r["monthly_ra_energy"] = value.(m[:MonthlyRaEnergy]) #.data
+		r["monthly_ra_dr"] = value.(m[:MonthlyRaDr]) #.data
+		r["monthly_ra_value"] = value.(m[:dvMonthlyRaValue]) #.data
 	end
 	event_hours = []
 	hourly_reductions = []
 	#Flatten event hour array of arrays to singel array
-	for mth in keys(p.RaEventStartTimes)
+	for mth in keys(p.RaEventStartTimes) 
 		for i in 1:length(p.RaEventStartTimes[mth])
 			for h in 0:p.RaMooHours-1
 				push!(event_hours, p.RaEventStartTimes[mth][i] + h)
-				push!(hourly_reductions, value(m[:dvHourlyReductionRA][mth, i, h]).data) 
+				push!(hourly_reductions, value.(m[:dvHourlyReductionRA][mth, i, h])) # .data) 
 			end
 		end
 	end
