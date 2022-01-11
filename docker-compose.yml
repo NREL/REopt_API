@@ -23,6 +23,7 @@ services:
   celery:
     build:
       context: .
+      dockerfile: Dockerfile
     image: base-api-image
     command:  >
       "celery -A reopt_api worker -l info"
@@ -40,6 +41,9 @@ services:
       - julia
 
   django:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: base-api-image
     command:  >
       "python manage.py migrate
@@ -54,7 +58,6 @@ services:
       - db
       - redis
       - julia
-      - celery
     ports:
       - 8000:8000
     volumes:
