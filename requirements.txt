@@ -6,7 +6,7 @@ autopep8==1.5.5
 bandit==1.7.0
 billiard==3.6.3.0
 cachetools==4.2.1
-celery==5.2.2
+celery==5.0.5
 certifi==2020.12.5
 cffi==1.14.5
 chardet==4.0.0
