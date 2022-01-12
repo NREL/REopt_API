@@ -208,3 +208,78 @@ class SteamTurbineTest(ResourceTestCaseMixin, TestCase):
         for tech in thermal_techs - {"SteamTurbine"}:
             if d["inputs"]["Scenario"]["Site"][tech]["can_supply_steam_turbine"] == False:
                 self.assertEqual(sum(tech_to_thermal_load[tech]["steamturbine"]), 0.0)
+
+    def test_div_by_zero(self):
+        """
+        Validation to ensure that:
+         1) breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2 is (zero or None??) when a tech is sized but not dispatched.
+         In this case, the NPV is negative but the emissions in the BAU and optimized cases are equal
+
+        :return:
+        """
+
+        post_divzero = {
+            "Scenario": {
+                "timeout_seconds": 420,
+                "optimality_tolerance_techs": 0.01,
+                "Site": {
+                "latitude": 37.78,
+                "longitude": -122.45,
+                "Boiler": {
+                    "existing_boiler_production_type_steam_or_hw": "steam",
+                    "can_supply_steam_turbine": True
+                },
+                "FuelTariff": {
+                    "existing_boiler_fuel_type": "natural_gas",
+                    "boiler_fuel_blended_annual_rates_us_dollars_per_mmbtu": 30.0
+                },
+                "SteamTurbine": {
+                    "size_class": 1,
+                    "min_kw": 200.0,
+                    "macrs_option_years": 0
+
+                },
+                "LoadProfile": {
+                    "doe_reference_name": "Hospital"
+                },
+                "LoadProfileBoilerFuel": {
+                    "doe_reference_name": "Hospital",
+                    "annual_mmbtu": "12042.0"
+                },
+                "ElectricTariff": {
+                    "blended_annual_demand_charges_us_dollars_per_kw": "0.0",
+                    "blended_annual_rates_us_dollars_per_kwh": "0.08"
+                },
+                "PV": {
+                    "pv_name": "",
+                    "existing_kw": 0.0,
+                    "min_kw": 0.0,
+                    "max_kw": 0.0
+                },
+                "Storage": {
+                    "min_kw": 0.0,
+                    "max_kw": 0.0,
+                    "min_kwh": 0.0,
+                    "max_kwh": 0.0
+                }      
+                },
+                "user_uuid": None,
+                "description": "",
+                "time_steps_per_hour": 1,
+                "webtool_uuid": None
+            }
+            }
+
+        resp = self.get_response(data=post_divzero)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+        d = ModelManager.make_response(run_uuid=run_uuid)
+
+        messages = d['messages']
+        outputs = d['outputs']['Scenario']['Site']
+        inputs = d['inputs']['Scenario']['Site']
+
+        # Assert breakeven is None 
+        self.assertEqual(outputs["breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2"], None)
+
