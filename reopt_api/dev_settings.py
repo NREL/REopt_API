@@ -133,6 +133,7 @@ if 'test' in sys.argv or os.environ.get('APP_ENV') == 'local':
         }
 }
 else:
+    DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760
     DATABASES = {
          'default': {
              'ENGINE': 'django.db.backends.postgresql_psycopg2',
