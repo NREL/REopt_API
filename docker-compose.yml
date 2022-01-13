@@ -32,7 +32,6 @@ services:
       - SQL_HOST=db
       - SQL_PORT=5432
       - REDIS_HOST=redis
-      - SOLVER=xpress
     volumes:
       - .:/opt/reopt
     depends_on:
@@ -53,7 +52,6 @@ services:
       - SQL_HOST=db
       - SQL_PORT=5432
       - REDIS_HOST=redis
-      - SOLVER=xpress
     depends_on:
       - db
       - redis
