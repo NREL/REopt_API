@@ -144,18 +144,10 @@ function add_cost_expressions(m, p)
 	m[:TotalPerUnitSizeOMCosts] = @expression(m, p.two_party_factor * p.pwf_om *
 		sum( p.OMperUnitSize[t] * m[:dvSize][t] for t in p.Tech )
 	)
-    if !isempty(p.FuelBurningTechs) && isempty(p.HeatingTechs)
+    FuelBurnAndHeatingTechs = union(p.FuelBurningTechs, p.HeatingTechs)
+    if !isempty(FuelBurnAndHeatingTechs)
 		m[:TotalPerUnitProdOMCosts] = @expression(m, p.two_party_factor * p.pwf_om * p.TimeStepScaling * 
-			sum( p.OMcostPerUnitProd[t] * m[:dvRatedProduction][t,ts] for t in p.FuelBurningTechs, ts in p.TimeStep )
-		)
-    elseif !isempty(p.HeatingTechs) && isempty(p.FuelBurningTechs)
-		m[:TotalPerUnitProdOMCosts] = @expression(m, p.two_party_factor * p.pwf_om * p.TimeStepScaling *
-            sum( p.OMcostPerUnitProd[t] * m[:dvRatedProduction][t,ts] for t in p.HeatingTechs, ts in p.TimeStep )
-		)
-    elseif !isempty(p.HeatingTechs) && !isempty(p.FuelBurningTechs)
-		m[:TotalPerUnitProdOMCosts] = @expression(m, p.two_party_factor * p.pwf_om * p.TimeStepScaling *
-            (sum( p.OMcostPerUnitProd[t] * m[:dvRatedProduction][t,ts] for t in p.FuelBurningTechs, ts in p.TimeStep ) +
-            sum( p.OMcostPerUnitProd[t] * m[:dvRatedProduction][t,ts] for t in p.HeatingTechs, ts in p.TimeStep ))
+			sum( p.OMcostPerUnitProd[t] * m[:dvRatedProduction][t,ts] for t in FuelBurnAndHeatingTechs, ts in p.TimeStep )
 		)
     else
         m[:TotalPerUnitProdOMCosts] = @expression(m, 0.0)
