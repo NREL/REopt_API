@@ -1,4 +1,4 @@
-FROM python:3.6
+FROM python:3.8
 # Used to create base python image for REopt app with requirements installed to speed up other builds
 
 ENV PYTHONDONTWRITEBYTECODE 1
