@@ -48,7 +48,9 @@ class TestNova(ResourceTestCaseMixin, TestCase):
         self.submit_url = '/v1/job/'
         self.results_url = '/v1/job/<run_uuid>/results/'
 
-        # load and pv case with battery charge and dischare split. 
+        wholesale_rate = [0]*8760
+        wholesale_rate[0] = 0.0001
+        # load and pv case with battery charge and discharge split. 
         self.post = { 
           "Scenario": {
             "Site": {
@@ -8832,16 +8834,7 @@ class TestNova(ResourceTestCaseMixin, TestCase):
                   0.68625,
                   0.74557894
                 ],
-                "loads_kw_is_net": False,
-                "critical_loads_kw_is_net": False,
-                "outage_start_hour": None,
-                "outage_end_hour": None,
-                "outage_start_time_step": None,
-                "outage_end_time_step": None,
-                "critical_load_pct": 0.5,
-                "outage_is_major_event": True,
-                "min_load_met_pct": 0.999,
-                "sr_required_pct": 0.1
+                "loads_kw_is_net": False
               },
               "ElectricTariff": {
                 "urdb_utility_name": "Green Mountain Power Corp",
@@ -8849,29 +8842,13 @@ class TestNova(ResourceTestCaseMixin, TestCase):
                 "net_metering_limit_kw": 500.0,
                 "interconnection_limit_kw": 100000000.0,
                 "urdb_label": "5d3f1f715457a3d71ddc8c3b",
-                "wholesale_rate_above_site_load_us_dollars_per_kwh": 0.000000000000001
+                "wholesale_rate_above_site_load_us_dollars_per_kwh": wholesale_rate
               },
               "PV": {
                 "pv_name": None,
-                "existing_kw": 0.0, # 6.0,
-                "min_kw": 6, # 0.0,
-                "max_kw": 6, # 0.0,
-                "installed_cost_us_dollars_per_kw": 1600.0,
-                "om_cost_us_dollars_per_kw": 16.0,
-                "macrs_option_years": 5,
-                "macrs_bonus_pct": 1.0,
-                "macrs_itc_reduction": 0.5,
-                "federal_itc_pct": 0.26,
-                "degradation_pct": 0.005,
-                "azimuth": 180.0,
-                "losses": 0.14,
-                "array_type": 1,
-                "module_type": 0,
-                "gcr": 0.4,
-                "dc_ac_ratio": 1.2,
-                "inv_eff": 0.96,
-                "radius": 0.0,
-                "tilt": 10.0,
+                "existing_kw": 6.0,
+                "min_kw": 0.0,
+                "max_kw": 0.0,
                 "location": "both",
                 "prod_factor_series_kw": [
                   0.0074,
@@ -17638,13 +17615,13 @@ class TestNova(ResourceTestCaseMixin, TestCase):
                 "can_net_meter": True,
                 "can_wholesale": True,
                 "can_export_beyond_site_load": True,
-                "can_curtail": False, # True 
+                "can_curtail": False
               },
               "Storage": {
-                "min_kw": 4.0,
-                "max_kw": 4.0,
-                "min_kwh": 6.0,
-                "max_kwh": 6.0,
+                "min_kw": 0,
+                "max_kw": 0,
+                "min_kwh": 0,
+                "max_kwh": 0,
               },
             },
             "timeout_seconds": 420,
@@ -17683,7 +17660,10 @@ class TestNova(ResourceTestCaseMixin, TestCase):
 
         
         try:
-          print('Load [kWh]', sum(inputs['LoadProfile']["loads_kw"]))
+          print('Can curtail?:', inputs["PV"]["can_curtail"])
+          print('Existing or fixed PV?: Existing') # manually change (existing or fixed)
+          print('WHL Rate:', sum(inputs['ElectricTariff']["wholesale_rate_above_site_load_us_dollars_per_kwh"]))
+          print('\nLoad [kWh]', sum(inputs['LoadProfile']["loads_kw"]))
           print('Expected PV Generation [kWh]:', sum(inputs['PV']["prod_factor_series_kw"])*
             inputs['PV']["existing_kw"])
           print('Average PV production [kWh]:', pv_out["average_yearly_energy_produced_kwh"])
