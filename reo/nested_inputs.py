@@ -183,7 +183,7 @@ nested_input_definitions = {
     "timeout_seconds": {
       "type": "int",
       "min": 1,
-      "max": 420,
+      "max": 4200,
       "default": 420,
       "description": "The number of seconds allowed before the optimization times out"
     },
@@ -2393,7 +2393,7 @@ nested_input_definitions = {
         "shr": {
           "type": "list_of_float",
           "default": [],
-          "description": "Time-varying SHR"
+          "description": "Time-varying sensible heat ratio (SHR)"
         },
         "fan_power_ratio": {
           "type": "float",
