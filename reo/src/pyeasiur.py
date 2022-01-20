@@ -102,8 +102,8 @@ LCP_US = pyproj.Proj(
     "+x_0=2736000.0 +y_0=2088000.0 +to_wgs=0,0,0 +units=m"
 )
 # GEO_SPHEROID = pyproj.Proj("+proj=lonlat +towgs84=0,0,0 +a=6370000.0 +no_defs")
-DATUM_NAD83 = pyproj.Proj("+init=epsg:4269 +proj=longlat +ellps=GRS80 +datum=NAD83 +no_defs +towgs84=0,0,0")
-DATUM_WGS84 = pyproj.Proj("+init=epsg:4326 +proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0")
+DATUM_NAD83 = pyproj.Proj("epsg:4269 +proj=longlat +ellps=GRS80 +datum=NAD83 +no_defs +towgs84=0,0,0")
+DATUM_WGS84 = pyproj.Proj("epsg:4326 +proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0")
 
 
 def get_EASIUR2005(stack, pop_year=2005, income_year=2005, dollar_year=2010):
