@@ -23,7 +23,6 @@ services:
   celery:
     build:
       context: .
-      dockerfile: Dockerfile
     image: base-api-image
     command:  >
       "celery -A reopt_api worker -l info"
@@ -32,6 +31,7 @@ services:
       - SQL_HOST=db
       - SQL_PORT=5432
       - REDIS_HOST=redis
+      - SOLVER=xpress
     volumes:
       - .:/opt/reopt
     depends_on:
@@ -40,9 +40,6 @@ services:
       - julia
 
   django:
-    build:
-      context: .
-      dockerfile: Dockerfile
     image: base-api-image
     command:  >
       "python manage.py migrate
@@ -52,10 +49,12 @@ services:
       - SQL_HOST=db
       - SQL_PORT=5432
       - REDIS_HOST=redis
+      - SOLVER=xpress
     depends_on:
       - db
       - redis
       - julia
+      - celery
     ports:
       - 8000:8000
     volumes:
