@@ -34,7 +34,7 @@ from reo.nested_to_flat_output import nested_to_flat_chp
 from django.test import TestCase
 from reo.models import ModelManager
 from reo.utilities import check_common_outputs
-import numpy as np
+from numpy_financial import npv
 
 class CHPTest(ResourceTestCaseMixin, TestCase):
     REopt_tol = 1e-2
@@ -123,7 +123,7 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         # init_capex = 600 * 2700 + (800 - 600) * slope, where
         # slope = (1140 * 2370 - 600 * 2700) / (1140 - 600)
         init_capex_chp_expected = 2020666.67
-        net_capex_chp_expected = init_capex_chp_expected - np.npv(0.083, [0, init_capex_chp_expected * 0.1])
+        net_capex_chp_expected = init_capex_chp_expected - npv(0.083, [0, init_capex_chp_expected * 0.1])
 
         #PV
         nested_data["Scenario"]["Site"]["PV"]["min_kw"] = 1500
@@ -135,7 +135,7 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         nested_data["Scenario"]["Site"]["PV"]["macrs_itc_reduction"] = 0.0
 
         init_capex_pv_expected = 1500 * 1600
-        net_capex_pv_expected = init_capex_pv_expected - np.npv(0.083, [0, init_capex_pv_expected * 0.26])
+        net_capex_pv_expected = init_capex_pv_expected - npv(0.083, [0, init_capex_pv_expected * 0.26])
 
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
