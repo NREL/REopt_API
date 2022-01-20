@@ -27,7 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-from numpy import npv
+from numpy_financial import npv
 from math import log10, ceil
 from reo.models import ErrorModel
 import pandas as pd

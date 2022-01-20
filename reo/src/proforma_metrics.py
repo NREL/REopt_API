@@ -29,6 +29,7 @@
 # *********************************************************************************
 import copy
 import numpy as np
+from numpy_financial import irr as IRR
 import logging
 from reo.models import AbsorptionChillerModel
 from reo.nested_inputs import macrs_five_year, macrs_seven_year
@@ -550,7 +551,7 @@ def calculate_proforma_metrics(data):
         annualized_payment_to_third_party_us_dollars = net_present_cost * capital_recovery_factor
         annual_income_from_host = -1 * sum(discounted_developer_cashflow) * capital_recovery_factor * (1 - tax_pct)
         developer_free_cashflow[1:] += annual_income_from_host
-        irr = np.irr(developer_free_cashflow)
+        irr = IRR(developer_free_cashflow)
         cumulative_cashflow = np.cumsum(developer_free_cashflow)
         net_free_cashflow = developer_free_cashflow
         developer_free_cashflow = [round(i, 2) for i in developer_free_cashflow]
@@ -611,7 +612,7 @@ def calculate_proforma_metrics(data):
                                             enumerate(free_cashflow_bau)]
         # difference optimal and BAU
         net_free_cashflow = free_cashflow - free_cashflow_bau
-        irr = np.irr(net_free_cashflow)
+        irr = IRR(net_free_cashflow)
         cumulative_cashflow = np.cumsum(net_free_cashflow)
 
     # At this point we have the cumulative_cashflow for the developer or offtaker so the payback calculation is the same
