@@ -27,7 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-from django.conf.urls import url, re_path
+from django.urls import re_path
 from django.conf.urls.static import static
 from django.conf import settings
 from . import views
