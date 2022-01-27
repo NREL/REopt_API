@@ -1,7 +1,7 @@
-# Contributing to REopt Lite
+# Contributing to REopt
 Thank you for contributing! 
 
-Below are guidelines for making contributions to REopt Lite.
+Below are guidelines for making contributions to REopt.
 
 
 ### I don't want to read this whole thing I just have a question!!!
@@ -14,11 +14,11 @@ Please create an [issue](https://github.com/NREL/REopt_Lite_API/issues) for a bu
 
 
 #### Suggesting Enhancements
-First, please check the [REopt Lite Development Plan](https://reopt.nrel.gov/development-plans.html) in case your idea is already in the works.
+First, please check the [REopt Development Plan](https://reopt.nrel.gov/development-plans.html) in case your idea is already in the works.
 
 Please refer to the instructions in the issue template provided in the [issues](https://github.com/NREL/reopt_api/issues) tab for suggesting enhancements. 
 
-Note that not all suggestions will be integrated into the public code. Enhancments should provide a clear benefit to the community of REopt Lite API users as well as preserve backwards compatibility (in most cases). Lastly, NREL developer time is limited so we can not create every suggested enhancement.
+Note that not all suggestions will be integrated into the public code. Enhancments should provide a clear benefit to the community of REopt API users as well as preserve backwards compatibility (in most cases). Lastly, NREL developer time is limited so we can not create every suggested enhancement.
 
 #### Pull Requests
 
@@ -34,7 +34,7 @@ Besides creating an issue for bugs found in the code, you can help the community
 ##### I have added a feature that other users will benefit from
 Not all features or Pull Requests will be merged into the public code. New features must provide clear benefit for the user community, as well as ideally preserve backwards compatibility.
 
-The following describes the general steps for adding a feature to the REopt Lite API:
+The following describes the general steps for adding a feature to the REopt API:
 - First fork the repository and create a new branch on your fork
 - Then develop the feature on that branch (a detailed tutorial for REopt-api feature development is [here](https://github.com/NREL/reopt_api/wiki/Developing-the-API))
 - Note that we highly recommend test-driven development
