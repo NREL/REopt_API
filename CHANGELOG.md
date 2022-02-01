@@ -302,7 +302,7 @@ Classify the change according to the following categories:
 - `proforma`: Updated storage to read per kW and per kWh incentives
 - `proforma`: Updated final cashflow to include non-taxed year 0 incentives (CBI and IBI)
 - `*.jl`: `MinChargeAdd` in `reopt.jl` was only accounting for year zero charges (needs to be lifecycle charges)
-- `REopt_Lite`: Use Django version 2.2.13 (had been 2.2.6)
+- `REopt_API`: Use Django version 2.2.13 (had been 2.2.6)
 - `reo`: Handling the financial scenario's user uploaded critical load series bug
 - `reo`: Fix bug in URDB parsing timestep for TOU rates
 - `reo`: Fix bug in error handling for load profiles with negative non-net loads
