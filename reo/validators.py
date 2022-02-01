@@ -905,7 +905,7 @@ class ValidateNestedInput:
                             break
                     test_data_list.append([name, copy.deepcopy(self.input_dict)])
                     self.update_attribute_value(object_name_path, number, name, good_val)
-                    if dependency_name is not '':
+                    if dependency_name != '':
                         self.update_attribute_value(object_name_path, number, dependency_name, dependency_good_val)
                     
                     

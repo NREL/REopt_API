@@ -27,14 +27,13 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-from django.conf.urls import include, url
+from django.urls import include, re_path, path
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.http import HttpResponse
 from reo.api import Job
 from resilience_stats.api import OutageSimJob
 from tastypie.api import Api
 from reo import views
-from django.urls import path
 from job.api import Job as DevJob
 from futurecosts.api import FutureCostsAPI
 from ghpghx.resources import GHPGHXJob
@@ -67,7 +66,7 @@ def page_not_found(request, url):
 
 # Note the order of the URLs matters for avoiding invalid GET method for v1_api endpoints
 urlpatterns = [
-    url(r'^_health/?$', views.health, name='health'),
+    re_path(r'^_health/?$', views.health, name='health'),
     
     path('v1/', include('reo.urls')),
     path('v1/', include('resilience_stats.urls')),
@@ -75,9 +74,9 @@ urlpatterns = [
     path('v1/', include('load_builder.urls')),
     path('v1/', include('summary.urls')),
     path('v1/', include('ghpghx.urls')),
-    url(r'', include(v1_api.urls), name='job'),
-    url(r'', include(v1_api.urls), name='outagesimjob'),
-    url(r'', include(v1_api.urls), name='ghpghx'),
+    re_path(r'', include(v1_api.urls), name='job'),
+    re_path(r'', include(v1_api.urls), name='outagesimjob'),
+    re_path(r'', include(v1_api.urls), name='ghpghx'),
 
     path('stable/', include('reo.urls')),
     path('stable/', include('resilience_stats.urls')),
@@ -85,18 +84,18 @@ urlpatterns = [
     path('stable/', include('load_builder.urls')),
     path('stable/', include('summary.urls')),
     path('stable/', include('ghpghx.urls')),
-    url(r'', include(stable_api.urls), name='job'),
-    url(r'', include(stable_api.urls), name='outagesimjob'),
+    re_path(r'', include(stable_api.urls), name='job'),
+    re_path(r'', include(stable_api.urls), name='outagesimjob'),
 
     path('dev/', include('job.urls')),
-    url(r'', include(dev_api.urls), name='job'),
+    re_path(r'', include(dev_api.urls), name='job'),
 
     path('dev/', include('futurecosts.urls')),
-    url(r'', include(dev_api.urls), name='futurecosts'),
+    re_path(r'', include(dev_api.urls), name='futurecosts'),
 
-    url(r'', include(stable_api.urls), name='ghpghx'),
+    re_path(r'', include(stable_api.urls), name='ghpghx'),
 
-    url(r'(.*)', page_not_found, name='404'),
+    re_path(r'(.*)', page_not_found, name='404'),
     ]
 
 urlpatterns += staticfiles_urlpatterns()

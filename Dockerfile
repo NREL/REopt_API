@@ -1,4 +1,4 @@
-FROM reopt/py36
+FROM reopt/py38
 
 # Install NREL root certs for machines running on NREL's network.
 ARG NREL_ROOT_CERT_URL_ROOT=""
