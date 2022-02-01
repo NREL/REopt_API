@@ -203,7 +203,7 @@ nested_input_definitions = {
     },
     "webtool_uuid": {
       "type": "str",
-      "description": "The unique ID of a scenario created by the REopt Lite Webtool. Note that this ID can be shared by several REopt Lite API Scenarios (for example when users select a 'Resilience' analysis more than one REopt API Scenario is created)."
+      "description": "The unique ID of a scenario created by the REopt Webtool. Note that this ID can be shared by several REopt API Scenarios (for example when users select a 'Resilience' analysis more than one REopt API Scenario is created)."
     },
     "optimality_tolerance_bau": {
       "type": "float",

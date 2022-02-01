@@ -27,7 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-from numpy import npv
+from numpy_financial import npv as NPV
 from math import log10, ceil
 from reo.models import ErrorModel
 import pandas as pd
@@ -37,7 +37,8 @@ import datetime
 import math
 import geopandas as gpd
 from shapely import geometry as g
-
+# shapely does not work with Python >= 3.9
+# https://github.com/shapely/shapely/issues/1040
 
 def slope(x1, y1, x2, y2):
     return (y2 - y1) / (x2 - x1)
@@ -173,7 +174,7 @@ def setup_capital_cost_incentive(itc_basis, replacement_cost, replacement_year,
     tax_savings_array[1] += itc_basis * itc
 
     # Compute the net present value of the tax savings
-    tax_savings = npv(discount_rate, tax_savings_array)
+    tax_savings = NPV(discount_rate, tax_savings_array)
 
     # Adjust cost curve to account for itc and depreciation savings ($/kW)
     cap_cost_slope = itc_basis - tax_savings + replacement
