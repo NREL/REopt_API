@@ -71,13 +71,11 @@ class TestOffGridSystem(ResourceTestCaseMixin, TestCase):
                     "annual_kwh": 87600.0,
                     "year": 2017,
                     "min_load_met_pct": 1.0,
-                    # "sr_required_pct": 0.1
                   },
                   "PV": {
                     "existing_kw": 0.0,
                     "min_kw": 0.0,
                     "max_kw": 1.0e5,
-                    # "sr_required_pct": 0.25,
                     "installed_cost_us_dollars_per_kw": 1600.0,
                     "om_cost_us_dollars_per_kw": 16.0,
                     "macrs_option_years": 0,
