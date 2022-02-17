@@ -2327,7 +2327,7 @@ nested_input_definitions = {
         "temperature_upper_bound": {
           "type": "float",
           "min": 0.0,
-          "max": 40.0,
+          "max": 100.0,
           "default": 40.0,
           "description": "Maximum allowable indoor air temperature"
         },
