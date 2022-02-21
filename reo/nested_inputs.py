@@ -133,6 +133,29 @@ off_grid_defaults = {
           "type": "bool",
           "default": False,
           "description": "Boolean value for if outage is a major event, which affects the avoided_outage_costs_us_dollars. If True, the avoided outage costs are calculated for a single outage occurring in the first year of the analysis_years. If False, the outage event is assumed to be an average outage event that occurs every year of the analysis period. In the latter case, the avoided outage costs for one year are escalated and discounted using the escalation_pct and offtaker_discount_pct to account for an annually recurring outage. (Average outage durations for certain utility service areas can be estimated using statistics reported on EIA form 861.)"
+        },
+        "sr_required_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.1,
+          "description": "Applies to off-grid scenarios only. Spinning reserve requirement for changes in load in off-grid analyses. Value must be between zero and one, inclusive."
+        },
+        "min_load_met_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.999,
+          "description": "Applies to off-grid scenarios only. Fraction of the load that must be met on an annual energy basis. Value must be between zero and one, inclusive."
+        }
+      },
+      "PV": {
+        "sr_required_pct": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.25,
+          "description": "Applies to off-grid scenarios only. Spinning reserve requirement for PV serving load in off-grid analyses. Value must be between zero and one, inclusive."
         }
       },
       "Storage": {
@@ -170,7 +193,7 @@ off_grid_defaults = {
         },
         "useful_life_years": {
           "type": "float", "min": 0.0, "max": max_years, "default": 10,
-          "description": "Number of years asset can be used for before replacement. A single replacement is considered for off-grid generators."
+          "description": "Applies to off-grid scenarios only. Number of years asset can be used for before replacement. A single replacement is considered for off-grid generators."
         }
       }
     }
@@ -203,7 +226,7 @@ nested_input_definitions = {
     },
     "webtool_uuid": {
       "type": "str",
-      "description": "The unique ID of a scenario created by the REopt Lite Webtool. Note that this ID can be shared by several REopt Lite API Scenarios (for example when users select a 'Resilience' analysis more than one REopt API Scenario is created)."
+      "description": "The unique ID of a scenario created by the REopt Webtool. Note that this ID can be shared by several REopt API Scenarios (for example when users select a 'Resilience' analysis more than one REopt API Scenario is created)."
     },
     "optimality_tolerance_bau": {
       "type": "float",
@@ -591,15 +614,15 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0,
-          "default": 0.999,
-          "description": "Fraction of the load that must be met on an annual energy basis. Value must be between zero and one, inclusive."
+          "default": 1.0,
+          "description": "Applies to off-grid scenarios only. Fraction of the load that must be met on an annual energy basis. Value must be between zero and one, inclusive."
         },
         "sr_required_pct": {
           "type": "float",
           "min": 0.0,
           "max": 1.0,
-          "default": 0.1,
-          "description": "Spinning reserve requirement for changes in load in off-grid analyses. Value must be between zero and one, inclusive."
+          "default": 0.0,
+          "description": "Applies to off-grid scenarios only. Spinning reserve requirement for changes in load in off-grid analyses. Value must be between zero and one, inclusive."
         }
       },
 
@@ -1407,8 +1430,8 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0,
-          "default": 0.25,
-          "description": "Spinning reserve requirement for PV serving load in off-grid analyses. Value must be between zero and one, inclusive."
+          "default": 0.0,
+          "description": "Applies to off-grid scenarios only. Spinning reserve requirement for PV serving load in off-grid analyses. Value must be between zero and one, inclusive."
         }
       },
 

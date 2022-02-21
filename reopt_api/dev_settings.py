@@ -189,6 +189,7 @@ STATIC_URL = '/static/'
 
 APPEND_SLASH = False
 TASTYPIE_ALLOW_MISSING_SLASH = True
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "reopt_api.dev_settings")
 django.setup()

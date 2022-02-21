@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Formatting
 - Use **bold** markup for field and model names (i.e. **outage_start_time_step**)
-- Use `code` markup for  REopt Lite-specific file names, classes and endpoints (i.e `reo/validators.py`)
+- Use `code` markup for  REopt-specific file names, classes and endpoints (i.e `reo/validators.py`)
 - Use _italic_ for code terms (i.e. _list_)
 - Prepend change with tag(s) directing where it is in the repository:  
 `reo`,`proforma`,`resilience_stats`,`*.jl`,`REopt_Lite_API`
@@ -304,7 +304,7 @@ Classify the change according to the following categories:
 - `proforma`: Updated storage to read per kW and per kWh incentives
 - `proforma`: Updated final cashflow to include non-taxed year 0 incentives (CBI and IBI)
 - `*.jl`: `MinChargeAdd` in `reopt.jl` was only accounting for year zero charges (needs to be lifecycle charges)
-- `REopt_Lite_API`: Use Django version 2.2.13 (had been 2.2.6)
+- `REopt_API`: Use Django version 2.2.13 (had been 2.2.6)
 - `reo`: Handling the financial scenario's user uploaded critical load series bug
 - `reo`: Fix bug in URDB parsing timestep for TOU rates
 - `reo`: Fix bug in error handling for load profiles with negative non-net loads
