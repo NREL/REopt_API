@@ -13,9 +13,11 @@ jobs:
     runs-on: ubuntu-18.04
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2    
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          token: ${{ secrets.SUBMODULE_GHX_PULL_KEY }}
+          submodules: recursive            
       - name: Decrypt
         env:
           TRANSCRYPT_PASSWORD: ${{ secrets.TRANSCRYPT_PASSWORD }}
@@ -33,4 +35,4 @@ jobs:
         with:
           time: '150s'
       - name: test
-        run: docker exec reopt_lite_api_celery_1 python manage.py test -v 2 --failfast --no-input
+        run: docker exec reopt_api_celery_1 python manage.py test -v 2 --failfast --no-input
