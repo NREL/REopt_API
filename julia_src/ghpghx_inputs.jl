@@ -42,7 +42,7 @@ Base.@kwdef struct InputsStruct
     simulation_years::Int64  # Number of years for GHP-GHX model
     solver_eft_tolerance_f::Float64  # Tolerance for the EFT error to accept a GHX sizing solution
     solver_eft_tolerance::Float64  # Convert to degC
-    ghx_model::String  # "TESS" or "DST"
+    ghx_model::String  # "TESS" or "DST" (DST is currently not available, pending license agreement)
     dst_ghx_timesteps_per_hour::Int64
     tess_ghx_minimum_timesteps_per_hour::Int64
     max_sizing_iterations::Int64
