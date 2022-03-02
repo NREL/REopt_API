@@ -593,9 +593,17 @@ function add_storage_op_constraints(m, p)
 			sum(m[:dvProductionToStorage][b,t,ts] for t in p.ElectricTechs) + m[:dvGridToStorage][ts]
 	)
 	#Constraint (4m): Dispatch to and from electrical storage is no greater than power capacity (no grid interaction)
+	# Hybrid inverter change: Power capacity >= storage to load + PV to load + generator to storage (no grid interaction) 
+	# Dispatch to and from electrical storage + PV to load is no greater than power capacity (no grid interaction)
+	PVtoBatt = @expression(m, [ts in p.TimeStep],
+					sum(m[:dvProductionToStorage][b, t, ts] for t in m[:PVTechs], b in p.ElecStorage))
+	PVtoCurtail = @expression(m, [ts in p.TimeStep],
+					sum(m[:dvProductionToCurtail][t, ts] for t in m[:PVTechs]))
+	
 	@constraint(m, DischargeLEQCapConNoGridAlt[b in p.ElecStorage, ts in p.TimeStepsWithoutGrid],
-		m[:dvStorageCapPower][b] >= m[:dvDischargeFromStorage][b,ts] +
-			sum(m[:dvProductionToStorage][b,t,ts] for t in p.ElectricTechs)
+		m[:dvStorageCapPower][b] >= m[:dvDischargeFromStorage][b,ts] + # Storage to load
+			sum(m[:dvProductionToStorage][b,t,ts] for t in p.FuelBurningTechs) +  # Generator to Storage
+			sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] for t in m[:PVTechs]) - PVtoBatt[ts] - PVtoCurtail[ts] # PV to load
 	)
 
 	#Constraint (4n)-1: Dispatch to and from thermal storage is no greater than power capacity
@@ -1440,6 +1448,8 @@ function reopt_run(m, p::Parameter)
 			add_no_grid_export_constraint(m, p)
 		end
 	end
+	
+	add_parameters(m, p)
 
 	### Constraint set (1): Fuel Burn Constraints
 	add_fuel_constraints(m, p)
@@ -1513,7 +1523,7 @@ function reopt_run(m, p::Parameter)
 		m[:TotalCPCharges] = 0
 	end
 
-	add_parameters(m, p)
+	
 	add_cost_expressions(m, p)
 	add_export_expressions(m, p)
 	add_util_fixed_and_min_charges(m, p)
