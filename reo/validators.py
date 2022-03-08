@@ -2018,12 +2018,15 @@ class ValidateNestedInput:
         :return: None
         """
 
-        def test_conversion(conversion_function, conversion_function_name, name, value, object_name_path, number, input_isDict, record_errors=True):
+        def test_conversion(conversion_function, conversion_function_name, name, value, object_name_path, number, input_isDict, record_errors=True, list_of_list_inner_conversion_function=None):
             try:
                 series = pd.Series(value)
                 if series.isnull().values.any():
                     raise NotImplementedError
-                new_value = conversion_function(value)
+                if list_of_list_inner_conversion_function == None:
+                    new_value = conversion_function(value)
+                else:
+                    new_value = conversion_function(value, inner_list_conversion_function = list_of_list_inner_conversion_function)
             except ValueError:
                 if record_errors:
                     if input_isDict or input_isDict is None:
@@ -2094,7 +2097,7 @@ class ValidateNestedInput:
                                 # Finally if it is a valid alternate type we set it to be converted to a list at the end
                                 # otherwise we flag an error
                                 try:
-                                    new_value = test_conversion(list_of_list, "list of list", name, value, object_name_path, number, input_isDict, record_errors=False)
+                                    new_value = test_conversion(list_of_list, "list of list", name, value, object_name_path, number, input_isDict, record_errors=False, list_of_list_inner_conversion_function=eval(list_eval_function_name))
                                 except:
                                     isValidAlternative = False
                                     for alternate_data_type in attribute_type:
