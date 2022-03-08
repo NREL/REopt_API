@@ -85,8 +85,8 @@ def list_of_float(input):
 def list_of_str(input):
   return [str(i) for i in input]
 
-def list_of_list(input):
-  return [list(i) for i in input]
+def list_of_list(input, inner_list_conversion_function=list):
+  return [inner_list_conversion_function(i) for i in input]
 
 def list_of_int(input):
   result = []
