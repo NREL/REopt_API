@@ -2101,20 +2101,21 @@ class ValidateNestedInput:
                                 except:
                                     isValidAlternative = False
                                     for alternate_data_type in attribute_type:
-                                        try:
-                                            new_value = eval(alternate_data_type)(value)
-                                            attribute_type = alternate_data_type
-                                            make_array = True
-                                            # In case where the data is not at least a list (i.e. int), make it a list
-                                            # so it will later be made into a list of lists
-                                            if not isinstance(new_value, list):
-                                                make_array_of_array = True
-                                                new_value = new_value
-                                                self.update_attribute_value(object_name_path, number, name, new_value)
-                                            isValidAlternative = True
-                                            break
-                                        except:
-                                            pass
+                                        if alternate_data_type != "list_of_list":
+                                            try:
+                                                new_value = eval(alternate_data_type)(value)
+                                                attribute_type = alternate_data_type
+                                                make_array = True
+                                                # In case where the data is not at least a list (i.e. int), make it a list
+                                                # so it will later be made into a list of lists
+                                                if not isinstance(new_value, list):
+                                                    make_array_of_array = True
+                                                    new_value = new_value
+                                                    self.update_attribute_value(object_name_path, number, name, new_value)
+                                                isValidAlternative = True
+                                                break
+                                            except:
+                                                pass
                                     if isValidAlternative == False:
                                         if input_isDict or input_isDict is None:
                                             self.input_data_errors.append('Could not convert %s (%s) in %s to one of %s' % (
