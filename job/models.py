@@ -1048,7 +1048,7 @@ class ElectricUtilityInputs(BaseModel, models.Model):
             MinValueValidator(1)
             # max value validated in InputValidator b/c it requires Settings.time_steps_per_hour
         ],
-        help_text="Time step that grid outage starts. Must be less than outage_end."
+        help_text="Time step that grid outage starts. Must be less than or equal to outage_end_time_step."
     )
     outage_end_time_step = models.IntegerField(
         null=True,
@@ -1057,7 +1057,7 @@ class ElectricUtilityInputs(BaseModel, models.Model):
             MinValueValidator(1)
             # max value validated in InputValidator b/c it requires Settings.time_steps_per_hour
         ],
-        help_text="Time step that grid outage ends. Must be greater than outage_start."
+        help_text="Time step that grid outage ends. Must be greater than or equal to outage_start_time_step."
     )
     interconnection_limit_kw = models.FloatField(
         validators=[
