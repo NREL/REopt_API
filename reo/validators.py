@@ -997,14 +997,6 @@ class ValidateNestedInput:
                         self.input_data_errors.append(
                             'min_kwh (%s) in %s is larger than the max_kwh value (%s)' % ( real_values.get('min_kwh'), self.object_name_string(object_name_path), real_values.get('max_kwh'))
                             )
-                if object_name_path[-1] in ['LoadProfile']:
-                    if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
-                        if real_values.get('outage_start_hour') >= real_values.get('outage_end_hour'):
-                            self.input_data_errors.append('LoadProfile outage_end_hour must be larger than outage_end_hour and these inputs cannot be equal')
-
-                    if real_values.get('outage_start_time_step') is not None and real_values.get('outage_end_time_step') is not None:
-                        if real_values.get('outage_start_time_step') > real_values.get('outage_end_time_step'):
-                            self.input_data_errors.append('LoadProfile outage_end_time_step must be larger than outage_start_time_step.')
 
     def check_for_nans(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
         """
@@ -1312,8 +1304,8 @@ class ValidateNestedInput:
         if object_name_path[-1] == "LoadProfile":
             if self.isValid:
                 if real_values.get('outage_start_time_step') is not None and real_values.get('outage_end_time_step') is not None:
-                    if real_values.get('outage_start_time_step') >= real_values.get('outage_end_time_step'):
-                        self.input_data_errors.append('LoadProfile outage_start_time_step must be less than outage_end_time_step.')
+                    if real_values.get('outage_start_time_step') > real_values.get('outage_end_time_step'):
+                        self.input_data_errors.append('LoadProfile outage_start_time_step must be less than or equal to outage_end_time_step.')
                     if self.input_dict['Scenario']['time_steps_per_hour'] == 1 and real_values.get('outage_end_time_step') > 8760:
                         self.input_data_errors.append('outage_end_time_step must be <= 8760 when time_steps_per_hour = 1')
                     if self.input_dict['Scenario']['time_steps_per_hour'] == 2 and real_values.get('outage_end_time_step') > 17520:
@@ -1321,6 +1313,8 @@ class ValidateNestedInput:
                     # case of 'time_steps_per_hour' == 4 and outage_end_time_step > 35040 handled by "max" value
 
                 if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
+                    if real_values.get('outage_start_hour') > real_values.get('outage_end_hour'):
+                        self.input_data_errors.append('LoadProfile outage_start_hour must be less than or equal to outage_end_hour.')
                     # the following preserves the original behavior
                     self.update_attribute_value(object_name_path, number, 'outage_start_time_step',
                                                 real_values.get('outage_start_hour') + 1)
@@ -1348,9 +1342,6 @@ class ValidateNestedInput:
                         self.input_data_errors.append((
                             'The length of doe_reference_name and percent_share lists should be equal'
                             ' for constructing hybrid LoadProfile'))
-                if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
-                    if real_values.get('outage_start_hour') == real_values.get('outage_end_hour'):
-                        self.input_data_errors.append('LoadProfile outage_start_hour and outage_end_hour cannot be the same')
                 for lp in ['critical_loads_kw', 'loads_kw']:
                     if real_values.get(lp) not in [None, []]:
                         self.validate_8760(real_values.get(lp), "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'],
