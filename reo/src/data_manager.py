@@ -1137,7 +1137,7 @@ class DataManager:
             bau_grid_to_load_kw -= np.array([pv.existing_kw * x * levelization_factor for x in pv.prod_factor])
 
         #No grid emissions, or pv exporting to grid, during an outage
-        for i in range((self.load.outage_start_time_step or 1) -1, (self.load.outage_end_time_step or 1) -1):
+        for i in range((self.load.outage_start_time_step or 1) -1, (self.load.outage_end_time_step or 0)):
             bau_grid_to_load_kw[i] = 0
 
         #If no net emissions accounting, no credit for RE grid exports:
