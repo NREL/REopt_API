@@ -862,7 +862,7 @@ class DataManager:
                     tech_emissions_factors_PM25.append(float(eval('self.' + tech + '.emissions_factor_lb_PM25_per_gal') / GAL_DIESEL_TO_KWH))
                 elif tech.lower() == 'chp':
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kwh')))
-                    om_cost_us_dollars_per_hr_per_kw_rated.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_hr_per_kw_rated') / MMBTU_TO_KWH))
+                    om_cost_us_dollars_per_hr_per_kw_rated.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_hr_per_kw_rated')))
                     tech_percent_RE.append(float(eval('self.fuel_tariff.chp_fuel_percent_RE')))
                     tech_emissions_factors_CO2.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_mmbtu') / MMBTU_TO_KWH))
                     tech_emissions_factors_NOx.append(float(eval('self.' + tech + '.emissions_factor_lb_NOx_per_mmbtu') / MMBTU_TO_KWH))
