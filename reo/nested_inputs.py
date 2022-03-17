@@ -995,8 +995,8 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e5,
-          "default": 3013.0,  # if the default value of 3013 goes in techs.py, there is a logic to assign actual defaul cost based on 'size_class'
-          "description": "Total upfront installed costs in US dollars/kW. Determined by size_class. For the 'large' (>2MW) size_class the cost is $1,874/kW. For the 'medium commercial' size_class the cost is $4,111/kW. For the 'small commercial' size_class the cost is $4,989/kW and for the 'residential' size_class the cost is $10,792/kW "
+          "default": 3013.0,  # if the default value of 3013 goes in techs.py, there is a logic to assign actual default cost based on 'size_class'
+          "description": "Total upfront installed costs in US dollars/kW. Determined by size_class. For the 'large' (>2MW) size_class the cost is $2,239/kW. For the 'medium commercial' size_class the cost is $2,766/kW. For the 'small commercial' size_class the cost is $4,300/kW and for the 'residential' size_class the cost is $5,675/kW "
         },
         "om_cost_us_dollars_per_kw": {
           "type": "float",
