@@ -27,6 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
+import copy
 
 max_big_number = 1.0e8
 max_incentive = 1.0e10
@@ -2603,3 +2604,70 @@ nested_input_definitions = {
     }
   }
 }
+
+defaults_dict = {
+  2: {
+    "Scenario": {
+      "Site": {
+        "Financial": {
+          "owner_discount_pct": {
+            "default": 0.0564
+          },
+          "offtaker_discount_pct": {
+            "default": 0.0564
+          },
+          "escalation_pct": {
+            "default": 0.019
+          }
+        },
+        "PV": {
+          "installed_cost_us_dollars_per_kw": {
+            "default":  1592.0
+          },
+          "om_cost_us_dollars_per_kw": {
+            "default": 17.0
+          }
+        },
+        "Storage": {
+          "installed_cost_us_dollars_per_kwh": {
+            "default": 388.0
+          },
+          "installed_cost_us_dollars_per_kw": {
+            "default": 775.0
+          },
+          "replace_cost_us_dollars_per_kwh": {
+            "default": 220.0
+          },
+          "replace_cost_us_dollars_per_kw": {
+            "default": 440.0
+          }
+        },
+        "Wind": {
+          "om_cost_us_dollars_per_kw": {
+            "default": 35.0
+          }
+        }
+      }
+    }
+  }
+}
+
+
+def get_input_defs_by_version(version_number):
+  """
+  Fill in new default values based on version_number
+  """
+  nids = copy.deepcopy(nested_input_definitions)
+  if version_number == 1:
+    return nids
+
+  def fill_nested_values(dict_to_fill: dict, vals: dict) -> None:
+    for k,v in vals.items():
+      if isinstance(v, dict):
+        fill_nested_values(dict_to_fill[k], vals[k])
+      else:
+        dict_to_fill[k] = v
+
+  defaults = defaults_dict[version_number]
+  fill_nested_values(nids, defaults)
+  return nids
