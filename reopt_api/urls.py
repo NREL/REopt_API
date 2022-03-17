@@ -37,12 +37,15 @@ from reo import views
 from job.api import Job as DevJob
 from futurecosts.api import FutureCostsAPI
 from ghpghx.resources import GHPGHXJob
-from ghpghx import views as ghp_views
+from reo.api import Job2
 
 v1_api = Api(api_name='v1')
 v1_api.register(Job())
 v1_api.register(OutageSimJob())
 v1_api.register(GHPGHXJob())
+
+v2_api = Api(api_name='v2')
+v2_api.register(Job2())
 
 stable_api = Api(api_name='stable')
 stable_api.register(Job())
@@ -69,6 +72,7 @@ urlpatterns = [
     re_path(r'^_health/?$', views.health, name='health'),
     
     path('v1/', include('reo.urls')),
+    path('v2/', include('reo.urls_v2')),
     path('v1/', include('resilience_stats.urls')),
     path('v1/', include('proforma.urls')),
     path('v1/', include('load_builder.urls')),
@@ -77,6 +81,10 @@ urlpatterns = [
     re_path(r'', include(v1_api.urls), name='job'),
     re_path(r'', include(v1_api.urls), name='outagesimjob'),
     re_path(r'', include(v1_api.urls), name='ghpghx'),
+
+    re_path(r'', include(v2_api.urls), name='job'),
+    path('v2/', include('resilience_stats.urls')),
+    path('v2/', include('proforma.urls')),
 
     path('stable/', include('reo.urls')),
     path('stable/', include('resilience_stats.urls')),
