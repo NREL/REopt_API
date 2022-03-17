@@ -191,7 +191,7 @@ class Job(ModelResource):
                 raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
                                                          content_type='application/json',
                                                          status=500))  # internal server error
-        setup = setup_scenario.s(run_uuid=run_uuid, data=data, api_version=2)
+        setup = setup_scenario.s(run_uuid=run_uuid, data=data, api_version=1)
         call_back = process_results.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version})
         # (use .si for immutable signature, if no outputs were passed from reopt_jobs)
         rjm = run_jump_model.s(data=data)
