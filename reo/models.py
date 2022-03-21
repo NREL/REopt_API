@@ -280,6 +280,7 @@ class FinancialModel(models.Model):
     lcoe_component_other_capex_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
     lcoe_component_om_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
     lcoe_component_other_annual_costs_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
+    total_production_incentive_after_tax = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -505,6 +506,7 @@ class FuelTariffModel(models.Model):
     total_boiler_fuel_cost_bau_us_dollars = models.FloatField(null=True, blank=True)
     total_newboiler_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
     year_one_newboiler_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
+    total_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
