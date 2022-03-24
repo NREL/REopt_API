@@ -59,9 +59,9 @@ function add_continuous_variables(m, p)
         dvSupplementaryThermalProduction[p.CHPTechs, p.TimeStep] >= 0
 		dvSupplementaryFiringCHPSize[p.CHPTechs] >= 0  #X^{\sigma db}_{t}: System size of CHP with supplementary firing [kW]
 		#Offgrid analyses
-		1 >= dvOffgridLoadServedFraction[p.TimeStepsWithoutGrid] >= 0
-		dvSRbatt[p.ElecStorage, p.TimeStepsWithoutGrid] >= 0
-		dvSR[p.TechsProvidingSR, p.TimeStepsWithoutGrid] >= 0
+		1 >= dvOffgridLoadServedFraction[p.TimeStepsWithoutGrid] >= 0 ## added
+		dvSRbatt[p.ElecStorage, p.TimeStepsWithoutGrid] >= 0 ## added
+		dvSR[p.TechsProvidingSR, p.TimeStepsWithoutGrid] >= 0 ## added
     end
 	if !isempty(p.ExportTiers)
 		@variable(m, dvProductionToGrid[p.Tech, p.ExportTiers, p.TimeStep] >= 0)  # X^{ptg}_{tuh}: Exports from electrical production to the grid by technology t in demand tier u during time step h [kW]   (NEW)
@@ -852,13 +852,13 @@ end
 
 function add_spinning_reserve_constraints(m, p)
 	# Calculate spinning reserve required
-	# 1. Production going to load from Techs Providing SR
+	# 1. Production going to load from Techs Providing SR ## added
 	m[:ProductionToLoadSR] = @expression(m, [t in p.TechsProvidingSR, ts in p.TimeStepsWithoutGrid],
 		p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] -
         sum(m[:dvProductionToStorage][b, t, ts] for b in p.ElecStorage) -
         m[:dvProductionToCurtail][t, ts]
 	)
-	# 2. Total SR required by TechsRequiringSR & Load
+	# 2. Total SR required by TechsRequiringSR & Load ## added
 	m[:SRrequired] = @expression(m, [ts in p.TimeStepsWithoutGrid],
 		 sum(m[:ProductionToLoadSR][t,ts] * p.SRrequiredPctTechs[t] for t in p.TechsRequiringSR)
          + p.ElecLoad[ts] * m[:dvOffgridLoadServedFraction][ts] * p.SRrequiredPctLoad
