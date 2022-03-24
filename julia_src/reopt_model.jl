@@ -834,10 +834,10 @@ function add_load_balance_constraints(m, p)
 		for t in p.ElectricTechs) +
         sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
         sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers )/ p.AbsorptionChillerElecCOP +
-		(p.ElecLoad[ts] * m[:dvOffgridLoadServedFraction][ts])
+		(p.ElecLoad[ts] * m[:dvOffgridLoadServedFraction][ts]) ## added
 	)
 
-	if !p.OffGridFlag # fix dvOffgridLoadServedFraction to 100% for "on-grid" analyses
+	if !p.OffGridFlag # fix dvOffgridLoadServedFraction to 100% for "on-grid" analyses ## added this entire if statement
 		for ts in p.TimeStepsWithoutGrid
 			fix(m[:dvOffgridLoadServedFraction][ts], 1.0, force=true)
 		end
@@ -1826,11 +1826,11 @@ function add_null_offgrid_financial_results(m, p, r::Dict)
 end
 
 function add_load_results(m, p, r::Dict)
-	@expression(m, LoadMet[ts in p.TimeStepsWithoutGrid], p.ElecLoad[ts] * m[:dvOffgridLoadServedFraction][ts])
-	r["load_met"] = round.(value.(LoadMet), digits=6)
+	@expression(m, LoadMet[ts in p.TimeStepsWithoutGrid], p.ElecLoad[ts] * m[:dvOffgridLoadServedFraction][ts]) ## added
+	r["load_met"] = round.(value.(LoadMet), digits=6) ## added
 	@expression(m, LoadMetPct, sum(m[:dvOffgridLoadServedFraction][ts] * p.ElecLoad[ts] for ts in p.TimeStepsWithoutGrid) /
-	 		sum(p.ElecLoad))
-	r["load_met_pct"] = round(value(LoadMetPct), digits=6)
+	 		sum(p.ElecLoad)) ## added
+	r["load_met_pct"] = round(value(LoadMetPct), digits=6) ## added
 
 	@expression(m, SRrequiredLoad[ts in p.TimeStepsWithoutGrid], p.ElecLoad[ts] * m[:dvOffgridLoadServedFraction][ts] * p.SRrequiredPctLoad)
 	r["sr_required_load"] = round.(value.(SRrequiredLoad), digits=3)

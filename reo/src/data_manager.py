@@ -1868,12 +1868,12 @@ class DataManager:
             'CHPSupplementaryFireEfficiency': supplementary_firing_efficiency,
             'CapCostSupplementaryFiring': supplementary_firing_capital_cost_per_kw,
             # Offgrid
-            'OffGridFlag': self.off_grid_flag,
-            'TechsRequiringSR': techs_requiring_sr,
-            'TechsProvidingSR': techs_providing_sr,
-            'MinLoadMetPct': self.load.min_load_met_pct,
-            'SRrequiredPctLoad': self.load.sr_required_pct,
-            'SRrequiredPctTechs': sr_required_pct,
+            'OffGridFlag': self.off_grid_flag, ## added
+            'TechsRequiringSR': techs_requiring_sr, ## added
+            'TechsProvidingSR': techs_providing_sr, ## added
+            'MinLoadMetPct': self.load.min_load_met_pct, ## added to electric_load.jl
+            'SRrequiredPctLoad': self.load.sr_required_pct, ## added to electric_load.jl
+            'SRrequiredPctTechs': sr_required_pct, ## added to pv.jl # may need to update
             'OtherCapitalCosts': sf.other_capital_costs_us_dollars,
             'OtherAnnualCosts': sf.other_annual_costs_us_dollars_per_year * pwf_om,
             # Emissions
