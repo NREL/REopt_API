@@ -410,7 +410,7 @@ class ElectricTariffModel(models.Model):
     chp_standby_rate_us_dollars_per_kw_per_month = models.FloatField(blank=True, null=True)
     chp_does_not_reduce_demand_charges = models.BooleanField(null=True, blank=True)
     emissions_region = models.TextField(null=True, blank=True)
-    coincident_peak_load_active_timesteps = ArrayField(ArrayField(models.FloatField(null=True, blank=True), null=True, default=list), null=True, default=list)
+    coincident_peak_load_active_timesteps = ArrayField(ArrayField(models.IntegerField(null=True, blank=True), null=True, default=list), null=True, default=list)
     coincident_peak_load_charge_us_dollars_per_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, default=list)
     emissions_factor_CO2_pct_decrease = models.FloatField(null=True, blank=True)
     emissions_factor_NOx_pct_decrease = models.FloatField(null=True, blank=True)
