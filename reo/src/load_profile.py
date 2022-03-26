@@ -763,8 +763,8 @@ class LoadProfile(BuiltInProfile):
                                     self.time_steps_per_hour)
 
             if bau_sustained_time_steps > 0:  # include critical load in bau load for the time that it can be met
-                self.bau_load_list[outage_start_time_step:outage_start_time_step+bau_sustained_time_steps] = \
-                    critical_loads_kw[outage_start_time_step:outage_start_time_step+bau_sustained_time_steps]
+                self.bau_load_list[outage_start_time_step - 1:outage_start_time_step + bau_sustained_time_steps - 1] = \
+                    critical_loads_kw[outage_start_time_step - 1:outage_start_time_step + bau_sustained_time_steps - 1]
 
         # resilience_check_flag: True if existing diesel and/or PV can sustain critical load during outage
         self.outage_start_time_step = outage_start_time_step
