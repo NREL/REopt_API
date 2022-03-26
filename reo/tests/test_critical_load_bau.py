@@ -46,6 +46,39 @@ class CriticalLoadBAUTests(ResourceTestCaseMixin, TestCase):
     def get_response(self, data):
         return self.api_client.post(self.reopt_base, format='json', data=data)
 
+    def test_critical_load_bau_can_sustain_part_outage(self):
+        """
+        Test scenario with
+        - outage_start_time_step: 5196
+        - outage_end_time_step: 5244
+        - existing diesel generator 2001 kW
+        - available fuel 1000000000 gallons
+        """
+        test_post = os.path.join('reo', 'tests', 'posts', 'critical_load_bau_can_sustain_part_outage.json')
+        nested_data = json.load(open(test_post, 'rb'))
+
+        resp = self.get_response(data=nested_data)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+        d = ModelManager.make_response(run_uuid=run_uuid)
+        c = nested_to_flat(d['outputs'])
+        c['resilience_check_flag'] = d['outputs']['Scenario']['Site']['LoadProfile']['resilience_check_flag']
+        c['bau_sustained_time_steps'] = d['outputs']['Scenario']['Site']['LoadProfile']['bau_sustained_time_steps']
+
+        d_expected = dict()
+        d_expected['status'] = 'optimal'
+        d_expected['year_one_energy_cost_bau'] = 1458525.98
+        d_expected['resilience_check_flag'] = False
+        d_expected['bau_sustained_time_steps'] = 22
+
+        try:
+            check_common_outputs(self, c, d_expected)
+        except:
+            print("Run {} expected outputs may have changed.".format(run_uuid))
+            print("Error message: {}".format(d['messages']['errors']))
+            raise
+
     def test_critical_load_bau_can_sustain_outage(self):
         """
         Test scenario with
@@ -95,5 +128,5 @@ class CriticalLoadBAUTests(ResourceTestCaseMixin, TestCase):
             check_common_outputs(self, c, d_expected)
         except:
             print("Run {} expected outputs may have changed.".format(run_uuid))
-            print("Error message: {}".format(d['messages']))
+            print("Error message: {}".format(d['messages']['errors']))
             raise
