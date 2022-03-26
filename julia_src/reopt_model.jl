@@ -1411,6 +1411,24 @@ function reopt(model::JuMP.AbstractModel, model_inputs::Dict)
 
 	results = reopt_run(model, p)
 	results["julia_input_construction_seconds"] = t
+	MOI.compute_conflict!(backend(model))
+	if MOI.get(backend(model), MOI.ConflictStatus()) == MOI.CONFLICT_FOUND
+		for (name, obj) in model.obj_dict
+			if typeof(obj) <: ConstraintRef
+				if MOI.get(model, MOI.ConstraintConflictStatus(), obj) == MOI.IN_CONFLICT
+					@info obj
+				end
+			elseif typeof(obj) <: JuMP.Containers.DenseAxisArray || typeof(obj) <: JuMP.Containers.SparseAxisArray
+				for elem in obj
+					if typeof(elem) <: ConstraintRef
+						if MOI.get(model, MOI.ConstraintConflictStatus(), elem) == MOI.IN_CONFLICT
+							@info elem
+						end
+					end
+				end
+			end
+		end
+	end
 	return results
 end
 
@@ -1551,7 +1569,7 @@ function reopt_run(m, p::Parameter)
     elseif termination_status(m) == MOI.OPTIMAL
         results["status"] = "optimal"
     elseif termination_status(m) == MOI.INFEASIBLE || termination_status(m) == MOI.INFEASIBLE_OR_UNBOUNDED
-        results["status"] = "infeasible"
+		results["status"] = "infeasible"
     else
     	@warn "not optimal status: $(termination_status(m))"
 		results["status"] = "not optimal"
