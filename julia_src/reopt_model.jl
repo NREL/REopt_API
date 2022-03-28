@@ -850,7 +850,7 @@ function add_load_balance_constraints(m, p)
 end
 
 
-function add_spinning_reserve_constraints(m, p)
+function add_spinning_reserve_constraints(m, p) ## added
 	# Calculate spinning reserve required
 	# 1. Production going to load from Techs Providing SR ## added
 	m[:ProductionToLoadSR] = @expression(m, [t in p.TechsProvidingSR, ts in p.TimeStepsWithoutGrid],
@@ -863,19 +863,19 @@ function add_spinning_reserve_constraints(m, p)
 		 sum(m[:ProductionToLoadSR][t,ts] * p.SRrequiredPctTechs[t] for t in p.TechsRequiringSR)
          + p.ElecLoad[ts] * m[:dvOffgridLoadServedFraction][ts] * p.SRrequiredPctLoad
 	)
-	# 3. Spinning reserve provided - battery
+	# 3. Spinning reserve provided - battery ## added
 	@constraint(m, [b in p.ElecStorage, ts in p.TimeStepsWithoutGrid],
 		m[:dvSRbatt][b,ts] <= (m[:dvStorageSOC][b,ts-1] - p.StorageMinSOC[b] * m[:dvStorageCapEnergy][b]) / p.TimeStepScaling - (m[:dvDischargeFromStorage][b,ts] / p.DischargeEfficiency[b])
 	)
 	@constraint(m, [b in p.ElecStorage, ts in p.TimeStepsWithoutGrid],
 		m[:dvSRbatt][b,ts] <= m[:dvStorageCapPower][b] - m[:dvDischargeFromStorage][b,ts] / p.DischargeEfficiency[b]
 	)
-	# 4. Spinning reserve provided - TechsProvidingSR
+	# 4. Spinning reserve provided - TechsProvidingSR ## added
 	@constraint(m, [t in p.TechsProvidingSR, ts in p.TimeStepsWithoutGrid],
 		 m[:dvSR][t,ts] <= (p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvSize][t] -
 		                   m[:ProductionToLoadSR][t,ts]) * (1 - p.SRrequiredPctTechs[t])
 	)
-	# 5. Upper bound on dvSR
+	# 5. Upper bound on dvSR ## added
 	@constraint(m, [t in p.TechsProvidingSR, ts in p.TimeStepsWithoutGrid],
 		m[:dvSR][t,ts] <= m[:binTechIsOnInTS][t,ts] * m[:NewMaxSize][t]
 	)
@@ -883,7 +883,7 @@ function add_spinning_reserve_constraints(m, p)
 		sum(m[:dvSR][t,ts] for t in p.TechsProvidingSR)
         + sum(m[:dvSRbatt][b,ts] for b in p.ElecStorage)
 	)
-	# 6. SR provided must be greater than SR required
+	# 6. SR provided must be greater than SR required ## added
 	@constraint(m, [ts in p.TimeStepsWithoutGrid],
         m[:SRprovided][ts] >= m[:SRrequired][ts]
 	)
