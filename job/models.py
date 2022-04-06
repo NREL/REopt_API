@@ -1048,7 +1048,7 @@ class ElectricUtilityInputs(BaseModel, models.Model):
             MinValueValidator(1)
             # max value validated in InputValidator b/c it requires Settings.time_steps_per_hour
         ],
-        help_text="Time step that grid outage starts. Must be less than outage_end."
+        help_text="Time step that grid outage starts. Must be less than or equal to outage_end_time_step."
     )
     outage_end_time_step = models.IntegerField(
         null=True,
@@ -1057,7 +1057,7 @@ class ElectricUtilityInputs(BaseModel, models.Model):
             MinValueValidator(1)
             # max value validated in InputValidator b/c it requires Settings.time_steps_per_hour
         ],
-        help_text="Time step that grid outage ends. Must be greater than outage_start."
+        help_text="Time step that grid outage ends. Must be greater than or equal to outage_start_time_step."
     )
     interconnection_limit_kw = models.FloatField(
         validators=[
@@ -1089,10 +1089,9 @@ class ElectricUtilityInputs(BaseModel, models.Model):
             error_messages["outage_start_time_step"] = "Got outage_end_time_step but no outage_start_time_step."
 
         if self.outage_start_time_step is not None and self.outage_end_time_step is not None:
-            if self.outage_start_time_step >= self.outage_end_time_step:
+            if self.outage_start_time_step > self.outage_end_time_step:
                 error_messages["outage start/stop time steps"] = \
-                    ('outage_end_time_step must be larger than outage_start_time_step and these inputs '
-                     'cannot be equal.')
+                    ('outage_end_time_step must be larger than or equal to outage_start_time_step.')
 
         if error_messages:
             raise ValidationError(error_messages)

@@ -85,8 +85,8 @@ def list_of_float(input):
 def list_of_str(input):
   return [str(i) for i in input]
 
-def list_of_list(input):
-  return [list(i) for i in input]
+def list_of_list(input, inner_list_conversion_function=list):
+  return [inner_list_conversion_function(i) for i in input]
 
 def list_of_int(input):
   result = []
@@ -574,29 +574,29 @@ nested_input_definitions = {
           "type": "int",
           "min": 0,
           "max": 8759,
-          "depends_on":["outage_end_hour"],
-          "description": "Hour of year that grid outage starts. Must be less than outage_end."
+          "depends_on": ["outage_end_hour"],
+          "description": "Hour of year that grid outage starts. Must be less than or equal to outage_end_hour."
         },
         "outage_end_hour": {
           "type": "int",
           "min": 0,
           "max": 8759,
-          "depends_on":["outage_start_hour"],
-          "description": "Hour of year that grid outage ends. Must be greater than outage_start."
+          "depends_on": ["outage_start_hour"],
+          "description": "Hour of year that grid outage ends. Must be greater than or equal to outage_start_hour."
         },
         "outage_start_time_step": {
           "type": "int",
           "min": 1,
           "max": 35040,
           "depends_on": ["outage_end_time_step"],
-          "description": "Time step that grid outage starts. Must be less than outage_end."
+          "description": "Time step that grid outage starts. Must be less than or equal to outage_end_time_step."
         },
         "outage_end_time_step": {
           "type": "int",
           "min": 1,
           "max": 35040,
           "depends_on": ["outage_start_time_step"],
-          "description": "Time step that grid outage ends. Must be greater than outage_start."
+          "description": "Time step that grid outage ends. Must be greater than or equal to outage_start_time_step."
         },
         "critical_load_pct": {
           "type": "float",
