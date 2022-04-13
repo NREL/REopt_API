@@ -86,7 +86,7 @@ urlpatterns = [
     path('v2/', include('resilience_stats.urls')),
     path('v2/', include('proforma.urls')),
 
-    path('stable/', include('reo.urls')),
+    path('stable/', include('reo.urls_v2')),
     path('stable/', include('resilience_stats.urls')),
     path('stable/', include('proforma.urls')),
     path('stable/', include('load_builder.urls')),
