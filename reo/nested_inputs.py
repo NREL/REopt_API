@@ -433,7 +433,7 @@ nested_input_definitions = {
         "other_capital_costs_us_dollars": {
           "type": "float",
           "min": 0.0,
-          "max": max_big_number,
+          "max": 1.0e10,
           "default": 0,
           "description": "Other capital costs associated with the distributed energy system project. These can include land purchase costs, distribution network costs, powerhouse or battery container structure costs, and pre-operating expenses. These costs will be incorporated in the life cycle cost and levelized cost of electricity calculations."
         },
