@@ -1982,13 +1982,13 @@ class WindOutputs(BaseModel, models.Model):
     lcoe_per_kwh = models.FloatField(null=True, blank=True)
 
 
-class StorageInputs(BaseModel, models.Model):
-    key = "Storage"
+class ElectricStorageInputs(BaseModel, models.Model):
+    key = "ElectricStorage"
 
     meta = models.OneToOneField(
         APIMeta,
         on_delete=models.CASCADE,
-        related_name="StorageInputs",
+        related_name="ElectricStorageInputs",
         primary_key=True
     )
 
@@ -2185,12 +2185,12 @@ class StorageInputs(BaseModel, models.Model):
     )
 
 
-class StorageOutputs(BaseModel, models.Model):
-    key = "StorageOutputs"
+class ElectricStorageOutputs(BaseModel, models.Model):
+    key = "ElectricStorageOutputs"
     meta = models.OneToOneField(
         APIMeta,
         on_delete=models.CASCADE,
-        related_name="StorageOutputs",
+        related_name="ElectricStorageOutputs",
         primary_key=True
     )
     size_kw = models.FloatField(null=True, blank=True)
@@ -2200,6 +2200,12 @@ class StorageOutputs(BaseModel, models.Model):
         blank=True, default=list
     )
     year_one_to_load_series_kw = ArrayField(
+        models.FloatField(null=True, blank=True),
+        blank=True, default=list
+    )
+    initial_capital_cost = models.FloatField(null=True, blank=True)
+    maintenance_cost = models.FloatField(null=True, blank=True)
+    state_of_health = ArrayField(
         models.FloatField(null=True, blank=True),
         blank=True, default=list
     )
