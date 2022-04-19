@@ -68,7 +68,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
                 "annual_kwh": 10000000.0,
                 "year": 2017
             },
-            "Storage": {
+            "ElectricStorage": {
                 "total_rebate_per_kw": 100.0,
                 "macrs_option_years": 5,
                 "can_grid_charge": True,
@@ -105,6 +105,6 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(results["Financial"]["lcc"], 1.240037e7, places=-3)
         self.assertAlmostEqual(results["Financial"]["lcc_bau"], 12766397, places=-3)
         self.assertAlmostEqual(results["PV"]["size_kw"], 216.667, places=1)
-        self.assertAlmostEqual(results["Storage"]["size_kw"], 55.9, places=1)
-        self.assertAlmostEqual(results["Storage"]["size_kwh"], 78.9, places=1)
+        self.assertAlmostEqual(results["ElectricStorage"]["size_kw"], 55.9, places=1)
+        self.assertAlmostEqual(results["ElectricStorage"]["size_kwh"], 78.9, places=1)
 
