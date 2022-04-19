@@ -1,7 +1,7 @@
 using HTTP, JSON, JuMP
 import Xpress
 include("REopt.jl")
-import REoptLite
+import REopt as reoptjl
 include("GHPGHX.jl")
 using .GHPGHX
 
@@ -67,7 +67,7 @@ function reopt(req::HTTP.Request)
     error_response = Dict()
     results = Dict()
     try
-        results = REoptLite.run_reopt(ms, d)
+        results = reoptjl.run_reopt(ms, d)
     catch e
         @error "Something went wrong in the Julia code!" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
