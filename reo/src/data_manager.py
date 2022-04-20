@@ -96,8 +96,6 @@ class DataManager:
         self.include_climate_in_objective = None
         self.include_health_in_objective = None
 
-        #Resource Adeqacy
-        self.resource_adequacy = None
 
         # following attributes used to pass data to process_results.py
         # If we serialize the python classes then we could pass the objects between Celery tasks
@@ -1664,24 +1662,12 @@ class DataManager:
                                                 self.elec_tariff.net_metering_limit_kw)
 
         if self.resource_adequacy is not None:
-            ra_event_start_times = self.resource_adequacy.ra_event_start_times #dict
-            ra_lookback_periods = {}
-            for key in self.resource_adequacy.ra_lookback_periods:
-                ra_lookback_periods[key] = []
-                for lst in self.resource_adequacy.ra_lookback_periods[key]:
-                    ra_lookback_periods[key].append([int(i) for i in lst])
-
-            ra_moo_hours = self.resource_adequacy.ra_moo_hours #int
-            ra_lookback_days = self.resource_adequacy.ra_lookback_days #int
-            ra_demand_pricing = self.resource_adequacy.ra_demand_pricing #list
-            ra_energy_pricing = self.resource_adequacy.ra_energy_pricing #list
+            ra_pricing = self.resource_adequacy.ra_pricing #list
+            ra_flexload_baseline = self.resource_adequacy.ra_flexload_baseline
+            
         else:
-            ra_event_start_times = {1:[]}
-            ra_lookback_periods = {1:[]}
-            ra_moo_hours = 0
-            ra_lookback_days = 0
-            ra_demand_pricing = {1:0}
-            ra_energy_pricing = []
+            ra_pricing = []
+            ra_flexload_baseline = []
 
         # Populate heating (convert to kw/kwh) and cooling loads with zeros if not included in model.
         # Combine heating load for space heating and DHW
@@ -1952,12 +1938,8 @@ class DataManager:
             'ElectricDerate': electric_derate,
             'TechsByNMILRegime': TechsByNMILRegime,
             'TechsCannotCurtail': techs_cannot_curtail,
-            'RaEventStartTimes': ra_event_start_times,
-            'RaLookbackPeriods': ra_lookback_periods,
-            'RaMooHours': ra_moo_hours,
-            'RaLookbackDays': ra_lookback_days,
-            'RaMonthlyPrice': ra_demand_pricing,
-            'RaEnergyPrice': ra_energy_pricing,
+            'RaPrice': ra_pricing,
+            'RaFlexloadBaseline': ra_flexload_baseline,
             "GridEmissionsFactor_CO2": grid_emissions_factor_CO2,
             "GridEmissionsFactor_NOx": grid_emissions_factor_NOx,
             "GridEmissionsFactor_SO2": grid_emissions_factor_SO2,

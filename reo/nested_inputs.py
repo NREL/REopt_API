@@ -880,29 +880,18 @@ nested_input_definitions = {
           "depends_on":["coincident_peak_load_active_timesteps"],
           "description": "Optional coincident peak demand charge that is applied to the max load during the timesteps specified in coincident_peak_load_active_timesteps"
         },
-        "ra_energy_pricing_us_dollars_per_kwh": {
+        "ra_pricing_us_dollars_per_kwh": {
           "type": "list_of_float",
           "min": -1000,
           "max": 10000,
           "description": "8760 of pricing for energy portion of resource adequacy (RA) (must be same year as the load year)"
         },
-        "ra_demand_pricing_us_dollars_per_kw": {
+        "ra_flexload_baseline_kw": {
           "type": "list_of_float",
-          "description": "Array (length of 12) of monthly value for resource adequacy (RA) provision based on $/kW"
+          "min": -1000,
+          "max": 10000,
+          "description": "8760 of kW for HVAC and or WH loads if they were not flexible to act as a baseline for flex loads"
         },
-        "ra_event_day_flags_boolean": {
-          "type": "list_of_float", #TODO change to list_of_int when that's implemented in validators
-          "min": 0,
-          "max": 1,
-          "description": "8760 of 1/0's flagging whether an hour is in an event day (must be same year as the load year)"
-        },
-        "ra_lookback_days": {
-          "type": "int",
-          "min": 0,
-          "max": 30,
-          "default": 10,
-          "description": "Number of lookback days the baseline calculated over"
-		}
       },
 
       "FuelTariff": {

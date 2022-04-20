@@ -325,7 +325,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
                                 time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
                                 **inputs_dict['Site']['ElectricTariff'])
 
-        if inputs_dict['Site']['ElectricTariff'].get('ra_event_day_flags_boolean') is not None:
+        if inputs_dict['Site']['ElectricTariff'].get('ra_pricing_us_dollars_per_kwh') is not None:
             resource_adequacy = ResourceAdequacy(dfm=dfm, run_id=run_uuid,
                                 load_year=inputs_dict['Site']['LoadProfile']['year'],
                                  **inputs_dict['Site']['ElectricTariff'])

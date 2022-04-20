@@ -217,13 +217,8 @@ Base.@kwdef struct Parameter
      Location::UnitRange
 
     # RA Additions
-     RaEventStartTimes::Dict # Dict of lists, with each nested list containing the event start hours for that monthly
-     RaLookbackPeriods::Dict # Dict of lists, with each nested list containing lists of lookback hours for the associated timestep in RaEventStartTimes
-     RaMooHours:: Int64
-     RaLookbackDays:: Int64
-     RaMonthlyPrice::Dict
-     RaEnergyPrice::Array{Float64, 1}
-	 AddSOCIncentive::Int64
+     RaFlexloadBaseline:: Array{Float64, 1}
+     RaPrice::Array{Float64, 1}
 
     # Annual RE parameters
      TechPercentRE::AxisArray

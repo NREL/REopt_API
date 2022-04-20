@@ -1081,35 +1081,15 @@ nested_output_definitions = {
                   "description": "Total tons of PM2.5 emissions associated with the site's grid-purchased electricity over the analysis period in the BAU scenario. If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. Otherwise, it accounts for emissions offset from any export to the grid.",
                   "units": "metric tons"
                 },
-                "monthly_ra_reduction_kw": {
+                "ra_hourly_reductions": {
                   "type": "list_of_float",
-                  "decription": "Amount of Resource Adequacy (RA) reduction (kW) which occurs in each month where RA is called. Monthly RA is the minimum of the reductions across all events in a month.",
-                  "units": "kW by month"
+                  "decription": "8760 with amount of Resource Adequacy (RA) reduction (kW) which occurs in each hour where capacity prices are nonzero. Hours where capacity prices are zero have a reduction of 0.",
+                  "units": "kWh"
                 },
-                "monthly_ra_energy_total_value" : {
+                "ra_prices": {
                   "type": "list_of_float",
-                  "description": "Total (over project lifetime) monthly RA payments from participation in wholesale energy market. Does not consider whether participation occurs in a given month",
-                  "units" : "$"
-                },
-                "monthly_ra_dr_total_value" : {
-                  "type": "list_of_float",
-                  "description": "Total (over project lifetime) monthly RA payments from providing capacity. Does not consider whether participation occurs in given month",
-                  "units" : "$"
-                }, 
-                "monthly_ra_total_value" : {
-                  "type" : "list_of_float",
-                  "description" : "Total (over project lifetime) monthly Resource Adequacy (RA) value from providing capacity and energy. Is zero for months where participation does not occur",
-                  "units" : "$"
-                },
-                "event_hours" : {
-                  "type" : "list_of_int",
-                  "description" : "Each hour which is a Resource Adequacy (RA) event hour",
-                  "units" : "hour index"
-                }, 
-                "hourly_reductions" : {
-                  "type" : "list_of_float",
-                  "description" : "Resource Adequacy (RA) load reduction (kWh) by event hour",
-                  "units" : "kWh"
+                  "decription": "8760 of capacity prices to calculate RA values",
+                  "units": "kWh"
                 },
                 "total_ra_value" : {
                   "type" : float,
