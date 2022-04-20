@@ -49,7 +49,6 @@ def process_results(results: dict, run_uuid: str) -> None:
         elif isinstance(results["PV"], list):
             for pvdict in results["PV"]:
                 PVOutputs.create(meta=meta, **pvdict).save()
-    from celery.contrib import rdb; rdb.set_trace()
     if "ElectricStorage" in results.keys():
         ElectricStorageOutputs.create(meta=meta, **results["ElectricStorage"]).save()
     if "Generator" in results.keys():
