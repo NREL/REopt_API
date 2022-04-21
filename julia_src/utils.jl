@@ -220,6 +220,9 @@ Base.@kwdef struct Parameter
      RaFlexloadBaseline:: Array{Float64, 1}
      RaPrice::Array{Float64, 1}
 
+
+    AddSOCIncentive::Int64
+     
     # Annual RE parameters
      TechPercentRE::AxisArray
      MinAnnualPercentREElec::Union{Float64,Nothing}

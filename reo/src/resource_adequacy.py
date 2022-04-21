@@ -32,7 +32,7 @@ log = logging.getLogger(__name__)
 
 class ResourceAdequacy(object):
 
-    def __init__(self, dfm, run_id, load_year, ra_pricing_us_dollars_per_kwh=None, ra_flexload_baseline_kw=None, **kwargs):
+    def __init__(self, dfm, run_id, load_year, ra_pricing_us_dollars_per_kwh= [], ra_flexload_baseline_kw= [], **kwargs):
         """
         Re object for creating inputs to REopt
         :param dfm: Object, DataManager

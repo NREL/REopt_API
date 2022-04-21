@@ -1142,7 +1142,7 @@ function add_resource_adequacy(m, p)
 
     if p.UseFlexLoadsModel
         m[:raReduction] = @expression(m, [ts in p.TimeStep],
-        [p.RaFlexLoadBaseline[ts] - sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t, ts] * (1 + p.FanPowerRatio[t]) for t in ["AC", "HP"]) +            
+        [p.RaFlexloadBaseline[ts] - sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t, ts] * (1 + p.FanPowerRatio[t]) for t in ["AC", "HP"]) +            
             sum(m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage) - m[:dvGridToStorage][ts] for ts in p.TimeStep ] .* event_hour_flag)
 
     else
@@ -1672,7 +1672,7 @@ function reopt_run(m, p::Parameter)
 	add_export_expressions(m, p)
 	add_util_fixed_and_min_charges(m, p)
 
-	if p.RaLookbackDays != 0
+	if !isempty(p.RaPrice) 
 		add_resource_adequacy(m, p)
 	else
 		m[:TotalRaValue] = 0
@@ -1822,10 +1822,11 @@ function reopt_results(m, p, r::Dict)
 	end
 
 	#resource adequacy results
-	if p.UseRaModel 
+	if !isempty(p.RaPrice)
 		add_ra_results(m, p, r)
 	else
-		r["ra_reductions"] = []
+		r["ra_hourly_reductions"] = []
+		r["total_ra_value "] = 0.0
 	end
 	## end NOVA addition
 
@@ -2687,7 +2688,5 @@ end
 # Output resource adequacy results
 function add_ra_results(m, p, r::Dict)
 	r["ra_hourly_reductions"] = value.(m[:raReduction])
-	r["total_ra_value "] = value.(m[:TotalRaValue])
-	r["ra_prices"] = p.RaPrice
 	nothing
 end
