@@ -621,7 +621,12 @@ nested_output_definitions = {
                   "type": "float",
                   "description": ("Other annual cost component of the LCOE in USD/kWh. In off-grid analyses only."),
                   "units": "$"
-                }
+                },
+                "total_production_incentive_after_tax": {
+                   "type": "float",
+                   "description": ("Present value of all production-based incentives, after tax."),
+                   "units": "$"
+                 }
               },
 
               "PV": {
@@ -1098,7 +1103,12 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Year one NewBoiler fuel cost, before-tax",
                   "units": "$"
-                }
+                },
+                "total_fuel_cost_us_dollars": {
+                   "type": float,
+                   "description": "Total fuel cost of all fuels burned over the lifecycle, after-tax",
+                   "units": "$"
+                 }
               },
 
               "Generator": {

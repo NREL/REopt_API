@@ -30,7 +30,8 @@
 import numpy as np
 import pandas as pd
 from .urdb_logger import log_urdb_errors
-from .nested_inputs import nested_input_definitions, list_of_float, list_of_str, list_of_int, list_of_list, list_of_dict, off_grid_defaults
+from .nested_inputs import nested_input_definitions, list_of_float, list_of_str, list_of_int, \
+    list_of_list, list_of_dict, off_grid_defaults, get_input_defs_by_version
 #Note: list_of_float is actually needed
 import os
 import csv
@@ -477,9 +478,12 @@ class ValidateNestedInput:
                 'diesel_oil':0.0
             }
 
-    def __init__(self, input_dict, ghpghx_inputs_validation_errors=None):
+    def __init__(self, input_dict, ghpghx_inputs_validation_errors=None, api_version=1):
         self.list_or_dict_objects = ['PV']
-        self.nested_input_definitions = copy.deepcopy(nested_input_definitions)
+        if api_version == 1:
+            self.nested_input_definitions = copy.deepcopy(nested_input_definitions)
+        else:
+            self.nested_input_definitions = get_input_defs_by_version(api_version)
         self.input_data_errors = []
         self.urdb_errors = []
         self.ghpghx_inputs_errors = ghpghx_inputs_validation_errors
@@ -997,14 +1001,6 @@ class ValidateNestedInput:
                         self.input_data_errors.append(
                             'min_kwh (%s) in %s is larger than the max_kwh value (%s)' % ( real_values.get('min_kwh'), self.object_name_string(object_name_path), real_values.get('max_kwh'))
                             )
-                if object_name_path[-1] in ['LoadProfile']:
-                    if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
-                        if real_values.get('outage_start_hour') >= real_values.get('outage_end_hour'):
-                            self.input_data_errors.append('LoadProfile outage_end_hour must be larger than outage_end_hour and these inputs cannot be equal')
-
-                    if real_values.get('outage_start_time_step') is not None and real_values.get('outage_end_time_step') is not None:
-                        if real_values.get('outage_start_time_step') > real_values.get('outage_end_time_step'):
-                            self.input_data_errors.append('LoadProfile outage_end_time_step must be larger than outage_start_time_step.')
 
     def check_for_nans(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
         """
@@ -1312,8 +1308,8 @@ class ValidateNestedInput:
         if object_name_path[-1] == "LoadProfile":
             if self.isValid:
                 if real_values.get('outage_start_time_step') is not None and real_values.get('outage_end_time_step') is not None:
-                    if real_values.get('outage_start_time_step') >= real_values.get('outage_end_time_step'):
-                        self.input_data_errors.append('LoadProfile outage_start_time_step must be less than outage_end_time_step.')
+                    if real_values.get('outage_start_time_step') > real_values.get('outage_end_time_step'):
+                        self.input_data_errors.append('LoadProfile outage_start_time_step must be less than or equal to outage_end_time_step.')
                     if self.input_dict['Scenario']['time_steps_per_hour'] == 1 and real_values.get('outage_end_time_step') > 8760:
                         self.input_data_errors.append('outage_end_time_step must be <= 8760 when time_steps_per_hour = 1')
                     if self.input_dict['Scenario']['time_steps_per_hour'] == 2 and real_values.get('outage_end_time_step') > 17520:
@@ -1321,6 +1317,8 @@ class ValidateNestedInput:
                     # case of 'time_steps_per_hour' == 4 and outage_end_time_step > 35040 handled by "max" value
 
                 if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
+                    if real_values.get('outage_start_hour') > real_values.get('outage_end_hour'):
+                        self.input_data_errors.append('LoadProfile outage_start_hour must be less than or equal to outage_end_hour.')
                     # the following preserves the original behavior
                     self.update_attribute_value(object_name_path, number, 'outage_start_time_step',
                                                 real_values.get('outage_start_hour') + 1)
@@ -1348,9 +1346,6 @@ class ValidateNestedInput:
                         self.input_data_errors.append((
                             'The length of doe_reference_name and percent_share lists should be equal'
                             ' for constructing hybrid LoadProfile'))
-                if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
-                    if real_values.get('outage_start_hour') == real_values.get('outage_end_hour'):
-                        self.input_data_errors.append('LoadProfile outage_start_hour and outage_end_hour cannot be the same')
                 for lp in ['critical_loads_kw', 'loads_kw']:
                     if real_values.get(lp) not in [None, []]:
                         self.validate_8760(real_values.get(lp), "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'],
@@ -2018,12 +2013,15 @@ class ValidateNestedInput:
         :return: None
         """
 
-        def test_conversion(conversion_function, conversion_function_name, name, value, object_name_path, number, input_isDict, record_errors=True):
+        def test_conversion(conversion_function, conversion_function_name, name, value, object_name_path, number, input_isDict, record_errors=True, list_of_list_inner_conversion_function=None):
             try:
                 series = pd.Series(value)
                 if series.isnull().values.any():
                     raise NotImplementedError
-                new_value = conversion_function(value)
+                if list_of_list_inner_conversion_function == None:
+                    new_value = conversion_function(value)
+                else:
+                    new_value = conversion_function(value, inner_list_conversion_function = list_of_list_inner_conversion_function)
             except ValueError:
                 if record_errors:
                     if input_isDict or input_isDict is None:
@@ -2094,24 +2092,25 @@ class ValidateNestedInput:
                                 # Finally if it is a valid alternate type we set it to be converted to a list at the end
                                 # otherwise we flag an error
                                 try:
-                                    new_value = test_conversion(list_of_list, "list of list", name, value, object_name_path, number, input_isDict, record_errors=False)
+                                    new_value = test_conversion(list_of_list, "list of list", name, value, object_name_path, number, input_isDict, record_errors=False, list_of_list_inner_conversion_function=eval(list_eval_function_name))
                                 except:
                                     isValidAlternative = False
                                     for alternate_data_type in attribute_type:
-                                        try:
-                                            new_value = eval(alternate_data_type)(value)
-                                            attribute_type = alternate_data_type
-                                            make_array = True
-                                            # In case where the data is not at least a list (i.e. int), make it a list
-                                            # so it will later be made into a list of lists
-                                            if not isinstance(new_value, list):
-                                                make_array_of_array = True
-                                                new_value = new_value
-                                                self.update_attribute_value(object_name_path, number, name, new_value)
-                                            isValidAlternative = True
-                                            break
-                                        except:
-                                            pass
+                                        if alternate_data_type != "list_of_list":
+                                            try:
+                                                new_value = eval(alternate_data_type)(value)
+                                                attribute_type = alternate_data_type
+                                                make_array = True
+                                                # In case where the data is not at least a list (i.e. int), make it a list
+                                                # so it will later be made into a list of lists
+                                                if not isinstance(new_value, list):
+                                                    make_array_of_array = True
+                                                    new_value = new_value
+                                                    self.update_attribute_value(object_name_path, number, name, new_value)
+                                                isValidAlternative = True
+                                                break
+                                            except:
+                                                pass
                                     if isValidAlternative == False:
                                         if input_isDict or input_isDict is None:
                                             self.input_data_errors.append('Could not convert %s (%s) in %s to one of %s' % (
