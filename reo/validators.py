@@ -30,7 +30,8 @@
 import numpy as np
 import pandas as pd
 from .urdb_logger import log_urdb_errors
-from .nested_inputs import nested_input_definitions, list_of_float, list_of_str, list_of_int, list_of_list, list_of_dict, off_grid_defaults
+from .nested_inputs import nested_input_definitions, list_of_float, list_of_str, list_of_int, \
+    list_of_list, list_of_dict, off_grid_defaults, get_input_defs_by_version
 #Note: list_of_float is actually needed
 import os
 import csv
@@ -477,9 +478,12 @@ class ValidateNestedInput:
                 'diesel_oil':0.0
             }
 
-    def __init__(self, input_dict, ghpghx_inputs_validation_errors=None):
+    def __init__(self, input_dict, ghpghx_inputs_validation_errors=None, api_version=1):
         self.list_or_dict_objects = ['PV']
-        self.nested_input_definitions = copy.deepcopy(nested_input_definitions)
+        if api_version == 1:
+            self.nested_input_definitions = copy.deepcopy(nested_input_definitions)
+        else:
+            self.nested_input_definitions = get_input_defs_by_version(api_version)
         self.input_data_errors = []
         self.urdb_errors = []
         self.ghpghx_inputs_errors = ghpghx_inputs_validation_errors
