@@ -59,7 +59,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         tech_to_load = list()
         for tech in list_to_load:
             if tech is not None:
-                tech_to_load = [sum_t + t for sum_t, t in zip(tech_to_load, tech[outage_start:outage_end])]
+                tech_to_load = [sum_t + t for sum_t, t in zip(tech_to_load, tech[outage_start-1:outage_end])]
         return tech_to_load
 
     def test_generator_sizing_with_existing_pv(self):
@@ -123,5 +123,5 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
 
         list_to_load = [generator_to_load, storage_to_load, pv_to_load]
         tech_to_load = self.outage_tech_to_load(list_to_load, outage_start, outage_end)
-        for x, y in zip(critical_load[outage_start:outage_end], tech_to_load):
+        for x, y in zip(critical_load[outage_start-1:outage_end], tech_to_load):
             self.assertAlmostEquals(x, y, places=3)

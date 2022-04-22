@@ -92,7 +92,7 @@ class ScenarioTask(Task):
 
 
 @shared_task(bind=True, base=ScenarioTask)
-def setup_scenario(self, run_uuid, data, raw_post):
+def setup_scenario(self, run_uuid, data, api_version=1):
     """
 
     :param run_uuid:
@@ -315,6 +315,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
                         longitude=inputs_dict['Site'].get('longitude'),
                         time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
                         run_uuid=run_uuid, 
+                        api_version=api_version,
                         **inputs_dict["Site"]["Wind"])
 
             # must propogate these changes back to database for proforma

@@ -280,6 +280,7 @@ class FinancialModel(models.Model):
     lcoe_component_other_capex_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
     lcoe_component_om_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
     lcoe_component_other_annual_costs_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
+    total_production_incentive_after_tax = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -410,7 +411,7 @@ class ElectricTariffModel(models.Model):
     chp_standby_rate_us_dollars_per_kw_per_month = models.FloatField(blank=True, null=True)
     chp_does_not_reduce_demand_charges = models.BooleanField(null=True, blank=True)
     emissions_region = models.TextField(null=True, blank=True)
-    coincident_peak_load_active_timesteps = ArrayField(ArrayField(models.FloatField(null=True, blank=True), null=True, default=list), null=True, default=list)
+    coincident_peak_load_active_timesteps = ArrayField(ArrayField(models.IntegerField(null=True, blank=True), null=True, default=list), null=True, default=list)
     coincident_peak_load_charge_us_dollars_per_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, default=list)
     emissions_factor_CO2_pct_decrease = models.FloatField(null=True, blank=True)
     emissions_factor_NOx_pct_decrease = models.FloatField(null=True, blank=True)
@@ -505,6 +506,7 @@ class FuelTariffModel(models.Model):
     total_boiler_fuel_cost_bau_us_dollars = models.FloatField(null=True, blank=True)
     total_newboiler_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
     year_one_newboiler_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
+    total_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):

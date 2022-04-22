@@ -862,7 +862,7 @@ class DataManager:
                     tech_emissions_factors_PM25.append(float(eval('self.' + tech + '.emissions_factor_lb_PM25_per_gal') / GAL_DIESEL_TO_KWH))
                 elif tech.lower() == 'chp':
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kwh')))
-                    om_cost_us_dollars_per_hr_per_kw_rated.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_hr_per_kw_rated') / MMBTU_TO_KWH))
+                    om_cost_us_dollars_per_hr_per_kw_rated.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_hr_per_kw_rated')))
                     tech_percent_RE.append(float(eval('self.fuel_tariff.chp_fuel_percent_RE')))
                     tech_emissions_factors_CO2.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_mmbtu') / MMBTU_TO_KWH))
                     tech_emissions_factors_NOx.append(float(eval('self.' + tech + '.emissions_factor_lb_NOx_per_mmbtu') / MMBTU_TO_KWH))
@@ -1137,7 +1137,7 @@ class DataManager:
             bau_grid_to_load_kw -= np.array([pv.existing_kw * x * levelization_factor for x in pv.prod_factor])
 
         #No grid emissions, or pv exporting to grid, during an outage
-        for i in range((self.load.outage_start_time_step or 1) -1, (self.load.outage_end_time_step or 1) -1):
+        for i in range((self.load.outage_start_time_step or 1) -1, (self.load.outage_end_time_step or 0)):
             bau_grid_to_load_kw[i] = 0
 
         #If no net emissions accounting, no credit for RE grid exports:

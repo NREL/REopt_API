@@ -27,6 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
+import copy
 
 max_big_number = 1.0e8
 max_incentive = 1.0e10
@@ -85,8 +86,8 @@ def list_of_float(input):
 def list_of_str(input):
   return [str(i) for i in input]
 
-def list_of_list(input):
-  return [list(i) for i in input]
+def list_of_list(input, inner_list_conversion_function=list):
+  return [inner_list_conversion_function(i) for i in input]
 
 def list_of_int(input):
   result = []
@@ -433,7 +434,7 @@ nested_input_definitions = {
         "other_capital_costs_us_dollars": {
           "type": "float",
           "min": 0.0,
-          "max": max_big_number,
+          "max": 1.0e10,
           "default": 0,
           "description": "Other capital costs associated with the distributed energy system project. These can include land purchase costs, distribution network costs, powerhouse or battery container structure costs, and pre-operating expenses. These costs will be incorporated in the life cycle cost and levelized cost of electricity calculations."
         },
@@ -575,28 +576,28 @@ nested_input_definitions = {
           "min": 0,
           "max": 8759,
           "depends_on": ["outage_end_hour"],
-          "description": "Hour of year that grid outage starts. Must be less than outage_end."
+          "description": "Hour of year that grid outage starts. Must be less than or equal to outage_end_hour."
         },
         "outage_end_hour": {
           "type": "int",
           "min": 0,
           "max": 8759,
           "depends_on": ["outage_start_hour"],
-          "description": "Hour of year that grid outage ends. Must be greater than outage_start."
+          "description": "Hour of year that grid outage ends. Must be greater than or equal to outage_start_hour."
         },
         "outage_start_time_step": {
           "type": "int",
           "min": 1,
           "max": 35040,
           "depends_on": ["outage_end_time_step"],
-          "description": "Time step that grid outage starts. Must be less than outage_end."
+          "description": "Time step that grid outage starts. Must be less than or equal to outage_end_time_step."
         },
         "outage_end_time_step": {
           "type": "int",
           "min": 1,
           "max": 35040,
           "depends_on": ["outage_start_time_step"],
-          "description": "Time step that grid outage ends. Must be greater than outage_start."
+          "description": "Time step that grid outage ends. Must be greater than or equal to outage_start_time_step."
         },
         "critical_load_pct": {
           "type": "float",
@@ -994,8 +995,8 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e5,
-          "default": 3013.0,  # if the default value of 3013 goes in techs.py, there is a logic to assign actual defaul cost based on 'size_class'
-          "description": "Total upfront installed costs in US dollars/kW. Determined by size_class. For the 'large' (>2MW) size_class the cost is $1,874/kW. For the 'medium commercial' size_class the cost is $4,111/kW. For the 'small commercial' size_class the cost is $4,989/kW and for the 'residential' size_class the cost is $10,792/kW "
+          "default": 3013.0,  # if the default value of 3013 goes in techs.py, there is a logic to assign actual default cost based on 'size_class'
+          "description": "Total upfront installed costs in US dollars/kW. Determined by size_class. For the 'large' (>2MW) size_class the cost is $2,239/kW. For the 'medium commercial' size_class the cost is $2,766/kW. For the 'small commercial' size_class the cost is $4,300/kW and for the 'residential' size_class the cost is $5,675/kW "
         },
         "om_cost_us_dollars_per_kw": {
           "type": "float",
@@ -2603,3 +2604,70 @@ nested_input_definitions = {
     }
   }
 }
+
+defaults_dict = {
+  2: {
+    "Scenario": {
+      "Site": {
+        "Financial": {
+          "owner_discount_pct": {
+            "default": 0.0564
+          },
+          "offtaker_discount_pct": {
+            "default": 0.0564
+          },
+          "escalation_pct": {
+            "default": 0.019
+          }
+        },
+        "PV": {
+          "installed_cost_us_dollars_per_kw": {
+            "default":  1592.0
+          },
+          "om_cost_us_dollars_per_kw": {
+            "default": 17.0
+          }
+        },
+        "Storage": {
+          "installed_cost_us_dollars_per_kwh": {
+            "default": 388.0
+          },
+          "installed_cost_us_dollars_per_kw": {
+            "default": 775.0
+          },
+          "replace_cost_us_dollars_per_kwh": {
+            "default": 220.0
+          },
+          "replace_cost_us_dollars_per_kw": {
+            "default": 440.0
+          }
+        },
+        "Wind": {
+          "om_cost_us_dollars_per_kw": {
+            "default": 35.0
+          }
+        }
+      }
+    }
+  }
+}
+
+
+def get_input_defs_by_version(version_number):
+  """
+  Fill in new default values based on version_number
+  """
+  nids = copy.deepcopy(nested_input_definitions)
+  if version_number == 1:
+    return nids
+
+  def fill_nested_values(dict_to_fill: dict, vals: dict) -> None:
+    for k,v in vals.items():
+      if isinstance(v, dict):
+        fill_nested_values(dict_to_fill[k], vals[k])
+      else:
+        dict_to_fill[k] = v
+
+  defaults = defaults_dict[version_number]
+  fill_nested_values(nids, defaults)
+  return nids
