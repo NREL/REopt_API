@@ -26,9 +26,34 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop - 2022-03-08
+
+# v2.0.0 Default cost updates
+Changing default costs can result in different results for the same inputs. Hence we are making a major version change.
+
+- the release of v2 will make https://developer.nrel.gov/api/reopt/stable = https://developer.nrel.gov/api/reopt/v2
+- if API users do not want results to change / want to use the old default values, then they should use https://developer.nrel.gov/api/reopt/v1
+
+The default values changed are:
+
+- Discount rate from 8.3% to 5.64%
+- Electricity cost escalation rate from 2.3% to 1.9%
+- PV System capital cost ($/kW) from $1600 to $1592
+- PV O&M cost ($/kW/yr) from $16 to $17
+- Battery Energy capacity cost ($/kWh) from $420 to $388
+- Battery Power capacity cost ($/kW AC) from $840 to $775
+- 10 yr Battery Energy capacity replacement cost ($/kWh) from $200 to $220
+- 10 yr Battery Power capacity replacement cost ($/kW AC) from $410 to $440
+- Wind O&M cost ($/kW/yr) from $40 to $35
+- Wind System Capital costs ($/kW)
+
+    - Residential (0-20 kW) from $11950 to $5675
+    - Commercial (21-100 kW) from $7390 to $4300
+    - Midsize (101-999 kW) from $4440 to $2766
+    - Large (>=1000 kW) from $3450 to $2239
+
 ### Patches
 - `reo`: Fix list_of_list conversion in `validators.py` not capturing inner list type. E.g. a 2D list of floats that was supposed to be a 2D list of integers wasn't getting caught.
+
 
 ## v1.9.1 - 2021-12-16
 ### Minor Updates
