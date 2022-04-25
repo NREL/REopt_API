@@ -118,7 +118,7 @@ def results(request, run_uuid):
     try:
         # get all required inputs/outputs
         meta = APIMeta.objects.select_related(
-                "Settings",
+            "Settings",
             'FinancialInputs', 'FinancialOutputs',
             'SiteInputs',
             'ElectricLoadInputs',
