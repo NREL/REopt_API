@@ -1295,15 +1295,6 @@ class ValidateNestedInput:
                 if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_PM25_per_gal') is None:
                     self.update_attribute_value(object_name_path, number, 'emissions_factor_lb_PM25_per_gal', self.fuel_conversion_lb_PM25_per_gal.get('diesel_oil'))
                 
-                if (real_values["max_kw"] > 0 or real_values["existing_kw"] > 0):
-                    # then replace zeros in default burn rate and slope, and set min/max kw values appropriately for
-                    # REopt (which need to be in place before data is saved and passed on to celery tasks)
-                    gen = real_values
-                    m, b = Generator.default_fuel_burn_rate(gen["min_kw"] + gen["existing_kw"])
-                    if gen["fuel_slope_gal_per_kwh"] == 0:
-                        gen["fuel_slope_gal_per_kwh"] = m
-                    if gen["fuel_intercept_gal_per_hr"] == 0:
-                        gen["fuel_intercept_gal_per_hr"] = b
 
         if object_name_path[-1] == "LoadProfile":
             if self.isValid:
