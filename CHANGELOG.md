@@ -26,11 +26,11 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-# "Develop - 2022-04-22"
-
+# v2.0.1
 ### Minor Updates
 ##### Changed
 Removed override of user inputs for `fuel_slope_gal_per_kwh` and `fuel_intercept_gal_per_hr` in validators.py. User inputs for these values will now be used in analysis. If these inputs are not supplied, the default values in nested_inputs.py will be used.
+
 # v2.0.0 Default cost updates
 Changing default costs can result in different results for the same inputs. Hence we are making a major version change.
 
