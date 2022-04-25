@@ -81,6 +81,7 @@ def run_jump_model(data):
     name = 'run_jump_model'
     run_uuid = data['APIMeta']['run_uuid']
     user_uuid = data['APIMeta'].get('user_uuid')
+    # TODO do not pass data to run_jump_model, pass the run_uuid and load data from DB
 
     logger.info("Running JuMP model ...")
     try:
