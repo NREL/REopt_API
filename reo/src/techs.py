@@ -178,16 +178,24 @@ class PV(Tech):
 
 class Wind(Tech):
     size_class_to_hub_height = {
-        'residential': 20,
+        'residential': 20,  # 3/17/22 got 30m from Wind team, but Wind Toolkit has increments of 20m
         'commercial': 40,
         'medium': 60,  # Owen Roberts provided 50m for medium size_class, but Wind Toolkit has increments of 20m
         'large': 80,
     }
-    size_class_to_installed_cost = {
-        'residential': 11950,
-        'commercial': 7390,
-        'medium': 4440,
-        'large': 3450,
+    size_class_to_installed_cost = { # indexed on api_version number
+        1: {
+            'residential': 11950,
+            'commercial': 7390,
+            'medium': 4440,
+            'large': 3450,
+        },
+        2: {
+            'residential': 5675,
+            'commercial': 4300,
+            'medium': 2766,
+            'large': 2239,
+        }
     }
 
     size_class_to_itc_incentives = {
@@ -197,7 +205,8 @@ class Wind(Tech):
         'large': 0.12,
     }
 
-    def __init__(self, dfm, inputs_path, acres_per_kw=.03, time_steps_per_hour=1, prod_factor_series_kw=None, **kwargs):
+    def __init__(self, dfm, inputs_path, acres_per_kw=.03, time_steps_per_hour=1, api_version=1,
+                prod_factor_series_kw=None, **kwargs):
         super(Wind, self).__init__(**kwargs)
 
         self.path_inputs = inputs_path
@@ -217,7 +226,8 @@ class Wind(Tech):
 
         # if user hasn't entered the installed cost per kw, it gets assigned based on size_class
         if kwargs.get('installed_cost_us_dollars_per_kw') == 3013:
-            self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs.get('size_class')]
+            self.installed_cost_us_dollars_per_kw = \
+                Wind.size_class_to_installed_cost[api_version][kwargs.get('size_class')]
 
         self.sam_prod_factor = None
         dfm.add_wind(self)

@@ -695,7 +695,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_om_costs_before_tax_bau_us_dollars"] = \
                         self.results_dict.get("year_one_om_costs_before_tax_bau")
                     self.nested_outputs["Scenario"]["Site"][name]["total_production_incentive_after_tax"] = \
-                        self.results_dict.get("total_production_incentive_after_tax")
+                         self.results_dict.get("total_production_incentive_after_tax")    
                 elif name == "PV":
                     pv_models = list(PVModel.objects.filter(run_uuid=meta['run_uuid']).order_by('pv_number'))
                     template_pv = copy.deepcopy(self.nested_outputs['Scenario']["Site"][name])
@@ -886,8 +886,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_newboiler_fuel_cost_us_dollars"] = self.results_dict.get("year_one_newboiler_fuel_cost")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "total_fuel_cost_us_dollars"] = self.results_dict.get("total_fuel_charges_after_tax")
-
+                         "total_fuel_cost_us_dollars"] = self.results_dict.get("total_fuel_charges_after_tax")
                 elif name == "Generator":
                     self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("generator_kw", 0)
                     self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal"] = self.results_dict.get(

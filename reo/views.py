@@ -39,7 +39,7 @@ from reo.src.load_profile import BuiltInProfile, LoadProfile
 from reo.src.load_profile_boiler_fuel import LoadProfileBoilerFuel
 from reo.src.load_profile_chiller_thermal import LoadProfileChillerThermal
 from reo.models import URDBError
-from reo.nested_inputs import nested_input_definitions
+from reo.nested_inputs import nested_input_definitions, get_input_defs_by_version
 from reo.api import UUIDFilter
 from reo.models import ModelManager
 from reo.exceptions import UnexpectedError  #, RequestError  # should we save bad requests? could be sql injection attack?
@@ -60,6 +60,7 @@ import numpy as np
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'r'))]
 
+
 def make_error_resp(msg):
         resp = dict()
         resp['messages'] = {'error': msg}
@@ -76,7 +77,17 @@ def health(request):
 def help(request):
 
     try:
-        response = copy.deepcopy(nested_input_definitions)
+        response = get_input_defs_by_version(1)
+        return JsonResponse(response)
+
+    except Exception as e:
+        return JsonResponse({"Error": "Unexpected error in help endpoint: {}".format(e.args[0])}, status=500)
+
+
+def help_v2(request):
+
+    try:
+        response = get_input_defs_by_version(2)
         return JsonResponse(response)
 
     except Exception as e:
@@ -235,6 +246,7 @@ def emissions_profile(request):
         log.error(debug_msg)
         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
 
+
 def easiur_costs(request):
     try:
         latitude = float(request.GET['latitude'])  # need float to convert unicode
@@ -279,6 +291,7 @@ def easiur_costs(request):
                                                                             tb.format_tb(exc_traceback))
         log.error(debug_msg)
         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
+
 
 def fuel_emissions_rates(request):
     try:
@@ -1044,6 +1057,7 @@ def schedule_stats(request):
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in schedule_stats endpoint. Check log for more."}, status=500)
+
 
 def ghp_efficiency_thermal_factors(request):
     """

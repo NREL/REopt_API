@@ -2727,7 +2727,9 @@ function add_util_results(m, p, r::Dict)
 						"total_om_costs_after_tax" => round(total_om_costs_after_tax, digits=0),
 						"year_one_om_costs_after_tax" => round(year_one_om_costs_after_tax, digits=0),
 						"year_one_om_costs_before_tax" => round(year_one_om_costs_after_tax / m[:r_tax_fraction_owner], digits=0),
-						"off_grid_flag" => p.OffGridFlag
+						"off_grid_flag" => p.OffGridFlag,
+						"total_production_incentive_after_tax" => round(value(m[:TotalProductionIncentive]) * m[:r_tax_fraction_owner], digits=2),
+						"total_fuel_charges_after_tax" => round(value(m[:TotalFuelCharges]) * m[:r_tax_fraction_offtaker], digits=2)
 					)...)
 
     @expression(m, GridToLoad[ts in p.TimeStep],
