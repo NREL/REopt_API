@@ -1,5 +1,5 @@
 ### Please check if the PR fulfills these requirements
-- [ ] The commit message follows our guidelines
+- [ ] CHANGELOG.md is updated
 - [ ] Tests for the changes have been added (for bug fixes / features)
 - [ ] Docs have been added / updated (for bug fixes / features)
 
