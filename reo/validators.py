@@ -30,7 +30,8 @@
 import numpy as np
 import pandas as pd
 from .urdb_logger import log_urdb_errors
-from .nested_inputs import nested_input_definitions, list_of_float, list_of_str, list_of_int, list_of_list, list_of_dict, off_grid_defaults
+from .nested_inputs import nested_input_definitions, list_of_float, list_of_str, list_of_int, \
+    list_of_list, list_of_dict, off_grid_defaults, get_input_defs_by_version
 #Note: list_of_float is actually needed
 import os
 import csv
@@ -477,9 +478,12 @@ class ValidateNestedInput:
                 'diesel_oil':0.0
             }
 
-    def __init__(self, input_dict, ghpghx_inputs_validation_errors=None):
+    def __init__(self, input_dict, ghpghx_inputs_validation_errors=None, api_version=1):
         self.list_or_dict_objects = ['PV']
-        self.nested_input_definitions = copy.deepcopy(nested_input_definitions)
+        if api_version == 1:
+            self.nested_input_definitions = copy.deepcopy(nested_input_definitions)
+        else:
+            self.nested_input_definitions = get_input_defs_by_version(api_version)
         self.input_data_errors = []
         self.urdb_errors = []
         self.ghpghx_inputs_errors = ghpghx_inputs_validation_errors
@@ -1291,15 +1295,6 @@ class ValidateNestedInput:
                 if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_PM25_per_gal') is None:
                     self.update_attribute_value(object_name_path, number, 'emissions_factor_lb_PM25_per_gal', self.fuel_conversion_lb_PM25_per_gal.get('diesel_oil'))
                 
-                if (real_values["max_kw"] > 0 or real_values["existing_kw"] > 0):
-                    # then replace zeros in default burn rate and slope, and set min/max kw values appropriately for
-                    # REopt (which need to be in place before data is saved and passed on to celery tasks)
-                    gen = real_values
-                    m, b = Generator.default_fuel_burn_rate(gen["min_kw"] + gen["existing_kw"])
-                    if gen["fuel_slope_gal_per_kwh"] == 0:
-                        gen["fuel_slope_gal_per_kwh"] = m
-                    if gen["fuel_intercept_gal_per_hr"] == 0:
-                        gen["fuel_intercept_gal_per_hr"] = b
 
         if object_name_path[-1] == "LoadProfile":
             if self.isValid:
