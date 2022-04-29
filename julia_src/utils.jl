@@ -217,7 +217,7 @@ Base.@kwdef struct Parameter
      Location::UnitRange
 
     # RA Additions
-     RaFlexloadBaseline:: Array{Float64, 1}
+     RaFlexloadBaseline::Array{Float64, 1}
      RaPrice::Array{Float64, 1}
 
 
