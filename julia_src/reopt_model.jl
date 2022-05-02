@@ -1140,7 +1140,6 @@ function add_resource_adequacy(m, p)
 		(sum(m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage) - m[:dvGridToStorage][ts]) * 
 		p.RaPrice[ts] for ts in p.TimeStep
 		])
-	#Only mark reductions for hours with capacity prices
     if p.UseFlexLoadsModel | p.UseWaterHeaterModel
 		m[:TotalRaValue] += sum([
 			p.RaFlexloadBaseline[ts] * p.RaPrice[ts] for ts in p.TimeStep
