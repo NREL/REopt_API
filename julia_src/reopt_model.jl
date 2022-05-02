@@ -1135,32 +1135,28 @@ function add_tou_demand_charge_constraints(m, p)
 end
 
 
-#Function to add RA value calculations
-# function add_resource_adequacy(m, p)
-# 	#Only mark reductions for hours with capacity prices
-# 	event_hour_flag = p.RaPrice .> 0
-
-#     if p.UseFlexLoadsModel
-#         m[:raReduction] = @expression(m, [ts in p.TimeStep],
-#         [p.RaFlexloadBaseline[ts] - sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t, ts] * (1 + p.FanPowerRatio[t]) for t in ["AC", "HP"]) +            
-#             sum(m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage) - m[:dvGridToStorage][ts] for ts in p.TimeStep ] .* event_hour_flag)
-
-#     else
-#         m[:raReduction] = @expression(m, [ts in p.TimeStep],
-#          [sum(m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage) - m[:dvGridToStorage][ts] for ts in p.TimeStep] .* event_hour_flag)
-#     end
-    
-#     m[:TotalRaValue] = sum(m[:raReduction] .* p.RaPrice)
-# end
-
 function add_resource_adequacy(m, p)
+	m[:TotalRaValue] = sum([
+		(sum(m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage) - m[:dvGridToStorage][ts]) * 
+		p.RaPrice[ts] for ts in p.TimeStep
+		])
 	#Only mark reductions for hours with capacity prices
-    if p.UseFlexLoadsModel
-		m[:TotalRaValue] = sum(
-			[(p.RaFlexloadBaseline[ts] - sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t, ts] * (1 + p.FanPowerRatio[t]) for t in ["AC", "HP"]) +
-			sum(m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage) - m[:dvGridToStorage][ts]) * p.RaPrice[ts] for ts in p.TimeStep])
-	else
-    	m[:TotalRaValue] = sum([(sum(m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage) - m[:dvGridToStorage][ts]) * p.RaPrice[ts] for ts in p.TimeStep])
+    if p.UseFlexLoadsModel | p.UseWaterHeaterModel
+		m[:TotalRaValue] += sum([
+			p.RaFlexloadBaseline[ts] * p.RaPrice[ts] for ts in p.TimeStep
+			])
+	end
+	if p.UseFlexLoadsModel
+		m[:TotalRaValue] -= sum([
+			sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t, ts] * (1 + p.FanPowerRatio[t]) for t in ["AC", "HP"]) *
+			p.RaPrice[ts] for ts in p.TimeStep
+			])
+	end 
+	if p.UseWaterHeaterModel
+		m[:TotalRaValue] -= sum([
+		(p.ProductionFactor["WHER", ts] * m[:dvWHFractions]["WHER",ts] * p.MaxSize["WHER"])*
+		p.RaPrice[ts] for ts in p.TimeStep
+		])
 	end
 end
 
@@ -2698,12 +2694,28 @@ end
 # Output resource adequacy results
 function add_ra_results(m, p, r::Dict)
 	event_hour_flag = p.RaPrice .> 0
-	if p.UseFlexLoadsModel
-		r["ra_hourly_reductions"] = [(p.RaFlexloadBaseline[ts] - sum(p.ProductionFactor[t, ts] * value(m[:dvRatedProduction][t, ts]) * (1 + p.FanPowerRatio[t]) for t in ["AC", "HP"]) +
-			sum(value(m[:dvDischargeFromStorage][b,ts]) for b in p.ElecStorage) - value(m[:dvGridToStorage][ts])) * event_hour_flag[ts] for ts in p.TimeStep]
+	r["ra_hourly_reductions"] =  [
+		(sum(value(m[:dvDischargeFromStorage][b,ts]) for b in p.ElecStorage) - value(m[:dvGridToStorage][ts])) * 
+		event_hour_flag[ts] for ts in p.TimeStep
+		] 
 
-	else
-		r["ra_hourly_reductions"] =  [(sum(value(m[:dvDischargeFromStorage][b,ts]) for b in p.ElecStorage) - value(m[:dvGridToStorage][ts])) * event_hour_flag[ts] for ts in p.TimeStep] 
+    if p.UseFlexLoadsModel | p.UseWaterHeaterModel
+		r["ra_hourly_reductions"] += [
+			p.RaFlexloadBaseline[ts] * event_hour_flag[ts] for ts in p.TimeStep]
 	end
+	if p.UseFlexLoadsModel
+		r["ra_hourly_reductions"] -= [
+			sum(p.ProductionFactor[t, ts] * value(m[:dvRatedProduction][t, ts]) * (1 + p.FanPowerRatio[t]) for t in ["AC", "HP"]) *
+			event_hour_flag[ts] for ts in p.TimeStep
+			]
+	end 
+	if p.UseWaterHeaterModel
+		r["ra_hourly_reductions"] -= [
+		(p.ProductionFactor["WHER", ts] * value(m[:dvWHFractions]["WHER",ts]) * p.MaxSize["WHER"])*
+		event_hour_flag[ts] for ts in p.TimeStep
+		]
+	end
+
+
 	nothing
 end

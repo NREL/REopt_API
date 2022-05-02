@@ -1670,7 +1670,6 @@ class ModelManager(object):
 
         # add try/except for get fail / bad run_uuid
 
-        #Added Resource Adequacy
         site_keys = ['PV', 'Storage', 'Financial', 'LoadProfile', 'LoadProfileBoilerFuel', 'LoadProfileChillerThermal',
                      'ElectricTariff', 'FuelTariff', 'Generator', 'Wind', 'CHP', 'Boiler', 'ElectricChiller',
                      'AbsorptionChiller', 'HotTES', 'ColdTES', 'RC', 'FlexTechAC', 'FlexTechHP', 'HotWaterTank',
