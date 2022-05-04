@@ -19034,7 +19034,7 @@
     "pbi_years": 5,
     "pbi_system_max_kw": 20
   },
-  "Storage": {
+  "ElectricStorage": {
     "min_kw": 0,
     "max_kw": 5,
     "min_kwh": 0,

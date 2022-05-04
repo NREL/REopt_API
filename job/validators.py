@@ -30,7 +30,7 @@
 import logging
 import pandas as pd
 from job.models import APIMeta, UserProvidedMeta, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
-    FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, StorageInputs, GeneratorInputs, WindInputs
+    FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs
 from django.core.exceptions import ValidationError
 from pyproj import Proj
 
@@ -89,7 +89,7 @@ class InputValidator(object):
             FinancialInputs,
             ElectricUtilityInputs,
             PVInputs,
-            StorageInputs,
+            ElectricStorageInputs,
             GeneratorInputs,
             WindInputs
         )

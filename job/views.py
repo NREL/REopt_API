@@ -33,8 +33,8 @@ import sys
 import traceback as tb
 from django.http import JsonResponse
 from reo.exceptions import UnexpectedError
-from job.models import Settings, PVInputs, StorageInputs, WindInputs, GeneratorInputs, ElectricLoadInputs,\
-    ElectricTariffInputs, ElectricUtilityInputs, PVOutputs, StorageOutputs, WindOutputs, GeneratorOutputs, \
+from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, GeneratorInputs, ElectricLoadInputs,\
+    ElectricTariffInputs, ElectricUtilityInputs, PVOutputs, ElectricStorageOutputs, WindOutputs, GeneratorOutputs, \
     ElectricTariffOutputs, ElectricUtilityOutputs, ElectricLoadOutputs, APIMeta, UserProvidedMeta
 
 
@@ -57,7 +57,7 @@ def help(request):
         d["ElectricTariff"] = ElectricTariffInputs.info_dict(ElectricTariffInputs)
         d["ElectricUtility"] = ElectricUtilityInputs.info_dict(ElectricUtilityInputs)
         d["PV"] = PVInputs.info_dict(PVInputs)
-        d["Storage"] = StorageInputs.info_dict(StorageInputs)
+        d["ElectricStorage"] = ElectricStorageInputs.info_dict(ElectricStorageInputs)
         d["Wind"] = WindInputs.info_dict(WindInputs)
         d["Generator"] = GeneratorInputs.info_dict(GeneratorInputs)
         return JsonResponse(d)
@@ -89,7 +89,7 @@ def outputs(request):
         d["ElectricTariff"] = ElectricTariffOutputs.info_dict(ElectricTariffOutputs)
         d["ElectricUtility"] = ElectricUtilityOutputs.info_dict(ElectricUtilityOutputs)
         d["PV"] = PVOutputs.info_dict(PVOutputs)
-        d["Storage"] = StorageOutputs.info_dict(StorageOutputs)
+        d["ElectricStorage"] = ElectricStorageOutputs.info_dict(ElectricStorageOutputs)
         d["Wind"] = WindOutputs.info_dict(WindOutputs)
         d["Generator"] = GeneratorOutputs.info_dict(GeneratorOutputs)
         return JsonResponse(d)
@@ -118,7 +118,7 @@ def results(request, run_uuid):
     try:
         # get all required inputs/outputs
         meta = APIMeta.objects.select_related(
-                "Settings",
+            "Settings",
             'FinancialInputs', 'FinancialOutputs',
             'SiteInputs',
             'ElectricLoadInputs',
@@ -167,7 +167,7 @@ def results(request, run_uuid):
     try: r["inputs"]["ElectricUtility"] = meta.ElectricUtilityInputs.dict
     except: pass
 
-    try: r["inputs"]["Storage"] = meta.StorageInputs.dict
+    try: r["inputs"]["ElectricStorage"] = meta.ElectricStorageInputs.dict
     except: pass
 
     try: r["inputs"]["Generator"] = meta.GeneratorInputs.dict
@@ -201,7 +201,7 @@ def results(request, run_uuid):
                 for pv in pvs:
                     r["outputs"]["PV"].append(pv.dict)
         except: pass
-        try: r["outputs"]["Storage"] = meta.StorageOutputs.dict
+        try: r["outputs"]["ElectricStorage"] = meta.ElectricStorageOutputs.dict
         except: pass
         try: r["outputs"]["Generator"] = meta.GeneratorOutputs.dict
         except: pass
