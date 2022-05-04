@@ -2592,6 +2592,533 @@ class Message(BaseModel, models.Model):
 
 # TODO other necessary models from reo/models.py
 
+class ExistingBoilerInputs(BaseModel, models.Model):
+    
+    key = "ExistingBoiler"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="ExistingBoilerInputs",
+        primary_key=True
+    )
+
+    PRODUCTION_TYPE = models.TextChoices('PRODUCTION_TYPE', (
+        'steam',
+        'hot_water'
+    ))
+
+    CHP_PRIME_MOVER = models.TextChoices('CHP_PRIME_MOVER', (
+        "recip_engine",
+        "micro_turbine",
+        "combustion_turbine",
+        "fuel_cell"
+    ))
+
+    FUEL_TYPE_LIST = models.TextChoices('FUEL_TYPE_LIST', (
+        "natural_gas",
+        "landfill_bio_gas",
+        "propane",
+        "diesel_oil"
+    ))
+
+    max_heat_demand_kw = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        null=True, blank=True,
+        help_text=""
+    )
+
+    fuel_cost_per_mmbtu = ArrayField(
+        models.FloatField(
+            blank=True,
+            validators=[
+                MinValueValidator(0)
+            ]
+        ),
+        default=list, blank=True,
+        help_text=("The ExistingBoiler default operating cost is zero. Please provide this field to include non-zero BAU heating costs. The `fuel_cost_per_mmbtu` can be a scalar, a list of 12 monthly values, or a time series of values for every time step.ExistingBoiler")
+    )
+
+    production_type = models.TextField(
+        null=True,
+        blank=True,
+        choices=PRODUCTION_TYPE.choices,
+        default="hot_water",
+        help_text="Boiler thermal production type, hot water or steam"
+    )
+
+    chp_prime_mover = models.TextField(
+        null=False,
+        blank=True,
+        choices=CHP_PRIME_MOVER.choices,
+        default="",
+        help_text=""
+    )
+
+    max_thermal_factor_on_peak_load = models.FloatField(
+        validators=[
+            MinValueValidator(1.0),
+            MaxValueValidator(5.0)
+        ],
+        null=True, blank=True,
+        default=1.25,
+        help_text="Factor on peak thermal LOAD which the boiler can supply"
+    )
+
+    efficiency = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0)
+        ],
+        null=True, blank=True,
+        default=0.0,
+        help_text="Existing boiler system efficiency - conversion of fuel to usable heating thermal energy."
+    )
+
+    fuel_type = models.TextField(
+        null=True,
+        blank=True,
+        choices=FUEL_TYPE_LIST.choices,
+        default="natural_gas",
+        help_text=""
+    )
+
+    can_supply_steam_turbine = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text="If the boiler can supply steam to the steam turbine for electric production"
+    )
+
+    # For custom validations within model.
+    def clean(self):
+        pass
+
+
+class ExistingBoilerOutputs(BaseModel, models.Model):
+    
+    key = "ExistingBoiler"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="ExistingBoilerOutputs",
+        primary_key=True
+    )
+
+    year_one_fuel_consumption_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e9)
+        ],
+        null=True, blank=True,
+        default=0.0,
+        help_text=""
+    )
+
+    lifecycle_fuel_cost = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e9)
+        ],
+        null=True, blank=True,
+        default=0.0,
+        help_text=""
+    )
+
+    lifecycle_fuel_cost_bau = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e9)
+        ],
+        null=True, blank=True,
+        default=0.0,
+        help_text=""
+    )
+
+    year_one_thermal_production_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e9)
+        ],
+        null=True, blank=True,
+        default=0.0,
+        help_text=""
+    )
+
+    year_one_fuel_cost = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e9)
+        ],
+        null=True, blank=True,
+        default=0.0,
+        help_text=""
+    )
+
+    thermal_to_tes_series_mmbtu_per_hour = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e9)
+        ],
+        null=True, blank=True,
+        default=0.0,
+        help_text=""
+    )
+
+    thermal_to_tes_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+            ),
+        default = list,
+        null=False, blank=True,
+        help_text=""
+    )
+
+    year_one_thermal_production_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+            ),
+        default = list,
+        null=False, blank=True,
+        help_text=""
+    )
+
+    year_one_thermal_to_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+            ),
+        default = list,
+        null=False, blank=True,
+        help_text=""
+    )
+
+    def clean(self):
+        # perform custom validation here.
+        pass
+
+
+class BoilerInputs(BaseModel, models.Model):
+    key = "Boiler"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="BoilerInputs",
+        primary_key=True
+    )
+
+    FUEL_TYPE_LIST = models.TextChoices('FUEL_TYPE_LIST', (
+        "natural_gas",
+        "landfill_bio_gas",
+        "propane",
+        "diesel_oil",
+        "uranium"
+    ))
+
+    min_mmbtu_per_hour = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e9)
+        ],
+        null=True, blank=True,
+        default=0.0,
+        help_text="Minimum thermal power size"
+    )
+
+    max_mmbtu_per_hour = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e9)
+        ],
+        null=True,
+        blank=True,
+        default=0.0,
+        help_text="Maximum thermal power size"
+    )
+
+    efficiency = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0)
+        ],
+        null=False,
+        blank=True,
+        default=0.8,
+        help_text="New boiler system efficiency - conversion of fuel to usable heating thermal energy."
+    )
+
+    fuel_cost_per_mmbtu = ArrayField(
+        models.FloatField(
+            blank=True,
+            validators=[
+                MinValueValidator(0)
+            ]
+        ),
+        default=list, blank=True,
+        help_text=""
+    )
+
+    macrs_option_years = models.IntegerField(
+        default=MACRS_YEARS_CHOICES.FIVE,
+        choices=MACRS_YEARS_CHOICES.choices,
+        blank=True,
+        null=False,
+        help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
+    )
+
+    macrs_bonus_pct = models.FloatField(
+        default=1.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        null=False,
+        help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
+    )
+
+    fuel_type = models.TextField(
+        default=FUEL_TYPE_LIST.natural_gas,
+        choices=FUEL_TYPE_LIST.choices,
+        blank=True,
+        null=False,
+        help_text=""
+    )
+
+    installed_cost_per_mmbtu_per_hour = models.FloatField(
+        default=293000.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        null=False,
+        help_text="Thermal power-based cost"
+    )
+
+    om_cost_per_mmbtu_per_hour = models.FloatField(
+        default=2930.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        null=False,
+        help_text="Thermal power-based fixed O&M cost"
+    )
+
+    om_cost_per_mmbtu = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        null=False,
+        help_text="Thermal energy-based variable O&M cost"
+    )
+
+    can_supply_steam_turbine = models.BooleanField(
+        default=True,
+        blank=True,
+        null=False,
+        help_text="If the boiler can supply steam to the steam turbine for electric production"
+    )
+
+    def clean(self):
+        pass
+
+
+class BoilerOutputs(BaseModel, models.Model):
+
+    key = "Boiler"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="BoilerOutputs",
+        primary_key=True
+    )
+
+    year_one_fuel_consumption_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e9)
+        ],
+        null=True, blank=True,
+        default=0.0,
+        help_text=""
+    )
+
+    lifecycle_fuel_cost = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e9)
+        ],
+        null=True, blank=True,
+        default=0.0,
+        help_text=""
+    )
+
+    lifecycle_fuel_cost_bau = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e9)
+        ],
+        null=True, blank=True,
+        default=0.0,
+        help_text=""
+    )
+
+    year_one_thermal_production_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e9)
+        ],
+        null=True, blank=True,
+        default=0.0,
+        help_text=""
+    )
+
+    year_one_fuel_cost = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e9)
+        ],
+        null=True, blank=True,
+        default=0.0,
+        help_text=""
+    )
+
+    thermal_to_tes_series_mmbtu_per_hour = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e9)
+        ],
+        null=True, blank=True,
+        default=0.0,
+        help_text=""
+    )
+
+    thermal_to_tes_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+            ),
+        default = list,
+        null=False, blank=True,
+        help_text=""
+    )
+
+    year_one_thermal_production_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+            ),
+        default = list,
+        null=False, blank=True,
+        help_text=""
+    )
+
+    year_one_thermal_to_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+            ),
+        default = list,
+        null=False, blank=True,
+        help_text=""
+    )
+
+
+class SpaceHeatingLoadInputs(BaseModel, models.Model):
+
+    key = "SpaceHeatingLoad"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="SpaceHeatingLoadInputs",
+        primary_key=True
+    )
+
+    doe_reference_name = models.TextField(
+        blank=True,
+        default="",
+        help_text=""
+    )
+
+    city = models.TextField(
+        blank=True,
+        default="",
+        help_text=""
+    )
+
+    blended_doe_reference_names = ArrayField(
+        models.TextField(
+            blank=True,
+        ),
+        default=list,
+        blank=True,
+        help_text=""
+    )
+
+    blended_doe_reference_percents = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0.0),
+                MaxValueValidator(1.0)
+            ],
+            blank=True,
+        ),
+        default=list,
+        blank=True,
+        null=False,
+        help_text=""
+    )
+
+    annual_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e9)
+        ],
+        default="",
+        blank=True,
+        null=False,
+        help_text=""
+    )
+
+    monthly_mmbtu = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0.0),
+                MaxValueValidator(1.0e9)
+            ],
+            blank=True,
+        ),
+        default=list,
+        blank=True,
+        null=False,
+        help_text=""
+    )
+
+    fuel_loads_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0.0),
+                MaxValueValidator(1.0e9)
+            ],
+            blank=True,
+        ),
+        default=list,
+        blank=True,
+        null=False,
+        help_text=""
+    )
+
+    def clean(self):
+        pass
+
 
 def get_input_dict_from_run_uuid(run_uuid:str):
     """
@@ -2638,6 +3165,15 @@ def get_input_dict_from_run_uuid(run_uuid:str):
     except: pass
 
     try: d["Wind"] = filter_none_and_empty_array(meta.WindInputs.dict)
+    except: pass
+
+    try: d["Boiler"] = filter_none_and_empty_array(meta.BoilerInputs.dict)
+    except: pass
+
+    try: d["ExistingBoiler"] = filter_none_and_empty_array(meta.ExistingBoilerInputs.dict)
+    except: pass
+
+    try: d["SpaceHeatingLoad"] = filter_none_and_empty_array(meta.SpaceHeatingLoadInputs.dict)
     except: pass
     
     return d
