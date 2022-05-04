@@ -107,4 +107,99 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(results["PV"]["size_kw"], 216.667, places=1)
         self.assertAlmostEqual(results["ElectricStorage"]["size_kw"], 55.9, places=1)
         self.assertAlmostEqual(results["ElectricStorage"]["size_kwh"], 78.9, places=1)
+    
+class TestBoilerScenario(ResourceTestCaseMixin, TestCase):
 
+    def test_boilers_scenario(self):
+
+        """
+        Same test as "Boiler and Steam Turbine" in the Julia package. Used in development of v2.
+        No need to keep this test.
+
+        Execution steps:
+            run CLI for active Docker container
+            Execeute python manage.py test job.test.test_job_endpoint.TestBoilerScenario
+        """
+        scenario = {
+            "Site": {
+            "latitude": 37.78,
+            "longitude": -122.45
+            },
+            "ExistingBoiler": {
+                "production_type": "steam",
+                "efficiency": 0.8,
+                "can_supply_steam_turbine": False,
+                "fuel_type": "natural_gas",
+                "fuel_cost_per_mmbtu": 0.5
+            },
+            "Boiler": {
+                "min_mmbtu_per_hour": 0.0,
+                "max_mmbtu_per_hour": 1.0E9,
+                "efficiency": 0.8,
+                "can_supply_steam_turbine": True,
+                "installed_cost_per_mmbtu_per_hour": 1.0,
+                "om_cost_per_mmbtu_per_hour": 0.1,
+                "om_cost_per_mmbtu": 0.1,                  
+                "fuel_type": "uranium",
+                "fuel_cost_per_mmbtu": 10.0
+            },
+            "SteamTurbine": {
+                "min_kw": 0.0,
+                "max_kw": 20000.0,
+                "is_condensing": True,
+                "inlet_steam_pressure_psig": 1000.0,
+                "inlet_steam_temperature_degF": '',
+                "inlet_steam_superheat_degF": 10.0,
+                "outlet_steam_pressure_psig": -12.7,
+                "outlet_steam_min_vapor_fraction": 0.7,                         
+                "isentropic_efficiency": 0.7,
+                "gearbox_generator_efficiency": 0.96,
+                "net_to_gross_electric_ratio": 0.98,
+                "installed_cost_per_kw": 4000.0,
+                "om_cost_per_kw": 80.0,
+                "om_cost_per_kwh": 0.0,
+                "can_net_meter": False,
+                "can_wholesale": True,
+                "can_export_beyond_site_load": True,
+                "can_curtail": False        
+            },
+            "Financial": {
+                "om_cost_escalation_pct": 0.025,
+                "elec_cost_escalation_pct": 0.023,
+                "existing_boiler_fuel_cost_escalation_pct": 0.034,
+                "boiler_fuel_cost_escalation_pct": 0.034,
+                "offtaker_tax_pct": 0.26,
+                "offtaker_discount_pct": 0.083,
+                "third_party_ownership": False,
+                "owner_tax_pct": 0.26,
+                "owner_discount_pct": 0.083,
+                "analysis_years": 25
+            },
+            "ElectricLoad": {
+                "doe_reference_name": "Hospital",
+                "annual_kwh": 8760000.0
+            },
+            "SpaceHeatingLoad": {
+                "doe_reference_name": "Hospital",
+                "annual_mmbtu": 29897.6
+            },
+            "ElectricTariff": {
+                "urdb_utility_name": "Pacific Gas & Electric Co",
+                "urdb_rate_name": "E-20 Maximum demand of (1000 KW or more) (Secondary)",
+                "urdb_label": "5e1676e95457a3f87673e3b0",
+                "wholesale_rate": 0.04
+            }
+        }
+
+        resp = self.api_client.post('/dev/job/', format='json', data=scenario)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+
+        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        r = json.loads(resp.content)
+        results = r["outputs"]
+
+        print(results)
+        print("\tExecuting existing boiler test.")
+        pass
