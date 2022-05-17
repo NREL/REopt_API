@@ -595,10 +595,7 @@ class UrdbParse:
                         demand_rates.append(tou_rate + tou_adj)
 
                         for step in time_steps:
-                            try:
-                                self.demand_rates_summary[step-1] += tou_rate + tou_adj
-                            except Exception as e:
-                                from celery.contrib import rdb; rdb.set_trace()
+                            self.demand_rates_summary[step-1] += tou_rate + tou_adj
 
         self.reopt_args.demand_ratchets_tou = demand_periods
         self.reopt_args.demand_rates_tou = demand_rates
