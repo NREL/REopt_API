@@ -1982,13 +1982,13 @@ class WindOutputs(BaseModel, models.Model):
     lcoe_per_kwh = models.FloatField(null=True, blank=True)
 
 
-class StorageInputs(BaseModel, models.Model):
-    key = "Storage"
+class ElectricStorageInputs(BaseModel, models.Model):
+    key = "ElectricStorage"
 
     meta = models.OneToOneField(
         APIMeta,
         on_delete=models.CASCADE,
-        related_name="StorageInputs",
+        related_name="ElectricStorageInputs",
         primary_key=True
     )
 
@@ -2185,12 +2185,12 @@ class StorageInputs(BaseModel, models.Model):
     )
 
 
-class StorageOutputs(BaseModel, models.Model):
-    key = "StorageOutputs"
+class ElectricStorageOutputs(BaseModel, models.Model):
+    key = "ElectricStorageOutputs"
     meta = models.OneToOneField(
         APIMeta,
         on_delete=models.CASCADE,
-        related_name="StorageOutputs",
+        related_name="ElectricStorageOutputs",
         primary_key=True
     )
     size_kw = models.FloatField(null=True, blank=True)
@@ -2200,6 +2200,12 @@ class StorageOutputs(BaseModel, models.Model):
         blank=True, default=list
     )
     year_one_to_load_series_kw = ArrayField(
+        models.FloatField(null=True, blank=True),
+        blank=True, default=list
+    )
+    initial_capital_cost = models.FloatField(null=True, blank=True)
+    maintenance_cost = models.FloatField(null=True, blank=True)
+    state_of_health = ArrayField(
         models.FloatField(null=True, blank=True),
         blank=True, default=list
     )
@@ -2585,3 +2591,53 @@ class Message(BaseModel, models.Model):
     message = models.TextField(default='')
 
 # TODO other necessary models from reo/models.py
+
+
+def get_input_dict_from_run_uuid(run_uuid:str):
+    """
+    Construct the input dict for REopt.run_reopt
+    """
+    # get inputs that are always created with one DB transaction
+    meta = APIMeta.objects.select_related(
+        "Settings",
+        'FinancialInputs', 
+        'SiteInputs',
+        'ElectricLoadInputs',
+        'ElectricTariffInputs',
+    ).get(run_uuid=run_uuid)
+
+    def filter_none_and_empty_array(d:dict):
+        return {k: v for (k, v) in d.items() if v not in [None, [], {}]}
+
+    d = dict()
+    d["user_uuid"] = meta.user_uuid
+    d["Settings"] = filter_none_and_empty_array(meta.Settings.dict)
+    d["Financial"] = filter_none_and_empty_array(meta.FinancialInputs.dict)
+    d["Site"] = filter_none_and_empty_array(meta.SiteInputs.dict)
+    d["ElectricLoad"] = filter_none_and_empty_array(meta.ElectricLoadInputs.dict)
+    d["ElectricTariff"] = filter_none_and_empty_array(meta.ElectricTariffInputs.dict)
+
+    # We have to try for the following objects because they may or may not be defined
+    try:
+        pvs = meta.PVInputs.all()
+        if len(pvs) == 1:
+            d["PV"] = filter_none_and_empty_array(pvs[0].dict)
+        elif len(pvs) > 1:
+            d["PV"] = []
+            for pv in pvs:
+                d["PV"].append(filter_none_and_empty_array(pv.dict))
+    except: pass
+
+    try: d["ElectricUtility"] = filter_none_and_empty_array(meta.ElectricUtilityInputs.dict)
+    except: pass
+
+    try: d["ElectricStorage"] = filter_none_and_empty_array(meta.ElectricStorageInputs.dict)
+    except: pass
+
+    try: d["Generator"] = filter_none_and_empty_array(meta.GeneratorInputs.dict)
+    except: pass
+
+    try: d["Wind"] = filter_none_and_empty_array(meta.WindInputs.dict)
+    except: pass
+    
+    return d

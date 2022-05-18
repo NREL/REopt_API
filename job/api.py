@@ -166,7 +166,7 @@ class Job(ModelResource):
 
         APIMeta.objects.filter(run_uuid=run_uuid).update(status='Optimizing...')
         try:
-            run_jump_model.s(data=input_validator.validated_input_dict).apply_async()
+            run_jump_model.s(run_uuid).apply_async()
         except Exception as e:
             if isinstance(e, REoptError):
                 pass  # handled in each task
