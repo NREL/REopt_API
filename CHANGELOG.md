@@ -26,6 +26,10 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+# v2.0.2
+### Patches
+- bug fix for 15/30 minute scenarios with URDB TOU demand rates
+
 # v2.0.1
 ### Minor Updates
 ##### Changed
