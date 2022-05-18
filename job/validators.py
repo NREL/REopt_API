@@ -223,8 +223,8 @@ class InputValidator(object):
         Time series values are up or down sampled to align with Settings.time_steps_per_hour
         """
         for key, time_series in zip(
-            ["ElectricLoad", "ElectricLoad",      "ElectricTariff"],
-            ["loads_kw",     "critical_loads_kw", "wholesale_rate"]
+            ["ElectricLoad", "ElectricLoad",      "ElectricTariff", "ExistingBoiler"],
+            ["loads_kw",     "critical_loads_kw", "wholesale_rate", "fuel_cost_per_mmbtu"]
         ):
             self.clean_time_series(key, time_series)
                         

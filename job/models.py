@@ -577,6 +577,10 @@ class FinancialOutputs(BaseModel, models.Model):
         help_text=("Net O&M and replacement costs in present value, after-tax for the third-party developer."
                    "Only calculated in the third-party case.")
     )
+    lifecycle_fuel_costs_after_tax = models.FloatField(
+        null=True, blank=True,
+        help_text="Life cycle fuel cost over analysis period after tax."
+    )
 
 
 class ElectricLoadInputs(BaseModel, models.Model):
@@ -2694,7 +2698,8 @@ class ExistingBoilerInputs(BaseModel, models.Model):
 
     # For custom validations within model.
     def clean(self):
-        pass
+        if len(self.fuel_cost_per_mmbtu) == 1:
+                self.fuel_cost_per_mmbtu = self.fuel_cost_per_mmbtu * 8760  # upsampling handled in InputValidator.cross_clean
 
 
 class ExistingBoilerOutputs(BaseModel, models.Model):
@@ -2715,6 +2720,17 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
         ],
         null=True, blank=True,
         default=0.0,
+        help_text=""
+    )
+
+    year_one_fuel_consumption_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            blank=True,
+            validators=[
+                MinValueValidator(0)
+            ]
+        ),
+        default=list, blank=True,
         help_text=""
     )
 
@@ -2928,8 +2944,10 @@ class BoilerInputs(BaseModel, models.Model):
         help_text="If the boiler can supply steam to the steam turbine for electric production"
     )
 
+    # For custom validations within model.
     def clean(self):
-        pass
+        if len(self.fuel_cost_per_mmbtu) == 1:
+                self.fuel_cost_per_mmbtu = self.fuel_cost_per_mmbtu * 8760  # upsampling handled in InputValidator.cross_clean
 
 
 class BoilerOutputs(BaseModel, models.Model):
@@ -2953,7 +2971,28 @@ class BoilerOutputs(BaseModel, models.Model):
         help_text=""
     )
 
+    year_one_fuel_consumption_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            blank=True,
+            validators=[
+                MinValueValidator(0)
+            ]
+        ),
+        default=list, blank=True,
+        help_text=""
+    )
+
     lifecycle_fuel_cost = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e9)
+        ],
+        null=True, blank=True,
+        default=0.0,
+        help_text=""
+    )
+
+    lifecycle_per_unit_prod_om_costs = models.FloatField(
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(1.0e9)
@@ -2984,16 +3023,6 @@ class BoilerOutputs(BaseModel, models.Model):
     )
 
     year_one_fuel_cost = models.FloatField(
-        validators=[
-            MinValueValidator(0.0),
-            MaxValueValidator(1.0e9)
-        ],
-        null=True, blank=True,
-        default=0.0,
-        help_text=""
-    )
-
-    thermal_to_tes_series_mmbtu_per_hour = models.FloatField(
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(1.0e9)
