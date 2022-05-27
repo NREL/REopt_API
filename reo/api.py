@@ -168,7 +168,7 @@ class Job(ModelResource):
             set_status(data, 'Optimizing...')
             data['outputs']['Scenario']['Profile']['pre_setup_scenario_seconds'] = profiler.getDuration()
             if bundle.request.META.get('HTTP_X_API_USER_ID') or False:
-                if bundle.request.META.get('HTTP_X_API_USER_ID') or '' == '6f09c972-8414-469b-b3e8-a78398874103':
+                if bundle.request.META.get('HTTP_X_API_USER_ID', '') == '6f09c972-8414-469b-b3e8-a78398874103':
                     data['outputs']['Scenario']['job_type'] = 'REopt Web Tool'
                 else:
                     data['outputs']['Scenario']['job_type'] = 'developer.nrel.gov'
@@ -338,7 +338,7 @@ class Job2(ModelResource):
             set_status(data, 'Optimizing...')
             data['outputs']['Scenario']['Profile']['pre_setup_scenario_seconds'] = profiler.getDuration()
             if bundle.request.META.get('HTTP_X_API_USER_ID') or False:
-                if bundle.request.META.get('HTTP_X_API_USER_ID') or '' == '6f09c972-8414-469b-b3e8-a78398874103':
+                if bundle.request.META.get('HTTP_X_API_USER_ID', '') == '6f09c972-8414-469b-b3e8-a78398874103':
                     data['outputs']['Scenario']['job_type'] = 'REopt Web Tool'
                 else:
                     data['outputs']['Scenario']['job_type'] = 'developer.nrel.gov'
