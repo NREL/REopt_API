@@ -223,8 +223,8 @@ class InputValidator(object):
         Time series values are up or down sampled to align with Settings.time_steps_per_hour
         """
         for key, time_series in zip(
-            ["ElectricLoad", "ElectricLoad",      "ElectricTariff", "ExistingBoiler"],
-            ["loads_kw",     "critical_loads_kw", "wholesale_rate", "fuel_cost_per_mmbtu"]
+            ["ElectricLoad", "ElectricLoad",      "ElectricTariff"],
+            ["loads_kw",     "critical_loads_kw", "wholesale_rate"]
         ):
             self.clean_time_series(key, time_series)
                         
@@ -287,6 +287,22 @@ class InputValidator(object):
                 if self.models["ElectricUtility"].outage_end_time_step > max_ts:
                     self.add_validation_error("ElectricUtility", "outage_end_time_step",
                                               f"Value is greater than the max allowable ({max_ts})")
+        
+        """
+        ExistingBoiler
+        """
+        if "ExistingBoiler" in self.models.keys():
+
+            # Clean fuel_cost_per_mmbtu to align with time series
+            self.clean_time_series("ExistingBoiler", "fuel_cost_per_mmbtu")
+
+        """
+        SpaceHeatingLoads
+        """
+        # if self.models["SpaceHeatingLoad"].latitude is None:
+        #     self.models["SpaceHeatingLoad"].latitude = self.models["Site"].latitude
+        # if self.models["SpaceHeatingLoad"].longitude is None:
+        #     self.models["SpaceHeatingLoad"].longitude = self.models["Site"].longitude
 
     def save(self):
         """
