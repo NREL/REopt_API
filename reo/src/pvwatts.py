@@ -75,7 +75,7 @@ class PVWatts:
                  module_type=0,
                  timeframe='hourly',
                  gcr=0.4,
-                 dc_ac_ratio=1.1,
+                 dc_ac_ratio=1.2,
                  inv_eff=0.96,
                  radius=100,
                  dataset="nsrdb",
