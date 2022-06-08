@@ -187,7 +187,7 @@ def results(request, run_uuid):
     try: r["inputs"]["Boiler"] = meta.BoilerInputs.dict
     except: pass
 
-    try: r["inputs"]["SpaceHeatingLoad"] = meta.BoilerInputs.dict
+    try: r["inputs"]["SpaceHeatingLoad"] = meta.SpaceHeatingLoadInputs.dict
     except: pass
 
     try:

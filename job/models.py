@@ -976,8 +976,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
                 if (possible_set[0] and not possible_set[1]) or (not possible_set[0] and possible_set[1]):
                     error_messages["required inputs"] = f"Must provide both {possible_set[0]} and {possible_set[1]}"
 
-        if len(self.wholesale_rate) == 1:
-            self.wholesale_rate = self.wholesale_rate * 8760  # upsampling handled in InputValidator.cross_clean
+        self.wholesale_rate = scalar_to_vector(self.wholesale_rate)
 
         if len(self.coincident_peak_load_charge_per_kw) > 0:
             if len(self.coincident_peak_load_active_timesteps) != len(self.coincident_peak_load_charge_per_kw):
@@ -2626,48 +2625,46 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         "diesel_oil"
     ))
 
+    '''
+    This field is populated based on heating loads provided via domestic hot water loads. TODO test with flexibleHVAC
     max_heat_demand_kw = models.FloatField(
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e9)
         ],
-        null=True, blank=True,
-        help_text=""
-    )
-
-    fuel_cost_per_mmbtu = ArrayField(
-        models.FloatField(
-            blank=True,
-            validators=[
-                MinValueValidator(0)
-            ]
-        ),
-        default=list, blank=True,
-        help_text=("The ExistingBoiler default operating cost is zero. Please provide this field to include non-zero BAU heating costs. The `fuel_cost_per_mmbtu` can be a scalar, a list of 12 monthly values, or a time series of values for every time step.ExistingBoiler")
-    )
-
-    production_type = models.TextField(
         null=True,
         blank=True,
+        help_text=""
+    )
+    '''
+
+    production_type = models.TextField(
+        blank=True,
+        null=False,
         choices=PRODUCTION_TYPE.choices,
         default="hot_water",
         help_text="Boiler thermal production type, hot water or steam"
     )
 
+    '''
+    We dont need to add CHP prime mover because this field is either set by CHP tech. Adding this here results in infeasible solutions.
     chp_prime_mover = models.TextField(
-        null=False,
-        blank=True,
-        choices=CHP_PRIME_MOVER.choices,
-        default="",
-        help_text=""
-    )
+            blank=True,
+            null=False,
+            choices=CHP_PRIME_MOVER.choices,
+            default="",
+            help_text=""
+        )
+
+    '''
 
     max_thermal_factor_on_peak_load = models.FloatField(
         validators=[
             MinValueValidator(1.0),
             MaxValueValidator(5.0)
         ],
-        null=True, blank=True,
+        null=True,
+        blank=True,
         default=1.25,
         help_text="Factor on peak thermal LOAD which the boiler can supply"
     )
@@ -2677,13 +2674,26 @@ class ExistingBoilerInputs(BaseModel, models.Model):
             MinValueValidator(0.0),
             MaxValueValidator(1.0)
         ],
-        null=True, blank=True,
+        null=True,
+        blank=True,
         default=0.0,
         help_text="Existing boiler system efficiency - conversion of fuel to usable heating thermal energy."
     )
 
+    fuel_cost_per_mmbtu = ArrayField(
+        models.FloatField(
+            blank=True,
+            validators=[
+                MinValueValidator(0)
+            ]
+        ),
+        default=list,
+        blank=True,
+        help_text=("The ExistingBoiler default operating cost is zero. Please provide this field to include non-zero BAU heating costs. The `fuel_cost_per_mmbtu` can be a scalar, a list of 12 monthly values, or a time series of values for every time step.ExistingBoiler")
+    )
+
     fuel_type = models.TextField(
-        null=True,
+        null=False,
         blank=True,
         choices=FUEL_TYPE_LIST.choices,
         default="natural_gas",
@@ -2693,14 +2703,13 @@ class ExistingBoilerInputs(BaseModel, models.Model):
     can_supply_steam_turbine = models.BooleanField(
         default=False,
         blank=True,
+        null=True,
         help_text="If the boiler can supply steam to the steam turbine for electric production"
     )
 
     # For custom validations within model.
     def clean(self):
-        if len(self.fuel_cost_per_mmbtu) == 1:
-                self.fuel_cost_per_mmbtu = self.fuel_cost_per_mmbtu * 8760  # upsampling handled in InputValidator.cross_clean
-
+        self.fuel_cost_per_mmbtu = scalar_to_vector(self.fuel_cost_per_mmbtu)
 
 class ExistingBoilerOutputs(BaseModel, models.Model):
     
@@ -2713,108 +2722,36 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
         primary_key=True
     )
 
-    year_one_fuel_consumption_mmbtu = models.FloatField(
-        validators=[
-            MinValueValidator(0.0),
-            MaxValueValidator(1.0e9)
-        ],
-        null=True, blank=True,
-        default=0.0,
-        help_text=""
-    )
+    year_one_fuel_consumption_mmbtu = models.FloatField(null=True, blank=True)
 
     year_one_fuel_consumption_mmbtu_per_hour = ArrayField(
-        models.FloatField(
-            blank=True,
-            validators=[
-                MinValueValidator(0)
-            ]
-        ),
-        default=list, blank=True,
-        help_text=""
+        models.FloatField(null=True, blank=True),
+        default=list,
     )
 
-    lifecycle_fuel_cost = models.FloatField(
-        validators=[
-            MinValueValidator(0.0),
-            MaxValueValidator(1.0e9)
-        ],
-        null=True, blank=True,
-        default=0.0,
-        help_text=""
-    )
-
-    lifecycle_fuel_cost_bau = models.FloatField(
-        validators=[
-            MinValueValidator(0.0),
-            MaxValueValidator(1.0e9)
-        ],
-        null=True, blank=True,
-        default=0.0,
-        help_text=""
-    )
-
-    year_one_thermal_production_mmbtu = models.FloatField(
-        validators=[
-            MinValueValidator(0.0),
-            MaxValueValidator(1.0e9)
-        ],
-        null=True, blank=True,
-        default=0.0,
-        help_text=""
-    )
-
-    year_one_fuel_cost = models.FloatField(
-        validators=[
-            MinValueValidator(0.0),
-            MaxValueValidator(1.0e9)
-        ],
-        null=True, blank=True,
-        default=0.0,
-        help_text=""
-    )
-
-    thermal_to_tes_series_mmbtu_per_hour = models.FloatField(
-        validators=[
-            MinValueValidator(0.0),
-            MaxValueValidator(1.0e9)
-        ],
-        null=True, blank=True,
-        default=0.0,
-        help_text=""
-    )
-
+    lifecycle_fuel_cost = models.FloatField(null=True, blank=True)
+    lifecycle_fuel_cost_bau = models.FloatField(null=True, blank=True)
+    year_one_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
+    year_one_fuel_cost = models.FloatField(null=True, blank=True)
+    thermal_to_tes_series_mmbtu_per_hour = models.FloatField(null=True, blank=True)
     thermal_to_tes_series_mmbtu_per_hour = ArrayField(
-        models.FloatField(
-            null=True, blank=True
-            ),
+        models.FloatField(null=True, blank=True),
         default = list,
-        null=False, blank=True,
-        help_text=""
     )
 
     year_one_thermal_production_mmbtu_per_hour = ArrayField(
-        models.FloatField(
-            null=True, blank=True
-            ),
+        models.FloatField(null=True, blank=True),
         default = list,
-        null=False, blank=True,
-        help_text=""
     )
 
     year_one_thermal_to_load_series_mmbtu_per_hour = ArrayField(
-        models.FloatField(
-            null=True, blank=True
-            ),
+        models.FloatField(null=True, blank=True),
         default = list,
-        null=False, blank=True,
-        help_text=""
     )
 
     def clean(self):
         # perform custom validation here.
         pass
-
 
 class BoilerInputs(BaseModel, models.Model):
     key = "Boiler"
@@ -2839,7 +2776,8 @@ class BoilerInputs(BaseModel, models.Model):
             MinValueValidator(0.0),
             MaxValueValidator(1.0e9)
         ],
-        null=True, blank=True,
+        null=True,
+        blank=True,
         default=0.0,
         help_text="Minimum thermal power size"
     )
@@ -2860,7 +2798,7 @@ class BoilerInputs(BaseModel, models.Model):
             MinValueValidator(0.0),
             MaxValueValidator(1.0)
         ],
-        null=False,
+        null=True,
         blank=True,
         default=0.8,
         help_text="New boiler system efficiency - conversion of fuel to usable heating thermal energy."
@@ -2873,35 +2811,28 @@ class BoilerInputs(BaseModel, models.Model):
                 MinValueValidator(0)
             ]
         ),
-        default=list, blank=True,
+        default=list,
+        blank=True,
         help_text=""
     )
 
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.FIVE,
+        default=MACRS_YEARS_CHOICES.ZERO,
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
-        null=False,
+        null=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
 
     macrs_bonus_pct = models.FloatField(
-        default=1.0,
+        default=0.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
         ],
         blank=True,
-        null=False,
+        null=True,
         help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
-    )
-
-    fuel_type = models.TextField(
-        default=FUEL_TYPE_LIST.natural_gas,
-        choices=FUEL_TYPE_LIST.choices,
-        blank=True,
-        null=False,
-        help_text=""
     )
 
     installed_cost_per_mmbtu_per_hour = models.FloatField(
@@ -2911,7 +2842,7 @@ class BoilerInputs(BaseModel, models.Model):
             MaxValueValidator(1.0e9)
         ],
         blank=True,
-        null=False,
+        null=True,
         help_text="Thermal power-based cost"
     )
 
@@ -2922,7 +2853,7 @@ class BoilerInputs(BaseModel, models.Model):
             MaxValueValidator(1.0e9)
         ],
         blank=True,
-        null=False,
+        null=True,
         help_text="Thermal power-based fixed O&M cost"
     )
 
@@ -2933,22 +2864,28 @@ class BoilerInputs(BaseModel, models.Model):
             MaxValueValidator(1.0e9)
         ],
         blank=True,
-        null=False,
+        null=True,
         help_text="Thermal energy-based variable O&M cost"
+    )
+
+    fuel_type = models.TextField(
+        default=FUEL_TYPE_LIST.natural_gas,
+        choices=FUEL_TYPE_LIST.choices,
+        blank=True,
+        null=True,
+        help_text=""
     )
 
     can_supply_steam_turbine = models.BooleanField(
         default=True,
         blank=True,
-        null=False,
+        null=True,
         help_text="If the boiler can supply steam to the steam turbine for electric production"
     )
 
     # For custom validations within model.
     def clean(self):
-        if len(self.fuel_cost_per_mmbtu) == 1:
-                self.fuel_cost_per_mmbtu = self.fuel_cost_per_mmbtu * 8760  # upsampling handled in InputValidator.cross_clean
-
+        self.fuel_cost_per_mmbtu = scalar_to_vector(self.fuel_cost_per_mmbtu)
 
 class BoilerOutputs(BaseModel, models.Model):
 
@@ -2961,107 +2898,35 @@ class BoilerOutputs(BaseModel, models.Model):
         primary_key=True
     )
 
-    year_one_fuel_consumption_mmbtu = models.FloatField(
-        validators=[
-            MinValueValidator(0.0),
-            MaxValueValidator(1.0e9)
-        ],
-        null=True, blank=True,
-        default=0.0,
-        help_text=""
-    )
+    year_one_fuel_consumption_mmbtu = models.FloatField(null=True, blank=True)
 
     year_one_fuel_consumption_mmbtu_per_hour = ArrayField(
-        models.FloatField(
-            blank=True,
-            validators=[
-                MinValueValidator(0)
-            ]
-        ),
-        default=list, blank=True,
-        help_text=""
+        models.FloatField(null=True, blank=True),
+        default=list,
     )
 
-    lifecycle_fuel_cost = models.FloatField(
-        validators=[
-            MinValueValidator(0.0),
-            MaxValueValidator(1.0e9)
-        ],
-        null=True, blank=True,
-        default=0.0,
-        help_text=""
-    )
-
-    lifecycle_per_unit_prod_om_costs = models.FloatField(
-        validators=[
-            MinValueValidator(0.0),
-            MaxValueValidator(1.0e9)
-        ],
-        null=True, blank=True,
-        default=0.0,
-        help_text=""
-    )
-
-    lifecycle_fuel_cost_bau = models.FloatField(
-        validators=[
-            MinValueValidator(0.0),
-            MaxValueValidator(1.0e9)
-        ],
-        null=True, blank=True,
-        default=0.0,
-        help_text=""
-    )
-
-    year_one_thermal_production_mmbtu = models.FloatField(
-        validators=[
-            MinValueValidator(0.0),
-            MaxValueValidator(1.0e9)
-        ],
-        null=True, blank=True,
-        default=0.0,
-        help_text=""
-    )
-
-    year_one_fuel_cost = models.FloatField(
-        validators=[
-            MinValueValidator(0.0),
-            MaxValueValidator(1.0e9)
-        ],
-        null=True, blank=True,
-        default=0.0,
-        help_text=""
-    )
-
+    lifecycle_fuel_cost = models.FloatField(null=True, blank=True)
+    lifecycle_per_unit_prod_om_costs = models.FloatField(null=True, blank=True)
+    lifecycle_fuel_cost_bau = models.FloatField(null=True, blank=True)
+    year_one_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
+    year_one_fuel_cost = models.FloatField(null=True, blank=True)
+    
     thermal_to_tes_series_mmbtu_per_hour = ArrayField(
-        models.FloatField(
-            null=True, blank=True
-            ),
+        models.FloatField(null=True, blank=True),
         default = list,
-        null=False, blank=True,
-        help_text=""
     )
-
     year_one_thermal_production_mmbtu_per_hour = ArrayField(
-        models.FloatField(
-            null=True, blank=True
-            ),
+        models.FloatField(null=True, blank=True),
         default = list,
-        null=False, blank=True,
-        help_text=""
     )
-
     year_one_thermal_to_load_series_mmbtu_per_hour = ArrayField(
-        models.FloatField(
-            null=True, blank=True
-            ),
+        models.FloatField(null=True, blank=True),
         default = list,
-        null=False, blank=True,
-        help_text=""
     )
 
 
 class SpaceHeatingLoadInputs(BaseModel, models.Model):
-
+    
     key = "SpaceHeatingLoad"
 
     meta = models.OneToOneField(
@@ -3071,83 +2936,132 @@ class SpaceHeatingLoadInputs(BaseModel, models.Model):
         primary_key=True
     )
 
-    doe_reference_name = models.TextField(
-        blank=True,
-        default="",
-        help_text=""
-    )
+    possible_sets = [
+        ["fuel_loads_mmbtu_per_hour"],
+        ["doe_reference_name", "monthly_mmbtu"],
+        ["annual_mmbtu", "doe_reference_name"],
+        ["doe_reference_name"],
+        ["blended_doe_reference_names", "blended_doe_reference_percents"]
+    ]
 
-    city = models.TextField(
-        blank=True,
-        default="",
-        help_text=""
-    )
-
-    blended_doe_reference_names = ArrayField(
-        models.TextField(
-            blank=True,
-        ),
-        default=list,
-        blank=True,
-        help_text=""
-    )
-
-    blended_doe_reference_percents = ArrayField(
-        models.FloatField(
-            validators=[
-                MinValueValidator(0.0),
-                MaxValueValidator(1.0)
-            ],
-            blank=True,
-        ),
-        default=list,
-        blank=True,
-        null=False,
-        help_text=""
-    )
+    DOE_REFERENCE_NAME = models.TextChoices('DOE_REFERENCE_NAME', (
+        'FastFoodRest '
+        'FullServiceRest '
+        'Hospital '
+        'LargeHotel '
+        'LargeOffice '
+        'MediumOffice '
+        'MidriseApartment '
+        'Outpatient '
+        'PrimarySchool '
+        'RetailStore '
+        'SecondarySchool '
+        'SmallHotel '
+        'SmallOffice '
+        'StripMall '
+        'Supermarket '
+        'Warehouse '
+        'FlatLoad '
+        'FlatLoad_24_5 '
+        'FlatLoad_16_7 '
+        'FlatLoad_16_5 '
+        'FlatLoad_8_7 '
+        'FlatLoad_8_5'
+    ))
 
     annual_mmbtu = models.FloatField(
         validators=[
-            MinValueValidator(0.0),
-            MaxValueValidator(1.0e9)
+            MinValueValidator(1),
+            MaxValueValidator(100000000)
         ],
-        default="",
+        null=True,
         blank=True,
-        null=False,
         help_text=""
+    )
+
+    doe_reference_name = models.TextField(
+        null=False,
+        blank=True,
+        choices=DOE_REFERENCE_NAME.choices,
+        help_text=("Simulated load profile from DOE Commercial Reference Buildings "
+                   "https://energy.gov/eere/buildings/commercial-reference-buildings")
     )
 
     monthly_mmbtu = ArrayField(
         models.FloatField(
             validators=[
-                MinValueValidator(0.0),
-                MaxValueValidator(1.0e9)
+                MinValueValidator(0),
+                MaxValueValidator(1.0e8)
             ],
-            blank=True,
+            blank=True
         ),
-        default=list,
-        blank=True,
-        null=False,
-        help_text=""
+        default=list, blank=True,
+        help_text=("Monthly site energy consumption from electricity series (an array 12 entries long), in kWh, used "
+                   "to scale simulated default building load profile for the site's climate zone")
     )
 
     fuel_loads_mmbtu_per_hour = ArrayField(
-        models.FloatField(
-            validators=[
-                MinValueValidator(0.0),
-                MaxValueValidator(1.0e9)
-            ],
-            blank=True,
+        models.FloatField(blank=True),
+        default=list, blank=True,
+        help_text=("Typical load over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,"
+                   "520 samples), or 15 minute (35,040 samples). All non-net load values must be greater than or "
+                   "equal to zero. "
+                   )
+    )
+
+    blended_doe_reference_names = ArrayField(
+        models.TextField(
+            choices=DOE_REFERENCE_NAME.choices,
+            blank=True
         ),
         default=list,
         blank=True,
-        null=False,
-        help_text=""
+        help_text=("Used in concert with blended_doe_reference_percents to create a blended load profile from multiple "
+                   "DoE Commercial Reference Buildings.")
     )
 
-    def clean(self):
-        pass
+    blended_doe_reference_percents = ArrayField(
+        models.FloatField(
+            null=True, blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1.0)
+            ],
+        ),
+        default=list,
+        blank=True,
+        help_text=("Used in concert with blended_doe_reference_names to create a blended load profile from multiple "
+                   "DoE Commercial Reference Buildings. Must sum to 1.0.")
+    )
 
+    '''
+    Latitude and longitude are passed on to SpaceHeating struct using the Site struct.
+    City is not used as an input here because it is found using find_ashrae_zone_city() when needed.
+    '''
+
+    def clean(self):
+        error_messages = {}
+
+        # possible sets for defining load profile
+        if not at_least_one_set(self.dict, self.possible_sets):
+            error_messages["required inputs"] = \
+                "Must provide at least one set of valid inputs from {}.".format(self.possible_sets)
+
+        if len(self.blended_doe_reference_names) > 0 and self.doe_reference_name == "":
+            if len(self.blended_doe_reference_names) != len(self.blended_doe_reference_percents):
+                error_messages["blended_doe_reference_names"] = \
+                    "The number of blended_doe_reference_names must equal the number of blended_doe_reference_percents."
+            if not math.isclose(sum(self.blended_doe_reference_percents),  1.0):
+                error_messages["blended_doe_reference_percents"] = "Sum must = 1.0."
+
+        if self.doe_reference_name != "" or \
+                len(self.blended_doe_reference_names) > 0:
+            self.year = 2017  # the validator provides an "info" message regarding this
+
+        if error_messages:
+            raise ValidationError(error_messages)
+        
+        pass
 
 def get_input_dict_from_run_uuid(run_uuid:str):
     """
@@ -3206,3 +3120,12 @@ def get_input_dict_from_run_uuid(run_uuid:str):
     except: pass
     
     return d
+
+'''
+If a scalar was provided where API expects a vector, extend it to 8760
+'''
+def scalar_to_vector(vec:list):
+    if len(vec) == 1:
+        return vec * 8760  # upsampling handled in InputValidator.cross_clean
+    else:
+        return vec # the vector len was not 1, handle it elsewhere
