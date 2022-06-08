@@ -133,7 +133,7 @@ class PV(Tech):
 
         # If site is in southern hemisphere and user has not changed from default azimuth of 180, update to 0 for all array types
         if kwargs.get('latitude') < 0:
-            if kwargs.get('azimuth') == 180: # Assume user does not want array facing away from equator
+            if self.azimuth == 180: # Assume user does not want array facing away from equator
                 self.azimuth = 0
         # if user hasn't entered the tilt (default value is 0.537), tilt value gets assigned based on array_type
         if self.tilt == 0.537:
