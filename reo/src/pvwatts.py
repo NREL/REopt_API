@@ -155,8 +155,8 @@ class PVWatts:
     def data(self):
         if self.response is None:
             # Check if point is beyond the bounds of the NRSDB dataset, if so use the international dataset and double the radius
-            if self.longitude < -177.0 or self.longitude > -21.0 or self.latitude < -21.5 or self.latitude > 60.0: 
-                if self.longitude < 81.5 or self.longitude > -177.0 or self.latitude < -43.8 or self.latitude > 60.0 :
+            if self.longitude < -179.5 or self.longitude > -21.0 or self.latitude < -21.5 or self.latitude > 60.0: 
+                if self.longitude < 81.5 or self.longitude > 179.5 or self.latitude < -43.8 or self.latitude > 60.0 :
                     if self.longitude < 67.0 or self.longitude > 81.5 or self.latitude < -43.8 or self.latitude > 38.0: 
                         self.dataset = 'intl'
                         self.radius = self.radius *2
