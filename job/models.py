@@ -2689,7 +2689,10 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         ),
         default=list,
         blank=True,
-        help_text=("The ExistingBoiler default operating cost is zero. Please provide this field to include non-zero BAU heating costs. The `fuel_cost_per_mmbtu` can be a scalar, a list of 12 monthly values, or a time series of values for every time step.ExistingBoiler")
+        help_text=("The ExistingBoiler default operating cost is zero. Please provide this field to include non-zero BAU heating costs."
+                    "The `fuel_cost_per_mmbtu` can be a scalar, a list of 12 monthly values, or a time series of values for every time step."
+                    "If a scalar or a vector of 12 values are provided, then the value is scaled up to 8760 values."
+                    "If a vector of 8760, 17520, or 35040 values is provided, it is adjusted to match timesteps per hour in the optimization.")
     )
 
     fuel_type = models.TextField(
@@ -3001,8 +3004,11 @@ class SpaceHeatingLoadInputs(BaseModel, models.Model):
     )
 
     fuel_loads_mmbtu_per_hour = ArrayField(
-        models.FloatField(blank=True),
-        default=list, blank=True,
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
         help_text=("Typical load over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,"
                    "520 samples), or 15 minute (35,040 samples). All non-net load values must be greater than or "
                    "equal to zero. "
@@ -3056,7 +3062,7 @@ class SpaceHeatingLoadInputs(BaseModel, models.Model):
 
         if self.doe_reference_name != "" or \
                 len(self.blended_doe_reference_names) > 0:
-            self.year = 2017  # the validator provides an "info" message regarding this
+            self.year = 2017  # the validator provides an "info" message regarding this)
 
         if error_messages:
             raise ValidationError(error_messages)
@@ -3123,9 +3129,12 @@ def get_input_dict_from_run_uuid(run_uuid:str):
 
 '''
 If a scalar was provided where API expects a vector, extend it to 8760
+Upsampling handled in InputValidator.cross_clean
 '''
 def scalar_to_vector(vec:list):
-    if len(vec) == 1:
-        return vec * 8760  # upsampling handled in InputValidator.cross_clean
+    if len(vec) == 1: # scalar length is provided
+        return vec * 8760
+    elif len(vec) == 12: # Monthly costs were provided
+        return vec * 730
     else:
         return vec # the vector len was not 1, handle it elsewhere
