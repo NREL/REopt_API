@@ -130,16 +130,6 @@ class PVWatts:
         self.verify = verify  # used for testing
         self.response = None
         self.response = self.data  # store response so don't hit API multiple times
-        if self.tilt is None:
-            # if the site is in the southern hemisphere, and no tilt has been specified,
-            # then set the tilt to the positive latitude value and change the azimuth to zero
-            if self.latitude < 0:
-                self.tilt = self.latitude * -1 
-                self.azimuth = 0 
-            else:
-                # if the site is in the norther hemisphere, and no tilt has been specified,
-                # then set the tilt to the latitude value
-                self.tilt = self.latitude
 
     @property
     def url(self):

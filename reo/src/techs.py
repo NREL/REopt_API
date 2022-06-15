@@ -142,13 +142,7 @@ class PV(Tech):
                 start assuming the site is in the northern hemisphere, set the tilt to the latitude and leave the
                 default azimuth of 180 (unless otherwise specified)
                 """
-                self.tilt = kwargs.get('latitude')
-                if kwargs.get('latitude') < 0:
-                    """
-                    if the site is in the southern hemisphere, now set the tilt to the positive latitude value. 
-                    Also update kwargs going forward so they get saved to the database later show up in final results
-                    """
-                    self.tilt = -1 * self.tilt
+                self.tilt = abs(kwargs.get('latitude')) # if site is in southern hemisphere will set tilt to positive latitude value
             else:  # All other tilts come from lookup table included in the array_type_to_tilt_angle dictionary above
                 self.tilt = PV.array_type_to_tilt_angle[kwargs.get('array_type')]
 
