@@ -86,7 +86,6 @@ class InternationalPVTest(ResourceTestCaseMixin, TestCase):
         pv_list = a['year_one_to_battery_series_kw'], a['year_one_to_load_series_kw'], a['year_one_to_grid_series_kw'], a['year_one_curtailed_production_series_kw']
         tot_pv = np.sum(pv_list, axis=0)
         total_pv = sum(tot_pv)
-        print(total_pv)
 
         try:
             self.assertAlmostEqual(total_pv, 1246915, delta=0.5) # checked against PVWatts online calculator
