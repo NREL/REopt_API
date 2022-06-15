@@ -113,8 +113,10 @@ class TestBoilerScenario(ResourceTestCaseMixin, TestCase):
     def test_boilers_scenario(self):
 
         """
-        Same test as "Boiler and Steam Turbine" in the Julia package. Used in development of v2.
-        No need to keep this test.
+        This test runs a simple test to determine if Boiler and ExistingBoiler keys are returned from the JOB API if a SpaceHeatingLoad is provided.
+        It tests the API's ability to read inputs such as scalar fuel costs and process them as vectors.
+
+        SteamTurbine key is manually removed for now. When the functionality is added to REopt it can be tested using below test case as well.
 
         Execution steps:
             run CLI for active Docker container
@@ -191,6 +193,8 @@ class TestBoilerScenario(ResourceTestCaseMixin, TestCase):
             }
         }
 
+        del scenario["SteamTurbine"]
+
         resp = self.api_client.post('/dev/job/', format='json', data=scenario)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
@@ -200,6 +204,9 @@ class TestBoilerScenario(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         results = r["outputs"]
 
-        print(results)
-        print("\tExecuting existing boiler test.")
-        pass
+        assert("ExistingBoiler" in results)
+        assert("Boiler" in results)
+        self.assertAlmostEqual(results["ExistingBoiler"]["year_one_fuel_consumption_mmbtu"], 29897, places=-3)
+        self.assertAlmostEqual(results["ExistingBoiler"]["lifecycle_fuel_cost"], 160072, places=-3)
+        self.assertAlmostEqual(results["ExistingBoiler"]["year_one_fuel_cost"], 14948, places=-3)
+        self.assertAlmostEqual(results["Boiler"]["year_one_fuel_consumption_mmbtu"], 0.0)
