@@ -26,6 +26,13 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+# v2.0.3
+### Minor Updates
+##### Fixed
+- In `src/pvwatts.py`, Updated lat-long coordinates if-statement used to determine whether the "nsrdb" dataset should be used to determine the PV prod factor. Accounts for recent updates to NSRDB data used by PVWatts (v6) 
+- Avoids overwriting user-entered PV azimuth (other than 180) for ground-mount systems in southern hemisphere
+- Updates default azimuth to 0 for southern latitudes for all PV types (rather than just for ground-mount)
+
 # v2.0.2
 ### Patches
 - bug fix for 15/30 minute scenarios with URDB TOU demand rates
