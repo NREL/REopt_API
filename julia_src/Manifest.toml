@@ -517,7 +517,9 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [[deps.REopt]]
 deps = ["ArchGDAL", "Dates", "DelimitedFiles", "HTTP", "JSON", "JuMP", "LinDistFlow", "Logging", "MathOptInterface", "Roots", "Shapefile", "TestEnv"]
-path = "C:\\Users\\BRATHOD\\.julia\\dev\\REopt"
+git-tree-sha1 = "6f608cb544fdd6b380c5803e72df346c8d93b8dd"
+repo-rev = "newboiler"
+repo-url = "https://github.com/NREL/REopt.jl.git"
 uuid = "d36ad4e8-d74a-4f7a-ace1-eaea049febf6"
 version = "0.15.1"
 
