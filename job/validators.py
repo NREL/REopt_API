@@ -95,7 +95,7 @@ class InputValidator(object):
         )
         self.pvnames = []
         required_object_names = [
-            "Site", "ElectricLoad", "ElectricTariff"
+            "Site", "ElectricLoad"
         ]
         
         filtered_user_post = dict()
@@ -185,11 +185,13 @@ class InputValidator(object):
     def clean(self):
         """
         Run all models' clean methods
+        Run ElectricTariff clean method in cross-clean
         :return: None
         """
         for model in self.models.values():
             try:
-                model.clean()
+                if model.key != "ElectricTariff":
+                    model.clean()
             except ValidationError as ve:
                 self.validation_errors[model.key] = ve.message_dict
 
@@ -220,8 +222,8 @@ class InputValidator(object):
         Time series values are up or down sampled to align with Settings.time_steps_per_hour
         """
         for key, time_series in zip(
-            ["ElectricLoad", "ElectricLoad",      "ElectricTariff"],
-            ["loads_kw",     "critical_loads_kw", "wholesale_rate"]
+            ["ElectricLoad", "ElectricLoad"],
+            ["loads_kw",     "critical_loads_kw"]
         ):
             self.clean_time_series(key, time_series)
                         
@@ -249,28 +251,57 @@ class InputValidator(object):
                               "latitude/longitude not in the WindToolkit database. Cannot retrieve wind resource data.")
 
         """
-        ElectricTariff
+        ElectricTariff only if off_grid_flag is False:
+            Validate ElectricTariff inputs
         """
-        if len(self.models["ElectricTariff"].tou_energy_rates_per_kwh) > 0:
-            self.clean_time_series("ElectricTariff", "tou_energy_rates_per_kwh")
 
-        cp_ts_arrays = self.models["ElectricTariff"].__getattribute__("coincident_peak_load_active_timesteps")
-        max_ts = 8760 * self.models["Settings"].time_steps_per_hour
-        if len(cp_ts_arrays) > 0:
-            if len(cp_ts_arrays[0]) > 0:
-                if any(ts > max_ts for a in cp_ts_arrays for ts in a):
-                    self.add_validation_error("ElectricTariff", "coincident_peak_load_active_timesteps",
-                                              f"At least one time step is greater than the max allowable ({max_ts})")
+        if self.models["Settings"].off_grid_flag==False:
+            self.models["ElectricTariff"].clean()
 
-        if self.models["ElectricTariff"].urdb_response:
-            if "energyweekdayschedule" in self.models["ElectricTariff"].urdb_response.keys():
-                urdb_rate_timesteps_per_hour = int(len(self.models["ElectricTariff"].urdb_response[
-                                                           "energyweekdayschedule"][1]) / 24)
-                if urdb_rate_timesteps_per_hour > self.models["Settings"].time_steps_per_hour:
-                    # do not support down-sampling tariff
-                    self.add_validation_error("ElectricTariff", "urdb_response",
-                                              ("The time steps per hour in the energyweekdayschedule must be no greater "
-                                               "than the Settings.time_steps_per_hour."))
+            self.clean_time_series("ElectricTariff", "wholesale_rate")
+
+            if len(self.models["ElectricTariff"].tou_energy_rates_per_kwh) > 0:
+                self.clean_time_series("ElectricTariff", "tou_energy_rates_per_kwh")
+
+            cp_ts_arrays = self.models["ElectricTariff"].__getattribute__("coincident_peak_load_active_time_steps")
+            max_ts = 8760 * self.models["Settings"].time_steps_per_hour
+            if len(cp_ts_arrays) > 0:
+                if len(cp_ts_arrays[0]) > 0:
+                    if any(ts > max_ts for a in cp_ts_arrays for ts in a):
+                        self.add_validation_error("ElectricTariff", "coincident_peak_load_active_timesteps",
+                                                f"At least one time step is greater than the max allowable ({max_ts})")
+
+            if self.models["ElectricTariff"].urdb_response:
+                if "energyweekdayschedule" in self.models["ElectricTariff"].urdb_response.keys():
+                    urdb_rate_timesteps_per_hour = int(len(self.models["ElectricTariff"].urdb_response[
+                                                            "energyweekdayschedule"][1]) / 24)
+                    if urdb_rate_timesteps_per_hour > self.models["Settings"].time_steps_per_hour:
+                        # do not support down-sampling tariff
+                        self.add_validation_error("ElectricTariff", "urdb_response",
+                                                ("The time steps per hour in the energyweekdayschedule must be no greater "
+                                                "than the Settings.time_steps_per_hour."))
+        
+        else:
+            # Off off-grid flag is true, update default values
+            self.models["ElectricLoad"].critical_load_pct = 1.0
+            self.models["ElectricLoad"].operating_reserve_required_pct = 0.1
+            self.models["ElectricLoad"].min_load_met_annual_pct = 0.99999
+
+            self.models["ElectricStorage"].soc_init_pct = 1.0
+            self.models["ElectricStorage"].can_grid_charge = False
+            
+            self.models["Financial"].microgrid_upgrade_cost_pct = 0.0
+
+            self.models["Generator"].fuel_avail_gal = 1.0e9
+            self.models["Generator"].min_turn_down_pct = 0.15
+            self.models["Generator"].replacement_year = 10
+            self.models["Generator"].replace_cost_per_kw = self.models["Generator"].installed_cost_per_kw
+
+            self.models["PV"].can_net_meter = False
+            self.models["PV"].can_wholesale = False
+            self.models["PV"].can_export_beyond_nem_limit = False
+            self.models["PV"].operating_reserve_required_pct = 0.25
+            pass
 
         """
         ElectricUtility

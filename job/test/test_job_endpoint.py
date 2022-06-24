@@ -108,3 +108,82 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(results["ElectricStorage"]["size_kw"], 55.9, places=1)
         self.assertAlmostEqual(results["ElectricStorage"]["size_kwh"], 78.9, places=1)
 
+    def test_off_grid(self):
+        """
+        document...
+        """
+        scenario = {
+            "Settings":{
+                "time_steps_per_hour": 1,
+                "off_grid_flag": True
+            },
+            "Site": {
+                "longitude": -118.1164613,
+                "latitude": 34.5794343,
+                "node": 1,
+                "land_acres": 30,
+                "roof_squarefeet": 5000
+            },
+            "PV": {
+                "macrs_bonus_pct": 0.4,
+                "installed_cost_per_kw": 2000,
+                "tilt": 34.579,
+                "federal_rebate_per_kw": 350,
+                "operating_reserve_required_pct": 0.25,
+                "production_incentive_per_kwh": 0.05
+            },
+            "Generator": {
+                "installed_cost_per_kw": 700,
+                "min_kw": 100,
+                "max_kw": 100,
+                "replacement_year": 10,
+                "replace_cost_per_kw": 700,
+                "fuel_intercept_gal_per_hr": 0.0,
+                "fuel_slope_gal_per_kwh": 0.076
+            },
+            "ElectricLoad": {
+                "doe_reference_name": "RetailStore",
+                "annual_kwh": 10000000.0,
+                "city": "LosAngeles",
+                "year": 2017,
+                "min_load_met_annual_pct": 0.99,
+                "operating_reserve_required_pct": 0.1
+            },
+            "ElectricStorage": {
+                "macrs_option_years": 5,
+                "macrs_bonus_pct": 0.4,
+                "installed_cost_per_kw": 1000.0,
+                "installed_cost_per_kwh": 500.0,
+                "replace_cost_per_kw": 460.0,
+                "replace_cost_per_kwh": 230.0,
+                "total_itc_pct": 0.0
+            },
+            "Financial": {
+                "elec_cost_escalation_pct": 0.026,
+                "generator_fuel_cost_escalation_pct": 0.027,
+                "offtaker_discount_pct": 0.08,
+                "owner_discount_pct": 0.15,
+                "analysis_years": 20,
+                "offtaker_tax_pct": 0.26,
+                "owner_tax_pct": 0.4,
+                "om_cost_escalation_pct": 0.025,
+                "offgrid_other_capital_costs": 3000,
+                "offgrid_other_annual_costs": 600,
+                "third_party_ownership": False
+            }
+        }
+
+        resp = self.api_client.post('/dev/job/', format='json', data=scenario)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+
+        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        r = json.loads(resp.content)
+        results = r["outputs"]
+
+        self.assertAlmostEqual(results["Financial"]["offgrid_microgrid_lcoe_dollars_per_kwh"], 3.317, places=-3)
+        self.assertAlmostEqual(results["ElectricTariff"]["year_one_bill_before_tax"], 0.0)
+        self.assertAlmostEqual(results["ElectricLoad"]["offgrid_load_met_pct"], 0.99, places=-2)
+        self.assertAlmostEqual(sum(results["ElectricLoad"]["offgrid_load_met_series_kw"]), 9999900, places=-1)
+        self.assertAlmostEqual(results["Financial"]["lifecycle_offgrid_other_annual_costs_after_tax"], 5365.53, places=-2)
