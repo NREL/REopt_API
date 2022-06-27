@@ -75,7 +75,7 @@ class PVWatts:
                  module_type=0,
                  timeframe='hourly',
                  gcr=0.4,
-                 dc_ac_ratio=1.1,
+                 dc_ac_ratio=1.2,
                  inv_eff=0.96,
                  radius=100,
                  dataset="nsrdb",
@@ -130,16 +130,6 @@ class PVWatts:
         self.verify = verify  # used for testing
         self.response = None
         self.response = self.data  # store response so don't hit API multiple times
-        if self.tilt is None:
-            # if the site is in the southern hemisphere, and no tilt has been specified,
-            # then set the tilt to the positive latitude value and change the azimuth to zero
-            if self.latitude < 0:
-                self.tilt = self.latitude * -1
-                self.azimuth = 0
-            else:
-                # if the site is in the norther hemisphere, and no tilt has been specified,
-                # then set the tilt to the latitude value
-                self.tilt = self.latitude
 
     @property
     def url(self):
@@ -155,9 +145,11 @@ class PVWatts:
     def data(self):
         if self.response is None:
             # Check if point is beyond the bounds of the NRSDB dataset, if so use the international dataset and double the radius
-            if self.latitude < -59.5 or self.latitude > 60.01 or self.longitude > -22.37 or self.longitude < -179.58 :
-                self.dataset = 'intl'
-                self.radius = self.radius *2
+            if self.longitude < -179.5 or self.longitude > -21.0 or self.latitude < -21.5 or self.latitude > 60.0: 
+                if self.longitude < 81.5 or self.longitude > 179.5 or self.latitude < -43.8 or self.latitude > 60.0 :
+                    if self.longitude < 67.0 or self.longitude > 81.5 or self.latitude < -43.8 or self.latitude > 38.0: 
+                        self.dataset = 'intl'
+                        self.radius = self.radius *2
             resp = requests.get(self.url, verify=self.verify)
             log.info("PVWatts API query successful.")
             data = check_pvwatts_response_data(resp)
