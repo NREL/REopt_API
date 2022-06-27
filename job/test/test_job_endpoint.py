@@ -110,7 +110,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
 
     def test_off_grid(self):
         """
-        document...
+        Same scenario as off-grid.json in REopt.jl -> test -> scenarios. Purpose of this test is to validate off-grid functionality in the API.
         """
         scenario = {
             "Settings":{

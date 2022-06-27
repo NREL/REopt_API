@@ -236,7 +236,7 @@ class Settings(BaseModel, models.Model):
     off_grid_flag = models.BooleanField(
         default=False,
         blank=True,
-        help_text=("Set to true to enable off-grid analysis")
+        help_text=("Set to true to enable off-grid analyses")
     )
 
 
@@ -429,7 +429,7 @@ class FinancialInputs(BaseModel, models.Model):
             blank=True,
             null=True,
             default=0.0,
-            help_text=("")
+            help_text=("Only applicable when off_grid_flag is true, applies a straight-line depreciation to this capex cost, reducing taxable income.")
     )
 
     offgrid_other_annual_costs = models.FloatField(
@@ -440,7 +440,7 @@ class FinancialInputs(BaseModel, models.Model):
         blank=True,
         null=True,
         default=0.0,
-        help_text=("")
+        help_text=("Only applicable when off_grid_flag is true. Considered tax deductible for owner. Costs are per year.")
     )
 
     # boiler_fuel_escalation_pct = models.FloatField(
@@ -612,60 +612,66 @@ class FinancialOutputs(BaseModel, models.Model):
     )
     lifecycle_generation_tech_capital_costs = models.FloatField(
         null=True, blank=True,
-        help_text=""
+        help_text=("Component of lifecycle costs, this value is the net capital costs for all generation technologies"
+                    "Costs are given in present value, including replacement costs and incentives."
+                    "This value does not include offgrid_other_capital_costs.")
     )
     lifecycle_storage_capital_costs = models.FloatField(
         null=True, blank=True,
-        help_text=""
+        help_text=("Component of lifecycle costs, this value is the Net capital costs for all storage technologies"
+                    "Value is in present value, including replacement costs and incentives."
+                    "This value does not include offgrid_other_capital_costs.")
     )
     lifecycle_om_costs_after_tax = models.FloatField(
         null=True, blank=True,
-        help_text=""
+        help_text=("Component of lifecycle costs, this value is the present value of all O&M costs, after tax.")
     )
     lifecycle_fuel_costs_after_tax = models.FloatField(
         null=True, blank=True,
-        help_text=""
+        help_text=("Component of lifecycle costs, this value is the present value of all fuel costs over the analysis period, after tax.")
     )
 
     lifecycle_chp_standby_cost_after_tax = models.FloatField(
         null=True, blank=True,
-        help_text=""
+        help_text=("Component of lifecycle costs, this value is the present value of all CHP standby charges, after tax.")
     )
     lifecycle_elecbill_after_tax = models.FloatField(
         null=True, blank=True,
-        help_text=""
+        help_text=("Component of lifecycle costs, this value is the present value of all electric utility charges, after tax.")
     )
     lifecycle_production_incentive_after_tax = models.FloatField(
         null=True, blank=True,
-        help_text=""
+        help_text=("Component of lifecycle costs, this value is the present value of all production-based incentives, after tax.")
     )
     lifecycle_offgrid_other_annual_costs_after_tax = models.FloatField(
         null=True, blank=True,
-        help_text=""
+        help_text=("Component of lifecycle costs, this value is the present value of offgrid_other_annual_costs over the analysis period, after tax.")
     )
     lifecycle_offgrid_other_capital_costs = models.FloatField(
         null=True, blank=True,
-        help_text=""
+        help_text=("Component of lifecycle costs, this value is equal to offgrid_other_capital_costs with straight line depreciation applied"
+                    " over analysis period. The depreciation expense is assumed to reduce the owner's taxable income.")
     )
     lifecycle_outage_cost = models.FloatField(
         null=True, blank=True,
-        help_text=""
+        help_text=("Component of lifecycle costs, expected outage cost.")
     )
     lifecycle_MG_upgrade_and_fuel_cost = models.FloatField(
         null=True, blank=True,
-        help_text=""
+        help_text=("Component of lifecycle costs, this is the cost to upgrade generation and storage technologies to be included in microgrid"
+                    "plus present value of microgrid fuel costs.")
     )
     replacements_future_cost_after_tax = models.FloatField(
         null=True, blank=True,
-        help_text=""
+        help_text="Future cost of replacing storage and/or generator systems, after tax."
     )
     replacements_present_cost_after_tax = models.FloatField(
         null=True, blank=True,
-        help_text=""
+        help_text="Present value cost of replacing storage and/or generator systems, after tax."
     )
     offgrid_microgrid_lcoe_dollars_per_kwh = models.FloatField(
         null=True, blank=True,
-        help_text=""
+        help_text="Levelized cost of electricity for modeled off-grid system."
     )
 
 class ElectricLoadInputs(BaseModel, models.Model):
@@ -890,28 +896,28 @@ class ElectricLoadOutputs(BaseModel, models.Model):
     )
     offgrid_load_met_pct = models.FloatField(
         null=True, blank=True,
-        help_text=""
+        help_text="Percentage of total electric load met on an annual basis, for off-grid scenarios only"
     )
     offgrid_annual_oper_res_required_series_kwh = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
         default=list,
-        help_text=""
+        help_text="Total operating reserves required on an annual basis, for off-grid scenarios only"
     )
     offgrid_annual_oper_res_provided_series_kwh = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
         default=list,
-        help_text=""
+        help_text="Total operating reserves provided on an annual basis, for off-grid scenarios only"
     )
     offgrid_load_met_series_kw = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
         default=list,
-        help_text=""
+        help_text="Percentage of total electric load met on an annual basis, for off-grid scenarios only"
     )
 
 class ElectricTariffInputs(BaseModel, models.Model):
@@ -2727,7 +2733,6 @@ def get_input_dict_from_run_uuid(run_uuid:str):
     d["Financial"] = filter_none_and_empty_array(meta.FinancialInputs.dict)
     d["Site"] = filter_none_and_empty_array(meta.SiteInputs.dict)
     d["ElectricLoad"] = filter_none_and_empty_array(meta.ElectricLoadInputs.dict)
-    # d["ElectricTariff"] = filter_none_and_empty_array(meta.ElectricTariffInputs.dict)
 
     # We have to try for the following objects because they may or may not be defined
     try:
@@ -2740,6 +2745,7 @@ def get_input_dict_from_run_uuid(run_uuid:str):
                 d["PV"].append(filter_none_and_empty_array(pv.dict))
     except: pass
 
+    # Try to get electric tariff as it may be missing in off-grid scenarios
     try: d["ElectricTariff"] = filter_none_and_empty_array(meta.ElectricTariffInputs.dict)
     except: pass
 

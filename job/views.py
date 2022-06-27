@@ -145,7 +145,6 @@ def results(request, run_uuid):
     r["inputs"] = dict()
     r["inputs"]["Financial"] = meta.FinancialInputs.dict
     r["inputs"]["ElectricLoad"] = meta.ElectricLoadInputs.dict
-    # r["inputs"]["ElectricTariff"] = meta.ElectricTariffInputs.dict
     r["inputs"]["Site"] = meta.SiteInputs.dict
     r["inputs"]["Settings"] = meta.Settings.dict
 

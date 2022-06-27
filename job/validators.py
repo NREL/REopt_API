@@ -251,14 +251,13 @@ class InputValidator(object):
                               "latitude/longitude not in the WindToolkit database. Cannot retrieve wind resource data.")
 
         """
-        ElectricTariff only if off_grid_flag is False:
-            Validate ElectricTariff inputs
+        Off-grid related validations
+        If off-grid flag is true, update default values in models to match off-grid scenarios
+        if off-grid value is false, validate ElectricTariff
         """
 
         if self.models["Settings"].off_grid_flag==False:
             self.models["ElectricTariff"].clean()
-
-            self.clean_time_series("ElectricTariff", "wholesale_rate")
 
             if len(self.models["ElectricTariff"].tou_energy_rates_per_kwh) > 0:
                 self.clean_time_series("ElectricTariff", "tou_energy_rates_per_kwh")
@@ -280,7 +279,8 @@ class InputValidator(object):
                         self.add_validation_error("ElectricTariff", "urdb_response",
                                                 ("The time steps per hour in the energyweekdayschedule must be no greater "
                                                 "than the Settings.time_steps_per_hour."))
-        
+            
+            self.clean_time_series("ElectricTariff", "wholesale_rate")
         else:
             # Off off-grid flag is true, update default values
             self.models["ElectricLoad"].critical_load_pct = 1.0
