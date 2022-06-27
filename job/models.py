@@ -2700,7 +2700,7 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         blank=True,
         choices=FUEL_TYPE_LIST.choices,
         default="natural_gas",
-        help_text=""
+        help_text=("Existing boiler fuel type, one of " + FUEL_TYPE_LIST.choices)
     )
 
     can_supply_steam_turbine = models.BooleanField(
@@ -2816,7 +2816,7 @@ class BoilerInputs(BaseModel, models.Model):
         ),
         default=list,
         blank=True,
-        help_text=""
+        help_text="Fuel cost per mmBtu (million Btu)"
     )
 
     macrs_option_years = models.IntegerField(
@@ -2876,7 +2876,7 @@ class BoilerInputs(BaseModel, models.Model):
         choices=FUEL_TYPE_LIST.choices,
         blank=True,
         null=True,
-        help_text=""
+        help_text=("Boiler fuel type, one of " + FUEL_TYPE_LIST.choices)
     )
 
     can_supply_steam_turbine = models.BooleanField(
@@ -2979,7 +2979,8 @@ class SpaceHeatingLoadInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        help_text=""
+        help_text=("Annual site space heating consumption, used "
+                   "to scale simulated default building load profile for the site's climate zone [MMBtu]")
     )
 
     doe_reference_name = models.TextField(
@@ -2999,7 +3000,7 @@ class SpaceHeatingLoadInputs(BaseModel, models.Model):
             blank=True
         ),
         default=list, blank=True,
-        help_text=("Monthly site energy consumption from electricity series (an array 12 entries long), in kWh, used "
+        help_text=("Monthly site space heating energy consumption in MMbtu, used "
                    "to scale simulated default building load profile for the site's climate zone")
     )
 
