@@ -39,16 +39,22 @@ Classify the change according to the following categories:
 - Changed `get_input_dict_from_run_uuid` to accomodate new models
 - Added `scalar_to_vector` to convert scalars of vector of 12 elements to 8760 elements
 - Changed **ElectricLoadInputs.wholesale_rate** to use `scalar_to_vector` function
-
 `0005_boilerinputs....` file used to add new models to the db
-
 `job/process_results.py` - add **ExistingBoilerOutputs** and **BoilerOutputs**
-
 `job/validators.py` - add new input models
-
 `job/views.py` - add new input/output models to properly save the inputs/outputs
-
 `job/test/test_job_endpoint.py` - add a testcase to validate that API is accepting/returning fields related to new models.
+
+# v2.0.3
+### Minor Updates
+##### Fixed
+- In `src/pvwatts.py`, Updated lat-long coordinates if-statement used to determine whether the "nsrdb" dataset should be used to determine the PV prod factor. Accounts for recent updates to NSRDB data used by PVWatts (v6) 
+- Avoids overwriting user-entered PV azimuth (other than 180) for ground-mount systems in southern hemisphere
+- Updates default azimuth to 0 for southern latitudes for all PV types (rather than just for ground-mount)
+
+# v2.0.2
+### Patches
+- bug fix for 15/30 minute scenarios with URDB TOU demand rates
 
 # v2.0.1
 ### Minor Updates
