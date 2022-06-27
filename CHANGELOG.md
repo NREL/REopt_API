@@ -26,6 +26,30 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop - 2022-06-27
+### Minor Updates
+##### Added
+`job/models.py`
+- Added **lifecycle_fuel_costs_after_tax** to **FinancialOutputs**
+- Added **ExistingBoilerInputs** model
+- Added **ExistingBoilerOutputs** model
+- Added **BoilerInputs** model
+- Added **BoilerOutputs** model
+- Added **SpaceHeatingLoadInputs** model
+- Changed `get_input_dict_from_run_uuid` to accomodate new models
+- Added `scalar_to_vector` to convert scalars of vector of 12 elements to 8760 elements
+- Changed **ElectricLoadInputs.wholesale_rate** to use `scalar_to_vector` function
+
+`0005_boilerinputs....` file used to add new models to the db
+
+`job/process_results.py` - add **ExistingBoilerOutputs** and **BoilerOutputs**
+
+`job/validators.py` - add new input models
+
+`job/views.py` - add new input/output models to properly save the inputs/outputs
+
+`job/test/test_job_endpoint.py` - add a testcase to validate that API is accepting/returning fields related to new models.
+
 # v2.0.1
 ### Minor Updates
 ##### Changed
