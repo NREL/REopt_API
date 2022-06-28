@@ -107,6 +107,8 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(results["PV"]["size_kw"], 216.667, places=1)
         self.assertAlmostEqual(results["ElectricStorage"]["size_kw"], 55.9, places=1)
         self.assertAlmostEqual(results["ElectricStorage"]["size_kwh"], 78.9, places=1)
+    
+class TestBoilerScenario(ResourceTestCaseMixin, TestCase):
 
     def test_boilers_scenario(self):
 
