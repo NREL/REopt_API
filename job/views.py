@@ -35,7 +35,7 @@ from django.http import JsonResponse
 from reo.exceptions import UnexpectedError
 from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, GeneratorInputs, ElectricLoadInputs,\
     ElectricTariffInputs, ElectricUtilityInputs, PVOutputs, ElectricStorageOutputs, WindOutputs, GeneratorOutputs, \
-    ElectricTariffOutputs, ElectricUtilityOutputs, ElectricLoadOutputs, APIMeta, UserProvidedMeta
+    ElectricTariffOutputs, ElectricUtilityOutputs, ElectricLoadOutputs, APIMeta, UserProvidedMeta, CoolingLoadInputs
 
 
 def make_error_resp(msg):
@@ -60,6 +60,7 @@ def help(request):
         d["ElectricStorage"] = ElectricStorageInputs.info_dict(ElectricStorageInputs)
         d["Wind"] = WindInputs.info_dict(WindInputs)
         d["Generator"] = GeneratorInputs.info_dict(GeneratorInputs)
+        d["CoolingLoad"] = GeneratorInputs.info_dict(CoolingLoadInputs)
         return JsonResponse(d)
 
     except Exception as e:
@@ -174,6 +175,9 @@ def results(request, run_uuid):
     except: pass
 
     try: r["inputs"]["Wind"] = meta.WindInputs.dict
+    except: pass
+
+    try: r["inputs"]["CoolingLoad"] = meta.CoolingLoadInputs.dict
     except: pass
 
     try:

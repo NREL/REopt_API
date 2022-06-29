@@ -30,7 +30,8 @@
 import logging
 import pandas as pd
 from job.models import APIMeta, UserProvidedMeta, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
-    FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs
+    FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs, \
+    CoolingLoadInputs
 from django.core.exceptions import ValidationError
 from pyproj import Proj
 
@@ -91,7 +92,8 @@ class InputValidator(object):
             PVInputs,
             ElectricStorageInputs,
             GeneratorInputs,
-            WindInputs
+            WindInputs,
+            CoolingLoadInputs
         )
         self.pvnames = []
         required_object_names = [
@@ -284,6 +286,18 @@ class InputValidator(object):
                 if self.models["ElectricUtility"].outage_end_time_step > max_ts:
                     self.add_validation_error("ElectricUtility", "outage_end_time_step",
                                               f"Value is greater than the max allowable ({max_ts})")
+        
+        """
+        CoolingLoad
+        """
+        if "CoolingLoad" in self.models.keys():
+
+            if len(self.models["CoolingLoad"].thermal_loads_ton) > 0:
+                self.clean_time_series("CoolingLoad", "thermal_loads_ton")
+
+            if len(self.models["CoolingLoad"].per_time_step_fractions_of_electric_load) > 0:
+                self.clean_time_series("CoolingLoad", "per_time_step_fractions_of_electric_load")
+            
 
     def save(self):
         """

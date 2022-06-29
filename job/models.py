@@ -2592,6 +2592,190 @@ class Message(BaseModel, models.Model):
 
 # TODO other necessary models from reo/models.py
 
+class CoolingLoadInputs(BaseModel, models.Model):
+    
+    key = "CoolingLoad"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="CoolingLoadInputs",
+        primary_key=True
+    )
+
+    possible_sets = [
+        ["thermal_loads_ton"],
+        ["doe_reference_name", "monthly_mmbtu"],
+        ["doe_reference_name", "annual_tonhour"],
+        ["blended_doe_reference_names", "blended_doe_reference_percents"],
+        ["blended_doe_reference_names", "blended_doe_reference_percents","annual_mmbtu"],
+        ["blended_doe_reference_names", "blended_doe_reference_percents","monthly_tonhour"],
+        ["annual_fraction_of_electric_load"],
+        ["monthly_fractions_of_electric_load"],
+    ]
+
+    DOE_REFERENCE_NAME = models.TextChoices('DOE_REFERENCE_NAME', (
+        'FastFoodRest '
+        'FullServiceRest '
+        'Hospital '
+        'LargeHotel '
+        'LargeOffice '
+        'MediumOffice '
+        'MidriseApartment '
+        'Outpatient '
+        'PrimarySchool '
+        'RetailStore '
+        'SecondarySchool '
+        'SmallHotel '
+        'SmallOffice '
+        'StripMall '
+        'Supermarket '
+        'Warehouse '
+        'FlatLoad '
+        'FlatLoad_24_5 '
+        'FlatLoad_16_7 '
+        'FlatLoad_16_5 '
+        'FlatLoad_8_7 '
+        'FlatLoad_8_5'
+    ))
+
+    doe_reference_name = models.TextField(
+        null=False,
+        blank=True,
+        choices=DOE_REFERENCE_NAME.choices,
+        help_text=("Simulated load profile from DOE Commercial Reference Buildings "
+                   "https://energy.gov/eere/buildings/commercial-reference-buildings")
+    )
+
+    blended_doe_reference_names = ArrayField(
+        models.TextField(
+            choices=DOE_REFERENCE_NAME.choices,
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        help_text=("Used in concert with blended_doe_reference_percents to create a blended load profile from multiple "
+                   "DoE Commercial Reference Buildings.")
+    )
+
+    blended_doe_reference_percents = ArrayField(
+        models.FloatField(
+            null=True, blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1.0)
+            ],
+        ),
+        default=list,
+        blank=True,
+        help_text=("Used in concert with blended_doe_reference_names to create a blended load profile from multiple "
+                   "DoE Commercial Reference Buildings. Must sum to 1.0.")
+    )
+
+
+    annual_tonhour = models.FloatField(
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(100000000)
+        ],
+        null=True,
+        blank=True,
+        help_text=("Annual site space cooling requirement, used "
+                   "to scale simulated default building load profile for the site's climate zone [Ton-Hour]")
+    )
+
+    monthly_tonhour = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1.0e8)
+            ],
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Monthly site space cooling requirement in [Ton-Hour], used "
+                   "to scale simulated default building load profile for the site's climate zone")
+    )
+
+    thermal_loads_ton = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        help_text=("Typical space cooling load over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,"
+                   "520 samples), or 15 minute (35,040 samples)."
+                   )
+    )
+
+    annual_fraction_of_electric_load = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        null=True,
+        blank=True,
+        help_text=("")
+    )
+
+    monthly_fractions_of_electric_load = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1)
+            ],
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Monthly site space heating energy consumption in [MMbtu], used "
+                   "to scale simulated default building load profile for the site's climate zone")
+    )
+
+    per_time_step_fractions_of_electric_load = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        help_text=("Typical load over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,"
+                   "520 samples), or 15 minute (35,040 samples). All non-net load values must be greater than or "
+                   "equal to zero. "
+                   )
+    )
+
+    '''
+    Latitude and longitude are passed on to SpaceHeating struct using the Site struct.
+    City is not used as an input here because it is found using find_ashrae_zone_city() when needed.
+    '''
+
+    def clean(self):
+        error_messages = {}
+
+        # possible sets for defining load profile
+        if not at_least_one_set(self.dict, self.possible_sets):
+            error_messages["required inputs"] = \
+                "Must provide at least one set of valid inputs from {}.".format(self.possible_sets)
+
+        if len(self.blended_doe_reference_names) > 0 and self.doe_reference_name == "":
+            if len(self.blended_doe_reference_names) != len(self.blended_doe_reference_percents):
+                error_messages["blended_doe_reference_names"] = \
+                    "The number of blended_doe_reference_names must equal the number of blended_doe_reference_percents."
+            if not math.isclose(sum(self.blended_doe_reference_percents),  1.0):
+                error_messages["blended_doe_reference_percents"] = "Sum must = 1.0."
+
+        if self.doe_reference_name != "" or \
+                len(self.blended_doe_reference_names) > 0:
+            self.year = 2017  # the validator provides an "info" message regarding this)
+        
+        if len(self.monthly_fractions_of_electric_load) > 0:
+            if len(self.monthly_fractions_of_electric_load) != 12:
+                error_messages["monthly_fractions_of_electric_load"] = \
+                    "Provided cooling monthly_fractions_of_electric_load array does not have 12 values."
+
+        if error_messages:
+            raise ValidationError(error_messages)
+        
+        pass
 
 def get_input_dict_from_run_uuid(run_uuid:str):
     """
@@ -2639,5 +2823,8 @@ def get_input_dict_from_run_uuid(run_uuid:str):
 
     try: d["Wind"] = filter_none_and_empty_array(meta.WindInputs.dict)
     except: pass
-    
+
+    try: d["CoolingLoad"] = filter_none_and_empty_array(meta.CoolingLoadInputs.dict)
+    except: pass
+
     return d
