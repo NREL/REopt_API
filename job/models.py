@@ -229,6 +229,7 @@ class Settings(BaseModel, models.Model):
     run_bau = models.BooleanField(
         blank=True,
         null=True,
+        default=True,
         help_text=("If True then the Business-As-Usual scenario is also solved to provide additional outputs such as "
                    "the LCC and BAU costs.")
     )
@@ -239,6 +240,9 @@ class Settings(BaseModel, models.Model):
         help_text=("Set to true to enable off-grid analyses")
     )
 
+    def clean(self):
+        if self.off_grid_flag:
+            self.run_bau = False
 
 class SiteInputs(BaseModel, models.Model):
     key = "Site"
