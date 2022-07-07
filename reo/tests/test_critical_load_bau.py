@@ -69,25 +69,30 @@ class CriticalLoadBAUTests(ResourceTestCaseMixin, TestCase):
 
         d_expected = dict()
         d_expected['status'] = 'optimal'
+
+        # calculate expected year one energy cost
         energy_rate = nested_data['Scenario']['Site']['ElectricTariff']["blended_annual_rates_us_dollars_per_kwh"]
         flat_load = nested_data['Scenario']['Site']['LoadProfile']["annual_kwh"] / 8760
         outage_duration = (1 + nested_data['Scenario']['Site']['LoadProfile']["outage_end_time_step"] - nested_data['Scenario']['Site']['LoadProfile']["outage_start_time_step"])
         d_expected['year_one_energy_cost_bau'] = energy_rate * flat_load * (8760 - outage_duration)
-        d_expected['resilience_check_flag'] = False
-        d_expected['bau_sustained_time_steps'] = int(nested_data['Scenario']['Site']['Generator']["fuel_avail_gal"] / (nested_data['Scenario']['Site']['Generator']["fuel_slope_gal_per_kwh"] * flat_load * nested_data['Scenario']['Site']['LoadProfile']["critical_load_pct"]))
-        d_expected["fuel_used_gal_bau"] = d_expected['bau_sustained_time_steps'] * (nested_data['Scenario']['Site']['Generator']["fuel_slope_gal_per_kwh"] * flat_load * nested_data['Scenario']['Site']['LoadProfile']["critical_load_pct"])
+        
+        # calculate expected total energy cost
         analysis_years = nested_data['Scenario']['Site']['Financial']["analysis_years"]
         escalation_pct = nested_data['Scenario']['Site']['Financial']["escalation_pct"]
         offtaker_discount_pct = nested_data['Scenario']['Site']['Financial']["offtaker_discount_pct"]
         tax_fraction = 1 - nested_data['Scenario']['Site']['Financial']["offtaker_tax_pct"]
-
         pwf_e = annuity(analysis_years, escalation_pct, offtaker_discount_pct)
-        bau_energy_cost = d['outputs']['Scenario']['Site']['ElectricTariff']["total_energy_cost_bau_us_dollars"]
         d_expected["total_energy_cost_bau"] = round(pwf_e * flat_load * energy_rate * (8760 - outage_duration) * tax_fraction)
 
+        # calculate expected BAU outage performance
+        d_expected['resilience_check_flag'] = False
+        d_expected['bau_sustained_time_steps'] = int(nested_data['Scenario']['Site']['Generator']["fuel_avail_gal"] / (nested_data['Scenario']['Site']['Generator']["fuel_slope_gal_per_kwh"] * flat_load * nested_data['Scenario']['Site']['LoadProfile']["critical_load_pct"]))
+        d_expected["fuel_used_gal_bau"] = d_expected['bau_sustained_time_steps'] * (nested_data['Scenario']['Site']['Generator']["fuel_slope_gal_per_kwh"] * flat_load * nested_data['Scenario']['Site']['LoadProfile']["critical_load_pct"])
+        
+        # calculate lcc components and lcc
+        bau_energy_cost = d['outputs']['Scenario']['Site']['ElectricTariff']["total_energy_cost_bau_us_dollars"]
         bau_fixed_om_cost = d['outputs']['Scenario']['Site']['Generator']["existing_gen_total_fixed_om_cost_us_dollars"]
         bau_var_om_cost = d['outputs']['Scenario']['Site']['Generator']["existing_gen_total_variable_om_cost_us_dollars"]
-        
         bau_fuel_used = d['outputs']['Scenario']['Site']['Generator']["fuel_used_gal_bau"]
         pwf_gen_fuel = annuity(analysis_years, nested_data['Scenario']['Site']['Generator']["generator_fuel_escalation_pct"], offtaker_discount_pct)
         bau_fuel_cost = tax_fraction*bau_fuel_used*nested_data['Scenario']['Site']['Generator']["diesel_fuel_cost_us_dollars_per_gallon"]*pwf_gen_fuel
