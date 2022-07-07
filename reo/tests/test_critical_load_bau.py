@@ -85,7 +85,6 @@ class CriticalLoadBAUTests(ResourceTestCaseMixin, TestCase):
         bau_energy_cost = d['outputs']['Scenario']['Site']['ElectricTariff']["total_energy_cost_bau_us_dollars"]
         d_expected["total_energy_cost_bau"] = round(pwf_e * flat_load * energy_rate * (8760 - outage_duration) * tax_fraction)
 
-        pwf_om = annuity(analysis_years, nested_data['Scenario']['Site']['Financial']["om_cost_escalation_pct"], offtaker_discount_pct)
         bau_fixed_om_cost = d['outputs']['Scenario']['Site']['Generator']["existing_gen_total_fixed_om_cost_us_dollars"]
         bau_var_om_cost = d['outputs']['Scenario']['Site']['Generator']["existing_gen_total_variable_om_cost_us_dollars"]
         
