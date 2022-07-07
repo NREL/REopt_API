@@ -414,7 +414,6 @@ class FinancialInputs(BaseModel, models.Model):
                    "critical load.")
     )
     microgrid_upgrade_cost_pct = models.FloatField(
-        default=0.3,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -797,11 +796,34 @@ class ElectricLoadInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(2)
         ],
-        default=0.5,
+        # default=0.5,
         help_text="Critical load factor is multiplied by the typical load to determine the critical load that must be "
                   "met during an outage. Value must be between zero and one, inclusive."
 
     )
+
+    operating_reserve_required_pct = models.FloatField(
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        help_text=""
+
+    )
+
+    min_load_met_annual_pct = models.FloatField(
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        help_text=""
+
+    )
+
     blended_doe_reference_names = ArrayField(
         models.TextField(
             choices=DOE_REFERENCE_NAME.choices,
@@ -1743,19 +1765,16 @@ class PVInputs(BaseModel, models.Model):
                    "generation data.")
     )
     can_net_meter = models.BooleanField(
-        default=True,
         blank=True,
         help_text=("True/False for if technology has option to participate in net metering agreement with utility. "
                    "Note that a technology can only participate in either net metering or wholesale rates (not both).")
     )
     can_wholesale = models.BooleanField(
-        default=True,
         blank=True,
         help_text=("True/False for if technology has option to export energy that is compensated at the wholesale_rate. "
                    "Note that a technology can only participate in either net metering or wholesale rates (not both).")
     )
     can_export_beyond_nem_limit = models.BooleanField(
-        default=True,
         blank=True,
         help_text=("True/False for if technology can export energy beyond the annual site load (and be compensated for "
                    "that energy at the export_rate_beyond_net_metering_limit).")
@@ -1764,6 +1783,16 @@ class PVInputs(BaseModel, models.Model):
         default=True,
         blank=True,
         help_text="True/False for if technology has the ability to curtail energy production."
+    )
+
+    operating_reserve_required_pct = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        null=True,
+        help_text=""
     )
 
 
@@ -2188,7 +2217,6 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Minimum allowable battery state of charge as fraction of energy capacity."
     )
     soc_init_pct = models.FloatField(
-        default=0.5,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0)
@@ -2197,7 +2225,6 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Battery state of charge at first hour of optimization as fraction of energy capacity."
     )
     can_grid_charge = models.BooleanField(
-        default=True,
         blank=True,
         help_text="Flag to set whether the battery can be charged from the grid, or just onsite generation."
     )
@@ -2426,7 +2453,6 @@ class GeneratorInputs(BaseModel, models.Model):
         help_text="Generator fuel consumption curve y-intercept in gallons per hour."
     )
     fuel_avail_gal = models.FloatField(
-        default=660.0,
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(1.0e9)
@@ -2435,7 +2461,6 @@ class GeneratorInputs(BaseModel, models.Model):
         help_text="On-site generator fuel available in gallons."
     )
     min_turn_down_pct = models.FloatField(
-        default=0.0,
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(1.0)
@@ -2626,7 +2651,25 @@ class GeneratorInputs(BaseModel, models.Model):
         blank=True,
         help_text="True/False for if technology has the ability to curtail energy production."
     )
-    # emissions_factor_lb_CO2_per_gal = models.FloatField(null=True, blank=True)
+    replacement_year = models.IntegerField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(100)
+        ],
+        blank=True,
+        null=True,
+        help_text=""
+    )
+
+    replace_cost_per_kw = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        null=True,
+        help_text=""
+    )
 
     def clean(self):
         if self.max_kw > 0 or self.existing_kw > 0:

@@ -217,6 +217,30 @@ class InputValidator(object):
         if len(self.pvnames) > 0:  # multiple PV
             for pvname in self.pvnames:
                 cross_clean_pv(self.models[pvname])
+        
+        if self.models["PV"].__getattribute__("can_net_meter") == None:
+            if self.models["Settings"].off_grid_flag==False:
+                self.models["PV"].can_net_meter = True
+            else:
+                self.models["PV"].can_net_meter = False
+        
+        if self.models["PV"].__getattribute__("can_wholesale") == None:
+            if self.models["Settings"].off_grid_flag==False:
+                self.models["PV"].can_wholesale = True
+            else:
+                self.models["PV"].can_wholesale = False
+        
+        if self.models["PV"].__getattribute__("can_export_beyond_nem_limit") == None:
+            if self.models["Settings"].off_grid_flag==False:
+                self.models["PV"].can_export_beyond_nem_limit = True
+            else:
+                self.models["PV"].can_export_beyond_nem_limit = False
+
+        if self.models["PV"].__getattribute__("operating_reserve_required_pct") == None:
+            if self.models["Settings"].off_grid_flag==False:
+                self.models["PV"].operating_reserve_required_pct = 0.0
+            else:
+                self.models["PV"].operating_reserve_required_pct = 0.25
 
         """
         Time series values are up or down sampled to align with Settings.time_steps_per_hour
@@ -255,7 +279,6 @@ class InputValidator(object):
         If off-grid flag is true, update default values in models to match off-grid scenarios
         if off-grid value is false, validate ElectricTariff
         """
-
         if self.models["Settings"].off_grid_flag==False:
             self.models["ElectricTariff"].clean()
 
@@ -282,27 +305,35 @@ class InputValidator(object):
             
             self.clean_time_series("ElectricTariff", "wholesale_rate")
         else:
-            # Off off-grid flag is true, update default values
-            self.models["ElectricLoad"].critical_load_pct = 1.0
-            self.models["ElectricLoad"].operating_reserve_required_pct = 0.1
-            self.models["ElectricLoad"].min_load_met_annual_pct = 0.99999
-
-            self.models["ElectricStorage"].soc_init_pct = 1.0
-            self.models["ElectricStorage"].can_grid_charge = False
-            
-            self.models["Financial"].microgrid_upgrade_cost_pct = 0.0
-
-            self.models["Generator"].fuel_avail_gal = 1.0e9
-            self.models["Generator"].min_turn_down_pct = 0.15
-            self.models["Generator"].replacement_year = 10
-            self.models["Generator"].replace_cost_per_kw = self.models["Generator"].installed_cost_per_kw
-
-            self.models["PV"].can_net_meter = False
-            self.models["PV"].can_wholesale = False
-            self.models["PV"].can_export_beyond_nem_limit = False
-            self.models["PV"].operating_reserve_required_pct = 0.25
             pass
 
+        """
+        Financial
+        """
+        if "Financial" in self.models.keys():
+            if self.models["Financial"].__getattribute__("microgrid_upgrade_cost_pct") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["Financial"].microgrid_upgrade_cost_pct = 0.3
+                else:
+                    self.models["Financial"].microgrid_upgrade_cost_pct = 0.0
+        
+        """
+        ElectricStorage
+        """
+        if "ElectricStorage" in self.models.keys():
+            if self.models["ElectricStorage"].__getattribute__("soc_init_pct") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["ElectricStorage"].soc_init_pct = 0.5
+                else:
+                    self.models["ElectricStorage"].soc_init_pct = 1.0
+            
+            if self.models["ElectricStorage"].__getattribute__("can_grid_charge") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["ElectricStorage"].can_grid_charge = True
+                else:
+                    self.models["ElectricStorage"].can_grid_charge = False
+
+        
         """
         ElectricUtility
         """
@@ -315,6 +346,59 @@ class InputValidator(object):
                 if self.models["ElectricUtility"].outage_end_time_step > max_ts:
                     self.add_validation_error("ElectricUtility", "outage_end_time_step",
                                               f"Value is greater than the max allowable ({max_ts})")
+
+        """
+        ElectricLoad
+        If user does not provide values, set defaults conditional on off-grid flag
+        """
+
+        if self.models["ElectricLoad"].__getattribute__("critical_load_pct") == None:
+            if self.models["Settings"].off_grid_flag==False:
+                self.models["ElectricLoad"].critical_load_pct = 0.5
+            else:
+                self.models["ElectricLoad"].critical_load_pct = 1.0
+        
+        if self.models["ElectricLoad"].__getattribute__("operating_reserve_required_pct") == None:
+            if self.models["Settings"].off_grid_flag==False:
+                self.models["ElectricLoad"].operating_reserve_required_pct = 0.0
+            else:
+                self.models["ElectricLoad"].operating_reserve_required_pct = 0.1
+
+        if self.models["ElectricLoad"].__getattribute__("min_load_met_annual_pct") == None:
+            if self.models["Settings"].off_grid_flag==False:
+                self.models["ElectricLoad"].min_load_met_annual_pct = 1.0
+            else:
+                self.models["ElectricLoad"].min_load_met_annual_pct = 0.99999
+
+        """
+        Generator
+        If user does not provide values, set defaults conditional on off-grid flag
+        """
+
+        if "Generator" in self.models.keys():
+            if self.models["Generator"].__getattribute__("fuel_avail_gal") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["Generator"].fuel_avail_gal = 660.0
+                else:
+                    self.models["Generator"].fuel_avail_gal = 1.0e9
+            
+            if self.models["Generator"].__getattribute__("min_turn_down_pct") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["Generator"].min_turn_down_pct = 0.0
+                else:
+                    self.models["Generator"].min_turn_down_pct = 0.15
+
+            if self.models["Generator"].__getattribute__("replacement_year") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["Generator"].replacement_year = 25
+                else:
+                    self.models["Generator"].replacement_year = 10
+
+            if self.models["Generator"].__getattribute__("replace_cost_per_kw") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["Generator"].replace_cost_per_kw = 410.0
+                else:
+                    self.models["Generator"].replace_cost_per_kw = self.models["Generator"].installed_cost_per_kw
 
     def save(self):
         """
