@@ -225,8 +225,18 @@ class Settings(BaseModel, models.Model):
     run_bau = models.BooleanField(
         default=True,
         blank=True,
-        help_text=("If True then the Business-As-Usual scenario is also solved to provide additional outputs such as "
+        help_text=("If True, then the Business-As-Usual scenario is also solved to provide additional outputs such as "
                    "the LCC and BAU costs.")
+    )
+    include_climate_in_objective = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text=("If True, then climate costs of CO2 emissions are included in the model's objective function.")
+    )
+    include_health_in_objective = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text=("If True, then health costs of NOx, SO2, and PM25 emissions are included in the model's objective function.")
     )
 
 
