@@ -280,6 +280,48 @@ class SiteInputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Area of roof in square feet available for PV siting"
     )
+    CO2_emissions_reduction_min_pct = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        null=True, blank=True,
+        help_text="Minimum allowed percentage reduction of CO2 emissions, relative to the business-as-usual case, over the financial lifecycle of the project."
+    )
+    CO2_emissions_reduction_max_pct = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        null=True, blank=True,
+        help_text="Maximum allowed percentage reduction of CO2 emissions, relative to the business-as-usual case, over the financial lifecycle of the project."
+    )
+    renewable_electricity_min_pct = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(10)
+        ],
+        null=True, blank=True,
+        help_text="Minimum allowed percentage of site electric consumption met by renewable energy on an annual basis."
+    )
+    renewable_electricity_max_pct = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(10)
+        ],
+        null=True, blank=True,
+        help_text="Maximum allowed percentage of site electric consumption met by renewable energy on an annual basis."
+    )
+    include_exported_elec_emissions_in_total = models.BooleanField(
+        default=True,
+        blank=True,
+        help_text=("If True, then energy exported to the grid is included in emissions calculations.")
+    )
+    include_exported_renewable_electricity_in_total = models.BooleanField(
+        default=True,
+        blank=True,
+        help_text=("If True, then renewable energy exported to the grid is counted in renewable electricity percent calculation.")
+    )
 
 """
 # TODO should we move the emissions_calculator to Julia? 
