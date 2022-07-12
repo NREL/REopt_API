@@ -231,7 +231,7 @@ class Settings(BaseModel, models.Model):
         null=True,
         default=True,
         help_text=("If True then the Business-As-Usual scenario is also solved to provide additional outputs such as "
-                   "the LCC and BAU costs.")
+                   "the NPV and BAU costs.")
     )
 
     off_grid_flag = models.BooleanField(
@@ -1110,7 +1110,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
         # possible sets for defining tariff
         if not at_least_one_set(self.dict, self.possible_sets):
             error_messages["required inputs"] = \
-                f"Must provide at least one set of valid inputs from {self.possible_sets}."
+                f"Must provide at least one set of valid inputs from {self.possible_sets}. If this is an off-grid analysis, ElectricTariff inputs will not be used in REopt, and can be removed from input JSON."
 
         for possible_set in self.possible_sets:
             if len(possible_set) == 2:  # check dependencies

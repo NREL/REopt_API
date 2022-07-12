@@ -144,6 +144,10 @@ class InputValidator(object):
                 len(self.models["ElectricLoad"].blended_doe_reference_names) > 0:
             msg_dict["ignored inputs"] = ("Both doe_reference_name and blended_doe_reference_names were provided for "
                                 "ElectricLoad. This is redundant, so only doe_reference_name is being used.")
+        if self.models["Settings"].off_grid_flag==True and \
+                "ElectricTariff" in self.models.keys():
+            msg_dict["ignored inputs"] = ("ElectricTariff inputs are not applicable when off_grid_flag is true, and will be ignored. "
+                                "Provided ElectricTariff can be removed from inputs")
         return msg_dict
 
     @property
@@ -190,8 +194,7 @@ class InputValidator(object):
         """
         for model in self.models.values():
             try:
-                if model.key != "ElectricTariff":
-                    model.clean()
+                model.clean()
             except ValidationError as ve:
                 self.validation_errors[model.key] = ve.message_dict
 
@@ -275,15 +278,16 @@ class InputValidator(object):
                               "latitude/longitude not in the WindToolkit database. Cannot retrieve wind resource data.")
 
         """
-        Off-grid related validations
-        If off-grid flag is true, update default values in models to match off-grid scenarios
-        if off-grid value is false, validate ElectricTariff
+        ElectricTariff
+        Key can be absent when running off-grid scenarios
         """
-        if self.models["Settings"].off_grid_flag==False:
-            self.models["ElectricTariff"].clean()
+        if "ElectricTariff" in self.models.keys():
 
-            if len(self.models["ElectricTariff"].tou_energy_rates_per_kwh) > 0:
-                self.clean_time_series("ElectricTariff", "tou_energy_rates_per_kwh")
+            for key, time_series in zip(
+                ["ElectricTariff",              "ElectricTariff"],
+                ["tou_energy_rates_per_kwh",    "wholesale_rate"]
+            ):
+                self.clean_time_series(key, time_series)
 
             cp_ts_arrays = self.models["ElectricTariff"].__getattribute__("coincident_peak_load_active_time_steps")
             max_ts = 8760 * self.models["Settings"].time_steps_per_hour
@@ -302,10 +306,6 @@ class InputValidator(object):
                         self.add_validation_error("ElectricTariff", "urdb_response",
                                                 ("The time steps per hour in the energyweekdayschedule must be no greater "
                                                 "than the Settings.time_steps_per_hour."))
-            
-            self.clean_time_series("ElectricTariff", "wholesale_rate")
-        else:
-            pass
 
         """
         Financial
