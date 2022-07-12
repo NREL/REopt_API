@@ -89,11 +89,12 @@ end
 
 function ghpghx(req::HTTP.Request)
     inputs_dict = JSON.parse(String(req.body))
-    @info "Starting GHPGHX" #with timeout of $(timeout) seconds..."
+    pop!(inputs_dict, "status")
+    @info "Starting GHPGHX"
     results, inputs_params = GhpGhx.ghp_model(inputs_dict)
     # Create a dictionary of the results data needed for REopt
     ghpghx_results = GhpGhx.get_results_for_reopt(results, inputs_params)
-    @info "GHPGHX model solved" #with status $(results["status"])."
+    @info "GHPGHX model solved"
     return HTTP.Response(200, JSON.json(ghpghx_results))
 end
 
