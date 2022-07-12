@@ -1,5 +1,6 @@
 # This file is machine-generated - editing it directly is not advised
 
+julia_version = "1.7.1"
 manifest_format = "2.0"
 
 [[deps.ArgTools]]
@@ -157,6 +158,13 @@ deps = ["RecipesBase"]
 git-tree-sha1 = "6b1a29c757f56e0ae01a35918a2c39260e2c4b98"
 uuid = "cf35fbd7-0cd7-5166-be24-54bfbe79505f"
 version = "0.5.7"
+
+[[deps.GhpGhx]]
+git-tree-sha1 = "19a4afe42a79f22612478a87d9d938c6a5087af2"
+repo-rev = "main"
+repo-url = "https://github.com/NREL/GhpGhx.jl"
+uuid = "7ce85f02-24a8-4d69-a3f0-14b5daa7d30c"
+version = "0.1.0"
 
 [[deps.HTTP]]
 deps = ["Base64", "Dates", "IniFile", "Logging", "MbedTLS", "NetworkOptions", "Sockets", "URIs"]
