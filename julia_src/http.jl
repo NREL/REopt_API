@@ -2,8 +2,7 @@ using HTTP, JSON, JuMP
 import Xpress
 include("REopt.jl")
 import REopt as reoptjl
-include("GHPGHX.jl")
-using .GHPGHX
+using GhpGhx
 
 function job(req::HTTP.Request)
     d = JSON.parse(String(req.body))
@@ -91,9 +90,9 @@ end
 function ghpghx(req::HTTP.Request)
     inputs_dict = JSON.parse(String(req.body))
     @info "Starting GHPGHX" #with timeout of $(timeout) seconds..."
-    results, inputs_params = GHPGHX.ghp_model(inputs_dict)
+    results, inputs_params = GhpGhx.ghp_model(inputs_dict)
     # Create a dictionary of the results data needed for REopt
-    ghpghx_results = GHPGHX.get_ghpghx_results_for_reopt(results, inputs_params)
+    ghpghx_results = GhpGhx.get_results_for_reopt(results, inputs_params)
     @info "GHPGHX model solved" #with status $(results["status"])."
     return HTTP.Response(200, JSON.json(ghpghx_results))
 end
