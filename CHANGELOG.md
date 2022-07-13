@@ -63,8 +63,12 @@ Classify the change according to the following categories:
     - Changed field names to add suffixes denoting `before_tax` or `after_tax` values
 - **ElectricTariffInputs**
     - Changed validation of this model to be conditional on **Settings.off_grid_flag** being False
-`job/run_jump_model.py` - Remove `run_uuid` key from input dictionary before running REopt to avoid downstream errors from Julia
-`job/validators.py` - Changed validation code to try to validate **ElectricTariffInputs**
+`job/run_jump_model.py` - Remove `run_uuid` key from input dictionary before running REopt to avoid downstream errors from REopt.jl
+`job/validators.py`
+- Changed **ElectricTariffInputs** to validate if **ElectricTariff** key exists in inputs
+- Added message to `messages()` to alert user if valid ElectricTariff input is provided when **Settings.off_grid_flag** is true.
+`job/models.py`
+- Changed **ElectricTariffInputs** `required inputs` error message to alert user that ElectricTariff inputs are not required if **Settings.off_grid_flag** is true.
 `job/views.py` - Changed validation code to try to save **ElectricTariffInputs**
 `job/test_job_endpoint.py` - Added test to validate API off-grid functionality
 - Added migration file `0005_remove_...` which contains the data model for all Added and Changed fields

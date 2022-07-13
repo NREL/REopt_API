@@ -114,26 +114,21 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         """
         scenario = {
             "Settings":{
-                "off_grid_flag": True
+                "off_grid_flag": True,
+                "optimality_tolerance":0.05
             },
             "Site": {
                 "longitude": -118.1164613,
                 "latitude": 34.5794343
             },
             "PV": {},
-            "Generator": {
-                "installed_cost_per_kw": 700,
-                "min_kw": 100,
-                "max_kw": 100
-            },
+            "ElectricStorage":{},
             "ElectricLoad": {
-                "doe_reference_name": "RetailStore",
-                "annual_kwh": 10000000.0,
+                "doe_reference_name": "FlatLoad",
+                "annual_kwh": 8760.0,
                 "city": "LosAngeles",
                 "year": 2017
-            },
-            "ElectricStorage": {},
-            "Financial": {}
+            }
         }
 
         resp = self.api_client.post('/dev/job/', format='json', data=scenario)
@@ -143,64 +138,11 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
 
         resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
         r = json.loads(resp.content)
-        inputs = r["inputs"]
         results = r["outputs"]
-
-        # Validate that defaults were set correctly via API
-        self.assertAlmostEqual(inputs["ElectricLoad"]["critical_load_pct"], 1.0)
-        self.assertAlmostEqual(inputs["Generator"]["replacement_year"], 10)
-        self.assertAlmostEqual(inputs["Generator"]["replace_cost_per_kw"], inputs["Generator"]["installed_cost_per_kw"])
 
         # Validate that we got off-grid response fields
-        self.assertAlmostEqual(results["Financial"]["offgrid_microgrid_lcoe_dollars_per_kwh"], 0.294, places=-3)
+        self.assertAlmostEqual(results["Financial"]["offgrid_microgrid_lcoe_dollars_per_kwh"], 0.337, places=-3)
         self.assertAlmostEqual(results["ElectricTariff"]["year_one_bill_before_tax"], 0.0)
-        self.assertAlmostEqual(results["ElectricLoad"]["offgrid_load_met_pct"], 0.99, places=-2)
-        self.assertAlmostEqual(sum(results["ElectricLoad"]["offgrid_load_met_series_kw"]), 9999900, places=-1)
+        self.assertAlmostEqual(results["ElectricLoad"]["offgrid_load_met_pct"], 0.99999, places=-2)
+        self.assertAlmostEqual(sum(results["ElectricLoad"]["offgrid_load_met_series_kw"]), 8760.0, places=-1)
         self.assertAlmostEqual(results["Financial"]["lifecycle_offgrid_other_annual_costs_after_tax"], 0.0, places=-2)
-
-
-    def test_off_grid_override_defaults(self):
-        """
-        Purpose of this test is to validate off-grid defaults override in the API.
-        """
-        scenario = {
-            "Settings":{
-                "off_grid_flag": True
-            },
-            "Site": {
-                "longitude": -118.1164613,
-                "latitude": 34.5794343
-            },
-            "PV": {},
-            "Generator": {
-                "installed_cost_per_kw": 700,
-                "min_kw": 100,
-                "max_kw": 100,
-                "replace_cost_per_kw": 200,
-                "replacement_year":7
-            },
-            "ElectricLoad": {
-                "doe_reference_name": "RetailStore",
-                "annual_kwh": 10000000.0,
-                "city": "LosAngeles",
-                "year": 2017,
-                "critical_load_pct":0.95
-            },
-            "ElectricStorage": {},
-            "Financial": {}
-        }
-
-        resp = self.api_client.post('/dev/job/', format='json', data=scenario)
-        self.assertHttpCreated(resp)
-        r = json.loads(resp.content)
-        run_uuid = r.get('run_uuid')
-
-        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
-        r = json.loads(resp.content)
-        inputs = r["inputs"]
-        results = r["outputs"]
-
-        # Validate that defaults were set correctly via API
-        self.assertAlmostEqual(inputs["ElectricLoad"]["critical_load_pct"], 0.95)
-        self.assertAlmostEqual(inputs["Generator"]["replacement_year"], 7)
-        self.assertAlmostEqual(inputs["Generator"]["replace_cost_per_kw"], 200.0)
