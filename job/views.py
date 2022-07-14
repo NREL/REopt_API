@@ -127,7 +127,6 @@ def results(request, run_uuid):
             'FinancialInputs', 'FinancialOutputs',
             'SiteInputs',
             'ElectricLoadInputs',
-            'ElectricTariffInputs', 'ElectricTariffOutputs',
             'ElectricUtilityOutputs'
         ).get(run_uuid=run_uuid)
     except Exception as e:
@@ -151,7 +150,6 @@ def results(request, run_uuid):
     r["inputs"] = dict()
     r["inputs"]["Financial"] = meta.FinancialInputs.dict
     r["inputs"]["ElectricLoad"] = meta.ElectricLoadInputs.dict
-    r["inputs"]["ElectricTariff"] = meta.ElectricTariffInputs.dict
     r["inputs"]["Site"] = meta.SiteInputs.dict
     r["inputs"]["Settings"] = meta.Settings.dict
 
@@ -167,6 +165,9 @@ def results(request, run_uuid):
     except: pass
 
     try: r["inputs"]["Meta"] = meta.UserProvidedMeta.dict
+    except: pass
+
+    try: r["inputs"]["ElectricTariff"] = meta.ElectricTariffInputs.dict
     except: pass
 
     try: r["inputs"]["ElectricUtility"] = meta.ElectricUtilityInputs.dict
