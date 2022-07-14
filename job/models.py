@@ -402,11 +402,11 @@ class SiteOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Total tons of PM2.5 emissions associated with the site's onsite fuel burn in year one."
     )
-    lifecycle_emissions_climate_cost = models.FloatField(
+    lifecycle_emissions_cost_climate = models.FloatField(
         null=True, blank=True,
         help_text="Total cost of CO2 emissions associated with the site's energy consumption over the analysis period."
     )
-    lifecycle_emissions_health_cost = models.FloatField(
+    lifecycle_emissions_cost_health = models.FloatField(
         null=True, blank=True,
         help_text="Total cost of NOx, SO2, and PM2.5 emissions associated with the site's energy consumption over the analysis period."
     )
@@ -497,11 +497,11 @@ class SiteOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Total tons of PM2.5 emissions associated with the site's onsite fuel burn in year one in the BAU case."
     )
-    lifecycle_emissions_climate_cost_bau = models.FloatField(
+    lifecycle_emissions_cost_climate_bau = models.FloatField(
         null=True, blank=True,
         help_text="Total cost of CO2 emissions associated with the site's energy consumption over the analysis period in the BAU case."
     )
-    lifecycle_emissions_health_cost_bau = models.FloatField(
+    lifecycle_emissions_cost_health_bau = models.FloatField(
         null=True, blank=True,
         help_text="Total cost of NOx, SO2, and PM2.5 emissions associated with the site's energy consumption over the analysis period in the BAU case."
     )
