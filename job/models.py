@@ -680,7 +680,6 @@ class FinancialInputs(BaseModel, models.Model):
                    "islandable from the grid and able to serve critical loads. Includes all upgrade costs such as "
                    "additional laber and critical load panels.")
     )
-
     offgrid_other_capital_costs = models.FloatField(
             validators=[
                 MinValueValidator(0),
@@ -691,7 +690,6 @@ class FinancialInputs(BaseModel, models.Model):
             default=0.0,
             help_text=("Only applicable when off_grid_flag is true, applies a straight-line depreciation to this capex cost, reducing taxable income.")
     )
-
     offgrid_other_annual_costs = models.FloatField(
         validators=[
             MinValueValidator(0),
@@ -701,6 +699,107 @@ class FinancialInputs(BaseModel, models.Model):
         null=True,
         default=0.0,
         help_text=("Only applicable when off_grid_flag is true. Considered tax deductible for owner. Costs are per year.")
+    )
+    CO2_cost_per_tonne = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1e6)
+        ],
+        blank=True,
+        null=True,
+        default=51.0,
+        help_text=("Social Cost of CO2 in the first year of the analysis. Units are US dollars per metric ton of CO2. The default of $51/t is the 2020 value (using a 3 pct discount rate) estimated by the U.S. Interagency Working Group on Social Cost of Greenhouse Gases.")
+    )
+    CO2_cost_escalation_pct = models.FloatField(
+        validators=[
+            MinValueValidator(-1),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        null=True,
+        default=0.042173,
+        help_text=("Annual nominal Social Cost of CO2 escalation rate (as a decimal).")
+    )
+    NOx_grid_cost_per_tonne = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1e6)
+        ],
+        blank=True,
+        null=True,
+        help_text=("Public health cost of NOx emissions from grid electricity in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model.")
+    )
+    SO2_grid_cost_per_tonne = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1e6)
+        ],
+        blank=True,
+        null=True,
+        help_text=("Public health cost of SO2 emissions from grid electricity in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model.")
+    )
+    PM25_grid_cost_per_tonne = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1e6)
+        ],
+        blank=True,
+        null=True,
+        help_text=("Public health cost of PM2.5 emissions from grid electricity in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model.")
+    )
+    NOx_onsite_fuelburn_cost_per_tonne = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1e6)
+        ],
+        blank=True,
+        null=True,
+        help_text=("Public health cost of NOx from onsite fuelburn in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model.")
+    )
+    SO2_onsite_fuelburn_cost_per_tonne = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1e6)
+        ],
+        blank=True,
+        null=True,
+        help_text=("Public health cost of SO2 from onsite fuelburn in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model.")
+    )
+    PM25_onsite_fuelburn_cost_per_tonne = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1e6)
+        ],
+        blank=True,
+        null=True,
+        help_text=("Public health cost of PM2.5 from onsite fuelburn in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model.")
+    )
+    NOx_cost_escalation_pct = models.FloatField(
+        validators=[
+            MinValueValidator(-1),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        null=True,
+        help_text=("Annual nominal escalation rate of the public health cost of 1 tonne of NOx emissions (as a decimal). The default value is calculated from the EASIUR model for a height of 150m.")
+    )
+    SO2_cost_escalation_pct = models.FloatField(
+        validators=[
+            MinValueValidator(-1),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        null=True,
+        help_text=("Annual nominal escalation rate of the public health cost of 1 tonne of SO2 emissions (as a decimal). The default value is calculated from the EASIUR model for a height of 150m.")
+    )
+    PM25_cost_escalation_pct = models.FloatField(
+        validators=[
+            MinValueValidator(-1),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        null=True,
+        help_text=("Annual nominal escalation rate of the public health cost of 1 tonne of PM2.5 emissions (as a decimal). The default value is calculated from the EASIUR model for a height of 150m.")
     )
 
     # boiler_fuel_escalation_pct = models.FloatField(
