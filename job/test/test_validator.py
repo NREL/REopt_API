@@ -115,3 +115,58 @@ class InputValidatorTests(TestCase):
                validator.validation_errors['ElectricLoad']['blended_doe_reference_names'][0])
         assert("Sum must = 1.0." in
                validator.validation_errors['ElectricLoad']['blended_doe_reference_percents'][0])
+
+    def test_off_grid_defaults_overrides(self):
+        post = {
+            "Settings":{
+                "off_grid_flag": True
+            },
+            "Site": {
+                "longitude": -118.1164613,
+                "latitude": 34.5794343
+            },
+            "PV": {},
+            "Generator": {
+                "installed_cost_per_kw": 700,
+                "min_kw": 100,
+                "max_kw": 100
+            },
+            "ElectricLoad": {
+                "doe_reference_name": "RetailStore",
+                "annual_kwh": 10000000.0,
+                "city": "LosAngeles",
+                "year": 2017
+            },
+            "ElectricStorage": {},
+            "Financial": {},
+            "APIMeta": {}
+        }
+
+        post["APIMeta"]["run_uuid"] = uuid.uuid4()
+
+        validator = InputValidator(post)
+        validator.clean_fields()
+        validator.clean()
+        validator.cross_clean()
+        self.assertEquals(validator.is_valid, True)
+
+        self.assertAlmostEqual(validator.models["ElectricLoad"].critical_load_pct, 1.0)
+        self.assertAlmostEqual(validator.models["Generator"].replacement_year, 10)
+        self.assertAlmostEqual(validator.models["Generator"].replace_cost_per_kw, validator.models["Generator"].installed_cost_per_kw)
+
+        # Test default overrides below
+
+        post["ElectricLoad"]["critical_load_pct"] = 0.95
+        post["Generator"]["replacement_year"] = 7
+        post["Generator"]["replace_cost_per_kw"] = 200
+        post["APIMeta"]["run_uuid"] = uuid.uuid4()
+
+        validator = InputValidator(post)
+        validator.clean_fields()
+        validator.clean()
+        validator.cross_clean()
+        self.assertEquals(validator.is_valid, True)
+
+        self.assertAlmostEqual(validator.models["ElectricLoad"].critical_load_pct, 0.95)
+        self.assertAlmostEqual(validator.models["Generator"].replacement_year, 7)
+        self.assertAlmostEqual(validator.models["Generator"].replace_cost_per_kw, 200.0)
