@@ -144,10 +144,11 @@ class InputValidator(object):
                 len(self.models["ElectricLoad"].blended_doe_reference_names) > 0:
             msg_dict["ignored inputs"] = ("Both doe_reference_name and blended_doe_reference_names were provided for "
                                 "ElectricLoad. This is redundant, so only doe_reference_name is being used.")
-        if self.models["Settings"].off_grid_flag==True and \
-                "ElectricTariff" in self.models.keys():
-            msg_dict["ignored inputs"] = ("ElectricTariff inputs are not applicable when off_grid_flag is true, and will be ignored. "
+        if self.models["Settings"].off_grid_flag==True:
+            if "ElectricTariff" in self.models.keys():
+                msg_dict["ignored inputs"] = ("ElectricTariff inputs are not applicable when off_grid_flag is true, and will be ignored. "
                                 "Provided ElectricTariff can be removed from inputs")
+            msg_dict["info"] = ("When off_grid_flag is true, only PV, ElectricStorage, Generator technologies can be modeled.")
         return msg_dict
 
     @property
@@ -374,7 +375,6 @@ class InputValidator(object):
         Generator
         If user does not provide values, set defaults conditional on off-grid flag
         """
-
         if "Generator" in self.models.keys():
             if self.models["Generator"].__getattribute__("fuel_avail_gal") == None:
                 if self.models["Settings"].off_grid_flag==False:
@@ -399,6 +399,25 @@ class InputValidator(object):
                     self.models["Generator"].replace_cost_per_kw = 410.0
                 else:
                     self.models["Generator"].replace_cost_per_kw = self.models["Generator"].installed_cost_per_kw
+        
+        """
+        Off-grid input keys validation
+        """
+        
+        def validate_offgrid_keys(self):
+            # From https://github.com/NREL/REopt.jl/blob/4b0fb7f6556b2b6e9a9a7e8fa65398096fb6610f/src/core/scenario.jl#L88            
+            valid_input_keys_offgrid = ["PV", "ElectricStorage", "Generator", "Settings", "Site", "Financial", "ElectricLoad", "ElectricTariff", "ElectricUtility"]
+
+            invalid_input_keys_offgrid = list(set(list(self.models.keys()))-set(valid_input_keys_offgrid))
+            if 'APIMeta' in invalid_input_keys_offgrid:
+                invalid_input_keys_offgrid.remove('APIMeta')
+
+            if len(invalid_input_keys_offgrid) != 0:
+                self.add_validation_error("Settings", "off_grid_flag",
+                                            f"Currently, off-grid functionality doesn't allow modeling for following keys: ({invalid_input_keys_offgrid})")
+        
+        if self.models["Settings"].off_grid_flag==True:
+            validate_offgrid_keys(self)
 
     def save(self):
         """

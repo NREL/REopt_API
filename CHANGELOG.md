@@ -67,6 +67,8 @@ Classify the change according to the following categories:
 `job/validators.py`
 - Changed **ElectricTariffInputs** to validate if **ElectricTariff** key exists in inputs
 - Added message to `messages()` to alert user if valid ElectricTariff input is provided when **Settings.off_grid_flag** is true.
+- Added message to `messages()` to alert user of technologies which can be modeled when **Settings.off_grid_flag** is true.
+- Added validation error to alert user of input keys which can't be modeled when **Settings.off_grid_flag** is true.
 `job/models.py`
 - Changed **ElectricTariffInputs** `required inputs` error message to alert user that ElectricTariff inputs are not required if **Settings.off_grid_flag** is true.
 `job/views.py` - Changed validation code to try to save **ElectricTariffInputs**
