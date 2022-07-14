@@ -81,6 +81,8 @@ def run_jump_model(run_uuid):
     name = 'run_jump_model'
     data = get_input_dict_from_run_uuid(run_uuid)
     user_uuid = data.get('user_uuid')
+    
+    data.pop('user_uuid',None) # Remove user uuid from inputs dict to avoid downstream errors
 
     logger.info("Running JuMP model ...")
     try:
