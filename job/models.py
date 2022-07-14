@@ -1810,6 +1810,7 @@ class PVOutputs(BaseModel, models.Model):
     )
     size_kw = models.FloatField(null=True, blank=True)
     lifecycle_om_cost_after_tax = models.FloatField(null=True, blank=True)
+    lifecycle_om_cost_after_tax_bau = models.FloatField(null=True, blank=True)
     lifecycle_om_cost_bau = models.FloatField(null=True, blank=True)
 #     station_latitude = models.FloatField(null=True, blank=True)
 #     station_longitude = models.FloatField(null=True, blank=True)
