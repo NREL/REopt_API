@@ -37,8 +37,9 @@ function reopt(req::HTTP.Request)
 	settings = d["Settings"]
 	timeout_seconds = -pop!(settings, "timeout_seconds")
 	optimality_tolerance = pop!(settings, "optimality_tolerance")
+	run_bau = pop!(settings, "run_bau")
 	ms = nothing
-	if get(settings, "run_bau", true)
+	if run_bau
 		m1 = direct_model(
 			Xpress.Optimizer(
 				MAXTIME = timeout_seconds,
