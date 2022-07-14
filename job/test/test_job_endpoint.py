@@ -108,3 +108,41 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(results["ElectricStorage"]["size_kw"], 55.9, places=1)
         self.assertAlmostEqual(results["ElectricStorage"]["size_kwh"], 78.9, places=1)
 
+    def test_off_grid_defaults(self):
+        """
+        Purpose of this test is to validate off-grid functionality and defaults in the API.
+        """
+        scenario = {
+            "Settings":{
+                "off_grid_flag": True,
+                "optimality_tolerance":0.05
+            },
+            "Site": {
+                "longitude": -118.1164613,
+                "latitude": 34.5794343
+            },
+            "PV": {},
+            "ElectricStorage":{},
+            "ElectricLoad": {
+                "doe_reference_name": "FlatLoad",
+                "annual_kwh": 8760.0,
+                "city": "LosAngeles",
+                "year": 2017
+            }
+        }
+
+        resp = self.api_client.post('/dev/job/', format='json', data=scenario)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+
+        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        r = json.loads(resp.content)
+        results = r["outputs"]
+
+        # Validate that we got off-grid response fields
+        self.assertAlmostEqual(results["Financial"]["offgrid_microgrid_lcoe_dollars_per_kwh"], 0.337, places=-3)
+        self.assertAlmostEqual(results["ElectricTariff"]["year_one_bill_before_tax"], 0.0)
+        self.assertAlmostEqual(results["ElectricLoad"]["offgrid_load_met_pct"], 0.99999, places=-2)
+        self.assertAlmostEqual(sum(results["ElectricLoad"]["offgrid_load_met_series_kw"]), 8760.0, places=-1)
+        self.assertAlmostEqual(results["Financial"]["lifecycle_offgrid_other_annual_costs_after_tax"], 0.0, places=-2)
