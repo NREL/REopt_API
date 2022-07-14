@@ -26,7 +26,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop - 2022-06-27
+
 ### Minor Updates
 ##### Added
 `job/models.py`
@@ -44,6 +44,55 @@ Classify the change according to the following categories:
 `job/validators.py` - add new input models
 `job/views.py` - add new input/output models to properly save the inputs/outputs
 `job/test/test_job_endpoint.py` - add a testcase to validate that API is accepting/returning fields related to new models.
+
+## Develop - 2022-06-27
+### Minor Updates 
+##### Changed
+`job/models.py` 
+- **Settings**
+    - Added **off_grid_flag**
+    - Changed **run_bau** to be nullable
+- **FinancialInputs**
+    - Added **offgrid_other_capital_costs**
+    - Added **offgrid_other_annual_costs**
+- **FinancialOutputs**
+    - Added **lifecycle_generation_tech_capital_costs**
+    - Added **lifecycle_storage_capital_costs**
+    - Added **lifecycle_om_costs_after_tax**
+    - Added **lifecycle_fuel_costs_after_tax**
+    - Added **lifecycle_chp_standby_cost_after_tax**
+    - Added **lifecycle_elecbill_after_tax**
+    - Added **lifecycle_production_incentive_after_tax**
+    - Added **lifecycle_offgrid_other_annual_costs_after_tax**
+    - Added **lifecycle_offgrid_other_capital_costs**
+    - Added **lifecycle_outage_cost**
+    - Added **lifecycle_MG_upgrade_and_fuel_cost**
+    - Added **replacements_future_cost_after_tax**
+    - Added **replacements_present_cost_after_tax**
+    - Added **offgrid_microgrid_lcoe_dollars_per_kwh**
+    - Changed **lifecycle_capital_costs_plus_om** and **lifecycle_om_costs_bau** field names to include before/after tax
+- **ElectricLoadOutputs**
+    - Added **offgrid_load_met_pct**
+    - Added **offgrid_annual_oper_res_required_series_kwh**
+    - Added **offgrid_annual_oper_res_provided_series_kwh**
+    - Added **offgrid_load_met_series_kw**
+- **ElectricTariffInputs**
+    - Changed all instances of `coincident_peak_load_active_timesteps` to `coincident_peak_load_active_time_steps`
+- **ElectricTariffOutputs**
+    - Changed field names to add suffixes denoting `before_tax` or `after_tax` values
+- **ElectricTariffInputs**
+    - Changed validation of this model to be conditional on **Settings.off_grid_flag** being False
+`job/run_jump_model.py` - Remove `run_uuid` key from input dictionary before running REopt to avoid downstream errors from REopt.jl
+`job/validators.py`
+- Changed **ElectricTariffInputs** to validate if **ElectricTariff** key exists in inputs
+- Added message to `messages()` to alert user if valid ElectricTariff input is provided when **Settings.off_grid_flag** is true.
+- Added message to `messages()` to alert user of technologies which can be modeled when **Settings.off_grid_flag** is true.
+- Added validation error to alert user of input keys which can't be modeled when **Settings.off_grid_flag** is true.
+`job/models.py`
+- Changed **ElectricTariffInputs** `required inputs` error message to alert user that ElectricTariff inputs are not required if **Settings.off_grid_flag** is true.
+`job/views.py` - Changed validation code to try to save **ElectricTariffInputs**
+`job/test_job_endpoint.py` - Added test to validate API off-grid functionality
+- Added migration file `0005_remove_...` which contains the data model for all Added and Changed fields
 
 # v2.0.3
 ### Minor Updates

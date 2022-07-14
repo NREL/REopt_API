@@ -202,11 +202,13 @@ class Settings(BaseModel, models.Model):
         ],
         help_text="The number of seconds allowed before the optimization times out."
     )
+
     time_steps_per_hour = models.IntegerField(
         default=TIME_STEP_CHOICES.ONE,
         choices=TIME_STEP_CHOICES.choices,
         help_text="The number of time steps per hour in the REopt model."
     )
+
     optimality_tolerance = models.FloatField(
         default=0.001,
         validators=[
@@ -216,19 +218,31 @@ class Settings(BaseModel, models.Model):
         help_text=("The threshold for the difference between the solution's objective value and the best possible "
                    "value at which the solver terminates")
     )
+
     add_soc_incentive = models.BooleanField(
         default=True,
         blank=True,
         help_text=("If True, then a small incentive to keep the battery's state of charge high is added to the "
                    "objective of the optimization.")
     )
+
     run_bau = models.BooleanField(
-        default=True,
         blank=True,
+        null=True,
+        default=True,
         help_text=("If True then the Business-As-Usual scenario is also solved to provide additional outputs such as "
-                   "the LCC and BAU costs.")
+                   "the NPV and BAU costs.")
     )
 
+    off_grid_flag = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text=("Set to true to enable off-grid analyses")
+    )
+
+    def clean(self):
+        if self.off_grid_flag:
+            self.run_bau = False
 
 class SiteInputs(BaseModel, models.Model):
     key = "Site"
@@ -400,7 +414,6 @@ class FinancialInputs(BaseModel, models.Model):
                    "critical load.")
     )
     microgrid_upgrade_cost_pct = models.FloatField(
-        default=0.3,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -410,6 +423,29 @@ class FinancialInputs(BaseModel, models.Model):
                    "islandable from the grid and able to serve critical loads. Includes all upgrade costs such as "
                    "additional laber and critical load panels.")
     )
+
+    offgrid_other_capital_costs = models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1e6)
+            ],
+            blank=True,
+            null=True,
+            default=0.0,
+            help_text=("Only applicable when off_grid_flag is true, applies a straight-line depreciation to this capex cost, reducing taxable income.")
+    )
+
+    offgrid_other_annual_costs = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1e6)
+        ],
+        blank=True,
+        null=True,
+        default=0.0,
+        help_text=("Only applicable when off_grid_flag is true. Considered tax deductible for owner. Costs are per year.")
+    )
+
     # boiler_fuel_escalation_pct = models.FloatField(
     #     default=0.034,
     #     validators=[
@@ -457,11 +493,11 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Net present value of savings realized by the project"
     )
-    lifecycle_capital_costs_plus_om = models.FloatField(
+    lifecycle_capital_costs_plus_om_after_tax = models.FloatField(
         null=True, blank=True,
         help_text="Capital cost for all technologies plus present value of operations and maintenance over anlaysis period"
     )
-    lifecycle_om_costs_bau = models.FloatField(
+    lifecycle_om_costs_before_tax_bau = models.FloatField(
         null=True, blank=True,
         help_text="Business-as-usual present value of operations and maintenance over analysis period",
     )
@@ -577,11 +613,69 @@ class FinancialOutputs(BaseModel, models.Model):
         help_text=("Net O&M and replacement costs in present value, after-tax for the third-party developer."
                    "Only calculated in the third-party case.")
     )
+    lifecycle_generation_tech_capital_costs = models.FloatField(
+        null=True, blank=True,
+        help_text=("Component of lifecycle costs, this value is the net capital costs for all generation technologies"
+                    "Costs are given in present value, including replacement costs and incentives."
+                    "This value does not include offgrid_other_capital_costs.")
+    )
+    lifecycle_storage_capital_costs = models.FloatField(
+        null=True, blank=True,
+        help_text=("Component of lifecycle costs, this value is the Net capital costs for all storage technologies"
+                    "Value is in present value, including replacement costs and incentives."
+                    "This value does not include offgrid_other_capital_costs.")
+    )
+    lifecycle_om_costs_after_tax = models.FloatField(
+        null=True, blank=True,
+        help_text=("Component of lifecycle costs, this value is the present value of all O&M costs, after tax.")
+    )
     lifecycle_fuel_costs_after_tax = models.FloatField(
         null=True, blank=True,
-        help_text="Life cycle fuel cost over analysis period after tax."
+        help_text=("Component of lifecycle costs, this value is the present value of all fuel costs over the analysis period, after tax.")
     )
 
+    lifecycle_chp_standby_cost_after_tax = models.FloatField(
+        null=True, blank=True,
+        help_text=("Component of lifecycle costs, this value is the present value of all CHP standby charges, after tax.")
+    )
+    lifecycle_elecbill_after_tax = models.FloatField(
+        null=True, blank=True,
+        help_text=("Component of lifecycle costs, this value is the present value of all electric utility charges, after tax.")
+    )
+    lifecycle_production_incentive_after_tax = models.FloatField(
+        null=True, blank=True,
+        help_text=("Component of lifecycle costs, this value is the present value of all production-based incentives, after tax.")
+    )
+    lifecycle_offgrid_other_annual_costs_after_tax = models.FloatField(
+        null=True, blank=True,
+        help_text=("Component of lifecycle costs, this value is the present value of offgrid_other_annual_costs over the analysis period, after tax.")
+    )
+    lifecycle_offgrid_other_capital_costs = models.FloatField(
+        null=True, blank=True,
+        help_text=("Component of lifecycle costs, this value is equal to offgrid_other_capital_costs with straight line depreciation applied"
+                    " over analysis period. The depreciation expense is assumed to reduce the owner's taxable income.")
+    )
+    lifecycle_outage_cost = models.FloatField(
+        null=True, blank=True,
+        help_text=("Component of lifecycle costs, expected outage cost.")
+    )
+    lifecycle_MG_upgrade_and_fuel_cost = models.FloatField(
+        null=True, blank=True,
+        help_text=("Component of lifecycle costs, this is the cost to upgrade generation and storage technologies to be included in microgrid"
+                    "plus present value of microgrid fuel costs.")
+    )
+    replacements_future_cost_after_tax = models.FloatField(
+        null=True, blank=True,
+        help_text="Future cost of replacing storage and/or generator systems, after tax."
+    )
+    replacements_present_cost_after_tax = models.FloatField(
+        null=True, blank=True,
+        help_text="Present value cost of replacing storage and/or generator systems, after tax."
+    )
+    offgrid_microgrid_lcoe_dollars_per_kwh = models.FloatField(
+        null=True, blank=True,
+        help_text="Levelized cost of electricity for modeled off-grid system."
+    )
 
 class ElectricLoadInputs(BaseModel, models.Model):
     key = "ElectricLoad"
@@ -702,11 +796,34 @@ class ElectricLoadInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(2)
         ],
-        default=0.5,
+        # default=0.5,
         help_text="Critical load factor is multiplied by the typical load to determine the critical load that must be "
                   "met during an outage. Value must be between zero and one, inclusive."
 
     )
+
+    operating_reserve_required_pct = models.FloatField(
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        help_text=""
+
+    )
+
+    min_load_met_annual_pct = models.FloatField(
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        help_text=""
+
+    )
+
     blended_doe_reference_names = ArrayField(
         models.TextField(
             choices=DOE_REFERENCE_NAME.choices,
@@ -803,7 +920,31 @@ class ElectricLoadOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Number of time steps the existing system can sustain the critical load."
     )
-
+    offgrid_load_met_pct = models.FloatField(
+        null=True, blank=True,
+        help_text="Percentage of total electric load met on an annual basis, for off-grid scenarios only"
+    )
+    offgrid_annual_oper_res_required_series_kwh = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ),
+        default=list,
+        help_text="Total operating reserves required on an annual basis, for off-grid scenarios only"
+    )
+    offgrid_annual_oper_res_provided_series_kwh = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ),
+        default=list,
+        help_text="Total operating reserves provided on an annual basis, for off-grid scenarios only"
+    )
+    offgrid_load_met_series_kw = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ),
+        default=list,
+        help_text="Percentage of total electric load met on an annual basis, for off-grid scenarios only"
+    )
 
 class ElectricTariffInputs(BaseModel, models.Model):
     key = "ElectricTariff"
@@ -913,7 +1054,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
                    "will only be considered if a URDB rate is not provided.")
 
     )
-    coincident_peak_load_active_timesteps = ArrayField(
+    coincident_peak_load_active_time_steps = ArrayField(
         ArrayField(
             models.IntegerField(blank=True),
             blank=True,
@@ -937,8 +1078,8 @@ class ElectricTariffInputs(BaseModel, models.Model):
         ),
         null=True, blank=True,
         default=list,
-        help_text=("Optional coincident peak demand charge that is applied to the max load during the timesteps "
-                   "specified in coincident_peak_load_active_timesteps")
+        help_text=("Optional coincident peak demand charge that is applied to the max load during the time_steps "
+                   "specified in coincident_peak_load_active_time_steps")
     )
     # chp_does_not_reduce_demand_charges = models.BooleanField(
     #     default=False,
@@ -959,7 +1100,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
     #     null=True, blank=True,
     #     default=list,
     #     help_text=("Carbon Dioxide emissions factor over all hours in one year. Can be provided as either a single "
-    #               "constant fraction that will be applied across all timesteps, or an annual timeseries array at an "
+    #               "constant fraction that will be applied across all time_steps, or an annual timeseries array at an "
     #               "hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.")
     # )
 
@@ -969,7 +1110,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
         # possible sets for defining tariff
         if not at_least_one_set(self.dict, self.possible_sets):
             error_messages["required inputs"] = \
-                f"Must provide at least one set of valid inputs from {self.possible_sets}."
+                f"Must provide at least one set of valid inputs from {self.possible_sets}. If this is an off-grid analysis, ElectricTariff inputs will not be used in REopt, and can be removed from input JSON."
 
         for possible_set in self.possible_sets:
             if len(possible_set) == 2:  # check dependencies
@@ -979,10 +1120,10 @@ class ElectricTariffInputs(BaseModel, models.Model):
         self.wholesale_rate = scalar_to_vector(self.wholesale_rate)
 
         if len(self.coincident_peak_load_charge_per_kw) > 0:
-            if len(self.coincident_peak_load_active_timesteps) != len(self.coincident_peak_load_charge_per_kw):
+            if len(self.coincident_peak_load_active_time_steps) != len(self.coincident_peak_load_charge_per_kw):
                 error_messages["coincident peak"] = (
                     "The number of rates in coincident_peak_load_charge_per_kw must match the number of "
-                    "timestep sets in coincident_peak_load_active_timesteps")
+                    "timestep sets in coincident_peak_load_active_time_steps")
 
         if self.urdb_label is not None:
             label_checker = URDB_LabelValidator(self.urdb_label)
@@ -1001,15 +1142,15 @@ class ElectricTariffInputs(BaseModel, models.Model):
 
     def save(self, *args, **kwargs):
         """
-        Special case for coincident_peak_load_active_timesteps: back-end database requires that
+        Special case for coincident_peak_load_active_time_steps: back-end database requires that
         "multidimensional arrays must have array expressions with matching dimensions"
         so we fill the arrays that are shorter than the longest arrays with repeats of the last value.
         By repeating the last value we do not have to deal with a mix of data types in the arrays and it does not
         affect the constraints in REopt.
         """
-        if len(self.coincident_peak_load_active_timesteps) > 0:
-            max_length = max(len(inner_array) for inner_array in self.coincident_peak_load_active_timesteps)
-            for inner_array in self.coincident_peak_load_active_timesteps:
+        if len(self.coincident_peak_load_active_time_steps) > 0:
+            max_length = max(len(inner_array) for inner_array in self.coincident_peak_load_active_time_steps)
+            for inner_array in self.coincident_peak_load_active_time_steps:
                 if len(inner_array) != max_length:
                     for _ in range(max_length - len(inner_array)):
                         inner_array.append(inner_array[-1])
@@ -1023,10 +1164,10 @@ class ElectricTariffInputs(BaseModel, models.Model):
         :return: dict
         """
         d = copy.deepcopy(self.__dict__)
-        if "coincident_peak_load_active_timesteps" in d.keys():
+        if "coincident_peak_load_active_time_steps" in d.keys():
             # filter out repeated values created to make the inner arrays have equal length
-            d["coincident_peak_load_active_timesteps"] = \
-                [list(set(l)) for l in d["coincident_peak_load_active_timesteps"]]
+            d["coincident_peak_load_active_time_steps"] = \
+                [list(set(l)) for l in d["coincident_peak_load_active_time_steps"]]
         d.pop("_state", None)
         d.pop("id", None)
         d.pop("basemodel_ptr_id", None)
@@ -1167,91 +1308,91 @@ class ElectricTariffOutputs(BaseModel, models.Model):
         null=True,
         blank=True
     )
-    year_one_energy_cost = models.FloatField(
+    year_one_energy_cost_before_tax = models.FloatField(
         null=True, blank=True,
         help_text="Optimal year one utility energy cost"
     )
-    year_one_demand_cost = models.FloatField(
+    year_one_demand_cost_before_tax = models.FloatField(
         null=True, blank=True,
         help_text="Optimal year one utility demand cost"
     )
-    year_one_fixed_cost = models.FloatField(
+    year_one_fixed_cost_before_tax = models.FloatField(
         null=True, blank=True,
         help_text="Optimal year one utility fixed cost"
     )
-    year_one_min_charge_adder = models.FloatField(
+    year_one_min_charge_adder_before_tax = models.FloatField(
         null=True, blank=True,
         help_text="Optimal year one utility minimum charge adder"
     )
-    year_one_energy_cost_bau = models.FloatField(
+    year_one_energy_cost_before_tax_bau = models.FloatField(
         null=True, blank=True,
         help_text="Business as usual year one utility energy cost"
     )
-    year_one_demand_cost_bau = models.FloatField(
+    year_one_demand_cost_before_tax_bau = models.FloatField(
         null=True, blank=True,
         help_text="Business as usual year one utility demand cost"
     )
-    year_one_fixed_cost_bau = models.FloatField(
+    year_one_fixed_cost_before_tax_bau = models.FloatField(
         null=True, blank=True,
         help_text="Business as usual year one utility fixed cost"
     )
-    year_one_min_charge_adder_bau = models.FloatField(
+    year_one_min_charge_adder_before_tax_bau = models.FloatField(
         null=True, blank=True,
         help_text="Business as usual year one utility minimum charge adder"
     )
-    lifecycle_energy_cost = models.FloatField(
+    lifecycle_energy_cost_after_tax = models.FloatField(
         null=True, blank=True,
         help_text="Optimal life cycle utility energy cost, after-tax"
     )
-    lifecycle_demand_cost = models.FloatField(
+    lifecycle_demand_cost_after_tax = models.FloatField(
         null=True, blank=True,
         help_text="Optimal life cycle utility demand cost, after-tax"
     )
-    lifecycle_fixed_cost = models.FloatField(
+    lifecycle_fixed_cost_after_tax = models.FloatField(
         null=True, blank=True,
         help_text="Optimal life cycle utility fixed cost, after-tax"
     )
-    lifecycle_min_charge_adder = models.FloatField(
+    lifecycle_min_charge_adder_after_tax = models.FloatField(
         null=True, blank=True,
         help_text="Optimal life cycle utility minimum charge adder, after-tax"
     )
-    lifecycle_energy_cost_bau = models.FloatField(
+    lifecycle_energy_cost_after_tax_bau = models.FloatField(
         null=True, blank=True,
         help_text="Business as usual life cycle utility energy cost, after-tax"
     )
-    lifecycle_demand_cost_bau = models.FloatField(
+    lifecycle_demand_cost_after_tax_bau = models.FloatField(
         null=True, blank=True,
         help_text="Business as usual life cycle lifecycle utility demand cost, after-tax"
     )
-    lifecycle_fixed_cost_bau = models.FloatField(
+    lifecycle_fixed_cost_after_tax_bau = models.FloatField(
         null=True, blank=True,
         help_text="Business as usual life cycle utility fixed cost, after-tax"
     )
-    lifecycle_min_charge_adder_bau = models.FloatField(
+    lifecycle_min_charge_adder_after_tax_bau = models.FloatField(
         null=True, blank=True,
         help_text="Business as usual life cycle utility minimum charge adder, after-tax"
     )
-    lifecycle_export_benefit = models.FloatField(
+    lifecycle_export_benefit_after_tax = models.FloatField(
         null=True, blank=True,
         help_text="Optimal life cycle value of exported energy, after-tax"
     )
-    lifecycle_export_benefit_bau = models.FloatField(
+    lifecycle_export_benefit_after_tax_bau = models.FloatField(
         null=True, blank=True,
         help_text="Business as usual life cycle value of exported energy, after-tax"
     )
-    year_one_bill = models.FloatField(
+    year_one_bill_before_tax = models.FloatField(
         null=True, blank=True,
         help_text="Optimal year one utility bill"
     )
-    year_one_bill_bau = models.FloatField(
+    year_one_bill_before_tax_bau = models.FloatField(
         null=True, blank=True,
         help_text="Business as usual year one utility bill"
     )
-    year_one_export_benefit = models.FloatField(
+    year_one_export_benefit_before_tax = models.FloatField(
         null=True, blank=True,
         help_text="Optimal year one value of exported energy"
     )
-    year_one_export_benefit_bau = models.FloatField(
+    year_one_export_benefit_before_tax_bau = models.FloatField(
         null=True, blank=True,
         help_text="Business as usual year one value of exported energy"
     )
@@ -1269,27 +1410,27 @@ class ElectricTariffOutputs(BaseModel, models.Model):
         default=list, blank=True,
         help_text="Optimal year one hourly demand costs"
     )
-    year_one_coincident_peak_cost = models.FloatField(
+    year_one_coincident_peak_cost_before_tax = models.FloatField(
         null=True, blank=True,
         help_text="Optimal year one coincident peak charges"
     )
-    year_one_coincident_peak_cost_bau = models.FloatField(
+    year_one_coincident_peak_cost_before_tax_bau = models.FloatField(
         null=True, blank=True,
         help_text="Business as usual year one coincident peak charges"
     )
-    lifecycle_coincident_peak_cost = models.FloatField(
+    lifecycle_coincident_peak_cost_after_tax = models.FloatField(
         null=True, blank=True,
         help_text="Optimal total coincident peak charges over the analysis period, after-tax"
     )
-    lifecycle_coincident_peak_cost_bau = models.FloatField(
+    lifecycle_coincident_peak_cost_after_tax_bau = models.FloatField(
         null=True, blank=True,
         help_text="Business as usual life cycle coincident peak charges, after-tax"
     )
-    year_one_chp_standby_cost = models.FloatField(
+    year_one_chp_standby_cost_before_tax = models.FloatField(
         null=True, blank=True,
         help_text="Optimal year one standby charge cost incurred by CHP"
     )
-    lifecycle_chp_standby_cost = models.FloatField(
+    lifecycle_chp_standby_cost_after_tax = models.FloatField(
         null=True, blank=True,
         help_text="Optimal life cycle standby charge cost incurred by CHP, after-tax"
     )
@@ -1623,19 +1764,16 @@ class PVInputs(BaseModel, models.Model):
                    "generation data.")
     )
     can_net_meter = models.BooleanField(
-        default=True,
         blank=True,
         help_text=("True/False for if technology has option to participate in net metering agreement with utility. "
                    "Note that a technology can only participate in either net metering or wholesale rates (not both).")
     )
     can_wholesale = models.BooleanField(
-        default=True,
         blank=True,
         help_text=("True/False for if technology has option to export energy that is compensated at the wholesale_rate. "
                    "Note that a technology can only participate in either net metering or wholesale rates (not both).")
     )
     can_export_beyond_nem_limit = models.BooleanField(
-        default=True,
         blank=True,
         help_text=("True/False for if technology can export energy beyond the annual site load (and be compensated for "
                    "that energy at the export_rate_beyond_net_metering_limit).")
@@ -1644,6 +1782,16 @@ class PVInputs(BaseModel, models.Model):
         default=True,
         blank=True,
         help_text="True/False for if technology has the ability to curtail energy production."
+    )
+
+    operating_reserve_required_pct = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        null=True,
+        help_text=""
     )
 
 
@@ -1661,7 +1809,7 @@ class PVOutputs(BaseModel, models.Model):
         help_text="PV description for distinguishing between multiple PV models"
     )
     size_kw = models.FloatField(null=True, blank=True)
-    lifecycle_om_cost = models.FloatField(null=True, blank=True)
+    lifecycle_om_cost_after_tax = models.FloatField(null=True, blank=True)
     lifecycle_om_cost_bau = models.FloatField(null=True, blank=True)
 #     station_latitude = models.FloatField(null=True, blank=True)
 #     station_longitude = models.FloatField(null=True, blank=True)
@@ -1969,8 +2117,8 @@ class WindOutputs(BaseModel, models.Model):
     )
 
     size_kw = models.FloatField(null=True, blank=True)
-    lifecycle_om_cost = models.FloatField(null=True, blank=True)
-    year_one_om_cost = models.FloatField(null=True, blank=True)
+    lifecycle_om_cost_after_tax = models.FloatField(null=True, blank=True)
+    year_one_om_cost_before_tax = models.FloatField(null=True, blank=True)
     average_annual_energy_produced_kwh = models.FloatField(null=True, blank=True)
     average_annual_energy_exported_kwh = models.FloatField(null=True, blank=True)
     year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)
@@ -2068,7 +2216,6 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Minimum allowable battery state of charge as fraction of energy capacity."
     )
     soc_init_pct = models.FloatField(
-        default=0.5,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0)
@@ -2077,7 +2224,6 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Battery state of charge at first hour of optimization as fraction of energy capacity."
     )
     can_grid_charge = models.BooleanField(
-        default=True,
         blank=True,
         help_text="Flag to set whether the battery can be charged from the grid, or just onsite generation."
     )
@@ -2306,7 +2452,6 @@ class GeneratorInputs(BaseModel, models.Model):
         help_text="Generator fuel consumption curve y-intercept in gallons per hour."
     )
     fuel_avail_gal = models.FloatField(
-        default=660.0,
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(1.0e9)
@@ -2315,7 +2460,6 @@ class GeneratorInputs(BaseModel, models.Model):
         help_text="On-site generator fuel available in gallons."
     )
     min_turn_down_pct = models.FloatField(
-        default=0.0,
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(1.0)
@@ -2506,7 +2650,25 @@ class GeneratorInputs(BaseModel, models.Model):
         blank=True,
         help_text="True/False for if technology has the ability to curtail energy production."
     )
-    # emissions_factor_lb_CO2_per_gal = models.FloatField(null=True, blank=True)
+    replacement_year = models.IntegerField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(100)
+        ],
+        blank=True,
+        null=True,
+        help_text=""
+    )
+
+    replace_cost_per_kw = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        null=True,
+        help_text=""
+    )
 
     def clean(self):
         if self.max_kw > 0 or self.existing_kw > 0:
@@ -2547,7 +2709,7 @@ class GeneratorOutputs(BaseModel, models.Model):
         primary_key=True
     )
 
-    fuel_used_gal = models.FloatField(null=True, blank=True)
+    average_annual_fuel_used_gal = models.FloatField(null=True, blank=True)
     fuel_used_gal_bau = models.FloatField(null=True, blank=True)
     size_kw = models.FloatField(null=True, blank=True)
     average_annual_energy_produced_kwh = models.FloatField(null=True, blank=True)
@@ -2559,17 +2721,17 @@ class GeneratorOutputs(BaseModel, models.Model):
             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
     year_one_to_grid_series_kw = ArrayField(
             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
-    year_one_variable_om_cost = models.FloatField(null=True, blank=True)
+    year_one_variable_om_cost_before_tax = models.FloatField(null=True, blank=True)
     year_one_variable_om_cost_bau = models.FloatField(null=True, blank=True)
-    year_one_fuel_cost = models.FloatField(null=True, blank=True)
+    year_one_fuel_cost_before_tax = models.FloatField(null=True, blank=True)
     year_one_fuel_cost_bau = models.FloatField(null=True, blank=True)
-    year_one_fixed_om_cost = models.FloatField(null=True, blank=True)
+    year_one_fixed_om_cost_before_tax = models.FloatField(null=True, blank=True)
     year_one_fixed_om_cost_bau = models.FloatField(null=True, blank=True)
-    lifecycle_variable_om_cost = models.FloatField(null=True, blank=True)
+    lifecycle_variable_om_cost_after_tax = models.FloatField(null=True, blank=True)
     lifecycle_variable_om_cost_bau = models.FloatField(null=True, blank=True)
-    lifecycle_fuel_cost = models.FloatField(null=True, blank=True)
+    lifecycle_fuel_cost_after_tax = models.FloatField(null=True, blank=True)
     lifecycle_fuel_cost_bau = models.FloatField(null=True, blank=True)
-    lifecycle_fixed_om_cost = models.FloatField(null=True, blank=True)
+    lifecycle_fixed_om_cost_after_tax = models.FloatField(null=True, blank=True)
     lifecycle_fixed_om_cost_bau = models.FloatField(null=True, blank=True)
     year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
     year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
@@ -3080,7 +3242,6 @@ def get_input_dict_from_run_uuid(run_uuid:str):
         'FinancialInputs', 
         'SiteInputs',
         'ElectricLoadInputs',
-        'ElectricTariffInputs',
     ).get(run_uuid=run_uuid)
 
     def filter_none_and_empty_array(d:dict):
@@ -3092,7 +3253,6 @@ def get_input_dict_from_run_uuid(run_uuid:str):
     d["Financial"] = filter_none_and_empty_array(meta.FinancialInputs.dict)
     d["Site"] = filter_none_and_empty_array(meta.SiteInputs.dict)
     d["ElectricLoad"] = filter_none_and_empty_array(meta.ElectricLoadInputs.dict)
-    d["ElectricTariff"] = filter_none_and_empty_array(meta.ElectricTariffInputs.dict)
 
     # We have to try for the following objects because they may or may not be defined
     try:
@@ -3103,6 +3263,10 @@ def get_input_dict_from_run_uuid(run_uuid:str):
             d["PV"] = []
             for pv in pvs:
                 d["PV"].append(filter_none_and_empty_array(pv.dict))
+    except: pass
+
+    # Try to get electric tariff as it may be missing in off-grid scenarios
+    try: d["ElectricTariff"] = filter_none_and_empty_array(meta.ElectricTariffInputs.dict)
     except: pass
 
     try: d["ElectricUtility"] = filter_none_and_empty_array(meta.ElectricUtilityInputs.dict)
