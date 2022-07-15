@@ -1711,17 +1711,111 @@ class ElectricUtilityOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text=("Year one energy supplied from grid to load")
     )
-    year_one_emissions_lb_C02 = models.FloatField(
+    year_one_emissions_tonnes_CO2 = models.FloatField(
         null=True, blank=True,
-        help_text=("Optimal year one equivalent pounds of carbon dioxide emitted from utility electricity use. "
-                    "Calculated from EPA AVERT region hourly grid emissions factor series for the continental US."
-                    "In AK and HI, the best available data are EPA eGRID annual averages.")
+        help_text=("Total tons of CO2 emissions associated with the site's grid-purchased electricity in year one. "
+                    "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
+                    "Otherwise, it accounts for emissions offset from any export to the grid.")
     )
-    year_one_emissions_bau_lb_C02 = models.FloatField(
+    year_one_emissions_tonnes_CO2_bau = models.FloatField(
         null=True, blank=True,
-        help_text=("Business as usual year one equivalent pounds of carbon dioxide emitted from utility electricity use. "
-                    "Calculated from EPA AVERT region hourly grid emissions factor series for the continental US."
-                    "In AK and HI, the best available data are EPA eGRID annual averages.")
+        help_text=("Total tons of CO2 emissions associated with the site's grid-purchased electricity in year one in the BAU case. "
+                    "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
+                    "Otherwise, it accounts for emissions offset from any export to the grid.")
+    )
+    year_one_emissions_tonnes_NOx = models.FloatField(
+        null=True, blank=True,
+        help_text=("Total tons of NOx emissions associated with the site's grid-purchased electricity in year one. "
+                    "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
+                    "Otherwise, it accounts for emissions offset from any export to the grid.")
+    )
+    year_one_emissions_tonnes_NOx_bau = models.FloatField(
+        null=True, blank=True,
+        help_text=("Total tons of NOx emissions associated with the site's grid-purchased electricity in year one in the BAU case. "
+                    "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
+                    "Otherwise, it accounts for emissions offset from any export to the grid.")
+    )
+    year_one_emissions_tonnes_SO2 = models.FloatField(
+        null=True, blank=True,
+        help_text=("Total tons of CO2 emissions associated with the site's grid-purchased electricity in year one. "
+                    "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
+                    "Otherwise, it accounts for emissions offset from any export to the grid.")
+    )
+    year_one_emissions_tonnes_SO2_bau = models.FloatField(
+        null=True, blank=True,
+        help_text=("Total tons of SO2 emissions associated with the site's grid-purchased electricity in year one in the BAU case. "
+                    "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
+                    "Otherwise, it accounts for emissions offset from any export to the grid.")
+    )
+    year_one_emissions_tonnes_PM25 = models.FloatField(
+        null=True, blank=True,
+        help_text=("Total tons of PM2.5 emissions associated with the site's grid-purchased electricity in year one. "
+                    "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
+                    "Otherwise, it accounts for emissions offset from any export to the grid.")
+    )
+    year_one_emissions_tonnes_PM25_bau = models.FloatField(
+        null=True, blank=True,
+        help_text=("Total tons of PM2.5 emissions associated with the site's grid-purchased electricity in year one in the BAU case. "
+                    "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
+                    "Otherwise, it accounts for emissions offset from any export to the grid.")
+    )
+
+    lifecycle_emissions_tonnes_CO2 = models.FloatField(
+        null=True, blank=True,
+        help_text=("Total tons of CO2 emissions associated with the site's grid-purchased electricity over the analysis period. "
+                    "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
+                    "Otherwise, it accounts for emissions offset from any export to the grid.")
+    )
+    lifecycle_emissions_tonnes_CO2_bau = models.FloatField(
+        null=True, blank=True,
+        help_text=("Total tons of CO2 emissions associated with the site's grid-purchased electricity over the analysis period in the BAU case. "
+                    "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
+                    "Otherwise, it accounts for emissions offset from any export to the grid.")
+    )
+    lifecycle_emissions_tonnes_NOx = models.FloatField(
+        null=True, blank=True,
+        help_text=("Total tons of NOx emissions associated with the site's grid-purchased electricity over the analysis period. "
+                    "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
+                    "Otherwise, it accounts for emissions offset from any export to the grid.")
+    )
+    lifecycle_emissions_tonnes_NOx_bau = models.FloatField(
+        null=True, blank=True,
+        help_text=("Total tons of NOx emissions associated with the site's grid-purchased electricity over the analysis period in the BAU case. "
+                    "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
+                    "Otherwise, it accounts for emissions offset from any export to the grid.")
+    )
+    lifecycle_emissions_tonnes_SO2 = models.FloatField(
+        null=True, blank=True,
+        help_text=("Total tons of CO2 emissions associated with the site's grid-purchased electricity over the analysis period. "
+                    "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
+                    "Otherwise, it accounts for emissions offset from any export to the grid.")
+    )
+    lifecycle_emissions_tonnes_SO2_bau = models.FloatField(
+        null=True, blank=True,
+        help_text=("Total tons of SO2 emissions associated with the site's grid-purchased electricity over the analysis period in the BAU case. "
+                    "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
+                    "Otherwise, it accounts for emissions offset from any export to the grid.")
+    )
+    lifecycle_emissions_tonnes_PM25 = models.FloatField(
+        null=True, blank=True,
+        help_text=("Total tons of PM2.5 emissions associated with the site's grid-purchased electricity over the analysis period. "
+                    "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
+                    "Otherwise, it accounts for emissions offset from any export to the grid.")
+    )
+    lifecycle_emissions_tonnes_PM25_bau = models.FloatField(
+        null=True, blank=True,
+        help_text=("Total tons of PM2.5 emissions associated with the site's grid-purchased electricity over the analysis period in the BAU case. "
+                    "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
+                    "Otherwise, it accounts for emissions offset from any export to the grid.")
+    )
+    emissions_region = models.TextField(
+        blank=True,
+        help_text=("Name of the AVERT emissions region used. Determined from site longitude and latitude if "
+                "emissions_region and emissions_factor_series_lb_<pollutant>_per_kwh inputs were not provided.")
+    )
+    distance_to_emissions_region_meters = models.FloatField(
+        null=True, blank=True,
+        help_text=("Distance in meters from the site to the nearest AVERT emissions region.")
     )
 
 
@@ -1733,11 +1827,6 @@ class ElectricTariffOutputs(BaseModel, models.Model):
         on_delete=models.CASCADE,
         related_name="ElectricTariffOutputs",
         primary_key=True
-    )
-
-    emissions_region = models.TextField(
-        null=True,
-        blank=True
     )
     year_one_energy_cost_before_tax = models.FloatField(
         null=True, blank=True,
