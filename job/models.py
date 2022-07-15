@@ -1586,7 +1586,12 @@ class ElectricUtilityInputs(BaseModel, models.Model):
     )
     emissions_region = models.TextField(
         blank=True,
-        help_text=("The AVERT emissions region. If emissions_factor_series_lb_<pollutant>_per_kwh inputs are not provided, emissions_region overrides latitude and longitude in determining emissions factors.")
+        help_text=("Name of the AVERT emissions region to use. Options are: "
+                "'California', 'Central', 'Florida', 'Mid-Atlantic', 'Midwest', 'Carolinas', "
+                "'New England', 'Northwest', 'New York', 'Rocky Mountains', 'Southeast', 'Southwest', "
+                "'Tennessee', 'Texas', 'Alaska', 'Hawaii (except Oahu)', 'Hawaii (Oahu)'. "
+                "If emissions_factor_series_lb_<pollutant>_per_kwh inputs are not provided, "
+                "emissions_region overrides latitude and longitude in determining emissions factors.")
     )
     emissions_factor_series_lb_CO2_per_kwh = ArrayField(
         models.FloatField(
