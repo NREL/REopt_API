@@ -3175,6 +3175,51 @@ class GeneratorInputs(BaseModel, models.Model):
         blank=True,
         help_text="True/False for if technology has the ability to curtail energy production."
     )
+    fuel_renewable_energy_pct = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text="Fraction of the generator fuel considered renewable."
+    )
+    emissions_factor_lb_CO2_per_gal = models.FloatField(
+        default=22.51,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1e4)
+        ],
+        blank=True,
+        help_text="Pounds of CO2 emitted per gallon of generator fuel burned."
+    )
+    emissions_factor_lb_NOx_per_gal = models.FloatField(
+        default=0.0775544,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1e4)
+        ],
+        blank=True,
+        help_text="Pounds of CO2 emitted per gallon of generator fuel burned."
+    )
+    emissions_factor_lb_SO2_per_gal = models.FloatField(
+        default=0.040020476,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1e4)
+        ],
+        blank=True,
+        help_text="Pounds of CO2 emitted per gallon of generator fuel burned."
+    )
+    emissions_factor_lb_PM25_per_gal = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1e4)
+        ],
+        blank=True,
+        help_text="Pounds of CO2 emitted per gallon of generator fuel burned."
+    )
     replacement_year = models.IntegerField(
         validators=[
             MinValueValidator(0),
@@ -3184,7 +3229,6 @@ class GeneratorInputs(BaseModel, models.Model):
         null=True,
         help_text=""
     )
-
     replace_cost_per_kw = models.FloatField(
         validators=[
             MinValueValidator(0),
