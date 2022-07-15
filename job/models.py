@@ -1032,6 +1032,12 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Levelized cost of electricity for modeled off-grid system."
     )
+    breakeven_cost_of_emissions_reduction_per_tonnes_CO2 = models.FloatField(
+        null=True, blank=True,
+        help_text=("Cost of emissions required to breakeven (NPV = 0) compared to the BAU case LCC."
+                    "If the cost of health emissions were included in the objective function," 
+                    "calculation of this output value keeps the cost of those emissions at the values input by the user.")
+    )
 
 class ElectricLoadInputs(BaseModel, models.Model):
     key = "ElectricLoad"
