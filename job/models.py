@@ -1584,6 +1584,74 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Upper limit on the total capacity of technologies that can participate in net metering agreement."
     )
+    emissions_region = models.TextField(
+        blank=True,
+        help_text=("The AVERT emissions region. If emissions_factor_series_lb_<pollutant>_per_kwh inputs are not provided, emissions_region overrides latitude and longitude in determining emissions factors.")
+    )
+    emissions_factor_series_lb_CO2_per_kwh = ArrayField(
+        models.FloatField(
+            blank=True, null=True,
+        ),
+        default=list, blank=True,
+        help_text=("CO2 emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.")
+    )
+    emissions_factor_series_lb_NOx_per_kwh = ArrayField(
+        models.FloatField(
+            blank=True, null=True,
+        ),
+        default=list, blank=True,
+        help_text=("NOx emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.")
+    )
+    emissions_factor_series_lb_SO2_per_kwh = ArrayField(
+        models.FloatField(
+            blank=True, null=True,
+        ),
+        default=list, blank=True,
+        help_text=("SO2 emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.")
+    )
+    emissions_factor_series_lb_PM25_per_kwh = ArrayField(
+        models.FloatField(
+            blank=True, null=True,
+        ),
+        default=list, blank=True,
+        help_text=("PM2.5 emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.")
+    )
+    emissions_factor_CO2_decrease_pct = models.FloatField(
+        default=0.01174,
+        validators=[
+            MinValueValidator(-1),
+            MaxValueValidator(1)
+        ],
+        null=True, blank=True,
+        help_text="Annual percent decrease in the total annual CO2 marginal emissions rate of the grid. A negative value indicates an annual increase."
+    )
+    emissions_factor_NOx_decrease_pct = models.FloatField(
+        default=0.01174,
+        validators=[
+            MinValueValidator(-1),
+            MaxValueValidator(1)
+        ],
+        null=True, blank=True,
+        help_text="Annual percent decrease in the total annual NOx marginal emissions rate of the grid. A negative value indicates an annual increase."
+    )
+    emissions_factor_SO2_decrease_pct = models.FloatField(
+        default=0.01174,
+        validators=[
+            MinValueValidator(-1),
+            MaxValueValidator(1)
+        ],
+        null=True, blank=True,
+        help_text="Annual percent decrease in the total annual SO2 marginal emissions rate of the grid. A negative value indicates an annual increase."
+    )
+    emissions_factor_PM25_decrease_pct = models.FloatField(
+        default=0.01174,
+        validators=[
+            MinValueValidator(-1),
+            MaxValueValidator(1)
+        ],
+        null=True, blank=True,
+        help_text="Annual percent decrease in the total annual PM2.5 marginal emissions rate of the grid. A negative value indicates an annual increase."
+    )
 
     def clean(self):
         error_messages = {}
