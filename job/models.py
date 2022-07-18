@@ -809,7 +809,8 @@ class ElectricLoadInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(1)
         ],
-        help_text=""
+        help_text="Required operating reserves applied to each timestep as a percentage of electric load in that timestep. "
+        "If off_grid_flag = True, the default is 10%. Not applicable for grid-connected scenarios."
 
     )
 
@@ -1792,7 +1793,8 @@ class PVInputs(BaseModel, models.Model):
         ],
         blank=True,
         null=True,
-        help_text=""
+        help_text="Required operating reserves applied to each timestep as a percentage of PV generation in that timestep. "
+        "If off_grid_flag = True, the default is 25%. Not applicable for grid-connected scenarios."
     )
 
 
