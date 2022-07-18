@@ -57,6 +57,38 @@ class MACRS_YEARS_CHOICES(models.IntegerChoices):
     FIVE = 5
     SEVEN = 7
 
+FUEL_DEFAULTS = {
+    "fuel_renewable_energy_pct" : {
+        "natural_gas" : 0.0,
+        "landfill_bio_gas" : 1.0,
+        "propane" : 0.0,
+        "diesel_oil" : 0.0
+    },
+    "emissions_factor_lb_CO2_per_mmbtu" : {
+        "natural_gas" : 116.9,
+        "landfill_bio_gas" : 114.8,
+        "propane" : 138.6,
+        "diesel_oil" : 163.1
+    },
+    "emissions_factor_lb_NOx_per_mmbtu" : {
+        "natural_gas" : 0.09139,
+        "landfill_bio_gas": 0.14,
+        "propane" : 0.15309,
+        "diesel_oil" : 0.56
+    },
+    "emissions_factor_lb_SO2_per_mmbtu" : {
+        "natural_gas" : 0.000578592,
+        "landfill_bio_gas" : 0.045,
+        "propane" : 0.0,
+        "diesel_oil" : 0.28897737
+    },
+    "emissions_factor_lb_PM25_per_mmbtu" : {
+        "natural_gas" : 0.007328833,
+        "landfill_bio_gas" : 0.02484,
+        "propane" : 0.009906836,
+        "diesel_oil" : 0.0
+    }
+}
 
 def at_least_one_set(model, possible_sets):
     """
@@ -2843,6 +2875,46 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         help_text="Existing boiler system efficiency - conversion of fuel to usable heating thermal energy."
     )
 
+    emissions_factor_lb_CO2_per_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e9)
+        ],
+        null=True,
+        blank=True,
+        help_text=""
+    )
+
+    emissions_factor_lb_NOx_per_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e9)
+        ],
+        null=True,
+        blank=True,
+        help_text=""
+    )
+
+    emissions_factor_lb_SO2_per_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e9)
+        ],
+        null=True,
+        blank=True,
+        help_text=""
+    )
+
+    emissions_factor_lb_PM25_per_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e9)
+        ],
+        null=True,
+        blank=True,
+        help_text=""
+    )
+
     fuel_cost_per_mmbtu = ArrayField(
         models.FloatField(
             blank=True,
@@ -2866,16 +2938,28 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         help_text="Existing boiler fuel type, one of natural_gas, landfill_bio_gas, propane, diesel_oil"
     )
 
-    can_supply_steam_turbine = models.BooleanField(
-        default=False,
-        blank=True,
-        null=True,
-        help_text="If the boiler can supply steam to the steam turbine for electric production"
-    )
+    # can_supply_steam_turbine = models.BooleanField(
+    #     default=False,
+    #     blank=True,
+    #     null=True,
+    #     help_text="If the boiler can supply steam to the steam turbine for electric production"
+    # )
 
     # For custom validations within model.
     def clean(self):
         self.fuel_cost_per_mmbtu = scalar_to_vector(self.fuel_cost_per_mmbtu)
+
+        if self.emissions_factor_lb_CO2_per_mmbtu == None:
+            self.emissions_factor_lb_CO2_per_mmbtu = FUEL_DEFAULTS["emissions_factor_lb_CO2_per_mmbtu"].get(self.fuel_type, 0.0)
+        
+        if self.emissions_factor_lb_SO2_per_mmbtu == None:
+            self.emissions_factor_lb_SO2_per_mmbtu = FUEL_DEFAULTS["emissions_factor_lb_SO2_per_mmbtu"].get(self.fuel_type, 0.0)
+        
+        if self.emissions_factor_lb_NOx_per_mmbtu == None:
+            self.emissions_factor_lb_NOx_per_mmbtu = FUEL_DEFAULTS["emissions_factor_lb_NOx_per_mmbtu"].get(self.fuel_type, 0.0)
+        
+        if self.emissions_factor_lb_PM25_per_mmbtu == None:
+            self.emissions_factor_lb_PM25_per_mmbtu = FUEL_DEFAULTS["emissions_factor_lb_PM25_per_mmbtu"].get(self.fuel_type, 0.0)
 
 class ExistingBoilerOutputs(BaseModel, models.Model):
     
