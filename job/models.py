@@ -1793,7 +1793,7 @@ class PVInputs(BaseModel, models.Model):
         ],
         blank=True,
         null=True,
-        help_text="Required operating reserves applied to each timestep as a percentage of PV generation in that timestep. "
+        help_text="Required operating reserves applied to each timestep as a percentage of PV generation serving load in that timestep. "
         "If off_grid_flag = True, the default is 25%. Not applicable for grid-connected scenarios."
     )
 
