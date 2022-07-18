@@ -421,7 +421,7 @@ class FinancialInputs(BaseModel, models.Model):
         blank=True,
         help_text=("Additional cost, in percent of non-islandable capital costs, to make a distributed energy system "
                    "islandable from the grid and able to serve critical loads. Includes all upgrade costs such as "
-                   "additional laber and critical load panels.")
+                   "additional labor and critical load panels.")
     )
 
     offgrid_other_capital_costs = models.FloatField(
