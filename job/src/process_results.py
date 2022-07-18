@@ -36,6 +36,8 @@ def process_results(results: dict, run_uuid: str) -> None:
     Saves the results returned from the Julia API in the backend database.
     Called in job/run_jump_model (a celery task)
     """
+    pop_result_keys(results)
+
     meta = APIMeta.objects.get(run_uuid=run_uuid)
     meta.status = results.get("status")
     meta.save(update_fields=["status"])
@@ -60,3 +62,53 @@ def process_results(results: dict, run_uuid: str) -> None:
     if "ExistingBoiler" in results.keys():
         ExistingBoilerOutputs.create(meta=meta, **results["ExistingBoiler"]).save()
     # TODO process rest of results
+
+keys_to_skip = [
+    "lifecycle_emissions_reduction_CO2_pct",
+    "breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2",
+    "year_one_emissions_tonnes_CO2",
+    "year_one_emissions_tonnes_SO2",
+    "year_one_emissions_tonnes_CO2_bau",
+    "year_one_emissions_tonnes_SO2_bau",
+    "year_one_emissions_from_fuelburn_tonnes_CO2",
+    "year_one_emissions_from_fuelburn_tonnes_SO2",
+    "year_one_emissions_from_fuelburn_tonnes_CO2_bau",
+    "year_one_emissions_from_fuelburn_tonnes_SO2_bau",
+    "lifecycle_emissions_cost_CO2",
+    "lifecycle_emissions_cost_CO2_bau",
+    "lifecycle_emissions_tonnes_CO2",
+    "lifecycle_emissions_tonnes_SO2",
+    "lifecycle_emissions_tonnes_CO2_bau",
+    "lifecycle_emissions_tonnes_SO2_bau",
+    "lifecycle_emissions_from_fuelburn_tonnes_CO2",
+    "lifecycle_emissions_from_fuelburn_tonnes_SO2",
+    "lifecycle_emissions_from_fuelburn_tonnes_CO2_bau",
+    "lifecycle_emissions_from_fuelburn_tonnes_SO2_bau",
+    "year_one_emissions_tonnes_NOx",
+    "year_one_emissions_tonnes_PM25",
+    "year_one_emissions_tonnes_NOx_bau",
+    "year_one_emissions_tonnes_PM25_bau",
+    "year_one_emissions_from_fuelburn_tonnes_NOx",
+    "year_one_emissions_from_fuelburn_tonnes_PM25",
+    "year_one_emissions_from_fuelburn_tonnes_NOx_bau",
+    "year_one_emissions_from_fuelburn_tonnes_PM25_bau",
+    "lifecycle_emissions_tonnes_NOx",
+    "lifecycle_emissions_tonnes_PM25",
+    "lifecycle_emissions_tonnes_NOx_bau",
+    "lifecycle_emissions_tonnes_PM25_bau",
+    "lifecycle_emissions_from_fuelburn_tonnes_NOx",
+    "lifecycle_emissions_from_fuelburn_tonnes_PM25",
+    "lifecycle_emissions_from_fuelburn_tonnes_NOx_bau",
+    "lifecycle_emissions_from_fuelburn_tonnes_PM25_bau",
+    "emissions_region",
+    "distance_to_emissions_region_meters"
+]
+
+def pop_result_keys(r:dict):
+
+    for k in r.keys():
+        if (type(r[k])) == dict:
+            for s in keys_to_skip:
+                r[k].pop(s, None)
+        else:
+            print(k)

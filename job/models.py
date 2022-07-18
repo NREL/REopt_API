@@ -2979,10 +2979,10 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
         default=list,
     )
 
-    lifecycle_fuel_cost = models.FloatField(null=True, blank=True)
-    lifecycle_fuel_cost_bau = models.FloatField(null=True, blank=True)
+    lifecycle_fuel_cost_after_tax = models.FloatField(null=True, blank=True)
+    lifecycle_fuel_cost_after_tax_bau = models.FloatField(null=True, blank=True)
     year_one_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
-    year_one_fuel_cost = models.FloatField(null=True, blank=True)
+    year_one_fuel_cost_before_tax = models.FloatField(null=True, blank=True)
     thermal_to_tes_series_mmbtu_per_hour = models.FloatField(null=True, blank=True)
     thermal_to_tes_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
