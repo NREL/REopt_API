@@ -26,6 +26,11 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop - 2022-07-19
+### Minor Updates 
+##### Changed
+- Avoid triggering duplicate GitHub workflows. When pushing to a branch that's in a PR, only trigger tests on the push not on the PR sync also.
+
 ## Develop - 2022-06-27
 ### Minor Updates 
 ##### Changed
