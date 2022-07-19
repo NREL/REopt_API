@@ -2737,6 +2737,23 @@ class GeneratorOutputs(BaseModel, models.Model):
     year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
     year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
 
+class CHPInputs(BaseModel, models.Model):
+    key = "CHP"
+    meta = models.OneToOneField(
+        to=APIMeta,
+        on_delete=models.CASCADE,
+        related_name="CHPInputs",
+        unique=True
+    )
+
+class CHPOutputs(BaseModel, models.Model):
+    key = "CHP"
+    meta = models.OneToOneField(
+        to=APIMeta,
+        on_delete=models.CASCADE,
+        related_name="CHPOutputs",
+        unique=True
+    )
 
 class Message(BaseModel, models.Model):
     """
