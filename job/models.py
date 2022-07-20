@@ -2754,6 +2754,92 @@ class CHPOutputs(BaseModel, models.Model):
         related_name="CHPOutputs",
         unique=True
     )
+    
+    size_kw = models.FloatField(
+        null=True, blank=True,
+        help_text="Power capacity size of the CHP system [kW]"
+    )
+    size_supplemental_firing_kw = models.FloatField(
+        null=True, blank=True,
+        help_text="Power capacity of CHP supplementary firing system [kW]"
+    )
+    year_one_fuel_used_mmbtu = models.FloatField(
+        null=True, blank=True,
+        help_text="Fuel consumed in year one [MMBtu]"
+    )
+    year_one_electric_energy_produced_kwh = models.FloatField(
+        null=True, blank=True,
+        help_text="Electric energy produced in year one [kWh]"
+    )
+    year_one_thermal_energy_produced_mmbtu = models.FloatField(
+        null=True, blank=True,
+        help_text="Thermal energy produced in year one [MMBtu]"
+    )
+    year_one_electric_production_series_kw = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ),
+        default=list, blank=True,
+        help_text="Electric power production time-series array [kW]"
+    )
+    year_one_to_grid_series_kw = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ),
+        default=list, blank=True,
+        help_text="Electric power exported time-series array [kW]"
+    )
+    year_one_to_battery_series_kw = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ),
+        default=list, blank=True,
+        help_text="Electric power to charge the battery storage time-series array [kW]"
+    )
+    year_one_to_load_series_kw = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ),
+        default=list, blank=True,
+        help_text="Electric power to serve the electric load time-series array [kW]"
+    )
+    year_one_thermal_to_tes_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ),
+        default=list, blank=True,
+        help_text="Thermal power to TES time-series array [MMBtu/hr]"
+    )
+    year_one_thermal_to_waste_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ),
+        default=list, blank=True,
+        help_text="Thermal power wasted/unused/vented time-series array [MMBtu/hr]"
+    )
+    year_one_thermal_to_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ),
+        default=list, blank=True,
+        help_text="Thermal power to serve the heating load time-series array [MMBtu/hr]"
+    )
+    year_one_chp_fuel_cost_before_tax = models.FloatField(
+        null=True, blank=True,
+        help_text="Cost of fuel consumed by the CHP system in year one [\$]"
+    )
+    lifecycle_chp_fuel_cost_after_tax = models.FloatField(
+        null=True, blank=True,
+        help_text="Present value of cost of fuel consumed by the CHP system, after tax [\$]"
+    )
+    year_one_chp_standby_cost_before_tax = models.FloatField(
+        null=True, blank=True,
+        help_text="CHP standby charges in year one [\$]"
+    )
+    lifecycle_chp_standby_cost_after_tax = models.FloatField(
+        null=True, blank=True,
+        help_text="Present value of all CHP standby charges, after tax."
+    )
 
 class Message(BaseModel, models.Model):
     """
