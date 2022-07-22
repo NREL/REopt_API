@@ -2771,6 +2771,8 @@ class CoolingLoadInputs(BaseModel, models.Model):
 
     possible_sets = [
         ["thermal_loads_ton"],
+        ["doe_reference_name"],
+        ["blended_doe_reference_names"],
         ["doe_reference_name", "monthly_mmbtu"],
         ["doe_reference_name", "annual_tonhour"],
         ["blended_doe_reference_names", "blended_doe_reference_percents"],
@@ -2842,7 +2844,7 @@ class CoolingLoadInputs(BaseModel, models.Model):
     annual_tonhour = models.FloatField(
         validators=[
             MinValueValidator(1),
-            MaxValueValidator(100000000)
+            MaxValueValidator(MAX_BIG_NUMBER)
         ],
         null=True,
         blank=True,
@@ -2854,7 +2856,7 @@ class CoolingLoadInputs(BaseModel, models.Model):
         models.FloatField(
             validators=[
                 MinValueValidator(0),
-                MaxValueValidator(1.0e8)
+                MaxValueValidator(MAX_BIG_NUMBER)
             ],
             blank=True
         ),
@@ -2908,11 +2910,6 @@ class CoolingLoadInputs(BaseModel, models.Model):
                    "equal to zero. "
                    )
     )
-
-    '''
-    Latitude and longitude are passed on to SpaceHeating struct using the Site struct.
-    City is not used as an input here because it is found using find_ashrae_zone_city() when needed.
-    '''
 
     def clean(self):
         error_messages = {}

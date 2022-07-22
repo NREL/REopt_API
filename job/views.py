@@ -60,7 +60,7 @@ def help(request):
         d["ElectricStorage"] = ElectricStorageInputs.info_dict(ElectricStorageInputs)
         d["Wind"] = WindInputs.info_dict(WindInputs)
         d["Generator"] = GeneratorInputs.info_dict(GeneratorInputs)
-        d["CoolingLoad"] = GeneratorInputs.info_dict(CoolingLoadInputs)
+        d["CoolingLoad"] = CoolingLoadInputs.info_dict(CoolingLoadInputs)
         return JsonResponse(d)
 
     except Exception as e:
