@@ -34,6 +34,7 @@ from django.contrib.postgres.fields import *
 # TODO rm picklefield from requirements.txt once v1 is retired (replaced with JSONfield)
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
+import numpy
 from job.urdb_rate_validator import URDB_RateValidator,URDB_LabelValidator
 import copy
 import logging
@@ -2878,7 +2879,7 @@ class ExistingBoilerInputs(BaseModel, models.Model):
     emissions_factor_lb_CO2_per_mmbtu = models.FloatField(
         validators=[
             MinValueValidator(0.0),
-            MaxValueValidator(1.0e9)
+            MaxValueValidator(MAX_BIG_NUMBER)
         ],
         null=True,
         blank=True,
@@ -2888,7 +2889,7 @@ class ExistingBoilerInputs(BaseModel, models.Model):
     emissions_factor_lb_NOx_per_mmbtu = models.FloatField(
         validators=[
             MinValueValidator(0.0),
-            MaxValueValidator(1.0e9)
+            MaxValueValidator(MAX_BIG_NUMBER)
         ],
         null=True,
         blank=True,
@@ -2898,7 +2899,7 @@ class ExistingBoilerInputs(BaseModel, models.Model):
     emissions_factor_lb_SO2_per_mmbtu = models.FloatField(
         validators=[
             MinValueValidator(0.0),
-            MaxValueValidator(1.0e9)
+            MaxValueValidator(MAX_BIG_NUMBER)
         ],
         null=True,
         blank=True,
@@ -2908,7 +2909,7 @@ class ExistingBoilerInputs(BaseModel, models.Model):
     emissions_factor_lb_PM25_per_mmbtu = models.FloatField(
         validators=[
             MinValueValidator(0.0),
-            MaxValueValidator(1.0e9)
+            MaxValueValidator(MAX_BIG_NUMBER)
         ],
         null=True,
         blank=True,
@@ -3222,7 +3223,7 @@ class SpaceHeatingLoadInputs(BaseModel, models.Model):
     annual_mmbtu = models.FloatField(
         validators=[
             MinValueValidator(1),
-            MaxValueValidator(100000000)
+            MaxValueValidator(MAX_BIG_NUMBER)
         ],
         null=True,
         blank=True,
@@ -3242,7 +3243,7 @@ class SpaceHeatingLoadInputs(BaseModel, models.Model):
         models.FloatField(
             validators=[
                 MinValueValidator(0),
-                MaxValueValidator(1.0e8)
+                MaxValueValidator(MAX_BIG_NUMBER)
             ],
             blank=True
         ),
@@ -3317,6 +3318,8 @@ class SpaceHeatingLoadInputs(BaseModel, models.Model):
         
         pass
 
+# TODO Add domestic hot water input model.
+
 def get_input_dict_from_run_uuid(run_uuid:str):
     """
     Construct the input dict for REopt.run_reopt
@@ -3385,6 +3388,7 @@ def scalar_to_vector(vec:list):
     if len(vec) == 1: # scalar length is provided
         return vec * 8760
     elif len(vec) == 12: # Monthly costs were provided
-        return vec * 730
+        days_per_month = [31,28,31,30,31,30,31,31,30,31,30,31]
+        return numpy.repeat(vec, [i * 24 for i in days_per_month]).tolist()
     else:
         return vec # the vector len was not 1, handle it elsewhere
