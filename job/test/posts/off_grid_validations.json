@@ -1,0 +1,24 @@
+{
+    "Settings":{
+        "off_grid_flag": true
+    },
+    "Site": {
+        "longitude": -118.1164613,
+        "latitude": 34.5794343
+    },
+    "PV": {},
+    "Generator": {
+        "installed_cost_per_kw": 700,
+        "min_kw": 100,
+        "max_kw": 100
+    },
+    "ElectricLoad": {
+        "doe_reference_name": "RetailStore",
+        "annual_kwh": 10000000.0,
+        "city": "LosAngeles",
+        "year": 2017
+    },
+    "ElectricStorage": {},
+    "Financial": {},
+    "APIMeta": {}
+}

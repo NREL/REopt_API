@@ -117,31 +117,10 @@ class InputValidatorTests(TestCase):
                validator.validation_errors['ElectricLoad']['blended_doe_reference_percents'][0])
 
     def test_off_grid_defaults_overrides(self):
-        post = {
-            "Settings":{
-                "off_grid_flag": True
-            },
-            "Site": {
-                "longitude": -118.1164613,
-                "latitude": 34.5794343
-            },
-            "PV": {},
-            "Generator": {
-                "installed_cost_per_kw": 700,
-                "min_kw": 100,
-                "max_kw": 100
-            },
-            "ElectricLoad": {
-                "doe_reference_name": "RetailStore",
-                "annual_kwh": 10000000.0,
-                "city": "LosAngeles",
-                "year": 2017
-            },
-            "ElectricStorage": {},
-            "Financial": {},
-            "APIMeta": {}
-        }
 
+        post_file = os.path.join('job', 'test', 'posts', 'off_grid_validations.json')
+        post = json.load(open(post_file, 'r'))
+        
         post["APIMeta"]["run_uuid"] = uuid.uuid4()
 
         validator = InputValidator(post)
@@ -170,3 +149,39 @@ class InputValidatorTests(TestCase):
         self.assertAlmostEqual(validator.models["ElectricLoad"].critical_load_pct, 0.95)
         self.assertAlmostEqual(validator.models["Generator"].replacement_year, 7)
         self.assertAlmostEqual(validator.models["Generator"].replace_cost_per_kw, 200.0)
+
+    def existing_boiler_validation(self):
+
+        """
+        Validate clean, cross-clean methods are working as expected
+        """
+        post_file = os.path.join('job', 'test', 'posts', 'existing_boiler.json')
+        post = json.load(open(post_file, 'r'))
+
+        post["APIMeta"]["run_uuid"] = uuid.uuid4()
+
+        validator = InputValidator(post)
+        validator.clean_fields()
+        validator.clean()
+        validator.cross_clean()
+        self.assertEquals(validator.is_valid, True)
+
+        self.assertAlmostEqual(validator.models["ExistingBoiler"].emissions_factor_lb_CO2_per_mmbtu, 117, places=-1)
+        self.assertAlmostEqual(len(validator.models["ExistingBoiler"].fuel_cost_per_mmbtu), 8760)
+        self.assertAlmostEqual(sum(validator.models["ExistingBoiler"].fuel_cost_per_mmbtu), 8760*0.5)
+
+        # Validate 12 month fuel cost vector gets scaled correctly
+
+        post["ExistingBoiler"]["fuel_cost_per_mmbtu"] = [1,2,1,1,1,1,1,1,1,1,1,1]
+
+        post["APIMeta"]["run_uuid"] = uuid.uuid4()
+
+        validator = InputValidator(post)
+        validator.clean_fields()
+        validator.clean()
+        validator.cross_clean()
+        self.assertEquals(validator.is_valid, True)
+
+        self.assertAlmostEqual(len(validator.models["ExistingBoiler"].fuel_cost_per_mmbtu), 8760)
+        self.assertEqual(sum(validator.models["ExistingBoiler"].fuel_cost_per_mmbtu), 9432.0)
+        # With old code, the total for last assertion would have been 9490 (i.e. 8760+730)
