@@ -37,6 +37,12 @@ Classify the change according to the following categories:
 - Added **CoolingLoadInputs** to `job/views.py/` for saving CoolingLoad inputs
 - Added `job\migrations\0006_coolingloadinputs.py` to contain migration for new **CoolingLoadInputs** model.
 
+## Develop - 2022-07-19
+### Minor Updates 
+##### Changed
+- Don't trigger Built-in Tests workflow on a push that only changes README.md and/or CHANGELOG.md
+- Avoid triggering duplicate GitHub workflows. When pushing to a branch that's in a PR, only trigger tests on the push not on the PR sync also.
+
 ## Develop - 2022-06-27
 ### Minor Updates 
 ##### Changed
