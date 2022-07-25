@@ -26,6 +26,17 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop - 2022-07-25
+### Minor Updates
+#### Added
+- Added **CoolingLoadInputs** model to `job/models.py` with its own `clean()` function
+- Added **CoolingLoadInputs** to `job/models.py/get_input_dict_from_run_uuid()`
+- Added **CoolingLoadInputs** to `job/validators.py/` for validation
+- Added time series length validation on **CoolingLoadInputs->thermal_loads_ton** and **CoolingLoadInputs->per_time_step_fractions_of_electric_load**
+- Changed **PV** validation in `job/validators.py` by adding `update_pv_defaults_offgrid()` to prevent validation failure when PV is not provided as input.
+- Added **CoolingLoadInputs** to `job/views.py/` for saving CoolingLoad inputs
+- Added `job\migrations\0006_coolingloadinputs.py` to contain migration for new **CoolingLoadInputs** model.
+
 ## Develop - 2022-06-27
 ### Minor Updates 
 ##### Changed
