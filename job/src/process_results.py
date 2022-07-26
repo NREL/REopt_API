@@ -29,7 +29,8 @@
 # *********************************************************************************
 from job.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorageOutputs, ElectricTariffOutputs,\
     ElectricUtilityOutputs, GeneratorOutputs, ElectricLoadOutputs, WindOutputs
-
+import logging
+log = logging.getLogger(__name__)
 
 def process_results(results: dict, run_uuid: str) -> None:
     """
@@ -56,3 +57,29 @@ def process_results(results: dict, run_uuid: str) -> None:
     if "Wind" in results.keys():
         WindOutputs.create(meta=meta, **results["Wind"]).save()
     # TODO process rest of results
+
+def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
+    """
+    Updates inputs in the backend database with values returned from Julia.
+    This is needed for inputs that have defaults calculated in the REopt Julia package, 
+    which currently is those that use EASIUR or AVERT data.
+    Called in job/run_jump_model (a celery task)
+    """
+    meta = APIMeta.objects.get(run_uuid=run_uuid)
+
+    try:
+        # get input models that need updating
+        meta = APIMeta.objects.select_related(
+            'FinancialInputs',
+            'ElectricUtilityInputs'
+        ).get(run_uuid=run_uuid)
+    except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(
+                                                                            exc_type, 
+                                                                            exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback)
+                                                                        )
+            log.debug(debug_msg)
+    meta.FinancialInputs.update(**inputs_to_update["Financial"])
+    meta.ElectricUtilityInputs.update(**inputs_to_update["ElectricUtility"])
