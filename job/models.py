@@ -402,14 +402,6 @@ class SiteOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Total tons of PM2.5 emissions associated with the site's onsite fuel burn in year one."
     )
-    lifecycle_emissions_cost_climate = models.FloatField(
-        null=True, blank=True,
-        help_text="Total cost of CO2 emissions associated with the site's energy consumption over the analysis period."
-    )
-    lifecycle_emissions_cost_health = models.FloatField(
-        null=True, blank=True,
-        help_text="Total cost of NOx, SO2, and PM2.5 emissions associated with the site's energy consumption over the analysis period."
-    )
     lifecycle_emissions_tonnes_CO2 = models.FloatField(
         null=True, blank=True,
         help_text="Total tons of CO2 emissions associated with the site's energy consumption over the analysis period."
@@ -1023,6 +1015,14 @@ class FinancialOutputs(BaseModel, models.Model):
     offgrid_microgrid_lcoe_dollars_per_kwh = models.FloatField(
         null=True, blank=True,
         help_text="Levelized cost of electricity for modeled off-grid system."
+    )
+    lifecycle_emissions_cost_climate = models.FloatField(
+        null=True, blank=True,
+        help_text="Total cost of CO2 emissions associated with the site's energy consumption over the analysis period."
+    )
+    lifecycle_emissions_cost_health = models.FloatField(
+        null=True, blank=True,
+        help_text="Total cost of NOx, SO2, and PM2.5 emissions associated with the site's energy consumption over the analysis period."
     )
     lifecycle_emissions_cost_climate_bau = models.FloatField(
         null=True, blank=True,
