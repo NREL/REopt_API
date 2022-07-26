@@ -67,8 +67,24 @@ function reopt(req::HTTP.Request)
     @info "Starting REopt..."
     error_response = Dict()
     results = Dict()
+	inputs_with_defaults_set_in_julia = Dict()
     try
-        results = reoptjl.run_reopt(ms, d)
+		model_inputs = reoptjl.REoptInputs(d)
+        results = reoptjl.run_reopt(ms, model_inputs)
+		@info keys(results)
+		inputs_with_defaults_from_easiur = [
+			:NOx_grid_cost_per_tonne, :SO2_grid_cost_per_tonne, :PM25_grid_cost_per_tonne, 
+			:NOx_onsite_fuelburn_cost_per_tonne, :SO2_onsite_fuelburn_cost_per_tonne, :PM25_onsite_fuelburn_cost_per_tonne,
+			:NOx_cost_escalation_pct, :SO2_cost_escalation_pct, :PM25_cost_escalation_pct
+		]
+		inputs_with_defaults_from_avert = [
+			:emissions_factor_series_lb_CO2_per_kwh, :emissions_factor_series_lb_NOx_per_kwh,
+			:emissions_factor_series_lb_SO2_per_kwh, :emissions_factor_series_lb_PM25_per_kwh
+		]
+		inputs_with_defaults_set_in_julia = Dict(
+			"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_easiur),
+			"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert)
+		)
     catch e
         @error "Something went wrong in the Julia code!" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
@@ -82,7 +98,12 @@ function reopt(req::HTTP.Request)
     GC.gc()
     if isempty(error_response)
         @info "REopt model solved with status $(results["status"])."
-        return HTTP.Response(200, JSON.json(results))
+		response = Dict(
+			"results" => results,
+			"inputs_with_defaults_set_in_julia" => inputs_with_defaults_set_in_julia
+		)
+		@info keys(response["results"])
+        return HTTP.Response(200, JSON.json(response))
     else
         @info "An error occured in the Julia code."
         return HTTP.Response(500, JSON.json(error_response))
