@@ -36,7 +36,7 @@ from celery import shared_task, Task
 from reo.exceptions import REoptError, OptimizationTimeout, UnexpectedError, NotOptimal, REoptFailedToStartError
 from job.models import APIMeta, Message, get_input_dict_from_run_uuid
 from reo.src.profiler import Profiler
-from job.src.process_results import process_results
+from job.src.process_results import process_results, update_inputs_in_database
 from celery.utils.log import get_task_logger
 logger = get_task_logger(__name__)
 
@@ -128,5 +128,6 @@ def run_jump_model(run_uuid):
 
     profiler.profileEnd()
     # TODO save profile times
+    update_inputs_in_database(inputs_with_defaults_set_in_julia, run_uuid)
     process_results(results, run_uuid)
     return True
