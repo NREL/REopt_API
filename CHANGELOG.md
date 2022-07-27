@@ -51,26 +51,80 @@ Classify the change according to the following categories:
     - Added **replacements_future_cost_after_tax**
     - Added **replacements_present_cost_after_tax**
     - Added **offgrid_microgrid_lcoe_dollars_per_kwh**
-    - Changed **lifecycle_capital_costs_plus_om** and **lifecycle_om_costs_bau** field names to include before/after tax
+    - Changed **lifecycle_capital_costs_plus_om** field name to **lifecycle_capital_costs_plus_om_after_tax**
+    - Changed **lifecycle_om_costs_bau** field name to **lifecycle_om_costs_before_tax_bau**
+- **ElectricLoadInputs**
+    - Removed default value for **critical_load_met_pct**. If user does not provide this value, it is defaulted depending on **Settings -> off_grid_flag**
+    - Added **operating_reserve_required_pct**
+    - Added **min_load_met_annual_pct**
 - **ElectricLoadOutputs**
     - Added **offgrid_load_met_pct**
     - Added **offgrid_annual_oper_res_required_series_kwh**
     - Added **offgrid_annual_oper_res_provided_series_kwh**
     - Added **offgrid_load_met_series_kw**
 - **ElectricTariffInputs**
-    - Changed all instances of `coincident_peak_load_active_timesteps` to `coincident_peak_load_active_time_steps`
+    - Changed field name **coincident_peak_load_active_timesteps** to **coincident_peak_load_active_time_steps**
 - **ElectricTariffOutputs**
-    - Changed field names to add suffixes denoting `before_tax` or `after_tax` values
+    - Changed field name **year_one_energy_cost** to **year_one_energy_cost_before_tax**
+    - Changed field name **year_one_demand_cost** to **year_one_demand_cost_before_tax**
+    - Changed field name **year_one_fixed_cost** to **year_one_fixed_cost_before_tax**
+    - Changed field name **year_one_min_charge_adder** to **year_one_min_charge_adder_before_tax**
+    - Changed field name **year_one_energy_cost_bau** to **year_one_energy_cost_before_tax_bau**
+    - Changed field name **year_one_demand_cost_bau** to **year_one_demand_cost_before_tax_bau**
+    - Changed field name **year_one_fixed_cost_bau** to **year_one_fixed_cost_before_tax_bau**
+    - Changed field name **year_one_min_charge_adder_bau** to **year_one_min_charge_adder_before_tax_bau**
+    - Changed field name **lifecycle_energy_cost** to **lifecycle_energy_cost_after_tax**
+    - Changed field name **lifecycle_demand_cost** to **lifecycle_demand_cost_after_tax**
+    - Changed field name **lifecycle_fixed_cost** to **lifecycle_fixed_cost_after_tax**
+    - Changed field name **lifecycle_min_charge_adder** to **lifecycle_min_charge_adder_after_tax_bau**
+    - Changed field name **lifecycle_energy_cost_bau** to **lifecycle_energy_cost_after_tax_bau**
+    - Changed field name **lifecycle_demand_cost_bau** to **lifecycle_demand_cost_after_tax_bau**
+    - Changed field name **lifecycle_fixed_cost_bau** to **lifecycle_fixed_cost_after_tax_bau**
+    - Changed field name **lifecycle_min_charge_adder_bau** to **lifecycle_min_charge_adder_after_tax_bau**
+    - Changed field name **lifecycle_export_benefit** to **lifecycle_export_benefit_after_tax**
+    - Changed field name **lifecycle_export_benefit_bau** to **lifecycle_export_benefit_after_tax_bau**
+    - Changed field name **year_one_bill** to **year_one_bill_before_tax**
+    - Changed field name **year_one_bill_bau** to **year_one_bill_before_tax_bau**
+    - Changed field name **year_one_export_benefit** to **year_one_export_benefit_before_tax**
+    - Changed field name **year_one_export_benefit_bau** to **year_one_export_benefit_before_tax_bau**
+    - Changed field name **year_one_coincident_peak_cost** to **year_one_coincident_peak_cost_before_tax**
+    - Changed field name **year_one_coincident_peak_cost_bau** to **year_one_coincident_peak_cost_before_tax_bau**
+    - Changed field name **lifecycle_coincident_peak_cost** to **lifecycle_coincident_peak_cost_after_tax**
+    - Changed field name **lifecycle_coincident_peak_cost_bau** to **lifecycle_coincident_peak_cost_after_tax_bau**
+    - Changed field name **year_one_chp_standby_cost** to **year_one_chp_standby_cost_before_tax**
+    - Changed field name **lifecycle_chp_standby_cost** to **lifecycle_chp_standby_cost_after_tax**
 - **ElectricTariffInputs**
     - Changed validation of this model to be conditional on **Settings.off_grid_flag** being False
+    - Changed **ElectricTariffInputs** `required inputs` error message to alert user that ElectricTariff inputs are not required if **Settings.off_grid_flag** is true.
+- **PVInputs**
+    - Removed default values for `can_net_meter`, `can_wholesale`, and `can_export_beyond_nem_limit` as defaults for these fields are set depending on **Settings->off_grid_flag**
+    - Added field **operating_reserve_required_pct**
+- **PVOutputs**
+    - Changed name of **lifecycle_om_cost** to **lifecycle_om_cost_after_tax**
+- **WindOutputs**
+    - Changed name of **lifecycle_om_cost** to **lifecycle_om_cost_after_tax**
+    - Changed name of **year_one_om_cost** to **year_one_om_cost_before_tax**
+- **ElectricStorageInputs**
+    - Removed default values for **soc_init_pct** and **can_grid_charge** as these defaults are set conditional on **Settings->off_grid_flag**
+- **GeneratorInputs**
+    - Removed default values for **fuel_avail_gal** and **min_turn_down_pct** as these defaults are set conditional on **Settings->off_grid_flag**
+    - Added field **replacement_year**
+    - Added field **replace_cost_per_kw**
+- **GeneratorOutputs**
+    - Changed field name **fuel_used_gal** to **average_annual_fuel_used_gal**
+    - Changed field name **year_one_variable_om_cost** to **year_one_variable_om_cost_before_tax**
+    - Changed field name **year_one_fuel_cost** to **year_one_fuel_cost_before_tax**
+    - Changed field name **year_one_fixed_om_cost** to **year_one_fixed_om_cost_before_tax**
+    - Changed field name **lifecycle_variable_om_cost** to **lifecycle_variable_om_cost_after_tax**
+    - Changed field name **lifecycle_fuel_cost** to **lifecycle_fuel_cost_after_tax**
+    - Changed field name **lifecycle_fixed_om_cost** to **lifecycle_fixed_om_cost_after_tax**
+
 `job/run_jump_model.py` - Remove `run_uuid` key from input dictionary before running REopt to avoid downstream errors from REopt.jl
 `job/validators.py`
-- Changed **ElectricTariffInputs** to validate if **ElectricTariff** key exists in inputs
-- Added message to `messages()` to alert user if valid ElectricTariff input is provided when **Settings.off_grid_flag** is true.
-- Added message to `messages()` to alert user of technologies which can be modeled when **Settings.off_grid_flag** is true.
-- Added validation error to alert user of input keys which can't be modeled when **Settings.off_grid_flag** is true.
-`job/models.py`
-- Changed **ElectricTariffInputs** `required inputs` error message to alert user that ElectricTariff inputs are not required if **Settings.off_grid_flag** is true.
+    - Changed **ElectricTariffInputs** to validate if **ElectricTariff** key exists in inputs
+    - Added message to `messages()` to alert user if valid ElectricTariff input is provided when **Settings.off_grid_flag** is true.
+    - Added message to `messages()` to alert user of technologies which can be modeled when **Settings.off_grid_flag** is true.
+    - Added validation error to alert user of input keys which can't be modeled when **Settings.off_grid_flag** is true.
 `job/views.py` - Changed validation code to try to save **ElectricTariffInputs**
 `job/test_job_endpoint.py` - Added test to validate API off-grid functionality
 - Added migration file `0005_remove_...` which contains the data model for all Added and Changed fields
