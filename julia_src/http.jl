@@ -71,7 +71,6 @@ function reopt(req::HTTP.Request)
     try
 		model_inputs = reoptjl.REoptInputs(d)
         results = reoptjl.run_reopt(ms, model_inputs)
-		@info keys(results)
 		inputs_with_defaults_from_easiur = [
 			:NOx_grid_cost_per_tonne, :SO2_grid_cost_per_tonne, :PM25_grid_cost_per_tonne, 
 			:NOx_onsite_fuelburn_cost_per_tonne, :SO2_onsite_fuelburn_cost_per_tonne, :PM25_onsite_fuelburn_cost_per_tonne,
@@ -102,7 +101,6 @@ function reopt(req::HTTP.Request)
 			"results" => results,
 			"inputs_with_defaults_set_in_julia" => inputs_with_defaults_set_in_julia
 		)
-		@info keys(response["results"])
         return HTTP.Response(200, JSON.json(response))
     else
         @info "An error occured in the Julia code."
