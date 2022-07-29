@@ -29,7 +29,7 @@
 # *********************************************************************************
 import logging
 import pandas as pd
-from job.models import APIMeta, BoilerInputs, ExistingBoilerInputs, UserProvidedMeta, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
+from job.models import APIMeta, ExistingBoilerInputs, UserProvidedMeta, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
     FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs, SpaceHeatingLoadInputs
 from django.core.exceptions import ValidationError
 from pyproj import Proj
@@ -93,7 +93,6 @@ class InputValidator(object):
             GeneratorInputs,
             WindInputs,
             ExistingBoilerInputs,
-            BoilerInputs,
             SpaceHeatingLoadInputs
         )
         self.pvnames = []
