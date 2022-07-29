@@ -34,8 +34,8 @@ import traceback as tb
 from django.http import JsonResponse
 from reo.exceptions import UnexpectedError
 from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, GeneratorInputs, ElectricLoadInputs,\
-    ElectricTariffInputs, ElectricUtilityInputs, SpaceHeatingLoadInputs, PVOutputs, ElectricStorageOutputs, WindOutputs, BoilerInputs, ExistingBoilerInputs,\
-    GeneratorOutputs, ElectricTariffOutputs, ElectricUtilityOutputs, ElectricLoadOutputs, BoilerOutputs, ExistingBoilerOutputs, APIMeta, UserProvidedMeta
+    ElectricTariffInputs, ElectricUtilityInputs, SpaceHeatingLoadInputs, PVOutputs, ElectricStorageOutputs, WindOutputs, ExistingBoilerInputs,\
+    GeneratorOutputs, ElectricTariffOutputs, ElectricUtilityOutputs, ElectricLoadOutputs, ExistingBoilerOutputs, APIMeta, UserProvidedMeta
 
 
 def make_error_resp(msg):
@@ -61,7 +61,7 @@ def help(request):
         d["Wind"] = WindInputs.info_dict(WindInputs)
         d["Generator"] = GeneratorInputs.info_dict(GeneratorInputs)
         d["ExistingBoiler"] = ExistingBoilerInputs.info_dict(ExistingBoilerInputs)
-        d["Boiler"] = BoilerInputs.info_dict(BoilerInputs)
+        # d["Boiler"] = BoilerInputs.info_dict(BoilerInputs)
         d["SpaceHeatingLoad"] = SpaceHeatingLoadInputs.info_dict(SpaceHeatingLoadInputs)
         return JsonResponse(d)
 
@@ -96,7 +96,7 @@ def outputs(request):
         d["Wind"] = WindOutputs.info_dict(WindOutputs)
         d["Generator"] = GeneratorOutputs.info_dict(GeneratorOutputs)
         d["ExistingBoiler"] = ExistingBoilerOutputs.info_dict(ExistingBoilerOutputs)
-        d["Boiler"] = BoilerOutputs.info_dict(BoilerOutputs)
+        # d["Boiler"] = BoilerOutputs.info_dict(BoilerOutputs)
         return JsonResponse(d)
 
     except Exception as e:
@@ -185,8 +185,8 @@ def results(request, run_uuid):
     try: r["inputs"]["ExistingBoiler"] = meta.ExistingBoilerInputs.dict
     except: pass
 
-    try: r["inputs"]["Boiler"] = meta.BoilerInputs.dict
-    except: pass
+    # try: r["inputs"]["Boiler"] = meta.BoilerInputs.dict
+    # except: pass
 
     try: r["inputs"]["SpaceHeatingLoad"] = meta.SpaceHeatingLoadInputs.dict
     except: pass
@@ -224,8 +224,8 @@ def results(request, run_uuid):
         except: pass
         try: r["outputs"]["ExistingBoiler"] = meta.ExistingBoilerOutputs.dict
         except: pass
-        try: r["outputs"]["Boiler"] = meta.BoilerOutputs.dict
-        except: pass
+        # try: r["outputs"]["Boiler"] = meta.BoilerOutputs.dict
+        # except: pass
 
         for d in r["outputs"].values():
             if isinstance(d, dict):

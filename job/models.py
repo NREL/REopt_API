@@ -3004,176 +3004,177 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
         # perform custom validation here.
         pass
 
-class BoilerInputs(BaseModel, models.Model):
-    key = "Boiler"
+# # Uncomment to enable Boiler functionality
+# class BoilerInputs(BaseModel, models.Model):
+#     key = "Boiler"
 
-    meta = models.OneToOneField(
-        APIMeta,
-        on_delete=models.CASCADE,
-        related_name="BoilerInputs",
-        primary_key=True
-    )
+#     meta = models.OneToOneField(
+#         APIMeta,
+#         on_delete=models.CASCADE,
+#         related_name="BoilerInputs",
+#         primary_key=True
+#     )
 
-    FUEL_TYPE_LIST = models.TextChoices('FUEL_TYPE_LIST', (
-        "natural_gas",
-        "landfill_bio_gas",
-        "propane",
-        "diesel_oil",
-        "uranium"
-    ))
+#     FUEL_TYPE_LIST = models.TextChoices('FUEL_TYPE_LIST', (
+#         "natural_gas",
+#         "landfill_bio_gas",
+#         "propane",
+#         "diesel_oil",
+#         "uranium"
+#     ))
 
-    min_mmbtu_per_hour = models.FloatField(
-        validators=[
-            MinValueValidator(0.0),
-            MaxValueValidator(1.0e9)
-        ],
-        null=True,
-        blank=True,
-        default=0.0,
-        help_text="Minimum thermal power size"
-    )
+#     min_mmbtu_per_hour = models.FloatField(
+#         validators=[
+#             MinValueValidator(0.0),
+#             MaxValueValidator(1.0e9)
+#         ],
+#         null=True,
+#         blank=True,
+#         default=0.0,
+#         help_text="Minimum thermal power size"
+#     )
 
-    max_mmbtu_per_hour = models.FloatField(
-        validators=[
-            MinValueValidator(0.0),
-            MaxValueValidator(1.0e9)
-        ],
-        null=True,
-        blank=True,
-        default=0.0,
-        help_text="Maximum thermal power size"
-    )
+#     max_mmbtu_per_hour = models.FloatField(
+#         validators=[
+#             MinValueValidator(0.0),
+#             MaxValueValidator(1.0e9)
+#         ],
+#         null=True,
+#         blank=True,
+#         default=0.0,
+#         help_text="Maximum thermal power size"
+#     )
 
-    efficiency = models.FloatField(
-        validators=[
-            MinValueValidator(0.0),
-            MaxValueValidator(1.0)
-        ],
-        null=True,
-        blank=True,
-        default=0.8,
-        help_text="New boiler system efficiency - conversion of fuel to usable heating thermal energy."
-    )
+#     efficiency = models.FloatField(
+#         validators=[
+#             MinValueValidator(0.0),
+#             MaxValueValidator(1.0)
+#         ],
+#         null=True,
+#         blank=True,
+#         default=0.8,
+#         help_text="New boiler system efficiency - conversion of fuel to usable heating thermal energy."
+#     )
 
-    fuel_cost_per_mmbtu = ArrayField(
-        models.FloatField(
-            blank=True,
-            validators=[
-                MinValueValidator(0)
-            ]
-        ),
-        default=list,
-        blank=True,
-        help_text="Fuel cost in [$/MMBtu]"
-    )
+#     fuel_cost_per_mmbtu = ArrayField(
+#         models.FloatField(
+#             blank=True,
+#             validators=[
+#                 MinValueValidator(0)
+#             ]
+#         ),
+#         default=list,
+#         blank=True,
+#         help_text="Fuel cost in [$/MMBtu]"
+#     )
 
-    macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.ZERO,
-        choices=MACRS_YEARS_CHOICES.choices,
-        blank=True,
-        null=True,
-        help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
-    )
+#     macrs_option_years = models.IntegerField(
+#         default=MACRS_YEARS_CHOICES.ZERO,
+#         choices=MACRS_YEARS_CHOICES.choices,
+#         blank=True,
+#         null=True,
+#         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
+#     )
 
-    macrs_bonus_pct = models.FloatField(
-        default=0.0,
-        validators=[
-            MinValueValidator(0),
-            MaxValueValidator(1)
-        ],
-        blank=True,
-        null=True,
-        help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
-    )
+#     macrs_bonus_pct = models.FloatField(
+#         default=0.0,
+#         validators=[
+#             MinValueValidator(0),
+#             MaxValueValidator(1)
+#         ],
+#         blank=True,
+#         null=True,
+#         help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
+#     )
 
-    installed_cost_per_mmbtu_per_hour = models.FloatField(
-        default=293000.0,
-        validators=[
-            MinValueValidator(0),
-            MaxValueValidator(1.0e9)
-        ],
-        blank=True,
-        null=True,
-        help_text="Thermal power-based cost"
-    )
+#     installed_cost_per_mmbtu_per_hour = models.FloatField(
+#         default=293000.0,
+#         validators=[
+#             MinValueValidator(0),
+#             MaxValueValidator(1.0e9)
+#         ],
+#         blank=True,
+#         null=True,
+#         help_text="Thermal power-based cost"
+#     )
 
-    om_cost_per_mmbtu_per_hour = models.FloatField(
-        default=2930.0,
-        validators=[
-            MinValueValidator(0),
-            MaxValueValidator(1.0e9)
-        ],
-        blank=True,
-        null=True,
-        help_text="Thermal power-based fixed O&M cost"
-    )
+#     om_cost_per_mmbtu_per_hour = models.FloatField(
+#         default=2930.0,
+#         validators=[
+#             MinValueValidator(0),
+#             MaxValueValidator(1.0e9)
+#         ],
+#         blank=True,
+#         null=True,
+#         help_text="Thermal power-based fixed O&M cost"
+#     )
 
-    om_cost_per_mmbtu = models.FloatField(
-        default=0.0,
-        validators=[
-            MinValueValidator(0),
-            MaxValueValidator(1.0e9)
-        ],
-        blank=True,
-        null=True,
-        help_text="Thermal energy-based variable O&M cost"
-    )
+#     om_cost_per_mmbtu = models.FloatField(
+#         default=0.0,
+#         validators=[
+#             MinValueValidator(0),
+#             MaxValueValidator(1.0e9)
+#         ],
+#         blank=True,
+#         null=True,
+#         help_text="Thermal energy-based variable O&M cost"
+#     )
 
-    fuel_type = models.TextField(
-        default=FUEL_TYPE_LIST.natural_gas,
-        choices=FUEL_TYPE_LIST.choices,
-        blank=True,
-        null=True,
-        help_text="Existing boiler fuel type, one of natural_gas, landfill_bio_gas, propane, diesel_oil, uranium"
-    )
+#     fuel_type = models.TextField(
+#         default=FUEL_TYPE_LIST.natural_gas,
+#         choices=FUEL_TYPE_LIST.choices,
+#         blank=True,
+#         null=True,
+#         help_text="Existing boiler fuel type, one of natural_gas, landfill_bio_gas, propane, diesel_oil, uranium"
+#     )
 
-    can_supply_steam_turbine = models.BooleanField(
-        default=True,
-        blank=True,
-        null=True,
-        help_text="If the boiler can supply steam to the steam turbine for electric production"
-    )
+#     can_supply_steam_turbine = models.BooleanField(
+#         default=True,
+#         blank=True,
+#         null=True,
+#         help_text="If the boiler can supply steam to the steam turbine for electric production"
+#     )
 
-    # For custom validations within model.
-    def clean(self):
-        self.fuel_cost_per_mmbtu = scalar_to_vector(self.fuel_cost_per_mmbtu)
+#     # For custom validations within model.
+#     def clean(self):
+#         self.fuel_cost_per_mmbtu = scalar_to_vector(self.fuel_cost_per_mmbtu)
 
-class BoilerOutputs(BaseModel, models.Model):
+# class BoilerOutputs(BaseModel, models.Model):
 
-    key = "Boiler"
+#     key = "Boiler"
 
-    meta = models.OneToOneField(
-        APIMeta,
-        on_delete=models.CASCADE,
-        related_name="BoilerOutputs",
-        primary_key=True
-    )
+#     meta = models.OneToOneField(
+#         APIMeta,
+#         on_delete=models.CASCADE,
+#         related_name="BoilerOutputs",
+#         primary_key=True
+#     )
 
-    year_one_fuel_consumption_mmbtu = models.FloatField(null=True, blank=True)
+#     year_one_fuel_consumption_mmbtu = models.FloatField(null=True, blank=True)
 
-    year_one_fuel_consumption_mmbtu_per_hour = ArrayField(
-        models.FloatField(null=True, blank=True),
-        default=list,
-    )
+#     year_one_fuel_consumption_mmbtu_per_hour = ArrayField(
+#         models.FloatField(null=True, blank=True),
+#         default=list,
+#     )
 
-    lifecycle_fuel_cost = models.FloatField(null=True, blank=True)
-    lifecycle_per_unit_prod_om_costs = models.FloatField(null=True, blank=True)
-    lifecycle_fuel_cost_bau = models.FloatField(null=True, blank=True)
-    year_one_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
-    year_one_fuel_cost = models.FloatField(null=True, blank=True)
+#     lifecycle_fuel_cost = models.FloatField(null=True, blank=True)
+#     lifecycle_per_unit_prod_om_costs = models.FloatField(null=True, blank=True)
+#     lifecycle_fuel_cost_bau = models.FloatField(null=True, blank=True)
+#     year_one_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
+#     year_one_fuel_cost = models.FloatField(null=True, blank=True)
     
-    thermal_to_tes_series_mmbtu_per_hour = ArrayField(
-        models.FloatField(null=True, blank=True),
-        default = list,
-    )
-    year_one_thermal_production_mmbtu_per_hour = ArrayField(
-        models.FloatField(null=True, blank=True),
-        default = list,
-    )
-    year_one_thermal_to_load_series_mmbtu_per_hour = ArrayField(
-        models.FloatField(null=True, blank=True),
-        default = list,
-    )
+#     thermal_to_tes_series_mmbtu_per_hour = ArrayField(
+#         models.FloatField(null=True, blank=True),
+#         default = list,
+#     )
+#     year_one_thermal_production_mmbtu_per_hour = ArrayField(
+#         models.FloatField(null=True, blank=True),
+#         default = list,
+#     )
+#     year_one_thermal_to_load_series_mmbtu_per_hour = ArrayField(
+#         models.FloatField(null=True, blank=True),
+#         default = list,
+#     )
 
 
 class SpaceHeatingLoadInputs(BaseModel, models.Model):
@@ -3369,8 +3370,8 @@ def get_input_dict_from_run_uuid(run_uuid:str):
     try: d["Wind"] = filter_none_and_empty_array(meta.WindInputs.dict)
     except: pass
 
-    try: d["Boiler"] = filter_none_and_empty_array(meta.BoilerInputs.dict)
-    except: pass
+    # try: d["Boiler"] = filter_none_and_empty_array(meta.BoilerInputs.dict)
+    # except: pass
 
     try: d["ExistingBoiler"] = filter_none_and_empty_array(meta.ExistingBoilerInputs.dict)
     except: pass

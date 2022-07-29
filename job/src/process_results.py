@@ -28,7 +28,7 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
 from job.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorageOutputs, ElectricTariffOutputs,\
-    ElectricUtilityOutputs, GeneratorOutputs, ElectricLoadOutputs, WindOutputs, BoilerOutputs, ExistingBoilerOutputs
+    ElectricUtilityOutputs, GeneratorOutputs, ElectricLoadOutputs, WindOutputs, ExistingBoilerOutputs
 
 
 def process_results(results: dict, run_uuid: str) -> None:
@@ -57,8 +57,8 @@ def process_results(results: dict, run_uuid: str) -> None:
         GeneratorOutputs.create(meta=meta, **results["Generator"]).save()
     if "Wind" in results.keys():
         WindOutputs.create(meta=meta, **results["Wind"]).save()
-    if "Boiler" in results.keys():
-        BoilerOutputs.create(meta=meta, **results["Boiler"]).save()
+    # if "Boiler" in results.keys():
+    #     BoilerOutputs.create(meta=meta, **results["Boiler"]).save()
     if "ExistingBoiler" in results.keys():
         ExistingBoilerOutputs.create(meta=meta, **results["ExistingBoiler"]).save()
     # TODO process rest of results
@@ -101,7 +101,11 @@ keys_to_skip = [
     "lifecycle_emissions_from_fuelburn_tonnes_NOx_bau",
     "lifecycle_emissions_from_fuelburn_tonnes_PM25_bau",
     "emissions_region",
-    "distance_to_emissions_region_meters"
+    "distance_to_emissions_region_meters",
+    "lifecycle_emissions_cost_health",
+    "lifecycle_emissions_cost_climate_bau",
+    "lifecycle_emissions_cost_climate",
+    "lifecycle_emissions_cost_health_bau"
 ]
 
 def pop_result_keys(r:dict):
@@ -111,4 +115,5 @@ def pop_result_keys(r:dict):
             for s in keys_to_skip:
                 r[k].pop(s, None)
         else:
-            print(k)
+            # print(k)
+            pass
