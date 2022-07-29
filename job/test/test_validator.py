@@ -137,6 +137,7 @@ class InputValidatorTests(TestCase):
                 "city": "LosAngeles",
                 "year": 2017
             },
+            "Wind": {},
             "ElectricStorage": {},
             "Financial": {},
             "APIMeta": {}
@@ -150,6 +151,7 @@ class InputValidatorTests(TestCase):
         validator.cross_clean()
         self.assertEquals(validator.is_valid, True)
 
+        self.assertAlmostEqual(validator.models["Wind"].operating_reserve_required_pct, 0.1)
         self.assertAlmostEqual(validator.models["ElectricLoad"].critical_load_pct, 1.0)
         self.assertAlmostEqual(validator.models["Generator"].replacement_year, 10)
         self.assertAlmostEqual(validator.models["Generator"].replace_cost_per_kw, validator.models["Generator"].installed_cost_per_kw)
@@ -159,6 +161,7 @@ class InputValidatorTests(TestCase):
         post["ElectricLoad"]["critical_load_pct"] = 0.95
         post["Generator"]["replacement_year"] = 7
         post["Generator"]["replace_cost_per_kw"] = 200
+        post["Wind"]["operating_reserve_required_pct"] = 0.35
         post["APIMeta"]["run_uuid"] = uuid.uuid4()
 
         validator = InputValidator(post)
@@ -168,5 +171,6 @@ class InputValidatorTests(TestCase):
         self.assertEquals(validator.is_valid, True)
 
         self.assertAlmostEqual(validator.models["ElectricLoad"].critical_load_pct, 0.95)
+        self.assertAlmostEqual(validator.models["Wind"].operating_reserve_required_pct, 0.35)
         self.assertAlmostEqual(validator.models["Generator"].replacement_year, 7)
         self.assertAlmostEqual(validator.models["Generator"].replace_cost_per_kw, 200.0)

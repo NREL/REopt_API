@@ -2108,6 +2108,16 @@ class WindInputs(BaseModel, models.Model):
         help_text="True/False for if technology has the ability to curtail energy production."
     )
 
+    operating_reserve_required_pct = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0)
+        ],
+        null=True,
+        blank=True,
+        help_text="Only applicable when off_grid_flag = True. Required operating reserves applied to each timestep as a fraction of electric load in that timestep."
+    )
+
 
 class WindOutputs(BaseModel, models.Model):
     key = "WindOutputs"
