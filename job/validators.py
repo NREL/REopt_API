@@ -214,6 +214,30 @@ class InputValidator(object):
             if pvmodel.__getattribute__("max_kw") > 0:
                 if len(pvmodel.__getattribute__("prod_factor_series")) > 0:
                     self.clean_time_series("PV", "prod_factor_series")
+            
+            if self.models["PV"].__getattribute__("can_net_meter") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["PV"].can_net_meter = True
+                else:
+                    self.models["PV"].can_net_meter = False
+            
+            if self.models["PV"].__getattribute__("can_wholesale") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["PV"].can_wholesale = True
+                else:
+                    self.models["PV"].can_wholesale = False
+            
+            if self.models["PV"].__getattribute__("can_export_beyond_nem_limit") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["PV"].can_export_beyond_nem_limit = True
+                else:
+                    self.models["PV"].can_export_beyond_nem_limit = False
+
+            if self.models["PV"].__getattribute__("operating_reserve_required_pct") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["PV"].operating_reserve_required_pct = 0.0
+                else:
+                    self.models["PV"].operating_reserve_required_pct = 0.25
                     
         if "PV" in self.models.keys():  # single PV
             cross_clean_pv(self.models["PV"])
@@ -221,30 +245,6 @@ class InputValidator(object):
         if len(self.pvnames) > 0:  # multiple PV
             for pvname in self.pvnames:
                 cross_clean_pv(self.models[pvname])
-        
-        if self.models["PV"].__getattribute__("can_net_meter") == None:
-            if self.models["Settings"].off_grid_flag==False:
-                self.models["PV"].can_net_meter = True
-            else:
-                self.models["PV"].can_net_meter = False
-        
-        if self.models["PV"].__getattribute__("can_wholesale") == None:
-            if self.models["Settings"].off_grid_flag==False:
-                self.models["PV"].can_wholesale = True
-            else:
-                self.models["PV"].can_wholesale = False
-        
-        if self.models["PV"].__getattribute__("can_export_beyond_nem_limit") == None:
-            if self.models["Settings"].off_grid_flag==False:
-                self.models["PV"].can_export_beyond_nem_limit = True
-            else:
-                self.models["PV"].can_export_beyond_nem_limit = False
-
-        if self.models["PV"].__getattribute__("operating_reserve_required_pct") == None:
-            if self.models["Settings"].off_grid_flag==False:
-                self.models["PV"].operating_reserve_required_pct = 0.0
-            else:
-                self.models["PV"].operating_reserve_required_pct = 0.25
 
         """
         Time series values are up or down sampled to align with Settings.time_steps_per_hour
@@ -277,6 +277,12 @@ class InputValidator(object):
                                                   self.models["Site"].__getattribute__("longitude")):
                         self.add_validation_error("Wind", "Site",
                               "latitude/longitude not in the WindToolkit database. Cannot retrieve wind resource data.")
+            
+            if self.models["Wind"].__getattribute__("operating_reserve_required_pct") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["Wind"].operating_reserve_required_pct = 0.0
+                else:
+                    self.models["Wind"].operating_reserve_required_pct = 0.1
 
         """
         ElectricTariff
@@ -405,8 +411,8 @@ class InputValidator(object):
         """
         
         def validate_offgrid_keys(self):
-            # From https://github.com/NREL/REopt.jl/blob/4b0fb7f6556b2b6e9a9a7e8fa65398096fb6610f/src/core/scenario.jl#L88            
-            valid_input_keys_offgrid = ["PV", "ElectricStorage", "Generator", "Settings", "Site", "Financial", "ElectricLoad", "ElectricTariff", "ElectricUtility"]
+            # From https://github.com/NREL/REopt.jl/blob/4b0fb7f6556b2b6e9a9a7e8fa65398096fb6610f/src/core/scenario.jl#L88         
+            valid_input_keys_offgrid = ["PV", "Wind", "ElectricStorage", "Generator", "Settings", "Site", "Financial", "ElectricLoad", "ElectricTariff", "ElectricUtility"]
 
             invalid_input_keys_offgrid = list(set(list(self.models.keys()))-set(valid_input_keys_offgrid))
             if 'APIMeta' in invalid_input_keys_offgrid:
