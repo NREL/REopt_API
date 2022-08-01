@@ -2115,7 +2115,7 @@ class WindInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        help_text="Only applicable when off_grid_flag = True. Required operating reserves applied to each timestep as a fraction of electric load in that timestep."
+        help_text="Only applicable when off_grid_flag = True. Required operating reserves applied to each timestep as a fraction of wind generation serving load in that timestep."
     )
 
 
