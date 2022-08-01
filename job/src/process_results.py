@@ -61,7 +61,7 @@ def process_results(results: dict, run_uuid: str) -> None:
     # TODO process rest of results
 
 
-keys_to_skip = [
+keys_to_skip = [ # TODO: remove once added to job app
     "lifecycle_emissions_reduction_CO2_pct",
     "breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2",
     "year_one_emissions_tonnes_CO2",
