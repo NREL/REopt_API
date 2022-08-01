@@ -71,7 +71,7 @@ class InputValidator(object):
             - inputs within min/max limits
             - fills in default values
         2. Check requirements across each Model's fields
-            - eg. if user provides outage_start_time_step then must also provide outage_start_end_step
+            - eg. if user provides outage_start_time_step then must also provide outage_end_time_step
         3. Check requirements across Model fields
             - eg. the time_steps_per_hour must align with the length of loads_kw
         """
@@ -209,8 +209,8 @@ class InputValidator(object):
         PV tilt set to latitude if not provided and prod_factor_series validated
         """
         def cross_clean_pv(pvmodel):
-            if pvmodel.__getattribute__("tilt") == 0.537:  # 0.537 is a dummy number, default tilt
-                pvmodel.__setattr__("tilt", self.models["Site"].__getattribute__("latitude"))
+            if pvmodel.__getattribute__("tilt") == 0.537:  # 0.537 is a dummy number, default tilt # TODO: change to None? 
+                pvmodel.__setattr__("tilt", self.models["Site"].__getattribute__("latitude")) # TODO differentiate default tilt based on array_type
             if pvmodel.__getattribute__("max_kw") > 0:
                 if len(pvmodel.__getattribute__("prod_factor_series")) > 0:
                     self.clean_time_series("PV", "prod_factor_series")
