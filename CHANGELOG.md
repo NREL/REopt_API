@@ -26,9 +26,12 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop - 2022-06-27
+# v2.1.0
 ### Minor Updates 
 ##### Changed
+- The `/stable` URL now correctly calls the `v2` version of the REopt model (`/job` endpoint)
+- Don't trigger Built-in Tests workflow on a push that only changes README.md and/or CHANGELOG.md
+- Avoid triggering duplicate GitHub workflows. When pushing to a branch that's in a PR, only trigger tests on the push not on the PR sync also.
 `job/models.py` 
 - **Settings**
     - Added **off_grid_flag**
