@@ -397,7 +397,7 @@ class InputValidator(object):
 
             if self.models["Generator"].__getattribute__("replacement_year") == None:
                 if self.models["Settings"].off_grid_flag==False:
-                    self.models["Generator"].replacement_year = 25
+                    self.models["Generator"].replacement_year = 25 # TODO: set to analysis_years
                 else:
                     self.models["Generator"].replacement_year = 10
 
