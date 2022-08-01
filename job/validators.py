@@ -403,7 +403,7 @@ class InputValidator(object):
 
             if self.models["Generator"].__getattribute__("replace_cost_per_kw") == None:
                 if self.models["Settings"].off_grid_flag==False:
-                    self.models["Generator"].replace_cost_per_kw = 410.0
+                    self.models["Generator"].replace_cost_per_kw = 410.0 # TODO: set to 0
                 else:
                     self.models["Generator"].replace_cost_per_kw = self.models["Generator"].installed_cost_per_kw
         
