@@ -364,7 +364,7 @@ class InputValidator(object):
             if self.models["Settings"].off_grid_flag==False:
                 self.models["ElectricLoad"].critical_load_pct = 0.5
             else:
-                self.models["ElectricLoad"].critical_load_pct = 1.0
+                self.models["ElectricLoad"].critical_load_pct = 1.0 # TODO: this always needs to be true for off-grid
         
         if self.models["ElectricLoad"].__getattribute__("operating_reserve_required_pct") == None:
             if self.models["Settings"].off_grid_flag==False:
