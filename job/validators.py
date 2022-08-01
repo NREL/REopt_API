@@ -211,6 +211,7 @@ class InputValidator(object):
         def cross_clean_pv(pvmodel):
             if pvmodel.__getattribute__("tilt") == 0.537:  # 0.537 is a dummy number, default tilt # TODO: change to None? 
                 pvmodel.__setattr__("tilt", self.models["Site"].__getattribute__("latitude")) # TODO differentiate default tilt based on array_type
+            # TODO add cross_clean for azimuth
             if pvmodel.__getattribute__("max_kw") > 0:
                 if len(pvmodel.__getattribute__("prod_factor_series")) > 0:
                     self.clean_time_series("PV", "prod_factor_series")
