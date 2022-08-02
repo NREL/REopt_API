@@ -283,7 +283,7 @@ class InputValidator(object):
                 if self.models["Settings"].off_grid_flag==False:
                     self.models["Wind"].operating_reserve_required_pct = 0.0
                 else:
-                    self.models["Wind"].operating_reserve_required_pct = 0.1
+                    self.models["Wind"].operating_reserve_required_pct = 0.5
 
         """
         ElectricTariff
