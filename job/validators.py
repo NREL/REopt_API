@@ -209,36 +209,36 @@ class InputValidator(object):
         PV tilt set to latitude if not provided and prod_factor_series validated
         """
         def cross_clean_pv(pvmodel):
-            if pvmodel.__getattribute__("tilt") == 0.537:  # 0.537 is a dummy number, default tilt # TODO: change to None? 
-                pvmodel.__setattr__("tilt", self.models["Site"].__getattribute__("latitude")) # TODO differentiate default tilt based on array_type
+            if pvmodel.__getattribute__("tilt") == None:  # 0.537 is a dummy number, default tilt # TODO: change to None?
+                if pvmodel.__getattribute__("array_type") == "ROOFTOP_FIXED":
+                    pvmodel.__setattr__("tilt", 10)
+                else:
+                    pvmodel.__setattr__("tilt", abs(self.models["Site"].__getattribute__("latitude"))) # TODO differentiate default tilt based on array_type
+            
+            if pvmodel.__getattribute__("azimuth") == None:
+                if self.models["Site"].__getattribute__("latitude") >= 0:
+                    pvmodel.__setattr__("azimuth", 180)
+                else:
+                    pvmodel.__setattr__("azimuth", 0.0)
+            
             # TODO add cross_clean for azimuth
             if pvmodel.__getattribute__("max_kw") > 0:
                 if len(pvmodel.__getattribute__("prod_factor_series")) > 0:
                     self.clean_time_series("PV", "prod_factor_series")
             
-            if self.models["PV"].__getattribute__("can_net_meter") == None:
-                if self.models["Settings"].off_grid_flag==False:
+            if self.models["Settings"].off_grid_flag==True:
+                self.models["PV"].can_net_meter = False
+                self.models["PV"].can_wholesale = False
+                self.models["PV"].can_export_beyond_nem_limit = False
+                self.models["PV"].operating_reserve_required_pct = 0.25
+            else:
+                if self.models["PV"].__getattribute__("can_net_meter") == None:
                     self.models["PV"].can_net_meter = True
-                else:
-                    self.models["PV"].can_net_meter = False
-            
-            if self.models["PV"].__getattribute__("can_wholesale") == None:
-                if self.models["Settings"].off_grid_flag==False:
+                if self.models["PV"].__getattribute__("can_wholesale") == None:
                     self.models["PV"].can_wholesale = True
-                else:
-                    self.models["PV"].can_wholesale = False
-            
-            if self.models["PV"].__getattribute__("can_export_beyond_nem_limit") == None:
-                if self.models["Settings"].off_grid_flag==False:
+                if self.models["PV"].__getattribute__("can_export_beyond_nem_limit") == None:
                     self.models["PV"].can_export_beyond_nem_limit = True
-                else:
-                    self.models["PV"].can_export_beyond_nem_limit = False
-
-            if self.models["PV"].__getattribute__("operating_reserve_required_pct") == None:
-                if self.models["Settings"].off_grid_flag==False:
-                    self.models["PV"].operating_reserve_required_pct = 0.0
-                else:
-                    self.models["PV"].operating_reserve_required_pct = 0.25
+                self.models["PV"].operating_reserve_required_pct = 0.0
                     
         if "PV" in self.models.keys():  # single PV
             cross_clean_pv(self.models["PV"])
@@ -279,11 +279,19 @@ class InputValidator(object):
                         self.add_validation_error("Wind", "Site",
                               "latitude/longitude not in the WindToolkit database. Cannot retrieve wind resource data.")
             
-            if self.models["Wind"].__getattribute__("operating_reserve_required_pct") == None:
-                if self.models["Settings"].off_grid_flag==False:
-                    self.models["Wind"].operating_reserve_required_pct = 0.0
-                else:
-                    self.models["Wind"].operating_reserve_required_pct = 0.5
+            if self.models["Settings"].off_grid_flag==True:
+                self.models["Wind"].operating_reserve_required_pct = 0.10
+                self.models["Wind"].can_net_meter = False
+                self.models["Wind"].can_wholesale = False
+                self.models["Wind"].can_export_beyond_nem_limit = False
+            else:
+                if self.models["Wind"].__getattribute__("can_net_meter") == None:
+                    self.models["Wind"].can_net_meter = True
+                if self.models["Wind"].__getattribute__("can_wholesale") == None:
+                    self.models["Wind"].can_wholesale = True
+                if self.models["Wind"].__getattribute__("can_export_beyond_nem_limit") == None:
+                    self.models["Wind"].can_export_beyond_nem_limit = True
+                self.models["Wind"].operating_reserve_required_pct = 0.0
 
         """
         ElectricTariff
@@ -359,12 +367,15 @@ class InputValidator(object):
         ElectricLoad
         If user does not provide values, set defaults conditional on off-grid flag
         """
-
-        if self.models["ElectricLoad"].__getattribute__("critical_load_pct") == None:
-            if self.models["Settings"].off_grid_flag==False:
+        '''
+        If off-grid scenario, then always set critical load pct to 1.0, overriding any other value the user might have provided.
+        If !off-grid scenario, if critical load pct is not specified in inputs, set it to 0.5. Otherwise, allow user specified pct.
+        '''
+        if self.models["Settings"].off_grid_flag==True:
+                self.models["ElectricLoad"].critical_load_pct = 1.0
+        else:
+            if self.models["ElectricLoad"].__getattribute__("critical_load_pct") == None:
                 self.models["ElectricLoad"].critical_load_pct = 0.5
-            else:
-                self.models["ElectricLoad"].critical_load_pct = 1.0 # TODO: this always needs to be true for off-grid
         
         if self.models["ElectricLoad"].__getattribute__("operating_reserve_required_pct") == None:
             if self.models["Settings"].off_grid_flag==False:
@@ -397,13 +408,13 @@ class InputValidator(object):
 
             if self.models["Generator"].__getattribute__("replacement_year") == None:
                 if self.models["Settings"].off_grid_flag==False:
-                    self.models["Generator"].replacement_year = 25 # TODO: set to analysis_years
+                    self.models["Generator"].replacement_year = self.models["Financial"].analysis_years
                 else:
                     self.models["Generator"].replacement_year = 10
 
             if self.models["Generator"].__getattribute__("replace_cost_per_kw") == None:
                 if self.models["Settings"].off_grid_flag==False:
-                    self.models["Generator"].replace_cost_per_kw = 410.0 # TODO: set to 0
+                    self.models["Generator"].replace_cost_per_kw = 0.0
                 else:
                     self.models["Generator"].replace_cost_per_kw = self.models["Generator"].installed_cost_per_kw
         
