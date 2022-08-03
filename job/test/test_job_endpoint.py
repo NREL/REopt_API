@@ -36,10 +36,10 @@ logging.disable(logging.CRITICAL)
 
 class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
 
-    def test_pv_and_battery_scenario(self):
+    def test_pv_battery_and_emissions_defaults_from_julia(self):
         """
-        Same test as"Solar and Storage w/BAU" in the Julia package. Used in development of v2.
-        No need to keep this test.
+        Same test post as"Solar and Storage w/BAU" in the Julia package. Used in development of v2.
+        Also tests that inputs with defaults determined in the REopt julia package get updated in the database.
         """
         scenario = {
             "Site": {
@@ -82,6 +82,8 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
             "ElectricTariff": {
                 "urdb_label": "5ed6c1a15457a3367add15ae"
             },
+            "ElectricUtility": {
+            },
             "Financial": {
                 "elec_cost_escalation_pct": 0.026,
                 "offtaker_discount_pct": 0.081,
@@ -107,6 +109,13 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(results["PV"]["size_kw"], 216.667, places=1)
         self.assertAlmostEqual(results["ElectricStorage"]["size_kw"], 55.9, places=1)
         self.assertAlmostEqual(results["ElectricStorage"]["size_kwh"], 78.9, places=1)
+
+        #test that emissions inputs got updated in the database with the defaults determined in REopt julia package
+        updated_inputs = r["inputs"]
+        self.assertIsNotNone(updated_inputs["ElectricUtility"]["emissions_factor_series_lb_CO2_per_kwh"])
+        self.assertIsNotNone(updated_inputs["Financial"]["NOx_grid_cost_per_tonne"])
+        self.assertIsNotNone(updated_inputs["Financial"]["SO2_onsite_fuelburn_cost_per_tonne"])
+        self.assertIsNotNone(updated_inputs["Financial"]["PM25_cost_escalation_pct"])
 
     def test_off_grid_defaults(self):
         """
