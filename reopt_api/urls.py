@@ -48,7 +48,7 @@ v2_api = Api(api_name='v2')
 v2_api.register(Job2())
 
 stable_api = Api(api_name='stable')
-stable_api.register(Job())
+stable_api.register(Job2())
 stable_api.register(OutageSimJob())
 stable_api.register(GHPGHXJob())
 
