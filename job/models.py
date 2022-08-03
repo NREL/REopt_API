@@ -1679,12 +1679,12 @@ class PVInputs(BaseModel, models.Model):
         help_text="Annual rate of degradation in PV energy production"
     )
     azimuth = models.FloatField(
-        default=180,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(360)
         ],
         blank=True,
+        null=True,
         help_text=("PV azimuth angle")
     )
     losses = models.FloatField(
@@ -1746,12 +1746,12 @@ class PVInputs(BaseModel, models.Model):
                    "closest station regardless of the distance.")
     )
     tilt = models.FloatField(
-        default=0.537,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(90)
         ],
         blank=True,
+        null=True,
         help_text="PV system tilt"
     )
     location = models.TextField(
