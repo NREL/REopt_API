@@ -26,7 +26,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop - 2022-07-28
+## Develop - 2022-08-23
 ### Minor Updates
 ##### Added
 `job/models.py`
@@ -43,9 +43,12 @@ Classify the change according to the following categories:
 `job/views.py` - add new input/output models to properly save the inputs/outputs
 `job/test/test_job_endpoint.py` - add a testcase to validate that API is accepting/returning fields related to new models.
 
-## Develop - 2022-06-27
+# v2.1.0
 ### Minor Updates 
 ##### Changed
+- The `/stable` URL now correctly calls the `v2` version of the REopt model (`/job` endpoint)
+- Don't trigger Built-in Tests workflow on a push that only changes README.md and/or CHANGELOG.md
+- Avoid triggering duplicate GitHub workflows. When pushing to a branch that's in a PR, only trigger tests on the push not on the PR sync also.
 `job/models.py` 
 - **Settings**
     - Added **off_grid_flag**
