@@ -343,6 +343,13 @@ class InputValidator(object):
         ElectricUtility
         """
         if "ElectricUtility" in self.models.keys():
+            for emissions_factor_input in ["emissions_factor_series_lb_CO2_per_kwh", 
+                                            "emissions_factor_series_lb_NOx_per_kwh", 
+                                            "emissions_factor_series_lb_SO2_per_kwh", 
+                                            "emissions_factor_series_lb_PM25_per_kwh"]:
+                if len(self.models["ElectricUtility"].__getattribute__(emissions_factor_input)) > 1:
+                    self.clean_time_series("ElectricUtility", emissions_factor_input)
+
             if self.models["ElectricUtility"].outage_start_time_step:
                 if self.models["ElectricUtility"].outage_start_time_step > max_ts:
                     self.add_validation_error("ElectricUtility", "outage_start_time_step",
