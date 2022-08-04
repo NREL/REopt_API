@@ -94,7 +94,10 @@ class InputValidator(object):
             WindInputs
         )
         self.pvnames = []
-        required_object_names = [
+        on_grid_required_object_names = [
+            "Site", "ElectricLoad", "ElectricTariff"
+        ]
+        off_grid_required_object_names = [
             "Site", "ElectricLoad"
         ]
         
@@ -116,10 +119,10 @@ class InputValidator(object):
                 else:
                     filtered_user_post[obj.key] = scrub_fields(obj, raw_inputs[obj.key])
                     self.models[obj.key] = obj.create(meta=meta, **filtered_user_post[obj.key])
-            elif obj.key in required_object_names:
-                self.validation_errors[obj.key] = "Missing required inputs."
             elif obj.key in ["Settings", "Financial"]:
                 self.models[obj.key] = obj.create(meta=meta)  # create default values
+            elif (obj.key in off_grid_required_object_names if self.models["Settings"].off_grid_flag else obj.key in on_grid_required_object_names):
+                self.validation_errors[obj.key] = "Missing required inputs."
 
         self.scrubbed_inputs = filtered_user_post
 
