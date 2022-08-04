@@ -121,6 +121,8 @@ class InputValidator(object):
                     self.models[obj.key] = obj.create(meta=meta, **filtered_user_post[obj.key])
             elif obj.key in ["Settings", "Financial"]:
                 self.models[obj.key] = obj.create(meta=meta)  # create default values
+            elif obj.key in ["ElectricUtility"] and not self.models["Settings"].off_grid_flag:
+                self.models[obj.key] = obj.create(meta=meta)  # create default values
             elif (obj.key in off_grid_required_object_names if self.models["Settings"].off_grid_flag else obj.key in on_grid_required_object_names):
                 self.validation_errors[obj.key] = "Missing required inputs."
 
