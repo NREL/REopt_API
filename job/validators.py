@@ -193,7 +193,6 @@ class InputValidator(object):
     def clean(self):
         """
         Run all models' clean methods
-        Run ElectricTariff clean method in cross-clean
         :return: None
         """
         for model in self.models.values():
