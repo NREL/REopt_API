@@ -148,6 +148,9 @@ class InputValidator(object):
             if "ElectricTariff" in self.models.keys():
                 msg_dict["ignored inputs"] = ("ElectricTariff inputs are not applicable when off_grid_flag is true, and will be ignored. "
                                 "Provided ElectricTariff can be removed from inputs")
+            if "ElectricUtility" in self.models.keys():
+                msg_dict["ignored inputs"] = ("ElectricUtility inputs are not applicable when off_grid_flag is true, and will be ignored. "
+                                "Provided ElectricUtility can be removed from inputs")
             msg_dict["info"] = ("When off_grid_flag is true, only PV, ElectricStorage, Generator technologies can be modeled.")
         return msg_dict
 
