@@ -33,6 +33,7 @@ from job.models import APIMeta, UserProvidedMeta, SiteInputs, Settings, Electric
     FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs
 from django.core.exceptions import ValidationError
 from pyproj import Proj
+from typing import Tuple
 
 log = logging.getLogger(__name__)
 
@@ -477,7 +478,7 @@ class InputValidator(object):
                 self.add_validation_error(model_key, series_name, err_msg)
 
 
-def validate_time_series(series: list, time_steps_per_hour: int) -> (list, str, str):
+def validate_time_series(series: list, time_steps_per_hour: int) -> Tuple[list, str, str]:
     """
     Used to check that an input time series has hourly, 30 minute, or 15 minute resolution and if the time series
     resolution matches the time_steps_per_hour (one of [1,2,4]).
