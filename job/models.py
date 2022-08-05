@@ -796,6 +796,7 @@ class ElectricLoadInputs(BaseModel, models.Model):
     critical_load_pct = models.FloatField(
         null=True,
         blank=True,
+        default = 0.5,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(2)
@@ -809,6 +810,7 @@ class ElectricLoadInputs(BaseModel, models.Model):
     operating_reserve_required_pct = models.FloatField(
         null=True,
         blank=True,
+        default = 0.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -820,6 +822,7 @@ class ElectricLoadInputs(BaseModel, models.Model):
     min_load_met_annual_pct = models.FloatField(
         null=True,
         blank=True,
+        default = 1.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -1772,18 +1775,24 @@ class PVInputs(BaseModel, models.Model):
     )
     can_net_meter = models.BooleanField(
         blank=True,
+        default = True,
         help_text=("True/False for if technology has option to participate in net metering agreement with utility. "
-                   "Note that a technology can only participate in either net metering or wholesale rates (not both).")
+                   "Note that a technology can only participate in either net metering or wholesale rates (not both)."
+                   "Note that if off-grid is true, net metering is always set to False.")
     )
     can_wholesale = models.BooleanField(
         blank=True,
+        default = True,
         help_text=("True/False for if technology has option to export energy that is compensated at the wholesale_rate. "
-                   "Note that a technology can only participate in either net metering or wholesale rates (not both).")
+                   "Note that a technology can only participate in either net metering or wholesale rates (not both)."
+                   "Note that if off-grid is true, can_wholesale is always set to False.")
     )
     can_export_beyond_nem_limit = models.BooleanField(
         blank=True,
+        default = True,
         help_text=("True/False for if technology can export energy beyond the annual site load (and be compensated for "
-                   "that energy at the export_rate_beyond_net_metering_limit).")
+                   "that energy at the export_rate_beyond_net_metering_limit)."
+                   "Note that if off-grid is true, can_export_beyond_nem_limit is always set to False.")
     )
     can_curtail = models.BooleanField(
         default=True,
@@ -2094,19 +2103,22 @@ class WindInputs(BaseModel, models.Model):
         default=True,
         blank=True,
         help_text=("True/False for if technology has option to participate in net metering agreement with utility. "
-                   "Note that a technology can only participate in either net metering or wholesale rates (not both).")
+                   "Note that a technology can only participate in either net metering or wholesale rates (not both)."
+                   "Note that if off-grid is true, net metering is always set to False.")
     )
     can_wholesale = models.BooleanField(
         default=True,
         blank=True,
         help_text=("True/False for if technology has option to export energy that is compensated at the wholesale_rate. "
-                   "Note that a technology can only participate in either net metering or wholesale rates (not both).")
+                   "Note that a technology can only participate in either net metering or wholesale rates (not both)."
+                   "Note that if off-grid is true, can_wholesale is always set to False.")
     )
     can_export_beyond_nem_limit = models.BooleanField(
         default=True,
         blank=True,
         help_text=("True/False for if technology can export energy beyond the annual site load (and be compensated for "
-                   "that energy at the export_rate_beyond_net_metering_limit).")
+                   "that energy at the export_rate_beyond_net_metering_limit)."
+                   "Note that if off-grid is true, can_export_beyond_nem_limit is always set to False.")
     )
     can_curtail = models.BooleanField(
         default=True,
@@ -2121,6 +2133,7 @@ class WindInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
+        default = 0.0,
         help_text="Only applicable when off_grid_flag = True. Required operating reserves applied to each timestep as a fraction of wind generation serving load in that timestep."
     )
 
