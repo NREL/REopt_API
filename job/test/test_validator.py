@@ -170,3 +170,24 @@ class InputValidatorTests(TestCase):
         self.assertAlmostEqual(validator.models["ElectricLoad"].critical_load_pct, 0.95)
         self.assertAlmostEqual(validator.models["Generator"].replacement_year, 7)
         self.assertAlmostEqual(validator.models["Generator"].replace_cost_per_kw, 200.0)
+
+    def test_missing_required_keys(self):
+        required_object_names = [
+            "Site", "ElectricLoad"
+        ]
+        post = copy.deepcopy(self.post)
+        post["APIMeta"]["run_uuid"] = uuid.uuid4()
+        post["Settings"]["off_grid_flag"] = True
+        for key in required_object_names:
+            del post[key]
+        validator = InputValidator(post)
+        for key in required_object_names:
+            assert("Missing required inputs." in validator.validation_errors[key])
+
+        post["APIMeta"]["run_uuid"] = uuid.uuid4()
+        post["Settings"]["off_grid_flag"] = False
+        required_object_names.append("ElectricTariff")
+        del post["ElectricTariff"]
+        validator = InputValidator(post)
+        for key in required_object_names:
+            assert("Missing required inputs." in validator.validation_errors[key])
