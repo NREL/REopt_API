@@ -209,11 +209,11 @@ class InputValidator(object):
         PV tilt set to latitude if not provided and prod_factor_series validated
         """
         def cross_clean_pv(pvmodel):
-            if pvmodel.__getattribute__("tilt") == None:  # 0.537 is a dummy number, default tilt # TODO: change to None?
+            if pvmodel.__getattribute__("tilt") == None:  # 0.537 is a dummy number, default tilt
                 if pvmodel.__getattribute__("array_type") == "ROOFTOP_FIXED":
                     pvmodel.__setattr__("tilt", 10)
                 else:
-                    pvmodel.__setattr__("tilt", abs(self.models["Site"].__getattribute__("latitude"))) # TODO differentiate default tilt based on array_type
+                    pvmodel.__setattr__("tilt", abs(self.models["Site"].__getattribute__("latitude")))
             
             if pvmodel.__getattribute__("azimuth") == None:
                 if self.models["Site"].__getattribute__("latitude") >= 0:
@@ -221,7 +221,6 @@ class InputValidator(object):
                 else:
                     pvmodel.__setattr__("azimuth", 0.0)
             
-            # TODO add cross_clean for azimuth
             if pvmodel.__getattribute__("max_kw") > 0:
                 if len(pvmodel.__getattribute__("prod_factor_series")) > 0:
                     self.clean_time_series("PV", "prod_factor_series")
@@ -232,12 +231,6 @@ class InputValidator(object):
                 self.models["PV"].can_export_beyond_nem_limit = False
                 self.models["PV"].operating_reserve_required_pct = 0.25
             else:
-                if self.models["PV"].__getattribute__("can_net_meter") == None:
-                    self.models["PV"].can_net_meter = True
-                if self.models["PV"].__getattribute__("can_wholesale") == None:
-                    self.models["PV"].can_wholesale = True
-                if self.models["PV"].__getattribute__("can_export_beyond_nem_limit") == None:
-                    self.models["PV"].can_export_beyond_nem_limit = True
                 self.models["PV"].operating_reserve_required_pct = 0.0
                     
         if "PV" in self.models.keys():  # single PV
@@ -285,12 +278,6 @@ class InputValidator(object):
                 self.models["Wind"].can_wholesale = False
                 self.models["Wind"].can_export_beyond_nem_limit = False
             else:
-                if self.models["Wind"].__getattribute__("can_net_meter") == None:
-                    self.models["Wind"].can_net_meter = True
-                if self.models["Wind"].__getattribute__("can_wholesale") == None:
-                    self.models["Wind"].can_wholesale = True
-                if self.models["Wind"].__getattribute__("can_export_beyond_nem_limit") == None:
-                    self.models["Wind"].can_export_beyond_nem_limit = True
                 self.models["Wind"].operating_reserve_required_pct = 0.0
 
         """
@@ -373,21 +360,11 @@ class InputValidator(object):
         '''
         if self.models["Settings"].off_grid_flag==True:
                 self.models["ElectricLoad"].critical_load_pct = 1.0
-        else:
-            if self.models["ElectricLoad"].__getattribute__("critical_load_pct") == None:
-                self.models["ElectricLoad"].critical_load_pct = 0.5
-        
-        if self.models["ElectricLoad"].__getattribute__("operating_reserve_required_pct") == None:
-            if self.models["Settings"].off_grid_flag==False:
-                self.models["ElectricLoad"].operating_reserve_required_pct = 0.0
-            else:
                 self.models["ElectricLoad"].operating_reserve_required_pct = 0.1
-
-        if self.models["ElectricLoad"].__getattribute__("min_load_met_annual_pct") == None:
-            if self.models["Settings"].off_grid_flag==False:
-                self.models["ElectricLoad"].min_load_met_annual_pct = 1.0
-            else:
                 self.models["ElectricLoad"].min_load_met_annual_pct = 0.99999
+        else:
+            self.models["ElectricLoad"].operating_reserve_required_pct = 0.0
+            self.models["ElectricLoad"].min_load_met_annual_pct = 1.0
 
         """
         Generator
