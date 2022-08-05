@@ -81,9 +81,9 @@ class InputValidator(object):
         self.models = dict()
         self.objects = (
             APIMeta,
+            Settings, #needs to be next in this list so that off-grid checks in loop below work
             UserProvidedMeta,
             SiteInputs,
-            Settings,
             ElectricLoadInputs,
             ElectricTariffInputs,
             FinancialInputs,
@@ -121,7 +121,7 @@ class InputValidator(object):
                     self.models[obj.key] = obj.create(meta=meta, **filtered_user_post[obj.key])
             elif obj.key in ["Settings", "Financial"]:
                 self.models[obj.key] = obj.create(meta=meta)  # create default values
-            elif obj.key in ["ElectricUtility"] and not self.models["Settings"].off_grid_flag:
+            elif obj.key == "ElectricUtility" and not self.models["Settings"].off_grid_flag:
                 self.models[obj.key] = obj.create(meta=meta)  # create default values
             elif (obj.key in off_grid_required_object_names if self.models["Settings"].off_grid_flag else obj.key in on_grid_required_object_names):
                 self.validation_errors[obj.key] = "Missing required inputs."
