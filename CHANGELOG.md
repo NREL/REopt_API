@@ -26,6 +26,13 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+# Develop
+### Minor Updates 
+##### Fixed
+- Require ElectricTariff key in inputs when **Settings.off_grid_flag** is false
+- Create and save **ElectricUtilityInputs** model if ElectricUtility key not provided in inputs when **Settings.off_grid_flag** is false, in order to use the default inputs in `job/models.py`
+- Added message to `messages()` to alert user if valid ElectricUtility input is provided when **Settings.off_grid_flag** is true
+
 # v2.1.0
 ### Minor Updates 
 ##### Changed
