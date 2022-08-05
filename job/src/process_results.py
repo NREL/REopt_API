@@ -62,7 +62,7 @@ def process_results(results: dict, run_uuid: str) -> None:
     if "ExistingBoiler" in results.keys():
         ExistingBoilerOutputs.create(meta=meta, **results["ExistingBoiler"]).save()
     # TODO process rest of results
-
+# TODO remove keys to skip and pop_result_keys() call
 keys_to_skip = [
     "lifecycle_emissions_reduction_CO2_pct",
     "breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2",

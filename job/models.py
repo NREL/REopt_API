@@ -2872,7 +2872,6 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        default=0.0,
         help_text="Existing boiler system efficiency - conversion of fuel to usable heating thermal energy."
     )
 
