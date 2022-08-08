@@ -26,13 +26,21 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-# v2.1.0
+## Develop
+### Minor Updates
+#### Added 
+- `job/` endpoint: Add inputs and validation to model off-grid wind 
+#### Changed
+- `job/models.py`: remove Generator `fuel_slope_gal_per_kwh` and `fuel_intercept_gal_per_hr` defaults based on size, keep defaults independent of size 
+- `job/validators.py`: Align PV tilt and aziumth defaults with API v2 behavior, based on location and PV type
+
+## v2.1.0
 ### Minor Updates 
 ##### Changed
 - The `/stable` URL now correctly calls the `v2` version of the REopt model (`/job` endpoint)
 - Don't trigger Built-in Tests workflow on a push that only changes README.md and/or CHANGELOG.md
 - Avoid triggering duplicate GitHub workflows. When pushing to a branch that's in a PR, only trigger tests on the push not on the PR sync also.
-`job/models.py` 
+In `job/models.py` : 
 - **Settings**
     - Added **off_grid_flag**
     - Changed **run_bau** to be nullable
@@ -132,23 +140,23 @@ Classify the change according to the following categories:
 `job/test_job_endpoint.py` - Added test to validate API off-grid functionality
 - Added migration file `0005_remove_...` which contains the data model for all Added and Changed fields
 
-# v2.0.3
+## v2.0.3
 ### Minor Updates
 ##### Fixed
 - In `src/pvwatts.py`, Updated lat-long coordinates if-statement used to determine whether the "nsrdb" dataset should be used to determine the PV prod factor. Accounts for recent updates to NSRDB data used by PVWatts (v6) 
 - Avoids overwriting user-entered PV azimuth (other than 180) for ground-mount systems in southern hemisphere
 - Updates default azimuth to 0 for southern latitudes for all PV types (rather than just for ground-mount)
 
-# v2.0.2
+## v2.0.2
 ### Patches
 - bug fix for 15/30 minute scenarios with URDB TOU demand rates
 
-# v2.0.1
+## v2.0.1
 ### Minor Updates
 ##### Changed
 Removed override of user inputs for `fuel_slope_gal_per_kwh` and `fuel_intercept_gal_per_hr` in validators.py. User inputs for these values will now be used in analysis. If these inputs are not supplied, the default values in nested_inputs.py will be used.
 
-# v2.0.0 Default cost updates
+## v2.0.0 Default cost updates
 Changing default costs can result in different results for the same inputs. Hence we are making a major version change.
 
 - the release of v2 will make https://developer.nrel.gov/api/reopt/stable = https://developer.nrel.gov/api/reopt/v2
