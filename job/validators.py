@@ -209,7 +209,7 @@ class InputValidator(object):
         PV tilt set to latitude if not provided and prod_factor_series validated
         """
         def cross_clean_pv(pvmodel):
-            if pvmodel.__getattribute__("tilt") == None:  # 0.537 is a dummy number, default tilt
+            if pvmodel.__getattribute__("tilt") == None:  
                 if pvmodel.__getattribute__("array_type") == "ROOFTOP_FIXED":
                     pvmodel.__setattr__("tilt", 10)
                 else:
