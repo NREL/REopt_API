@@ -10,6 +10,10 @@ pipeline {
     cron(env.BRANCH_NAME == "master" ? "H * * * *" : "")
   }
 
+  environment {
+    DEPLOY_IMAGE_REPO_DOMAIN = credentials("reopt-api-image-repo-domain")
+  }
+
   parameters {
     booleanParam(
       name: "UNDEPLOY_DELETED_BRANCHES",
@@ -32,7 +36,7 @@ pipeline {
     stage("deploy-agent") {
       agent {
         docker {
-          image "harbor.nrel.gov/tada-public/tada-jenkins-kube-deploy:latest"
+          image "${DEPLOY_IMAGE_REPO_DOMAIN}/tada-public/tada-jenkins-kube-deploy:werf-1.2"
           args tadaDockerInDockerArgs()
         }
       }
@@ -40,6 +44,7 @@ pipeline {
       environment {
         TMPDIR = tadaDockerInDockerTmp()
         WERF_LOG_VERBOSE = "true"
+        WERF_SYNCHRONIZATION = ":local"
         DEPLOY_ENV = "staging"
         RANCHER_PROJECT = "reopt-api-stage"
         DB_BASE_NAME = "reopt_api_staging"
@@ -58,6 +63,12 @@ pipeline {
           }
         }
       }
+    }
+  }
+
+  post {
+    always {
+      tadaSendNotifications()
     }
   }
 }

@@ -30,7 +30,7 @@
 import logging
 import pandas as pd
 from job.models import APIMeta, UserProvidedMeta, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
-    FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, StorageInputs, GeneratorInputs, WindInputs
+    FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs
 from django.core.exceptions import ValidationError
 from pyproj import Proj
 
@@ -89,13 +89,13 @@ class InputValidator(object):
             FinancialInputs,
             ElectricUtilityInputs,
             PVInputs,
-            StorageInputs,
+            ElectricStorageInputs,
             GeneratorInputs,
             WindInputs
         )
         self.pvnames = []
         required_object_names = [
-            "Site", "ElectricLoad", "ElectricTariff"
+            "Site", "ElectricLoad"
         ]
         
         filtered_user_post = dict()
@@ -144,6 +144,11 @@ class InputValidator(object):
                 len(self.models["ElectricLoad"].blended_doe_reference_names) > 0:
             msg_dict["ignored inputs"] = ("Both doe_reference_name and blended_doe_reference_names were provided for "
                                 "ElectricLoad. This is redundant, so only doe_reference_name is being used.")
+        if self.models["Settings"].off_grid_flag==True:
+            if "ElectricTariff" in self.models.keys():
+                msg_dict["ignored inputs"] = ("ElectricTariff inputs are not applicable when off_grid_flag is true, and will be ignored. "
+                                "Provided ElectricTariff can be removed from inputs")
+            msg_dict["info"] = ("When off_grid_flag is true, only PV, ElectricStorage, Generator technologies can be modeled.")
         return msg_dict
 
     @property
@@ -185,6 +190,7 @@ class InputValidator(object):
     def clean(self):
         """
         Run all models' clean methods
+        Run ElectricTariff clean method in cross-clean
         :return: None
         """
         for model in self.models.values():
@@ -215,13 +221,37 @@ class InputValidator(object):
         if len(self.pvnames) > 0:  # multiple PV
             for pvname in self.pvnames:
                 cross_clean_pv(self.models[pvname])
+        
+        if self.models["PV"].__getattribute__("can_net_meter") == None:
+            if self.models["Settings"].off_grid_flag==False:
+                self.models["PV"].can_net_meter = True
+            else:
+                self.models["PV"].can_net_meter = False
+        
+        if self.models["PV"].__getattribute__("can_wholesale") == None:
+            if self.models["Settings"].off_grid_flag==False:
+                self.models["PV"].can_wholesale = True
+            else:
+                self.models["PV"].can_wholesale = False
+        
+        if self.models["PV"].__getattribute__("can_export_beyond_nem_limit") == None:
+            if self.models["Settings"].off_grid_flag==False:
+                self.models["PV"].can_export_beyond_nem_limit = True
+            else:
+                self.models["PV"].can_export_beyond_nem_limit = False
+
+        if self.models["PV"].__getattribute__("operating_reserve_required_pct") == None:
+            if self.models["Settings"].off_grid_flag==False:
+                self.models["PV"].operating_reserve_required_pct = 0.0
+            else:
+                self.models["PV"].operating_reserve_required_pct = 0.25
 
         """
         Time series values are up or down sampled to align with Settings.time_steps_per_hour
         """
         for key, time_series in zip(
-            ["ElectricLoad", "ElectricLoad",      "ElectricTariff"],
-            ["loads_kw",     "critical_loads_kw", "wholesale_rate"]
+            ["ElectricLoad", "ElectricLoad"],
+            ["loads_kw",     "critical_loads_kw"]
         ):
             self.clean_time_series(key, time_series)
                         
@@ -250,28 +280,61 @@ class InputValidator(object):
 
         """
         ElectricTariff
+        Key can be absent when running off-grid scenarios
         """
-        if len(self.models["ElectricTariff"].tou_energy_rates_per_kwh) > 0:
-            self.clean_time_series("ElectricTariff", "tou_energy_rates_per_kwh")
+        if "ElectricTariff" in self.models.keys():
 
-        cp_ts_arrays = self.models["ElectricTariff"].__getattribute__("coincident_peak_load_active_timesteps")
-        max_ts = 8760 * self.models["Settings"].time_steps_per_hour
-        if len(cp_ts_arrays) > 0:
-            if len(cp_ts_arrays[0]) > 0:
-                if any(ts > max_ts for a in cp_ts_arrays for ts in a):
-                    self.add_validation_error("ElectricTariff", "coincident_peak_load_active_timesteps",
-                                              f"At least one time step is greater than the max allowable ({max_ts})")
+            for key, time_series in zip(
+                ["ElectricTariff",              "ElectricTariff"],
+                ["tou_energy_rates_per_kwh",    "wholesale_rate"]
+            ):
+                self.clean_time_series(key, time_series)
 
-        if self.models["ElectricTariff"].urdb_response:
-            if "energyweekdayschedule" in self.models["ElectricTariff"].urdb_response.keys():
-                urdb_rate_timesteps_per_hour = int(len(self.models["ElectricTariff"].urdb_response[
-                                                           "energyweekdayschedule"][1]) / 24)
-                if urdb_rate_timesteps_per_hour > self.models["Settings"].time_steps_per_hour:
-                    # do not support down-sampling tariff
-                    self.add_validation_error("ElectricTariff", "urdb_response",
-                                              ("The time steps per hour in the energyweekdayschedule must be no greater "
-                                               "than the Settings.time_steps_per_hour."))
+            cp_ts_arrays = self.models["ElectricTariff"].__getattribute__("coincident_peak_load_active_time_steps")
+            max_ts = 8760 * self.models["Settings"].time_steps_per_hour
+            if len(cp_ts_arrays) > 0:
+                if len(cp_ts_arrays[0]) > 0:
+                    if any(ts > max_ts for a in cp_ts_arrays for ts in a):
+                        self.add_validation_error("ElectricTariff", "coincident_peak_load_active_timesteps",
+                                                f"At least one time step is greater than the max allowable ({max_ts})")
 
+            if self.models["ElectricTariff"].urdb_response:
+                if "energyweekdayschedule" in self.models["ElectricTariff"].urdb_response.keys():
+                    urdb_rate_timesteps_per_hour = int(len(self.models["ElectricTariff"].urdb_response[
+                                                            "energyweekdayschedule"][1]) / 24)
+                    if urdb_rate_timesteps_per_hour > self.models["Settings"].time_steps_per_hour:
+                        # do not support down-sampling tariff
+                        self.add_validation_error("ElectricTariff", "urdb_response",
+                                                ("The time steps per hour in the energyweekdayschedule must be no greater "
+                                                "than the Settings.time_steps_per_hour."))
+
+        """
+        Financial
+        """
+        if "Financial" in self.models.keys():
+            if self.models["Financial"].__getattribute__("microgrid_upgrade_cost_pct") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["Financial"].microgrid_upgrade_cost_pct = 0.3
+                else:
+                    self.models["Financial"].microgrid_upgrade_cost_pct = 0.0
+        
+        """
+        ElectricStorage
+        """
+        if "ElectricStorage" in self.models.keys():
+            if self.models["ElectricStorage"].__getattribute__("soc_init_pct") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["ElectricStorage"].soc_init_pct = 0.5
+                else:
+                    self.models["ElectricStorage"].soc_init_pct = 1.0
+            
+            if self.models["ElectricStorage"].__getattribute__("can_grid_charge") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["ElectricStorage"].can_grid_charge = True
+                else:
+                    self.models["ElectricStorage"].can_grid_charge = False
+
+        
         """
         ElectricUtility
         """
@@ -284,6 +347,77 @@ class InputValidator(object):
                 if self.models["ElectricUtility"].outage_end_time_step > max_ts:
                     self.add_validation_error("ElectricUtility", "outage_end_time_step",
                                               f"Value is greater than the max allowable ({max_ts})")
+
+        """
+        ElectricLoad
+        If user does not provide values, set defaults conditional on off-grid flag
+        """
+
+        if self.models["ElectricLoad"].__getattribute__("critical_load_pct") == None:
+            if self.models["Settings"].off_grid_flag==False:
+                self.models["ElectricLoad"].critical_load_pct = 0.5
+            else:
+                self.models["ElectricLoad"].critical_load_pct = 1.0
+        
+        if self.models["ElectricLoad"].__getattribute__("operating_reserve_required_pct") == None:
+            if self.models["Settings"].off_grid_flag==False:
+                self.models["ElectricLoad"].operating_reserve_required_pct = 0.0
+            else:
+                self.models["ElectricLoad"].operating_reserve_required_pct = 0.1
+
+        if self.models["ElectricLoad"].__getattribute__("min_load_met_annual_pct") == None:
+            if self.models["Settings"].off_grid_flag==False:
+                self.models["ElectricLoad"].min_load_met_annual_pct = 1.0
+            else:
+                self.models["ElectricLoad"].min_load_met_annual_pct = 0.99999
+
+        """
+        Generator
+        If user does not provide values, set defaults conditional on off-grid flag
+        """
+        if "Generator" in self.models.keys():
+            if self.models["Generator"].__getattribute__("fuel_avail_gal") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["Generator"].fuel_avail_gal = 660.0
+                else:
+                    self.models["Generator"].fuel_avail_gal = 1.0e9
+            
+            if self.models["Generator"].__getattribute__("min_turn_down_pct") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["Generator"].min_turn_down_pct = 0.0
+                else:
+                    self.models["Generator"].min_turn_down_pct = 0.15
+
+            if self.models["Generator"].__getattribute__("replacement_year") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["Generator"].replacement_year = 25
+                else:
+                    self.models["Generator"].replacement_year = 10
+
+            if self.models["Generator"].__getattribute__("replace_cost_per_kw") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["Generator"].replace_cost_per_kw = 410.0
+                else:
+                    self.models["Generator"].replace_cost_per_kw = self.models["Generator"].installed_cost_per_kw
+        
+        """
+        Off-grid input keys validation
+        """
+        
+        def validate_offgrid_keys(self):
+            # From https://github.com/NREL/REopt.jl/blob/4b0fb7f6556b2b6e9a9a7e8fa65398096fb6610f/src/core/scenario.jl#L88            
+            valid_input_keys_offgrid = ["PV", "ElectricStorage", "Generator", "Settings", "Site", "Financial", "ElectricLoad", "ElectricTariff", "ElectricUtility"]
+
+            invalid_input_keys_offgrid = list(set(list(self.models.keys()))-set(valid_input_keys_offgrid))
+            if 'APIMeta' in invalid_input_keys_offgrid:
+                invalid_input_keys_offgrid.remove('APIMeta')
+
+            if len(invalid_input_keys_offgrid) != 0:
+                self.add_validation_error("Settings", "off_grid_flag",
+                                            f"Currently, off-grid functionality doesn't allow modeling for following keys: ({invalid_input_keys_offgrid})")
+        
+        if self.models["Settings"].off_grid_flag==True:
+            validate_offgrid_keys(self)
 
     def save(self):
         """

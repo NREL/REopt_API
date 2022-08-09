@@ -14,19 +14,19 @@ spec:
       labels:
         app: {{ .Chart.Name }}-django
     spec:
+      imagePullSecrets:
+        - name: {{ .Chart.Name }}-ecr-image-pull-secret
       volumes:
         - name: {{ .Chart.Name }}-secrets-volume
           secret:
             secretName: {{ .Chart.Name }}-secrets
       initContainers:
         - name: {{ .Chart.Name }}-ready-wait
-{{ tuple "reopt-api" . | werf_container_image | indent 10 }}
+          image: {{ index .Values.werf.image "reopt-api" }}
           args: ["bin/ready-wait"]
           envFrom:
             - configMapRef:
                 name: {{ .Chart.Name }}-base-config-map
-          env:
-{{ tuple "reopt-api" . | werf_container_env | indent 12 }}
           volumeMounts:
             - name: {{ .Chart.Name }}-secrets-volume
               readOnly: true
@@ -34,15 +34,13 @@ spec:
               subPath: {{ .Values.appEnv }}-keys.py
       containers:
         - name: {{ .Chart.Name }}-django
-{{ tuple "reopt-api" . | werf_container_image | indent 10 }}
+          image: {{ index .Values.werf.image "reopt-api" }}
           args: ["bin/server"]
           ports:
             - containerPort: 8000
           envFrom:
             - configMapRef:
                 name: {{ .Chart.Name }}-base-config-map
-          env:
-{{ tuple "reopt-api" . | werf_container_env | indent 12 }}
           volumeMounts:
             - name: {{ .Chart.Name }}-secrets-volume
               readOnly: true

@@ -581,7 +581,7 @@ class UrdbParse:
 
             for demand_period in range(len(current_rate.demandratestructure)):
 
-                time_steps = self.get_tou_steps(current_rate, month, demand_period)
+                time_steps = self.get_demand_tou_steps(current_rate, month, demand_period)
 
                 if len(time_steps) > 0:
 
@@ -637,22 +637,23 @@ class UrdbParse:
 
         return range(hours[month], hours[month + 1])
 
-    def get_tou_steps(self, current_rate, month, period):
+    def get_demand_tou_steps(self, current_rate, month, period):
         """
-        Get the TOU steps indexed on 1-8760 for hourly simulations
+        Get the demand TOU steps based the month (zero-indexed) and the TOU period (zero-indexed)
         :param current_rate: RateData class instance
-        :param month: int
-        :param period: int
-        :return: list of ints
+        :param month: int (zero-indexed)
+        :param period: int (zero-indexed)
+        :return: list of ints (indexed on 1)
         """
         step_array = []
         start_step = 1
 
-        demand_ts_per_hour = int(len(current_rate.demandweekdayschedule[0] or 0)/24)
+        demand_ts_per_hour = int(len(current_rate.demandweekdayschedule[0]) / 24)
         simulation_time_steps_per_rate_time_step = int(self.time_steps_per_hour / demand_ts_per_hour)
 
+
         if month > 0:
-            start_step = (self.last_hour_in_month[month - 1] + 1) * self.time_steps_per_hour
+            start_step = (self.last_hour_in_month[month - 1]) * self.time_steps_per_hour + 1
 
         step_of_year = start_step
 
@@ -663,13 +664,12 @@ class UrdbParse:
                 is_weekday = False
 
             for hour in range(0, 24):
-                demand_ts = hour * demand_ts_per_hour
                 for ts in range(demand_ts_per_hour):
-                    for step in range(0, simulation_time_steps_per_rate_time_step):
+                    demand_ts = hour + ts
+                    for step in range(0, simulation_time_steps_per_rate_time_step): # this fails to loop if time_steps_per_hour < demand_ts_per_hour
                         if is_weekday and current_rate.demandweekdayschedule[month][demand_ts] == period:
                             step_array.append(step_of_year)
                         elif not is_weekday and current_rate.demandweekendschedule[month][demand_ts] == period:
                             step_array.append(step_of_year)
                         step_of_year += 1
-                    demand_ts += 1
         return step_array

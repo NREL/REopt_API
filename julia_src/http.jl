@@ -1,7 +1,7 @@
 using HTTP, JSON, JuMP
 import Xpress
 include("REopt.jl")
-import REoptLite
+import REopt as reoptjl
 include("GHPGHX.jl")
 using .GHPGHX
 
@@ -37,8 +37,9 @@ function reopt(req::HTTP.Request)
 	settings = d["Settings"]
 	timeout_seconds = -pop!(settings, "timeout_seconds")
 	optimality_tolerance = pop!(settings, "optimality_tolerance")
+	run_bau = pop!(settings, "run_bau")
 	ms = nothing
-	if get(settings, "run_bau", true)
+	if run_bau
 		m1 = direct_model(
 			Xpress.Optimizer(
 				MAXTIME = timeout_seconds,
@@ -67,7 +68,7 @@ function reopt(req::HTTP.Request)
     error_response = Dict()
     results = Dict()
     try
-        results = REoptLite.run_reopt(ms, d)
+        results = reoptjl.run_reopt(ms, d)
     catch e
         @error "Something went wrong in the Julia code!" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)

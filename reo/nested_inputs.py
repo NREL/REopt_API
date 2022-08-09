@@ -1405,7 +1405,7 @@ nested_input_definitions = {
         },
         "prod_factor_series_kw": {
           "type": "list_of_float",
-          "description": "Optional user-defined production factors. Entries have units of kWh/kW, representing the energy (kWh) output of a 1 kW system in each time step. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+          "description": "Optional user-defined production factors. Entries have units of kWh/kW, representing the AC energy (kWh) output of a 1 kW-DC system in each time step. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
         },
         "can_net_meter": {
           "type": "bool",

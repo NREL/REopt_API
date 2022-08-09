@@ -50,7 +50,6 @@ from django.core.exceptions import ValidationError
 from celery import group, chain
 log = logging.getLogger(__name__)
 
-api_version = "version 1.0.0"
 saveToDb = True
 
 
@@ -99,6 +98,7 @@ class Job(ModelResource):
         return self.get_object_list(bundle.request)
 
     def obj_create(self, bundle, **kwargs):
+        api_version = "version 1.0.0"
 
         # to use the Job API from within the REopt API (see futurecosts/api.py)
         if isinstance(bundle, dict):
@@ -168,7 +168,7 @@ class Job(ModelResource):
             set_status(data, 'Optimizing...')
             data['outputs']['Scenario']['Profile']['pre_setup_scenario_seconds'] = profiler.getDuration()
             if bundle.request.META.get('HTTP_X_API_USER_ID') or False:
-                if bundle.request.META.get('HTTP_X_API_USER_ID') or '' == '6f09c972-8414-469b-b3e8-a78398874103':
+                if bundle.request.META.get('HTTP_X_API_USER_ID', '') == '6f09c972-8414-469b-b3e8-a78398874103':
                     data['outputs']['Scenario']['job_type'] = 'REopt Web Tool'
                 else:
                     data['outputs']['Scenario']['job_type'] = 'developer.nrel.gov'
@@ -266,6 +266,7 @@ class Job2(ModelResource):
         return self.get_object_list(bundle.request)
 
     def obj_create(self, bundle, **kwargs):
+        api_version = "version 2.0.0"
 
         # to use the Job API from within the REopt API (see futurecosts/api.py)
         if isinstance(bundle, dict):
@@ -273,7 +274,7 @@ class Job2(ModelResource):
 
         run_uuid = str(uuid.uuid4())
         data = dict()
-        data["outputs"] = {"Scenario": {'run_uuid': run_uuid, 'api_version': "2",
+        data["outputs"] = {"Scenario": {'run_uuid': run_uuid, 'api_version': api_version,
                                         'Profile': {'pre_setup_scenario_seconds': 0, 'setup_scenario_seconds': 0,
                                                         'reopt_seconds': 0, 'reopt_bau_seconds': 0,
                                                         'parse_run_outputs_seconds': 0},                                            
@@ -338,7 +339,7 @@ class Job2(ModelResource):
             set_status(data, 'Optimizing...')
             data['outputs']['Scenario']['Profile']['pre_setup_scenario_seconds'] = profiler.getDuration()
             if bundle.request.META.get('HTTP_X_API_USER_ID') or False:
-                if bundle.request.META.get('HTTP_X_API_USER_ID') or '' == '6f09c972-8414-469b-b3e8-a78398874103':
+                if bundle.request.META.get('HTTP_X_API_USER_ID', '') == '6f09c972-8414-469b-b3e8-a78398874103':
                     data['outputs']['Scenario']['job_type'] = 'REopt Web Tool'
                 else:
                     data['outputs']['Scenario']['job_type'] = 'developer.nrel.gov'
@@ -362,7 +363,7 @@ class Job2(ModelResource):
                                                          content_type='application/json',
                                                          status=500))  # internal server error
         setup = setup_scenario.s(run_uuid=run_uuid, data=data, api_version=2)
-        call_back = process_results.s(data=data, meta={'run_uuid': run_uuid, 'api_version': "2"})
+        call_back = process_results.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version})
         # (use .si for immutable signature, if no outputs were passed from reopt_jobs)
         rjm = run_jump_model.s(data=data)
         rjm_bau = run_jump_model.s(data=data, bau=True)

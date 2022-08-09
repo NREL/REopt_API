@@ -34,7 +34,7 @@ import time
 import requests
 from celery import shared_task, Task
 from reo.exceptions import REoptError, OptimizationTimeout, UnexpectedError, NotOptimal, REoptFailedToStartError
-from job.models import APIMeta, Message
+from job.models import APIMeta, Message, get_input_dict_from_run_uuid
 from reo.src.profiler import Profiler
 from job.src.process_results import process_results
 from celery.utils.log import get_task_logger
@@ -75,13 +75,14 @@ class RunJumpModelTask(Task):
 
 
 @shared_task(base=RunJumpModelTask)
-def run_jump_model(data):
-    profiler = Profiler()
+def run_jump_model(run_uuid):
+    profiler = Profiler()  # TODO? are we still using the Profile?
     time_dict = dict()
     name = 'run_jump_model'
-    run_uuid = data['APIMeta']['run_uuid']
-    user_uuid = data['APIMeta'].get('user_uuid')
-    # TODO do not pass data to run_jump_model, pass the run_uuid and load data from DB
+    data = get_input_dict_from_run_uuid(run_uuid)
+    user_uuid = data.get('user_uuid')
+    
+    data.pop('user_uuid',None) # Remove user uuid from inputs dict to avoid downstream errors
 
     logger.info("Running JuMP model ...")
     try:
