@@ -14,17 +14,17 @@ spec:
       labels:
         app: {{ .Chart.Name }}-julia
     spec:
+      imagePullSecrets:
+        - name: {{ .Chart.Name }}-ecr-image-pull-secret
       containers:
         - name: {{ .Chart.Name }}-julia
-{{ tuple "julia-api" . | werf_container_image | indent 10 }}
+          image: {{ index .Values.werf.image "julia-api" }}
           args: ["julia", "--project=/opt/julia_src", "http.jl"]
           ports:
             - containerPort: 8081
           envFrom:
             - configMapRef:
                 name: {{ .Chart.Name }}-base-config-map
-          env:
-{{ tuple "julia-api" . | werf_container_env | indent 12 }}
           readinessProbe:
             httpGet:
               path: /health
