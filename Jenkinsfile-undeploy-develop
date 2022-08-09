@@ -48,6 +48,8 @@ pipeline {
         DEPLOY_ENV = "development"
         RANCHER_PROJECT = "reopt-api-dev"
         DB_BASE_NAME = "reopt_api_develop"
+        XPRESS_LICENSE_HOST = credentials("reopt-api-xpress-license-host")
+        NREL_ROOT_CERT_URL_ROOT = credentials("reopt-api-nrel-root-cert-url-root")
       }
 
       stages {

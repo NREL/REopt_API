@@ -29,8 +29,8 @@ pipeline {
         WERF_REPO = "${APP_IMAGE_REPO_DOMAIN}/tada/reopt-api"
         WERF_LOG_VERBOSE = "true"
         WERF_SYNCHRONIZATION = ":local"
-        XPRESS_LICENSE_HOST = ""
-        NREL_ROOT_CERT_URL_ROOT = ""
+        XPRESS_LICENSE_HOST = credentials("reopt-api-xpress-license-host")
+        NREL_ROOT_CERT_URL_ROOT = credentials("reopt-api-nrel-root-cert-url-root")
       }
 
       stages {
