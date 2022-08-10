@@ -1595,28 +1595,28 @@ class ElectricUtilityInputs(BaseModel, models.Model):
     )
     emissions_factor_series_lb_CO2_per_kwh = ArrayField(
         models.FloatField(
-            blank=True, null=True,
+            blank=True,
         ),
         default=list, blank=True,
         help_text=("CO2 emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.")
     )
     emissions_factor_series_lb_NOx_per_kwh = ArrayField(
         models.FloatField(
-            blank=True, null=True,
+            blank=True,
         ),
         default=list, blank=True,
         help_text=("NOx emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.")
     )
     emissions_factor_series_lb_SO2_per_kwh = ArrayField(
         models.FloatField(
-            blank=True, null=True,
+            blank=True,
         ),
         default=list, blank=True,
         help_text=("SO2 emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.")
     )
     emissions_factor_series_lb_PM25_per_kwh = ArrayField(
         models.FloatField(
-            blank=True, null=True,
+            blank=True,
         ),
         default=list, blank=True,
         help_text=("PM2.5 emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.")
