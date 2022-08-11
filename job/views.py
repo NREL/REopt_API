@@ -35,7 +35,8 @@ from django.http import JsonResponse
 from reo.exceptions import UnexpectedError
 from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, GeneratorInputs, ElectricLoadInputs,\
     ElectricTariffInputs, ElectricUtilityInputs, PVOutputs, ElectricStorageOutputs, WindOutputs, GeneratorOutputs, \
-    ElectricTariffOutputs, ElectricUtilityOutputs, ElectricLoadOutputs, APIMeta, UserProvidedMeta, CoolingLoadInputs
+    ElectricTariffOutputs, ElectricUtilityOutputs, ElectricLoadOutputs, APIMeta, UserProvidedMeta, CoolingLoadInputs, \
+    ExistingChillerInputs, ExistingChillerOutputs
 
 
 def make_error_resp(msg):
@@ -61,6 +62,7 @@ def help(request):
         d["Wind"] = WindInputs.info_dict(WindInputs)
         d["Generator"] = GeneratorInputs.info_dict(GeneratorInputs)
         d["CoolingLoad"] = CoolingLoadInputs.info_dict(CoolingLoadInputs)
+        d["ExistingChiller"] = ExistingChillerInputs.info_dict(ExistingChillerInputs)
         return JsonResponse(d)
 
     except Exception as e:
@@ -93,6 +95,7 @@ def outputs(request):
         d["ElectricStorage"] = ElectricStorageOutputs.info_dict(ElectricStorageOutputs)
         d["Wind"] = WindOutputs.info_dict(WindOutputs)
         d["Generator"] = GeneratorOutputs.info_dict(GeneratorOutputs)
+        d["ExistingChiller"] = ExistingChillerOutputs.info_dict(ExistingChillerOutputs)
         return JsonResponse(d)
 
     except Exception as e:
@@ -181,6 +184,9 @@ def results(request, run_uuid):
     try: r["inputs"]["CoolingLoad"] = meta.CoolingLoadInputs.dict
     except: pass
 
+    try: r["inputs"]["ExistingChiller"] = meta.ExistingChillerInputs.dict
+    except: pass
+
     try:
         r["outputs"] = dict()
         r["messages"] = dict()
@@ -211,6 +217,8 @@ def results(request, run_uuid):
         try: r["outputs"]["Generator"] = meta.GeneratorOutputs.dict
         except: pass
         try: r["outputs"]["Wind"] = meta.WindOutputs.dict
+        except: pass
+        try: r["outputs"]["ExistingChiller"] = meta.ExistingChillerOutputs.dict
         except: pass
 
         for d in r["outputs"].values():
