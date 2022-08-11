@@ -30,12 +30,15 @@ Classify the change according to the following categories:
 ### Minor Updates
 #### Added
 - Added **CoolingLoadInputs** model to `job/models.py` with its own `clean()` function
-- Added **CoolingLoadInputs** to `job/models.py/get_input_dict_from_run_uuid()`
-- Added **CoolingLoadInputs** to `job/validators.py/` for validation
+- Added **ExistingChillerInputs** and **ExistingChillerOutputs** models to `job/models.py`
+- Added **CoolingLoadInputs** and **ExistingChillerInputs** to `job/models.py/get_input_dict_from_run_uuid()`
+- Added **CoolingLoadInputs** and **ExistingChillerInputs** to `job/validators.py/` for validation
 - Added time series length validation on **CoolingLoadInputs->thermal_loads_ton** and **CoolingLoadInputs->per_time_step_fractions_of_electric_load**
 - Changed **PV** validation in `job/validators.py` by adding `update_pv_defaults_offgrid()` to prevent validation failure when PV is not provided as input.
 - Added **CoolingLoadInputs** to `job/views.py/` for saving CoolingLoad inputs
-- Added `job\migrations\0006_coolingloadinputs.py` to contain migration for new **CoolingLoadInputs** model.
+- Added `job\migrations\0006_coolingloadinputs_existing.....py` to contain migration for new **CoolingLoadInputs**, **ExistingChillerInputs**, **ExistingChillerOutputs** models.
+- Added **ExistingChillerOutputs** to `job/src/process_results.py`
+- Changed `job/julia_src/` TOML files to use `REopt v 0.17.0`
 
 ## Develop - 2022-07-19
 ### Minor Updates 
