@@ -2811,8 +2811,9 @@ class CoolingLoadInputs(BaseModel, models.Model):
         null=False,
         blank=True,
         choices=DOE_REFERENCE_NAME.choices,
-        help_text=("Simulated load profile from DOE Commercial Reference Buildings "
-                   "https://energy.gov/eere/buildings/commercial-reference-buildings")
+        help_text=("Building type to use in selecting a simulated load profile from DOE "
+                    "<a href='https: //energy.gov/eere/buildings/commercial-reference-buildings' target='blank'>Commercial Reference Buildings</a>."
+                    "By default, the doe_reference_name of the ElectricLoad is used.")
     )
 
     blended_doe_reference_names = ArrayField(
@@ -2837,7 +2838,7 @@ class CoolingLoadInputs(BaseModel, models.Model):
         default=list,
         blank=True,
         help_text=("Used in concert with blended_doe_reference_names to create a blended load profile from multiple "
-                   "DoE Commercial Reference Buildings. Must sum to 1.0.")
+                   "DoE Commercial Reference Buildings to simulate buildings/campuses. Must sum to 1.0.")
     )
 
 
@@ -2848,8 +2849,8 @@ class CoolingLoadInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        help_text=("Annual site space cooling requirement, used "
-                   "to scale simulated default building load profile for the site's climate zone [Ton-Hour]")
+        help_text=("Annual electric chiller energy consumption, in [Ton-Hours],"
+                    "used to scale simulated default electric chiller load profile for the site's climate zone")
     )
 
     monthly_tonhour = ArrayField(
@@ -2860,7 +2861,8 @@ class CoolingLoadInputs(BaseModel, models.Model):
             ],
             blank=True
         ),
-        default=list, blank=True,
+        default=list,
+        blank=True,
         help_text=("Monthly site space cooling requirement in [Ton-Hour], used "
                    "to scale simulated default building load profile for the site's climate zone")
     )
@@ -2871,7 +2873,7 @@ class CoolingLoadInputs(BaseModel, models.Model):
         ),
         default=list,
         blank=True,
-        help_text=("Typical space cooling load over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,"
+        help_text=("Typical electric chiller load for all hours in one year. Must be hourly (8,760 samples), 30 minute (17,"
                    "520 samples), or 15 minute (35,040 samples)."
                    )
     )
@@ -2883,7 +2885,9 @@ class CoolingLoadInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        help_text=("")
+        help_text=("Annual electric chiller energy consumption scalar (i.e. fraction of total electric load)"
+                "used to scale simulated default electric chiller load profile for the site's climate zone"
+        )
     )
 
     monthly_fractions_of_electric_load = ArrayField(
@@ -2895,8 +2899,8 @@ class CoolingLoadInputs(BaseModel, models.Model):
             blank=True
         ),
         default=list, blank=True,
-        help_text=("Monthly site space heating energy consumption in [MMbtu], used "
-                   "to scale simulated default building load profile for the site's climate zone")
+        help_text=("Monthly fraction of site's total electric consumption used up by electric chiller."
+                    "to scale simulated default building load profile for the site's climate zone")
     )
 
     per_time_step_fractions_of_electric_load = ArrayField(
@@ -2905,9 +2909,8 @@ class CoolingLoadInputs(BaseModel, models.Model):
         ),
         default=list,
         blank=True,
-        help_text=("Typical load over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,"
-                   "520 samples), or 15 minute (35,040 samples). All non-net load values must be greater than or "
-                   "equal to zero. "
+        help_text=("Per timestep fraction of site's total electric consumption used up by electric chiller."
+                    "Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
                    )
     )
 
@@ -2934,10 +2937,116 @@ class CoolingLoadInputs(BaseModel, models.Model):
             if len(self.monthly_fractions_of_electric_load) != 12:
                 error_messages["monthly_fractions_of_electric_load"] = \
                     "Provided cooling monthly_fractions_of_electric_load array does not have 12 values."
+        
+        # Require 12 values if monthly_tonhours is provided.
+        if 12 > len(self.monthly_tonhour) > 0:
+            error_messages["required inputs"] = \
+                "Must provide 12 elements as inputs to monthly_tonhour. Received {}.".format(self.monthly_tonhour)
 
         if error_messages:
             raise ValidationError(error_messages)
         
+        pass
+
+
+class ExistingChillerInputs(BaseModel, models.Model):
+    
+    key = "ExistingChiller"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="ExistingChillerInputs",
+        primary_key=True
+    )
+
+    loads_kw_thermal = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        help_text=("")
+    )
+
+    cop = models.FloatField(
+        validators=[
+            MinValueValidator(0.01),
+            MaxValueValidator(20)
+        ],
+        null=True,
+        blank=True,
+        help_text=("Existing electric chiller system coefficient of performance (ability to convert electricity to usable cooling thermal energy")
+    )
+
+    max_thermal_factor_on_peak_load = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(5.0)
+        ],
+        default=1.25,
+        blank=True,
+        help_text=("Factor on peak thermal LOAD which the electric chiller can supply")
+    )
+
+    def clean(self):
+        pass
+
+
+class ExistingChillerOutputs(BaseModel, models.Model):
+    
+    key = "ExistingChiller"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="ExistingChillerOutputs",
+        primary_key=True
+    )
+
+    year_one_to_tes_series_ton = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        null=True,
+        help_text=("Year one hourly time series of electric chiller thermal to cold TES [Ton]")
+    )
+
+    year_one_to_load_series_ton = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        null=True,
+        help_text=("Year one hourly time series of electric chiller thermal to cooling load [Ton]")
+    )
+
+    year_one_electric_consumption_series = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        null=True,
+        help_text=("Year one hourly time series of chiller electric consumption [kW]")
+    )
+
+    year_one_electric_consumption_kwh = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=("Year one chiller electric consumption [kWh]")
+    )
+
+    year_one_thermal_production_tonhour = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=("Year one chiller thermal production [Ton Hour")
+    )
+
+    def clean(self):
         pass
 
 def get_input_dict_from_run_uuid(run_uuid:str):
@@ -2990,6 +3099,9 @@ def get_input_dict_from_run_uuid(run_uuid:str):
     except: pass
 
     try: d["CoolingLoad"] = filter_none_and_empty_array(meta.CoolingLoadInputs.dict)
+    except: pass
+
+    try: d["ExistingChiller"] = filter_none_and_empty_array(meta.ExistingChillerInputs.dict)
     except: pass
 
     return d

@@ -31,7 +31,7 @@ import logging
 import pandas as pd
 from job.models import APIMeta, UserProvidedMeta, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
     FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs, \
-    CoolingLoadInputs
+    CoolingLoadInputs, ExistingChillerInputs
 from django.core.exceptions import ValidationError
 from pyproj import Proj
 
@@ -93,7 +93,8 @@ class InputValidator(object):
             ElectricStorageInputs,
             GeneratorInputs,
             WindInputs,
-            CoolingLoadInputs
+            CoolingLoadInputs,
+            ExistingChillerInputs
         )
         self.pvnames = []
         required_object_names = [
@@ -435,6 +436,14 @@ class InputValidator(object):
         
         if self.models["Settings"].off_grid_flag==True:
             validate_offgrid_keys(self)
+
+        """
+        ExistingChiller
+        """
+        if "ExistingChiller" in self.models.keys():
+
+            if len(self.models["ExistingChiller"].loads_kw_thermal) > 0:
+                self.clean_time_series("ExistingChiller", "loads_kw_thermal")
 
     def save(self):
         """
