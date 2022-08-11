@@ -29,7 +29,7 @@
 # *********************************************************************************
 import logging
 import pandas as pd
-from job.models import APIMeta, UserProvidedMeta, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
+from job.models import MAX_BIG_NUMBER, APIMeta, UserProvidedMeta, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
     FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs
 from django.core.exceptions import ValidationError
 from pyproj import Proj
@@ -209,7 +209,7 @@ class InputValidator(object):
         PV tilt set to latitude if not provided and prod_factor_series validated
         """
         def cross_clean_pv(pvmodel):
-            if pvmodel.__getattribute__("tilt") == None:  
+            if pvmodel.__getattribute__("tilt") == None:
                 if pvmodel.__getattribute__("array_type") == "ROOFTOP_FIXED":
                     pvmodel.__setattr__("tilt", 10)
                 else:
@@ -229,9 +229,10 @@ class InputValidator(object):
                 self.models["PV"].can_net_meter = False
                 self.models["PV"].can_wholesale = False
                 self.models["PV"].can_export_beyond_nem_limit = False
-                self.models["PV"].operating_reserve_required_pct = 0.25
+                if pvmodel.__getattribute__("operating_reserve_required_pct") == None: # user provided no value
+                    self.models["PV"].operating_reserve_required_pct = 0.25
             else:
-                self.models["PV"].operating_reserve_required_pct = 0.0
+                self.models["PV"].operating_reserve_required_pct = 0.0 # override any user provided values
                     
         if "PV" in self.models.keys():  # single PV
             cross_clean_pv(self.models["PV"])
@@ -273,12 +274,13 @@ class InputValidator(object):
                               "latitude/longitude not in the WindToolkit database. Cannot retrieve wind resource data.")
             
             if self.models["Settings"].off_grid_flag==True:
-                self.models["Wind"].operating_reserve_required_pct = 0.10
+                if self.models["Wind"].__getattribute__("operating_reserve_required_pct") == None: # user provided no value
+                    self.models["Wind"].operating_reserve_required_pct = 0.50
                 self.models["Wind"].can_net_meter = False
                 self.models["Wind"].can_wholesale = False
                 self.models["Wind"].can_export_beyond_nem_limit = False
             else:
-                self.models["Wind"].operating_reserve_required_pct = 0.0
+                self.models["Wind"].operating_reserve_required_pct = 0.0 # override any user input
 
         """
         ElectricTariff
@@ -359,9 +361,13 @@ class InputValidator(object):
         If !off-grid scenario, if critical load pct is not specified in inputs, set it to 0.5. Otherwise, allow user specified pct.
         '''
         if self.models["Settings"].off_grid_flag==True:
-                self.models["ElectricLoad"].critical_load_pct = 1.0
+            if self.models["ElectricLoad"].__getattribute__("operating_reserve_required_pct") == None: # user provided no value
                 self.models["ElectricLoad"].operating_reserve_required_pct = 0.1
+            
+            if self.models["ElectricLoad"].__getattribute__("min_load_met_annual_pct") == None: # user provided no value
                 self.models["ElectricLoad"].min_load_met_annual_pct = 0.99999
+
+            self.models["ElectricLoad"].critical_load_pct = 1.0
         else:
             self.models["ElectricLoad"].operating_reserve_required_pct = 0.0
             self.models["ElectricLoad"].min_load_met_annual_pct = 1.0
@@ -371,11 +377,19 @@ class InputValidator(object):
         If user does not provide values, set defaults conditional on off-grid flag
         """
         if "Generator" in self.models.keys():
+
+            if self.models["Generator"].__getattribute__("om_cost_per_kw") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["Generator"].om_cost_per_kw = 10.0
+                else:
+                    self.models["Generator"].om_cost_per_kw = 20.0
+
+            
             if self.models["Generator"].__getattribute__("fuel_avail_gal") == None:
                 if self.models["Settings"].off_grid_flag==False:
                     self.models["Generator"].fuel_avail_gal = 660.0
                 else:
-                    self.models["Generator"].fuel_avail_gal = 1.0e9
+                    self.models["Generator"].fuel_avail_gal = MAX_BIG_NUMBER*10 # 1.0e8 * 10 => 1.0e9
             
             if self.models["Generator"].__getattribute__("min_turn_down_pct") == None:
                 if self.models["Settings"].off_grid_flag==False:
