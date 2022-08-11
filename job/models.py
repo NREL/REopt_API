@@ -810,7 +810,6 @@ class ElectricLoadInputs(BaseModel, models.Model):
     operating_reserve_required_pct = models.FloatField(
         null=True,
         blank=True,
-        default = 0.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -822,7 +821,6 @@ class ElectricLoadInputs(BaseModel, models.Model):
     min_load_met_annual_pct = models.FloatField(
         null=True,
         blank=True,
-        default = 1.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -1755,7 +1753,7 @@ class PVInputs(BaseModel, models.Model):
         ],
         blank=True,
         null=True,
-        help_text="PV system tilt"
+        help_text="PV system tilt. If PV system type is rooftop-fixed, then tilt=10 degrees, else abs(site.latitude)"
     )
     location = models.TextField(
         default=PV_LOCATION_CHOICES.BOTH,
@@ -1807,7 +1805,7 @@ class PVInputs(BaseModel, models.Model):
         ],
         blank=True,
         null=True,
-        help_text=("Only applicable when off_grid_flag = True. " 
+        help_text=("When off_grid_flag = True, this field is automatically set to 0.25, but can be adjusted. For on-grid runs, this field is set to 0 pct." 
                 "Required operating reserves applied to each timestep as a fraction of PV generation serving load in that timestep.")
     )
 
@@ -2133,8 +2131,8 @@ class WindInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        default = 0.0,
-        help_text="Only applicable when off_grid_flag = True. Required operating reserves applied to each timestep as a fraction of wind generation serving load in that timestep."
+        help_text="Only applicable when off_grid_flag = True. Set to 0.10 for off-grid scenarios, 0.0 for on-grid runs."
+            "Required operating reserves applied to each timestep as a fraction of wind generation serving load in that timestep."
     )
 
 
@@ -2438,12 +2436,12 @@ class GeneratorInputs(BaseModel, models.Model):
         help_text="Installed diesel generator cost in $/kW"
     )
     om_cost_per_kw = models.FloatField(
-        default=10.0,
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(1.0e3)
         ],
         blank=True,
+        null=True,
         help_text="Annual diesel generator fixed operations and maintenance costs in $/kW"
     )
     om_cost_per_kwh = models.FloatField(
@@ -2485,9 +2483,10 @@ class GeneratorInputs(BaseModel, models.Model):
     fuel_avail_gal = models.FloatField(
         validators=[
             MinValueValidator(0.0),
-            MaxValueValidator(1.0e9)
+            MaxValueValidator(MAX_BIG_NUMBER*10)
         ],
         blank=True,
+        null=True,
         help_text="On-site generator fuel available in gallons."
     )
     min_turn_down_pct = models.FloatField(
@@ -2496,6 +2495,7 @@ class GeneratorInputs(BaseModel, models.Model):
             MaxValueValidator(1.0)
         ],
         blank=True,
+        null=True,
         help_text="Minimum generator loading in percent of capacity (size_kw)."
     )
     only_runs_during_grid_outage = models.BooleanField(
@@ -2694,7 +2694,7 @@ class GeneratorInputs(BaseModel, models.Model):
     replace_cost_per_kw = models.FloatField(
         validators=[
             MinValueValidator(0),
-            MaxValueValidator(1.0e9)
+            MaxValueValidator(MAX_BIG_NUMBER*10)
         ],
         blank=True,
         null=True,
