@@ -179,11 +179,11 @@ class InputValidator(object):
         """
         for model in self.models.values():
             try:
-                model.clean_fields(exclude=["coincident_peak_load_active_timesteps"])
-                # coincident_peak_load_active_timesteps can have unequal inner lengths (it's an array of array),
+                model.clean_fields(exclude=["coincident_peak_load_active_time_steps"])
+                # coincident_peak_load_active_time_steps can have unequal inner lengths (it's an array of array),
                 # which is not allowed in the database. We fix the lengths with repeated last values by overriding the
                 # Django Model save method on ElectricTariffInputs. We then remove the repeated values before
-                # passing coincident_peak_load_active_timesteps to Julia (b/c o.w. JuMP.constraint will raise an error
+                # passing coincident_peak_load_active_time_steps to Julia (b/c o.w. JuMP.constraint will raise an error
                 # for duplicate constraints)
             except ValidationError as ve:
                 self.validation_errors[model.key] = ve.message_dict
@@ -299,14 +299,14 @@ class InputValidator(object):
             if len(cp_ts_arrays) > 0:
                 if len(cp_ts_arrays[0]) > 0:
                     if any(ts > max_ts for a in cp_ts_arrays for ts in a):
-                        self.add_validation_error("ElectricTariff", "coincident_peak_load_active_timesteps",
+                        self.add_validation_error("ElectricTariff", "coincident_peak_load_active_time_steps",
                                                 f"At least one time step is greater than the max allowable ({max_ts})")
 
             if self.models["ElectricTariff"].urdb_response:
                 if "energyweekdayschedule" in self.models["ElectricTariff"].urdb_response.keys():
-                    urdb_rate_timesteps_per_hour = int(len(self.models["ElectricTariff"].urdb_response[
+                    urdb_rate_time_steps_per_hour = int(len(self.models["ElectricTariff"].urdb_response[
                                                             "energyweekdayschedule"][1]) / 24)
-                    if urdb_rate_timesteps_per_hour > self.models["Settings"].time_steps_per_hour:
+                    if urdb_rate_time_steps_per_hour > self.models["Settings"].time_steps_per_hour:
                         # do not support down-sampling tariff
                         self.add_validation_error("ElectricTariff", "urdb_response",
                                                 ("The time steps per hour in the energyweekdayschedule must be no greater "
