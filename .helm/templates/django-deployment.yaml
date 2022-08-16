@@ -13,7 +13,22 @@ spec:
     metadata:
       labels:
         app: {{ .Chart.Name }}-django
+        appImageTagChecksum: {{ index .Values.werf.image "reopt-api" | sha1sum }}
     spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - {{ .Chart.Name }}-django
+              - key: appImageTagChecksum
+                operator: In
+                values:
+                  - {{ index .Values.werf.image "reopt-api" | sha1sum }}
       imagePullSecrets:
         - name: {{ .Chart.Name }}-ecr-image-pull-secret
       volumes:
@@ -67,3 +82,10 @@ spec:
 #             periodSeconds: 60
 #             timeoutSeconds: 60
 #             failureThreshold: 10
+          resources:
+            requests:
+              cpu: {{ .Values.djangoCpuRequest | quote }}
+              memory: {{ .Values.djangoMemoryRequest | quote }}
+            limits:
+              cpu: {{ .Values.djangoCpuLimit | quote }}
+              memory: {{ .Values.djangoMemoryLimit | quote }}
