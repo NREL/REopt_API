@@ -2487,7 +2487,7 @@ class GeneratorInputs(BaseModel, models.Model):
         ],
         blank=True,
         null=True,
-        help_text="On-site generator fuel available in gallons."
+        help_text="On-site generator fuel available in gallons per year."
     )
     min_turn_down_pct = models.FloatField(
         validators=[
