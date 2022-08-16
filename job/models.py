@@ -1418,12 +1418,14 @@ class ElectricTariffInputs(BaseModel, models.Model):
     )
     coincident_peak_load_active_time_steps = ArrayField(
         ArrayField(
-            models.IntegerField(blank=True),
+            models.IntegerField(
+                blank=True,
+                validators=[
+                    MinValueValidator(1)
+                ]
+            ),
             blank=True,
-            default=list,
-            validators=[
-                MinValueValidator(1)
-            ]
+            default=list
         ),
         blank=True,
         default=list,
