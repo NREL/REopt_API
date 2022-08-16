@@ -1513,6 +1513,8 @@ class ElectricTariffInputs(BaseModel, models.Model):
         By repeating the last value we do not have to deal with a mix of data types in the arrays and it does not
         affect the constraints in REopt.
         """
+        # TODO: we might want to instead make the underlying IntegerField nullable and pad with None,
+        # because avoiding duplicate constraints could speed up solve time.
         if len(self.coincident_peak_load_active_time_steps) > 0:
             max_length = max(len(inner_array) for inner_array in self.coincident_peak_load_active_time_steps)
             for inner_array in self.coincident_peak_load_active_time_steps:
