@@ -38,7 +38,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
 
     def test_pv_battery_and_emissions_defaults_from_julia(self):
         """
-        Same test post as"Solar and Storage w/BAU" in the Julia package. Used in development of v2.
+        Same test post as"Solar and Storage w/BAU" in the Julia package. Used in development of v3.
         Also tests that inputs with defaults determined in the REopt julia package get updated in the database.
         """
         scenario = {
@@ -83,6 +83,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
                 "urdb_label": "5ed6c1a15457a3367add15ae"
             },
             "ElectricUtility": {
+                "emissions_factor_series_lb_NOx_per_kwh": 1
             },
             "Financial": {
                 "elec_cost_escalation_pct": 0.026,
