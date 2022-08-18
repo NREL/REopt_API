@@ -1,0 +1,6 @@
+giterminismConfigVersion: 1
+config:
+  goTemplateRendering:
+    allowEnvVariables:
+      - XPRESS_LICENSE_HOST
+      - NREL_ROOT_CERT_URL_ROOT
