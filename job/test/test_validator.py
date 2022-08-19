@@ -172,22 +172,44 @@ class InputValidatorTests(TestCase):
         self.assertAlmostEqual(validator.models["Generator"].replace_cost_per_kw, 200.0)
 
     def test_missing_required_keys(self):
-        required_object_names = [
+        #start with on_grid, and keep all keys
+        required_ongrid_object_names = [
+            "Site", "ElectricLoad", "ElectricTariff"
+        ]
+        required_offgrid_object_names = [
             "Site", "ElectricLoad"
         ]
+        #prior to removal of keys, test lack or errors of validator with full inputs
+        post = copy.deepcopy(self.post)
+        post["APIMeta"]["run_uuid"] = uuid.uuid4()
+        post["Settings"]["off_grid_flag"] = False
+        validator = InputValidator(post)
+        for key in required_ongrid_object_names:
+            assert (key not in validator.validation_errors.keys())
         post = copy.deepcopy(self.post)
         post["APIMeta"]["run_uuid"] = uuid.uuid4()
         post["Settings"]["off_grid_flag"] = True
-        for key in required_object_names:
-            del post[key]
         validator = InputValidator(post)
-        for key in required_object_names:
-            assert("Missing required inputs." in validator.validation_errors[key])
-
+        for key in required_ongrid_object_names:
+            assert (key not in validator.validation_errors.keys())
+        #test ongrid removal of all ongrid keys, trigger an error for all required ongrid inputs
+        post = copy.deepcopy(self.post)
         post["APIMeta"]["run_uuid"] = uuid.uuid4()
         post["Settings"]["off_grid_flag"] = False
-        required_object_names.append("ElectricTariff")
-        del post["ElectricTariff"]
+        for key in required_ongrid_object_names:
+            del post[key]
         validator = InputValidator(post)
-        for key in required_object_names:
+        for key in required_ongrid_object_names:
             assert("Missing required inputs." in validator.validation_errors[key])
+        #test offgrid removal of all offgrid keys, should trigger an error for required offgrid but not ongrid requirements
+        post = copy.deepcopy(self.post)
+        post["APIMeta"]["run_uuid"] = uuid.uuid4()
+        post["Settings"]["off_grid_flag"] = True
+        for key in required_ongrid_object_names:
+            del post[key]
+        validator = InputValidator(post)
+        for key in required_ongrid_object_names:
+            if key in required_offgrid_object_names:
+                assert("Missing required inputs." in validator.validation_errors[key])
+            else: 
+                assert(key not in validator.validation_errors.keys())
