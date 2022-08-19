@@ -27,7 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-from job.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorageOutputs, ElectricTariffOutputs,\
+from job.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorageOutputs, ElectricTariffOutputs, SiteOutputs,\
     ElectricUtilityOutputs, GeneratorOutputs, ElectricLoadOutputs, WindOutputs, FinancialInputs, ElectricUtilityInputs
 import logging
 log = logging.getLogger(__name__)
@@ -44,6 +44,7 @@ def process_results(results: dict, run_uuid: str) -> None:
     ElectricTariffOutputs.create(meta=meta, **results["ElectricTariff"]).save()
     ElectricUtilityOutputs.create(meta=meta, **results["ElectricUtility"]).save()
     ElectricLoadOutputs.create(meta=meta, **results["ElectricLoad"]).save()
+    SiteOutputs.create(meta=meta, **results["Site"]).save()
     if "PV" in results.keys():
         if isinstance(results["PV"], dict):
             PVOutputs.create(meta=meta, **results["PV"]).save()

@@ -110,6 +110,9 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(results["PV"]["size_kw"], 216.667, places=1)
         self.assertAlmostEqual(results["ElectricStorage"]["size_kw"], 55.9, places=1)
         self.assertAlmostEqual(results["ElectricStorage"]["size_kwh"], 78.9, places=1)
+        self.assertIsNotNone(results["Site"]["total_renewable_energy_pct"])
+        self.assertIsNotNone(results["Site"]["year_one_emissions_tonnes_CO2"])
+        self.assertIsNotNone(results["Site"]["lifecycle_emissions_tonnes_NOx"])
 
         #test that emissions inputs got updated in the database with the defaults determined in REopt julia package
         updated_inputs = r["inputs"]
