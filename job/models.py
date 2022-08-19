@@ -284,6 +284,15 @@ class SiteInputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Area of roof in square feet available for PV siting"
     )
+    min_resil_time_steps = models.IntegerField(
+        default=0,
+        validators=[
+            MinValueValidator(0)
+        ],
+        blank=True,
+        help_text="The minimum number consecutive timesteps that load must be fully met once an outage begins. "
+                    "Only applies to multiple outage modeling using inputs outage_start_time_steps and outage_durations."
+    )
 
 """
 # TODO should we move the emissions_calculator to Julia? 
@@ -408,10 +417,8 @@ class FinancialInputs(BaseModel, models.Model):
         ],
         blank=True,
         help_text=("Value placed on unmet site load during grid outages. Units are US dollars per unmet kilowatt-hour. "
-                   "The value of lost load (VoLL) is used to determine the avoided outage costs by multiplying VoLL "
-                   "[$/kWh] with the average number of hours that the critical load can be met by the energy system "
-                   "(determined by simulating outages occuring at every hour of the year), and multiplying by the mean "
-                   "critical load.")
+                   "The value of lost load (VoLL) is used to determine outage costs by multiplying VoLL by unserved load for each outage start time and duration. "
+                   "Only applies to multiple outage modeling using inputs outage_start_time_steps and outage_durations.")
     )
     microgrid_upgrade_cost_pct = models.FloatField(
         validators=[
@@ -1203,6 +1210,55 @@ class ElectricUtilityInputs(BaseModel, models.Model):
             # max value validated in InputValidator b/c it requires Settings.time_steps_per_hour
         ],
         help_text="Time step that grid outage ends. Must be greater than or equal to outage_start_time_step."
+    )
+    outage_start_time_steps = ArrayField(
+        models.IntegerField(
+            blank=True,
+            validators=[
+                MinValueValidator(1)
+            ]
+        ),
+        blank=True,
+        default=list,
+        help_text=("A list of time steps that the grid outage may start. "
+                    "This input is used for robust optimization across multiple outages. "
+                    "The maximum (over outage_start_time_steps) of the expected value "
+                    "(over outage_durations with probabilities outage_probabilities) of "
+                    "outage cost is included in the objective function minimized by REopt."
+                )
+    )
+    outage_durations = ArrayField(
+        models.IntegerField(
+            blank=True,
+            validators=[
+                MinValueValidator(1)
+            ]
+        ),
+        blank=True,
+        default=list,
+        help_text=("One-to-one with outage_probabilities. A list of possible time step durations of the grid outage. "
+                    "This input is used for robust optimization across multiple outages. "
+                    "The maximum (over outage_start_time_steps) of the expected value "
+                    "(over outage_durations with probabilities outage_probabilities) of "
+                    "outage cost is included in the objective function minimized by REopt."
+                )
+    )
+    outage_probabilities = ArrayField(
+        models.FloatField(
+            blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1)
+            ]
+        ),
+        blank=True,
+        default=list,
+        help_text=("One-to-one with outage_durations. The probability of each duration of the grid outage. Defaults to equal probability for each duration. "
+                    "This input is used for robust optimization across multiple outages. "
+                    "The maximum (over outage_start_time_steps) of the expected value "
+                    "(over outage_durations with probabilities outage_probabilities) of "
+                    "outage cost is included in the objective function minimized by REopt."
+                )
     )
     interconnection_limit_kw = models.FloatField(
         validators=[
