@@ -37,8 +37,6 @@ def process_results(results: dict, run_uuid: str) -> None:
     Saves the results returned from the Julia API in the backend database.
     Called in job/run_jump_model (a celery task)
     """
-    keys_to_skip = ["include_climate_in_objective","pwf_emissions_cost_CO2_grid","pwf_emissions_cost_CO2_onsite"]
-    pop_result_keys(results, keys_to_skip)
 
     meta = APIMeta.objects.get(run_uuid=run_uuid)
     meta.status = results.get("status")
@@ -62,14 +60,6 @@ def process_results(results: dict, run_uuid: str) -> None:
         WindOutputs.create(meta=meta, **results["Wind"]).save()
     # TODO process rest of results
 
-def pop_result_keys(r:dict, keys_to_skip:list):
-
-    for k in r.keys():
-        if (type(r[k])) == dict:
-            for s in keys_to_skip:
-                r[k].pop(s, None)
-        else:
-            pass
 
 def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
     """
