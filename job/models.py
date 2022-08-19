@@ -293,6 +293,8 @@ class SiteInputs(BaseModel, models.Model):
         help_text="The minimum number consecutive timesteps that load must be fully met once an outage begins. "
                     "Only applies to multiple outage modeling using inputs outage_start_time_steps and outage_durations."
     )
+    # don't provide mg_tech_sizes_equal_grid_sizes in the API, effectively force it to true (the REopt.jl default)
+
 
 """
 # TODO should we move the emissions_calculator to Julia? 
@@ -1350,6 +1352,70 @@ class ElectricUtilityOutputs(BaseModel, models.Model):
                     "In AK and HI, the best available data are EPA eGRID annual averages.")
     )
 
+class OutageOutputs(BaseModel, models.Model):
+    key = "ElectricTariffOutputs"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="OutageOutputs",
+        primary_key=True
+    )
+    expected_outage_cost = models.FloatField(
+        null=True, blank=True,
+        help_text="The expected outage cost over the random outages modeled."
+    )
+    max_outage_cost_per_outage_duration_series = ArrayField(
+        models.FloatField(
+            blank=True,
+        ),
+        default=list, blank=True,
+        help_text="The maximum outage cost for every outage duration modeled."
+    )
+    unserved_load_series = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True,
+            ),
+            default=list, blank=True,
+        ),
+        default=list, blank=True,
+        help_text="The amount of unserved load in each outage time step for each outage start time and duration. Outage duration changes along the first dimension, outage start time step along the second, and time step in outage along the third."
+    )
+    unserved_load_per_outage_series = ArrayField(
+        ArrayField(
+            models.FloatField(
+                blank=True,
+            ),
+            default=list, blank=True,
+        ),
+        default=list, blank=True,
+        help_text="The total unserved load for each outage start time and duration. Outage duration changes along the first dimension and outage start time changes along the second dimention."
+    )
+    microgrid_upgrade_capital_cost = models.FloatField(
+        null=True, blank=True,
+        help_text="Total capital cost of including technologies in the microgrid."
+    )
+    # Outputs from REopt.jl not implementing API
+    # Some of these are trickier to conclude in api because names aren't fixed. Also skipping some of these detailed dispatch outputs for now.
+    # - `storage_upgraded` Boolean that is true if it is cost optimal to include the storage system in the microgrid.
+    # - `discharge_from_storage_series` Array of storage power discharged in every outage modeled.
+    # - `PVmg_kw` Optimal microgrid PV capacity. Note that the name `PV` can change based on user provided `PV.name`.
+    # - `PV_upgraded` Boolean that is true if it is cost optimal to include the PV system in the microgrid.
+    # - `mg_PV_upgrade_cost` The cost to include the PV system in the microgrid.
+    # - `mgPV_to_storage_series` Array of PV power sent to the battery in every outage modeled.
+    # - `mgPV_curtailed_series` Array of PV curtailed in every outage modeled.
+    # - `mgPV_to_load_series` Array of PV power used to meet load in every outage modeled.
+    # - `Generatormg_kw` Optimal microgrid Generator capacity. Note that the name `Generator` can change based on user provided `Generator.name`.
+    # - `Generator_upgraded` Boolean that is true if it is cost optimal to include the Generator in the microgrid.
+    # - `mg_Generator_upgrade_cost` The cost to include the Generator system in the microgrid.
+    # - `mgGenerator_to_storage_series` Array of Generator power sent to the battery in every outage modeled.
+    # - `mgGenerator_curtailed_series` Array of Generator curtailed in every outage modeled.
+    # - `mgGenerator_to_load_series` Array of Generator power used to meet load in every outage modeled.
+    # - `mg_Generator_fuel_used` Array of Generator fuel used in every outage modeled.
 
 class ElectricTariffOutputs(BaseModel, models.Model):
     key = "ElectricTariffOutputs"
