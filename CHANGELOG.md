@@ -50,6 +50,12 @@ Classify the change according to the following categories:
     - add `breakeven_cost_of_emissions_reduction_per_tonnes_CO2`
 - `job/test/test_job_endpoint.py` - test that AVERT and EASIUR defaults for emissions inputs not provided by user are passed back from REopt.jl and saved in database
 
+`job/views.py`
+- Added **SiteInputs** to `help` endpoint
+- Added **SiteOutputs** to `outputs` endpoint
+
+- Created `006_siteoutputs_and_more.py` migration file
+
 # v2.1.0
 ### Minor Updates 
 ##### Changed

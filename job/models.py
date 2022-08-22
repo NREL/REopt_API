@@ -348,12 +348,14 @@ class SiteOutputs(BaseModel, models.Model):
     )
 
     annual_renewable_electricity_kwh = models.FloatField(
+        null=True, blank=True,
         help_text=(
                   "Electricity consumption (incl. electric heating/cooling loads) that is derived from on-site renewable resource generation."
                   "Calculated as total annual RE electric generation, minus storage losses and curtailment, with the user selecting whether exported renewable generation is included). "
                   )
     )
     renewable_electricity_pct = models.FloatField(
+        null=True, blank=True,
         help_text=(
                   "Portion of electricity consumption (incl. electric heating/cooling loads) that is derived from on-site renewable resource generation."
                   "Calculated as total annual RE electric generation, minus storage losses and curtailment, with the user selecting whether exported renewable generation is included, "
@@ -361,6 +363,7 @@ class SiteOutputs(BaseModel, models.Model):
                   )
     )
     total_renewable_energy_pct = models.FloatField(
+        null=True, blank=True,
         help_text=(
                   "Portion of annual total energy consumption that is derived from on-site renewable resource generation."
                   "The numerator is calculated as total annual RE electricity consumption (calculation described for annual_renewable_electricity_kwh output),"
@@ -435,12 +438,14 @@ class SiteOutputs(BaseModel, models.Model):
         help_text="Total tons of PM2.5 emissions associated with the site's onsite fuel burn over the analysis period."
     )
     annual_renewable_electricity_kwh_bau = models.FloatField(
+        null=True, blank=True,
         help_text=(
                   "Electricity consumption (incl. electric heating/cooling loads) that is derived from on-site renewable resource generation in the BAU case."
                   "Calculated as total RE electric generation in the BAU case, minus storage losses and curtailment, with the user selecting whether exported renewable generation is included). "
                   )
     )
     renewable_electricity_pct_bau = models.FloatField(
+        null=True, blank=True,
         help_text=(
                   "Electricity consumption (incl. electric heating/cooling loads) that is derived from on-site renewable resource generation in the BAU case."
                   "Calculated as total annual RE electric generation in the BAU case, minus storage losses and curtailment, with the user selecting whether exported renewable generation is included, "
@@ -448,6 +453,7 @@ class SiteOutputs(BaseModel, models.Model):
                   )
     )
     total_renewable_energy_pct_bau = models.FloatField(
+        null=True, blank=True,
         help_text=(
                   "Portion of annual total energy consumption that is derived from on-site renewable resource generation in the BAU case."
                   "The numerator is calculated as total annual RE electricity consumption (calculation described for annual_renewable_electricity_kwh_bau output),"
