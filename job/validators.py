@@ -30,7 +30,8 @@
 import logging
 import pandas as pd
 from job.models import APIMeta, ExistingBoilerInputs, UserProvidedMeta, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
-    FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs, SpaceHeatingLoadInputs
+    FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs, \
+    SpaceHeatingLoadInputs, DomesticHotWaterLoadInputs
 from django.core.exceptions import ValidationError
 from pyproj import Proj
 
@@ -93,7 +94,8 @@ class InputValidator(object):
             GeneratorInputs,
             WindInputs,
             ExistingBoilerInputs,
-            SpaceHeatingLoadInputs
+            SpaceHeatingLoadInputs,
+            DomesticHotWaterLoadInputs
         )
         self.pvnames = []
         required_object_names = [
@@ -423,6 +425,40 @@ class InputValidator(object):
                     self.models["Generator"].replace_cost_per_kw = 410.0
                 else:
                     self.models["Generator"].replace_cost_per_kw = self.models["Generator"].installed_cost_per_kw
+        
+        """
+        DomesticHotWaterLoad
+        """
+        if "DomesticHotWaterLoad" in self.models.keys():
+            self.clean_time_series("DomesticHotWaterLoad", "fuel_loads_mmbtu_per_hour")
+
+            # If empty key is provided, then check if doe_reference_names are provided in ElectricLoad
+            if self.models["DomesticHotWaterLoad"] == []:
+                if self.models["ElectricLoad"].doe_reference_name != None:
+                    self.models["DomesticHotWaterLoad"].__setattr__("doe_reference_name", self.models["ElectricLoad"].__getattribute__("doe_reference_name"))
+                elif self.models["ElectricLoad"].blended_doe_reference_names != None:
+                    self.models["DomesticHotWaterLoad"].__setattr__("blended_doe_reference_names", self.models["ElectricLoad"].__getattribute__("blended_doe_reference_names"))
+                    self.models["DomesticHotWaterLoad"].__setattr__("blended_doe_reference_percents", self.models["ElectricLoad"].__getattribute__("blended_doe_reference_percents"))
+                else:
+                    self.add_validation_error("DomesticHotWaterLoad", "doe_reference_name",
+                                              f"Must provide DOE commercial reference building profiles either under DomesticHotWater or ElectricLoad")
+        
+        """
+        SpaceHeatingLoad
+        """
+        if "SpaceHeatingLoad" in self.models.keys():
+            self.clean_time_series("SpaceHeatingLoad", "fuel_loads_mmbtu_per_hour")
+
+            # If empty key is provided, then check if doe_reference_names are provided in ElectricLoad
+            if self.models["SpaceHeatingLoad"] == []:
+                if self.models["ElectricLoad"].doe_reference_name != None:
+                    self.models["SpaceHeatingLoad"].__setattr__("doe_reference_name", self.models["ElectricLoad"].__getattribute__("doe_reference_name"))
+                elif self.models["ElectricLoad"].blended_doe_reference_names != None:
+                    self.models["SpaceHeatingLoad"].__setattr__("blended_doe_reference_names", self.models["ElectricLoad"].__getattribute__("blended_doe_reference_names"))
+                    self.models["SpaceHeatingLoad"].__setattr__("blended_doe_reference_percents", self.models["ElectricLoad"].__getattribute__("blended_doe_reference_percents"))
+                else:
+                    self.add_validation_error("SpaceHeatingLoad", "doe_reference_name",
+                                              f"Must provide DOE commercial reference building profiles either under SpaceHeatingLoad or ElectricLoad")
         
         """
         Off-grid input keys validation

@@ -3192,7 +3192,8 @@ class SpaceHeatingLoadInputs(BaseModel, models.Model):
         ["doe_reference_name", "monthly_mmbtu"],
         ["annual_mmbtu", "doe_reference_name"],
         ["doe_reference_name"],
-        ["blended_doe_reference_names", "blended_doe_reference_percents"]
+        ["blended_doe_reference_names", "blended_doe_reference_percents"],
+        []
     ]
 
     DOE_REFERENCE_NAME = models.TextChoices('DOE_REFERENCE_NAME', (
@@ -3318,6 +3319,150 @@ class SpaceHeatingLoadInputs(BaseModel, models.Model):
         
         pass
 
+class DomesticHotWaterLoadInputs(BaseModel, models.Model):
+    # DHW
+    key = "DomesticHotWaterLoad"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="DomesticHotWaterLoadInputs",
+        primary_key=True
+    )
+
+    possible_sets = [
+        ["fuel_loads_mmbtu_per_hour"],
+        ["doe_reference_name", "monthly_mmbtu"],
+        ["annual_mmbtu", "doe_reference_name"],
+        ["doe_reference_name"],
+        [],
+        ["blended_doe_reference_names", "blended_doe_reference_percents"]
+    ]
+
+    DOE_REFERENCE_NAME = models.TextChoices('DOE_REFERENCE_NAME', (
+        'FastFoodRest '
+        'FullServiceRest '
+        'Hospital '
+        'LargeHotel '
+        'LargeOffice '
+        'MediumOffice '
+        'MidriseApartment '
+        'Outpatient '
+        'PrimarySchool '
+        'RetailStore '
+        'SecondarySchool '
+        'SmallHotel '
+        'SmallOffice '
+        'StripMall '
+        'Supermarket '
+        'Warehouse '
+        'FlatLoad '
+        'FlatLoad_24_5 '
+        'FlatLoad_16_7 '
+        'FlatLoad_16_5 '
+        'FlatLoad_8_7 '
+        'FlatLoad_8_5'
+    ))
+
+    annual_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        help_text=("Annual site DHW consumption, used "
+                   "to scale simulated default building load profile for the site's climate zone [MMBtu]")
+    )
+
+    doe_reference_name = models.TextField(
+        null=False,
+        blank=True,
+        choices=DOE_REFERENCE_NAME.choices,
+        help_text=("Simulated load profile from DOE Commercial Reference Buildings "
+                   "https://energy.gov/eere/buildings/commercial-reference-buildings")
+    )
+
+    monthly_mmbtu = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(MAX_BIG_NUMBER)
+            ],
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Monthly site DHW energy consumption in [MMbtu], used "
+                   "to scale simulated default building load profile for the site's climate zone")
+    )
+
+    fuel_loads_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        help_text=("Typical load over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,"
+                   "520 samples), or 15 minute (35,040 samples). All non-net load values must be greater than or "
+                   "equal to zero. "
+                   )
+    )
+
+    blended_doe_reference_names = ArrayField(
+        models.TextField(
+            choices=DOE_REFERENCE_NAME.choices,
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        help_text=("Used in concert with blended_doe_reference_percents to create a blended load profile from multiple "
+                   "DoE Commercial Reference Buildings.")
+    )
+
+    blended_doe_reference_percents = ArrayField(
+        models.FloatField(
+            null=True, blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1.0)
+            ],
+        ),
+        default=list,
+        blank=True,
+        help_text=("Used in concert with blended_doe_reference_names to create a blended load profile from multiple "
+                   "DoE Commercial Reference Buildings. Must sum to 1.0.")
+    )
+
+    '''
+    Latitude and longitude are passed on to SpaceHeating struct using the Site struct.
+    City is not used as an input here because it is found using find_ashrae_zone_city() when needed.
+    If a blank key is provided, then default DOE load profile from electricload is used [cross-clean]
+    '''
+
+    def clean(self):
+        error_messages = {}
+
+        # possible sets for defining load profile
+        if not at_least_one_set(self.dict, self.possible_sets):
+            error_messages["required inputs"] = \
+                "Must provide at least one set of valid inputs from {}.".format(self.possible_sets)
+
+        if len(self.blended_doe_reference_names) > 0 and self.doe_reference_name == "":
+            if len(self.blended_doe_reference_names) != len(self.blended_doe_reference_percents):
+                error_messages["blended_doe_reference_names"] = \
+                    "The number of blended_doe_reference_names must equal the number of blended_doe_reference_percents."
+            if not math.isclose(sum(self.blended_doe_reference_percents),  1.0):
+                error_messages["blended_doe_reference_percents"] = "Sum must = 1.0."
+
+        if self.doe_reference_name != "" or \
+                len(self.blended_doe_reference_names) > 0:
+            self.year = 2017  # the validator provides an "info" message regarding this)
+
+        if error_messages:
+            raise ValidationError(error_messages)
+        
+        pass
+
 # TODO Add domestic hot water input model.
 
 def get_input_dict_from_run_uuid(run_uuid:str):
@@ -3377,7 +3522,10 @@ def get_input_dict_from_run_uuid(run_uuid:str):
 
     try: d["SpaceHeatingLoad"] = filter_none_and_empty_array(meta.SpaceHeatingLoadInputs.dict)
     except: pass
-    
+
+    try: d["DomesticHotWaterLoad"] = filter_none_and_empty_array(meta.DomesticHotWaterLoadInputs.dict)
+    except: pass
+
     return d
 
 '''
