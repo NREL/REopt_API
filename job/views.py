@@ -35,8 +35,8 @@ from django.http import JsonResponse
 from reo.exceptions import UnexpectedError
 from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, GeneratorInputs, ElectricLoadInputs,\
     ElectricTariffInputs, ElectricUtilityInputs, SpaceHeatingLoadInputs, PVOutputs, ElectricStorageOutputs, WindOutputs, ExistingBoilerInputs,\
-    GeneratorOutputs, ElectricTariffOutputs, ElectricUtilityOutputs, ElectricLoadOutputs, ExistingBoilerOutputs, APIMeta, UserProvidedMeta, \
-    DomesticHotWaterLoadInputs
+    GeneratorOutputs, ElectricTariffOutputs, ElectricUtilityOutputs, ElectricLoadOutputs, ExistingBoilerOutputs, \
+    DomesticHotWaterLoadInputs, SiteInputs, SiteOutputs, APIMeta, UserProvidedMeta
 
 
 def make_error_resp(msg):
@@ -65,6 +65,7 @@ def help(request):
         # d["Boiler"] = BoilerInputs.info_dict(BoilerInputs)
         d["SpaceHeatingLoad"] = SpaceHeatingLoadInputs.info_dict(SpaceHeatingLoadInputs)
         d["DomesticHotWaterLoad"] = DomesticHotWaterLoadInputs.info_dict(DomesticHotWaterLoadInputs)
+        d["Site"] = SiteInputs.info_dict(SiteInputs)
         return JsonResponse(d)
 
     except Exception as e:
@@ -93,6 +94,7 @@ def outputs(request):
         d["ElectricLoad"] = ElectricLoadOutputs.info_dict(ElectricLoadOutputs)
         d["ElectricTariff"] = ElectricTariffOutputs.info_dict(ElectricTariffOutputs)
         d["ElectricUtility"] = ElectricUtilityOutputs.info_dict(ElectricUtilityOutputs)
+        d["Site"] = SiteOutputs.info_dict(SiteOutputs)
         d["PV"] = PVOutputs.info_dict(PVOutputs)
         d["ElectricStorage"] = ElectricStorageOutputs.info_dict(ElectricStorageOutputs)
         d["Wind"] = WindOutputs.info_dict(WindOutputs)
@@ -127,7 +129,7 @@ def results(request, run_uuid):
         meta = APIMeta.objects.select_related(
             "Settings",
             'FinancialInputs', 'FinancialOutputs',
-            'SiteInputs',
+            'SiteInputs', 'SiteOutputs',
             'ElectricLoadInputs',
             'ElectricUtilityOutputs'
         ).get(run_uuid=run_uuid)
@@ -210,6 +212,7 @@ def results(request, run_uuid):
             r["outputs"]["ElectricTariff"] = meta.ElectricTariffOutputs.dict
             r["outputs"]["ElectricUtility"] = meta.ElectricUtilityOutputs.dict
             r["outputs"]["ElectricLoad"] = meta.ElectricLoadOutputs.dict
+            r["outputs"]["Site"] = meta.SiteOutputs.dict
         except: pass
 
         try:
