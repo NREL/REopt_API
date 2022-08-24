@@ -26,6 +26,36 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+# Develop
+### Minor Updates 
+##### Added
+`job/models.py` 
+- **GeneratorInputs** (must add to CHP and Boiler when implemented in v3)
+    - added `emissions_factor_lb_<pollutant>_per_gal` for CO2, NOx, SO2, and PM25
+    - add `fuel_renewable_energy_pct`
+- **ElectricUtilityInputs**
+    - add `emissions_factor_series_lb_<pollutant>_per_kwh` for CO2, NOx, SO2, and PM25
+- **Settings**
+    - add `include_climate_in_objective` and `include_health_in_objective`
+- **SiteInputs**
+    - add `renewable_electricity_min_pct`, `renewable_electricity_max_pct`, and `include_exported_renewable_electricity_in_total`
+    - add `CO2_emissions_reduction_min_pct`, `CO2_emissions_reduction_max_pct`, and `include_exported_elec_emissions_in_total`
+- **FinancialInputs**
+    - add `CO2_cost_per_tonne`, `CO2_cost_escalation_pct`
+    - add `<pollutant>_grid_cost_per_tonne`, `<pollutant>_onsite_fuelburn_cost_per_tonne`, and `<pollutant>_cost_escalation_pct` for NOx, SO2, and PM25
+- **SiteOutputs**
+    - add `renewable_electricity_pct`, `total_renewable_energy_pct`
+    - add `year_one_emissions_tonnes_<pollutant>`, `year_one_emissions_from_fuelburn_tonnes_<pollutant>`, `lifecycle_emissions_tonnes_<pollutant>`, and `lifecycle_emissions_from_fuelburn_tonnes_<pollutant>` for CO2, NOx, SO2, and PM25
+- **FinancialOutputs**
+    - add `breakeven_cost_of_emissions_reduction_per_tonnes_CO2`
+- `job/test/test_job_endpoint.py` - test that AVERT and EASIUR defaults for emissions inputs not provided by user are passed back from REopt.jl and saved in database
+
+`job/views.py`
+- Added **SiteInputs** to `help` endpoint
+- Added **SiteOutputs** to `outputs` endpoint
+
+- Created `006_siteoutputs_and_more.py` migration file
+
 # v2.1.0
 ### Minor Updates 
 ##### Changed
