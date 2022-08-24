@@ -33,6 +33,7 @@ from job.models import MAX_BIG_NUMBER, APIMeta, UserProvidedMeta, SiteInputs, Se
     FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs
 from django.core.exceptions import ValidationError
 from pyproj import Proj
+from typing import Tuple
 
 log = logging.getLogger(__name__)
 
@@ -234,8 +235,34 @@ class InputValidator(object):
             else:
                 self.models["PV"].operating_reserve_required_pct = 0.0 # override any user provided values
                     
+        def update_pv_defaults_offgrid(self):
+            if self.models["PV"].__getattribute__("can_net_meter") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["PV"].can_net_meter = True
+                else:
+                    self.models["PV"].can_net_meter = False
+            
+            if self.models["PV"].__getattribute__("can_wholesale") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["PV"].can_wholesale = True
+                else:
+                    self.models["PV"].can_wholesale = False
+            
+            if self.models["PV"].__getattribute__("can_export_beyond_nem_limit") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["PV"].can_export_beyond_nem_limit = True
+                else:
+                    self.models["PV"].can_export_beyond_nem_limit = False
+
+            if self.models["PV"].__getattribute__("operating_reserve_required_pct") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["PV"].operating_reserve_required_pct = 0.0
+                else:
+                    self.models["PV"].operating_reserve_required_pct = 0.25
+
         if "PV" in self.models.keys():  # single PV
             cross_clean_pv(self.models["PV"])
+            update_pv_defaults_offgrid(self)
 
         if len(self.pvnames) > 0:  # multiple PV
             for pvname in self.pvnames:
@@ -304,9 +331,9 @@ class InputValidator(object):
 
             if self.models["ElectricTariff"].urdb_response:
                 if "energyweekdayschedule" in self.models["ElectricTariff"].urdb_response.keys():
-                    urdb_rate_timesteps_per_hour = int(len(self.models["ElectricTariff"].urdb_response[
+                    urdb_rate_time_steps_per_hour = int(len(self.models["ElectricTariff"].urdb_response[
                                                             "energyweekdayschedule"][1]) / 24)
-                    if urdb_rate_timesteps_per_hour > self.models["Settings"].time_steps_per_hour:
+                    if urdb_rate_time_steps_per_hour > self.models["Settings"].time_steps_per_hour:
                         # do not support down-sampling tariff
                         self.add_validation_error("ElectricTariff", "urdb_response",
                                                 ("The time steps per hour in the energyweekdayschedule must be no greater "
@@ -343,6 +370,13 @@ class InputValidator(object):
         ElectricUtility
         """
         if "ElectricUtility" in self.models.keys():
+            for emissions_factor_input in ["emissions_factor_series_lb_CO2_per_kwh", 
+                                            "emissions_factor_series_lb_NOx_per_kwh", 
+                                            "emissions_factor_series_lb_SO2_per_kwh", 
+                                            "emissions_factor_series_lb_PM25_per_kwh"]:
+                if len(self.models["ElectricUtility"].__getattribute__(emissions_factor_input)) > 1:
+                    self.clean_time_series("ElectricUtility", emissions_factor_input)
+
             if self.models["ElectricUtility"].outage_start_time_step:
                 if self.models["ElectricUtility"].outage_start_time_step > max_ts:
                     self.add_validation_error("ElectricUtility", "outage_start_time_step",
@@ -483,7 +517,7 @@ class InputValidator(object):
                 self.add_validation_error(model_key, series_name, err_msg)
 
 
-def validate_time_series(series: list, time_steps_per_hour: int) -> (list, str, str):
+def validate_time_series(series: list, time_steps_per_hour: int) -> Tuple[list, str, str]:
     """
     Used to check that an input time series has hourly, 30 minute, or 15 minute resolution and if the time series
     resolution matches the time_steps_per_hour (one of [1,2,4]).
