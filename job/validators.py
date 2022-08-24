@@ -33,6 +33,7 @@ from job.models import APIMeta, UserProvidedMeta, SiteInputs, Settings, Electric
     FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs
 from django.core.exceptions import ValidationError
 from pyproj import Proj
+from typing import Tuple
 
 log = logging.getLogger(__name__)
 
@@ -178,11 +179,11 @@ class InputValidator(object):
         """
         for model in self.models.values():
             try:
-                model.clean_fields(exclude=["coincident_peak_load_active_timesteps"])
-                # coincident_peak_load_active_timesteps can have unequal inner lengths (it's an array of array),
+                model.clean_fields(exclude=["coincident_peak_load_active_time_steps"])
+                # coincident_peak_load_active_time_steps can have unequal inner lengths (it's an array of array),
                 # which is not allowed in the database. We fix the lengths with repeated last values by overriding the
                 # Django Model save method on ElectricTariffInputs. We then remove the repeated values before
-                # passing coincident_peak_load_active_timesteps to Julia (b/c o.w. JuMP.constraint will raise an error
+                # passing coincident_peak_load_active_time_steps to Julia (b/c o.w. JuMP.constraint will raise an error
                 # for duplicate constraints)
             except ValidationError as ve:
                 self.validation_errors[model.key] = ve.message_dict
@@ -215,36 +216,39 @@ class InputValidator(object):
                 if len(pvmodel.__getattribute__("prod_factor_series")) > 0:
                     self.clean_time_series("PV", "prod_factor_series")
                     
+        def update_pv_defaults_offgrid(self):
+            if self.models["PV"].__getattribute__("can_net_meter") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["PV"].can_net_meter = True
+                else:
+                    self.models["PV"].can_net_meter = False
+            
+            if self.models["PV"].__getattribute__("can_wholesale") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["PV"].can_wholesale = True
+                else:
+                    self.models["PV"].can_wholesale = False
+            
+            if self.models["PV"].__getattribute__("can_export_beyond_nem_limit") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["PV"].can_export_beyond_nem_limit = True
+                else:
+                    self.models["PV"].can_export_beyond_nem_limit = False
+
+            if self.models["PV"].__getattribute__("operating_reserve_required_pct") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["PV"].operating_reserve_required_pct = 0.0
+                else:
+                    self.models["PV"].operating_reserve_required_pct = 0.25
+
         if "PV" in self.models.keys():  # single PV
             cross_clean_pv(self.models["PV"])
+            update_pv_defaults_offgrid(self)
 
         if len(self.pvnames) > 0:  # multiple PV
             for pvname in self.pvnames:
                 cross_clean_pv(self.models[pvname])
-        
-        if self.models["PV"].__getattribute__("can_net_meter") == None:
-            if self.models["Settings"].off_grid_flag==False:
-                self.models["PV"].can_net_meter = True
-            else:
-                self.models["PV"].can_net_meter = False
-        
-        if self.models["PV"].__getattribute__("can_wholesale") == None:
-            if self.models["Settings"].off_grid_flag==False:
-                self.models["PV"].can_wholesale = True
-            else:
-                self.models["PV"].can_wholesale = False
-        
-        if self.models["PV"].__getattribute__("can_export_beyond_nem_limit") == None:
-            if self.models["Settings"].off_grid_flag==False:
-                self.models["PV"].can_export_beyond_nem_limit = True
-            else:
-                self.models["PV"].can_export_beyond_nem_limit = False
-
-        if self.models["PV"].__getattribute__("operating_reserve_required_pct") == None:
-            if self.models["Settings"].off_grid_flag==False:
-                self.models["PV"].operating_reserve_required_pct = 0.0
-            else:
-                self.models["PV"].operating_reserve_required_pct = 0.25
+                update_pv_defaults_offgrid(self)
 
         """
         Time series values are up or down sampled to align with Settings.time_steps_per_hour
@@ -295,14 +299,14 @@ class InputValidator(object):
             if len(cp_ts_arrays) > 0:
                 if len(cp_ts_arrays[0]) > 0:
                     if any(ts > max_ts for a in cp_ts_arrays for ts in a):
-                        self.add_validation_error("ElectricTariff", "coincident_peak_load_active_timesteps",
+                        self.add_validation_error("ElectricTariff", "coincident_peak_load_active_time_steps",
                                                 f"At least one time step is greater than the max allowable ({max_ts})")
 
             if self.models["ElectricTariff"].urdb_response:
                 if "energyweekdayschedule" in self.models["ElectricTariff"].urdb_response.keys():
-                    urdb_rate_timesteps_per_hour = int(len(self.models["ElectricTariff"].urdb_response[
+                    urdb_rate_time_steps_per_hour = int(len(self.models["ElectricTariff"].urdb_response[
                                                             "energyweekdayschedule"][1]) / 24)
-                    if urdb_rate_timesteps_per_hour > self.models["Settings"].time_steps_per_hour:
+                    if urdb_rate_time_steps_per_hour > self.models["Settings"].time_steps_per_hour:
                         # do not support down-sampling tariff
                         self.add_validation_error("ElectricTariff", "urdb_response",
                                                 ("The time steps per hour in the energyweekdayschedule must be no greater "
@@ -339,6 +343,13 @@ class InputValidator(object):
         ElectricUtility
         """
         if "ElectricUtility" in self.models.keys():
+            for emissions_factor_input in ["emissions_factor_series_lb_CO2_per_kwh", 
+                                            "emissions_factor_series_lb_NOx_per_kwh", 
+                                            "emissions_factor_series_lb_SO2_per_kwh", 
+                                            "emissions_factor_series_lb_PM25_per_kwh"]:
+                if len(self.models["ElectricUtility"].__getattribute__(emissions_factor_input)) > 1:
+                    self.clean_time_series("ElectricUtility", emissions_factor_input)
+
             if self.models["ElectricUtility"].outage_start_time_step:
                 if self.models["ElectricUtility"].outage_start_time_step > max_ts:
                     self.add_validation_error("ElectricUtility", "outage_start_time_step",
@@ -474,7 +485,7 @@ class InputValidator(object):
                 self.add_validation_error(model_key, series_name, err_msg)
 
 
-def validate_time_series(series: list, time_steps_per_hour: int) -> (list, str, str):
+def validate_time_series(series: list, time_steps_per_hour: int) -> Tuple[list, str, str]:
     """
     Used to check that an input time series has hourly, 30 minute, or 15 minute resolution and if the time series
     resolution matches the time_steps_per_hour (one of [1,2,4]).
