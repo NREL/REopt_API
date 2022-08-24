@@ -89,9 +89,9 @@ def run_jump_model(run_uuid):
         t_start = time.time()
         julia_host = os.environ.get('JULIA_HOST', "julia")
         response = requests.post("http://" + julia_host + ":8081/reopt/", json=data)
-        if response.status_code == 500:
-            raise REoptFailedToStartError(task=name, message=results["error"], run_uuid=run_uuid, user_uuid=user_uuid)
         response_json = response.json()
+        if response.status_code == 500:
+            raise REoptFailedToStartError(task=name, message=response_json["error"], run_uuid=run_uuid, user_uuid=user_uuid)
         results = response_json["results"]
         inputs_with_defaults_set_in_julia = response_json["inputs_with_defaults_set_in_julia"]
         time_dict["pyjulia_run_reopt_seconds"] = time.time() - t_start
