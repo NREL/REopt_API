@@ -3811,7 +3811,7 @@ class SpaceHeatingLoadInputs(BaseModel, models.Model):
     )
 
     doe_reference_name = models.TextField(
-        null=False,
+        null=True,
         blank=True,
         choices=DOE_REFERENCE_NAME.choices,
         help_text=("Simulated load profile from DOE Commercial Reference Buildings "
@@ -3846,7 +3846,8 @@ class SpaceHeatingLoadInputs(BaseModel, models.Model):
     blended_doe_reference_names = ArrayField(
         models.TextField(
             choices=DOE_REFERENCE_NAME.choices,
-            blank=True
+            blank=True,
+            null=True
         ),
         default=list,
         blank=True,
@@ -3954,7 +3955,7 @@ class DomesticHotWaterLoadInputs(BaseModel, models.Model):
     )
 
     doe_reference_name = models.TextField(
-        null=False,
+        null=True,
         blank=True,
         choices=DOE_REFERENCE_NAME.choices,
         help_text=("Simulated load profile from DOE Commercial Reference Buildings "

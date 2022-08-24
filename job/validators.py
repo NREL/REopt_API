@@ -441,15 +441,15 @@ class InputValidator(object):
             self.clean_time_series("DomesticHotWaterLoad", "fuel_loads_mmbtu_per_hour")
 
             # If empty key is provided, then check if doe_reference_names are provided in ElectricLoad
-            if self.models["DomesticHotWaterLoad"] == []:
-                if self.models["ElectricLoad"].doe_reference_name != None:
+            if self.models["DomesticHotWaterLoad"].doe_reference_name == None and not self.models["DomesticHotWaterLoad"].blended_doe_reference_names:
+                if self.models["ElectricLoad"].doe_reference_name != "":
                     self.models["DomesticHotWaterLoad"].__setattr__("doe_reference_name", self.models["ElectricLoad"].__getattribute__("doe_reference_name"))
-                elif self.models["ElectricLoad"].blended_doe_reference_names != None:
+                elif len(self.models["ElectricLoad"].blended_doe_reference_names) > 0:
                     self.models["DomesticHotWaterLoad"].__setattr__("blended_doe_reference_names", self.models["ElectricLoad"].__getattribute__("blended_doe_reference_names"))
                     self.models["DomesticHotWaterLoad"].__setattr__("blended_doe_reference_percents", self.models["ElectricLoad"].__getattribute__("blended_doe_reference_percents"))
                 else:
                     self.add_validation_error("DomesticHotWaterLoad", "doe_reference_name",
-                                              f"Must provide DOE commercial reference building profiles either under DomesticHotWater or ElectricLoad")
+                                              f"Must provide DOE commercial reference building profiles either under SpaceHeatingLoad or ElectricLoad")
         
         """
         SpaceHeatingLoad
@@ -458,13 +458,16 @@ class InputValidator(object):
             self.clean_time_series("SpaceHeatingLoad", "fuel_loads_mmbtu_per_hour")
 
             # If empty key is provided, then check if doe_reference_names are provided in ElectricLoad
-            if self.models["SpaceHeatingLoad"] == []:
-                if self.models["ElectricLoad"].doe_reference_name != None:
+            if self.models["SpaceHeatingLoad"].doe_reference_name == None and not self.models["SpaceHeatingLoad"].blended_doe_reference_names:
+                if self.models["ElectricLoad"].doe_reference_name != "":
+                    print("**check 1")
                     self.models["SpaceHeatingLoad"].__setattr__("doe_reference_name", self.models["ElectricLoad"].__getattribute__("doe_reference_name"))
-                elif self.models["ElectricLoad"].blended_doe_reference_names != None:
+                elif len(self.models["ElectricLoad"].blended_doe_reference_names) > 0:
+                    print("**check 2")
                     self.models["SpaceHeatingLoad"].__setattr__("blended_doe_reference_names", self.models["ElectricLoad"].__getattribute__("blended_doe_reference_names"))
                     self.models["SpaceHeatingLoad"].__setattr__("blended_doe_reference_percents", self.models["ElectricLoad"].__getattribute__("blended_doe_reference_percents"))
                 else:
+                    print("**check 3")
                     self.add_validation_error("SpaceHeatingLoad", "doe_reference_name",
                                               f"Must provide DOE commercial reference building profiles either under SpaceHeatingLoad or ElectricLoad")
         
