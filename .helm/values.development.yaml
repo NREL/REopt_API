@@ -1,0 +1,6 @@
+# Currently only our dev cluster both requires and supports this version for
+# the Ingress resource. But once staging/production match, then we could remove
+# this as a variable and just use "v1" everywhere. But for now, the
+# staging/prod clusters still need to use the "v1beta1" version due to their
+# older Kubernetes versions.
+ingressApiVersion: networking.k8s.io/v1
