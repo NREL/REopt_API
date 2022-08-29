@@ -57,7 +57,7 @@ Classify the change according to the following categories:
     - Added **SiteInputs** to `help` endpoint
     - Added **SiteOutputs** to `outputs` endpoint
 
-# v2.1.0
+## v2.1.0
 ### Minor Updates 
 ##### Changed
 - The `/stable` URL now correctly calls the `v2` version of the REopt model (`/job` endpoint)
