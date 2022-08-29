@@ -28,10 +28,10 @@ Classify the change according to the following categories:
 
 ## Develop
 ### Minor Updates
-#### Changed
+##### Changed
 - `job/models.py`: remove Generator `fuel_slope_gal_per_kwh` and `fuel_intercept_gal_per_hr` defaults based on size, keep defaults independent of size 
 - `job/validators.py`: Align PV tilt and aziumth defaults with API v2 behavior, based on location and PV type
-#### Added 
+##### Added 
 - `job/` endpoint: Add inputs and validation to model off-grid wind 
 - `job/models.py`:
     - **GeneratorInputs** (must add to CHP and Boiler when implemented in v3)
