@@ -411,10 +411,9 @@ class ElectricTariffModel(models.Model):
     chp_does_not_reduce_demand_charges = models.BooleanField(null=True, blank=True)
     emissions_region = models.TextField(null=True, blank=True)
     #Resource Adequacy Inputs
-    ra_energy_pricing_us_dollars_per_kwh = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    ra_demand_pricing_us_dollars_per_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    ra_event_day_flags_boolean = ArrayField(models.IntegerField(null=True, blank=True), null=True, blank=True)
-    ra_lookback_days = models.IntegerField(null=True, blank=True)
+    ra_pricing_us_dollars_per_kwh = ArrayField(models.FloatField(null=True, blank=True), null=True, blank = True)
+    ra_flexload_baseline_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank = True)
+    
     coincident_peak_load_active_timesteps = ArrayField(ArrayField(models.IntegerField(null=True, blank=True), null=True, default=list), null=True, default=list)
     coincident_peak_load_charge_us_dollars_per_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, default=list)
     emissions_factor_CO2_pct_decrease = models.FloatField(null=True, blank=True)
@@ -456,12 +455,7 @@ class ElectricTariffModel(models.Model):
     year_one_energy_supplied_kwh = models.FloatField(null=True, blank=True)
     year_one_energy_supplied_kwh_bau = models.FloatField(null=True, blank=True)
 	#Resource Adequacy Outputs
-    monthly_ra_reduction_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    monthly_ra_energy_total_value = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    monthly_ra_dr_total_value = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    monthly_ra_total_value = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    event_hours = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    hourly_reductions = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    ra_hourly_reductions = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     total_ra_value = models.FloatField(null=True, blank=True)
 
     year_one_emissions_tCO2 = models.FloatField(null=True, blank=True)
@@ -1676,7 +1670,6 @@ class ModelManager(object):
 
         # add try/except for get fail / bad run_uuid
 
-        #Added Resource Adequacy
         site_keys = ['PV', 'Storage', 'Financial', 'LoadProfile', 'LoadProfileBoilerFuel', 'LoadProfileChillerThermal',
                      'ElectricTariff', 'FuelTariff', 'Generator', 'Wind', 'CHP', 'Boiler', 'ElectricChiller',
                      'AbsorptionChiller', 'HotTES', 'ColdTES', 'RC', 'FlexTechAC', 'FlexTechHP', 'HotWaterTank',
