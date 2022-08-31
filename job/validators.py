@@ -82,9 +82,9 @@ class InputValidator(object):
         self.models = dict()
         self.objects = (
             APIMeta,
+            Settings, #needs to be next in this list so that off-grid checks in loop below work
             UserProvidedMeta,
             SiteInputs,
-            Settings,
             ElectricLoadInputs,
             ElectricTariffInputs,
             FinancialInputs,
@@ -95,7 +95,10 @@ class InputValidator(object):
             WindInputs
         )
         self.pvnames = []
-        required_object_names = [
+        on_grid_required_object_names = [
+            "Site", "ElectricLoad", "ElectricTariff"
+        ]
+        off_grid_required_object_names = [
             "Site", "ElectricLoad"
         ]
         
@@ -117,10 +120,12 @@ class InputValidator(object):
                 else:
                     filtered_user_post[obj.key] = scrub_fields(obj, raw_inputs[obj.key])
                     self.models[obj.key] = obj.create(meta=meta, **filtered_user_post[obj.key])
-            elif obj.key in required_object_names:
-                self.validation_errors[obj.key] = "Missing required inputs."
             elif obj.key in ["Settings", "Financial"]:
                 self.models[obj.key] = obj.create(meta=meta)  # create default values
+            elif obj.key == "ElectricUtility" and not self.models["Settings"].off_grid_flag:
+                self.models[obj.key] = obj.create(meta=meta)  # create default values
+            elif (obj.key in off_grid_required_object_names if self.models["Settings"].off_grid_flag else obj.key in on_grid_required_object_names):
+                self.validation_errors[obj.key] = "Missing required inputs."
 
         self.scrubbed_inputs = filtered_user_post
 
@@ -149,6 +154,9 @@ class InputValidator(object):
             if "ElectricTariff" in self.models.keys():
                 msg_dict["ignored inputs"] = ("ElectricTariff inputs are not applicable when off_grid_flag is true, and will be ignored. "
                                 "Provided ElectricTariff can be removed from inputs")
+            if "ElectricUtility" in self.models.keys():
+                msg_dict["ignored inputs"] = ("ElectricUtility inputs are not applicable when off_grid_flag is true, and will be ignored. "
+                                "Provided ElectricUtility can be removed from inputs")
             msg_dict["info"] = ("When off_grid_flag is true, only PV, ElectricStorage, Generator technologies can be modeled.")
         return msg_dict
 
@@ -191,7 +199,6 @@ class InputValidator(object):
     def clean(self):
         """
         Run all models' clean methods
-        Run ElectricTariff clean method in cross-clean
         :return: None
         """
         for model in self.models.values():
