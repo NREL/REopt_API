@@ -286,7 +286,7 @@ nested_input_definitions = {
         "type": "float",
         "min": 0.0,
         "max": 1.0e6,
-        "description": "Land area in acres available for PV panel siting"
+        "description": "Land area in acres available for PV panel and wind turbine siting"
       },
       "roof_squarefeet": {
         "type": "float",
@@ -429,7 +429,7 @@ nested_input_definitions = {
           "min": 0.0,
           "max": 1.0,
           "default": 0.3,
-          "description": "Additional cost, in percent of non-islandable capital costs, to make a distributed energy system islandable from the grid and able to serve critical loads. Includes all upgrade costs such as additional laber and critical load panels."
+          "description": "Additional cost, in percent of non-islandable capital costs, to make a distributed energy system islandable from the grid and able to serve critical loads. Includes all upgrade costs such as additional labor and critical load panels."
         },
         "other_capital_costs_us_dollars": {
           "type": "float",
