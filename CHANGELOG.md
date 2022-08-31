@@ -26,7 +26,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-# Develop
+## Develop
 ### Minor Updates 
 ##### Fixed
 - Require ElectricTariff key in inputs when **Settings.off_grid_flag** is false
