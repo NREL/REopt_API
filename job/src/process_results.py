@@ -27,16 +27,18 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-from job.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorageOutputs, ElectricTariffOutputs,\
-    ElectricUtilityOutputs, GeneratorOutputs, ElectricLoadOutputs, WindOutputs, ExistingBoilerOutputs
 
+from job.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorageOutputs, ElectricTariffOutputs, SiteOutputs,\
+    ElectricUtilityOutputs, GeneratorOutputs, ElectricLoadOutputs, WindOutputs, FinancialInputs, ElectricUtilityInputs, \
+    ExistingBoilerOutputs
+import logging
+log = logging.getLogger(__name__)
 
 def process_results(results: dict, run_uuid: str) -> None:
     """
     Saves the results returned from the Julia API in the backend database.
     Called in job/run_jump_model (a celery task)
     """
-    pop_result_keys(results)
 
     meta = APIMeta.objects.get(run_uuid=run_uuid)
     meta.status = results.get("status")
@@ -45,6 +47,7 @@ def process_results(results: dict, run_uuid: str) -> None:
     ElectricTariffOutputs.create(meta=meta, **results["ElectricTariff"]).save()
     ElectricUtilityOutputs.create(meta=meta, **results["ElectricUtility"]).save()
     ElectricLoadOutputs.create(meta=meta, **results["ElectricLoad"]).save()
+    SiteOutputs.create(meta=meta, **results["Site"]).save()
     if "PV" in results.keys():
         if isinstance(results["PV"], dict):
             PVOutputs.create(meta=meta, **results["PV"]).save()
@@ -62,58 +65,26 @@ def process_results(results: dict, run_uuid: str) -> None:
     if "ExistingBoiler" in results.keys():
         ExistingBoilerOutputs.create(meta=meta, **results["ExistingBoiler"]).save()
     # TODO process rest of results
-# TODO remove keys to skip and pop_result_keys() call
-keys_to_skip = [
-    "lifecycle_emissions_reduction_CO2_pct",
-    "breakeven_cost_of_emissions_reduction_us_dollars_per_tCO2",
-    "year_one_emissions_tonnes_CO2",
-    "year_one_emissions_tonnes_SO2",
-    "year_one_emissions_tonnes_CO2_bau",
-    "year_one_emissions_tonnes_SO2_bau",
-    "year_one_emissions_from_fuelburn_tonnes_CO2",
-    "year_one_emissions_from_fuelburn_tonnes_SO2",
-    "year_one_emissions_from_fuelburn_tonnes_CO2_bau",
-    "year_one_emissions_from_fuelburn_tonnes_SO2_bau",
-    "lifecycle_emissions_cost_CO2",
-    "lifecycle_emissions_cost_CO2_bau",
-    "lifecycle_emissions_tonnes_CO2",
-    "lifecycle_emissions_tonnes_SO2",
-    "lifecycle_emissions_tonnes_CO2_bau",
-    "lifecycle_emissions_tonnes_SO2_bau",
-    "lifecycle_emissions_from_fuelburn_tonnes_CO2",
-    "lifecycle_emissions_from_fuelburn_tonnes_SO2",
-    "lifecycle_emissions_from_fuelburn_tonnes_CO2_bau",
-    "lifecycle_emissions_from_fuelburn_tonnes_SO2_bau",
-    "year_one_emissions_tonnes_NOx",
-    "year_one_emissions_tonnes_PM25",
-    "year_one_emissions_tonnes_NOx_bau",
-    "year_one_emissions_tonnes_PM25_bau",
-    "year_one_emissions_from_fuelburn_tonnes_NOx",
-    "year_one_emissions_from_fuelburn_tonnes_PM25",
-    "year_one_emissions_from_fuelburn_tonnes_NOx_bau",
-    "year_one_emissions_from_fuelburn_tonnes_PM25_bau",
-    "lifecycle_emissions_tonnes_NOx",
-    "lifecycle_emissions_tonnes_PM25",
-    "lifecycle_emissions_tonnes_NOx_bau",
-    "lifecycle_emissions_tonnes_PM25_bau",
-    "lifecycle_emissions_from_fuelburn_tonnes_NOx",
-    "lifecycle_emissions_from_fuelburn_tonnes_PM25",
-    "lifecycle_emissions_from_fuelburn_tonnes_NOx_bau",
-    "lifecycle_emissions_from_fuelburn_tonnes_PM25_bau",
-    "emissions_region",
-    "distance_to_emissions_region_meters",
-    "lifecycle_emissions_cost_health",
-    "lifecycle_emissions_cost_climate_bau",
-    "lifecycle_emissions_cost_climate",
-    "lifecycle_emissions_cost_health_bau"
-]
 
-def pop_result_keys(r:dict):
 
-    for k in r.keys():
-        if (type(r[k])) == dict:
-            for s in keys_to_skip:
-                r[k].pop(s, None)
-        else:
-            # print(k)
-            pass
+def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
+    """
+    Updates inputs in the backend database with values returned from Julia.
+    This is needed for inputs that have defaults calculated in the REopt Julia package, 
+    which currently is those that use EASIUR or AVERT data.
+    Called in job/run_jump_model (a celery task)
+    """
+
+    try:
+        # get input models that need updating
+        FinancialInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["Financial"])
+        ElectricUtilityInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["ElectricUtility"])
+    except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(
+                                                                            exc_type, 
+                                                                            exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback)
+                                                                        )
+            log.debug(debug_msg)
+
