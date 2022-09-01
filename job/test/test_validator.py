@@ -117,6 +117,28 @@ class InputValidatorTests(TestCase):
                validator.validation_errors['ElectricLoad']['blended_doe_reference_percents'][0])
 
     def test_off_grid_defaults_overrides(self):
+        post = {
+            "Settings":{
+                "off_grid_flag": True
+            },
+            "Site": {
+                "longitude": -118.1164613,
+                "latitude": 34.5794343
+            },
+            "PV": {},
+            "Generator": {
+                "min_kw": 100,
+                "max_kw": 100
+            },
+            "ElectricLoad": {
+                "doe_reference_name": "RetailStore",
+                "city": "LosAngeles"
+            },
+            "Wind": {},
+            "ElectricStorage": {},
+            "Financial": {},
+            "APIMeta": {}
+        }
 
         post_file = os.path.join('job', 'test', 'posts', 'off_grid_validations.json')
         post = json.load(open(post_file, 'r'))
@@ -129,15 +151,35 @@ class InputValidatorTests(TestCase):
         validator.cross_clean()
         self.assertEquals(validator.is_valid, True)
 
+        self.assertAlmostEqual(validator.models["Wind"].operating_reserve_required_pct, 0.5)
+        self.assertAlmostEqual(validator.models["PV"].operating_reserve_required_pct, 0.25)
+
+        self.assertAlmostEqual(validator.models["ElectricLoad"].operating_reserve_required_pct, 0.1)
         self.assertAlmostEqual(validator.models["ElectricLoad"].critical_load_pct, 1.0)
+        self.assertAlmostEqual(validator.models["ElectricLoad"].min_load_met_annual_pct, 0.99999)
+
+        self.assertAlmostEqual(validator.models["Generator"].om_cost_per_kw, 20)
+        self.assertAlmostEqual(validator.models["Generator"].fuel_avail_gal, 1.0e9)
+        self.assertAlmostEqual(validator.models["Generator"].min_turn_down_pct, 0.15)
         self.assertAlmostEqual(validator.models["Generator"].replacement_year, 10)
         self.assertAlmostEqual(validator.models["Generator"].replace_cost_per_kw, validator.models["Generator"].installed_cost_per_kw)
 
-        # Test default overrides below
+        ## Test that some defaults can be overriden below
 
+        post["ElectricLoad"]["operating_reserve_required_pct"] = 0.2
         post["ElectricLoad"]["critical_load_pct"] = 0.95
+        post["ElectricLoad"]["min_load_met_annual_pct"] = 0.95
+        
+        post["Generator"]["om_cost_per_kw"] = 21
+        post["Generator"]["fuel_avail_gal"] = 10000
+        post["Generator"]["min_turn_down_pct"] = 0.14
         post["Generator"]["replacement_year"] = 7
         post["Generator"]["replace_cost_per_kw"] = 200
+
+        post["Wind"]["operating_reserve_required_pct"] = 0.35
+        post["PV"]["operating_reserve_required_pct"] = 0.35
+        
+
         post["APIMeta"]["run_uuid"] = uuid.uuid4()
 
         validator = InputValidator(post)
@@ -146,7 +188,16 @@ class InputValidatorTests(TestCase):
         validator.cross_clean()
         self.assertEquals(validator.is_valid, True)
 
-        self.assertAlmostEqual(validator.models["ElectricLoad"].critical_load_pct, 0.95)
+        self.assertAlmostEqual(validator.models["PV"].operating_reserve_required_pct, 0.35)
+        self.assertAlmostEqual(validator.models["Wind"].operating_reserve_required_pct, 0.35)
+
+        self.assertAlmostEqual(validator.models["ElectricLoad"].operating_reserve_required_pct, 0.2)
+        self.assertAlmostEqual(validator.models["ElectricLoad"].critical_load_pct, 1.0) # cant override
+        self.assertAlmostEqual(validator.models["ElectricLoad"].min_load_met_annual_pct, 0.95)
+
+        self.assertAlmostEqual(validator.models["Generator"].om_cost_per_kw, 21)
+        self.assertAlmostEqual(validator.models["Generator"].fuel_avail_gal, 10000)
+        self.assertAlmostEqual(validator.models["Generator"].min_turn_down_pct, 0.14)
         self.assertAlmostEqual(validator.models["Generator"].replacement_year, 7)
         self.assertAlmostEqual(validator.models["Generator"].replace_cost_per_kw, 200.0)
 
@@ -185,3 +236,46 @@ class InputValidatorTests(TestCase):
         self.assertAlmostEqual(len(validator.models["ExistingBoiler"].fuel_cost_per_mmbtu), 8760)
         self.assertEqual(sum(validator.models["ExistingBoiler"].fuel_cost_per_mmbtu), 9432.0)
         # With old code, the total for last assertion would have been 9490 (i.e. 8760+730)
+
+    def test_missing_required_keys(self):
+        #start with on_grid, and keep all keys
+        required_ongrid_object_names = [
+            "Site", "ElectricLoad", "ElectricTariff"
+        ]
+        required_offgrid_object_names = [
+            "Site", "ElectricLoad"
+        ]
+        #prior to removal of keys, test lack or errors of validator with full inputs
+        post = copy.deepcopy(self.post)
+        post["APIMeta"]["run_uuid"] = uuid.uuid4()
+        post["Settings"]["off_grid_flag"] = False
+        validator = InputValidator(post)
+        for key in required_ongrid_object_names:
+            assert (key not in validator.validation_errors.keys())
+        post = copy.deepcopy(self.post)
+        post["APIMeta"]["run_uuid"] = uuid.uuid4()
+        post["Settings"]["off_grid_flag"] = True
+        validator = InputValidator(post)
+        for key in required_ongrid_object_names:
+            assert (key not in validator.validation_errors.keys())
+        #test ongrid removal of all ongrid keys, trigger an error for all required ongrid inputs
+        post = copy.deepcopy(self.post)
+        post["APIMeta"]["run_uuid"] = uuid.uuid4()
+        post["Settings"]["off_grid_flag"] = False
+        for key in required_ongrid_object_names:
+            del post[key]
+        validator = InputValidator(post)
+        for key in required_ongrid_object_names:
+            assert("Missing required inputs." in validator.validation_errors[key])
+        #test offgrid removal of all offgrid keys, should trigger an error for required offgrid but not ongrid requirements
+        post = copy.deepcopy(self.post)
+        post["APIMeta"]["run_uuid"] = uuid.uuid4()
+        post["Settings"]["off_grid_flag"] = True
+        for key in required_ongrid_object_names:
+            del post[key]
+        validator = InputValidator(post)
+        for key in required_ongrid_object_names:
+            if key in required_offgrid_object_names:
+                assert("Missing required inputs." in validator.validation_errors[key])
+            else: 
+                assert(key not in validator.validation_errors.keys())

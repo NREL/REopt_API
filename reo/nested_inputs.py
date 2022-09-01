@@ -286,7 +286,7 @@ nested_input_definitions = {
         "type": "float",
         "min": 0.0,
         "max": 1.0e6,
-        "description": "Land area in acres available for PV panel siting"
+        "description": "Land area in acres available for PV panel and wind turbine siting"
       },
       "roof_squarefeet": {
         "type": "float",

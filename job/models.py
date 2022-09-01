@@ -280,7 +280,7 @@ class Settings(BaseModel, models.Model):
     off_grid_flag = models.BooleanField(
         default=False,
         blank=True,
-        help_text=("Set to true to enable off-grid analyses")
+        help_text=("Set to true to enable off-grid analyses, not connected to a bulk power system.")
     )
 
     def clean(self):
@@ -302,14 +302,14 @@ class SiteInputs(BaseModel, models.Model):
             MinValueValidator(-90),
             MaxValueValidator(90)
         ],
-        help_text="The approximate latitude of the site in decimal degrees."
+        help_text="The latitude of the site in decimal degrees."
     )
     longitude = models.FloatField(
         validators=[
             MinValueValidator(-180),
             MaxValueValidator(180)
         ],
-        help_text="The approximate longitude of the site in decimal degrees."
+        help_text="The longitude of the site in decimal degrees."
     )
     land_acres = models.FloatField(
         validators=[
@@ -691,7 +691,9 @@ class FinancialInputs(BaseModel, models.Model):
                    "The value of lost load (VoLL) is used to determine the avoided outage costs by multiplying VoLL "
                    "[$/kWh] with the average number of hours that the critical load can be met by the energy system "
                    "(determined by simulating outages occuring at every hour of the year), and multiplying by the mean "
-                   "critical load.")
+                   "critical load. Costs apply only when modeling outages using "
+                   "the outage_start_time_steps, outage_durations, and outage_probabilities inputs, and do not "
+                   "apply when modeling a single outage using outage_start_time_step and outage_end_time_step.")
     )
     microgrid_upgrade_cost_pct = models.FloatField(
         validators=[
@@ -701,7 +703,9 @@ class FinancialInputs(BaseModel, models.Model):
         blank=True,
         help_text=("Additional cost, in percent of non-islandable capital costs, to make a distributed energy system "
                    "islandable from the grid and able to serve critical loads. Includes all upgrade costs such as "
-                   "additional laber and critical load panels.")
+                   "additional labor and critical load panels. Costs apply only when modeling outages using "
+                   "the outage_start_time_steps, outage_durations, and outage_probabilities inputs, and do not "
+                   "apply when modeling a single outage using outage_start_time_step and outage_end_time_step.")
     )
     offgrid_other_capital_costs = models.FloatField(
             validators=[
@@ -721,7 +725,7 @@ class FinancialInputs(BaseModel, models.Model):
         blank=True,
         null=True,
         default=0.0,
-        help_text=("Only applicable when off_grid_flag is true. Considered tax deductible for owner. Costs are per year.")
+        help_text=("Only applicable when off_grid_flag is true. These per year costs are considered tax deductible for owner.")
     )
     CO2_cost_per_tonne = models.FloatField(
         validators=[
@@ -994,53 +998,53 @@ class FinancialOutputs(BaseModel, models.Model):
     )
     lifecycle_generation_tech_capital_costs = models.FloatField(
         null=True, blank=True,
-        help_text=("Component of lifecycle costs, this value is the net capital costs for all generation technologies"
+        help_text=("Component of lifecycle costs (LCC). Net capital costs for all generation technologies."
                     "Costs are given in present value, including replacement costs and incentives."
                     "This value does not include offgrid_other_capital_costs.")
     )
     lifecycle_storage_capital_costs = models.FloatField(
         null=True, blank=True,
-        help_text=("Component of lifecycle costs, this value is the Net capital costs for all storage technologies"
+        help_text=("Component of lifecycle costs (LCC). Net capital costs for all storage technologies."
                     "Value is in present value, including replacement costs and incentives."
                     "This value does not include offgrid_other_capital_costs.")
     )
     lifecycle_om_costs_after_tax = models.FloatField(
         null=True, blank=True,
-        help_text=("Component of lifecycle costs, this value is the present value of all O&M costs, after tax.")
+        help_text=("Component of lifecycle costs (LCC). This value is the present value of all O&M costs, after tax.")
     )
     lifecycle_fuel_costs_after_tax = models.FloatField(
         null=True, blank=True,
-        help_text=("Component of lifecycle costs, this value is the present value of all fuel costs over the analysis period, after tax.")
+        help_text=("Component of lifecycle costs (LCC). This value is the present value of all fuel costs over the analysis period, after tax.")
     )
 
     lifecycle_chp_standby_cost_after_tax = models.FloatField(
         null=True, blank=True,
-        help_text=("Component of lifecycle costs, this value is the present value of all CHP standby charges, after tax.")
+        help_text=("Component of lifecycle costs (LCC). This value is the present value of all CHP standby charges, after tax.")
     )
     lifecycle_elecbill_after_tax = models.FloatField(
         null=True, blank=True,
-        help_text=("Component of lifecycle costs, this value is the present value of all electric utility charges, after tax.")
+        help_text=("Component of lifecycle costs (LCC). This value is the present value of all electric utility charges, after tax.")
     )
     lifecycle_production_incentive_after_tax = models.FloatField(
         null=True, blank=True,
-        help_text=("Component of lifecycle costs, this value is the present value of all production-based incentives, after tax.")
+        help_text=("Component of lifecycle costs (LCC). This value is the present value of all production-based incentives, after tax.")
     )
     lifecycle_offgrid_other_annual_costs_after_tax = models.FloatField(
         null=True, blank=True,
-        help_text=("Component of lifecycle costs, this value is the present value of offgrid_other_annual_costs over the analysis period, after tax.")
+        help_text=("Component of lifecycle costs (LCC). This value is the present value of offgrid_other_annual_costs over the analysis period, after tax.")
     )
     lifecycle_offgrid_other_capital_costs = models.FloatField(
         null=True, blank=True,
-        help_text=("Component of lifecycle costs, this value is equal to offgrid_other_capital_costs with straight line depreciation applied"
-                    " over analysis period. The depreciation expense is assumed to reduce the owner's taxable income.")
+        help_text=("Component of lifecycle costs (LCC). This value is equal to offgrid_other_capital_costs with straight line depreciation applied"
+                    " over the analysis period. The depreciation expense is assumed to reduce the owner's taxable income.")
     )
     lifecycle_outage_cost = models.FloatField(
         null=True, blank=True,
-        help_text=("Component of lifecycle costs, expected outage cost.")
+        help_text=("Component of lifecycle costs (LCC). Expected outage cost.")
     )
     lifecycle_MG_upgrade_and_fuel_cost = models.FloatField(
         null=True, blank=True,
-        help_text=("Component of lifecycle costs, this is the cost to upgrade generation and storage technologies to be included in microgrid"
+        help_text=("Component of lifecycle costs (LCC). This is the cost to upgrade generation and storage technologies to be included in microgrid"
                     "plus present value of microgrid fuel costs.")
     )
     replacements_future_cost_after_tax = models.FloatField(
@@ -1193,6 +1197,7 @@ class ElectricLoadInputs(BaseModel, models.Model):
     critical_load_pct = models.FloatField(
         null=True,
         blank=True,
+        default = 0.5,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(2)
@@ -1210,7 +1215,8 @@ class ElectricLoadInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(1)
         ],
-        help_text=""
+        help_text="Only applicable when off_grid_flag=True; defaults to 0.1 (10 pct) for off-grid scenarios and fixed at 0 otherwise."
+                    "Required operating reserves applied to each timestep as a fraction of electric load in that timestep."
 
     )
 
@@ -1221,7 +1227,7 @@ class ElectricLoadInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(1)
         ],
-        help_text=""
+        help_text="Only applicable when off_grid_flag = True. Fraction of the load that must be met on an annual energy basis."
 
     )
 
@@ -1330,7 +1336,7 @@ class ElectricLoadOutputs(BaseModel, models.Model):
             null=True, blank=True
         ),
         default=list,
-        help_text="Total operating reserves required on an annual basis, for off-grid scenarios only"
+        help_text="Total operating reserves required (for load and techs) on an annual basis, for off-grid scenarios only"
     )
     offgrid_annual_oper_res_provided_series_kwh = ArrayField(
         models.FloatField(
@@ -1597,7 +1603,7 @@ class ElectricUtilityInputs(BaseModel, models.Model):
             MinValueValidator(1)
             # max value validated in InputValidator b/c it requires Settings.time_steps_per_hour
         ],
-        help_text="Time step that grid outage starts. Must be less than or equal to outage_end_time_step."
+        help_text="Time step that grid outage starts. Must be less than or equal to outage_end_time_step. Use to model a single, deterministic outage."
     )
     outage_end_time_step = models.IntegerField(
         null=True,
@@ -1606,7 +1612,7 @@ class ElectricUtilityInputs(BaseModel, models.Model):
             MinValueValidator(1)
             # max value validated in InputValidator b/c it requires Settings.time_steps_per_hour
         ],
-        help_text="Time step that grid outage ends. Must be greater than or equal to outage_start_time_step."
+        help_text="Time step that grid outage ends. Must be greater than or equal to outage_start_time_step. Use to model a single, deterministic outage."
     )
     interconnection_limit_kw = models.FloatField(
         validators=[
@@ -1615,7 +1621,7 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         ],
         default=1.0e9,
         blank=True,
-        help_text="Limit on total system capacity that can be interconnected to the grid"
+        help_text="Limit on total system capacity that can be interconnected to the grid."
     )
     net_metering_limit_kw = models.FloatField(
         default=0,
@@ -1699,6 +1705,8 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Annual percent decrease in the total annual PM2.5 marginal emissions rate of the grid. A negative value indicates an annual increase."
     )
+
+    # TODO add: allow_simultaneous_export_import, multiple outages inputs, emissions inputs
 
     def clean(self):
         error_messages = {}
@@ -2050,7 +2058,7 @@ class PVInputs(BaseModel, models.Model):
             MaxValueValidator(1.0e9)
         ],
         blank=True,
-        help_text="Minimum PV size constraint for optimization"
+        help_text="Minimum PV size constraint for optimization (lower bound on additional capacity beyond existing_kw)."
     )
     max_kw = models.FloatField(
         default=1.0e9,
@@ -2059,7 +2067,7 @@ class PVInputs(BaseModel, models.Model):
             MaxValueValidator(1.0e9)
         ],
         blank=True,
-        help_text="Maximum PV size constraint for optimization. Set to zero to disable PV"
+        help_text="Maximum PV size constraint for optimization (upper bound on additional capacity beyond existing_kw). Set to zero to disable PV"
     )
     installed_cost_per_kw = models.FloatField(
         default=1600,
@@ -2239,12 +2247,12 @@ class PVInputs(BaseModel, models.Model):
         help_text="Annual rate of degradation in PV energy production"
     )
     azimuth = models.FloatField(
-        default=180,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(360)
         ],
         blank=True,
+        null=True,
         help_text=("PV azimuth angle")
     )
     losses = models.FloatField(
@@ -2306,13 +2314,13 @@ class PVInputs(BaseModel, models.Model):
                    "closest station regardless of the distance.")
     )
     tilt = models.FloatField(
-        default=0.537,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(90)
         ],
         blank=True,
-        help_text="PV system tilt"
+        null=True,
+        help_text="PV system tilt. If PV system type is rooftop-fixed, then tilt=10 degrees, else abs(site.latitude)"
     )
     location = models.TextField(
         default=PV_LOCATION_CHOICES.BOTH,
@@ -2332,18 +2340,24 @@ class PVInputs(BaseModel, models.Model):
     )
     can_net_meter = models.BooleanField(
         blank=True,
+        default = True,
         help_text=("True/False for if technology has option to participate in net metering agreement with utility. "
-                   "Note that a technology can only participate in either net metering or wholesale rates (not both).")
+                   "Note that a technology can only participate in either net metering or wholesale rates (not both)."
+                   "Note that if off-grid is true, net metering is always set to False.")
     )
     can_wholesale = models.BooleanField(
         blank=True,
+        default = True,
         help_text=("True/False for if technology has option to export energy that is compensated at the wholesale_rate. "
-                   "Note that a technology can only participate in either net metering or wholesale rates (not both).")
+                   "Note that a technology can only participate in either net metering or wholesale rates (not both)."
+                   "Note that if off-grid is true, can_wholesale is always set to False.")
     )
     can_export_beyond_nem_limit = models.BooleanField(
         blank=True,
+        default = True,
         help_text=("True/False for if technology can export energy beyond the annual site load (and be compensated for "
-                   "that energy at the export_rate_beyond_net_metering_limit).")
+                   "that energy at the export_rate_beyond_net_metering_limit)."
+                   "Note that if off-grid is true, can_export_beyond_nem_limit is always set to False.")
     )
     can_curtail = models.BooleanField(
         default=True,
@@ -2358,7 +2372,8 @@ class PVInputs(BaseModel, models.Model):
         ],
         blank=True,
         null=True,
-        help_text=""
+        help_text=("Only applicable when off_grid_flag=True; defaults to 0.25 (25 pct) for off-grid scenarios and fixed at 0 otherwise." 
+                "Required operating reserves applied to each timestep as a fraction of PV generation serving load in that timestep.")
     )
 
 
@@ -2654,24 +2669,38 @@ class WindInputs(BaseModel, models.Model):
         default=True,
         blank=True,
         help_text=("True/False for if technology has option to participate in net metering agreement with utility. "
-                   "Note that a technology can only participate in either net metering or wholesale rates (not both).")
+                   "Note that a technology can only participate in either net metering or wholesale rates (not both)."
+                   "Note that if off-grid is true, net metering is always set to False.")
     )
     can_wholesale = models.BooleanField(
         default=True,
         blank=True,
         help_text=("True/False for if technology has option to export energy that is compensated at the wholesale_rate. "
-                   "Note that a technology can only participate in either net metering or wholesale rates (not both).")
+                   "Note that a technology can only participate in either net metering or wholesale rates (not both)."
+                   "Note that if off-grid is true, can_wholesale is always set to False.")
     )
     can_export_beyond_nem_limit = models.BooleanField(
         default=True,
         blank=True,
         help_text=("True/False for if technology can export energy beyond the annual site load (and be compensated for "
-                   "that energy at the export_rate_beyond_net_metering_limit).")
+                   "that energy at the export_rate_beyond_net_metering_limit)."
+                   "Note that if off-grid is true, can_export_beyond_nem_limit is always set to False.")
     )
     can_curtail = models.BooleanField(
         default=True,
         blank=True,
         help_text="True/False for if technology has the ability to curtail energy production."
+    )
+
+    operating_reserve_required_pct = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0)
+        ],
+        null=True,
+        blank=True,
+        help_text="Only applicable when off_grid_flag=True; defaults to 0.5 (50 pct) for off-grid scenarios and fixed at 0 otherwise."
+            "Required operating reserves applied to each timestep as a fraction of wind generation serving load in that timestep."
     )
 
 
@@ -2975,12 +3004,12 @@ class GeneratorInputs(BaseModel, models.Model):
         help_text="Installed diesel generator cost in $/kW"
     )
     om_cost_per_kw = models.FloatField(
-        default=10.0,
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(1.0e3)
         ],
         blank=True,
+        null=True,
         help_text="Annual diesel generator fixed operations and maintenance costs in $/kW"
     )
     om_cost_per_kwh = models.FloatField(
@@ -3011,21 +3040,22 @@ class GeneratorInputs(BaseModel, models.Model):
         help_text="Generator fuel burn rate in gallons/kWh."
     )
     fuel_intercept_gal_per_hr = models.FloatField(
+        default=0.0,
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(10.0)
         ],
         blank=True,
-        null=True,
         help_text="Generator fuel consumption curve y-intercept in gallons per hour."
     )
     fuel_avail_gal = models.FloatField(
         validators=[
             MinValueValidator(0.0),
-            MaxValueValidator(1.0e9)
+            MaxValueValidator(MAX_BIG_NUMBER*10)
         ],
         blank=True,
-        help_text="On-site generator fuel available in gallons."
+        null=True,
+        help_text="On-site generator fuel available in gallons per year."
     )
     min_turn_down_pct = models.FloatField(
         validators=[
@@ -3033,6 +3063,7 @@ class GeneratorInputs(BaseModel, models.Model):
             MaxValueValidator(1.0)
         ],
         blank=True,
+        null=True,
         help_text="Minimum generator loading in percent of capacity (size_kw)."
     )
     only_runs_during_grid_outage = models.BooleanField(
@@ -3270,46 +3301,17 @@ class GeneratorInputs(BaseModel, models.Model):
         ],
         blank=True,
         null=True,
-        help_text=""
+        help_text="Project year in which generator capacity will be replaced at a cost of replace_cost_per_kw."
     )
     replace_cost_per_kw = models.FloatField(
         validators=[
             MinValueValidator(0),
-            MaxValueValidator(1.0e9)
+            MaxValueValidator(MAX_BIG_NUMBER*10)
         ],
         blank=True,
         null=True,
-        help_text=""
+        help_text="Per kW replacement cost for generator capacity. Replacement costs are considered tax deductible."
     )
-
-    def clean(self):
-        if self.max_kw > 0 or self.existing_kw > 0:
-            total_kw = self.min_kw + self.existing_kw
-            if total_kw <= 40:
-                m = 0.068
-                b = 0.0125
-            elif total_kw <= 80:
-                m = 0.066
-                b = 0.0142
-            elif total_kw <= 150:
-                m = 0.0644
-                b = 0.0095
-            elif total_kw <= 250:
-                m = 0.0648
-                b = 0.0067
-            elif total_kw <= 750:
-                m = 0.0656
-                b = 0.0048
-            elif total_kw <= 1500:
-                m = 0.0657
-                b = 0.0043
-            else:
-                m = 0.0657
-                b = 0.004
-            if self.fuel_slope_gal_per_kwh == 0:
-                self.fuel_slope_gal_per_kwh = m
-            if self.fuel_intercept_gal_per_hr is None:
-                self.fuel_intercept_gal_per_hr = b
 
 
 class GeneratorOutputs(BaseModel, models.Model):
