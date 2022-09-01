@@ -3314,6 +3314,28 @@ class HotThermalStorageInputs(BaseModel, models.Model):
         # perform custom validation here.
         pass
 
+class HotThermalStorageOutputs(BaseModel, models.Model):
+    key = "HotThermalStorageOutputs"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="HotThermalStorageOutputs",
+        primary_key=True
+    )
+    size_gal = models.FloatField(null=True, blank=True)
+    year_one_soc_series_pct = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+    year_one_thermal_production_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    def clean(self):
+        # perform custom validation here.
+        pass
 
 class SpaceHeatingLoadInputs(BaseModel, models.Model):
     
