@@ -526,9 +526,9 @@ version = "1.4.1"
 
 [[deps.PROJ_jll]]
 deps = ["Artifacts", "JLLWrappers", "LibCURL_jll", "Libdl", "Libtiff_jll", "Pkg", "SQLite_jll"]
-git-tree-sha1 = "1330dce5d1ef02482420f8cf7206ff80d2f77974"
+git-tree-sha1 = "12bd68665a0c3cb4635c4359d3fa9e2769ed59e5"
 uuid = "58948b4f-47e0-5654-a9ad-f609743f8632"
-version = "900.0.100+0"
+version = "900.0.0+0"
 
 [[deps.PaddedViews]]
 deps = ["OffsetArrays"]

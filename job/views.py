@@ -34,9 +34,10 @@ import traceback as tb
 from django.http import JsonResponse
 from reo.exceptions import UnexpectedError
 from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, GeneratorInputs, ElectricLoadInputs,\
-    ElectricTariffInputs, ElectricUtilityInputs, SpaceHeatingLoadInputs, PVOutputs, ElectricStorageOutputs, WindOutputs, ExistingBoilerInputs,\
-    GeneratorOutputs, ElectricTariffOutputs, ElectricUtilityOutputs, ElectricLoadOutputs, ExistingBoilerOutputs, SiteInputs, SiteOutputs, \
-	APIMeta, UserProvidedMeta
+    ElectricTariffInputs, ElectricUtilityInputs, SpaceHeatingLoadInputs, PVOutputs, ElectricStorageOutputs, WindOutputs, \
+    ExistingBoilerInputs, GeneratorOutputs, ElectricTariffOutputs, ElectricUtilityOutputs, ElectricLoadOutputs,  \
+    ExistingBoilerOutputs, DomesticHotWaterLoadInputs, SiteInputs, SiteOutputs, APIMeta, UserProvidedMeta
+
 
 def make_error_resp(msg):
     resp = dict()
@@ -63,6 +64,7 @@ def help(request):
         d["ExistingBoiler"] = ExistingBoilerInputs.info_dict(ExistingBoilerInputs)
         # d["Boiler"] = BoilerInputs.info_dict(BoilerInputs)
         d["SpaceHeatingLoad"] = SpaceHeatingLoadInputs.info_dict(SpaceHeatingLoadInputs)
+        d["DomesticHotWaterLoad"] = DomesticHotWaterLoadInputs.info_dict(DomesticHotWaterLoadInputs)
         d["Site"] = SiteInputs.info_dict(SiteInputs)
         return JsonResponse(d)
 
@@ -192,6 +194,9 @@ def results(request, run_uuid):
     # except: pass
 
     try: r["inputs"]["SpaceHeatingLoad"] = meta.SpaceHeatingLoadInputs.dict
+    except: pass
+
+    try: r["inputs"]["DomesticHotWaterLoad"] = meta.DomesticHotWaterLoadInputs.dict
     except: pass
 
     try:
