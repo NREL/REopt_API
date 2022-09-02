@@ -30,7 +30,8 @@
 import logging
 import pandas as pd
 from job.models import MAX_BIG_NUMBER, APIMeta, ExistingBoilerInputs, UserProvidedMeta, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
-    FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs, SpaceHeatingLoadInputs
+    FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs, SpaceHeatingLoadInputs, \
+    DomesticHotWaterLoadInputs
 from django.core.exceptions import ValidationError
 from pyproj import Proj
 from typing import Tuple
@@ -245,8 +246,34 @@ class InputValidator(object):
             else:
                 pvmodel.__setattr__("operating_reserve_required_pct", 0.0) # override any user provided values
 
+        def update_pv_defaults_offgrid(self):
+            if self.models["PV"].__getattribute__("can_net_meter") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["PV"].can_net_meter = True
+                else:
+                    self.models["PV"].can_net_meter = False
+            
+            if self.models["PV"].__getattribute__("can_wholesale") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["PV"].can_wholesale = True
+                else:
+                    self.models["PV"].can_wholesale = False
+            
+            if self.models["PV"].__getattribute__("can_export_beyond_nem_limit") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["PV"].can_export_beyond_nem_limit = True
+                else:
+                    self.models["PV"].can_export_beyond_nem_limit = False
+
+            if self.models["PV"].__getattribute__("operating_reserve_required_pct") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["PV"].operating_reserve_required_pct = 0.0
+                else:
+                    self.models["PV"].operating_reserve_required_pct = 0.25
+
         if "PV" in self.models.keys():  # single PV
             cross_clean_pv(self.models["PV"])
+            update_pv_defaults_offgrid(self)
 
         if len(self.pvnames) > 0:  # multiple PV
             for pvname in self.pvnames:
