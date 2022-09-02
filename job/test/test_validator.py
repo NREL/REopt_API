@@ -117,29 +117,6 @@ class InputValidatorTests(TestCase):
                validator.validation_errors['ElectricLoad']['blended_doe_reference_percents'][0])
 
     def test_off_grid_defaults_overrides(self):
-        post = {
-            "Settings":{
-                "off_grid_flag": True
-            },
-            "Site": {
-                "longitude": -118.1164613,
-                "latitude": 34.5794343
-            },
-            "PV": {},
-            "Generator": {
-                "min_kw": 100,
-                "max_kw": 100
-            },
-            "ElectricLoad": {
-                "doe_reference_name": "RetailStore",
-                "city": "LosAngeles"
-            },
-            "Wind": {},
-            "ElectricStorage": {},
-            "Financial": {},
-            "APIMeta": {}
-        }
-
         post_file = os.path.join('job', 'test', 'posts', 'off_grid_validations.json')
         post = json.load(open(post_file, 'r'))
         
