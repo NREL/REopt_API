@@ -262,6 +262,31 @@ class InputValidator(object):
                 else:
                     self.models["PV"].operating_reserve_required_pct = 0.25
 
+        def update_pv_defaults_offgrid(self):
+            if self.models["PV"].__getattribute__("can_net_meter") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["PV"].can_net_meter = True
+                else:
+                    self.models["PV"].can_net_meter = False
+            
+            if self.models["PV"].__getattribute__("can_wholesale") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["PV"].can_wholesale = True
+                else:
+                    self.models["PV"].can_wholesale = False
+            
+            if self.models["PV"].__getattribute__("can_export_beyond_nem_limit") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["PV"].can_export_beyond_nem_limit = True
+                else:
+                    self.models["PV"].can_export_beyond_nem_limit = False
+
+            if self.models["PV"].__getattribute__("operating_reserve_required_pct") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["PV"].operating_reserve_required_pct = 0.0
+                else:
+                    self.models["PV"].operating_reserve_required_pct = 0.25
+
         if "PV" in self.models.keys():  # single PV
             cross_clean_pv(self.models["PV"])
             update_pv_defaults_offgrid(self)
