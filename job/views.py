@@ -36,7 +36,8 @@ from reo.exceptions import UnexpectedError
 from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, GeneratorInputs, ElectricLoadInputs,\
     ElectricTariffInputs, ElectricUtilityInputs, SpaceHeatingLoadInputs, PVOutputs, ElectricStorageOutputs, WindOutputs, \
     ExistingBoilerInputs, GeneratorOutputs, ElectricTariffOutputs, ElectricUtilityOutputs, ElectricLoadOutputs,  \
-    ExistingBoilerOutputs, DomesticHotWaterLoadInputs, SiteInputs, SiteOutputs, APIMeta, UserProvidedMeta
+    ExistingBoilerOutputs, DomesticHotWaterLoadInputs, SiteInputs, SiteOutputs, APIMeta, UserProvidedMeta,\
+    HotThermalStorageInputs, HotThermalStorageOutputs
 
 
 def make_error_resp(msg):
@@ -63,6 +64,7 @@ def help(request):
         d["Generator"] = GeneratorInputs.info_dict(GeneratorInputs)
         d["ExistingBoiler"] = ExistingBoilerInputs.info_dict(ExistingBoilerInputs)
         # d["Boiler"] = BoilerInputs.info_dict(BoilerInputs)
+        d["HotThermalStorage"] = HotThermalStorageInputs.info_dict(HotThermalStorageInputs)
         d["SpaceHeatingLoad"] = SpaceHeatingLoadInputs.info_dict(SpaceHeatingLoadInputs)
         d["DomesticHotWaterLoad"] = DomesticHotWaterLoadInputs.info_dict(DomesticHotWaterLoadInputs)
         d["Site"] = SiteInputs.info_dict(SiteInputs)
@@ -101,6 +103,7 @@ def outputs(request):
         d["Generator"] = GeneratorOutputs.info_dict(GeneratorOutputs)
         d["ExistingBoiler"] = ExistingBoilerOutputs.info_dict(ExistingBoilerOutputs)
         # d["Boiler"] = BoilerOutputs.info_dict(BoilerOutputs)
+        d["HotThermalStorage"] = HotThermalStorageOutputs.info_dict(HotThermalStorageOutputs)
         d["Site"] = SiteOutputs.info_dict(SiteOutputs)
         return JsonResponse(d)
 
@@ -193,6 +196,9 @@ def results(request, run_uuid):
     # try: r["inputs"]["Boiler"] = meta.BoilerInputs.dict
     # except: pass
 
+    try: r["inputs"]["HotThermalStorage"] = meta.HotThermalStorageInputs.dict
+    except: pass
+
     try: r["inputs"]["SpaceHeatingLoad"] = meta.SpaceHeatingLoadInputs.dict
     except: pass
 
@@ -235,6 +241,8 @@ def results(request, run_uuid):
         except: pass
         # try: r["outputs"]["Boiler"] = meta.BoilerOutputs.dict
         # except: pass
+        try: r["outputs"]["HotThermalStorage"] = meta.HotThermalStorageOutputs.dict
+        except: pass
 
         for d in r["outputs"].values():
             if isinstance(d, dict):
