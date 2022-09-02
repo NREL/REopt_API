@@ -30,7 +30,8 @@
 import logging
 import pandas as pd
 from job.models import MAX_BIG_NUMBER, APIMeta, ExistingBoilerInputs, UserProvidedMeta, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
-    FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs, SpaceHeatingLoadInputs
+    FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs, SpaceHeatingLoadInputs, \
+    DomesticHotWaterLoadInputs
 from django.core.exceptions import ValidationError
 from pyproj import Proj
 from typing import Tuple
@@ -260,18 +261,10 @@ class InputValidator(object):
                     self.models["PV"].operating_reserve_required_pct = 0.0
                 else:
                     self.models["PV"].operating_reserve_required_pct = 0.25
-            
-            if self.models["Settings"].off_grid_flag==True:
-                pvmodel.__setattr__("can_net_meter", False)
-                pvmodel.__setattr__("can_wholesale", False)
-                pvmodel.__setattr__("can_export_beyond_nem_limit", False)
-                if pvmodel.__getattribute__("operating_reserve_required_pct") == None: # user provided no value
-                    pvmodel.__setattr__("operating_reserve_required_pct", 0.25)
-            else:
-                pvmodel.__setattr__("operating_reserve_required_pct", 0.0) # override any user provided values
 
         if "PV" in self.models.keys():  # single PV
             cross_clean_pv(self.models["PV"])
+            update_pv_defaults_offgrid(self)
 
         if len(self.pvnames) > 0:  # multiple PV
             for pvname in self.pvnames:
