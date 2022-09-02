@@ -29,8 +29,9 @@
 # *********************************************************************************
 import logging
 import pandas as pd
-from job.models import MAX_BIG_NUMBER, APIMeta, UserProvidedMeta, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
-    FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs
+from job.models import MAX_BIG_NUMBER, APIMeta, ExistingBoilerInputs, UserProvidedMeta, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
+    FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs, SpaceHeatingLoadInputs, \
+    DomesticHotWaterLoadInputs
 from django.core.exceptions import ValidationError
 from pyproj import Proj
 from typing import Tuple
@@ -92,7 +93,10 @@ class InputValidator(object):
             PVInputs,
             ElectricStorageInputs,
             GeneratorInputs,
-            WindInputs
+            WindInputs,
+            ExistingBoilerInputs,
+            SpaceHeatingLoadInputs,
+            DomesticHotWaterLoadInputs
         )
         self.pvnames = []
         on_grid_required_object_names = [
@@ -242,8 +246,34 @@ class InputValidator(object):
             else:
                 pvmodel.__setattr__("operating_reserve_required_pct", 0.0) # override any user provided values
 
+        def update_pv_defaults_offgrid(self):
+            if self.models["PV"].__getattribute__("can_net_meter") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["PV"].can_net_meter = True
+                else:
+                    self.models["PV"].can_net_meter = False
+            
+            if self.models["PV"].__getattribute__("can_wholesale") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["PV"].can_wholesale = True
+                else:
+                    self.models["PV"].can_wholesale = False
+            
+            if self.models["PV"].__getattribute__("can_export_beyond_nem_limit") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["PV"].can_export_beyond_nem_limit = True
+                else:
+                    self.models["PV"].can_export_beyond_nem_limit = False
+
+            if self.models["PV"].__getattribute__("operating_reserve_required_pct") == None:
+                if self.models["Settings"].off_grid_flag==False:
+                    self.models["PV"].operating_reserve_required_pct = 0.0
+                else:
+                    self.models["PV"].operating_reserve_required_pct = 0.25
+
         if "PV" in self.models.keys():  # single PV
             cross_clean_pv(self.models["PV"])
+            update_pv_defaults_offgrid(self)
 
         if len(self.pvnames) > 0:  # multiple PV
             for pvname in self.pvnames:
@@ -366,7 +396,26 @@ class InputValidator(object):
                 if self.models["ElectricUtility"].outage_end_time_step > max_ts:
                     self.add_validation_error("ElectricUtility", "outage_end_time_step",
                                               f"Value is greater than the max allowable ({max_ts})")
+        
+        """
+        ExistingBoiler
+        """
+        if "ExistingBoiler" in self.models.keys():
 
+            # Clean fuel_cost_per_mmbtu to align with time series
+            self.clean_time_series("ExistingBoiler", "fuel_cost_per_mmbtu")
+
+            if self.models["ExistingBoiler"].efficiency is None:
+                if "CHP" in self.models.keys():
+                    pass
+                # TODO add CHP based validation on ExistingBoiler efficiency
+                # Get production type by chp prime mover
+                else:
+                    if self.models["ExistingBoiler"].production_type == 'hot_water':
+                        self.models["ExistingBoiler"].efficiency = 0.8
+                    else:
+                        self.models["ExistingBoiler"].efficiency = 0.75
+        
         """
         ElectricLoad
         If user does not provide values, set defaults conditional on off-grid flag
@@ -423,6 +472,43 @@ class InputValidator(object):
                     self.models["Generator"].replace_cost_per_kw = 0.0
                 else:
                     self.models["Generator"].replace_cost_per_kw = self.models["Generator"].installed_cost_per_kw
+        
+        """
+        DomesticHotWaterLoad
+        """
+        if "DomesticHotWaterLoad" in self.models.keys():
+            self.clean_time_series("DomesticHotWaterLoad", "fuel_loads_mmbtu_per_hour")
+
+            # If empty key is provided, then check if doe_reference_names are provided in ElectricLoad
+            if self.models["DomesticHotWaterLoad"].doe_reference_name == None and not self.models["DomesticHotWaterLoad"].blended_doe_reference_names:
+                if self.models["ElectricLoad"].doe_reference_name != "":
+                    self.models["DomesticHotWaterLoad"].__setattr__("doe_reference_name", self.models["ElectricLoad"].__getattribute__("doe_reference_name"))
+                elif len(self.models["ElectricLoad"].blended_doe_reference_names) > 0:
+                    self.models["DomesticHotWaterLoad"].__setattr__("blended_doe_reference_names", self.models["ElectricLoad"].__getattribute__("blended_doe_reference_names"))
+                    self.models["DomesticHotWaterLoad"].__setattr__("blended_doe_reference_percents", self.models["ElectricLoad"].__getattribute__("blended_doe_reference_percents"))
+                else:
+                    self.add_validation_error("DomesticHotWaterLoad", "doe_reference_name",
+                                              f"Must provide DOE commercial reference building profiles either under SpaceHeatingLoad or ElectricLoad")
+        
+        """
+        SpaceHeatingLoad
+        """
+        if "SpaceHeatingLoad" in self.models.keys():
+            self.clean_time_series("SpaceHeatingLoad", "fuel_loads_mmbtu_per_hour")
+
+            # If empty key is provided, then check if doe_reference_names are provided in ElectricLoad
+            if self.models["SpaceHeatingLoad"].doe_reference_name == None and not self.models["SpaceHeatingLoad"].blended_doe_reference_names:
+                if self.models["ElectricLoad"].doe_reference_name != "":
+                    print("**check 1")
+                    self.models["SpaceHeatingLoad"].__setattr__("doe_reference_name", self.models["ElectricLoad"].__getattribute__("doe_reference_name"))
+                elif len(self.models["ElectricLoad"].blended_doe_reference_names) > 0:
+                    print("**check 2")
+                    self.models["SpaceHeatingLoad"].__setattr__("blended_doe_reference_names", self.models["ElectricLoad"].__getattribute__("blended_doe_reference_names"))
+                    self.models["SpaceHeatingLoad"].__setattr__("blended_doe_reference_percents", self.models["ElectricLoad"].__getattribute__("blended_doe_reference_percents"))
+                else:
+                    print("**check 3")
+                    self.add_validation_error("SpaceHeatingLoad", "doe_reference_name",
+                                              f"Must provide DOE commercial reference building profiles either under SpaceHeatingLoad or ElectricLoad")
         
         """
         Off-grid input keys validation

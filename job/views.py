@@ -34,8 +34,9 @@ import traceback as tb
 from django.http import JsonResponse
 from reo.exceptions import UnexpectedError
 from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, GeneratorInputs, ElectricLoadInputs,\
-    ElectricTariffInputs, ElectricUtilityInputs, PVOutputs, ElectricStorageOutputs, WindOutputs, GeneratorOutputs, \
-    ElectricTariffOutputs, ElectricUtilityOutputs, ElectricLoadOutputs, SiteInputs, SiteOutputs, APIMeta, UserProvidedMeta
+    ElectricTariffInputs, ElectricUtilityInputs, SpaceHeatingLoadInputs, PVOutputs, ElectricStorageOutputs, WindOutputs, ExistingBoilerInputs,\
+    GeneratorOutputs, ElectricTariffOutputs, ElectricUtilityOutputs, ElectricLoadOutputs, ExistingBoilerOutputs, \
+    DomesticHotWaterLoadInputs, SiteInputs, SiteOutputs, APIMeta, UserProvidedMeta
 
 
 def make_error_resp(msg):
@@ -60,6 +61,10 @@ def help(request):
         d["ElectricStorage"] = ElectricStorageInputs.info_dict(ElectricStorageInputs)
         d["Wind"] = WindInputs.info_dict(WindInputs)
         d["Generator"] = GeneratorInputs.info_dict(GeneratorInputs)
+        d["ExistingBoiler"] = ExistingBoilerInputs.info_dict(ExistingBoilerInputs)
+        # d["Boiler"] = BoilerInputs.info_dict(BoilerInputs)
+        d["SpaceHeatingLoad"] = SpaceHeatingLoadInputs.info_dict(SpaceHeatingLoadInputs)
+        d["DomesticHotWaterLoad"] = DomesticHotWaterLoadInputs.info_dict(DomesticHotWaterLoadInputs)
         d["Site"] = SiteInputs.info_dict(SiteInputs)
         return JsonResponse(d)
 
@@ -94,7 +99,8 @@ def outputs(request):
         d["ElectricStorage"] = ElectricStorageOutputs.info_dict(ElectricStorageOutputs)
         d["Wind"] = WindOutputs.info_dict(WindOutputs)
         d["Generator"] = GeneratorOutputs.info_dict(GeneratorOutputs)
-        d["Site"] = SiteOutputs.info_dict(SiteOutputs)
+        d["ExistingBoiler"] = ExistingBoilerOutputs.info_dict(ExistingBoilerOutputs)
+        # d["Boiler"] = BoilerOutputs.info_dict(BoilerOutputs)
         return JsonResponse(d)
 
     except Exception as e:
@@ -180,6 +186,18 @@ def results(request, run_uuid):
     try: r["inputs"]["Wind"] = meta.WindInputs.dict
     except: pass
 
+    try: r["inputs"]["ExistingBoiler"] = meta.ExistingBoilerInputs.dict
+    except: pass
+
+    # try: r["inputs"]["Boiler"] = meta.BoilerInputs.dict
+    # except: pass
+
+    try: r["inputs"]["SpaceHeatingLoad"] = meta.SpaceHeatingLoadInputs.dict
+    except: pass
+
+    try: r["inputs"]["DomesticHotWaterLoad"] = meta.DomesticHotWaterLoadInputs.dict
+    except: pass
+
     try:
         r["outputs"] = dict()
         r["messages"] = dict()
@@ -212,6 +230,10 @@ def results(request, run_uuid):
         except: pass
         try: r["outputs"]["Wind"] = meta.WindOutputs.dict
         except: pass
+        try: r["outputs"]["ExistingBoiler"] = meta.ExistingBoilerOutputs.dict
+        except: pass
+        # try: r["outputs"]["Boiler"] = meta.BoilerOutputs.dict
+        # except: pass
 
         for d in r["outputs"].values():
             if isinstance(d, dict):

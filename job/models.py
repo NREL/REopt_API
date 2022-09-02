@@ -34,6 +34,7 @@ from django.contrib.postgres.fields import *
 # TODO rm picklefield from requirements.txt once v1 is retired (replaced with JSONfield)
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
+import numpy
 from job.urdb_rate_validator import URDB_RateValidator,URDB_LabelValidator
 import copy
 import logging
@@ -57,6 +58,38 @@ class MACRS_YEARS_CHOICES(models.IntegerChoices):
     FIVE = 5
     SEVEN = 7
 
+FUEL_DEFAULTS = {
+    "fuel_renewable_energy_pct" : {
+        "natural_gas" : 0.0,
+        "landfill_bio_gas" : 1.0,
+        "propane" : 0.0,
+        "diesel_oil" : 0.0
+    },
+    "emissions_factor_lb_CO2_per_mmbtu" : {
+        "natural_gas" : 116.9,
+        "landfill_bio_gas" : 114.8,
+        "propane" : 138.6,
+        "diesel_oil" : 163.1
+    },
+    "emissions_factor_lb_NOx_per_mmbtu" : {
+        "natural_gas" : 0.09139,
+        "landfill_bio_gas": 0.14,
+        "propane" : 0.15309,
+        "diesel_oil" : 0.56
+    },
+    "emissions_factor_lb_SO2_per_mmbtu" : {
+        "natural_gas" : 0.000578592,
+        "landfill_bio_gas" : 0.045,
+        "propane" : 0.0,
+        "diesel_oil" : 0.28897737
+    },
+    "emissions_factor_lb_PM25_per_mmbtu" : {
+        "natural_gas" : 0.007328833,
+        "landfill_bio_gas" : 0.02484,
+        "propane" : 0.009906836,
+        "diesel_oil" : 0.0
+    }
+}
 
 def at_least_one_set(model, possible_sets):
     """
@@ -1493,8 +1526,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
                 if (possible_set[0] and not possible_set[1]) or (not possible_set[0] and possible_set[1]):
                     error_messages["required inputs"] = f"Must provide both {possible_set[0]} and {possible_set[1]}"
 
-        if len(self.wholesale_rate) == 1:
-            self.wholesale_rate = self.wholesale_rate * 8760  # upsampling handled in InputValidator.cross_clean
+        self.wholesale_rate = scalar_to_vector(self.wholesale_rate)
 
         if len(self.coincident_peak_load_charge_per_kw) > 0:
             if len(self.coincident_peak_load_active_time_steps) != len(self.coincident_peak_load_charge_per_kw):
@@ -2360,6 +2392,7 @@ class PVOutputs(BaseModel, models.Model):
     )
     size_kw = models.FloatField(null=True, blank=True)
     lifecycle_om_cost_after_tax = models.FloatField(null=True, blank=True)
+    lifecycle_om_cost_after_tax_bau = models.FloatField(null=True, blank=True)
     lifecycle_om_cost_bau = models.FloatField(null=True, blank=True)
 #     station_latitude = models.FloatField(null=True, blank=True)
 #     station_longitude = models.FloatField(null=True, blank=True)
@@ -3338,6 +3371,680 @@ class Message(BaseModel, models.Model):
 
 # TODO other necessary models from reo/models.py
 
+class ExistingBoilerInputs(BaseModel, models.Model):
+    
+    key = "ExistingBoiler"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="ExistingBoilerInputs",
+        primary_key=True
+    )
+
+    PRODUCTION_TYPE = models.TextChoices('PRODUCTION_TYPE', (
+        'steam',
+        'hot_water'
+    ))
+
+    CHP_PRIME_MOVER = models.TextChoices('CHP_PRIME_MOVER', (
+        "recip_engine",
+        "micro_turbine",
+        "combustion_turbine",
+        "fuel_cell"
+    ))
+
+    FUEL_TYPE_LIST = models.TextChoices('FUEL_TYPE_LIST', (
+        "natural_gas",
+        "landfill_bio_gas",
+        "propane",
+        "diesel_oil"
+    ))
+
+    '''
+    This field is populated based on heating loads provided via domestic hot water loads. TODO test with flexibleHVAC
+    max_heat_demand_kw = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        null=True,
+        blank=True,
+        help_text=""
+    )
+    '''
+
+    production_type = models.TextField(
+        blank=True,
+        null=False,
+        choices=PRODUCTION_TYPE.choices,
+        default="hot_water",
+        help_text="Boiler thermal production type, hot water or steam"
+    )
+
+    '''
+    We dont need to add CHP prime mover because this field is either set by CHP tech. Adding this here results in infeasible solutions.
+    chp_prime_mover = models.TextField(
+            blank=True,
+            null=False,
+            choices=CHP_PRIME_MOVER.choices,
+            default="",
+            help_text=""
+        )
+
+    '''
+
+    max_thermal_factor_on_peak_load = models.FloatField(
+        validators=[
+            MinValueValidator(1.0),
+            MaxValueValidator(5.0)
+        ],
+        null=True,
+        blank=True,
+        default=1.25,
+        help_text="Factor on peak thermal LOAD which the boiler can supply"
+    )
+
+    efficiency = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0)
+        ],
+        null=True,
+        blank=True,
+        help_text="Existing boiler system efficiency - conversion of fuel to usable heating thermal energy."
+    )
+
+    emissions_factor_lb_CO2_per_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        help_text=""
+    )
+
+    emissions_factor_lb_NOx_per_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        help_text=""
+    )
+
+    emissions_factor_lb_SO2_per_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        help_text=""
+    )
+
+    emissions_factor_lb_PM25_per_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        help_text=""
+    )
+
+    fuel_cost_per_mmbtu = ArrayField(
+        models.FloatField(
+            blank=True,
+            validators=[
+                MinValueValidator(0)
+            ]
+        ),
+        default=list,
+        blank=True,
+        help_text=("The ExistingBoiler default operating cost is zero. Please provide this field to include non-zero BAU heating costs."
+                    "The `fuel_cost_per_mmbtu` can be a scalar, a list of 12 monthly values, or a time series of values for every time step."
+                    "If a scalar or a vector of 12 values are provided, then the value is scaled up to 8760 values."
+                    "If a vector of 8760, 17520, or 35040 values is provided, it is adjusted to match timesteps per hour in the optimization.")
+    )
+
+    fuel_type = models.TextField(
+        null=False,
+        blank=True,
+        choices=FUEL_TYPE_LIST.choices,
+        default="natural_gas",
+        help_text="Existing boiler fuel type, one of natural_gas, landfill_bio_gas, propane, diesel_oil"
+    )
+
+    # can_supply_steam_turbine = models.BooleanField(
+    #     default=False,
+    #     blank=True,
+    #     null=True,
+    #     help_text="If the boiler can supply steam to the steam turbine for electric production"
+    # )
+
+    # For custom validations within model.
+    def clean(self):
+        self.fuel_cost_per_mmbtu = scalar_to_vector(self.fuel_cost_per_mmbtu)
+
+        if self.emissions_factor_lb_CO2_per_mmbtu == None:
+            self.emissions_factor_lb_CO2_per_mmbtu = FUEL_DEFAULTS["emissions_factor_lb_CO2_per_mmbtu"].get(self.fuel_type, 0.0)
+        
+        if self.emissions_factor_lb_SO2_per_mmbtu == None:
+            self.emissions_factor_lb_SO2_per_mmbtu = FUEL_DEFAULTS["emissions_factor_lb_SO2_per_mmbtu"].get(self.fuel_type, 0.0)
+        
+        if self.emissions_factor_lb_NOx_per_mmbtu == None:
+            self.emissions_factor_lb_NOx_per_mmbtu = FUEL_DEFAULTS["emissions_factor_lb_NOx_per_mmbtu"].get(self.fuel_type, 0.0)
+        
+        if self.emissions_factor_lb_PM25_per_mmbtu == None:
+            self.emissions_factor_lb_PM25_per_mmbtu = FUEL_DEFAULTS["emissions_factor_lb_PM25_per_mmbtu"].get(self.fuel_type, 0.0)
+
+class ExistingBoilerOutputs(BaseModel, models.Model):
+    
+    key = "ExistingBoiler"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="ExistingBoilerOutputs",
+        primary_key=True
+    )
+
+    year_one_fuel_consumption_mmbtu = models.FloatField(null=True, blank=True)
+
+    year_one_fuel_consumption_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default=list,
+    )
+
+    lifecycle_fuel_cost_after_tax = models.FloatField(null=True, blank=True)
+    lifecycle_fuel_cost_after_tax_bau = models.FloatField(null=True, blank=True)
+    year_one_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
+    year_one_fuel_cost_before_tax = models.FloatField(null=True, blank=True)
+    thermal_to_tes_series_mmbtu_per_hour = models.FloatField(null=True, blank=True)
+    thermal_to_tes_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    year_one_thermal_production_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    year_one_thermal_to_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    def clean(self):
+        # perform custom validation here.
+        pass
+
+# # Uncomment to enable Boiler functionality
+# class BoilerInputs(BaseModel, models.Model):
+#     key = "Boiler"
+
+#     meta = models.OneToOneField(
+#         APIMeta,
+#         on_delete=models.CASCADE,
+#         related_name="BoilerInputs",
+#         primary_key=True
+#     )
+
+#     FUEL_TYPE_LIST = models.TextChoices('FUEL_TYPE_LIST', (
+#         "natural_gas",
+#         "landfill_bio_gas",
+#         "propane",
+#         "diesel_oil",
+#         "uranium"
+#     ))
+
+#     min_mmbtu_per_hour = models.FloatField(
+#         validators=[
+#             MinValueValidator(0.0),
+#             MaxValueValidator(1.0e9)
+#         ],
+#         null=True,
+#         blank=True,
+#         default=0.0,
+#         help_text="Minimum thermal power size"
+#     )
+
+#     max_mmbtu_per_hour = models.FloatField(
+#         validators=[
+#             MinValueValidator(0.0),
+#             MaxValueValidator(1.0e9)
+#         ],
+#         null=True,
+#         blank=True,
+#         default=0.0,
+#         help_text="Maximum thermal power size"
+#     )
+
+#     efficiency = models.FloatField(
+#         validators=[
+#             MinValueValidator(0.0),
+#             MaxValueValidator(1.0)
+#         ],
+#         null=True,
+#         blank=True,
+#         default=0.8,
+#         help_text="New boiler system efficiency - conversion of fuel to usable heating thermal energy."
+#     )
+
+#     fuel_cost_per_mmbtu = ArrayField(
+#         models.FloatField(
+#             blank=True,
+#             validators=[
+#                 MinValueValidator(0)
+#             ]
+#         ),
+#         default=list,
+#         blank=True,
+#         help_text="Fuel cost in [$/MMBtu]"
+#     )
+
+#     macrs_option_years = models.IntegerField(
+#         default=MACRS_YEARS_CHOICES.ZERO,
+#         choices=MACRS_YEARS_CHOICES.choices,
+#         blank=True,
+#         null=True,
+#         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
+#     )
+
+#     macrs_bonus_pct = models.FloatField(
+#         default=0.0,
+#         validators=[
+#             MinValueValidator(0),
+#             MaxValueValidator(1)
+#         ],
+#         blank=True,
+#         null=True,
+#         help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
+#     )
+
+#     installed_cost_per_mmbtu_per_hour = models.FloatField(
+#         default=293000.0,
+#         validators=[
+#             MinValueValidator(0),
+#             MaxValueValidator(1.0e9)
+#         ],
+#         blank=True,
+#         null=True,
+#         help_text="Thermal power-based cost"
+#     )
+
+#     om_cost_per_mmbtu_per_hour = models.FloatField(
+#         default=2930.0,
+#         validators=[
+#             MinValueValidator(0),
+#             MaxValueValidator(1.0e9)
+#         ],
+#         blank=True,
+#         null=True,
+#         help_text="Thermal power-based fixed O&M cost"
+#     )
+
+#     om_cost_per_mmbtu = models.FloatField(
+#         default=0.0,
+#         validators=[
+#             MinValueValidator(0),
+#             MaxValueValidator(1.0e9)
+#         ],
+#         blank=True,
+#         null=True,
+#         help_text="Thermal energy-based variable O&M cost"
+#     )
+
+#     fuel_type = models.TextField(
+#         default=FUEL_TYPE_LIST.natural_gas,
+#         choices=FUEL_TYPE_LIST.choices,
+#         blank=True,
+#         null=True,
+#         help_text="Existing boiler fuel type, one of natural_gas, landfill_bio_gas, propane, diesel_oil, uranium"
+#     )
+
+#     can_supply_steam_turbine = models.BooleanField(
+#         default=True,
+#         blank=True,
+#         null=True,
+#         help_text="If the boiler can supply steam to the steam turbine for electric production"
+#     )
+
+#     # For custom validations within model.
+#     def clean(self):
+#         self.fuel_cost_per_mmbtu = scalar_to_vector(self.fuel_cost_per_mmbtu)
+
+# class BoilerOutputs(BaseModel, models.Model):
+
+#     key = "Boiler"
+
+#     meta = models.OneToOneField(
+#         APIMeta,
+#         on_delete=models.CASCADE,
+#         related_name="BoilerOutputs",
+#         primary_key=True
+#     )
+
+#     year_one_fuel_consumption_mmbtu = models.FloatField(null=True, blank=True)
+
+#     year_one_fuel_consumption_mmbtu_per_hour = ArrayField(
+#         models.FloatField(null=True, blank=True),
+#         default=list,
+#     )
+
+#     lifecycle_fuel_cost = models.FloatField(null=True, blank=True)
+#     lifecycle_per_unit_prod_om_costs = models.FloatField(null=True, blank=True)
+#     lifecycle_fuel_cost_bau = models.FloatField(null=True, blank=True)
+#     year_one_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
+#     year_one_fuel_cost = models.FloatField(null=True, blank=True)
+    
+#     thermal_to_tes_series_mmbtu_per_hour = ArrayField(
+#         models.FloatField(null=True, blank=True),
+#         default = list,
+#     )
+#     year_one_thermal_production_mmbtu_per_hour = ArrayField(
+#         models.FloatField(null=True, blank=True),
+#         default = list,
+#     )
+#     year_one_thermal_to_load_series_mmbtu_per_hour = ArrayField(
+#         models.FloatField(null=True, blank=True),
+#         default = list,
+#     )
+
+
+class SpaceHeatingLoadInputs(BaseModel, models.Model):
+    
+    key = "SpaceHeatingLoad"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="SpaceHeatingLoadInputs",
+        primary_key=True
+    )
+
+    possible_sets = [
+        ["fuel_loads_mmbtu_per_hour"],
+        ["doe_reference_name", "monthly_mmbtu"],
+        ["annual_mmbtu", "doe_reference_name"],
+        ["doe_reference_name"],
+        ["blended_doe_reference_names", "blended_doe_reference_percents"],
+        []
+    ]
+
+    DOE_REFERENCE_NAME = models.TextChoices('DOE_REFERENCE_NAME', (
+        'FastFoodRest '
+        'FullServiceRest '
+        'Hospital '
+        'LargeHotel '
+        'LargeOffice '
+        'MediumOffice '
+        'MidriseApartment '
+        'Outpatient '
+        'PrimarySchool '
+        'RetailStore '
+        'SecondarySchool '
+        'SmallHotel '
+        'SmallOffice '
+        'StripMall '
+        'Supermarket '
+        'Warehouse '
+        'FlatLoad '
+        'FlatLoad_24_5 '
+        'FlatLoad_16_7 '
+        'FlatLoad_16_5 '
+        'FlatLoad_8_7 '
+        'FlatLoad_8_5'
+    ))
+
+    annual_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        help_text=("Annual site space heating consumption, used "
+                   "to scale simulated default building load profile for the site's climate zone [MMBtu]")
+    )
+
+    doe_reference_name = models.TextField(
+        null=True,
+        blank=True,
+        choices=DOE_REFERENCE_NAME.choices,
+        help_text=("Simulated load profile from DOE Commercial Reference Buildings "
+                   "https://energy.gov/eere/buildings/commercial-reference-buildings")
+    )
+
+    monthly_mmbtu = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(MAX_BIG_NUMBER)
+            ],
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Monthly site space heating energy consumption in [MMbtu], used "
+                   "to scale simulated default building load profile for the site's climate zone")
+    )
+
+    fuel_loads_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        help_text=("Typical load over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,"
+                   "520 samples), or 15 minute (35,040 samples). All non-net load values must be greater than or "
+                   "equal to zero. "
+                   )
+    )
+
+    blended_doe_reference_names = ArrayField(
+        models.TextField(
+            choices=DOE_REFERENCE_NAME.choices,
+            blank=True,
+            null=True
+        ),
+        default=list,
+        blank=True,
+        help_text=("Used in concert with blended_doe_reference_percents to create a blended load profile from multiple "
+                   "DoE Commercial Reference Buildings.")
+    )
+
+    blended_doe_reference_percents = ArrayField(
+        models.FloatField(
+            null=True, blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1.0)
+            ],
+        ),
+        default=list,
+        blank=True,
+        help_text=("Used in concert with blended_doe_reference_names to create a blended load profile from multiple "
+                   "DoE Commercial Reference Buildings. Must sum to 1.0.")
+    )
+
+    '''
+    Latitude and longitude are passed on to SpaceHeating struct using the Site struct.
+    City is not used as an input here because it is found using find_ashrae_zone_city() when needed.
+    '''
+
+    def clean(self):
+        error_messages = {}
+
+        # possible sets for defining load profile
+        if not at_least_one_set(self.dict, self.possible_sets):
+            error_messages["required inputs"] = \
+                "Must provide at least one set of valid inputs from {}.".format(self.possible_sets)
+
+        if len(self.blended_doe_reference_names) > 0 and self.doe_reference_name == "":
+            if len(self.blended_doe_reference_names) != len(self.blended_doe_reference_percents):
+                error_messages["blended_doe_reference_names"] = \
+                    "The number of blended_doe_reference_names must equal the number of blended_doe_reference_percents."
+            if not math.isclose(sum(self.blended_doe_reference_percents),  1.0):
+                error_messages["blended_doe_reference_percents"] = "Sum must = 1.0."
+
+        if self.doe_reference_name != "" or \
+                len(self.blended_doe_reference_names) > 0:
+            self.year = 2017  # the validator provides an "info" message regarding this)
+
+        if error_messages:
+            raise ValidationError(error_messages)
+        
+        pass
+
+class DomesticHotWaterLoadInputs(BaseModel, models.Model):
+    # DHW
+    key = "DomesticHotWaterLoad"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="DomesticHotWaterLoadInputs",
+        primary_key=True
+    )
+
+    possible_sets = [
+        ["fuel_loads_mmbtu_per_hour"],
+        ["doe_reference_name", "monthly_mmbtu"],
+        ["annual_mmbtu", "doe_reference_name"],
+        ["doe_reference_name"],
+        [],
+        ["blended_doe_reference_names", "blended_doe_reference_percents"]
+    ]
+
+    DOE_REFERENCE_NAME = models.TextChoices('DOE_REFERENCE_NAME', (
+        'FastFoodRest '
+        'FullServiceRest '
+        'Hospital '
+        'LargeHotel '
+        'LargeOffice '
+        'MediumOffice '
+        'MidriseApartment '
+        'Outpatient '
+        'PrimarySchool '
+        'RetailStore '
+        'SecondarySchool '
+        'SmallHotel '
+        'SmallOffice '
+        'StripMall '
+        'Supermarket '
+        'Warehouse '
+        'FlatLoad '
+        'FlatLoad_24_5 '
+        'FlatLoad_16_7 '
+        'FlatLoad_16_5 '
+        'FlatLoad_8_7 '
+        'FlatLoad_8_5'
+    ))
+
+    annual_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        help_text=("Annual site DHW consumption, used "
+                   "to scale simulated default building load profile for the site's climate zone [MMBtu]")
+    )
+
+    doe_reference_name = models.TextField(
+        null=True,
+        blank=True,
+        choices=DOE_REFERENCE_NAME.choices,
+        help_text=("Simulated load profile from DOE Commercial Reference Buildings "
+                   "https://energy.gov/eere/buildings/commercial-reference-buildings")
+    )
+
+    monthly_mmbtu = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(MAX_BIG_NUMBER)
+            ],
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Monthly site DHW energy consumption in [MMbtu], used "
+                   "to scale simulated default building load profile for the site's climate zone")
+    )
+
+    fuel_loads_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        help_text=("Typical load over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,"
+                   "520 samples), or 15 minute (35,040 samples). All non-net load values must be greater than or "
+                   "equal to zero. "
+                   )
+    )
+
+    blended_doe_reference_names = ArrayField(
+        models.TextField(
+            choices=DOE_REFERENCE_NAME.choices,
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        help_text=("Used in concert with blended_doe_reference_percents to create a blended load profile from multiple "
+                   "DoE Commercial Reference Buildings.")
+    )
+
+    blended_doe_reference_percents = ArrayField(
+        models.FloatField(
+            null=True, blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1.0)
+            ],
+        ),
+        default=list,
+        blank=True,
+        help_text=("Used in concert with blended_doe_reference_names to create a blended load profile from multiple "
+                   "DoE Commercial Reference Buildings. Must sum to 1.0.")
+    )
+
+    '''
+    Latitude and longitude are passed on to SpaceHeating struct using the Site struct.
+    City is not used as an input here because it is found using find_ashrae_zone_city() when needed.
+    If a blank key is provided, then default DOE load profile from electricload is used [cross-clean]
+    '''
+
+    def clean(self):
+        error_messages = {}
+
+        # possible sets for defining load profile
+        if not at_least_one_set(self.dict, self.possible_sets):
+            error_messages["required inputs"] = \
+                "Must provide at least one set of valid inputs from {}.".format(self.possible_sets)
+
+        if len(self.blended_doe_reference_names) > 0 and self.doe_reference_name == "":
+            if len(self.blended_doe_reference_names) != len(self.blended_doe_reference_percents):
+                error_messages["blended_doe_reference_names"] = \
+                    "The number of blended_doe_reference_names must equal the number of blended_doe_reference_percents."
+            if not math.isclose(sum(self.blended_doe_reference_percents),  1.0):
+                error_messages["blended_doe_reference_percents"] = "Sum must = 1.0."
+
+        if self.doe_reference_name != "" or \
+                len(self.blended_doe_reference_names) > 0:
+            self.year = 2017  # the validator provides an "info" message regarding this)
+
+        if error_messages:
+            raise ValidationError(error_messages)
+        
+        pass
+
+# TODO Add domestic hot water input model.
 
 def get_input_dict_from_run_uuid(run_uuid:str):
     """
@@ -3387,5 +4094,30 @@ def get_input_dict_from_run_uuid(run_uuid:str):
 
     try: d["Wind"] = filter_none_and_empty_array(meta.WindInputs.dict)
     except: pass
-    
+
+    # try: d["Boiler"] = filter_none_and_empty_array(meta.BoilerInputs.dict)
+    # except: pass
+
+    try: d["ExistingBoiler"] = filter_none_and_empty_array(meta.ExistingBoilerInputs.dict)
+    except: pass
+
+    try: d["SpaceHeatingLoad"] = filter_none_and_empty_array(meta.SpaceHeatingLoadInputs.dict)
+    except: pass
+
+    try: d["DomesticHotWaterLoad"] = filter_none_and_empty_array(meta.DomesticHotWaterLoadInputs.dict)
+    except: pass
+
     return d
+
+'''
+If a scalar was provided where API expects a vector, extend it to 8760
+Upsampling handled in InputValidator.cross_clean
+'''
+def scalar_to_vector(vec:list):
+    if len(vec) == 1: # scalar length is provided
+        return vec * 8760
+    elif len(vec) == 12: # Monthly costs were provided
+        days_per_month = [31,28,31,30,31,30,31,31,30,31,30,31]
+        return numpy.repeat(vec, [i * 24 for i in days_per_month]).tolist()
+    else:
+        return vec # the vector len was not 1, handle it elsewhere

@@ -28,7 +28,7 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
 from job.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorageOutputs, ElectricTariffOutputs, SiteOutputs,\
-    ElectricUtilityOutputs, GeneratorOutputs, ElectricLoadOutputs, WindOutputs, FinancialInputs, ElectricUtilityInputs
+    ElectricUtilityOutputs, GeneratorOutputs, ElectricLoadOutputs, WindOutputs, FinancialInputs, ElectricUtilityInputs, ExistingBoilerOutputs
 import logging
 log = logging.getLogger(__name__)
 
@@ -58,6 +58,10 @@ def process_results(results: dict, run_uuid: str) -> None:
         GeneratorOutputs.create(meta=meta, **results["Generator"]).save()
     if "Wind" in results.keys():
         WindOutputs.create(meta=meta, **results["Wind"]).save()
+    # if "Boiler" in results.keys():
+    #     BoilerOutputs.create(meta=meta, **results["Boiler"]).save()
+    if "ExistingBoiler" in results.keys():
+        ExistingBoilerOutputs.create(meta=meta, **results["ExistingBoiler"]).save()
     # TODO process rest of results
 
 

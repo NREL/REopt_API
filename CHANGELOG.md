@@ -26,18 +26,26 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop
+## Develop - 2022-09-01
 ### Minor Updates 
 ##### Fixed
 - Require ElectricTariff key in inputs when **Settings.off_grid_flag** is false
 - Create and save **ElectricUtilityInputs** model if ElectricUtility key not provided in inputs when **Settings.off_grid_flag** is false, in order to use the default inputs in `job/models.py`
 - Added message to `messages()` to alert user if valid ElectricUtility input is provided when **Settings.off_grid_flag** is true
 ##### Changed
-- `job/models.py`: remove Generator `fuel_slope_gal_per_kwh` and `fuel_intercept_gal_per_hr` defaults based on size, keep defaults independent of size 
+- `job/models.py`: 
+    - remove Generator `fuel_slope_gal_per_kwh` and `fuel_intercept_gal_per_hr` defaults based on size, keep defaults independent of size 
+	- changed `get_input_dict_from_run_uuid` to accomodate new models
+	- changed **ElectricLoadInputs.wholesale_rate** to use `scalar_to_vector` function
 - `job/validators.py`: Align PV tilt and aziumth defaults with API v2 behavior, based on location and PV type
 ##### Added 
+- `0005_boilerinputs....` file used to add new models to the db
 - `job/` endpoint: Add inputs and validation to model off-grid wind 
 In `job/models.py`:
+- added **ExistingBoilerInputs** model
+- added **ExistingBoilerOutputs** model
+- added **SpaceHeatingLoadInputs** model
+- added `scalar_to_vector` to convert scalars of vector of 12 elements to 8760 elements
 - **GeneratorInputs** (must add to CHP and Boiler when implemented in v3)
     - added `emissions_factor_lb_<pollutant>_per_gal` for CO2, NOx, SO2, and PM25
     - add `fuel_renewable_energy_pct`
@@ -51,16 +59,24 @@ In `job/models.py`:
 - **FinancialInputs**
     - add `CO2_cost_per_tonne`, `CO2_cost_escalation_pct`
     - add `<pollutant>_grid_cost_per_tonne`, `<pollutant>_onsite_fuelburn_cost_per_tonne`, and `<pollutant>_cost_escalation_pct` for NOx, SO2, and PM25
+- **FinancialOutputs**
+    - add **lifecycle_fuel_costs_after_tax** 
 - **SiteOutputs**
     - add `renewable_electricity_pct`, `total_renewable_energy_pct`
     - add `year_one_emissions_tonnes_<pollutant>`, `year_one_emissions_from_fuelburn_tonnes_<pollutant>`, `lifecycle_emissions_tonnes_<pollutant>`, and `lifecycle_emissions_from_fuelburn_tonnes_<pollutant>` for CO2, NOx, SO2, and PM25
 - **FinancialOutputs**
     - add `breakeven_cost_of_emissions_reduction_per_tonnes_CO2`
+In `job/process_results.py`: 
+- add **ExistingBoilerOutputs**
 In `job/test/test_job_endpoint.py`: 
 - test that AVERT and EASIUR defaults for emissions inputs not provided by user are passed back from REopt.jl and saved in database
+- add a testcase to validate that API is accepting/returning fields related to new models.
+In `'job/validators.py`:
+- add new input models
 In `job/views.py`:
 - Added **SiteInputs** to `help` endpoint
 - Added **SiteOutputs** to `outputs` endpoint
+- add new input/output models to properly save the inputs/outputs
 
 ## v2.1.0
 ### Minor Updates 
