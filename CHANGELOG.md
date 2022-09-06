@@ -27,7 +27,7 @@ Classify the change according to the following categories:
     ### Patches
 
 
-## Develop - 2022-09-01
+## Develop - 2022-09-06
 ### Minor Updates 
 ##### Fixed
 - Require ElectricTariff key in inputs when **Settings.off_grid_flag** is false
@@ -43,6 +43,8 @@ Classify the change according to the following categories:
 - `0005_boilerinputs....` file used to add new models to the db
 - `job/` endpoint: Add inputs and validation to model off-grid wind 
 In `job/models.py`:
+- added **HotThermalStorageInputs** model
+- added **HotThermalStorageOutputs** model
 - added **ExistingBoilerInputs** model
 - added **ExistingBoilerOutputs** model
 - added **SpaceHeatingLoadInputs** model
@@ -68,6 +70,7 @@ In `job/models.py`:
 - **FinancialOutputs**
     - add `breakeven_cost_of_emissions_reduction_per_tonnes_CO2`
 In `job/process_results.py`: 
+- add **HotThermalStorageOutputs**
 - add **ExistingBoilerOutputs**
 In `job/test/test_job_endpoint.py`: 
 - test that AVERT and EASIUR defaults for emissions inputs not provided by user are passed back from REopt.jl and saved in database
