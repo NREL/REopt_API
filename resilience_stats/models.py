@@ -31,10 +31,152 @@ import sys
 import logging
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
+from django.core.validators import MaxValueValidator, MinValueValidator
 from reo.models import ScenarioModel
 from reo.exceptions import SaveToDatabase
 log = logging.getLogger(__name__)
 
+class ERPInputs(models.Model):
+
+    run_uuid = models.UUIDField(unique=True)
+ 
+    generator_operational_availability = models.FloatField(
+        default=0.9998,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        help_text=("Fraction of year generators not down for maintenance")
+    )
+    generator_failure_to_start = models.FloatField(
+        default=0.0066,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        help_text=("Chance of generator starting given outage")
+    )
+    generator_failure_to_run = models.FloatField(
+        default=0.00157,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        help_text=("Chance of generator failing in each hour of outage")
+    )
+    num_generators = models.IntegerField(
+        default=1,
+        validators=[
+            MinValueValidator(1),
+        ],
+        help_text=("Number of generators")
+    )
+    generator_size_kw = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        help_text=("Backup generator capacity")
+    )
+    battery_size_kw = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        help_text=("Battery kW power capacity")
+    )
+    battery_size_kwh = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        help_text=("Battery kWh energy capacity")
+    )
+    starting_battery_soc_kwh = ArrayField(
+        models.FloatField(
+            blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(batt_kwh)
+            ]
+        ),
+        help_text=("Battery kWh state of charge when an outage begins, at each timestep. Must be hourly (8,760 samples).")
+    )
+    battery_charge_efficiency = models.FloatField(
+        default=0.948,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        help_text=("Efficiency of charging battery")
+    )
+    battery_discharge_efficiency = models.FloatField(
+        default=0.948,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        help_text=("Efficiency of discharging battery")
+    )
+    num_battery_bins = models.IntegerField(
+        default=100,
+        validators=[
+            MinValueValidator(1),
+        ],
+        help_text=("Number of bins for modeling battery state of charge")
+    )
+    pv_size_kw = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        help_text=("PV system capacity")
+    )
+    pv_production_factor_series = ArrayField(
+        models.FloatField(
+            blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1)
+            ]
+        ),
+        help_text=("PV system output at each timestep, normalized to PV system size. Must be hourly (8,760 samples).")
+    )
+    chp_size_kw = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        help_text=("CHP system electric capacity")
+    )
+    chp_production_factor_series = ArrayField(
+        models.FloatField(
+            blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1)
+            ]
+        ),
+        help_text=("CHP system electric output at each timestep, normalized to CHP system size. Must be hourly (8,760 samples).")
+    )
+    max_outage_duration = models.IntegerField(
+        default=96,
+        validators=[
+            MinValueValidator(1),
+        ],
+        help_text=("Maximum outage duration modeled")
+    )
+    critical_loads_kw = ArrayField(
+        models.FloatField(blank=True),
+        help_text=("Critical load during an outage. Must be hourly (8,760 samples). All non-net load values must be greater than or equal to zero.")
+    )
+
+    
 
 class ResilienceModel(models.Model):
 
