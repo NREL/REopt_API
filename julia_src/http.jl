@@ -108,6 +108,27 @@ function reopt(req::HTTP.Request)
     end
 end
 
+function erp(req::HTTP.Request)
+	erp_inputs = JSON.parse(String(req.body))
+
+    @info "Starting ERP..."
+    error_response = Dict()
+    results = Dict()
+    try
+		reoptjl.process_reliability_results(reoptjl.return_backup_reliability(; erp_inputs... ))
+    catch e
+        @error "Something went wrong in the ERP Julia code!" exception=(e, catch_backtrace())
+        error_response["error"] = sprint(showerror, e)
+    end
+    GC.gc()
+    if isempty(error_response)
+        @info "ERP ran successfully."
+        return HTTP.Response(200, JSON.json(results))
+    else
+        return HTTP.Response(500, JSON.json(error_response))
+    end
+end
+
 function ghpghx(req::HTTP.Request)
     inputs_dict = JSON.parse(String(req.body))
     @info "Starting GHPGHX" #with timeout of $(timeout) seconds..."
