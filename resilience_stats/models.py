@@ -177,6 +177,38 @@ class ERPInputs(models.Model):
     )
 
     
+class ERPOutputs(models.Model):
+
+    erp_inputs = models.OneToOneField(
+        ERPInputs,
+        on_delete=models.CASCADE,
+        primary_key=True,
+        related_name="ERPInputs"
+    )
+    mean_marginal_duration_survival_probability = ArrayField(
+        models.FloatField(blank=True),
+        help_text=("The mean, calculated over outages starting at each hour of the year, of the marginal probability of surviving each hour of max_outage_duration.")
+    )
+    min_marginal_duration_survival_probability = ArrayField(
+        models.FloatField(blank=True),
+        help_text=("The minimum, calculated over outages starting at each hour of the year, of the marginal probability of surviving each hour of max_outage_duration.")
+    )
+    mean_cumulative_duration_survival_probability = ArrayField(
+        models.FloatField(blank=True),
+        help_text=("The mean, calculated over outages starting at each hour of the year, of the cumulative probability of surviving up to and including each hour of max_outage_duration.")
+    )
+    min_cumulative_duration_survival_probability = ArrayField(
+        models.FloatField(blank=True),
+        help_text=("The minimum, calculated over outages starting at each hour of the year, of the cumulative probability of surviving up to and including each hour of max_outage_duration.")
+    )
+    cumulative_outage_survival_probability = ArrayField(
+        models.FloatField(blank=True),
+        help_text=("The probability of surviving the full max_outage_duration, for outages starting at each hour of the year.")
+    )
+    mean_cumulative_outage_survival_probability = models.FloatField(
+        blank=True,
+        help_text=("The mean, calculated over outages starting at each hour of the year, of the probability of surviving the full max_outage_duration.")
+    )
 
 class ResilienceModel(models.Model):
 
