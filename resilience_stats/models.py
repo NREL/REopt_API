@@ -36,9 +36,26 @@ from reo.models import ScenarioModel
 from reo.exceptions import SaveToDatabase
 log = logging.getLogger(__name__)
 
-class ERPInputs(models.Model):
+class ERPMeta(models.Model):
 
     run_uuid = models.UUIDField(unique=True)
+    user_uuid = models.TextField(
+        blank=True,
+        default="",
+        help_text="The assigned unique ID of a signed in REopt user."
+    )
+    job_type = models.TextField(
+        default='developer.nrel.gov'
+    )
+    status = models.TextField(blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+    reopt_version = models.TextField(
+        blank=True,
+        default="",
+        help_text="Version number of the REopt Julia package that is used to calculate reliability."
+    )
+
+class ERPInputs(models.Model):
  
     generator_operational_availability = models.FloatField(
         default=0.9998,
@@ -254,3 +271,4 @@ class ResilienceModel(models.Model):
             err.save_to_db()
             raise err
         return rm
+
