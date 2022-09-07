@@ -272,3 +272,18 @@ class ResilienceModel(models.Model):
             raise err
         return rm
 
+def get_erp_input_dict_from_run_uuid(run_uuid:str):
+    """
+    Construct the input dict for REopt backup reliability
+    """
+    meta = ERPMeta.objects.select_related("ERPInputs").get(run_uuid=run_uuid)
+
+    def filter_none_and_empty_array(d:dict):
+        return {k: v for (k, v) in d.items() if v not in [None, [], {}]}
+
+    d = dict()
+    d = filter_none_and_empty_array(meta.ERPInputs.dict)
+    d.pop('reopt_run_uuid',None) # Remove REopt run_uuid from inputs dict because it is not used by the REopt julia package
+    d["user_uuid"] = meta.user_uuid # Add user_uuid for error handling in run_erp_task
+
+    return d
