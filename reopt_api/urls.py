@@ -74,7 +74,6 @@ urlpatterns = [
     re_path(r'^_health/?$', views.health, name='health'),
     
     path('v1/', include('reo.urls')),
-    path('v2/', include('reo.urls_v2')),
     path('v1/', include('resilience_stats.urls')),
     path('v1/', include('proforma.urls')),
     path('v1/', include('load_builder.urls')),
@@ -85,8 +84,14 @@ urlpatterns = [
     re_path(r'', include(v1_api.urls), name='ghpghx'),
 
     re_path(r'', include(v2_api.urls), name='job'),
+    re_path(r'', include(v2_api.urls), name='outagesimjob'),
+    re_path(r'', include(v2_api.urls), name='ghpghx'),
+    path('v2/', include('reo.urls_v2')),
     path('v2/', include('resilience_stats.urls')),
     path('v2/', include('proforma.urls')),
+    path('v2/', include('load_builder.urls')),
+    path('v2/', include('summary.urls')),
+    path('v2/', include('ghpghx.urls')),
 
     path('stable/', include('reo.urls_v2')),
     path('stable/', include('resilience_stats.urls')),
@@ -96,6 +101,7 @@ urlpatterns = [
     path('stable/', include('ghpghx.urls')),
     re_path(r'', include(stable_api.urls), name='job'),
     re_path(r'', include(stable_api.urls), name='outagesimjob'),
+    re_path(r'', include(stable_api.urls), name='ghpghx'),
 
     path('dev/', include('job.urls')),
     re_path(r'', include(dev_api.urls), name='job'),
