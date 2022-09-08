@@ -56,7 +56,7 @@ class ERPMeta(models.Model):
     )
 
 class ERPInputs(models.Model):
-    
+
     meta = models.OneToOneField(
         ERPMeta,
         on_delete=models.CASCADE,
@@ -177,16 +177,6 @@ class ERPInputs(models.Model):
             MaxValueValidator(1.0e9)
         ],
         help_text=("CHP system electric capacity")
-    )
-    chp_production_factor_series = ArrayField(
-        models.FloatField(
-            blank=True,
-            validators=[
-                MinValueValidator(0),
-                MaxValueValidator(1)
-            ]
-        ),
-        help_text=("CHP system electric output at each timestep, normalized to CHP system size. Must be hourly (8,760 samples).")
     )
     max_outage_duration = models.IntegerField(
         default=96,
