@@ -83,15 +83,15 @@ urlpatterns = [
     re_path(r'', include(v1_api.urls), name='outagesimjob'),
     re_path(r'', include(v1_api.urls), name='ghpghx'),
 
-    re_path(r'', include(v2_api.urls), name='job'),
-    re_path(r'', include(v2_api.urls), name='outagesimjob'),
-    re_path(r'', include(v2_api.urls), name='ghpghx'),
     path('v2/', include('reo.urls_v2')),
     path('v2/', include('resilience_stats.urls')),
     path('v2/', include('proforma.urls')),
     path('v2/', include('load_builder.urls')),
     path('v2/', include('summary.urls')),
     path('v2/', include('ghpghx.urls')),
+    re_path(r'', include(v2_api.urls), name='job'),
+    re_path(r'', include(v2_api.urls), name='outagesimjob'),
+    re_path(r'', include(v2_api.urls), name='ghpghx'),
 
     path('stable/', include('reo.urls_v2')),
     path('stable/', include('resilience_stats.urls')),
