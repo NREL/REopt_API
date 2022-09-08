@@ -4304,7 +4304,7 @@ class DomesticHotWaterLoadInputs(BaseModel, models.Model):
     )
 
     '''
-    Latitude and longitude are passed on to SpaceHeating struct using the Site struct.
+    Latitude and longitude are passed on to DomesticHotWater struct using the Site struct.
     City is not used as an input here because it is found using find_ashrae_zone_city() when needed.
     If a blank key is provided, then default DOE load profile from electricload is used [cross-clean]
     '''
