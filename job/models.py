@@ -3374,14 +3374,14 @@ class Message(BaseModel, models.Model):
 class CoolingLoadInputs(BaseModel, models.Model):
     
     key = "CoolingLoad"
-	meta = models.OneToOneField(
+    meta = models.OneToOneField(
         APIMeta,
         on_delete=models.CASCADE,
         related_name="CoolingLoadInputs",
         primary_key=True
     )
 	
-	possible_sets = [
+    possible_sets = [
         ["thermal_loads_ton"],
         ["doe_reference_name"],
         ["blended_doe_reference_names"],
@@ -3394,7 +3394,7 @@ class CoolingLoadInputs(BaseModel, models.Model):
         ["monthly_fractions_of_electric_load"]
 	]
 	
-	DOE_REFERENCE_NAME = models.TextChoices('DOE_REFERENCE_NAME', (
+    DOE_REFERENCE_NAME = models.TextChoices('DOE_REFERENCE_NAME', (
         'FastFoodRest '
         'FullServiceRest '
         'Hospital '
@@ -3553,8 +3553,8 @@ class CoolingLoadInputs(BaseModel, models.Model):
         if 12 > len(self.monthly_tonhour) > 0:
             error_messages["required inputs"] = \
                 "Must provide 12 elements as inputs to monthly_tonhour. Received {}.".format(self.monthly_tonhour)
-				
-	    if error_messages:
+
+        if error_messages:
             raise ValidationError(error_messages)
         
         pass
@@ -3663,14 +3663,14 @@ class ExistingChillerOutputs(BaseModel, models.Model):
 class ExistingBoilerInputs(BaseModel, models.Model):
     
     key = "ExistingBoiler"
-	meta = models.OneToOneField(
+    meta = models.OneToOneField(
         APIMeta,
         on_delete=models.CASCADE,
 		related_name="ExistingBoilerInputs",
         primary_key=True
     )
 	
-	PRODUCTION_TYPE = models.TextChoices('PRODUCTION_TYPE', (
+    PRODUCTION_TYPE = models.TextChoices('PRODUCTION_TYPE', (
         'steam',
         'hot_water'
     ))
@@ -4300,7 +4300,7 @@ class DomesticHotWaterLoadInputs(BaseModel, models.Model):
         default=list,
         blank=True,
         help_text=("Used in concert with blended_doe_reference_names to create a blended load profile from multiple "
-                   "DoE Commercial Reference Buildings to simulate buildings/campuses. Must sum to 1.0."
+                   "DoE Commercial Reference Buildings to simulate buildings/campuses. Must sum to 1.0.")
     )
 
     '''

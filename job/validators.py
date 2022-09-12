@@ -96,7 +96,7 @@ class InputValidator(object):
             GeneratorInputs,
             WindInputs,
             CoolingLoadInputs,
-            ExistingChillerInputs
+            ExistingChillerInputs,
             ExistingBoilerInputs,
             SpaceHeatingLoadInputs,
             DomesticHotWaterLoadInputs
