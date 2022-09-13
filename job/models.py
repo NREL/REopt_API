@@ -635,7 +635,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text=("Nominal energy offtaker discount rate. In single ownership model the offtaker is also the "
                    "generation owner.")
     )
-    offtaker_tax_pct = models.FloatField(
+    offtaker_tax_rate_fraction = models.FloatField(
         default=0.26,
         validators=[
             MinValueValidator(0),
@@ -663,7 +663,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text=("Nominal generation owner discount rate. Used for two party financing model. In two party ownership "
                    "model the offtaker does not own the generator(s).")
     )
-    owner_tax_pct = models.FloatField(
+    owner_tax_rate_fraction = models.FloatField(
         default=0.26,
         validators=[
             MinValueValidator(0),
@@ -850,7 +850,7 @@ class FinancialInputs(BaseModel, models.Model):
 
     def clean(self):
         if not self.third_party_ownership:
-            self.owner_tax_pct = self.offtaker_tax_pct
+            self.owner_tax_rate_fraction = self.offtaker_tax_rate_fraction
             self.owner_discount_rate_fraction = self.offtaker_discount_rate_fraction
 
 
