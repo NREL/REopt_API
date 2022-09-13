@@ -29,6 +29,7 @@
 # *********************************************************************************
 import json
 import sys
+import uuid
 
 from celery import shared_task
 from django.core.exceptions import ValidationError
@@ -39,10 +40,14 @@ from tastypie.exceptions import ImmediateHttpResponse
 from tastypie.resources import ModelResource
 from tastypie.serializers import Serializer
 from tastypie.validation import Validation
+from celery.utils.log import get_task_logger
+logger = get_task_logger(__name__)
 
-from reo.exceptions import SaveToDatabase
+from reo.exceptions import SaveToDatabase, UnexpectedError, REoptFailedToStartError
+
 from reo.models import ScenarioModel, FinancialModel
-from resilience_stats.models import ResilienceModel
+from job.models import APIMeta, GeneratorOutputs, ElectricStorageInputs, ElectricStorageOutputs, PVOutputs, ElectricLoadInputs#, CHPOutputs
+from resilience_stats.models import ResilienceModel, ERPMeta, ERPInputs, ERPOutputs, get_erp_input_dict_from_run_uuid
 from resilience_stats.validators import validate_run_uuid
 from resilience_stats.views import run_outage_sim
 
@@ -124,6 +129,38 @@ class OutageSimJob(ModelResource):
 
         return bundle
 
+@shared_task
+def run_erp_task(run_uuid):
+    name = 'run_erp_task'
+    data = get_erp_input_dict_from_run_uuid(run_uuid)
+
+    user_uuid = data.get('user_uuid')
+    data.pop('user_uuid',None) # Remove user uuid from inputs dict to avoid downstream errors
+
+    logger.info("Running ERP tool ...")
+    try:
+        julia_host = os.environ.get('JULIA_HOST', "julia")
+        response = requests.post("http://" + julia_host + ":8081/erp/", json=data)
+        response_json = response.json()
+        if response.status_code == 500:
+            raise REoptFailedToStartError(task=name, message=response_json["error"], run_uuid=run_uuid, user_uuid=user_uuid)
+
+    except Exception as e:
+        if isinstance(e, REoptFailedToStartError):
+            raise e
+
+        if isinstance(e, requests.exceptions.ConnectionError):  # Julia server down
+            raise REoptFailedToStartError(task=name, message="Julia server is down.", run_uuid=run_uuid, user_uuid=user_uuid)
+
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        logger.error("ERP raised an unexpected error: UUID: " + str(run_uuid))
+        raise UnexpectedError(exc_type, exc_value, traceback.format_tb(exc_traceback), task=name, run_uuid=run_uuid,
+                              user_uuid=user_uuid)
+    else:
+        logger.info("ERP run successful.")
+
+    process_erp_results(response_json, run_uuid)
+    return True
 
 @shared_task
 def run_outage_sim_task(scenariomodel_id, run_uuid, bau):
