@@ -625,7 +625,7 @@ class FinancialInputs(BaseModel, models.Model):
         blank=True,
         help_text="Annual nominal utility electricity cost escalation rate."
     )
-    offtaker_discount_pct = models.FloatField(
+    offtaker_discount_rate_fraction = models.FloatField(
         default=0.083,
         validators=[
             MinValueValidator(0),
@@ -653,7 +653,7 @@ class FinancialInputs(BaseModel, models.Model):
         blank=True,
         help_text="Annual nominal O&M cost escalation rate"
     )
-    owner_discount_pct = models.FloatField(
+    owner_discount_rate_fraction = models.FloatField(
         default=0.083,
         validators=[
             MinValueValidator(0),
@@ -851,7 +851,7 @@ class FinancialInputs(BaseModel, models.Model):
     def clean(self):
         if not self.third_party_ownership:
             self.owner_tax_pct = self.offtaker_tax_pct
-            self.owner_discount_pct = self.offtaker_discount_pct
+            self.owner_discount_rate_fraction = self.offtaker_discount_rate_fraction
 
 
 class FinancialOutputs(BaseModel, models.Model):
@@ -1262,7 +1262,7 @@ class ElectricLoadInputs(BaseModel, models.Model):
     #               "True, the avoided outage costs are calculated for a single outage occurring in the first year of "
     #               "the analysis_years. If False, the outage event is assumed to be an average outage event that occurs "
     #               "every year of the analysis period. In the latter case, the avoided outage costs for one year are "
-    #               "escalated and discounted using the escalation_rate_fraction and offtaker_discount_pct to account for an "
+    #               "escalated and discounted using the escalation_rate_fraction and offtaker_discount_rate_fraction to account for an "
     #               "annually recurring outage. (Average outage durations for certain utility service areas can be "
     #               "estimated using statistics reported on EIA form 861.)"
     # )

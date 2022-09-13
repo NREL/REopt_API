@@ -22,8 +22,8 @@
     "escalation_rate_fraction": 0.026,
     "owner_tax_pct": 0.02,
     "offtaker_tax_pct": 0.4,
-    "owner_discount_pct": 0.02,
-    "offtaker_discount_pct": 0.081,
+    "owner_discount_rate_fraction": 0.02,
+    "offtaker_discount_rate_fraction": 0.081,
     "analysis_years": 20
   },
   "ElectricLoad": {
