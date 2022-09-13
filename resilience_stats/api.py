@@ -55,6 +55,100 @@ from resilience_stats.views import run_outage_sim
 # POST data:{"run_uuid": UUID, "bau": True}
 
 
+class ERPJob(ModelResource):
+
+    class Meta:
+        resource_name = 'erp'
+        allowed_methods = ['post']
+        detail_allowed_methods = []
+        authorization = ReadOnlyAuthorization()
+        serializer = Serializer(formats=['json'])
+        always_return_data = True
+        validation = Validation()
+        object_class = None
+        
+    def detail_uri_kwargs(self, bundle_or_obj):
+        kwargs = {}
+
+        if isinstance(bundle_or_obj, Bundle):
+            kwargs['pk'] = bundle_or_obj.obj.id
+        else:
+            kwargs['pk'] = bundle_or_obj['id']
+
+        return kwargs
+
+    def get_object_list(self, request):
+        return [request]
+
+    def obj_get_list(self, bundle, **kwargs):
+        return self.get_object_list(bundle.request)
+
+    def obj_create(self, bundle, **kwargs):
+        erp_run_uuid = str(uuid.uuid4())
+
+        meta = {
+            "run_uuid": erp_run_uuid,
+            "reopt_version": "0.18.0",
+            "status": "validating..." #TODO replace
+        }
+        if bundle.request.META.get('HTTP_X_API_USER_ID', False):
+            if bundle.request.META.get('HTTP_X_API_USER_ID', '') == '6f09c972-8414-469b-b3e8-a78398874103':
+                meta["job_type"] = 'REopt Web Tool'
+            else:
+                meta["job_type"] = 'developer.nrel.gov'
+        else:
+            meta["job_type"] = 'Internal NREL'
+        test_case = bundle.request.META.get('HTTP_USER_AGENT','')
+        if test_case.startswith('check_http/'):
+            meta["job_type"] = 'Monitoring'
+        #TODO: make one line
+        meta = ERPMeta.create(**meta) 
+        meta.save()
+
+        reopt_run_uuid = bundle.data.get("reopt_run_uuid", None)
+        try:
+            validate_run_uuid(reopt_run_uuid)
+        except ValidationError as err:
+            raise ImmediateHttpResponse(HttpResponse(json.dumps({"Error": str(err.message)}), status=400))
+
+        if reopt_run_uuid is not None:
+            # Get inputs from a REopt run in database
+            try:
+                reopt_run_meta = APIMeta.objects.select_related(
+                    "GeneratorOutputs",
+                    "ElectricStorageInputs",
+                    "ElectricStorageOutputs",
+                    "PVOutputs", 
+                    "CHPOutputs",
+                    "ElectricLoadInputs",
+                ).get(run_uuid=reopt_run_uuid)
+                #TODO: use to fill in inputs not provided, like:
+                #if bundle.data['generator_size_kw'] exists and is not none
+                #bundle.data['generator_size_kw'] = reopt_run_meta.GeneratorOutputs.size_kw
+                #create a helper function that returns all the inputs that could come from REopt?
+                #do all of this stuff in clean or save django methods?
+            except:
+                # Handle non-existent REopt runs
+                msg = "Invalid run_uuid {}, REopt run does not exist.".format(reopt_run_uuid)
+                raise ImmediateHttpResponse(HttpResponse(json.dumps({"Error": msg}), content_type='application/json', status=404))
+
+        try:
+            erpinputs = ERPInputs.create(**bundle.data)
+            erpinputs.clean_fields()
+            erpinputs.clean()
+            erpinputs.save()
+
+            run_erp_task.delay(erp_run_uuid)
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            raise ImmediateHttpResponse(HttpResponse(json.dumps({"error": exc_value}),
+                                        content_type='application/json',
+                                        status=500))  # internal server error
+
+        raise ImmediateHttpResponse(HttpResponse(json.dumps({'run_uuid': erp_run_uuid}),
+                                    content_type='application/json', status=201))
+
+
 class OutageSimJob(ModelResource):
     class Meta:
         resource_name = 'outagesimjob'
