@@ -87,8 +87,8 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
             },
             "Financial": {
                 "elec_cost_escalation_rate_fraction": 0.026,
-                "offtaker_discount_pct": 0.081,
-                "owner_discount_pct": 0.081,
+                "offtaker_discount_rate_fraction": 0.081,
+                "owner_discount_rate_fraction": 0.081,
                 "analysis_years": 20,
                 "offtaker_tax_pct": 0.4,
                 "owner_tax_pct": 0.4,
