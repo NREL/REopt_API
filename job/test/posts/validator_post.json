@@ -18,8 +18,8 @@
     "roof_squarefeet": 500
   },
   "Financial": {
-    "om_cost_escalation_pct": 0.025,
-    "escalation_pct": 0.026,
+    "om_cost_escalation_rate_fraction": 0.025,
+    "escalation_rate_fraction": 0.026,
     "owner_tax_pct": 0.02,
     "offtaker_tax_pct": 0.4,
     "owner_discount_pct": 0.02,
