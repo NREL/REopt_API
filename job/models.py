@@ -616,7 +616,7 @@ class FinancialInputs(BaseModel, models.Model):
         blank=True,
         help_text="Analysis period in years. Must be integer."
     )
-    elec_cost_escalation_pct = models.FloatField(
+    elec_cost_escalation_rate_fraction = models.FloatField(
         default=0.023,
         validators=[
             MinValueValidator(-1),
@@ -644,7 +644,7 @@ class FinancialInputs(BaseModel, models.Model):
         blank=True,
         help_text="Host tax rate"
     )
-    om_cost_escalation_pct = models.FloatField(
+    om_cost_escalation_rate_fraction = models.FloatField(
         default=0.025,
         validators=[
             MinValueValidator(-1),
@@ -737,7 +737,7 @@ class FinancialInputs(BaseModel, models.Model):
         default=51.0,
         help_text=("Social Cost of CO2 in the first year of the analysis. Units are US dollars per metric ton of CO2. The default of $51/t is the 2020 value (using a 3 pct discount rate) estimated by the U.S. Interagency Working Group on Social Cost of Greenhouse Gases.")
     )
-    CO2_cost_escalation_pct = models.FloatField(
+    CO2_cost_escalation_rate_fraction = models.FloatField(
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -801,7 +801,7 @@ class FinancialInputs(BaseModel, models.Model):
         null=True,
         help_text=("Public health cost of PM2.5 from onsite fuelburn in the first year of the analysis. Units are US dollars per metric ton. Default values for the U.S. obtained from the EASIUR model.")
     )
-    NOx_cost_escalation_pct = models.FloatField(
+    NOx_cost_escalation_rate_fraction = models.FloatField(
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -810,7 +810,7 @@ class FinancialInputs(BaseModel, models.Model):
         null=True,
         help_text=("Annual nominal escalation rate of the public health cost of 1 tonne of NOx emissions (as a decimal). The default value is calculated from the EASIUR model for a height of 150m.")
     )
-    SO2_cost_escalation_pct = models.FloatField(
+    SO2_cost_escalation_rate_fraction = models.FloatField(
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -819,7 +819,7 @@ class FinancialInputs(BaseModel, models.Model):
         null=True,
         help_text=("Annual nominal escalation rate of the public health cost of 1 tonne of SO2 emissions (as a decimal). The default value is calculated from the EASIUR model for a height of 150m.")
     )
-    PM25_cost_escalation_pct = models.FloatField(
+    PM25_cost_escalation_rate_fraction = models.FloatField(
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -829,7 +829,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text=("Annual nominal escalation rate of the public health cost of 1 tonne of PM2.5 emissions (as a decimal). The default value is calculated from the EASIUR model for a height of 150m.")
     )
 
-    # boiler_fuel_escalation_pct = models.FloatField(
+    # boiler_fuel_escalation_rate_fraction = models.FloatField(
     #     default=0.034,
     #     validators=[
     #         MinValueValidator(-1),
@@ -838,7 +838,7 @@ class FinancialInputs(BaseModel, models.Model):
     #     blank=True,
     #     help_text=("Annual nominal boiler fuel cost escalation rate")
     # )
-    # chp_fuel_escalation_pct = models.FloatField(
+    # chp_fuel_escalation_rate_fraction = models.FloatField(
     #     default=0.034,
     #     validators=[
     #         MinValueValidator(-1),
@@ -1262,7 +1262,7 @@ class ElectricLoadInputs(BaseModel, models.Model):
     #               "True, the avoided outage costs are calculated for a single outage occurring in the first year of "
     #               "the analysis_years. If False, the outage event is assumed to be an average outage event that occurs "
     #               "every year of the analysis period. In the latter case, the avoided outage costs for one year are "
-    #               "escalated and discounted using the escalation_pct and offtaker_discount_pct to account for an "
+    #               "escalated and discounted using the escalation_rate_fraction and offtaker_discount_pct to account for an "
     #               "annually recurring outage. (Average outage durations for certain utility service areas can be "
     #               "estimated using statistics reported on EIA form 861.)"
     # )

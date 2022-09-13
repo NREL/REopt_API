@@ -86,13 +86,13 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
                 "emissions_factor_series_lb_NOx_per_kwh": 1
             },
             "Financial": {
-                "elec_cost_escalation_pct": 0.026,
+                "elec_cost_escalation_rate_fraction": 0.026,
                 "offtaker_discount_pct": 0.081,
                 "owner_discount_pct": 0.081,
                 "analysis_years": 20,
                 "offtaker_tax_pct": 0.4,
                 "owner_tax_pct": 0.4,
-                "om_cost_escalation_pct": 0.025
+                "om_cost_escalation_rate_fraction": 0.025
             }
         }
 
@@ -119,7 +119,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         self.assertIsNotNone(updated_inputs["ElectricUtility"]["emissions_factor_series_lb_CO2_per_kwh"])
         self.assertIsNotNone(updated_inputs["Financial"]["NOx_grid_cost_per_tonne"])
         self.assertIsNotNone(updated_inputs["Financial"]["SO2_onsite_fuelburn_cost_per_tonne"])
-        self.assertIsNotNone(updated_inputs["Financial"]["PM25_cost_escalation_pct"])
+        self.assertIsNotNone(updated_inputs["Financial"]["PM25_cost_escalation_rate_fraction"])
 
     def test_off_grid_defaults(self):
         """
