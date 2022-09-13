@@ -115,7 +115,7 @@ function erp(req::HTTP.Request)
     error_response = Dict()
     results = Dict()
     try
-		reoptjl.process_reliability_results(reoptjl.return_backup_reliability(; erp_inputs... ))
+		reoptjl.backup_reliability(erp_inputs)
     catch e
         @error "Something went wrong in the ERP Julia code!" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
