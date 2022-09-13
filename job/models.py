@@ -59,7 +59,7 @@ class MACRS_YEARS_CHOICES(models.IntegerChoices):
     SEVEN = 7
 
 FUEL_DEFAULTS = {
-    "fuel_renewable_energy_pct" : {
+    "fuel_renewable_energy_fraction" : {
         "natural_gas" : 0.0,
         "landfill_bio_gas" : 1.0,
         "propane" : 0.0,
@@ -387,7 +387,7 @@ class SiteOutputs(BaseModel, models.Model):
                   "Calculated as total annual RE electric generation, minus storage losses and curtailment, with the user selecting whether exported renewable generation is included). "
                   )
     )
-    renewable_electricity_pct = models.FloatField(
+    renewable_electricity_fraction = models.FloatField(
         null=True, blank=True,
         help_text=(
                   "Portion of electricity consumption (incl. electric heating/cooling loads) that is derived from on-site renewable resource generation."
@@ -395,7 +395,7 @@ class SiteOutputs(BaseModel, models.Model):
                   "divided by total annual electric consumption."
                   )
     )
-    total_renewable_energy_pct = models.FloatField(
+    total_renewable_energy_fraction = models.FloatField(
         null=True, blank=True,
         help_text=(
                   "Portion of annual total energy consumption that is derived from on-site renewable resource generation."
@@ -477,7 +477,7 @@ class SiteOutputs(BaseModel, models.Model):
                   "Calculated as total RE electric generation in the BAU case, minus storage losses and curtailment, with the user selecting whether exported renewable generation is included). "
                   )
     )
-    renewable_electricity_pct_bau = models.FloatField(
+    renewable_electricity_fraction_bau = models.FloatField(
         null=True, blank=True,
         help_text=(
                   "Electricity consumption (incl. electric heating/cooling loads) that is derived from on-site renewable resource generation in the BAU case."
@@ -485,7 +485,7 @@ class SiteOutputs(BaseModel, models.Model):
                   "divided by total annual electric consumption."
                   )
     )
-    total_renewable_energy_pct_bau = models.FloatField(
+    total_renewable_energy_fraction_bau = models.FloatField(
         null=True, blank=True,
         help_text=(
                   "Portion of annual total energy consumption that is derived from on-site renewable resource generation in the BAU case."
@@ -560,7 +560,7 @@ class SiteOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Total tons of PM2.5 emissions associated with the site's onsite fuel burn over the analysis period in the BAU case."
     )
-    lifecycle_emissions_reduction_CO2_pct = models.FloatField(
+    lifecycle_emissions_reduction_CO2_fraction = models.FloatField(
         null=True, blank=True,
         help_text="Percent reduction in total pounds of carbon dioxide emissions in the optimal case relative to the BAU case"
     )
@@ -587,7 +587,7 @@ class SiteOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Total equivalent pounds of carbon dioxide emittedf rom the site use in the first year in the BAU case."
     )
-    renewable_electricity_energy_pct = models.FloatField(
+    renewable_electricity_energy_fraction = models.FloatField(
         null=True, blank=True,
         help_text=("Portion of electrictrity use that is derived from on-site "
                     "renewable resource generation in year one. Calculated as "
@@ -695,7 +695,7 @@ class FinancialInputs(BaseModel, models.Model):
                    "the outage_start_time_steps, outage_durations, and outage_probabilities inputs, and do not "
                    "apply when modeling a single outage using outage_start_time_step and outage_end_time_step.")
     )
-    microgrid_upgrade_cost_pct = models.FloatField(
+    microgrid_upgrade_cost_fraction = models.FloatField(
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -892,7 +892,7 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text=("Cost to make a distributed energy system islandable from the grid. Determined by multiplying the "
             "total capital costs of resultant energy systems from REopt (such as PV and Storage system) with the input "
-            "value for microgrid_upgrade_cost_pct (which defaults to 0.30).")
+            "value for microgrid_upgrade_cost_fraction (which defaults to 0.30).")
     )
     initial_capital_costs = models.FloatField(
         null=True, blank=True,
@@ -1194,7 +1194,7 @@ class ElectricLoadInputs(BaseModel, models.Model):
         help_text=("If there is existing PV, must specify whether provided load is the net load after existing PV or "
                    "not.")
     )
-    critical_load_pct = models.FloatField(
+    critical_load_fraction = models.FloatField(
         null=True,
         blank=True,
         default = 0.5,
@@ -1208,7 +1208,7 @@ class ElectricLoadInputs(BaseModel, models.Model):
 
     )
 
-    operating_reserve_required_pct = models.FloatField(
+    operating_reserve_required_fraction = models.FloatField(
         null=True,
         blank=True,
         validators=[
@@ -1220,7 +1220,7 @@ class ElectricLoadInputs(BaseModel, models.Model):
 
     )
 
-    min_load_met_annual_pct = models.FloatField(
+    min_load_met_annual_fraction = models.FloatField(
         null=True,
         blank=True,
         validators=[
@@ -1313,7 +1313,7 @@ class ElectricLoadOutputs(BaseModel, models.Model):
         ),
         default=list,
         help_text=("Hourly critical load for outage simulator. Values are either uploaded by user, "
-                   "or determined from typical load (either uploaded or simulated) and critical_load_pct.")
+                   "or determined from typical load (either uploaded or simulated) and critical_load_fraction.")
     )
     annual_calculated_kwh = models.FloatField(
         null=True, blank=True,
@@ -1327,7 +1327,7 @@ class ElectricLoadOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Number of time steps the existing system can sustain the critical load."
     )
-    offgrid_load_met_pct = models.FloatField(
+    offgrid_load_met_fraction = models.FloatField(
         null=True, blank=True,
         help_text="Percentage of total electric load met on an annual basis, for off-grid scenarios only"
     )
@@ -1669,7 +1669,7 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         default=list, blank=True,
         help_text=("PM2.5 emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.")
     )
-    emissions_factor_CO2_decrease_pct = models.FloatField(
+    emissions_factor_CO2_decrease_fraction = models.FloatField(
         default=0.01174,
         validators=[
             MinValueValidator(-1),
@@ -1678,7 +1678,7 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Annual percent decrease in the total annual CO2 marginal emissions rate of the grid. A negative value indicates an annual increase."
     )
-    emissions_factor_NOx_decrease_pct = models.FloatField(
+    emissions_factor_NOx_decrease_fraction = models.FloatField(
         default=0.01174,
         validators=[
             MinValueValidator(-1),
@@ -1687,7 +1687,7 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Annual percent decrease in the total annual NOx marginal emissions rate of the grid. A negative value indicates an annual increase."
     )
-    emissions_factor_SO2_decrease_pct = models.FloatField(
+    emissions_factor_SO2_decrease_fraction = models.FloatField(
         default=0.01174,
         validators=[
             MinValueValidator(-1),
@@ -1696,7 +1696,7 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Annual percent decrease in the total annual SO2 marginal emissions rate of the grid. A negative value indicates an annual increase."
     )
-    emissions_factor_PM25_decrease_pct = models.FloatField(
+    emissions_factor_PM25_decrease_fraction = models.FloatField(
         default=0.01174,
         validators=[
             MinValueValidator(-1),
@@ -2093,7 +2093,7 @@ class PVInputs(BaseModel, models.Model):
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
-    macrs_bonus_pct = models.FloatField(
+    macrs_bonus_fraction = models.FloatField(
         default=1.0,
         validators=[
             MinValueValidator(0),
@@ -2111,7 +2111,7 @@ class PVInputs(BaseModel, models.Model):
         blank=True,
         help_text="Percent of the ITC value by which depreciable basis is reduced"
     )
-    federal_itc_pct = models.FloatField(
+    federal_itc_fraction = models.FloatField(
         default=0.26,
         validators=[
             MinValueValidator(0),
@@ -2120,7 +2120,7 @@ class PVInputs(BaseModel, models.Model):
         blank=True,
         help_text="Percentage of capital costs that are credited towards federal taxes"
     )
-    state_ibi_pct = models.FloatField(
+    state_ibi_fraction = models.FloatField(
         default=0,
         validators=[
             MinValueValidator(0),
@@ -2138,7 +2138,7 @@ class PVInputs(BaseModel, models.Model):
         blank=True,
         help_text="Maximum dollar value of state percentage-based capital cost incentive"
     )
-    utility_ibi_pct = models.FloatField(
+    utility_ibi_fraction = models.FloatField(
         default=0,
         validators=[
             MinValueValidator(0),
@@ -2237,7 +2237,7 @@ class PVInputs(BaseModel, models.Model):
         blank=True,
         help_text="Maximum system size eligible for production-based incentive"
     )
-    degradation_pct = models.FloatField(
+    degradation_fraction = models.FloatField(
         default=0.005,
         validators=[
             MinValueValidator(0),
@@ -2365,7 +2365,7 @@ class PVInputs(BaseModel, models.Model):
         help_text="True/False for if technology has the ability to curtail energy production."
     )
 
-    operating_reserve_required_pct = models.FloatField(
+    operating_reserve_required_fraction = models.FloatField(
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0)
@@ -2511,7 +2511,7 @@ class WindInputs(BaseModel, models.Model):
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
-    macrs_bonus_pct = models.FloatField(
+    macrs_bonus_fraction = models.FloatField(
         default=1.0,
         validators=[
             MinValueValidator(0),
@@ -2529,7 +2529,7 @@ class WindInputs(BaseModel, models.Model):
         blank=True,
         help_text="Percent of the ITC value by which depreciable basis is reduced"
     )
-    federal_itc_pct = models.FloatField(
+    federal_itc_fraction = models.FloatField(
         default=0.26,
         validators=[
             MinValueValidator(0),
@@ -2538,7 +2538,7 @@ class WindInputs(BaseModel, models.Model):
         blank=True,
         help_text="Percentage of capital costs that are credited towards federal taxes"
     )
-    state_ibi_pct = models.FloatField(
+    state_ibi_fraction = models.FloatField(
         default=0,
         validators=[
             MinValueValidator(0),
@@ -2556,7 +2556,7 @@ class WindInputs(BaseModel, models.Model):
         blank=True,
         help_text="Maximum dollar value of state percentage-based capital cost incentive"
     )
-    utility_ibi_pct = models.FloatField(
+    utility_ibi_fraction = models.FloatField(
         default=0,
         validators=[
             MinValueValidator(0),
@@ -2692,7 +2692,7 @@ class WindInputs(BaseModel, models.Model):
         help_text="True/False for if technology has the ability to curtail energy production."
     )
 
-    operating_reserve_required_pct = models.FloatField(
+    operating_reserve_required_fraction = models.FloatField(
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(1.0)
@@ -2776,7 +2776,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         blank=True,
         help_text="Maximum energy storage capacity constraint for optimization."
     )
-    internal_efficiency_pct = models.FloatField(
+    internal_efficiency_fraction = models.FloatField(
         default=0.975,
         validators=[
             MinValueValidator(0),
@@ -2785,7 +2785,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         blank=True,
         help_text="Battery inherent efficiency independent of inverter and rectifier"
     )
-    inverter_efficiency_pct = models.FloatField(
+    inverter_efficiency_fraction = models.FloatField(
         default=0.96,
         validators=[
             MinValueValidator(0),
@@ -2794,7 +2794,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         blank=True,
         help_text="Battery inverter efficiency"
     )
-    rectifier_efficiency_pct = models.FloatField(
+    rectifier_efficiency_fraction = models.FloatField(
         default=0.96,
         validators=[
             MinValueValidator(0),
@@ -2812,7 +2812,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         blank=True,
         help_text="Minimum allowable battery state of charge as fraction of energy capacity."
     )
-    soc_init_pct = models.FloatField(
+    soc_init_fraction = models.FloatField(
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0)
@@ -2884,7 +2884,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
-    macrs_bonus_pct = models.FloatField(
+    macrs_bonus_fraction = models.FloatField(
         default=1.0,
         validators=[
             MinValueValidator(0),
@@ -2902,7 +2902,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         blank=True,
         help_text="Percent of the ITC value by which depreciable basis is reduced"
     )
-    total_itc_pct = models.FloatField(
+    total_itc_fraction = models.FloatField(
         default=0.0,
         validators=[
             MinValueValidator(0),
@@ -2941,7 +2941,7 @@ class ElectricStorageOutputs(BaseModel, models.Model):
     )
     size_kw = models.FloatField(null=True, blank=True)
     size_kwh = models.FloatField(null=True, blank=True)
-    year_one_soc_series_pct = ArrayField(
+    year_one_soc_series_fraction = ArrayField(
         models.FloatField(null=True, blank=True),
         blank=True, default=list
     )
@@ -3057,7 +3057,7 @@ class GeneratorInputs(BaseModel, models.Model):
         null=True,
         help_text="On-site generator fuel available in gallons per year."
     )
-    min_turn_down_pct = models.FloatField(
+    min_turn_down_fraction = models.FloatField(
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(1.0)
@@ -3082,7 +3082,7 @@ class GeneratorInputs(BaseModel, models.Model):
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
-    macrs_bonus_pct = models.FloatField(
+    macrs_bonus_fraction = models.FloatField(
         default=1.0,
         validators=[
             MinValueValidator(0),
@@ -3100,7 +3100,7 @@ class GeneratorInputs(BaseModel, models.Model):
         blank=True,
         help_text="Percent of the ITC value by which depreciable basis is reduced"
     )
-    federal_itc_pct = models.FloatField(
+    federal_itc_fraction = models.FloatField(
         default=0.0,
         validators=[
             MinValueValidator(0),
@@ -3109,7 +3109,7 @@ class GeneratorInputs(BaseModel, models.Model):
         blank=True,
         help_text="Percentage of capital costs that are credited towards federal taxes"
     )
-    state_ibi_pct = models.FloatField(
+    state_ibi_fraction = models.FloatField(
         default=0,
         validators=[
             MinValueValidator(0),
@@ -3127,7 +3127,7 @@ class GeneratorInputs(BaseModel, models.Model):
         blank=True,
         help_text="Maximum dollar value of state percentage-based capital cost incentive"
     )
-    utility_ibi_pct = models.FloatField(
+    utility_ibi_fraction = models.FloatField(
         default=0,
         validators=[
             MinValueValidator(0),
@@ -3249,7 +3249,7 @@ class GeneratorInputs(BaseModel, models.Model):
         blank=True,
         help_text="True/False for if technology has the ability to curtail energy production."
     )
-    fuel_renewable_energy_pct = models.FloatField(
+    fuel_renewable_energy_fraction = models.FloatField(
         default=0.0,
         validators=[
             MinValueValidator(0),
@@ -3655,7 +3655,7 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
 #         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
 #     )
 
-#     macrs_bonus_pct = models.FloatField(
+#     macrs_bonus_fraction = models.FloatField(
 #         default=0.0,
 #         validators=[
 #             MinValueValidator(0),
