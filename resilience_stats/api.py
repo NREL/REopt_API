@@ -162,6 +162,18 @@ def run_erp_task(run_uuid):
     process_erp_results(response_json, run_uuid)
     return True
 
+def process_erp_results(results: dict, run_uuid: str) -> None:
+    """
+    Saves ERP results returned from the Julia API in the backend database.
+    Called in resilience_stats/run_erp_task (a celery task)
+    """
+
+    meta = ERPMeta.objects.get(run_uuid=run_uuid)
+    # meta.status = results.get("status")
+    # meta.save(update_fields=["status"])
+    ERPOutputs.create(meta=meta, **results).save()
+    
+
 @shared_task
 def run_outage_sim_task(scenariomodel_id, run_uuid, bau):
 
