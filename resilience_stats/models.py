@@ -47,7 +47,7 @@ class ERPMeta(models.Model):
     job_type = models.TextField(
         default='developer.nrel.gov'
     )
-    status = models.TextField(blank=True)
+    # status = models.TextField(blank=True)
     created = models.DateTimeField(auto_now_add=True)
     reopt_version = models.TextField(
         blank=True,
