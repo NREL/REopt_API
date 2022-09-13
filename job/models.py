@@ -327,7 +327,7 @@ class SiteInputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Area of roof in square feet available for PV siting"
     )
-    CO2_emissions_reduction_min_pct = models.FloatField(
+    CO2_emissions_reduction_min_fraction = models.FloatField(
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -335,7 +335,7 @@ class SiteInputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Minimum allowed percentage reduction of CO2 emissions, relative to the business-as-usual case, over the financial lifecycle of the project."
     )
-    CO2_emissions_reduction_max_pct = models.FloatField(
+    CO2_emissions_reduction_max_fraction = models.FloatField(
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -343,7 +343,7 @@ class SiteInputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Maximum allowed percentage reduction of CO2 emissions, relative to the business-as-usual case, over the financial lifecycle of the project."
     )
-    renewable_electricity_min_pct = models.FloatField(
+    renewable_electricity_min_fraction = models.FloatField(
         validators=[
             MinValueValidator(0),
             MaxValueValidator(10)
@@ -351,7 +351,7 @@ class SiteInputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Minimum allowed percentage of site electric consumption met by renewable energy on an annual basis."
     )
-    renewable_electricity_max_pct = models.FloatField(
+    renewable_electricity_max_fraction = models.FloatField(
         validators=[
             MinValueValidator(0),
             MaxValueValidator(10)
@@ -2803,7 +2803,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         blank=True,
         help_text="Battery rectifier efficiency"
     )
-    soc_min_pct = models.FloatField(
+    soc_min_fraction = models.FloatField(
         default=0.2,
         validators=[
             MinValueValidator(0),
