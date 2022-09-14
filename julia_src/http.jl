@@ -74,7 +74,7 @@ function reopt(req::HTTP.Request)
 		inputs_with_defaults_from_easiur = [
 			:NOx_grid_cost_per_tonne, :SO2_grid_cost_per_tonne, :PM25_grid_cost_per_tonne, 
 			:NOx_onsite_fuelburn_cost_per_tonne, :SO2_onsite_fuelburn_cost_per_tonne, :PM25_onsite_fuelburn_cost_per_tonne,
-			:NOx_cost_escalation_pct, :SO2_cost_escalation_pct, :PM25_cost_escalation_pct
+			:NOx_cost_escalation_fraction, :SO2_cost_escalation_fraction, :PM25_cost_escalation_fraction
 		]
 		inputs_with_defaults_from_avert = [
 			:emissions_factor_series_lb_CO2_per_kwh, :emissions_factor_series_lb_NOx_per_kwh,
