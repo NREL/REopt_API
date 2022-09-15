@@ -88,7 +88,7 @@ class ERPInputs(models.Model):
         ],
         help_text=("Chance of generator failing in each hour of outage")
     )
-    num_generators = = ArrayField(
+    num_generators = ArrayField(
         models.IntegerField(
             default=1,
             validators=[
