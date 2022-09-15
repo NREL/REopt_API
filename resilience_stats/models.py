@@ -88,11 +88,13 @@ class ERPInputs(models.Model):
         ],
         help_text=("Chance of generator failing in each hour of outage")
     )
-    num_generators = models.IntegerField(
-        default=1,
-        validators=[
-            MinValueValidator(1),
-        ],
+    num_generators = = ArrayField(
+        models.IntegerField(
+            default=1,
+            validators=[
+                MinValueValidator(1),
+            ]
+        ),
         help_text=("Number of generators")
     )
     generator_size_kw = models.FloatField(
@@ -160,6 +162,7 @@ class ERPInputs(models.Model):
         ],
         help_text=("PV system capacity")
     )
+    #TODO: add _kw_per_kw_rated?
     pv_production_factor_series = ArrayField(
         models.FloatField(
             blank=True,
