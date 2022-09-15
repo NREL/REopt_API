@@ -55,6 +55,7 @@ stable_api.register(GHPGHXJob())
 dev_api = Api(api_name='dev')
 dev_api.register(DevJob())
 dev_api.register(FutureCostsAPI())
+dev_api.register(ERPJob())
 
 
 def page_not_found(request, url):
@@ -73,7 +74,7 @@ urlpatterns = [
     
     path('v1/', include('reo.urls')),
     path('v2/', include('reo.urls_v2')),
-    path('v1/', include('resilience_stats.urls')),
+    path('v1/', include('resilience_stats.urls_v1_v2')),
     path('v1/', include('proforma.urls')),
     path('v1/', include('load_builder.urls')),
     path('v1/', include('summary.urls')),
@@ -83,11 +84,11 @@ urlpatterns = [
     re_path(r'', include(v1_api.urls), name='ghpghx'),
 
     re_path(r'', include(v2_api.urls), name='job'),
-    path('v2/', include('resilience_stats.urls')),
+    path('v2/', include('resilience_stats.urls_v1_v2')),
     path('v2/', include('proforma.urls')),
 
     path('stable/', include('reo.urls_v2')),
-    path('stable/', include('resilience_stats.urls')),
+    path('stable/', include('resilience_stats.urls_v1_v2')),
     path('stable/', include('proforma.urls')),
     path('stable/', include('load_builder.urls')),
     path('stable/', include('summary.urls')),
@@ -97,9 +98,10 @@ urlpatterns = [
 
     path('dev/', include('job.urls')),
     re_path(r'', include(dev_api.urls), name='job'),
-
     path('dev/', include('futurecosts.urls')),
     re_path(r'', include(dev_api.urls), name='futurecosts'),
+    path('dev/', include('resilience_stats.urls_v3plus')),
+    re_path(r'', include(dev_api.urls), name='erp'),
 
     re_path(r'', include(stable_api.urls), name='ghpghx'),
 
