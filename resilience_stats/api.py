@@ -102,9 +102,7 @@ class ERPJob(ModelResource):
         test_case = bundle.request.META.get('HTTP_USER_AGENT','')
         if test_case.startswith('check_http/'):
             meta["job_type"] = 'Monitoring'
-        #TODO: make one line
-        meta = ERPMeta.create(**meta) 
-        meta.save()
+        meta = ERPMeta.create(**meta).save()
 
         reopt_run_uuid = bundle.data.get("reopt_run_uuid", None)
         try:
@@ -124,12 +122,7 @@ class ERPJob(ModelResource):
                 msg = "Invalid run_uuid {}, REopt run does not exist.".format(reopt_run_uuid)
                 raise ImmediateHttpResponse(HttpResponse(json.dumps({"Error": msg}), content_type='application/json', status=404))
             
-            #TODO: use to fill in inputs not provided, like:
-            #if bundle.data['generator_size_kw'] exists and is not none
-            #bundle.data['generator_size_kw'] = reopt_run_meta.GeneratorOutputs.size_kw
-            #create a helper function that returns all the inputs that could come from REopt?
-            #do all of this stuff in clean or save django methods?
-            #or just section this into a function here?
+            #TODO: put all of this stuff below in a helper function, or in clean or save django methods?
             critical_loads_kw = reopt_run_meta.ElectricLoadOutputs.dict["critical_load_series_kw"]
             # Have to try for CHP, PV, and Storage models because may not exist
             try: 
@@ -169,7 +162,7 @@ class ERPJob(ModelResource):
                 else:
                     generator_size_kw = gen.get("size_kw", 0)
             except: pass
-            
+
             for field_name in ["critical_loads_kw", "battery_charge_efficiency",
                                 "battery_discharge_efficiency", "battery_size_kw",
                                 "battery_size_kwh", "starting_battery_soc_kwh",
