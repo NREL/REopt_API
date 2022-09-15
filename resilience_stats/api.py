@@ -130,24 +130,25 @@ class ERPJob(ModelResource):
             #create a helper function that returns all the inputs that could come from REopt?
             #do all of this stuff in clean or save django methods?
             #or just section this into a function here?
-            net_critical_loads_kw = reopt_run_meta.ElectricLoadOutputs.dict["critical_load_series_kw"]
+            critical_loads_kw = reopt_run_meta.ElectricLoadOutputs.dict["critical_load_series_kw"]
             # Have to try for CHP, PV, and Storage models because may not exist
-            if bundle.data.get("chp_size_kw", None) is None:
-                try: 
-                    chp_size = get(reopt_run_meta.CHPOutputs.dict, "size_kw", 0)
-                    bundle.data["chp_size_kw"] = chp_size
-                    net_critical_loads_kw .-= chp_size
-                except: pass
-            pv_kw_ac_hourly = np.zeros(len(net_critical_loads_kw))
+            try: 
+                chp_size_kw = get(reopt_run_meta.CHPOutputs.dict, "size_kw", 0)
+            except: pass
             try:
                 pvs = reopt_run_meta.PVInputs.all()
+                pv_size_kw = 0
+                pv_kw_series = np.zeros(len(critical_loads_kw))
                 for pv in pvs:
-                    pv_kw_ac_hourly += (
-                        pv.dict.get("year_one_to_battery_series_kw", zero_array)
-                        + pv.dict.get("year_one_curtailed_production_series_kw", zero_array)
-                        + pv.dict.get("year_one_to_load_series_kw", zero_array)
-                        + pv.dict.get("year_one_to_grid_series_kw", zero_array)
+                    pvd = pv.dict
+                    pv_size_kw += pv
+                    pv_kw_series += (
+                        pvd.get("year_one_to_battery_series_kw", np.zeros(len(critical_loads_kw)))
+                        + pvd.get("year_one_curtailed_production_series_kw", np.zeros(len(critical_loads_kw)))
+                        + pvd.get("year_one_to_load_series_kw", np.zeros(len(critical_loads_kw)))
+                        + pvd.get("year_one_to_grid_series_kw", np.zeros(len(critical_loads_kw)))
                     )
+                pv_production_factor_series = pv_kw_series ./ pv_size_kw
             except: pass
             try:
                 stor_out = reopt_run_meta.ElectricStorageOutputs.dict
@@ -158,24 +159,26 @@ class ERPJob(ModelResource):
                 battery_size_kw = stor_out.get("size_kw", 0)
                 init_soc = stor_out.get("year_one_soc_series_pct", [])
                 starting_battery_soc_kwh = init_soc .* battery_size_kwh
-                net_critical_loads_kw .-= pv_kw_ac_hourly
             except: pass
-            for field_name in ["net_critical_loads_kw", "battery_charge_efficiency",
-                                "battery_discharge_efficiency", "battery_size_kw",
-                                "battery_size_kwh", "starting_battery_soc_kwh"]:
-                if bundle.data.get(field_name, None) is None:
-                    try: bundle.data[field_name] = eval(field_name)
-                    except: pass # if field_name variable wasn't set due to tech not being present then ignore it
             #TODO: figure out which way it should be
             # way 1: if the user provides a reopt run and a generator_size_kw to override that, num_generators defaults to 1
-            if bundle.data.get("generator_size_kw", None) is None:
-                try:
-                    gen = reopt_run_meta.GeneratorOutputs.dict
-                    if bundle.data.get("num_generators", None) is not None:
-                        bundle.data["generator_size_kw"] = gen.get("size_kw", 0) / bundle.data["num_generators"])
-                    else:
-                        bundle.data["generator_size_kw"] = gen.get("size_kw", 0)
-                except: pass
+            try:
+                gen = reopt_run_meta.GeneratorOutputs.dict
+                if bundle.data.get("num_generators", None) is not None:
+                    generator_size_kw = gen.get("size_kw", 0) / bundle.data["num_generators"])
+                else:
+                    generator_size_kw = gen.get("size_kw", 0)
+            except: pass
+            
+            for field_name in ["critical_loads_kw", "battery_charge_efficiency",
+                                "battery_discharge_efficiency", "battery_size_kw",
+                                "battery_size_kwh", "starting_battery_soc_kwh",
+                                "chp_size_kw", "generator_size_kw",
+                                "pv_size_kw", "pv_production_factor_series"]:
+                if bundle.data.get(field_name, None) is None:
+                    try: bundle.data[field_name] = eval(field_name)
+                    except: pass # if field_name variable wasn't set due to tech not being present then don't update
+                
             # # way 2: if the user provides a reopt run and a generator_size_kw to override that, num_generators defaults to reopt results gen size divided by generator_size_kw
             # if bundle.data.get("num_generators", None) is None and bundle.data.get("generator_size_kw", None) is not None:
             #     try:
