@@ -30,6 +30,7 @@
 import json
 import sys
 import uuid
+import numpy as np
 
 from celery import shared_task
 from django.core.exceptions import ValidationError
@@ -115,27 +116,88 @@ class ERPJob(ModelResource):
             # Get inputs from a REopt run in database
             try:
                 reopt_run_meta = APIMeta.objects.select_related(
-                    "GeneratorOutputs",
-                    "ElectricStorageInputs",
-                    "ElectricStorageOutputs",
-                    "PVOutputs", 
-                    "CHPOutputs",
-                    "ElectricLoadInputs",
+                    "ElectricLoadOutputs",
                 ).get(run_uuid=reopt_run_uuid)
-                #TODO: use to fill in inputs not provided, like:
-                #if bundle.data['generator_size_kw'] exists and is not none
-                #bundle.data['generator_size_kw'] = reopt_run_meta.GeneratorOutputs.size_kw
-                #create a helper function that returns all the inputs that could come from REopt?
-                #do all of this stuff in clean or save django methods?
+                
             except:
                 # Handle non-existent REopt runs
                 msg = "Invalid run_uuid {}, REopt run does not exist.".format(reopt_run_uuid)
                 raise ImmediateHttpResponse(HttpResponse(json.dumps({"Error": msg}), content_type='application/json', status=404))
+            
+            #TODO: use to fill in inputs not provided, like:
+            #if bundle.data['generator_size_kw'] exists and is not none
+            #bundle.data['generator_size_kw'] = reopt_run_meta.GeneratorOutputs.size_kw
+            #create a helper function that returns all the inputs that could come from REopt?
+            #do all of this stuff in clean or save django methods?
+            #or just section this into a function here?
+            net_critical_loads_kw = reopt_run_meta.ElectricLoadOutputs.dict["critical_load_series_kw"]
+            # Have to try for CHP, PV, and Storage models because may not exist
+            if bundle.data.get("chp_size_kw", None) is None:
+                try: 
+                    chp_size = get(reopt_run_meta.CHPOutputs.dict, "size_kw", 0)
+                    bundle.data["chp_size_kw"] = chp_size
+                    net_critical_loads_kw .-= chp_size
+                except: pass
+            pv_kw_ac_hourly = np.zeros(len(net_critical_loads_kw))
+            try:
+                pvs = reopt_run_meta.PVInputs.all()
+                for pv in pvs:
+                    pv_kw_ac_hourly += (
+                        pv.dict.get("year_one_to_battery_series_kw", zero_array)
+                        + pv.dict.get("year_one_curtailed_production_series_kw", zero_array)
+                        + pv.dict.get("year_one_to_load_series_kw", zero_array)
+                        + pv.dict.get("year_one_to_grid_series_kw", zero_array)
+                    )
+            except: pass
+            try:
+                stor_out = reopt_run_meta.ElectricStorageOutputs.dict
+                stor_in = reopt_run_meta.ElectricStorageInputs.dict
+                battery_charge_efficiency = stor_in["rectifier_efficiency_pct"] * stor_in["internal_efficiency_pct"]**0.5
+                battery_discharge_efficiency = stor_in["inverter_efficiency_pct"] * stor_in["internal_efficiency_pct"]**0.5
+                battery_size_kwh = stor_out.get("size_kwh", 0)
+                battery_size_kw = stor_out.get("size_kw", 0)
+                init_soc = stor_out.get("year_one_soc_series_pct", [])
+                starting_battery_soc_kwh = init_soc .* battery_size_kwh
+                net_critical_loads_kw .-= pv_kw_ac_hourly
+            except: pass
+            for field_name in ["net_critical_loads_kw", "battery_charge_efficiency",
+                                "battery_discharge_efficiency", "battery_size_kw",
+                                "battery_size_kwh", "starting_battery_soc_kwh"]:
+                if bundle.data.get(field_name, None) is None:
+                    try: bundle.data[field_name] = eval(field_name)
+                    except: pass # if field_name variable wasn't set due to tech not being present then ignore it
+            #TODO: figure out which way it should be
+            # way 1: if the user provides a reopt run and a generator_size_kw to override that, num_generators defaults to 1
+            if bundle.data.get("generator_size_kw", None) is None:
+                try:
+                    gen = reopt_run_meta.GeneratorOutputs.dict
+                    if bundle.data.get("num_generators", None) is not None:
+                        bundle.data["generator_size_kw"] = gen.get("size_kw", 0) / bundle.data["num_generators"])
+                    else:
+                        bundle.data["generator_size_kw"] = gen.get("size_kw", 0)
+                except: pass
+            # # way 2: if the user provides a reopt run and a generator_size_kw to override that, num_generators defaults to reopt results gen size divided by generator_size_kw
+            # if bundle.data.get("num_generators", None) is None and bundle.data.get("generator_size_kw", None) is not None:
+            #     try:
+            #         gen = reopt_run_meta.GeneratorOutputs.dict
+            #         bundle.data["num_generators"] = ceil(gen.get("size_kw", 0) / bundle.data["generator_size_kw"])
+            #     except: bundle.data["num_generators"] = 1
+            # else if bundle.data.get("num_generators", None) is not None and bundle.data.get("generator_size_kw", None) is None:
+            #     try:
+            #         gen = reopt_run_meta.GeneratorOutputs.dict
+            #         bundle.data["generator_size_kw"] = gen.get("size_kw", 0) / bundle.data["num_generators"])
+            #     except: pass #will error later when creating ERPInputs and ImmediateHttpResponse will be raised
+            # else if bundle.data.get("num_generators", None) is None and bundle.data.get("generator_size_kw", None) is None:
+            #     try:
+            #         gen = reopt_run_meta.GeneratorOutputs.dict
+            #         bundle.data["num_generators"] = 1
+            #         bundle.data["generator_size_kw"] = gen.get("size_kw", 0)
+            #     except: pass #will error later when creating ERPInputs and ImmediateHttpResponse will be raised
 
         try:
             erpinputs = ERPInputs.create(**bundle.data)
             erpinputs.clean_fields()
-            erpinputs.clean()
+            # erpinputs.clean()
             erpinputs.save()
 
             run_erp_task.delay(erp_run_uuid)
