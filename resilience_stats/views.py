@@ -42,6 +42,44 @@ from resilience_stats.outage_simulator_LF import simulate_outages
 import numpy as np
 from reo.utilities import empty_record
 
+def erp(request: Union[Dict, HttpRequest], run_uuid=None):
+    try:
+        uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
+    except ValueError as e:
+        if e.args[0] == "badly formed hexadecimal UUID string":
+            return JsonResponse({"Error": str(e.args[0])}, status=400)
+        else:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            err = UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task='resilience_stats',
+                                  run_uuid=run_uuid)
+            err.save_to_db()
+            return JsonResponse({"Error": str(err.message)}, status=400)
+    try:  # catch all exceptions
+        try:  # catch specific exception
+            erp_outputs = ERPOutputs.objects.get(meta__run_uuid=run_uuid)
+        except ERPOutputs.DoesNotExist:
+            not_ready_msg = ('ERP results are not ready. '
+                'If you have already submitted an ERP job, please try again later. '
+                'If not, please first submit an ERP job by sending a POST request to '
+                '<version>/erp/. This will generate'
+                ' ERP results that you can access from a GET request to the '
+                '<version>/erp/<run uuid>/results endpoint. ')
+            return JsonResponse({"Error": not_ready_msg}, content_type='application/json', status=404)
+
+        else:  # ERPOutputs does exist
+            results = erp_outputs.dict
+            # # remove items that user does not need
+            # del results['scenariomodel']
+            # del results['id']
+
+        response = JsonResponse(results, content_type='application/json', status=200)
+        return response
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task='erp', run_uuid=run_uuid)
+        err.save_to_db()
+        return JsonResponse({"error": err.message}, status=500)
 
 def resilience_stats(request: Union[Dict, HttpRequest], run_uuid=None):
     """
