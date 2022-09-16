@@ -92,13 +92,13 @@ class ERPInputs(models.Model):
         help_text=("Chance of generator failing in each hour of outage")
     )
     num_generators = ArrayField(
-        blank=True,
-        default=[1],
         models.IntegerField(
             validators=[
-                MinValueValidator(1),
+                MinValueValidator(1)
             ]
         ),
+        blank=True,
+        default=[1],
         help_text=("Number of generators")
     )
     generator_size_kw = models.FloatField(
@@ -129,14 +129,14 @@ class ERPInputs(models.Model):
         help_text=("Battery kWh energy capacity")
     )
     starting_battery_soc_kwh = ArrayField(
-        blank=True,
-        default=list,
         models.FloatField(
             validators=[
                 MinValueValidator(0),
-                MaxValueValidator(batt_kwh)
+                MaxValueValidator(battery_size_kwh)
             ]
         ),
+        blank=True,
+        default=list,
         help_text=("Battery kWh state of charge when an outage begins, at each timestep. Must be hourly (8,760 samples).")
     )
     battery_charge_efficiency = models.FloatField(
@@ -176,14 +176,14 @@ class ERPInputs(models.Model):
     )
     #TODO: add _kw_per_kw_rated?
     pv_production_factor_series = ArrayField(
-        blank=True,
-        default=list,
         models.FloatField(
             validators=[
                 MinValueValidator(0),
                 MaxValueValidator(1)
             ]
         ),
+        blank=True,
+        default=list,
         help_text=("PV system output at each timestep, normalized to PV system size. Must be hourly (8,760 samples).")
     )
     chp_size_kw = models.FloatField(
