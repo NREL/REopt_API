@@ -2328,7 +2328,7 @@ class PVInputs(BaseModel, models.Model):
         blank=True,
         help_text="Where PV can be deployed. One of [roof, ground, both] with default as both."
     )
-    prod_factor_series = ArrayField(
+    production_factor_series = ArrayField(
         models.FloatField(
             blank=True
         ),
@@ -2655,7 +2655,7 @@ class WindInputs(BaseModel, models.Model):
         blank=True,
         help_text="Maximum system size eligible for production-based incentive"
     )
-    prod_factor_series = ArrayField(
+    production_factor_series = ArrayField(
         models.FloatField(
             blank=True
         ),

@@ -218,7 +218,7 @@ class InputValidator(object):
         """
 
         """
-        PV tilt set to latitude if not provided and prod_factor_series validated
+        PV tilt set to latitude if not provided and production_factor_series validated
         """
         def cross_clean_pv(pvmodel):
             if pvmodel.__getattribute__("tilt") == None:
@@ -234,8 +234,8 @@ class InputValidator(object):
                     pvmodel.__setattr__("azimuth", 0.0)
             
             if pvmodel.__getattribute__("max_kw") > 0:
-                if len(pvmodel.__getattribute__("prod_factor_series")) > 0:
-                    self.clean_time_series("PV", "prod_factor_series")
+                if len(pvmodel.__getattribute__("production_factor_series")) > 0:
+                    self.clean_time_series("PV", "production_factor_series")
             
             if self.models["Settings"].off_grid_flag==True:
                 pvmodel.__setattr__("can_net_meter", False)
@@ -301,7 +301,7 @@ class InputValidator(object):
                     "temperature_celsius", "pressure_atmospheres"
                 ]
 
-                for time_series in ["prod_factor_series"] + wind_resource_inputs:
+                for time_series in ["production_factor_series"] + wind_resource_inputs:
                     self.clean_time_series("Wind", time_series)
 
                 if not all([self.models["Wind"].__getattribute__(wr) for wr in wind_resource_inputs]):
