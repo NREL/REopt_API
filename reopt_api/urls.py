@@ -32,6 +32,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.http import HttpResponse
 from reo.api import Job
 from resilience_stats.api import OutageSimJob
+from resilience_stats.api import ERPJob
 from tastypie.api import Api
 from reo import views
 from job.api import Job as DevJob

@@ -31,6 +31,9 @@ import json
 import sys
 import uuid
 import numpy as np
+import requests
+import traceback
+import os
 
 from celery import shared_task
 from django.core.exceptions import ValidationError
@@ -126,7 +129,7 @@ class ERPJob(ModelResource):
             critical_loads_kw = reopt_run_meta.ElectricLoadOutputs.dict["critical_load_series_kw"]
             # Have to try for CHP, PV, and Storage models because may not exist
             try: 
-                chp_size_kw = get(reopt_run_meta.CHPOutputs.dict, "size_kw", 0)
+                chp_size_kw = reopt_run_meta.CHPOutputs.dictget("size_kw", 0)
             except: pass
             try:
                 pvs = reopt_run_meta.PVInputs.all()
@@ -141,7 +144,7 @@ class ERPJob(ModelResource):
                         + pvd.get("year_one_to_load_series_kw", np.zeros(len(critical_loads_kw)))
                         + pvd.get("year_one_to_grid_series_kw", np.zeros(len(critical_loads_kw)))
                     )
-                pv_production_factor_series = pv_kw_series ./ pv_size_kw
+                pv_production_factor_series = pv_kw_series / pv_size_kw
             except: pass
             try:
                 stor_out = reopt_run_meta.ElectricStorageOutputs.dict
@@ -151,14 +154,14 @@ class ERPJob(ModelResource):
                 battery_size_kwh = stor_out.get("size_kwh", 0)
                 battery_size_kw = stor_out.get("size_kw", 0)
                 init_soc = stor_out.get("year_one_soc_series_pct", [])
-                starting_battery_soc_kwh = init_soc .* battery_size_kwh
+                starting_battery_soc_kwh = init_soc * battery_size_kwh
             except: pass
             #TODO: figure out which way it should be
             # way 1: if the user provides a reopt run and a generator_size_kw to override that, num_generators defaults to 1
             try:
                 gen = reopt_run_meta.GeneratorOutputs.dict
                 if bundle.data.get("num_generators", None) is not None:
-                    generator_size_kw = gen.get("size_kw", 0) / bundle.data["num_generators"])
+                    generator_size_kw = gen.get("size_kw", 0) / bundle.data["num_generators"]
                 else:
                     generator_size_kw = gen.get("size_kw", 0)
             except: pass
