@@ -1157,6 +1157,7 @@ function add_resource_adequacy(m, p)
 		p.RaPrice[ts] for ts in p.TimeStep
 		])
 	end
+	m[:TotalRaValue] *= p.pwf_e 
 end
 
 
