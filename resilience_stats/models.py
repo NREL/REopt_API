@@ -61,7 +61,7 @@ class ERPInputs(models.Model):
         ERPMeta,
         on_delete=models.CASCADE,
         primary_key=True,
-        related_name="ERPMeta"
+        related_name="ERPInputs"
     )
  
     generator_operational_availability = models.FloatField(
@@ -215,7 +215,7 @@ class ERPOutputs(models.Model):
         ERPMeta,
         on_delete=models.CASCADE,
         primary_key=True,
-        related_name="ERPMeta"
+        related_name="ERPOutputs"
     )
     mean_marginal_duration_survival_probability = ArrayField(
         models.FloatField(blank=True),
