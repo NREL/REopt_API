@@ -46,6 +46,7 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
 
         #for simulation module
         self.reopt_base_erp = '/dev/erp/'
+        self.post_sim = os.path.join('resilience_stats', 'tests', 'ERP_sim_post.json')
         self.reopt_base_erp_results = '/dev/job/{}/results'
 
 
@@ -58,20 +59,23 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
     def get_results_sim(self, run_uuid):
         return self.api_client.post(self.reopt_base_erp_results.format(run_uuid), format='json')
 
-    def test_both_modules(self):
+    def test_erp(self):
         """
         """
+
         data = json.load(open(self.post_opt, 'rb'))
         resp = self.get_response_opt(data)
         self.assertHttpCreated(resp)
         r_opt = json.loads(resp.content)
-        run_uuid = r_opt.get('run_uuid')
+        reopt_run_uuid = r_opt.get('run_uuid')
 
-        assert(run_uuid is not None)
-        post_sim = {"reopt_run_uuid": run_uuid}
-        resp = self.get_response_sim(data_sim=post_sim)
+        assert(reopt_run_uuid is not None)
+        post_sim = self.post_sim
+        post_sim["reopt_run_uuid"] = reopt_run_uuid
+        resp = self.get_response_sim(post_sim)
         self.assertHttpCreated(resp)
         r_sim = json.loads(resp.content)
+        erp_run_uuid = r_sim.get('run_uuid')
 
-        resp = self.get_results_sim(run_uuid=run_uuid)
+        resp = self.get_results_sim(erp_run_uuid)
         results = json.loads(resp.content)
