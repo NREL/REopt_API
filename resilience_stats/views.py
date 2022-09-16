@@ -42,7 +42,7 @@ from resilience_stats.outage_simulator_LF import simulate_outages
 import numpy as np
 from reo.utilities import empty_record
 
-def erp(request: Union[Dict, HttpRequest], run_uuid=None):
+def erp_results(request: Union[Dict, HttpRequest], run_uuid=None):
     try:
         uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
     except ValueError as e:
