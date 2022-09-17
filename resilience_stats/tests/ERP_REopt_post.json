@@ -39,9 +39,6 @@
   "ElectricTariff": {
       "urdb_label": "5ed6c1a15457a3367add15ae"
   },
-  "ElectricUtility": {
-      "emissions_factor_series_lb_NOx_per_kwh": 1
-  },
   "Financial": {
       "elec_cost_escalation_pct": 0.026,
       "offtaker_discount_pct": 0.081,
