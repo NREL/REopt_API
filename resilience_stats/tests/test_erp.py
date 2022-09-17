@@ -70,7 +70,7 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         reopt_run_uuid = r_opt.get('run_uuid')
 
         assert(reopt_run_uuid is not None)
-        post_sim = self.post_sim
+        post_sim = json.load(open(self.post_sim, 'rb'))
         post_sim["reopt_run_uuid"] = reopt_run_uuid
         resp = self.get_response_sim(post_sim)
         self.assertHttpCreated(resp)
