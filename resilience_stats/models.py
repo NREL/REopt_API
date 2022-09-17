@@ -29,6 +29,7 @@
 # *********************************************************************************
 import sys
 import logging
+import copy
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -36,7 +37,28 @@ from reo.models import ScenarioModel
 from reo.exceptions import SaveToDatabase
 log = logging.getLogger(__name__)
 
-class ERPMeta(models.Model):
+class BaseModel(object):
+
+    @property
+    def dict(self):
+        """
+        Serialize Django Model.__dict__
+        NOTE: to get correct field types you must run self.clean_fields() first (eg. convert int to float)
+        :return: dict
+        """
+        d = copy.deepcopy(self.__dict__)
+        d.pop("_state", None)
+        d.pop("id", None)
+        d.pop("basemodel_ptr_id", None)
+        d.pop("run_uuid", None)  # redundant with base_scenario
+        return d
+
+    @classmethod
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
+        return obj
+        
+class ERPMeta(BaseModel, models.Model):
 
     run_uuid = models.UUIDField(unique=True)
     user_uuid = models.TextField(
@@ -55,7 +77,7 @@ class ERPMeta(models.Model):
         help_text="Version number of the REopt Julia package that is used to calculate reliability."
     )
 
-class ERPInputs(models.Model):
+class ERPInputs(BaseModel, models.Model):
 
     meta = models.OneToOneField(
         ERPMeta,
@@ -211,7 +233,7 @@ class ERPInputs(models.Model):
     )
 
     
-class ERPOutputs(models.Model):
+class ERPOutputs(BaseModel, models.Model):
 
     meta = models.OneToOneField(
         ERPMeta,
