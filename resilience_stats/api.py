@@ -93,7 +93,6 @@ class ERPJob(ModelResource):
         meta = {
             "run_uuid": erp_run_uuid,
             "reopt_version": "0.18.0",
-            "status": "validating..." #TODO replace
         }
         if bundle.request.META.get('HTTP_X_API_USER_ID', False):
             if bundle.request.META.get('HTTP_X_API_USER_ID', '') == '6f09c972-8414-469b-b3e8-a78398874103':
