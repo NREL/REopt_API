@@ -90,21 +90,22 @@ class ERPJob(ModelResource):
     def obj_create(self, bundle, **kwargs):
         erp_run_uuid = str(uuid.uuid4())
 
-        meta = {
+        meta_dict = {
             "run_uuid": erp_run_uuid,
             "reopt_version": "0.18.0",
         }
         if bundle.request.META.get('HTTP_X_API_USER_ID', False):
             if bundle.request.META.get('HTTP_X_API_USER_ID', '') == '6f09c972-8414-469b-b3e8-a78398874103':
-                meta["job_type"] = 'REopt Web Tool'
+                meta_dict["job_type"] = 'REopt Web Tool'
             else:
-                meta["job_type"] = 'developer.nrel.gov'
+                meta_dict["job_type"] = 'developer.nrel.gov'
         else:
-            meta["job_type"] = 'Internal NREL'
+            meta_dict["job_type"] = 'Internal NREL'
         test_case = bundle.request.META.get('HTTP_USER_AGENT','')
         if test_case.startswith('check_http/'):
-            meta["job_type"] = 'Monitoring'
-        meta = ERPMeta.create(**meta).save()
+            meta_dict["job_type"] = 'Monitoring'
+        meta = ERPMeta.create(**meta_dict)
+        meta.save()
 
         reopt_run_uuid = bundle.data.get("reopt_run_uuid", None)
         try:
@@ -201,7 +202,7 @@ class ERPJob(ModelResource):
             run_erp_task.delay(erp_run_uuid)
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            raise ImmediateHttpResponse(HttpResponse(json.dumps({"error": exc_value}),
+            raise ImmediateHttpResponse(HttpResponse(json.dumps({"error": exc_value.args[0]}),
                                         content_type='application/json',
                                         status=500))  # internal server error
 
