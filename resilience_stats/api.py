@@ -105,6 +105,7 @@ class ERPJob(ModelResource):
         if test_case.startswith('check_http/'):
             meta_dict["job_type"] = 'Monitoring'
         meta = ERPMeta.create(**meta_dict)
+        meta.clean_fields()
         meta.save()
 
         reopt_run_uuid = bundle.data.get("reopt_run_uuid", None)
