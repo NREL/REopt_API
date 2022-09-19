@@ -203,7 +203,7 @@ class ERPJob(ModelResource):
             run_erp_task.delay(erp_run_uuid)
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            raise ImmediateHttpResponse(HttpResponse(json.dumps({"error": exc_value.args[0]}),
+            raise ImmediateHttpResponse(HttpResponse(json.dumps({"error": str(exc_value.args[0])}),
                                         content_type='application/json',
                                         status=500))  # internal server error
 
