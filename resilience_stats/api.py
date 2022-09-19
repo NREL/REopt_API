@@ -193,7 +193,7 @@ class ERPJob(ModelResource):
             #     except: pass #will error later when creating ERPInputs and ImmediateHttpResponse will be raised
 
         try:
-            erpinputs = ERPInputs.create(**bundle.data)
+            erpinputs = ERPInputs.create(meta=meta, **bundle.data)
             erpinputs.clean_fields()
             # erpinputs.clean()
             erpinputs.save()
