@@ -7,19 +7,19 @@ spec:
   template:
     spec:
       restartPolicy: Never
+      imagePullSecrets:
+        - name: {{ .Chart.Name }}-ecr-image-pull-secret
       volumes:
         - name: {{ .Chart.Name }}-secrets-volume
           secret:
             secretName: {{ .Chart.Name }}-secrets
       containers:
         - name: {{ .Chart.Name }}-job
-{{ tuple "reopt-api" . | werf_container_image | indent 10 }}
+          image: {{ index .Values.werf.image "reopt-api" }}
           args: ["bin/migrate"]
           envFrom:
             - configMapRef:
                 name: {{ .Chart.Name }}-base-config-map
-          env:
-{{ tuple "reopt-api" . | werf_container_env | indent 12 }}
           volumeMounts:
             - name: {{ .Chart.Name }}-secrets-volume
               readOnly: true

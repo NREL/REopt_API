@@ -3,6 +3,9 @@ name: Built-in Tests for Push (Xpress in Ubuntu 18.04)
 on:
 
   push:
+    paths-ignore:
+      - README.md
+      - CHANGELOG.md
 
 jobs:
 
