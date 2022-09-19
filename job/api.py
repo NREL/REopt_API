@@ -100,8 +100,8 @@ class Job(ModelResource):
         run_uuid = str(uuid.uuid4())
         meta = {
             "run_uuid": run_uuid,
-            "api_version": 2,
-            "reopt_version": "0.11.0",
+            "api_version": 3,
+            "reopt_version": "0.18.0",
             "status": "validating..."
         }
         bundle.data.update({"APIMeta": meta})
