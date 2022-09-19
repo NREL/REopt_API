@@ -86,6 +86,11 @@ class ERPInputs(BaseModel, models.Model):
         related_name="ERPInputs"
     )
  
+    reopt_run_uuid = models.UUIDField(
+        blank=True,
+        null=True,
+        help_text="The unique ID of a REopt optimization run from which to load inputs."
+    )
     generator_operational_availability = models.FloatField(
         blank=True,
         default=0.9998,
