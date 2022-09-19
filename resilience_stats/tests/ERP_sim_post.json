@@ -2,7 +2,7 @@
  "generator_operational_availability": 0.9998, 
  "generator_failure_to_start" : 0.0066, 
  "generator_failure_to_run" : 0.00157,
- "num_generators" : 2,
+ "num_generators" : [2],
  "generator_size_kw" : 200.0,
  "num_battery_bins" : 101,
  "max_outage_duration" : 96,
