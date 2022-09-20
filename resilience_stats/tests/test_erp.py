@@ -47,7 +47,7 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         #for simulation module
         self.reopt_base_erp = '/dev/erp/'
         self.post_sim = os.path.join('resilience_stats', 'tests', 'ERP_sim_post.json')
-        self.reopt_base_erp_results = '/dev/job/{}/results'
+        self.reopt_base_erp_results = '/dev/erp/{}/results'
 
 
     def get_response_opt(self, data):
