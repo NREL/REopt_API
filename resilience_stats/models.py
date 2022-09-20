@@ -117,18 +117,26 @@ class ERPInputs(BaseModel, models.Model):
         ],
         help_text=("Chance of generator failing in each hour of outage")
     )
-    def num_generators_default():
-        return list([1])
-    num_generators = ArrayField(
-        models.IntegerField(
-            validators=[
-                MinValueValidator(1)
-            ]
-        ),
+    num_generators = models.IntegerField(
+        validators=[
+            MinValueValidator(1)
+        ],
         blank=True,
-        default=num_generators_default,
+        default=1,
         help_text=("Number of generators")
     )
+    # def num_generators_default():
+    #     return list([1])
+    # num_generators = ArrayField(
+    #     models.IntegerField(
+    #         validators=[
+    #             MinValueValidator(1)
+    #         ]
+    #     ),
+    #     blank=True,
+    #     default=num_generators_default,
+    #     help_text=("Number of generators")
+    # )
     generator_size_kw = models.FloatField(
         blank=True,
         default=0.0,
