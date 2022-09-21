@@ -32,7 +32,8 @@ Classify the change according to the following categories:
 - Require ElectricTariff key in inputs when **Settings.off_grid_flag** is false
 - Create and save **ElectricUtilityInputs** model if ElectricUtility key not provided in inputs when **Settings.off_grid_flag** is false, in order to use the default inputs in `job/models.py`
 - Added message to `messages()` to alert user if valid ElectricUtility input is provided when **Settings.off_grid_flag** is true
-- Register `OutageSimJob()` and `GHPGHXJob()` to the 'v2' API in `urls.py`, making the `v2/outagesimjob` and `v2/ghpghx` urls available
+- Register 
+- Make all urls available from stable/ also available from v2/. Includes registering `OutageSimJob()` and `GHPGHXJob()` to the 'v2' API and adding missing paths to urlpatterns in `urls.py`.
 ##### Changed
 - `job/models.py`: 
     - remove Generator `fuel_slope_gal_per_kwh` and `fuel_intercept_gal_per_hr` defaults based on size, keep defaults independent of size 
