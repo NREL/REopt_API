@@ -57,7 +57,7 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         return self.api_client.post(self.reopt_base_erp, format='json', data=data_sim)
 
     def get_results_sim(self, run_uuid):
-        return self.api_client.post(self.reopt_base_erp_results.format(run_uuid), format='json')
+        return self.api_client.get(self.reopt_base_erp_results.format(run_uuid))
 
     def test_erp(self):
         """
