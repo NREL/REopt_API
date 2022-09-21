@@ -3460,7 +3460,7 @@ class CoolingLoadInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        help_text=("Annual electric chiller energy consumption, in [Ton-Hours],"
+        help_text=("Annual electric chiller thermal energy production, in [Ton-Hour],"
                     "used to scale simulated default electric chiller load profile for the site's climate zone")
     )
 
@@ -3484,7 +3484,7 @@ class CoolingLoadInputs(BaseModel, models.Model):
         ),
         default=list,
         blank=True,
-        help_text=("Typical electric chiller load for all hours in one year. Must be hourly (8,760 samples), 30 minute (17,"
+        help_text=("Typical electric chiller thermal production to serve the load for all hours in one year. Must be hourly (8,760 samples), 30 minute (17,"
                    "520 samples), or 15 minute (35,040 samples)."
                    )
     )
@@ -3496,7 +3496,7 @@ class CoolingLoadInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        help_text=("Annual electric chiller energy consumption scalar (i.e. fraction of total electric load)"
+        help_text=("Annual electric chiller energy consumption scalar as a fraction of total electric load applied to every time step"
                 "used to scale simulated default electric chiller load profile for the site's climate zone"
         )
     )
@@ -3510,7 +3510,7 @@ class CoolingLoadInputs(BaseModel, models.Model):
             blank=True
         ),
         default=list, blank=True,
-        help_text=("Monthly fraction of site's total electric consumption used up by electric chiller."
+        help_text=("Monthly fraction of site's total electric consumption used up by electric chiller, applied to every hour of each month,"
                     "to scale simulated default building load profile for the site's climate zone")
     )
 
@@ -3587,7 +3587,8 @@ class ExistingChillerInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        help_text=("Existing electric chiller system coefficient of performance (ability to convert electricity to usable cooling thermal energy")
+        help_text=("Existing electric chiller system coefficient of performance (COP) "
+                    "(ratio of usable cooling thermal energy produced per unit electric energy consumed)")
     )
 
     max_thermal_factor_on_peak_load = models.FloatField(
@@ -3597,7 +3598,9 @@ class ExistingChillerInputs(BaseModel, models.Model):
         ],
         default=1.25,
         blank=True,
-        help_text=("Factor on peak thermal LOAD which the electric chiller can supply")
+        help_text=("Factor on peak thermal LOAD which the electric chiller can supply. "
+                    "This accounts for the assumed size of the electric chiller which typically has a safety factor above the peak load."
+                    "This factor limits the max production which could otherwise be exploited with ColdThermalStorage")
     )
 
     def clean(self):
