@@ -50,7 +50,7 @@ class BaseModel(object):
         d.pop("_state", None)
         d.pop("id", None)
         d.pop("basemodel_ptr_id", None)
-        d.pop("run_uuid", None)  # redundant with base_scenario
+        d.pop("meta_id", None)
         return d
 
     @classmethod
