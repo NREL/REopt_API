@@ -26,6 +26,13 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop - 2022-09-13
+### Minor Updates
+##### Changed
+The following name changes were made in the `job/` endpoint and `julia_src/http.jl`: 
+ - Change "_pct" to "_rate_fraction" for input and output names containing "discount", "escalation", and "tax_pct" (financial terms)
+ - Change "_pct" to "_fraction" for all other input and output names (e.g., "min_soc_", "min_turndown_")
+ - Change **prod_factor_series** to **production_factor_series** 
 ## v2.2.0
 ### Minor Updates 
 ##### Fixed
