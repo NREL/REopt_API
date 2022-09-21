@@ -42,7 +42,7 @@ from resilience_stats.outage_simulator_LF import simulate_outages
 import numpy as np
 from reo.utilities import empty_record
 
-def erp_results(request: Union[Dict, HttpRequest], run_uuid=None):
+def erp_results(request, run_uuid):
     try:
         uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
     except ValueError as e:
@@ -57,7 +57,7 @@ def erp_results(request: Union[Dict, HttpRequest], run_uuid=None):
     try:  # catch all exceptions
         try:  # catch specific exception
             erp_outputs = ERPOutputs.objects.get(meta__run_uuid=run_uuid)
-        except ERPOutputs.DoesNotExist:
+        except models.ObjectDoesNotExist:
             not_ready_msg = ('ERP results are not ready. '
                 'If you have already submitted an ERP job, please try again later. '
                 'If not, please first submit an ERP job by sending a POST request to '
