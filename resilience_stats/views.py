@@ -94,9 +94,9 @@ def resilience_stats(request: Union[Dict, HttpRequest], run_uuid=None):
             not_ready_msg = ('Outage sim results are not ready. '
                 'If you have already submitted an outagesimjob, please try again later. '
                 'If not, please first submit an outagesimjob by sending a POST request to '
-                'v1/outagesimjob/ with run_uuid and bau parameters. This will generate'
+                '<version>/outagesimjob/ with run_uuid and bau parameters. This will generate'
                 ' outage simulation results that you can access from a GET request to the '
-                'v1/job/<run uuid>/resilience_stats endpoint. ')
+                '<version>/job/<run uuid>/resilience_stats endpoint. ')
             not_ready_msg += 'Sample body data for POST-ing to /outagesimjob/: {"run_uuid\": \"6ea30f0f-3723-4fd1-8a3f-bebf8a3e4dbf\", \"bau\": false}' 
             rm = ResilienceModel.objects.get(scenariomodel=scenario)
             if rm.resilience_by_timestep is None:
