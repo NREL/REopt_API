@@ -140,6 +140,18 @@ git-tree-sha1 = "fb21ddd70a051d882a1686a5a550990bbe371a95"
 uuid = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
 version = "1.4.1"
 
+[[deps.CoolProp]]
+deps = ["CoolProp_jll", "Markdown", "Unitful"]
+git-tree-sha1 = "94062163b5656b1351f7f7a784341b8fe13c1ca1"
+uuid = "e084ae63-2819-5025-826e-f8e611a84251"
+version = "0.1.0"
+
+[[deps.CoolProp_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "00a315eb9652c16094b57e052b6c47355aec5f8a"
+uuid = "3351c21f-4feb-5f29-afb9-f4fcb0e27549"
+version = "6.4.2+0"
+
 [[deps.DataAPI]]
 git-tree-sha1 = "1106fa7e1256b402a86a8e7b15c00c85036fef49"
 uuid = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
@@ -565,10 +577,10 @@ deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
 uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [[deps.REopt]]
-deps = ["ArchGDAL", "Dates", "DelimitedFiles", "HTTP", "JLD", "JSON", "JuMP", "LinDistFlow", "LinearAlgebra", "Logging", "MathOptInterface", "Requires", "Roots", "Statistics", "TestEnv"]
-git-tree-sha1 = "13a6ae2f66a18b451d3ce67e472d1aedacf7d1a5"
+deps = ["ArchGDAL", "CoolProp", "Dates", "DelimitedFiles", "HTTP", "JLD", "JSON", "JuMP", "LinDistFlow", "LinearAlgebra", "Logging", "MathOptInterface", "Requires", "Roots", "Statistics", "TestEnv"]
+git-tree-sha1 = "4b2e8b7ec3bc44a68c7a58c20bc42a04ced820e0"
 uuid = "d36ad4e8-d74a-4f7a-ace1-eaea049febf6"
-version = "0.19.0"
+version = "0.20.0"
 
 [[deps.Random]]
 deps = ["SHA", "Serialization"]
@@ -706,6 +718,12 @@ uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 
 [[deps.Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
+
+[[deps.Unitful]]
+deps = ["ConstructionBase", "Dates", "LinearAlgebra", "Random"]
+git-tree-sha1 = "d57a4ed70b6f9ff1da6719f5f2713706d57e0d66"
+uuid = "1986cc42-f94f-5a68-af5c-568840ba703d"
+version = "1.12.0"
 
 [[deps.Xpress]]
 deps = ["Libdl", "LinearAlgebra", "MathOptInterface", "SparseArrays"]
