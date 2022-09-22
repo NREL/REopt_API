@@ -109,12 +109,12 @@ class ERPJob(ModelResource):
         meta.save()
 
         reopt_run_uuid = bundle.data.get("reopt_run_uuid", None)
-        try:
-            validate_run_uuid(reopt_run_uuid)
-        except ValidationError as err:
-            raise ImmediateHttpResponse(HttpResponse(json.dumps({"Error": str(err.message)}), status=400))
-
         if reopt_run_uuid is not None:
+            try:
+                validate_run_uuid(reopt_run_uuid)
+            except ValidationError as err:
+                raise ImmediateHttpResponse(HttpResponse(json.dumps({"Error": str(err.message)}), status=400))
+
             # Get inputs from a REopt run in database
             try:
                 reopt_run_meta = APIMeta.objects.select_related(
@@ -193,6 +193,9 @@ class ERPJob(ModelResource):
             #         bundle.data["num_generators"] = 1
             #         bundle.data["generator_size_kw"] = gen.get("size_kw", 0)
             #     except: pass #will error later when creating ERPInputs and ImmediateHttpResponse will be raised
+
+        
+        json.dump(bundle.data, open("resilience_stats/tests/erp_model_inputs_to_skip_reopt.json", "w"))
 
         try:
             erpinputs = ERPInputs.create(meta=meta, **bundle.data)
