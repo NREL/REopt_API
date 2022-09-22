@@ -3488,10 +3488,6 @@ class CHPInputs(BaseModel, models.Model):
         blank=True,
         help_text=("Boolean indicator if CHP does not reduce demand charges")
     )
-    use_default_derate = models.BooleanField(null=True, blank=True)
-    max_derate_factor = models.FloatField(null=True, blank=True)
-    derate_start_temp_degF = models.FloatField(null=True, blank=True)
-    derate_slope_pct_per_degF = models.FloatField(null=True, blank=True)
     can_supply_steam_turbine = models.BooleanField(null=True, blank=True)
 
     #Financial and emissions    
