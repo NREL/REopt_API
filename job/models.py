@@ -3867,6 +3867,20 @@ class SpaceHeatingLoadInputs(BaseModel, models.Model):
                    "DoE Commercial Reference Buildings. Must sum to 1.0.")
     )
 
+    addressable_load_fraction = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1.0)
+            ],
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        help_text=( "Fraction of input fuel load which is addressable by heating technologies (default is 1.0)." 
+                    "Can be a scalar or vector with length aligned with use of monthly_mmbtu or fuel_loads_mmbtu_per_hour.")
+    )
+
     '''
     Latitude and longitude are passed on to SpaceHeating struct using the Site struct.
     City is not used as an input here because it is found using find_ashrae_zone_city() when needed.
@@ -3890,6 +3904,10 @@ class SpaceHeatingLoadInputs(BaseModel, models.Model):
         if self.doe_reference_name != "" or \
                 len(self.blended_doe_reference_names) > 0:
             self.year = 2017  # the validator provides an "info" message regarding this)
+
+        if self.addressable_load_fraction == None:
+            self.addressable_load_fraction = 1.0
+        self.addressable_load_fraction = scalar_to_vector(self.addressable_load_fraction)
 
         if error_messages:
             raise ValidationError(error_messages)
