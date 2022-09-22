@@ -3361,7 +3361,7 @@ class CHPInputs(BaseModel, models.Model):
             "om_cost_per_kwh",
             "electric_efficiency_half_load",
             "electric_efficiency_full_load",
-            "min_turn_down_pct",
+            "min_turn_down_fraction",
             "thermal_efficiency_full_load",
             "thermal_efficiency_half_load",
             "min_allowable_kw",
@@ -3396,9 +3396,9 @@ class CHPInputs(BaseModel, models.Model):
         help_text="CHP prime mover, one of recip_engine, micro_turbine, combustion_turbine, fuel_cell"
     )
     # Required "custom inputs" if not providing prime_mover:
-    installed_cost_us_dollars_per_kw = ArrayField(
+    installed_cost_per_kw = ArrayField(
             models.FloatField(null=True, blank=True), default=list, null=True)
-    tech_size_for_cost_curve = ArrayField(
+    tech_sizes_for_cost_curve = ArrayField(
             models.FloatField(null=True, blank=True), default=list, null=True)
     om_cost_per_kwh = models.FloatField(
         default=0.0,
@@ -3409,9 +3409,9 @@ class CHPInputs(BaseModel, models.Model):
         blank=True,
         help_text="CHP per unit production (variable) operations and maintenance costs in $/kWh"
     )
-    electric_efficiency_full_load = models.FloatField(null=True, blank=True)
     electric_efficiency_half_load = models.FloatField(null=True, blank=True)
-    min_turn_down_pct = models.FloatField(
+    electric_efficiency_full_load = models.FloatField(null=True, blank=True)
+    min_turn_down_fraction = models.FloatField(
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(1.0)
@@ -3501,7 +3501,7 @@ class CHPInputs(BaseModel, models.Model):
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
-    macrs_bonus_pct = models.FloatField(
+    macrs_bonus_fraction = models.FloatField(
         default=1.0,
         validators=[
             MinValueValidator(0),
@@ -3519,7 +3519,7 @@ class CHPInputs(BaseModel, models.Model):
         blank=True,
         help_text="Percent of the ITC value by which depreciable basis is reduced"
     )
-    federal_itc_pct = models.FloatField(
+    federal_itc_fraction = models.FloatField(
         default=0.0,
         validators=[
             MinValueValidator(0),
@@ -3537,7 +3537,7 @@ class CHPInputs(BaseModel, models.Model):
         blank=True,
         help_text="Federal rebates based on installed capacity"
     )
-    state_ibi_pct = models.FloatField(
+    state_ibi_fraction = models.FloatField(
         default=0,
         validators=[
             MinValueValidator(0),
@@ -3573,7 +3573,7 @@ class CHPInputs(BaseModel, models.Model):
         blank=True,
         help_text="Maximum state rebate"
     )
-    utility_ibi_pct = models.FloatField(
+    utility_ibi_fraction = models.FloatField(
         default=0,
         validators=[
             MinValueValidator(0),
@@ -3668,7 +3668,7 @@ class CHPInputs(BaseModel, models.Model):
         blank=True,
         help_text="True/False for if technology has the ability to curtail energy production."
     )
-    fuel_renewable_energy_pct = models.FloatField(
+    fuel_renewable_energy_fraction = models.FloatField(
         default=0.0,
         validators=[
             MinValueValidator(0),
