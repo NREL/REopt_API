@@ -3353,6 +3353,24 @@ class CHPInputs(BaseModel, models.Model):
         "diesel_oil"
     ))
 
+    possible_sets = [
+        ["prime_mover"],
+        [
+            "installed_cost_per_kw",
+            "tech_sizes_for_cost_curve",
+            "om_cost_per_kwh",
+            "elec_effic_half_load",
+            "elec_effic_full_load",
+            "min_turn_down_pct",
+            "thermal_effic_full_load",
+            "thermal_effic_half_load",
+            "min_allowable_kw",
+            "max_kw",
+            "cooling_thermal_factor",
+            "unavailability_periods"
+        ]
+    ]
+
     #Always required
     fuel_cost_per_mmbtu = ArrayField(
         models.FloatField(
@@ -3695,6 +3713,9 @@ class CHPInputs(BaseModel, models.Model):
         blank=True,
         help_text="Pounds of CO2 emitted per MMBTU of CHP fuel burned."
     )
+    
+    def clean(self):
+        pass
 
 
 class CHPOutputs(BaseModel, models.Model):
@@ -3791,6 +3812,9 @@ class CHPOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Present value of all CHP standby charges, after tax."
     )
+
+    def clean():
+        pass
 
 class Message(BaseModel, models.Model):
     """
