@@ -3382,10 +3382,12 @@ class CHPInputs(BaseModel, models.Model):
         default=list,
         null=False,
         blank=True,
-        help_text=("The CHP system fuel cost is a required input when the CHP system is included as an option."
-                    "The `fuel_cost_per_mmbtu` can be a scalar, a list of 12 monthly values, or a time series of values for every time step."
-                    "If a scalar or a vector of 12 values are provided, then the value is scaled up to 8760 values."
-                    "If a vector of 8760, 17520, or 35040 values is provided, it is adjusted to match timesteps per hour in the optimization.")
+        help_text=(
+            "The CHP system fuel cost is a required input when the CHP system is included as an option."
+            "The `fuel_cost_per_mmbtu` can be a scalar, a list of 12 monthly values, or a time series of values for every time step."
+            "If a scalar or a vector of 12 values are provided, then the value is scaled up to 8760 values."
+            "If a vector of 8760, 17520, or 35040 values is provided, it is adjusted to match timesteps per hour in the optimization."
+        )
     )
 
     # Prime mover - required unless "custom inputs" below are all included
@@ -3397,9 +3399,17 @@ class CHPInputs(BaseModel, models.Model):
     )
     # Required "custom inputs" if not providing prime_mover:
     installed_cost_per_kw = ArrayField(
-            models.FloatField(null=True, blank=True), default=list, null=True)
+            models.FloatField(null=True, blank=True), 
+            default=list, 
+            null=True,
+            help_text="Installed cost in $/kW"
+    )
     tech_sizes_for_cost_curve = ArrayField(
-            models.FloatField(null=True, blank=True), default=list, null=True)
+            models.FloatField(null=True, blank=True), 
+            default=list, 
+            null=True,
+            help_text="Capacity intervals correpsonding to cost rates in installed_cost_per_kW, in kW"
+    )
     om_cost_per_kwh = models.FloatField(
         default=0.0,
         validators=[
@@ -3409,8 +3419,24 @@ class CHPInputs(BaseModel, models.Model):
         blank=True,
         help_text="CHP per unit production (variable) operations and maintenance costs in $/kWh"
     )
-    electric_efficiency_half_load = models.FloatField(null=True, blank=True)
-    electric_efficiency_full_load = models.FloatField(null=True, blank=True)
+    electric_efficiency_half_load = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0)
+        ],
+        null=True, 
+        blank=True,
+        help_text="Electric efficiency of CHP prime-mover at half-load, HHV-basis"    
+    )
+    electric_efficiency_full_load = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0)
+        ],
+        null=True, 
+        blank=True,
+        help_text="Electric efficiency of CHP prime-mover at full-load, HHV-basis"    
+    )
     min_turn_down_fraction = models.FloatField(
         validators=[
             MinValueValidator(0.0),
@@ -3420,13 +3446,64 @@ class CHPInputs(BaseModel, models.Model):
         null=True,
         help_text="Minimum CHP loading in fraction of capacity (size_kw)."
     )
-    thermal_efficiency_full_load = models.FloatField(null=True, blank=True)
-    thermal_efficiency_half_load = models.FloatField(null=True, blank=True)
-    min_allowable_kw = models.FloatField(null=True, blank=True)
-    max_kw = models.FloatField(null=True, blank=True)
-    cooling_thermal_factor = models.FloatField(null=True, blank=True)  # only needed with cooling load
+    thermal_efficiency_full_load = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0)
+        ],
+        null=True, 
+        blank=True,
+        help_text="CHP fraction of fuel energy converted to hot-thermal energy at full electric load"    
+    )
+    thermal_efficiency_half_load = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0)
+        ],
+        null=True, 
+        blank=True,
+        help_text="CHP fraction of fuel energy converted to hot-thermal energy at half electric load"    
+    )
+    min_allowable_kw = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True, 
+        blank=True,
+        help_text="Minimum nonzero CHP size (in kWe) (i.e. it is possible to select no CHP system)"
+    )
+    max_kw = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True, 
+        blank=True,
+        help_text="Maximum CHP size (in kWe) constraint for optimization. Set to zero to disable CHP"
+    )
+    cooling_thermal_factor = models.FloatField(
+        validators=[
+            MinValueValidator(0.01),
+            MaxValueValidator(1.0)
+        ],
+        null=True, 
+        blank=True,
+        help_text=(
+            "Knockdown factor on absorption chiller COP based on the CHP prime_mover not being able to produce "
+            "as high of temp/pressure hot water/steam"
+        )
+    )  # only needed with cooling load
     unavailability_periods = ArrayField(
-            PickledObjectField(null=True, editable=True), null=True)
+            PickledObjectField(null=True, editable=True), 
+            null=True,
+            help_text=(
+                "CHP unavailability periods for scheduled and unscheduled maintenance, list of dictionaries with keys of "
+                "['month', 'start_week_of_month', 'start_day_of_week', 'start_hour', 'duration_hours'] "
+                "all values are one-indexed and start_day_of_week uses 1 for Monday, 7 for Sunday"
+            )
+            
+    )
     # Optional inputs
     size_class = models.IntegerField(
         default=1,
@@ -3435,7 +3512,7 @@ class CHPInputs(BaseModel, models.Model):
             MaxValueValidator(1.0e9)
         ],
         blank=True,
-        help_text="CHP size class.  Must be an integer value"
+        help_text="CHP size class. Must be an integer value"
     )
     min_kw = models.FloatField(
         default=0,
@@ -3471,24 +3548,61 @@ class CHPInputs(BaseModel, models.Model):
         blank=True,
         help_text="CHP system per-operating-hour (variable) operations and maintenance costs in $/hr-kW"
     )
-    supplementary_firing_capital_cost_per_kw = models.FloatField(null=True, blank=True)
-    supplementary_firing_max_steam_ratio = models.FloatField(null=True, blank=True)
-    supplementary_firing_efficiency = models.FloatField(null=True, blank=True)
+    supplementary_firing_capital_cost_per_kw = models.FloatField(
+        default=150,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e5)
+        ],
+        null=True, 
+        blank=True,
+        help_text="Installed CHP supplementary firing system cost in $/kWe"
+    )
+    supplementary_firing_max_steam_ratio = models.FloatField(
+        default=1.0,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(10.0)
+        ],
+        null=True, 
+        blank=True,
+        help_text="Ratio of max fired steam to un-fired steam production. Relevant only for combustion_turbine prime_mover"
+    )
+    supplementary_firing_efficiency =models.FloatField(
+        default=0.92,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0)
+        ],
+        null=True, 
+        blank=True,
+        help_text=(
+            "Thermal efficiency of the incremental steam production from supplementary firing. Relevant only for "
+            "combustion_turbine prime_mover"
+        )
+    )
     standby_rate_per_kw_per_month = models.FloatField(
         default=0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1000)
         ],
-        null=True, blank=True,
+        null=True, 
+        blank=True,
         help_text=("Standby rate charged to CHP based on CHP electric power size")
     )
     reduces_demand_charges = models.BooleanField(
         default=True,
+        null=True,
         blank=True,
-        help_text=("Boolean indicator if CHP does not reduce demand charges")
+        help_text=("Boolean indicator if CHP reduces demand charges")
     )
-    can_supply_steam_turbine = models.BooleanField(null=True, blank=True)
+    can_supply_steam_turbine = models.BooleanField(
+        default=False,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if CHP can supply steam to the steam turbine for electric production"   
+    )
 
     #Financial and emissions    
     macrs_option_years = models.IntegerField(
@@ -3507,7 +3621,7 @@ class CHPInputs(BaseModel, models.Model):
         help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
     )
     macrs_itc_reduction = models.FloatField(
-        default=0.0,
+        default=0.5,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -3516,7 +3630,7 @@ class CHPInputs(BaseModel, models.Model):
         help_text="Percent of the ITC value by which depreciable basis is reduced"
     )
     federal_itc_fraction = models.FloatField(
-        default=0.0,
+        default=0.1,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -3674,7 +3788,6 @@ class CHPInputs(BaseModel, models.Model):
         help_text="Fraction of the CHP fuel considered renewable."
     )
     emissions_factor_lb_CO2_per_mmbtu = models.FloatField(
-        default=22.51,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1e4)
@@ -3683,7 +3796,6 @@ class CHPInputs(BaseModel, models.Model):
         help_text="Pounds of CO2 emitted per MMBTU of CHP fuel burned."
     )
     emissions_factor_lb_NOx_per_mmbtu = models.FloatField(
-        default=0.0775544,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1e4)
@@ -3692,7 +3804,6 @@ class CHPInputs(BaseModel, models.Model):
         help_text="Pounds of CO2 emitted per MMBTU of CHP fuel burned."
     )
     emissions_factor_lb_SO2_per_mmbtu = models.FloatField(
-        default=0.040020476,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1e4)
@@ -3701,7 +3812,6 @@ class CHPInputs(BaseModel, models.Model):
         help_text="Pounds of CO2 emitted per MMBTU of CHP fuel burned."
     )
     emissions_factor_lb_PM25_per_mmbtu = models.FloatField(
-        default=0.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1e4)
