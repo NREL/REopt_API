@@ -32,16 +32,19 @@ import uuid
 from typing import Dict, Union
 from django.forms.models import model_to_dict
 from django.http import JsonResponse, HttpRequest
+from django.db import models
 from reo.exceptions import UnexpectedError
 from reo.models import ModelManager
 from reo.models import ScenarioModel, PVModel, StorageModel, LoadProfileModel, GeneratorModel, FinancialModel, \
     WindModel, CHPModel
 from reo.utilities import annuity
-from resilience_stats.models import ResilienceModel
+from resilience_stats.models import ResilienceModel, ERPOutputs
 from resilience_stats.outage_simulator_LF import simulate_outages
 import numpy as np
 from reo.utilities import empty_record
+from django.views.decorators.http import require_http_methods
 
+@require_http_methods(["GET"])
 def erp_results(request, run_uuid):
     try:
         uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
