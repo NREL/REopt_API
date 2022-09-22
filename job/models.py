@@ -3855,6 +3855,25 @@ class CHPInputs(BaseModel, models.Model):
             error_messages["required inputs"] = \
                 "Must provide at least one set of valid inputs from {}.".format(self.possible_sets)
 
+        else:  #use defaults if CHP prime mover given 
+            if self.dict.get("prime_mover") not in [None, ""]:
+                boiler_type = "steam" if self.prime_mover == "combustion turbine" else "hot_water"
+                for key in self.possible_sets[1]:
+                    if key in ["thermal_efficiency_full_load""thermal_efficiency_half_load"]:
+                        setattr(self,key,self.prime_mover_defaults[self.prime_mover][key][boiler_type][self.size_class-1])
+                    else: 
+                        setattr(self,key,self.prime_mover_defaults[self.prime_mover][key][self.size_class-1])
+
+        # Fuel burn slope and intercept
+        self.fuel_burn_full_load = 1 / self.electric_efficiency_full_load * 1.0  # [kWt/kWe]
+        self.fuel_burn_half_load = 1 / self.electric_efficiency_half_load * 0.5  # [kWt/kWe]
+        self.fuel_burn_slope = (self.fuel_burn_full_load - self.fuel_burn_half_load) / (1.0 - 0.5)  # [kWt/kWe]
+        self.fuel_burn_intercept = self.fuel_burn_full_load - self.fuel_burn_slope * 1.0  # [kWt/kWe_rated]
+        # Thermal production slope and intercept
+        self.thermal_prod_full_load = 1.0 * 1 / self.electric_efficiency_full_load * self.thermal_efficiency_full_load  # [kWt/kWe]
+        self.thermal_prod_half_load = 0.5 * 1 / self.electric_efficiency_half_load * self.thermal_efficiency_half_load   # [kWt/kWe]
+        self.thermal_prod_slope = (self.thermal_prod_full_load - self.thermal_prod_half_load) / (1.0 - 0.5)  # [kWt/kWe]
+        self.thermal_prod_intercept = self.thermal_prod_full_load - self.thermal_prod_slope * 1.0  # [kWt/kWe_rated]
         if error_messages:
             raise ValidationError(error_messages)
 
