@@ -330,7 +330,7 @@ def process_erp_results(results: dict, run_uuid: str) -> None:
     meta = ERPMeta.objects.get(run_uuid=run_uuid)
     # meta.status = results.get("status")
     # meta.save(update_fields=["status"])
-    results.pop("marginal_outage_survival_probability",None)
+    results.pop("marginal_outage_survival_final_time_step",None)
     ERPOutputs.create(meta=meta, **results).save()
     
 
