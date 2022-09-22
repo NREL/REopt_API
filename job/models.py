@@ -1202,7 +1202,6 @@ class ElectricLoadInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(2)
         ],
-        # default=0.5,
         help_text="Critical load factor is multiplied by the typical load to determine the critical load that must be "
                   "met during an outage. Value must be between zero and one, inclusive."
 
@@ -3497,7 +3496,6 @@ class ExistingBoilerInputs(BaseModel, models.Model):
 
     fuel_cost_per_mmbtu = ArrayField(
         models.FloatField(
-            blank=True,
             validators=[
                 MinValueValidator(0)
             ]
@@ -3837,7 +3835,7 @@ class SpaceHeatingLoadInputs(BaseModel, models.Model):
         ),
         default=list,
         blank=True,
-        help_text=("Typical load over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,"
+        help_text=("Vector of space heating fuel loads [mmbtu/hr] over one year. Must be hourly (8,760 samples), 30 minute (17,"
                    "520 samples), or 15 minute (35,040 samples). All non-net load values must be greater than or "
                    "equal to zero. "
                    )
@@ -3981,7 +3979,7 @@ class DomesticHotWaterLoadInputs(BaseModel, models.Model):
         ),
         default=list,
         blank=True,
-        help_text=("Typical load over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,"
+        help_text=("Vector of hot water fuel loads [mmbtu/hour] over one year. Must be hourly (8,760 samples), 30 minute (17,"
                    "520 samples), or 15 minute (35,040 samples). All non-net load values must be greater than or "
                    "equal to zero. "
                    )
@@ -4010,6 +4008,20 @@ class DomesticHotWaterLoadInputs(BaseModel, models.Model):
         blank=True,
         help_text=("Used in concert with blended_doe_reference_names to create a blended load profile from multiple "
                    "DoE Commercial Reference Buildings. Must sum to 1.0.")
+    )
+
+    addressable_load_fraction = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1.0)
+            ],
+            blank=True
+        ),
+        default=[1],
+        blank=True,
+        help_text=( "Fraction of input fuel load which is addressable by heating technologies." 
+                    "Can be a scalar or vector with length aligned with use of monthly_mmbtu or fuel_loads_mmbtu_per_hour.")
     )
 
     '''
@@ -4042,7 +4054,7 @@ class DomesticHotWaterLoadInputs(BaseModel, models.Model):
         
         pass
 
-# TODO Add domestic hot water input model.
+# TODO Add domestic hot water input model. - done? 
 
 def get_input_dict_from_run_uuid(run_uuid:str):
     """
