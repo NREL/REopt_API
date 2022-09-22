@@ -39,6 +39,8 @@ import numpy
 from job.urdb_rate_validator import URDB_RateValidator,URDB_LabelValidator
 import copy
 import logging
+import os
+import json
 
 log = logging.getLogger(__name__)
 
@@ -3339,7 +3341,7 @@ class CHPInputs(BaseModel, models.Model):
     )
 
     # Prime mover
-    CHP_PRIME_MOVER = models.TextChoices('CHP_PRIME_MOVER', (
+    PRIME_MOVER = models.TextChoices('PRIME_MOVER', (
         "recip_engine",
         "micro_turbine",
         "combustion_turbine",
@@ -3352,6 +3354,16 @@ class CHPInputs(BaseModel, models.Model):
         "propane",
         "diesel_oil"
     ))
+
+    # Default data, created from input_files.CHP.chp_input_defaults_processing, copied from chp_default_data.json
+    prime_mover_defaults = json.load(open(os.path.join("input_files","CHP","chp_defaults_v3.json")))
+
+    # Lower and upper bounds for size classes - Class 0 is the total average across entire range of data
+    class_bounds = {"recip_engine": [(30, 9300), (30, 100), (100, 630), (630, 1140), (1140, 3300), (3300, 9300)],
+                    "micro_turbine": [(30, 1290), (30, 60), (60, 190), (190, 950), (950, 1290)],
+                    "combustion_turbine": [(950, 20000), (950, 1800), (1800, 3300), (3300, 5400), (5400, 7500),
+                                           (7500, 14000), (14000, 20000)],
+                    "fuel_cell": [(440, 9300), (440, 1400), (1400, 9300)]}
 
     possible_sets = [
         ["prime_mover"],
@@ -3394,7 +3406,7 @@ class CHPInputs(BaseModel, models.Model):
     prime_mover = models.TextField(
         null=False,
         blank=True,
-        choices=CHP_PRIME_MOVER.choices,
+        choices=PRIME_MOVER.choices,
         help_text="CHP prime mover, one of recip_engine, micro_turbine, combustion_turbine, fuel_cell"
     )
     # Required "custom inputs" if not providing prime_mover:
@@ -3508,11 +3520,11 @@ class CHPInputs(BaseModel, models.Model):
     size_class = models.IntegerField(
         default=1,
         validators=[
-            MinValueValidator(0),
-            MaxValueValidator(1.0e9)
+            MinValueValidator(1),
+            MaxValueValidator(5)
         ],
         blank=True,
-        help_text="CHP size class. Must be an integer value"
+        help_text="CHP size class. Must be a strictly positive integer value"
     )
     min_kw = models.FloatField(
         default=0,
@@ -3838,7 +3850,7 @@ class CHPInputs(BaseModel, models.Model):
 
         error_messages = {}
 
-        # possible sets for defining load profile
+        # possible sets for defining CHP
         if not at_least_one_set(self.dict, self.possible_sets):
             error_messages["required inputs"] = \
                 "Must provide at least one set of valid inputs from {}.".format(self.possible_sets)
