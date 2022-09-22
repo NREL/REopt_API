@@ -3503,9 +3503,7 @@ class ExistingBoilerInputs(BaseModel, models.Model):
             ]
         ),
         default=list,
-        blank=True,
-        help_text=("The ExistingBoiler default operating cost is zero. Please provide this field to include non-zero BAU heating costs."
-                    "The `fuel_cost_per_mmbtu` can be a scalar, a list of 12 monthly values, or a time series of values for every time step."
+        help_text=( "The `fuel_cost_per_mmbtu` is a required input and can be a scalar, a list of 12 monthly values, or a time series of values for every time step."
                     "If a scalar or a vector of 12 values are provided, then the value is scaled up to 8760 values."
                     "If a vector of 8760, 17520, or 35040 values is provided, it is adjusted to match timesteps per hour in the optimization.")
     )
