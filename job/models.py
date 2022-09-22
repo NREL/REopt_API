@@ -3359,11 +3359,11 @@ class CHPInputs(BaseModel, models.Model):
             "installed_cost_per_kw",
             "tech_sizes_for_cost_curve",
             "om_cost_per_kwh",
-            "elec_effic_half_load",
-            "elec_effic_full_load",
+            "electric_efficiency_half_load",
+            "electric_efficiency_full_load",
             "min_turn_down_pct",
-            "thermal_effic_full_load",
-            "thermal_effic_half_load",
+            "thermal_efficiency_full_load",
+            "thermal_efficiency_half_load",
             "min_allowable_kw",
             "max_kw",
             "cooling_thermal_factor",
@@ -3409,8 +3409,8 @@ class CHPInputs(BaseModel, models.Model):
         blank=True,
         help_text="CHP per unit production (variable) operations and maintenance costs in $/kWh"
     )
-    elec_effic_full_load = models.FloatField(null=True, blank=True)
-    elec_effic_half_load = models.FloatField(null=True, blank=True)
+    electric_efficiency_full_load = models.FloatField(null=True, blank=True)
+    electric_efficiency_half_load = models.FloatField(null=True, blank=True)
     min_turn_down_pct = models.FloatField(
         validators=[
             MinValueValidator(0.0),
@@ -3420,8 +3420,8 @@ class CHPInputs(BaseModel, models.Model):
         null=True,
         help_text="Minimum CHP loading in fraction of capacity (size_kw)."
     )
-    thermal_effic_full_load = models.FloatField(null=True, blank=True)
-    thermal_effic_half_load = models.FloatField(null=True, blank=True)
+    thermal_efficiency_full_load = models.FloatField(null=True, blank=True)
+    thermal_efficiency_half_load = models.FloatField(null=True, blank=True)
     min_allowable_kw = models.FloatField(null=True, blank=True)
     max_kw = models.FloatField(null=True, blank=True)
     cooling_thermal_factor = models.FloatField(null=True, blank=True)  # only needed with cooling load
@@ -3715,7 +3715,30 @@ class CHPInputs(BaseModel, models.Model):
     )
     
     def clean(self):
-        pass
+
+        self.fuel_cost_per_mmbtu = scalar_to_vector(self.fuel_cost_per_mmbtu)
+
+        if self.emissions_factor_lb_CO2_per_mmbtu == None:
+            self.emissions_factor_lb_CO2_per_mmbtu = FUEL_DEFAULTS["emissions_factor_lb_CO2_per_mmbtu"].get(self.fuel_type, 0.0)
+        
+        if self.emissions_factor_lb_SO2_per_mmbtu == None:
+            self.emissions_factor_lb_SO2_per_mmbtu = FUEL_DEFAULTS["emissions_factor_lb_SO2_per_mmbtu"].get(self.fuel_type, 0.0)
+        
+        if self.emissions_factor_lb_NOx_per_mmbtu == None:
+            self.emissions_factor_lb_NOx_per_mmbtu = FUEL_DEFAULTS["emissions_factor_lb_NOx_per_mmbtu"].get(self.fuel_type, 0.0)
+        
+        if self.emissions_factor_lb_PM25_per_mmbtu == None:
+            self.emissions_factor_lb_PM25_per_mmbtu = FUEL_DEFAULTS["emissions_factor_lb_PM25_per_mmbtu"].get(self.fuel_type, 0.0)
+
+        error_messages = {}
+
+        # possible sets for defining load profile
+        if not at_least_one_set(self.dict, self.possible_sets):
+            error_messages["required inputs"] = \
+                "Must provide at least one set of valid inputs from {}.".format(self.possible_sets)
+
+        if error_messages:
+            raise ValidationError(error_messages)
 
 
 class CHPOutputs(BaseModel, models.Model):
