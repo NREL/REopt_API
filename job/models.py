@@ -4018,9 +4018,9 @@ class DomesticHotWaterLoadInputs(BaseModel, models.Model):
             ],
             blank=True
         ),
-        default=[1],
+        default=list,
         blank=True,
-        help_text=( "Fraction of input fuel load which is addressable by heating technologies." 
+        help_text=( "Fraction of input fuel load which is addressable by heating technologies (default is 1.0)." 
                     "Can be a scalar or vector with length aligned with use of monthly_mmbtu or fuel_loads_mmbtu_per_hour.")
     )
 
@@ -4049,12 +4049,14 @@ class DomesticHotWaterLoadInputs(BaseModel, models.Model):
                 len(self.blended_doe_reference_names) > 0:
             self.year = 2017  # the validator provides an "info" message regarding this)
 
+        if self.addressable_load_fraction == None:
+            self.addressable_load_fraction = 1.0
+        self.addressable_load_fraction = scalar_to_vector(self.addressable_load_fraction)
+
         if error_messages:
             raise ValidationError(error_messages)
         
         pass
-
-# TODO Add domestic hot water input model. - done? 
 
 def get_input_dict_from_run_uuid(run_uuid:str):
     """
@@ -4130,4 +4132,4 @@ def scalar_to_vector(vec:list):
         days_per_month = [31,28,31,30,31,30,31,31,30,31,30,31]
         return numpy.repeat(vec, [i * 24 for i in days_per_month]).tolist()
     else:
-        return vec # the vector len was not 1, handle it elsewhere
+        return vec # the vector len was not 1 or 12, handle it elsewhere
