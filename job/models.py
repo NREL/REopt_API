@@ -3876,16 +3876,16 @@ class CHPInputs(BaseModel, models.Model):
         self.thermal_prod_intercept = self.thermal_prod_full_load - self.thermal_prod_slope * 1.0  # [kWt/kWe_rated]
 
         #If max_kw not specified, set to max class size
-        if self.dict.get('max_kw') in [None, "", []]:
-            self.max_kw = self.class_bounds[self.prime_mover][self.size_class-1][1]
+        # if self.dict.get('max_kw') in [None, "", []]:
+        #     self.max_kw = self.class_bounds[self.prime_mover][self.size_class-1][1]
 
         #check for min/max sizes within class bounds: 
-        if self.min_allowable_kw < self.class_bounds[self.prime_mover][self.size_class-1][0]:
-            error_messages["size_class"] = \
-            "Min size must be within the size class bounds of {}.".format(self.class_bounds[self.prime_mover][self.size_class-1])
-        if self.max_kw > self.class_bounds[self.prime_mover][self.size_class-1][1]:
-            error_messages["size_class"] = \
-            "Min size must be within the size class bounds of {}.".format(self.class_bounds[self.prime_mover][self.size_class-1])
+        # if self.min_allowable_kw < self.class_bounds[self.prime_mover][self.size_class-1][0]:
+        #     error_messages["size_class"] = \
+        #     "Min size must be within the size class bounds of {}.".format(self.class_bounds[self.prime_mover][self.size_class-1])
+        # if self.max_kw > self.class_bounds[self.prime_mover][self.size_class-1][1]:
+        #     error_messages["size_class"] = \
+        #     "Min size must be within the size class bounds of {}.".format(self.class_bounds[self.prime_mover][self.size_class-1])
         
         if error_messages:
             raise ValidationError(error_messages)
