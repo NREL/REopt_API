@@ -28,6 +28,16 @@ Classify the change according to the following categories:
 
 ## Develop - 2022-09-13
 ### Minor Updates
+##### Added 
+In `job/models.py`:
+- added **CHPInputs** model
+- added **CHPOutputs** model
+In `job/process_results.py`: 
+- add **CHPOutputs**
+In `'job/validators.py`:
+- add new input models
+In `job/views.py`:
+- add new input/output models to properly save the inputs/outputs
 ##### Changed
 The following name changes were made in the `job/` endpoint and `julia_src/http.jl`: 
  - Change "_pct" to "_rate_fraction" for input and output names containing "discount", "escalation", and "tax_pct" (financial terms)
