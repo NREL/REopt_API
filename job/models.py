@@ -3851,6 +3851,18 @@ class CHPInputs(BaseModel, models.Model):
         error_messages = {}
 
         # possible sets for defining CHP
+        update_installed_costs = False
+        if type(self.dict.get("installed_cost_per_kw")) == list and len(self.dict.get("installed_cost_per_kw")) == 1:
+            self.tech_sizes_for_cost_curve = []
+        elif self.dict.get("installed_cost_per_kw") not in [None, [], ""] and self.dict.get("tech_sizes_for_cost_curve") in [None, [], ""]:
+            error_messages["required inputs"] = \
+                "To model CHP cost curve, you must provide `chp.tech_sizes_for_cost_curve` vector of equal length to `chp.installed_cost_per_kw`"
+        elif self.dict.get("tech_sizes_for_cost_curve") in [None, [], ""]:
+            update_installed_costs = True
+        elif len(self.dict.get("tech_sizes_for_cost_curve")) != len(self.dict.get("installed_cost_per_kw")):
+            error_messages["required inputs"] = \
+                "To model CHP cost curve, you must provide `chp.tech_sizes_for_cost_curve` vector of equal length to `chp.installed_cost_per_kw`"
+        
         if not at_least_one_set(self.dict, self.possible_sets):
             error_messages["required inputs"] = \
                 "Must provide at least one set of valid inputs from {}.".format(self.possible_sets)
@@ -3858,7 +3870,9 @@ class CHPInputs(BaseModel, models.Model):
             if self.dict.get("prime_mover") not in [None, ""]:
                 boiler_type = "steam" if self.prime_mover == "combustion turbine" else "hot_water"
                 for key in self.possible_sets[1]:
-                    if self.dict.get(key) in [None, "", []]:
+                    if key in ["installed_cost_per_kw","tech_sizes_for_cost_curve"] and update_installed_costs:
+                        setattr(self,key,self.prime_mover_defaults[self.prime_mover][key][self.size_class-1])
+                    elif self.dict.get(key) in [None, "", []]:
                         if key in ["thermal_efficiency_full_load","thermal_efficiency_half_load"]:
                             setattr(self,key,self.prime_mover_defaults[self.prime_mover][key][boiler_type][self.size_class-1])
                         else: 
