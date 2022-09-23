@@ -3858,10 +3858,11 @@ class CHPInputs(BaseModel, models.Model):
             if self.dict.get("prime_mover") not in [None, ""]:
                 boiler_type = "steam" if self.prime_mover == "combustion turbine" else "hot_water"
                 for key in self.possible_sets[1]:
-                    if key in ["thermal_efficiency_full_load""thermal_efficiency_half_load"]:
-                        setattr(self,key,self.prime_mover_defaults[self.prime_mover][key][boiler_type][self.size_class-1])
-                    else: 
-                        setattr(self,key,self.prime_mover_defaults[self.prime_mover][key][self.size_class-1])
+                    if self.dict.get(key) in [None, "", []]:
+                        if key in ["thermal_efficiency_full_load","thermal_efficiency_half_load"]:
+                            setattr(self,key,self.prime_mover_defaults[self.prime_mover][key][boiler_type][self.size_class-1])
+                        else: 
+                            setattr(self,key,self.prime_mover_defaults[self.prime_mover][key][self.size_class-1])
 
         # Fuel burn slope and intercept
         self.fuel_burn_full_load = 1 / self.electric_efficiency_full_load * 1.0  # [kWt/kWe]
