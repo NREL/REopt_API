@@ -3825,7 +3825,7 @@ class SpaceHeatingLoadInputs(BaseModel, models.Model):
             blank=True
         ),
         default=list, blank=True,
-        help_text=("Monthly site space heating energy consumption in [MMbtu], used "
+        help_text=("Monthly site space heating energy consumption in [MMbtu] (array of length 12). Used "
                    "to scale simulated default building load profile for the site's climate zone")
     )
 
@@ -3878,7 +3878,7 @@ class SpaceHeatingLoadInputs(BaseModel, models.Model):
         default=list,
         blank=True,
         help_text=( "Fraction of input fuel load which is addressable by heating technologies (default is 1.0)." 
-                    "Can be a scalar or vector with length aligned with use of monthly_mmbtu or fuel_loads_mmbtu_per_hour.")
+                    "Can be a scalar or vector with length aligned with use of monthly_mmbtu (12) or fuel_loads_mmbtu_per_hour.")
     )
 
     '''
@@ -3906,8 +3906,7 @@ class SpaceHeatingLoadInputs(BaseModel, models.Model):
             self.year = 2017  # the validator provides an "info" message regarding this)
 
         if self.addressable_load_fraction == None:
-            self.addressable_load_fraction = 1.0
-        self.addressable_load_fraction = scalar_to_vector(self.addressable_load_fraction)
+            self.addressable_load_fraction = list([1.0]) # should not convert to timeseries, in case it is to be used with monthly_mmbtu
 
         if error_messages:
             raise ValidationError(error_messages)
@@ -4068,8 +4067,7 @@ class DomesticHotWaterLoadInputs(BaseModel, models.Model):
             self.year = 2017  # the validator provides an "info" message regarding this)
 
         if self.addressable_load_fraction == None:
-            self.addressable_load_fraction = 1.0
-        self.addressable_load_fraction = scalar_to_vector(self.addressable_load_fraction)
+            self.addressable_load_fraction = list([1.0]) # should not convert to timeseries, in case it is to be used with monthly_mmbtu
 
         if error_messages:
             raise ValidationError(error_messages)
