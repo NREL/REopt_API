@@ -3575,6 +3575,16 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
         default = list,
     )
 
+    year_one_thermal_to_tes_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    year_one_fuel_consumption_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
     def clean(self):
         # perform custom validation here.
         pass
@@ -4067,7 +4077,7 @@ class DomesticHotWaterLoadInputs(BaseModel, models.Model):
             self.year = 2017  # the validator provides an "info" message regarding this)
 
         if self.addressable_load_fraction == None:
-            self.addressable_load_fraction = list([1.0]) # should not convert to timeseries, in case it is to be used with monthly_mmbtu
+            self.addressable_load_fraction = list([1.0]) # should not convert to timeseries, in case it is to be used with monthly_mmbtu or annual_mmbtu
 
         if error_messages:
             raise ValidationError(error_messages)
