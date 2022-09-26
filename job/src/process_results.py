@@ -27,7 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-from job.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorageOutputs, ElectricTariffOutputs, SiteOutputs,\
+from job.models import MessagesOutputs, FinancialOutputs, APIMeta, PVOutputs, ElectricStorageOutputs, ElectricTariffOutputs, SiteOutputs,\
     ElectricUtilityOutputs, GeneratorOutputs, ElectricLoadOutputs, WindOutputs, FinancialInputs, ElectricUtilityInputs, ExistingBoilerOutputs
 import logging
 log = logging.getLogger(__name__)
@@ -41,11 +41,17 @@ def process_results(results: dict, run_uuid: str) -> None:
     meta = APIMeta.objects.get(run_uuid=run_uuid)
     meta.status = results.get("status")
     meta.save(update_fields=["status"])
-    FinancialOutputs.create(meta=meta, **results["Financial"]).save()
-    ElectricTariffOutputs.create(meta=meta, **results["ElectricTariff"]).save()
-    ElectricUtilityOutputs.create(meta=meta, **results["ElectricUtility"]).save()
-    ElectricLoadOutputs.create(meta=meta, **results["ElectricLoad"]).save()
-    SiteOutputs.create(meta=meta, **results["Site"]).save()
+
+    if "Financial" in results.keys():
+        FinancialOutputs.create(meta=meta, **results["Financial"]).save()
+    if "ElectricTariff" in results.keys():
+        ElectricTariffOutputs.create(meta=meta, **results["ElectricTariff"]).save()
+    if "ElectricUtility" in results.keys():
+        ElectricUtilityOutputs.create(meta=meta, **results["ElectricUtility"]).save()
+    if "ElectricLoad" in results.keys():
+        ElectricLoadOutputs.create(meta=meta, **results["ElectricLoad"]).save()
+    if "Site" in results.keys():
+        SiteOutputs.create(meta=meta, **results["Site"]).save()
     if "PV" in results.keys():
         if isinstance(results["PV"], dict):
             PVOutputs.create(meta=meta, **results["PV"]).save()
@@ -62,6 +68,8 @@ def process_results(results: dict, run_uuid: str) -> None:
     #     BoilerOutputs.create(meta=meta, **results["Boiler"]).save()
     if "ExistingBoiler" in results.keys():
         ExistingBoilerOutputs.create(meta=meta, **results["ExistingBoiler"]).save()
+    if "Messages" in results.keys():
+        MessagesOutputs.create(meta=meta, **results["Messages"]).save()
     # TODO process rest of results
 
 
