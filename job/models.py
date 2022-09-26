@@ -3583,6 +3583,29 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
         # perform custom validation here.
         pass
 
+class MessagesOutputs(BaseModel, models.Model):
+    
+    key = "Messages"
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="MessagesOutputs",
+        primary_key=True
+    )
+
+    errors = ArrayField(
+        models.TextField(null=True, blank=True),
+        default = list,
+    )
+
+    warnings = ArrayField(
+        models.TextField(null=True, blank=True),
+        default = list,
+    )
+
+    def clean(self):
+        pass
+
 # # Uncomment to enable Boiler functionality
 # class BoilerInputs(BaseModel, models.Model):
 #     key = "Boiler"
@@ -4043,8 +4066,6 @@ class DomesticHotWaterLoadInputs(BaseModel, models.Model):
             raise ValidationError(error_messages)
         
         pass
-
-# TODO Add domestic hot water input model.
 
 def get_input_dict_from_run_uuid(run_uuid:str):
     """
