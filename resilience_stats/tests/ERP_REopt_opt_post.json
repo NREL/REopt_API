@@ -22,6 +22,10 @@
       "azimuth": 180.0,
       "federal_rebate_per_kw": 350.0
   },
+  "Generator": {
+      "min_kw": 0,
+      "max_kw": 100000000
+  },
   "ElectricLoad": {
       "doe_reference_name": "RetailStore",
       "annual_kwh": 10000000.0,

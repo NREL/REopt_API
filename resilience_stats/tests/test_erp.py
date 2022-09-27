@@ -41,13 +41,14 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
 
         # for optimization module
         self.reopt_base_opt = '/dev/job/'
-        self.post_opt = os.path.join('resilience_stats', 'tests', 'ERP_REopt_post.json')
+        self.post_opt = os.path.join('resilience_stats', 'tests', 'ERP_REopt_opt_post.json')
         self.run_uuid = None
 
         #for simulation module
         self.reopt_base_erp = '/dev/erp/'
-        self.post_sim = os.path.join('resilience_stats', 'tests', 'ERP_sim_post.json')
-        self.reopt_base_erp_results = '/dev/erp/{}/results'
+        self.post_sim_with_reopt_run_uuid = os.path.join('resilience_stats', 'tests', 'ERP_REopt_sim_post.json')
+        self.post_sim_only = os.path.join('resilience_stats', 'tests', 'ERP_only_sim_post.json')
+        self.reopt_base_erp_results = '/dev/erp/{}/results/'
 
 
     def get_response_opt(self, data):
@@ -59,7 +60,7 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
     def get_results_sim(self, run_uuid):
         return self.api_client.get(self.reopt_base_erp_results.format(run_uuid))
 
-    def test_erp(self):
+    def test_erp_with_reopt_run_uuid(self):
         """
         """
 
@@ -70,8 +71,9 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         reopt_run_uuid = r_opt.get('run_uuid')
 
         assert(reopt_run_uuid is not None)
-        post_sim = json.load(open(self.post_sim, 'rb'))
+        post_sim = json.load(open(self.post_sim_with_reopt_run_uuid, 'rb'))
         post_sim["reopt_run_uuid"] = reopt_run_uuid
+
         resp = self.get_response_sim(post_sim)
         self.assertHttpCreated(resp)
         r_sim = json.loads(resp.content)
@@ -79,3 +81,18 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
 
         resp = self.get_results_sim(erp_run_uuid)
         results = json.loads(resp.content)
+
+    def test_erp_with_no_opt(self):
+        """
+        """
+        
+        post_sim = json.load(open(self.post_sim_only, 'rb'))
+
+        resp = self.get_response_sim(post_sim)
+        self.assertHttpCreated(resp)
+        r_sim = json.loads(resp.content)
+        erp_run_uuid = r_sim.get('run_uuid')
+
+        resp = self.get_results_sim(erp_run_uuid)
+        results = json.loads(resp.content)
+        self.assertAlmostEqual(results["mean_cumulative_outage_survival_final_time_step"], 0.990784, places=-2)
