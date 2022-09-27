@@ -155,7 +155,7 @@ class ERPJob(ModelResource):
                 battery_size_kwh = stor_out.get("size_kwh", 0)
                 battery_size_kw = stor_out.get("size_kw", 0)
                 init_soc = stor_out.get("year_one_soc_series_pct", [])
-                starting_battery_soc_kwh = init_soc * battery_size_kwh
+                battery_starting_soc_kwh = init_soc * battery_size_kwh
             except: pass
             #TODO: figure out which way it should be
             # way 1: if the user provides a reopt run and a generator_size_kw to override that, num_generators defaults to 1
@@ -169,7 +169,7 @@ class ERPJob(ModelResource):
 
             for field_name in ["critical_loads_kw", "battery_charge_efficiency",
                                 "battery_discharge_efficiency", "battery_size_kw",
-                                "battery_size_kwh", "starting_battery_soc_kwh",
+                                "battery_size_kwh", "battery_starting_soc_kwh",
                                 "chp_size_kw", "generator_size_kw",
                                 "pv_size_kw", "pv_production_factor_series"]:
                 if bundle.data.get(field_name, None) is None:
