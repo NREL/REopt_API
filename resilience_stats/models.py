@@ -164,11 +164,10 @@ class ERPInputs(BaseModel, models.Model):
         ],
         help_text=("Battery kWh energy capacity")
     )
-    starting_battery_soc_kwh = ArrayField(
+    battery_starting_soc_kwh = ArrayField(
         models.FloatField(
             validators=[
-                MinValueValidator(0),
-                MaxValueValidator(battery_size_kwh)
+                MinValueValidator(0)
             ]
         ),
         blank=True,
