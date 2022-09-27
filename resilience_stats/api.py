@@ -133,12 +133,12 @@ class ERPJob(ModelResource):
                 chp_size_kw = reopt_run_meta.CHPOutputs.dictget("size_kw", 0)
             except: pass
             try:
-                pvs = reopt_run_meta.PVInputs.all()
+                pvs = reopt_run_meta.PVOutputs.all()
                 pv_size_kw = 0
                 pv_kw_series = np.zeros(len(critical_loads_kw))
                 for pv in pvs:
                     pvd = pv.dict
-                    pv_size_kw += pv
+                    pv_size_kw += pvd.get("size_kw")
                     pv_kw_series += (
                         pvd.get("year_one_to_battery_series_kw", np.zeros(len(critical_loads_kw)))
                         + pvd.get("year_one_curtailed_production_series_kw", np.zeros(len(critical_loads_kw)))
