@@ -617,7 +617,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text="Analysis period in years. Must be integer."
     )
     elec_cost_escalation_pct = models.FloatField(
-        default=0.023,
+        default=0.019,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -626,7 +626,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text="Annual nominal utility electricity cost escalation rate."
     )
     offtaker_discount_pct = models.FloatField(
-        default=0.083,
+        default=0.0564,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -654,7 +654,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text="Annual nominal O&M cost escalation rate"
     )
     owner_discount_pct = models.FloatField(
-        default=0.083,
+        default=0.0564,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -2070,7 +2070,7 @@ class PVInputs(BaseModel, models.Model):
         help_text="Maximum PV size constraint for optimization (upper bound on additional capacity beyond existing_kw). Set to zero to disable PV"
     )
     installed_cost_per_kw = models.FloatField(
-        default=1600,
+        default=1592,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e5)
@@ -2079,7 +2079,7 @@ class PVInputs(BaseModel, models.Model):
         help_text="Installed PV cost in $/kW"
     )
     om_cost_per_kw = models.FloatField(
-        default=16,
+        default=17,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e3)
@@ -2497,7 +2497,7 @@ class WindInputs(BaseModel, models.Model):
         help_text="Installed cost in $/kW"
     )
     om_cost_per_kw = models.FloatField(
-        default=16,
+        default=35,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e3)
@@ -2703,6 +2703,11 @@ class WindInputs(BaseModel, models.Model):
             "Required operating reserves applied to each timestep as a fraction of wind generation serving load in that timestep."
     )
 
+    # By default prodfactor is [], which causes errors in REopt. Should we either make prod factor not default to anything or handle it separately in REopt?
+    def clean(self):
+        if self.prod_factor_series == []:
+           self.prod_factor_series = scalar_to_vector([0.0]) 
+
 
 class WindOutputs(BaseModel, models.Model):
     key = "WindOutputs"
@@ -2825,7 +2830,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Flag to set whether the battery can be charged from the grid, or just onsite generation."
     )
     installed_cost_per_kw = models.FloatField(
-        default=840.0,
+        default=775.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -2834,7 +2839,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Total upfront battery power capacity costs (e.g. inverter and balance of power systems)"
     )
     installed_cost_per_kwh = models.FloatField(
-        default=420.0,
+        default=388.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -2843,7 +2848,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Total upfront battery costs"
     )
     replace_cost_per_kw = models.FloatField(
-        default=410.0,
+        default=440.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -2852,7 +2857,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Battery power capacity replacement cost at time of replacement year"
     )
     replace_cost_per_kwh = models.FloatField(
-        default=200.0,
+        default=220.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
