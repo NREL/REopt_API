@@ -45,7 +45,7 @@ def process_results(results: dict, run_uuid: str) -> None:
     ElectricTariffOutputs.create(meta=meta, **results["ElectricTariff"]).save()
     ElectricUtilityOutputs.create(meta=meta, **results["ElectricUtility"]).save()
     ElectricLoadOutputs.create(meta=meta, **results["ElectricLoad"]).save()
-    # SiteOutputs.create(meta=meta, **results["Site"]).save()
+    SiteOutputs.create(meta=meta, **results["Site"]).save()
     if "PV" in results.keys():
         if isinstance(results["PV"], dict):
             PVOutputs.create(meta=meta, **results["PV"]).save()
