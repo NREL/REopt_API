@@ -29,6 +29,7 @@
 # *********************************************************************************
 from job.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorageOutputs, ElectricTariffOutputs, SiteOutputs,\
     ElectricUtilityOutputs, GeneratorOutputs, ElectricLoadOutputs, WindOutputs, FinancialInputs, ElectricUtilityInputs, ExistingBoilerOutputs
+import sys
 import logging
 log = logging.getLogger(__name__)
 
