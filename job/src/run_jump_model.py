@@ -127,6 +127,6 @@ def run_jump_model(run_uuid):
 
     profiler.profileEnd()
     # TODO save profile times
-    # update_inputs_in_database(inputs_with_defaults_set_in_julia, run_uuid)
+    update_inputs_in_database(inputs_with_defaults_set_in_julia, run_uuid)
     process_results(results, run_uuid)
     return True
