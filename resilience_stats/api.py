@@ -170,8 +170,6 @@ class ERPJob(ModelResource):
                     bundle.data["battery_starting_soc_kwh"] = (init_soc * bundle.data.get("battery_size_kwh")).tolist()
             except AttributeError as e: 
                 pass
-            #TODO: figure out which way it should be
-            # way 1: if the user provides a reopt run and a generator_size_kw to override that, num_generators defaults to 1
             try:
                 if bundle.data.get("generator_size_kw", None) is None:
                     gen = reopt_run_meta.GeneratorOutputs.dict
@@ -182,24 +180,6 @@ class ERPJob(ModelResource):
             except AttributeError as e: 
                 pass
                 
-            # # way 2: if the user provides a reopt run and a generator_size_kw to override that, num_generators defaults to reopt results gen size divided by generator_size_kw
-            # if bundle.data.get("num_generators", None) is None and bundle.data.get("generator_size_kw", None) is not None:
-            #     try:
-            #         gen = reopt_run_meta.GeneratorOutputs.dict
-            #         bundle.data["num_generators"] = ceil(gen.get("size_kw", 0) / bundle.data["generator_size_kw"])
-            #     except: bundle.data["num_generators"] = 1
-            # else if bundle.data.get("num_generators", None) is not None and bundle.data.get("generator_size_kw", None) is None:
-            #     try:
-            #         gen = reopt_run_meta.GeneratorOutputs.dict
-            #         bundle.data["generator_size_kw"] = gen.get("size_kw", 0) / bundle.data["num_generators"])
-            #     except: pass #will error later when creating ERPInputs and ImmediateHttpResponse will be raised
-            # else if bundle.data.get("num_generators", None) is None and bundle.data.get("generator_size_kw", None) is None:
-            #     try:
-            #         gen = reopt_run_meta.GeneratorOutputs.dict
-            #         bundle.data["num_generators"] = 1
-            #         bundle.data["generator_size_kw"] = gen.get("size_kw", 0)
-            #     except: pass #will error later when creating ERPInputs and ImmediateHttpResponse will be raised
-
         
         json.dump(bundle.data, open("resilience_stats/tests/erp_model_inputs_to_skip_reopt.json", "w"))
 
