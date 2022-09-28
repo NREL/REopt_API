@@ -513,7 +513,7 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [[deps.REopt]]
 deps = ["ArchGDAL", "Dates", "DelimitedFiles", "HTTP", "JSON", "JuMP", "LinDistFlow", "LinearAlgebra", "Logging", "MathOptInterface", "Roots", "Shapefile", "Statistics", "TestEnv"]
-git-tree-sha1 = "99c09f02c17be3886e8fca31e9c0488b0ee374bf"
+git-tree-sha1 = "41e75e21d36c0116cc165630dd8eceb4ed6b3d69"
 repo-rev = "limited-gen-reliability"
 repo-url = "https://github.com/NREL/REopt.jl.git"
 uuid = "d36ad4e8-d74a-4f7a-ace1-eaea049febf6"
