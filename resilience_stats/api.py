@@ -130,32 +130,32 @@ class ERPJob(ModelResource):
             critical_loads_kw = reopt_run_meta.ElectricLoadOutputs.dict["critical_load_series_kw"]
             if bundle.data.get("critical_loads_kw", None) is None: 
                 bundle.data["critical_loads_kw"] = critical_loads_kw
-            # Have to try for CHP, PV, and Storage models because may not exist
+            
+            # Have to try for CHP, PV, Storage, and Generator models because may not exist
             try:
                 if bundle.data.get("chp_size_kw", None) is None: 
                     bundle.data["chp_size_kw"] = reopt_run_meta.CHPOutputs.dict.get("size_kw", 0)
             except AttributeError as e:
                 pass
-            try: 
-                pvs = reopt_run_meta.PVOutputs.all()
-                pv_size_kw = 0
-                pv_kw_series = np.zeros(len(critical_loads_kw))
-                for pv in pvs:
-                    pvd = pv.dict
-                    pv_size_kw += pvd.get("size_kw")
-                    pv_kw_series += (
-                        np.array(pvd.get("year_one_to_battery_series_kw"))
-                        + np.array(pvd.get("year_one_curtailed_production_series_kw"))
-                        + np.array(pvd.get("year_one_to_load_series_kw"))
-                        + np.array(pvd.get("year_one_to_grid_series_kw"))
-                    )
-                pv_kw_series = pv_kw_series.tolist()
-                if bundle.data.get("pv_size_kw", None) is None: 
-                    bundle.data["pv_size_kw"] = pv_size_kw
-                if bundle.data.get("pv_production_factor_series", None) is None: 
-                    bundle.data["pv_production_factor_series"] = pv_kw_series / pv_size_kw
-            except AttributeError as e: 
-                pass
+
+            pvs = reopt_run_meta.PVOutputs.all()
+            pv_size_kw = 0
+            pv_kw_series = np.zeros(len(critical_loads_kw))
+            for pv in pvs:
+                pvd = pv.dict
+                pv_size_kw += pvd.get("size_kw")
+                pv_kw_series += (
+                    np.array(pvd.get("year_one_to_battery_series_kw"))
+                    + np.array(pvd.get("year_one_curtailed_production_series_kw"))
+                    + np.array(pvd.get("year_one_to_load_series_kw"))
+                    + np.array(pvd.get("year_one_to_grid_series_kw"))
+                )
+            pv_kw_series = pv_kw_series.tolist()
+            if bundle.data.get("pv_size_kw", None) is None: 
+                bundle.data["pv_size_kw"] = pv_size_kw
+            if bundle.data.get("pv_production_factor_series", None) is None: 
+                bundle.data["pv_production_factor_series"] = pv_kw_series / pv_size_kw
+            
             try:
                 stor_out = reopt_run_meta.ElectricStorageOutputs.dict
                 stor_in = reopt_run_meta.ElectricStorageInputs.dict
@@ -170,6 +170,7 @@ class ERPJob(ModelResource):
                     bundle.data["battery_starting_soc_kwh"] = (init_soc * bundle.data.get("battery_size_kwh")).tolist()
             except AttributeError as e: 
                 pass
+            
             try:
                 if bundle.data.get("generator_size_kw", None) is None:
                     gen = reopt_run_meta.GeneratorOutputs.dict
