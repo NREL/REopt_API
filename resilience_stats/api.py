@@ -128,11 +128,15 @@ class ERPJob(ModelResource):
             
             #TODO: put all of this stuff below in a helper function, or in clean or save django methods?
             critical_loads_kw = reopt_run_meta.ElectricLoadOutputs.dict["critical_load_series_kw"]
+            if bundle.data.get("critical_loads_kw", None) is None: 
+                bundle.data["critical_loads_kw"] = critical_loads_kw
             # Have to try for CHP, PV, and Storage models because may not exist
-            try: 
-                chp_size_kw = reopt_run_meta.CHPOutputs.dictget("size_kw", 0)
-            except: pass
             try:
+                if bundle.data.get("chp_size_kw", None) is None: 
+                    bundle.data["chp_size_kw"] = reopt_run_meta.CHPOutputs.dict.get("size_kw", 0)
+            except AttributeError as e:
+                pass
+            try: 
                 pvs = reopt_run_meta.PVOutputs.all()
                 pv_size_kw = 0
                 pv_kw_series = np.zeros(len(critical_loads_kw))
@@ -140,41 +144,43 @@ class ERPJob(ModelResource):
                     pvd = pv.dict
                     pv_size_kw += pvd.get("size_kw")
                     pv_kw_series += (
-                        pvd.get("year_one_to_battery_series_kw", np.zeros(len(critical_loads_kw)))
-                        + pvd.get("year_one_curtailed_production_series_kw", np.zeros(len(critical_loads_kw)))
-                        + pvd.get("year_one_to_load_series_kw", np.zeros(len(critical_loads_kw)))
-                        + pvd.get("year_one_to_grid_series_kw", np.zeros(len(critical_loads_kw)))
+                        np.array(pvd.get("year_one_to_battery_series_kw"))
+                        + np.array(pvd.get("year_one_curtailed_production_series_kw"))
+                        + np.array(pvd.get("year_one_to_load_series_kw"))
+                        + np.array(pvd.get("year_one_to_grid_series_kw"))
                     )
-                pv_production_factor_series = pv_kw_series / pv_size_kw
-            except: pass
+                pv_kw_series = pv_kw_series.tolist()
+                if bundle.data.get("pv_size_kw", None) is None: 
+                    bundle.data["pv_size_kw"] = pv_size_kw
+                if bundle.data.get("pv_production_factor_series", None) is None: 
+                    bundle.data["pv_production_factor_series"] = pv_kw_series / pv_size_kw
+            except AttributeError as e: 
+                pass
             try:
                 stor_out = reopt_run_meta.ElectricStorageOutputs.dict
                 stor_in = reopt_run_meta.ElectricStorageInputs.dict
-                battery_charge_efficiency = stor_in["rectifier_efficiency_pct"] * stor_in["internal_efficiency_pct"]**0.5
-                battery_discharge_efficiency = stor_in["inverter_efficiency_pct"] * stor_in["internal_efficiency_pct"]**0.5
-                battery_size_kwh = stor_out.get("size_kwh", 0)
-                battery_size_kw = stor_out.get("size_kw", 0)
-                init_soc = stor_out.get("year_one_soc_series_pct", [])
-                battery_starting_soc_kwh = init_soc * battery_size_kwh
-            except: pass
+                if bundle.data.get("battery_charge_efficiency", None) is None: 
+                    bundle.data["battery_charge_efficiency"] = stor_in["rectifier_efficiency_pct"] * stor_in["internal_efficiency_pct"]**0.5
+                if bundle.data.get("battery_discharge_efficiency", None) is None: 
+                    bundle.data["battery_discharge_efficiency"] = stor_in["inverter_efficiency_pct"] * stor_in["internal_efficiency_pct"]**0.5
+                if bundle.data.get("battery_size_kw", None) is None: bundle.data["battery_size_kw"] = stor_out.get("size_kw", 0)
+                if bundle.data.get("battery_size_kwh", None) is None: bundle.data["battery_size_kwh"] = stor_out.get("size_kwh", 0)
+                init_soc = np.array(stor_out.get("year_one_soc_series_pct", []))
+                if bundle.data.get("battery_starting_soc_kwh", None) is None: 
+                    bundle.data["battery_starting_soc_kwh"] = (init_soc * bundle.data.get("battery_size_kwh")).tolist()
+            except AttributeError as e: 
+                pass
             #TODO: figure out which way it should be
             # way 1: if the user provides a reopt run and a generator_size_kw to override that, num_generators defaults to 1
             try:
-                gen = reopt_run_meta.GeneratorOutputs.dict
-                if bundle.data.get("num_generators", None) is not None:
-                    generator_size_kw = gen.get("size_kw", 0) / bundle.data["num_generators"]
-                else:
-                    generator_size_kw = gen.get("size_kw", 0)
-            except: pass
-
-            for field_name in ["critical_loads_kw", "battery_charge_efficiency",
-                                "battery_discharge_efficiency", "battery_size_kw",
-                                "battery_size_kwh", "battery_starting_soc_kwh",
-                                "chp_size_kw", "generator_size_kw",
-                                "pv_size_kw", "pv_production_factor_series"]:
-                if bundle.data.get(field_name, None) is None:
-                    try: bundle.data[field_name] = eval(field_name)
-                    except: pass # if field_name variable wasn't set due to tech not being present then don't update
+                if bundle.data.get("generator_size_kw", None) is None:
+                    gen = reopt_run_meta.GeneratorOutputs.dict
+                    if bundle.data.get("num_generators", None) is not None:
+                        bundle.data["generator_size_kw"] = gen.get("size_kw", 0) / bundle.data["num_generators"]
+                    else:
+                        bundle.data["generator_size_kw"] = gen.get("size_kw", 0)
+            except AttributeError as e: 
+                pass
                 
             # # way 2: if the user provides a reopt run and a generator_size_kw to override that, num_generators defaults to reopt results gen size divided by generator_size_kw
             # if bundle.data.get("num_generators", None) is None and bundle.data.get("generator_size_kw", None) is not None:
