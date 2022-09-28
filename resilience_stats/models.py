@@ -273,6 +273,7 @@ class ERPOutputs(BaseModel, models.Model):
         help_text=("The probability of surviving the full max_outage_duration, for outages starting at each hour of the year.")
     )
     mean_cumulative_outage_survival_final_time_step = models.FloatField(
+        null=True,
         blank=True,
         help_text=("The mean, calculated over outages starting at each hour of the year, of the probability of surviving the full max_outage_duration.")
     )
