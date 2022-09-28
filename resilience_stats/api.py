@@ -182,7 +182,7 @@ class ERPJob(ModelResource):
                 pass
                 
         
-        json.dump(bundle.data, open("resilience_stats/tests/erp_model_inputs_to_skip_reopt.json", "w"))
+        #json.dump(bundle.data, open("resilience_stats/tests/erp_model_inputs_to_skip_reopt.json", "w"))
 
         try:
             erpinputs = ERPInputs.create(meta=meta, **bundle.data)
