@@ -97,9 +97,9 @@ urlpatterns = [
     re_path(r'', include(stable_api.urls), name='job'),
     re_path(r'', include(stable_api.urls), name='outagesimjob'),
 
+    path('dev/', include('job.urls')),
     path('dev/', include('resilience_stats.urls_v3plus')),
     re_path(r'', include(dev_api.urls), name='erp'),
-    path('dev/', include('job.urls')),
     re_path(r'', include(dev_api.urls), name='job'),
     path('dev/', include('futurecosts.urls')),
     re_path(r'', include(dev_api.urls), name='futurecosts'),
