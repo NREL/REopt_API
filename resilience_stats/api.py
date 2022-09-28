@@ -160,12 +160,12 @@ class ERPJob(ModelResource):
                 stor_out = reopt_run_meta.ElectricStorageOutputs.dict
                 stor_in = reopt_run_meta.ElectricStorageInputs.dict
                 if bundle.data.get("battery_charge_efficiency", None) is None: 
-                    bundle.data["battery_charge_efficiency"] = stor_in["rectifier_efficiency_pct"] * stor_in["internal_efficiency_pct"]**0.5
+                    bundle.data["battery_charge_efficiency"] = stor_in["rectifier_efficiency_fraction"] * stor_in["internal_efficiency_fraction"]**0.5
                 if bundle.data.get("battery_discharge_efficiency", None) is None: 
-                    bundle.data["battery_discharge_efficiency"] = stor_in["inverter_efficiency_pct"] * stor_in["internal_efficiency_pct"]**0.5
+                    bundle.data["battery_discharge_efficiency"] = stor_in["inverter_efficiency_fraction"] * stor_in["internal_efficiency_fraction"]**0.5
                 if bundle.data.get("battery_size_kw", None) is None: bundle.data["battery_size_kw"] = stor_out.get("size_kw", 0)
                 if bundle.data.get("battery_size_kwh", None) is None: bundle.data["battery_size_kwh"] = stor_out.get("size_kwh", 0)
-                init_soc = np.array(stor_out.get("year_one_soc_series_pct", []))
+                init_soc = np.array(stor_out.get("year_one_soc_series_fraction", []))
                 if bundle.data.get("battery_starting_soc_kwh", None) is None: 
                     bundle.data["battery_starting_soc_kwh"] = (init_soc * bundle.data.get("battery_size_kwh")).tolist()
             except AttributeError as e: 
