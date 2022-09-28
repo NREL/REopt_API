@@ -4060,28 +4060,12 @@ def get_input_dict_from_run_uuid(run_uuid:str):
 
     def filter_none_and_empty_array(d:dict):
         return {k: v for (k, v) in d.items() if v not in [None, [], {}]}
-    
-    #TODO: remove pops once merged develop branch of REopt.jl into backup_reliability branch
+
     d = dict()
     d["user_uuid"] = meta.user_uuid
     d["Settings"] = filter_none_and_empty_array(meta.Settings.dict)
-    d["Settings"].pop("include_climate_in_objective",None)
-    d["Settings"].pop("include_health_in_objective",None)
     d["Financial"] = filter_none_and_empty_array(meta.FinancialInputs.dict)
-    d["Financial"].pop("CO2_cost_per_tonne",None)
-    d["Financial"].pop("CO2_cost_escalation_pct",None)
-    d["Financial"].pop("NOx_grid_cost_per_tonne",None)
-    d["Financial"].pop("NOx_onsite_fuelburn_cost_per_tonne",None)
-    d["Financial"].pop("NOx_cost_escalation_pct",None)
-    d["Financial"].pop("SO2_grid_cost_per_tonne",None)
-    d["Financial"].pop("SO2_onsite_fuelburn_cost_per_tonne",None)
-    d["Financial"].pop("SO2_cost_escalation_pct",None)
-    d["Financial"].pop("PM25_grid_cost_per_tonne",None)
-    d["Financial"].pop("PM25_onsite_fuelburn_cost_per_tonne",None)
-    d["Financial"].pop("PM25_cost_escalation_pct",None)
     d["Site"] = filter_none_and_empty_array(meta.SiteInputs.dict)
-    d["Site"].pop("include_exported_elec_emissions_in_total",None)
-    d["Site"].pop("include_exported_renewable_electricity_in_total",None)
     d["ElectricLoad"] = filter_none_and_empty_array(meta.ElectricLoadInputs.dict)
 
     # We have to try for the following objects because they may or may not be defined
@@ -4099,25 +4083,13 @@ def get_input_dict_from_run_uuid(run_uuid:str):
     try: d["ElectricTariff"] = filter_none_and_empty_array(meta.ElectricTariffInputs.dict)
     except: pass
 
-    try: 
-        d["ElectricUtility"] = filter_none_and_empty_array(meta.ElectricUtilityInputs.dict)
-        d["ElectricUtility"].pop("emissions_region",None)
-        d["ElectricUtility"].pop("emissions_factor_PM25_decrease_pct",None)
-        d["ElectricUtility"].pop("emissions_factor_SO2_decrease_pct",None)
-        d["ElectricUtility"].pop("emissions_factor_NOx_decrease_pct",None)
-        d["ElectricUtility"].pop("emissions_factor_CO2_decrease_pct",None)
+    try: d["ElectricUtility"] = filter_none_and_empty_array(meta.ElectricUtilityInputs.dict)
     except: pass
 
     try: d["ElectricStorage"] = filter_none_and_empty_array(meta.ElectricStorageInputs.dict)
     except: pass
 
-    try: 
-        d["Generator"] = filter_none_and_empty_array(meta.GeneratorInputs.dict)
-        d["Generator"].pop("fuel_renewable_energy_pct",None)
-        d["Generator"].pop("emissions_factor_lb_CO2_per_gal",None)
-        d["Generator"].pop("emissions_factor_lb_NOx_per_gal",None)
-        d["Generator"].pop("emissions_factor_lb_SO2_per_gal",None)
-        d["Generator"].pop("emissions_factor_lb_PM25_per_gal",None)
+    try: d["Generator"] = filter_none_and_empty_array(meta.GeneratorInputs.dict)
     except: pass
 
     try: d["Wind"] = filter_none_and_empty_array(meta.WindInputs.dict)
