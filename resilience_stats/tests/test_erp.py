@@ -31,6 +31,7 @@ import json
 import os
 from tastypie.test import ResourceTestCaseMixin
 from django.test import TestCase
+import numpy as np
 
 
 class ERPTests(ResourceTestCaseMixin, TestCase):
@@ -39,17 +40,14 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
     def setUp(self):
         super(ERPTests, self).setUp()
 
-        # for optimization module
-        self.reopt_base_opt = '/dev/job/'
-        self.post_opt = os.path.join('resilience_stats', 'tests', 'ERP_REopt_opt_post.json')
-        self.run_uuid = None
-
-        #for simulation module
+        #for ERP simulation
         self.reopt_base_erp = '/dev/erp/'
-        self.post_sim_with_reopt_run_uuid = os.path.join('resilience_stats', 'tests', 'ERP_REopt_sim_post.json')
-        self.post_sim_only = os.path.join('resilience_stats', 'tests', 'ERP_only_sim_post.json')
         self.reopt_base_erp_results = '/dev/erp/{}/results/'
-
+        self.post_sim = os.path.join('resilience_stats', 'tests', 'ERP_sim_post.json')
+        
+        #for REopt optimization
+        self.reopt_base_opt = '/dev/job/'
+        self.post_opt = os.path.join('resilience_stats', 'tests', 'ERP_opt_post.json')
 
     def get_response_opt(self, data):
         return self.api_client.post(self.reopt_base_opt, format='json', data=data)
@@ -71,8 +69,9 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         reopt_run_uuid = r_opt.get('run_uuid')
 
         assert(reopt_run_uuid is not None)
-        post_sim = json.load(open(self.post_sim_with_reopt_run_uuid, 'rb'))
+        post_sim = json.load(open(self.post_sim, 'rb'))
         post_sim["reopt_run_uuid"] = reopt_run_uuid
+        post_sim["battery_starting_soc_series_fraction"] = 8760 * [1]
 
         resp = self.get_response_sim(post_sim)
         self.assertHttpCreated(resp)
@@ -81,12 +80,35 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
 
         resp = self.get_results_sim(erp_run_uuid)
         results = json.loads(resp.content)
+        #same as last test in julia
+        self.assertAlmostEqual(results["mean_cumulative_outage_survival_final_time_step"], 0.904242, places=-4)
+
+        #remove inputs that override REopt results and run again
+        for input_key in [
+                    "generator_size_kw",
+                    "battery_size_kw",
+                    "battery_size_kwh",
+                    "pv_size_kw",
+                    "critical_loads_kw",
+                    "pv_production_factor_series",
+                    "battery_starting_soc_series_fraction"
+                ]:
+            post_sim.pop(input_key)
+        
+        resp = self.get_response_sim(post_sim)
+        self.assertHttpCreated(resp)
+        r_sim = json.loads(resp.content)
+        erp_run_uuid = r_sim.get('run_uuid')
+
+        resp = self.get_results_sim(erp_run_uuid)
+        results = json.loads(resp.content)
+        self.assertAlmostEqual(results["mean_cumulative_outage_survival_final_time_step"], 0.817088, places=-4)
 
     def test_erp_with_no_opt(self):
         """
         """
         
-        post_sim = json.load(open(self.post_sim_only, 'rb'))
+        post_sim = json.load(open(self.post_sim, 'rb'))
 
         resp = self.get_response_sim(post_sim)
         self.assertHttpCreated(resp)
@@ -95,4 +117,4 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
 
         resp = self.get_results_sim(erp_run_uuid)
         results = json.loads(resp.content)
-        self.assertAlmostEqual(results["mean_cumulative_outage_survival_final_time_step"], 0.990784, places=-2)
+        self.assertAlmostEqual(results["mean_cumulative_outage_survival_final_time_step"], 0.990784, places=-4)
