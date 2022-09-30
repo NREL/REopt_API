@@ -154,7 +154,7 @@ class ERPJob(ModelResource):
             if bundle.data.get("pv_size_kw", None) is None: 
                 bundle.data["pv_size_kw"] = pv_size_kw
             if bundle.data.get("pv_production_factor_series", None) is None: 
-                bundle.data["pv_production_factor_series"] = pv_kw_series / pv_size_kw
+                bundle.data["pv_production_factor_series"] = (np.array(pv_kw_series) / pv_size_kw).tolist()
             
             try:
                 stor_out = reopt_run_meta.ElectricStorageOutputs.dict
