@@ -60,6 +60,10 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
 
     def test_erp_with_reopt_run_uuid(self):
         """
+        Tests calling ERP with a REopt run_uuid provided, but all inputs from REopt results overrided.
+        This ends up being the same as the second to last test in the "Backup Generator Reliability" testset in the REopt Julia package.
+        Then tests calling ERP with the same REopt run_uuid provided, but only the necessary additional ERP inputs provided.
+        This is the same as the last test in the "Backup Generator Reliability" testset in the REopt Julia package.
         """
 
         data = json.load(open(self.post_opt, 'rb'))
@@ -106,6 +110,8 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
 
     def test_erp_with_no_opt(self):
         """
+        Tests calling ERP on it's own without providing a REopt run_uuid.
+        Same as the second to last test in the "Backup Generator Reliability" testset in the REopt Julia package.
         """
         
         post_sim = json.load(open(self.post_sim, 'rb'))
