@@ -164,7 +164,7 @@ class ERPInputs(BaseModel, models.Model):
         ],
         help_text=("Battery kWh energy capacity")
     )
-    battery_starting_soc_kwh = ArrayField(
+    battery_starting_soc_series_fraction = ArrayField(
         models.FloatField(
             validators=[
                 MinValueValidator(0)
@@ -172,7 +172,7 @@ class ERPInputs(BaseModel, models.Model):
         ),
         blank=True,
         default=list,
-        help_text=("Battery kWh state of charge when an outage begins, at each timestep. Must be hourly (8,760 samples).")
+        help_text=("Battery state of charge fraction when an outage begins, at each timestep. Must be hourly (8,760 samples).")
     )
     battery_charge_efficiency = models.FloatField(
         blank=True,

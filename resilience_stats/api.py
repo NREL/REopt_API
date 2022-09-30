@@ -165,9 +165,8 @@ class ERPJob(ModelResource):
                     bundle.data["battery_discharge_efficiency"] = stor_in["inverter_efficiency_fraction"] * stor_in["internal_efficiency_fraction"]**0.5
                 if bundle.data.get("battery_size_kw", None) is None: bundle.data["battery_size_kw"] = stor_out.get("size_kw", 0)
                 if bundle.data.get("battery_size_kwh", None) is None: bundle.data["battery_size_kwh"] = stor_out.get("size_kwh", 0)
-                init_soc = np.array(stor_out.get("year_one_soc_series_fraction", []))
-                if bundle.data.get("battery_starting_soc_kwh", None) is None: 
-                    bundle.data["battery_starting_soc_kwh"] = (init_soc * bundle.data.get("battery_size_kwh")).tolist()
+                if bundle.data.get("battery_starting_soc_series_fraction", None) is None: 
+                    bundle.data["battery_starting_soc_series_fraction"] = stor_out.get("year_one_soc_series_fraction", [])
             except AttributeError as e: 
                 pass
             
