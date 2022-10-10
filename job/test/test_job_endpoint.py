@@ -30,6 +30,7 @@
 import json
 from tastypie.test import ResourceTestCaseMixin
 from django.test import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
+import os
 import logging
 logging.disable(logging.CRITICAL)
 
@@ -159,3 +160,21 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(results["ElectricLoad"]["offgrid_load_met_pct"], 0.99999, places=-2)
         self.assertAlmostEqual(sum(results["ElectricLoad"]["offgrid_load_met_series_kw"]), 8760.0, places=-1)
         self.assertAlmostEqual(results["Financial"]["lifecycle_offgrid_other_annual_costs_after_tax"], 0.0, places=-2)
+    
+    def test_superset_input_fields(self):
+        """
+        Purpose of this test is to test the API's ability to accept all relevant input fields and send to REopt.
+        """
+        post_file = os.path.join('job', 'test', 'posts', 'all_inputs_test.json')
+        post = json.load(open(post_file, 'r'))
+
+        resp = self.api_client.post('/dev/job/', format='json', data=post)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+
+        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        r = json.loads(resp.content)
+        results = r["outputs"]
+
+        assert(results["status"]=="optimal")
