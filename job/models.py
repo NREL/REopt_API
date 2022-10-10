@@ -3414,12 +3414,14 @@ class CHPInputs(BaseModel, models.Model):
             models.FloatField(null=True, blank=True), 
             default=list, 
             null=True,
+            blank=True,
             help_text="Installed cost in $/kW"
     )
     tech_sizes_for_cost_curve = ArrayField(
             models.FloatField(null=True, blank=True), 
             default=list, 
             null=True,
+            blank=True,
             help_text="Capacity intervals correpsonding to cost rates in installed_cost_per_kW, in kW"
     )
     om_cost_per_kwh = models.FloatField(
@@ -3509,6 +3511,7 @@ class CHPInputs(BaseModel, models.Model):
     unavailability_periods = ArrayField(
             PickledObjectField(null=True, editable=True), 
             null=True,
+            blank=True,
             help_text=(
                 "CHP unavailability periods for scheduled and unscheduled maintenance, list of dictionaries with keys of "
                 "['month', 'start_week_of_month', 'start_day_of_week', 'start_hour', 'duration_hours'] "
