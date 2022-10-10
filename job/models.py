@@ -3369,7 +3369,6 @@ class CHPInputs(BaseModel, models.Model):
         ["prime_mover"],
         [
             "installed_cost_per_kw",
-            "tech_sizes_for_cost_curve",
             "om_cost_per_kwh",
             "electric_efficiency_half_load",
             "electric_efficiency_full_load",
@@ -3855,7 +3854,9 @@ class CHPInputs(BaseModel, models.Model):
 
         # possible sets for defining CHP
         update_installed_costs = False
-        if type(self.dict.get("installed_cost_per_kw")) == list and len(self.dict.get("installed_cost_per_kw")) == 1:
+        if (type(self.dict.get("installed_cost_per_kw")) == float or
+                (type(self.dict.get("installed_cost_per_kw")) == list and len(self.dict.get("installed_cost_per_kw")) == 1)
+                ):
             self.tech_sizes_for_cost_curve = []
         elif self.dict.get("installed_cost_per_kw") not in [None, [], ""] and self.dict.get("tech_sizes_for_cost_curve") in [None, [], ""]:
             error_messages["required inputs"] = \
