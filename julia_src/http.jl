@@ -25,7 +25,11 @@ function job(req::HTTP.Request)
     Xpress.postsolve(optimizer.inner)
 	if isempty(error_response)
     	@info "REopt model solved with status $(results["status"])."
-    	return HTTP.Response(200, JSON.json(results))
+		if results["status"] == "error"
+    		return HTTP.Response(400, JSON.json(results))
+		else
+			return HTTP.Response(200, JSON.json(results))
+		end
 	else
 		@info "An error occured in the Julia code."
 		return HTTP.Response(500, JSON.json(error_response))
@@ -64,20 +68,29 @@ function reopt(req::HTTP.Request)
 			)
 		)
 	end
-    @info "Starting REopt..."
+	@info "Starting REopt..."
     error_response = Dict()
     results = Dict()
 	inputs_with_defaults_set_in_julia = Dict()
 	model_inputs = nothing
-    try
-        results = reoptjl.run_reopt(ms, d)
+	# Catch handled/unhandled exceptions in data pre-processing, JuMP setup
+	try
 		model_inputs = reoptjl.REoptInputs(d)
-		
-		if !isnothing(model_inputs)
+	catch e
+		@error "Something went wrong in the Julia code!" exception=(e, catch_backtrace())
+        error_response["error"] = sprint(showerror, e)
+	end
+	
+	if isa(model_inputs, Dict) && model_inputs["status"] == "error"
+		results = model_inputs
+	else
+		# Catch handled/unhandled exceptions in optimization
+		try
+			results = reoptjl.run_reopt(ms, model_inputs)
 			inputs_with_defaults_from_easiur = [
 				:NOx_grid_cost_per_tonne, :SO2_grid_cost_per_tonne, :PM25_grid_cost_per_tonne, 
 				:NOx_onsite_fuelburn_cost_per_tonne, :SO2_onsite_fuelburn_cost_per_tonne, :PM25_onsite_fuelburn_cost_per_tonne,
-				:NOx_cost_escalation_pct, :SO2_cost_escalation_pct, :PM25_cost_escalation_pct
+				:NOx_cost_escalation_rate_fraction, :SO2_cost_escalation_rate_fraction, :PM25_cost_escalation_rate_fraction
 			]
 			inputs_with_defaults_from_avert = [
 				:emissions_factor_series_lb_CO2_per_kwh, :emissions_factor_series_lb_NOx_per_kwh,
@@ -87,15 +100,12 @@ function reopt(req::HTTP.Request)
 				"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_easiur),
 				"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert)
 			)
+		catch e
+			@error "Something q wrong in the Julia code!" exception=(e, catch_backtrace())
+			error_response["error"] = sprint(showerror, e) # append instead of rewrite?
 		end
-    catch e
-		if collect(keys(results)) == ["Messages","status"]
-			nothing
-		else
-			@error "Something went wrong in the Julia code!" exception=(e, catch_backtrace())
-			error_response["error"] = sprint(showerror, e)
-		end
-    end
+	end
+    
 	if typeof(ms) <: AbstractArray
 		finalize(backend(ms[1]))
 		finalize(backend(ms[2]))
@@ -103,22 +113,30 @@ function reopt(req::HTTP.Request)
 		finalize(backend(ms))
 	end
     GC.gc()
+
     if isempty(error_response)
-		response = Dict(
-			"results" => results
-		)
-		if collect(keys(results)) == ["Messages","status"]
-			@info "REopt model solved with an error, see Messages for more information."
+        @info "REopt model solved with status $(results["status"])."
+		if results["status"] == "error"
+			response = Dict(
+				"results" => results
+			)
+			if !isempty(inputs_with_defaults_set_in_julia)
+				response["inputs_with_defaults_set_in_julia"] = inputs_with_defaults_set_in_julia
+			end
+			return HTTP.Response(400, JSON.json(response))
 		else
-        	@info "REopt model solved with status $(results["status"])."
-			response["inputs_with_defaults_set_in_julia"] = inputs_with_defaults_set_in_julia
+			response = Dict(
+				"results" => results,
+				"inputs_with_defaults_set_in_julia" => inputs_with_defaults_set_in_julia
+			)
+			return HTTP.Response(200, JSON.json(response))
 		end
-        return HTTP.Response(200, JSON.json(response))
     else
         @info "An error occured in the Julia code."
         return HTTP.Response(500, JSON.json(error_response))
     end
 end
+
 
 function ghpghx(req::HTTP.Request)
     inputs_dict = JSON.parse(String(req.body))

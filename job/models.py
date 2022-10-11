@@ -616,7 +616,7 @@ class FinancialInputs(BaseModel, models.Model):
         blank=True,
         help_text="Analysis period in years. Must be integer."
     )
-    elec_cost_escalation_pct = models.FloatField(
+    elec_cost_escalation_rate_fraction = models.FloatField(
         default=0.019,
         validators=[
             MinValueValidator(-1),
@@ -625,7 +625,7 @@ class FinancialInputs(BaseModel, models.Model):
         blank=True,
         help_text="Annual nominal utility electricity cost escalation rate."
     )
-    offtaker_discount_pct = models.FloatField(
+    offtaker_discount_rate_fraction = models.FloatField(
         default=0.0564,
         validators=[
             MinValueValidator(0),
@@ -653,7 +653,7 @@ class FinancialInputs(BaseModel, models.Model):
         blank=True,
         help_text="Annual nominal O&M cost escalation rate"
     )
-    owner_discount_pct = models.FloatField(
+    owner_discount_rate_fraction = models.FloatField(
         default=0.0564,
         validators=[
             MinValueValidator(0),

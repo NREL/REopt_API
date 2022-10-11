@@ -255,5 +255,8 @@ def results(request, run_uuid):
             err.save_to_db()
             resp = make_error_resp(err.message)
             return JsonResponse(resp, status=500)
+    
+    if meta.status == "error":
+        return JsonResponse(r, status=400)
 
     return JsonResponse(r)
