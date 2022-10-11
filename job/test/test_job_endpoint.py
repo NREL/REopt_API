@@ -27,11 +27,13 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
+from cProfile import run
 import json
 from tastypie.test import ResourceTestCaseMixin
 from django.test import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
 import os
 import logging
+import requests
 logging.disable(logging.CRITICAL)
 
 
@@ -42,62 +44,10 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         Same test post as"Solar and Storage w/BAU" in the Julia package. Used in development of v3.
         Also tests that inputs with defaults determined in the REopt julia package get updated in the database.
         """
-        scenario = {
-            "Site": {
-                "longitude": -118.1164613,
-                "latitude": 34.5794343,
-                "roof_squarefeet": 5000.0,
-                "land_acres": 1.0,
-                "node": 3
-            },
-            "PV": {
-                "macrs_bonus_fraction": 0.4,
-                "installed_cost_per_kw": 2000.0,
-                "tilt": 34.579,
-                "degradation_fraction": 0.005,
-                "macrs_option_years": 5,
-                "federal_itc_fraction": 0.3,
-                "module_type": 0,
-                "array_type": 1,
-                "om_cost_per_kw": 16.0,
-                "macrs_itc_reduction": 0.5,
-                "azimuth": 180.0,
-                "federal_rebate_per_kw": 350.0
-            },
-            "ElectricLoad": {
-                "doe_reference_name": "RetailStore",
-                "annual_kwh": 10000000.0,
-                "year": 2017
-            },
-            "ElectricStorage": {
-                "total_rebate_per_kw": 100.0,
-                "macrs_option_years": 5,
-                "can_grid_charge": True,
-                "macrs_bonus_fraction": 0.4,
-                "replace_cost_per_kw": 460.0,
-                "replace_cost_per_kwh": 230.0,
-                "installed_cost_per_kw": 1000.0,
-                "installed_cost_per_kwh": 500.0,
-                "total_itc_fraction": 0.0
-            },
-            "ElectricTariff": {
-                "urdb_label": "5ed6c1a15457a3367add15ae"
-            },
-            "ElectricUtility": {
-                "emissions_factor_series_lb_NOx_per_kwh": 1
-            },
-            "Financial": {
-                "elec_cost_escalation_rate_fraction": 0.026,
-                "offtaker_discount_rate_fraction": 0.081,
-                "owner_discount_rate_fraction": 0.081,
-                "analysis_years": 20,
-                "offtaker_tax_rate_fraction": 0.4,
-                "owner_tax_rate_fraction": 0.4,
-                "om_cost_escalation_rate_fraction": 0.025
-            }
-        }
+        post_file = os.path.join('job', 'test', 'posts', 'pv_batt_emissions.json')
+        post = json.load(open(post_file, 'r'))
 
-        resp = self.api_client.post('/dev/job/', format='json', data=scenario)
+        resp = self.api_client.post('/dev/job/', format='json', data=post)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
@@ -126,26 +76,10 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         """
         Purpose of this test is to validate off-grid functionality and defaults in the API.
         """
-        scenario = {
-            "Settings":{
-                "off_grid_flag": True,
-                "optimality_tolerance":0.05
-            },
-            "Site": {
-                "longitude": -118.1164613,
-                "latitude": 34.5794343
-            },
-            "PV": {},
-            "ElectricStorage":{},
-            "ElectricLoad": {
-                "doe_reference_name": "FlatLoad",
-                "annual_kwh": 8760.0,
-                "city": "LosAngeles",
-                "year": 2017
-            }
-        }
+        post_file = os.path.join('job', 'test', 'posts', 'off_grid_defaults.json')
+        post = json.load(open(post_file, 'r'))
 
-        resp = self.api_client.post('/dev/job/', format='json', data=scenario)
+        resp = self.api_client.post('/dev/job/', format='json', data=post)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
@@ -161,6 +95,24 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(sum(results["ElectricLoad"]["offgrid_load_met_series_kw"]), 8760.0, places=-1)
         self.assertAlmostEqual(results["Financial"]["lifecycle_offgrid_other_annual_costs_after_tax"], 0.0, places=-2)
     
+    def process_reopt_error(self):
+        """
+        Purpose of this test is to ensure REopt status 400 is returned using the job endpoint
+        """
+
+        post_file = os.path.join('job', 'test', 'posts', 'handle_reopt_error.json')
+        post = json.load(open(post_file, 'r'))
+
+        resp = self.api_client.post('/dev/job/', format='json', data=post)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+
+        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        r = json.loads(resp.content)
+        results = r["outputs"]
+        assert(resp.status_code==400)
+
     def test_superset_input_fields(self):
         """
         Purpose of this test is to test the API's ability to accept all relevant input fields and send to REopt.
@@ -177,4 +129,5 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         results = r["outputs"]
 
-        assert(results["status"]=="optimal")
+        self.assertAlmostEqual(results["Financial"]["npv"], 165.21, places=-2)
+        assert(resp.status_code==200)
