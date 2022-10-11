@@ -25,11 +25,7 @@ function job(req::HTTP.Request)
     Xpress.postsolve(optimizer.inner)
 	if isempty(error_response)
     	@info "REopt model solved with status $(results["status"])."
-		if results["status"] == "error"
-    		return HTTP.Response(400, JSON.json(results))
-		else
-			return HTTP.Response(200, JSON.json(results))
-		end
+    	return HTTP.Response(200, JSON.json(results))
 	else
 		@info "An error occured in the Julia code."
 		return HTTP.Response(500, JSON.json(error_response))

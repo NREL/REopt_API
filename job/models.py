@@ -2703,11 +2703,6 @@ class WindInputs(BaseModel, models.Model):
             "Required operating reserves applied to each timestep as a fraction of wind generation serving load in that timestep."
     )
 
-    # By default prodfactor is [], which causes errors in REopt. Should we either make prod factor not default to anything or handle it separately in REopt?
-    def clean(self):
-        if self.prod_factor_series == []:
-           self.prod_factor_series = scalar_to_vector([0.0]) 
-
 
 class WindOutputs(BaseModel, models.Model):
     key = "WindOutputs"
@@ -3569,6 +3564,21 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
     year_one_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
     year_one_fuel_cost_before_tax = models.FloatField(null=True, blank=True)
     thermal_to_tes_series_mmbtu_per_hour = models.FloatField(null=True, blank=True)
+
+    year_one_thermal_to_steamturbine_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    year_one_thermal_production_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    year_one_fuel_consumption_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
     thermal_to_tes_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
         default = list,
@@ -3580,6 +3590,11 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
     )
 
     year_one_thermal_to_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    year_one_thermal_to_tes_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
         default = list,
     )
