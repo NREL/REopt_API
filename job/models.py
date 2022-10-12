@@ -3872,7 +3872,7 @@ class CHPInputs(BaseModel, models.Model):
                 "Must provide at least one set of valid inputs from {}.".format(self.possible_sets)
         else:  #use defaults if CHP prime mover given 
             if self.dict.get("prime_mover") not in [None, ""]:
-                boiler_type = "steam" if self.prime_mover == "combustion turbine" else "hot_water"
+                boiler_type = "steam" if self.prime_mover == "combustion_turbine" else "hot_water"
                 for key in self.possible_sets[1]:
                     if key in ["installed_cost_per_kw","tech_sizes_for_cost_curve"] and update_installed_costs:
                         setattr(self,key,self.prime_mover_defaults[self.prime_mover][key][self.size_class-1])
