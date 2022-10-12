@@ -3424,11 +3424,11 @@ class CHPInputs(BaseModel, models.Model):
             help_text="Capacity intervals correpsonding to cost rates in installed_cost_per_kW, in kW"
     )
     om_cost_per_kwh = models.FloatField(
-        default=0.0,
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(1.0e3)
         ],
+        null=True,
         blank=True,
         help_text="CHP per unit production (variable) operations and maintenance costs in $/kWh"
     )
