@@ -3879,6 +3879,14 @@ class CHPInputs(BaseModel, models.Model):
                     elif self.dict.get(key) in [None, "", []]:
                         if key in ["thermal_efficiency_full_load","thermal_efficiency_half_load"]:
                             setattr(self,key,self.prime_mover_defaults[self.prime_mover][key][boiler_type][self.size_class-1])
+                        elif key == "unavailability_periods":
+                            if self.dict.get(key) == []: # Set it to empty which is the intended input (no unvailability periods)
+                                setattr(self,key,[])
+                            else: # Not included in inputs, so use default periods
+                                unavailability_periods = []
+                                for period in self.prime_mover_defaults[self.prime_mover][key]:
+                                    unavailability_periods.append(period)
+                                setattr(self,key,unavailability_periods)                                
                         else: 
                             setattr(self,key,self.prime_mover_defaults[self.prime_mover][key][self.size_class-1])
 
