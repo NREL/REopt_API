@@ -38,7 +38,7 @@ from reo.models import ModelManager
 from reo.models import ScenarioModel, PVModel, StorageModel, LoadProfileModel, GeneratorModel, FinancialModel, \
     WindModel, CHPModel
 from reo.utilities import annuity
-from resilience_stats.models import ResilienceModel, ERPOutputs
+from resilience_stats.models import ResilienceModel, ERPMeta, ERPInputs, ERPOutputs
 from resilience_stats.outage_simulator_LF import simulate_outages
 import numpy as np
 from reo.utilities import empty_record
@@ -49,40 +49,70 @@ def erp_results(request, run_uuid):
     try:
         uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
     except ValueError as e:
+        resp = {"messages": {}}
+        resp['status'] = 'Error'
         if e.args[0] == "badly formed hexadecimal UUID string":
-            return JsonResponse({"Error": str(e.args[0])}, status=400)
+            resp['messages']['error'] = str(e.args[0])
+            return JsonResponse(resp, status=400)
         else:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             err = UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task='resilience_stats',
                                   run_uuid=run_uuid)
             err.save_to_db()
-            return JsonResponse({"Error": str(err.message)}, status=400)
-    try:  # catch all exceptions
-        try:  # catch specific exception
+            resp['messages']['error'] = str(err.message)
+            return JsonResponse(resp, status=400)
+    try:  # catch all unexpected exceptions
+        # catch specific exceptions
+        try:
+            meta = ERPMeta.objects.select_related("ERPInputs").get(run_uuid=run_uuid)
+        except models.ObjectDoesNotExist as e:
+            resp = {"messages": {}}
+            resp['messages']['error'] = (
+                "run_uuid {} not in database. "
+                "If you have already submitted an ERP job, you may have "
+                "hit the results endpoint too quickly after POST'ing, "
+                "have a typo in your run_uuid, or the scenario was deleted. "
+                "If you have not, please first submit an ERP job by sending a POST request to "
+                "<version>/erp/. This will generate"
+                " ERP results that you can access from a GET request to the "
+                "<version>/erp/<run uuid>/results endpoint. ").format(run_uuid)
+            resp['status'] = 'Error'
+            return JsonResponse(resp, content_type='application/json', status=404)
+        # 
+        resp = meta.dict
+        resp["inputs"] = meta.ERPInputs.dict
+        resp["outputs"] = dict()
+        resp["messages"] = dict()
+        #TODO: save messages for ERP jobs and include here
+        # try:
+        #     msgs = meta.Message.all()
+        #     for msg in msgs:
+        #         r["messages"][msg.message_type] = msg.message
+        # except: pass
+
+        try:  
             erp_outputs = ERPOutputs.objects.get(meta__run_uuid=run_uuid)
         except models.ObjectDoesNotExist:
-            not_ready_msg = ('ERP results are not ready. '
-                'If you have already submitted an ERP job, please try again later. '
-                'If not, please first submit an ERP job by sending a POST request to '
-                '<version>/erp/. This will generate'
-                ' ERP results that you can access from a GET request to the '
-                '<version>/erp/<run uuid>/results endpoint. ')
-            return JsonResponse({"Error": not_ready_msg}, content_type='application/json', status=404)
+            resp['messages']['error'] = ('ERP results are not ready. Please try again later.')
+            return JsonResponse(resp, content_type='application/json', status=404)
 
         else:  # ERPOutputs does exist
-            results = erp_outputs.dict
+            resp["outputs"] = erp_outputs.dict
             # # remove items that user does not need
             # del results['scenariomodel']
             # del results['id']
 
-        response = JsonResponse(results, content_type='application/json', status=200)
+        response = JsonResponse(resp, content_type='application/json', status=200)
         return response
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         err = UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task='erp', run_uuid=run_uuid)
         err.save_to_db()
-        return JsonResponse({"error": err.message}, status=500)
+        resp = {"messages": {}}
+        resp['messages']['error'] = err.message
+        resp['status'] = 'Error'
+        return JsonResponse(resp, status=500)
 
 def resilience_stats(request: Union[Dict, HttpRequest], run_uuid=None):
     """
