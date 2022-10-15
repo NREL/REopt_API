@@ -93,6 +93,7 @@ class ERPJob(ModelResource):
         meta_dict = {
             "run_uuid": erp_run_uuid,
             "reopt_version": "0.18.0",
+            "status": "Validating..."
         }
         if bundle.request.META.get('HTTP_X_API_USER_ID', False):
             if bundle.request.META.get('HTTP_X_API_USER_ID', '') == '6f09c972-8414-469b-b3e8-a78398874103':
@@ -110,10 +111,14 @@ class ERPJob(ModelResource):
 
         reopt_run_uuid = bundle.data.get("reopt_run_uuid", None)
         if reopt_run_uuid is not None:
+            #TODO: put in helper function for more readable code
             try:
                 validate_run_uuid(reopt_run_uuid)
             except ValidationError as err:
-                raise ImmediateHttpResponse(HttpResponse(json.dumps({"Error": str(err.message)}), status=400))
+                meta_dict["status"] = "Validation Error. See messages for details."
+                meta_dict["messages"] = {}
+                meta_dict["messages"]["error"] = str(err.message)
+                raise ImmediateHttpResponse(HttpResponse(json.dumps(meta_dict), status=400))
 
             # Get inputs from a REopt run in database
             try:
@@ -123,8 +128,10 @@ class ERPJob(ModelResource):
                 
             except:
                 # Handle non-existent REopt runs
-                msg = "Invalid run_uuid {}, REopt run does not exist.".format(reopt_run_uuid)
-                raise ImmediateHttpResponse(HttpResponse(json.dumps({"Error": msg}), content_type='application/json', status=404))
+                meta_dict["status"] = "Validation Error. See messages for details."
+                meta_dict["messages"] = {}
+                meta_dict["messages"]["error"] = "Invalid run_uuid {}, REopt run does not exist.".format(reopt_run_uuid)
+                raise ImmediateHttpResponse(HttpResponse(json.dumps(meta_dict), content_type='application/json', status=404))
             
             #TODO: put all of this stuff below in a helper function, or in clean or save django methods?
             critical_loads_kw = reopt_run_meta.ElectricLoadOutputs.dict["critical_load_series_kw"]
@@ -179,20 +186,22 @@ class ERPJob(ModelResource):
                         bundle.data["generator_size_kw"] = gen.get("size_kw", 0)
             except AttributeError as e: 
                 pass
-                
-        
-        #json.dump(bundle.data, open("resilience_stats/tests/erp_model_inputs_to_skip_reopt.json", "w"))
-
+            
         try:
             erpinputs = ERPInputs.create(meta=meta, **bundle.data)
             erpinputs.clean_fields()
             # erpinputs.clean()
             erpinputs.save()
 
+            meta.status = 'Simulating...'
+            meta.save(update_fields=['status'])
             run_erp_task.delay(erp_run_uuid)
-        except Exception as e:
+        except Exception:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            raise ImmediateHttpResponse(HttpResponse(json.dumps({"error": str(exc_value.args[0])}),
+            meta_dict["status"] = "Internal Server Error. See messages for details."
+            meta_dict["messages"] = {}
+            meta_dict["messages"]["error"] = str(exc_value.args[0])
+            raise ImmediateHttpResponse(HttpResponse(json.dumps(meta_dict),
                                         content_type='application/json',
                                         status=500))  # internal server error
 
@@ -312,7 +321,6 @@ def process_erp_results(results: dict, run_uuid: str) -> None:
     Saves ERP results returned from the Julia API in the backend database.
     Called in resilience_stats/run_erp_task (a celery task)
     """
-
     meta = ERPMeta.objects.get(run_uuid=run_uuid)
     # meta.status = results.get("status")
     # meta.save(update_fields=["status"])
