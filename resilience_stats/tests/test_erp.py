@@ -85,7 +85,7 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         resp = self.get_results_sim(erp_run_uuid)
         results = json.loads(resp.content)
         #same as last test in julia
-        self.assertAlmostEqual(results["mean_cumulative_outage_survival_final_time_step"], 0.904242, places=-4)
+        self.assertAlmostEqual(results["outputs"]["mean_cumulative_outage_survival_final_time_step"], 0.904242, places=-4)
 
         #remove inputs that override REopt results and run again
         for input_key in [
@@ -106,7 +106,7 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
 
         resp = self.get_results_sim(erp_run_uuid)
         results = json.loads(resp.content)
-        self.assertAlmostEqual(results["mean_cumulative_outage_survival_final_time_step"], 0.817088, places=-4)
+        self.assertAlmostEqual(results["outputs"]["mean_cumulative_outage_survival_final_time_step"], 0.817088, places=-4)
 
     def test_erp_with_no_opt(self):
         """
@@ -123,4 +123,4 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
 
         resp = self.get_results_sim(erp_run_uuid)
         results = json.loads(resp.content)
-        self.assertAlmostEqual(results["mean_cumulative_outage_survival_final_time_step"], 0.990784, places=-4)
+        self.assertAlmostEqual(results["outputs"]["mean_cumulative_outage_survival_final_time_step"], 0.990784, places=-4)
