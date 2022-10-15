@@ -321,9 +321,10 @@ def process_erp_results(results: dict, run_uuid: str) -> None:
     Saves ERP results returned from the Julia API in the backend database.
     Called in resilience_stats/run_erp_task (a celery task)
     """
+    #TODO: get success or error status from julia
     meta = ERPMeta.objects.get(run_uuid=run_uuid)
-    # meta.status = results.get("status")
-    # meta.save(update_fields=["status"])
+    meta.status = 'Completed' #results.get("status")
+    meta.save(update_fields=['status'])
     results.pop("marginal_outage_survival_final_time_step",None)
     ERPOutputs.create(meta=meta, **results).save()
     
