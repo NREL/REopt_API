@@ -111,7 +111,7 @@ def run_jump_model(run_uuid):
             raise OptimizationTimeout(task=name, message=msg, run_uuid=run_uuid, user_uuid=user_uuid)
 
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        logger.error("REopt.py raise unexpected error: UUID: " + str(run_uuid))
+        logger.error("REopt.jl raised an unexpected error: UUID: " + str(run_uuid))
         raise UnexpectedError(exc_type, exc_value, traceback.format_tb(exc_traceback), task=name, run_uuid=run_uuid,
                               user_uuid=user_uuid)
     else:
@@ -123,7 +123,7 @@ def run_jump_model(run_uuid):
             logger.info(msg)
             raise OptimizationTimeout(task=name, message=msg, run_uuid=run_uuid, user_uuid=user_uuid)
         elif status.strip().lower() == 'error':
-            msg = "Optimization errored out."
+            msg = "Optimization did not complete due to an error."
             logger.info(msg)
         elif status.strip().lower() != 'optimal':
             logger.error("REopt status not optimal. Raising NotOptimal Exception.")
