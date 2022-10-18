@@ -115,7 +115,8 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
 
     def test_superset_input_fields(self):
         """
-        Purpose of this test is to test the API's ability to accept all relevant input fields and send to REopt.
+        Purpose of this test is to test the API's ability to accept all relevant 
+        input fields and send to REopt, ensuring name input consistency with REopt.jl.
         """
         post_file = os.path.join('job', 'test', 'posts', 'all_inputs_test.json')
         post = json.load(open(post_file, 'r'))
