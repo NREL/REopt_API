@@ -95,7 +95,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(sum(results["ElectricLoad"]["offgrid_load_met_series_kw"]), 8760.0, places=-1)
         self.assertAlmostEqual(results["Financial"]["lifecycle_offgrid_other_annual_costs_after_tax"], 0.0, places=-2)
     
-    def process_reopt_error(self):
+    def test_process_reopt_error(self):
         """
         Purpose of this test is to ensure REopt status 400 is returned using the job endpoint
         """
