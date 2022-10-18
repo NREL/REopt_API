@@ -565,38 +565,6 @@ class SiteOutputs(BaseModel, models.Model):
         help_text="Percent reduction in total pounds of carbon dioxide emissions in the optimal case relative to the BAU case"
     )
 
-"""
-# TODO should we move the emissions_calculator to Julia? 
-# Or is it supplanted by new emissions capabilities (not in develop/master as of 21.09.02)?
-
-class SiteOutputs(BaseModel, models.Model):
-    key = "SiteOutputs"
-
-    meta = models.OneToOneField(
-        APIMeta,
-        on_delete=models.CASCADE,
-        primary_key=True,
-        related_name="SiteOutputs"
-    )
-
-    year_one_emissions_lb_C02 = models.FloatField(
-        null=True, blank=True,
-        help_text="Total equivalent pounds of carbon dioxide emitted from the site in the first year."
-    )
-    year_one_emissions_bau_lb_C02 = models.FloatField(
-        null=True, blank=True,
-        help_text="Total equivalent pounds of carbon dioxide emittedf rom the site use in the first year in the BAU case."
-    )
-    renewable_electricity_energy_fraction = models.FloatField(
-        null=True, blank=True,
-        help_text=("Portion of electrictrity use that is derived from on-site "
-                    "renewable resource generation in year one. Calculated as "
-                    "total PV and Wind generation in year one (including exports), "
-                    "divided by the total annual load in year one.")
-    )
-"""
-
-
 class FinancialInputs(BaseModel, models.Model):
     key = "Financial"
 
