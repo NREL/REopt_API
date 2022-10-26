@@ -26,7 +26,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop - 2022-09-13
+## v2.3.0
 ### Minor Updates
 ##### Added 
 In `job/models.py`:
@@ -42,7 +42,10 @@ In `job/views.py`:
 The following name changes were made in the `job/` endpoint and `julia_src/http.jl`: 
  - Change "_pct" to "_rate_fraction" for input and output names containing "discount", "escalation", and "tax_pct" (financial terms)
  - Change "_pct" to "_fraction" for all other input and output names (e.g., "min_soc_", "min_turndown_")
- - Change **prod_factor_series** to **production_factor_series** 
+ - Change **prod_factor_series** to **production_factor_series**
+ - Updated the version of REopt.jl in /julia_src to v0.20.0 which includes the addition of:
+   - Boiler tech from the REopt_API (known as NewBoiler in API)
+   - SteamTurbine tech from the REopt_API 
 ## v2.2.0
 ### Minor Updates 
 ##### Fixed
