@@ -1526,7 +1526,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
                 if (possible_set[0] and not possible_set[1]) or (not possible_set[0] and possible_set[1]):
                     error_messages["required inputs"] = f"Must provide both {possible_set[0]} and {possible_set[1]}"
 
-        self.wholesale_rate = scalar_to_vector(self.wholesale_rate)
+        self.wholesale_rate = scalar_or_monthly_to_8760(self.wholesale_rate)
 
         if len(self.coincident_peak_load_charge_per_kw) > 0:
             if len(self.coincident_peak_load_active_time_steps) != len(self.coincident_peak_load_charge_per_kw):
@@ -3506,8 +3506,7 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         blank=True,
         help_text=("The ExistingBoiler default operating cost is zero. Please provide this field to include non-zero BAU heating costs."
                     "The `fuel_cost_per_mmbtu` can be a scalar, a list of 12 monthly values, or a time series of values for every time step."
-                    "If a scalar or a vector of 12 values are provided, then the value is scaled up to 8760 values."
-                    "If a vector of 8760, 17520, or 35040 values is provided, it is adjusted to match timesteps per hour in the optimization.")
+                    "If a vector of length 8760, 17520, or 35040 is provided, it is adjusted to match timesteps per hour in the optimization.")
     )
 
     fuel_type = models.TextField(
@@ -3527,7 +3526,7 @@ class ExistingBoilerInputs(BaseModel, models.Model):
 
     # For custom validations within model.
     def clean(self):
-        self.fuel_cost_per_mmbtu = scalar_to_vector(self.fuel_cost_per_mmbtu)
+        self.fuel_cost_per_mmbtu = scalar_or_monthly_to_8760(self.fuel_cost_per_mmbtu)
 
         if self.emissions_factor_lb_CO2_per_mmbtu == None:
             self.emissions_factor_lb_CO2_per_mmbtu = FUEL_DEFAULTS["emissions_factor_lb_CO2_per_mmbtu"].get(self.fuel_type, 0.0)
@@ -3716,7 +3715,7 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
 
 #     # For custom validations within model.
 #     def clean(self):
-#         self.fuel_cost_per_mmbtu = scalar_to_vector(self.fuel_cost_per_mmbtu)
+#         self.fuel_cost_per_mmbtu = scalar_or_monthly_to_8760(self.fuel_cost_per_mmbtu)
 
 # class BoilerOutputs(BaseModel, models.Model):
 
@@ -4113,11 +4112,11 @@ def get_input_dict_from_run_uuid(run_uuid:str):
 If a scalar was provided where API expects a vector, extend it to 8760
 Upsampling handled in InputValidator.cross_clean
 '''
-def scalar_to_vector(vec:list):
+def scalar_or_monthly_to_8760(vec:list):
     if len(vec) == 1: # scalar length is provided
         return vec * 8760
     elif len(vec) == 12: # Monthly costs were provided
         days_per_month = [31,28,31,30,31,30,31,31,30,31,30,31]
         return numpy.repeat(vec, [i * 24 for i in days_per_month]).tolist()
     else:
-        return vec # the vector len was not 1, handle it elsewhere
+        return vec # the vector len was not 1 or 12, handle it elsewhere
