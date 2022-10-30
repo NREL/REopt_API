@@ -141,6 +141,7 @@ class ERPJob(ModelResource):
                 
                 # Have to try for CHP, PV, Storage, and Generator models because may not exist
                 try:
+                    #TODO: how to distinguish CHP from prime generator using the CHP model?
                     if bundle.data.get("chp_size_kw", None) is None: 
                         bundle.data["chp_size_kw"] = reopt_run_meta.CHPOutputs.dict.get("size_kw", 0)
                 except AttributeError as e:
@@ -181,16 +182,21 @@ class ERPJob(ModelResource):
                 try:
                     if bundle.data.get("generator_size_kw", None) is None:
                         gen = reopt_run_meta.GeneratorOutputs.dict
-                        if bundle.data.get("num_generators", None) is not None:
-                            bundle.data["generator_size_kw"] = gen.get("size_kw", 0) / bundle.data["num_generators"]
+                        num_generators = bundle.data.get("num_generators", None)
+                        if num_generators is not None:
+                            #TODO: deal with num_generators being list of len > 1
+                            if type(num_generators) == list:
+                                bundle.data["generator_size_kw"] = gen.get("size_kw", 0) / num_generators[0]
+                            else:
+                                bundle.data["generator_size_kw"] = gen.get("size_kw", 0) / num_generators
                         else:
                             bundle.data["generator_size_kw"] = gen.get("size_kw", 0)
                 except AttributeError as e: 
                     pass
             
             erpinputs = ERPInputs.create(meta=meta, **bundle.data)
+            erpinputs.clean()
             erpinputs.clean_fields()
-            # erpinputs.clean()
             erpinputs.save()
 
             meta.status = 'Simulating...'
