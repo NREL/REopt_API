@@ -95,60 +95,72 @@ class ERPInputs(BaseModel, models.Model):
         null=True,
         help_text="The unique ID of a REopt optimization run from which to load inputs."
     )
-    generator_operational_availability = models.FloatField(
+    def generator_operational_availability_default():
+        return [0.9998]
+    generator_operational_availability = ArrayField(
+        models.FloatField(
+            blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1)
+            ]
+        ),
+        default=generator_operational_availability_default, 
         blank=True,
-        default=0.9998,
-        validators=[
-            MinValueValidator(0),
-            MaxValueValidator(1)
-        ],
         help_text=("Fraction of year generators not down for maintenance")
     )
-    generator_failure_to_start = models.FloatField(
+    def generator_failure_to_start_default():
+        return [0.0066]
+    generator_failure_to_start = ArrayField(
+        models.FloatField(
+            blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1)
+            ]
+        ),
+        default=generator_failure_to_start_default,
         blank=True,
-        default=0.0066,
-        validators=[
-            MinValueValidator(0),
-            MaxValueValidator(1)
-        ],
         help_text=("Chance of generator starting given outage")
     )
-    generator_failure_to_run = models.FloatField(
+    def generator_failure_to_run_default():
+        return [0.00157]
+    generator_failure_to_run = ArrayField(
+        models.FloatField(
+            blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1)
+            ]
+        ),
+        default=generator_failure_to_run_default,
         blank=True,
-        default=0.00157,
-        validators=[
-            MinValueValidator(0),
-            MaxValueValidator(1)
-        ],
         help_text=("Chance of generator failing in each hour of outage")
     )
-    num_generators = models.IntegerField(
-        validators=[
-            MinValueValidator(1)
-        ],
+    def num_generators_default():
+        return [1]
+    num_generators = ArrayField(
+        models.IntegerField(
+            validators=[
+                MinValueValidator(1)
+            ]
+        ),
         blank=True,
-        default=1,
+        default=num_generators_default,
         help_text=("Number of generators")
     )
-    # def num_generators_default():
-    #     return list([1])
-    # num_generators = ArrayField(
-    #     models.IntegerField(
-    #         validators=[
-    #             MinValueValidator(1)
-    #         ]
-    #     ),
-    #     blank=True,
-    #     default=num_generators_default,
-    #     help_text=("Number of generators")
-    # )
-    generator_size_kw = models.FloatField(
+    def generator_size_kw_default():
+        return [0.0]
+    generator_size_kw = ArrayField(
+        models.FloatField(
+            blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1.0e9)
+            ]
+        ),
         blank=True,
-        default=0.0,
-        validators=[
-            MinValueValidator(0),
-            MaxValueValidator(1.0e9)
-        ],
+        default=generator_size_kw_default,
         help_text=("Backup generator capacity")
     )
     battery_size_kw = models.FloatField(
