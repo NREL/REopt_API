@@ -261,6 +261,18 @@ class ERPInputs(BaseModel, models.Model):
         help_text=("Critical load during an outage. Must be hourly (8,760 samples). All non-net load values must be greater than or equal to zero.")
     )
 
+    def clean(self):
+        if type(self.generator_operational_availability) != list:
+            self.generator_operational_availability = [self.generator_operational_availability]
+        if type(self.generator_failure_to_start) != list:
+            self.generator_failure_to_start = [self.generator_failure_to_start]
+        if type(self.generator_failure_to_run) != list:
+            self.generator_failure_to_run = [self.generator_failure_to_run]
+        if type(self.num_generators) != list:
+            self.num_generators = [self.num_generators]
+        if type(self.generator_size_kw) != list:
+            self.generator_size_kw = [self.generator_size_kw]
+
     
 class ERPOutputs(BaseModel, models.Model):
 
