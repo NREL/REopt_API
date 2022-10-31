@@ -118,6 +118,49 @@ function ghpghx(req::HTTP.Request)
     return HTTP.Response(200, JSON.json(ghpghx_results))
 end
 
+function chp_defaults(req::HTTP.Request)
+    d = JSON.parse(String(req.body))
+    keys = ["existing_boiler_production_type", 
+            "avg_boiler_fuel_load_mmbtu_per_hour",
+            "prime_mover",
+            "size_class",
+            "boiler_efficiency"]
+    # Process .json inputs and convert to correct type if needed
+    for k in keys
+        if !haskey(d, k)
+            d[k] = nothing
+        elseif !isnothing(d[k])
+            if k in ["avg_boiler_fuel_load_mmbtu_per_hour", "boiler_efficiency"] && typeof(d[k]) == String
+                d[k] = parse(Float64, d[k])
+            elseif k == "size_class" && typeof(d[k]) == String
+                d[k] = parse(Int64, d[k])
+            end
+        end
+    end
+
+    @info "Getting CHP defaults..."
+    data = Dict()
+    error_response = Dict()
+    try
+        data = reoptjl.get_chp_defaults_prime_mover_size_class(;hot_water_or_steam=d["existing_boiler_production_type"],
+                                                                avg_boiler_fuel_load_mmbtu_per_hour=d["avg_boiler_fuel_load_mmbtu_per_hour"],
+                                                                prime_mover=d["prime_mover"],
+                                                                size_class=d["size_class"],
+                                                                boiler_efficiency=d["boiler_efficiency"])
+    catch e
+        @error "Something went wrong in the chp_defaults" exception=(e, catch_backtrace())
+        error_response["error"] = sprint(showerror, e)
+    end
+    if isempty(error_response)
+        @info "CHP defaults determined."
+		response = data
+        return HTTP.Response(200, JSON.json(response))
+    else
+        @info "An error occured in the chp_defaults endpoint"
+        return HTTP.Response(500, JSON.json(error_response))
+    end
+end
+
 function health(req::HTTP.Request)
     return HTTP.Response(200, JSON.json(Dict("Julia-api"=>"healthy!")))
 end
@@ -128,5 +171,6 @@ const ROUTER = HTTP.Router()
 HTTP.@register(ROUTER, "POST", "/job", job)
 HTTP.@register(ROUTER, "POST", "/reopt", reopt)
 HTTP.@register(ROUTER, "POST", "/ghpghx", ghpghx)
+HTTP.@register(ROUTER, "GET", "/chp_defaults", chp_defaults)
 HTTP.@register(ROUTER, "GET", "/health", health)
 HTTP.serve(ROUTER, "0.0.0.0", 8081, reuseaddr=true)
