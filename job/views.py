@@ -37,7 +37,10 @@ from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, Ge
     ElectricTariffInputs, ElectricUtilityInputs, SpaceHeatingLoadInputs, PVOutputs, ElectricStorageOutputs, WindOutputs, ExistingBoilerInputs,\
     GeneratorOutputs, ElectricTariffOutputs, ElectricUtilityOutputs, ElectricLoadOutputs, ExistingBoilerOutputs, \
     DomesticHotWaterLoadInputs, SiteInputs, SiteOutputs, APIMeta, UserProvidedMeta, CHPInputs, CHPOutputs
-
+import os
+import requests
+import logging
+log = logging.getLogger(__name__)
 
 def make_error_resp(msg):
     resp = dict()
@@ -261,3 +264,33 @@ def results(request, run_uuid):
             return JsonResponse(resp, status=500)
 
     return JsonResponse(r)
+
+
+def chp_defaults(request):
+    inputs = {
+        "existing_boiler_production_type": request.GET.get("existing_boiler_production_type"),
+        "avg_boiler_fuel_load_mmbtu_per_hour": request.GET.get("avg_boiler_fuel_load_mmbtu_per_hour"),
+        "prime_mover": request.GET.get("prime_mover"),
+        "size_class": request.GET.get("size_class"),
+        "boiler_efficiency": request.GET.get("boiler_efficiency")
+    }
+    try:
+        julia_host = os.environ.get('JULIA_HOST', "julia")
+        http_jl_response = requests.get("http://" + julia_host + ":8081/chp_defaults/", json=inputs)
+        response = JsonResponse(
+            http_jl_response.json()
+        )
+        return response
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected error in chp_defaults endpoint. Check log for more."}, status=500)
