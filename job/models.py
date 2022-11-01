@@ -3523,7 +3523,7 @@ class CHPInputs(BaseModel, models.Model):
         default=1,
         validators=[
             MinValueValidator(1),
-            MaxValueValidator(5)
+            MaxValueValidator(7)
         ],
         blank=True,
         help_text="CHP size class. Must be a strictly positive integer value"
