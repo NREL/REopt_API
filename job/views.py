@@ -208,6 +208,8 @@ def results(request, run_uuid):
         except: pass
         try: r["outputs"]["Wind"] = meta.WindOutputs.dict
         except: pass
+        try: r["outputs"]["Outages"] = meta.OutageOutputs.dict
+        except: pass
 
         for d in r["outputs"].values():
             if isinstance(d, dict):
