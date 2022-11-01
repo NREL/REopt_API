@@ -28,6 +28,7 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
 from . import views
+from reo import views as views_reo
 from django.urls import re_path
 
 urlpatterns = [
