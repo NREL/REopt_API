@@ -64,6 +64,8 @@ def process_results(results: dict, run_uuid: str) -> None:
         GeneratorOutputs.create(meta=meta, **results["Generator"]).save()
     if "Wind" in results.keys():
         WindOutputs.create(meta=meta, **results["Wind"]).save()
+    if "Outages" in results.keys():
+        OutageOutputs.create(meta=meta, **results["Outages"]).save()
     # TODO process rest of results
 
 def pop_result_keys(r:dict, keys_to_skip:list):
