@@ -36,17 +36,6 @@ def process_results(results: dict, run_uuid: str) -> None:
     Saves the results returned from the Julia API in the backend database.
     Called in job/run_jump_model (a celery task)
     """
-    keys_to_skip = [
-                    # "storage_upgraded", "Generator_upgraded", "PV_upgraded",
-                    "discharge_from_storage_series", 
-                    "PVmg_kw", "mg_PV_upgrade_cost", 
-                    "mgPV_to_storage_series", "mgPV_curtailed_series", 
-                    "mgPV_to_load_series", "Generatormg_kw",
-                    "mg_Generator_upgrade_cost", 
-                    "mgGenerator_to_storage_series", "mgGenerator_curtailed_series",
-                    "mgGenerator_to_load_series", "mg_Generator_fuel_used"
-                    ]
-    pop_result_keys(results, keys_to_skip)
 
     meta = APIMeta.objects.get(run_uuid=run_uuid)
     meta.status = results.get("status")
@@ -68,6 +57,17 @@ def process_results(results: dict, run_uuid: str) -> None:
     if "Wind" in results.keys():
         WindOutputs.create(meta=meta, **results["Wind"]).save()
     if "Outages" in results.keys():
+        outage_keys_to_skip = [
+                    # "storage_upgraded", "Generator_upgraded", "PV_upgraded",
+                    "discharge_from_storage_series", 
+                    "PVmg_kw", "mg_PV_upgrade_cost", 
+                    "mgPV_to_storage_series", "mgPV_curtailed_series", 
+                    "mgPV_to_load_series", "Generatormg_kw",
+                    "mg_Generator_upgrade_cost", 
+                    "mgGenerator_to_storage_series", "mgGenerator_curtailed_series",
+                    "mgGenerator_to_load_series", "mg_Generator_fuel_used"
+                    ]
+        pop_result_keys(results["Outages"], keys_to_skip)
         OutageOutputs.create(meta=meta, **results["Outages"]).save()
     # TODO process rest of results
 
