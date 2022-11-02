@@ -1981,6 +1981,7 @@ class OutageOutputs(BaseModel, models.Model):
     # Outputs from REopt.jl not implementing API
     # Some of these are trickier to conclude in api because names aren't fixed. Also skipping some of these detailed dispatch outputs for now.
     # - `storage_upgraded` Boolean that is true if it is cost optimal to include the storage system in the microgrid.
+    # - `mg_storage_upgrade_cost` The cost to include the storage system in the microgrid.
     # - `discharge_from_storage_series` Array of storage power discharged in every outage modeled.
     # - `PVmg_kw` Optimal microgrid PV capacity. Note that the name `PV` can change based on user provided `PV.name`.
     # - `PV_upgraded` Boolean that is true if it is cost optimal to include the PV system in the microgrid.
