@@ -47,7 +47,7 @@ def process_results(results: dict, run_uuid: str) -> None:
                     "mgPV_to_load_series", "Generatormg_kw",
                     "mg_Generator_upgrade_cost", 
                     "mgGenerator_to_storage_series", "mgGenerator_curtailed_series",
-                    "mgGenerator_to_load_series", "mg_Generator_fuel_used"
+                    "mgGenerator_to_load_series", "mg_Generator_fuel_used_per_outage_series"
                     ]
     pop_result_keys(results, keys_to_skip)
 
