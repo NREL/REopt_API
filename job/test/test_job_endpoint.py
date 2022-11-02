@@ -59,7 +59,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
             },
             "Generator": {
                 "existing_kw": 0.0,
-                "min_turn_down_pct": 0.0,
+                "min_turn_down_fraction": 0.0,
                 "only_runs_during_grid_outage": True,
                 "sells_energy_back_to_grid": False
             },
@@ -74,7 +74,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
             },
             "ElectricStorage": {
                 "can_grid_charge": False,
-                "total_itc_pct": 0.26,
+                "total_itc_fraction": 0.26,
                 "macrs_option_years": 5,
                 "installed_cost_per_kw": 840.0,
                 "installed_cost_per_kwh": 420.0,
@@ -87,10 +87,10 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
             "Financial": {
                 "value_of_lost_load_per_kwh": 100.0,
                 "third_party_ownership": True,
-                "offtaker_tax_pct": 0.0,
-                "owner_discount_pct": 0.1,
-                "offtaker_discount_pct": 0.03,
-                "elec_cost_escalation_pct": 0.023
+                "offtaker_tax_rate_fraction": 0.0,
+                "owner_discount_rate_fraction": 0.1,
+                "offtaker_discount_rate_fraction": 0.03,
+                "elec_cost_escalation_rate_fraction": 0.023
             }
         }
 
