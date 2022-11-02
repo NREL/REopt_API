@@ -57,6 +57,7 @@ class TestDemandRatchets(ResourceTestCaseMixin, TestCase):
                 "max_kw": 0.0
               },
               "LoadProfile": {
+                "year": 2017
               },
               "Storage": {
                 "max_kwh": 0.0,
@@ -99,7 +100,6 @@ class TestDemandRatchets(ResourceTestCaseMixin, TestCase):
     def test_demand_ratchet_rate(self):
         # urdb_label used https://apps.openei.org/IURDB/rate/view/539f6a23ec4f024411ec8bf9#2__Demand
         # has a demand charge lookback of 35% for all months with 2 different demand charges based on which month        
-        self.post["Scenario"]["Site"]["LoadProfile"] = {}
         self.post["Scenario"]["Site"]["LoadProfile"]["loads_kw"] = [1.0]*8760
         self.post["Scenario"]["Site"]["LoadProfile"]["loads_kw"][8] = 100.0
         # Expected result is 100 kW demand for January, 35% of that for all other months and 
