@@ -234,14 +234,14 @@ function add_bigM_adjustments(m, p)
 		for mth in p.Month
 			if n > 1
 				m[:NewMaxDemandMonthsInTier][mth,n] = minimum([p.MaxDemandMonthsInTier[n],
-					added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] +
+					added_power + 2*maximum([100*p.ElecLoad[ts] + p.CoolingLoad[ts] +
                     add_ghp_heating_elec * p.HeatingLoad[ts]
 					for ts in p.TimeStepRatchetsMonth[mth]])  -
 					sum(m[:NewMaxDemandMonthsInTier][mth,np] for np in 1:(n-1))]
 				)
 			else
 				m[:NewMaxDemandMonthsInTier][mth,n] = minimum([p.MaxDemandMonthsInTier[n],
-					added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] +
+					added_power + 2*maximum([100*p.ElecLoad[ts] + p.CoolingLoad[ts] +
                     add_ghp_heating_elec * p.HeatingLoad[ts]
 					for ts in p.TimeStepRatchetsMonth[mth]])]
                 )
