@@ -73,7 +73,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
         r = json.loads(resp.content)
         results = r["outputs"]
-        self.assertAlmostEqual(sum(np.array(results["Outages"]["unserved_load_per_outage_series"])), 60)
+        self.assertAlmostEqual(sum(np.reshape(np.array(results["Outages"]["unserved_load_per_outage_series"]),-1)), 60)
 
     # def test_pv_battery_and_emissions_defaults_from_julia(self):
     #     """
