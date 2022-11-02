@@ -53,7 +53,6 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(sum(np.array(results["Outages"]["unserved_load_per_outage_series"])), 0.0, places=3)
         self.assertAlmostEqual(results["Financial"]["lcc"], 7.3879557e7, places=-5)
 
-
         scenario_file = os.path.join('job', 'test', 'posts', 'nogridcost_minresilhours.json')
         scenario = json.load(open(scenario_file, 'r'))
         resp = self.api_client.post('/dev/job/', format='json', data=scenario)
