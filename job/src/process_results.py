@@ -40,7 +40,7 @@ def process_results(results: dict, run_uuid: str) -> None:
     Called in job/run_jump_model (a celery task)
     """
     keys_to_skip = [
-                    # "storage_upgraded", "Generator_upgraded", "PV_upgraded",
+                    "storage_upgraded", "Generator_upgraded", "PV_upgraded",
                     "discharge_from_storage_series", 
                     "PVmg_kw", "mg_PV_upgrade_cost", 
                     "mgPV_to_storage_series", "mgPV_curtailed_series", 

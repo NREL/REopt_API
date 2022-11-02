@@ -103,9 +103,6 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(results["Outages"]["expected_outage_cost"], 0.0, places=3)
         self.assertAlmostEqual(sum(results["Outages"]["unserved_load_per_outage_series"]), 0.0, places=3)
         self.assertAlmostEqual(results["Financial"]["lcc"], 7.3879557e7, places=-5)
-        self.assertTrue(results["Outages"]["Generator_upgraded"])
-        self.assertFalse(results["Outages"]["PV_upgraded"])
-        self.assertTrue(results["Outages"]["storage_upgraded"])
 
     # def test_pv_battery_and_emissions_defaults_from_julia(self):
     #     """
