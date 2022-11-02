@@ -81,9 +81,6 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
                 "replace_cost_per_kw": 410.0,
                 "replace_cost_per_kwh": 200.0
             },
-            "ElectricUtility": {
-                "emissions_factor_series_lb_NOx_per_kwh": 1
-            },
             "Financial": {
                 "value_of_lost_load_per_kwh": 100.0,
                 "third_party_ownership": True,
@@ -156,6 +153,9 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
     #         "ElectricTariff": {
     #             "urdb_label": "5ed6c1a15457a3367add15ae"
     #         },
+    #         "ElectricUtility": {
+    #             "emissions_factor_series_lb_NOx_per_kwh": 1
+    #         },
     #         "Financial": {
     #             "elec_cost_escalation_rate_fraction": 0.026,
     #             "offtaker_discount_rate_fraction": 0.081,
@@ -164,7 +164,6 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
     #             "offtaker_tax_rate_fraction": 0.4,
     #             "owner_tax_rate_fraction": 0.4,
     #             "om_cost_escalation_rate_fraction": 0.025
-
     #         }
     #     }
 
