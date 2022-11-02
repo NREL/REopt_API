@@ -27,8 +27,10 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-from job.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorageOutputs, ElectricTariffOutputs, SiteOutputs,\
-    ElectricUtilityOutputs, GeneratorOutputs, ElectricLoadOutputs, WindOutputs, FinancialInputs, ElectricUtilityInputs, ExistingBoilerOutputs
+from job.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorageOutputs,\
+                        ElectricTariffOutputs, SiteOutputs, ElectricUtilityOutputs,\
+                        GeneratorOutputs, ElectricLoadOutputs, WindOutputs, FinancialInputs,\
+                        ElectricUtilityInputs, ExistingBoilerOutputs, OutageOutputs
 import logging
 log = logging.getLogger(__name__)
 
