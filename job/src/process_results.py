@@ -42,7 +42,7 @@ def process_results(results: dict, run_uuid: str) -> None:
     keys_to_skip = [
                     "storage_upgraded", "Generator_upgraded", "PV_upgraded",
                     "mg_storage_upgrade_cost", "discharge_from_storage_series", 
-                    "PVmg_kw", "mg_PV_upgrade_cost", 
+                    "PV_mg_kw", "mg_PV_upgrade_cost", 
                     "mgPV_to_storage_series", "mgPV_curtailed_series", 
                     "mgPV_to_load_series", "Generator_mg_kw",
                     "mg_Generator_upgrade_cost", 

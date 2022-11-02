@@ -1983,7 +1983,7 @@ class OutageOutputs(BaseModel, models.Model):
     # - `storage_upgraded` Boolean that is true if it is cost optimal to include the storage system in the microgrid.
     # - `mg_storage_upgrade_cost` The cost to include the storage system in the microgrid.
     # - `discharge_from_storage_series` Array of storage power discharged in every outage modeled.
-    # - `PVmg_kw` Optimal microgrid PV capacity. Note that the name `PV` can change based on user provided `PV.name`.
+    # - `PV_mg_kw` Optimal microgrid PV capacity. Note that the name `PV` can change based on user provided `PV.name`.
     # - `PV_upgraded` Boolean that is true if it is cost optimal to include the PV system in the microgrid.
     # - `mg_PV_upgrade_cost` The cost to include the PV system in the microgrid.
     # - `mgPV_to_storage_series` Array of PV power sent to the battery in every outage modeled.
