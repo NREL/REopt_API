@@ -393,13 +393,13 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
 
     def test_resil_endpoint(self):
         post = json.load(open(os.path.join('resilience_stats', 'tests', 'POST_nested.json'), 'r'))
-        r = self.api_client.post('/v1/job/', format='json', data=post)
+        r = self.api_client.post('/v2/job/', format='json', data=post)
         reopt_resp = json.loads(r.content)
         run_uuid = reopt_resp['run_uuid']
 
-        resp = self.api_client.post('/v1/outagesimjob/', format='json', data={"run_uuid": run_uuid, "bau": True})
+        resp = self.api_client.post('/v2/outagesimjob/', format='json', data={"run_uuid": run_uuid, "bau": True})
         self.assertEqual(resp.status_code, 201)
-        resp = self.api_client.get('/v1/job/<run_uuid>/resilience_stats/'.replace("<run_uuid>", run_uuid))
+        resp = self.api_client.get('/v2/job/<run_uuid>/resilience_stats/'.replace("<run_uuid>", run_uuid))
         resp_dict = json.loads(resp.content)['outage_sim_results']
 
         # NOTE: probabilities are sensitive to the SOC series,
@@ -418,7 +418,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         resilience scenario system capacities
         """
         resp = self.api_client.get(
-            '/v1/financial_check/?financial_uuid={0}&resilience_uuid={0}'.format(run_uuid),
+            '/v2/financial_check/?financial_uuid={0}&resilience_uuid={0}'.format(run_uuid),
             format='json')
         self.assertEqual(resp.status_code, 200)
         results = json.loads(resp.content)
