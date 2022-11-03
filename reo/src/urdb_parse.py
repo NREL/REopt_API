@@ -108,9 +108,9 @@ class RateData:
             'demandwindow',
             'demandreactivepowercharge',
             # lookback demand charges
-            'lookbackMonths',
-            'lookbackPercent',
-            'lookbackRange',
+            'lookbackmonths',
+            'lookbackpercent',
+            'lookbackrange',
             # coincident rates
             'coincidentrateunit',
             'coincidentratestructure',
@@ -447,31 +447,31 @@ class UrdbParse:
     def prepare_demand_lookback(self, current_rate):
         """
         URDB lookback fields:
-            lookbackMonths
+            lookbackmonths
             Type: array
-            Array of 12 booleans, true or false, indicating months in which lookbackPercent applies.
-                If any of these is true, lookbackRange should be zero.
+            Array of 12 booleans, true or false, indicating months in which lookbackpercent applies.
+                If any of these is true, lookbackrange should be zero.
 
-            lookbackPercent
+            lookbackpercent
             Type: decimal
-            Lookback percentage. Applies to either lookbackMonths with value=1, or a lookbackRange.
+            Lookback percentage. Applies to either lookbackmonths with value=1, or a lookbackrange.
 
-            lookbackRange
+            lookbackrange
             Type: integer
-            Number of months for which lookbackPercent applies. If not 0, lookbackMonths values should all be 0.
+            Number of months for which lookbackpercent applies. If not 0, lookbackmonths values should all be 0.
         """
-        if current_rate.lookbackPercent in [None, 0, []]:
+        if current_rate.lookbackpercent in [None, 0, []]:
             reopt_lookback_months = []
             lookback_percentage = 0
             lookback_range = 0
         else:
-            lookback_percentage = current_rate.lookbackPercent or 0.0
-            lookback_months = current_rate.lookbackMonths  # defaults to empty list
-            lookback_range = current_rate.lookbackRange or 0
+            lookback_percentage = current_rate.lookbackpercent or 0.0
+            lookback_months = current_rate.lookbackmonths  # defaults to empty list
+            lookback_range = current_rate.lookbackrange or 0
             reopt_lookback_months = []
-            if lookback_range != 0 and len(lookback_months) == 12:
-                for month in range(1, 13):
-                    if lookback_months[month] == 1:
+            if lookback_range == 0 and len(lookback_months) == 12:
+                for month in range(1,13):
+                    if lookback_months[month-1] == True:
                         reopt_lookback_months.append(month)
 
         self.reopt_args.demand_lookback_months = reopt_lookback_months
