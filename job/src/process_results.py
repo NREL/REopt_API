@@ -43,11 +43,11 @@ def process_results(results: dict, run_uuid: str) -> None:
                     "storage_upgraded", "Generator_upgraded", "PV_upgraded",
                     "mg_storage_upgrade_cost", "discharge_from_storage_series", 
                     "PV_mg_kw", "mg_PV_upgrade_cost", 
-                    "mgPV_to_storage_series", "mgPV_curtailed_series", 
-                    "mgPV_to_load_series", "Generator_mg_kw",
+                    "mg_PV_to_storage_series", "mg_PV_curtailed_series", 
+                    "mg_PV_to_load_series", "Generator_mg_kw",
                     "mg_Generator_upgrade_cost", 
-                    "mgGenerator_to_storage_series", "mgGenerator_curtailed_series",
-                    "mgGenerator_to_load_series", "mg_Generator_fuel_used_per_outage_series"
+                    "mg_Generator_to_storage_series", "mg_Generator_curtailed_series",
+                    "mg_Generator_to_load_series", "mg_Generator_fuel_used_per_outage_series"
                     ]
     pop_result_keys(results, keys_to_skip)
 
