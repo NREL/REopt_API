@@ -1978,6 +1978,13 @@ class OutageOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Total capital cost of including technologies in the microgrid."
     )
+    generator_fuel_used_per_outage = ArrayField(
+        models.FloatField(
+            blank=True,
+        ),
+        default=list, blank=True,
+        help_text="Generator fuel used in each outage modeled."
+    )
     # Outputs from REopt.jl not implementing API
     # Some of these are trickier to conclude in api because names aren't fixed. Also skipping some of these detailed dispatch outputs for now.
     # - `storage_upgraded` Boolean that is true if it is cost optimal to include the storage system in the microgrid.
