@@ -1944,7 +1944,7 @@ class OutageOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="The expected outage cost over the random outages modeled."
     )
-    max_outage_cost_per_outage_duration_series = ArrayField(
+    max_outage_cost_per_outage_duration = ArrayField(
         models.FloatField(
             blank=True,
         ),
@@ -1964,7 +1964,7 @@ class OutageOutputs(BaseModel, models.Model):
         default=list, blank=True,
         help_text="The amount of unserved load in each outage time step for each outage start time and duration. Outage duration changes along the first dimension, outage start time step along the second, and time step in outage along the third."
     )
-    unserved_load_per_outage_series = ArrayField(
+    unserved_load_per_outage = ArrayField(
         ArrayField(
             models.FloatField(
                 blank=True,
@@ -1995,7 +1995,7 @@ class OutageOutputs(BaseModel, models.Model):
     # - `mg_Generator_to_storage_series` Array of Generator power sent to the battery in every outage modeled.
     # - `mg_Generator_curtailed_series` Array of Generator curtailed in every outage modeled.
     # - `mg_Generator_to_load_series` Array of Generator power used to meet load in every outage modeled.
-    # - `mg_Generator_fuel_used_per_outage_series` Array of Generator fuel used in every outage modeled.
+    # - `mg_Generator_fuel_used_per_outage` Array of Generator fuel used in every outage modeled.
 
 class ElectricTariffOutputs(BaseModel, models.Model):
     key = "ElectricTariffOutputs"
