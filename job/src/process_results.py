@@ -40,14 +40,18 @@ def process_results(results: dict, run_uuid: str) -> None:
     Called in job/run_jump_model (a celery task)
     """
     keys_to_skip = [
-                    "storage_upgraded", "Generator_upgraded", "PV_upgraded",
+                    "storage_upgraded", "Generator_upgraded", "PV_upgraded", #for now, these are forced to true in the API
+                    #Skipping these outputs for now until it's decided that we need them.
+                    #To use them, we will need to modify naming implementation in REopt.jl.
+                    #These names are constructed in REopt.jl based on tech names so can't 
+                    #be added to models.py, which requires constant output names.
                     "mg_storage_upgrade_cost", "discharge_from_storage_series", 
                     "PV_mg_kw", "mg_PV_upgrade_cost", 
                     "mg_PV_to_storage_series", "mg_PV_curtailed_series", 
                     "mg_PV_to_load_series", "Generator_mg_kw",
                     "mg_Generator_upgrade_cost", 
                     "mg_Generator_to_storage_series", "mg_Generator_curtailed_series",
-                    "mg_Generator_to_load_series", "mg_Generator_fuel_used_per_outage_series"
+                    "mg_Generator_to_load_series", "mg_Generator_fuel_used_per_outage"
                     ]
     pop_result_keys(results, keys_to_skip)
 
