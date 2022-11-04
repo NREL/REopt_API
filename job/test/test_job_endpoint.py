@@ -49,31 +49,10 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
         r = json.loads(resp.content)
         results = r["outputs"]
-        self.assertAlmostEqual(results["Outages"]["expected_outage_cost"], 0.0, places=3)
-        self.assertAlmostEqual(sum(np.array(results["Outages"]["unserved_load_per_outage_series"])), 0.0, places=3)
-        self.assertAlmostEqual(results["Financial"]["lcc"], 7.3879557e7, places=-5)
-
-        scenario_file = os.path.join('job', 'test', 'posts', 'nogridcost_minresilhours.json')
-        scenario = json.load(open(scenario_file, 'r'))
-        resp = self.api_client.post('/dev/job/', format='json', data=scenario)
-        self.assertHttpCreated(resp)
-        r = json.loads(resp.content)
-        run_uuid = r.get('run_uuid')
-        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
-        r = json.loads(resp.content)
-        results = r["outputs"]
-        self.assertAlmostEqual(sum(np.array(results["Outages"]["unserved_load_per_outage_series"])), 12)
-
-        scenario_file = os.path.join('job', 'test', 'posts', 'nogridcost_multiscenario.json')
-        scenario = json.load(open(scenario_file, 'r'))
-        resp = self.api_client.post('/dev/job/', format='json', data=scenario)
-        self.assertHttpCreated(resp)
-        r = json.loads(resp.content)
-        run_uuid = r.get('run_uuid')
-        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
-        r = json.loads(resp.content)
-        results = r["outputs"]
-        self.assertAlmostEqual(sum(np.reshape(np.array(results["Outages"]["unserved_load_per_outage_series"]),-1)), 60)
+        self.assertAlmostEqual(results["Outages"]["expected_outage_cost_series"], 4.7140e6, places=-3)
+        self.assertAlmostEqual(sum(np.array(results["Outages"]["unserved_load_per_outage_series"])), 20579, places=0)
+        self.assertAlmostEqual(results["Outages"]["microgrid_upgrade_capital_cost"], 9.2477e6, places=-3)
+        self.assertAlmostEqual(results["Financial"]["lcc"], 9.10904e7, places=-3)
 
     # def test_pv_battery_and_emissions_defaults_from_julia(self):
     #     """
