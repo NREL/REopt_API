@@ -1986,15 +1986,15 @@ class OutageOutputs(BaseModel, models.Model):
     # - `PV_mg_kw` Optimal microgrid PV capacity. Note that the name `PV` can change based on user provided `PV.name`.
     # - `PV_upgraded` Boolean that is true if it is cost optimal to include the PV system in the microgrid.
     # - `mg_PV_upgrade_cost` The cost to include the PV system in the microgrid.
-    # - `mgPV_to_storage_series` Array of PV power sent to the battery in every outage modeled.
-    # - `mgPV_curtailed_series` Array of PV curtailed in every outage modeled.
-    # - `mgPV_to_load_series` Array of PV power used to meet load in every outage modeled.
+    # - `mg_PV_to_storage_series` Array of PV power sent to the battery in every outage modeled.
+    # - `mg_PV_curtailed_series` Array of PV curtailed in every outage modeled.
+    # - `mg_PV_to_load_series` Array of PV power used to meet load in every outage modeled.
     # - `Generator_mg_kw` Optimal microgrid Generator capacity. Note that the name `Generator` can change based on user provided `Generator.name`.
     # - `Generator_upgraded` Boolean that is true if it is cost optimal to include the Generator in the microgrid.
     # - `mg_Generator_upgrade_cost` The cost to include the Generator system in the microgrid.
-    # - `mgGenerator_to_storage_series` Array of Generator power sent to the battery in every outage modeled.
-    # - `mgGenerator_curtailed_series` Array of Generator curtailed in every outage modeled.
-    # - `mgGenerator_to_load_series` Array of Generator power used to meet load in every outage modeled.
+    # - `mg_Generator_to_storage_series` Array of Generator power sent to the battery in every outage modeled.
+    # - `mg_Generator_curtailed_series` Array of Generator curtailed in every outage modeled.
+    # - `mg_Generator_to_load_series` Array of Generator power used to meet load in every outage modeled.
     # - `mg_Generator_fuel_used_per_outage_series` Array of Generator fuel used in every outage modeled.
 
 class ElectricTariffOutputs(BaseModel, models.Model):
