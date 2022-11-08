@@ -48,6 +48,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
         r = json.loads(resp.content)
         results = r["outputs"]
+        json.dump(results, open("debug_results.json", "w"))
         self.assertAlmostEqual(results["Outages"]["expected_outage_cost"], 4.7140e6, places=-3)
         self.assertAlmostEqual(sum(np.array(results["Outages"]["unserved_load_per_outage"])), 20579, places=0)
         self.assertAlmostEqual(results["Outages"]["microgrid_upgrade_capital_cost"], 9.2477e6, places=-3)
