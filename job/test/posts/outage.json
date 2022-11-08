@@ -1,4 +1,7 @@
 {
+    "Settings": {
+        "run_bau": false
+    },
     "Site": {
         "longitude": -105.1686,
         "latitude": 39.7407,
