@@ -1979,11 +1979,14 @@ class OutageOutputs(BaseModel, models.Model):
         help_text="Total capital cost of including technologies in the microgrid."
     )
     generator_fuel_used_per_outage = ArrayField(
-        models.FloatField(
-            blank=True,
+        ArrayField(
+            models.FloatField(
+                blank=True,
+            ),
+            default=list, blank=True,
         ),
         default=list, blank=True,
-        help_text="Generator fuel used in each outage modeled."
+        help_text="Generator fuel used in each outage modeled. Outage duration changes along the first dimension and outage start time changes along the second dimention."
     )
     # Outputs from REopt.jl not implementing API
     # Some of these are trickier to conclude in api because names aren't fixed. Also skipping some of these detailed dispatch outputs for now.
