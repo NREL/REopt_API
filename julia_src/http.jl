@@ -80,9 +80,20 @@ function reopt(req::HTTP.Request)
 			:emissions_factor_series_lb_CO2_per_kwh, :emissions_factor_series_lb_NOx_per_kwh,
 			:emissions_factor_series_lb_SO2_per_kwh, :emissions_factor_series_lb_PM25_per_kwh
 		]
+        if haskey(d, "CHP")
+            inputs_with_defaults_from_chp = [
+                :installed_cost_per_kw, :tech_sizes_for_cost_curve, :om_cost_per_kwh, 
+                :electric_efficiency_full_load, :thermal_efficiency_full_load, :min_allowable_kw,
+                :cooling_thermal_factor, :min_turn_down_fraction, :unavailability_periods
+            ]
+            chp_dict = Dict(key=>getfield(model_inputs.s.chp, key) for key in inputs_with_defaults_from_chp)
+        else
+            chp_dict = {}
+        end
 		inputs_with_defaults_set_in_julia = Dict(
 			"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_easiur),
-			"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert)
+			"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert),
+            "CHP" => chp_dict
 		)
     catch e
         @error "Something went wrong in the Julia code!" exception=(e, catch_backtrace())
@@ -161,6 +172,28 @@ function chp_defaults(req::HTTP.Request)
     end
 end
 
+function simulated_load(req::HTTP.Request)
+    d = JSON.parse(String(req.body))
+
+    @info "Getting CRB Loads..."
+    data = Dict()
+    error_response = Dict()
+    try
+        data = reoptjl.simulated_load(d)
+    catch e
+        @error "Something went wrong in the simulated_load" exception=(e, catch_backtrace())
+        error_response["error"] = sprint(showerror, e)
+    end
+    if isempty(error_response)
+        @info "CRB Loads determined."
+		response = data
+        return HTTP.Response(200, JSON.json(response))
+    else
+        @info "An error occured in the simulated_load endpoint"
+        return HTTP.Response(500, JSON.json(error_response))
+    end
+end
+
 function health(req::HTTP.Request)
     return HTTP.Response(200, JSON.json(Dict("Julia-api"=>"healthy!")))
 end
@@ -172,5 +205,6 @@ HTTP.@register(ROUTER, "POST", "/job", job)
 HTTP.@register(ROUTER, "POST", "/reopt", reopt)
 HTTP.@register(ROUTER, "POST", "/ghpghx", ghpghx)
 HTTP.@register(ROUTER, "GET", "/chp_defaults", chp_defaults)
+HTTP.@register(ROUTER, "GET", "/simulated_load", simulated_load)
 HTTP.@register(ROUTER, "GET", "/health", health)
 HTTP.serve(ROUTER, "0.0.0.0", 8081, reuseaddr=true)
