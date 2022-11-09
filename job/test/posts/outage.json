@@ -5,12 +5,11 @@
     "Site": {
         "longitude": -105.1686,
         "latitude": 39.7407,
-        "min_resil_time_steps": 15
+        "min_resil_time_steps": 48
     },
     "ElectricUtility": {
         "outage_start_time_steps": [5100, 5200],
-        "outage_durations": [10, 20],
-        "outage_probabilities": [0.8, 0.2]
+        "outage_durations": [96]
     },
     "Generator": {
         "min_turn_down_fraction": 0.0,
@@ -45,7 +44,7 @@
         "replace_cost_per_kwh": 200.0
     },
     "Financial": {
-        "value_of_lost_load_per_kwh": 100.0,
+        "value_of_lost_load_per_kwh": 10.0,
         "third_party_ownership": true,
         "offtaker_tax_rate_fraction": 0.0,
         "owner_discount_rate_fraction": 0.1,
