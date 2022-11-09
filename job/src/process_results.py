@@ -29,7 +29,7 @@
 # *********************************************************************************
 from job.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorageOutputs, ElectricTariffOutputs, SiteOutputs,\
     ElectricUtilityOutputs, GeneratorOutputs, ElectricLoadOutputs, WindOutputs, FinancialInputs, ElectricUtilityInputs,\
-    ExistingBoilerOutputs, CHPOutputs
+    ExistingBoilerOutputs, CHPOutputs, CHPInputs
 import logging
 log = logging.getLogger(__name__)
 
@@ -80,6 +80,8 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
         # get input models that need updating
         FinancialInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["Financial"])
         ElectricUtilityInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["ElectricUtility"])
+        #TODO maybe need to check if CHPInputs exists, unless it always gets created
+        CHPInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["CHP"])
     except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(
