@@ -9,7 +9,8 @@
     },
     "ElectricUtility": {
         "outage_start_time_steps": [5100, 5200],
-        "outage_durations": [96]
+        "outage_durations": [48,96],
+        "outage_probabilities": [0.8,0.2]
     },
     "Generator": {
         "min_turn_down_fraction": 0.0,
