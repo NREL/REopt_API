@@ -294,3 +294,82 @@ def chp_defaults(request):
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in chp_defaults endpoint. Check log for more."}, status=500)
+
+def simulated_load(request):
+    try:
+        valid_keys = ["doe_reference_name","latitude","longitude","load_type","percent_share","annual_kwh",
+                        "monthly_totals_kwh","annual_mmbtu","annual_fraction","annual_tonhour","monthly_tonhour",
+                        "monthly_mmbtu","monthly_fraction","max_thermal_factor_on_peak_load","chiller_cop",
+                        "addressable_load_fraction", "cooling_doe_ref_name", "cooling_pct_share"]
+        for key in request.GET.keys():
+            k = key
+            if "[" in key:
+                k = key.split('[')[0]
+            if k not in valid_keys:
+                raise ValueError("{} is not a valid input parameter".format(key))
+        # Build inputs dictionary to send to http.jl /simulated_load endpoint
+        inputs = {}
+        inputs["latitude"] = float(request.GET['latitude'])  # need float to convert unicode
+        inputs["longitude"] = float(request.GET['longitude'])
+        inputs["load_type"] = request.GET.get('load_type')
+
+        # This parses the GET request way of sending a list/array for doe_reference_name, 
+        # i.e. doe_reference_name[0], doe_reference_name[1], etc
+        if 'doe_reference_name' in request.GET.keys():
+            inputs["doe_reference_name"] = request.GET.get('doe_reference_name')
+        elif 'doe_reference_name[0]' in request.GET.keys():
+            idx = 0
+            doe_reference_name = []
+            percent_share_list = []
+            while 'doe_reference_name[{}]'.format(idx) in request.GET.keys():
+                doe_reference_name.append(request.GET['doe_reference_name[{}]'.format(idx)])
+                if 'percent_share[{}]'.format(idx) in request.GET.keys():
+                    percent_share_list.append(float(request.GET['percent_share[{}]'.format(idx)]))
+                idx += 1
+            inputs["doe_reference_name"] = doe_reference_name
+            inputs["percent_share_list"] = percent_share_list
+
+        # When wanting cooling profile based on building type(s) for cooling, need separate cooling building(s)
+        if 'cooling_doe_ref_name' in request.GET.keys():
+            inputs["cooling_doe_ref_name"] = request.GET.get('cooling_doe_ref_name')
+        elif 'cooling_doe_ref_name[0]' in request.GET.keys():
+            idx = 0
+            cooling_doe_ref_name = []
+            cooling_pct_share_list = []
+            while 'cooling_doe_ref_name[{}]'.format(idx) in request.GET.keys():
+                cooling_doe_ref_name.append(request.GET['cooling_doe_ref_name[{}]'.format(idx)])
+                if 'cooling_pct_share[{}]'.format(idx) in request.GET.keys():
+                    cooling_pct_share_list.append(float(request.GET['cooling_pct_share[{}]'.format(idx)]))
+                idx += 1
+            inputs["cooling_doe_ref_name"] = cooling_doe_ref_name
+            inputs["cooling_pct_share"] = cooling_pct_share_list                
+
+        # Build the rest of inputs for http.jl /simulated_load endpoint
+        other_keys_types = ["annual", "monthly", "max_thermal_factor", "chiller_cop", "addressable"]
+        for key in valid_keys:
+            for key_type in other_keys_types:
+                if key_type in key:
+                    value = request.GET.get(key)
+                    if value is not None:
+                        inputs[key] = value
+
+        julia_host = os.environ.get('JULIA_HOST', "julia")
+        http_jl_response = requests.get("http://" + julia_host + ":8081/simulated_load/", json=inputs)
+        response = JsonResponse(
+            http_jl_response.json()
+        )
+        
+        return response
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected error in simulated_load endpoint. Check log for more."}, status=500)
