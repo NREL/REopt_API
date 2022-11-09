@@ -3355,33 +3355,6 @@ class CHPInputs(BaseModel, models.Model):
         "diesel_oil"
     ))
 
-    # Default data, created from input_files.CHP.chp_input_defaults_processing, copied from chp_default_data.json
-    prime_mover_defaults = json.load(open(os.path.join("input_files","CHP","chp_defaults_v3.json")))
-
-    # Lower and upper bounds for size classes - Class 0 is the total average across entire range of data
-    class_bounds = {"recip_engine": [(30, 9300), (30, 100), (100, 630), (630, 1140), (1140, 3300), (3300, 9300)],
-                    "micro_turbine": [(30, 1290), (30, 60), (60, 190), (190, 950), (950, 1290)],
-                    "combustion_turbine": [(950, 20000), (950, 1800), (1800, 3300), (3300, 5400), (5400, 7500),
-                                           (7500, 14000), (14000, 20000)],
-                    "fuel_cell": [(440, 9300), (440, 1400), (1400, 9300)]}
-
-    possible_sets = [
-        ["prime_mover"],
-        [
-            "installed_cost_per_kw",
-            "om_cost_per_kwh",
-            "electric_efficiency_half_load",
-            "electric_efficiency_full_load",
-            "min_turn_down_fraction",
-            "thermal_efficiency_full_load",
-            "thermal_efficiency_half_load",
-            "min_allowable_kw",
-            "max_kw",
-            "cooling_thermal_factor",
-            "unavailability_periods"
-        ]
-    ]
-
     #Always required
     fuel_cost_per_mmbtu = ArrayField(
         models.FloatField(
@@ -3401,14 +3374,14 @@ class CHPInputs(BaseModel, models.Model):
         )
     )
 
-    # Prime mover - required unless "custom inputs" below are all included
+    # Prime mover - highly suggested, but not required
     prime_mover = models.TextField(
         null=False,
         blank=True,
         choices=PRIME_MOVER.choices,
         help_text="CHP prime mover, one of recip_engine, micro_turbine, combustion_turbine, fuel_cell"
     )
-    # Required "custom inputs" if not providing prime_mover:
+    # These are assigned using chp_defaults() logic by choosing prime_mover and size_class (if not supplied) based on average heating load
     installed_cost_per_kw = ArrayField(
             models.FloatField(null=True, blank=True), 
             default=list, 
@@ -3851,69 +3824,8 @@ class CHPInputs(BaseModel, models.Model):
             self.emissions_factor_lb_PM25_per_mmbtu = FUEL_DEFAULTS["emissions_factor_lb_PM25_per_mmbtu"].get(self.fuel_type, 0.0)
 
         error_messages = {}
-
-        # possible sets for defining CHP
-        update_installed_costs = False
-        if (type(self.dict.get("installed_cost_per_kw")) == float or
-                (type(self.dict.get("installed_cost_per_kw")) == list and len(self.dict.get("installed_cost_per_kw")) == 1)
-                ):
-            self.tech_sizes_for_cost_curve = []
-        elif self.dict.get("installed_cost_per_kw") not in [None, [], ""] and self.dict.get("tech_sizes_for_cost_curve") in [None, [], ""]:
-            error_messages["required inputs"] = \
-                "To model CHP cost curve, you must provide `chp.tech_sizes_for_cost_curve` vector of equal length to `chp.installed_cost_per_kw`"
-        elif self.dict.get("tech_sizes_for_cost_curve") in [None, [], ""]:
-            update_installed_costs = True
-        elif len(self.dict.get("tech_sizes_for_cost_curve")) != len(self.dict.get("installed_cost_per_kw")):
-            error_messages["required inputs"] = \
-                "To model CHP cost curve, you must provide `chp.tech_sizes_for_cost_curve` vector of equal length to `chp.installed_cost_per_kw`"
         
-        if not at_least_one_set(self.dict, self.possible_sets):
-            error_messages["required inputs"] = \
-                "Must provide at least one set of valid inputs from {}.".format(self.possible_sets)
-        else:  #use defaults if CHP prime mover given 
-            if self.dict.get("prime_mover") not in [None, ""]:
-                boiler_type = "steam" if self.prime_mover == "combustion_turbine" else "hot_water"
-                for key in self.possible_sets[1]:
-                    if key in ["installed_cost_per_kw","tech_sizes_for_cost_curve"] and update_installed_costs:
-                        setattr(self,key,self.prime_mover_defaults[self.prime_mover][key][self.size_class-1])
-                    elif self.dict.get(key) in [None, "", []]:
-                        if key in ["thermal_efficiency_full_load","thermal_efficiency_half_load"]:
-                            setattr(self,key,self.prime_mover_defaults[self.prime_mover][key][boiler_type][self.size_class-1])
-                        elif key == "unavailability_periods":
-                            if self.dict.get(key) == []: # Set it to empty which is the intended input (no unvailability periods)
-                                setattr(self,key,[])
-                            else: # Not included in inputs, so use default periods
-                                unavailability_periods = []
-                                for period in self.prime_mover_defaults[self.prime_mover][key]:
-                                    unavailability_periods.append(period)
-                                setattr(self,key,unavailability_periods)                                
-                        else: 
-                            setattr(self,key,self.prime_mover_defaults[self.prime_mover][key][self.size_class-1])
-
-        # Fuel burn slope and intercept
-        self.fuel_burn_full_load = 1 / self.electric_efficiency_full_load * 1.0  # [kWt/kWe]
-        self.fuel_burn_half_load = 1 / self.electric_efficiency_half_load * 0.5  # [kWt/kWe]
-        self.fuel_burn_slope = (self.fuel_burn_full_load - self.fuel_burn_half_load) / (1.0 - 0.5)  # [kWt/kWe]
-        self.fuel_burn_intercept = self.fuel_burn_full_load - self.fuel_burn_slope * 1.0  # [kWt/kWe_rated]
-        # Thermal production slope and intercept
-        self.thermal_prod_full_load = 1.0 * 1 / self.electric_efficiency_full_load * self.thermal_efficiency_full_load  # [kWt/kWe]
-        self.thermal_prod_half_load = 0.5 * 1 / self.electric_efficiency_half_load * self.thermal_efficiency_half_load   # [kWt/kWe]
-        self.thermal_prod_slope = (self.thermal_prod_full_load - self.thermal_prod_half_load) / (1.0 - 0.5)  # [kWt/kWe]
-        self.thermal_prod_intercept = self.thermal_prod_full_load - self.thermal_prod_slope * 1.0  # [kWt/kWe_rated]
-
-        #If max_kw not specified, set to max class size
-        # if self.dict.get('max_kw') in [None, "", []]:
-        #     self.max_kw = self.class_bounds[self.prime_mover][self.size_class-1][1]
-
-        #check for min/max sizes within class bounds: 
-        # if self.min_allowable_kw < self.class_bounds[self.prime_mover][self.size_class-1][0]:
-        #     error_messages["size_class"] = \
-        #     "Min size must be within the size class bounds of {}.".format(self.class_bounds[self.prime_mover][self.size_class-1])
-        # if self.max_kw > self.class_bounds[self.prime_mover][self.size_class-1][1]:
-        #     error_messages["size_class"] = \
-        #     "Min size must be within the size class bounds of {}.".format(self.class_bounds[self.prime_mover][self.size_class-1])
-        
-        if error_messages:
+        if error_messages == {}:
             raise ValidationError(error_messages)
 
 
