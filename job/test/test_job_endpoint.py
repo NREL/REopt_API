@@ -49,10 +49,11 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         r = json.loads(resp.content)
         results = r["outputs"]
         json.dump(results, open("debug_results.json", "w"))
-        self.assertAlmostEqual(results["Outages"]["expected_outage_cost"], 587470, places=-3)
-        self.assertAlmostEqual(sum(sum(np.array(results["Outages"]["unserved_load_per_outage"]))), 25646.14, places=0)
-        self.assertAlmostEqual(results["Outages"]["microgrid_upgrade_capital_cost"], 2.078707e7, places=-3)
-        self.assertAlmostEqual(results["Financial"]["lcc"], 1.169522127146e8, places=-4)
+        self.assertAlmostEqual(results["Outages"]["expected_outage_cost"], 4.714008363463863e6, places=-3)
+        self.assertAlmostEqual(sum(sum(np.array(results["Outages"]["unserved_load_per_outage"]))), 13365.72, places=0)
+        self.assertAlmostEqual(results["Outages"]["unserved_load_per_outage"][0][1], 10289.54, places=0)
+        self.assertAlmostEqual(results["Outages"]["microgrid_upgrade_capital_cost"], 9.247726268228792e6, places=-3)
+        self.assertAlmostEqual(results["Financial"]["lcc"], 9.10904009721e7, places=-4)
 
     # def test_pv_battery_and_emissions_defaults_from_julia(self):
     #     """
