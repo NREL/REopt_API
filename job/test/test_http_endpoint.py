@@ -5,11 +5,11 @@ from django.test import TestCase  # have to use unittest.TestCase to get tests t
 import logging
 import os
 import requests
-# from tastypie.test import TestApiClient
 logging.disable(logging.CRITICAL)
 
 class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
 
+    @skip("TestHTTPEndpoings until we merge simulated-load into master")
     def test_chp_defaults(self):
 
         inputs = {"existing_boiler_production_type": "hot_water",
@@ -31,6 +31,34 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
                 mismatch.append(k)
         
         self.assertEqual(mismatch, [])
+
+        # Check the endpoint logic with the expected selection
+        self.assertEqual(http_response["prime_mover"], "combustion_turbine")
+        self.assertEqual(http_response["size_class"], 4)
+        self.assertGreater(http_response["chp_size_based_on_avg_heating_load_kw"], 3500.0)
+
+
+    def test_simulated_load(self):
+
+        inputs = {"existing_boiler_production_type": "hot_water",
+                "avg_boiler_fuel_load_mmbtu_per_hour": 28.0
+        }
+
+        # Direct call of the http.jl endpoint /chp_defaults
+        julia_host = os.environ.get('JULIA_HOST', "julia")
+        response = requests.get("http://" + julia_host + ":8081/chp_defaults/", json=inputs)
+        http_response = response.json()
+
+        # Call to the django view endpoint /chp_defaults which calls the http.jl endpoint
+        resp = self.api_client.get(f'/dev/chp_defaults', data=inputs)
+        view_response = json.loads(resp.content)
+
+        mismatch = []
+        for k, v in http_response["default_inputs"].items():
+            if v != view_response["default_inputs"][k]:
+                mismatch.append(k)
+        
+        self.assertEqual(mismatch, [])        
 
         # Check the endpoint logic with the expected selection
         self.assertEqual(http_response["prime_mover"], "combustion_turbine")
