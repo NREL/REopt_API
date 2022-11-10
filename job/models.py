@@ -3784,7 +3784,7 @@ class HotThermalStorageInputs(BaseModel, models.Model):
         default=0.0,
         help_text="Maximum TES volume (energy) size constraint for optimization. Set to zero to disable storage"
     )
-    hot_supply_water_temp_degF = models.FloatField(
+    hot_water_temp_degF = models.FloatField(
         validators=[
             MinValueValidator(40.0),
             MaxValueValidator(210.0)
@@ -3793,7 +3793,7 @@ class HotThermalStorageInputs(BaseModel, models.Model):
         default=180.0,
         help_text="Hot-side supply water temperature from HotTES (top of tank) to the heating load"
     )
-    cooled_return_water_temp_degF = models.FloatField(
+    cold_water_temp_degF = models.FloatField(
         validators=[
             MinValueValidator(33.0),
             MaxValueValidator(200.0)
@@ -3802,7 +3802,7 @@ class HotThermalStorageInputs(BaseModel, models.Model):
         default=160.0,
         help_text="Cold-side return water temperature from the heating load to the HotTES (bottom of tank)"
     )
-    internal_efficiency_pct = models.FloatField(
+    internal_efficiency_fraction = models.FloatField(
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0)
@@ -3811,7 +3811,7 @@ class HotThermalStorageInputs(BaseModel, models.Model):
         default=0.999999,
         help_text="Thermal losses due to mixing from thermal power entering or leaving tank"
     )
-    soc_min_pct = models.FloatField(
+    soc_min_fraction = models.FloatField(
         default=0.1,
         validators=[
             MinValueValidator(0),
@@ -3820,7 +3820,7 @@ class HotThermalStorageInputs(BaseModel, models.Model):
         blank=True,
         help_text="Minimum allowable battery state of charge as fraction of energy capacity."
     )
-    soc_init_pct = models.FloatField(
+    soc_init_fraction = models.FloatField(
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0)
@@ -3857,13 +3857,13 @@ class HotThermalStorageInputs(BaseModel, models.Model):
         help_text="Thermal energy-based cost of TES (e.g. volume of the tank)"
     )
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.FIVE,
+        default=MACRS_YEARS_CHOICES.ZERO,
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
-    macrs_bonus_pct = models.FloatField(
-        default=1.0,
+    macrs_bonus_fraction = models.FloatField(
+        default=0.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -3871,7 +3871,7 @@ class HotThermalStorageInputs(BaseModel, models.Model):
         blank=True,
         help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
     )
-    total_itc_pct = models.FloatField(
+    total_itc_fraction = models.FloatField(
         default=0.0,
         validators=[
             MinValueValidator(0),
