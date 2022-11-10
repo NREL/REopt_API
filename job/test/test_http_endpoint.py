@@ -6,6 +6,7 @@ import logging
 import os
 import requests
 logging.disable(logging.CRITICAL)
+from unittest import skip
 
 class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
 
