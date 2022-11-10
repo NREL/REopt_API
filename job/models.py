@@ -3904,11 +3904,11 @@ class HotThermalStorageOutputs(BaseModel, models.Model):
         primary_key=True
     )
     size_gal = models.FloatField(null=True, blank=True)
-    year_one_soc_series_pct = ArrayField(
+    year_one_soc_series_fraction = ArrayField(
         models.FloatField(null=True, blank=True),
         default = list,
     )
-    year_one_thermal_production_mmbtu_per_hour = ArrayField(
+    year_one_to_load_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
         default = list,
     )
