@@ -88,7 +88,7 @@ function reopt(req::HTTP.Request)
             ]
             chp_dict = Dict(key=>getfield(model_inputs.s.chp, key) for key in inputs_with_defaults_from_chp)
         else
-            chp_dict = {}
+            chp_dict = Dict()
         end
 		inputs_with_defaults_set_in_julia = Dict(
 			"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_easiur),
