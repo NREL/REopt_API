@@ -25,14 +25,31 @@ Classify the change according to the following categories:
     ##### Deprecated
     ##### Removed
     ### Patches
+    
+## v2.3.1
+### Minor Updates
+##### Fixed
+Lookback charge parameters expected from the URDB API call were changed to the non-caplitalized format, so they are now used properly.
 
+## v2.3.0
+### Minor Updates
+##### Changed
+The following name changes were made in the `job/` endpoint and `julia_src/http.jl`: 
+ - Change "_pct" to "_rate_fraction" for input and output names containing "discount", "escalation", and "tax_pct" (financial terms)
+ - Change "_pct" to "_fraction" for all other input and output names (e.g., "min_soc_", "min_turndown_")
+ - Change **prod_factor_series** to **production_factor_series**
+ - Updated the version of REopt.jl in /julia_src to v0.20.0 which includes the addition of:
+   - Boiler tech from the REopt_API (known as NewBoiler in API)
+   - SteamTurbine tech from the REopt_API 
 
-## Develop - 2022-09-06
+## v2.2.0
 ### Minor Updates 
 ##### Fixed
 - Require ElectricTariff key in inputs when **Settings.off_grid_flag** is false
 - Create and save **ElectricUtilityInputs** model if ElectricUtility key not provided in inputs when **Settings.off_grid_flag** is false, in order to use the default inputs in `job/models.py`
 - Added message to `messages()` to alert user if valid ElectricUtility input is provided when **Settings.off_grid_flag** is true
+- Register 
+- Make all urls available from stable/ also available from v2/. Includes registering `OutageSimJob()` and `GHPGHXJob()` to the 'v2' API and adding missing paths to urlpatterns in `urls.py`.
 ##### Changed
 - `job/models.py`: 
     - remove Generator `fuel_slope_gal_per_kwh` and `fuel_intercept_gal_per_hr` defaults based on size, keep defaults independent of size 
