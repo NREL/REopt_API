@@ -128,33 +128,33 @@ class InputValidatorTests(TestCase):
         validator.cross_clean()
         self.assertEquals(validator.is_valid, True)
 
-        self.assertAlmostEqual(validator.models["Wind"].operating_reserve_required_pct, 0.5)
-        self.assertAlmostEqual(validator.models["PV"].operating_reserve_required_pct, 0.25)
+        self.assertAlmostEqual(validator.models["Wind"].operating_reserve_required_fraction, 0.5)
+        self.assertAlmostEqual(validator.models["PV"].operating_reserve_required_fraction, 0.25)
 
-        self.assertAlmostEqual(validator.models["ElectricLoad"].operating_reserve_required_pct, 0.1)
-        self.assertAlmostEqual(validator.models["ElectricLoad"].critical_load_pct, 1.0)
-        self.assertAlmostEqual(validator.models["ElectricLoad"].min_load_met_annual_pct, 0.99999)
+        self.assertAlmostEqual(validator.models["ElectricLoad"].operating_reserve_required_fraction, 0.1)
+        self.assertAlmostEqual(validator.models["ElectricLoad"].critical_load_fraction, 1.0)
+        self.assertAlmostEqual(validator.models["ElectricLoad"].min_load_met_annual_fraction, 0.99999)
 
         self.assertAlmostEqual(validator.models["Generator"].om_cost_per_kw, 20)
         self.assertAlmostEqual(validator.models["Generator"].fuel_avail_gal, 1.0e9)
-        self.assertAlmostEqual(validator.models["Generator"].min_turn_down_pct, 0.15)
+        self.assertAlmostEqual(validator.models["Generator"].min_turn_down_fraction, 0.15)
         self.assertAlmostEqual(validator.models["Generator"].replacement_year, 10)
         self.assertAlmostEqual(validator.models["Generator"].replace_cost_per_kw, validator.models["Generator"].installed_cost_per_kw)
 
         ## Test that some defaults can be overriden below
 
-        post["ElectricLoad"]["operating_reserve_required_pct"] = 0.2
-        post["ElectricLoad"]["critical_load_pct"] = 0.95
-        post["ElectricLoad"]["min_load_met_annual_pct"] = 0.95
+        post["ElectricLoad"]["operating_reserve_required_fraction"] = 0.2
+        post["ElectricLoad"]["critical_load_fraction"] = 0.95
+        post["ElectricLoad"]["min_load_met_annual_fraction"] = 0.95
         
         post["Generator"]["om_cost_per_kw"] = 21
         post["Generator"]["fuel_avail_gal"] = 10000
-        post["Generator"]["min_turn_down_pct"] = 0.14
+        post["Generator"]["min_turn_down_fraction"] = 0.14
         post["Generator"]["replacement_year"] = 7
         post["Generator"]["replace_cost_per_kw"] = 200
 
-        post["Wind"]["operating_reserve_required_pct"] = 0.35
-        post["PV"]["operating_reserve_required_pct"] = 0.35
+        post["Wind"]["operating_reserve_required_fraction"] = 0.35
+        post["PV"]["operating_reserve_required_fraction"] = 0.35
         
 
         post["APIMeta"]["run_uuid"] = uuid.uuid4()
@@ -165,16 +165,16 @@ class InputValidatorTests(TestCase):
         validator.cross_clean()
         self.assertEquals(validator.is_valid, True)
 
-        self.assertAlmostEqual(validator.models["PV"].operating_reserve_required_pct, 0.35)
-        self.assertAlmostEqual(validator.models["Wind"].operating_reserve_required_pct, 0.35)
+        self.assertAlmostEqual(validator.models["PV"].operating_reserve_required_fraction, 0.35)
+        self.assertAlmostEqual(validator.models["Wind"].operating_reserve_required_fraction, 0.35)
 
-        self.assertAlmostEqual(validator.models["ElectricLoad"].operating_reserve_required_pct, 0.2)
-        self.assertAlmostEqual(validator.models["ElectricLoad"].critical_load_pct, 1.0) # cant override
-        self.assertAlmostEqual(validator.models["ElectricLoad"].min_load_met_annual_pct, 0.95)
+        self.assertAlmostEqual(validator.models["ElectricLoad"].operating_reserve_required_fraction, 0.2)
+        self.assertAlmostEqual(validator.models["ElectricLoad"].critical_load_fraction, 1.0) # cant override
+        self.assertAlmostEqual(validator.models["ElectricLoad"].min_load_met_annual_fraction, 0.95)
 
         self.assertAlmostEqual(validator.models["Generator"].om_cost_per_kw, 21)
         self.assertAlmostEqual(validator.models["Generator"].fuel_avail_gal, 10000)
-        self.assertAlmostEqual(validator.models["Generator"].min_turn_down_pct, 0.14)
+        self.assertAlmostEqual(validator.models["Generator"].min_turn_down_fraction, 0.14)
         self.assertAlmostEqual(validator.models["Generator"].replacement_year, 7)
         self.assertAlmostEqual(validator.models["Generator"].replace_cost_per_kw, 200.0)
 

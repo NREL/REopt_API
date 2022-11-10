@@ -1,4 +1,4 @@
-apiVersion: {{ .Values.ingressApiVersion }}
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ .Chart.Name }}-django-ingress
@@ -22,15 +22,10 @@ spec:
           - path: /
             pathType: Prefix
             backend:
-              {{ if (eq .Values.ingressApiVersion "networking.k8s.io/v1") }}
               service:
                 name: {{ .Chart.Name }}-django-service
                 port:
                   number: 8000
-              {{ else }}
-              serviceName: {{ .Chart.Name }}-django-service
-              servicePort: 8000
-              {{ end }}
     {{ if .Values.tempIngressHost }}
     - host: {{ .Values.tempIngressHost }}
       http:
@@ -38,13 +33,8 @@ spec:
           - path: /
             pathType: Prefix
             backend:
-              {{ if (eq .Values.ingressApiVersion "networking.k8s.io/v1") }}
               service:
                 name: {{ .Chart.Name }}-django-service
                 port:
                   number: 8000
-              {{ else }}
-              serviceName: {{ .Chart.Name }}-django-service
-              servicePort: 8000
-              {{ end }}
     {{ end }}
