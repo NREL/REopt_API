@@ -10,7 +10,7 @@ from unittest import skip
 
 class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
 
-    @skip("TestHTTPEndpoings until we merge simulated-load into master")
+    @skip("TestHTTPEndpoints until we merge simulated-load into master")
     def test_chp_defaults(self):
 
         inputs = {"existing_boiler_production_type": "hot_water",
@@ -38,7 +38,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         self.assertEqual(http_response["size_class"], 4)
         self.assertGreater(http_response["chp_size_based_on_avg_heating_load_kw"], 3500.0)
 
-
+    @skip("TestHTTPEndpoints until we merge simulated-load into master")
     def test_simulated_load(self):
 
         inputs = {"existing_boiler_production_type": "hot_water",
