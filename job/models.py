@@ -3887,7 +3887,7 @@ class HotThermalStorageInputs(BaseModel, models.Model):
             MaxValueValidator(1.0e9)
         ],
         blank=True,
-        help_text="Rebate based on installed energy capacity"
+        help_text="Rebate per unit installed energy capacity"
     )
 
     def clean(self):
