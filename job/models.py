@@ -4331,6 +4331,179 @@ class DomesticHotWaterLoadInputs(BaseModel, models.Model):
                 len(self.blended_doe_reference_names) > 0:
             self.year = 2017  # the validator provides an "info" message regarding this)
 
+class HeatingLoadOutputs(BaseModel, models.Model):
+
+    key = "HeatingLoadOutputs"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="HeatingLoadOutputs",
+        primary_key=True
+    )
+
+    dhw_thermal_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(MAX_BIG_NUMBER)
+            ],
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Hourly domestic hot water load [MMBTU/hr]")
+    )
+
+    space_heating_thermal_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(MAX_BIG_NUMBER)
+            ],
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Hourly domestic space heating load [MMBTU/hr]")
+    )
+
+    total_heating_thermal_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(MAX_BIG_NUMBER)
+            ],
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Hourly total heating load [MMBTU/hr]")
+    )
+
+    annual_calculated_dhw_thermal_load_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default=0,
+        help_text=("Annual site DHW load [MMBTU]")
+    )
+
+    annual_calculated_space_heating_thermal_load_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default=0,
+        help_text=("Annual site space heating load [MMBTU]")
+    )
+
+    annual_calculated_total_heating_thermal_load_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default=0,
+        help_text=("Annual site total heating load [MMBTU]")
+    )
+
+    annual_calculated_dhw_boiler_fuel_load_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default=0,
+        help_text=("Annual site DHW boiler fuel load [MMBTU]")
+    )
+
+    annual_calculated_space_heating_boiler_fuel_load_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default=0,
+        help_text=("Annual site space heating boiler fuel load [MMBTU]")
+    )
+
+    annual_calculated_total_heating_boiler_fuel_load_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default=0,
+        help_text=("Annual site total heating boiler fuel load [MMBTU]")
+    )
+
+    def clean(self):
+        pass
+
+class CoolingLoadOutputs(BaseModel, models.Model):
+    
+    key = "CoolingLoadOutputs"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="CoolingLoadOutputs",
+        primary_key=True
+    )
+
+    load_series_ton = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(MAX_BIG_NUMBER)
+            ],
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Hourly total cooling load [ton]")
+    )
+
+    electric_chiller_base_load_series_kw = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(MAX_BIG_NUMBER)
+            ],
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Hourly total base load drawn from chiller [kW-electric]")
+    )
+
+    annual_calculated_tonhour = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default=0,
+        help_text=("Annual site total cooling load [tonhr]")
+    )
+
+    annual_electric_chiller_base_load_kwh = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default=0,
+        help_text=("Annual total base load drawn from chiller [kWh-electric]")
+    )
+
 def get_input_dict_from_run_uuid(run_uuid:str):
     """
     Construct the input dict for REopt.run_reopt
