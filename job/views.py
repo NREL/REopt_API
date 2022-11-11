@@ -37,7 +37,8 @@ from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, Ge
     ElectricTariffInputs, ElectricUtilityInputs, SpaceHeatingLoadInputs, PVOutputs, ElectricStorageOutputs,\
 	WindOutputs, ExistingBoilerInputs, GeneratorOutputs, ElectricTariffOutputs, ElectricUtilityOutputs,\
 	ElectricLoadOutputs, ExistingBoilerOutputs, DomesticHotWaterLoadInputs, SiteInputs, SiteOutputs, APIMeta,\
-	UserProvidedMeta, CoolingLoadInputs, ExistingChillerInputs, ExistingChillerOutputs
+	UserProvidedMeta, CoolingLoadInputs, ExistingChillerInputs, ExistingChillerOutputs, CoolingLoadOutputs,\
+    HeatingLoadOutputs
 
 
 def make_error_resp(msg):
@@ -105,6 +106,8 @@ def outputs(request):
         d["ExistingChiller"] = ExistingChillerOutputs.info_dict(ExistingChillerOutputs)
         d["ExistingBoiler"] = ExistingBoilerOutputs.info_dict(ExistingBoilerOutputs)
         # d["Boiler"] = BoilerOutputs.info_dict(BoilerOutputs)
+        d["HeatingLoad"] = HeatingLoadOutputs.info_dict(HeatingLoadOutputs)
+        d["CoolingLoad"] = CoolingLoadOutputs.info_dict(CoolingLoadOutputs)
         return JsonResponse(d)
 
     except Exception as e:
@@ -246,6 +249,10 @@ def results(request, run_uuid):
         except: pass
         # try: r["outputs"]["Boiler"] = meta.BoilerOutputs.dict
         # except: pass
+        try: r["outputs"]["HeatingLoad"] = meta.HeatingLoadOutputs.dict
+        except: pass
+        try: r["outputs"]["CoolingLoad"] = meta.CoolingLoadOutputs.dict
+        except: pass
 
         for d in r["outputs"].values():
             if isinstance(d, dict):
