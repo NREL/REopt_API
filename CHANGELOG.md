@@ -29,6 +29,7 @@ Classify the change according to the following categories:
 ## Develop - 2022-11-11
 ### Minor Updates
 ##### Added
+- `0011_coolingloadinputs....` file used to add new models to the db
 In `job/models.py`:
 - added **ExistingChillerInputs** model
 - added **ExistingChillerOutputs** model
