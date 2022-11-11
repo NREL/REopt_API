@@ -27,12 +27,44 @@ Classify the change according to the following categories:
     ### Patches
 
 ## Develop - 2022-11-11
+### Minor Updates
+##### Added
+In `job/models.py`:
+- added **ExistingChillerInputs** model
+- added **ExistingChillerOutputs** model
+- added **CoolingLoadInputs** model
+- added **CoolingLoadOutputs** model
+- added **HeatingLoadOutputs** model
+In `job/process_results.py`: 
+- add **ExistingChillerOutputs** 
+- add **CoolingLoadOutputs**
+- add **HeatingLoadOutputs**
+In `job/validators.py:
+- add time series length validation on **CoolingLoadInputs->thermal_loads_ton** and **CoolingLoadInputs->per_time_step_fractions_of_electric_load**
+In `job/views.py`:
+- add new input/output models to properly save the inputs/outputs
+## v2.3.1
+### Minor Updates
+##### Fixed
+Lookback charge parameters expected from the URDB API call were changed to the non-caplitalized format, so they are now used properly.
+## v2.3.0
+### Minor Updates
+##### Changed
+The following name changes were made in the `job/` endpoint and `julia_src/http.jl`: 
+ - Change "_pct" to "_rate_fraction" for input and output names containing "discount", "escalation", and "tax_pct" (financial terms)
+ - Change "_pct" to "_fraction" for all other input and output names (e.g., "min_soc_", "min_turndown_")
+ - Change **prod_factor_series** to **production_factor_series**
+ - Updated the version of REopt.jl in /julia_src to v0.20.0 which includes the addition of:
+   - Boiler tech from the REopt_API (known as NewBoiler in API)
+   - SteamTurbine tech from the REopt_API 
+## v2.2.0
 ### Minor Updates 
 ##### Fixed
 - Require ElectricTariff key in inputs when **Settings.off_grid_flag** is false
 - Create and save **ElectricUtilityInputs** model if ElectricUtility key not provided in inputs when **Settings.off_grid_flag** is false, in order to use the default inputs in `job/models.py`
 - Added message to `messages()` to alert user if valid ElectricUtility input is provided when **Settings.off_grid_flag** is true
-- Register `OutageSimJob()` and `GHPGHXJob()` to the 'v2' API in `urls.py`, making the `v2/outagesimjob` and `v2/ghpghx` urls available
+- Register 
+- Make all urls available from stable/ also available from v2/. Includes registering `OutageSimJob()` and `GHPGHXJob()` to the 'v2' API and adding missing paths to urlpatterns in `urls.py`.
 ##### Changed
 - `job/models.py`: 
     - remove Generator `fuel_slope_gal_per_kwh` and `fuel_intercept_gal_per_hr` defaults based on size, keep defaults independent of size 
@@ -42,15 +74,9 @@ Classify the change according to the following categories:
 ##### Added 
 - `0005_boilerinputs....` file used to add new models to the db
 - `job/` endpoint: Add inputs and validation to model off-grid wind 
-In `job/models.py`:
-- added **CoolingLoadInputs** model
-- added **CoolingLoadOutputs** model
-- added **ExistingChillerInputs** model
-- added **ExistingChillerOutputs** model
 - added **ExistingBoilerInputs** model
 - added **ExistingBoilerOutputs** model
 - added **SpaceHeatingLoadInputs** model
-- added **HeatingLoadOutputs** model
 - added `scalar_to_vector` to convert scalars of vector of 12 elements to 8760 elements
 - **GeneratorInputs** (must add to CHP and Boiler when implemented in v3)
     - added `emissions_factor_lb_<pollutant>_per_gal` for CO2, NOx, SO2, and PM25
@@ -73,16 +99,12 @@ In `job/models.py`:
 - **FinancialOutputs**
     - add `breakeven_cost_of_emissions_reduction_per_tonnes_CO2`
 In `job/process_results.py`: 
-- add **ExistingChillerOutputs** 
 - add **ExistingBoilerOutputs**
-- add **CoolingLoadOutputs**
-- add **HeatingLoadOutputs**
 In `job/test/test_job_endpoint.py`: 
 - test that AVERT and EASIUR defaults for emissions inputs not provided by user are passed back from REopt.jl and saved in database
 - add a testcase to validate that API is accepting/returning fields related to new models.
 In `'job/validators.py`:
 - add new input models
-- added time series length validation on **CoolingLoadInputs->thermal_loads_ton** and **CoolingLoadInputs->per_time_step_fractions_of_electric_load**
 - added `update_pv_defaults_offgrid()` to prevent validation failure when PV is not provided as input
 In `job/views.py`:
 - Added **SiteInputs** to `help` endpoint
