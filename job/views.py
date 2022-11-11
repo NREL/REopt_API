@@ -38,7 +38,8 @@ from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, Ge
 	WindOutputs, ExistingBoilerInputs, GeneratorOutputs, ElectricTariffOutputs, ElectricUtilityOutputs,\
 	ElectricLoadOutputs, ExistingBoilerOutputs, DomesticHotWaterLoadInputs, SiteInputs, SiteOutputs, APIMeta,\
 	UserProvidedMeta, CoolingLoadInputs, ExistingChillerInputs, ExistingChillerOutputs, CoolingLoadOutputs,\
-    HeatingLoadOutputs, HotThermalStorageInputs, HotThermalStorageOutputs
+    HeatingLoadOutputs, HotThermalStorageInputs, HotThermalStorageOutputs, ColdThermalStorageInputs,\
+    ColdThermalStorageOutputs
 
 
 def make_error_resp(msg):
@@ -68,6 +69,7 @@ def help(request):
         d["ExistingBoiler"] = ExistingBoilerInputs.info_dict(ExistingBoilerInputs)
         # d["Boiler"] = BoilerInputs.info_dict(BoilerInputs)
         d["HotThermalStorage"] = HotThermalStorageInputs.info_dict(HotThermalStorageInputs)
+        d["ColdThermalStorage"] = ColdThermalStorageInputs.info_dict(ColdThermalStorageInputs)
         d["SpaceHeatingLoad"] = SpaceHeatingLoadInputs.info_dict(SpaceHeatingLoadInputs)
         d["DomesticHotWaterLoad"] = DomesticHotWaterLoadInputs.info_dict(DomesticHotWaterLoadInputs)
         d["Site"] = SiteInputs.info_dict(SiteInputs)
@@ -108,6 +110,7 @@ def outputs(request):
         d["ExistingBoiler"] = ExistingBoilerOutputs.info_dict(ExistingBoilerOutputs)
         # d["Boiler"] = BoilerOutputs.info_dict(BoilerOutputs)
         d["HotThermalStorage"] = HotThermalStorageOutputs.info_dict(HotThermalStorageOutputs)
+        d["ColdThermalStorage"] = ColdThermalStorageOutputs.info_dict(ColdThermalStorageOutputs)
         d["Site"] = SiteOutputs.info_dict(SiteOutputs)
         d["HeatingLoad"] = HeatingLoadOutputs.info_dict(HeatingLoadOutputs)
         d["CoolingLoad"] = CoolingLoadOutputs.info_dict(CoolingLoadOutputs)
@@ -211,6 +214,9 @@ def results(request, run_uuid):
     try: r["inputs"]["HotThermalStorage"] = meta.HotThermalStorageInputs.dict
     except: pass
 
+    try: r["inputs"]["ColdThermalStorage"] = meta.ColdThermalStorageInputs.dict
+    except: pass
+
     try: r["inputs"]["SpaceHeatingLoad"] = meta.SpaceHeatingLoadInputs.dict
     except: pass
 
@@ -257,6 +263,8 @@ def results(request, run_uuid):
         # except: pass
 
         try: r["outputs"]["HotThermalStorage"] = meta.HotThermalStorageOutputs.dict
+        except: pass
+        try: r["outputs"]["ColdThermalStorage"] = meta.ColdThermalStorageOutputs.dict
         except: pass
         try: r["outputs"]["HeatingLoad"] = meta.HeatingLoadOutputs.dict
         except: pass
