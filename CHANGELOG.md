@@ -30,6 +30,7 @@ Classify the change according to the following categories:
 ### Minor Updates
 ##### Added
 - `0011_coolingloadinputs....` file used to add new models to the db
+- `0012_coldthermalstorageinputs....` file used to add new models to the db
 In `job/models.py`:
 - added **ExistingChillerInputs** model
 - added **ExistingChillerOutputs** model
@@ -38,11 +39,14 @@ In `job/models.py`:
 - added **HeatingLoadOutputs** model
 - added **HotThermalStorageInputs** model
 - added **HotThermalStorageOutputs** model
+- added **ColdThermalStorageInputs** model
+- added **ColdThermalStorageOutputs** model
 In `job/process_results.py`: 
 - add **ExistingChillerOutputs** 
 - add **CoolingLoadOutputs**
 - add **HeatingLoadOutputs**
 - add **HotThermalStorageOutputs**
+- add **ColdThermalStorageOutputs**
 In `job/validators.py:
 - add time series length validation on **CoolingLoadInputs->thermal_loads_ton** and **CoolingLoadInputs->per_time_step_fractions_of_electric_load**
 In `job/views.py`:
