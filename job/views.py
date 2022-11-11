@@ -34,10 +34,11 @@ import traceback as tb
 from django.http import JsonResponse
 from reo.exceptions import UnexpectedError
 from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, GeneratorInputs, ElectricLoadInputs,\
-    ElectricTariffInputs, ElectricUtilityInputs, SpaceHeatingLoadInputs, PVOutputs, ElectricStorageOutputs, WindOutputs, \
-    ExistingBoilerInputs, GeneratorOutputs, ElectricTariffOutputs, ElectricUtilityOutputs, ElectricLoadOutputs,  \
-    ExistingBoilerOutputs, DomesticHotWaterLoadInputs, SiteInputs, SiteOutputs, APIMeta, UserProvidedMeta,\
-    HotThermalStorageInputs, HotThermalStorageOutputs
+    ElectricTariffInputs, ElectricUtilityInputs, SpaceHeatingLoadInputs, PVOutputs, ElectricStorageOutputs,\
+	WindOutputs, ExistingBoilerInputs, GeneratorOutputs, ElectricTariffOutputs, ElectricUtilityOutputs,\
+	ElectricLoadOutputs, ExistingBoilerOutputs, DomesticHotWaterLoadInputs, SiteInputs, SiteOutputs, APIMeta,\
+	UserProvidedMeta, CoolingLoadInputs, ExistingChillerInputs, ExistingChillerOutputs, CoolingLoadOutputs,\
+    HeatingLoadOutputs, HotThermalStorageInputs, HotThermalStorageOutputs
 
 
 def make_error_resp(msg):
@@ -62,6 +63,8 @@ def help(request):
         d["ElectricStorage"] = ElectricStorageInputs.info_dict(ElectricStorageInputs)
         d["Wind"] = WindInputs.info_dict(WindInputs)
         d["Generator"] = GeneratorInputs.info_dict(GeneratorInputs)
+        d["CoolingLoad"] = CoolingLoadInputs.info_dict(CoolingLoadInputs)
+        d["ExistingChiller"] = ExistingChillerInputs.info_dict(ExistingChillerInputs)
         d["ExistingBoiler"] = ExistingBoilerInputs.info_dict(ExistingBoilerInputs)
         # d["Boiler"] = BoilerInputs.info_dict(BoilerInputs)
         d["HotThermalStorage"] = HotThermalStorageInputs.info_dict(HotThermalStorageInputs)
@@ -101,10 +104,13 @@ def outputs(request):
         d["ElectricStorage"] = ElectricStorageOutputs.info_dict(ElectricStorageOutputs)
         d["Wind"] = WindOutputs.info_dict(WindOutputs)
         d["Generator"] = GeneratorOutputs.info_dict(GeneratorOutputs)
+        d["ExistingChiller"] = ExistingChillerOutputs.info_dict(ExistingChillerOutputs)
         d["ExistingBoiler"] = ExistingBoilerOutputs.info_dict(ExistingBoilerOutputs)
         # d["Boiler"] = BoilerOutputs.info_dict(BoilerOutputs)
         d["HotThermalStorage"] = HotThermalStorageOutputs.info_dict(HotThermalStorageOutputs)
         d["Site"] = SiteOutputs.info_dict(SiteOutputs)
+        d["HeatingLoad"] = HeatingLoadOutputs.info_dict(HeatingLoadOutputs)
+        d["CoolingLoad"] = CoolingLoadOutputs.info_dict(CoolingLoadOutputs)
         return JsonResponse(d)
 
     except Exception as e:
@@ -190,6 +196,12 @@ def results(request, run_uuid):
     try: r["inputs"]["Wind"] = meta.WindInputs.dict
     except: pass
 
+    try: r["inputs"]["CoolingLoad"] = meta.CoolingLoadInputs.dict
+    except: pass
+
+    try: r["inputs"]["ExistingChiller"] = meta.ExistingChillerInputs.dict
+    except: pass
+	
     try: r["inputs"]["ExistingBoiler"] = meta.ExistingBoilerInputs.dict
     except: pass
 
@@ -237,11 +249,18 @@ def results(request, run_uuid):
         except: pass
         try: r["outputs"]["Wind"] = meta.WindOutputs.dict
         except: pass
+        try: r["outputs"]["ExistingChiller"] = meta.ExistingChillerOutputs.dict
+        except: pass
         try: r["outputs"]["ExistingBoiler"] = meta.ExistingBoilerOutputs.dict
         except: pass
         # try: r["outputs"]["Boiler"] = meta.BoilerOutputs.dict
         # except: pass
+
         try: r["outputs"]["HotThermalStorage"] = meta.HotThermalStorageOutputs.dict
+        except: pass
+        try: r["outputs"]["HeatingLoad"] = meta.HeatingLoadOutputs.dict
+        except: pass
+        try: r["outputs"]["CoolingLoad"] = meta.CoolingLoadOutputs.dict
         except: pass
 
         for d in r["outputs"].values():

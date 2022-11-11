@@ -29,8 +29,9 @@
 # *********************************************************************************
 
 from job.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorageOutputs, ElectricTariffOutputs, SiteOutputs,\
-    ElectricUtilityOutputs, GeneratorOutputs, ElectricLoadOutputs, WindOutputs, FinancialInputs, ElectricUtilityInputs, \
-    ExistingBoilerOutputs, HotThermalStorageOutputs, ColdThermalStorageOutputs
+    ElectricUtilityOutputs, GeneratorOutputs, ElectricLoadOutputs, WindOutputs, FinancialInputs, ElectricUtilityInputs,\
+	ExistingBoilerOutputs, ExistingChillerOutputs, CoolingLoadOutputs, HeatingLoadOutputs, HotThermalStorageOutputs,\
+    ColdThermalStorageOutputs
 import logging
 log = logging.getLogger(__name__)
 
@@ -39,6 +40,7 @@ def process_results(results: dict, run_uuid: str) -> None:
     Saves the results returned from the Julia API in the backend database.
     Called in job/run_jump_model (a celery task)
     """
+
 
     meta = APIMeta.objects.get(run_uuid=run_uuid)
     meta.status = results.get("status")
@@ -60,6 +62,8 @@ def process_results(results: dict, run_uuid: str) -> None:
         GeneratorOutputs.create(meta=meta, **results["Generator"]).save()
     if "Wind" in results.keys():
         WindOutputs.create(meta=meta, **results["Wind"]).save()
+    if "ExistingChiller" in results.keys():
+        ExistingChillerOutputs.create(meta=meta, **results["ExistingChiller"]).save()
     # if "Boiler" in results.keys():
     #     BoilerOutputs.create(meta=meta, **results["Boiler"]).save()
     if "ExistingBoiler" in results.keys():
@@ -68,6 +72,10 @@ def process_results(results: dict, run_uuid: str) -> None:
         HotThermalStorageOutputs.create(meta=meta, **results["HotThermalStorage"]).save()
     if "ColdThermalStorage" in results.keys():
         HotThermalStorageOutputs.create(meta=meta, **results["ColdThermalStorage"]).save()
+    if "HeatingLoad" in results.keys():
+        HeatingLoadOutputs.create(meta=meta, **results["HeatingLoad"]).save()
+    if "CoolingLoad" in results.keys():
+        CoolingLoadOutputs.create(meta=meta, **results["CoolingLoad"]).save()
     # TODO process rest of results
 
 
