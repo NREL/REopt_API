@@ -4504,6 +4504,9 @@ class CoolingLoadOutputs(BaseModel, models.Model):
         help_text=("Annual total base load drawn from chiller [kWh-electric]")
     )
 
+    def clean(self):
+        pass
+
 def get_input_dict_from_run_uuid(run_uuid:str):
     """
     Construct the input dict for REopt.run_reopt
