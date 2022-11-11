@@ -26,7 +26,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop - 2022-09-08
+## Develop - 2022-11-11
 ### Minor Updates 
 ##### Fixed
 - Require ElectricTariff key in inputs when **Settings.off_grid_flag** is false
@@ -44,11 +44,13 @@ Classify the change according to the following categories:
 - `job/` endpoint: Add inputs and validation to model off-grid wind 
 In `job/models.py`:
 - added **CoolingLoadInputs** model
+- added **CoolingLoadOutputs** model
 - added **ExistingChillerInputs** model
 - added **ExistingChillerOutputs** model
 - added **ExistingBoilerInputs** model
 - added **ExistingBoilerOutputs** model
 - added **SpaceHeatingLoadInputs** model
+- added **HeatingLoadOutputs** model
 - added `scalar_to_vector` to convert scalars of vector of 12 elements to 8760 elements
 - **GeneratorInputs** (must add to CHP and Boiler when implemented in v3)
     - added `emissions_factor_lb_<pollutant>_per_gal` for CO2, NOx, SO2, and PM25
@@ -73,6 +75,8 @@ In `job/models.py`:
 In `job/process_results.py`: 
 - add **ExistingChillerOutputs** 
 - add **ExistingBoilerOutputs**
+- add **CoolingLoadOutputs**
+- add **HeatingLoadOutputs**
 In `job/test/test_job_endpoint.py`: 
 - test that AVERT and EASIUR defaults for emissions inputs not provided by user are passed back from REopt.jl and saved in database
 - add a testcase to validate that API is accepting/returning fields related to new models.
