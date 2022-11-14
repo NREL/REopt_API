@@ -3908,6 +3908,13 @@ class CHPOutputs(BaseModel, models.Model):
         default=list, blank=True,
         help_text="Thermal power to serve the heating load time-series array [MMBtu/hr]"
     )
+    year_one_thermal_to_steamturbine_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ),
+        default=list, blank=True,
+        help_text="Thermal power to TES time-series array [MMBtu/hr]"
+    )    
     year_one_chp_fuel_cost_before_tax = models.FloatField(
         null=True, blank=True,
         help_text="Cost of fuel consumed by the CHP system in year one [\$]"
@@ -3964,13 +3971,6 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         'hot_water'
     ))
 
-    CHP_PRIME_MOVER = models.TextChoices('CHP_PRIME_MOVER', (
-        "recip_engine",
-        "micro_turbine",
-        "combustion_turbine",
-        "fuel_cell"
-    ))
-
     FUEL_TYPE_LIST = models.TextChoices('FUEL_TYPE_LIST', (
         "natural_gas",
         "landfill_bio_gas",
@@ -3998,18 +3998,6 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         default="hot_water",
         help_text="Boiler thermal production type, hot water or steam"
     )
-
-    '''
-    We dont need to add CHP prime mover because this field is either set by CHP tech. Adding this here results in infeasible solutions.
-    chp_prime_mover = models.TextField(
-            blank=True,
-            null=False,
-            choices=CHP_PRIME_MOVER.choices,
-            default="",
-            help_text=""
-        )
-
-    '''
 
     max_thermal_factor_on_peak_load = models.FloatField(
         validators=[
@@ -4131,7 +4119,7 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
 
     year_one_fuel_consumption_mmbtu = models.FloatField(null=True, blank=True)
 
-    year_one_fuel_consumption_mmbtu_per_hour = ArrayField(
+    year_one_fuel_consumption_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
         default=list,
     )
@@ -4140,13 +4128,17 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
     lifecycle_fuel_cost_after_tax_bau = models.FloatField(null=True, blank=True)
     year_one_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
     year_one_fuel_cost_before_tax = models.FloatField(null=True, blank=True)
-    thermal_to_tes_series_mmbtu_per_hour = models.FloatField(null=True, blank=True)
-    thermal_to_tes_series_mmbtu_per_hour = ArrayField(
+    year_one_thermal_to_tes_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
         default = list,
     )
 
-    year_one_thermal_production_mmbtu_per_hour = ArrayField(
+    year_one_thermal_to_steamturbine_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    year_one_thermal_production_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
         default = list,
     )
