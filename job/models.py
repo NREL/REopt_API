@@ -3826,7 +3826,7 @@ class CHPInputs(BaseModel, models.Model):
 
         error_messages = {}
         
-        if error_messages == {}:
+        if error_messages:
             raise ValidationError(error_messages)
 
 
