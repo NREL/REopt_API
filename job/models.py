@@ -3809,6 +3809,12 @@ class CHPInputs(BaseModel, models.Model):
     )
     
     def clean(self):
+        error_messages = {}
+        if not self.dict.get("fuel_cost_per_mmbtu"):
+            error_messages["required inputs"] = "Must provide fuel_cost_per_mmbtu to model {}".format(self.key)
+
+        if error_messages:
+            raise ValidationError(error_messages)
 
         self.fuel_cost_per_mmbtu = scalar_to_vector(self.fuel_cost_per_mmbtu)
 
@@ -3823,11 +3829,6 @@ class CHPInputs(BaseModel, models.Model):
         
         if self.emissions_factor_lb_PM25_per_mmbtu == None:
             self.emissions_factor_lb_PM25_per_mmbtu = FUEL_DEFAULTS["emissions_factor_lb_PM25_per_mmbtu"].get(self.fuel_type, 0.0)
-
-        error_messages = {}
-        
-        if error_messages:
-            raise ValidationError(error_messages)
 
 
 class CHPOutputs(BaseModel, models.Model):
@@ -4092,6 +4093,13 @@ class ExistingBoilerInputs(BaseModel, models.Model):
 
     # For custom validations within model.
     def clean(self):
+        error_messages = {}
+        if not self.dict.get("fuel_cost_per_mmbtu"):
+            error_messages["required inputs"] = "Must provide fuel_cost_per_mmbtu to model {}".format(self.key)
+
+        if error_messages:
+            raise ValidationError(error_messages)
+        
         self.fuel_cost_per_mmbtu = scalar_to_vector(self.fuel_cost_per_mmbtu)
 
         if self.emissions_factor_lb_CO2_per_mmbtu == None:
@@ -4692,4 +4700,4 @@ def scalar_to_vector(vec:list):
         days_per_month = [31,28,31,30,31,30,31,31,30,31,30,31]
         return numpy.repeat(vec, [i * 24 for i in days_per_month]).tolist()
     else:
-        return vec # the vector len was not 1, handle it elsewhere
+        return vec # the vector len was not 1 or 12, handle it elsewhere

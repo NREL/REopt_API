@@ -260,7 +260,7 @@ class InputValidatorTests(TestCase):
         # check for missing CHP inputs
         post = copy.deepcopy(self.post)
         post["APIMeta"]["run_uuid"] = uuid.uuid4()
-        post["CHP"].pop("prime_mover")
+        post["CHP"].pop("fuel_cost_per_mmbtu")
         validator = InputValidator(post)
         validator.clean_fields()
         validator.clean()
