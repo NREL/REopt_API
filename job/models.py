@@ -3376,7 +3376,7 @@ class CHPInputs(BaseModel, models.Model):
 
     # Prime mover - highly suggested, but not required
     prime_mover = models.TextField(
-        null=False,
+        null=True,
         blank=True,
         choices=PRIME_MOVER.choices,
         help_text="CHP prime mover, one of recip_engine, micro_turbine, combustion_turbine, fuel_cell"
@@ -3493,11 +3493,11 @@ class CHPInputs(BaseModel, models.Model):
     )
     # Optional inputs
     size_class = models.IntegerField(
-        default=1,
         validators=[
             MinValueValidator(1),
             MaxValueValidator(7)
         ],
+        null=True,
         blank=True,
         help_text="CHP size class. Must be a strictly positive integer value"
     )
@@ -3518,6 +3518,7 @@ class CHPInputs(BaseModel, models.Model):
         help_text="Existing CHP fuel type, one of natural_gas, landfill_bio_gas, propane, diesel_oil"
     )
     om_cost_per_kw = models.FloatField(
+        default=0.0,
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(1.0e3)
