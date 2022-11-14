@@ -267,34 +267,6 @@ class InputValidatorTests(TestCase):
         validator.cross_clean()
         assert("required inputs" in validator.validation_errors["CHP"].keys())
 
-    def test_chp_defaults(self):
-        #Test prime_mover defaults accepted and updated
-        post_file = os.path.join('job', 'test', 'posts', 'chp_defaults_post.json')
-        post = json.load(open(post_file, 'r'))
-        post["APIMeta"]["run_uuid"] = uuid.uuid4()
-        validator = InputValidator(post)
-        validator.clean_fields()
-        validator.clean()
-        validator.cross_clean()
-        self.assertAlmostEqual(validator.models["CHP"].om_cost_per_kwh, 0.019)
-        self.assertAlmostEqual(validator.models["CHP"].electric_efficiency_full_load, 0.35633333333333334)
-        self.assertAlmostEqual(validator.models["CHP"].electric_efficiency_half_load, 0.35633333333333334)
-        self.assertAlmostEqual(validator.models["CHP"].thermal_efficiency_full_load, 0.4418333333333333)
-        self.assertAlmostEqual(validator.models["CHP"].thermal_efficiency_half_load, 0.4418333333333333)
-        self.assertAlmostEqual(validator.models["CHP"].min_allowable_kw, 15.0)
-        self.assertAlmostEqual(validator.models["CHP"].max_kw, 10000)
-        self.assertAlmostEqual(validator.models["CHP"].min_turn_down_fraction, 0.5)
-        self.assertAlmostEqual(validator.models["CHP"].cooling_thermal_factor, 0.8300000000000001)
-        #ensure that installed_cost_per_kw can be presented as a float
-        post = json.load(open(post_file, 'r'))
-        post["APIMeta"]["run_uuid"] = uuid.uuid4()
-        post["CHP"]["installed_cost_per_kw"] = 150.0
-        validator = InputValidator(post)
-        validator.clean_fields()
-        validator.clean()
-        validator.cross_clean()
-        self.assertAlmostEqual(validator.models["CHP"].installed_cost_per_kw[0], 150.0)
-        assert(validator.models["CHP"].tech_sizes_for_cost_curve == [])
 
 
 
