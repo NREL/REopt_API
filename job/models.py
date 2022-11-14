@@ -4683,6 +4683,9 @@ def get_input_dict_from_run_uuid(run_uuid:str):
     try: d["DomesticHotWaterLoad"] = filter_none_and_empty_array(meta.DomesticHotWaterLoadInputs.dict)
     except: pass
 
+    try: d["CHP"] = filter_none_and_empty_array(meta.CHPInputs.dict)
+    except: pass    
+
     return d
 
 '''
