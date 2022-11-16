@@ -3384,14 +3384,11 @@ class CoolingLoadInputs(BaseModel, models.Model):
     possible_sets = [
         ["thermal_loads_ton"],
         ["doe_reference_name"],
-        ["blended_doe_reference_names"],
-        ["doe_reference_name", "monthly_mmbtu"],
-        ["doe_reference_name", "annual_tonhour"],
         ["blended_doe_reference_names", "blended_doe_reference_percents"],
-        ["blended_doe_reference_names", "blended_doe_reference_percents","annual_mmbtu"],
-        ["blended_doe_reference_names", "blended_doe_reference_percents","monthly_tonhour"],
         ["annual_fraction_of_electric_load"],
-        ["monthly_fractions_of_electric_load"]
+        ["monthly_fractions_of_electric_load"],
+        ["per_time_step_fractions_of_electric_load"],
+        []
 	]
 	
     DOE_REFERENCE_NAME = models.TextChoices('DOE_REFERENCE_NAME', (
@@ -3569,15 +3566,6 @@ class ExistingChillerInputs(BaseModel, models.Model):
         on_delete=models.CASCADE,
         related_name="ExistingChillerInputs",
         primary_key=True
-    )
-
-    loads_kw_thermal = ArrayField(
-        models.FloatField(
-            blank=True
-        ),
-        default=list,
-        blank=True,
-        help_text=("")
     )
 
     cop = models.FloatField(
