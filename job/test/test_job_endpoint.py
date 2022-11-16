@@ -159,3 +159,35 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(results["ElectricLoad"]["offgrid_load_met_fraction"], 0.99999, places=-2)
         self.assertAlmostEqual(sum(results["ElectricLoad"]["offgrid_load_met_series_kw"]), 8760.0, places=-1)
         self.assertAlmostEqual(results["Financial"]["lifecycle_offgrid_other_annual_costs_after_tax"], 0.0, places=-2)
+
+    def test_cooling_possible_sets_and_results(self):
+        """
+        Purpose of this test is to test the validity of Cooling Load possible_sets, in particular []/null and blend/hybrid
+        """
+        scenario = {
+            "Site": {"longitude": -118.1164613, "latitude": 34.5794343},
+            "ElectricTariff": {"urdb_label": "5ed6c1a15457a3367add15ae"},
+            "PV": {"max_kw": 0.0},
+            "ElectricStorage":{"max_kw": 0.0, "max_kwh": 0.0},
+            "ElectricLoad": {
+                "blended_doe_reference_names": ["Hospital", "LargeOffice"],
+                "blended_doe_reference_percents": [0.75, 0.25],              
+                "annual_kwh": 8760.0
+            },
+            "CoolingLoad": {
+                "doe_reference_name": "Hospital",
+                "annual_tonhour": 5000.0
+            }
+        }
+
+        resp = self.api_client.post('/dev/job/', format='json', data=scenario)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+
+        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        r = json.loads(resp.content)
+        inputs = r["inputs"]
+        results = r["outputs"]
+
+        json.dump(r, open("response.json", "w"))
