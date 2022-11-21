@@ -31,7 +31,10 @@ import numpy as np
 import os
 import json
 from tastypie.test import ResourceTestCaseMixin
-from django.test import TestCase, TransactionTestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
+from django.test import TransactionTestCase 
+# Using TransactionTestCase instead of TestCase b/c this avoids whole test being wrapped in a 
+# transaction which leads to a TransactionManagementError when doing a database query in the middle.
+# Using django.test flushes database, so if you don't want this use unittest.TestCase.
 import logging
 logging.disable(logging.CRITICAL)
 
