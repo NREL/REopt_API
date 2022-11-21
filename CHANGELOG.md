@@ -26,6 +26,17 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop 11/21/2022
+### Minor Updates
+##### Added
+- Added access to the multiple outage stochastic/robust modeling capabilities in REopt.jl. Not all inputs and outputs are exposed, but the following are:
+    - **SiteInputs**: **min_resil_time_steps**
+    - **ElectricUtilityInputs**: **outage_start_time_steps**, **outage_durations**, **outage_probabilities**
+    - **OutageOutputs**: **expected_outage_cost**, **max_outage_cost_per_outage_duration**, **unserved_load_series**, **unserved_load_per_outage**, **microgrid_upgrade_capital_cost**, **generator_fuel_used_per_outage**
+- added test using multiple outage modeling
+##### Changed
+- use TransactionTestCase instead of TestCase (this avoids whole test being wrapped in a transaction which leads to a TransactionManagementError when doing a database query in the middle)
+
 ## v2.3.0
 ### Minor Updates
 ##### Changed
