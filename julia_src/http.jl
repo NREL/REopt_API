@@ -73,7 +73,7 @@ function reopt(req::HTTP.Request)
 	try
 		model_inputs = reoptjl.REoptInputs(d)
 	catch e
-		@error "Something went wrong in the Julia code!" exception=(e, catch_backtrace())
+		@error "Something went wrong in REopt inputs processing!" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
 	end
 	
@@ -97,7 +97,7 @@ function reopt(req::HTTP.Request)
 				"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert)
 			)
 		catch e
-			@error "Something q wrong in the Julia code!" exception=(e, catch_backtrace())
+			@error "Something went wrong in REopt optimization!" exception=(e, catch_backtrace())
 			error_response["error"] = sprint(showerror, e) # append instead of rewrite?
 		end
 	end
