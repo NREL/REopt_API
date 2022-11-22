@@ -35,7 +35,7 @@ from django.http import JsonResponse
 from reo.exceptions import UnexpectedError
 from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, GeneratorInputs, ElectricLoadInputs,\
     ElectricTariffInputs, ElectricUtilityInputs, SpaceHeatingLoadInputs, PVOutputs, ElectricStorageOutputs, WindOutputs, ExistingBoilerInputs,\
-    GeneratorOutputs, ElectricTariffOutputs, ElectricUtilityOutputs, ElectricLoadOutputs, ExistingBoilerOutputs, MessagesOutputs, \
+    GeneratorOutputs, ElectricTariffOutputs, ElectricUtilityOutputs, ElectricLoadOutputs, ExistingBoilerOutputs, REoptjlMessageOutputs, \
     DomesticHotWaterLoadInputs, SiteInputs, SiteOutputs, APIMeta, UserProvidedMeta
 
 
@@ -101,7 +101,7 @@ def outputs(request):
         d["Generator"] = GeneratorOutputs.info_dict(GeneratorOutputs)
         d["ExistingBoiler"] = ExistingBoilerOutputs.info_dict(ExistingBoilerOutputs)
         # d["Boiler"] = BoilerOutputs.info_dict(BoilerOutputs)
-        d["Messages"] = MessagesOutputs.info_dict(MessagesOutputs)
+        d["Messages"] = REoptjlMessageOutputs.info_dict(REoptjlMessageOutputs)
         return JsonResponse(d)
 
     except Exception as e:
@@ -206,6 +206,11 @@ def results(request, run_uuid):
             msgs = meta.Message.all()
             for msg in msgs:
                 r["messages"][msg.message_type] = msg.message
+            
+            reopt_messages = meta.REoptjlMessageOutputs.dict
+            for msg_type in ["errors","warnings"]:
+                for e in range(0,len(reopt_messages[msg_type])):
+                    r["messages"][msg_type] = reopt_messages[msg_type][e]
         except: pass
 
         try:
@@ -235,8 +240,6 @@ def results(request, run_uuid):
         except: pass
         # try: r["outputs"]["Boiler"] = meta.BoilerOutputs.dict
         # except: pass
-        try: r["outputs"]["Messages"] = meta.MessagesOutputs.dict
-        except: pass
 
         for d in r["outputs"].values():
             if isinstance(d, dict):

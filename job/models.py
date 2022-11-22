@@ -3571,13 +3571,13 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
         # perform custom validation here.
         pass
 
-class MessagesOutputs(BaseModel, models.Model):
+class REoptjlMessageOutputs(BaseModel, models.Model):
     
     key = "Messages"
     meta = models.OneToOneField(
         APIMeta,
         on_delete=models.CASCADE,
-        related_name="MessagesOutputs",
+        related_name="REoptjlMessageOutputs",
         primary_key=True
     )
 

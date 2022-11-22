@@ -27,7 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-from job.models import MessagesOutputs, FinancialOutputs, APIMeta, PVOutputs, ElectricStorageOutputs, ElectricTariffOutputs, SiteOutputs,\
+from job.models import REoptjlMessageOutputs, FinancialOutputs, APIMeta, PVOutputs, ElectricStorageOutputs, ElectricTariffOutputs, SiteOutputs,\
     ElectricUtilityOutputs, GeneratorOutputs, ElectricLoadOutputs, WindOutputs, FinancialInputs, ElectricUtilityInputs, ExistingBoilerOutputs
 import logging
 log = logging.getLogger(__name__)
@@ -42,35 +42,34 @@ def process_results(results: dict, run_uuid: str) -> None:
     meta.status = results.get("status")
     meta.save(update_fields=["status"])
 
-    if "Financial" in results.keys():
+    if results.get("status") == "error":
+        if "Messages" in results.keys():
+            REoptjlMessageOutputs.create(meta=meta, **results["Messages"]).save()
+    else:
         FinancialOutputs.create(meta=meta, **results["Financial"]).save()
-    if "ElectricTariff" in results.keys():
         ElectricTariffOutputs.create(meta=meta, **results["ElectricTariff"]).save()
-    if "ElectricUtility" in results.keys():
         ElectricUtilityOutputs.create(meta=meta, **results["ElectricUtility"]).save()
-    if "ElectricLoad" in results.keys():
         ElectricLoadOutputs.create(meta=meta, **results["ElectricLoad"]).save()
-    if "Site" in results.keys():
         SiteOutputs.create(meta=meta, **results["Site"]).save()
-    if "PV" in results.keys():
-        if isinstance(results["PV"], dict):
-            PVOutputs.create(meta=meta, **results["PV"]).save()
-        elif isinstance(results["PV"], list):
-            for pvdict in results["PV"]:
-                PVOutputs.create(meta=meta, **pvdict).save()
-    if "ElectricStorage" in results.keys():
-        ElectricStorageOutputs.create(meta=meta, **results["ElectricStorage"]).save()
-    if "Generator" in results.keys():
-        GeneratorOutputs.create(meta=meta, **results["Generator"]).save()
-    if "Wind" in results.keys():
-        WindOutputs.create(meta=meta, **results["Wind"]).save()
-    # if "Boiler" in results.keys():
-    #     BoilerOutputs.create(meta=meta, **results["Boiler"]).save()
-    if "ExistingBoiler" in results.keys():
-        ExistingBoilerOutputs.create(meta=meta, **results["ExistingBoiler"]).save()
-    if "Messages" in results.keys():
-        MessagesOutputs.create(meta=meta, **results["Messages"]).save()
-    # TODO process rest of results
+        if "PV" in results.keys():
+            if isinstance(results["PV"], dict):
+                PVOutputs.create(meta=meta, **results["PV"]).save()
+            elif isinstance(results["PV"], list):
+                for pvdict in results["PV"]:
+                    PVOutputs.create(meta=meta, **pvdict).save()
+        if "ElectricStorage" in results.keys():
+            ElectricStorageOutputs.create(meta=meta, **results["ElectricStorage"]).save()
+        if "Generator" in results.keys():
+            GeneratorOutputs.create(meta=meta, **results["Generator"]).save()
+        if "Wind" in results.keys():
+            WindOutputs.create(meta=meta, **results["Wind"]).save()
+        # if "Boiler" in results.keys():
+        #     BoilerOutputs.create(meta=meta, **results["Boiler"]).save()
+        if "ExistingBoiler" in results.keys():
+            ExistingBoilerOutputs.create(meta=meta, **results["ExistingBoiler"]).save()
+        if "Messages" in results.keys():
+            REoptjlMessageOutputs.create(meta=meta, **results["Messages"]).save()
+        # TODO process rest of results
 
 
 def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:

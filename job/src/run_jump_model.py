@@ -116,7 +116,7 @@ def run_jump_model(run_uuid):
                               user_uuid=user_uuid)
     else:
         status = results["status"]
-        logger.info("REopt run successful. Status {}".format(status))
+        logger.info("REopt run completed with status {}".format(status))
 
         if status.strip().lower() == 'timed-out':
             msg = "Optimization exceeded timeout: {} seconds.".format(data["Settings"]["timeout_seconds"])
