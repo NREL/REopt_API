@@ -26,7 +26,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## v2.3.0
+## Develop
 ### Minor Updates
 ##### Added 
 In `job/models.py`:
@@ -38,6 +38,10 @@ In `'job/validators.py`:
 - add new input models
 In `job/views.py`:
 - add new input/output models to properly save the inputs/outputs
+- add /chp_defaults endpoint which calls the http.jl chp_defaults endpoint
+- add /simulated_load endpoint which calls the http.jl simulated_load endpoint
+
+## v2.3.0
 ##### Changed
 The following name changes were made in the `job/` endpoint and `julia_src/http.jl`: 
  - Change "_pct" to "_rate_fraction" for input and output names containing "discount", "escalation", and "tax_pct" (financial terms)
