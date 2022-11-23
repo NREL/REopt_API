@@ -31,6 +31,7 @@ from django.db import models
 import uuid
 import sys
 import traceback as tb
+import re
 from django.http import JsonResponse
 from reo.exceptions import UnexpectedError
 from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, GeneratorInputs, ElectricLoadInputs,\
@@ -207,10 +208,19 @@ def results(request, run_uuid):
             for msg in msgs:
                 r["messages"][msg.message_type] = msg.message
             
+            # Add a dictionary of warnings and errors from REopt
+            # key = location of warning, error, or uncaught error
+            # value = vector of text from REopt
+            #   In case of uncaught error, vector length > 1
             reopt_messages = meta.REoptjlMessageOutputs.dict
             for msg_type in ["errors","warnings"]:
-                for e in range(0,len(reopt_messages[msg_type])):
-                    r["messages"][msg_type] = reopt_messages[msg_type][e]
+                r["messages"][msg_type] = dict()
+                for m in range(0,len(reopt_messages[msg_type])):
+                    txt = reopt_messages[msg_type][m]
+                    txt = re.sub('[^0-9a-zA-Z_.,() ]+', '', txt)
+                    k = txt.split(',')[0]
+                    v = txt.split(',')[1:]
+                    r["messages"][msg_type][k] = v
         except: pass
 
         try:
