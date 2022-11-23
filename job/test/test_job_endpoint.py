@@ -110,7 +110,8 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
 
         resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
         r = json.loads(resp.content)
-        results = r["outputs"]
+        assert('errors' in r["messages"].keys())
+        assert('warnings' in r["messages"].keys())
         assert(resp.status_code==400)
 
     def test_superset_input_fields(self):
