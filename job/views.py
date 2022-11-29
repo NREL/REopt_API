@@ -38,7 +38,10 @@ from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, Ge
     ElectricTariffInputs, ElectricUtilityInputs, SpaceHeatingLoadInputs, PVOutputs, ElectricStorageOutputs, WindOutputs, ExistingBoilerInputs,\
     GeneratorOutputs, ElectricTariffOutputs, ElectricUtilityOutputs, ElectricLoadOutputs, ExistingBoilerOutputs, REoptjlMessageOutputs, \
     DomesticHotWaterLoadInputs, SiteInputs, SiteOutputs, APIMeta, UserProvidedMeta, CHPInputs, CHPOutputs
-
+import os
+import requests
+import logging
+log = logging.getLogger(__name__)
 
 def make_error_resp(msg):
     resp = dict()
