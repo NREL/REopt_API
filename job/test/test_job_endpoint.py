@@ -35,6 +35,7 @@ import os
 import logging
 import requests
 logging.disable(logging.CRITICAL)
+import os
 
 
 class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
@@ -102,26 +103,19 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
 
         post_file = os.path.join('job', 'test', 'posts', 'handle_reopt_error.json')
         post = json.load(open(post_file, 'r'))
-
-        resp = self.api_client.post('/dev/job/', format='json', data=post)
-        self.assertHttpCreated(resp)
-        r = json.loads(resp.content)
-        run_uuid = r.get('run_uuid')
-
-        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
-        r = json.loads(resp.content)
         assert('errors' in r["messages"].keys())
         assert('warnings' in r["messages"].keys())
         assert(resp.status_code==400)
 
-    def test_superset_input_fields(self):
-        """
-        Purpose of this test is to test the API's ability to accept all relevant 
-        input fields and send to REopt, ensuring name input consistency with REopt.jl.
-        """
-        post_file = os.path.join('job', 'test', 'posts', 'all_inputs_test.json')
-        post = json.load(open(post_file, 'r'))
 
+    def test_chp_defaults_from_julia(self):
+        # Test that the inputs_with_defaults_set_in_julia feature worked for CHP, consistent with /chp_defaults
+        post_file = os.path.join('job', 'test', 'posts', 'chp_defaults_post.json')
+        post = json.load(open(post_file, 'r'))
+        # Make average MMBtu/hr thermal steam greater than 7 MMBtu/hr threshold for combustion_turbine to be chosen
+        # Default ExistingBoiler efficiency for production_type = steam is 0.75
+        post["SpaceHeatingLoad"]["annual_mmbtu"] = 8760 * 8 / 0.75
+        post["DomesticHotWaterLoad"]["annual_mmbtu"] = 8760 * 8 / 0.75
         resp = self.api_client.post('/dev/job/', format='json', data=post)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
@@ -129,7 +123,41 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
 
         resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
         r = json.loads(resp.content)
-        results = r["outputs"]
 
-        self.assertAlmostEqual(results["Financial"]["npv"], 165.21, places=-2)
-        assert(resp.status_code==200)
+        inputs_chp = r["inputs"]["CHP"]
+
+        avg_fuel_load = (post["SpaceHeatingLoad"]["annual_mmbtu"] + 
+                            post["DomesticHotWaterLoad"]["annual_mmbtu"]) / 8760.0
+        inputs_chp_defaults = {"existing_boiler_production_type": post["ExistingBoiler"]["production_type"],
+                            "avg_boiler_fuel_load_mmbtu_per_hour": avg_fuel_load
+            }
+
+        # Call to the django view endpoint /chp_defaults which calls the http.jl endpoint
+        resp = self.api_client.get(f'/dev/chp_defaults', data=inputs_chp_defaults)
+        view_response = json.loads(resp.content)
+
+        for key in view_response["default_inputs"].keys():
+            if post["CHP"].get(key) is None: # Check that default got assigned consistent with /chp_defaults
+                self.assertEquals(inputs_chp[key], view_response["default_inputs"][key])
+            else:  # Make sure we didn't overwrite user-input
+                self.assertEquals(inputs_chp[key], post["CHP"][key])
+
+    def test_superset_input_fields(self):
+            """
+            Purpose of this test is to test the API's ability to accept all relevant 
+            input fields and send to REopt, ensuring name input consistency with REopt.jl.
+            """
+            post_file = os.path.join('job', 'test', 'posts', 'all_inputs_test.json')
+            post = json.load(open(post_file, 'r'))
+
+            resp = self.api_client.post('/dev/job/', format='json', data=post)
+            self.assertHttpCreated(resp)
+            r = json.loads(resp.content)
+            run_uuid = r.get('run_uuid')
+
+            resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+            r = json.loads(resp.content)
+            results = r["outputs"]
+
+            self.assertAlmostEqual(results["Financial"]["npv"], 165.21, places=-2)
+            assert(resp.status_code==200)

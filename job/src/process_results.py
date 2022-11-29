@@ -28,7 +28,9 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
 from job.models import REoptjlMessageOutputs, FinancialOutputs, APIMeta, PVOutputs, ElectricStorageOutputs, ElectricTariffOutputs, SiteOutputs,\
-    ElectricUtilityOutputs, GeneratorOutputs, ElectricLoadOutputs, WindOutputs, FinancialInputs, ElectricUtilityInputs, ExistingBoilerOutputs
+    ElectricUtilityOutputs, GeneratorOutputs, ElectricLoadOutputs, WindOutputs, FinancialInputs, ElectricUtilityInputs, ExistingBoilerOutputs,\ 
+    CHPInputs, CHPOutputs
+    
 import logging
 log = logging.getLogger(__name__)
 
@@ -69,6 +71,8 @@ def process_results(results: dict, run_uuid: str) -> None:
             ExistingBoilerOutputs.create(meta=meta, **results["ExistingBoiler"]).save()
         if "Messages" in results.keys():
             REoptjlMessageOutputs.create(meta=meta, **results["Messages"]).save()
+        if "CHP" in results.keys():
+            CHPOutputs.create(meta=meta, **results["CHP"]).save()
         # TODO process rest of results
 
 
@@ -84,6 +88,8 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
         # get input models that need updating
         FinancialInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["Financial"])
         ElectricUtilityInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["ElectricUtility"])
+        if inputs_to_update["CHP"]:  # Will be an empty dictionary if CHP is not considered
+            CHPInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["CHP"])
     except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(
