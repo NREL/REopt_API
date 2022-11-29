@@ -83,18 +83,11 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         v2_response = json.loads(resp.content)     
         self.assertAlmostEqual(http_response["annual_kwh"], v2_response["annual_kwh"], delta=1.0)        
 
-        # Test bad and missing inputs
+        # Test bad inputs
         inputs["invalid_key"] = "invalid_val"
         resp = self.api_client.get(f'/v2/simulated_load', data=inputs)
         v2_response = json.loads(resp.content)   
         assert("Error" in v2_response.keys())
-
-        inputs.pop("invalid_key")
-        inputs.pop("load_type")
-        inputs.pop("doe_reference_name")
-        resp = self.api_client.get(f'/v2/simulated_load', data=inputs)
-        v2_response = json.loads(resp.content)   
-        assert("Error. Missing" in v2_response.keys())
 
 # For POSTing to an endpoint which returns a `run_uuid` to later GET the results from the database
 # resp = self.api_client.post('/dev/job/', format='json', data=scenario))
