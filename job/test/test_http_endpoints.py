@@ -84,7 +84,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(http_response["annual_kwh"], v2_response["annual_kwh"], delta=1.0)        
 
         # Test bad and missing inputs
-        inputs["invalid_key"] = None
+        inputs["invalid_key"] = "invalid_val"
         resp = self.api_client.get(f'/v2/simulated_load', data=inputs)
         v2_response = json.loads(resp.content)   
         assert("invalid_key is not a valid input parameter" in v2_response.keys())
