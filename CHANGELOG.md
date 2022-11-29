@@ -25,6 +25,11 @@ Classify the change according to the following categories:
     ##### Deprecated
     ##### Removed
     ### Patches
+    
+## v2.3.1
+### Minor Updates
+##### Fixed
+Lookback charge parameters expected from the URDB API call were changed to the non-caplitalized format, so they are now used properly.
 
 ## Develop
 ### Minor Updates
