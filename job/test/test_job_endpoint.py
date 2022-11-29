@@ -32,6 +32,7 @@ from tastypie.test import ResourceTestCaseMixin
 from django.test import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
 import logging
 logging.disable(logging.CRITICAL)
+import os
 
 
 class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
@@ -159,3 +160,36 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(results["ElectricLoad"]["offgrid_load_met_fraction"], 0.99999, places=-2)
         self.assertAlmostEqual(sum(results["ElectricLoad"]["offgrid_load_met_series_kw"]), 8760.0, places=-1)
         self.assertAlmostEqual(results["Financial"]["lifecycle_offgrid_other_annual_costs_after_tax"], 0.0, places=-2)
+
+    def test_chp_defaults_from_julia(self):
+        # Test that the inputs_with_defaults_set_in_julia feature worked for CHP, consistent with /chp_defaults
+        post_file = os.path.join('job', 'test', 'posts', 'chp_defaults_post.json')
+        post = json.load(open(post_file, 'r'))
+        # Make average MMBtu/hr thermal steam greater than 7 MMBtu/hr threshold for combustion_turbine to be chosen
+        # Default ExistingBoiler efficiency for production_type = steam is 0.75
+        post["SpaceHeatingLoad"]["annual_mmbtu"] = 8760 * 8 / 0.75
+        post["DomesticHotWaterLoad"]["annual_mmbtu"] = 8760 * 8 / 0.75
+        resp = self.api_client.post('/dev/job/', format='json', data=post)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+
+        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        r = json.loads(resp.content)
+        inputs_chp = r["inputs"]["CHP"]
+
+        avg_fuel_load = (post["SpaceHeatingLoad"]["annual_mmbtu"] + 
+                            post["DomesticHotWaterLoad"]["annual_mmbtu"]) / 8760.0
+        inputs_chp_defaults = {"existing_boiler_production_type": post["ExistingBoiler"]["production_type"],
+                            "avg_boiler_fuel_load_mmbtu_per_hour": avg_fuel_load
+            }
+
+        # Call to the django view endpoint /chp_defaults which calls the http.jl endpoint
+        resp = self.api_client.get(f'/dev/chp_defaults', data=inputs_chp_defaults)
+        view_response = json.loads(resp.content)
+
+        for key in view_response["default_inputs"].keys():
+            if post["CHP"].get(key) is None: # Check that default got assigned consistent with /chp_defaults
+                self.assertEquals(inputs_chp[key], view_response["default_inputs"][key])
+            else:  # Make sure we didn't overwrite user-input
+                self.assertEquals(inputs_chp[key], post["CHP"][key])

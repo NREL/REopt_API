@@ -1,0 +1,40 @@
+{
+  "Site": {
+    "latitude": 37.78,
+    "longitude": -122.45
+  },
+  "ElectricLoad": {
+    "doe_reference_name": "Hospital"
+  },
+  "SpaceHeatingLoad": {
+    "doe_reference_name": "Hospital"
+  },
+  "DomesticHotWaterLoad": {
+    "doe_reference_name": "Hospital"
+  },
+  "ElectricTariff": {
+    "blended_annual_energy_rate": 0.1,
+    "blended_annual_demand_rate": 10
+  },
+  "ExistingBoiler": {
+    "fuel_cost_per_mmbtu": 10.0,
+    "production_type": "steam"
+  },
+  "CHP": {
+    "min_kw": 200.0,
+    "min_allowable_kw": 0.0,
+    "max_kw": 200.0,
+    "fuel_cost_per_mmbtu": 10.0,
+    "om_cost_per_kwh": 0.0246
+    },
+  "PV": {
+    "min_kw": 0,
+    "max_kw": 0
+    },
+  "ElectricStorage": {
+    "min_kw": 0,
+    "max_kw": 0,
+    "min_kwh": 0,
+    "max_kwh": 0
+    }
+}
