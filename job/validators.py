@@ -29,10 +29,9 @@
 # *********************************************************************************
 import logging
 import pandas as pd
-from job.models import MAX_BIG_NUMBER, APIMeta, ExistingBoilerInputs, UserProvidedMeta, SiteInputs, Settings, \
-    ElectricLoadInputs, ElectricTariffInputs, FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, \
-	ElectricStorageInputs, GeneratorInputs, WindInputs, SpaceHeatingLoadInputs, DomesticHotWaterLoadInputs, \
-    CoolingLoadInputs, ExistingChillerInputs
+from job.models import MAX_BIG_NUMBER, APIMeta, ExistingBoilerInputs, UserProvidedMeta, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
+    FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs, SpaceHeatingLoadInputs, \
+    DomesticHotWaterLoadInputs, CHPInputs, CoolingLoadInputs, ExistingChillerInputs
 from django.core.exceptions import ValidationError
 from pyproj import Proj
 from typing import Tuple
@@ -99,7 +98,8 @@ class InputValidator(object):
             ExistingChillerInputs,
             ExistingBoilerInputs,
             SpaceHeatingLoadInputs,
-            DomesticHotWaterLoadInputs
+            DomesticHotWaterLoadInputs,
+            CHPInputs
         )
         self.pvnames = []
         on_grid_required_object_names = [
@@ -417,19 +417,11 @@ class InputValidator(object):
         """
         if "ExistingBoiler" in self.models.keys():
 
-            # Clean fuel_cost_per_mmbtu to align with time series
-            self.clean_time_series("ExistingBoiler", "fuel_cost_per_mmbtu")
-
             if self.models["ExistingBoiler"].efficiency is None:
-                if "CHP" in self.models.keys():
-                    pass
-                # TODO add CHP based validation on ExistingBoiler efficiency
-                # Get production type by chp prime mover
+                if self.models["ExistingBoiler"].production_type == 'hot_water':
+                    self.models["ExistingBoiler"].efficiency = 0.8
                 else:
-                    if self.models["ExistingBoiler"].production_type == 'hot_water':
-                        self.models["ExistingBoiler"].efficiency = 0.8
-                    else:
-                        self.models["ExistingBoiler"].efficiency = 0.75
+                    self.models["ExistingBoiler"].efficiency = 0.75
         
         """
         ElectricLoad
