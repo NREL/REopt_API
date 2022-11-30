@@ -163,6 +163,47 @@ class ERPInputs(BaseModel, models.Model):
         default=generator_size_kw_default,
         help_text=("Backup generator capacity")
     )
+    fuel_limit = ArrayField(
+        models.FloatField(
+            blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1.0e9)
+            ]
+        ),
+        blank=True,
+        default=generator_size_kw_default,
+        help_text=("Amount of fuel available, by generator type, either per type or per generator depending on value of fuel_limit_is_per_generator.")
+    )
+    generator_fuel_intercept = ArrayField(
+        models.FloatField(
+            blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1.0e9)
+            ]
+        ),
+        blank=True,
+        default=generator_size_kw_default,
+        help_text=("Amount of fuel burned per time step by each generator type while idling.")
+    )
+    fuel_limit_is_per_generator = models.BooleanField(
+        default=True,
+        blank=True,
+        help_text=("Whether fuel_limit is per generator or per generator type")
+    )
+    generator_burn_rate_fuel_per_kwh = ArrayField(
+        models.FloatField(
+            blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1.0e9)
+            ]
+        ),
+        blank=True,
+        default=generator_size_kw_default,
+        help_text=("Amount of fuel used per kWh produced by each generator type.")
+    )
     battery_operational_availability = models.FloatField(
         blank=True,
         default=1.0,
