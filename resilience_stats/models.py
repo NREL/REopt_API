@@ -163,6 +163,15 @@ class ERPInputs(BaseModel, models.Model):
         default=generator_size_kw_default,
         help_text=("Backup generator capacity")
     )
+    battery_operational_availability = models.FloatField(
+        blank=True,
+        default=1.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0)
+        ],
+        help_text=("Fraction of year battery system not down for maintenance")
+    )
     battery_size_kw = models.FloatField(
         blank=True,
         default=0.0,
@@ -216,6 +225,15 @@ class ERPInputs(BaseModel, models.Model):
             MinValueValidator(1),
         ],
         help_text=("Number of bins for modeling battery state of charge")
+    )
+    pv_operational_availability = models.FloatField(
+        blank=True,
+        default=1.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0)
+        ],
+        help_text=("Fraction of year PV system not down for maintenance")
     )
     pv_size_kw = models.FloatField(
         blank=True,
