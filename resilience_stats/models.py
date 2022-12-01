@@ -394,9 +394,10 @@ class ERPOutputs(BaseModel, models.Model):
         blank=True,
         help_text=("The mean, calculated over outages starting at each hour of the year, of the probability of surviving the full max_outage_duration.")
     )
-    monthly_cumulative_outage_survival_final_time_step = models.FloatField(
-        null=True,
+    monthly_cumulative_outage_survival_final_time_step = ArrayField(
+        models.FloatField(blank=True),
         blank=True,
+        default=list,
         help_text=("The monthly means, calculated over outages starting at each hour of the month, of the probability of surviving the full max_outage_duration.")
     )
 
