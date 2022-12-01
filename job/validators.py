@@ -537,12 +537,8 @@ class InputValidator(object):
             validate_offgrid_keys(self)
 
         """
-        ExistingChiller
+        ExistingChiller - skip, no checks
         """
-        if "ExistingChiller" in self.models.keys():
-
-            if len(self.models["ExistingChiller"].loads_kw_thermal) > 0:
-                self.clean_time_series("ExistingChiller", "loads_kw_thermal")
 
     def save(self):
         """
