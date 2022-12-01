@@ -341,29 +341,47 @@ class ERPOutputs(BaseModel, models.Model):
         primary_key=True,
         related_name="ERPOutputs"
     )
-    mean_marginal_survival_by_duration = ArrayField(
+    unlimited_fuel_mean_cumulative_survival_by_duration = ArrayField(
         models.FloatField(blank=True),
         blank=True,
         default=list,
-        help_text=("The mean, calculated over outages starting at each hour of the year, of the marginal probability of surviving each hour of max_outage_duration.")
+        help_text=("The mean, calculated over outages starting at each hour of the year, of the probability of surviving up to and including each hour of max_outage_duration, if generator fuel is unlimited.")
     )
-    min_marginal_survival_by_duration = ArrayField(
+    unlimited_fuel_min_cumulative_survival_by_duration = ArrayField(
         models.FloatField(blank=True),
         blank=True,
         default=list,
-        help_text=("The minimum, calculated over outages starting at each hour of the year, of the marginal probability of surviving each hour of max_outage_duration.")
+        help_text=("The minimum, calculated over outages starting at each hour of the year, of the probability of surviving up to and including each hour of max_outage_duration, if generator fuel is unlimited.")
+    )
+    unlimited_fuel_cumulative_outage_survival_final_time_step = ArrayField(
+        models.FloatField(blank=True),
+        blank=True,
+        default=list,
+        help_text=("The probability of surviving the full max_outage_duration, for outages starting at each hour of the year, if generator fuel is unlimited.")
+    )
+    mean_fuel_survival_by_duration = ArrayField(
+        models.FloatField(blank=True),
+        blank=True,
+        default=list,
+        help_text=("The probability, averaged over outages starting at each hour of the year, of having sufficient fuel to survive up to and including each hour of max_outage_duration.")
+    )
+    fuel_outage_survival_final_time_step = ArrayField(
+        models.IntegerField(blank=True),
+        blank=True,
+        default=list,
+        help_text=("Whether there is sufficient fuel to survive the full max_outage_duration, for outages starting at each hour of the year. A 1 means true, a 0 means false.")
     )
     mean_cumulative_survival_by_duration = ArrayField(
         models.FloatField(blank=True),
         blank=True,
         default=list,
-        help_text=("The mean, calculated over outages starting at each hour of the year, of the cumulative probability of surviving up to and including each hour of max_outage_duration.")
+        help_text=("The mean, calculated over outages starting at each hour of the year, of the probability of surviving up to and including each hour of max_outage_duration.")
     )
     min_cumulative_survival_by_duration = ArrayField(
         models.FloatField(blank=True),
         blank=True,
         default=list,
-        help_text=("The minimum, calculated over outages starting at each hour of the year, of the cumulative probability of surviving up to and including each hour of max_outage_duration.")
+        help_text=("The minimum, calculated over outages starting at each hour of the year, of the probability of surviving up to and including each hour of max_outage_duration.")
     )
     cumulative_outage_survival_final_time_step = ArrayField(
         models.FloatField(blank=True),
@@ -375,6 +393,11 @@ class ERPOutputs(BaseModel, models.Model):
         null=True,
         blank=True,
         help_text=("The mean, calculated over outages starting at each hour of the year, of the probability of surviving the full max_outage_duration.")
+    )
+    monthly_cumulative_outage_survival_final_time_step = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=("The monthly means, calculated over outages starting at each hour of the month, of the probability of surviving the full max_outage_duration.")
     )
 
 class ResilienceModel(models.Model):
