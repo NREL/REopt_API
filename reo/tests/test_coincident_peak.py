@@ -75,7 +75,7 @@ class TestCoincidentPeak(ResourceTestCaseMixin, TestCase):
                         "doe_reference_name": "MidriseApartment"
                     },
                     "ElectricTariff": {
-                        "coincident_peak_load_active_timesteps": [[1,2,100],[6000,7000]],
+                        "coincident_peak_load_active_timesteps": [[1,2.0,100.0],[6000.0,7000.0]],
                         "coincident_peak_load_charge_us_dollars_per_kw": [10,5],
                         "add_blended_rates_to_urdb_rate": False,
                         "net_metering_limit_kw": 0,

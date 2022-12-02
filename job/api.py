@@ -100,8 +100,8 @@ class Job(ModelResource):
         run_uuid = str(uuid.uuid4())
         meta = {
             "run_uuid": run_uuid,
-            "api_version": 2,
-            "reopt_version": "0.11.0",
+            "api_version": 3,
+            "reopt_version": "0.18.0",
             "status": "validating..."
         }
         bundle.data.update({"APIMeta": meta})
@@ -166,7 +166,7 @@ class Job(ModelResource):
 
         APIMeta.objects.filter(run_uuid=run_uuid).update(status='Optimizing...')
         try:
-            run_jump_model.s(data=input_validator.validated_input_dict).apply_async()
+            run_jump_model.s(run_uuid).apply_async()
         except Exception as e:
             if isinstance(e, REoptError):
                 pass  # handled in each task

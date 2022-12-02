@@ -11,8 +11,6 @@ services:
   db:
     image: postgres
     restart: always
-    volumes:
-      - pgdata:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=reopt
       - POSTGRES_PASSWORD=reopt
@@ -83,6 +81,3 @@ services:
       - licenseserver
     volumes:
       - ./julia_src:/opt/julia_src
-
-volumes:
-  pgdata:

@@ -33,10 +33,14 @@ import sys
 import traceback as tb
 from django.http import JsonResponse
 from reo.exceptions import UnexpectedError
-from job.models import Settings, PVInputs, StorageInputs, WindInputs, GeneratorInputs, ElectricLoadInputs,\
-    ElectricTariffInputs, ElectricUtilityInputs, PVOutputs, StorageOutputs, WindOutputs, GeneratorOutputs, \
-    ElectricTariffOutputs, ElectricUtilityOutputs, ElectricLoadOutputs, APIMeta, UserProvidedMeta
-
+from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, GeneratorInputs, ElectricLoadInputs,\
+    ElectricTariffInputs, ElectricUtilityInputs, SpaceHeatingLoadInputs, PVOutputs, ElectricStorageOutputs, WindOutputs, ExistingBoilerInputs,\
+    GeneratorOutputs, ElectricTariffOutputs, ElectricUtilityOutputs, ElectricLoadOutputs, ExistingBoilerOutputs, \
+    DomesticHotWaterLoadInputs, SiteInputs, SiteOutputs, APIMeta, UserProvidedMeta, CHPInputs, CHPOutputs
+import os
+import requests
+import logging
+log = logging.getLogger(__name__)
 
 def make_error_resp(msg):
     resp = dict()
@@ -57,9 +61,15 @@ def help(request):
         d["ElectricTariff"] = ElectricTariffInputs.info_dict(ElectricTariffInputs)
         d["ElectricUtility"] = ElectricUtilityInputs.info_dict(ElectricUtilityInputs)
         d["PV"] = PVInputs.info_dict(PVInputs)
-        d["Storage"] = StorageInputs.info_dict(StorageInputs)
+        d["ElectricStorage"] = ElectricStorageInputs.info_dict(ElectricStorageInputs)
         d["Wind"] = WindInputs.info_dict(WindInputs)
         d["Generator"] = GeneratorInputs.info_dict(GeneratorInputs)
+        d["ExistingBoiler"] = ExistingBoilerInputs.info_dict(ExistingBoilerInputs)
+        # d["Boiler"] = BoilerInputs.info_dict(BoilerInputs)
+        d["SpaceHeatingLoad"] = SpaceHeatingLoadInputs.info_dict(SpaceHeatingLoadInputs)
+        d["DomesticHotWaterLoad"] = DomesticHotWaterLoadInputs.info_dict(DomesticHotWaterLoadInputs)
+        d["Site"] = SiteInputs.info_dict(SiteInputs)
+        d["CHP"] = CHPInputs.info_dict(CHPInputs)
         return JsonResponse(d)
 
     except Exception as e:
@@ -88,10 +98,14 @@ def outputs(request):
         d["ElectricLoad"] = ElectricLoadOutputs.info_dict(ElectricLoadOutputs)
         d["ElectricTariff"] = ElectricTariffOutputs.info_dict(ElectricTariffOutputs)
         d["ElectricUtility"] = ElectricUtilityOutputs.info_dict(ElectricUtilityOutputs)
+        d["Site"] = SiteOutputs.info_dict(SiteOutputs)
         d["PV"] = PVOutputs.info_dict(PVOutputs)
-        d["Storage"] = StorageOutputs.info_dict(StorageOutputs)
+        d["ElectricStorage"] = ElectricStorageOutputs.info_dict(ElectricStorageOutputs)
         d["Wind"] = WindOutputs.info_dict(WindOutputs)
         d["Generator"] = GeneratorOutputs.info_dict(GeneratorOutputs)
+        d["ExistingBoiler"] = ExistingBoilerOutputs.info_dict(ExistingBoilerOutputs)
+        # d["Boiler"] = BoilerOutputs.info_dict(BoilerOutputs)
+        d["CHP"] = CHPOutputs.info_dict(CHPOutputs)
         return JsonResponse(d)
 
     except Exception as e:
@@ -118,11 +132,10 @@ def results(request, run_uuid):
     try:
         # get all required inputs/outputs
         meta = APIMeta.objects.select_related(
-                "Settings",
+            "Settings",
             'FinancialInputs', 'FinancialOutputs',
-            'SiteInputs',
+            'SiteInputs', 'SiteOutputs',
             'ElectricLoadInputs',
-            'ElectricTariffInputs', 'ElectricTariffOutputs',
             'ElectricUtilityOutputs'
         ).get(run_uuid=run_uuid)
     except Exception as e:
@@ -146,7 +159,6 @@ def results(request, run_uuid):
     r["inputs"] = dict()
     r["inputs"]["Financial"] = meta.FinancialInputs.dict
     r["inputs"]["ElectricLoad"] = meta.ElectricLoadInputs.dict
-    r["inputs"]["ElectricTariff"] = meta.ElectricTariffInputs.dict
     r["inputs"]["Site"] = meta.SiteInputs.dict
     r["inputs"]["Settings"] = meta.Settings.dict
 
@@ -164,16 +176,34 @@ def results(request, run_uuid):
     try: r["inputs"]["Meta"] = meta.UserProvidedMeta.dict
     except: pass
 
+    try: r["inputs"]["ElectricTariff"] = meta.ElectricTariffInputs.dict
+    except: pass
+
     try: r["inputs"]["ElectricUtility"] = meta.ElectricUtilityInputs.dict
     except: pass
 
-    try: r["inputs"]["Storage"] = meta.StorageInputs.dict
+    try: r["inputs"]["ElectricStorage"] = meta.ElectricStorageInputs.dict
     except: pass
 
     try: r["inputs"]["Generator"] = meta.GeneratorInputs.dict
     except: pass
 
     try: r["inputs"]["Wind"] = meta.WindInputs.dict
+    except: pass
+
+    try: r["inputs"]["ExistingBoiler"] = meta.ExistingBoilerInputs.dict
+    except: pass
+
+    # try: r["inputs"]["Boiler"] = meta.BoilerInputs.dict
+    # except: pass
+
+    try: r["inputs"]["SpaceHeatingLoad"] = meta.SpaceHeatingLoadInputs.dict
+    except: pass
+
+    try: r["inputs"]["DomesticHotWaterLoad"] = meta.DomesticHotWaterLoadInputs.dict
+    except: pass
+
+    try: r["inputs"]["CHP"] = meta.CHPInputs.dict
     except: pass
 
     try:
@@ -190,6 +220,7 @@ def results(request, run_uuid):
             r["outputs"]["ElectricTariff"] = meta.ElectricTariffOutputs.dict
             r["outputs"]["ElectricUtility"] = meta.ElectricUtilityOutputs.dict
             r["outputs"]["ElectricLoad"] = meta.ElectricLoadOutputs.dict
+            r["outputs"]["Site"] = meta.SiteOutputs.dict
         except: pass
 
         try:
@@ -201,11 +232,17 @@ def results(request, run_uuid):
                 for pv in pvs:
                     r["outputs"]["PV"].append(pv.dict)
         except: pass
-        try: r["outputs"]["Storage"] = meta.StorageOutputs.dict
+        try: r["outputs"]["ElectricStorage"] = meta.ElectricStorageOutputs.dict
         except: pass
         try: r["outputs"]["Generator"] = meta.GeneratorOutputs.dict
         except: pass
         try: r["outputs"]["Wind"] = meta.WindOutputs.dict
+        except: pass
+        try: r["outputs"]["ExistingBoiler"] = meta.ExistingBoilerOutputs.dict
+        except: pass
+        # try: r["outputs"]["Boiler"] = meta.BoilerOutputs.dict
+        # except: pass
+        try: r["outputs"]["CHP"] = meta.CHPOutputs.dict
         except: pass
 
         for d in r["outputs"].values():
@@ -227,3 +264,112 @@ def results(request, run_uuid):
             return JsonResponse(resp, status=500)
 
     return JsonResponse(r)
+
+
+def chp_defaults(request):
+    inputs = {
+        "existing_boiler_production_type": request.GET.get("existing_boiler_production_type"),
+        "avg_boiler_fuel_load_mmbtu_per_hour": request.GET.get("avg_boiler_fuel_load_mmbtu_per_hour"),
+        "prime_mover": request.GET.get("prime_mover"),
+        "size_class": request.GET.get("size_class"),
+        "boiler_efficiency": request.GET.get("boiler_efficiency")
+    }
+    try:
+        julia_host = os.environ.get('JULIA_HOST', "julia")
+        http_jl_response = requests.get("http://" + julia_host + ":8081/chp_defaults/", json=inputs)
+        response = JsonResponse(
+            http_jl_response.json()
+        )
+        return response
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected error in chp_defaults endpoint. Check log for more."}, status=500)
+
+def simulated_load(request):
+    try:
+        valid_keys = ["doe_reference_name","latitude","longitude","load_type","percent_share","annual_kwh",
+                        "monthly_totals_kwh","annual_mmbtu","annual_fraction","annual_tonhour","monthly_tonhour",
+                        "monthly_mmbtu","monthly_fraction","max_thermal_factor_on_peak_load","chiller_cop",
+                        "addressable_load_fraction", "cooling_doe_ref_name", "cooling_pct_share"]
+        for key in request.GET.keys():
+            k = key
+            if "[" in key:
+                k = key.split('[')[0]
+            if k not in valid_keys:
+                raise ValueError("{} is not a valid input parameter".format(key))
+        # Build inputs dictionary to send to http.jl /simulated_load endpoint
+        inputs = {}
+        inputs["latitude"] = float(request.GET['latitude'])  # need float to convert unicode
+        inputs["longitude"] = float(request.GET['longitude'])
+        inputs["load_type"] = request.GET.get('load_type')
+
+        # This parses the GET request way of sending a list/array for doe_reference_name, 
+        # i.e. doe_reference_name[0], doe_reference_name[1], etc
+        if 'doe_reference_name' in request.GET.keys():
+            inputs["doe_reference_name"] = request.GET.get('doe_reference_name')
+        elif 'doe_reference_name[0]' in request.GET.keys():
+            idx = 0
+            doe_reference_name = []
+            percent_share_list = []
+            while 'doe_reference_name[{}]'.format(idx) in request.GET.keys():
+                doe_reference_name.append(request.GET['doe_reference_name[{}]'.format(idx)])
+                if 'percent_share[{}]'.format(idx) in request.GET.keys():
+                    percent_share_list.append(float(request.GET['percent_share[{}]'.format(idx)]))
+                idx += 1
+            inputs["doe_reference_name"] = doe_reference_name
+            inputs["percent_share_list"] = percent_share_list
+
+        # When wanting cooling profile based on building type(s) for cooling, need separate cooling building(s)
+        if 'cooling_doe_ref_name' in request.GET.keys():
+            inputs["cooling_doe_ref_name"] = request.GET.get('cooling_doe_ref_name')
+        elif 'cooling_doe_ref_name[0]' in request.GET.keys():
+            idx = 0
+            cooling_doe_ref_name = []
+            cooling_pct_share_list = []
+            while 'cooling_doe_ref_name[{}]'.format(idx) in request.GET.keys():
+                cooling_doe_ref_name.append(request.GET['cooling_doe_ref_name[{}]'.format(idx)])
+                if 'cooling_pct_share[{}]'.format(idx) in request.GET.keys():
+                    cooling_pct_share_list.append(float(request.GET['cooling_pct_share[{}]'.format(idx)]))
+                idx += 1
+            inputs["cooling_doe_ref_name"] = cooling_doe_ref_name
+            inputs["cooling_pct_share"] = cooling_pct_share_list                
+
+        # Build the rest of inputs for http.jl /simulated_load endpoint
+        other_keys_types = ["annual", "monthly", "max_thermal_factor", "chiller_cop", "addressable"]
+        for key in valid_keys:
+            for key_type in other_keys_types:
+                if key_type in key:
+                    value = request.GET.get(key)
+                    if value is not None:
+                        inputs[key] = value
+
+        julia_host = os.environ.get('JULIA_HOST', "julia")
+        http_jl_response = requests.get("http://" + julia_host + ":8081/simulated_load/", json=inputs)
+        response = JsonResponse(
+            http_jl_response.json()
+        )
+        
+        return response
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected error in simulated_load endpoint. Check log for more."}, status=500)

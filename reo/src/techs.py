@@ -131,6 +131,10 @@ class PV(Tech):
         self.pvwatts = None
         self.sr_required_pct = kwargs.get("sr_required_pct")
 
+        # If site is in southern hemisphere and user has not changed from default azimuth of 180, update to 0 for all array types
+        if kwargs.get('latitude') < 0:
+            if self.azimuth == 180: # Assume user does not want array facing away from equator
+                self.azimuth = 0
         # if user hasn't entered the tilt (default value is 0.537), tilt value gets assigned based on array_type
         if self.tilt == 0.537:
             if kwargs.get('array_type') == 0:  # 0 are Ground Mount Fixed (Open Rack) arrays, we assume an optimal tilt
@@ -138,15 +142,7 @@ class PV(Tech):
                 start assuming the site is in the northern hemisphere, set the tilt to the latitude and leave the
                 default azimuth of 180 (unless otherwise specified)
                 """
-                self.tilt = kwargs.get('latitude')
-                if kwargs.get('latitude') < 0:
-                    """
-                    if the site is in the southern hemisphere, now set the tilt to the positive latitude value and
-                    change the azimuth to 0. Also update kwargs going forward so they get saved to the database later
-                    show up in final results
-                    """
-                    self.tilt = -1 * self.tilt
-                    self.azimuth = 0
+                self.tilt = abs(kwargs.get('latitude')) # if site is in southern hemisphere will set tilt to positive latitude value
             else:  # All other tilts come from lookup table included in the array_type_to_tilt_angle dictionary above
                 self.tilt = PV.array_type_to_tilt_angle[kwargs.get('array_type')]
 
@@ -179,16 +175,24 @@ class PV(Tech):
 
 class Wind(Tech):
     size_class_to_hub_height = {
-        'residential': 20,
+        'residential': 20,  # 3/17/22 got 30m from Wind team, but Wind Toolkit has increments of 20m
         'commercial': 40,
         'medium': 60,  # Owen Roberts provided 50m for medium size_class, but Wind Toolkit has increments of 20m
         'large': 80,
     }
-    size_class_to_installed_cost = {
-        'residential': 11950,
-        'commercial': 7390,
-        'medium': 4440,
-        'large': 3450,
+    size_class_to_installed_cost = { # indexed on api_version number
+        1: {
+            'residential': 11950,
+            'commercial': 7390,
+            'medium': 4440,
+            'large': 3450,
+        },
+        2: {
+            'residential': 5675,
+            'commercial': 4300,
+            'medium': 2766,
+            'large': 2239,
+        }
     }
 
     size_class_to_itc_incentives = {
@@ -198,7 +202,8 @@ class Wind(Tech):
         'large': 0.12,
     }
 
-    def __init__(self, dfm, inputs_path, acres_per_kw=.03, time_steps_per_hour=1, prod_factor_series_kw=None, **kwargs):
+    def __init__(self, dfm, inputs_path, acres_per_kw=.03, time_steps_per_hour=1, api_version=1,
+                prod_factor_series_kw=None, **kwargs):
         super(Wind, self).__init__(**kwargs)
 
         self.path_inputs = inputs_path
@@ -218,7 +223,8 @@ class Wind(Tech):
 
         # if user hasn't entered the installed cost per kw, it gets assigned based on size_class
         if kwargs.get('installed_cost_us_dollars_per_kw') == 3013:
-            self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs.get('size_class')]
+            self.installed_cost_us_dollars_per_kw = \
+                Wind.size_class_to_installed_cost[api_version][kwargs.get('size_class')]
 
         self.sam_prod_factor = None
         dfm.add_wind(self)

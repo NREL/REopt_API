@@ -234,14 +234,14 @@ function add_bigM_adjustments(m, p)
 		for mth in p.Month
 			if n > 1
 				m[:NewMaxDemandMonthsInTier][mth,n] = minimum([p.MaxDemandMonthsInTier[n],
-					added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] +
+					added_power + 2*maximum([100*p.ElecLoad[ts] + p.CoolingLoad[ts] +
                     add_ghp_heating_elec * p.HeatingLoad[ts]
 					for ts in p.TimeStepRatchetsMonth[mth]])  -
 					sum(m[:NewMaxDemandMonthsInTier][mth,np] for np in 1:(n-1))]
 				)
 			else
 				m[:NewMaxDemandMonthsInTier][mth,n] = minimum([p.MaxDemandMonthsInTier[n],
-					added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] +
+					added_power + 2*maximum([100*p.ElecLoad[ts] + p.CoolingLoad[ts] +
                     add_ghp_heating_elec * p.HeatingLoad[ts]
 					for ts in p.TimeStepRatchetsMonth[mth]])]
                 )
@@ -1077,7 +1077,8 @@ function add_tou_demand_charge_constraints(m, p)
 
 	if !isempty(p.DemandRates)
 		m[:DemandTOUCharges] = @expression(m, p.pwf_e * sum( p.DemandRates[r,e] * m[:dvPeakDemandE][r,e] for r in p.Ratchets, e in p.DemandBin) )
-
+	else
+		m[:DemandTOUCharges] = 0.0
 	end
 end
 
@@ -1147,7 +1148,7 @@ function add_cost_function(m, p)
 		# CHP Standby Charges
 		m[:TotalCHPStandbyCharges] * m[:r_tax_fraction_offtaker] +
 
-        ## Total Generator Fuel Costs, tax deductible for offtaker
+        ## Total Fuel Costs for all fuel-burning techs, tax deductible for offtaker
         m[:TotalFuelCharges] * m[:r_tax_fraction_offtaker] -
 
         # Subtract Incentives, which are taxable
@@ -1509,11 +1510,7 @@ function reopt_run(m, p::Parameter)
 	### Constraint set (11): Peak Electrical Power Demand Charges: binDemandMonthsTier
 	add_monthly_demand_charge_constraints(m, p)
 	### Constraint set (12): Peak Electrical Power Demand Charges: Ratchets
-	if !isempty(p.TimeStepRatchets)
-		add_tou_demand_charge_constraints(m, p)
-	else
-		m[:DemandTOUCharges] = 0
-	end
+	add_tou_demand_charge_constraints(m, p)
 	m[:TotalDemandCharges] = @expression(m, m[:DemandTOUCharges] + m[:DemandFlatCharges])
 	
 	### Constraint set (14): Coincident Peak Charges
@@ -2384,7 +2381,9 @@ function add_util_results(m, p, r::Dict)
 						"total_om_costs_after_tax" => round(total_om_costs_after_tax, digits=0),
 						"year_one_om_costs_after_tax" => round(year_one_om_costs_after_tax, digits=0),
 						"year_one_om_costs_before_tax" => round(year_one_om_costs_after_tax / m[:r_tax_fraction_owner], digits=0),
-						"off_grid_flag" => p.OffGridFlag
+						"off_grid_flag" => p.OffGridFlag,
+						"total_production_incentive_after_tax" => round(value(m[:TotalProductionIncentive]) * m[:r_tax_fraction_owner], digits=2),
+						"total_fuel_charges_after_tax" => round(value(m[:TotalFuelCharges]) * m[:r_tax_fraction_offtaker], digits=2)
 					)...)
 
     @expression(m, GridToLoad[ts in p.TimeStep],
