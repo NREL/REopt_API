@@ -1,0 +1,21 @@
+{
+    "Site": {
+        "latitude": 37.78,
+        "longitude": -122.45
+    },
+    "ExistingBoiler": {
+        "fuel_cost_per_mmbtu": 0.5
+    },
+    "ElectricLoad": {
+        "doe_reference_name": "Hospital",
+        "annual_kwh": 8760000.0
+    },
+    "SpaceHeatingLoad": {
+        "doe_reference_name": "Hospital",
+        "annual_mmbtu": 29897.6
+    },
+    "ElectricTariff": {
+        "urdb_label": "5e1676e95457a3f87673e3b0"
+    },
+    "APIMeta" : {}
+}
