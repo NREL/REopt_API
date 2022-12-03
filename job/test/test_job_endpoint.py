@@ -32,6 +32,7 @@ from tastypie.test import ResourceTestCaseMixin
 from django.test import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
 import logging
 logging.disable(logging.CRITICAL)
+import os
 
 
 class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
@@ -50,12 +51,12 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
                 "node": 3
             },
             "PV": {
-                "macrs_bonus_pct": 0.4,
+                "macrs_bonus_fraction": 0.4,
                 "installed_cost_per_kw": 2000.0,
                 "tilt": 34.579,
-                "degradation_pct": 0.005,
+                "degradation_fraction": 0.005,
                 "macrs_option_years": 5,
-                "federal_itc_pct": 0.3,
+                "federal_itc_fraction": 0.3,
                 "module_type": 0,
                 "array_type": 1,
                 "om_cost_per_kw": 16.0,
@@ -72,12 +73,12 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
                 "total_rebate_per_kw": 100.0,
                 "macrs_option_years": 5,
                 "can_grid_charge": True,
-                "macrs_bonus_pct": 0.4,
+                "macrs_bonus_fraction": 0.4,
                 "replace_cost_per_kw": 460.0,
                 "replace_cost_per_kwh": 230.0,
                 "installed_cost_per_kw": 1000.0,
                 "installed_cost_per_kwh": 500.0,
-                "total_itc_pct": 0.0
+                "total_itc_fraction": 0.0
             },
             "ElectricTariff": {
                 "urdb_label": "5ed6c1a15457a3367add15ae"
@@ -86,13 +87,13 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
                 "emissions_factor_series_lb_NOx_per_kwh": 1
             },
             "Financial": {
-                "elec_cost_escalation_pct": 0.026,
-                "offtaker_discount_pct": 0.081,
-                "owner_discount_pct": 0.081,
+                "elec_cost_escalation_rate_fraction": 0.026,
+                "offtaker_discount_rate_fraction": 0.081,
+                "owner_discount_rate_fraction": 0.081,
                 "analysis_years": 20,
-                "offtaker_tax_pct": 0.4,
-                "owner_tax_pct": 0.4,
-                "om_cost_escalation_pct": 0.025
+                "offtaker_tax_rate_fraction": 0.4,
+                "owner_tax_rate_fraction": 0.4,
+                "om_cost_escalation_rate_fraction": 0.025
             }
         }
 
@@ -110,7 +111,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(results["PV"]["size_kw"], 216.667, places=1)
         self.assertAlmostEqual(results["ElectricStorage"]["size_kw"], 55.9, places=1)
         self.assertAlmostEqual(results["ElectricStorage"]["size_kwh"], 78.9, places=1)
-        self.assertIsNotNone(results["Site"]["total_renewable_energy_pct"])
+        self.assertIsNotNone(results["Site"]["total_renewable_energy_fraction"])
         self.assertIsNotNone(results["Site"]["year_one_emissions_tonnes_CO2"])
         self.assertIsNotNone(results["Site"]["lifecycle_emissions_tonnes_NOx"])
 
@@ -119,7 +120,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         self.assertIsNotNone(updated_inputs["ElectricUtility"]["emissions_factor_series_lb_CO2_per_kwh"])
         self.assertIsNotNone(updated_inputs["Financial"]["NOx_grid_cost_per_tonne"])
         self.assertIsNotNone(updated_inputs["Financial"]["SO2_onsite_fuelburn_cost_per_tonne"])
-        self.assertIsNotNone(updated_inputs["Financial"]["PM25_cost_escalation_pct"])
+        self.assertIsNotNone(updated_inputs["Financial"]["PM25_cost_escalation_rate_fraction"])
 
     def test_off_grid_defaults(self):
         """
@@ -156,6 +157,39 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         # Validate that we got off-grid response fields
         self.assertAlmostEqual(results["Financial"]["offgrid_microgrid_lcoe_dollars_per_kwh"], 0.337, places=-3)
         self.assertAlmostEqual(results["ElectricTariff"]["year_one_bill_before_tax"], 0.0)
-        self.assertAlmostEqual(results["ElectricLoad"]["offgrid_load_met_pct"], 0.99999, places=-2)
+        self.assertAlmostEqual(results["ElectricLoad"]["offgrid_load_met_fraction"], 0.99999, places=-2)
         self.assertAlmostEqual(sum(results["ElectricLoad"]["offgrid_load_met_series_kw"]), 8760.0, places=-1)
         self.assertAlmostEqual(results["Financial"]["lifecycle_offgrid_other_annual_costs_after_tax"], 0.0, places=-2)
+
+    def test_chp_defaults_from_julia(self):
+        # Test that the inputs_with_defaults_set_in_julia feature worked for CHP, consistent with /chp_defaults
+        post_file = os.path.join('job', 'test', 'posts', 'chp_defaults_post.json')
+        post = json.load(open(post_file, 'r'))
+        # Make average MMBtu/hr thermal steam greater than 7 MMBtu/hr threshold for combustion_turbine to be chosen
+        # Default ExistingBoiler efficiency for production_type = steam is 0.75
+        post["SpaceHeatingLoad"]["annual_mmbtu"] = 8760 * 8 / 0.75
+        post["DomesticHotWaterLoad"]["annual_mmbtu"] = 8760 * 8 / 0.75
+        resp = self.api_client.post('/dev/job/', format='json', data=post)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+
+        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        r = json.loads(resp.content)
+        inputs_chp = r["inputs"]["CHP"]
+
+        avg_fuel_load = (post["SpaceHeatingLoad"]["annual_mmbtu"] + 
+                            post["DomesticHotWaterLoad"]["annual_mmbtu"]) / 8760.0
+        inputs_chp_defaults = {"existing_boiler_production_type": post["ExistingBoiler"]["production_type"],
+                            "avg_boiler_fuel_load_mmbtu_per_hour": avg_fuel_load
+            }
+
+        # Call to the django view endpoint /chp_defaults which calls the http.jl endpoint
+        resp = self.api_client.get(f'/dev/chp_defaults', data=inputs_chp_defaults)
+        view_response = json.loads(resp.content)
+
+        for key in view_response["default_inputs"].keys():
+            if post["CHP"].get(key) is None: # Check that default got assigned consistent with /chp_defaults
+                self.assertEquals(inputs_chp[key], view_response["default_inputs"][key])
+            else:  # Make sure we didn't overwrite user-input
+                self.assertEquals(inputs_chp[key], post["CHP"][key])
