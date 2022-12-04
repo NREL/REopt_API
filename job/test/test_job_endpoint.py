@@ -178,6 +178,29 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
             "CoolingLoad": {
                 "doe_reference_name": "Hospital",
                 "annual_tonhour": 5000.0
+            },
+            "SpaceHeatingLoad": {
+                "doe_reference_name": "Hospital",
+                "annual_mmbtu": 500.0
+            },
+            "ExistingBoiler": {
+                "production_type": "water",
+                "max_thermal_factor_on_peak_load": 1.25
+            },
+            "ExistingChiller": {
+                "cop": 3.4,
+                "max_thermal_factor_on_peak_load": 1.25
+            },
+            "CHP": {
+                "prime_mover": "recip_engine",
+                "fuel_cost_per_mmbtu": 10,
+                "min_kw": 100,
+                "max_kw": 100,
+                "electric_efficiency_full_load": 0.35,
+                "electric_efficiency_half_load": 0.35,
+                "min_turn_down_fraction": 0.1,
+                "thermal_efficiency_full_load": 0.45,
+                "thermal_efficiency_half_load": 0.45
             }
         }
 
