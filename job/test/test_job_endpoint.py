@@ -184,8 +184,9 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
                 "annual_mmbtu": 500.0
             },
             "ExistingBoiler": {
-                "production_type": "water",
-                "max_thermal_factor_on_peak_load": 1.25
+                "efficiency": 0.72,
+                "production_type": "steam",
+                "fuel_cost_per_mmbtu": 10
             },
             "ExistingChiller": {
                 "cop": 3.4,
