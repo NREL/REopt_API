@@ -92,10 +92,21 @@ function reopt(req::HTTP.Request)
 				:emissions_factor_series_lb_CO2_per_kwh, :emissions_factor_series_lb_NOx_per_kwh,
 				:emissions_factor_series_lb_SO2_per_kwh, :emissions_factor_series_lb_PM25_per_kwh
 			]
+            if haskey(d, "CHP")
+                inputs_with_defaults_from_chp = [
+                    :installed_cost_per_kw, :tech_sizes_for_cost_curve, :om_cost_per_kwh, 
+                    :electric_efficiency_full_load, :thermal_efficiency_full_load, :min_allowable_kw,
+                    :cooling_thermal_factor, :min_turn_down_fraction, :unavailability_periods
+                ]
+                chp_dict = Dict(key=>getfield(model_inputs.s.chp, key) for key in inputs_with_defaults_from_chp)
+            else
+                chp_dict = Dict()
+            end
 			inputs_with_defaults_set_in_julia = Dict(
 				"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_easiur),
-				"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert)
-			)
+				"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert),
+                "CHP" => chp_dict
+			)            
 		catch e
 			@error "Something went wrong in REopt optimization!" exception=(e, catch_backtrace())
 			error_response["error"] = sprint(showerror, e) # append instead of rewrite?
