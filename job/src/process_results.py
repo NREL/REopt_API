@@ -33,6 +33,8 @@ from job.models import REoptjlMessageOutputs, FinancialOutputs, APIMeta, PVOutpu
     
 import logging
 log = logging.getLogger(__name__)
+import sys
+import traceback
 
 def process_results(results: dict, run_uuid: str) -> None:
     """
@@ -95,6 +97,6 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
             debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(
                                                                             exc_type, 
                                                                             exc_value.args[0],
-                                                                            tb.format_tb(exc_traceback)
+                                                                            traceback.format_tb(exc_traceback)
                                                                         )
             log.debug(debug_msg)
