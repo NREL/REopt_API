@@ -103,6 +103,14 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
 
         post_file = os.path.join('job', 'test', 'posts', 'handle_reopt_error.json')
         post = json.load(open(post_file, 'r'))
+
+        resp = self.api_client.post('/dev/job/', format='json', data=post)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+
+        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        r = json.loads(resp.content)
         assert('errors' in r["messages"].keys())
         assert('warnings' in r["messages"].keys())
         assert(resp.status_code==400)
@@ -160,4 +168,4 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
             results = r["outputs"]
 
             self.assertAlmostEqual(results["Financial"]["npv"], 165.21, places=-2)
-            assert(resp.status_code==200)
+            assert(resp.status_code==200)          
