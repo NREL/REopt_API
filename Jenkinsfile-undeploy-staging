@@ -46,7 +46,7 @@ pipeline {
         WERF_LOG_VERBOSE = "true"
         WERF_SYNCHRONIZATION = ":local"
         DEPLOY_ENV = "staging"
-        RANCHER_PROJECT = "reopt-api-stage"
+        RANCHER_PROJECT = "reopt-api-staging"
         DB_BASE_NAME = "reopt_api_staging"
         XPRESS_LICENSE_HOST = credentials("reopt-api-xpress-license-host")
         NREL_ROOT_CERT_URL_ROOT = credentials("reopt-api-nrel-root-cert-url-root")
