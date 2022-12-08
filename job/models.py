@@ -4211,7 +4211,7 @@ class ExistingChillerOutputs(BaseModel, models.Model):
         help_text=("Year one hourly time series of electric chiller thermal to cooling load [Ton]")
     )
 
-    year_one_electric_consumption_series = ArrayField(
+    year_one_electric_consumption_series_kw = ArrayField(
         models.FloatField(
             blank=True
         ),
