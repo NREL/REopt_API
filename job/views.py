@@ -259,6 +259,10 @@ def results(request, run_uuid):
         # except: pass
         try: r["outputs"]["CHP"] = meta.CHPOutputs.dict
         except: pass
+        try: r["outputs"]["HeatingLoad"] = meta.HeatingLoadOutputs.dict
+        except: pass
+        try: r["outputs"]["CoolingLoad"] = meta.CoolingLoadOutputs.dict
+        except: pass
 
         for d in r["outputs"].values():
             if isinstance(d, dict):
