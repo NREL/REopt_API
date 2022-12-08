@@ -3832,7 +3832,7 @@ class CHPInputs(BaseModel, models.Model):
 
 
 class CHPOutputs(BaseModel, models.Model):
-    key = "CHP"
+    key = "CHPOutputs"
     meta = models.OneToOneField(
         to=APIMeta,
         on_delete=models.CASCADE,
@@ -4932,6 +4932,42 @@ class HeatingLoadOutputs(BaseModel, models.Model):
     )
 
     total_heating_thermal_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(MAX_BIG_NUMBER)
+            ],
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Hourly total heating load [MMBTU/hr]")
+    )
+
+    dhw_boiler_fuel_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(MAX_BIG_NUMBER)
+            ],
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Hourly domestic hot water load [MMBTU/hr]")
+    )
+
+    space_heating_boiler_fuel_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(MAX_BIG_NUMBER)
+            ],
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Hourly domestic space heating load [MMBTU/hr]")
+    )
+
+    total_heating_boiler_fuel_load_series_mmbtu_per_hour = ArrayField(
         models.FloatField(
             validators=[
                 MinValueValidator(0),
