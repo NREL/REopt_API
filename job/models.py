@@ -4182,7 +4182,7 @@ class ExistingChillerInputs(BaseModel, models.Model):
 
 class ExistingChillerOutputs(BaseModel, models.Model):
     
-    key = "ExistingChiller"
+    key = "ExistingChillerOutputs"
 
     meta = models.OneToOneField(
         APIMeta,
@@ -4395,7 +4395,7 @@ class ExistingBoilerInputs(BaseModel, models.Model):
 
 class ExistingBoilerOutputs(BaseModel, models.Model):
     
-    key = "ExistingBoiler"
+    key = "ExistingBoilerOutputs"
 
     meta = models.OneToOneField(
         APIMeta,
