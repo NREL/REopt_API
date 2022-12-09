@@ -173,7 +173,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
             "ElectricLoad": {
                 "blended_doe_reference_names": ["Hospital", "LargeOffice"],
                 "blended_doe_reference_percents": [0.75, 0.25],              
-                "annual_kwh": 8760.0
+                "annual_kwh": 876000.0
             },
             "CoolingLoad": {
                 "doe_reference_name": "Hospital",
