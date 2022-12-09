@@ -166,6 +166,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         Purpose of this test is to test the validity of Cooling Load possible_sets, in particular []/null and blend/hybrid
         """
         scenario = {
+            "Settings": {"run_bau": False},
             "Site": {"longitude": -118.1164613, "latitude": 34.5794343},
             "ElectricTariff": {"urdb_label": "5ed6c1a15457a3367add15ae"},
             "PV": {"max_kw": 0.0},
