@@ -214,7 +214,12 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         inputs = r["inputs"]
         results = r["outputs"]
-        json.dump(r, open("response.json", "w"))
+        self.assertIn("CoolingLoad", list(inputs.keys()))
+        self.assertIn("CoolingLoad", list(results.keys()))
+        self.assertIn("CHP", list(results.keys()))
+        self.assertIn("ExistingChiller",list(results.keys()))
+        self.assertIn("ExistingBoiler", list(results.keys()))
+        self.assertIn("HeatingLoad", list(results.keys()))
 
 
     def test_chp_defaults_from_julia(self):
