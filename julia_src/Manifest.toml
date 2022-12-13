@@ -670,7 +670,6 @@ deps = ["ArchGDAL", "CoolProp", "Dates", "DelimitedFiles", "HTTP", "JLD", "JSON"
 git-tree-sha1 = "b6234ebc897bf5fbf2fdaef3506617e87b9f02be"
 repo-rev = "limited-gen-reliability"
 repo-url = "https://github.com/NREL/REopt.jl.git"
-git-tree-sha1 = "01951cf0e5b4fbdfd9f3a63fb1076346c3fe3b69"
 uuid = "d36ad4e8-d74a-4f7a-ace1-eaea049febf6"
 version = "0.22.0"
 
