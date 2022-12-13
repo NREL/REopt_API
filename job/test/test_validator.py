@@ -256,3 +256,17 @@ class InputValidatorTests(TestCase):
                 assert("Missing required inputs." in validator.validation_errors[key])
             else: 
                 assert(key not in validator.validation_errors.keys())
+
+        # check for missing CHP inputs
+        post = copy.deepcopy(self.post)
+        post["APIMeta"]["run_uuid"] = uuid.uuid4()
+        post["CHP"].pop("fuel_cost_per_mmbtu")
+        validator = InputValidator(post)
+        validator.clean_fields()
+        validator.clean()
+        validator.cross_clean()
+        assert("required inputs" in validator.validation_errors["CHP"].keys())
+
+
+
+

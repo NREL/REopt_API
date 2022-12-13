@@ -35,4 +35,6 @@ urlpatterns = [
     re_path(r'^help/?$', views.help),
     re_path(r'^job/inputs/?$', views.inputs),
     re_path(r'^job/outputs/?$', views.outputs),
+    re_path(r'^chp_defaults/?$', views.chp_defaults),
+    re_path(r'^simulated_load/?$', views.simulated_load),
 ]
