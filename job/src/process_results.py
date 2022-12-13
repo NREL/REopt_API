@@ -30,8 +30,8 @@
 
 from job.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorageOutputs, ElectricTariffOutputs, SiteOutputs,\
     ElectricUtilityOutputs, GeneratorOutputs, ElectricLoadOutputs, WindOutputs, FinancialInputs, ElectricUtilityInputs,\
-	ExistingBoilerOutputs, ExistingChillerOutputs, CoolingLoadOutputs, HeatingLoadOutputs, HotThermalStorageOutputs,\
-    ColdThermalStorageOutputs
+	ExistingBoilerOutputs, CHPOutputs, CHPInputs, ExistingChillerOutputs, CoolingLoadOutputs, HeatingLoadOutputs,\
+    HotThermalStorageOutputs, ColdThermalStorageOutputs
 import logging
 log = logging.getLogger(__name__)
 
@@ -76,6 +76,8 @@ def process_results(results: dict, run_uuid: str) -> None:
         HeatingLoadOutputs.create(meta=meta, **results["HeatingLoad"]).save()
     if "CoolingLoad" in results.keys():
         CoolingLoadOutputs.create(meta=meta, **results["CoolingLoad"]).save()
+    if "CHP" in results.keys():
+        CHPOutputs.create(meta=meta, **results["CHP"]).save()
     # TODO process rest of results
 
 
@@ -91,6 +93,8 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
         # get input models that need updating
         FinancialInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["Financial"])
         ElectricUtilityInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["ElectricUtility"])
+        if inputs_to_update["CHP"]:  # Will be an empty dictionary if CHP is not considered
+            CHPInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["CHP"])
     except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(
