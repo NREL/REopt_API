@@ -25,6 +25,24 @@ Classify the change according to the following categories:
     ##### Deprecated
     ##### Removed
     ### Patches
+    
+## v2.4.0
+### Minor Updates
+##### Added 
+- In `job/models.py`:
+  - add **CHPInputs** model
+  - add **CHPOutputs** model
+- In `job/process_results.py` add **CHPOutputs**
+- In `job/validators.py` add new input models
+- In `job/views.py`:
+  - add new input/output models to properly save the inputs/outputs
+  - add `/chp_defaults` endpoint which calls the http.jl chp_defaults endpoint
+  - add `/simulated_load` endpoint which calls the http.jl simulated_load endpoint    
+    
+## v2.3.1
+### Minor Updates
+##### Fixed
+Lookback charge parameters expected from the URDB API call were changed to the non-caplitalized format, so they are now used properly.
 
 ## Develop
 ### Minor Updates
@@ -34,7 +52,6 @@ Classify the change according to the following categories:
 - changed `scalar_to_vector` helper function to `scalar_or_monthly_to_8760`
 
 ## v2.3.0
-### Minor Updates
 ##### Changed
 The following name changes were made in the `job/` endpoint and `julia_src/http.jl`: 
  - Change "_pct" to "_rate_fraction" for input and output names containing "discount", "escalation", and "tax_pct" (financial terms)
