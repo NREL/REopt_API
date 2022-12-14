@@ -87,31 +87,31 @@ class ERPMeta(BaseModel, models.Model):
         help_text="Version number of the REopt Julia package that is used to calculate reliability."
     )
 
-class ERPGeneratorBaseModel(BaseModel, models.Model):
-    @property
-    def dict(self):
-        """
-        Serialize Django Model.__dict__
-        NOTE: to get correct field types you must run self.clean_fields() first (eg. convert int to float)
-        :return: dict
-        """
-        d1 = self.__dict__
-        d2 = dict()
-        for (from_key, to_key) in [
-                                    ("operational_availability","generator_operational_availability"),
-                                    ("failure_to_start","generator_failure_to_start"),
-                                    ("failure_to_run","generator_failure_to_run"),
-                                    ("num_generators","num_generators"),
-                                    ("size_kw","generator_size_kw"),
-                                    ("fuel_limit","fuel_limit"),
-                                    ("fuel_intercept","generator_fuel_intercept"),
-                                    ("fuel_limit_is_per_generator","fuel_limit_is_per_generator"),
-                                    ("burn_rate_fuel_per_kwh","generator_burn_rate_fuel_per_kwh"),
-                                ]:
-            d2[to_key] = d1[from_key]
-        return d2
+# class ERPGeneratorBaseModel(BaseModel, models.Model):
+#     @property
+#     def dict(self):
+#         """
+#         Serialize Django Model.__dict__
+#         NOTE: to get correct field types you must run self.clean_fields() first (eg. convert int to float)
+#         :return: dict
+#         """
+#         d1 = self.__dict__
+#         d2 = dict()
+#         for (from_key, to_key) in [
+#                                     ("operational_availability","generator_operational_availability"),
+#                                     ("failure_to_start","generator_failure_to_start"),
+#                                     ("failure_to_run","generator_failure_to_run"),
+#                                     ("num_generators","num_generators"),
+#                                     ("size_kw","generator_size_kw"),
+#                                     ("fuel_limit","fuel_limit"),
+#                                     ("fuel_intercept","generator_fuel_intercept"),
+#                                     ("fuel_limit_is_per_generator","fuel_limit_is_per_generator"),
+#                                     ("burn_rate_fuel_per_kwh","generator_burn_rate_fuel_per_kwh"),
+#                                 ]:
+#             d2[to_key] = d1[from_key]
+#         return d2
 
-class ERPBackupGeneratorInputs(ERPGeneratorBaseModel, models.Model):
+class ERPBackupGeneratorInputs(BaseModel, models.Model):
     meta = models.OneToOneField(
         ERPMeta,
         on_delete=models.CASCADE,
@@ -271,26 +271,26 @@ class ERPElectricStorageInputs(BaseModel, models.Model):
         help_text=("Number of bins for modeling battery state of charge")
     )
 
-    @property
-    def dict(self):
-        """
-        Serialize Django Model.__dict__
-        NOTE: to get correct field types you must run self.clean_fields() first (eg. convert int to float)
-        :return: dict
-        """
-        d1 = self.__dict__
-        d2 = dict()
-        for (from_key, to_key) in [
-                                    ("operational_availability","battery_operational_availability"),
-                                    ("size_kw","battery_size_kw"),
-                                    ("size_kwh","battery_size_kwh"),
-                                    ("starting_soc_series_fraction","battery_starting_soc_series_fraction"),
-                                    ("charge_efficiency","battery_charge_efficiency"),
-                                    ("charge_disefficiency","battery_discharge_efficiency"),
-                                    ("num_battery_bins","num_battery_bins"),
-                                ]:
-            d2[to_key] = d1[from_key]
-        return d2
+    # @property
+    # def dict(self):
+    #     """
+    #     Serialize Django Model.__dict__
+    #     NOTE: to get correct field types you must run self.clean_fields() first (eg. convert int to float)
+    #     :return: dict
+    #     """
+    #     d1 = self.__dict__
+    #     d2 = dict()
+    #     for (from_key, to_key) in [
+    #                                 ("operational_availability","battery_operational_availability"),
+    #                                 ("size_kw","battery_size_kw"),
+    #                                 ("size_kwh","battery_size_kwh"),
+    #                                 ("starting_soc_series_fraction","battery_starting_soc_series_fraction"),
+    #                                 ("charge_efficiency","battery_charge_efficiency"),
+    #                                 ("charge_disefficiency","battery_discharge_efficiency"),
+    #                                 ("num_battery_bins","num_battery_bins"),
+    #                             ]:
+    #         d2[to_key] = d1[from_key]
+    #     return d2
 
 class ERPPVInputs(BaseModel, models.Model):
     meta = models.OneToOneField(
@@ -330,22 +330,22 @@ class ERPPVInputs(BaseModel, models.Model):
         help_text=("PV system output at each timestep, normalized to PV system size. Must be hourly (8,760 samples).")
     )
 
-    @property
-    def dict(self):
-        """
-        Serialize Django Model.__dict__
-        NOTE: to get correct field types you must run self.clean_fields() first (eg. convert int to float)
-        :return: dict
-        """
-        d1 = self.__dict__
-        d2 = dict()
-        for (from_key, to_key) in [
-                                    ("operational_availability","pv_operational_availability"),
-                                    ("size_kw","pv_size_kw"),
-                                    ("production_factor_series","pv_production_factor_series")
-                                ]:
-            d2[to_key] = d1[from_key]
-        return d2
+    # @property
+    # def dict(self):
+    #     """
+    #     Serialize Django Model.__dict__
+    #     NOTE: to get correct field types you must run self.clean_fields() first (eg. convert int to float)
+    #     :return: dict
+    #     """
+    #     d1 = self.__dict__
+    #     d2 = dict()
+    #     for (from_key, to_key) in [
+    #                                 ("operational_availability","pv_operational_availability"),
+    #                                 ("size_kw","pv_size_kw"),
+    #                                 ("production_factor_series","pv_production_factor_series")
+    #                             ]:
+    #         d2[to_key] = d1[from_key]
+    #     return d2
 
 class ERPOutageInputs(BaseModel, models.Model):
     meta = models.OneToOneField(
