@@ -66,6 +66,11 @@ class ERPMeta(BaseModel, models.Model):
         default="",
         help_text="The assigned unique ID of a signed in REopt user."
     )
+    reopt_run_uuid = models.UUIDField(
+        blank=True,
+        null=True,
+        help_text="The unique ID of a REopt optimization run from which to load inputs."
+    )
     job_type = models.TextField(
         default='developer.nrel.gov'
     )
@@ -82,129 +87,127 @@ class ERPMeta(BaseModel, models.Model):
         help_text="Version number of the REopt Julia package that is used to calculate reliability."
     )
 
-class ERPInputs(BaseModel, models.Model):
+class ERPGeneratorBaseModel(BaseModel, models.Model):
+    @property
+    def dict(self):
+        """
+        Serialize Django Model.__dict__
+        NOTE: to get correct field types you must run self.clean_fields() first (eg. convert int to float)
+        :return: dict
+        """
+        d1 = self.__dict__
+        d2 = dict()
+        for (from_key, to_key) in [
+                                    ("operational_availability","generator_operational_availability"),
+                                    ("failure_to_start","generator_failure_to_start"),
+                                    ("failure_to_run","generator_failure_to_run"),
+                                    ("num_generators","num_generators"),
+                                    ("size_kw","generator_size_kw"),
+                                    ("fuel_limit","fuel_limit"),
+                                    ("fuel_intercept","generator_fuel_intercept"),
+                                    ("fuel_limit_is_per_generator","fuel_limit_is_per_generator"),
+                                    ("burn_rate_fuel_per_kwh","generator_burn_rate_fuel_per_kwh"),
+                                ]:
+            d2[to_key] = d1[from_key]
+        return d2
 
+class ERPBackupGeneratorInputs(ERPGeneratorBaseModel, models.Model):
     meta = models.OneToOneField(
         ERPMeta,
         on_delete=models.CASCADE,
         primary_key=True,
-        related_name="ERPInputs"
+        related_name="ERPBackupGeneratorInputs"
     )
-    reopt_run_uuid = models.UUIDField(
-        blank=True,
-        null=True,
-        help_text="The unique ID of a REopt optimization run from which to load inputs."
-    )
-    def generator_operational_availability_default():
-        return [0.9998]
-    generator_operational_availability = ArrayField(
-        models.FloatField(
-            blank=True,
-            validators=[
-                MinValueValidator(0),
-                MaxValueValidator(1)
-            ]
-        ),
-        default=generator_operational_availability_default, 
+    operational_availability = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        default=0.9998, 
         blank=True,
         help_text=("Fraction of year generators not down for maintenance")
     )
-    def generator_failure_to_start_default():
-        return [0.0066]
-    generator_failure_to_start = ArrayField(
-        models.FloatField(
-            blank=True,
-            validators=[
-                MinValueValidator(0),
-                MaxValueValidator(1)
-            ]
-        ),
-        default=generator_failure_to_start_default,
+    failure_to_start = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        default=0.0066,
         blank=True,
         help_text=("Chance of generator starting given outage")
     )
-    def generator_failure_to_run_default():
-        return [0.00157]
-    generator_failure_to_run = ArrayField(
-        models.FloatField(
-            blank=True,
-            validators=[
-                MinValueValidator(0),
-                MaxValueValidator(1)
-            ]
-        ),
-        default=generator_failure_to_run_default,
+    failure_to_run = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        default=0.00157,
         blank=True,
         help_text=("Chance of generator failing in each hour of outage")
     )
-    def num_generators_default():
-        return [1]
-    num_generators = ArrayField(
-        models.IntegerField(
-            validators=[
-                MinValueValidator(1)
-            ]
-        ),
+    num_generators = models.IntegerField(
+        validators=[
+            MinValueValidator(1)
+        ],
         blank=True,
-        default=num_generators_default,
+        default=1,
         help_text=("Number of generators")
     )
-    def generator_size_kw_default():
-        return [0.0]
-    generator_size_kw = ArrayField(
-        models.FloatField(
-            blank=True,
-            validators=[
-                MinValueValidator(0),
-                MaxValueValidator(1.0e9)
-            ]
-        ),
+    size_kw = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
         blank=True,
-        default=generator_size_kw_default,
+        default=0.0,
         help_text=("Backup generator capacity")
     )
-    fuel_limit = ArrayField(
-        models.FloatField(
-            blank=True,
-            validators=[
-                MinValueValidator(0),
-                MaxValueValidator(1.0e9)
-            ]
-        ),
+    fuel_limit = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
         blank=True,
-        default=generator_size_kw_default,
+        default=1.0e9,
         help_text=("Amount of fuel available, by generator type, either per type or per generator depending on value of fuel_limit_is_per_generator.")
-    )
-    generator_fuel_intercept = ArrayField(
-        models.FloatField(
-            blank=True,
-            validators=[
-                MinValueValidator(0),
-                MaxValueValidator(1.0e9)
-            ]
-        ),
-        blank=True,
-        default=generator_size_kw_default,
-        help_text=("Amount of fuel burned per time step by each generator type while idling.")
     )
     fuel_limit_is_per_generator = models.BooleanField(
         default=True,
         blank=True,
         help_text=("Whether fuel_limit is per generator or per generator type")
     )
-    generator_burn_rate_fuel_per_kwh = ArrayField(
-        models.FloatField(
-            blank=True,
-            validators=[
-                MinValueValidator(0),
-                MaxValueValidator(1.0e9)
-            ]
-        ),
+    electric_efficiency_half_load = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0)
+        ],
         blank=True,
-        default=generator_size_kw_default,
-        help_text=("Amount of fuel used per kWh produced by each generator type.")
+        null=True,
+        help_text=("Electric efficiency of the generator running at half load.")
     )
-    battery_operational_availability = models.FloatField(
+    electric_efficiency_full_load = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        default=0.34,
+        help_text=("Electric efficiency of the generator running at full load.")
+    )
+
+    def clean(self):
+        if not self.electric_efficiency_half_load:
+            self.electric_efficiency_half_load = self.electric_efficiency_full_load
+
+
+class ERPElectricStorageInputs(BaseModel, models.Model):
+    meta = models.OneToOneField(
+        ERPMeta,
+        on_delete=models.CASCADE,
+        primary_key=True,
+        related_name="ERPElectricStorageInputs"
+    )
+    operational_availability = models.FloatField(
         blank=True,
         default=1.0,
         validators=[
@@ -213,7 +216,7 @@ class ERPInputs(BaseModel, models.Model):
         ],
         help_text=("Fraction of year battery system not down for maintenance")
     )
-    battery_size_kw = models.FloatField(
+    size_kw = models.FloatField(
         blank=True,
         default=0.0,
         validators=[
@@ -222,7 +225,7 @@ class ERPInputs(BaseModel, models.Model):
         ],
         help_text=("Battery kW power capacity")
     )
-    battery_size_kwh = models.FloatField(
+    size_kwh = models.FloatField(
         blank=True,
         default=0.0,
         validators=[
@@ -231,7 +234,7 @@ class ERPInputs(BaseModel, models.Model):
         ],
         help_text=("Battery kWh energy capacity")
     )
-    battery_starting_soc_series_fraction = ArrayField(
+    starting_soc_series_fraction = ArrayField(
         models.FloatField(
             validators=[
                 MinValueValidator(0)
@@ -241,7 +244,7 @@ class ERPInputs(BaseModel, models.Model):
         default=list,
         help_text=("Battery state of charge fraction when an outage begins, at each timestep. Must be hourly (8,760 samples).")
     )
-    battery_charge_efficiency = models.FloatField(
+    charge_efficiency = models.FloatField(
         blank=True,
         default=0.948,
         validators=[
@@ -267,7 +270,36 @@ class ERPInputs(BaseModel, models.Model):
         ],
         help_text=("Number of bins for modeling battery state of charge")
     )
-    pv_operational_availability = models.FloatField(
+
+    @property
+    def dict(self):
+        """
+        Serialize Django Model.__dict__
+        NOTE: to get correct field types you must run self.clean_fields() first (eg. convert int to float)
+        :return: dict
+        """
+        d1 = self.__dict__
+        d2 = dict()
+        for (from_key, to_key) in [
+                                    ("operational_availability","battery_operational_availability"),
+                                    ("size_kw","battery_size_kw"),
+                                    ("size_kwh","battery_size_kwh"),
+                                    ("starting_soc_series_fraction","battery_starting_soc_series_fraction"),
+                                    ("charge_efficiency","battery_charge_efficiency"),
+                                    ("charge_disefficiency","battery_discharge_efficiency"),
+                                    ("num_battery_bins","num_battery_bins"),
+                                ]:
+            d2[to_key] = d1[from_key]
+        return d2
+
+class ERPPVInputs(BaseModel, models.Model):
+    meta = models.OneToOneField(
+        ERPMeta,
+        on_delete=models.CASCADE,
+        primary_key=True,
+        related_name="ERPPVInputs"
+    )    
+    operational_availability = models.FloatField(
         blank=True,
         default=1.0,
         validators=[
@@ -276,7 +308,7 @@ class ERPInputs(BaseModel, models.Model):
         ],
         help_text=("Fraction of year PV system not down for maintenance")
     )
-    pv_size_kw = models.FloatField(
+    size_kw = models.FloatField(
         blank=True,
         default=0.0,
         validators=[
@@ -286,7 +318,7 @@ class ERPInputs(BaseModel, models.Model):
         help_text=("PV system capacity")
     )
     #TODO: add _kw_per_kw_rated?
-    pv_production_factor_series = ArrayField(
+    production_factor_series = ArrayField(
         models.FloatField(
             validators=[
                 MinValueValidator(0),
@@ -297,14 +329,30 @@ class ERPInputs(BaseModel, models.Model):
         default=list,
         help_text=("PV system output at each timestep, normalized to PV system size. Must be hourly (8,760 samples).")
     )
-    chp_size_kw = models.FloatField(
-        blank=True,
-        default=0.0,
-        validators=[
-            MinValueValidator(0),
-            MaxValueValidator(1.0e9)
-        ],
-        help_text=("CHP system electric capacity")
+
+    @property
+    def dict(self):
+        """
+        Serialize Django Model.__dict__
+        NOTE: to get correct field types you must run self.clean_fields() first (eg. convert int to float)
+        :return: dict
+        """
+        d1 = self.__dict__
+        d2 = dict()
+        for (from_key, to_key) in [
+                                    ("operational_availability","pv_operational_availability"),
+                                    ("size_kw","pv_size_kw"),
+                                    ("production_factor_series","pv_production_factor_series")
+                                ]:
+            d2[to_key] = d1[from_key]
+        return d2
+
+class ERPOutageInputs(BaseModel, models.Model):
+    meta = models.OneToOneField(
+        ERPMeta,
+        on_delete=models.CASCADE,
+        primary_key=True,
+        related_name="ERPOutageInputs"
     )
     max_outage_duration = models.IntegerField(
         blank=True,
@@ -321,16 +369,18 @@ class ERPInputs(BaseModel, models.Model):
     )
 
     def clean(self):
-        if type(self.generator_operational_availability) != list:
-            self.generator_operational_availability = [self.generator_operational_availability]
-        if type(self.generator_failure_to_start) != list:
-            self.generator_failure_to_start = [self.generator_failure_to_start]
-        if type(self.generator_failure_to_run) != list:
-            self.generator_failure_to_run = [self.generator_failure_to_run]
-        if type(self.num_generators) != list:
-            self.num_generators = [self.num_generators]
         if type(self.generator_size_kw) != list:
             self.generator_size_kw = [self.generator_size_kw]
+        for gen_list_input_name in ["generator_operational_availability",
+                                    "generator_failure_to_start",
+                                    "generator_failure_to_run",
+                                    "num_generators"]:
+            if type(getattr(self, gen_list_input_name)) != list:
+                setattr(self, gen_list_input_name, [getattr(self, gen_list_input_name)])
+            if len(getattr(self, gen_list_input_name)) == 0:
+                num_gen_types = len(self.generator_size_kw)
+                setattr(self, gen_list_input_name, [gen_input_default(input_name=gen_list_input_name)]*num_gen_types)
+            self.errors.append('List is empty for {}.'.format(name))
 
     
 class ERPOutputs(BaseModel, models.Model):
@@ -450,14 +500,68 @@ def get_erp_input_dict_from_run_uuid(run_uuid:str):
     """
     Construct the input dict for REopt backup reliability
     """
-    meta = ERPMeta.objects.select_related("ERPInputs").get(run_uuid=run_uuid)
+    meta = ERPMeta.objects.select_related("ERPOutageInputs").get(run_uuid=run_uuid)
 
     def filter_none_and_empty_array(d:dict):
         return {k: v for (k, v) in d.items() if v not in [None, [], {}]}
 
+    def add_tech_prefixes(d:dict, prefix):
+        keys_to_add_tech_prefix = {
+                                    "operational_availability",
+                                    "failure_to_start",
+                                    "failure_to_run",
+                                    "size_kw",
+                                    "fuel_intercept",
+                                    "burn_rate_fuel_per_kwh",
+                                    "operational_availability",
+                                    "size_kw",
+                                    "size_kwh",
+                                    "starting_soc_series_fraction",
+                                    "charge_efficiency",
+                                    "charge_disefficiency",
+                                    "operational_availability",
+                                    "size_kw",
+                                    "production_factor_series",
+                                }
+        return {(prefix + "_" + k if k in keys_to_add_tech_prefix else k): v for (k, v) in d.items()}
+    
+    def merge_generator_inputs(gen_dicts:list):
+        #assumes gen_dicts not empty and all dicts in it have all same keys
+        return {k: [gen_type[k] for gen_type in gen_dicts] for k in gen_dicts[0].keys()}
+
     d = dict()
-    d = filter_none_and_empty_array(meta.ERPInputs.dict)
-    d.pop('reopt_run_uuid',None) # Remove REopt run_uuid from inputs dict because it is not used by the REopt julia package
     d["user_uuid"] = meta.user_uuid # Add user_uuid for error handling in run_erp_task
+    d.update(filter_none_and_empty_array(meta.ERPOutageInputs.dict))
+    try:
+        d.update(add_tech_prefixes(filter_none_and_empty_array(meta.ERPElectricStorageInputs.dict),"battery"))
+    except:
+        pass
+    try:
+        d.update(add_tech_prefixes(filter_none_and_empty_array(meta.ERPPVInputs.dict),"pv"))
+    except:
+        pass
+    gen_dicts = []
+    try:
+        gen_dicts += meta.ERPBackupGeneratorInputs.dict
+    except:
+        pass
+    try:
+        gen_dicts += meta.ERPPrimeGeneratorInputs.dict
+    except:
+        pass
+    try:
+        gen_dicts += meta.ERPCHPInputs.dict
+    except:
+        pass
+    if gen_dicts != []:
+        d.update(filter_none_and_empty_array(merge_generator_inputs(gen_dicts)))
+
+    # TODO: do this instead once extend input structure changes to julia
+    # d["BackupGenerator"] = filter_none_and_empty_array(meta.ERPBackupGeneratorInputs.dict)
+    # d["PrimeGenerator"] = filter_none_and_empty_array(meta.ERPPrimeGeneratorInputs.dict)
+    # d["CHP"] = filter_none_and_empty_array(meta.ERPCHPInputs.dict)
+    # d["ElectricStorage"] = filter_none_and_empty_array(meta.ERPElectricStorageInputs.dict)
+    # d["PV"] = filter_none_and_empty_array(meta.ERPPVInputs.dict)
+    # d["Outage"] = filter_none_and_empty_array(meta.ERPOutageInputs.dict)
 
     return d
