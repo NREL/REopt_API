@@ -534,25 +534,17 @@ def get_erp_input_dict_from_run_uuid(run_uuid:str):
     d.update(filter_none_and_empty_array(meta.ERPOutageInputs.dict))
     try:
         d.update(add_tech_prefixes(filter_none_and_empty_array(meta.ERPElectricStorageInputs.dict),"battery"))
-    except:
-        pass
+    except: pass
     try:
         d.update(add_tech_prefixes(filter_none_and_empty_array(meta.ERPPVInputs.dict),"pv"))
-    except:
-        pass
+    except: pass
     gen_dicts = []
-    try:
-        gen_dicts += meta.ERPBackupGeneratorInputs.dict
-    except:
-        pass
-    try:
-        gen_dicts += meta.ERPPrimeGeneratorInputs.dict
-    except:
-        pass
-    try:
-        gen_dicts += meta.ERPCHPInputs.dict
-    except:
-        pass
+    try: gen_dicts += meta.ERPBackupGeneratorInputs.dict 
+    except: pass
+    try: gen_dicts += meta.ERPPrimeGeneratorInputs.dict
+    except: pass
+    try: gen_dicts += meta.ERPCHPInputs.dict
+    except: pass
     if gen_dicts != []:
         d.update(filter_none_and_empty_array(merge_generator_inputs(gen_dicts)))
 
