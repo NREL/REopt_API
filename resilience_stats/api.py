@@ -132,7 +132,11 @@ class ERPJob(ModelResource):
                     meta_dict["messages"]["error"] = str(err.message)
                     raise ImmediateHttpResponse(HttpResponse(json.dumps(meta_dict), status=400))
 
-                # Get inputs from a REopt run in database
+                ### Get values from REopt run for inputs that user has not provided ###
+                # Note: have to try/except for CHP, ElectricStorage, and Generator models 
+                # because may not exist (not PV because just get empty list)
+
+                ## Get Meta model, validating reopt run_uuid ##
                 try:
                     reopt_run_meta = APIMeta.objects.select_related(
                         "ElectricLoadOutputs",
@@ -142,10 +146,14 @@ class ERPJob(ModelResource):
                     meta_dict["status"] = "Validation Error. See messages for details."
                     meta_dict["messages"] = {}
                     meta_dict["messages"]["error"] = "Invalid run_uuid {}, REopt run does not exist.".format(reopt_run_uuid)
-                    raise ImmediateHttpResponse(HttpResponse(json.dumps(meta_dict), content_type='application/json', status=404))
+                    raise ImmediateHttpResponse(HttpResponse(
+                                        json.dumps(meta_dict), 
+                                        content_type='application/json', 
+                                        status=404))
                 
                 #TODO: put all of this stuff below in a helper function, or in clean or save django methods?
 
+                ## Outage ##
                 critical_loads_kw = reopt_run_meta.ElectricLoadOutputs.dict["critical_load_series_kw"]
                 if bundle.data.get("Outage", None) is None:
                      bundle.data["Outage"] = {"critical_loads_kw": critical_loads_kw}
@@ -154,36 +162,39 @@ class ERPJob(ModelResource):
                 # TODO: set max_outage_duration based on reopt outage inputs when multiple outage PR merged
                 # if bundle.data["Outage"].get("max_outage_duration", None) is None: 
                 #     bundle.data["Outage"]["max_outage_duration"] = max(reopt_run_meta.ElectricUtilityInputs.dict["outage_durations"])
-                
-                # Have to try for CHP, PV, Storage, and Generator models because may not exist
-                
-                # BackupGenerator
+                                
+                ## BackupGenerator ##
+                gen_out = None
                 try:
-                    if bundle.data.get("BackupGenerator", {}).get("generator_size_kw", None) is None:
-                        gen = reopt_run_meta.GeneratorOutputs.dict
+                    gen_out = reopt_run_meta.GeneratorOutputs.dict
+                except AttributeError as e: 
+                    pass
+                if "BackupGenerator" not in bundle.data and \
+                                gen_out is not None and \
+                                gen_out.get("size_kw", 0) > 0:
+                    bundle.data["BackupGenerator"] = {}
+                # if "BackupGenerator" is still not in bundle.data then not being included
+                if "BackupGenerator" in bundle.data:
+                    if bundle.data["BackupGenerator"].get("generator_size_kw", None) is None \
+                                                                    and gen_out is not None:
                         num_generators = bundle.data["BackupGenerator"].get("num_generators", None)
                         if num_generators is not None:
-                            #TODO: deal with num_generators being list of len > 1
-                            if type(num_generators) == list:
-                                bundle.data["BackupGenerator"]["generator_size_kw"] = gen.get("size_kw", 0) / num_generators[0]
-                            else:
-                                bundle.data["BackupGenerator"]["generator_size_kw"] = gen.get("size_kw", 0) / num_generators
+                            bundle.data["BackupGenerator"]["generator_size_kw"] = gen_out.get("size_kw", 0) / num_generators
                         else:
-                            bundle.data["BackupGenerator"]["generator_size_kw"] = gen.get("size_kw", 0)
-                except AttributeError as e: 
-                    pass
-                try:
-                    gen_in = reopt_run_meta.GeneratorInputs.dict
-                    # Loop through gen inputs that can be taken from reopt inputs
-                    for field_name in ["fuel_avail_gal", "electric_efficiency_half_load", "electric_efficiency_full_load"]:
-                        if bundle.data.get("BackupGenerator", {}).get(field_name, None) is None:
-                            #if bundle.data.get("BackupGenerator", None) is None then need to create first
-                            # does it always get created? only if non-zero in reopt outputs?
-                            bundle.data["BackupGenerator"][field_name] = gen_in[field_name]
-                except AttributeError as e: 
-                    pass
+                            bundle.data["BackupGenerator"]["generator_size_kw"] = gen_out.get("size_kw", 0)
+                    try:
+                        gen_in = reopt_run_meta.GeneratorInputs.dict
+                        for field_name in [
+                                            "fuel_avail_gal", 
+                                            "electric_efficiency_half_load", 
+                                            "electric_efficiency_full_load"
+                                        ]:
+                            if bundle.data["BackupGenerator"].get(field_name, None) is None:
+                                bundle.data["BackupGenerator"][field_name] = gen_in[field_name]
+                    except AttributeError as e: 
+                        pass
 
-                
+                ## CHP/PrimeGenerator ##
                 try:
                     #TODO: how to distinguish CHP from prime generator using the CHP model?
                     if bundle.data.get("chp_size_kw", None) is None: 
@@ -191,6 +202,7 @@ class ERPJob(ModelResource):
                 except AttributeError as e:
                     pass
 
+                ## PV ##
                 pvs = reopt_run_meta.PVOutputs.all()
                 pv_size_kw = 0
                 pv_kw_series = np.zeros(len(critical_loads_kw))
@@ -209,6 +221,7 @@ class ERPJob(ModelResource):
                 if bundle.data.get("pv_production_factor_series", None) is None: 
                     bundle.data["pv_production_factor_series"] = (np.array(pv_kw_series) / pv_size_kw).tolist()
                 
+                ## ElectricStorage ##
                 try:
                     stor_out = reopt_run_meta.ElectricStorageOutputs.dict
                     stor_in = reopt_run_meta.ElectricStorageInputs.dict
