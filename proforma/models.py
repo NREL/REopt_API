@@ -73,7 +73,7 @@ class ProForma(models.Model):
     def output_file(self):
         folder = os.path.join(os.getcwd(),'static', 'files', str(self.uuid))
         if not os.path.exists(folder):
-            os.mkdir(folder)
+            os.makedirs(folder)
         return os.path.join(folder, self.output_file_name)
           
     def generate_spreadsheet(self):
