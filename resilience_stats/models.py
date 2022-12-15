@@ -103,9 +103,9 @@ class ERPMeta(BaseModel, models.Model):
 #                                     ("failure_to_run","generator_failure_to_run"),
 #                                     ("num_generators","num_generators"),
 #                                     ("size_kw","generator_size_kw"),
-#                                     ("fuel_limit","fuel_limit"),
+#                                     ("fuel_avail_gal","fuel_avail_gal"),
 #                                     ("fuel_intercept","generator_fuel_intercept"),
-#                                     ("fuel_limit_is_per_generator","fuel_limit_is_per_generator"),
+#                                     ("fuel_avail_gal_is_per_generator","fuel_avail_gal_is_per_generator"),
 #                                     ("burn_rate_fuel_per_kwh","generator_burn_rate_fuel_per_kwh"),
 #                                 ]:
 #             d2[to_key] = d1[from_key]
@@ -162,19 +162,19 @@ class ERPBackupGeneratorInputs(BaseModel, models.Model):
         default=0.0,
         help_text=("Backup generator capacity")
     )
-    fuel_limit = models.FloatField(
+    fuel_avail_gal = models.FloatField(
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e9)
         ],
         blank=True,
         default=1.0e9,
-        help_text=("Amount of fuel available, by generator type, either per type or per generator depending on value of fuel_limit_is_per_generator.")
+        help_text=("Amount of diesel fuel available, either for all backup generators or per generator depending on value of fuel_avail_gal_is_per_generator.")
     )
-    fuel_limit_is_per_generator = models.BooleanField(
-        default=True,
+    fuel_avail_gal_is_per_generator = models.BooleanField(
+        default=False,
         blank=True,
-        help_text=("Whether fuel_limit is per generator or per generator type")
+        help_text=("Whether fuel_avail_gal is per generator or per generator type")
     )
     electric_efficiency_half_load = models.FloatField(
         validators=[
