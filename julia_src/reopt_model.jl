@@ -234,14 +234,14 @@ function add_bigM_adjustments(m, p)
 		for mth in p.Month
 			if n > 1
 				m[:NewMaxDemandMonthsInTier][mth,n] = minimum([p.MaxDemandMonthsInTier[n],
-					added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] +
+					added_power + 2*maximum([100*p.ElecLoad[ts] + p.CoolingLoad[ts] +
                     add_ghp_heating_elec * p.HeatingLoad[ts]
 					for ts in p.TimeStepRatchetsMonth[mth]])  -
 					sum(m[:NewMaxDemandMonthsInTier][mth,np] for np in 1:(n-1))]
 				)
 			else
 				m[:NewMaxDemandMonthsInTier][mth,n] = minimum([p.MaxDemandMonthsInTier[n],
-					added_power + 2*maximum([p.ElecLoad[ts] + p.CoolingLoad[ts] +
+					added_power + 2*maximum([100*p.ElecLoad[ts] + p.CoolingLoad[ts] +
                     add_ghp_heating_elec * p.HeatingLoad[ts]
 					for ts in p.TimeStepRatchetsMonth[mth]])]
                 )
@@ -1069,7 +1069,8 @@ function add_tou_demand_charge_constraints(m, p)
 
 	if !isempty(p.DemandRates)
 		m[:DemandTOUCharges] = @expression(m, p.pwf_e * sum( p.DemandRates[r,e] * m[:dvPeakDemandE][r,e] for r in p.Ratchets, e in p.DemandBin) )
-
+	else
+		m[:DemandTOUCharges] = 0.0
 	end
 end
 
@@ -1499,11 +1500,7 @@ function reopt_run(m, p::Parameter)
 	### Constraint set (11): Peak Electrical Power Demand Charges: binDemandMonthsTier
 	add_monthly_demand_charge_constraints(m, p)
 	### Constraint set (12): Peak Electrical Power Demand Charges: Ratchets
-	if !isempty(p.TimeStepRatchets)
-		add_tou_demand_charge_constraints(m, p)
-	else
-		m[:DemandTOUCharges] = 0
-	end
+	add_tou_demand_charge_constraints(m, p)
 	m[:TotalDemandCharges] = @expression(m, m[:DemandTOUCharges] + m[:DemandFlatCharges])
 	
 	### Constraint set (14): Coincident Peak Charges
