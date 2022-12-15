@@ -253,7 +253,7 @@ class ERPElectricStorageInputs(BaseModel, models.Model):
         ],
         help_text=("Efficiency of charging battery")
     )
-    battery_discharge_efficiency = models.FloatField(
+    discharge_efficiency = models.FloatField(
         blank=True,
         default=0.948,
         validators=[
