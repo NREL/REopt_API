@@ -53,6 +53,7 @@ Classify the change according to the following categories:
 Lookback charge parameters expected from the URDB API call were changed to the non-caplitalized format, so they are now used properly.
 
 ## v2.3.0
+### Minor Updates
 ##### Changed
 The following name changes were made in the `job/` endpoint and `julia_src/http.jl`: 
  - Change "_pct" to "_rate_fraction" for input and output names containing "discount", "escalation", and "tax_pct" (financial terms)
@@ -61,6 +62,7 @@ The following name changes were made in the `job/` endpoint and `julia_src/http.
  - Updated the version of REopt.jl in /julia_src to v0.20.0 which includes the addition of:
    - Boiler tech from the REopt_API (known as NewBoiler in API)
    - SteamTurbine tech from the REopt_API 
+
 ## v2.2.0
 ### Minor Updates 
 ##### Fixed
