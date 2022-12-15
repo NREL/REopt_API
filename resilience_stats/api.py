@@ -106,12 +106,23 @@ class ERPJob(ModelResource):
             test_case = bundle.request.META.get('HTTP_USER_AGENT','')
             if test_case.startswith('check_http/'):
                 meta_dict["job_type"] = 'Monitoring'
+
+            reopt_run_uuid = bundle.data.get("reopt_run_uuid", None)
+            meta_dict["reopt_run_uuid"] = reopt_run_uuid
+
             meta = ERPMeta.create(**meta_dict)
             meta.clean_fields()
             meta.save()
 
-            reopt_run_uuid = bundle.data.get("reopt_run_uuid", None)
-            if reopt_run_uuid is not None:
+            if reopt_run_uuid is None:
+                if bundle.data.get("CHP", None) or bundle.data.get("PrimeGenerator", None):
+                    meta_dict["status"] = "Validation Error. See messages for details."
+                    meta_dict["messages"] = {}
+                    meta_dict["messages"]["error"] = "Running ERP with CHP or PrimeGenerator but no reopt_run_uuid is not yet supported."
+                    raise ImmediateHttpResponse(HttpResponse(json.dumps(meta_dict),
+                                            content_type='application/json',
+                                            status=400))
+            else:
                 #TODO: put in helper function for more readable code
                 try:
                     validate_run_uuid(reopt_run_uuid)
@@ -126,7 +137,6 @@ class ERPJob(ModelResource):
                     reopt_run_meta = APIMeta.objects.select_related(
                         "ElectricLoadOutputs",
                     ).get(run_uuid=reopt_run_uuid)
-                    
                 except:
                     # Handle non-existent REopt runs
                     meta_dict["status"] = "Validation Error. See messages for details."
@@ -135,11 +145,45 @@ class ERPJob(ModelResource):
                     raise ImmediateHttpResponse(HttpResponse(json.dumps(meta_dict), content_type='application/json', status=404))
                 
                 #TODO: put all of this stuff below in a helper function, or in clean or save django methods?
+
                 critical_loads_kw = reopt_run_meta.ElectricLoadOutputs.dict["critical_load_series_kw"]
-                if bundle.data.get("critical_loads_kw", None) is None: 
-                    bundle.data["critical_loads_kw"] = critical_loads_kw
+                if bundle.data.get("Outage", None) is None:
+                     bundle.data["Outage"] = {"critical_loads_kw": critical_loads_kw}
+                elif bundle.data["Outage"].get("critical_loads_kw", None) is None: 
+                    bundle.data["Outage"]["critical_loads_kw"] = critical_loads_kw
+                # TODO: set max_outage_duration based on reopt outage inputs when multiple outage PR merged
+                # if bundle.data["Outage"].get("max_outage_duration", None) is None: 
+                #     bundle.data["Outage"]["max_outage_duration"] = max(reopt_run_meta.ElectricUtilityInputs.dict["outage_durations"])
                 
                 # Have to try for CHP, PV, Storage, and Generator models because may not exist
+                
+                # BackupGenerator
+                try:
+                    if bundle.data.get("BackupGenerator", {}).get("generator_size_kw", None) is None:
+                        gen = reopt_run_meta.GeneratorOutputs.dict
+                        num_generators = bundle.data["BackupGenerator"].get("num_generators", None)
+                        if num_generators is not None:
+                            #TODO: deal with num_generators being list of len > 1
+                            if type(num_generators) == list:
+                                bundle.data["BackupGenerator"]["generator_size_kw"] = gen.get("size_kw", 0) / num_generators[0]
+                            else:
+                                bundle.data["BackupGenerator"]["generator_size_kw"] = gen.get("size_kw", 0) / num_generators
+                        else:
+                            bundle.data["BackupGenerator"]["generator_size_kw"] = gen.get("size_kw", 0)
+                except AttributeError as e: 
+                    pass
+                try:
+                    gen_in = reopt_run_meta.GeneratorInputs.dict
+                    # Loop through gen inputs that can be taken from reopt inputs
+                    for field_name in ["fuel_avail_gal", "electric_efficiency_half_load", "electric_efficiency_full_load"]:
+                        if bundle.data.get("BackupGenerator", {}).get(field_name, None) is None:
+                            #if bundle.data.get("BackupGenerator", None) is None then need to create first
+                            # does it always get created? only if non-zero in reopt outputs?
+                            bundle.data["BackupGenerator"][field_name] = gen_in[field_name]
+                except AttributeError as e: 
+                    pass
+
+                
                 try:
                     #TODO: how to distinguish CHP from prime generator using the CHP model?
                     if bundle.data.get("chp_size_kw", None) is None: 
@@ -179,20 +223,6 @@ class ERPJob(ModelResource):
                 except AttributeError as e: 
                     pass
                 
-                try:
-                    if bundle.data.get("generator_size_kw", None) is None:
-                        gen = reopt_run_meta.GeneratorOutputs.dict
-                        num_generators = bundle.data.get("num_generators", None)
-                        if num_generators is not None:
-                            #TODO: deal with num_generators being list of len > 1
-                            if type(num_generators) == list:
-                                bundle.data["generator_size_kw"] = gen.get("size_kw", 0) / num_generators[0]
-                            else:
-                                bundle.data["generator_size_kw"] = gen.get("size_kw", 0) / num_generators
-                        else:
-                            bundle.data["generator_size_kw"] = gen.get("size_kw", 0)
-                except AttributeError as e: 
-                    pass
             
             erpinputs = ERPInputs.create(meta=meta, **bundle.data)
             erpinputs.clean()
