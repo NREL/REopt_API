@@ -1,4 +1,6 @@
 {
+"pv_operational_availability":0.1,
+"battery_operational_availability":0.1,
 "generator_operational_availability": 0.9, 
 "generator_failure_to_start" : 0.02, 
 "generator_failure_to_run" : 0.005,
