@@ -25,7 +25,15 @@ Classify the change according to the following categories:
     ##### Deprecated
     ##### Removed
     ### Patches
-    
+
+
+## Develop
+### Minor Updates
+- added `scalar_to_array` function to convert scalar user input to single element arrays and used it on generator inputs in **ERPInputs** `clean` function
+##### Changed
+- let generator inputs in **ERPInputs** be arrays, which enables running ERP with multiple generator types
+- changed `scalar_to_vector` helper function to `scalar_or_monthly_to_8760`
+
 ## v2.4.0
 ### Minor Updates
 ##### Added 
@@ -43,13 +51,6 @@ Classify the change according to the following categories:
 ### Minor Updates
 ##### Fixed
 Lookback charge parameters expected from the URDB API call were changed to the non-caplitalized format, so they are now used properly.
-
-## Develop
-### Minor Updates
-- added `scalar_to_array` function to convert scalar user input to single element arrays and used it on generator inputs in **ERPInputs** `clean` function
-##### Changed
-- let generator inputs in **ERPInputs** be arrays, which enables running ERP with multiple generator types
-- changed `scalar_to_vector` helper function to `scalar_or_monthly_to_8760`
 
 ## v2.3.0
 ##### Changed
