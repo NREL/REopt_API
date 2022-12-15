@@ -3030,23 +3030,23 @@ class GeneratorInputs(BaseModel, models.Model):
         blank=True,
         help_text="Diesel cost in $/gallon"
     )
-    fuel_slope_gal_per_kwh = models.FloatField(
-        default=0.076,
+    electric_efficiency_half_load = models.FloatField(
         validators=[
             MinValueValidator(0.0),
-            MaxValueValidator(10.0)
+            MaxValueValidator(1.0)
         ],
         blank=True,
-        help_text="Generator fuel burn rate in gallons/kWh."
+        null=True,
+        help_text="Electric efficiency of the generator running at half load."
     )
-    fuel_intercept_gal_per_hr = models.FloatField(
-        default=0.0,
+    electric_efficiency_full_load = models.FloatField(
+        default=0.34,
         validators=[
             MinValueValidator(0.0),
-            MaxValueValidator(10.0)
+            MaxValueValidator(1.0)
         ],
         blank=True,
-        help_text="Generator fuel consumption curve y-intercept in gallons per hour."
+        help_text="Electric efficiency of the generator running at full load."
     )
     fuel_avail_gal = models.FloatField(
         validators=[
@@ -3312,6 +3312,11 @@ class GeneratorInputs(BaseModel, models.Model):
         null=True,
         help_text="Per kW replacement cost for generator capacity. Replacement costs are considered tax deductible."
     )
+
+    def clean(self):
+        if not self.electric_efficiency_half_load:
+            self.electric_efficiency_half_load = self.electric_efficiency_full_load
+
 
 
 class GeneratorOutputs(BaseModel, models.Model):
