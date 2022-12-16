@@ -3832,7 +3832,7 @@ class CHPInputs(BaseModel, models.Model):
 
 
 class CHPOutputs(BaseModel, models.Model):
-    key = "CHP"
+    key = "CHPOutputs"
     meta = models.OneToOneField(
         to=APIMeta,
         on_delete=models.CASCADE,
@@ -3956,17 +3956,296 @@ class Message(BaseModel, models.Model):
 
 # TODO other necessary models from reo/models.py
 
-class ExistingBoilerInputs(BaseModel, models.Model):
+class CoolingLoadInputs(BaseModel, models.Model):
     
-    key = "ExistingBoiler"
+    key = "CoolingLoad"
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="CoolingLoadInputs",
+        primary_key=True
+    )
+	
+    possible_sets = [
+        ["thermal_loads_ton"],
+        ["doe_reference_name"],
+        ["blended_doe_reference_names", "blended_doe_reference_percents"],
+        ["annual_fraction_of_electric_load"],
+        ["monthly_fractions_of_electric_load"],
+        ["per_time_step_fractions_of_electric_load"],
+        []
+	]
+	
+    DOE_REFERENCE_NAME = models.TextChoices('DOE_REFERENCE_NAME', (
+        'FastFoodRest '
+        'FullServiceRest '
+        'Hospital '
+        'LargeHotel '
+        'LargeOffice '
+        'MediumOffice '
+        'MidriseApartment '
+        'Outpatient '
+        'PrimarySchool '
+        'RetailStore '
+        'SecondarySchool '
+        'SmallHotel '
+        'SmallOffice '
+        'StripMall '
+        'Supermarket '
+        'Warehouse '
+        'FlatLoad '
+        'FlatLoad_24_5 '
+        'FlatLoad_16_7 '
+        'FlatLoad_16_5 '
+        'FlatLoad_8_7 '
+        'FlatLoad_8_5'
+    ))
+
+    doe_reference_name = models.TextField(
+        null=False,
+        blank=True,
+        choices=DOE_REFERENCE_NAME.choices,
+        help_text=("Building type to use in selecting a simulated load profile from DOE "
+                    "<a href='https: //energy.gov/eere/buildings/commercial-reference-buildings' target='blank'>Commercial Reference Buildings</a>."
+                    "By default, the doe_reference_name of the ElectricLoad is used.")
+	    )
+
+    blended_doe_reference_names = ArrayField(
+        models.TextField(
+            choices=DOE_REFERENCE_NAME.choices,
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        help_text=("Used in concert with blended_doe_reference_percents to create a blended load profile from multiple "
+                   "DoE Commercial Reference Buildings.")
+    )
+
+    blended_doe_reference_percents = ArrayField(
+        models.FloatField(
+            null=True, blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1.0)
+            ],
+        ),
+        default=list,
+        blank=True,
+        help_text=("Used in concert with blended_doe_reference_names to create a blended load profile from multiple "
+                   "DoE Commercial Reference Buildings to simulate buildings/campuses. Must sum to 1.0.")
+    )
+
+    annual_tonhour = models.FloatField(
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        help_text=("Annual electric chiller thermal energy production, in [Ton-Hour],"
+                    "used to scale simulated default electric chiller load profile for the site's climate zone")
+    )
+
+    monthly_tonhour = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(MAX_BIG_NUMBER)
+            ],
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        help_text=("Monthly site space cooling requirement in [Ton-Hour], used "
+                   "to scale simulated default building load profile for the site's climate zone")
+    )
+
+    thermal_loads_ton = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        help_text=("Typical electric chiller thermal production to serve the load for all hours in one year. Must be hourly (8,760 samples), 30 minute (17,"
+                   "520 samples), or 15 minute (35,040 samples)."
+                   )
+    )
+
+    annual_fraction_of_electric_load = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        null=True,
+        blank=True,
+        help_text=("Annual electric chiller energy consumption scalar as a fraction of total electric load applied to every time step"
+                "used to scale simulated default electric chiller load profile for the site's climate zone"
+        )
+    )
+
+    monthly_fractions_of_electric_load = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1)
+            ],
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Monthly fraction of site's total electric consumption used up by electric chiller, applied to every hour of each month,"
+                    "to scale simulated default building load profile for the site's climate zone")
+    )
+
+    per_time_step_fractions_of_electric_load = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        help_text=("Per timestep fraction of site's total electric consumption used up by electric chiller."
+                    "Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+                   )
+    )		
+
+    def clean(self):
+        error_messages = {}
+
+        # possible sets for defining load profile
+        if not at_least_one_set(self.dict, self.possible_sets):
+            error_messages["required inputs"] = \
+                "Must provide at least one set of valid inputs from {}.".format(self.possible_sets)
+
+        if len(self.blended_doe_reference_names) > 0 and self.doe_reference_name == "":
+            if len(self.blended_doe_reference_names) != len(self.blended_doe_reference_percents):
+                error_messages["blended_doe_reference_names"] = \
+                    "The number of blended_doe_reference_names must equal the number of blended_doe_reference_percents."
+            if not math.isclose(sum(self.blended_doe_reference_percents),  1.0):
+                error_messages["blended_doe_reference_percents"] = "Sum must = 1.0."
+
+        if self.doe_reference_name != "" or \
+                len(self.blended_doe_reference_names) > 0:
+            self.year = 2017  # the validator provides an "info" message regarding this)
+        
+        if len(self.monthly_fractions_of_electric_load) > 0:
+            if len(self.monthly_fractions_of_electric_load) != 12:
+                error_messages["monthly_fractions_of_electric_load"] = \
+                    "Provided cooling monthly_fractions_of_electric_load array does not have 12 values."
+        
+        # Require 12 values if monthly_tonhours is provided.
+        if 12 > len(self.monthly_tonhour) > 0:
+            error_messages["required inputs"] = \
+                "Must provide 12 elements as inputs to monthly_tonhour. Received {}.".format(self.monthly_tonhour)
+
+        if error_messages:
+            raise ValidationError(error_messages)
+        
+        pass
+
+
+class ExistingChillerInputs(BaseModel, models.Model):
+    
+    key = "ExistingChiller"
 
     meta = models.OneToOneField(
         APIMeta,
         on_delete=models.CASCADE,
-        related_name="ExistingBoilerInputs",
+        related_name="ExistingChillerInputs",
         primary_key=True
     )
 
+    cop = models.FloatField(
+        validators=[
+            MinValueValidator(0.01),
+            MaxValueValidator(20)
+        ],
+        null=True,
+        blank=True,
+        help_text=("Existing electric chiller system coefficient of performance (COP) "
+                    "(ratio of usable cooling thermal energy produced per unit electric energy consumed)")
+    )
+
+    max_thermal_factor_on_peak_load = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(5.0)
+        ],
+        default=1.25,
+        blank=True,
+        help_text=("Factor on peak thermal LOAD which the electric chiller can supply. "
+                    "This accounts for the assumed size of the electric chiller which typically has a safety factor above the peak load."
+                    "This factor limits the max production which could otherwise be exploited with ColdThermalStorage")
+    )
+
+    def clean(self):
+        pass
+
+
+class ExistingChillerOutputs(BaseModel, models.Model):
+    
+    key = "ExistingChillerOutputs"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="ExistingChillerOutputs",
+        primary_key=True
+    )
+
+    year_one_to_tes_series_ton = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        null=True,
+        help_text=("Year one hourly time series of electric chiller thermal to cold TES [Ton]")
+    )
+
+    year_one_to_load_series_ton = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        null=True,
+        help_text=("Year one hourly time series of electric chiller thermal to cooling load [Ton]")
+    )
+
+    year_one_electric_consumption_series_kw = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        null=True,
+        help_text=("Year one hourly time series of chiller electric consumption [kW]")
+    )
+
+    year_one_electric_consumption_kwh = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=("Year one chiller electric consumption [kWh]")
+    )
+
+    year_one_thermal_production_tonhour = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=("Year one chiller thermal production [Ton Hour")
+    )
+
+    def clean(self):
+        pass
+	
+class ExistingBoilerInputs(BaseModel, models.Model):
+    
+    key = "ExistingBoiler"
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+		related_name="ExistingBoilerInputs",
+        primary_key=True
+    )
+	
     PRODUCTION_TYPE = models.TextChoices('PRODUCTION_TYPE', (
         'steam',
         'hot_water'
@@ -4116,7 +4395,7 @@ class ExistingBoilerInputs(BaseModel, models.Model):
 
 class ExistingBoilerOutputs(BaseModel, models.Model):
     
-    key = "ExistingBoiler"
+    key = "ExistingBoilerOutputs"
 
     meta = models.OneToOneField(
         APIMeta,
@@ -4564,6 +4843,7 @@ class DomesticHotWaterLoadInputs(BaseModel, models.Model):
                    "520 samples), or 15 minute (35,040 samples). All non-net load values must be greater than or "
                    "equal to zero. "
                    )
+
     )
 
     blended_doe_reference_names = ArrayField(
@@ -4588,11 +4868,11 @@ class DomesticHotWaterLoadInputs(BaseModel, models.Model):
         default=list,
         blank=True,
         help_text=("Used in concert with blended_doe_reference_names to create a blended load profile from multiple "
-                   "DoE Commercial Reference Buildings. Must sum to 1.0.")
+                   "DoE Commercial Reference Buildings to simulate buildings/campuses. Must sum to 1.0.")
     )
 
     '''
-    Latitude and longitude are passed on to SpaceHeating struct using the Site struct.
+    Latitude and longitude are passed on to DomesticHotWater struct using the Site struct.
     City is not used as an input here because it is found using find_ashrae_zone_city() when needed.
     If a blank key is provided, then default DOE load profile from electricload is used [cross-clean]
     '''
@@ -4616,12 +4896,217 @@ class DomesticHotWaterLoadInputs(BaseModel, models.Model):
                 len(self.blended_doe_reference_names) > 0:
             self.year = 2017  # the validator provides an "info" message regarding this)
 
-        if error_messages:
-            raise ValidationError(error_messages)
-        
+class HeatingLoadOutputs(BaseModel, models.Model):
+
+    key = "HeatingLoadOutputs"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="HeatingLoadOutputs",
+        primary_key=True
+    )
+
+    dhw_thermal_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(MAX_BIG_NUMBER)
+            ],
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Hourly domestic hot water load [MMBTU/hr]")
+    )
+
+    space_heating_thermal_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(MAX_BIG_NUMBER)
+            ],
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Hourly domestic space heating load [MMBTU/hr]")
+    )
+
+    total_heating_thermal_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(MAX_BIG_NUMBER)
+            ],
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Hourly total heating load [MMBTU/hr]")
+    )
+
+    dhw_boiler_fuel_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(MAX_BIG_NUMBER)
+            ],
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Hourly domestic hot water load [MMBTU/hr]")
+    )
+
+    space_heating_boiler_fuel_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(MAX_BIG_NUMBER)
+            ],
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Hourly domestic space heating load [MMBTU/hr]")
+    )
+
+    total_heating_boiler_fuel_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(MAX_BIG_NUMBER)
+            ],
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Hourly total heating load [MMBTU/hr]")
+    )
+
+    annual_calculated_dhw_thermal_load_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default=0,
+        help_text=("Annual site DHW load [MMBTU]")
+    )
+
+    annual_calculated_space_heating_thermal_load_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default=0,
+        help_text=("Annual site space heating load [MMBTU]")
+    )
+
+    annual_calculated_total_heating_thermal_load_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default=0,
+        help_text=("Annual site total heating load [MMBTU]")
+    )
+
+    annual_calculated_dhw_boiler_fuel_load_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default=0,
+        help_text=("Annual site DHW boiler fuel load [MMBTU]")
+    )
+
+    annual_calculated_space_heating_boiler_fuel_load_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default=0,
+        help_text=("Annual site space heating boiler fuel load [MMBTU]")
+    )
+
+    annual_calculated_total_heating_boiler_fuel_load_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default=0,
+        help_text=("Annual site total heating boiler fuel load [MMBTU]")
+    )
+
+    def clean(self):
         pass
 
-# TODO Add domestic hot water input model.
+class CoolingLoadOutputs(BaseModel, models.Model):
+    
+    key = "CoolingLoadOutputs"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="CoolingLoadOutputs",
+        primary_key=True
+    )
+
+    load_series_ton = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(MAX_BIG_NUMBER)
+            ],
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Hourly total cooling load [ton]")
+    )
+
+    electric_chiller_base_load_series_kw = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(MAX_BIG_NUMBER)
+            ],
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Hourly total base load drawn from chiller [kW-electric]")
+    )
+
+    annual_calculated_tonhour = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default=0,
+        help_text=("Annual site total cooling load [tonhr]")
+    )
+
+    annual_electric_chiller_base_load_kwh = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default=0,
+        help_text=("Annual total base load drawn from chiller [kWh-electric]")
+    )
+
+    def clean(self):
+        pass
 
 def get_input_dict_from_run_uuid(run_uuid:str):
     """
@@ -4670,6 +5155,12 @@ def get_input_dict_from_run_uuid(run_uuid:str):
     except: pass
 
     try: d["Wind"] = filter_none_and_empty_array(meta.WindInputs.dict)
+    except: pass
+
+    try: d["CoolingLoad"] = filter_none_and_empty_array(meta.CoolingLoadInputs.dict)
+    except: pass
+
+    try: d["ExistingChiller"] = filter_none_and_empty_array(meta.ExistingChillerInputs.dict)
     except: pass
 
     # try: d["Boiler"] = filter_none_and_empty_array(meta.BoilerInputs.dict)
