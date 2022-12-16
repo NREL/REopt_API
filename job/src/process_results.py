@@ -27,9 +27,10 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
+
 from job.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorageOutputs, ElectricTariffOutputs, SiteOutputs,\
     ElectricUtilityOutputs, GeneratorOutputs, ElectricLoadOutputs, WindOutputs, FinancialInputs, ElectricUtilityInputs,\
-    ExistingBoilerOutputs, CHPOutputs, CHPInputs
+	ExistingBoilerOutputs, CHPOutputs, CHPInputs, ExistingChillerOutputs, CoolingLoadOutputs, HeatingLoadOutputs
 import logging
 log = logging.getLogger(__name__)
 
@@ -38,6 +39,7 @@ def process_results(results: dict, run_uuid: str) -> None:
     Saves the results returned from the Julia API in the backend database.
     Called in job/run_jump_model (a celery task)
     """
+
 
     meta = APIMeta.objects.get(run_uuid=run_uuid)
     meta.status = results.get("status")
@@ -59,10 +61,16 @@ def process_results(results: dict, run_uuid: str) -> None:
         GeneratorOutputs.create(meta=meta, **results["Generator"]).save()
     if "Wind" in results.keys():
         WindOutputs.create(meta=meta, **results["Wind"]).save()
+    if "ExistingChiller" in results.keys():
+        ExistingChillerOutputs.create(meta=meta, **results["ExistingChiller"]).save()
     # if "Boiler" in results.keys():
     #     BoilerOutputs.create(meta=meta, **results["Boiler"]).save()
     if "ExistingBoiler" in results.keys():
         ExistingBoilerOutputs.create(meta=meta, **results["ExistingBoiler"]).save()
+    if "HeatingLoad" in results.keys():
+        HeatingLoadOutputs.create(meta=meta, **results["HeatingLoad"]).save()
+    if "CoolingLoad" in results.keys():
+        CoolingLoadOutputs.create(meta=meta, **results["CoolingLoad"]).save()
     if "CHP" in results.keys():
         CHPOutputs.create(meta=meta, **results["CHP"]).save()
     # TODO process rest of results

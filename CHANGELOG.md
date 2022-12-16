@@ -25,6 +25,25 @@ Classify the change according to the following categories:
     ##### Deprecated
     ##### Removed
     ### Patches
+
+## Develop - 2022-11-11
+### Minor Updates
+##### Added
+- `0011_coolingloadinputs....` file used to add new models to the db
+In `job/models.py`:
+- added **ExistingChillerInputs** model
+- added **ExistingChillerOutputs** model
+- added **CoolingLoadInputs** model
+- added **CoolingLoadOutputs** model
+- added **HeatingLoadOutputs** model
+In `job/process_results.py`: 
+- add **ExistingChillerOutputs** 
+- add **CoolingLoadOutputs**
+- add **HeatingLoadOutputs**
+In `job/validators.py:
+- add time series length validation on **CoolingLoadInputs->thermal_loads_ton** and **CoolingLoadInputs->per_time_step_fractions_of_electric_load**
+In `job/views.py`:
+- add new input/output models to properly save the inputs/outputs
     
 ## v2.4.0
 ### Minor Updates
@@ -43,7 +62,6 @@ Classify the change according to the following categories:
 ### Minor Updates
 ##### Fixed
 Lookback charge parameters expected from the URDB API call were changed to the non-caplitalized format, so they are now used properly.
-
 ## v2.3.0
 ##### Changed
 The following name changes were made in the `job/` endpoint and `julia_src/http.jl`: 
@@ -70,7 +88,6 @@ The following name changes were made in the `job/` endpoint and `julia_src/http.
 ##### Added 
 - `0005_boilerinputs....` file used to add new models to the db
 - `job/` endpoint: Add inputs and validation to model off-grid wind 
-In `job/models.py`:
 - added **ExistingBoilerInputs** model
 - added **ExistingBoilerOutputs** model
 - added **SpaceHeatingLoadInputs** model
@@ -102,6 +119,7 @@ In `job/test/test_job_endpoint.py`:
 - add a testcase to validate that API is accepting/returning fields related to new models.
 In `'job/validators.py`:
 - add new input models
+- added `update_pv_defaults_offgrid()` to prevent validation failure when PV is not provided as input
 In `job/views.py`:
 - Added **SiteInputs** to `help` endpoint
 - Added **SiteOutputs** to `outputs` endpoint
