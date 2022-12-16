@@ -3018,7 +3018,7 @@ class GeneratorInputs(BaseModel, models.Model):
         ],
         blank=True,
         null=True,
-        help_text="Electric efficiency of the generator running at half load."
+        help_text="Electric efficiency of the generator running at half load. Defaults to electric_efficiency_full_load."
     )
     electric_efficiency_full_load = models.FloatField(
         default=0.34,
