@@ -95,6 +95,15 @@ class ERPJob(ModelResource):
             "reopt_version": "0.18.0",
             "status": "Validating..."
         }
+
+        def add_validation_err_msg_and_raise_400_response(d:dict, err_msg:str):
+            d["status"] = "Validation Error. See messages for details."
+            d["messages"] = {}
+            d["messages"]["error"] = err_msg
+            raise ImmediateHttpResponse(HttpResponse(json.dumps(meta_dict),
+                                    content_type='application/json',
+                                    status=400))
+
         try:
             if bundle.request.META.get('HTTP_X_API_USER_ID', False):
                 if bundle.request.META.get('HTTP_X_API_USER_ID', '') == '6f09c972-8414-469b-b3e8-a78398874103':
@@ -116,21 +125,16 @@ class ERPJob(ModelResource):
 
             if reopt_run_uuid is None:
                 if bundle.data.get("CHP", None) or bundle.data.get("PrimeGenerator", None):
-                    meta_dict["status"] = "Validation Error. See messages for details."
-                    meta_dict["messages"] = {}
-                    meta_dict["messages"]["error"] = "Running ERP with CHP or PrimeGenerator but no reopt_run_uuid is not yet supported."
-                    raise ImmediateHttpResponse(HttpResponse(json.dumps(meta_dict),
-                                            content_type='application/json',
-                                            status=400))
+                    add_validation_err_msg_and_raise_400_response(
+                        meta_dict, 
+                        "Running ERP with CHP or PrimeGenerator but no reopt_run_uuid is not yet supported."
+                    )
             else:
                 #TODO: put in helper function for more readable code
                 try:
                     validate_run_uuid(reopt_run_uuid)
                 except ValidationError as err:
-                    meta_dict["status"] = "Validation Error. See messages for details."
-                    meta_dict["messages"] = {}
-                    meta_dict["messages"]["error"] = str(err.message)
-                    raise ImmediateHttpResponse(HttpResponse(json.dumps(meta_dict), status=400))
+                    add_validation_err_msg_and_raise_400_response(meta_dict, str(err.message))
 
                 ### Get values from REopt run for inputs that user has not provided ###
                 # Note: have to try/except for CHP, ElectricStorage, and Generator models 
@@ -143,13 +147,10 @@ class ERPJob(ModelResource):
                     ).get(run_uuid=reopt_run_uuid)
                 except:
                     # Handle non-existent REopt runs
-                    meta_dict["status"] = "Validation Error. See messages for details."
-                    meta_dict["messages"] = {}
-                    meta_dict["messages"]["error"] = "Invalid run_uuid {}, REopt run does not exist.".format(reopt_run_uuid)
-                    raise ImmediateHttpResponse(HttpResponse(
-                                        json.dumps(meta_dict), 
-                                        content_type='application/json', 
-                                        status=404))
+                    add_validation_err_msg_and_raise_400_response(
+                        meta_dict, 
+                        "Invalid run_uuid {}, REopt run does not exist.".format(reopt_run_uuid)
+                    )
                 
                 #TODO: put all of this stuff below in a helper function, or in clean or save django methods?
 
@@ -195,12 +196,51 @@ class ERPJob(ModelResource):
                         pass
 
                 ## CHP/PrimeGenerator ##
+                chp_or_prime_out = None
+                chp_or_prime_in = None
+                tech_key = ""
                 try:
-                    #TODO: how to distinguish CHP from prime generator using the CHP model?
-                    if bundle.data.get("chp_size_kw", None) is None: 
-                        bundle.data["chp_size_kw"] = reopt_run_meta.CHPOutputs.dict.get("size_kw", 0)
-                except AttributeError as e:
+                    chp_or_prime_out = reopt_run_meta.CHPOutputs.dict
+                except AttributeError as e: 
                     pass
+                try:
+                    chp_or_prime_in = reopt_run_meta.CHPInputs.dict
+                    tech_key = "CHP" if chp_or_prime_in["thermal_efficiency_full_load"] > 0 else "PrimeGenerator"
+                except AttributeError as e: 
+                    pass
+                if (
+                        chp_or_prime_in is None and 
+                        ("CHP" in bundle.data or "PrimeGenerator" in bundle.data)
+                    ) or (
+                        tech_key != "CHP" and "CHP" in bundle.data
+                    ) or (
+                        tech_key != "PrimeGenerator" and "PrimeGenerator" in bundle.data
+                    ):
+                    add_validation_err_msg_and_raise_400_response(
+                        meta_dict, 
+                        "Running ERP with CHP or PrimeGenerator but a reopt_run_uuid of an optimization that did not consider it is not yet supported."
+                    )
+                if chp_or_prime_out is not None and \
+                        chp_or_prime_out.get("size_kw", 0) > 0 and \
+                        tech_key not in bundle.data:
+                        # "CHP" not in bundle.data and \
+                        # "PrimeGenerator" not in bundle.data:
+                    bundle.data[tech_key] = {}
+                # if "CHP" or "PrimeGenerator" is still not in bundle.data then not being included
+                # if one is in bundle.data then chp_or_prime_out is not None otherwise would have errored above
+                if tech_key in bundle.data:
+                    if bundle.data[tech_key].get("size_kw", None) is None:
+                        num_generators = bundle.data[tech_key].get("num_generators", None)
+                        if num_generators is not None:
+                            bundle.data[tech_key]["size_kw"] = chp_or_prime_out.get("size_kw", 0) / num_generators
+                        else:
+                            bundle.data[tech_key]["size_kw"] = chp_or_prime_out.get("size_kw", 0)
+                    for field_name in [
+                                        "electric_efficiency_half_load", 
+                                        "electric_efficiency_full_load"
+                                    ]:
+                        if bundle.data[tech_key].get(field_name, None) is None:
+                            bundle.data[tech_key][field_name] = chp_or_prime_in[field_name]
 
                 ## PV ##
                 pvs = reopt_run_meta.PVOutputs.all()
