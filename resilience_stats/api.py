@@ -176,13 +176,13 @@ class ERPJob(ModelResource):
                     bundle.data["BackupGenerator"] = {}
                 # if "BackupGenerator" is still not in bundle.data then not being included
                 if "BackupGenerator" in bundle.data:
-                    if bundle.data["BackupGenerator"].get("generator_size_kw", None) is None \
+                    if bundle.data["BackupGenerator"].get("size_kw", None) is None \
                                                                     and gen_out is not None:
                         num_generators = bundle.data["BackupGenerator"].get("num_generators", None)
                         if num_generators is not None:
-                            bundle.data["BackupGenerator"]["generator_size_kw"] = gen_out.get("size_kw", 0) / num_generators
+                            bundle.data["BackupGenerator"]["size_kw"] = gen_out.get("size_kw", 0) / num_generators
                         else:
-                            bundle.data["BackupGenerator"]["generator_size_kw"] = gen_out.get("size_kw", 0)
+                            bundle.data["BackupGenerator"]["size_kw"] = gen_out.get("size_kw", 0)
                     try:
                         gen_in = reopt_run_meta.GeneratorInputs.dict
                         for field_name in [
