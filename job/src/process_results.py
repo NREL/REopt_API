@@ -72,6 +72,8 @@ def process_results(results: dict, run_uuid: str) -> None:
         #     BoilerOutputs.create(meta=meta, **results["Boiler"]).save()
         if "ExistingBoiler" in results.keys():
             ExistingBoilerOutputs.create(meta=meta, **results["ExistingBoiler"]).save()
+        if "ExistingChiller" in results.keys():
+            ExistingChillerOutputs.create(meta=meta, **results["ExistingChiller"]).save()
         if "Messages" in results.keys():
             REoptjlMessageOutputs.create(meta=meta, **results["Messages"]).save()
         if "HeatingLoad" in results.keys():
