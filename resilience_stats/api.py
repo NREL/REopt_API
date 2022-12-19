@@ -50,8 +50,8 @@ logger = get_task_logger(__name__)
 from reo.exceptions import SaveToDatabase, UnexpectedError, REoptFailedToStartError
 
 from reo.models import ScenarioModel, FinancialModel
-from job.models import APIMeta, GeneratorOutputs, ElectricStorageInputs, ElectricStorageOutputs, PVOutputs, ElectricLoadInputs#, CHPOutputs
-from resilience_stats.models import ResilienceModel, ERPMeta, ERPInputs, ERPOutputs, get_erp_input_dict_from_run_uuid
+from job.models import APIMeta, GeneratorOutputs, ElectricStorageInputs, ElectricStorageOutputs, PVOutputs, ElectricLoadInputs#, CHPOutputs don't need to import these output models because accessing from meta not creating?
+from resilience_stats.models import ResilienceModel, ERPMeta, ERPOutageInputs, ERPBackupGeneratorInputs, ERPPVInputs, ERPElectricStorageInputs, ERPOutputs, get_erp_input_dict_from_run_uuid
 from resilience_stats.validators import validate_run_uuid
 from resilience_stats.views import run_outage_sim
 
@@ -123,11 +123,17 @@ class ERPJob(ModelResource):
             meta.clean_fields()
             meta.save()
 
+            # TODO: validate time series (prod factors)
             if reopt_run_uuid is None:
                 if bundle.data.get("CHP", None) or bundle.data.get("PrimeGenerator", None):
                     add_validation_err_msg_and_raise_400_response(
                         meta_dict, 
                         "Running ERP with CHP or PrimeGenerator but no reopt_run_uuid is not yet supported."
+                    )
+                if len(bundle.data.get("PV",{}).get("production_factor_series", [])) != 8760: #TODO: handle subhourly
+                    add_validation_err_msg_and_raise_400_response(
+                        meta_dict, 
+                        "To include PV, you must provide PV production_factor_series or the reopt_run_uuid of an optimization that considered PV."
                     )
             else:
                 #TODO: put in helper function for more readable code
@@ -153,6 +159,7 @@ class ERPJob(ModelResource):
                     )
                 
                 #TODO: put all of this stuff below in a helper function, or in clean or save django methods?
+                #TODO: use user_dict = reopt_dict.update(user_dict) to eliminate if is None checks and simplify code
 
                 ## Outage ##
                 critical_loads_kw = reopt_run_meta.ElectricLoadOutputs.dict["critical_load_series_kw"]
@@ -244,23 +251,37 @@ class ERPJob(ModelResource):
 
                 ## PV ##
                 pvs = reopt_run_meta.PVOutputs.all()
-                pv_size_kw = 0
-                pv_kw_series = np.zeros(len(critical_loads_kw))
+                if len(pvs) == 0 and \
+                        bundle.data.get("PV",{}).get("size_kw", 0) > 0 and \
+                        len(bundle.data.get("PV",{}).get("production_factor_series", [])) == 0:
+                    add_validation_err_msg_and_raise_400_response(
+                        meta_dict, 
+                        "To include PV, you must provide PV production_factor_series or the reopt_run_uuid of an optimization that considered PV."
+                    )
+                reopt_pv_size_kw = 0
+                pv_prod_series = np.zeros(len(critical_loads_kw))
                 for pv in pvs:
                     pvd = pv.dict
-                    pv_size_kw += pvd.get("size_kw")
-                    pv_kw_series += (
-                        np.array(pvd.get("year_one_to_battery_series_kw"))
-                        + np.array(pvd.get("year_one_curtailed_production_series_kw"))
-                        + np.array(pvd.get("year_one_to_load_series_kw"))
-                        + np.array(pvd.get("year_one_to_grid_series_kw"))
-                    )
-                pv_kw_series = pv_kw_series.tolist()
-                if bundle.data.get("pv_size_kw", None) is None: 
-                    bundle.data["pv_size_kw"] = pv_size_kw
-                if bundle.data.get("pv_production_factor_series", None) is None: 
-                    bundle.data["pv_production_factor_series"] = (np.array(pv_kw_series) / pv_size_kw).tolist()
-                
+                    reopt_pv_size_kw += pvd.get("size_kw")
+                    pv_prod_series += pvd.get("size_kw") * np.array(pvd.get("production_factor_series"))
+                    # pv_prod_factor_series += (
+                    #     np.array(pvd.get("year_one_to_battery_series_kw"))
+                    #     + np.array(pvd.get("year_one_curtailed_production_series_kw"))
+                    #     + np.array(pvd.get("year_one_to_load_series_kw"))
+                    #     + np.array(pvd.get("year_one_to_grid_series_kw"))
+                    # )
+                if reopt_pv_size_kw > 0 and "PV" not in bundle.data:
+                    bundle.data["PV"] = {}
+                if "PV" in bundle.data:
+                    if bundle.data["PV"].get("size_kw", None) is None:
+                        bundle.data["PV"]["size_kw"] = reopt_pv_size_kw
+                    if bundle.data["PV"].get("production_factor_series", None) is None: 
+                        # List pvs cannot be empty otherwise would have errored above
+                        if reopt_pv_size_kw > 0: # Use weighted avg of PV prod factors
+                            bundle.data["PV"]["production_factor_series"] = (pv_prod_series/reopt_pv_size_kw).tolist()
+                        else: # PV considered in optimization but optimal sizes all 0. Use prod factor of first PV.
+                            bundle.data["PV"]["production_factor_series"] = pvs[0].dict.get("production_factor_series")
+                                    
                 ## ElectricStorage ##
                 try:
                     stor_out = reopt_run_meta.ElectricStorageOutputs.dict
@@ -277,7 +298,8 @@ class ERPJob(ModelResource):
                     pass
                 
             
-            erpinputs = ERPInputs.create(meta=meta, **bundle.data)
+            erpinputs = ERPOutageInputs.create(meta=meta, **bundle.data["Outage"])
+            erpinputs = ERPBackupGeneratorInputs.create(meta=meta, **bundle.data["BackupGenerator"])
             erpinputs.clean()
             erpinputs.clean_fields()
             erpinputs.save()
