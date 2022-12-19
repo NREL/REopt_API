@@ -159,7 +159,7 @@ class ERPJob(ModelResource):
                     )
                 
                 #TODO: put all of this stuff below in a helper function, or in clean or save django methods?
-                #TODO: use user_dict = reopt_dict.update(user_dict) to eliminate if is None checks and simplify code
+                #TODO: use user_dict = reopt_dict.update(user_dict) to eliminate if is None checks and simplify code (like did for ElectricStorage)
 
                 ## Outage ##
                 critical_loads_kw = reopt_run_meta.ElectricLoadOutputs.dict["critical_load_series_kw"]
@@ -277,24 +277,29 @@ class ERPJob(ModelResource):
                             bundle.data["PV"]["production_factor_series"] = pvs[0].dict.get("production_factor_series")
                                     
                 ## ElectricStorage ##
+                stor_out = None
                 try:
                     stor_out = reopt_run_meta.ElectricStorageOutputs.dict
+                except AttributeError as e: 
+                    pass
+                try:
                     stor_in = reopt_run_meta.ElectricStorageInputs.dict
-                    if bundle.data.get("battery_charge_efficiency", None) is None: 
-                        bundle.data["battery_charge_efficiency"] = stor_in["rectifier_efficiency_fraction"] * stor_in["internal_efficiency_fraction"]**0.5
-                    if bundle.data.get("battery_discharge_efficiency", None) is None: 
-                        bundle.data["battery_discharge_efficiency"] = stor_in["inverter_efficiency_fraction"] * stor_in["internal_efficiency_fraction"]**0.5
-                    if bundle.data.get("battery_size_kw", None) is None: bundle.data["battery_size_kw"] = stor_out.get("size_kw", 0)
-                    if bundle.data.get("battery_size_kwh", None) is None: bundle.data["battery_size_kwh"] = stor_out.get("size_kwh", 0)
-                    if bundle.data.get("battery_starting_soc_series_fraction", None) is None: 
-                        bundle.data["battery_starting_soc_series_fraction"] = stor_out.get("year_one_soc_series_fraction", [])
+                    stor_inputs_from_reopt_results = {
+                        "charge_efficiency": stor_in["rectifier_efficiency_fraction"] * stor_in["internal_efficiency_fraction"]**0.5,
+                        "discharge_efficiency": stor_in["inverter_efficiency_fraction"] * stor_in["internal_efficiency_fraction"]**0.5,
+                        "size_kw": 0 if stor_out is None else stor_out.get("size_kw", 0),
+                        "size_kwh": 0 if stor_out is None else stor_out.get("size_kwh", 0),
+                        "starting_soc_series_fraction": [] if stor_out is None else stor_out.get("year_one_soc_series_fraction", []),
+                    }
+                    bundle.data["ElectricStorage"] = stor_inputs_from_reopt_results.update(bundle.data.get("ElectricStorage", {}))
                 except AttributeError as e: 
                     pass
                 
             for model in (
                 ERPOutageInputs,    
                 ERPBackupGeneratorInputs,
-                ERPPVInputs
+                ERPPVInputs,
+                ERPElectricStorageInputs
             ):
                 obj = model.create(meta=meta, **bundle.data[model.key])
                 obj.clean()
