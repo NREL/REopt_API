@@ -110,13 +110,13 @@ class ERPMeta(BaseModel, models.Model):
 #             d2[to_key] = d1[from_key]
 #         return d2
 
-class ERPBackupGeneratorInputs(BaseModel, models.Model):
-    key = "BackupGenerator"
+class ERPGeneratorInputs(BaseModel, models.Model):
+    key = "Generator"
     meta = models.OneToOneField(
         ERPMeta,
         on_delete=models.CASCADE,
         primary_key=True,
-        related_name="ERPBackupGeneratorInputs"
+        related_name="ERPGeneratorInputs"
     )
     operational_availability = models.FloatField(
         validators=[
@@ -527,9 +527,9 @@ def get_erp_input_dict_from_run_uuid(run_uuid:str):
         d.update(add_tech_prefixes(filter_none_and_empty_array(meta.ERPPVInputs.dict),"pv"))
     except: pass
     gen_dicts = []
-    try: gen_dicts += meta.ERPBackupGeneratorInputs.dict 
+    try: gen_dicts += meta.ERPGeneratorInputs.dict 
     except: pass
-    try: gen_dicts += meta.ERPPrimeGeneratorInputs.dict
+    try: gen_dicts += meta.ERPGeneratorInputs.dict
     except: pass
     try: gen_dicts += meta.ERPCHPInputs.dict
     except: pass
@@ -537,7 +537,7 @@ def get_erp_input_dict_from_run_uuid(run_uuid:str):
         d.update(filter_none_and_empty_array(merge_generator_inputs(gen_dicts)))
 
     # TODO: do this instead once extend input structure changes to julia
-    # d["BackupGenerator"] = filter_none_and_empty_array(meta.ERPBackupGeneratorInputs.dict)
+    # d["Generator"] = filter_none_and_empty_array(meta.ERPGeneratorInputs.dict)
     # d["PrimeGenerator"] = filter_none_and_empty_array(meta.ERPPrimeGeneratorInputs.dict)
     # d["CHP"] = filter_none_and_empty_array(meta.ERPCHPInputs.dict)
     # d["ElectricStorage"] = filter_none_and_empty_array(meta.ERPElectricStorageInputs.dict)

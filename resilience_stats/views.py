@@ -38,7 +38,7 @@ from reo.models import ModelManager
 from reo.models import ScenarioModel, PVModel, StorageModel, LoadProfileModel, GeneratorModel, FinancialModel, \
     WindModel, CHPModel
 from reo.utilities import annuity
-from resilience_stats.models import ResilienceModel, ERPMeta, ERPOutageInputs, ERPBackupGeneratorInputs, ERPPVInputs, ERPElectricStorageInputs, ERPOutputs
+from resilience_stats.models import ResilienceModel, ERPMeta, ERPOutageInputs, ERPGeneratorInputs, ERPPVInputs, ERPElectricStorageInputs, ERPOutputs
 from resilience_stats.outage_simulator_LF import simulate_outages
 import numpy as np
 from reo.utilities import empty_record
@@ -83,7 +83,7 @@ def erp_results(request, run_uuid):
         resp["inputs"] = dict()
         resp["inputs"][ERPOutageInputs.key] = meta.ERPOutageInputs.dict
         try:
-            resp["inputs"][ERPBackupGeneratorInputs.key] = meta.ERPBackupGeneratorInputs.dict
+            resp["inputs"][ERPGeneratorInputs.key] = meta.ERPGeneratorInputs.dict
         except AttributeError:
             pass
         try:

@@ -51,7 +51,7 @@ from reo.exceptions import SaveToDatabase, UnexpectedError, REoptFailedToStartEr
 
 from reo.models import ScenarioModel, FinancialModel
 from job.models import APIMeta, GeneratorOutputs, ElectricStorageInputs, ElectricStorageOutputs, PVOutputs, ElectricLoadInputs#, CHPOutputs don't need to import these output models because accessing from meta not creating?
-from resilience_stats.models import ResilienceModel, ERPMeta, ERPOutageInputs, ERPBackupGeneratorInputs, ERPPVInputs, ERPElectricStorageInputs, ERPOutputs, get_erp_input_dict_from_run_uuid
+from resilience_stats.models import ResilienceModel, ERPMeta, ERPOutageInputs, ERPGeneratorInputs, ERPPVInputs, ERPElectricStorageInputs, ERPOutputs, get_erp_input_dict_from_run_uuid
 from resilience_stats.validators import validate_run_uuid
 from resilience_stats.views import run_outage_sim
 
@@ -171,25 +171,25 @@ class ERPJob(ModelResource):
                 # if bundle.data["Outage"].get("max_outage_duration", None) is None: 
                 #     bundle.data["Outage"]["max_outage_duration"] = max(reopt_run_meta.ElectricUtilityInputs.dict["outage_durations"])
                                 
-                ## BackupGenerator ##
+                ## Generator ##
                 gen_out = None
                 try:
                     gen_out = reopt_run_meta.GeneratorOutputs.dict
                 except AttributeError as e: 
                     pass
-                if "BackupGenerator" not in bundle.data and \
+                if "Generator" not in bundle.data and \
                                 gen_out is not None and \
                                 gen_out.get("size_kw", 0) > 0:
-                    bundle.data["BackupGenerator"] = {}
-                # if "BackupGenerator" is still not in bundle.data then not being included
-                if "BackupGenerator" in bundle.data:
-                    if bundle.data["BackupGenerator"].get("size_kw", None) is None \
+                    bundle.data["Generator"] = {}
+                # if "Generator" is still not in bundle.data then not being included
+                if "Generator" in bundle.data:
+                    if bundle.data["Generator"].get("size_kw", None) is None \
                                                                     and gen_out is not None:
-                        num_generators = bundle.data["BackupGenerator"].get("num_generators", None)
+                        num_generators = bundle.data["Generator"].get("num_generators", None)
                         if num_generators is not None:
-                            bundle.data["BackupGenerator"]["size_kw"] = gen_out.get("size_kw", 0) / num_generators
+                            bundle.data["Generator"]["size_kw"] = gen_out.get("size_kw", 0) / num_generators
                         else:
-                            bundle.data["BackupGenerator"]["size_kw"] = gen_out.get("size_kw", 0)
+                            bundle.data["Generator"]["size_kw"] = gen_out.get("size_kw", 0)
                     try:
                         gen_in = reopt_run_meta.GeneratorInputs.dict
                         for field_name in [
@@ -197,8 +197,8 @@ class ERPJob(ModelResource):
                                             "electric_efficiency_half_load", 
                                             "electric_efficiency_full_load"
                                         ]:
-                            if bundle.data["BackupGenerator"].get(field_name, None) is None:
-                                bundle.data["BackupGenerator"][field_name] = gen_in[field_name]
+                            if bundle.data["Generator"].get(field_name, None) is None:
+                                bundle.data["Generator"][field_name] = gen_in[field_name]
                     except AttributeError as e: 
                         pass
 
@@ -297,7 +297,7 @@ class ERPJob(ModelResource):
                 
             for model in (
                 ERPOutageInputs,    
-                ERPBackupGeneratorInputs,
+                ERPGeneratorInputs,
                 ERPPVInputs,
                 ERPElectricStorageInputs
             ):
