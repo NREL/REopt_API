@@ -26,7 +26,8 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop - 2022-11-11
+
+## v2.5.0
 ### Minor Updates
 ##### Added
 - `0011_coolingloadinputs....` file used to add new models to the db
