@@ -264,12 +264,6 @@ class ERPJob(ModelResource):
                     pvd = pv.dict
                     reopt_pv_size_kw += pvd.get("size_kw")
                     pv_prod_series += pvd.get("size_kw") * np.array(pvd.get("production_factor_series"))
-                    # pv_prod_factor_series += (
-                    #     np.array(pvd.get("year_one_to_battery_series_kw"))
-                    #     + np.array(pvd.get("year_one_curtailed_production_series_kw"))
-                    #     + np.array(pvd.get("year_one_to_load_series_kw"))
-                    #     + np.array(pvd.get("year_one_to_grid_series_kw"))
-                    # )
                 if reopt_pv_size_kw > 0 and "PV" not in bundle.data:
                     bundle.data["PV"] = {}
                 if "PV" in bundle.data:
