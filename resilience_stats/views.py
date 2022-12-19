@@ -38,7 +38,7 @@ from reo.models import ModelManager
 from reo.models import ScenarioModel, PVModel, StorageModel, LoadProfileModel, GeneratorModel, FinancialModel, \
     WindModel, CHPModel
 from reo.utilities import annuity
-from resilience_stats.models import ResilienceModel, ERPMeta, ERPInputs, ERPOutputs
+from resilience_stats.models import ResilienceModel, ERPMeta, ERPOutageInputs, ERPBackupGeneratorInputs, ERPPVInputs, ERPElectricStorageInputs, ERPOutputs
 from resilience_stats.outage_simulator_LF import simulate_outages
 import numpy as np
 from reo.utilities import empty_record
@@ -64,7 +64,7 @@ def erp_results(request, run_uuid):
     try:  # catch all unexpected exceptions
         # catch specific exceptions
         try:
-            meta = ERPMeta.objects.select_related("ERPInputs").get(run_uuid=run_uuid)
+            meta = ERPMeta.objects.select_related("ERPOutageInputs").get(run_uuid=run_uuid)
         except models.ObjectDoesNotExist as e:
             resp = {"messages": {}}
             resp['messages']['error'] = (
@@ -78,9 +78,22 @@ def erp_results(request, run_uuid):
                 "<version>/erp/<run uuid>/results endpoint. ").format(run_uuid)
             resp['status'] = 'Error'
             return JsonResponse(resp, content_type='application/json', status=404)
-        # 
+        
         resp = meta.dict
-        resp["inputs"] = meta.ERPInputs.dict
+        resp["inputs"] = dict()
+        resp["inputs"][ERPOutageInputs.key] = meta.ERPOutageInputs.dict
+        try:
+            resp["inputs"][ERPBackupGeneratorInputs.key] = meta.ERPBackupGeneratorInputs.dict
+        except AttributeError:
+            pass
+        try:
+            resp["inputs"][ERPPVInputs.key] = meta.ERPPVInputs.dict
+        except AttributeError:
+            pass
+        try:
+            resp["inputs"][ERPElectricStorageInputs.key] = meta.ERPElectricStorageInputs.dict
+        except AttributeError:
+            pass
         resp["outputs"] = dict()
         resp["messages"] = dict()
         #TODO: save messages for ERP jobs and include here
