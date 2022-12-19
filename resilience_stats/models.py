@@ -371,20 +371,6 @@ class ERPOutageInputs(BaseModel, models.Model):
         help_text=("Critical load during an outage. Must be hourly (8,760 samples). All non-net load values must be greater than or equal to zero.")
     )
 
-    def clean(self):
-        if type(self.generator_size_kw) != list:
-            self.generator_size_kw = [self.generator_size_kw]
-        for gen_list_input_name in ["generator_operational_availability",
-                                    "generator_failure_to_start",
-                                    "generator_failure_to_run",
-                                    "num_generators"]:
-            if type(getattr(self, gen_list_input_name)) != list:
-                setattr(self, gen_list_input_name, [getattr(self, gen_list_input_name)])
-            if len(getattr(self, gen_list_input_name)) == 0:
-                num_gen_types = len(self.generator_size_kw)
-                setattr(self, gen_list_input_name, [gen_input_default(input_name=gen_list_input_name)]*num_gen_types)
-            self.errors.append('List is empty for {}.'.format(name))
-
     
 class ERPOutputs(BaseModel, models.Model):
     meta = models.OneToOneField(
