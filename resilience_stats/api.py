@@ -291,12 +291,15 @@ class ERPJob(ModelResource):
                 except AttributeError as e: 
                     pass
                 
-            
-            erpinputs = ERPOutageInputs.create(meta=meta, **bundle.data["Outage"])
-            erpinputs = ERPBackupGeneratorInputs.create(meta=meta, **bundle.data["BackupGenerator"])
-            erpinputs.clean()
-            erpinputs.clean_fields()
-            erpinputs.save()
+            for model in (
+                ERPOutageInputs,    
+                ERPBackupGeneratorInputs,
+                ERPPVInputs
+            ):
+                obj = model.create(meta=meta, **bundle.data[model.key])
+                obj.clean()
+                obj.clean_fields()
+                obj.save()
 
             meta.status = 'Simulating...'
             meta.save(update_fields=['status'])
