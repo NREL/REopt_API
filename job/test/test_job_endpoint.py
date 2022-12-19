@@ -116,6 +116,68 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         assert(resp.status_code==400)
 
 
+    def test_cooling_possible_sets_and_results(self):
+        """
+        Purpose of this test is to test the validity of Cooling Load possible_sets, in particular []/null and blend/hybrid
+        """
+        scenario = {
+            "Settings": {"run_bau": False},
+            "Site": {"longitude": -118.1164613, "latitude": 34.5794343},
+            "ElectricTariff": {"urdb_label": "5ed6c1a15457a3367add15ae"},
+            "PV": {"max_kw": 0.0},
+            "ElectricStorage":{"max_kw": 0.0, "max_kwh": 0.0},
+            "ElectricLoad": {
+                "blended_doe_reference_names": ["Hospital", "LargeOffice"],
+                "blended_doe_reference_percents": [0.75, 0.25],              
+                "annual_kwh": 876000.0
+            },
+            "CoolingLoad": {
+                "doe_reference_name": "Hospital",
+                "annual_tonhour": 5000.0
+            },
+            "SpaceHeatingLoad": {
+                "doe_reference_name": "Hospital",
+                "annual_mmbtu": 500.0
+            },
+            "ExistingBoiler": {
+                "efficiency": 0.72,
+                "production_type": "steam",
+                "fuel_cost_per_mmbtu": 10
+            },
+            "ExistingChiller": {
+                "cop": 3.4,
+                "max_thermal_factor_on_peak_load": 1.25
+            },
+            "CHP": {
+                "prime_mover": "recip_engine",
+                "fuel_cost_per_mmbtu": 10,
+                "min_kw": 100,
+                "max_kw": 100,
+                "electric_efficiency_full_load": 0.35,
+                "electric_efficiency_half_load": 0.35,
+                "min_turn_down_fraction": 0.1,
+                "thermal_efficiency_full_load": 0.45,
+                "thermal_efficiency_half_load": 0.45
+            }
+        }
+
+        resp = self.api_client.post('/dev/job/', format='json', data=scenario)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+        
+        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        r = json.loads(resp.content)
+        inputs = r["inputs"]
+        results = r["outputs"]
+        self.assertIn("CoolingLoad", list(inputs.keys()))
+        self.assertIn("CoolingLoad", list(results.keys()))
+        self.assertIn("CHP", list(results.keys()))
+        self.assertIn("ExistingChiller",list(results.keys()))
+        self.assertIn("ExistingBoiler", list(results.keys()))
+        self.assertIn("HeatingLoad", list(results.keys()))
+
+
     def test_chp_defaults_from_julia(self):
         # Test that the inputs_with_defaults_set_in_julia feature worked for CHP, consistent with /chp_defaults
         post_file = os.path.join('job', 'test', 'posts', 'chp_defaults_post.json')
