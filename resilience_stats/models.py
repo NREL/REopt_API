@@ -59,7 +59,6 @@ class BaseModel(object):
         return obj
         
 class ERPMeta(BaseModel, models.Model):
-
     run_uuid = models.UUIDField(unique=True)
     user_uuid = models.TextField(
         blank=True,
@@ -112,6 +111,7 @@ class ERPMeta(BaseModel, models.Model):
 #         return d2
 
 class ERPBackupGeneratorInputs(BaseModel, models.Model):
+    key = "BackupGenerator"
     meta = models.OneToOneField(
         ERPMeta,
         on_delete=models.CASCADE,
@@ -201,6 +201,7 @@ class ERPBackupGeneratorInputs(BaseModel, models.Model):
 
 
 class ERPElectricStorageInputs(BaseModel, models.Model):
+    key = "ElectricStorage"
     meta = models.OneToOneField(
         ERPMeta,
         on_delete=models.CASCADE,
@@ -293,6 +294,7 @@ class ERPElectricStorageInputs(BaseModel, models.Model):
     #     return d2
 
 class ERPPVInputs(BaseModel, models.Model):
+    key = "PV"
     meta = models.OneToOneField(
         ERPMeta,
         on_delete=models.CASCADE,
@@ -348,6 +350,7 @@ class ERPPVInputs(BaseModel, models.Model):
     #     return d2
 
 class ERPOutageInputs(BaseModel, models.Model):
+    key = "Outage"
     meta = models.OneToOneField(
         ERPMeta,
         on_delete=models.CASCADE,
@@ -384,7 +387,6 @@ class ERPOutageInputs(BaseModel, models.Model):
 
     
 class ERPOutputs(BaseModel, models.Model):
-
     meta = models.OneToOneField(
         ERPMeta,
         on_delete=models.CASCADE,
