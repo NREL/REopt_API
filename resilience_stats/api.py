@@ -178,30 +178,44 @@ class ERPJob(ModelResource):
                     gen_out = reopt_run_meta.GeneratorOutputs.dict
                 except AttributeError as e: 
                     pass
-                if "Generator" not in bundle.data and \
-                                gen_out is not None and \
-                                gen_out.get("size_kw", 0) > 0:
-                    bundle.data["Generator"] = {}
-                # if "Generator" is still not in bundle.data then not being included
                 if "Generator" in bundle.data:
-                    if bundle.data["Generator"].get("size_kw", None) is None \
-                                                                    and gen_out is not None:
-                        num_generators = bundle.data["Generator"].get("num_generators", None)
-                        if num_generators is not None:
-                            bundle.data["Generator"]["size_kw"] = gen_out.get("size_kw", 0) / num_generators
-                        else:
-                            bundle.data["Generator"]["size_kw"] = gen_out.get("size_kw", 0)
                     try:
                         gen_in = reopt_run_meta.GeneratorInputs.dict
-                        for field_name in [
-                                            "fuel_avail_gal", 
-                                            "electric_efficiency_half_load", 
-                                            "electric_efficiency_full_load"
-                                        ]:
-                            if bundle.data["Generator"].get(field_name, None) is None:
-                                bundle.data["Generator"][field_name] = gen_in[field_name]
+                        gen_inputs_from_reopt_results = {
+                            "fuel_avail_gal": gen_in["fuel_avail_gal"],
+                            "electric_efficiency_half_load": gen_in["electric_efficiency_half_load"],
+                            "electric_efficiency_full_load": gen_in["electric_efficiency_full_load"]
+                        }
+                        if gen_out is not None:
+                            gen_inputs_from_reopt_results["size_kw"] = gen_out.get("size_kw", 0) / bundle.data.get("Generator", {}).get("num_generators", 1),
+                        bundle.data["Generator"] = gen_inputs_from_reopt_results.update(bundle.data.get("Generator", {}))
                     except AttributeError as e: 
                         pass
+
+                # if "Generator" not in bundle.data and \
+                #                 gen_out is not None and \
+                #                 gen_out.get("size_kw", 0) > 0:
+                #     bundle.data["Generator"] = {}
+                # # if "Generator" is still not in bundle.data then not being included
+                # if "Generator" in bundle.data:
+                #     if bundle.data["Generator"].get("size_kw", None) is None \
+                #                                                     and gen_out is not None:
+                #         num_generators = bundle.data["Generator"].get("num_generators", None)
+                #         if num_generators is not None:
+                #             bundle.data["Generator"]["size_kw"] = gen_out.get("size_kw", 0) / num_generators
+                #         else:
+                #             bundle.data["Generator"]["size_kw"] = gen_out.get("size_kw", 0)
+                #     try:
+                #         gen_in = reopt_run_meta.GeneratorInputs.dict
+                #         for field_name in [
+                #                             "fuel_avail_gal", 
+                #                             "electric_efficiency_half_load", 
+                #                             "electric_efficiency_full_load"
+                #                         ]:
+                #             if bundle.data["Generator"].get(field_name, None) is None:
+                #                 bundle.data["Generator"][field_name] = gen_in[field_name]
+                #     except AttributeError as e: 
+                #         pass
 
                 ## CHP/PrimeGenerator ##
                 chp_or_prime_out = None
@@ -285,14 +299,14 @@ class ERPJob(ModelResource):
                     pass
                 try:
                     stor_in = reopt_run_meta.ElectricStorageInputs.dict
-                    stor_inputs_from_reopt_results = {
+                    stor_inputs_from_reopt = {
                         "charge_efficiency": stor_in["rectifier_efficiency_fraction"] * stor_in["internal_efficiency_fraction"]**0.5,
                         "discharge_efficiency": stor_in["inverter_efficiency_fraction"] * stor_in["internal_efficiency_fraction"]**0.5,
                         "size_kw": 0 if stor_out is None else stor_out.get("size_kw", 0),
                         "size_kwh": 0 if stor_out is None else stor_out.get("size_kwh", 0),
                         "starting_soc_series_fraction": [] if stor_out is None else stor_out.get("year_one_soc_series_fraction", []),
                     }
-                    bundle.data["ElectricStorage"] = stor_inputs_from_reopt_results.update(bundle.data.get("ElectricStorage", {}))
+                    bundle.data["ElectricStorage"] = stor_inputs_from_reopt.update(bundle.data.get("ElectricStorage", {}))
                 except AttributeError as e: 
                     pass
                 
