@@ -104,12 +104,9 @@ urlpatterns = [
     re_path(r'', include(stable_api.urls), name='ghpghx'),
 
     path('dev/', include('job.urls')),
-    re_path(r'', include(dev_api.urls), name='job'),
-
     path('dev/', include('futurecosts.urls')),
+    re_path(r'', include(dev_api.urls), name='job'),
     re_path(r'', include(dev_api.urls), name='futurecosts'),
-
-    re_path(r'', include(stable_api.urls), name='ghpghx'),
 
     re_path(r'(.*)', page_not_found, name='404'),
     ]
