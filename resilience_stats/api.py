@@ -192,50 +192,6 @@ class ERPJob(ModelResource):
                     except AttributeError as e: 
                         pass
 
-                # gen_out = None
-                # try:
-                #     gen_out = reopt_run_meta.GeneratorOutputs.dict
-                # except AttributeError as e: 
-                #     pass
-                # if "Generator" in bundle.data:
-                #     try:
-                #         gen_in = reopt_run_meta.GeneratorInputs.dict
-                #         gen_inputs_from_reopt_results = {
-                #             "fuel_avail_gal": gen_in["fuel_avail_gal"],
-                #             "electric_efficiency_half_load": gen_in["electric_efficiency_half_load"],
-                #             "electric_efficiency_full_load": gen_in["electric_efficiency_full_load"]
-                #         }
-                #         if gen_out is not None:
-                #             gen_inputs_from_reopt_results["size_kw"] = gen_out.get("size_kw", 0) / bundle.data.get("Generator", {}).get("num_generators", 1),
-                #         bundle.data["Generator"] = gen_inputs_from_reopt_results.update(bundle.data.get("Generator", {}))
-                #     except AttributeError as e: 
-                #         pass
-
-                # if "Generator" not in bundle.data and \
-                #                 gen_out is not None and \
-                #                 gen_out.get("size_kw", 0) > 0:
-                #     bundle.data["Generator"] = {}
-                # # if "Generator" is still not in bundle.data then not being included
-                # if "Generator" in bundle.data:
-                #     if bundle.data["Generator"].get("size_kw", None) is None \
-                #                                                     and gen_out is not None:
-                #         num_generators = bundle.data["Generator"].get("num_generators", None)
-                #         if num_generators is not None:
-                #             bundle.data["Generator"]["size_kw"] = gen_out.get("size_kw", 0) / num_generators
-                #         else:
-                #             bundle.data["Generator"]["size_kw"] = gen_out.get("size_kw", 0)
-                #     try:
-                #         gen_in = reopt_run_meta.GeneratorInputs.dict
-                #         for field_name in [
-                #                             "fuel_avail_gal", 
-                #                             "electric_efficiency_half_load", 
-                #                             "electric_efficiency_full_load"
-                #                         ]:
-                #             if bundle.data["Generator"].get(field_name, None) is None:
-                #                 bundle.data["Generator"][field_name] = gen_in[field_name]
-                #     except AttributeError as e: 
-                #         pass
-
                 ## CHP/PrimeGenerator ##
                 chp_or_prime_out = None
                 chp_or_prime_in = None
