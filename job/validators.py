@@ -31,7 +31,7 @@ import logging
 import pandas as pd
 from job.models import MAX_BIG_NUMBER, APIMeta, ExistingBoilerInputs, UserProvidedMeta, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
     FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs, SpaceHeatingLoadInputs, \
-    DomesticHotWaterLoadInputs, CHPInputs
+    DomesticHotWaterLoadInputs, CHPInputs, CoolingLoadInputs, ExistingChillerInputs
 from django.core.exceptions import ValidationError
 from pyproj import Proj
 from typing import Tuple
@@ -94,6 +94,8 @@ class InputValidator(object):
             ElectricStorageInputs,
             GeneratorInputs,
             WindInputs,
+            CoolingLoadInputs,
+            ExistingChillerInputs,
             ExistingBoilerInputs,
             SpaceHeatingLoadInputs,
             DomesticHotWaterLoadInputs,
@@ -279,6 +281,7 @@ class InputValidator(object):
         if len(self.pvnames) > 0:  # multiple PV
             for pvname in self.pvnames:
                 cross_clean_pv(self.models[pvname])
+                update_pv_defaults_offgrid(self)
 
         """
         Time series values are up or down sampled to align with Settings.time_steps_per_hour
@@ -398,6 +401,17 @@ class InputValidator(object):
                     self.add_validation_error("ElectricUtility", "outage_end_time_step",
                                               f"Value is greater than the max allowable ({max_ts})")
         
+        """
+        CoolingLoad
+        """
+        if "CoolingLoad" in self.models.keys():
+
+            if len(self.models["CoolingLoad"].thermal_loads_ton) > 0:
+                self.clean_time_series("CoolingLoad", "thermal_loads_ton")
+
+            if len(self.models["CoolingLoad"].per_time_step_fractions_of_electric_load) > 0:
+                self.clean_time_series("CoolingLoad", "per_time_step_fractions_of_electric_load")
+            
         """
         ExistingBoiler
         """
@@ -521,6 +535,10 @@ class InputValidator(object):
         
         if self.models["Settings"].off_grid_flag==True:
             validate_offgrid_keys(self)
+
+        """
+        ExistingChiller - skip, no checks
+        """
 
     def save(self):
         """
