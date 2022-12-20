@@ -38,7 +38,7 @@ from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, Ge
     WindOutputs, ExistingBoilerInputs, GeneratorOutputs, ElectricTariffOutputs, ElectricUtilityOutputs,\
     ElectricLoadOutputs, ExistingBoilerOutputs, DomesticHotWaterLoadInputs, SiteInputs, SiteOutputs, APIMeta,\
     UserProvidedMeta, CHPInputs, CHPOutputs, CoolingLoadInputs, ExistingChillerInputs, ExistingChillerOutputs,\
-    CoolingLoadOutputs, HeatingLoadOutputs
+    CoolingLoadOutputs, HeatingLoadOutputs, BoilerInputs, BoilerOutputs
 import os
 import requests
 import logging
@@ -69,7 +69,7 @@ def help(request):
         d["CoolingLoad"] = CoolingLoadInputs.info_dict(CoolingLoadInputs)
         d["ExistingChiller"] = ExistingChillerInputs.info_dict(ExistingChillerInputs)
         d["ExistingBoiler"] = ExistingBoilerInputs.info_dict(ExistingBoilerInputs)
-        # d["Boiler"] = BoilerInputs.info_dict(BoilerInputs)
+        d["Boiler"] = BoilerInputs.info_dict(BoilerInputs)
         d["SpaceHeatingLoad"] = SpaceHeatingLoadInputs.info_dict(SpaceHeatingLoadInputs)
         d["DomesticHotWaterLoad"] = DomesticHotWaterLoadInputs.info_dict(DomesticHotWaterLoadInputs)
         d["Site"] = SiteInputs.info_dict(SiteInputs)
@@ -109,7 +109,7 @@ def outputs(request):
         d["Generator"] = GeneratorOutputs.info_dict(GeneratorOutputs)
         d["ExistingChiller"] = ExistingChillerOutputs.info_dict(ExistingChillerOutputs)
         d["ExistingBoiler"] = ExistingBoilerOutputs.info_dict(ExistingBoilerOutputs)
-        # d["Boiler"] = BoilerOutputs.info_dict(BoilerOutputs)
+        d["Boiler"] = BoilerOutputs.info_dict(BoilerOutputs)
         d["HeatingLoad"] = HeatingLoadOutputs.info_dict(HeatingLoadOutputs)
         d["CoolingLoad"] = CoolingLoadOutputs.info_dict(CoolingLoadOutputs)
         d["CHP"] = CHPOutputs.info_dict(CHPOutputs)
@@ -207,8 +207,8 @@ def results(request, run_uuid):
     try: r["inputs"]["ExistingBoiler"] = meta.ExistingBoilerInputs.dict
     except: pass
 
-    # try: r["inputs"]["Boiler"] = meta.BoilerInputs.dict
-    # except: pass
+    try: r["inputs"]["Boiler"] = meta.BoilerInputs.dict
+    except: pass
 
     try: r["inputs"]["SpaceHeatingLoad"] = meta.SpaceHeatingLoadInputs.dict
     except: pass
@@ -255,8 +255,8 @@ def results(request, run_uuid):
         except: pass
         try: r["outputs"]["ExistingBoiler"] = meta.ExistingBoilerOutputs.dict
         except: pass
-        # try: r["outputs"]["Boiler"] = meta.BoilerOutputs.dict
-        # except: pass
+        try: r["outputs"]["Boiler"] = meta.BoilerOutputs.dict
+        except: pass
         try: r["outputs"]["CHP"] = meta.CHPOutputs.dict
         except: pass
         try: r["outputs"]["HeatingLoad"] = meta.HeatingLoadOutputs.dict
