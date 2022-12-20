@@ -258,18 +258,6 @@ class ERPJob(ModelResource):
                             bundle.data["PV"]["production_factor_series"] = (pv_prod_series/reopt_pv_size_kw).tolist()
                         else: # PV considered in optimization but optimal sizes all 0. Use prod factor of first PV.
                             bundle.data["PV"]["production_factor_series"] = pvs[0].dict.get("production_factor_series")
-                    
-                # if reopt_pv_size_kw > 0 and "PV" not in bundle.data:
-                #     bundle.data["PV"] = {}
-                # if "PV" in bundle.data:
-                #     if bundle.data["PV"].get("size_kw", None) is None:
-                #         bundle.data["PV"]["size_kw"] = reopt_pv_size_kw
-                #     if bundle.data["PV"].get("production_factor_series", None) is None: 
-                #         # List pvs cannot be empty otherwise would have errored above
-                #         if reopt_pv_size_kw > 0: # Use weighted avg of PV prod factors
-                #             bundle.data["PV"]["production_factor_series"] = (pv_prod_series/reopt_pv_size_kw).tolist()
-                #         else: # PV considered in optimization but optimal sizes all 0. Use prod factor of first PV.
-                #             bundle.data["PV"]["production_factor_series"] = pvs[0].dict.get("production_factor_series")
                                     
                 ## ElectricStorage ##
                 stor_out = None
