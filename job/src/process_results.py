@@ -30,7 +30,7 @@
 
 from job.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorageOutputs, ElectricTariffOutputs, SiteOutputs,\
     ElectricUtilityOutputs, GeneratorOutputs, ElectricLoadOutputs, WindOutputs, FinancialInputs, ElectricUtilityInputs,\
-	ExistingBoilerOutputs, CHPOutputs, CHPInputs, ExistingChillerOutputs, CoolingLoadOutputs, HeatingLoadOutputs
+	ExistingBoilerOutputs, CHPOutputs, CHPInputs, ExistingChillerOutputs, CoolingLoadOutputs, HeatingLoadOutputs, BoilerOutputs
 import logging
 log = logging.getLogger(__name__)
 
@@ -63,8 +63,8 @@ def process_results(results: dict, run_uuid: str) -> None:
         WindOutputs.create(meta=meta, **results["Wind"]).save()
     if "ExistingChiller" in results.keys():
         ExistingChillerOutputs.create(meta=meta, **results["ExistingChiller"]).save()
-    # if "Boiler" in results.keys():
-    #     BoilerOutputs.create(meta=meta, **results["Boiler"]).save()
+    if "Boiler" in results.keys():
+        BoilerOutputs.create(meta=meta, **results["Boiler"]).save()
     if "ExistingBoiler" in results.keys():
         ExistingBoilerOutputs.create(meta=meta, **results["ExistingBoiler"]).save()
     if "HeatingLoad" in results.keys():
