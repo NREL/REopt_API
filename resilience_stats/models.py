@@ -134,7 +134,7 @@ class ERPGeneratorInputs(BaseModel, models.Model):
         ],
         default=0.0066,
         blank=True,
-        help_text=("Chance of generator starting given outage")
+        help_text=("Chance of generator starting when an outage occurs")
     )
     failure_to_run = models.FloatField(
         validators=[
@@ -151,7 +151,7 @@ class ERPGeneratorInputs(BaseModel, models.Model):
         ],
         blank=True,
         default=1,
-        help_text=("Number of generators")
+        help_text=("Number of generator units")
     )
     size_kw = models.FloatField(
         validators=[
@@ -160,7 +160,7 @@ class ERPGeneratorInputs(BaseModel, models.Model):
         ],
         blank=True,
         default=0.0,
-        help_text=("Backup generator capacity")
+        help_text=("Generator unit capacity")
     )
     fuel_avail_gal = models.FloatField(
         validators=[
@@ -169,7 +169,7 @@ class ERPGeneratorInputs(BaseModel, models.Model):
         ],
         blank=True,
         default=1.0e9,
-        help_text=("Amount of diesel fuel available, either for all backup generators or per generator depending on value of fuel_avail_gal_is_per_generator.")
+        help_text=("Amount of diesel fuel available, either for all generators or per generator depending on value of fuel_avail_gal_is_per_generator.")
     )
     fuel_avail_gal_is_per_generator = models.BooleanField(
         default=False,
@@ -183,7 +183,7 @@ class ERPGeneratorInputs(BaseModel, models.Model):
         ],
         blank=True,
         null=True,
-        help_text=("Electric efficiency of the generator running at half load.electric_efficiency_full_load")
+        help_text=("Electric efficiency of generator running at half load.electric_efficiency_full_load")
     )
     electric_efficiency_full_load = models.FloatField(
         validators=[
@@ -192,7 +192,7 @@ class ERPGeneratorInputs(BaseModel, models.Model):
         ],
         blank=True,
         default=0.34,
-        help_text=("Electric efficiency of the generator running at full load.")
+        help_text=("Electric efficiency of generator running at full load.")
     )
 
     def clean(self):
@@ -499,8 +499,8 @@ def get_erp_input_dict_from_run_uuid(run_uuid:str):
                                     "failure_to_start",
                                     "failure_to_run",
                                     "size_kw",
-                                    "fuel_intercept",
-                                    "burn_rate_fuel_per_kwh",
+                                    "fuel_intercept_per_hr",
+                                    "fuel_burn_rate_per_kwh",
                                     "operational_availability",
                                     "size_kw",
                                     "size_kwh",
@@ -513,7 +513,7 @@ def get_erp_input_dict_from_run_uuid(run_uuid:str):
                                 }
         return {(prefix + "_" + k if k in keys_to_add_tech_prefix else k): v for (k, v) in d.items()}
     
-    def merge_generator_inputs(gen_dicts:list):
+    def merge_gen_and_chp_inputs(gen_dicts:list):
         #assumes gen_dicts not empty and all dicts in it have all same keys
         return {k: [gen_type[k] for gen_type in gen_dicts] for k in gen_dicts[0].keys()}
 
@@ -527,16 +527,41 @@ def get_erp_input_dict_from_run_uuid(run_uuid:str):
         d.update(add_tech_prefixes(filter_none_and_empty_array(meta.ERPPVInputs.dict),"pv"))
     except: pass
     gen_dicts = []
-    try: gen_dicts += meta.ERPGeneratorInputs.dict 
-    except: pass
-    try: gen_dicts += meta.ERPGeneratorInputs.dict
-    except: pass
-    try: gen_dicts += meta.ERPCHPInputs.dict
-    except: pass
-    if gen_dicts != []:
-        d.update(filter_none_and_empty_array(merge_generator_inputs(gen_dicts)))
+    try: 
+        gen = meta.ERPGeneratorInputs.dict
 
-    # TODO: do this instead once extend input structure changes to julia
+        # Temp conversions until extend input structure changes to julia
+        # convert efficiency to slope/intercept in gen dict
+        KWH_PER_GAL_DIESEL = 40.7
+        fuel_burn_full_load_kwht = 1.0 / gen.pop("electric_efficiency_full_load")  # [kWe_rated/(kWhe/kWht)]
+        fuel_burn_half_load_kwht = 0.5 / gen.pop("electric_efficiency_half_load")  # [kWe_rated/(kWhe/kWht)]
+        fuel_slope_kwht_per_kwhe = (fuel_burn_full_load_kwht - fuel_burn_half_load_kwht) / (1.0 - 0.5)  # [kWht/kWhe]
+        fuel_intercept_kwht_per_hr = fuel_burn_full_load_kwht - fuel_slope_kwht_per_kwhe * 1.0  # [kWht/hr]
+        gen["fuel_burn_rate_per_kwh"] = fuel_slope_kwht_per_kwhe / KWH_PER_GAL_DIESEL # [gal/kWhe]
+        gen["fuel_intercept_per_hr"] = fuel_intercept_kwht_per_hr / KWH_PER_GAL_DIESEL # [gal/hr]
+        # change fuel_avail_gal to fuel_limit
+        gen["fuel_limit"] = gen.pop("fuel_avail_gal")
+    
+        gen_dicts += gen
+    except AttributeError: pass
+    try: 
+        chp = meta.ERPCHPInputs.dict
+
+        # Temp conversions until extend input structure changes to julia
+        # convert efficiency to slope/intercept in chp dict
+        fuel_burn_full_load = 1.0 / chp.pop("electric_efficiency_full_load")
+        fuel_burn_half_load = 0.5 / chp.pop("electric_efficiency_half_load")
+        chp["fuel_burn_rate_per_kwh"] = (fuel_burn_full_load - fuel_burn_half_load) / (1.0 - 0.5)  # [kWht/kWhe]
+        chp["fuel_intercept_per_hr"] = fuel_burn_full_load - chp["fuel_burn_rate_per_kwh"] * 1.0  # [kWht/hr]
+        # add fuel_limit
+        gen["fuel_limit"] = 1e9
+    
+        gen_dicts += chp
+    except AttributeError: pass
+    if gen_dicts != []:
+        d.update(filter_none_and_empty_array(merge_gen_and_chp_inputs(gen_dicts)))
+
+    # TODO: do this instead once extend input structure changes to julia (and do conversion of effic to slope/intercept in julia using existing util function)
     # d["Generator"] = filter_none_and_empty_array(meta.ERPGeneratorInputs.dict)
     # d["PrimeGenerator"] = filter_none_and_empty_array(meta.ERPPrimeGeneratorInputs.dict)
     # d["CHP"] = filter_none_and_empty_array(meta.ERPCHPInputs.dict)
