@@ -199,6 +199,81 @@ class ERPGeneratorInputs(BaseModel, models.Model):
         if not self.electric_efficiency_half_load:
             self.electric_efficiency_half_load = self.electric_efficiency_full_load
 
+class ERPCHPInputs(BaseModel, models.Model):
+    key = "CHP"
+    meta = models.OneToOneField(
+        ERPMeta,
+        on_delete=models.CASCADE,
+        primary_key=True,
+        related_name="ERPCHPInputs"
+    )
+    operational_availability = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        default=0.9998, 
+        blank=True,
+        help_text=("Fraction of year CHP units are not down for maintenance")
+    )
+    failure_to_start = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        default=0.0066,
+        blank=True,
+        help_text=("Chance of CHP unit starting when an outage occurs")
+    )
+    failure_to_run = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        default=0.00157,
+        blank=True,
+        help_text=("Chance of CHP unit failing in each hour of outage")
+    )
+    num_generators = models.IntegerField(
+        validators=[
+            MinValueValidator(1)
+        ],
+        blank=True,
+        default=1,
+        help_text=("Number of CHP units")
+    )
+    size_kw = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        default=0.0,
+        help_text=("CHP unit electric capacity")
+    )
+    electric_efficiency_half_load = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        null=True,
+        help_text=("Electric efficiency of CHP unit running at half load.electric_efficiency_full_load")
+    )
+    electric_efficiency_full_load = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        default=0.34,
+        help_text=("Electric efficiency of CHP unit running at full load.")
+    )
+
+    def clean(self):
+        if not self.electric_efficiency_half_load:
+            self.electric_efficiency_half_load = self.electric_efficiency_full_load
+
 
 class ERPElectricStorageInputs(BaseModel, models.Model):
     key = "ElectricStorage"
