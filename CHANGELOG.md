@@ -48,7 +48,7 @@ Classify the change according to the following categories:
 2. Modified `julia_src\http.jl` and `julia_src\cbc\http.jl` to return status 400 when REopt responds with an error
 3. Updated `r["Messages"]` in `views.py` to include **REoptjlMessageOutputs** errors and warnings
 
-## Develop - 2022-11-11
+## v2.5.0
 ### Minor Updates
 ##### Added
 - `0011_coolingloadinputs....` file used to add new models to the db
