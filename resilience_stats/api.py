@@ -164,10 +164,6 @@ class ERPJob(ModelResource):
                 ## Outage ##
                 critical_loads_kw = reopt_run_meta.ElectricLoadOutputs.dict["critical_load_series_kw"]
                 bundle.data["Outage"] = {"critical_loads_kw": critical_loads_kw}.update(bundle.data.get("Outage", {}))
-                # if bundle.data.get("Outage", None) is None:
-                #      bundle.data["Outage"] = {"critical_loads_kw": critical_loads_kw}
-                # elif bundle.data["Outage"].get("critical_loads_kw", None) is None: 
-                #     bundle.data["Outage"]["critical_loads_kw"] = critical_loads_kw
                 # TODO: set max_outage_duration based on reopt outage inputs when multiple outage PR merged
                 # if bundle.data["Outage"].get("max_outage_duration", None) is None: 
                 #     bundle.data["Outage"]["max_outage_duration"] = max(reopt_run_meta.ElectricUtilityInputs.dict["outage_durations"])
