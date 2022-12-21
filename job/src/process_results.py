@@ -71,7 +71,7 @@ def process_results(results: dict, run_uuid: str) -> None:
     if "HotThermalStorage" in results.keys():
         HotThermalStorageOutputs.create(meta=meta, **results["HotThermalStorage"]).save()
     if "ColdThermalStorage" in results.keys():
-        HotThermalStorageOutputs.create(meta=meta, **results["ColdThermalStorage"]).save()
+        ColdThermalStorageOutputs.create(meta=meta, **results["ColdThermalStorage"]).save()
     if "HeatingLoad" in results.keys():
         HeatingLoadOutputs.create(meta=meta, **results["HeatingLoad"]).save()
     if "CoolingLoad" in results.keys():
