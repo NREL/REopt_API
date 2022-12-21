@@ -203,6 +203,14 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
                 "min_turn_down_fraction": 0.1,
                 "thermal_efficiency_full_load": 0.45,
                 "thermal_efficiency_half_load": 0.45
+            },
+            "HotThermalStorage":{
+                "min_gal":2500,
+                "max_gal":2500
+            },
+            "ColdThermalStorage":{
+                "min_gal":2500,
+                "max_gal":2500
             }
         }
 
@@ -221,6 +229,8 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         self.assertIn("ExistingChiller",list(results.keys()))
         self.assertIn("ExistingBoiler", list(results.keys()))
         self.assertIn("HeatingLoad", list(results.keys()))
+        self.assertIn("HotThermalStorage", list(results.keys()))
+        self.assertIn("ColdThermalStorage", list(results.keys()))
 
 
     def test_chp_defaults_from_julia(self):
