@@ -229,7 +229,7 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
             MaxValueValidator(1)
         ],
         blank=True,
-        help_text=("Fraction of year CHP units are not down for maintenance")
+        help_text=("Fraction of year prime generator/CHP units are not down for maintenance")
     )
     failure_to_start = models.FloatField(
         validators=[
@@ -238,7 +238,7 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
         ],
         default=0,
         blank=True,
-        help_text=("Chance of CHP unit not starting when an outage occurs")
+        help_text=("Chance of prime generator/CHP unit not starting when an outage occurs")
     )
     mean_time_between_failures = models.FloatField(
         validators=[
@@ -254,7 +254,7 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
         ],
         blank=True,
         default=1,
-        help_text=("Number of CHP units")
+        help_text=("Number of prime generator/CHP units")
     )
     size_kw = models.FloatField(
         validators=[
@@ -263,7 +263,7 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
         ],
         blank=True,
         default=0.0,
-        help_text=("CHP unit electric capacity")
+        help_text=("Prime generator/CHP unit electric capacity")
     )
     electric_efficiency_half_load = models.FloatField(
         validators=[
@@ -272,7 +272,7 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
         ],
         blank=True,
         null=True,
-        help_text=("Electric efficiency of CHP unit running at half load.electric_efficiency_full_load")
+        help_text=("Electric efficiency of prime generator/CHP unit running at half load.electric_efficiency_full_load")
     )
     electric_efficiency_full_load = models.FloatField(
         validators=[
@@ -280,7 +280,7 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
             MaxValueValidator(1.0)
         ],
         default=0.34,
-        help_text=("Electric efficiency of CHP unit running at full load.")
+        help_text=("Electric efficiency of prime generator/CHP unit running at full load.")
     )
 
     def clean(self):
@@ -672,7 +672,7 @@ def get_erp_input_dict_from_run_uuid(run_uuid:str):
         gen.pop("prime_mover")
 
         # Temp conversions until extend input structure changes to julia
-        # convert efficiency to slope/intercept in chp dict
+        # convert efficiency to slope/intercept in gen dict
         fuel_burn_full_load = 1.0 / gen.pop("electric_efficiency_full_load")
         fuel_burn_half_load = 0.5 / gen.pop("electric_efficiency_half_load")
         gen["fuel_burn_rate_per_kwh"] = (fuel_burn_full_load - fuel_burn_half_load) / (1.0 - 0.5)  # [kWht/kWhe]
