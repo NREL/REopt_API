@@ -199,13 +199,18 @@ class ERPGeneratorInputs(BaseModel, models.Model):
         if not self.electric_efficiency_half_load:
             self.electric_efficiency_half_load = self.electric_efficiency_full_load
 
-class ERPCHPInputs(BaseModel, models.Model):
+class ERPPrimeGeneratorInputs(BaseModel, models.Model):
     key = "CHP"
     meta = models.OneToOneField(
         ERPMeta,
         on_delete=models.CASCADE,
         primary_key=True,
         related_name="ERPCHPInputs"
+    )
+    is_chp = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text=("Whether prime generator system is CHP")
     )
     operational_availability = models.FloatField(
         validators=[
