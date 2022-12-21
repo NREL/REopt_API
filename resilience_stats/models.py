@@ -632,7 +632,7 @@ def get_erp_input_dict_from_run_uuid(run_uuid:str):
         gen_dicts += gen
     except AttributeError: pass
     try: 
-        chp = meta.ERPCHPInputs.dict
+        chp = meta.ERPPrimeGeneratorInputs.dict
 
         # Temp conversions until extend input structure changes to julia
         # convert efficiency to slope/intercept in chp dict
@@ -651,7 +651,6 @@ def get_erp_input_dict_from_run_uuid(run_uuid:str):
     # TODO: do this instead once extend input structure changes to julia (and do conversion of effic to slope/intercept in julia using existing util function)
     # d["Generator"] = filter_none_and_empty_array(meta.ERPGeneratorInputs.dict)
     # d["PrimeGenerator"] = filter_none_and_empty_array(meta.ERPPrimeGeneratorInputs.dict)
-    # d["CHP"] = filter_none_and_empty_array(meta.ERPCHPInputs.dict)
     # d["ElectricStorage"] = filter_none_and_empty_array(meta.ERPElectricStorageInputs.dict)
     # d["PV"] = filter_none_and_empty_array(meta.ERPPVInputs.dict)
     # d["Outage"] = filter_none_and_empty_array(meta.ERPOutageInputs.dict)
