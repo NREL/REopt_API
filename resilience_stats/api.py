@@ -206,7 +206,8 @@ class ERPJob(ModelResource):
                         prime_gen_inputs_from_reopt = {
                             "is_chp": chp_or_prime_in["thermal_efficiency_full_load"] > 0,
                             "electric_efficiency_half_load": chp_or_prime_in["electric_efficiency_half_load"],
-                            "electric_efficiency_full_load": chp_or_prime_in["electric_efficiency_full_load"]
+                            "electric_efficiency_full_load": chp_or_prime_in["electric_efficiency_full_load"],
+                            "prime_mover": chp_or_prime_in["prime_mover"]
                         }
                         bundle.data["PrimeGenerator"] = prime_gen_inputs_from_reopt.update(bundle.data.get("PrimeGenerator", {}))
                     except AttributeError as e:
