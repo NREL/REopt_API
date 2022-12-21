@@ -134,7 +134,7 @@ class ERPGeneratorInputs(BaseModel, models.Model):
         ],
         default=0.0066,
         blank=True,
-        help_text=("Chance of generator starting when an outage occurs")
+        help_text=("Chance of generator not starting when an outage occurs")
     )
     failure_to_run = models.FloatField(
         validators=[
@@ -236,8 +236,9 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(1)
         ],
+        default=0,
         blank=True,
-        help_text=("Chance of CHP unit starting when an outage occurs")
+        help_text=("Chance of CHP unit not starting when an outage occurs")
     )
     failure_to_run = models.FloatField(
         validators=[
