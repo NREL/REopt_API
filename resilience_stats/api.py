@@ -171,9 +171,10 @@ class ERPJob(ModelResource):
                 ## Generator ##
                 try:
                     gen_out = reopt_run_meta.GeneratorOutputs.dict
-                    bundle.data["Generator"] = {
-                        "size_kw": gen_out.get("size_kw", 0) / bundle.data.get("Generator", {}).get("num_generators", 1)
-                    }.update(bundle.data.get("Generator", {}))
+                    if gen_out.get("size_kw", 0) > 0:
+                        bundle.data["Generator"] = {
+                            "size_kw": gen_out.get("size_kw", 0) / bundle.data.get("Generator", {}).get("num_generators", 1)
+                        }.update(bundle.data.get("Generator", {}))
                 except AttributeError as e: 
                     pass
                 if "Generator" in bundle.data:
@@ -191,49 +192,75 @@ class ERPJob(ModelResource):
                 ## CHP/PrimeGenerator ##
                 chp_or_prime_out = None
                 chp_or_prime_in = None
-                tech_key = ""
+                is_chp_in_reopt = False
                 try:
                     chp_or_prime_out = reopt_run_meta.CHPOutputs.dict
+                    if chp_or_prime_out.get("size_kw", 0) > 0:
+                        bundle.data["PrimeGenerator"] = {
+                            "size_kw": chp_or_prime_out.get("size_kw", 0) / bundle.data.get("PrimeGenerator", {}).get("num_generators", 1)
+                        }.update(bundle.data.get("PrimeGenerator", {}))
                 except AttributeError as e: 
                     pass
-                try:
-                    chp_or_prime_in = reopt_run_meta.CHPInputs.dict
-                    tech_key = "CHP" if chp_or_prime_in["thermal_efficiency_full_load"] > 0 else "PrimeGenerator"
-                except AttributeError as e: 
-                    pass
-                if (
-                        chp_or_prime_in is None and 
-                        ("CHP" in bundle.data or "PrimeGenerator" in bundle.data)
-                    ) or (
-                        tech_key != "CHP" and "CHP" in bundle.data
-                    ) or (
-                        tech_key != "PrimeGenerator" and "PrimeGenerator" in bundle.data
-                    ):
-                    add_validation_err_msg_and_raise_400_response(
-                        meta_dict, 
-                        "Running ERP with CHP or PrimeGenerator but a reopt_run_uuid of an optimization that did not consider it is not yet supported."
-                    )
-                if chp_or_prime_out is not None and \
-                        chp_or_prime_out.get("size_kw", 0) > 0 and \
-                        tech_key not in bundle.data:
-                        # "CHP" not in bundle.data and \
-                        # "PrimeGenerator" not in bundle.data:
-                    bundle.data[tech_key] = {}
-                # if "CHP" or "PrimeGenerator" is still not in bundle.data then not being included
-                # if one is in bundle.data then chp_or_prime_out is not None otherwise would have errored above
-                if tech_key in bundle.data:
-                    if bundle.data[tech_key].get("size_kw", None) is None:
-                        num_generators = bundle.data[tech_key].get("num_generators", None)
-                        if num_generators is not None:
-                            bundle.data[tech_key]["size_kw"] = chp_or_prime_out.get("size_kw", 0) / num_generators
-                        else:
-                            bundle.data[tech_key]["size_kw"] = chp_or_prime_out.get("size_kw", 0)
-                    for field_name in [
-                                        "electric_efficiency_half_load", 
-                                        "electric_efficiency_full_load"
-                                    ]:
-                        if bundle.data[tech_key].get(field_name, None) is None:
-                            bundle.data[tech_key][field_name] = chp_or_prime_in[field_name]
+                if "PrimeGenerator" in bundle.data:
+                    try:
+                        chp_or_prime_in = reopt_run_meta.CHPInputs.dict
+                        prime_gen_inputs_from_reopt = {
+                            "is_chp": chp_or_prime_in["thermal_efficiency_full_load"] > 0,
+                            "electric_efficiency_half_load": chp_or_prime_in["electric_efficiency_half_load"],
+                            "electric_efficiency_full_load": chp_or_prime_in["electric_efficiency_full_load"]
+                        }
+                        bundle.data["PrimeGenerator"] = prime_gen_inputs_from_reopt.update(bundle.data.get("PrimeGenerator", {}))
+                    except AttributeError as e:
+                        add_validation_err_msg_and_raise_400_response(
+                            meta_dict, 
+                            "Running ERP with PrimeGenerator but a reopt_run_uuid of an optimization that did not consider it (using CHP) is not yet supported."
+                        )
+
+                # chp_or_prime_out = None
+                # chp_or_prime_in = None
+                # tech_key = ""
+                # try:
+                #     chp_or_prime_out = reopt_run_meta.CHPOutputs.dict
+                # except AttributeError as e: 
+                #     pass
+                # try:
+                #     chp_or_prime_in = reopt_run_meta.CHPInputs.dict
+                #     tech_key = "CHP" if chp_or_prime_in["thermal_efficiency_full_load"] > 0 else "PrimeGenerator"
+                # except AttributeError as e: 
+                #     pass
+                # if (
+                #         chp_or_prime_in is None and 
+                #         ("CHP" in bundle.data or "PrimeGenerator" in bundle.data)
+                #     ) or (
+                #         tech_key != "CHP" and "CHP" in bundle.data
+                #     ) or (
+                #         tech_key != "PrimeGenerator" and "PrimeGenerator" in bundle.data
+                #     ):
+                #     add_validation_err_msg_and_raise_400_response(
+                #         meta_dict, 
+                #         "Running ERP with CHP or PrimeGenerator but a reopt_run_uuid of an optimization that did not consider it is not yet supported."
+                #     )
+                # if chp_or_prime_out is not None and \
+                #         chp_or_prime_out.get("size_kw", 0) > 0 and \
+                #         tech_key not in bundle.data:
+                #         # "CHP" not in bundle.data and \
+                #         # "PrimeGenerator" not in bundle.data:
+                #     bundle.data[tech_key] = {}
+                # # if "CHP" or "PrimeGenerator" is still not in bundle.data then not being included
+                # # if one is in bundle.data then chp_or_prime_out is not None otherwise would have errored above
+                # if tech_key in bundle.data:
+                #     if bundle.data[tech_key].get("size_kw", None) is None:
+                #         num_generators = bundle.data[tech_key].get("num_generators", None)
+                #         if num_generators is not None:
+                #             bundle.data[tech_key]["size_kw"] = chp_or_prime_out.get("size_kw", 0) / num_generators
+                #         else:
+                #             bundle.data[tech_key]["size_kw"] = chp_or_prime_out.get("size_kw", 0)
+                #     for field_name in [
+                #                         "electric_efficiency_half_load", 
+                #                         "electric_efficiency_full_load"
+                #                     ]:
+                #         if bundle.data[tech_key].get(field_name, None) is None:
+                #             bundle.data[tech_key][field_name] = chp_or_prime_in[field_name]
 
                 ## PV ##
                 pvs = reopt_run_meta.PVOutputs.all()
@@ -274,6 +301,7 @@ class ERPJob(ModelResource):
                         "size_kwh": 0 if stor_out is None else stor_out.get("size_kwh", 0),
                         "starting_soc_series_fraction": [] if stor_out is None else stor_out.get("year_one_soc_series_fraction", []),
                     }
+                    #TODO: don't add ElectricStorage key if stor_out is None
                     bundle.data["ElectricStorage"] = stor_inputs_from_reopt.update(bundle.data.get("ElectricStorage", {}))
                 except AttributeError as e: 
                     pass
