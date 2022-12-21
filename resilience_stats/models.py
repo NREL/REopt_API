@@ -99,7 +99,7 @@ class ERPMeta(BaseModel, models.Model):
 #         for (from_key, to_key) in [
 #                                     ("operational_availability","generator_operational_availability"),
 #                                     ("failure_to_start","generator_failure_to_start"),
-#                                     ("mean_time_between_failures","generator_mean_time_between_failures"),
+#                                     ("mean_time_to_failure","generator_mean_time_to_failure"),
 #                                     ("num_generators","num_generators"),
 #                                     ("size_kw","generator_size_kw"),
 #                                     ("fuel_avail_gal","fuel_avail_gal"),
@@ -136,7 +136,7 @@ class ERPGeneratorInputs(BaseModel, models.Model):
         blank=True,
         help_text=("Chance of generator not starting when an outage occurs")
     )
-    mean_time_between_failures = models.FloatField(
+    mean_time_to_failure = models.FloatField(
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -240,7 +240,7 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
         blank=True,
         help_text=("Chance of prime generator/CHP unit not starting when an outage occurs")
     )
-    mean_time_between_failures = models.FloatField(
+    mean_time_to_failure = models.FloatField(
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -306,8 +306,8 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
                     "fuel_cell": [1] #TODO: none in data
                 }
             }[self.is_chp][self.prime_mover][size_class_index]
-        if not self.mean_time_between_failures:
-            self.mean_time_between_failures = {
+        if not self.mean_time_to_failure:
+            self.mean_time_to_failure = {
                 True: {
                     "recip_engine": [870, 2150],
                     "micro_turbine": [None], #TODO: none in data
@@ -620,7 +620,7 @@ def get_erp_input_dict_from_run_uuid(run_uuid:str):
         keys_to_add_tech_prefix = {
                                     "operational_availability",
                                     "failure_to_start",
-                                    "mean_time_between_failures",
+                                    "mean_time_to_failure",
                                     "size_kw",
                                     "fuel_intercept_per_hr",
                                     "fuel_burn_rate_per_kwh",

@@ -6,7 +6,7 @@
         "generator_size_kw": 1,
         "generator_operational_availability": 1,
         "generator_failure_to_start": 0.0,
-        "generator_mean_time_between_failures": 5,
+        "generator_mean_time_to_failure": 5,
         "battery_operational_availability": 1,
         "num_battery_bins": 3,
         "battery_size_kwh": 2,
