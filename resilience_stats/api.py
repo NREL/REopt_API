@@ -216,52 +216,6 @@ class ERPJob(ModelResource):
                             "Running ERP with PrimeGenerator but a reopt_run_uuid of an optimization that did not consider it (using CHP) is not yet supported."
                         )
 
-                # chp_or_prime_out = None
-                # chp_or_prime_in = None
-                # tech_key = ""
-                # try:
-                #     chp_or_prime_out = reopt_run_meta.CHPOutputs.dict
-                # except AttributeError as e: 
-                #     pass
-                # try:
-                #     chp_or_prime_in = reopt_run_meta.CHPInputs.dict
-                #     tech_key = "CHP" if chp_or_prime_in["thermal_efficiency_full_load"] > 0 else "PrimeGenerator"
-                # except AttributeError as e: 
-                #     pass
-                # if (
-                #         chp_or_prime_in is None and 
-                #         ("CHP" in bundle.data or "PrimeGenerator" in bundle.data)
-                #     ) or (
-                #         tech_key != "CHP" and "CHP" in bundle.data
-                #     ) or (
-                #         tech_key != "PrimeGenerator" and "PrimeGenerator" in bundle.data
-                #     ):
-                #     add_validation_err_msg_and_raise_400_response(
-                #         meta_dict, 
-                #         "Running ERP with CHP or PrimeGenerator but a reopt_run_uuid of an optimization that did not consider it is not yet supported."
-                #     )
-                # if chp_or_prime_out is not None and \
-                #         chp_or_prime_out.get("size_kw", 0) > 0 and \
-                #         tech_key not in bundle.data:
-                #         # "CHP" not in bundle.data and \
-                #         # "PrimeGenerator" not in bundle.data:
-                #     bundle.data[tech_key] = {}
-                # # if "CHP" or "PrimeGenerator" is still not in bundle.data then not being included
-                # # if one is in bundle.data then chp_or_prime_out is not None otherwise would have errored above
-                # if tech_key in bundle.data:
-                #     if bundle.data[tech_key].get("size_kw", None) is None:
-                #         num_generators = bundle.data[tech_key].get("num_generators", None)
-                #         if num_generators is not None:
-                #             bundle.data[tech_key]["size_kw"] = chp_or_prime_out.get("size_kw", 0) / num_generators
-                #         else:
-                #             bundle.data[tech_key]["size_kw"] = chp_or_prime_out.get("size_kw", 0)
-                #     for field_name in [
-                #                         "electric_efficiency_half_load", 
-                #                         "electric_efficiency_full_load"
-                #                     ]:
-                #         if bundle.data[tech_key].get(field_name, None) is None:
-                #             bundle.data[tech_key][field_name] = chp_or_prime_in[field_name]
-
                 ## PV ##
                 pvs = reopt_run_meta.PVOutputs.all()
                 if len(pvs) == 0 and \
