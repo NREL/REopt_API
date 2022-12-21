@@ -287,9 +287,9 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
         if not self.electric_efficiency_half_load:
             self.electric_efficiency_half_load = self.electric_efficiency_full_load
         size_class_index = 1 if (
-                self.prime_mover is "recip_engine" and self.size_kw > 800
+                self.prime_mover == "recip_engine" and self.size_kw > 800
             ) or (
-                self.prime_mover is "combustion_turbine" and self.size_kw > 5000
+                self.prime_mover == "combustion_turbine" and self.size_kw > 5000
             ) else 0
         if not self.operational_availability:
             self.operational_availability = {
