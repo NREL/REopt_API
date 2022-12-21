@@ -217,7 +217,6 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(1)
         ],
-        default=0.9998, 
         blank=True,
         help_text=("Fraction of year CHP units are not down for maintenance")
     )
@@ -226,7 +225,6 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(1)
         ],
-        default=0.0066,
         blank=True,
         help_text=("Chance of CHP unit starting when an outage occurs")
     )
@@ -235,7 +233,6 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(1)
         ],
-        default=0.00157,
         blank=True,
         help_text=("Chance of CHP unit failing in each hour of outage")
     )
