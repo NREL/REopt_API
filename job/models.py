@@ -5518,6 +5518,9 @@ def get_input_dict_from_run_uuid(run_uuid:str):
 
     try: d["HotThermalStorage"] = filter_none_and_empty_array(meta.HotThermalStorageInputs.dict)
     except: pass
+
+    try: d["ColdThermalStorage"] = filter_none_and_empty_array(meta.ColdThermalStorageInputs.dict)
+    except: pass
     
     try: d["CHP"] = filter_none_and_empty_array(meta.CHPInputs.dict)
     except: pass    
