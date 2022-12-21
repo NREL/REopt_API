@@ -285,6 +285,23 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
     def clean(self):
         if not self.electric_efficiency_half_load:
             self.electric_efficiency_half_load = self.electric_efficiency_full_load
+        size_class_index = 1 if (
+                self.prime_mover is "recip_engine" and self.size_kw > 800
+            ) or (
+                self.prime_mover is "combustion_turbine" and self.size_kw > 5000
+            ) else 0
+        if not self.operational_availability:
+            self.operational_availability = {
+                True: {
+                    "recip_engine": [0.96, 0.98],
+                    "micro_turbine": [1],
+                    "combustion_turbine": [0.98, 0.97],
+                    "fuel_cell": [0.9]
+                },
+                False: {
+                    "recip_engine": {}
+                }
+            }[self.is_chp][self.prime_mover][size_class_index]
 
 
 class ERPElectricStorageInputs(BaseModel, models.Model):
