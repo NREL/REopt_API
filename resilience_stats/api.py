@@ -51,7 +51,7 @@ from reo.exceptions import SaveToDatabase, UnexpectedError, REoptFailedToStartEr
 
 from reo.models import ScenarioModel, FinancialModel
 from job.models import APIMeta, GeneratorOutputs, ElectricStorageInputs, ElectricStorageOutputs, PVOutputs, ElectricLoadInputs#, CHPOutputs don't need to import these output models because accessing from meta not creating?
-from resilience_stats.models import ResilienceModel, ERPMeta, ERPOutageInputs, ERPGeneratorInputs, ERPPVInputs, ERPElectricStorageInputs, ERPOutputs, get_erp_input_dict_from_run_uuid
+from resilience_stats.models import ResilienceModel, ERPMeta, ERPOutageInputs, ERPGeneratorInputs, ERPPrimeGeneratorInputs, ERPPVInputs, ERPElectricStorageInputs, ERPOutputs, get_erp_input_dict_from_run_uuid
 from resilience_stats.validators import validate_run_uuid
 from resilience_stats.views import run_outage_sim
 
@@ -263,6 +263,7 @@ class ERPJob(ModelResource):
             for model in (
                 ERPOutageInputs,    
                 ERPGeneratorInputs,
+                ERPPrimeGeneratorInputs,
                 ERPPVInputs,
                 ERPElectricStorageInputs
             ):
