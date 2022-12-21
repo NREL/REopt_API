@@ -4944,7 +4944,7 @@ class ColdThermalStorageOutputs(BaseModel, models.Model):
         models.FloatField(null=True, blank=True),
         default = list,
     )
-    year_one_to_load_series_mmbtu_per_hour = ArrayField(
+    year_one_to_load_series_ton = ArrayField(
         models.FloatField(null=True, blank=True),
         default = list,
     )
