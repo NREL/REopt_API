@@ -600,7 +600,7 @@ def get_erp_input_dict_from_run_uuid(run_uuid:str):
                                 }
         return {(prefix + "_" + k if k in keys_to_add_tech_prefix else k): v for (k, v) in d.items()}
     
-    def merge_gen_and_chp_inputs(gen_dicts:list):
+    def merge_generator_inputs(gen_dicts:list):
         #assumes gen_dicts not empty and all dicts in it have all same keys
         return {k: [gen_type[k] for gen_type in gen_dicts] for k in gen_dicts[0].keys()}
 
@@ -632,22 +632,22 @@ def get_erp_input_dict_from_run_uuid(run_uuid:str):
         gen_dicts += gen
     except AttributeError: pass
     try: 
-        chp = meta.ERPPrimeGeneratorInputs.dict
-        chp.pop("prime_mover")
+        gen = meta.ERPPrimeGeneratorInputs.dict
+        gen.pop("prime_mover")
 
         # Temp conversions until extend input structure changes to julia
         # convert efficiency to slope/intercept in chp dict
-        fuel_burn_full_load = 1.0 / chp.pop("electric_efficiency_full_load")
-        fuel_burn_half_load = 0.5 / chp.pop("electric_efficiency_half_load")
-        chp["fuel_burn_rate_per_kwh"] = (fuel_burn_full_load - fuel_burn_half_load) / (1.0 - 0.5)  # [kWht/kWhe]
-        chp["fuel_intercept_per_hr"] = fuel_burn_full_load - chp["fuel_burn_rate_per_kwh"] * 1.0  # [kWht/hr]
+        fuel_burn_full_load = 1.0 / gen.pop("electric_efficiency_full_load")
+        fuel_burn_half_load = 0.5 / gen.pop("electric_efficiency_half_load")
+        gen["fuel_burn_rate_per_kwh"] = (fuel_burn_full_load - fuel_burn_half_load) / (1.0 - 0.5)  # [kWht/kWhe]
+        gen["fuel_intercept_per_hr"] = fuel_burn_full_load - gen["fuel_burn_rate_per_kwh"] * 1.0  # [kWht/hr]
         # add fuel_limit
         gen["fuel_limit"] = 1e9
     
-        gen_dicts += chp
+        gen_dicts += gen
     except AttributeError: pass
     if gen_dicts != []:
-        d.update(filter_none_and_empty_array(merge_gen_and_chp_inputs(gen_dicts)))
+        d.update(filter_none_and_empty_array(merge_generator_inputs(gen_dicts)))
 
     # TODO: do this instead once extend input structure changes to julia (and do conversion of effic to slope/intercept in julia using existing util function)
     # d["Generator"] = filter_none_and_empty_array(meta.ERPGeneratorInputs.dict)
