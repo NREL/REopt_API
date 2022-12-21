@@ -212,6 +212,17 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
         blank=True,
         help_text=("Whether prime generator system is CHP")
     )
+    PRIME_MOVER = models.TextChoices('PRIME_MOVER', (
+        "recip_engine",
+        "micro_turbine",
+        "combustion_turbine",
+        "fuel_cell"
+    ))
+    prime_mover = models.TextField(
+        default="recip_engine",
+        choices=PRIME_MOVER.choices,
+        help_text="Prime generator/CHP prime mover, one of recip_engine, micro_turbine, combustion_turbine, fuel_cell"
+    )
     operational_availability = models.FloatField(
         validators=[
             MinValueValidator(0),
