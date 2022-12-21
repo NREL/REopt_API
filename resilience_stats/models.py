@@ -295,12 +295,30 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
             self.operational_availability = {
                 True: {
                     "recip_engine": [0.96, 0.98],
-                    "micro_turbine": [1],
+                    "micro_turbine": [1], #TODO: none in data
                     "combustion_turbine": [0.98, 0.97],
                     "fuel_cell": [0.9]
                 },
                 False: {
-                    "recip_engine": {}
+                    "recip_engine": [0.96, 0.98],
+                    "micro_turbine": [1], #TODO: none in data
+                    "combustion_turbine": [0.98, 0.97],
+                    "fuel_cell": [1] #TODO: none in data
+                }
+            }[self.is_chp][self.prime_mover][size_class_index]
+        if not self.failure_to_run:
+            self.failure_to_run = {
+                True: {
+                    "recip_engine": [1/870, 1/2150],
+                    "micro_turbine": [0], #TODO: none in data
+                    "combustion_turbine": [1/990, 1/3160],
+                    "fuel_cell": [1/2500]
+                },
+                False: {
+                    "recip_engine": [1/920, 1/2300],
+                    "micro_turbine": [1], #TODO: none in data
+                    "combustion_turbine": [1/1040, 1/3250],
+                    "fuel_cell": [1/2500]
                 }
             }[self.is_chp][self.prime_mover][size_class_index]
 
