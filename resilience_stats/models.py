@@ -633,6 +633,7 @@ def get_erp_input_dict_from_run_uuid(run_uuid:str):
     except AttributeError: pass
     try: 
         chp = meta.ERPPrimeGeneratorInputs.dict
+        chp.pop("prime_mover")
 
         # Temp conversions until extend input structure changes to julia
         # convert efficiency to slope/intercept in chp dict
