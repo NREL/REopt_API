@@ -143,7 +143,7 @@ class ERPGeneratorInputs(BaseModel, models.Model):
         ],
         default=637,
         blank=True,
-        help_text=("Chance of generator failing in each hour of outage")
+        help_text=("Average number of time steps between a generator's failures. 1/(failure to run probability).")
     )
     num_generators = models.IntegerField(
         validators=[
@@ -246,7 +246,7 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
             MaxValueValidator(1)
         ],
         blank=True,
-        help_text=("Chance of CHP unit failing in each hour of outage")
+        help_text=("Average number of time steps between a prime generator/CHP unit's failures. 1/(failure to run probability).")
     )
     num_generators = models.IntegerField(
         validators=[
