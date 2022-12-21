@@ -4649,7 +4649,7 @@ class HotThermalStorageInputs(BaseModel, models.Model):
         default=180.0,
         help_text="Hot-side supply water temperature from HotTES (top of tank) to the heating load"
     )
-    cold_water_temp_degF = models.FloatField(
+    cool_water_temp_degF = models.FloatField(
         validators=[
             MinValueValidator(33.0),
             MaxValueValidator(200.0)
