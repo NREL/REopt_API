@@ -99,7 +99,7 @@ class ERPMeta(BaseModel, models.Model):
 #         for (from_key, to_key) in [
 #                                     ("operational_availability","generator_operational_availability"),
 #                                     ("failure_to_start","generator_failure_to_start"),
-#                                     ("failure_to_run","generator_failure_to_run"),
+#                                     ("mean_time_between_failures","generator_mean_time_between_failures"),
 #                                     ("num_generators","num_generators"),
 #                                     ("size_kw","generator_size_kw"),
 #                                     ("fuel_avail_gal","fuel_avail_gal"),
@@ -136,12 +136,12 @@ class ERPGeneratorInputs(BaseModel, models.Model):
         blank=True,
         help_text=("Chance of generator not starting when an outage occurs")
     )
-    failure_to_run = models.FloatField(
+    mean_time_between_failures = models.FloatField(
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
         ],
-        default=0.00157,
+        default=637,
         blank=True,
         help_text=("Chance of generator failing in each hour of outage")
     )
@@ -240,7 +240,7 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
         blank=True,
         help_text=("Chance of CHP unit not starting when an outage occurs")
     )
-    failure_to_run = models.FloatField(
+    mean_time_between_failures = models.FloatField(
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -306,19 +306,19 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
                     "fuel_cell": [1] #TODO: none in data
                 }
             }[self.is_chp][self.prime_mover][size_class_index]
-        if not self.failure_to_run:
-            self.failure_to_run = {
+        if not self.mean_time_between_failures:
+            self.mean_time_between_failures = {
                 True: {
-                    "recip_engine": [1/870, 1/2150],
-                    "micro_turbine": [0], #TODO: none in data
-                    "combustion_turbine": [1/990, 1/3160],
-                    "fuel_cell": [1/2500]
+                    "recip_engine": [870, 2150],
+                    "micro_turbine": [None], #TODO: none in data
+                    "combustion_turbine": [990, 3160],
+                    "fuel_cell": [2500]
                 },
                 False: {
-                    "recip_engine": [1/920, 1/2300],
-                    "micro_turbine": [1], #TODO: none in data
-                    "combustion_turbine": [1/1040, 1/3250],
-                    "fuel_cell": [1/2500]
+                    "recip_engine": [920, 2300],
+                    "micro_turbine": [None], #TODO: none in data
+                    "combustion_turbine": [1040, 3250],
+                    "fuel_cell": [2500]
                 }
             }[self.is_chp][self.prime_mover][size_class_index]
 
@@ -620,7 +620,7 @@ def get_erp_input_dict_from_run_uuid(run_uuid:str):
         keys_to_add_tech_prefix = {
                                     "operational_availability",
                                     "failure_to_start",
-                                    "failure_to_run",
+                                    "mean_time_between_failures",
                                     "size_kw",
                                     "fuel_intercept_per_hr",
                                     "fuel_burn_rate_per_kwh",
