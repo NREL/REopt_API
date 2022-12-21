@@ -270,7 +270,6 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(1.0)
         ],
-        blank=True,
         default=0.34,
         help_text=("Electric efficiency of CHP unit running at full load.")
     )
