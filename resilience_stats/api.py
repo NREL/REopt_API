@@ -192,7 +192,6 @@ class ERPJob(ModelResource):
                 ## CHP/PrimeGenerator ##
                 chp_or_prime_out = None
                 chp_or_prime_in = None
-                is_chp_in_reopt = False
                 try:
                     chp_or_prime_out = reopt_run_meta.CHPOutputs.dict
                     if chp_or_prime_out.get("size_kw", 0) > 0:
