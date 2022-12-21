@@ -200,12 +200,12 @@ class ERPGeneratorInputs(BaseModel, models.Model):
             self.electric_efficiency_half_load = self.electric_efficiency_full_load
 
 class ERPPrimeGeneratorInputs(BaseModel, models.Model):
-    key = "CHP"
+    key = "PrimeGenerator"
     meta = models.OneToOneField(
         ERPMeta,
         on_delete=models.CASCADE,
         primary_key=True,
-        related_name="ERPCHPInputs"
+        related_name="ERPPrimeGeneratorInputs"
     )
     is_chp = models.BooleanField(
         default=False,
