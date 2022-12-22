@@ -47,10 +47,9 @@ def process_results(results: dict, run_uuid: str) -> None:
     meta.status = results.get("status")
     meta.save(update_fields=["status"])
 
-    if results.get("status") == "error":
-        if "Messages" in results.keys():
-            REoptjlMessageOutputs.create(meta=meta, **results["Messages"]).save()
-    else:
+    if "Messages" in results.keys():
+        REoptjlMessageOutputs.create(meta=meta, **results["Messages"]).save()
+    if results.get("status") != "error":
         FinancialOutputs.create(meta=meta, **results["Financial"]).save()
         ElectricTariffOutputs.create(meta=meta, **results["ElectricTariff"]).save()
         ElectricUtilityOutputs.create(meta=meta, **results["ElectricUtility"]).save()
@@ -74,8 +73,6 @@ def process_results(results: dict, run_uuid: str) -> None:
             ExistingBoilerOutputs.create(meta=meta, **results["ExistingBoiler"]).save()
         if "ExistingChiller" in results.keys():
             ExistingChillerOutputs.create(meta=meta, **results["ExistingChiller"]).save()
-        if "Messages" in results.keys():
-            REoptjlMessageOutputs.create(meta=meta, **results["Messages"]).save()
         if "HeatingLoad" in results.keys():
             HeatingLoadOutputs.create(meta=meta, **results["HeatingLoad"]).save()
         if "CoolingLoad" in results.keys():
