@@ -228,6 +228,7 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(1)
         ],
+        null=True,
         blank=True,
         help_text=("Fraction of year prime generator/CHP units are not down for maintenance")
     )
@@ -245,6 +246,7 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(1)
         ],
+        null=True,
         blank=True,
         help_text=("Average number of time steps between a prime generator/CHP unit's failures. 1/(failure to run probability).")
     )
