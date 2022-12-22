@@ -4,16 +4,19 @@ pipeline {
   agent none
   options {
     disableConcurrentBuilds()
-    buildDiscarder(logRotator(numToKeepStr: "365"))
+    buildDiscarder(logRotator(daysToKeepStr: "365"))
   }
 
   environment {
-    IMAGE_REPO_DOMAIN = credentials("reopt-api-image-repo-domain")
+    DEPLOY_IMAGE_REPO_DOMAIN = credentials("reopt-api-image-repo-domain")
+    APP_IMAGE_REPO_DOMAIN = credentials("reopt-api-app-image-repo-domain")
     DEVELOPMENT_BASE_DOMAIN = credentials("reopt-api-development-base-domain")
     DEVELOPMENT_TEMP_BASE_DOMAIN = credentials("reopt-api-development-temp-base-domain")
     STAGING_BASE_DOMAIN = credentials("reopt-api-staging-base-domain")
     STAGING_TEMP_BASE_DOMAIN = credentials("reopt-api-staging-temp-base-domain")
-    PRODUCTION_DOMAIN = credentials("reopt-api-production-domain")
+    // FIXME: Restore after testing new deploys and ready to switch.
+    // PRODUCTION_DOMAIN = credentials("reopt-api-production-domain")
+    PRODUCTION_DOMAIN = credentials("reopt-api-production-temp-domain")
     XPRESS_LICENSE_HOST = credentials("reopt-api-xpress-license-host")
     NREL_ROOT_CERT_URL_ROOT = credentials("reopt-api-nrel-root-cert-url-root")
   }
@@ -53,20 +56,16 @@ pipeline {
     stage("deploy-agent") {
       agent {
         docker {
-          image "${IMAGE_REPO_DOMAIN}/tada-public/tada-jenkins-kube-deploy:latest"
+          image "${DEPLOY_IMAGE_REPO_DOMAIN}/tada-public/tada-jenkins-kube-deploy:werf-1.2"
           args tadaDockerInDockerArgs()
         }
       }
 
       environment {
         TMPDIR = tadaDockerInDockerTmp()
-        WERF_STAGES_STORAGE = ":local"
-        WERF_IMAGES_REPO = "${IMAGE_REPO_DOMAIN}/tada-public"
-        WERF_TAG_BY_STAGES_SIGNATURE = "true"
-        WERF_ADD_ANNOTATION_CI_COMMIT = "ci.werf.io/commit=$GIT_COMMIT"
-        WERF_THREE_WAY_MERGE_MODE = "enabled"
+        WERF_REPO = "${APP_IMAGE_REPO_DOMAIN}/tada/reopt-api"
         WERF_LOG_VERBOSE = "true"
-        DOCKER_BASE_IMAGE_DIGEST = tadaDockerBaseImageDigest(dockerfile: "Dockerfile")
+        WERF_SYNCHRONIZATION = ":local"
         XPRESS_LICENSE_HOST = credentials("reopt-api-xpress-license-host")
         NREL_ROOT_CERT_URL_ROOT = credentials("reopt-api-nrel-root-cert-url-root")
       }
@@ -84,16 +83,8 @@ pipeline {
 
             stage("build") {
               steps {
-                sh "werf build"
-              }
-            }
-
-            stage("publish") {
-              steps {
-                script {
-                  docker.withRegistry("https://${IMAGE_REPO_DOMAIN}", "harbor-tada-public") {
-                    sh "werf publish"
-                  }
+                withDockerRegistry(url: "https://${env.WERF_REPO}", credentialsId: "ecr:us-east-2:aws-nrel-tada-ci") {
+                  sh "werf build"
                 }
               }
             }
@@ -108,19 +99,25 @@ pipeline {
               }
 
               steps {
-                withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-test"]) {
-                  tadaWithWerfNamespaces(rancherProject: "reopt-api-dev", primaryBranch: "master", dbBaseName: "reopt_api_development", baseDomain: "${DEVELOPMENT_BASE_DOMAIN}") {
-                    withCredentials([string(credentialsId: "reopt-api-werf-secret-key", variable: "WERF_SECRET_KEY")]) {
-                      sh """
-                        werf deploy \
-                          --values=./.helm/values.deploy.yaml \
-                          --values=./.helm/values.${DEPLOY_ENV}.yaml \
-                          --secret-values=./.helm/secret-values.${DEPLOY_ENV}.yaml \
-                          --set='branchName=${BRANCH_NAME}' \
-                          --set='ingressHost=${DEPLOY_BRANCH_DOMAIN}' \
-                          --set='tempIngressHost=${tadaDeployBranchDomain(baseDomain: env.DEVELOPMENT_TEMP_BASE_DOMAIN, primaryBranch: "master")}' \
-                          --set='dbName=${DEPLOY_BRANCH_DB_NAME}'
-                      """
+                withDockerRegistry(url: "https://${env.WERF_REPO}", credentialsId: "ecr:us-east-2:aws-nrel-tada-ci") {
+                  withCredentials([aws(credentialsId: "aws-nrel-tada-ci")]) {
+                    withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-test"]) {
+                      tadaWithWerfNamespaces(rancherProject: "reopt-api-dev", primaryBranch: "master", dbBaseName: "reopt_api_development", baseDomain: "${DEVELOPMENT_BASE_DOMAIN}") {
+                        withCredentials([string(credentialsId: "reopt-api-werf-secret-key", variable: "WERF_SECRET_KEY")]) {
+                          sh """
+                            werf converge \
+                              --values=./.helm/values.deploy.yaml \
+                              --values=./.helm/values.${DEPLOY_ENV}.yaml \
+                              --secret-values=./.helm/secret-values.${DEPLOY_ENV}.yaml \
+                              --set='ecrAwsAccessKeyId=${AWS_ACCESS_KEY_ID}' \
+                              --set='ecrAwsSecretAccessKey=${AWS_SECRET_ACCESS_KEY}' \
+                              --set='branchName=${BRANCH_NAME}' \
+                              --set='ingressHost=${DEPLOY_BRANCH_DOMAIN}' \
+                              --set='tempIngressHost=${tadaDeployBranchDomain(baseDomain: env.DEVELOPMENT_TEMP_BASE_DOMAIN, primaryBranch: "master")}' \
+                              --set='dbName=${DEPLOY_BRANCH_DB_NAME}'
+                          """
+                        }
+                      }
                     }
                   }
                 }
@@ -137,19 +134,25 @@ pipeline {
               }
 
               steps {
-                withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod"]) {
-                  tadaWithWerfNamespaces(rancherProject: "reopt-api-stage", primaryBranch: "master", dbBaseName: "reopt_api_staging", baseDomain: "${STAGING_BASE_DOMAIN}") {
-                    withCredentials([string(credentialsId: "reopt-api-werf-secret-key", variable: "WERF_SECRET_KEY")]) {
-                      sh """
-                        werf deploy \
-                          --values=./.helm/values.deploy.yaml \
-                          --values=./.helm/values.${DEPLOY_ENV}.yaml \
-                          --secret-values=./.helm/secret-values.${DEPLOY_ENV}.yaml \
-                          --set='branchName=${BRANCH_NAME}' \
-                          --set='ingressHost=${DEPLOY_BRANCH_DOMAIN}' \
-                          --set='tempIngressHost=${tadaDeployBranchDomain(baseDomain: env.STAGING_TEMP_BASE_DOMAIN, primaryBranch: "master")}' \
-                          --set='dbName=${DEPLOY_BRANCH_DB_NAME}'
-                      """
+                withDockerRegistry(url: "https://${env.WERF_REPO}", credentialsId: "ecr:us-east-2:aws-nrel-tada-ci") {
+                  withCredentials([aws(credentialsId: "aws-nrel-tada-ci")]) {
+                    withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod2"]) {
+                      tadaWithWerfNamespaces(rancherProject: "reopt-api-staging", primaryBranch: "master", dbBaseName: "reopt_api_staging", baseDomain: "${STAGING_BASE_DOMAIN}") {
+                        withCredentials([string(credentialsId: "reopt-api-werf-secret-key", variable: "WERF_SECRET_KEY")]) {
+                          sh """
+                            werf converge \
+                              --values=./.helm/values.deploy.yaml \
+                              --values=./.helm/values.${DEPLOY_ENV}.yaml \
+                              --secret-values=./.helm/secret-values.${DEPLOY_ENV}.yaml \
+                              --set='ecrAwsAccessKeyId=${AWS_ACCESS_KEY_ID}' \
+                              --set='ecrAwsSecretAccessKey=${AWS_SECRET_ACCESS_KEY}' \
+                              --set='branchName=${BRANCH_NAME}' \
+                              --set='ingressHost=${DEPLOY_BRANCH_DOMAIN}' \
+                              --set='tempIngressHost=${tadaDeployBranchDomain(baseDomain: env.STAGING_TEMP_BASE_DOMAIN, primaryBranch: "master")}' \
+                              --set='dbName=${DEPLOY_BRANCH_DB_NAME}'
+                          """
+                        }
+                      }
                     }
                   }
                 }
@@ -166,16 +169,22 @@ pipeline {
               }
 
               steps {
-                withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod"]) {
-                  tadaWithWerfNamespaces(rancherProject: "reopt-api-prod", primaryBranch: "master") {
-                    withCredentials([string(credentialsId: "reopt-api-werf-secret-key", variable: "WERF_SECRET_KEY")]) {
-                      sh """
-                        werf deploy \
-                          --values=./.helm/values.deploy.yaml \
-                          --values=./.helm/values.${DEPLOY_ENV}.yaml \
-                          --secret-values=./.helm/secret-values.${DEPLOY_ENV}.yaml \
-                          --set='ingressHost=${PRODUCTION_DOMAIN}'
-                      """
+                withDockerRegistry(url: "https://${env.WERF_REPO}", credentialsId: "ecr:us-east-2:aws-nrel-tada-ci") {
+                  withCredentials([aws(credentialsId: "aws-nrel-tada-ci")]) {
+                    withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod2"]) {
+                      tadaWithWerfNamespaces(rancherProject: "reopt-api-production", primaryBranch: "master") {
+                        withCredentials([string(credentialsId: "reopt-api-werf-secret-key", variable: "WERF_SECRET_KEY")]) {
+                          sh """
+                            werf converge \
+                              --values=./.helm/values.deploy.yaml \
+                              --values=./.helm/values.${DEPLOY_ENV}.yaml \
+                              --secret-values=./.helm/secret-values.${DEPLOY_ENV}.yaml \
+                              --set='ecrAwsAccessKeyId=${AWS_ACCESS_KEY_ID}' \
+                              --set='ecrAwsSecretAccessKey=${AWS_SECRET_ACCESS_KEY}' \
+                              --set='ingressHost=${PRODUCTION_DOMAIN}'
+                          """
+                        }
+                      }
                     }
                   }
                 }

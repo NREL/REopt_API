@@ -10,6 +10,10 @@ pipeline {
     cron(env.BRANCH_NAME == "master" ? "H * * * *" : "")
   }
 
+  environment {
+    DEPLOY_IMAGE_REPO_DOMAIN = credentials("reopt-api-image-repo-domain")
+  }
+
   parameters {
     booleanParam(
       name: "UNDEPLOY_DELETED_BRANCHES",
@@ -32,7 +36,7 @@ pipeline {
     stage("deploy-agent") {
       agent {
         docker {
-          image "harbor.nrel.gov/tada-public/tada-jenkins-kube-deploy:latest"
+          image "${DEPLOY_IMAGE_REPO_DOMAIN}/tada-public/tada-jenkins-kube-deploy:werf-1.2"
           args tadaDockerInDockerArgs()
         }
       }
@@ -40,15 +44,18 @@ pipeline {
       environment {
         TMPDIR = tadaDockerInDockerTmp()
         WERF_LOG_VERBOSE = "true"
+        WERF_SYNCHRONIZATION = ":local"
         DEPLOY_ENV = "staging"
-        RANCHER_PROJECT = "reopt-api-stage"
+        RANCHER_PROJECT = "reopt-api-staging"
         DB_BASE_NAME = "reopt_api_staging"
+        XPRESS_LICENSE_HOST = credentials("reopt-api-xpress-license-host")
+        NREL_ROOT_CERT_URL_ROOT = credentials("reopt-api-nrel-root-cert-url-root")
       }
 
       stages {
         stage("undeploy-branches") {
           steps {
-            withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod"]) {
+            withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod2"]) {
               tadaUndeployEachBranch(rancherProject: env.RANCHER_PROJECT, undeployDeletedBranches: params.UNDEPLOY_DELETED_BRANCHES, undeployMergedBranches: params.UNDEPLOY_MERGED_BRANCHES, undeployBranchNames: params.UNDEPLOY_BRANCH_NAMES, primaryBranch: "master") {
                 tadaWithWerfEnv(rancherProject: env.RANCHER_PROJECT, dbBaseName: env.DB_BASE_NAME) {
                   tadaUndeployBranch()
@@ -58,6 +65,12 @@ pipeline {
           }
         }
       }
+    }
+  }
+
+  post {
+    always {
+      tadaSendNotifications()
     }
   }
 }
