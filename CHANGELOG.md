@@ -26,23 +26,229 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-# v2.0.3
+
+## v2.5.0
+### Minor Updates
+##### Added
+- `0011_coolingloadinputs....` file used to add new models to the db
+In `job/models.py`:
+- added **ExistingChillerInputs** model
+- added **ExistingChillerOutputs** model
+- added **CoolingLoadInputs** model
+- added **CoolingLoadOutputs** model
+- added **HeatingLoadOutputs** model
+In `job/process_results.py`: 
+- add **ExistingChillerOutputs** 
+- add **CoolingLoadOutputs**
+- add **HeatingLoadOutputs**
+In `job/validators.py:
+- add time series length validation on **CoolingLoadInputs->thermal_loads_ton** and **CoolingLoadInputs->per_time_step_fractions_of_electric_load**
+In `job/views.py`:
+- add new input/output models to properly save the inputs/outputs
+    
+## v2.4.0
+### Minor Updates
+##### Added 
+- In `job/models.py`:
+  - add **CHPInputs** model
+  - add **CHPOutputs** model
+- In `job/process_results.py` add **CHPOutputs**
+- In `job/validators.py` add new input models
+- In `job/views.py`:
+  - add new input/output models to properly save the inputs/outputs
+  - add `/chp_defaults` endpoint which calls the http.jl chp_defaults endpoint
+  - add `/simulated_load` endpoint which calls the http.jl simulated_load endpoint    
+    
+## v2.3.1
+### Minor Updates
+##### Fixed
+Lookback charge parameters expected from the URDB API call were changed to the non-caplitalized format, so they are now used properly.
+## v2.3.0
+##### Changed
+The following name changes were made in the `job/` endpoint and `julia_src/http.jl`: 
+ - Change "_pct" to "_rate_fraction" for input and output names containing "discount", "escalation", and "tax_pct" (financial terms)
+ - Change "_pct" to "_fraction" for all other input and output names (e.g., "min_soc_", "min_turndown_")
+ - Change **prod_factor_series** to **production_factor_series**
+ - Updated the version of REopt.jl in /julia_src to v0.20.0 which includes the addition of:
+   - Boiler tech from the REopt_API (known as NewBoiler in API)
+   - SteamTurbine tech from the REopt_API 
+## v2.2.0
+### Minor Updates 
+##### Fixed
+- Require ElectricTariff key in inputs when **Settings.off_grid_flag** is false
+- Create and save **ElectricUtilityInputs** model if ElectricUtility key not provided in inputs when **Settings.off_grid_flag** is false, in order to use the default inputs in `job/models.py`
+- Added message to `messages()` to alert user if valid ElectricUtility input is provided when **Settings.off_grid_flag** is true
+- Register 
+- Make all urls available from stable/ also available from v2/. Includes registering `OutageSimJob()` and `GHPGHXJob()` to the 'v2' API and adding missing paths to urlpatterns in `urls.py`.
+##### Changed
+- `job/models.py`: 
+    - remove Generator `fuel_slope_gal_per_kwh` and `fuel_intercept_gal_per_hr` defaults based on size, keep defaults independent of size 
+	- changed `get_input_dict_from_run_uuid` to accomodate new models
+	- changed **ElectricLoadInputs.wholesale_rate** to use `scalar_to_vector` function
+- `job/validators.py`: Align PV tilt and aziumth defaults with API v2 behavior, based on location and PV type
+##### Added 
+- `0005_boilerinputs....` file used to add new models to the db
+- `job/` endpoint: Add inputs and validation to model off-grid wind 
+- added **ExistingBoilerInputs** model
+- added **ExistingBoilerOutputs** model
+- added **SpaceHeatingLoadInputs** model
+- added `scalar_to_vector` to convert scalars of vector of 12 elements to 8760 elements
+- **GeneratorInputs** (must add to CHP and Boiler when implemented in v3)
+    - added `emissions_factor_lb_<pollutant>_per_gal` for CO2, NOx, SO2, and PM25
+    - add `fuel_renewable_energy_pct`
+- **ElectricUtilityInputs**
+    - add `emissions_factor_series_lb_<pollutant>_per_kwh` for CO2, NOx, SO2, and PM25
+- **Settings**
+    - add `include_climate_in_objective` and `include_health_in_objective`
+- **SiteInputs**
+    - add `renewable_electricity_min_pct`, `renewable_electricity_max_pct`, and `include_exported_renewable_electricity_in_total`
+    - add `CO2_emissions_reduction_min_pct`, `CO2_emissions_reduction_max_pct`, and `include_exported_elec_emissions_in_total`
+- **FinancialInputs**
+    - add `CO2_cost_per_tonne`, `CO2_cost_escalation_pct`
+    - add `<pollutant>_grid_cost_per_tonne`, `<pollutant>_onsite_fuelburn_cost_per_tonne`, and `<pollutant>_cost_escalation_pct` for NOx, SO2, and PM25
+- **FinancialOutputs**
+    - add **lifecycle_fuel_costs_after_tax** 
+- **SiteOutputs**
+    - add `renewable_electricity_pct`, `total_renewable_energy_pct`
+    - add `year_one_emissions_tonnes_<pollutant>`, `year_one_emissions_from_fuelburn_tonnes_<pollutant>`, `lifecycle_emissions_tonnes_<pollutant>`, and `lifecycle_emissions_from_fuelburn_tonnes_<pollutant>` for CO2, NOx, SO2, and PM25
+- **FinancialOutputs**
+    - add `breakeven_cost_of_emissions_reduction_per_tonnes_CO2`
+In `job/process_results.py`: 
+- add **ExistingBoilerOutputs**
+In `job/test/test_job_endpoint.py`: 
+- test that AVERT and EASIUR defaults for emissions inputs not provided by user are passed back from REopt.jl and saved in database
+- add a testcase to validate that API is accepting/returning fields related to new models.
+In `'job/validators.py`:
+- add new input models
+- added `update_pv_defaults_offgrid()` to prevent validation failure when PV is not provided as input
+In `job/views.py`:
+- Added **SiteInputs** to `help` endpoint
+- Added **SiteOutputs** to `outputs` endpoint
+- add new input/output models to properly save the inputs/outputs
+
+## v2.1.0
+### Minor Updates 
+##### Changed
+- The `/stable` URL now correctly calls the `v2` version of the REopt model (`/job` endpoint)
+- Don't trigger Built-in Tests workflow on a push that only changes README.md and/or CHANGELOG.md
+- Avoid triggering duplicate GitHub workflows. When pushing to a branch that's in a PR, only trigger tests on the push not on the PR sync also.
+In `job/models.py` : 
+- **Settings**
+    - Added **off_grid_flag**
+    - Changed **run_bau** to be nullable
+- **FinancialInputs**
+    - Added **offgrid_other_capital_costs**
+    - Added **offgrid_other_annual_costs**
+- **FinancialOutputs**
+    - Added **lifecycle_generation_tech_capital_costs**
+    - Added **lifecycle_storage_capital_costs**
+    - Added **lifecycle_om_costs_after_tax**
+    - Added **lifecycle_fuel_costs_after_tax**
+    - Added **lifecycle_chp_standby_cost_after_tax**
+    - Added **lifecycle_elecbill_after_tax**
+    - Added **lifecycle_production_incentive_after_tax**
+    - Added **lifecycle_offgrid_other_annual_costs_after_tax**
+    - Added **lifecycle_offgrid_other_capital_costs**
+    - Added **lifecycle_outage_cost**
+    - Added **lifecycle_MG_upgrade_and_fuel_cost**
+    - Added **replacements_future_cost_after_tax**
+    - Added **replacements_present_cost_after_tax**
+    - Added **offgrid_microgrid_lcoe_dollars_per_kwh**
+    - Changed **lifecycle_capital_costs_plus_om** field name to **lifecycle_capital_costs_plus_om_after_tax**
+    - Changed **lifecycle_om_costs_bau** field name to **lifecycle_om_costs_before_tax_bau**
+- **ElectricLoadInputs**
+    - Removed default value for **critical_load_met_pct**. If user does not provide this value, it is defaulted depending on **Settings -> off_grid_flag**
+    - Added **operating_reserve_required_pct**
+    - Added **min_load_met_annual_pct**
+- **ElectricLoadOutputs**
+    - Added **offgrid_load_met_pct**
+    - Added **offgrid_annual_oper_res_required_series_kwh**
+    - Added **offgrid_annual_oper_res_provided_series_kwh**
+    - Added **offgrid_load_met_series_kw**
+- **ElectricTariffInputs**
+    - Changed field name **coincident_peak_load_active_timesteps** to **coincident_peak_load_active_time_steps**
+- **ElectricTariffOutputs**
+    - Changed field name **year_one_energy_cost** to **year_one_energy_cost_before_tax**
+    - Changed field name **year_one_demand_cost** to **year_one_demand_cost_before_tax**
+    - Changed field name **year_one_fixed_cost** to **year_one_fixed_cost_before_tax**
+    - Changed field name **year_one_min_charge_adder** to **year_one_min_charge_adder_before_tax**
+    - Changed field name **year_one_energy_cost_bau** to **year_one_energy_cost_before_tax_bau**
+    - Changed field name **year_one_demand_cost_bau** to **year_one_demand_cost_before_tax_bau**
+    - Changed field name **year_one_fixed_cost_bau** to **year_one_fixed_cost_before_tax_bau**
+    - Changed field name **year_one_min_charge_adder_bau** to **year_one_min_charge_adder_before_tax_bau**
+    - Changed field name **lifecycle_energy_cost** to **lifecycle_energy_cost_after_tax**
+    - Changed field name **lifecycle_demand_cost** to **lifecycle_demand_cost_after_tax**
+    - Changed field name **lifecycle_fixed_cost** to **lifecycle_fixed_cost_after_tax**
+    - Changed field name **lifecycle_min_charge_adder** to **lifecycle_min_charge_adder_after_tax_bau**
+    - Changed field name **lifecycle_energy_cost_bau** to **lifecycle_energy_cost_after_tax_bau**
+    - Changed field name **lifecycle_demand_cost_bau** to **lifecycle_demand_cost_after_tax_bau**
+    - Changed field name **lifecycle_fixed_cost_bau** to **lifecycle_fixed_cost_after_tax_bau**
+    - Changed field name **lifecycle_min_charge_adder_bau** to **lifecycle_min_charge_adder_after_tax_bau**
+    - Changed field name **lifecycle_export_benefit** to **lifecycle_export_benefit_after_tax**
+    - Changed field name **lifecycle_export_benefit_bau** to **lifecycle_export_benefit_after_tax_bau**
+    - Changed field name **year_one_bill** to **year_one_bill_before_tax**
+    - Changed field name **year_one_bill_bau** to **year_one_bill_before_tax_bau**
+    - Changed field name **year_one_export_benefit** to **year_one_export_benefit_before_tax**
+    - Changed field name **year_one_export_benefit_bau** to **year_one_export_benefit_before_tax_bau**
+    - Changed field name **year_one_coincident_peak_cost** to **year_one_coincident_peak_cost_before_tax**
+    - Changed field name **year_one_coincident_peak_cost_bau** to **year_one_coincident_peak_cost_before_tax_bau**
+    - Changed field name **lifecycle_coincident_peak_cost** to **lifecycle_coincident_peak_cost_after_tax**
+    - Changed field name **lifecycle_coincident_peak_cost_bau** to **lifecycle_coincident_peak_cost_after_tax_bau**
+    - Changed field name **year_one_chp_standby_cost** to **year_one_chp_standby_cost_before_tax**
+    - Changed field name **lifecycle_chp_standby_cost** to **lifecycle_chp_standby_cost_after_tax**
+- **ElectricTariffInputs**
+    - Changed validation of this model to be conditional on **Settings.off_grid_flag** being False
+    - Changed **ElectricTariffInputs** `required inputs` error message to alert user that ElectricTariff inputs are not required if **Settings.off_grid_flag** is true.
+- **PVInputs**
+    - Removed default values for `can_net_meter`, `can_wholesale`, and `can_export_beyond_nem_limit` as defaults for these fields are set depending on **Settings->off_grid_flag**
+    - Added field **operating_reserve_required_pct**
+- **PVOutputs**
+    - Changed name of **lifecycle_om_cost** to **lifecycle_om_cost_after_tax**
+- **WindOutputs**
+    - Changed name of **lifecycle_om_cost** to **lifecycle_om_cost_after_tax**
+    - Changed name of **year_one_om_cost** to **year_one_om_cost_before_tax**
+- **ElectricStorageInputs**
+    - Removed default values for **soc_init_pct** and **can_grid_charge** as these defaults are set conditional on **Settings->off_grid_flag**
+- **GeneratorInputs**
+    - Removed default values for **fuel_avail_gal** and **min_turn_down_pct** as these defaults are set conditional on **Settings->off_grid_flag**
+    - Added field **replacement_year**
+    - Added field **replace_cost_per_kw**
+- **GeneratorOutputs**
+    - Changed field name **fuel_used_gal** to **average_annual_fuel_used_gal**
+    - Changed field name **year_one_variable_om_cost** to **year_one_variable_om_cost_before_tax**
+    - Changed field name **year_one_fuel_cost** to **year_one_fuel_cost_before_tax**
+    - Changed field name **year_one_fixed_om_cost** to **year_one_fixed_om_cost_before_tax**
+    - Changed field name **lifecycle_variable_om_cost** to **lifecycle_variable_om_cost_after_tax**
+    - Changed field name **lifecycle_fuel_cost** to **lifecycle_fuel_cost_after_tax**
+    - Changed field name **lifecycle_fixed_om_cost** to **lifecycle_fixed_om_cost_after_tax**
+
+`job/run_jump_model.py` - Remove `run_uuid` key from input dictionary before running REopt to avoid downstream errors from REopt.jl
+`job/validators.py`
+    - Changed **ElectricTariffInputs** to validate if **ElectricTariff** key exists in inputs
+    - Added message to `messages()` to alert user if valid ElectricTariff input is provided when **Settings.off_grid_flag** is true.
+    - Added message to `messages()` to alert user of technologies which can be modeled when **Settings.off_grid_flag** is true.
+    - Added validation error to alert user of input keys which can't be modeled when **Settings.off_grid_flag** is true.
+`job/views.py` - Changed validation code to try to save **ElectricTariffInputs**
+`job/test_job_endpoint.py` - Added test to validate API off-grid functionality
+- Added migration file `0005_remove_...` which contains the data model for all Added and Changed fields
+
+## v2.0.3
 ### Minor Updates
 ##### Fixed
 - In `src/pvwatts.py`, Updated lat-long coordinates if-statement used to determine whether the "nsrdb" dataset should be used to determine the PV prod factor. Accounts for recent updates to NSRDB data used by PVWatts (v6) 
 - Avoids overwriting user-entered PV azimuth (other than 180) for ground-mount systems in southern hemisphere
 - Updates default azimuth to 0 for southern latitudes for all PV types (rather than just for ground-mount)
 
-# v2.0.2
+## v2.0.2
 ### Patches
 - bug fix for 15/30 minute scenarios with URDB TOU demand rates
 
-# v2.0.1
+## v2.0.1
 ### Minor Updates
 ##### Changed
 Removed override of user inputs for `fuel_slope_gal_per_kwh` and `fuel_intercept_gal_per_hr` in validators.py. User inputs for these values will now be used in analysis. If these inputs are not supplied, the default values in nested_inputs.py will be used.
 
-# v2.0.0 Default cost updates
+## v2.0.0 Default cost updates
 Changing default costs can result in different results for the same inputs. Hence we are making a major version change.
 
 - the release of v2 will make https://developer.nrel.gov/api/reopt/stable = https://developer.nrel.gov/api/reopt/v2

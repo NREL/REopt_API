@@ -8,3 +8,7 @@ MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
 MutableArithmetics = "d8a4904e-b15c-11e9-3269-09a3773c0cb0"
 REopt = "d36ad4e8-d74a-4f7a-ace1-eaea049febf6"
 Xpress = "9e70acf3-d6c9-5be6-b5bd-4e2c73e3e054"
+PROJ_jll = "58948b4f-47e0-5654-a9ad-f609743f8632"
+
+[compat]
+PROJ_jll = "900.0.0"

@@ -40,12 +40,12 @@ class OutageSimTests(ResourceTestCaseMixin, TestCase):
         super(OutageSimTests, self).setUp()
 
         # for optimization module
-        self.reopt_base_opt = '/v1/job/'
+        self.reopt_base_opt = '/v2/job/'
         self.post_opt = os.path.join('resilience_stats', 'tests', 'optPOST.json')
         self.run_uuid = None
 
         #for simulation module
-        self.reopt_base_sim = '/v1/outagesimjob/'
+        self.reopt_base_sim = '/v2/outagesimjob/'
 
 
     def get_response_opt(self, data):
