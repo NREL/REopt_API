@@ -26,13 +26,52 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop - 2022-09-13
+
+## v2.5.0
 ### Minor Updates
+##### Added
+- `0011_coolingloadinputs....` file used to add new models to the db
+In `job/models.py`:
+- added **ExistingChillerInputs** model
+- added **ExistingChillerOutputs** model
+- added **CoolingLoadInputs** model
+- added **CoolingLoadOutputs** model
+- added **HeatingLoadOutputs** model
+In `job/process_results.py`: 
+- add **ExistingChillerOutputs** 
+- add **CoolingLoadOutputs**
+- add **HeatingLoadOutputs**
+In `job/validators.py:
+- add time series length validation on **CoolingLoadInputs->thermal_loads_ton** and **CoolingLoadInputs->per_time_step_fractions_of_electric_load**
+In `job/views.py`:
+- add new input/output models to properly save the inputs/outputs
+    
+## v2.4.0
+### Minor Updates
+##### Added 
+- In `job/models.py`:
+  - add **CHPInputs** model
+  - add **CHPOutputs** model
+- In `job/process_results.py` add **CHPOutputs**
+- In `job/validators.py` add new input models
+- In `job/views.py`:
+  - add new input/output models to properly save the inputs/outputs
+  - add `/chp_defaults` endpoint which calls the http.jl chp_defaults endpoint
+  - add `/simulated_load` endpoint which calls the http.jl simulated_load endpoint    
+    
+## v2.3.1
+### Minor Updates
+##### Fixed
+Lookback charge parameters expected from the URDB API call were changed to the non-caplitalized format, so they are now used properly.
+## v2.3.0
 ##### Changed
 The following name changes were made in the `job/` endpoint and `julia_src/http.jl`: 
  - Change "_pct" to "_rate_fraction" for input and output names containing "discount", "escalation", and "tax_pct" (financial terms)
  - Change "_pct" to "_fraction" for all other input and output names (e.g., "min_soc_", "min_turndown_")
- - Change **prod_factor_series** to **production_factor_series** 
+ - Change **prod_factor_series** to **production_factor_series**
+ - Updated the version of REopt.jl in /julia_src to v0.20.0 which includes the addition of:
+   - Boiler tech from the REopt_API (known as NewBoiler in API)
+   - SteamTurbine tech from the REopt_API 
 ## v2.2.0
 ### Minor Updates 
 ##### Fixed
@@ -50,7 +89,6 @@ The following name changes were made in the `job/` endpoint and `julia_src/http.
 ##### Added 
 - `0005_boilerinputs....` file used to add new models to the db
 - `job/` endpoint: Add inputs and validation to model off-grid wind 
-In `job/models.py`:
 - added **ExistingBoilerInputs** model
 - added **ExistingBoilerOutputs** model
 - added **SpaceHeatingLoadInputs** model
@@ -82,6 +120,7 @@ In `job/test/test_job_endpoint.py`:
 - add a testcase to validate that API is accepting/returning fields related to new models.
 In `'job/validators.py`:
 - add new input models
+- added `update_pv_defaults_offgrid()` to prevent validation failure when PV is not provided as input
 In `job/views.py`:
 - Added **SiteInputs** to `help` endpoint
 - Added **SiteOutputs** to `outputs` endpoint
