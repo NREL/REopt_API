@@ -73,7 +73,7 @@ function reopt(req::HTTP.Request)
 	try
 		model_inputs = reoptjl.REoptInputs(d)
 	catch e
-		@error "Something went wrong in REopt inputs processing!" exception=(e, catch_backtrace())
+		@error "Something went wrong during REopt inputs processing!" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
 	end
 	
