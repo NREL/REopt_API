@@ -161,9 +161,9 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(sum(results["ElectricLoad"]["offgrid_load_met_series_kw"]), 8760.0, places=-1)
         self.assertAlmostEqual(results["Financial"]["lifecycle_offgrid_other_annual_costs_after_tax"], 0.0, places=-2)
 
-    def test_cooling_possible_sets_and_results(self):
+    def test_thermal_in_results(self):
         """
-        Purpose of this test is to test the validity of Cooling Load possible_sets, in particular []/null and blend/hybrid
+        Purpose of this test is to check that the expected thermal loads, techs, and storage are included in the results
         """
         scenario = {
             "Settings": {"run_bau": False},
