@@ -149,7 +149,7 @@ def results(request, run_uuid):
         ).get(run_uuid=run_uuid)
     except Exception as e:
         if isinstance(e, models.ObjectDoesNotExist):
-            resp = {"messages": {"error": ""}}
+            resp = {"messages": {}}
             resp['messages']['error'] = (
                 "run_uuid {} not in database. "
                 "You may have hit the results endpoint too quickly after POST'ing scenario, "
