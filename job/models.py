@@ -5449,6 +5449,87 @@ class CoolingLoadOutputs(BaseModel, models.Model):
     def clean(self):
         pass
 
+class AbsorptionChillerOutputs(BaseModel, models.Model):
+    key = "AbsorptionChiller"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="AbsorptionChillerOutputs",
+        primary_key=True
+    )
+
+    size_kw = models.FloatField(
+        null=True, blank=True,
+        help_text="Thermal power capacity of the absorption chiller [kW]"
+    )
+    
+    size_ton = models.FloatField(
+        null=True, blank=True,
+        help_text="Thermal power capacity of the absorption chiller [ton]"
+    )
+
+    year_one_to_tes_series_ton = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        null=True,
+        help_text=("Year one hourly time series of absorption chiller thermal to cold TES [Ton]")
+    )
+
+    year_one_to_load_series_ton = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        null=True,
+        help_text=("Year one hourly time series of absorption chiller thermal to cooling load [Ton]")
+    )
+
+    year_one_thermal_consumption_series_mmbtu_per_hr = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        null=True,
+        help_text=("Year one hourly time series of absorption chiller electric consumption [kW]")
+    )
+
+    year_one_thermal_consumption_mmbtu = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=("Year one absorption chiller electric consumption [kWh]")
+    )
+
+    year_one_thermal_production_tonhour = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=("Year one absorption chiller thermal production [Ton Hour")
+    )
+    year_one_electric_consumption_series_kw = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        null=True,
+        help_text=("Year one hourly time series of absorption chiller electric consumption [kW]")
+    )
+
+    year_one_electric_consumption_kwh = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=("Year one absorption chiller electric consumption [kWh]")
+    )
+
+    def clean(self):
+        pass
+
+
 def get_input_dict_from_run_uuid(run_uuid:str):
     """
     Construct the input dict for REopt.run_reopt
@@ -5524,6 +5605,9 @@ def get_input_dict_from_run_uuid(run_uuid:str):
     
     try: d["CHP"] = filter_none_and_empty_array(meta.CHPInputs.dict)
     except: pass    
+
+    try: d["AbsorptionChiller"] = filter_none_and_empty_array(meta.AbsorptionChillerInputs.dict)
+    except: pass  
 
     return d
 
