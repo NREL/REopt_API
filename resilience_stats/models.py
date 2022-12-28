@@ -557,11 +557,35 @@ class ERPOutputs(BaseModel, models.Model):
         blank=True,
         help_text=("The mean, calculated over outages starting at each hour of the year, of the probability of surviving the full max_outage_duration.")
     )
-    monthly_cumulative_survival_final_time_step = ArrayField(
+    monthly_min_cumulative_survival_final_time_step = ArrayField(
         models.FloatField(blank=True),
         blank=True,
         default=list,
-        help_text=("The monthly means, calculated over outages starting at each hour of the month, of the probability of surviving the full max_outage_duration.")
+        help_text=("The monthly minimums, calculated over outages starting at each hour of the month, of the probability of surviving the full max_outage_duration.")
+    )
+    monthly_lower_quartile_cumulative_survival_final_time_step = ArrayField(
+        models.FloatField(blank=True),
+        blank=True,
+        default=list,
+        help_text=("The monthly lower quartile cutoff, calculated over outages starting at each hour of the month, of the probability of surviving the full max_outage_duration.")
+    )
+    monthly_median_cumulative_survival_final_time_step = ArrayField(
+        models.FloatField(blank=True),
+        blank=True,
+        default=list,
+        help_text=("The monthly medians, calculated over outages starting at each hour of the month, of the probability of surviving the full max_outage_duration.")
+    )
+    monthly_upper_quartile_cumulative_survival_final_time_step = ArrayField(
+        models.FloatField(blank=True),
+        blank=True,
+        default=list,
+        help_text=("The monthly upper quartile cutoff, calculated over outages starting at each hour of the month, of the probability of surviving the full max_outage_duration.")
+    )
+    monthly_max_cumulative_survival_final_time_step = ArrayField(
+        models.FloatField(blank=True),
+        blank=True,
+        default=list,
+        help_text=("The monthly maximums, calculated over outages starting at each hour of the month, of the probability of surviving the full max_outage_duration.")
     )
 
 class ResilienceModel(models.Model):
