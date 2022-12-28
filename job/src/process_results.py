@@ -29,8 +29,7 @@
 # *********************************************************************************
 from job.models import REoptjlMessageOutputs, FinancialOutputs, APIMeta, PVOutputs, ElectricStorageOutputs, ElectricTariffOutputs, SiteOutputs,\
     ElectricUtilityOutputs, GeneratorOutputs, ElectricLoadOutputs, WindOutputs, FinancialInputs, ElectricUtilityInputs, ExistingBoilerOutputs,\
-    CHPInputs, CHPOutputs, ExistingChillerOutputs, CoolingLoadOutputs, HeatingLoadOutputs
-    
+    CHPInputs, CHPOutputs, ExistingChillerOutputs, CoolingLoadOutputs, HeatingLoadOutputs, HotThermalStorageOutputs, ColdThermalStorageOutputs
 import logging
 log = logging.getLogger(__name__)
 import sys
@@ -73,6 +72,10 @@ def process_results(results: dict, run_uuid: str) -> None:
             ExistingBoilerOutputs.create(meta=meta, **results["ExistingBoiler"]).save()
         if "ExistingChiller" in results.keys():
             ExistingChillerOutputs.create(meta=meta, **results["ExistingChiller"]).save()
+        if "HotThermalStorage" in results.keys():
+            HotThermalStorageOutputs.create(meta=meta, **results["HotThermalStorage"]).save()
+        if "ColdThermalStorage" in results.keys():
+            ColdThermalStorageOutputs.create(meta=meta, **results["ColdThermalStorage"]).save()
         if "HeatingLoad" in results.keys():
             HeatingLoadOutputs.create(meta=meta, **results["HeatingLoad"]).save()
         if "CoolingLoad" in results.keys():
@@ -80,7 +83,6 @@ def process_results(results: dict, run_uuid: str) -> None:
         if "CHP" in results.keys():
             CHPOutputs.create(meta=meta, **results["CHP"]).save()
         # TODO process rest of results
-
 
 def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
     """
@@ -104,3 +106,4 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
                                                                             traceback.format_tb(exc_traceback)
                                                                         )
             log.debug(debug_msg)
+
