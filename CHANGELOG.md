@@ -31,16 +31,23 @@ Classify the change according to the following categories:
 ### Minor Updates
 ##### Added
 - `0011_coolingloadinputs....` file used to add new models to the db
+- `0012_coldthermalstorageinputs....` file used to add new models to the db
 In `job/models.py`:
 - added **ExistingChillerInputs** model
 - added **ExistingChillerOutputs** model
 - added **CoolingLoadInputs** model
 - added **CoolingLoadOutputs** model
 - added **HeatingLoadOutputs** model
+- added **HotThermalStorageInputs** model
+- added **HotThermalStorageOutputs** model
+- added **ColdThermalStorageInputs** model
+- added **ColdThermalStorageOutputs** model
 In `job/process_results.py`: 
 - add **ExistingChillerOutputs** 
 - add **CoolingLoadOutputs**
 - add **HeatingLoadOutputs**
+- add **HotThermalStorageOutputs**
+- add **ColdThermalStorageOutputs**
 In `job/validators.py:
 - add time series length validation on **CoolingLoadInputs->thermal_loads_ton** and **CoolingLoadInputs->per_time_step_fractions_of_electric_load**
 In `job/views.py`:
@@ -72,6 +79,7 @@ The following name changes were made in the `job/` endpoint and `julia_src/http.
  - Updated the version of REopt.jl in /julia_src to v0.20.0 which includes the addition of:
    - Boiler tech from the REopt_API (known as NewBoiler in API)
    - SteamTurbine tech from the REopt_API 
+
 ## v2.2.0
 ### Minor Updates 
 ##### Fixed
@@ -114,6 +122,7 @@ The following name changes were made in the `job/` endpoint and `julia_src/http.
 - **FinancialOutputs**
     - add `breakeven_cost_of_emissions_reduction_per_tonnes_CO2`
 In `job/process_results.py`: 
+- add **HotThermalStorageOutputs**
 - add **ExistingBoilerOutputs**
 In `job/test/test_job_endpoint.py`: 
 - test that AVERT and EASIUR defaults for emissions inputs not provided by user are passed back from REopt.jl and saved in database
