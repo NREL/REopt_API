@@ -411,35 +411,35 @@ class SiteOutputs(BaseModel, models.Model):
     )
     annual_emissions_tonnes_CO2 = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of CO2 emissions associated with the site's energy consumption in year one."
+        help_text="Total tons of CO2 emissions associated with the site's energy consumption in an one."
     )
     annual_emissions_tonnes_NOx = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of NOx emissions associated with the site's energy consumption in year one."
+        help_text="Total tons of NOx emissions associated with the site's energy consumption in an average year."
     )
     annual_emissions_tonnes_SO2 = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of SO2 emissions associated with the site's energy consumption in year one."
+        help_text="Total tons of SO2 emissions associated with the site's energy consumption in an average year."
     )
     annual_emissions_tonnes_PM25 = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of PM2.5 emissions associated with the site's energy consumption in year one."
+        help_text="Total tons of PM2.5 emissions associated with the site's energy consumption in an average year."
     )
     annual_emissions_from_fuelburn_tonnes_CO2 = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of CO2 emissions associated with the site's onsite fuel burn in year one."
+        help_text="Total tons of CO2 emissions associated with the site's onsite fuel burn in an average year."
     )
     annual_emissions_from_fuelburn_tonnes_NOx = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of NOx emissions associated with the site's onsite fuel burn in year one."
+        help_text="Total tons of NOx emissions associated with the site's onsite fuel burn in an average year."
     )
     annual_emissions_from_fuelburn_tonnes_SO2 = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of SO2 emissions associated with the site's onsite fuel burn in year one."
+        help_text="Total tons of SO2 emissions associated with the site's onsite fuel burn in an average year."
     )
     annual_emissions_from_fuelburn_tonnes_PM25 = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of PM2.5 emissions associated with the site's onsite fuel burn in year one."
+        help_text="Total tons of PM2.5 emissions associated with the site's onsite fuel burn in an average year."
     )
     lifecycle_emissions_tonnes_CO2 = models.FloatField(
         null=True, blank=True,
@@ -501,35 +501,35 @@ class SiteOutputs(BaseModel, models.Model):
     )
     annual_emissions_tonnes_CO2_bau = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of CO2 emissions associated with the site's energy consumption in year one in the BAU case."
+        help_text="Total tons of CO2 emissions associated with the site's energy consumption in an average year in the BAU case."
     )
     annual_emissions_tonnes_NOx_bau = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of NOx emissions associated with the site's energy consumption in year one in the BAU case."
+        help_text="Total tons of NOx emissions associated with the site's energy consumption in an average year in the BAU case."
     )
     annual_emissions_tonnes_SO2_bau = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of SO2 emissions associated with the site's energy consumption in year one in the BAU case."
+        help_text="Total tons of SO2 emissions associated with the site's energy consumption in an average year in the BAU case."
     )
     annual_emissions_tonnes_PM25_bau = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of PM2.5 emissions associated with the site's energy consumption in year one in the BAU case."
+        help_text="Total tons of PM2.5 emissions associated with the site's energy consumption in an average year in the BAU case."
     )
     annual_emissions_from_fuelburn_tonnes_CO2_bau = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of CO2 emissions associated with the site's onsite fuel burn in year one in the BAU case."
+        help_text="Total tons of CO2 emissions associated with the site's onsite fuel burn in an average year in the BAU case."
     )
     annual_emissions_from_fuelburn_tonnes_NOx_bau = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of NOx emissions associated with the site's onsite fuel burn in year one in the BAU case."
+        help_text="Total tons of NOx emissions associated with the site's onsite fuel burn in an average year in the BAU case."
     )
     annual_emissions_from_fuelburn_tonnes_SO2_bau = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of SO2 emissions associated with the site's onsite fuel burn in year one in the BAU case."
+        help_text="Total tons of SO2 emissions associated with the site's onsite fuel burn in an average year in the BAU case."
     )
     annual_emissions_from_fuelburn_tonnes_PM25_bau = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of PM2.5 emissions associated with the site's onsite fuel burn in year one in the BAU case."
+        help_text="Total tons of PM2.5 emissions associated with the site's onsite fuel burn in an average year in the BAU case."
     )
     lifecycle_emissions_tonnes_CO2_bau = models.FloatField(
         null=True, blank=True,
@@ -1724,75 +1724,75 @@ class ElectricUtilityOutputs(BaseModel, models.Model):
             blank=True
         ),
         default=list, blank=True,
-        help_text=("Optimal year one grid to load time series")
+        help_text=("Optimal average annual grid to load time series")
     )
     production_to_load_series_kw_bau = ArrayField(
         models.FloatField(
             blank=True
         ),
         default=list, blank=True,
-        help_text=("Business as usual year one grid to load time series")
+        help_text=("Business as usual average annual grid to load time series")
     )
     production_to_battery_series_kw = ArrayField(
         models.FloatField(
             blank=True
         ),
         default=list, blank=True,
-        help_text=("Optimal year one grid to battery time series")
+        help_text=("Optimal average annual grid to battery time series")
     )
     annual_energy_supplied_kwh = models.FloatField(
         null=True, blank=True,
-        help_text=("Year one energy supplied from grid to load")
+        help_text=("Average annual energy supplied from grid to load")
     )
     annual_energy_supplied_kwh_bau = models.FloatField(
         null=True, blank=True,
-        help_text=("Year one energy supplied from grid to load")
+        help_text=("Average annual energy supplied from grid to load")
     )
     annual_emissions_tonnes_CO2 = models.FloatField(
         null=True, blank=True,
-        help_text=("Total tons of CO2 emissions associated with the site's grid-purchased electricity in year one. "
+        help_text=("Total tons of CO2 emissions associated with the site's grid-purchased electricity in an average year. "
                     "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
                     "Otherwise, it accounts for emissions offset from any export to the grid.")
     )
     annual_emissions_tonnes_CO2_bau = models.FloatField(
         null=True, blank=True,
-        help_text=("Total tons of CO2 emissions associated with the site's grid-purchased electricity in year one in the BAU case. "
+        help_text=("Total tons of CO2 emissions associated with the site's grid-purchased electricity in an average year in the BAU case. "
                     "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
                     "Otherwise, it accounts for emissions offset from any export to the grid.")
     )
     annual_emissions_tonnes_NOx = models.FloatField(
         null=True, blank=True,
-        help_text=("Total tons of NOx emissions associated with the site's grid-purchased electricity in year one. "
+        help_text=("Total tons of NOx emissions associated with the site's grid-purchased electricity in an average year. "
                     "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
                     "Otherwise, it accounts for emissions offset from any export to the grid.")
     )
     annual_emissions_tonnes_NOx_bau = models.FloatField(
         null=True, blank=True,
-        help_text=("Total tons of NOx emissions associated with the site's grid-purchased electricity in year one in the BAU case. "
+        help_text=("Total tons of NOx emissions associated with the site's grid-purchased electricity in an average year in the BAU case. "
                     "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
                     "Otherwise, it accounts for emissions offset from any export to the grid.")
     )
     annual_emissions_tonnes_SO2 = models.FloatField(
         null=True, blank=True,
-        help_text=("Total tons of CO2 emissions associated with the site's grid-purchased electricity in year one. "
+        help_text=("Total tons of CO2 emissions associated with the site's grid-purchased electricity in an average year. "
                     "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
                     "Otherwise, it accounts for emissions offset from any export to the grid.")
     )
     annual_emissions_tonnes_SO2_bau = models.FloatField(
         null=True, blank=True,
-        help_text=("Total tons of SO2 emissions associated with the site's grid-purchased electricity in year one in the BAU case. "
+        help_text=("Total tons of SO2 emissions associated with the site's grid-purchased electricity in an average year in the BAU case. "
                     "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
                     "Otherwise, it accounts for emissions offset from any export to the grid.")
     )
     annual_emissions_tonnes_PM25 = models.FloatField(
         null=True, blank=True,
-        help_text=("Total tons of PM2.5 emissions associated with the site's grid-purchased electricity in year one. "
+        help_text=("Total tons of PM2.5 emissions associated with the site's grid-purchased electricity in an average year. "
                     "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
                     "Otherwise, it accounts for emissions offset from any export to the grid.")
     )
     annual_emissions_tonnes_PM25_bau = models.FloatField(
         null=True, blank=True,
-        help_text=("Total tons of PM2.5 emissions associated with the site's grid-purchased electricity in year one in the BAU case. "
+        help_text=("Total tons of PM2.5 emissions associated with the site's grid-purchased electricity in an average year in the BAU case. "
                     "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
                     "Otherwise, it accounts for emissions offset from any export to the grid.")
     )
@@ -3307,9 +3307,9 @@ class GeneratorOutputs(BaseModel, models.Model):
     year_one_variable_om_cost_before_tax = models.FloatField(null=True, blank=True)
     year_one_variable_om_cost_before_tax_bau = models.FloatField(null=True, blank=True)
     year_one_fuel_cost_before_tax = models.FloatField(null=True, blank=True)
-    year_one_fuel_cost_before_tax_bau = models.FloatField(null=True, blank=True) # TODO why didn't this error when it was year_one_fuel_cost_bau
+    year_one_fuel_cost_before_tax_bau = models.FloatField(null=True, blank=True)
     year_one_fixed_om_cost_before_tax = models.FloatField(null=True, blank=True)
-    year_one_fixed_om_cost_before_taxbau = models.FloatField(null=True, blank=True)
+    year_one_fixed_om_cost_before_tax_bau = models.FloatField(null=True, blank=True)
     lifecycle_variable_om_cost_after_tax = models.FloatField(null=True, blank=True)
     lifecycle_variable_om_cost_after_tax_bau = models.FloatField(null=True, blank=True)
     lifecycle_fuel_cost_after_tax = models.FloatField(null=True, blank=True)
