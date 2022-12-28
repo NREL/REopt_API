@@ -197,6 +197,9 @@ class InputValidatorTests(TestCase):
         self.assertAlmostEqual(validator.models["ExistingBoiler"].emissions_factor_lb_CO2_per_mmbtu, 117, places=-1)
         self.assertAlmostEqual(len(validator.models["ExistingBoiler"].fuel_cost_per_mmbtu), 8760)
         self.assertAlmostEqual(sum(validator.models["ExistingBoiler"].fuel_cost_per_mmbtu), 8760*0.5)
+        
+        # Ensure Hot Thermal Storage System parameter is loaded from json
+        self.assertAlmostEqual(validator.models["HotThermalStorage"].max_gal, 2500.0)
 
         # Validate 12 month fuel cost vector gets scaled correctly
 
@@ -256,3 +259,17 @@ class InputValidatorTests(TestCase):
                 assert("Missing required inputs." in validator.validation_errors[key])
             else: 
                 assert(key not in validator.validation_errors.keys())
+
+        # check for missing CHP inputs
+        post = copy.deepcopy(self.post)
+        post["APIMeta"]["run_uuid"] = uuid.uuid4()
+        post["CHP"].pop("fuel_cost_per_mmbtu")
+        validator = InputValidator(post)
+        validator.clean_fields()
+        validator.clean()
+        validator.cross_clean()
+        assert("required inputs" in validator.validation_errors["CHP"].keys())
+
+
+
+

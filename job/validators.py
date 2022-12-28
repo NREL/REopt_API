@@ -31,7 +31,7 @@ import logging
 import pandas as pd
 from job.models import MAX_BIG_NUMBER, APIMeta, ExistingBoilerInputs, UserProvidedMeta, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
     FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs, SpaceHeatingLoadInputs, \
-    DomesticHotWaterLoadInputs
+    DomesticHotWaterLoadInputs, CHPInputs, CoolingLoadInputs, ExistingChillerInputs, HotThermalStorageInputs, ColdThermalStorageInputs
 from django.core.exceptions import ValidationError
 from pyproj import Proj
 from typing import Tuple
@@ -94,9 +94,14 @@ class InputValidator(object):
             ElectricStorageInputs,
             GeneratorInputs,
             WindInputs,
+            CoolingLoadInputs,
+            ExistingChillerInputs,
             ExistingBoilerInputs,
             SpaceHeatingLoadInputs,
-            DomesticHotWaterLoadInputs
+            DomesticHotWaterLoadInputs,
+            CHPInputs,
+            HotThermalStorageInputs,
+            ColdThermalStorageInputs
         )
         self.pvnames = []
         on_grid_required_object_names = [
@@ -278,6 +283,7 @@ class InputValidator(object):
         if len(self.pvnames) > 0:  # multiple PV
             for pvname in self.pvnames:
                 cross_clean_pv(self.models[pvname])
+                update_pv_defaults_offgrid(self)
 
         """
         Time series values are up or down sampled to align with Settings.time_steps_per_hour
@@ -408,23 +414,26 @@ class InputValidator(object):
                                                 f"Value is greater than the max allowable ({max_ts} - {max_start_time_step_input})")
         
         """
+        CoolingLoad
+        """
+        if "CoolingLoad" in self.models.keys():
+
+            if len(self.models["CoolingLoad"].thermal_loads_ton) > 0:
+                self.clean_time_series("CoolingLoad", "thermal_loads_ton")
+
+            if len(self.models["CoolingLoad"].per_time_step_fractions_of_electric_load) > 0:
+                self.clean_time_series("CoolingLoad", "per_time_step_fractions_of_electric_load")
+            
+        """
         ExistingBoiler
         """
         if "ExistingBoiler" in self.models.keys():
 
-            # Clean fuel_cost_per_mmbtu to align with time series
-            self.clean_time_series("ExistingBoiler", "fuel_cost_per_mmbtu")
-
             if self.models["ExistingBoiler"].efficiency is None:
-                if "CHP" in self.models.keys():
-                    pass
-                # TODO add CHP based validation on ExistingBoiler efficiency
-                # Get production type by chp prime mover
+                if self.models["ExistingBoiler"].production_type == 'hot_water':
+                    self.models["ExistingBoiler"].efficiency = 0.8
                 else:
-                    if self.models["ExistingBoiler"].production_type == 'hot_water':
-                        self.models["ExistingBoiler"].efficiency = 0.8
-                    else:
-                        self.models["ExistingBoiler"].efficiency = 0.75
+                    self.models["ExistingBoiler"].efficiency = 0.75
         
         """
         ElectricLoad
@@ -538,6 +547,10 @@ class InputValidator(object):
         
         if self.models["Settings"].off_grid_flag==True:
             validate_offgrid_keys(self)
+
+        """
+        ExistingChiller - skip, no checks
+        """
 
     def save(self):
         """

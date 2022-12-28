@@ -30,7 +30,9 @@
 from job.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorageOutputs,\
                         ElectricTariffOutputs, SiteOutputs, ElectricUtilityOutputs,\
                         GeneratorOutputs, ElectricLoadOutputs, WindOutputs, FinancialInputs,\
-                        ElectricUtilityInputs, ExistingBoilerOutputs, OutageOutputs
+                        ElectricUtilityInputs, ExistingBoilerOutputs, CHPOutputs, CHPInputs, \
+                        ExistingChillerOutputs, CoolingLoadOutputs, HeatingLoadOutputs,\
+                        HotThermalStorageOutputs, ColdThermalStorageOutputs, OutageOutputs
 import sys
 import traceback as tb
 import logging
@@ -78,12 +80,24 @@ def process_results(results: dict, run_uuid: str) -> None:
             GeneratorOutputs.create(meta=meta, **results["Generator"]).save()
         if "Wind" in results.keys():
             WindOutputs.create(meta=meta, **results["Wind"]).save()
-        if "Outages" in results.keys():
-            OutageOutputs.create(meta=meta, **results["Outages"]).save()
+        if "ExistingChiller" in results.keys():
+            ExistingChillerOutputs.create(meta=meta, **results["ExistingChiller"]).save()
         # if "Boiler" in results.keys():
         #     BoilerOutputs.create(meta=meta, **results["Boiler"]).save()
         if "ExistingBoiler" in results.keys():
             ExistingBoilerOutputs.create(meta=meta, **results["ExistingBoiler"]).save()
+        if "HotThermalStorage" in results.keys():
+            HotThermalStorageOutputs.create(meta=meta, **results["HotThermalStorage"]).save()
+        if "ColdThermalStorage" in results.keys():
+            ColdThermalStorageOutputs.create(meta=meta, **results["ColdThermalStorage"]).save()
+        if "HeatingLoad" in results.keys():
+            HeatingLoadOutputs.create(meta=meta, **results["HeatingLoad"]).save()
+        if "CoolingLoad" in results.keys():
+            CoolingLoadOutputs.create(meta=meta, **results["CoolingLoad"]).save()
+        if "CHP" in results.keys():
+            CHPOutputs.create(meta=meta, **results["CHP"]).save()
+        if "Outages" in results.keys():
+            OutageOutputs.create(meta=meta, **results["Outages"]).save()
         # TODO process rest of results
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -96,7 +110,6 @@ def process_results(results: dict, run_uuid: str) -> None:
         raise e
 
 def pop_result_keys(r:dict, keys_to_skip:list):
-
     for k in r.keys():
         if (type(r[k])) == dict:
             for s in keys_to_skip:
@@ -116,6 +129,8 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
         # get input models that need updating
         FinancialInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["Financial"])
         ElectricUtilityInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["ElectricUtility"])
+        if inputs_to_update["CHP"]:  # Will be an empty dictionary if CHP is not considered
+            CHPInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["CHP"])
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(
