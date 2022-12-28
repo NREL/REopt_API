@@ -31,7 +31,7 @@ import logging
 import pandas as pd
 from job.models import MAX_BIG_NUMBER, APIMeta, ExistingBoilerInputs, UserProvidedMeta, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
     FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs, SpaceHeatingLoadInputs, \
-    DomesticHotWaterLoadInputs, CHPInputs, CoolingLoadInputs, ExistingChillerInputs
+    DomesticHotWaterLoadInputs, CHPInputs, CoolingLoadInputs, ExistingChillerInputs, HotThermalStorageInputs, ColdThermalStorageInputs
 from django.core.exceptions import ValidationError
 from pyproj import Proj
 from typing import Tuple
@@ -99,7 +99,9 @@ class InputValidator(object):
             ExistingBoilerInputs,
             SpaceHeatingLoadInputs,
             DomesticHotWaterLoadInputs,
-            CHPInputs
+            CHPInputs,
+            HotThermalStorageInputs,
+            ColdThermalStorageInputs
         )
         self.pvnames = []
         on_grid_required_object_names = [
