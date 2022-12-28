@@ -25,11 +25,7 @@ Classify the change according to the following categories:
     ##### Deprecated
     ##### Removed
     ### Patches
-    
-## v2.3.1
-### Minor Updates
-##### Fixed
-Lookback charge parameters expected from the URDB API call were changed to the non-caplitalized format, so they are now used properly.
+
 
 ## Develop 11/21/2022
 ### Minor Updates
@@ -42,8 +38,51 @@ Lookback charge parameters expected from the URDB API call were changed to the n
 ##### Changed
 - use TransactionTestCase instead of TestCase (this avoids whole test being wrapped in a transaction which leads to a TransactionManagementError when doing a database query in the middle)
 
-## v2.3.0
+## v2.5.0
 ### Minor Updates
+##### Added
+- `0011_coolingloadinputs....` file used to add new models to the db
+- `0012_coldthermalstorageinputs....` file used to add new models to the db
+In `job/models.py`:
+- added **ExistingChillerInputs** model
+- added **ExistingChillerOutputs** model
+- added **CoolingLoadInputs** model
+- added **CoolingLoadOutputs** model
+- added **HeatingLoadOutputs** model
+- added **HotThermalStorageInputs** model
+- added **HotThermalStorageOutputs** model
+- added **ColdThermalStorageInputs** model
+- added **ColdThermalStorageOutputs** model
+In `job/process_results.py`: 
+- add **ExistingChillerOutputs** 
+- add **CoolingLoadOutputs**
+- add **HeatingLoadOutputs**
+- add **HotThermalStorageOutputs**
+- add **ColdThermalStorageOutputs**
+In `job/validators.py:
+- add time series length validation on **CoolingLoadInputs->thermal_loads_ton** and **CoolingLoadInputs->per_time_step_fractions_of_electric_load**
+In `job/views.py`:
+- add new input/output models to properly save the inputs/outputs
+    
+## v2.4.0
+### Minor Updates
+##### Added 
+- In `job/models.py`:
+  - add **CHPInputs** model
+  - add **CHPOutputs** model
+- In `job/process_results.py` add **CHPOutputs**
+- In `job/validators.py` add new input models
+- In `job/views.py`:
+  - add new input/output models to properly save the inputs/outputs
+  - add `/chp_defaults` endpoint which calls the http.jl chp_defaults endpoint
+  - add `/simulated_load` endpoint which calls the http.jl simulated_load endpoint    
+    
+## v2.3.1
+### Minor Updates
+##### Fixed
+Lookback charge parameters expected from the URDB API call were changed to the non-caplitalized format, so they are now used properly.
+
+## v2.3.0
 ##### Changed
 The following name changes were made in the `job/` endpoint and `julia_src/http.jl`: 
  - Change "_pct" to "_rate_fraction" for input and output names containing "discount", "escalation", and "tax_pct" (financial terms)
@@ -52,6 +91,7 @@ The following name changes were made in the `job/` endpoint and `julia_src/http.
  - Updated the version of REopt.jl in /julia_src to v0.20.0 which includes the addition of:
    - Boiler tech from the REopt_API (known as NewBoiler in API)
    - SteamTurbine tech from the REopt_API 
+
 ## v2.2.0
 ### Minor Updates 
 ##### Fixed
@@ -69,7 +109,6 @@ The following name changes were made in the `job/` endpoint and `julia_src/http.
 ##### Added 
 - `0005_boilerinputs....` file used to add new models to the db
 - `job/` endpoint: Add inputs and validation to model off-grid wind 
-In `job/models.py`:
 - added **ExistingBoilerInputs** model
 - added **ExistingBoilerOutputs** model
 - added **SpaceHeatingLoadInputs** model
@@ -95,12 +134,14 @@ In `job/models.py`:
 - **FinancialOutputs**
     - add `breakeven_cost_of_emissions_reduction_per_tonnes_CO2`
 In `job/process_results.py`: 
+- add **HotThermalStorageOutputs**
 - add **ExistingBoilerOutputs**
 In `job/test/test_job_endpoint.py`: 
 - test that AVERT and EASIUR defaults for emissions inputs not provided by user are passed back from REopt.jl and saved in database
 - add a testcase to validate that API is accepting/returning fields related to new models.
 In `'job/validators.py`:
 - add new input models
+- added `update_pv_defaults_offgrid()` to prevent validation failure when PV is not provided as input
 In `job/views.py`:
 - Added **SiteInputs** to `help` endpoint
 - Added **SiteOutputs** to `outputs` endpoint

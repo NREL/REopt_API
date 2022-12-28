@@ -14,7 +14,9 @@ pipeline {
     DEVELOPMENT_TEMP_BASE_DOMAIN = credentials("reopt-api-development-temp-base-domain")
     STAGING_BASE_DOMAIN = credentials("reopt-api-staging-base-domain")
     STAGING_TEMP_BASE_DOMAIN = credentials("reopt-api-staging-temp-base-domain")
-    PRODUCTION_DOMAIN = credentials("reopt-api-production-domain")
+    // FIXME: Restore after testing new deploys and ready to switch.
+    // PRODUCTION_DOMAIN = credentials("reopt-api-production-domain")
+    PRODUCTION_DOMAIN = credentials("reopt-api-production-temp-domain")
     XPRESS_LICENSE_HOST = credentials("reopt-api-xpress-license-host")
     NREL_ROOT_CERT_URL_ROOT = credentials("reopt-api-nrel-root-cert-url-root")
   }
@@ -134,8 +136,8 @@ pipeline {
               steps {
                 withDockerRegistry(url: "https://${env.WERF_REPO}", credentialsId: "ecr:us-east-2:aws-nrel-tada-ci") {
                   withCredentials([aws(credentialsId: "aws-nrel-tada-ci")]) {
-                    withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod"]) {
-                      tadaWithWerfNamespaces(rancherProject: "reopt-api-stage", primaryBranch: "master", dbBaseName: "reopt_api_staging", baseDomain: "${STAGING_BASE_DOMAIN}") {
+                    withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod2"]) {
+                      tadaWithWerfNamespaces(rancherProject: "reopt-api-staging", primaryBranch: "master", dbBaseName: "reopt_api_staging", baseDomain: "${STAGING_BASE_DOMAIN}") {
                         withCredentials([string(credentialsId: "reopt-api-werf-secret-key", variable: "WERF_SECRET_KEY")]) {
                           sh """
                             werf converge \
@@ -169,8 +171,8 @@ pipeline {
               steps {
                 withDockerRegistry(url: "https://${env.WERF_REPO}", credentialsId: "ecr:us-east-2:aws-nrel-tada-ci") {
                   withCredentials([aws(credentialsId: "aws-nrel-tada-ci")]) {
-                    withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod"]) {
-                      tadaWithWerfNamespaces(rancherProject: "reopt-api-prod", primaryBranch: "master") {
+                    withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod2"]) {
+                      tadaWithWerfNamespaces(rancherProject: "reopt-api-production", primaryBranch: "master") {
                         withCredentials([string(credentialsId: "reopt-api-werf-secret-key", variable: "WERF_SECRET_KEY")]) {
                           sh """
                             werf converge \
