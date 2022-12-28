@@ -26,7 +26,16 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-
+## Develop - 2022-12-28
+### Minor Updates
+ ### Changed
+ - In job/ app (v3): Name changes for many outputs/results. Generally, changes are for energy outputs (not costs) that include "year_one", and are changed to annual_ for scalars and to production_to_, thermal_to_ etc. for time series.
+ - In job/ app (v3): Changed some _bau outputs to align with REopt.jl outputs
+ ### Added 
+ - In job/ app (v3): Added **thermal_production_series_mmbtu_per_hour** to CHP results.
+##### Removed
+- In job/ app (v3): Removed outputs not reported by REopt.jl
+  
 ## v2.5.0
 ### Minor Updates
 ##### Added
