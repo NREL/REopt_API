@@ -27,27 +27,31 @@ Classify the change according to the following categories:
     ### Patches
 
 
+## v2.5.1
+### Minor Updates
+#### Added
+- added **HotThermalStorageInputs** model
+- added **HotThermalStorageOutputs** model
+- added **ColdThermalStorageInputs** model
+- added **ColdThermalStorageOutputs** model
+- add **HotThermalStorageOutputs**
+- add **ColdThermalStorageOutputs**
+- `0012_coldthermalstorageinputs....` file used to add new models to the db
+
 ## v2.5.0
 ### Minor Updates
 ##### Added
 - `0011_coolingloadinputs....` file used to add new models to the db
-- `0012_coldthermalstorageinputs....` file used to add new models to the db
 In `job/models.py`:
 - added **ExistingChillerInputs** model
 - added **ExistingChillerOutputs** model
 - added **CoolingLoadInputs** model
 - added **CoolingLoadOutputs** model
 - added **HeatingLoadOutputs** model
-- added **HotThermalStorageInputs** model
-- added **HotThermalStorageOutputs** model
-- added **ColdThermalStorageInputs** model
-- added **ColdThermalStorageOutputs** model
 In `job/process_results.py`: 
 - add **ExistingChillerOutputs** 
 - add **CoolingLoadOutputs**
 - add **HeatingLoadOutputs**
-- add **HotThermalStorageOutputs**
-- add **ColdThermalStorageOutputs**
 In `job/validators.py:
 - add time series length validation on **CoolingLoadInputs->thermal_loads_ton** and **CoolingLoadInputs->per_time_step_fractions_of_electric_load**
 In `job/views.py`:
