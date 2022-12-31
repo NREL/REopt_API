@@ -1309,7 +1309,7 @@ class ElectricLoadOutputs(BaseModel, models.Model):
             null=True, blank=True
         ),
         default=list,
-        help_text="Year one hourly time series of electric load"
+        help_text="Annual hourly time series of electric load"
     )
     critical_load_series_kw = ArrayField(
         models.FloatField(
@@ -1719,21 +1719,21 @@ class ElectricUtilityOutputs(BaseModel, models.Model):
         primary_key=True
     )
 
-    production_to_load_series_kw = ArrayField(
+    electric_to_load_series_kw = ArrayField(
         models.FloatField(
             blank=True
         ),
         default=list, blank=True,
         help_text=("Optimal average annual grid to load time series")
     )
-    production_to_load_series_kw_bau = ArrayField(
+    electric_to_load_series_kw_bau = ArrayField(
         models.FloatField(
             blank=True
         ),
         default=list, blank=True,
         help_text=("Business as usual average annual grid to load time series")
     )
-    production_to_battery_series_kw = ArrayField(
+    electric_to_storage_series_kw = ArrayField(
         models.FloatField(
             blank=True
         ),
@@ -2288,7 +2288,7 @@ class PVInputs(BaseModel, models.Model):
         ],
         blank=True,
         null=True,
-        help_text="PV system tilt. If PV system type is rooftop-fixed, then tilt=10 degrees, else abs(site.latitude)"
+        help_text="PV system tilt. If PV system type is rooftop-fixed, then tilt=10 degrees, else tilt=abs(site.latitude)"
     )
     location = models.TextField(
         default=PV_LOCATION_CHOICES.BOTH,
@@ -2370,15 +2370,15 @@ class PVOutputs(BaseModel, models.Model):
     annual_energy_exported_kwh = models.FloatField(null=True, blank=True)
     year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)
     year_one_energy_produced_kwh_bau = models.FloatField(null=True, blank=True)
-    production_to_battery_series_kw = ArrayField(
+    electric_to_storage_series_kw = ArrayField(
         models.FloatField(null=True, blank=True),
         blank=True, default=list
     )
-    production_to_load_series_kw = ArrayField(
+    electric_to_load_series_kw = ArrayField(
         models.FloatField(null=True, blank=True),
         blank=True, default=list
     )
-    production_to_grid_series_kw = ArrayField(
+    electric_to_grid_series_kw = ArrayField(
         models.FloatField(null=True, blank=True),
         blank=True, default=list
     )
@@ -2687,11 +2687,11 @@ class WindOutputs(BaseModel, models.Model):
     annual_energy_produced_kwh = models.FloatField(null=True, blank=True)
     annual_energy_exported_kwh = models.FloatField(null=True, blank=True)
     year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)
-    production_to_battery_series_kw = ArrayField(
+    electric_to_storage_series_kw = ArrayField(
             models.FloatField(null=True, blank=True), blank=True, default=list)
-    production_to_load_series_kw = ArrayField(
+    electric_to_load_series_kw = ArrayField(
             models.FloatField(null=True, blank=True), blank=True, default=list)
-    production_to_grid_series_kw = ArrayField(
+    electric_to_grid_series_kw = ArrayField(
             models.FloatField(null=True, blank=True), blank=True, default=list)
     production_curtailed_series_kw = ArrayField(
             models.FloatField(null=True, blank=True), blank=True, default=list)
@@ -3298,11 +3298,11 @@ class GeneratorOutputs(BaseModel, models.Model):
     size_kw = models.FloatField(null=True, blank=True)
     annual_energy_produced_kwh = models.FloatField(null=True, blank=True)
     year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)
-    production_to_battery_series_kw = ArrayField(
+    electric_to_storage_series_kw = ArrayField(
             models.FloatField(null=True, blank=True), null=True, blank=True)
-    production_to_load_series_kw = ArrayField(
+    electric_to_load_series_kw = ArrayField(
             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
-    production_to_grid_series_kw = ArrayField(
+    electric_to_grid_series_kw = ArrayField(
             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
     year_one_variable_om_cost_before_tax = models.FloatField(null=True, blank=True)
     year_one_variable_om_cost_before_tax_bau = models.FloatField(null=True, blank=True)
@@ -3860,7 +3860,7 @@ class CHPOutputs(BaseModel, models.Model):
         default=list, blank=True,
         help_text="Electric power exported time-series array [kW]"
     )
-    electric_to_battery_series_kw = ArrayField(
+    electric_to_storage_series_kw = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
@@ -3874,7 +3874,7 @@ class CHPOutputs(BaseModel, models.Model):
         default=list, blank=True,
         help_text="Electric power serving the electric load time-series array [kW]"
     )
-    thermal_to_tes_series_mmbtu_per_hour = ArrayField(
+    thermal_to_storage_series_mmbtu_per_hour = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
@@ -4177,24 +4177,24 @@ class ExistingChillerOutputs(BaseModel, models.Model):
         primary_key=True
     )
 
-    production_to_tes_series_ton = ArrayField(
+    thermal_to_storage_series_ton = ArrayField(
         models.FloatField(
             blank=True
         ),
         default=list,
         blank=True,
         null=True,
-        help_text=("Year one hourly time series of electric chiller thermal to cold TES [Ton]")
+        help_text=("Annual hourly time series of electric chiller thermal to cold TES [Ton]")
     )
 
-    production_to_load_series_ton = ArrayField(
+    thermal_to_load_series_ton = ArrayField(
         models.FloatField(
             blank=True
         ),
         default=list,
         blank=True,
         null=True,
-        help_text=("Year one hourly time series of electric chiller thermal to cooling load [Ton]")
+        help_text=("Annual hourly time series of electric chiller thermal to cooling load [Ton]")
     )
 
     electric_consumption_series_kw = ArrayField(
@@ -4204,19 +4204,19 @@ class ExistingChillerOutputs(BaseModel, models.Model):
         default=list,
         blank=True,
         null=True,
-        help_text=("Year one hourly time series of chiller electric consumption [kW]")
+        help_text=("Annual hourly time series of chiller electric consumption [kW]")
     )
 
     annual_electric_consumption_kwh = models.FloatField(
         null=True,
         blank=True,
-        help_text=("Year one chiller electric consumption [kWh]")
+        help_text=("Annual chiller electric consumption [kWh]")
     )
 
     annual_thermal_production_tonhour = models.FloatField(
         null=True,
         blank=True,
-        help_text=("Year one chiller thermal production [Ton Hour")
+        help_text=("Annual chiller thermal production [Ton Hour")
     )
 
     def clean(self):
@@ -4401,7 +4401,7 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
     lifecycle_fuel_cost_after_tax_bau = models.FloatField(null=True, blank=True)
     annual_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
     year_one_fuel_cost_before_tax = models.FloatField(null=True, blank=True)
-    thermal_to_tes_series_mmbtu_per_hour = ArrayField(
+    thermal_to_storage_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
         default = list,
     )
@@ -4584,7 +4584,7 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
 #     annual_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
 #     year_one_fuel_cost = models.FloatField(null=True, blank=True)
     
-#     thermal_to_tes_series_mmbtu_per_hour = ArrayField(
+#     thermal_to_storage_series_mmbtu_per_hour = ArrayField(
 #         models.FloatField(null=True, blank=True),
 #         default = list,
 #     )
