@@ -33,6 +33,7 @@ import copy
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.exceptions import ValidationError
 from reo.models import ScenarioModel
 from reo.exceptions import SaveToDatabase
 log = logging.getLogger(__name__)
@@ -297,32 +298,41 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
             self.operational_availability = {
                 True: {
                     "recip_engine": [0.96, 0.98],
-                    "micro_turbine": [1], #TODO: none in data
+                    "micro_turbine": [None],
                     "combustion_turbine": [0.98, 0.97],
                     "fuel_cell": [0.9]
                 },
                 False: {
                     "recip_engine": [0.96, 0.98],
-                    "micro_turbine": [1], #TODO: none in data
+                    "micro_turbine": [None],
                     "combustion_turbine": [0.98, 0.97],
-                    "fuel_cell": [1] #TODO: none in data
+                    "fuel_cell": [None]
                 }
             }[self.is_chp][self.prime_mover][size_class_index]
         if not self.mean_time_to_failure:
             self.mean_time_to_failure = {
                 True: {
                     "recip_engine": [870, 2150],
-                    "micro_turbine": [None], #TODO: none in data
+                    "micro_turbine": [None],
                     "combustion_turbine": [990, 3160],
                     "fuel_cell": [2500]
                 },
                 False: {
                     "recip_engine": [920, 2300],
-                    "micro_turbine": [None], #TODO: none in data
+                    "micro_turbine": [None],
                     "combustion_turbine": [1040, 3250],
                     "fuel_cell": [2500]
                 }
             }[self.is_chp][self.prime_mover][size_class_index]
+        error_messages = {}
+        if self.operational_availability is None and self.mean_time_to_failure is None:
+            error_messages["required inputs"] = "Must provide operational_availability and mean_time_to_failure to model {} with the specified prime_mover".format(self.key)
+        elif self.operational_availability is None:
+            error_messages["required inputs"] = "Must provide operational_availability to model {} with the specified prime_mover".format(self.key)
+        elif self.mean_time_to_failure is None:
+            error_messages["required inputs"] = "Must provide mean_time_to_failure to model {} with the specified prime_mover".format(self.key)
+        if error_messages:
+            raise ValidationError(error_messages)
 
 
 class ERPElectricStorageInputs(BaseModel, models.Model):
