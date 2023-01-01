@@ -75,7 +75,7 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
     #     assert(reopt_run_uuid is not None)
     #     post_sim = json.load(open(self.post_sim, 'rb'))
     #     post_sim["reopt_run_uuid"] = reopt_run_uuid
-    #     post_sim["battery_starting_soc_series_fraction"] = 8760 * [1]
+    #     post_sim["ElectricStorage"]["battery_starting_soc_series_fraction"] = 8760 * [1]
 
     #     resp = self.get_response_sim(post_sim)
     #     self.assertHttpCreated(resp)
@@ -88,16 +88,17 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
     #     self.assertAlmostEqual(results["outputs"]["mean_cumulative_survival_final_time_step"], 0.904242, places=4)
 
     #     #remove inputs that override REopt results and run again
-    #     for input_key in [
-    #                 "generator_size_kw",
-    #                 "battery_size_kw",
-    #                 "battery_size_kwh",
-    #                 "pv_size_kw",
-    #                 "critical_loads_kw",
-    #                 "pv_production_factor_series",
-    #                 "battery_starting_soc_series_fraction"
+    #     for model, field in [
+    #                 ("Generator","size_kw"),
+    #                 ("PrimeGenerator","size_kw"),
+    #                 ("ElectricStorage","size_kw"),
+    #                 ("ElectricStorage","size_kwh"),
+    #                 ("PV","size_kw"),
+    #                 ("Outage","critical_loads_kw"),
+    #                 ("PV","production_factor_series"),
+    #                 ("ElectricStorage","starting_soc_series_fraction")
     #             ]:
-    #         post_sim.pop(input_key)
+    #         post_sim[model].pop(field)
         
     #     resp = self.get_response_sim(post_sim)
     #     self.assertHttpCreated(resp)
