@@ -123,7 +123,7 @@ class ERPGeneratorInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(1)
         ],
-        default=0.9998, 
+        default=0.995, 
         blank=True,
         help_text=("Fraction of year generators not down for maintenance")
     )
@@ -132,7 +132,7 @@ class ERPGeneratorInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(1)
         ],
-        default=0.0066,
+        default=0.0094,
         blank=True,
         help_text=("Chance of generator not starting when an outage occurs")
     )
@@ -141,7 +141,7 @@ class ERPGeneratorInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(1)
         ],
-        default=637,
+        default=1100,
         blank=True,
         help_text=("Average number of time steps between a generator's failures. 1/(failure to run probability).")
     )
