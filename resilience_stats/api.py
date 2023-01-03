@@ -136,6 +136,7 @@ class ERPJob(ModelResource):
                         meta_dict, 
                         "To include PV, you must provide PV production_factor_series or the reopt_run_uuid of an optimization that considered PV."
                     )
+                #TODO: error if no outage inputs and no reopt run_uuid
             else:
                 #TODO: put in helper function for more readable code
                 try:
@@ -260,7 +261,7 @@ class ERPJob(ModelResource):
                     bundle.data["ElectricStorage"] = stor_inputs_from_reopt.update(bundle.data.get("ElectricStorage", {}))
                 except AttributeError as e: 
                     pass
-                
+
             for model in (
                 ERPOutageInputs,    
                 ERPGeneratorInputs,
@@ -268,10 +269,13 @@ class ERPJob(ModelResource):
                 ERPPVInputs,
                 ERPElectricStorageInputs
             ):
-                obj = model.create(meta=meta, **bundle.data[model.key])
-                obj.clean()
-                obj.clean_fields()
-                obj.save()
+                try:
+                    obj = model.create(meta=meta, **bundle.data[model.key])
+                    obj.clean()
+                    obj.clean_fields()
+                    obj.save()
+                except KeyError:
+                    pass
 
             meta.status = 'Simulating...'
             meta.save(update_fields=['status'])
