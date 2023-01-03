@@ -31,14 +31,15 @@ from django.db import models
 import uuid
 import sys
 import traceback as tb
+import re
 from django.http import JsonResponse
 from reo.exceptions import UnexpectedError
 from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, GeneratorInputs, ElectricLoadInputs,\
     ElectricTariffInputs, ElectricUtilityInputs, SpaceHeatingLoadInputs, PVOutputs, ElectricStorageOutputs,\
-    WindOutputs, ExistingBoilerInputs, GeneratorOutputs, ElectricTariffOutputs, ElectricUtilityOutputs,\
-    ElectricLoadOutputs, ExistingBoilerOutputs, DomesticHotWaterLoadInputs, SiteInputs, SiteOutputs, APIMeta,\
+    WindOutputs, ExistingBoilerInputs, GeneratorOutputs, ElectricTariffOutputs, ElectricUtilityOutputs, \
+    ElectricLoadOutputs, ExistingBoilerOutputs, DomesticHotWaterLoadInputs, SiteInputs, SiteOutputs, APIMeta, \
     UserProvidedMeta, CHPInputs, CHPOutputs, CoolingLoadInputs, ExistingChillerInputs, ExistingChillerOutputs,\
-    CoolingLoadOutputs, HeatingLoadOutputs, HotThermalStorageInputs, HotThermalStorageOutputs,\
+    CoolingLoadOutputs, HeatingLoadOutputs, REoptjlMessageOutputs, HotThermalStorageInputs, HotThermalStorageOutputs,\
     ColdThermalStorageInputs, ColdThermalStorageOutputs
 import os
 import requests
@@ -119,6 +120,7 @@ def outputs(request):
         d["HeatingLoad"] = HeatingLoadOutputs.info_dict(HeatingLoadOutputs)
         d["CoolingLoad"] = CoolingLoadOutputs.info_dict(CoolingLoadOutputs)
         d["CHP"] = CHPOutputs.info_dict(CHPOutputs)
+        d["Messages"] = REoptjlMessageOutputs.info_dict(REoptjlMessageOutputs)
         return JsonResponse(d)
 
     except Exception as e:
@@ -153,7 +155,7 @@ def results(request, run_uuid):
         ).get(run_uuid=run_uuid)
     except Exception as e:
         if isinstance(e, models.ObjectDoesNotExist):
-            resp = {"messages": {"error": ""}}
+            resp = {"messages": {}}
             resp['messages']['error'] = (
                 "run_uuid {} not in database. "
                 "You may have hit the results endpoint too quickly after POST'ing scenario, "
@@ -238,6 +240,20 @@ def results(request, run_uuid):
             msgs = meta.Message.all()
             for msg in msgs:
                 r["messages"][msg.message_type] = msg.message
+            
+            # Add a dictionary of warnings and errors from REopt
+            # key = location of warning, error, or uncaught error
+            # value = vector of text from REopt
+            #   In case of uncaught error, vector length > 1
+            reopt_messages = meta.REoptjlMessageOutputs.dict
+            for msg_type in ["errors","warnings"]:
+                r["messages"][msg_type] = dict()
+                for m in range(0,len(reopt_messages[msg_type])):
+                    txt = reopt_messages[msg_type][m]
+                    txt = re.sub('[^0-9a-zA-Z_.,() ]+', '', txt)
+                    k = txt.split(',')[0]
+                    v = txt.split(',')[1:]
+                    r["messages"][msg_type][k] = v
         except: pass
 
         try:
@@ -298,6 +314,9 @@ def results(request, run_uuid):
             err.save_to_db()
             resp = make_error_resp(err.message)
             return JsonResponse(resp, status=500)
+    
+    if meta.status == "error":
+        return JsonResponse(r, status=400)
 
     return JsonResponse(r)
 
