@@ -130,7 +130,8 @@ class ERPJob(ModelResource):
                         meta_dict, 
                         "Running ERP with CHP or PrimeGenerator but no reopt_run_uuid is not yet supported."
                     )
-                if len(bundle.data.get("PV",{}).get("production_factor_series", [])) != 8760: #TODO: handle subhourly
+                if bundle.data.get("PV",{}).get("size_kw", 0) > 0 and \
+                    len(bundle.data.get("PV",{}).get("production_factor_series", [])) != 8760: #TODO: handle subhourly
                     add_validation_err_msg_and_raise_400_response(
                         meta_dict, 
                         "To include PV, you must provide PV production_factor_series or the reopt_run_uuid of an optimization that considered PV."
