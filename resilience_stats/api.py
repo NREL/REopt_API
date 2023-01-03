@@ -282,7 +282,7 @@ class ERPJob(ModelResource):
             exc_type, exc_value, exc_traceback = sys.exc_info()
             meta_dict["status"] = "Internal Server Error. See messages for details."
             meta_dict["messages"] = {}
-            meta_dict["messages"]["error"] = str(exc_value.args[0])
+            meta_dict["messages"]["error"] = str(exc_value)
             raise ImmediateHttpResponse(HttpResponse(json.dumps(meta_dict),
                                         content_type='application/json',
                                         status=500))  # internal server error
