@@ -699,7 +699,7 @@ def get_erp_input_dict_from_run_uuid(run_uuid:str):
         # change fuel_avail_gal to fuel_limit
         gen["fuel_limit"] = gen.pop("fuel_avail_gal")
     
-        gen_dicts += gen
+        gen_dicts.append(gen)
     except AttributeError: pass
     try: 
         gen = meta.ERPPrimeGeneratorInputs.dict
@@ -714,7 +714,7 @@ def get_erp_input_dict_from_run_uuid(run_uuid:str):
         # add fuel_limit
         gen["fuel_limit"] = 1e9
     
-        gen_dicts += gen
+        gen_dicts.append(gen)
     except AttributeError: pass
     if gen_dicts != []:
         d.update(filter_none_and_empty_array(merge_generator_inputs(gen_dicts)))
