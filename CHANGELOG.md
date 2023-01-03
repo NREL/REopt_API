@@ -26,12 +26,19 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop - 2022-11-22
+## v2.6.0
 ### Minor Updates
 #### Added
 1. **REoptjlMessageOutputs** model to capture errors and warnings returned by REoptjl during input processing and post optimization
 2. Missing output fields for **ExistingBoilerOutputs** model
 3. API test `job\test\posts\all_inputs_test.json` to include all input models in a single API test
+- added **HotThermalStorageInputs** model
+- added **HotThermalStorageOutputs** model
+- added **ColdThermalStorageInputs** model
+- added **ColdThermalStorageOutputs** model
+- add **HotThermalStorageOutputs**
+- add **ColdThermalStorageOutputs**
+- `0012_coldthermalstorageinputs....` file used to add new models to the db
 
 #### Changed
 1. Default values for the following fields were changed to align them with REopt API v2 (i.e. stable, and REopt.jl) defaults. As-is, these values are aligned with REopt v1 defaults. Units were unchanged.
@@ -47,17 +54,6 @@ Classify the change according to the following categories:
 - **ElectricStorageInputs.replace_cost_per_kwh** from 200 to 220
 2. Modified `julia_src\http.jl` and `julia_src\cbc\http.jl` to return status 400 when REopt responds with an error
 3. Updated `r["Messages"]` in `views.py` to include **REoptjlMessageOutputs** errors and warnings
-
-## v2.5.1
-### Minor Updates
-#### Added
-- added **HotThermalStorageInputs** model
-- added **HotThermalStorageOutputs** model
-- added **ColdThermalStorageInputs** model
-- added **ColdThermalStorageOutputs** model
-- add **HotThermalStorageOutputs**
-- add **ColdThermalStorageOutputs**
-- `0012_coldthermalstorageinputs....` file used to add new models to the db
 
 ## v2.5.0
 ### Minor Updates
