@@ -1,8 +1,7 @@
 {
         "Outage": {
                 "critical_loads_kw": [1,2,2,1],
-                "max_outage_duration": 3,
-
+                "max_outage_duration": 3
         },
         "ElectricStorage": {
                 "battery_starting_soc_series_fraction": [0.5,0.5,0.5,0.5],
