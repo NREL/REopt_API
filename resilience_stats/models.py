@@ -655,17 +655,13 @@ def get_erp_input_dict_from_run_uuid(run_uuid:str):
                                     "operational_availability",
                                     "failure_to_start",
                                     "mean_time_to_failure",
-                                    "size_kw",
                                     "fuel_intercept_per_hr",
                                     "fuel_burn_rate_per_kwh",
-                                    "operational_availability",
                                     "size_kw",
                                     "size_kwh",
                                     "starting_soc_series_fraction",
                                     "charge_efficiency",
                                     "charge_disefficiency",
-                                    "operational_availability",
-                                    "size_kw",
                                     "production_factor_series",
                                 }
         return {(prefix + "_" + k if k in keys_to_add_tech_prefix else k): v for (k, v) in d.items()}
