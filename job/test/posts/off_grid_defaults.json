@@ -1,0 +1,18 @@
+{
+    "Settings":{
+        "off_grid_flag": true,
+        "optimality_tolerance":0.05
+    },
+    "Site": {
+        "longitude": -118.1164613,
+        "latitude": 34.5794343
+    },
+    "PV": {},
+    "ElectricStorage":{},
+    "ElectricLoad": {
+        "doe_reference_name": "FlatLoad",
+        "annual_kwh": 8760.0,
+        "city": "LosAngeles",
+        "year": 2017
+    }
+}

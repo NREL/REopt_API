@@ -21,7 +21,11 @@ function job(req::HTTP.Request)
 	GC.gc()
 	if isempty(error_response)
     	@info "REopt model solved with status $(results["status"])."
-    	return HTTP.Response(200, JSON.json(results))
+		if results["status"] == "error"
+			return HTTP.Response(400, JSON.json(response))
+		else
+			return HTTP.Response(200, JSON.json(response))
+		end
 	else
 		@info "An error occured in the Julia code."
 		return HTTP.Response(500, JSON.json(error_response))
