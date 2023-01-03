@@ -244,8 +244,7 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
     )
     mean_time_to_failure = models.FloatField(
         validators=[
-            MinValueValidator(0),
-            MaxValueValidator(1)
+            MinValueValidator(1)
         ],
         null=True,
         blank=True,
