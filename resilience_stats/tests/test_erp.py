@@ -120,6 +120,7 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         resp = self.get_response_sim(post_sim)
         # self.assertHttpCreated(resp)
         r_sim = json.loads(resp.content)
+        #TODO: don't return run_uuid when there's a REoptFailedToStartError
         erp_run_uuid = r_sim.get('run_uuid')
 
         resp = self.get_results_sim(erp_run_uuid)
