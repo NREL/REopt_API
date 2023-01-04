@@ -161,11 +161,14 @@ class ERPJob(ModelResource):
                     )
                 
                 #TODO: put all of this stuff below in a helper function, or in clean or save django methods?
-                #TODO: use user_dict = reopt_dict.update(user_dict) to eliminate if is None checks and simplify code (like did for ElectricStorage)
+                
+                def update_user_dict_with_values_from_reopt(user_dict_key:str, reopt_dict:dict):
+                    reopt_dict.update(bundle.data.get(user_dict_key, {}))
+                    bundle.data[user_dict_key] = reopt_dict
 
                 ## Outage ##
                 critical_loads_kw = reopt_run_meta.ElectricLoadOutputs.dict["critical_load_series_kw"]
-                bundle.data["Outage"] = {"critical_loads_kw": critical_loads_kw}.update(bundle.data.get("Outage", {}))
+                update_user_dict_with_values_from_reopt("Outage", {"critical_loads_kw": critical_loads_kw})
                 # TODO: set max_outage_duration based on reopt outage inputs when multiple outage PR merged
                 # if bundle.data["Outage"].get("max_outage_duration", None) is None: 
                 #     bundle.data["Outage"]["max_outage_duration"] = max(reopt_run_meta.ElectricUtilityInputs.dict["outage_durations"])
@@ -174,20 +177,23 @@ class ERPJob(ModelResource):
                 try:
                     gen_out = reopt_run_meta.GeneratorOutputs.dict
                     if gen_out.get("size_kw", 0) > 0:
-                        bundle.data["Generator"] = {
-                            "size_kw": gen_out.get("size_kw", 0) / bundle.data.get("Generator", {}).get("num_generators", 1)
-                        }.update(bundle.data.get("Generator", {}))
+                        update_user_dict_with_values_from_reopt(
+                            "Generator", 
+                            {"size_kw": gen_out.get("size_kw", 0) / bundle.data.get("Generator", {}).get("num_generators", 1)}
+                        )
                 except AttributeError as e: 
                     pass
                 if "Generator" in bundle.data:
                     try:
                         gen_in = reopt_run_meta.GeneratorInputs.dict
-                        gen_inputs_from_reopt_inputs = {
-                            "fuel_avail_gal": gen_in["fuel_avail_gal"],
-                            "electric_efficiency_half_load": gen_in["electric_efficiency_half_load"],
-                            "electric_efficiency_full_load": gen_in["electric_efficiency_full_load"]
-                        }
-                        bundle.data["Generator"] = gen_inputs_from_reopt_inputs.update(bundle.data.get("Generator", {}))
+                        update_user_dict_with_values_from_reopt(
+                            "Generator",
+                            {
+                                "fuel_avail_gal": gen_in["fuel_avail_gal"],
+                                "electric_efficiency_half_load": gen_in["electric_efficiency_half_load"],
+                                "electric_efficiency_full_load": gen_in["electric_efficiency_full_load"]
+                            }
+                        )
                     except AttributeError as e: 
                         pass
 
@@ -197,21 +203,24 @@ class ERPJob(ModelResource):
                 try:
                     chp_or_prime_out = reopt_run_meta.CHPOutputs.dict
                     if chp_or_prime_out.get("size_kw", 0) > 0:
-                        bundle.data["PrimeGenerator"] = {
-                            "size_kw": chp_or_prime_out.get("size_kw", 0) / bundle.data.get("PrimeGenerator", {}).get("num_generators", 1)
-                        }.update(bundle.data.get("PrimeGenerator", {}))
+                        update_user_dict_with_values_from_reopt(
+                            "PrimeGenerator",
+                            {"size_kw": chp_or_prime_out.get("size_kw", 0) / bundle.data.get("PrimeGenerator", {}).get("num_generators", 1)}
+                        )
                 except AttributeError as e: 
                     pass
                 if "PrimeGenerator" in bundle.data:
                     try:
                         chp_or_prime_in = reopt_run_meta.CHPInputs.dict
-                        prime_gen_inputs_from_reopt = {
-                            "is_chp": chp_or_prime_in["thermal_efficiency_full_load"] > 0,
-                            "electric_efficiency_half_load": chp_or_prime_in["electric_efficiency_half_load"],
-                            "electric_efficiency_full_load": chp_or_prime_in["electric_efficiency_full_load"],
-                            "prime_mover": chp_or_prime_in["prime_mover"]
-                        }
-                        bundle.data["PrimeGenerator"] = prime_gen_inputs_from_reopt.update(bundle.data.get("PrimeGenerator", {}))
+                        update_user_dict_with_values_from_reopt(
+                            "PrimeGenerator",
+                            { 
+                                "is_chp": chp_or_prime_in["thermal_efficiency_full_load"] > 0,
+                                "electric_efficiency_half_load": chp_or_prime_in["electric_efficiency_half_load"],
+                                "electric_efficiency_full_load": chp_or_prime_in["electric_efficiency_full_load"],
+                                "prime_mover": chp_or_prime_in["prime_mover"]
+                            }
+                        )
                     except AttributeError as e:
                         add_validation_err_msg_and_raise_400_response(
                             meta_dict, 
@@ -234,7 +243,10 @@ class ERPJob(ModelResource):
                     reopt_pv_size_kw += pvd.get("size_kw")
                     pv_prod_series += pvd.get("size_kw") * np.array(pvd.get("production_factor_series"))
                 if reopt_pv_size_kw > 0 or "PV" in bundle.data:
-                    bundle.data["PV"] = {"size_kw": reopt_pv_size_kw}.update(bundle.data.get("PV", {}))
+                    update_user_dict_with_values_from_reopt(
+                        "PV",
+                        {"size_kw": reopt_pv_size_kw}
+                    )
                     if bundle.data["PV"].get("production_factor_series", None) is None: 
                         # List pvs cannot be empty otherwise would have errored above
                         if reopt_pv_size_kw > 0: # Use weighted avg of PV prod factors
@@ -250,15 +262,17 @@ class ERPJob(ModelResource):
                     pass
                 try:
                     stor_in = reopt_run_meta.ElectricStorageInputs.dict
-                    stor_inputs_from_reopt = {
-                        "charge_efficiency": stor_in["rectifier_efficiency_fraction"] * stor_in["internal_efficiency_fraction"]**0.5,
-                        "discharge_efficiency": stor_in["inverter_efficiency_fraction"] * stor_in["internal_efficiency_fraction"]**0.5,
-                        "size_kw": 0 if stor_out is None else stor_out.get("size_kw", 0),
-                        "size_kwh": 0 if stor_out is None else stor_out.get("size_kwh", 0),
-                        "starting_soc_series_fraction": [] if stor_out is None else stor_out.get("year_one_soc_series_fraction", []),
-                    }
                     #TODO: don't add ElectricStorage key if stor_out is None
-                    bundle.data["ElectricStorage"] = stor_inputs_from_reopt.update(bundle.data.get("ElectricStorage", {}))
+                    update_user_dict_with_values_from_reopt(
+                        "ElectricStorage",
+                        {
+                            "charge_efficiency": stor_in["rectifier_efficiency_fraction"] * stor_in["internal_efficiency_fraction"]**0.5,
+                            "discharge_efficiency": stor_in["inverter_efficiency_fraction"] * stor_in["internal_efficiency_fraction"]**0.5,
+                            "size_kw": 0 if stor_out is None else stor_out.get("size_kw", 0),
+                            "size_kwh": 0 if stor_out is None else stor_out.get("size_kwh", 0),
+                            "starting_soc_series_fraction": [] if stor_out is None else stor_out.get("year_one_soc_series_fraction", []),
+                        }
+                    )
                 except AttributeError as e: 
                     pass
 
