@@ -31,14 +31,16 @@ from django.db import models
 import uuid
 import sys
 import traceback as tb
+import re
 from django.http import JsonResponse
 from reo.exceptions import UnexpectedError
 from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, GeneratorInputs, ElectricLoadInputs,\
     ElectricTariffInputs, ElectricUtilityInputs, SpaceHeatingLoadInputs, PVOutputs, ElectricStorageOutputs,\
-    WindOutputs, ExistingBoilerInputs, GeneratorOutputs, ElectricTariffOutputs, ElectricUtilityOutputs,\
-    ElectricLoadOutputs, ExistingBoilerOutputs, DomesticHotWaterLoadInputs, SiteInputs, SiteOutputs, APIMeta,\
+    WindOutputs, ExistingBoilerInputs, GeneratorOutputs, ElectricTariffOutputs, ElectricUtilityOutputs, \
+    ElectricLoadOutputs, ExistingBoilerOutputs, DomesticHotWaterLoadInputs, SiteInputs, SiteOutputs, APIMeta, \
     UserProvidedMeta, CHPInputs, CHPOutputs, CoolingLoadInputs, ExistingChillerInputs, ExistingChillerOutputs,\
-    CoolingLoadOutputs, HeatingLoadOutputs
+    CoolingLoadOutputs, HeatingLoadOutputs, REoptjlMessageOutputs, HotThermalStorageInputs, HotThermalStorageOutputs,\
+    ColdThermalStorageInputs, ColdThermalStorageOutputs
 import os
 import requests
 import logging
@@ -70,6 +72,8 @@ def help(request):
         d["ExistingChiller"] = ExistingChillerInputs.info_dict(ExistingChillerInputs)
         d["ExistingBoiler"] = ExistingBoilerInputs.info_dict(ExistingBoilerInputs)
         # d["Boiler"] = BoilerInputs.info_dict(BoilerInputs)
+        d["HotThermalStorage"] = HotThermalStorageInputs.info_dict(HotThermalStorageInputs)
+        d["ColdThermalStorage"] = ColdThermalStorageInputs.info_dict(ColdThermalStorageInputs)
         d["SpaceHeatingLoad"] = SpaceHeatingLoadInputs.info_dict(SpaceHeatingLoadInputs)
         d["DomesticHotWaterLoad"] = DomesticHotWaterLoadInputs.info_dict(DomesticHotWaterLoadInputs)
         d["Site"] = SiteInputs.info_dict(SiteInputs)
@@ -110,9 +114,13 @@ def outputs(request):
         d["ExistingChiller"] = ExistingChillerOutputs.info_dict(ExistingChillerOutputs)
         d["ExistingBoiler"] = ExistingBoilerOutputs.info_dict(ExistingBoilerOutputs)
         # d["Boiler"] = BoilerOutputs.info_dict(BoilerOutputs)
+        d["HotThermalStorage"] = HotThermalStorageOutputs.info_dict(HotThermalStorageOutputs)
+        d["ColdThermalStorage"] = ColdThermalStorageOutputs.info_dict(ColdThermalStorageOutputs)
+        d["Site"] = SiteOutputs.info_dict(SiteOutputs)
         d["HeatingLoad"] = HeatingLoadOutputs.info_dict(HeatingLoadOutputs)
         d["CoolingLoad"] = CoolingLoadOutputs.info_dict(CoolingLoadOutputs)
         d["CHP"] = CHPOutputs.info_dict(CHPOutputs)
+        d["Messages"] = REoptjlMessageOutputs.info_dict(REoptjlMessageOutputs)
         return JsonResponse(d)
 
     except Exception as e:
@@ -147,7 +155,7 @@ def results(request, run_uuid):
         ).get(run_uuid=run_uuid)
     except Exception as e:
         if isinstance(e, models.ObjectDoesNotExist):
-            resp = {"messages": {"error": ""}}
+            resp = {"messages": {}}
             resp['messages']['error'] = (
                 "run_uuid {} not in database. "
                 "You may have hit the results endpoint too quickly after POST'ing scenario, "
@@ -210,6 +218,12 @@ def results(request, run_uuid):
     # try: r["inputs"]["Boiler"] = meta.BoilerInputs.dict
     # except: pass
 
+    try: r["inputs"]["HotThermalStorage"] = meta.HotThermalStorageInputs.dict
+    except: pass
+
+    try: r["inputs"]["ColdThermalStorage"] = meta.ColdThermalStorageInputs.dict
+    except: pass
+
     try: r["inputs"]["SpaceHeatingLoad"] = meta.SpaceHeatingLoadInputs.dict
     except: pass
 
@@ -226,6 +240,20 @@ def results(request, run_uuid):
             msgs = meta.Message.all()
             for msg in msgs:
                 r["messages"][msg.message_type] = msg.message
+            
+            # Add a dictionary of warnings and errors from REopt
+            # key = location of warning, error, or uncaught error
+            # value = vector of text from REopt
+            #   In case of uncaught error, vector length > 1
+            reopt_messages = meta.REoptjlMessageOutputs.dict
+            for msg_type in ["errors","warnings"]:
+                r["messages"][msg_type] = dict()
+                for m in range(0,len(reopt_messages[msg_type])):
+                    txt = reopt_messages[msg_type][m]
+                    txt = re.sub('[^0-9a-zA-Z_.,() ]+', '', txt)
+                    k = txt.split(',')[0]
+                    v = txt.split(',')[1:]
+                    r["messages"][msg_type][k] = v
         except: pass
 
         try:
@@ -257,6 +285,11 @@ def results(request, run_uuid):
         except: pass
         # try: r["outputs"]["Boiler"] = meta.BoilerOutputs.dict
         # except: pass
+
+        try: r["outputs"]["HotThermalStorage"] = meta.HotThermalStorageOutputs.dict
+        except: pass
+        try: r["outputs"]["ColdThermalStorage"] = meta.ColdThermalStorageOutputs.dict
+        except: pass
         try: r["outputs"]["CHP"] = meta.CHPOutputs.dict
         except: pass
         try: r["outputs"]["HeatingLoad"] = meta.HeatingLoadOutputs.dict
@@ -281,6 +314,9 @@ def results(request, run_uuid):
             err.save_to_db()
             resp = make_error_resp(err.message)
             return JsonResponse(resp, status=500)
+    
+    if meta.status == "error":
+        return JsonResponse(r, status=400)
 
     return JsonResponse(r)
 
