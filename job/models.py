@@ -568,39 +568,6 @@ class SiteOutputs(BaseModel, models.Model):
         help_text="Percent reduction in total pounds of carbon dioxide emissions in the optimal case relative to the BAU case"
     )
 
-"""
-# TODO: Remove this commented out text? 
-# TODO should we move the emissions_calculator to Julia? 
-# Or is it supplanted by new emissions capabilities (not in develop/master as of 21.09.02)?
-
-class SiteOutputs(BaseModel, models.Model):
-    key = "SiteOutputs"
-
-    meta = models.OneToOneField(
-        APIMeta,
-        on_delete=models.CASCADE,
-        primary_key=True,
-        related_name="SiteOutputs"
-    )
-
-    year_one_emissions_lb_C02 = models.FloatField(
-        null=True, blank=True,
-        help_text="Total equivalent pounds of carbon dioxide emitted from the site in the first year."
-    )
-    year_one_emissions_bau_lb_C02 = models.FloatField(
-        null=True, blank=True,
-        help_text="Total equivalent pounds of carbon dioxide emittedf rom the site use in the first year in the BAU case."
-    )
-    renewable_electricity_energy_fraction = models.FloatField(
-        null=True, blank=True,
-        help_text=("Portion of electrictrity use that is derived from on-site "
-                    "renewable resource generation in year one. Calculated as "
-                    "total PV and Wind generation in year one (including exports), "
-                    "divided by the total annual load in year one.")
-    )
-"""
-
-
 class FinancialInputs(BaseModel, models.Model):
     key = "Financial"
 
@@ -621,7 +588,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text="Analysis period in years. Must be integer."
     )
     elec_cost_escalation_rate_fraction = models.FloatField(
-        default=0.023,
+        default=0.019,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -630,7 +597,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text="Annual nominal utility electricity cost escalation rate."
     )
     offtaker_discount_rate_fraction = models.FloatField(
-        default=0.083,
+        default=0.0564,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -658,7 +625,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text="Annual nominal O&M cost escalation rate"
     )
     owner_discount_rate_fraction = models.FloatField(
-        default=0.083,
+        default=0.0564,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -2038,7 +2005,7 @@ class PVInputs(BaseModel, models.Model):
         help_text="Maximum PV size constraint for optimization (upper bound on additional capacity beyond existing_kw). Set to zero to disable PV"
     )
     installed_cost_per_kw = models.FloatField(
-        default=1600,
+        default=1592,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e5)
@@ -2047,7 +2014,7 @@ class PVInputs(BaseModel, models.Model):
         help_text="Installed PV cost in $/kW"
     )
     om_cost_per_kw = models.FloatField(
-        default=16,
+        default=17,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e3)
@@ -2465,7 +2432,7 @@ class WindInputs(BaseModel, models.Model):
         help_text="Installed cost in $/kW"
     )
     om_cost_per_kw = models.FloatField(
-        default=16,
+        default=35,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e3)
@@ -2686,7 +2653,6 @@ class WindOutputs(BaseModel, models.Model):
     year_one_om_cost_before_tax = models.FloatField(null=True, blank=True)
     annual_energy_produced_kwh = models.FloatField(null=True, blank=True)
     annual_energy_exported_kwh = models.FloatField(null=True, blank=True)
-    year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)
     electric_to_storage_series_kw = ArrayField(
             models.FloatField(null=True, blank=True), blank=True, default=list)
     electric_to_load_series_kw = ArrayField(
@@ -2793,7 +2759,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Flag to set whether the battery can be charged from the grid, or just onsite generation."
     )
     installed_cost_per_kw = models.FloatField(
-        default=840.0,
+        default=775.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -2802,7 +2768,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Total upfront battery power capacity costs (e.g. inverter and balance of power systems)"
     )
     installed_cost_per_kwh = models.FloatField(
-        default=420.0,
+        default=388.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -2811,7 +2777,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Total upfront battery costs"
     )
     replace_cost_per_kw = models.FloatField(
-        default=410.0,
+        default=440.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -2820,7 +2786,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Battery power capacity replacement cost at time of replacement year"
     )
     replace_cost_per_kwh = models.FloatField(
-        default=200.0,
+        default=220.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -3297,7 +3263,6 @@ class GeneratorOutputs(BaseModel, models.Model):
     annual_fuel_consumption_gal_bau = models.FloatField(null=True, blank=True)
     size_kw = models.FloatField(null=True, blank=True)
     annual_energy_produced_kwh = models.FloatField(null=True, blank=True)
-    year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)
     electric_to_storage_series_kw = ArrayField(
             models.FloatField(null=True, blank=True), null=True, blank=True)
     electric_to_load_series_kw = ArrayField(
@@ -4401,6 +4366,7 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
     lifecycle_fuel_cost_after_tax_bau = models.FloatField(null=True, blank=True)
     annual_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
     year_one_fuel_cost_before_tax = models.FloatField(null=True, blank=True)
+
     thermal_to_storage_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
         default = list,
@@ -4423,6 +4389,29 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
 
     def clean(self):
         # perform custom validation here.
+        pass
+
+class REoptjlMessageOutputs(BaseModel, models.Model):
+    
+    key = "Messages"
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="REoptjlMessageOutputs",
+        primary_key=True
+    )
+
+    errors = ArrayField(
+        models.TextField(null=True, blank=True),
+        default = list,
+    )
+
+    warnings = ArrayField(
+        models.TextField(null=True, blank=True),
+        default = list,
+    )
+
+    def clean(self):
         pass
 
 # # Uncomment to enable Boiler functionality
