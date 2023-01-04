@@ -568,38 +568,6 @@ class SiteOutputs(BaseModel, models.Model):
         help_text="Percent reduction in total pounds of carbon dioxide emissions in the optimal case relative to the BAU case"
     )
 
-"""
-# TODO should we move the emissions_calculator to Julia? 
-# Or is it supplanted by new emissions capabilities (not in develop/master as of 21.09.02)?
-
-class SiteOutputs(BaseModel, models.Model):
-    key = "SiteOutputs"
-
-    meta = models.OneToOneField(
-        APIMeta,
-        on_delete=models.CASCADE,
-        primary_key=True,
-        related_name="SiteOutputs"
-    )
-
-    year_one_emissions_lb_C02 = models.FloatField(
-        null=True, blank=True,
-        help_text="Total equivalent pounds of carbon dioxide emitted from the site in the first year."
-    )
-    year_one_emissions_bau_lb_C02 = models.FloatField(
-        null=True, blank=True,
-        help_text="Total equivalent pounds of carbon dioxide emittedf rom the site use in the first year in the BAU case."
-    )
-    renewable_electricity_energy_fraction = models.FloatField(
-        null=True, blank=True,
-        help_text=("Portion of electrictrity use that is derived from on-site "
-                    "renewable resource generation in year one. Calculated as "
-                    "total PV and Wind generation in year one (including exports), "
-                    "divided by the total annual load in year one.")
-    )
-"""
-
-
 class FinancialInputs(BaseModel, models.Model):
     key = "Financial"
 
@@ -620,7 +588,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text="Analysis period in years. Must be integer."
     )
     elec_cost_escalation_rate_fraction = models.FloatField(
-        default=0.023,
+        default=0.019,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -629,7 +597,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text="Annual nominal utility electricity cost escalation rate."
     )
     offtaker_discount_rate_fraction = models.FloatField(
-        default=0.083,
+        default=0.0564,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -657,7 +625,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text="Annual nominal O&M cost escalation rate"
     )
     owner_discount_rate_fraction = models.FloatField(
-        default=0.083,
+        default=0.0564,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -2051,7 +2019,7 @@ class PVInputs(BaseModel, models.Model):
         help_text="Maximum PV size constraint for optimization (upper bound on additional capacity beyond existing_kw). Set to zero to disable PV"
     )
     installed_cost_per_kw = models.FloatField(
-        default=1600,
+        default=1592,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e5)
@@ -2060,7 +2028,7 @@ class PVInputs(BaseModel, models.Model):
         help_text="Installed PV cost in $/kW"
     )
     om_cost_per_kw = models.FloatField(
-        default=16,
+        default=17,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e3)
@@ -2478,7 +2446,7 @@ class WindInputs(BaseModel, models.Model):
         help_text="Installed cost in $/kW"
     )
     om_cost_per_kw = models.FloatField(
-        default=16,
+        default=35,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e3)
@@ -2806,7 +2774,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Flag to set whether the battery can be charged from the grid, or just onsite generation."
     )
     installed_cost_per_kw = models.FloatField(
-        default=840.0,
+        default=775.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -2815,7 +2783,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Total upfront battery power capacity costs (e.g. inverter and balance of power systems)"
     )
     installed_cost_per_kwh = models.FloatField(
-        default=420.0,
+        default=388.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -2824,7 +2792,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Total upfront battery costs"
     )
     replace_cost_per_kw = models.FloatField(
-        default=410.0,
+        default=440.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -2833,7 +2801,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Battery power capacity replacement cost at time of replacement year"
     )
     replace_cost_per_kwh = models.FloatField(
-        default=200.0,
+        default=220.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -4415,7 +4383,23 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
     lifecycle_fuel_cost_after_tax_bau = models.FloatField(null=True, blank=True)
     year_one_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
     year_one_fuel_cost_before_tax = models.FloatField(null=True, blank=True)
-    year_one_thermal_to_tes_series_mmbtu_per_hour = ArrayField(
+    thermal_to_tes_series_mmbtu_per_hour = models.FloatField(null=True, blank=True)
+
+    year_one_thermal_to_steamturbine_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    year_one_thermal_production_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    year_one_fuel_consumption_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+    thermal_to_tes_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
         default = list,
     )
@@ -4435,8 +4419,36 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
         default = list,
     )
 
+    year_one_thermal_to_tes_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
     def clean(self):
         # perform custom validation here.
+        pass
+
+class REoptjlMessageOutputs(BaseModel, models.Model):
+    
+    key = "Messages"
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="REoptjlMessageOutputs",
+        primary_key=True
+    )
+
+    errors = ArrayField(
+        models.TextField(null=True, blank=True),
+        default = list,
+    )
+
+    warnings = ArrayField(
+        models.TextField(null=True, blank=True),
+        default = list,
+    )
+
+    def clean(self):
         pass
 
 # # Uncomment to enable Boiler functionality
@@ -4611,6 +4623,347 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
 #         default = list,
 #     )
 
+class HotThermalStorageInputs(BaseModel, models.Model):
+    key = "HotThermalStorage"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="HotThermalStorageInputs",
+        primary_key=True
+    )
+
+    min_gal = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        null=True,
+        blank=True,
+        default=0.0,
+        help_text="Minimum TES volume (energy) size constraint for optimization"
+    )
+    max_gal = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        default=0.0,
+        help_text="Maximum TES volume (energy) size constraint for optimization. Set to zero to disable storage"
+    )
+    hot_water_temp_degF = models.FloatField(
+        validators=[
+            MinValueValidator(40.0),
+            MaxValueValidator(210.0)
+        ],
+        blank=True,
+        default=180.0,
+        help_text="Hot-side supply water temperature from HotTES (top of tank) to the heating load"
+    )
+    cool_water_temp_degF = models.FloatField(
+        validators=[
+            MinValueValidator(33.0),
+            MaxValueValidator(200.0)
+        ],
+        blank=True,
+        default=160.0,
+        help_text="Cold-side return water temperature from the heating load to the HotTES (bottom of tank)"
+    )
+    internal_efficiency_fraction = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        default=0.999999,
+        help_text="Thermal losses due to mixing from thermal power entering or leaving tank"
+    )
+    soc_min_fraction = models.FloatField(
+        default=0.1,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        help_text="Minimum allowable battery state of charge as fraction of energy capacity."
+    )
+    soc_init_fraction = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0)
+        ],
+        default=0.5,
+        blank=True,
+        help_text="Battery state of charge at first hour of optimization as fraction of energy capacity."
+    )
+    installed_cost_per_gal = models.FloatField(
+        default=1.5,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e4)
+        ],
+        blank=True,
+        help_text="Installed hot TES cost in $/gal"
+    )
+    om_cost_per_gal = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e3)
+        ],
+        blank=True,
+        help_text="Annual hot TES operations and maintenance costs in $/gal"
+    )
+    thermal_decay_rate_fraction = models.FloatField(
+        default=0.0004,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        help_text="Thermal energy-based cost of TES (e.g. volume of the tank)"
+    )
+    macrs_option_years = models.IntegerField(
+        default=MACRS_YEARS_CHOICES.ZERO,
+        choices=MACRS_YEARS_CHOICES.choices,
+        blank=True,
+        help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
+    )
+    macrs_bonus_fraction = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
+    )
+    macrs_itc_reduction = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text="Percent of the ITC value by which depreciable basis is reduced"
+    )
+    total_itc_fraction = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text="Total investment tax credit in percent applied toward capital costs"
+    )
+    total_rebate_per_kwh = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Rebate per unit installed energy capacity"
+    )
+
+    def clean(self):
+        # perform custom validation here.
+        pass
+
+class HotThermalStorageOutputs(BaseModel, models.Model):
+    key = "HotThermalStorageOutputs"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="HotThermalStorageOutputs",
+        primary_key=True
+    )
+    size_gal = models.FloatField(null=True, blank=True)
+    year_one_soc_series_fraction = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+    year_one_to_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    def clean(self):
+        # perform custom validation here.
+        pass
+
+class ColdThermalStorageInputs(BaseModel, models.Model):
+    key = "ColdThermalStorage"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="ColdThermalStorageInputs",
+        primary_key=True
+    )
+
+    min_gal = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        null=True,
+        blank=True,
+        default=0.0,
+        help_text="Minimum TES volume (energy) size constraint for optimization"
+    )
+    max_gal = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        default=0.0,
+        help_text="Maximum TES volume (energy) size constraint for optimization. Set to zero to disable storage"
+    )
+    cool_water_temp_degF = models.FloatField(
+        validators=[
+            MinValueValidator(33.0),
+            MaxValueValidator(200.0)
+        ],
+        blank=True,
+        default=44.0,
+        help_text="Cold-side supply water temperature from ColdTES (top of tank) to the heating load"
+    )
+    hot_water_temp_degF = models.FloatField(
+        validators=[
+            MinValueValidator(40.0),
+            MaxValueValidator(210.0)
+        ],
+        blank=True,
+        default=56.0,
+        help_text="Cold-side return water temperature from the heating load to the ColdTES (bottom of tank)"
+    )
+    internal_efficiency_fraction = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        default=0.999999,
+        help_text="Thermal losses due to mixing from thermal power entering or leaving tank"
+    )
+    soc_min_fraction = models.FloatField(
+        default=0.1,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        help_text="Minimum allowable battery state of charge as fraction of energy capacity."
+    )
+    soc_init_fraction = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0)
+        ],
+        default=0.5,
+        blank=True,
+        help_text="Battery state of charge at first hour of optimization as fraction of energy capacity."
+    )
+    installed_cost_per_gal = models.FloatField(
+        default=1.5,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e4)
+        ],
+        blank=True,
+        help_text="Installed cold TES cost in $/gal"
+    )
+    om_cost_per_gal = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e3)
+        ],
+        blank=True,
+        help_text="Annual cold TES operations and maintenance costs in $/gal"
+    )
+    thermal_decay_rate_fraction = models.FloatField(
+        default=0.0004,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        help_text="Thermal energy-based cost of TES (e.g. volume of the tank)"
+    )
+    macrs_option_years = models.IntegerField(
+        default=MACRS_YEARS_CHOICES.ZERO,
+        choices=MACRS_YEARS_CHOICES.choices,
+        blank=True,
+        help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
+    )
+    macrs_bonus_fraction = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
+    )
+    macrs_itc_reduction = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text="Percent of the ITC value by which depreciable basis is reduced"
+    )
+    total_itc_fraction = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text="Total investment tax credit in percent applied toward capital costs"
+    )
+    total_rebate_per_kwh = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Rebate per unit installed energy capacity"
+    )
+
+    def clean(self):
+        # perform custom validation here.
+        pass
+
+class ColdThermalStorageOutputs(BaseModel, models.Model):
+    key = "ColdThermalStorageOutputs"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="ColdThermalStorageOutputs",
+        primary_key=True
+    )
+    size_gal = models.FloatField(null=True, blank=True)
+    year_one_soc_series_fraction = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+    year_one_to_load_series_ton = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    def clean(self):
+        # perform custom validation here.
+        pass
 
 class SpaceHeatingLoadInputs(BaseModel, models.Model):
     
@@ -5175,6 +5528,12 @@ def get_input_dict_from_run_uuid(run_uuid:str):
     try: d["DomesticHotWaterLoad"] = filter_none_and_empty_array(meta.DomesticHotWaterLoadInputs.dict)
     except: pass
 
+    try: d["HotThermalStorage"] = filter_none_and_empty_array(meta.HotThermalStorageInputs.dict)
+    except: pass
+
+    try: d["ColdThermalStorage"] = filter_none_and_empty_array(meta.ColdThermalStorageInputs.dict)
+    except: pass
+    
     try: d["CHP"] = filter_none_and_empty_array(meta.CHPInputs.dict)
     except: pass    
 
