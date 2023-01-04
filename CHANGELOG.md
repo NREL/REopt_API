@@ -38,8 +38,12 @@ Classify the change according to the following categories:
   
 
 ## v2.5.1
+## v2.6.0
 ### Minor Updates
 #### Added
+1. **REoptjlMessageOutputs** model to capture errors and warnings returned by REoptjl during input processing and post optimization
+2. Missing output fields for **ExistingBoilerOutputs** model
+3. API test `job\test\posts\all_inputs_test.json` to include all input models in a single API test
 - added **HotThermalStorageInputs** model
 - added **HotThermalStorageOutputs** model
 - added **ColdThermalStorageInputs** model
@@ -47,6 +51,21 @@ Classify the change according to the following categories:
 - add **HotThermalStorageOutputs**
 - add **ColdThermalStorageOutputs**
 - `0012_coldthermalstorageinputs....` file used to add new models to the db
+
+#### Changed
+1. Default values for the following fields were changed to align them with REopt API v2 (i.e. stable, and REopt.jl) defaults. As-is, these values are aligned with REopt v1 defaults. Units were unchanged.
+- **FinancialInputs.elec_cost_escalation_rate_fraction** from 0.023 to 0.019
+- **FinancialInputs.offtaker_discount_rate_fraction** from 0.083 to 0.0564
+- **FinancialInputs.owner_discount_rate_fraction** from 0.083 to 0.0564
+- **PVInputs.installed_cost_per_kw** from 1600 to 1592
+- **PVInputs.om_cost_per_kw** from 16 to 17
+- **WindInputs.om_cost_per_kw** from 16 to 35
+- **ElectricStorageInputs.installed_cost_per_kw** from 840 to 775
+- **ElectricStorageInputs.installed_cost_per_kwh** from 420 to 388
+- **ElectricStorageInputs.replace_cost_per_kw** from 410 to 440
+- **ElectricStorageInputs.replace_cost_per_kwh** from 200 to 220
+2. Modified `julia_src\http.jl` and `julia_src\cbc\http.jl` to return status 400 when REopt responds with an error
+3. Updated `r["Messages"]` in `views.py` to include **REoptjlMessageOutputs** errors and warnings
 
 ## v2.5.0
 ### Minor Updates
@@ -84,6 +103,7 @@ In `job/views.py`:
 ### Minor Updates
 ##### Fixed
 Lookback charge parameters expected from the URDB API call were changed to the non-caplitalized format, so they are now used properly.
+
 ## v2.3.0
 ##### Changed
 The following name changes were made in the `job/` endpoint and `julia_src/http.jl`: 
