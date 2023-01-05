@@ -2349,7 +2349,7 @@ class PVOutputs(BaseModel, models.Model):
         models.FloatField(null=True, blank=True),
         blank=True, default=list
     )
-    production_curtailed_series_kw = ArrayField(
+    electric_curtailed_series_kw = ArrayField(
         models.FloatField(null=True, blank=True),
         blank=True, default=list
     )
@@ -2659,7 +2659,7 @@ class WindOutputs(BaseModel, models.Model):
             models.FloatField(null=True, blank=True), blank=True, default=list)
     electric_to_grid_series_kw = ArrayField(
             models.FloatField(null=True, blank=True), blank=True, default=list)
-    production_curtailed_series_kw = ArrayField(
+    electric_curtailed_series_kw = ArrayField(
             models.FloatField(null=True, blank=True), blank=True, default=list)
     lcoe_per_kwh = models.FloatField(null=True, blank=True)
 
