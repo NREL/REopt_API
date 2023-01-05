@@ -1,0 +1,23 @@
+{
+        "Outage": {
+                "critical_loads_kw": [1,2,2,1],
+                "max_outage_duration": 3
+        },
+        "ElectricStorage": {
+                "starting_soc_series_fraction": [0.5,0.5,0.5,0.5],
+                "operational_availability": 1,
+                "num_battery_bins": 3,
+                "size_kwh": 2,
+                "size_kw": 1,
+                "charge_efficiency": 1,
+                "discharge_efficiency": 1        
+        },
+        "Generator": {
+                "num_generators": 2, 
+                "size_kw": 1,
+                "operational_availability": 1,
+                "failure_to_start": 0.0,
+                "mean_time_to_failure": 5
+        }
+}
+

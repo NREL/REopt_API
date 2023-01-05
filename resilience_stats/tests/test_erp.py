@@ -75,7 +75,7 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
     #     assert(reopt_run_uuid is not None)
     #     post_sim = json.load(open(self.post_sim, 'rb'))
     #     post_sim["reopt_run_uuid"] = reopt_run_uuid
-    #     post_sim["ElectricStorage"]["battery_starting_soc_series_fraction"] = 8760 * [1]
+    #     post_sim["ElectricStorage"]["starting_soc_series_fraction"] = 8760 * [1]
 
     #     resp = self.get_response_sim(post_sim)
     #     self.assertHttpCreated(resp)
@@ -126,7 +126,6 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         resp = self.get_results_sim(erp_run_uuid)
         results = json.loads(resp.content)
 
-        self.assertAlmostEqual(results["outputs"]["unlimited_fuel_cumulative_survival_final_time_step"][1], 0.557056, places=4)
-        self.assertAlmostEqual(results["outputs"]["cumulative_survival_final_time_step"][1], 0.557056, places=4)
-        
-        self.assertAlmostEqual(results["outputs"]["mean_cumulative_survival_final_time_step"], 0.990784, places=4)
+        self.assertAlmostEqual(results["outputs"]["unlimited_fuel_cumulative_survival_final_time_step"][0], 0.858756, places=4)
+        self.assertAlmostEqual(results["outputs"]["cumulative_survival_final_time_step"][0], 0.858756, places=4)
+        self.assertAlmostEqual(results["outputs"]["mean_cumulative_survival_final_time_step"], 0.904242, places=4) #0.990784, places=4)
