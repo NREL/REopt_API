@@ -3883,6 +3883,10 @@ class CHPOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Present value of all CHP standby charges, after tax."
     )
+    thermal_production_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
 
     def clean():
         pass
