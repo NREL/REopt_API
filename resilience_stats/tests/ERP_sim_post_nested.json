@@ -43,14 +43,17 @@
         "ElectricStorage": {
                 "num_battery_bins": 20,
                 "size_kwh": 2306,
-                "size_kw": 506       
+                "size_kw": 506,
+                "charge_efficiency": 0.948,
+                "discharge_efficiency": 0.948
         },
         "Generator": {
                 "num_generators": 2, 
                 "size_kw": 200,
                 "operational_availability": 0.9,
                 "failure_to_start": 0.02,
-                "mean_time_to_failure": 200
+                "mean_time_to_failure": 200,
+                "fuel_avail_gal": 1000000000
         },
         "PV": {
                 "size_kw": 2552,
