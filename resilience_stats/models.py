@@ -661,7 +661,7 @@ def get_erp_input_dict_from_run_uuid(run_uuid:str):
                                     "size_kwh",
                                     "starting_soc_series_fraction",
                                     "charge_efficiency",
-                                    "charge_disefficiency",
+                                    "discharge_efficiency",
                                     "production_factor_series",
                                 }
         return {(prefix + "_" + k if k in keys_to_add_tech_prefix else k): v for (k, v) in d.items()}
@@ -713,7 +713,7 @@ def get_erp_input_dict_from_run_uuid(run_uuid:str):
         gen_dicts.append(gen)
     except AttributeError: pass
     if gen_dicts != []:
-        d.update(filter_none_and_empty_array(merge_generator_inputs(gen_dicts)))
+        d.update(add_tech_prefixes(filter_none_and_empty_array(merge_generator_inputs(gen_dicts)), "generator"))
 
     # TODO: do this instead once extend input structure changes to julia (and do conversion of effic to slope/intercept in julia using existing util function)
     # d["Generator"] = filter_none_and_empty_array(meta.ERPGeneratorInputs.dict)
