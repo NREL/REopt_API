@@ -404,6 +404,15 @@ class ERPElectricStorageInputs(BaseModel, models.Model):
         ],
         help_text=("Number of bins for modeling battery state of charge")
     )
+    minimum_soc_fraction = models.FloatField(
+        blank=True,
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        help_text=("Minimum battery state of charge allowed during an outage")
+    )
 
     # @property
     # def dict(self):
