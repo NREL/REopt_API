@@ -102,6 +102,9 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
                     ("ElectricStorage","starting_soc_series_fraction")
                 ]:
             post_sim.get(model,{}).pop(field, None)
+
+        # add minimum_soc_fraction input to be consistent with test in REopt.jl
+        post_sim["ElectricStorage"]["minimum_soc_fraction"] = 0.2
         
         resp = self.get_response_sim(post_sim)
         self.assertHttpCreated(resp)

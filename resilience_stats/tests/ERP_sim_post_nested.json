@@ -45,7 +45,8 @@
                 "size_kwh": 2306,
                 "size_kw": 506,
                 "charge_efficiency": 0.948,
-                "discharge_efficiency": 0.948
+                "discharge_efficiency": 0.948,
+                "minimum_soc_fraction": 0.0
         },
         "Generator": {
                 "num_generators": 2, 
