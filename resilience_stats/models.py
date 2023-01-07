@@ -672,6 +672,7 @@ def get_erp_input_dict_from_run_uuid(run_uuid:str):
                                     "charge_efficiency",
                                     "discharge_efficiency",
                                     "production_factor_series",
+                                    "minimum_soc_fraction"
                                 }
         return {(prefix + "_" + k if k in keys_to_add_tech_prefix else k): v for (k, v) in d.items()}
     
