@@ -407,6 +407,19 @@ def simulated_load(request):
                     value = request.GET.get(key)
                     if value is not None:
                         inputs[key] = value
+        
+        #removed all error messages when copying code from reo.views
+        if inputs["load_type"] == "electric":
+            
+            #Annual loads
+            if 'annual_kwh' in request.GET.keys():
+                inputs["annual_kwh"] = float(request.GET.get('annual_kwh'))
+           
+            #Monthly loads
+            monthly_totals_kwh = None
+            if 'monthly_totals_kwh[0]' in request.GET.keys():
+                monthly_totals_kwh  = [request.GET.get('monthly_totals_kwh[{}]'.format(i)) for i in range(12)]
+                inputs["monthly_totals_kwh"] = [float(i) for i in monthly_totals_kwh]
 
         julia_host = os.environ.get('JULIA_HOST', "julia")
         http_jl_response = requests.get("http://" + julia_host + ":8081/simulated_load/", json=inputs)
