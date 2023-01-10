@@ -34,6 +34,54 @@ Classify the change according to the following categories:
 - let generator inputs in **ERPInputs** be arrays, which enables running ERP with multiple generator types
 - changed `scalar_to_vector` helper function to `scalar_or_monthly_to_8760`
 
+## v2.6.0
+### Minor Updates
+#### Added
+1. **REoptjlMessageOutputs** model to capture errors and warnings returned by REoptjl during input processing and post optimization
+2. Missing output fields for **ExistingBoilerOutputs** model
+3. API test `job\test\posts\all_inputs_test.json` to include all input models in a single API test
+- added **HotThermalStorageInputs** model
+- added **HotThermalStorageOutputs** model
+- added **ColdThermalStorageInputs** model
+- added **ColdThermalStorageOutputs** model
+- add **HotThermalStorageOutputs**
+- add **ColdThermalStorageOutputs**
+- `0012_coldthermalstorageinputs....` file used to add new models to the db
+
+#### Changed
+1. Default values for the following fields were changed to align them with REopt API v2 (i.e. stable, and REopt.jl) defaults. As-is, these values are aligned with REopt v1 defaults. Units were unchanged.
+- **FinancialInputs.elec_cost_escalation_rate_fraction** from 0.023 to 0.019
+- **FinancialInputs.offtaker_discount_rate_fraction** from 0.083 to 0.0564
+- **FinancialInputs.owner_discount_rate_fraction** from 0.083 to 0.0564
+- **PVInputs.installed_cost_per_kw** from 1600 to 1592
+- **PVInputs.om_cost_per_kw** from 16 to 17
+- **WindInputs.om_cost_per_kw** from 16 to 35
+- **ElectricStorageInputs.installed_cost_per_kw** from 840 to 775
+- **ElectricStorageInputs.installed_cost_per_kwh** from 420 to 388
+- **ElectricStorageInputs.replace_cost_per_kw** from 410 to 440
+- **ElectricStorageInputs.replace_cost_per_kwh** from 200 to 220
+2. Modified `julia_src\http.jl` and `julia_src\cbc\http.jl` to return status 400 when REopt responds with an error
+3. Updated `r["Messages"]` in `views.py` to include **REoptjlMessageOutputs** errors and warnings
+
+## v2.5.0
+### Minor Updates
+##### Added
+- `0011_coolingloadinputs....` file used to add new models to the db
+In `job/models.py`:
+- added **ExistingChillerInputs** model
+- added **ExistingChillerOutputs** model
+- added **CoolingLoadInputs** model
+- added **CoolingLoadOutputs** model
+- added **HeatingLoadOutputs** model
+In `job/process_results.py`: 
+- add **ExistingChillerOutputs** 
+- add **CoolingLoadOutputs**
+- add **HeatingLoadOutputs**
+In `job/validators.py:
+- add time series length validation on **CoolingLoadInputs->thermal_loads_ton** and **CoolingLoadInputs->per_time_step_fractions_of_electric_load**
+In `job/views.py`:
+- add new input/output models to properly save the inputs/outputs
+
 ## v2.4.0
 ### Minor Updates
 ##### Added 
@@ -80,7 +128,6 @@ The following name changes were made in the `job/` endpoint and `julia_src/http.
 ##### Added 
 - `0005_boilerinputs....` file used to add new models to the db
 - `job/` endpoint: Add inputs and validation to model off-grid wind 
-In `job/models.py`:
 - added **ExistingBoilerInputs** model
 - added **ExistingBoilerOutputs** model
 - added **SpaceHeatingLoadInputs** model
@@ -106,12 +153,14 @@ In `job/models.py`:
 - **FinancialOutputs**
     - add `breakeven_cost_of_emissions_reduction_per_tonnes_CO2`
 In `job/process_results.py`: 
+- add **HotThermalStorageOutputs**
 - add **ExistingBoilerOutputs**
 In `job/test/test_job_endpoint.py`: 
 - test that AVERT and EASIUR defaults for emissions inputs not provided by user are passed back from REopt.jl and saved in database
 - add a testcase to validate that API is accepting/returning fields related to new models.
 In `'job/validators.py`:
 - add new input models
+- added `update_pv_defaults_offgrid()` to prevent validation failure when PV is not provided as input
 In `job/views.py`:
 - Added **SiteInputs** to `help` endpoint
 - Added **SiteOutputs** to `outputs` endpoint
