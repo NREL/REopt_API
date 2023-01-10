@@ -41,5 +41,4 @@ urlpatterns = [
 
     re_path(r'^invalid_urdb/?$', reoviews.invalid_urdb),
     re_path(r'^emissions_profile/?$', reoviews.emissions_profile),
-    re_path(r'^annual_kwh/?$', reoviews.annual_kwh),
 ]
