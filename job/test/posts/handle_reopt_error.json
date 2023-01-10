@@ -1,0 +1,18 @@
+{
+    "Settings":{
+        "optimality_tolerance":0.005,
+        "timeout_seconds":420,
+        "run_bau":false
+    },
+    "ElectricTariff": {
+        "urdb_label": "539fc1a6ec4f024c27d8a8f7"
+    },
+    "Site": {
+        "latitude": 65.0,
+        "longitude": -155.8394336
+    },
+    "ElectricLoad": {
+        "annual_kwh": 100000.0,
+        "doe_reference_name": "MidriseApartment"
+    }
+}

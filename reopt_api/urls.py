@@ -101,8 +101,8 @@ urlpatterns = [
 
     path('dev/', include('job.urls')),
     path('dev/', include('resilience_stats.urls_v3plus')),
-    re_path(r'', include(dev_api.urls)),
     path('dev/', include('futurecosts.urls')),
+    re_path(r'', include(dev_api.urls)),
 
     re_path(r'(.*)', page_not_found, name='404'),
     ]

@@ -55,10 +55,9 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
                 "longitude": -122.45
         }
 
-        # Direct call of the http.jl endpoint /chp_defaults
-        julia_host = os.environ.get('JULIA_HOST', "julia")
-        response = requests.get("http://" + julia_host + ":8081/simulated_load/", json=inputs)
-        http_response = response.json()
+        # The /dev/simulated_load endpoint calls the http.jl /simulated_load endpoint
+        response = self.api_client.get(f'/dev/simulated_load', data=inputs)
+        http_response = json.loads(response.content)
 
         # Call to the v2 /simulated_load to check for consistency
         resp = self.api_client.get(f'/v2/simulated_load', data=inputs)
@@ -73,10 +72,9 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         inputs["percent_share[0]"] = 25.0
         inputs["percent_share[1]"] = 100.0 - inputs["percent_share[0]"]
         
-        # Direct call of the http.jl endpoint /chp_defaults
-        julia_host = os.environ.get('JULIA_HOST', "julia")
-        response = requests.get("http://" + julia_host + ":8081/simulated_load/", json=inputs)
-        http_response = response.json()
+        # The /dev/simulated_load endpoint calls the http.jl /simulated_load endpoint
+        response = self.api_client.get(f'/dev/simulated_load', data=inputs)
+        http_response = json.loads(response.content)
 
         # Call to the v2 /simulated_load to check for consistency
         resp = self.api_client.get(f'/v2/simulated_load', data=inputs)
