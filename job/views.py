@@ -364,35 +364,37 @@ def simulated_load(request):
                 raise ValueError("{} is not a valid input parameter".format(key))
         # Build inputs dictionary to send to http.jl /simulated_load endpoint
         inputs = {}
+        # Required - will throw a Missing Error if not included
         inputs["latitude"] = float(request.GET['latitude'])  # need float to convert unicode
         inputs["longitude"] = float(request.GET['longitude'])
+        # Optional load_type - will default to "electric"
         inputs["load_type"] = request.GET.get('load_type')
 
         # This parses the GET request way of sending a list/array for doe_reference_name, 
-        # i.e. doe_reference_name[0], doe_reference_name[1], etc
+        # i.e. doe_reference_name[0], doe_reference_name[1], etc along with percent_share[0], percent_share[1]
         if 'doe_reference_name' in request.GET.keys():
-            inputs["doe_reference_name"] = request.GET.get('doe_reference_name')
+            inputs["doe_reference_name"] = str(request.GET.get('doe_reference_name'))
         elif 'doe_reference_name[0]' in request.GET.keys():
             idx = 0
             doe_reference_name = []
             percent_share_list = []
             while 'doe_reference_name[{}]'.format(idx) in request.GET.keys():
-                doe_reference_name.append(request.GET['doe_reference_name[{}]'.format(idx)])
+                doe_reference_name.append(str(request.GET['doe_reference_name[{}]'.format(idx)]))
                 if 'percent_share[{}]'.format(idx) in request.GET.keys():
                     percent_share_list.append(float(request.GET['percent_share[{}]'.format(idx)]))
                 idx += 1
             inputs["doe_reference_name"] = doe_reference_name
-            inputs["percent_share_list"] = percent_share_list
+            inputs["percent_share"] = percent_share_list
 
         # When wanting cooling profile based on building type(s) for cooling, need separate cooling building(s)
         if 'cooling_doe_ref_name' in request.GET.keys():
-            inputs["cooling_doe_ref_name"] = request.GET.get('cooling_doe_ref_name')
+            inputs["cooling_doe_ref_name"] = str(request.GET.get('cooling_doe_ref_name'))
         elif 'cooling_doe_ref_name[0]' in request.GET.keys():
             idx = 0
             cooling_doe_ref_name = []
             cooling_pct_share_list = []
             while 'cooling_doe_ref_name[{}]'.format(idx) in request.GET.keys():
-                cooling_doe_ref_name.append(request.GET['cooling_doe_ref_name[{}]'.format(idx)])
+                cooling_doe_ref_name.append(str(request.GET['cooling_doe_ref_name[{}]'.format(idx)]))
                 if 'cooling_pct_share[{}]'.format(idx) in request.GET.keys():
                     cooling_pct_share_list.append(float(request.GET['cooling_pct_share[{}]'.format(idx)]))
                 idx += 1
@@ -406,20 +408,12 @@ def simulated_load(request):
                 if key_type in key:
                     value = request.GET.get(key)
                     if value is not None:
-                        inputs[key] = value
-        
-        #removed all error messages when copying code from reo.views
-        if inputs["load_type"] == "electric":
-            
-            #Annual loads
-            if 'annual_kwh' in request.GET.keys():
-                inputs["annual_kwh"] = float(request.GET.get('annual_kwh'))
-           
-            #Monthly loads
-            monthly_totals_kwh = None
-            if 'monthly_totals_kwh[0]' in request.GET.keys():
-                monthly_totals_kwh  = [request.GET.get('monthly_totals_kwh[{}]'.format(i)) for i in range(12)]
-                inputs["monthly_totals_kwh"] = [float(i) for i in monthly_totals_kwh]
+                        if type(value) == list:
+                            monthly_list  = [request.GET.get(key+'[{}]'.format(i)) for i in range(12)]
+                            k = key.split('[')[0]
+                            inputs[k] = [float(i) for i in monthly_list]
+                        else:
+                            inputs[key] = float(value)
 
         julia_host = os.environ.get('JULIA_HOST', "julia")
         http_jl_response = requests.get("http://" + julia_host + ":8081/simulated_load/", json=inputs)
