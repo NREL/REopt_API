@@ -409,37 +409,37 @@ class SiteOutputs(BaseModel, models.Model):
                   "The denominator is calculated as total annual electricity consumption plus total annual thermal steam/hot water load."
                   )
     )
-    year_one_emissions_tonnes_CO2 = models.FloatField(
+    annual_emissions_tonnes_CO2 = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of CO2 emissions associated with the site's energy consumption in year one."
+        help_text="Total tons of CO2 emissions associated with the site's energy consumption in an one."
     )
-    year_one_emissions_tonnes_NOx = models.FloatField(
+    annual_emissions_tonnes_NOx = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of NOx emissions associated with the site's energy consumption in year one."
+        help_text="Total tons of NOx emissions associated with the site's energy consumption in an average year."
     )
-    year_one_emissions_tonnes_SO2 = models.FloatField(
+    annual_emissions_tonnes_SO2 = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of SO2 emissions associated with the site's energy consumption in year one."
+        help_text="Total tons of SO2 emissions associated with the site's energy consumption in an average year."
     )
-    year_one_emissions_tonnes_PM25 = models.FloatField(
+    annual_emissions_tonnes_PM25 = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of PM2.5 emissions associated with the site's energy consumption in year one."
+        help_text="Total tons of PM2.5 emissions associated with the site's energy consumption in an average year."
     )
-    year_one_emissions_from_fuelburn_tonnes_CO2 = models.FloatField(
+    annual_emissions_from_fuelburn_tonnes_CO2 = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of CO2 emissions associated with the site's onsite fuel burn in year one."
+        help_text="Total tons of CO2 emissions associated with the site's onsite fuel burn in an average year."
     )
-    year_one_emissions_from_fuelburn_tonnes_NOx = models.FloatField(
+    annual_emissions_from_fuelburn_tonnes_NOx = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of NOx emissions associated with the site's onsite fuel burn in year one."
+        help_text="Total tons of NOx emissions associated with the site's onsite fuel burn in an average year."
     )
-    year_one_emissions_from_fuelburn_tonnes_SO2 = models.FloatField(
+    annual_emissions_from_fuelburn_tonnes_SO2 = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of SO2 emissions associated with the site's onsite fuel burn in year one."
+        help_text="Total tons of SO2 emissions associated with the site's onsite fuel burn in an average year."
     )
-    year_one_emissions_from_fuelburn_tonnes_PM25 = models.FloatField(
+    annual_emissions_from_fuelburn_tonnes_PM25 = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of PM2.5 emissions associated with the site's onsite fuel burn in year one."
+        help_text="Total tons of PM2.5 emissions associated with the site's onsite fuel burn in an average year."
     )
     lifecycle_emissions_tonnes_CO2 = models.FloatField(
         null=True, blank=True,
@@ -499,37 +499,37 @@ class SiteOutputs(BaseModel, models.Model):
                   "The denominator is calculated as total annual electricity consumption plus total annual thermal steam/hot water load."
                   )
     )
-    year_one_emissions_tonnes_CO2_bau = models.FloatField(
+    annual_emissions_tonnes_CO2_bau = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of CO2 emissions associated with the site's energy consumption in year one in the BAU case."
+        help_text="Total tons of CO2 emissions associated with the site's energy consumption in an average year in the BAU case."
     )
-    year_one_emissions_tonnes_NOx_bau = models.FloatField(
+    annual_emissions_tonnes_NOx_bau = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of NOx emissions associated with the site's energy consumption in year one in the BAU case."
+        help_text="Total tons of NOx emissions associated with the site's energy consumption in an average year in the BAU case."
     )
-    year_one_emissions_tonnes_SO2_bau = models.FloatField(
+    annual_emissions_tonnes_SO2_bau = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of SO2 emissions associated with the site's energy consumption in year one in the BAU case."
+        help_text="Total tons of SO2 emissions associated with the site's energy consumption in an average year in the BAU case."
     )
-    year_one_emissions_tonnes_PM25_bau = models.FloatField(
+    annual_emissions_tonnes_PM25_bau = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of PM2.5 emissions associated with the site's energy consumption in year one in the BAU case."
+        help_text="Total tons of PM2.5 emissions associated with the site's energy consumption in an average year in the BAU case."
     )
-    year_one_emissions_from_fuelburn_tonnes_CO2_bau = models.FloatField(
+    annual_emissions_from_fuelburn_tonnes_CO2_bau = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of CO2 emissions associated with the site's onsite fuel burn in year one in the BAU case."
+        help_text="Total tons of CO2 emissions associated with the site's onsite fuel burn in an average year in the BAU case."
     )
-    year_one_emissions_from_fuelburn_tonnes_NOx_bau = models.FloatField(
+    annual_emissions_from_fuelburn_tonnes_NOx_bau = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of NOx emissions associated with the site's onsite fuel burn in year one in the BAU case."
+        help_text="Total tons of NOx emissions associated with the site's onsite fuel burn in an average year in the BAU case."
     )
-    year_one_emissions_from_fuelburn_tonnes_SO2_bau = models.FloatField(
+    annual_emissions_from_fuelburn_tonnes_SO2_bau = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of SO2 emissions associated with the site's onsite fuel burn in year one in the BAU case."
+        help_text="Total tons of SO2 emissions associated with the site's onsite fuel burn in an average year in the BAU case."
     )
-    year_one_emissions_from_fuelburn_tonnes_PM25_bau = models.FloatField(
+    annual_emissions_from_fuelburn_tonnes_PM25_bau = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of PM2.5 emissions associated with the site's onsite fuel burn in year one in the BAU case."
+        help_text="Total tons of PM2.5 emissions associated with the site's onsite fuel burn in an average year in the BAU case."
     )
     lifecycle_emissions_tonnes_CO2_bau = models.FloatField(
         null=True, blank=True,
@@ -1276,7 +1276,7 @@ class ElectricLoadOutputs(BaseModel, models.Model):
             null=True, blank=True
         ),
         default=list,
-        help_text="Year one hourly time series of electric load"
+        help_text="Annual hourly time series of electric load"
     )
     critical_load_series_kw = ArrayField(
         models.FloatField(
@@ -1686,80 +1686,80 @@ class ElectricUtilityOutputs(BaseModel, models.Model):
         primary_key=True
     )
 
-    year_one_to_load_series_kw = ArrayField(
+    electric_to_load_series_kw = ArrayField(
         models.FloatField(
             blank=True
         ),
         default=list, blank=True,
-        help_text=("Optimal year one grid to load time series")
+        help_text=("Optimal average annual grid to load time series")
     )
-    year_one_to_load_series_kw_bau = ArrayField(
+    electric_to_load_series_kw_bau = ArrayField(
         models.FloatField(
             blank=True
         ),
         default=list, blank=True,
-        help_text=("Business as usual year one grid to load time series")
+        help_text=("Business as usual average annual grid to load time series")
     )
-    year_one_to_battery_series_kw = ArrayField(
+    electric_to_storage_series_kw = ArrayField(
         models.FloatField(
             blank=True
         ),
         default=list, blank=True,
-        help_text=("Optimal year one grid to battery time series")
+        help_text=("Optimal average annual grid to battery time series")
     )
-    year_one_energy_supplied_kwh = models.FloatField(
+    annual_energy_supplied_kwh = models.FloatField(
         null=True, blank=True,
-        help_text=("Year one energy supplied from grid to load")
+        help_text=("Average annual energy supplied from grid to load")
     )
-    year_one_energy_supplied_kwh_bau = models.FloatField(
+    annual_energy_supplied_kwh_bau = models.FloatField(
         null=True, blank=True,
-        help_text=("Year one energy supplied from grid to load")
+        help_text=("Average annual energy supplied from grid to load")
     )
-    year_one_emissions_tonnes_CO2 = models.FloatField(
+    annual_emissions_tonnes_CO2 = models.FloatField(
         null=True, blank=True,
-        help_text=("Total tons of CO2 emissions associated with the site's grid-purchased electricity in year one. "
+        help_text=("Total tons of CO2 emissions associated with the site's grid-purchased electricity in an average year. "
                     "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
                     "Otherwise, it accounts for emissions offset from any export to the grid.")
     )
-    year_one_emissions_tonnes_CO2_bau = models.FloatField(
+    annual_emissions_tonnes_CO2_bau = models.FloatField(
         null=True, blank=True,
-        help_text=("Total tons of CO2 emissions associated with the site's grid-purchased electricity in year one in the BAU case. "
+        help_text=("Total tons of CO2 emissions associated with the site's grid-purchased electricity in an average year in the BAU case. "
                     "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
                     "Otherwise, it accounts for emissions offset from any export to the grid.")
     )
-    year_one_emissions_tonnes_NOx = models.FloatField(
+    annual_emissions_tonnes_NOx = models.FloatField(
         null=True, blank=True,
-        help_text=("Total tons of NOx emissions associated with the site's grid-purchased electricity in year one. "
+        help_text=("Total tons of NOx emissions associated with the site's grid-purchased electricity in an average year. "
                     "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
                     "Otherwise, it accounts for emissions offset from any export to the grid.")
     )
-    year_one_emissions_tonnes_NOx_bau = models.FloatField(
+    annual_emissions_tonnes_NOx_bau = models.FloatField(
         null=True, blank=True,
-        help_text=("Total tons of NOx emissions associated with the site's grid-purchased electricity in year one in the BAU case. "
+        help_text=("Total tons of NOx emissions associated with the site's grid-purchased electricity in an average year in the BAU case. "
                     "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
                     "Otherwise, it accounts for emissions offset from any export to the grid.")
     )
-    year_one_emissions_tonnes_SO2 = models.FloatField(
+    annual_emissions_tonnes_SO2 = models.FloatField(
         null=True, blank=True,
-        help_text=("Total tons of CO2 emissions associated with the site's grid-purchased electricity in year one. "
+        help_text=("Total tons of CO2 emissions associated with the site's grid-purchased electricity in an average year. "
                     "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
                     "Otherwise, it accounts for emissions offset from any export to the grid.")
     )
-    year_one_emissions_tonnes_SO2_bau = models.FloatField(
+    annual_emissions_tonnes_SO2_bau = models.FloatField(
         null=True, blank=True,
-        help_text=("Total tons of SO2 emissions associated with the site's grid-purchased electricity in year one in the BAU case. "
+        help_text=("Total tons of SO2 emissions associated with the site's grid-purchased electricity in an average year in the BAU case. "
                     "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
                     "Otherwise, it accounts for emissions offset from any export to the grid.")
     )
-    year_one_emissions_tonnes_PM25 = models.FloatField(
+    annual_emissions_tonnes_PM25 = models.FloatField(
         null=True, blank=True,
-        help_text=("Total tons of PM2.5 emissions associated with the site's grid-purchased electricity in year one. "
+        help_text=("Total tons of PM2.5 emissions associated with the site's grid-purchased electricity in an average year. "
                     "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
                     "Otherwise, it accounts for emissions offset from any export to the grid.")
     )
-    year_one_emissions_tonnes_PM25_bau = models.FloatField(
+    annual_emissions_tonnes_PM25_bau = models.FloatField(
         null=True, blank=True,
-        help_text=("Total tons of PM2.5 emissions associated with the site's grid-purchased electricity in year one in the BAU case. "
+        help_text=("Total tons of PM2.5 emissions associated with the site's grid-purchased electricity in an average year in the BAU case. "
                     "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
                     "Otherwise, it accounts for emissions offset from any export to the grid.")
     )
@@ -1919,20 +1919,6 @@ class ElectricTariffOutputs(BaseModel, models.Model):
     year_one_export_benefit_before_tax_bau = models.FloatField(
         null=True, blank=True,
         help_text="Business as usual year one value of exported energy"
-    )
-    year_one_energy_cost_series_per_kwh = ArrayField(
-        models.FloatField(
-            blank=True
-        ),
-        default=list, blank=True,
-        help_text="Optimal year one hourly energy costs"
-    )
-    year_one_demand_cost_series_per_kw = ArrayField(
-        models.FloatField(
-            blank=True
-        ),
-        default=list, blank=True,
-        help_text="Optimal year one hourly demand costs"
     )
     year_one_coincident_peak_cost_before_tax = models.FloatField(
         null=True, blank=True,
@@ -2269,7 +2255,7 @@ class PVInputs(BaseModel, models.Model):
         ],
         blank=True,
         null=True,
-        help_text="PV system tilt. If PV system type is rooftop-fixed, then tilt=10 degrees, else abs(site.latitude)"
+        help_text="PV system tilt. If PV system type is rooftop-fixed, then tilt=10 degrees, else tilt=abs(site.latitude)"
     )
     location = models.TextField(
         default=PV_LOCATION_CHOICES.BOTH,
@@ -2346,24 +2332,24 @@ class PVOutputs(BaseModel, models.Model):
 #     station_latitude = models.FloatField(null=True, blank=True)
 #     station_longitude = models.FloatField(null=True, blank=True)
 #     station_distance_km = models.FloatField(null=True, blank=True)
-    average_annual_energy_produced_kwh = models.FloatField(null=True, blank=True)
-    average_annual_energy_produced_kwh_bau = models.FloatField(null=True, blank=True)
-    average_annual_energy_exported_kwh = models.FloatField(null=True, blank=True)
+    annual_energy_produced_kwh = models.FloatField(null=True, blank=True)
+    annual_energy_produced_kwh_bau = models.FloatField(null=True, blank=True)
+    annual_energy_exported_kwh = models.FloatField(null=True, blank=True)
     year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)
     year_one_energy_produced_kwh_bau = models.FloatField(null=True, blank=True)
-    year_one_to_battery_series_kw = ArrayField(
+    electric_to_storage_series_kw = ArrayField(
         models.FloatField(null=True, blank=True),
         blank=True, default=list
     )
-    year_one_to_load_series_kw = ArrayField(
+    electric_to_load_series_kw = ArrayField(
         models.FloatField(null=True, blank=True),
         blank=True, default=list
     )
-    year_one_to_grid_series_kw = ArrayField(
+    electric_to_grid_series_kw = ArrayField(
         models.FloatField(null=True, blank=True),
         blank=True, default=list
     )
-    year_one_curtailed_production_series_kw = ArrayField(
+    electric_curtailed_series_kw = ArrayField(
         models.FloatField(null=True, blank=True),
         blank=True, default=list
     )
@@ -2665,16 +2651,15 @@ class WindOutputs(BaseModel, models.Model):
     size_kw = models.FloatField(null=True, blank=True)
     lifecycle_om_cost_after_tax = models.FloatField(null=True, blank=True)
     year_one_om_cost_before_tax = models.FloatField(null=True, blank=True)
-    average_annual_energy_produced_kwh = models.FloatField(null=True, blank=True)
-    average_annual_energy_exported_kwh = models.FloatField(null=True, blank=True)
-    year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)
-    year_one_to_battery_series_kw = ArrayField(
+    annual_energy_produced_kwh = models.FloatField(null=True, blank=True)
+    annual_energy_exported_kwh = models.FloatField(null=True, blank=True)
+    electric_to_storage_series_kw = ArrayField(
             models.FloatField(null=True, blank=True), blank=True, default=list)
-    year_one_to_load_series_kw = ArrayField(
+    electric_to_load_series_kw = ArrayField(
             models.FloatField(null=True, blank=True), blank=True, default=list)
-    year_one_to_grid_series_kw = ArrayField(
+    electric_to_grid_series_kw = ArrayField(
             models.FloatField(null=True, blank=True), blank=True, default=list)
-    year_one_curtailed_production_series_kw = ArrayField(
+    electric_curtailed_series_kw = ArrayField(
             models.FloatField(null=True, blank=True), blank=True, default=list)
     lcoe_per_kwh = models.FloatField(null=True, blank=True)
 
@@ -2890,11 +2875,11 @@ class ElectricStorageOutputs(BaseModel, models.Model):
     )
     size_kw = models.FloatField(null=True, blank=True)
     size_kwh = models.FloatField(null=True, blank=True)
-    year_one_soc_series_fraction = ArrayField(
+    soc_series_fraction = ArrayField(
         models.FloatField(null=True, blank=True),
         blank=True, default=list
     )
-    year_one_to_load_series_kw = ArrayField(
+    storage_to_load_series_kw = ArrayField(
         models.FloatField(null=True, blank=True),
         blank=True, default=list
     )
@@ -3272,32 +3257,30 @@ class GeneratorOutputs(BaseModel, models.Model):
         primary_key=True
     )
 
-    average_annual_fuel_used_gal = models.FloatField(null=True, blank=True)
-    fuel_used_gal_bau = models.FloatField(null=True, blank=True)
+    ## TODO: check all BAU outputs throughout.
+
+    annual_fuel_consumption_gal = models.FloatField(null=True, blank=True)
+    annual_fuel_consumption_gal_bau = models.FloatField(null=True, blank=True)
     size_kw = models.FloatField(null=True, blank=True)
-    average_annual_energy_produced_kwh = models.FloatField(null=True, blank=True)
-    average_annual_energy_exported_kwh = models.FloatField(null=True, blank=True)
-    year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)
-    year_one_to_battery_series_kw = ArrayField(
+    annual_energy_produced_kwh = models.FloatField(null=True, blank=True)
+    electric_to_storage_series_kw = ArrayField(
             models.FloatField(null=True, blank=True), null=True, blank=True)
-    year_one_to_load_series_kw = ArrayField(
+    electric_to_load_series_kw = ArrayField(
             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
-    year_one_to_grid_series_kw = ArrayField(
+    electric_to_grid_series_kw = ArrayField(
             models.FloatField(null=True, blank=True), null=True, blank=True, default=list)
     year_one_variable_om_cost_before_tax = models.FloatField(null=True, blank=True)
-    year_one_variable_om_cost_bau = models.FloatField(null=True, blank=True)
+    year_one_variable_om_cost_before_tax_bau = models.FloatField(null=True, blank=True)
     year_one_fuel_cost_before_tax = models.FloatField(null=True, blank=True)
-    year_one_fuel_cost_bau = models.FloatField(null=True, blank=True)
+    year_one_fuel_cost_before_tax_bau = models.FloatField(null=True, blank=True)
     year_one_fixed_om_cost_before_tax = models.FloatField(null=True, blank=True)
-    year_one_fixed_om_cost_bau = models.FloatField(null=True, blank=True)
+    year_one_fixed_om_cost_before_tax_bau = models.FloatField(null=True, blank=True)
     lifecycle_variable_om_cost_after_tax = models.FloatField(null=True, blank=True)
-    lifecycle_variable_om_cost_bau = models.FloatField(null=True, blank=True)
+    lifecycle_variable_om_cost_after_tax_bau = models.FloatField(null=True, blank=True)
     lifecycle_fuel_cost_after_tax = models.FloatField(null=True, blank=True)
-    lifecycle_fuel_cost_bau = models.FloatField(null=True, blank=True)
+    lifecycle_fuel_cost_after_tax_bau = models.FloatField(null=True, blank=True)
     lifecycle_fixed_om_cost_after_tax = models.FloatField(null=True, blank=True)
-    lifecycle_fixed_om_cost_bau = models.FloatField(null=True, blank=True)
-    year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
-    year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
+    lifecycle_fixed_om_cost_after_tax_bau = models.FloatField(null=True, blank=True)
 
 class CHPInputs(BaseModel, models.Model):
     key = "CHP"
@@ -3816,89 +3799,93 @@ class CHPOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Power capacity of CHP supplementary firing system [kW]"
     )
-    year_one_fuel_used_mmbtu = models.FloatField(
+    annual_fuel_consumption_mmbtu = models.FloatField(
         null=True, blank=True,
-        help_text="Fuel consumed in year one [MMBtu]"
+        help_text="Fuel consumed in a year [MMBtu]"
     )
-    year_one_electric_energy_produced_kwh = models.FloatField(
+    annual_electric_production_kwh = models.FloatField(
         null=True, blank=True,
-        help_text="Electric energy produced in year one [kWh]"
+        help_text="Electric energy produced in a year [kWh]"
     )
-    year_one_thermal_energy_produced_mmbtu = models.FloatField(
+    annual_thermal_production_mmbtu = models.FloatField(
         null=True, blank=True,
-        help_text="Thermal energy produced in year one [MMBtu]"
+        help_text="Thermal energy produced in a year [MMBtu]"
     )
-    year_one_electric_production_series_kw = ArrayField(
+    electric_production_series_kw = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
         default=list, blank=True,
         help_text="Electric power production time-series array [kW]"
     )
-    year_one_to_grid_series_kw = ArrayField(
+    electric_to_grid_series_kw = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
         default=list, blank=True,
         help_text="Electric power exported time-series array [kW]"
     )
-    year_one_to_battery_series_kw = ArrayField(
+    electric_to_storage_series_kw = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
         default=list, blank=True,
         help_text="Electric power to charge the battery storage time-series array [kW]"
     )
-    year_one_to_load_series_kw = ArrayField(
+    electric_to_load_series_kw = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
         default=list, blank=True,
-        help_text="Electric power to serve the electric load time-series array [kW]"
+        help_text="Electric power serving the electric load time-series array [kW]"
     )
-    year_one_thermal_to_tes_series_mmbtu_per_hour = ArrayField(
+    thermal_to_storage_series_mmbtu_per_hour = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
         default=list, blank=True,
         help_text="Thermal power to TES time-series array [MMBtu/hr]"
     )
-    year_one_thermal_to_waste_series_mmbtu_per_hour = ArrayField(
+    thermal_curtailed_series_mmbtu_per_hour = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
         default=list, blank=True,
         help_text="Thermal power wasted/unused/vented time-series array [MMBtu/hr]"
     )
-    year_one_thermal_to_load_series_mmbtu_per_hour = ArrayField(
+    thermal_to_load_series_mmbtu_per_hour = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
         default=list, blank=True,
         help_text="Thermal power to serve the heating load time-series array [MMBtu/hr]"
     )
-    year_one_thermal_to_steamturbine_series_mmbtu_per_hour = ArrayField(
+    thermal_to_steamturbine_series_mmbtu_per_hour = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
         default=list, blank=True,
-        help_text="Thermal power to TES time-series array [MMBtu/hr]"
+        help_text="Thermal power to steam turbine time-series array [MMBtu/hr]"
     )    
-    year_one_chp_fuel_cost_before_tax = models.FloatField(
+    year_one_fuel_cost_before_tax = models.FloatField(
         null=True, blank=True,
         help_text="Cost of fuel consumed by the CHP system in year one [\$]"
     )
-    lifecycle_chp_fuel_cost_after_tax = models.FloatField(
+    lifecycle_fuel_cost_after_tax = models.FloatField(
         null=True, blank=True,
         help_text="Present value of cost of fuel consumed by the CHP system, after tax [\$]"
     )
-    year_one_chp_standby_cost_before_tax = models.FloatField(
+    year_one_standby_cost_before_tax = models.FloatField(
         null=True, blank=True,
         help_text="CHP standby charges in year one [\$]"
     )
-    lifecycle_chp_standby_cost_after_tax = models.FloatField(
+    lifecycle_standby_cost_after_tax = models.FloatField(
         null=True, blank=True,
         help_text="Present value of all CHP standby charges, after tax."
+    )
+    thermal_production_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
     )
 
     def clean():
@@ -4159,46 +4146,46 @@ class ExistingChillerOutputs(BaseModel, models.Model):
         primary_key=True
     )
 
-    year_one_to_tes_series_ton = ArrayField(
+    thermal_to_storage_series_ton = ArrayField(
         models.FloatField(
             blank=True
         ),
         default=list,
         blank=True,
         null=True,
-        help_text=("Year one hourly time series of electric chiller thermal to cold TES [Ton]")
+        help_text=("Annual hourly time series of electric chiller thermal to cold TES [Ton]")
     )
 
-    year_one_to_load_series_ton = ArrayField(
+    thermal_to_load_series_ton = ArrayField(
         models.FloatField(
             blank=True
         ),
         default=list,
         blank=True,
         null=True,
-        help_text=("Year one hourly time series of electric chiller thermal to cooling load [Ton]")
+        help_text=("Annual hourly time series of electric chiller thermal to cooling load [Ton]")
     )
 
-    year_one_electric_consumption_series_kw = ArrayField(
+    electric_consumption_series_kw = ArrayField(
         models.FloatField(
             blank=True
         ),
         default=list,
         blank=True,
         null=True,
-        help_text=("Year one hourly time series of chiller electric consumption [kW]")
+        help_text=("Annual hourly time series of chiller electric consumption [kW]")
     )
 
-    year_one_electric_consumption_kwh = models.FloatField(
+    annual_electric_consumption_kwh = models.FloatField(
         null=True,
         blank=True,
-        help_text=("Year one chiller electric consumption [kWh]")
+        help_text=("Annual chiller electric consumption [kWh]")
     )
 
-    year_one_thermal_production_tonhour = models.FloatField(
+    annual_thermal_production_tonhour = models.FloatField(
         null=True,
         blank=True,
-        help_text=("Year one chiller thermal production [Ton Hour")
+        help_text=("Annual chiller thermal production [Ton Hour")
     )
 
     def clean(self):
@@ -4372,54 +4359,34 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
         primary_key=True
     )
 
-    year_one_fuel_consumption_mmbtu = models.FloatField(null=True, blank=True)
+    annual_fuel_consumption_mmbtu = models.FloatField(null=True, blank=True)
 
-    year_one_fuel_consumption_series_mmbtu_per_hour = ArrayField(
+    fuel_consumption_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
         default=list,
     )
 
     lifecycle_fuel_cost_after_tax = models.FloatField(null=True, blank=True)
     lifecycle_fuel_cost_after_tax_bau = models.FloatField(null=True, blank=True)
-    year_one_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
+    annual_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
     year_one_fuel_cost_before_tax = models.FloatField(null=True, blank=True)
-    thermal_to_tes_series_mmbtu_per_hour = models.FloatField(null=True, blank=True)
 
-    year_one_thermal_to_steamturbine_series_mmbtu_per_hour = ArrayField(
+    thermal_to_storage_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
         default = list,
     )
 
-    year_one_thermal_production_series_mmbtu_per_hour = ArrayField(
+    thermal_to_steamturbine_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
         default = list,
     )
 
-    year_one_fuel_consumption_series_mmbtu_per_hour = ArrayField(
-        models.FloatField(null=True, blank=True),
-        default = list,
-    )
-    thermal_to_tes_series_mmbtu_per_hour = ArrayField(
+    thermal_production_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
         default = list,
     )
 
-    year_one_thermal_to_steamturbine_series_mmbtu_per_hour = ArrayField(
-        models.FloatField(null=True, blank=True),
-        default = list,
-    )
-
-    year_one_thermal_production_series_mmbtu_per_hour = ArrayField(
-        models.FloatField(null=True, blank=True),
-        default = list,
-    )
-
-    year_one_thermal_to_load_series_mmbtu_per_hour = ArrayField(
-        models.FloatField(null=True, blank=True),
-        default = list,
-    )
-
-    year_one_thermal_to_tes_series_mmbtu_per_hour = ArrayField(
+    thermal_to_load_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
         default = list,
     )
@@ -4597,9 +4564,9 @@ class REoptjlMessageOutputs(BaseModel, models.Model):
 #         primary_key=True
 #     )
 
-#     year_one_fuel_consumption_mmbtu = models.FloatField(null=True, blank=True)
+#     annual_fuel_consumption_mmbtu = models.FloatField(null=True, blank=True)
 
-#     year_one_fuel_consumption_mmbtu_per_hour = ArrayField(
+#     fuel_consumption_series_mmbtu_per_hour = ArrayField(
 #         models.FloatField(null=True, blank=True),
 #         default=list,
 #     )
@@ -4607,10 +4574,10 @@ class REoptjlMessageOutputs(BaseModel, models.Model):
 #     lifecycle_fuel_cost = models.FloatField(null=True, blank=True)
 #     lifecycle_per_unit_prod_om_costs = models.FloatField(null=True, blank=True)
 #     lifecycle_fuel_cost_bau = models.FloatField(null=True, blank=True)
-#     year_one_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
+#     annual_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
 #     year_one_fuel_cost = models.FloatField(null=True, blank=True)
     
-#     thermal_to_tes_series_mmbtu_per_hour = ArrayField(
+#     thermal_to_storage_series_mmbtu_per_hour = ArrayField(
 #         models.FloatField(null=True, blank=True),
 #         default = list,
 #     )
@@ -4618,7 +4585,7 @@ class REoptjlMessageOutputs(BaseModel, models.Model):
 #         models.FloatField(null=True, blank=True),
 #         default = list,
 #     )
-#     year_one_thermal_to_load_series_mmbtu_per_hour = ArrayField(
+#     thermal_to_load_series_mmbtu_per_hour = ArrayField(
 #         models.FloatField(null=True, blank=True),
 #         default = list,
 #     )
@@ -4781,11 +4748,11 @@ class HotThermalStorageOutputs(BaseModel, models.Model):
         primary_key=True
     )
     size_gal = models.FloatField(null=True, blank=True)
-    year_one_soc_series_fraction = ArrayField(
+    soc_series_fraction = ArrayField(
         models.FloatField(null=True, blank=True),
         default = list,
     )
-    year_one_to_load_series_mmbtu_per_hour = ArrayField(
+    storage_to_load_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
         default = list,
     )
@@ -4952,11 +4919,11 @@ class ColdThermalStorageOutputs(BaseModel, models.Model):
         primary_key=True
     )
     size_gal = models.FloatField(null=True, blank=True)
-    year_one_soc_series_fraction = ArrayField(
+    soc_series_fraction = ArrayField(
         models.FloatField(null=True, blank=True),
         default = list,
     )
-    year_one_to_load_series_ton = ArrayField(
+    storage_to_load_series_ton = ArrayField(
         models.FloatField(null=True, blank=True),
         default = list,
     )
