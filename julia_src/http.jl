@@ -201,6 +201,17 @@ end
 function simulated_load(req::HTTP.Request)
     d = JSON.parse(String(req.body))
 
+    # Arrays in d are being parsed as type Vector{Any} instead of fixed type Vector{String or <:Real} without conversion
+    for key in ["doe_reference_name", "cooling_doe_ref_name"]
+        if key in keys(d) && typeof(d[key]) <: Vector{}
+            d[key] = convert(Vector{String}, d[key])
+        end
+    end
+
+    if "percent_share" in keys(d) && typeof(d["percent_share"]) <: Vector{}
+        d["percent_share"] = convert(Vector{Float64}, d["percent_share"])
+    end
+
     @info "Getting CRB Loads..."
     data = Dict()
     error_response = Dict()
