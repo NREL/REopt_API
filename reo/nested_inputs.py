@@ -1213,7 +1213,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0,
-          "default": 0.26,
+          "default": 0.3,
           "description": "Percentage of capital costs that are credited towards federal taxes"
         },
         "state_ibi_pct": {
@@ -2626,6 +2626,12 @@ defaults_dict = {
           },
           "om_cost_us_dollars_per_kw": {
             "default": 17.0
+          },
+          "federal_itc_pct": {
+            "default": 0.3
+          },
+          "macrs_bonus_pct": {
+            "default": 0.8
           }
         },
         "Storage": {
@@ -2640,11 +2646,33 @@ defaults_dict = {
           },
           "replace_cost_us_dollars_per_kw": {
             "default": 440.0
-          }
+          },
+          "federal_itc_pct": {
+            "default": 0.3
+          },
+          "macrs_option_years": {
+            "default": 5
+          },
         },
         "Wind": {
           "om_cost_us_dollars_per_kw": {
             "default": 35.0
+          },
+          "federal_itc_pct": {
+            "default": 0.3
+          },
+          "macrs_bonus_pct": {
+            "default": 0.8
+          }
+        },
+        "CHP": {
+          "federal_itc_pct": {
+            "default": 0.3
+          }
+        },
+        "GHP": {
+          "federal_itc_pct": {
+            "default": 0.3
           }
         }
       }
