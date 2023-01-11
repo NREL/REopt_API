@@ -1,6 +1,6 @@
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.1"
+julia_version = "1.8.3"
 manifest_format = "2.0"
 project_hash = "c2cdadb4ef175368e043d03d8dd75e25e020ef11"
 
@@ -806,7 +806,7 @@ uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 deps = ["Pkg"]
 git-tree-sha1 = "df6f1b5f13936504ba45088e13a62a6930cdabf7"
 uuid = "1e6cf692-eddd-4d53-88a5-2d735e33781b"
-version = "1.7.4"
+version = "1.8.1"
 
 [[deps.Thrift_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "boost_jll"]
