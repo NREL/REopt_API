@@ -1213,7 +1213,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0,
-          "default": 0.3,
+          "default": 0.26,
           "description": "Percentage of capital costs that are credited towards federal taxes"
         },
         "state_ibi_pct": {
@@ -2647,7 +2647,7 @@ defaults_dict = {
           "replace_cost_us_dollars_per_kw": {
             "default": 440.0
           },
-          "federal_itc_pct": {
+          "total_itc_pct": {
             "default": 0.3
           },
           "macrs_option_years": {
