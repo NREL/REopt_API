@@ -704,6 +704,7 @@ def get_erp_input_dict_from_run_uuid(run_uuid:str):
         gen["fuel_intercept_per_hr"] = fuel_intercept_kwht_per_hr / KWH_PER_GAL_DIESEL # [gal/hr]
         # change fuel_avail_gal to fuel_limit
         gen["fuel_limit"] = gen.pop("fuel_avail_gal")
+        gen["fuel_limit_is_per_generator"] = gen.pop("fuel_avail_gal_is_per_generator")
     
         gen_dicts.append(gen)
     except AttributeError: pass
@@ -719,6 +720,7 @@ def get_erp_input_dict_from_run_uuid(run_uuid:str):
         gen["fuel_intercept_per_hr"] = fuel_burn_full_load - gen["fuel_burn_rate_per_kwh"] * 1.0  # [kWht/hr]
         # add fuel_limit
         gen["fuel_limit"] = 1e9
+        gen["fuel_limit_is_per_generator"] = True
     
         gen_dicts.append(gen)
     except AttributeError: pass
