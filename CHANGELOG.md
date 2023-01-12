@@ -26,6 +26,10 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop
+### Minor Updates
+### Added 
+ - In job/ app (v3): Added **addressable_load_fraction** to SpaceHeatingLoad and DomesticHotWaterLoad inputs. 
 ## v2.7.0
 ### Minor Updates
  ### Changed
