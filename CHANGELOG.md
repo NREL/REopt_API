@@ -26,7 +26,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop - 2022-12-28
+## Develop - 2022-01-11
 ### Minor Updates
  ### Changed
  - In job/ app (v3): Name changes for many outputs/results. Generally, changes are for energy outputs (not costs) that include "year_one", and are changed to annual_ for scalars and to production_to_, thermal_to_ etc. for time series.
@@ -35,9 +35,10 @@ Classify the change according to the following categories:
  - In job/ app (v3): Added **thermal_production_series_mmbtu_per_hour** to CHP results.
 ##### Removed
 - In job/ app (v3): Removed outputs not reported by REopt.jl
+#### Fixed
+- In job/views for `/simulated_load` endpoint: Fixed the data type conversion issues between JSON and Julia
   
 
-## v2.5.1
 ## v2.6.0
 ### Minor Updates
 #### Added
