@@ -87,6 +87,10 @@ def erp_results(request, run_uuid):
         except AttributeError:
             pass
         try:
+            resp["inputs"][ERPPrimeGeneratorInputs.key] = meta.ERPPrimeGeneratorInputs.dict
+        except AttributeError:
+            pass
+        try:
             resp["inputs"][ERPPVInputs.key] = meta.ERPPVInputs.dict
         except AttributeError:
             pass
