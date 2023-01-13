@@ -31,6 +31,7 @@ import sys
 import logging
 import copy
 from django.db import models
+from django.db.models.fields import NOT_PROVIDED
 from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.core.exceptions import ValidationError
@@ -226,6 +227,11 @@ class ERPGeneratorInputs(BaseModel, models.Model):
     def clean(self):
         if not self.electric_efficiency_half_load:
             self.electric_efficiency_half_load = self.electric_efficiency_full_load
+
+    def info_dict(self):
+        d = super().info_dict()
+        d["electric_efficiency_half_load"]["default"] = "electric_efficiency_full_load"
+        return d
 
 class ERPPrimeGeneratorInputs(BaseModel, models.Model):
     key = "PrimeGenerator"
