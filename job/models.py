@@ -3318,10 +3318,7 @@ class CHPInputs(BaseModel, models.Model):
         null=False,
         blank=True,
         help_text=(
-            "The CHP system fuel cost is a required input when the CHP system is included as an option."
-            "The `fuel_cost_per_mmbtu` can be a scalar, a list of 12 monthly values, or a time series of values for every time step."
-            "If a scalar or a vector of 12 values are provided, then the value is scaled up to 8760 values."
-            "If a vector of 8760, 17520, or 35040 values is provided, it is adjusted to match timesteps per hour in the optimization."
+            "The `fuel_cost_per_mmbtu` is a required input and can be a scalar, a list of 12 monthly values, or a time series of values for every time step."
         )
     )
 
@@ -5015,7 +5012,7 @@ class SpaceHeatingLoadInputs(BaseModel, models.Model):
         ),
         default=list,
         blank=True,
-        help_text=("Typical load over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,"
+        help_text=("Vector of space heating fuel loads [mmbtu/hr] over one year. Must be hourly (8,760 samples), 30 minute (17,"
                    "520 samples), or 15 minute (35,040 samples). All non-net load values must be greater than or "
                    "equal to zero. "
                    )
@@ -5047,6 +5044,20 @@ class SpaceHeatingLoadInputs(BaseModel, models.Model):
                    "DoE Commercial Reference Buildings. Must sum to 1.0.")
     )
 
+    addressable_load_fraction = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1.0)
+            ],
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        help_text=( "Fraction of input fuel load which is addressable by heating technologies (default is 1.0)." 
+                    "Can be a scalar or vector with length aligned with use of monthly_mmbtu (12) or fuel_loads_mmbtu_per_hour.")
+    )
+
     '''
     Latitude and longitude are passed on to SpaceHeating struct using the Site struct.
     City is not used as an input here because it is found using find_ashrae_zone_city() when needed.
@@ -5070,6 +5081,9 @@ class SpaceHeatingLoadInputs(BaseModel, models.Model):
         if self.doe_reference_name != "" or \
                 len(self.blended_doe_reference_names) > 0:
             self.year = 2017  # the validator provides an "info" message regarding this)
+        
+        if self.addressable_load_fraction == None:
+            self.addressable_load_fraction = list([1.0]) # should not convert to timeseries, in case it is to be used with monthly_mmbtu or annual_mmbtu
 
         if error_messages:
             raise ValidationError(error_messages)
@@ -5191,6 +5205,20 @@ class DomesticHotWaterLoadInputs(BaseModel, models.Model):
                    "DoE Commercial Reference Buildings to simulate buildings/campuses. Must sum to 1.0.")
     )
 
+    addressable_load_fraction = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1.0)
+            ],
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        help_text=( "Fraction of input fuel load which is addressable by heating technologies (default is 1.0)." 
+                    "Can be a scalar or vector with length aligned with use of monthly_mmbtu (12) or fuel_loads_mmbtu_per_hour.")
+    )    
+
     '''
     Latitude and longitude are passed on to DomesticHotWater struct using the Site struct.
     City is not used as an input here because it is found using find_ashrae_zone_city() when needed.
@@ -5215,6 +5243,9 @@ class DomesticHotWaterLoadInputs(BaseModel, models.Model):
         if self.doe_reference_name != "" or \
                 len(self.blended_doe_reference_names) > 0:
             self.year = 2017  # the validator provides an "info" message regarding this)
+        
+        if self.addressable_load_fraction == None:
+            self.addressable_load_fraction = list([1.0]) # should not convert to timeseries, in case it is to be used with monthly_mmbtu or annual_mmbtu
 
 class HeatingLoadOutputs(BaseModel, models.Model):
 
