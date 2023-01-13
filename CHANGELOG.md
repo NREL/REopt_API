@@ -30,6 +30,9 @@ Classify the change according to the following categories:
 ### Minor Updates
 ### Added 
  - In job/ app (v3): Added **addressable_load_fraction** to SpaceHeatingLoad and DomesticHotWaterLoad inputs. 
+### Changed
+ - Changed redis service memory settings to mitigate "out of memory" OOM issue we've been getting on production
+ 
 ## v2.7.0
 ### Minor Updates
  ### Changed
