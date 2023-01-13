@@ -38,7 +38,7 @@ from reo.models import ModelManager
 from reo.models import ScenarioModel, PVModel, StorageModel, LoadProfileModel, GeneratorModel, FinancialModel, \
     WindModel, CHPModel
 from reo.utilities import annuity
-from resilience_stats.models import ResilienceModel, ERPMeta, ERPOutageInputs, ERPGeneratorInputs, ERPPVInputs, ERPElectricStorageInputs, ERPOutputs
+from resilience_stats.models import ResilienceModel, ERPMeta, ERPOutageInputs, ERPGeneratorInputs, ERPPrimeGeneratorInputs, ERPPVInputs, ERPElectricStorageInputs, ERPOutputs
 from resilience_stats.outage_simulator_LF import simulate_outages
 import numpy as np
 from reo.utilities import empty_record
@@ -126,6 +126,22 @@ def erp_results(request, run_uuid):
         resp['messages']['error'] = err.message
         resp['status'] = 'Error'
         return JsonResponse(resp, status=500)
+
+def erp_help(request):
+    try:
+        d = dict()
+        d["reopt_run_uuid"] = ERPMeta.info_dict(ERPOutageInputs)["reopt_run_uuid"]
+        # do models need to be passed in as arg?
+        d["Outage"] = ERPOutageInputs.info_dict(ERPOutageInputs)
+        d["PV"] = ERPPVInputs.info_dict(ERPPVInputs)
+        d["ElectricStorage"] = ERPElectricStorageInputs.info_dict(ERPElectricStorageInputs)
+        d["Generator"] = ERPGeneratorInputs.info_dict(ERPGeneratorInputs)
+        d["PrimeGenerator"] = ERPPrimeGeneratorInputs.info_dict(ERPPrimeGeneratorInputs)
+        #TODO: add wind once implemented
+        return JsonResponse(d)
+
+    except Exception as e:
+        return JsonResponse({"Error": "Unexpected error in ERP help endpoint: {}".format(e.args[0])}, status=500)
 
 def resilience_stats(request: Union[Dict, HttpRequest], run_uuid=None):
     """
