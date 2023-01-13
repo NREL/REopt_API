@@ -132,11 +132,11 @@ def erp_help(request):
         d = dict()
         d["reopt_run_uuid"] = ERPMeta.info_dict(ERPOutageInputs)["reopt_run_uuid"]
         # do models need to be passed in as arg?
-        d["Outage"] = ERPOutageInputs.info_dict(ERPOutageInputs)
-        d["PV"] = ERPPVInputs.info_dict(ERPPVInputs)
-        d["ElectricStorage"] = ERPElectricStorageInputs.info_dict(ERPElectricStorageInputs)
-        d["Generator"] = ERPGeneratorInputs.info_dict(ERPGeneratorInputs)
-        d["PrimeGenerator"] = ERPPrimeGeneratorInputs.info_dict(ERPPrimeGeneratorInputs)
+        d[ERPOutageInputs.key] = ERPOutageInputs.info_dict(ERPOutageInputs)
+        d[ERPPVInputs.key] = ERPPVInputs.info_dict(ERPPVInputs)
+        d[ERPElectricStorageInputs.key] = ERPElectricStorageInputs.info_dict(ERPElectricStorageInputs)
+        d[ERPGeneratorInputs.key] = ERPGeneratorInputs.info_dict(ERPGeneratorInputs)
+        d[ERPPrimeGeneratorInputs.key] = ERPPrimeGeneratorInputs.info_dict(ERPPrimeGeneratorInputs)
         #TODO: add wind once implemented
         return JsonResponse(d)
 
