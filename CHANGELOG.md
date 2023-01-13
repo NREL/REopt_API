@@ -26,7 +26,14 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop - 2022-01-11
+## Develop
+### Minor Updates
+### Added 
+ - In job/ app (v3): Added **addressable_load_fraction** to SpaceHeatingLoad and DomesticHotWaterLoad inputs. 
+### Changed
+ - Changed redis service memory settings to mitigate "out of memory" OOM issue we've been getting on production
+ 
+## v2.7.0
 ### Minor Updates
  ### Changed
  - In job/ app (v3): Name changes for many outputs/results. Generally, changes are for energy outputs (not costs) that include "year_one", and are changed to annual_ for scalars and to production_to_, thermal_to_ etc. for time series.
