@@ -58,6 +58,34 @@ class BaseModel(object):
     def create(cls, **kwargs):
         obj = cls(**kwargs)
         return obj
+
+    def info_dict(self):
+        """
+        :return: dict with keys for each model field and sub-dicts for the settings for each key, such as help_text
+        """
+        d = dict()
+        possible_sets = getattr(self, "possible_sets", None)
+        if possible_sets is not None:
+            d["possible_sets"] = possible_sets
+
+        for field in self._meta.fields:
+            if field.attname.endswith("id"): continue
+            d[field.attname] = dict()
+            if "Outputs" not in getattr(self, "key", ""):
+                d[field.attname]["required"] = not field.blank and field.default == NOT_PROVIDED
+            if field.choices is not None:
+                d[field.attname]["choices"] = [t[0] for t in field.choices]
+            if not field.default == NOT_PROVIDED and field.default != list:
+                try:
+                    d[field.attname]["default"] = field.default.value
+                except:
+                    d[field.attname]["default"] = field.default
+            if len(field.help_text) > 0:
+                d[field.attname]["help_text"] = field.help_text
+            for val in field.validators:
+                if val.limit_value not in (-2147483648, 2147483647):  # integer limits
+                    d[field.attname][val.code] = val.limit_value
+        return d
         
 class ERPMeta(BaseModel, models.Model):
     run_uuid = models.UUIDField(unique=True)
