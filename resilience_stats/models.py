@@ -294,16 +294,13 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
         help_text=("Electric efficiency of prime generator/CHP unit running at full load.")
     )
 
-    def clean(self):
-        if not self.electric_efficiency_half_load:
-            self.electric_efficiency_half_load = self.electric_efficiency_full_load
+    def op_avail(prime_mover, is_chp, size_kw):
         size_class_index = 1 if (
-                self.prime_mover == "recip_engine" and self.size_kw > 800
+                prime_mover == "recip_engine" and size_kw > 800
             ) or (
-                self.prime_mover == "combustion_turbine" and self.size_kw > 5000
+                prime_mover == "combustion_turbine" and size_kw > 5000
             ) else 0
-        if not self.operational_availability:
-            self.operational_availability = {
+        return {
                 True: {
                     "recip_engine": [0.96, 0.98],
                     "micro_turbine": [None],
@@ -316,9 +313,15 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
                     "combustion_turbine": [0.98, 0.97],
                     "fuel_cell": [None]
                 }
-            }[self.is_chp][self.prime_mover][size_class_index]
-        if not self.mean_time_to_failure:
-            self.mean_time_to_failure = {
+            }[is_chp][prime_mover][size_class_index]
+        
+    def mttf(prime_mover, is_chp, size_kw):
+        size_class_index = 1 if (
+                prime_mover == "recip_engine" and size_kw > 800
+            ) or (
+                prime_mover == "combustion_turbine" and size_kw > 5000
+            ) else 0
+        return {
                 True: {
                     "recip_engine": [870, 2150],
                     "micro_turbine": [None],
@@ -331,7 +334,15 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
                     "combustion_turbine": [1040, 3250],
                     "fuel_cell": [2500]
                 }
-            }[self.is_chp][self.prime_mover][size_class_index]
+            }[is_chp][prime_mover][size_class_index]
+
+    def clean(self):
+        if not self.electric_efficiency_half_load:
+            self.electric_efficiency_half_load = self.electric_efficiency_full_load
+        if not self.operational_availability:
+            self.operational_availability = self.op_avail(self.prime_mover, self.is_chp, self.size_kw)
+        if not self.mean_time_to_failure:
+            self.mean_time_to_failure = self.mttf(self.prime_mover, self.is_chp, self.size_kw)
         error_messages = {}
         if self.operational_availability is None and self.mean_time_to_failure is None:
             error_messages["required inputs"] = "Must provide operational_availability and mean_time_to_failure to model {} with the specified prime_mover".format(self.key)
@@ -342,11 +353,12 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
         if error_messages:
             raise ValidationError(error_messages)
     
-    def info_dict(self):
+    def info_dict(self, prime_mover, is_chp):
         d = super().info_dict()
         d["electric_efficiency_half_load"]["default"] = "electric_efficiency_full_load"
+        d["operational_availability"]["default"] = self.op_avail(self.prime_mover, self.is_chp, self.size_kw)
+        d["mean_time_to_failure"]["default"] = self.mttf(self.prime_mover, self.is_chp, self.size_kw)
         return d
-
 
 class ERPElectricStorageInputs(BaseModel, models.Model):
     key = "ElectricStorage"
