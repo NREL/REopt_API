@@ -29,10 +29,26 @@ Classify the change according to the following categories:
 
 ## Develop
 ### Minor Updates
-- added `scalar_to_array` function to convert scalar user input to single element arrays and used it on generator inputs in **ERPInputs** `clean` function
-##### Changed
-- let generator inputs in **ERPInputs** be arrays, which enables running ERP with multiple generator types
-- changed `scalar_to_vector` helper function to `scalar_or_monthly_to_8760`
+#### Added 
+ - added `scalar_to_array` function to convert scalar user input to single element arrays and used it on generator inputs in **ERPInputs** `clean` function
+ - In job/ app (v3): Added **addressable_load_fraction** to SpaceHeatingLoad and DomesticHotWaterLoad inputs. 
+#### Changed
+ - Changed redis service memory settings to mitigate "out of memory" OOM issue we've been getting on production
+ - let generator inputs in **ERPInputs** be arrays, which enables running ERP with multiple generator types
+ - changed `scalar_to_vector` helper function to `scalar_or_monthly_to_8760`
+
+## v2.7.0
+### Minor Updates
+#### Changed
+ - In job/ app (v3): Name changes for many outputs/results. Generally, changes are for energy outputs (not costs) that include "year_one", and are changed to annual_ for scalars and to production_to_, thermal_to_ etc. for time series.
+ - In job/ app (v3): Changed some _bau outputs to align with REopt.jl outputs
+#### Added 
+ - In job/ app (v3): Added **thermal_production_series_mmbtu_per_hour** to CHP results.
+#### Removed
+- In job/ app (v3): Removed outputs not reported by REopt.jl
+#### Fixed
+- In job/views for `/simulated_load` endpoint: Fixed the data type conversion issues between JSON and Julia
+  
 
 ## v2.6.0
 ### Minor Updates
