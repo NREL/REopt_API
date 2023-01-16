@@ -70,7 +70,7 @@ class BaseModel(object):
             d["possible_sets"] = possible_sets
 
         for field in self._meta.fields:
-            if field.attname.endswith("id"): continue
+            if field.attname.endswith("id") and field.attname != "reopt_run_uuid": continue
             d[field.attname] = dict()
             if "Outputs" not in getattr(self, "key", ""):
                 d[field.attname]["required"] = not field.blank and field.default == NOT_PROVIDED
@@ -205,7 +205,7 @@ class ERPGeneratorInputs(BaseModel, models.Model):
             self.electric_efficiency_half_load = self.electric_efficiency_full_load
 
     def info_dict(self):
-        d = super().info_dict()
+        d = super().info_dict(self)
         d["electric_efficiency_half_load"]["default"] = "electric_efficiency_full_load"
         return d
 
@@ -353,11 +353,15 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
         if error_messages:
             raise ValidationError(error_messages)
     
-    def info_dict(self, prime_mover, is_chp):
-        d = super().info_dict()
+    def info_dict(self):
+        d = super().info_dict(self)
         d["electric_efficiency_half_load"]["default"] = "electric_efficiency_full_load"
-        d["operational_availability"]["default"] = self.op_avail(self.prime_mover, self.is_chp, self.size_kw)
-        d["mean_time_to_failure"]["default"] = self.mttf(self.prime_mover, self.is_chp, self.size_kw)
+        return d
+
+    def info_dict_with_dependent_defaults(self, prime_mover:str, is_chp:bool, size_kw:float):
+        d = self.info_dict(self)
+        d["operational_availability"]["default"] = self.op_avail(prime_mover, is_chp, size_kw)
+        d["mean_time_to_failure"]["default"] = self.mttf(prime_mover, is_chp, size_kw)
         return d
 
 class ERPElectricStorageInputs(BaseModel, models.Model):
