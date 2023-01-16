@@ -134,7 +134,7 @@ def erp_results(request, run_uuid):
 def erp_help(request):
     try:
         d = dict()
-        d["reopt_run_uuid"] = ERPMeta.info_dict(ERPOutageInputs)["reopt_run_uuid"]
+        d["reopt_run_uuid"] = ERPMeta.info_dict(ERPMeta)["reopt_run_uuid"]
         # do models need to be passed in as arg?
         d[ERPOutageInputs.key] = ERPOutageInputs.info_dict(ERPOutageInputs)
         d[ERPPVInputs.key] = ERPPVInputs.info_dict(ERPPVInputs)
@@ -146,6 +146,20 @@ def erp_help(request):
 
     except Exception as e:
         return JsonResponse({"Error": "Unexpected error in ERP help endpoint: {}".format(e.args[0])}, status=500)
+
+def erp_chp_prime_gen_defaults(request):
+    prime_mover = str(request.GET.get('prime_mover'))
+    is_chp = bool(request.GET.get('is_chp'))
+    size_kw = float(request.GET.get('size_kw'))
+    try:
+        d = ERPPrimeGeneratorInputs.info_dict_with_dependent_defaults(ERPPrimeGeneratorInputs, prime_mover, is_chp, size_kw)
+        return JsonResponse(d)
+
+    except TypeError as e:
+        return JsonResponse({"Error": "Invalid or missing arguments: {}".format(e.args[0])}, status=400)
+
+    except Exception as e:
+        return JsonResponse({"Error": "Unexpected error in ERP chp_defaults endpoint: {}".format(e.args[0])}, status=500)
 
 def resilience_stats(request: Union[Dict, HttpRequest], run_uuid=None):
     """
