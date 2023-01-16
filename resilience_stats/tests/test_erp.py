@@ -43,6 +43,8 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         #for ERP simulation
         self.reopt_base_erp = '/dev/erp/'
         self.reopt_base_erp_results = '/dev/erp/{}/results/'
+        self.reopt_base_erp_help = '/dev/erp/help/'
+        self.reopt_base_erp_chp_defaults = '/dev/erp/chp_defaults/?prime_mover={0}&is_chp={1}&size_kw={2}'
         self.post_sim = os.path.join('resilience_stats', 'tests', 'ERP_sim_post_nested.json')
         
         #for REopt optimization
@@ -57,6 +59,15 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
 
     def get_results_sim(self, run_uuid):
         return self.api_client.get(self.reopt_base_erp_results.format(run_uuid))
+
+    def get_help(self):
+        return self.api_client.get(self.reopt_base_erp_help)
+    
+    def get_chp_defaults(self, prime_mover, is_chp, size_kw):
+        return self.api_client.get(
+            self.reopt_base_erp_chp_defaults.format(prime_mover, is_chp, size_kw),
+            format='json'
+        )
 
     def test_erp_with_reopt_run_uuid(self):
         """
@@ -126,7 +137,7 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         post_sim = json.load(open(self.post_sim, 'rb'))
 
         resp = self.get_response_sim(post_sim)
-        # self.assertHttpCreated(resp)
+        self.assertHttpCreated(resp)
         r_sim = json.loads(resp.content)
         #TODO: don't return run_uuid when there's a REoptFailedToStartError
         erp_run_uuid = r_sim.get('run_uuid')
@@ -135,3 +146,17 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         results = json.loads(resp.content)
 
         self.assertAlmostEqual(results["outputs"]["mean_cumulative_survival_final_time_step"], 0.904242, places=4) #0.990784, places=4)
+    
+    def test_erp_help_view(self):
+        """
+        Tests hiting the erp/help url to get defaults and other info about inputs
+        """
+        
+        resp = self.get_help()
+        self.assertHttpOK(resp)
+        resp = json.loads(resp.content)
+
+        resp = self.get_chp_defaults("recip_engine", True, 10000)
+        self.assertHttpOK(resp)
+        resp = json.loads(resp.content)
+    
