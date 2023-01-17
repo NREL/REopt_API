@@ -37,8 +37,8 @@ urlpatterns = [
     re_path(r'^job/inputs/?$', views.inputs),
     re_path(r'^job/outputs/?$', views.outputs),
     re_path(r'^chp_defaults/?$', views.chp_defaults),
+    re_path(r'^emissions_profile/?$', views.emissions_profile),
     re_path(r'^simulated_load/?$', views.simulated_load),
 
     re_path(r'^invalid_urdb/?$', reoviews.invalid_urdb),
-    re_path(r'^emissions_profile/?$', reoviews.emissions_profile),
 ]
