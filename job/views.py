@@ -338,10 +338,10 @@ def chp_defaults(request):
         return response
 
     except ValueError as e:
-        return JsonResponse({"Error": str(e.args[0])}, status=500)
+        return JsonResponse({"Error": str(e.args[0])}, status=400)
 
     except KeyError as e:
-        return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=400)
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -456,10 +456,10 @@ def emissions_profile(request):
         return response
 
     except KeyError as e:
-        return JsonResponse({"Error. Missing Parameter": str(e.args[0])}, status=500)
+        return JsonResponse({"Error. Missing Parameter": str(e.args[0])}, status=400)
 
     except ValueError as e:
-        return JsonResponse({"Error": str(e.args[0])}, status=500)
+        return JsonResponse({"Error": str(e.args[0])}, status=400)
 
     except Exception:
 
