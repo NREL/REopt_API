@@ -213,8 +213,7 @@ function emissions_profile(req::HTTP.Request)
     end
     if isempty(error_response)
         @info "Emissions profile determined."
-		response = data
-        return HTTP.Response(200, JSON.json(response))
+        return HTTP.Response(200, JSON.json(data))
     else
         @info "An error occured getting the emissions data"
         return HTTP.Response(500, JSON.json(error_response))
