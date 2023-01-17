@@ -205,8 +205,8 @@ function emissions_profile(req::HTTP.Request)
     error_response = Dict()
     try
 		latitude = typeof(d["latitude"]) == String ? parse(Float64, d["latitude"]) : d["latitude"]
-		longtiude = typeof(d["longtiude"]) == String ? parse(Float64, d["longtiude"]) : d["longtiude"]
-        data = reoptjl.emissions_profiles(;latitude=latitude, longtiude=longtiude, time_steps_per_hour=1)
+		longitude = typeof(d["longitude"]) == String ? parse(Float64, d["longitude"]) : d["longitude"]
+        data = reoptjl.emissions_profiles(;latitude=latitude, longitude=longitude, time_steps_per_hour=1)
     catch e
         @error "Something went wrong getting the emissions data" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)

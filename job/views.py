@@ -440,7 +440,7 @@ def emissions_profile(request):
     try:
         inputs = {
             "latitude": request.GET['latitude'], # need to do float() to convert unicode?
-            "longitude": request.GET['latitude']
+            "longitude": request.GET['longitude']
         }
         julia_host = os.environ.get(
             'JULIA_HOST', 
