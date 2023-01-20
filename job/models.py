@@ -873,10 +873,6 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Up-front capital costs for all technologies, in present value, excluding replacement costs, including incentives."
     )
-    replacement_costs = models.FloatField(
-        null=True, blank=True,
-        help_text="Net replacement costs for all technologies, in future value, excluding incentives."
-    )
     om_and_replacement_present_cost_after_tax = models.FloatField(
         null=True, blank=True,
         help_text="Net O&M and replacement costs in present value, after-tax."
