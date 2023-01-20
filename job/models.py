@@ -4214,7 +4214,7 @@ class ExistingBoilerInputs(BaseModel, models.Model):
     ))
 
     '''
-    This field is populated based on heating loads provided via domestic hot water loads. TODO test with flexibleHVAC
+    This field is populated based on heating loads provided via domestic hot water and space heating loads. TODO test with flexibleHVAC
     max_heat_demand_kw = models.FloatField(
         validators=[
             MinValueValidator(0),
