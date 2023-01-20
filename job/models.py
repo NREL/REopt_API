@@ -881,10 +881,6 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Net O&M and replacement costs in present value, after-tax."
     )
-    lifecycle_om_costs_after_tax = models.FloatField(
-        null=True, blank=True,
-        help_text="Life cycle operations and maintenance cost over analysis period after tax."
-    )
     year_one_om_costs_after_tax = models.FloatField(
         null=True, blank=True,
         help_text="Year one operations and maintenance cost after tax."
