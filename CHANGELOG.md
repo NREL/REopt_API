@@ -28,12 +28,17 @@ Classify the change according to the following categories:
 
 ## Develop - 2023-01-10
  ### Changed
- - In `reo/nested_inputs.py` v2 inputs (defaults_dict[2]), updated the following default values:
+ - In `reo/nested_inputs.py` v2 inputs (`defaults_dict[2]`), updated the following default values:
    - PV, Wind, Storage, CHP, GHP: **federal_itc_pct** to 0.30 (30%)
-   - Storage: ***macrs_options_years** to 5 years
-   - PV, Wind: ***macrs_bonus_pct** to 0.8 (80%) 
-## Develop - 2022-12-28
-## Develop - 2022-01-11
+   - PV, Wind, Storage, CHP, GHP: ***macrs_bonus_pct** to 0.8 (80%) 
+## v2.7.1
+### Minor Updates
+### Added 
+ - In job/ app (v3): Added **addressable_load_fraction** to SpaceHeatingLoad and DomesticHotWaterLoad inputs. 
+### Changed
+ - Changed redis service memory settings to mitigate "out of memory" OOM issue we've been getting on production
+ 
+## v2.7.0
 ### Minor Updates
  ### Changed
  - In job/ app (v3): Name changes for many outputs/results. Generally, changes are for energy outputs (not costs) that include "year_one", and are changed to annual_ for scalars and to production_to_, thermal_to_ etc. for time series.
