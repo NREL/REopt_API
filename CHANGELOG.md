@@ -27,10 +27,13 @@ Classify the change according to the following categories:
     ### Patches
 
 ## Develop - 2023-01-10
- ### Changed
+ ##### Changed
  - In `reo/nested_inputs.py` v2 inputs (`defaults_dict[2]`), updated the following default values:
    - PV, Wind, Storage, CHP, GHP: **federal_itc_pct** to 0.30 (30%)
-   - PV, Wind, Storage, CHP, GHP: ***macrs_bonus_pct** to 0.8 (80%) 
+   - PV, Wind, Storage, CHP, GHP: ***macrs_bonus_pct** to 0.8 (80%)
+##### Removed 
+- From v3 (models.py), removed duplicate output Financial **lifecycle_om_costs_after_tax** and un-used output Financial **replacement_costs**
+
 ## v2.7.1
 ### Minor Updates
 ### Added 
