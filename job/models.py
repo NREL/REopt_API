@@ -1368,7 +1368,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
     blended_annual_demand_rate = models.FloatField(
         blank=True,
         null=True,
-        help_text="Average monthly demand charge [$ per kW per month]. Rate will be applied to monthly peak demand."
+        help_text="Average monthly demand charge ($ per kW per month). Rate will be applied to monthly peak demand."
     )
     blended_annual_energy_rate = models.FloatField(
         blank=True,
