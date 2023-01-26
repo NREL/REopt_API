@@ -166,6 +166,10 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
             "ColdThermalStorage":{
                 "min_gal":2500,
                 "max_gal":2500
+            },
+            "AbsorptionChiller":{
+                "min_ton":10,
+                "max_ton":10
             }
         }
 
@@ -186,6 +190,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         self.assertIn("HeatingLoad", list(results.keys()))
         self.assertIn("HotThermalStorage", list(results.keys()))
         self.assertIn("ColdThermalStorage", list(results.keys()))
+        self.assertIn("AbsorptionChiller", list(results.keys()))
 
 
     def test_chp_defaults_from_julia(self):
