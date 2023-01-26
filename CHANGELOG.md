@@ -31,11 +31,16 @@ Classify the change according to the following categories:
 ### Minor Updates
 #### Added 
  - added `scalar_to_array` function to convert scalar user input to single element arrays and used it on generator inputs in **ERPInputs** `clean` function
+#### Changed
+ - let generator inputs in **ERPInputs** be arrays, which enables running ERP with multiple generator types
+ - changed `scalar_to_vector` helper function to `scalar_or_monthly_to_8760`
+
+## v2.7.1
+### Minor Updates
+#### Added 
  - In job/ app (v3): Added **addressable_load_fraction** to SpaceHeatingLoad and DomesticHotWaterLoad inputs. 
 #### Changed
  - Changed redis service memory settings to mitigate "out of memory" OOM issue we've been getting on production
- - let generator inputs in **ERPInputs** be arrays, which enables running ERP with multiple generator types
- - changed `scalar_to_vector` helper function to `scalar_or_monthly_to_8760`
 
 ## v2.7.0
 ### Minor Updates
