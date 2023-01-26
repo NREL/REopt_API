@@ -5459,6 +5459,113 @@ class CoolingLoadOutputs(BaseModel, models.Model):
     def clean(self):
         pass
 
+class AbsorptionChillerInputs(BaseModel, models.Model):
+    key = "AbsorptionChiller"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="AbsorptionChillerInputs",
+        primary_key=True
+    )
+
+    PRODUCTION_TYPE = models.TextChoices('PRODUCTION_TYPE', (
+        'steam',
+        'hot_water'
+    ))
+
+    thermal_consumption_hot_water_or_steam = models.TextField(
+        blank=True,
+        null=False,
+        choices=PRODUCTION_TYPE.choices,
+        help_text="Boiler thermal production type, hot water or steam"
+    )
+
+    installed_cost_per_ton = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        help_text=("Thermal power-based cost of absorption chiller [$/ton] (3.5 ton to 1 kWt)")
+    )
+    
+    min_ton = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default = 0.0,
+        help_text=("Minimum thermal power size constraint for optimization [ton]")
+    )
+
+    max_ton = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default = MAX_BIG_NUMBER,
+        help_text=("Maximum thermal power size constraint for optimization [ton]")
+    )
+
+    cop_thermal = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        help_text=("Absorption chiller system coefficient of performance - conversion of hot thermal power input "
+                    "to usable cooling thermal energy output")
+    )
+
+    cop_electric = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default=14.1,
+        help_text=("Absorption chiller electric consumption CoP from cooling tower heat rejection - conversion of electric power input "
+                    "to usable cooling thermal energy output")
+    )
+
+    om_cost_per_ton = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        help_text=("Yearly fixed O&M cost [$/ton]")
+    )
+
+    macrs_option_years = models.IntegerField(
+        default=MACRS_YEARS_CHOICES.ZERO,
+        choices=MACRS_YEARS_CHOICES.choices,
+        blank=True,
+        help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
+    )
+
+    macrs_bonus_fraction = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
+    )
+
+    
+
+
 class AbsorptionChillerOutputs(BaseModel, models.Model):
     key = "AbsorptionChiller"
 
