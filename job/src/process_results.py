@@ -29,7 +29,8 @@
 # *********************************************************************************
 from job.models import REoptjlMessageOutputs, FinancialOutputs, APIMeta, PVOutputs, ElectricStorageOutputs, ElectricTariffOutputs, SiteOutputs,\
     ElectricUtilityOutputs, GeneratorOutputs, ElectricLoadOutputs, WindOutputs, FinancialInputs, ElectricUtilityInputs, ExistingBoilerOutputs,\
-    CHPInputs, CHPOutputs, ExistingChillerOutputs, CoolingLoadOutputs, HeatingLoadOutputs, HotThermalStorageOutputs, ColdThermalStorageOutputs
+    CHPInputs, CHPOutputs, ExistingChillerOutputs, CoolingLoadOutputs, HeatingLoadOutputs, HotThermalStorageOutputs, ColdThermalStorageOutputs,\
+    AbsorptionChillerOutputs
 import logging
 log = logging.getLogger(__name__)
 import sys
@@ -82,6 +83,8 @@ def process_results(results: dict, run_uuid: str) -> None:
             CoolingLoadOutputs.create(meta=meta, **results["CoolingLoad"]).save()
         if "CHP" in results.keys():
             CHPOutputs.create(meta=meta, **results["CHP"]).save()
+        if "AbsorptionChiller" in results.keys():
+            AbsorptionChillerOutputs.create(meta=meta, **results["AbsorptionChiller"]).save()
         # TODO process rest of results
 
 def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
