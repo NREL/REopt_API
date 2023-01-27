@@ -357,6 +357,36 @@ def chp_defaults(request):
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in chp_defaults endpoint. Check log for more."}, status=500)
 
+def absorption_chiller_defaults(request):
+    inputs = {
+        "thermal_consumption_hot_water_or_steam": request.GET.get("thermal_consumption_hot_water_or_steam"), 
+        "chp_prime_mover": request.GET.get("chp_prime_mover"),
+        "boiler_type": request.GET.get("boiler_type"),
+        "load_max_tons": request.GET.get("load_max_tons"),
+        "existing_boiler_production_type": request.GET.get("existing_boiler_production_type")
+    }
+    try:
+        julia_host = os.environ.get('JULIA_HOST', "julia")
+        http_jl_response = requests.get("http://" + julia_host + ":8081/absorption_chiller_defaults/", json=inputs)
+        response = JsonResponse(
+            http_jl_response.json()
+        )
+        return response
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected error in absorption_chiller_defaults endpoint. Check log for more."}, status=500)
+
+
 def simulated_load(request):
     try:
         valid_keys = ["doe_reference_name","latitude","longitude","load_type","percent_share","annual_kwh",
