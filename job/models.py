@@ -5563,6 +5563,9 @@ class AbsorptionChillerInputs(BaseModel, models.Model):
         help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
     )
 
+    def clean(self):
+        pass
+
     
 
 
