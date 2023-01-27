@@ -2659,7 +2659,8 @@ defaults_dict = {
             "default": 35.0
           },
           "federal_itc_pct": {
-            "default": 0.3
+            "default": 0.123,
+            "description": "Default set based on size class according to ITC"
           },
           "macrs_bonus_pct": {
             "default": 0.8
