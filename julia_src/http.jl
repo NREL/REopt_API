@@ -198,6 +198,48 @@ function chp_defaults(req::HTTP.Request)
     end
 end
 
+function absorption_chiller_defaults(req::HTTP.Request)
+	d = JSON.parse(String(req.body))
+    keys = ["thermal_consumption_hot_water_or_steam", 
+            "chp_prime_mover",
+            "boiler_type",
+            "load_max_tons"]
+    # Process .json inputs and convert to correct type if needed
+    for k in keys
+        if !haskey(d, k)
+            d[k] = nothing
+        elseif !isnothing(d[k])
+            if k in ["load_max_tons"] && typeof(d[k]) == String
+                d[k] = parse(Float64, d[k])
+            elseif typeof(d[k]) != String
+                d[k] = parse(String, d[k])
+            end
+        end
+    end
+
+    @info "Getting AbsorptionChiller defaults..."
+    data = Dict()
+    error_response = Dict()
+    try
+        data = reoptjl.get_absorption_chiller_defaults(;
+			thermal_consumption_hot_water_or_steam=d["thermal_consumption_hot_water_or_steam"],
+			chp_prime_mover=d["chp_prime_mover"],
+			boiler_type=d["boiler_type"],
+			load_max_tons=d["load_max_tons"])
+    catch e
+        @error "Something went wrong in the absorption_chiller_defaults" exception=(e, catch_backtrace())
+        error_response["error"] = sprint(showerror, e)
+    end
+    if isempty(error_response)
+        @info "AbsorptionChiller defaults determined."
+		response = data
+        return HTTP.Response(200, JSON.json(response))
+    else
+        @info "An error occured in the absorption_chiller_defaults endpoint"
+        return HTTP.Response(500, JSON.json(error_response))
+    end
+end
+
 function simulated_load(req::HTTP.Request)
     d = JSON.parse(String(req.body))
 
