@@ -26,7 +26,8 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop - 2023-01-10
+## v2.8.0
+### Minor Updates
  ##### Changed
  - In `reo/nested_inputs.py` v2 inputs (`defaults_dict[2]`), updated the following default values:
    - PV, Wind, Storage, CHP, GHP: **federal_itc_pct** to 0.30 (30%)
