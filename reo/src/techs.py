@@ -205,8 +205,8 @@ class Wind(Tech):
         2: {
             'residential': 0.3,
             'commercial': 0.3,
-            'medium': 0,
-            'large': 0,
+            'medium': 0.3,
+            'large': 0.3,
         }
     }
 
