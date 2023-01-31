@@ -32,12 +32,9 @@ Classify the change according to the following categories:
  - In `reo/nested_inputs.py` v2 inputs (`defaults_dict[2]`), updated the following default values:
    - PV, Wind, Storage, CHP, GHP: **federal_itc_pct** to 0.30 (30%)
    - PV, Wind, Storage, CHP, GHP: ***macrs_bonus_pct** to 0.8 (80%)
+- The `ghpghx` app and Julia endpoint in `http.jl` uses the [GhpGhx.jl](https://github.com/NREL/GhpGhx.jl) Julia package instead of internal Julia scripts with git submodule for the `tess.so` file
 ##### Removed 
 - From v3 (models.py), removed duplicate output Financial **lifecycle_om_costs_after_tax** and un-used output Financial **replacement_costs**
-## Develop 2023-01-31
-### Minor Updates
-#### Changed
-- The `ghpghx` app and Julia endpoint in `http.jl` uses the [GhpGhx.jl](https://github.com/NREL/GhpGhx.jl) Julia package instead of internal Julia scripts with git submodule for the `tess.so` file
 
 ## v2.7.1
 ### Minor Updates
