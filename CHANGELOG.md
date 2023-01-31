@@ -33,6 +33,10 @@ Classify the change according to the following categories:
    - PV, Wind, Storage, CHP, GHP: ***macrs_bonus_pct** to 0.8 (80%)
 ##### Removed 
 - From v3 (models.py), removed duplicate output Financial **lifecycle_om_costs_after_tax** and un-used output Financial **replacement_costs**
+## Develop 2023-01-31
+### Minor Updates
+#### Changed
+- The `ghpghx` app and Julia endpoint in `http.jl` uses the [GhpGhx.jl](https://github.com/NREL/GhpGhx.jl) Julia package instead of internal Julia scripts with git submodule for the `tess.so` file
 
 ## v2.7.1
 ### Minor Updates
@@ -53,7 +57,6 @@ Classify the change according to the following categories:
 #### Fixed
 - In job/views for `/simulated_load` endpoint: Fixed the data type conversion issues between JSON and Julia
   
-
 ## v2.6.0
 ### Minor Updates
 #### Added
