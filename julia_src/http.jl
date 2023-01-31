@@ -63,41 +63,55 @@ function reopt(req::HTTP.Request)
 			)
 		)
 	end
-    @info "Starting REopt..."
+	@info "Starting REopt..."
     error_response = Dict()
     results = Dict()
 	inputs_with_defaults_set_in_julia = Dict()
-    try
+	model_inputs = nothing
+	# Catch handled/unhandled exceptions in data pre-processing, JuMP setup
+	try
 		model_inputs = reoptjl.REoptInputs(d)
-        results = reoptjl.run_reopt(ms, model_inputs)
-		inputs_with_defaults_from_easiur = [
-			:NOx_grid_cost_per_tonne, :SO2_grid_cost_per_tonne, :PM25_grid_cost_per_tonne, 
-			:NOx_onsite_fuelburn_cost_per_tonne, :SO2_onsite_fuelburn_cost_per_tonne, :PM25_onsite_fuelburn_cost_per_tonne,
-			:NOx_cost_escalation_rate_fraction, :SO2_cost_escalation_rate_fraction, :PM25_cost_escalation_rate_fraction
-		]
-		inputs_with_defaults_from_avert = [
-			:emissions_factor_series_lb_CO2_per_kwh, :emissions_factor_series_lb_NOx_per_kwh,
-			:emissions_factor_series_lb_SO2_per_kwh, :emissions_factor_series_lb_PM25_per_kwh
-		]
-        if haskey(d, "CHP")
-            inputs_with_defaults_from_chp = [
-                :installed_cost_per_kw, :tech_sizes_for_cost_curve, :om_cost_per_kwh, 
-                :electric_efficiency_full_load, :thermal_efficiency_full_load, :min_allowable_kw,
-                :cooling_thermal_factor, :min_turn_down_fraction, :unavailability_periods
-            ]
-            chp_dict = Dict(key=>getfield(model_inputs.s.chp, key) for key in inputs_with_defaults_from_chp)
-        else
-            chp_dict = Dict()
-        end
-		inputs_with_defaults_set_in_julia = Dict(
-			"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_easiur),
-			"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert),
-            "CHP" => chp_dict
-		)
-    catch e
-        @error "Something went wrong in the Julia code!" exception=(e, catch_backtrace())
+	catch e
+		@error "Something went wrong during REopt inputs processing!" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
-    end
+	end
+	
+	if isa(model_inputs, Dict) && model_inputs["status"] == "error"
+		results = model_inputs
+	else
+		# Catch handled/unhandled exceptions in optimization
+		try
+			results = reoptjl.run_reopt(ms, model_inputs)
+			inputs_with_defaults_from_easiur = [
+				:NOx_grid_cost_per_tonne, :SO2_grid_cost_per_tonne, :PM25_grid_cost_per_tonne, 
+				:NOx_onsite_fuelburn_cost_per_tonne, :SO2_onsite_fuelburn_cost_per_tonne, :PM25_onsite_fuelburn_cost_per_tonne,
+				:NOx_cost_escalation_rate_fraction, :SO2_cost_escalation_rate_fraction, :PM25_cost_escalation_rate_fraction
+			]
+			inputs_with_defaults_from_avert = [
+				:emissions_factor_series_lb_CO2_per_kwh, :emissions_factor_series_lb_NOx_per_kwh,
+				:emissions_factor_series_lb_SO2_per_kwh, :emissions_factor_series_lb_PM25_per_kwh
+			]
+            if haskey(d, "CHP")
+                inputs_with_defaults_from_chp = [
+                    :installed_cost_per_kw, :tech_sizes_for_cost_curve, :om_cost_per_kwh, 
+                    :electric_efficiency_full_load, :thermal_efficiency_full_load, :min_allowable_kw,
+                    :cooling_thermal_factor, :min_turn_down_fraction, :unavailability_periods
+                ]
+                chp_dict = Dict(key=>getfield(model_inputs.s.chp, key) for key in inputs_with_defaults_from_chp)
+            else
+                chp_dict = Dict()
+            end
+			inputs_with_defaults_set_in_julia = Dict(
+				"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_easiur),
+				"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert),
+                "CHP" => chp_dict
+			)            
+		catch e
+			@error "Something went wrong in REopt optimization!" exception=(e, catch_backtrace())
+			error_response["error"] = sprint(showerror, e) # append instead of rewrite?
+		end
+	end
+    
 	if typeof(ms) <: AbstractArray
 		finalize(backend(ms[1]))
 		finalize(backend(ms[2]))
@@ -105,18 +119,30 @@ function reopt(req::HTTP.Request)
 		finalize(backend(ms))
 	end
     GC.gc()
+
     if isempty(error_response)
         @info "REopt model solved with status $(results["status"])."
-		response = Dict(
-			"results" => results,
-			"inputs_with_defaults_set_in_julia" => inputs_with_defaults_set_in_julia
-		)
-        return HTTP.Response(200, JSON.json(response))
+		if results["status"] == "error"
+			response = Dict(
+				"results" => results
+			)
+			if !isempty(inputs_with_defaults_set_in_julia)
+				response["inputs_with_defaults_set_in_julia"] = inputs_with_defaults_set_in_julia
+			end
+			return HTTP.Response(400, JSON.json(response))
+		else
+			response = Dict(
+				"results" => results,
+				"inputs_with_defaults_set_in_julia" => inputs_with_defaults_set_in_julia
+			)
+			return HTTP.Response(200, JSON.json(response))
+		end
     else
         @info "An error occured in the Julia code."
         return HTTP.Response(500, JSON.json(error_response))
     end
 end
+
 
 function ghpghx(req::HTTP.Request)
     inputs_dict = JSON.parse(String(req.body))
@@ -174,6 +200,17 @@ end
 
 function simulated_load(req::HTTP.Request)
     d = JSON.parse(String(req.body))
+
+    # Arrays in d are being parsed as type Vector{Any} instead of fixed type Vector{String or <:Real} without conversion
+    for key in ["doe_reference_name", "cooling_doe_ref_name"]
+        if key in keys(d) && typeof(d[key]) <: Vector{}
+            d[key] = convert(Vector{String}, d[key])
+        end
+    end
+
+    if "percent_share" in keys(d) && typeof(d["percent_share"]) <: Vector{}
+        d["percent_share"] = convert(Vector{Float64}, d["percent_share"])
+    end
 
     @info "Getting CRB Loads..."
     data = Dict()
