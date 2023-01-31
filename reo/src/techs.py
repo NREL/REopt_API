@@ -195,11 +195,19 @@ class Wind(Tech):
         }
     }
 
-    size_class_to_itc_incentives = {
-        'residential': 0.3,
-        'commercial': 0.3,
-        'medium': 0,
-        'large': 0,
+    size_class_to_itc_incentives = { # indexed on api_version number
+        1: {
+            'residential': 0.3,
+            'commercial': 0.3,
+            'medium': 0.12,
+            'large': 0.12,
+        },
+        2: {
+            'residential': 0.3,
+            'commercial': 0.3,
+            'medium': 0,
+            'large': 0,
+        }
     }
 
     def __init__(self, dfm, inputs_path, acres_per_kw=.03, time_steps_per_hour=1, api_version=1,
@@ -219,7 +227,7 @@ class Wind(Tech):
 
         # if user hasn't entered the federal itc, itc value gets assigned based on size_class
         if self.incentives.federal.itc == 0.123:
-            self.incentives.federal.itc = Wind.size_class_to_itc_incentives[kwargs.get('size_class')]
+            self.incentives.federal.itc = Wind.size_class_to_itc_incentives[api_version][kwargs.get('size_class')]
 
         # if user hasn't entered the installed cost per kw, it gets assigned based on size_class
         if kwargs.get('installed_cost_us_dollars_per_kw') == 3013:

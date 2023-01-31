@@ -995,7 +995,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e5,
-          "default": 3013.0,  # if the default value of 3013 goes in techs.py, there is a logic to assign actual default cost based on 'size_class'
+          "default": 3013.0,  # if the default value of 3013 goes in techs.py, there is a logic to assign actual default cost based on 'size_class' and api_version
           "description": "Total upfront installed costs in US dollars/kW. Determined by size_class. For the 'large' (>2MW) size_class the cost is $2,239/kW. For the 'medium commercial' size_class the cost is $2,766/kW. For the 'small commercial' size_class the cost is $4,300/kW and for the 'residential' size_class the cost is $5,675/kW "
         },
         "om_cost_us_dollars_per_kw": {
@@ -1029,7 +1029,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0,
-          "default": 0.26,
+          "default": 0.123, # if the default value of 0.123 goes in techs.py, there is logic to assign actual default itc 'size_class' and api_version
           "description": "Percent federal capital cost incentive"
         },
         "state_ibi_pct": {
@@ -2657,10 +2657,6 @@ defaults_dict = {
         "Wind": {
           "om_cost_us_dollars_per_kw": {
             "default": 35.0
-          },
-          "federal_itc_pct": {
-            "default": 0.123,
-            "description": "Default set based on size class according to ITC"
           },
           "macrs_bonus_pct": {
             "default": 0.8
