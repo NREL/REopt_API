@@ -26,6 +26,54 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v2.7.1
+### Minor Updates
+### Added 
+ - In job/ app (v3): Added **addressable_load_fraction** to SpaceHeatingLoad and DomesticHotWaterLoad inputs. 
+### Changed
+ - Changed redis service memory settings to mitigate "out of memory" OOM issue we've been getting on production
+ 
+## v2.7.0
+### Minor Updates
+ ### Changed
+ - In job/ app (v3): Name changes for many outputs/results. Generally, changes are for energy outputs (not costs) that include "year_one", and are changed to annual_ for scalars and to production_to_, thermal_to_ etc. for time series.
+ - In job/ app (v3): Changed some _bau outputs to align with REopt.jl outputs
+ ### Added 
+ - In job/ app (v3): Added **thermal_production_series_mmbtu_per_hour** to CHP results.
+##### Removed
+- In job/ app (v3): Removed outputs not reported by REopt.jl
+#### Fixed
+- In job/views for `/simulated_load` endpoint: Fixed the data type conversion issues between JSON and Julia
+  
+
+## v2.6.0
+### Minor Updates
+#### Added
+1. **REoptjlMessageOutputs** model to capture errors and warnings returned by REoptjl during input processing and post optimization
+2. Missing output fields for **ExistingBoilerOutputs** model
+3. API test `job\test\posts\all_inputs_test.json` to include all input models in a single API test
+- added **HotThermalStorageInputs** model
+- added **HotThermalStorageOutputs** model
+- added **ColdThermalStorageInputs** model
+- added **ColdThermalStorageOutputs** model
+- add **HotThermalStorageOutputs**
+- add **ColdThermalStorageOutputs**
+- `0012_coldthermalstorageinputs....` file used to add new models to the db
+
+#### Changed
+1. Default values for the following fields were changed to align them with REopt API v2 (i.e. stable, and REopt.jl) defaults. As-is, these values are aligned with REopt v1 defaults. Units were unchanged.
+- **FinancialInputs.elec_cost_escalation_rate_fraction** from 0.023 to 0.019
+- **FinancialInputs.offtaker_discount_rate_fraction** from 0.083 to 0.0564
+- **FinancialInputs.owner_discount_rate_fraction** from 0.083 to 0.0564
+- **PVInputs.installed_cost_per_kw** from 1600 to 1592
+- **PVInputs.om_cost_per_kw** from 16 to 17
+- **WindInputs.om_cost_per_kw** from 16 to 35
+- **ElectricStorageInputs.installed_cost_per_kw** from 840 to 775
+- **ElectricStorageInputs.installed_cost_per_kwh** from 420 to 388
+- **ElectricStorageInputs.replace_cost_per_kw** from 410 to 440
+- **ElectricStorageInputs.replace_cost_per_kwh** from 200 to 220
+2. Modified `julia_src\http.jl` and `julia_src\cbc\http.jl` to return status 400 when REopt responds with an error
+3. Updated `r["Messages"]` in `views.py` to include **REoptjlMessageOutputs** errors and warnings
 
 ## v2.5.0
 ### Minor Updates
@@ -63,6 +111,7 @@ In `job/views.py`:
 ### Minor Updates
 ##### Fixed
 Lookback charge parameters expected from the URDB API call were changed to the non-caplitalized format, so they are now used properly.
+
 ## v2.3.0
 ##### Changed
 The following name changes were made in the `job/` endpoint and `julia_src/http.jl`: 
@@ -72,6 +121,7 @@ The following name changes were made in the `job/` endpoint and `julia_src/http.
  - Updated the version of REopt.jl in /julia_src to v0.20.0 which includes the addition of:
    - Boiler tech from the REopt_API (known as NewBoiler in API)
    - SteamTurbine tech from the REopt_API 
+
 ## v2.2.0
 ### Minor Updates 
 ##### Fixed
@@ -114,6 +164,7 @@ The following name changes were made in the `job/` endpoint and `julia_src/http.
 - **FinancialOutputs**
     - add `breakeven_cost_of_emissions_reduction_per_tonnes_CO2`
 In `job/process_results.py`: 
+- add **HotThermalStorageOutputs**
 - add **ExistingBoilerOutputs**
 In `job/test/test_job_endpoint.py`: 
 - test that AVERT and EASIUR defaults for emissions inputs not provided by user are passed back from REopt.jl and saved in database
