@@ -197,6 +197,9 @@ class InputValidatorTests(TestCase):
         self.assertAlmostEqual(validator.models["ExistingBoiler"].emissions_factor_lb_CO2_per_mmbtu, 117, places=-1)
         self.assertAlmostEqual(len(validator.models["ExistingBoiler"].fuel_cost_per_mmbtu), 8760)
         self.assertAlmostEqual(sum(validator.models["ExistingBoiler"].fuel_cost_per_mmbtu), 8760*0.5)
+        
+        # Ensure Hot Thermal Storage System parameter is loaded from json
+        self.assertAlmostEqual(validator.models["HotThermalStorage"].max_gal, 2500.0)
 
         # Validate 12 month fuel cost vector gets scaled correctly
 
