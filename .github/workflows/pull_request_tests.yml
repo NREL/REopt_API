@@ -17,11 +17,7 @@ jobs:
     runs-on: ubuntu-18.04
 
     steps:
-      - uses: actions/checkout@v2    
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          token: ${{ secrets.SUBMODULE_GHX_PULL_KEY }}
-          submodules: recursive            
+      - uses: actions/checkout@v2      
       - name: Decrypt
         env:
           TRANSCRYPT_PASSWORD: ${{ secrets.TRANSCRYPT_PASSWORD }}
