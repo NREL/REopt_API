@@ -40,7 +40,7 @@ from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, Ge
     ElectricLoadOutputs, ExistingBoilerOutputs, DomesticHotWaterLoadInputs, SiteInputs, SiteOutputs, APIMeta, \
     UserProvidedMeta, CHPInputs, CHPOutputs, CoolingLoadInputs, ExistingChillerInputs, ExistingChillerOutputs,\
     CoolingLoadOutputs, HeatingLoadOutputs, REoptjlMessageOutputs, HotThermalStorageInputs, HotThermalStorageOutputs,\
-    ColdThermalStorageInputs, ColdThermalStorageOutputs
+    ColdThermalStorageInputs, ColdThermalStorageOutputs, GHPInputs, GHPOutputs
 import os
 import requests
 import logging
@@ -78,6 +78,7 @@ def help(request):
         d["DomesticHotWaterLoad"] = DomesticHotWaterLoadInputs.info_dict(DomesticHotWaterLoadInputs)
         d["Site"] = SiteInputs.info_dict(SiteInputs)
         d["CHP"] = CHPInputs.info_dict(CHPInputs)
+        d["GHP"] = GHPInputs.info_dict(GHPInputs)
         return JsonResponse(d)
 
     except Exception as e:
@@ -120,6 +121,7 @@ def outputs(request):
         d["HeatingLoad"] = HeatingLoadOutputs.info_dict(HeatingLoadOutputs)
         d["CoolingLoad"] = CoolingLoadOutputs.info_dict(CoolingLoadOutputs)
         d["CHP"] = CHPOutputs.info_dict(CHPOutputs)
+        d["GHP"] = GHPOutputs.info_dict(GHPOutputs)
         d["Messages"] = REoptjlMessageOutputs.info_dict(REoptjlMessageOutputs)
         return JsonResponse(d)
 
@@ -233,6 +235,9 @@ def results(request, run_uuid):
     try: r["inputs"]["CHP"] = meta.CHPInputs.dict
     except: pass
 
+    try: r["inputs"]["GHP"] = meta.GHPInputs.dict
+    except: pass    
+
     try:
         r["outputs"] = dict()
         r["messages"] = dict()
@@ -296,6 +301,8 @@ def results(request, run_uuid):
         except: pass
         try: r["outputs"]["CoolingLoad"] = meta.CoolingLoadOutputs.dict
         except: pass
+        try: r["outputs"]["GHP"] = meta.GHPOutputs.dict
+        except: pass        
 
         for d in r["outputs"].values():
             if isinstance(d, dict):
