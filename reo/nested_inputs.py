@@ -2652,7 +2652,7 @@ defaults_dict = {
           },
           "macrs_bonus_pct": {
             "default": 0.8
-          }
+          } 
         },
         "Wind": {
           "om_cost_us_dollars_per_kw": {
