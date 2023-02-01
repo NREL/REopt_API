@@ -31,7 +31,7 @@ import logging
 import pandas as pd
 from job.models import MAX_BIG_NUMBER, APIMeta, ExistingBoilerInputs, UserProvidedMeta, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
     FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs, SpaceHeatingLoadInputs, \
-    DomesticHotWaterLoadInputs, CHPInputs, CoolingLoadInputs, ExistingChillerInputs, HotThermalStorageInputs, ColdThermalStorageInputs
+    DomesticHotWaterLoadInputs, CHPInputs, CoolingLoadInputs, ExistingChillerInputs, HotThermalStorageInputs, ColdThermalStorageInputs, GHPInputs
 from django.core.exceptions import ValidationError
 from pyproj import Proj
 from typing import Tuple
@@ -63,7 +63,7 @@ def scrub_fields(obj: BaseModel, raw_fields: dict):
 
 class InputValidator(object):
 
-    def __init__(self, raw_inputs: dict):
+    def __init__(self, raw_inputs: dict, ghpghx_inputs_validation_errors=None):
         """
         Validate user inputs
         Used in job/api.py to:
@@ -80,6 +80,7 @@ class InputValidator(object):
         # TODO figure out how to align with MessagesModel from v1 with validation errors, resampling messages, etc.
         self.validation_errors = dict()
         self.resampling_messages = dict()
+        self.ghpghx_inputs_errors = ghpghx_inputs_validation_errors
         self.models = dict()
         self.objects = (
             APIMeta,
@@ -101,7 +102,8 @@ class InputValidator(object):
             DomesticHotWaterLoadInputs,
             CHPInputs,
             HotThermalStorageInputs,
-            ColdThermalStorageInputs
+            ColdThermalStorageInputs,
+            GHPInputs
         )
         self.pvnames = []
         on_grid_required_object_names = [
