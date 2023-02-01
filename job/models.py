@@ -5459,6 +5459,180 @@ class CoolingLoadOutputs(BaseModel, models.Model):
     def clean(self):
         pass
 
+class GHPInputs(BaseModel, models.Model):
+    key = "GHP"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="GHPInputs",
+        primary_key=True
+    )
+
+    require_ghp_purchase = models.BooleanField(
+        default=False,
+        blank=True,
+        null=True,
+        help_text="Force one of the considered GHP design options."
+    )
+
+    installed_cost_heatpump_us_dollars_per_ton = models.FloatField(
+        default=1075.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e5)
+        ],
+        blank=True,
+        null=True,
+        help_text="Installed heating heat pump cost in $/ton (based on peak coincident cooling+heating thermal load)"
+    )
+
+    heatpump_capacity_sizing_factor_on_peak_load = models.FloatField(
+        default=1.1,
+        validators=[
+            MinValueValidator(1.0),
+            MaxValueValidator(5.0)
+        ],
+        blank=True,
+        null=True,
+        help_text="Factor on peak heating and cooling load served by GHP used for determining GHP installed capacity"
+    )    
+
+    installed_cost_ghx_us_dollars_per_ft = models.FloatField(
+        default=14.0,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(100.0)
+        ],
+        blank=True,
+        null=True,
+        help_text="Installed cost of the ground heat exchanger (GHX) in $/ft of vertical piping"
+    ) 
+
+    installed_cost_building_hydronic_loop_us_dollars_per_sqft = models.FloatField(
+        default=1.70,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(100.0)
+        ],
+        blank=True,
+        null=True,
+        help_text="Installed cost of the building hydronic loop per floor space of the site"
+    ) 
+
+    om_cost_us_dollars_per_sqft_year = models.FloatField(
+        default=-0.51,
+        validators=[
+            MinValueValidator(-100.0),
+            MaxValueValidator(100.0)
+        ],
+        blank=True,
+        null=True,
+        help_text="Annual GHP incremental operations and maintenance costs in $/ft^2-building/year"
+    ) 
+
+    # REQUIRED FOR GHP
+    building_sqft = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        help_text="Building square footage for GHP/HVAC cost calculations"
+    ) 
+
+    space_heating_efficiency_thermal_factor = models.FloatField(
+        validators=[
+            MinValueValidator(0.001),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        null=True,
+        help_text="Heating efficiency factor (annual average) to account for reduced space heating thermal load from GHP retrofit (e.g. reduced reheat)"
+    )    
+
+    cooling_efficiency_thermal_factor = models.FloatField(
+        validators=[
+            MinValueValidator(0.001),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        null=True,
+        help_text="Cooling efficiency factor (annual average) to account for reduced cooling thermal load from GHP retrofit (e.g. reduced reheat)"
+    )
+
+    ghpghx_inputs = ArrayField(
+        PickledObjectField(
+            null=True,
+            editable=True
+        ),
+        default=list, blank=True, null=True,
+        help_text=("GhpGhx.jl inputs/POST to ghpghx app")
+    )
+
+    ghpghx_response_uuids = ArrayField(
+        models.TextField(
+            blank=True
+        ),
+        default=list, blank=True, null=True,
+        help_text=("List of ghp_uuid's (like run_uuid for REopt) from ghpghx app, used to get GhpGhx.jl run data")    
+    )
+
+    ghpghx_responses = ArrayField(
+        PickledObjectField(
+            null=True,
+            editable=True
+        ),
+        default=list, blank=True, null=True,
+        help_text=("ghpghx app response(s) to re-use a previous GhpGhx.jl run without relying on a database entry")
+    )
+
+    can_serve_dhw = models.BooleanField(
+        default=False,
+        null=True,        
+        blank=True,
+        help_text="If GHP can serve the domestic hot water (DHW) portion of the heating load"
+    )
+
+    # TODO Add incentives
+
+    # macrs_option_years = models.IntegerField(null=True, blank=True)
+    # macrs_bonus_fraction = models.FloatField(null=True, blank=True)
+    # macrs_itc_reduction = models.FloatField(null=True, blank=True)
+    # federal_itc_fraction = models.FloatField(null=True, blank=True)
+    # state_ibi_fraction = models.FloatField(null=True, blank=True)
+    # state_ibi_max_us_dollars = models.FloatField(null=True, blank=True)
+    # utility_ibi_fraction = models.FloatField(null=True, blank=True)
+    # utility_ibi_max_us_dollars = models.FloatField(null=True, blank=True)
+    # federal_rebate_us_dollars_per_ton = models.FloatField(null=True, blank=True)
+    # state_rebate_us_dollars_per_ton = models.FloatField(null=True, blank=True)
+    # state_rebate_max_us_dollars = models.FloatField(null=True, blank=True)
+    # utility_rebate_us_dollars_per_ton = models.FloatField(null=True, blank=True)
+    # utility_rebate_max_us_dollars = models.FloatField(null=True, blank=True)
+
+    def clean(self):
+        # perform custom validation here.
+        pass
+
+class GHPOutputs(BaseModel, models.Model):
+    key = "GHPOutputs"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="GHPOutputs",
+        primary_key=True
+    )
+
+    # TODO may make this a UUIDField once it's actually assigned one from the ghpghx app
+    ghp_chosen_uuid = models.TextField(null=True, blank=True)
+    ghpghx_chosen_outputs = PickledObjectField(null=True, editable=True)
+    size_heat_pump_ton = models.FloatField(null=True, blank=True)  # This includes a factor on the peak coincident heating+cooling load
+    space_heating_thermal_reduction_series_mmbtu_per_hr = ArrayField(
+            models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
+    cooling_thermal_reduction_series_ton = ArrayField(
+            models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
+
+
 def get_input_dict_from_run_uuid(run_uuid:str):
     """
     Construct the input dict for REopt.run_reopt
@@ -5534,6 +5708,9 @@ def get_input_dict_from_run_uuid(run_uuid:str):
     
     try: d["CHP"] = filter_none_and_empty_array(meta.CHPInputs.dict)
     except: pass    
+
+    try: d["GHP"] = filter_none_and_empty_array(meta.GHPInputs.dict)
+    except: pass   
 
     return d
 
