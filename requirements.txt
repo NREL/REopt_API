@@ -33,7 +33,7 @@ django-tastypie==0.14.4
 docopt==0.6.2
 et-xmlfile==1.1.0
 Fiona==1.8.20
-future==0.18.2
+future==0.18.3
 geopandas==0.10.2
 gitdb==4.0.9
 GitPython==3.1.26
