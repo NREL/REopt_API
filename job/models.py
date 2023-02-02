@@ -889,6 +889,10 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Year one operations and maintenance cost before tax."
     )
+    year_one_om_costs_before_tax_bau = models.FloatField(
+        null=True, blank=True,
+        help_text="Year one operations and maintenance cost before tax in the BAU case."
+    )
     simple_payback_years = models.FloatField(
         null=True, blank=True,
         help_text=("Number of years until the cumulative annual cashflows turn positive. "
@@ -975,6 +979,10 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text=("Component of lifecycle costs (LCC). This value is the present value of all O&M costs, after tax.")
     )
+    lifecycle_om_costs_after_tax_bau = models.FloatField(
+        null=True, blank=True,
+        help_text=("BAU Component of lifecycle costs (LCC). This value is the present value of all O&M costs, after tax in the BAU case.")
+    )
     lifecycle_fuel_costs_after_tax = models.FloatField(
         null=True, blank=True,
         help_text=("Component of lifecycle costs (LCC). This value is the present value of all fuel costs over the analysis period, after tax.")
@@ -1038,7 +1046,7 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Total cost of NOx, SO2, and PM2.5 emissions associated with the site's energy consumption over the analysis period in the BAU case."
     )
-    breakeven_cost_of_emissions_reduction_per_tonnes_CO2 = models.FloatField(
+    breakeven_cost_of_emissions_reduction_per_tonne_CO2 = models.FloatField(
         null=True, blank=True,
         help_text=("Cost of emissions required to breakeven (NPV = 0) compared to the BAU case LCC."
                     "If the cost of health emissions were included in the objective function," 
