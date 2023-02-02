@@ -26,6 +26,63 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v2.8.0
+### Minor Updates
+ ##### Changed
+ - In `reo/nested_inputs.py` v2 inputs (`defaults_dict[2]`), updated the following default values:
+   - PV, Wind, Storage, CHP, GHP: **federal_itc_pct** to 0.30 (30%)
+   - PV, Wind, Storage, CHP, GHP: ***macrs_bonus_pct** to 0.8 (80%)
+- The `ghpghx` app and Julia endpoint in `http.jl` uses the [GhpGhx.jl](https://github.com/NREL/GhpGhx.jl) Julia package instead of internal Julia scripts with git submodule for the `tess.so` file
+##### Removed 
+- From v3 (models.py), removed duplicate output Financial **lifecycle_om_costs_after_tax** and un-used output Financial **replacement_costs**
+
+## v2.7.1
+### Minor Updates
+### Added 
+ - In job/ app (v3): Added **addressable_load_fraction** to SpaceHeatingLoad and DomesticHotWaterLoad inputs. 
+### Changed
+ - Changed redis service memory settings to mitigate "out of memory" OOM issue we've been getting on production
+ 
+## v2.7.0
+### Minor Updates
+ ### Changed
+ - In job/ app (v3): Name changes for many outputs/results. Generally, changes are for energy outputs (not costs) that include "year_one", and are changed to annual_ for scalars and to production_to_, thermal_to_ etc. for time series.
+ - In job/ app (v3): Changed some _bau outputs to align with REopt.jl outputs
+ ### Added 
+ - In job/ app (v3): Added **thermal_production_series_mmbtu_per_hour** to CHP results.
+##### Removed
+- In job/ app (v3): Removed outputs not reported by REopt.jl
+#### Fixed
+- In job/views for `/simulated_load` endpoint: Fixed the data type conversion issues between JSON and Julia
+  
+## v2.6.0
+### Minor Updates
+#### Added
+1. **REoptjlMessageOutputs** model to capture errors and warnings returned by REoptjl during input processing and post optimization
+2. Missing output fields for **ExistingBoilerOutputs** model
+3. API test `job\test\posts\all_inputs_test.json` to include all input models in a single API test
+- added **HotThermalStorageInputs** model
+- added **HotThermalStorageOutputs** model
+- added **ColdThermalStorageInputs** model
+- added **ColdThermalStorageOutputs** model
+- add **HotThermalStorageOutputs**
+- add **ColdThermalStorageOutputs**
+- `0012_coldthermalstorageinputs....` file used to add new models to the db
+
+#### Changed
+1. Default values for the following fields were changed to align them with REopt API v2 (i.e. stable, and REopt.jl) defaults. As-is, these values are aligned with REopt v1 defaults. Units were unchanged.
+- **FinancialInputs.elec_cost_escalation_rate_fraction** from 0.023 to 0.019
+- **FinancialInputs.offtaker_discount_rate_fraction** from 0.083 to 0.0564
+- **FinancialInputs.owner_discount_rate_fraction** from 0.083 to 0.0564
+- **PVInputs.installed_cost_per_kw** from 1600 to 1592
+- **PVInputs.om_cost_per_kw** from 16 to 17
+- **WindInputs.om_cost_per_kw** from 16 to 35
+- **ElectricStorageInputs.installed_cost_per_kw** from 840 to 775
+- **ElectricStorageInputs.installed_cost_per_kwh** from 420 to 388
+- **ElectricStorageInputs.replace_cost_per_kw** from 410 to 440
+- **ElectricStorageInputs.replace_cost_per_kwh** from 200 to 220
+2. Modified `julia_src\http.jl` and `julia_src\cbc\http.jl` to return status 400 when REopt responds with an error
+3. Updated `r["Messages"]` in `views.py` to include **REoptjlMessageOutputs** errors and warnings
 
 ## Develop 11/21/2022
 ### Minor Updates
@@ -42,23 +99,16 @@ Classify the change according to the following categories:
 ### Minor Updates
 ##### Added
 - `0011_coolingloadinputs....` file used to add new models to the db
-- `0012_coldthermalstorageinputs....` file used to add new models to the db
 In `job/models.py`:
 - added **ExistingChillerInputs** model
 - added **ExistingChillerOutputs** model
 - added **CoolingLoadInputs** model
 - added **CoolingLoadOutputs** model
 - added **HeatingLoadOutputs** model
-- added **HotThermalStorageInputs** model
-- added **HotThermalStorageOutputs** model
-- added **ColdThermalStorageInputs** model
-- added **ColdThermalStorageOutputs** model
 In `job/process_results.py`: 
 - add **ExistingChillerOutputs** 
 - add **CoolingLoadOutputs**
 - add **HeatingLoadOutputs**
-- add **HotThermalStorageOutputs**
-- add **ColdThermalStorageOutputs**
 In `job/validators.py:
 - add time series length validation on **CoolingLoadInputs->thermal_loads_ton** and **CoolingLoadInputs->per_time_step_fractions_of_electric_load**
 In `job/views.py`:
