@@ -362,8 +362,7 @@ def absorption_chiller_defaults(request):
         "thermal_consumption_hot_water_or_steam": request.GET.get("thermal_consumption_hot_water_or_steam"), 
         "chp_prime_mover": request.GET.get("chp_prime_mover"),
         "boiler_type": request.GET.get("boiler_type"),
-        "load_max_tons": request.GET.get("load_max_tons"),
-        "existing_boiler_production_type": request.GET.get("existing_boiler_production_type")
+        "load_max_tons": request.GET.get("load_max_tons")
     }
     try:
         julia_host = os.environ.get('JULIA_HOST', "julia")
