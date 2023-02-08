@@ -541,6 +541,13 @@ class InputValidator(object):
         ExistingChiller - skip, no checks
         """
 
+        """
+        GHP - just check for ghpghx_inputs errors from /ghpghx app
+        """
+        if "GHP" in self.models.keys():
+            if self.ghpghx_inputs_errors not in [None, []]:
+                self.add_validation_error("GHP", "ghpghx_inputs", str(self.ghpghx_inputs_errors))
+
     def save(self):
         """
         Save all values to database
