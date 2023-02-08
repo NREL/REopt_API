@@ -5463,7 +5463,7 @@ class GHPInputs(BaseModel, models.Model):
     key = "GHP"
 
     meta = models.OneToOneField(
-        APIMeta,
+        to=APIMeta,
         on_delete=models.CASCADE,
         related_name="GHPInputs",
         primary_key=True
@@ -5476,7 +5476,7 @@ class GHPInputs(BaseModel, models.Model):
         help_text="Force one of the considered GHP design options."
     )
 
-    installed_cost_heatpump_us_dollars_per_ton = models.FloatField(
+    installed_cost_heatpump_per_ton = models.FloatField(
         default=1075.0,
         validators=[
             MinValueValidator(0),
@@ -5498,7 +5498,7 @@ class GHPInputs(BaseModel, models.Model):
         help_text="Factor on peak heating and cooling load served by GHP used for determining GHP installed capacity"
     )    
 
-    installed_cost_ghx_us_dollars_per_ft = models.FloatField(
+    installed_cost_ghx_per_ft = models.FloatField(
         default=14.0,
         validators=[
             MinValueValidator(0.0),
@@ -5509,7 +5509,7 @@ class GHPInputs(BaseModel, models.Model):
         help_text="Installed cost of the ground heat exchanger (GHX) in $/ft of vertical piping"
     ) 
 
-    installed_cost_building_hydronic_loop_us_dollars_per_sqft = models.FloatField(
+    installed_cost_building_hydronic_loop_per_sqft = models.FloatField(
         default=1.70,
         validators=[
             MinValueValidator(0.0),
@@ -5520,7 +5520,7 @@ class GHPInputs(BaseModel, models.Model):
         help_text="Installed cost of the building hydronic loop per floor space of the site"
     ) 
 
-    om_cost_us_dollars_per_sqft_year = models.FloatField(
+    om_cost_per_sqft_year = models.FloatField(
         default=-0.51,
         validators=[
             MinValueValidator(-100.0),
@@ -5561,7 +5561,7 @@ class GHPInputs(BaseModel, models.Model):
     )
 
     ghpghx_inputs = ArrayField(
-        PickledObjectField(
+        models.JSONField(
             null=True,
             editable=True
         ),
@@ -5569,6 +5569,7 @@ class GHPInputs(BaseModel, models.Model):
         help_text=("GhpGhx.jl inputs/POST to ghpghx app")
     )
 
+    # TODO do we need this? What would it do? Need to process this into ghpghx_responses...
     ghpghx_response_uuids = ArrayField(
         models.TextField(
             blank=True
@@ -5578,7 +5579,7 @@ class GHPInputs(BaseModel, models.Model):
     )
 
     ghpghx_responses = ArrayField(
-        PickledObjectField(
+        models.JSONField(
             null=True,
             editable=True
         ),
@@ -5593,21 +5594,121 @@ class GHPInputs(BaseModel, models.Model):
         help_text="If GHP can serve the domestic hot water (DHW) portion of the heating load"
     )
 
-    # TODO Add incentives
+    macrs_option_years = models.IntegerField(
+        default=MACRS_YEARS_CHOICES.FIVE,
+        choices=MACRS_YEARS_CHOICES.choices,
+        blank=True,
+        help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
+    )
+    macrs_bonus_fraction = models.FloatField(
+        default=0.8,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
+    )
+    macrs_itc_reduction = models.FloatField(
+        default=0.5,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text="Percent of the ITC value by which depreciable basis is reduced"
+    )
+    federal_itc_fraction = models.FloatField(
+        default=0.3,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text="Percentage of capital costs that are credited towards federal taxes"
+    )
+    state_ibi_fraction = models.FloatField(
+        default=0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text="Percentage of capital costs offset by state incentives"
+    )
+    state_ibi_max = models.FloatField(
+        default=MAX_INCENTIVE,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_INCENTIVE)
+        ],
+        blank=True,
+        help_text="Maximum dollar value of state percentage-based capital cost incentive"
+    )
+    utility_ibi_fraction = models.FloatField(
+        default=0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text="Percentage of capital costs offset by utility incentives"
+    )
+    utility_ibi_max = models.FloatField(
+        default=MAX_INCENTIVE,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_INCENTIVE)
+        ],
+        blank=True,
+        help_text="Maximum dollar value of utility percentage-based capital cost incentive"
+    )
+    federal_rebate_per_ton = models.FloatField(
+        default=0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Federal rebates based on installed capacity of heat pumps"
+    )
+    state_rebate_per_ton = models.FloatField(
+        default=0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="State rebate based on installed capacity of heat pumps"
+    )
+    state_rebate_max = models.FloatField(
+        default=MAX_INCENTIVE,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_INCENTIVE)
+        ],
+        blank=True,
+        help_text="Maximum state rebate"
+    )
+    utility_rebate_per_ton = models.FloatField(
+        default=0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Utility rebate based on installed capacity of heat pumps"
+    )
+    utility_rebate_max = models.FloatField(
+        default=MAX_INCENTIVE,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_INCENTIVE)
+        ],
+        blank=True,
+        help_text="Maximum utility rebate"
+    )
 
-    # macrs_option_years = models.IntegerField(null=True, blank=True)
-    # macrs_bonus_fraction = models.FloatField(null=True, blank=True)
-    # macrs_itc_reduction = models.FloatField(null=True, blank=True)
-    # federal_itc_fraction = models.FloatField(null=True, blank=True)
-    # state_ibi_fraction = models.FloatField(null=True, blank=True)
-    # state_ibi_max_us_dollars = models.FloatField(null=True, blank=True)
-    # utility_ibi_fraction = models.FloatField(null=True, blank=True)
-    # utility_ibi_max_us_dollars = models.FloatField(null=True, blank=True)
-    # federal_rebate_us_dollars_per_ton = models.FloatField(null=True, blank=True)
-    # state_rebate_us_dollars_per_ton = models.FloatField(null=True, blank=True)
-    # state_rebate_max_us_dollars = models.FloatField(null=True, blank=True)
-    # utility_rebate_us_dollars_per_ton = models.FloatField(null=True, blank=True)
-    # utility_rebate_max_us_dollars = models.FloatField(null=True, blank=True)
 
     def clean(self):
         # perform custom validation here.
@@ -5617,19 +5718,18 @@ class GHPOutputs(BaseModel, models.Model):
     key = "GHPOutputs"
 
     meta = models.OneToOneField(
-        APIMeta,
+        to=APIMeta,
         on_delete=models.CASCADE,
         related_name="GHPOutputs",
         primary_key=True
     )
 
-    # TODO may make this a UUIDField once it's actually assigned one from the ghpghx app
-    ghp_chosen_uuid = models.TextField(null=True, blank=True)
-    ghpghx_chosen_outputs = PickledObjectField(null=True, editable=True)
+    # TODO replace PickledObjectField with JSONField, also in /ghpghx
+    ghpghx_chosen_outputs = models.JSONField(null=True, editable=True)
     size_heat_pump_ton = models.FloatField(null=True, blank=True)  # This includes a factor on the peak coincident heating+cooling load
-    space_heating_thermal_reduction_series_mmbtu_per_hr = ArrayField(
+    space_heating_thermal_load_reduction_with_ghp_mmbtu_per_hour = ArrayField(
             models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
-    cooling_thermal_reduction_series_ton = ArrayField(
+    cooling_thermal_load_reduction_with_ghp_ton = ArrayField(
             models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
 
 
