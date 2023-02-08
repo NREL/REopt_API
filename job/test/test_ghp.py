@@ -36,12 +36,16 @@ import logging
 import requests
 logging.disable(logging.CRITICAL)
 import os
+import json
+from job.models import APIMeta, GHPOutputs
 
 class TestGHP(ResourceTestCaseMixin, TestCase):    
     
     def setUp(self):
         super(TestGHP, self).setUp()
         self.test_ghpghx_post = os.path.join('ghpghx', 'tests', 'posts', 'test_ghpghx_POST.json')
+        self.ghpghx_response = os.path.join('job', 'test', 'posts', 'ghpghx_response.json')
+        self.ghp_results = os.path.join('julia_src', 'ghp_results.json')
 
     def test_ghp(self):
         """
@@ -58,7 +62,7 @@ class TestGHP(ResourceTestCaseMixin, TestCase):
                 "building_sqft": 50000.0,
                 "require_ghp_purchase": True,
                 "space_heating_efficiency_thermal_factor": 0.85,
-                "cooling_efficiency_thermal_factor": 0.6                
+                "cooling_efficiency_thermal_factor": 0.6
             },
             "ElectricLoad": {
                 "doe_reference_name": "Hospital"
@@ -77,8 +81,27 @@ class TestGHP(ResourceTestCaseMixin, TestCase):
         }
 
         ghpghx_post = json.load(open(self.test_ghpghx_post, 'rb'))
+        ghpghx_response = json.load(open(self.ghpghx_response, 'rb'))
 
         scenario["GHP"]["ghpghx_inputs"] = [ghpghx_post]
+        scenario["GHP"]["ghpghx_inputs"][0]["max_sizing_iterations"] = 1
+        scenario["GHP"]["ghpghx_responses"] = [ghpghx_response]
+        # json.dump(scenario, open("scenario.json", "w"))
+
+        # ghp_results = json.load(open(self.ghp_results, 'rb'))
+        # ghp_outputs = ghp_results["GHP"]
+
+        # resp = self.api_client.post('/dev/job/', format='json', data=scenario)
+        # self.assertHttpCreated(resp)
+        # r = json.loads(resp.content)
+        # run_uuid = r.get('run_uuid')
+
+        # meta = APIMeta.objects.get(run_uuid=run_uuid)
+        # meta.status = results.get("status")
+        # meta.save(update_fields=["status"])
+
+        # GHPOutputs.create(meta=meta, **ghp_outputs).save()
+        # GHPOutputs.create(**ghp_outputs).save()
 
         resp = self.api_client.post('/dev/job/', format='json', data=scenario)
         self.assertHttpCreated(resp)
@@ -96,3 +119,5 @@ class TestGHP(ResourceTestCaseMixin, TestCase):
         self.assertIn("GHP", list(results.keys()))
         self.assertIn("ExistingChiller",list(results.keys()))
         self.assertIn("ExistingBoiler", list(results.keys()))
+
+        # json.dump(r, open("ghp_response.json", "w"))
