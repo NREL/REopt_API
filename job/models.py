@@ -5724,7 +5724,7 @@ class GHPOutputs(BaseModel, models.Model):
         primary_key=True
     )
 
-    ghp_chosen_option = models.IntegerField(null=True, blank=True)
+    ghp_option_chosen = models.IntegerField(null=True, blank=True)
     ghpghx_chosen_outputs = models.JSONField(null=True, editable=True)
     size_heat_pump_ton = models.FloatField(null=True, blank=True)  # This includes a factor on the peak coincident heating+cooling load
     space_heating_thermal_load_reduction_with_ghp_mmbtu_per_hour = ArrayField(
