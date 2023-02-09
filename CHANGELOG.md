@@ -28,13 +28,26 @@ Classify the change according to the following categories:
 
 ## Develop - 2023-02-09
 ### Minor Updates
-### Added 
- - In job/ app (v3): Added **addressable_load_fraction** to SpaceHeatingLoad and DomesticHotWaterLoad inputs. 
+##### Added 
  - In job/ app (v3): added **AbsorptionChillerInputs** model
  - In job/ app (v3): added **AbsorptionChillerOutputs** model
  - In `job/views.py`:
    - add new input/output models to properly save the inputs/outputs
    - add `/absorption_chiller_defaults` endpoint which calls the http.jl absorption_chiller_defaults endpoint
+
+## v2.8.0
+##### Changed
+ - In `reo/nested_inputs.py` v2 inputs (`defaults_dict[2]`), updated the following default values:
+   - PV, Wind, Storage, CHP, GHP: **federal_itc_pct** to 0.30 (30%)
+   - PV, Wind, Storage, CHP, GHP: ***macrs_bonus_pct** to 0.8 (80%)
+- The `ghpghx` app and Julia endpoint in `http.jl` uses the [GhpGhx.jl](https://github.com/NREL/GhpGhx.jl) Julia package instead of internal Julia scripts with git submodule for the `tess.so` file
+##### Removed 
+- From v3 (models.py), removed duplicate output Financial **lifecycle_om_costs_after_tax** and un-used output Financial **replacement_costs**
+
+## v2.7.1
+### Minor Updates
+### Added 
+ - In job/ app (v3): Added **addressable_load_fraction** to SpaceHeatingLoad and DomesticHotWaterLoad inputs. 
 ### Changed
  - Changed redis service memory settings to mitigate "out of memory" OOM issue we've been getting on production
  
@@ -50,7 +63,6 @@ Classify the change according to the following categories:
 #### Fixed
 - In job/views for `/simulated_load` endpoint: Fixed the data type conversion issues between JSON and Julia
   
-
 ## v2.6.0
 ### Minor Updates
 #### Added
