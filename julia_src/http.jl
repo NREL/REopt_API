@@ -209,7 +209,7 @@ function absorption_chiller_defaults(req::HTTP.Request)
         if !haskey(d, k)
             d[k] = nothing
         elseif !isnothing(d[k])
-            if k in ["load_max_tons"] && typeof(d[k]) != Float64
+            if k in ["load_max_tons"] && typeof(d[k]) == String
                 d[k] = parse(Float64, d[k])
             end
         end
