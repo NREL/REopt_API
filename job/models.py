@@ -5476,7 +5476,7 @@ class AbsorptionChillerInputs(BaseModel, models.Model):
 
     thermal_consumption_hot_water_or_steam = models.TextField(
         blank=True,
-        null=False,
+        null=True,
         choices=PRODUCTION_TYPE.choices,
         help_text="Boiler thermal production type, hot water or steam"
     )
