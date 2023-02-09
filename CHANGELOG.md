@@ -26,10 +26,15 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop
+## Develop - 2023-02-09
 ### Minor Updates
 ### Added 
  - In job/ app (v3): Added **addressable_load_fraction** to SpaceHeatingLoad and DomesticHotWaterLoad inputs. 
+ - In job/ app (v3): added **AbsorptionChillerInputs** model
+ - In job/ app (v3): added **AbsorptionChillerOutputs** model
+ - In `job/views.py`:
+   - add new input/output models to properly save the inputs/outputs
+   - add `/absorption_chiller_defaults` endpoint which calls the http.jl absorption_chiller_defaults endpoint
 ### Changed
  - Changed redis service memory settings to mitigate "out of memory" OOM issue we've been getting on production
  
