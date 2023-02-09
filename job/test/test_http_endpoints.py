@@ -52,12 +52,12 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
                 "load_max_tons": 50
         }
 
-        # Direct call of the http.jl endpoint /chp_defaults
+        # Direct call of the http.jl endpoint /absorption_chiller_defaults
         julia_host = os.environ.get('JULIA_HOST', "julia")
         response = requests.get("http://" + julia_host + ":8081/absorption_chiller_defaults/", json=inputs)
         http_response = response.json()
 
-        # Call to the django view endpoint /chp_defaults which calls the http.jl endpoint
+        # Call to the django view endpoint /absorption_chiller_defaults which calls the http.jl endpoint
         resp = self.api_client.get(f'/dev/absorption_chiller_defaults', data=inputs)
         view_response = json.loads(resp.content)
 
