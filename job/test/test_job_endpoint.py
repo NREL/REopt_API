@@ -170,8 +170,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
             },
             "AbsorptionChiller":{
                 "min_ton":10,
-                "max_ton":10,
-                "thermal_production_hot_water_or_steam": "hot_water"
+                "max_ton":10
             }
         }
 
