@@ -157,7 +157,8 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
                 "electric_efficiency_half_load": 0.35,
                 "min_turn_down_fraction": 0.1,
                 "thermal_efficiency_full_load": 0.45,
-                "thermal_efficiency_half_load": 0.45
+                "thermal_efficiency_half_load": 0.45,
+                "cooling_thermal_factor": 0.8
             },
             "HotThermalStorage":{
                 "min_gal":2500,
@@ -169,7 +170,8 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
             },
             "AbsorptionChiller":{
                 "min_ton":10,
-                "max_ton":10
+                "max_ton":10,
+                "thermal_production_hot_water_or_steam": "hot_water"
             }
         }
 
