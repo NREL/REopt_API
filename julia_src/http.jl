@@ -211,6 +211,8 @@ function absorption_chiller_defaults(req::HTTP.Request)
         elseif !isnothing(d[k])
             if k in ["load_max_tons"] && typeof(d[k]) == String
                 d[k] = parse(Float64, d[k])
+            elseif k in ["load_max_tons"] && typeof(d[k]) == Int64
+                d[k] = convert(Float64, d[k])
             end
         end
     end
