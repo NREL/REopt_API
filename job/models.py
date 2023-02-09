@@ -5589,7 +5589,7 @@ class AbsorptionChillerOutputs(BaseModel, models.Model):
         help_text="Thermal power capacity of the absorption chiller [ton]"
     )
 
-    year_one_to_tes_series_ton = ArrayField(
+    thermal_to_storage_series_ton = ArrayField(
         models.FloatField(
             blank=True
         ),
@@ -5599,7 +5599,7 @@ class AbsorptionChillerOutputs(BaseModel, models.Model):
         help_text=("Year one hourly time series of absorption chiller thermal to cold TES [Ton]")
     )
 
-    year_one_to_load_series_ton = ArrayField(
+    thermal_to_load_series_ton = ArrayField(
         models.FloatField(
             blank=True
         ),
@@ -5609,7 +5609,7 @@ class AbsorptionChillerOutputs(BaseModel, models.Model):
         help_text=("Year one hourly time series of absorption chiller thermal to cooling load [Ton]")
     )
 
-    year_one_thermal_consumption_series_mmbtu_per_hr = ArrayField(
+    thermal_consumption_series_mmbtu_per_hour = ArrayField(
         models.FloatField(
             blank=True
         ),
@@ -5619,18 +5619,18 @@ class AbsorptionChillerOutputs(BaseModel, models.Model):
         help_text=("Year one hourly time series of absorption chiller electric consumption [kW]")
     )
 
-    year_one_thermal_consumption_mmbtu = models.FloatField(
+    annual_thermal_consumption_mmbtu = models.FloatField(
         null=True,
         blank=True,
         help_text=("Year one absorption chiller electric consumption [kWh]")
     )
 
-    year_one_thermal_production_tonhour = models.FloatField(
+    annual_thermal_production_tonhour = models.FloatField(
         null=True,
         blank=True,
         help_text=("Year one absorption chiller thermal production [Ton Hour")
     )
-    year_one_electric_consumption_series_kw = ArrayField(
+    electric_consumption_series_kw = ArrayField(
         models.FloatField(
             blank=True
         ),
@@ -5640,7 +5640,7 @@ class AbsorptionChillerOutputs(BaseModel, models.Model):
         help_text=("Year one hourly time series of absorption chiller electric consumption [kW]")
     )
 
-    year_one_electric_consumption_kwh = models.FloatField(
+    annual_electric_consumption_kwh = models.FloatField(
         null=True,
         blank=True,
         help_text=("Year one absorption chiller electric consumption [kWh]")
