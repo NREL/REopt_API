@@ -231,6 +231,39 @@ function simulated_load(req::HTTP.Request)
     end
 end
 
+function ghp_efficiency_thermal_factors(req::HTTP.Request)
+    d = JSON.parse(String(req.body))
+
+    @info "Getting ghp_efficiency_thermal_factors..."
+    # The REopt.jl function assumes the REopt input dictionary is being mutated, so put in that form
+    data = Dict([("Site", Dict([("latitude", d["latitude"]), ("longitude", d["longitude"])])),
+                 ("SpaceHeatingLoad", Dict([("doe_reference_name", d["doe_reference_name"])])),
+                 ("CoolingLoad", Dict([("doe_reference_name", d["doe_reference_name"])])),
+                 ("GHP", Dict())])
+    error_response = Dict()
+    nearest_city = ""
+    climate_zone = ""
+    try
+        for factor in ["space_heating", "cooling"]
+            nearest_city, climate_zone = reoptjl.assign_thermal_factor!(data, factor)
+        end        
+    catch e
+        @error "Something went wrong in the ghp_efficiency_thermal_factors" exception=(e, catch_backtrace())
+        error_response["error"] = sprint(showerror, e)
+    end
+    if isempty(error_response)
+        @info "ghp_efficiency_thermal_factors determined."
+		response = Dict([("doe_reference_name", d["doe_reference_name"]),
+                            ("nearest_city", nearest_city),
+                            ("climate_zone", climate_zone), 
+                          data["GHP"]...])
+        return HTTP.Response(200, JSON.json(response))
+    else
+        @info "An error occured in the ghp_efficiency_thermal_factors endpoint"
+        return HTTP.Response(500, JSON.json(error_response))
+    end
+end
+
 function health(req::HTTP.Request)
     return HTTP.Response(200, JSON.json(Dict("Julia-api"=>"healthy!")))
 end
@@ -242,6 +275,7 @@ HTTP.@register(ROUTER, "POST", "/job", job)
 HTTP.@register(ROUTER, "POST", "/reopt", reopt)
 HTTP.@register(ROUTER, "POST", "/ghpghx", ghpghx)
 HTTP.@register(ROUTER, "GET", "/chp_defaults", chp_defaults)
-HTTP.@register(ROUTER, "GET", "/simulated_load", simulated_load)
+HTTP.@register(ROUTER, "GET", "/ghp_efficiency_thermal_factors", ghp_efficiency_thermal_factors)
+HTTP.@register(ROUTER, "GET", "/chp_defaults", chp_defaults)
 HTTP.@register(ROUTER, "GET", "/health", health)
 HTTP.serve(ROUTER, "0.0.0.0", 8081, reuseaddr=true)
