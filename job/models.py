@@ -873,17 +873,9 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Up-front capital costs for all technologies, in present value, excluding replacement costs, including incentives."
     )
-    replacement_costs = models.FloatField(
-        null=True, blank=True,
-        help_text="Net replacement costs for all technologies, in future value, excluding incentives."
-    )
     om_and_replacement_present_cost_after_tax = models.FloatField(
         null=True, blank=True,
         help_text="Net O&M and replacement costs in present value, after-tax."
-    )
-    lifecycle_om_costs_after_tax = models.FloatField(
-        null=True, blank=True,
-        help_text="Life cycle operations and maintenance cost over analysis period after tax."
     )
     year_one_om_costs_after_tax = models.FloatField(
         null=True, blank=True,
@@ -1376,7 +1368,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
     blended_annual_demand_rate = models.FloatField(
         blank=True,
         null=True,
-        help_text="Annual blended demand rates (annual demand charge cost in $ divided by annual peak demand in kW)"
+        help_text="Average monthly demand charge ($ per kW per month). Rate will be applied to monthly peak demand."
     )
     blended_annual_energy_rate = models.FloatField(
         blank=True,
@@ -4211,7 +4203,7 @@ class ExistingBoilerInputs(BaseModel, models.Model):
     ))
 
     '''
-    This field is populated based on heating loads provided via domestic hot water loads. TODO test with flexibleHVAC
+    This field is populated based on heating loads provided via domestic hot water and space heating loads. TODO test with flexibleHVAC
     max_heat_demand_kw = models.FloatField(
         validators=[
             MinValueValidator(0),
