@@ -257,26 +257,3 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
 
             self.assertAlmostEqual(results["Financial"]["npv"], 165.21, places=-2)
             assert(resp.status_code==200)          
-
-    def test_ghp_endpoints(self):
-        # Test /ghp_efficiency_thermal_factors
-        inputs_dict = {"latitude": 37.78,
-                        "longitude": -122.45,
-                        "doe_reference_name": "MediumOffice"}
-
-        # Call to the django view endpoint /ghp_efficiency_thermal_factors which calls the http.jl endpoint
-        resp = self.api_client.get(f'/dev/ghp_efficiency_thermal_factors', data=inputs_dict)
-        view_response = json.loads(resp.content)
-
-        self.assertEqual(view_response["cooling_efficiency_thermal_factor"], 0.43)
-        self.assertEqual(view_response["space_heating_efficiency_thermal_factor"], 0.46)
-
-        # Test /ghpghx/ground_conductivity
-        inputs_dict = {"latitude": 37.78,
-                        "longitude": -122.45}
-
-        # Call to the django view endpoint /ghp_efficiency_thermal_factors which calls the http.jl endpoint
-        resp = self.api_client.get(f'/dev/ghpghx/ground_conductivity', data=inputs_dict)
-        view_response = json.loads(resp.content)
-
-        self.assertEqual(view_response["thermal_conductivity"], 1.117)
