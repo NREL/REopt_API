@@ -450,7 +450,8 @@ def ghp_efficiency_thermal_factors(request):
     param: longitude: longitude of the site location
     param: doe_reference_name: commercial reference building name
     return: climate_zone: climate zone of the site location
-    return: heating_efficiency_thermal_factor: default value for GHP.heating_efficiency_thermal_factor
+    return: nearest_city: nearest major city from the lat/long used for ASHRAE climate zone
+    return: space_heating_efficiency_thermal_factor: default value for GHP.space_heating_efficiency_thermal_factor
     return: cooling_efficiency_thermal_factor: default value for GHP.cooling_efficiency_thermal_factor
     """    
     try:
