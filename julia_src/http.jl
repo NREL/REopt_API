@@ -264,6 +264,33 @@ function ghp_efficiency_thermal_factors(req::HTTP.Request)
     end
 end
 
+function ground_conductivity(req::HTTP.Request)
+    d = JSON.parse(String(req.body))
+
+    @info "Getting ground_conductivity..."
+    error_response = Dict()
+    nearest_city = ""
+    climate_zone = ""
+    ground_thermal_conductivity = 0.01
+    try
+        nearest_city, climate_zone = reoptjl.find_ashrae_zone_city(d["latitude"], d["longitude"], get_zone=true)    
+        ground_thermal_conductivity = GhpGhx.ground_k_by_climate_zone[climate_zone]
+    catch e
+        @error "Something went wrong in the ground_conductivity" exception=(e, catch_backtrace())
+        error_response["error"] = sprint(showerror, e)
+    end
+    if isempty(error_response)
+        @info "ground_conductivity determined."
+		response = Dict([("climate_zone", climate_zone),
+                         ("nearest_city", nearest_city),
+                         ("thermal_conductivity", ground_thermal_conductivity)])
+        return HTTP.Response(200, JSON.json(response))
+    else
+        @info "An error occured in the ground_conductivity endpoint"
+        return HTTP.Response(500, JSON.json(error_response))
+    end
+end
+
 function health(req::HTTP.Request)
     return HTTP.Response(200, JSON.json(Dict("Julia-api"=>"healthy!")))
 end
@@ -276,6 +303,7 @@ HTTP.@register(ROUTER, "POST", "/reopt", reopt)
 HTTP.@register(ROUTER, "POST", "/ghpghx", ghpghx)
 HTTP.@register(ROUTER, "GET", "/chp_defaults", chp_defaults)
 HTTP.@register(ROUTER, "GET", "/ghp_efficiency_thermal_factors", ghp_efficiency_thermal_factors)
+HTTP.@register(ROUTER, "GET", "/ground_conductivity", ground_conductivity)
 HTTP.@register(ROUTER, "GET", "/chp_defaults", chp_defaults)
 HTTP.@register(ROUTER, "GET", "/health", health)
 HTTP.serve(ROUTER, "0.0.0.0", 8081, reuseaddr=true)
