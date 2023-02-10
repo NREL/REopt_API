@@ -104,7 +104,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         inputs_dict = {"latitude": 37.78,
                         "longitude": -122.45}
 
-        # Call to the django view endpoint /ghp_efficiency_thermal_factors which calls the http.jl endpoint
+        # Call to the django view endpoint /ghpghx/ground_conductivity which calls the http.jl endpoint
         resp = self.api_client.get(f'/dev/ghpghx/ground_conductivity', data=inputs_dict)
         view_response = json.loads(resp.content)
 
