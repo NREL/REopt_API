@@ -26,6 +26,14 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop 2023-02-10
+### Minor Updates
+##### Added
+- Add `GHP` to `job` app for v3
+- Add `/ghp_efficiency_thermal_factors` endpoint to `job` app for v
+##### Changed
+- Update a couple of GHP functions to use the GhpGhx.jl package instead of previous Julia scripts and data from v2
+
 ## v2.8.0
 ### Minor Updates
  ##### Changed
