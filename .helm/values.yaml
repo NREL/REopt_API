@@ -13,12 +13,12 @@ djangoCpuRequest: "100m"
 djangoCpuLimit: "4000m"
 djangoMemoryRequest: "800Mi"
 djangoMemoryLimit: "800Mi"
-celeryReplicas: 6
+celeryReplicas: 2
 celeryCpuRequest: "100m"
 celeryCpuLimit: "4000m"
 celeryMemoryRequest: "700Mi"
 celeryMemoryLimit: "700Mi"
-juliaReplicas: 6
+juliaReplicas: 2
 juliaCpuRequest: "300m"
 juliaCpuLimit: "4000m"
 juliaMemoryRequest: "3000Mi"
