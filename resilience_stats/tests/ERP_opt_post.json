@@ -54,7 +54,7 @@
         "owner_tax_rate_fraction": 0.4,
         "om_cost_escalation_rate_fraction": 0.025
     },
-        "ElectricLoad": {
+    "ElectricLoad": {
         "doe_reference_name": "Hospital",
         "annual_kwh": 1000000.0,
         "year": 2017
