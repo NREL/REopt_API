@@ -323,7 +323,7 @@ def results(request, run_uuid):
 
     return JsonResponse(r)
 
-def outage_times_based_on_load_peaks(request):
+def peak_load_outage_times(request):
     try:
         seasonal_peaks = bool(request.POST.get("seasonal_peaks"))
         outage_duration = int(request.POST.get("outage_duration"))
