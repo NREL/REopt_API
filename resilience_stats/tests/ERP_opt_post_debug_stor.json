@@ -1,0 +1,36 @@
+{
+    "Settings": {
+        "run_bau": false
+    },
+    "Site": {
+        "longitude": -122.44172224870913,
+        "latitude": 37.773692125534595,
+        "land_acres": 1.0
+    },
+    "PV": {
+        "min_kw": 3635,
+        "max_kw": 3635
+    },
+    "Generator": {
+        "min_kw": 157,
+        "max_kw": 157
+    },
+    "ElectricStorage": {
+        "min_kw": 2000,
+        "max_kw": 2000,
+        "min_kwh": 600000,
+        "max_kwh": 600000,
+        "can_grid_charge": true
+    },
+    "ElectricTariff": {
+        "urdb_label": "62d5b7fc4939f52c862151f9"
+    },
+    "ElectricLoad": {
+        "doe_reference_name": "Hospital",
+        "annual_kwh": 7752817.0,
+        "critical_load_fraction": 0.5,
+        "outage_start_time_step": 6420,
+        "outage_end_time_step": 168
+
+    } 
+}

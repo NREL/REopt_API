@@ -146,6 +146,9 @@ end
 
 function erp(req::HTTP.Request)
 	erp_inputs = JSON.parse(String(req.body))
+    @info erp_inputs["battery_size_kw"]
+    @info erp_inputs["battery_size_kwh"]
+    @info erp_inputs["battery_minimum_soc_fraction"]
 
     @info "Starting ERP..."
     error_response = Dict()
