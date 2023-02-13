@@ -45,7 +45,7 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         self.reopt_base_erp_results = '/dev/erp/{}/results/'
         self.reopt_base_erp_help = '/dev/erp/help/'
         self.reopt_base_erp_chp_defaults = '/dev/erp/chp_defaults/?prime_mover={0}&is_chp={1}&size_kw={2}'
-        self.post_sim = os.path.join('resilience_stats', 'tests', 'ERP_sim_post_nested.json')
+        self.post_sim = os.path.join('resilience_stats', 'tests', 'ERP_sim_post.json')
         
         #for REopt optimization
         self.reopt_base_opt = '/dev/job/'
