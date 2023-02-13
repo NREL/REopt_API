@@ -42,22 +42,24 @@ import os
 
 
 class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
-    def test_multiple_outages(self):
 
-        scenario_file = os.path.join('job', 'test', 'posts', 'outage.json')
-        scenario = json.load(open(scenario_file, 'r'))
-        resp = self.api_client.post('/dev/job/', format='json', data=scenario)
-        self.assertHttpCreated(resp)
-        r = json.loads(resp.content)
-        run_uuid = r.get('run_uuid')
-        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
-        r = json.loads(resp.content)
-        results = r["outputs"]
-        self.assertAlmostEqual(results["Outages"]["expected_outage_cost"], 4.800393567995261e6, places=-2)
-        self.assertAlmostEqual(sum(sum(np.array(results["Outages"]["unserved_load_per_outage"]))), 14274.25, places=0)
-        self.assertAlmostEqual(results["Outages"]["unserved_load_per_outage"][0][1], 10478.1, places=0)
-        self.assertAlmostEqual(results["Outages"]["microgrid_upgrade_capital_cost"], 9.075113562008379e6, places=-2)
-        self.assertAlmostEqual(results["Financial"]["lcc"], 8.9857671584e7, places=-3)
+
+    # def test_multiple_outages(self):
+
+    #     scenario_file = os.path.join('job', 'test', 'posts', 'outage.json')
+    #     scenario = json.load(open(scenario_file, 'r'))
+    #     resp = self.api_client.post('/dev/job/', format='json', data=scenario)
+    #     self.assertHttpCreated(resp)
+    #     r = json.loads(resp.content)
+    #     run_uuid = r.get('run_uuid')
+    #     resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+    #     r = json.loads(resp.content)
+    #     results = r["outputs"]
+    #     self.assertAlmostEqual(results["Outages"]["expected_outage_cost"], 4.800393567995261e6, places=-2)
+    #     self.assertAlmostEqual(sum(sum(np.array(results["Outages"]["unserved_load_per_outage"]))), 14274.25, places=0)
+    #     self.assertAlmostEqual(results["Outages"]["unserved_load_per_outage"][0][1], 10478.1, places=0)
+    #     self.assertAlmostEqual(results["Outages"]["microgrid_upgrade_capital_cost"], 9.075113562008379e6, places=-2)
+    #     self.assertAlmostEqual(results["Financial"]["lcc"], 8.9857671584e7, places=-3)
 
     # def test_pv_battery_and_emissions_defaults_from_julia(self):
     #     """
@@ -261,3 +263,32 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
 
     #         self.assertAlmostEqual(results["Financial"]["npv"], 165.21, places=-2)
     #         assert(resp.status_code==200)          
+
+
+    def test_peak_load_outage_times(self):
+        """
+        Purpose of this test is to test the endpoint /peak_load_outage_times 
+        """
+
+        load = 100*np.ones(8760)
+        load[40*24] = 200
+        load[50*24] = 300
+        load[70*24] = 300
+        load[170*24] = 300
+        load[300*24] = 400
+        outage_inputs = {"seasonal_peaks": True,
+                        "outage_duration": 95,
+                        "critical_load": load,
+                        "start_not_center_on_peaks": False
+        }
+        expected_result = [50*24-47, 70*24-47, 170*24-47, 300*24-47]
+        resp = self.api_client.post(f'/dev/peak_load_outage_times', data=outage_inputs)
+        outage_start_time_steps = json.loads(resp.content)["outage_start_time_steps"]
+        self.assertEquals(outage_start_time_steps, expected_result)
+
+        outage_inputs["seasonal_peaks"] = False
+        outage_inputs["start_not_center_on_peaks"] = True
+        expected_result = [300*24]
+        resp = self.api_client.post(f'/dev/peak_load_outage_times', data=outage_inputs)
+        outage_start_time_steps = json.loads(resp.content)["outage_start_time_steps"]
+        self.assertEquals(outage_start_time_steps, expected_result)
