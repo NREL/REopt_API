@@ -388,6 +388,9 @@ def run_erp_task(run_uuid):
     name = 'run_erp_task'
     data = get_erp_input_dict_from_run_uuid(run_uuid)
 
+    import json
+    json.dump(data, open("tests/debug_stor_inputs_to_julia.json", "w"))
+
     user_uuid = data.get('user_uuid')
     data.pop('user_uuid',None) # Remove user uuid from inputs dict to avoid downstream errors
 
