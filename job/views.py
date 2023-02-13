@@ -43,6 +43,7 @@ from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, Ge
     ColdThermalStorageInputs, ColdThermalStorageOutputs
 import os
 import requests
+import numpy as np
 import logging
 log = logging.getLogger(__name__)
 
@@ -322,6 +323,51 @@ def results(request, run_uuid):
 
     return JsonResponse(r)
 
+def outage_times_based_on_load_peaks(request):
+    try:
+        seasonal_peaks = bool(request.POST.get("seasonal_peaks"))
+        outage_duration = int(request.POST.get("outage_duration"))
+        critical_load = np.array(request.POST.get("critical_load"))
+        start_not_center_on_peaks = bool(request.POST.get("start_not_center_on_peaks"))
+        
+        if seasonal_peaks:
+            winter_start = 334*24
+            spring_start = 60*24
+            summer_start = 152*24
+            autumn_start = 244*24
+            winter_load = np.append(critical_load[winter_start:-1], critical_load[0:spring_start])
+            spring_load = critical_load[spring_start:summer_start]
+            summer_load = critical_load[summer_start:autumn_start]
+            autumn_load = critical_load[autumn_start:winter_start]
+            peaks = np.array([
+                np.argmax(winter_load), 
+                np.argmax(spring_load), 
+                np.argmax(summer_load), 
+                np.argmax(autumn_load)
+            ])
+        else:
+            peaks = np.array([np.argmax(critical_load)])
+        if start_not_center_on_peaks: 
+            outage_start_time_steps = peaks
+        else:
+            outage_start_time_steps = peaks - int(outage_duration / 2)
+
+        return JsonResponse(
+            {"outage_start_time_steps": outage_start_time_steps}.json()
+        )
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=400)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=400)
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected error in outage_times_based_on_load_peaks endpoint. Check log for more."}, status=500)
 
 def chp_defaults(request):
     inputs = {
@@ -340,10 +386,10 @@ def chp_defaults(request):
         return response
 
     except ValueError as e:
-        return JsonResponse({"Error": str(e.args[0])}, status=500)
+        return JsonResponse({"Error": str(e.args[0])}, status=400)
 
     except KeyError as e:
-        return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=400)
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
