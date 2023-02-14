@@ -44,6 +44,7 @@ from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, Ge
 import os
 import requests
 import numpy as np
+import json
 import logging
 log = logging.getLogger(__name__)
 
@@ -325,25 +326,26 @@ def results(request, run_uuid):
 
 def peak_load_outage_times(request):
     try:
-        seasonal_peaks = bool(request.POST.get("seasonal_peaks"))
-        outage_duration = int(request.POST.get("outage_duration"))
-        critical_load = np.array(request.POST.get("critical_load"))
-        start_not_center_on_peaks = bool(request.POST.get("start_not_center_on_peaks"))
+        post_body = json.loads(request.body)
+        seasonal_peaks = bool(post_body.get("seasonal_peaks"))
+        outage_duration = int(post_body.get("outage_duration"))
+        critical_load = np.array(list(post_body.get("critical_load")))
+        start_not_center_on_peaks = bool(post_body.get("start_not_center_on_peaks"))
         
         if seasonal_peaks:
             winter_start = 334*24
             spring_start = 60*24
             summer_start = 152*24
             autumn_start = 244*24
-            winter_load = np.append(critical_load[winter_start:-1], critical_load[0:spring_start])
+            winter_load = np.append(critical_load[winter_start:], critical_load[0:spring_start])
             spring_load = critical_load[spring_start:summer_start]
             summer_load = critical_load[summer_start:autumn_start]
             autumn_load = critical_load[autumn_start:winter_start]
             peaks = np.array([
-                np.argmax(winter_load), 
-                np.argmax(spring_load), 
-                np.argmax(summer_load), 
-                np.argmax(autumn_load)
+                (np.argmax(winter_load) + winter_start) % 8760, 
+                np.argmax(spring_load) + spring_start, 
+                np.argmax(summer_load) + summer_start, 
+                np.argmax(autumn_load) + autumn_start
             ])
         else:
             peaks = np.array([np.argmax(critical_load)])
@@ -353,7 +355,8 @@ def peak_load_outage_times(request):
             outage_start_time_steps = peaks - int(outage_duration / 2)
 
         return JsonResponse(
-            {"outage_start_time_steps": outage_start_time_steps}.json()
+            {"outage_start_time_steps": outage_start_time_steps.tolist()}, 
+            status=200
         )
 
     except ValueError as e:
