@@ -72,7 +72,7 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
     def test_debug_stor(self):
 
         data = json.load(open(
-            os.path.join('resilience_stats', 'tests', 'ERP_opt_post_debug_stor.json'), 
+            os.path.join('resilience_stats', 'tests', 'ERP_opt_post_debug_stor_from_UI.json'), 
             'rb'
         ))
         resp = self.get_response_opt(data)

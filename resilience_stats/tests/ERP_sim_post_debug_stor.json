@@ -6,12 +6,13 @@
                 "charge_efficiency": 0.948,
                 "discharge_efficiency": 0.948,
                 "minimum_soc_fraction": 0.0,
-                "operational_availability": 1.0
+                "operational_availability": 1.0,
+                "num_battery_bins": 100
         },
         "Generator": {
                 "num_generators": 1, 
-                "size_kw": 200,
-                "fuel_avail_gal": 1000000000
+                "fuel_avail_gal": 1000000000,
+                "fuel_avail_gal_is_per_generator": false
         },
         "PV": {
                 "operational_availability": 1.0
