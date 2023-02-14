@@ -270,7 +270,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         Purpose of this test is to test the endpoint /peak_load_outage_times 
         """
 
-        load = 100*np.ones(8760)
+        load = [100]*8760
         load[40*24] = 200
         load[50*24] = 300
         load[70*24] = 300
@@ -283,6 +283,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         }
         expected_result = [50*24-47, 70*24-47, 170*24-47, 300*24-47]
         resp = self.api_client.post(f'/dev/peak_load_outage_times', data=outage_inputs)
+        self.assertHttpOK(resp)
         outage_start_time_steps = json.loads(resp.content)["outage_start_time_steps"]
         self.assertEquals(outage_start_time_steps, expected_result)
 
@@ -290,5 +291,6 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         outage_inputs["start_not_center_on_peaks"] = True
         expected_result = [300*24]
         resp = self.api_client.post(f'/dev/peak_load_outage_times', data=outage_inputs)
+        self.assertHttpOK(resp)
         outage_start_time_steps = json.loads(resp.content)["outage_start_time_steps"]
         self.assertEquals(outage_start_time_steps, expected_result)
