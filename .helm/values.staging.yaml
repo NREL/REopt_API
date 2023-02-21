@@ -1,0 +1,2 @@
+appEnv: staging
+djangoSettingsModule: reopt_api.staging_settings
