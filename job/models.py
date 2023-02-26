@@ -4404,6 +4404,12 @@ class REoptjlMessageOutputs(BaseModel, models.Model):
         default = list,
     )
 
+    has_stacktrace = models.TextField(
+        blank=True,
+        default="false",
+        help_text="True if the error message has a stacktrace, false otherwise"
+    )
+
     def clean(self):
         pass
 
