@@ -254,6 +254,7 @@ def results(request, run_uuid):
                     k = txt.split(',')[0]
                     v = txt.split(',')[1:]
                     r["messages"][msg_type][k] = v
+            r["messages"]["has_stacktrace"] = reopt_messages["has_stacktrace"]            
         except: pass
 
         try:
