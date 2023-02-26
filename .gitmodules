@@ -1,3 +1,0 @@
-[submodule "julia_src/GHX-Model-REopt"]
-	path = julia_src/GHX-Model-REopt
-	url = https://github.com/NREL/GHX-Model-REopt.git

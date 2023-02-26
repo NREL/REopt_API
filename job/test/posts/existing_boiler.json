@@ -6,6 +6,9 @@
     "ExistingBoiler": {
         "fuel_cost_per_mmbtu": 0.5
     },
+    "HotThermalStorage":{
+        "max_gal":2500
+    },
     "ElectricLoad": {
         "doe_reference_name": "Hospital",
         "annual_kwh": 8760000.0
