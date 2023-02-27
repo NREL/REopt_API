@@ -51,7 +51,7 @@ Guidance:
 - description: use square brackets for units, eg. [dollars per kWh]
 - Output models need to have null=True, blank=True for cases when results are not generated 
 """
-MAX_BIG_NUMBER = 1.0e9
+MAX_BIG_NUMBER = 1.0e8
 MAX_INCENTIVE = 1.0e10
 MAX_YEARS = 75
 
