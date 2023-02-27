@@ -31,7 +31,8 @@ import logging
 import pandas as pd
 from job.models import MAX_BIG_NUMBER, APIMeta, ExistingBoilerInputs, UserProvidedMeta, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
     FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs, SpaceHeatingLoadInputs, \
-    DomesticHotWaterLoadInputs, CHPInputs, CoolingLoadInputs, ExistingChillerInputs, HotThermalStorageInputs, ColdThermalStorageInputs, BoilerInputs
+    DomesticHotWaterLoadInputs, CHPInputs, CoolingLoadInputs, ExistingChillerInputs, HotThermalStorageInputs, ColdThermalStorageInputs, BoilerInputs, \
+    SteamTurbineInputs
 from django.core.exceptions import ValidationError
 from pyproj import Proj
 from typing import Tuple
@@ -100,9 +101,10 @@ class InputValidator(object):
             SpaceHeatingLoadInputs,
             DomesticHotWaterLoadInputs,
             CHPInputs,
-            BoilerInputs
+            BoilerInputs,
             HotThermalStorageInputs,
-            ColdThermalStorageInputs
+            ColdThermalStorageInputs,
+            SteamTurbineInputs
         )
         self.pvnames = []
         on_grid_required_object_names = [
@@ -334,8 +336,8 @@ class InputValidator(object):
         if "ElectricTariff" in self.models.keys():
 
             for key, time_series in zip(
-                ["ElectricTariff",              "ElectricTariff"],
-                ["tou_energy_rates_per_kwh",    "wholesale_rate"]
+                ["ElectricTariff",              "ElectricTariff",   "ElectricTariff"],
+                ["tou_energy_rates_per_kwh",    "wholesale_rate",   "export_rate_beyond_net_metering_limit"]
             ):
                 self.clean_time_series(key, time_series)
 

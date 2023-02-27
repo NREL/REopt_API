@@ -40,7 +40,7 @@ from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, Ge
     ElectricLoadOutputs, ExistingBoilerOutputs, DomesticHotWaterLoadInputs, SiteInputs, SiteOutputs, APIMeta, \
     UserProvidedMeta, CHPInputs, CHPOutputs, CoolingLoadInputs, ExistingChillerInputs, ExistingChillerOutputs,\
     CoolingLoadOutputs, HeatingLoadOutputs, REoptjlMessageOutputs, HotThermalStorageInputs, HotThermalStorageOutputs,\
-    ColdThermalStorageInputs, ColdThermalStorageOutputs, BoilerInputs, BoilerOutputs
+    ColdThermalStorageInputs, ColdThermalStorageOutputs, BoilerInputs, BoilerOutputs, SteamTurbineInputs, SteamTurbineOutputs
 import os
 import requests
 import logging
@@ -78,6 +78,7 @@ def help(request):
         d["DomesticHotWaterLoad"] = DomesticHotWaterLoadInputs.info_dict(DomesticHotWaterLoadInputs)
         d["Site"] = SiteInputs.info_dict(SiteInputs)
         d["CHP"] = CHPInputs.info_dict(CHPInputs)
+        d["SteamTurbine"] = SteamTurbineInputs.info_dict(SteamTurbineInputs)
         return JsonResponse(d)
 
     except Exception as e:
@@ -121,6 +122,7 @@ def outputs(request):
         d["CoolingLoad"] = CoolingLoadOutputs.info_dict(CoolingLoadOutputs)
         d["CHP"] = CHPOutputs.info_dict(CHPOutputs)
         d["Messages"] = REoptjlMessageOutputs.info_dict(REoptjlMessageOutputs)
+        d["SteamTurbine"] = SteamTurbineOutputs.info_dict(SteamTurbineOutputs)
         return JsonResponse(d)
 
     except Exception as e:
@@ -233,6 +235,9 @@ def results(request, run_uuid):
     try: r["inputs"]["CHP"] = meta.CHPInputs.dict
     except: pass
 
+    try: r["inputs"]["SteamTurbine"] = meta.SteamTurbineInputs.dict
+    except: pass
+
     try:
         r["outputs"] = dict()
         r["messages"] = dict()
@@ -295,6 +300,8 @@ def results(request, run_uuid):
         except: pass
         try: r["outputs"]["CoolingLoad"] = meta.CoolingLoadOutputs.dict
         except: pass
+        try: r["outputs"]["SteamTurbine"] = meta.SteamTurbineOutputs.dict
+        except: pass
 
         for d in r["outputs"].values():
             if isinstance(d, dict):
@@ -319,7 +326,36 @@ def results(request, run_uuid):
 
     return JsonResponse(r)
 
+# *********************************!!!!!!!!!!!
+def steamturbine_defaults(request):
+    inputs = {
+        "existing_boiler_production_type": request.GET.get("existing_boiler_production_type"),
+        "avg_boiler_fuel_load_mmbtu_per_hour": request.GET.get("avg_boiler_fuel_load_mmbtu_per_hour"),
+        "prime_mover": request.GET.get("prime_mover"),
+        "size_class": request.GET.get("size_class"),
+        "boiler_efficiency": request.GET.get("boiler_efficiency")
+    }
+    try:
+        julia_host = os.environ.get('JULIA_HOST', "julia")
+        http_jl_response = requests.get("http://" + julia_host + ":8081/chp_defaults/", json=inputs)
+        response = JsonResponse(
+            http_jl_response.json()
+        )
+        return response
 
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected error in chp_defaults endpoint. Check log for more."}, status=500)
+    
 def chp_defaults(request):
     inputs = {
         "existing_boiler_production_type": request.GET.get("existing_boiler_production_type"),
