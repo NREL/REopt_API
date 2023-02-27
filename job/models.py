@@ -1873,7 +1873,7 @@ class ElectricUtilityOutputs(BaseModel, models.Model):
     )
 
 class OutageOutputs(BaseModel, models.Model):
-    key = "ElectricTariffOutputs"
+    key = "OutageOutputs"
 
     meta = models.OneToOneField(
         APIMeta,
