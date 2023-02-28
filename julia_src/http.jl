@@ -101,7 +101,7 @@ function reopt(req::HTTP.Request)
             else
                 chp_dict = Dict()
             end
-			if haskey(d, "SteamTurbine") # no prime mover or chp_size_based_on_avg_heating_load_kw?
+			if haskey(d, "SteamTurbine")
 				inputs_with_defaults_from_steamturbine = [
 					:size_class, :gearbox_generator_efficiency, :isentropic_efficiency, 
 					:inlet_steam_pressure_psig, :inlet_steam_temperature_degF, :installed_cost_per_kw, :om_cost_per_kwh, 
@@ -185,6 +185,7 @@ function chp_defaults(req::HTTP.Request)
             end
         end
     end
+    println(d)  
 
     @info "Getting CHP defaults..."
     data = Dict()
@@ -212,7 +213,9 @@ end
 # Should this accept all inputs provided in `get_steam_turbine_defaults_size_class` docstring in REopt.jl?
 function steamturbine_defaults(req::HTTP.Request)
     d = JSON.parse(String(req.body))
-    keys = ["avg_boiler_fuel_load_mmbtu_per_hour"]
+    keys = ["avg_boiler_fuel_load_mmbtu_per_hour",
+            "size_class"
+    ]
     # Process .json inputs and convert to correct type if needed
     for k in keys
         if !haskey(d, k)
@@ -220,6 +223,8 @@ function steamturbine_defaults(req::HTTP.Request)
         elseif !isnothing(d[k])
             if k in ["avg_boiler_fuel_load_mmbtu_per_hour"] && typeof(d[k]) == String
                 d[k] = parse(Float64, d[k])
+            elseif k == "size_class" && typeof(d[k]) == String
+                d[k] = parse(Int64, d[k])
             end
         end
     end
@@ -228,7 +233,9 @@ function steamturbine_defaults(req::HTTP.Request)
     data = Dict()
     error_response = Dict()
     try
-        data = reoptjl.get_steam_turbine_defaults_size_class(;avg_boiler_fuel_load_mmbtu_per_hour=d["avg_boiler_fuel_load_mmbtu_per_hour"])
+        data = reoptjl.get_steam_turbine_defaults_size_class(;avg_boiler_fuel_load_mmbtu_per_hour=d["avg_boiler_fuel_load_mmbtu_per_hour"],
+                                                            size_class=d["size_class"]
+        )
     catch e
         @error "Something went wrong in the steamturbine_defaults" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
