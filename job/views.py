@@ -326,18 +326,13 @@ def results(request, run_uuid):
 
     return JsonResponse(r)
 
-# *********************************!!!!!!!!!!!
 def steamturbine_defaults(request):
     inputs = {
-        "existing_boiler_production_type": request.GET.get("existing_boiler_production_type"),
-        "avg_boiler_fuel_load_mmbtu_per_hour": request.GET.get("avg_boiler_fuel_load_mmbtu_per_hour"),
-        "prime_mover": request.GET.get("prime_mover"),
-        "size_class": request.GET.get("size_class"),
-        "boiler_efficiency": request.GET.get("boiler_efficiency")
+        "avg_boiler_fuel_load_mmbtu_per_hour": request.GET.get("avg_boiler_fuel_load_mmbtu_per_hour")
     }
     try:
         julia_host = os.environ.get('JULIA_HOST', "julia")
-        http_jl_response = requests.get("http://" + julia_host + ":8081/chp_defaults/", json=inputs)
+        http_jl_response = requests.get("http://" + julia_host + ":8081/steamturbine_defaults/", json=inputs)
         response = JsonResponse(
             http_jl_response.json()
         )
@@ -354,7 +349,7 @@ def steamturbine_defaults(request):
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
-        return JsonResponse({"Error": "Unexpected error in chp_defaults endpoint. Check log for more."}, status=500)
+        return JsonResponse({"Error": "Unexpected error in steamturbine_defaults endpoint. Check log for more."}, status=500)
     
 def chp_defaults(request):
     inputs = {
