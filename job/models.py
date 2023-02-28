@@ -4608,14 +4608,6 @@ class SteamTurbineInputs(BaseModel, models.Model):
         TWO = 2
         FOUR = 4
 
-    # No default value provided in REO inputs or in REopt.jl input struct
-    size_class = models.IntegerField(
-        null=True,
-        choices=SIZE_CLASS_LIST.choices,
-        blank=True,
-        help_text="Steam turbine size class for using appropriate default inputs"
-    )
-
     min_kw = models.FloatField(
         default=0.0,
         validators=[
@@ -4635,6 +4627,97 @@ class SteamTurbineInputs(BaseModel, models.Model):
         help_text="Maximum steam turbine size constraint for optimization"
     )
 
+    # default values for these fields is determined via steamturbine_defaults returned from REoptInputs() call in http.jl
+    size_class = models.IntegerField(
+        null=True,
+        choices=SIZE_CLASS_LIST.choices,
+        blank=True,
+        help_text="Steam turbine size class for using appropriate default inputs"
+    )
+
+    gearbox_generator_efficiency = models.FloatField(
+        null=True,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        help_text="Combined gearbox (if applicable) and electric motor/generator efficiency"
+    )
+
+    isentropic_efficiency = models.FloatField(
+        null=True,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        help_text="Combined gearbox (if applicable) and electric motor/generator efficiency"
+    )
+
+    inlet_steam_pressure_psig = models.FloatField(
+        null=True,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(5.0e3)
+        ],
+        blank=True,
+        help_text="Inlet steam pressure to the steam turbine"
+    )
+
+    inlet_steam_temperature_degF = models.FloatField(
+        null=True,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1300.0)
+        ],
+        blank=True,
+        help_text="Inlet steam temperature to the steam turbine"
+    )
+
+    installed_cost_per_kw = models.FloatField(
+        null=True,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e5)
+        ],
+        blank=True,
+        help_text="Installed steam turbine cost in $/kW"
+    )
+
+    om_cost_per_kwh = models.FloatField(
+        null=True,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e2)
+        ],
+        blank=True,
+        help_text="Steam turbine per unit production (variable) operations and maintenance costs in $/kWh"
+    )
+
+    outlet_steam_pressure_psig = models.FloatField(
+        null=True,
+        validators=[
+            MinValueValidator(-14.7),
+            MaxValueValidator(1.0e3)
+        ],
+        blank=True,
+        help_text="Outlet steam pressure from the steam turbine (to the condenser or heat recovery unit)"
+    )
+
+    net_to_gross_electric_ratio = models.FloatField(
+        null=True,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        help_text="Efficiency factor to account for auxiliary loads such as pumps, controls, lights, etc"
+    )
+
+    # no prime mover field here? no chp_size_based_on_avg_heating_load_kw here?
+
+    # Other input fields
     electric_produced_to_thermal_consumed_ratio = models.FloatField(
         null=True,
         validators=[
@@ -4661,26 +4744,6 @@ class SteamTurbineInputs(BaseModel, models.Model):
         help_text="Steam turbine type, if it is a condensing turbine which produces no useful thermal (max electric output)"
     )
 
-    inlet_steam_pressure_psig = models.FloatField(
-        null=True,
-        validators=[
-            MinValueValidator(0.0),
-            MaxValueValidator(5.0e3)
-        ],
-        blank=True,
-        help_text="Inlet steam pressure to the steam turbine"
-    )
-
-    inlet_steam_temperature_degF = models.FloatField(
-        null=True,
-        validators=[
-            MinValueValidator(0.0),
-            MaxValueValidator(1300.0)
-        ],
-        blank=True,
-        help_text="Inlet steam temperature to the steam turbine"
-    )
-
     inlet_steam_superheat_degF = models.FloatField(
         null=True,
         validators=[
@@ -4689,16 +4752,6 @@ class SteamTurbineInputs(BaseModel, models.Model):
         ],
         blank=True,
         help_text="Alternative input to inlet steam temperature, this is the superheat amount (delta from T_saturation) to the steam turbine"
-    )
-
-    outlet_steam_pressure_psig = models.FloatField(
-        null=True,
-        validators=[
-            MinValueValidator(-14.7),
-            MaxValueValidator(1.0e3)
-        ],
-        blank=True,
-        help_text="Outlet steam pressure from the steam turbine (to the condenser or heat recovery unit)"
     )
 
     outlet_steam_min_vapor_fraction = models.FloatField(
@@ -4721,36 +4774,6 @@ class SteamTurbineInputs(BaseModel, models.Model):
         help_text="Steam turbine isentropic efficiency - uses inlet T/P and outlet T/P/X to get power out"
     )
 
-    gearbox_generator_efficiency = models.FloatField(
-        null=True,
-        validators=[
-            MinValueValidator(0.0),
-            MaxValueValidator(1.0)
-        ],
-        blank=True,
-        help_text="Combined gearbox (if applicable) and electric motor/generator efficiency"
-    )
-
-    net_to_gross_electric_ratio = models.FloatField(
-        null=True,
-        validators=[
-            MinValueValidator(0.0),
-            MaxValueValidator(1.0)
-        ],
-        blank=True,
-        help_text="Efficiency factor to account for auxiliary loads such as pumps, controls, lights, etc"
-    )
-
-    installed_cost_per_kw = models.FloatField(
-        null=True,
-        validators=[
-            MinValueValidator(0.0),
-            MaxValueValidator(1.0e5)
-        ],
-        blank=True,
-        help_text="Installed steam turbine cost in $/kW"
-    )
-
     om_cost_per_kw = models.FloatField(
         validators=[
             MinValueValidator(0.0),
@@ -4759,16 +4782,6 @@ class SteamTurbineInputs(BaseModel, models.Model):
         blank=True,
         null=True,
         help_text="Annual steam turbine fixed operations and maintenance costs in $/kW"
-    )
-
-    om_cost_per_kwh = models.FloatField(
-        null=True,
-        validators=[
-            MinValueValidator(0.0),
-            MaxValueValidator(1.0e2)
-        ],
-        blank=True,
-        help_text="Steam turbine per unit production (variable) operations and maintenance costs in $/kWh"
     )
 
     can_net_meter = models.BooleanField(

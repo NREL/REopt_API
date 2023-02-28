@@ -101,10 +101,21 @@ function reopt(req::HTTP.Request)
             else
                 chp_dict = Dict()
             end
+			if haskey(d, "SteamTurbine") # no prime mover or chp_size_based_on_avg_heating_load_kw?
+				inputs_with_defaults_from_steamturbine = [
+					:size_class, :gearbox_generator_efficiency, :isentropic_efficiency, 
+					:inlet_steam_pressure_psig, :inlet_steam_temperature_degF, :installed_cost_per_kw, :om_cost_per_kwh, 
+					:outlet_steam_pressure_psig, :net_to_gross_electric_ratio
+				]
+				steamturbine_dict = Dict(key=>getfield(model_inputs.s.steam_turbine, key) for key in inputs_with_defaults_from_steamturbine)
+			else
+				steamturbine_dict = Dict()
+			end
 			inputs_with_defaults_set_in_julia = Dict(
 				"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_easiur),
 				"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert),
-                "CHP" => chp_dict
+                "CHP" => chp_dict,
+				"SteamTurbine" => steamturbine_dict
 			)            
 		catch e
 			@error "Something went wrong in REopt optimization!" exception=(e, catch_backtrace())
@@ -198,6 +209,40 @@ function chp_defaults(req::HTTP.Request)
     end
 end
 
+# Should this accept all inputs provided in `get_steam_turbine_defaults_size_class` docstring in REopt.jl?
+function steamturbine_defaults(req::HTTP.Request)
+    d = JSON.parse(String(req.body))
+    keys = ["avg_boiler_fuel_load_mmbtu_per_hour"]
+    # Process .json inputs and convert to correct type if needed
+    for k in keys
+        if !haskey(d, k)
+            d[k] = nothing
+        elseif !isnothing(d[k])
+            if k in ["avg_boiler_fuel_load_mmbtu_per_hour"] && typeof(d[k]) == String
+                d[k] = parse(Float64, d[k])
+            end
+        end
+    end
+
+    @info "Getting SteamTurbine defaults..."
+    data = Dict()
+    error_response = Dict()
+    try
+        data = reoptjl.get_steam_turbine_defaults_size_class(;avg_boiler_fuel_load_mmbtu_per_hour=d["avg_boiler_fuel_load_mmbtu_per_hour"])
+    catch e
+        @error "Something went wrong in the steamturbine_defaults" exception=(e, catch_backtrace())
+        error_response["error"] = sprint(showerror, e)
+    end
+    if isempty(error_response)
+        @info "SteamTurbine defaults determined."
+		response = data
+        return HTTP.Response(200, JSON.json(response))
+    else
+        @info "An error occured in the steamturbine_defaults endpoint"
+        return HTTP.Response(500, JSON.json(error_response))
+    end
+end
+
 function simulated_load(req::HTTP.Request)
     d = JSON.parse(String(req.body))
 
@@ -242,6 +287,7 @@ HTTP.@register(ROUTER, "POST", "/job", job)
 HTTP.@register(ROUTER, "POST", "/reopt", reopt)
 HTTP.@register(ROUTER, "POST", "/ghpghx", ghpghx)
 HTTP.@register(ROUTER, "GET", "/chp_defaults", chp_defaults)
+HTTP.@register(ROUTER, "GET", "/steamturbine_defaults", steamturbine_defaults)
 HTTP.@register(ROUTER, "GET", "/simulated_load", simulated_load)
 HTTP.@register(ROUTER, "GET", "/health", health)
 HTTP.serve(ROUTER, "0.0.0.0", 8081, reuseaddr=true)
