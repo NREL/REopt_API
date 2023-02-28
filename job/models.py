@@ -1721,6 +1721,18 @@ class ElectricUtilityInputs(BaseModel, models.Model):
             if self.outage_start_time_step > self.outage_end_time_step:
                 error_messages["outage start/stop time steps"] = \
                     ('outage_end_time_step must be larger than or equal to outage_start_time_step.')
+        
+        if self.outage_probabilities not in [None,[]]:
+            if abs(1.0-sum(self.outage_probabilities)) > 1e-08:
+                error_messages["outage_probabilities"] = "outage_probabilities must have a sum of 1.0."
+            if self.outage_durations not in [None,[]]:
+                if len(self.outage_probabilities) != len(self.outage_durations):
+                    error_messages["mismatched length"] = "outage_probabilities and outage_durations must have the same length."
+            else: 
+                error_messages["missing required inputs"] = "outage_durations is required if outage_probabilities is present."
+        elif self.outage_durations not in [None,[]]: 
+            error_messages["missing required inputs"] = "outage_probabilities is required if outage_durations is present."
+
 
         if error_messages:
             raise ValidationError(error_messages)
