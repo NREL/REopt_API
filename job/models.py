@@ -4627,7 +4627,7 @@ class SteamTurbineInputs(BaseModel, models.Model):
         help_text="Maximum steam turbine size constraint for optimization"
     )
 
-    # default values for these fields is determined via steamturbine_defaults returned from REoptInputs() call in http.jl
+    ## default values for these fields is determined via steamturbine_defaults returned from REoptInputs() call in http.jl
     size_class = models.IntegerField(
         null=True,
         choices=SIZE_CLASS_LIST.choices,
@@ -4714,8 +4714,6 @@ class SteamTurbineInputs(BaseModel, models.Model):
         blank=True,
         help_text="Efficiency factor to account for auxiliary loads such as pumps, controls, lights, etc"
     )
-
-    # no prime mover field here? no chp_size_based_on_avg_heating_load_kw here?
 
     # Other input fields
     electric_produced_to_thermal_consumed_ratio = models.FloatField(

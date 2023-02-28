@@ -328,7 +328,8 @@ def results(request, run_uuid):
 
 def steamturbine_defaults(request):
     inputs = {
-        "avg_boiler_fuel_load_mmbtu_per_hour": request.GET.get("avg_boiler_fuel_load_mmbtu_per_hour")
+        "avg_boiler_fuel_load_mmbtu_per_hour": request.GET.get("avg_boiler_fuel_load_mmbtu_per_hour"),
+        "size_class": request.GET.get("size_class")
     }
     try:
         julia_host = os.environ.get('JULIA_HOST', "julia")

@@ -73,16 +73,6 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         self.assertEqual(http_response["size_class"], 2)
         self.assertGreater(http_response["chp_size_based_on_avg_heating_load_kw"], 574.419)
 
-        # Check that size_class logic is the same, but we shifted it to 1-indexed instead of 0-indexed
-        # Modify input names for v2
-        # inputs_v2 = {
-        #     "existing_boiler_production_type_steam_or_hw": inputs["existing_boiler_production_type"],
-        #     "avg_boiler_fuel_load_mmbtu_per_hr": inputs["avg_boiler_fuel_load_mmbtu_per_hour"]
-        # }
-        # resp = self.api_client.get(f'/v2/chp_defaults', data=inputs_v2)
-        # v2_response = json.loads(resp.content)
-        # self.assertEqual(http_response["size_class"], v2_response["size_class"]+1)
-
     def test_simulated_load(self):
 
         # Test heating load because REopt.jl separates SpaceHeating and DHW, so had to aggregate for this endpoint

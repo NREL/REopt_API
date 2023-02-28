@@ -240,4 +240,34 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
             results = r["outputs"]
 
             self.assertAlmostEqual(results["Financial"]["npv"], 165.21, places=-2)
-            assert(resp.status_code==200)          
+            assert(resp.status_code==200)
+    
+    def test_steamturbine_defaults_from_julia(self):
+        # Test that the inputs_with_defaults_set_in_julia feature worked for SteamTurbine, consistent with /steamturbine_defaults
+        post_file = os.path.join('job', 'test', 'posts', 'steamturbine_defaults_post.json')
+        post = json.load(open(post_file, 'r'))
+        resp = self.api_client.post('/dev/job/', format='json', data=post)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+
+        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        r = json.loads(resp.content)
+
+        inputs_steamturbine = r["inputs"]["SteamTurbine"]
+
+        avg_fuel_load = (post["SpaceHeatingLoad"]["annual_mmbtu"] + 
+                            post["DomesticHotWaterLoad"]["annual_mmbtu"]) / 8760.0
+        inputs_steamturbine_defaults = {
+            "avg_boiler_fuel_load_mmbtu_per_hour": avg_fuel_load
+        }
+
+        # Call to the django view endpoint /steamturbine_defaults which calls the http.jl endpoint
+        resp = self.api_client.get(f'/dev/steamturbine_defaults', data=inputs_steamturbine_defaults)
+        view_response = json.loads(resp.content)
+
+        for key in view_response["default_inputs"].keys():
+            if post["SteamTurbine"].get(key) is None: # Check that default got assigned consistent with /steamturbine_defaults
+                self.assertEquals(inputs_steamturbine[key], view_response["default_inputs"][key])
+            else:  # Make sure we didn't overwrite user-input
+                self.assertEquals(inputs_steamturbine[key], post["SteamTurbine"][key])
