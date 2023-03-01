@@ -1141,6 +1141,15 @@ class GHPModel(models.Model):
     ghpghx_response_uuids = ArrayField(models.TextField(null=True, blank=True), default=list, null=True)
     ghpghx_responses = ArrayField(PickledObjectField(null=True, editable=True), null=True, default=list)
     can_serve_dhw = models.BooleanField(null=True, blank=True)
+    
+    # TODO move is_hybrid_ghx to ghpghx_inputs because we want to compete non-hybrid vs hybrid within single REopt run
+    is_hybrid_ghx = models.BooleanField(null=True, blank=True)
+    
+    aux_heater_type = models.TextField(null=True, blank=True)
+    aux_heater_installed_cost_us_dollars_per_mmbtu_per_hr = models.FloatField(null=True, blank=True)
+    aux_heater_thermal_efficiency = models.FloatField(null=True, blank=True)
+    aux_cooler_installed_cost_us_dollars_per_ton = models.FloatField(null=True, blank=True)
+    aux_cooler_energy_use_intensity_kwe_per_kwt = models.FloatField(null=True, blank=True)
     macrs_option_years = models.IntegerField(null=True, blank=True)
     macrs_bonus_pct = models.FloatField(null=True, blank=True)
     macrs_itc_reduction = models.FloatField(null=True, blank=True)
