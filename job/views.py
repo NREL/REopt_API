@@ -28,6 +28,7 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
 from django.db import models
+from django.db.models import Q
 import uuid
 import sys
 import traceback as tb
@@ -435,3 +436,150 @@ def simulated_load(request):
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in simulated_load endpoint. Check log for more."}, status=500)
+
+def summary(request, run_uuid):
+    """
+    Retrieve a summary of scenarios for given user_uuid
+    :param request:
+    :param user_uuid:
+    :return:
+        {
+            "user_uuid",
+            "scenarios":
+                [{
+                  "run_uuid",                   # Run ID
+                  "status",                     # Status
+                  "created",                    # Date
+                  "description",                # Description**
+                  "focus",                      # Focus**
+                  "address",                    # Address**
+                  "urdb_rate_name",             # Utility Tariff**
+                  "doe_reference_name",         # Load Profile**
+                  "npv_us_dollars",             # Net Present Value ($)
+                  "net_capital_costs",          # DG System Cost ($)
+                  "year_one_savings_us_dollars",# Year 1 Savings ($)**
+                  "pv_kw",                      # PV Size (kW)
+                  "wind_kw",                    # Wind Size (kW)
+                  "gen_kw",                     # Generator Size (kW)
+                  "batt_kw",                    # Battery Power (kW)
+                  "batt_kwh"                    # Battery Capacity (kWh)
+                  ""
+                }]
+        }
+    """
+
+    # Validate that user UUID is valid.
+    try:
+        uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
+
+    except ValueError as e:
+        if e.args[0] == "badly formed hexadecimal UUID string":
+            return JsonResponse({"Error": str(e.message)}, status=404)
+        else:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', run_uuid=run_uuid)
+            err.save_to_db()
+            return JsonResponse({"Error": str(err.message)}, status=404)
+
+    try:
+
+        # Potentially create a dictionary here with run_uuids returned on provided user_uuid and populate information over next code chunk.
+
+        # get all required inputs/outputs by user_uuid, which is an APIMeta component
+        # use filter() instead of get() because we need 1-many records. get() is for a single record.
+        scenarios = APIMeta.objects.filter(run_uuid=run_uuid)
+        scenarios = scenarios.order_by('created')
+
+        # Ever present Keys (assume BAU scenario was run always?)
+        scenarios_financial = scenarios.select_related(
+            'FinancialOutputs'
+        )
+
+        scenarios_financial = scenarios_financial.only(
+            'FinancialOutputs__npv',
+            'FinancialOutputs__initial_capital_costs_after_incentives'
+        )
+
+        for s in scenarios_financial:
+            print(s.status)
+            print(s.run_uuid)
+            print(s.created)
+            print(s.FinancialOutputs.dict['npv'])
+        
+        # PV
+        try:
+            scenarios_pv = scenarios.select_related(
+            'PVOutputs'
+            )
+            
+            scenarios_pv = scenarios_pv.only(
+                'PVOutputs__size_kw'
+            )
+
+            for s in scenarios_pv:
+                print(s.PVOutputs.dict['size_kw'])
+        except:
+            print('NO PV')
+        
+        # WIND
+        try:
+            scenarios_wind = scenarios.select_related(
+                'WindOutputs'
+            )
+            
+            scenarios_wind = scenarios_wind.only(
+                'WindOutputs__size_kw'
+            )
+
+            for s in scenarios_wind:
+                print(s.WindOutputs.dict['size_kw'])
+        except:
+            print('NO WIND')
+        
+        # GENERATOR
+        try:
+            scenarios_gen = scenarios.select_related(
+                'GeneratorOutputs'
+            )
+            
+            scenarios_gen = scenarios_gen.only(
+                'GeneratorOutputs__size_kw'
+            )
+
+            for s in scenarios_gen:
+                print(s.GeneratorOutputs.dict['size_kw'])
+        except:
+            print('NO GEN')
+        
+        # STORAGE
+        try:
+            scenarios_bess = scenarios.select_related(
+                'ElectricStorageOutputs'
+            )
+            
+            scenarios_bess = scenarios_bess.only(
+                'ElectricStorageOutputs__size_kw',
+                'ElectricStorageOutputs__size_kwh'
+            )
+
+            for s in scenarios_bess:
+                print(s.ElectricStorageOutputs.dict['size_kw'])
+                print(s.ElectricStorageOutputs.dict['size_kwh'])
+        except:
+            print('NO BESS kW')
+            print('NO BESS kWh')
+
+        ## TODO Handle unlinked UUIDs and remove from scenarios
+
+        if len(scenarios) == 0:
+            response = JsonResponse({"Error": "No scenarios found for user '{}'".format(run_uuid)}, content_type='application/json', status=404)
+            return response
+
+        response = JsonResponse({"Status": "good"}, status=200)
+        return response
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', run_uuid=run_uuid)
+        err.save_to_db()
+        return JsonResponse({"Error": err.message}, status=404)
