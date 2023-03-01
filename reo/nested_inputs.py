@@ -2510,6 +2510,42 @@ nested_input_definitions = {
           "type": "bool", "default": False,
           "description": "If GHP can serve the domestic hot water (DHW) portion of the heating load"
         },
+        # TODO move is_hybrid_ghx into ghpghx_inputs (and an input of GhpGhx.jl)
+        "is_hybrid_ghx": {
+          "type": "bool", "default": False,
+          "description": "If the GHP system uses a hybrid GHX with auxiliary heater or cooler"
+        }, 
+               
+        "aux_heater_type": {
+          "type": "str", "default": "electric",
+          "description": "The type of auxiliary heater, 'electric' or 'natural_gas'"
+        },
+        "aux_heater_installed_cost_us_dollars_per_mmbtu_per_hr": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e6,
+          "default": 1000.0,
+          "description": "Installed cost of auxiliary heater for hybrid ghx in $/MMBtu/hr based on peak thermal production"
+        },
+        "aux_heater_thermal_efficiency": {
+          "type": "float",
+          "min": 0.001,
+          "max": 10.0,
+          "description": "The thermal efficiency (thermal_out/fuel_in) of the auxiliary heater"
+        },
+        "aux_cooler_installed_cost_us_dollars_per_ton": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e6,
+          "default": 80.0,
+          "description": "Installed cost of auxiliary cooler (e.g. cooling tower) for hybrid ghx in $/ton based on peak thermal production"
+        },
+        "aux_cooler_energy_use_intensity_kwe_per_kwt": {
+          "type": "float",
+          "min": 0.001,
+          "max": 10.0,
+          "description": "The thermal efficiency (thermal_out/fuel_in) of the auxiliary heater"
+        },        
         "macrs_option_years": {
           "type": "int",
           "restrict_to": macrs_schedules,
