@@ -28,7 +28,6 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
 from django.db import models
-from django.db.models import Q
 import uuid
 import sys
 import traceback as tb
@@ -41,7 +40,7 @@ from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, Ge
     ElectricLoadOutputs, ExistingBoilerOutputs, DomesticHotWaterLoadInputs, SiteInputs, SiteOutputs, APIMeta, \
     UserProvidedMeta, CHPInputs, CHPOutputs, CoolingLoadInputs, ExistingChillerInputs, ExistingChillerOutputs,\
     CoolingLoadOutputs, HeatingLoadOutputs, REoptjlMessageOutputs, HotThermalStorageInputs, HotThermalStorageOutputs,\
-    ColdThermalStorageInputs, ColdThermalStorageOutputs
+    ColdThermalStorageInputs, ColdThermalStorageOutputs, FinancialInputs, FinancialOutputs
 import os
 import requests
 import logging
@@ -450,14 +449,14 @@ def summary(request, run_uuid):
                   "run_uuid",                   # Run ID
                   "status",                     # Status
                   "created",                    # Date
-                  "description",                # Description**
-                  "focus",                      # Focus**
-                  "address",                    # Address**
-                  "urdb_rate_name",             # Utility Tariff**
-                  "doe_reference_name",         # Load Profile**
+                  "description",                # Description
+                  "focus",                      # Focus
+                  "address",                    # Address
+                  "urdb_rate_name",             # Utility Tariff
+                  "doe_reference_name",         # Load Profile
                   "npv_us_dollars",             # Net Present Value ($)
                   "net_capital_costs",          # DG System Cost ($)
-                  "year_one_savings_us_dollars",# Year 1 Savings ($)**
+                  "year_one_savings_us_dollars",# Year 1 Savings ($)
                   "pv_kw",                      # PV Size (kW)
                   "wind_kw",                    # Wind Size (kW)
                   "gen_kw",                     # Generator Size (kW)
@@ -482,101 +481,152 @@ def summary(request, run_uuid):
             return JsonResponse({"Error": str(err.message)}, status=404)
 
     try:
+        # Dictionary to store all results. Primary key = run_uuid and secondary key = data values from each uuid
+        summary_dict = dict()
 
-        # Potentially create a dictionary here with run_uuids returned on provided user_uuid and populate information over next code chunk.
-
-        # get all required inputs/outputs by user_uuid, which is an APIMeta component
-        # use filter() instead of get() because we need 1-many records. get() is for a single record.
-        scenarios = APIMeta.objects.filter(run_uuid=run_uuid)
-        scenarios = scenarios.order_by('created')
-
-        # Ever present Keys (assume BAU scenario was run always?)
-        scenarios_financial = scenarios.select_related(
-            'FinancialOutputs'
+        # Create Querysets: Select all objects associate with a user_uuid (using run_uuid for testing purposes). Order by `created` column
+        api_metas = APIMeta.objects.filter(run_uuid=run_uuid).only(
+            'run_uuid',
+            'status',
+            'created'
         )
 
-        scenarios_financial = scenarios_financial.only(
-            'FinancialOutputs__npv',
-            'FinancialOutputs__initial_capital_costs_after_incentives'
-        )
+        if len(api_metas) > 0:
+            # Loop over all the APIMetas associated with a user_uuid, do something if needed
+            for m in api_metas:
+                # print(3, meta.run_uuid) #acces Meta fields like this
+                summary_dict[str(m.run_uuid)] = dict()
+                summary_dict[str(m.run_uuid)]['status'] = m.status
+                summary_dict[str(m.run_uuid)]['run_uuid'] = str(m.run_uuid)
+                summary_dict[str(m.run_uuid)]['created'] = str(m.created)
+                
+            run_uuids = summary_dict.keys()
 
-        for s in scenarios_financial:
-            print(s.status)
-            print(s.run_uuid)
-            print(s.created)
-            print(s.FinancialOutputs.dict['npv'])
-        
-        # PV
-        try:
-            scenarios_pv = scenarios.select_related(
-            'PVOutputs'
+            # User provided meta
+            usermeta = UserProvidedMeta.objects.filter(meta__run_uuid__in=run_uuids).only(
+                'meta__run_uuid',
+                'description',
+                'address'
             )
+
+            if len(usermeta) > 0:
+                for m in usermeta:
+                    summary_dict[str(m.meta.run_uuid)]['description'] = m.description
+                    summary_dict[str(m.meta.run_uuid)]['address'] = m.address
             
-            scenarios_pv = scenarios_pv.only(
-                'PVOutputs__size_kw'
+            utility = ElectricUtilityInputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+                'meta__run_uuid',
+                'outage_start_time_step'
             )
-
-            for s in scenarios_pv:
-                print(s.PVOutputs.dict['size_kw'])
-        except:
-            print('NO PV')
-        
-        # WIND
-        try:
-            scenarios_wind = scenarios.select_related(
-                'WindOutputs'
-            )
+            if len(utility) > 0:
+                for m in utility:
+                    print(m.outage_start_time_step)
+                    if m.outage_start_time_step is None:
+                        summary_dict[str(m.meta.run_uuid)]['focus'] = "Financial"
+                    else:
+                        summary_dict[str(m.meta.run_uuid)]['focus'] = "Resilience"
             
-            scenarios_wind = scenarios_wind.only(
-                'WindOutputs__size_kw'
+            tariffInputs = ElectricTariffInputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+                'meta__run_uuid',
+                'urdb_rate_name'
             )
-
-            for s in scenarios_wind:
-                print(s.WindOutputs.dict['size_kw'])
-        except:
-            print('NO WIND')
-        
-        # GENERATOR
-        try:
-            scenarios_gen = scenarios.select_related(
-                'GeneratorOutputs'
-            )
+            if len(tariffInputs) > 0:
+                for m in tariffInputs:
+                    print(m.urdb_rate_name)
+                    if m.urdb_rate_name is None:
+                        summary_dict[str(m.meta.run_uuid)]['urdb_rate_name'] = 'Custom'
+                    else:
+                        summary_dict[str(m.meta.run_uuid)]['urdb_rate_name'] = m.urdb_rate_name
             
-            scenarios_gen = scenarios_gen.only(
-                'GeneratorOutputs__size_kw'
+            tariffOuts = ElectricTariffOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+                'meta__run_uuid',
+                'year_one_energy_cost_before_tax',
+                'year_one_demand_cost_before_tax',
+                'year_one_fixed_cost_before_tax',
+                'year_one_min_charge_adder_before_tax',
+                'year_one_energy_cost_before_tax_bau',
+                'year_one_demand_cost_before_tax_bau',
+                'year_one_fixed_cost_before_tax_bau',
+                'year_one_min_charge_adder_before_tax_bau',
             )
+            if len(tariffOuts) > 0:
+                for m in tariffOuts:
+                    summary_dict[str(m.meta.run_uuid)]['year_one_savings_us_dollars'] = (m.year_one_energy_cost_before_tax_bau + m.year_one_demand_cost_before_tax_bau + m.year_one_fixed_cost_before_tax_bau + m.year_one_min_charge_adder_before_tax_bau) - (m.year_one_energy_cost_before_tax + m.year_one_demand_cost_before_tax + m.year_one_fixed_cost_before_tax + m.year_one_min_charge_adder_before_tax)
 
-            for s in scenarios_gen:
-                print(s.GeneratorOutputs.dict['size_kw'])
-        except:
-            print('NO GEN')
-        
-        # STORAGE
-        try:
-            scenarios_bess = scenarios.select_related(
-                'ElectricStorageOutputs'
+            load = ElectricLoadInputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+                'meta__run_uuid',
+                'loads_kw',
+                'doe_reference_name'
             )
+            if len(load) > 0:
+                for m in load:
+                    print(m.loads_kw)
+                    if m.loads_kw is None:
+                        summary_dict[str(m.meta.run_uuid)]['doe_reference_name'] = m.doe_reference_name
+                    else:
+                        summary_dict[str(m.meta.run_uuid)]['doe_reference_name'] = 'Custom'
+
+    
+            fin = FinancialOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+                'meta__run_uuid',
+                'npv',
+                'initial_capital_costs_after_incentives'
+            )
+            if len(fin) > 0:
+                for m in fin:
+                    print(m.npv)
+                    summary_dict[str(m.meta.run_uuid)]['npv_us_dollars'] = m.npv
+                    summary_dict[str(m.meta.run_uuid)]['net_capital_costs'] = m.initial_capital_costs_after_incentives
             
-            scenarios_bess = scenarios_bess.only(
-                'ElectricStorageOutputs__size_kw',
-                'ElectricStorageOutputs__size_kwh'
+            batt = ElectricStorageOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+                'meta__run_uuid',
+                'size_kw',
+                'size_kwh'
             )
+            if len(batt) > 0:
+                for m in batt:
+                    summary_dict[str(m.meta.run_uuid)]['batt_kw'] = m.size_kw  
+                    summary_dict[str(m.meta.run_uuid)]['batt_kwh'] = m.size_kwh
+            
+            pv = PVOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+                'meta__run_uuid',
+                'size_kw'
+            )
+            if len(pv) > 0:
+                for m in pv:
+                    summary_dict[str(m.meta.run_uuid)]['pv_kw'] = m.size_kw
+            
+            wind = WindOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+                'meta__run_uuid',
+                'size_kw'
+            )
+            if len(wind) > 0:
+                for m in wind:
+                    summary_dict[str(m.meta.run_uuid)]['wind_kw'] = m.size_kw
 
-            for s in scenarios_bess:
-                print(s.ElectricStorageOutputs.dict['size_kw'])
-                print(s.ElectricStorageOutputs.dict['size_kwh'])
-        except:
-            print('NO BESS kW')
-            print('NO BESS kWh')
+            gen = GeneratorOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+                'meta__run_uuid',
+                'size_kw'
+            )
+            if len(gen) > 0:
+                for m in gen:
+                    summary_dict[str(m.meta.run_uuid)]['wind_kw'] = m.size_kw
 
-        ## TODO Handle unlinked UUIDs and remove from scenarios
-
-        if len(scenarios) == 0:
-            response = JsonResponse({"Error": "No scenarios found for user '{}'".format(run_uuid)}, content_type='application/json', status=404)
+            # Create eventual response dictionary
+            return_dict = dict()
+            return_dict['user_uuid'] = run_uuid ## CHANGE!!
+            scenario_summaries = []
+            for k in summary_dict.keys():
+                scenario_summaries.append(summary_dict[k])
+            
+            return_dict['scenarios'] = scenario_summaries
+            
+            response = JsonResponse(return_dict, status=200, safe=False)
             return response
-
-        response = JsonResponse({"Status": "good"}, status=200)
-        return response
+        
+        else:
+            response = JsonResponse({'status':'nothing!'}, status=200, safe=False)
+            return response
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
