@@ -2688,7 +2688,7 @@ defaults_dict = {
         },
         "HotTES": {
           "macrs_option_years": {
-            "default": 7
+            "default": 7 
           },
           "macrs_bonus_pct": {
             "default": 0.8
