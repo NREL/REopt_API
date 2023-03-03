@@ -47,10 +47,10 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 60
             failureThreshold: 10
-          resources:
-            requests:
-              cpu: {{ .Values.juliaCpuRequest | quote }}
-              memory: {{ .Values.juliaMemoryRequest | quote }}
-            limits:
-              cpu: {{ .Values.juliaCpuLimit | quote }}
-              memory: {{ .Values.juliaMemoryLimit | quote }}
+          # resources:
+          #   requests:
+          #     cpu: {{ .Values.juliaCpuRequest | quote }}
+          #     memory: {{ .Values.juliaMemoryRequest | quote }}
+          #   limits:
+          #     cpu: {{ .Values.juliaCpuLimit | quote }}
+          #     memory: {{ .Values.juliaMemoryLimit | quote }}
