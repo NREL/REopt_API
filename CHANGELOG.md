@@ -26,6 +26,11 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop - 2023-03-06
+### Minor Updates
+### Added
+- In **REoptjlMessageOutputs** added a `has_stacktrace` field to denote if response has a stacktrace error or not. Default is False.
+
 ## v2.8.0
 ### Minor Updates
  ##### Changed
