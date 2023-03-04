@@ -270,6 +270,24 @@ class InputValidatorTests(TestCase):
         validator.cross_clean()
         assert("required inputs" in validator.validation_errors["CHP"].keys())
 
+    def boiler_validation(self):
 
+        """
+        Validate clean, cross-clean methods are working as expected
+        """
+        post_file = os.path.join('job', 'test', 'posts', 'boiler_test.json')
+        post = json.load(open(post_file, 'r'))
 
+        post["APIMeta"]["run_uuid"] = uuid.uuid4()
+
+        validator = InputValidator(post)
+        validator.clean_fields()
+        validator.clean()
+        validator.cross_clean()
+        self.assertEquals(validator.is_valid, True)
+
+        # Update with Boiler test fields
+        # self.assertAlmostEqual(validator.models["ExistingBoiler"].emissions_factor_lb_CO2_per_mmbtu, 117, places=-1)
+        # self.assertAlmostEqual(len(validator.models["ExistingBoiler"].fuel_cost_per_mmbtu), 8760)
+        # self.assertAlmostEqual(sum(validator.models["ExistingBoiler"].fuel_cost_per_mmbtu), 8760*0.5)
 
