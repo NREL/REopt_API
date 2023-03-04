@@ -1,8 +1,4 @@
 {
-    "ElectricStorage": {
-        "max_kw": 0.0,
-        "max_kwh": 0.0
-    },
     "DomesticHotWaterLoad": {
         "annual_mmbtu": 67140.53099999999,
         "doe_reference_name": "Hospital"
@@ -18,47 +14,17 @@
         "annual_kwh": 3.876408500000039e7,
         "doe_reference_name": "Hospital"
     },
-    "PV": {
-        "max_kw": 0.0
-    },
-    "Financial": {
-        "offtaker_tax_rate_fraction": 0.26,
-        "analysis_years": 25,
-        "om_cost_escalation_rate_fraction": 0.025,
-        "elec_cost_escalation_rate_fraction": 0.023,
-        "owner_discount_rate_fraction": 0.083,
-        "owner_tax_rate_fraction": 0.26,
-        "existing_boiler_fuel_cost_escalation_rate_fraction": 0.034,
-        "offtaker_discount_rate_fraction": 0.083,
-        "third_party_ownership": false
-    },
     "SpaceHeatingLoad": {
         "annual_mmbtu": 1.15709155e6,
         "doe_reference_name": "Hospital"
     },
     "SteamTurbine": {
-        "inlet_steam_temperature_degF": 575.0,
-        "outlet_steam_pressure_psig": 150.0,
-        "om_cost_per_kwh": 0.009,
-        "net_to_gross_electric_ratio": 0.9,
-        "min_kw": 0,
-        "gearbox_generator_efficiency": 0.94,
-        "is_condensing": false,
-        "inlet_steam_pressure_psig": 600.0,
-        "outlet_steam_min_vapor_fraction": 0.8,
-        "max_kw": 20000.0,
-        "can_wholesale": false,
-        "installed_cost_per_kw": 682.0,
-        "can_curtail": false,
-        "isentropic_efficiency": 0.612,
-        "om_cost_per_kw": 0.0
+        "max_kw": 2000
     },
     "ExistingBoiler": {
         "fuel_cost_per_mmbtu": 10.0,
-        "fuel_type": "natural_gas",
         "efficiency": 0.8,
         "can_supply_steam_turbine": true,
-        "max_thermal_factor_on_peak_load": 1.25,
         "production_type": "steam"
     }
 }

@@ -212,6 +212,7 @@ end
 
 # Should this accept all inputs provided in `get_steam_turbine_defaults_size_class` docstring in REopt.jl?
 function steamturbine_defaults(req::HTTP.Request)
+
     d = JSON.parse(String(req.body))
     keys = ["avg_boiler_fuel_load_mmbtu_per_hour",
             "size_class"
@@ -221,7 +222,7 @@ function steamturbine_defaults(req::HTTP.Request)
         if !haskey(d, k)
             d[k] = nothing
         elseif !isnothing(d[k])
-            if k in ["avg_boiler_fuel_load_mmbtu_per_hour"] && typeof(d[k]) == String
+            if k == "avg_boiler_fuel_load_mmbtu_per_hour" && typeof(d[k]) == String
                 d[k] = parse(Float64, d[k])
             elseif k == "size_class" && typeof(d[k]) == String
                 d[k] = parse(Int64, d[k])
