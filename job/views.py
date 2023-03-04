@@ -492,140 +492,11 @@ def summary(request, run_uuid):
         )
 
         if len(api_metas) > 0:
-            # Loop over all the APIMetas associated with a user_uuid, do something if needed
-            for m in api_metas:
-                # print(3, meta.run_uuid) #acces Meta fields like this
-                summary_dict[str(m.run_uuid)] = dict()
-                summary_dict[str(m.run_uuid)]['status'] = m.status
-                summary_dict[str(m.run_uuid)]['run_uuid'] = str(m.run_uuid)
-                summary_dict[str(m.run_uuid)]['created'] = str(m.created)
-                
-            run_uuids = summary_dict.keys()
-
-            # User provided meta
-            usermeta = UserProvidedMeta.objects.filter(meta__run_uuid__in=run_uuids).only(
-                'meta__run_uuid',
-                'description',
-                'address'
-            )
-
-            if len(usermeta) > 0:
-                for m in usermeta:
-                    summary_dict[str(m.meta.run_uuid)]['description'] = m.description
-                    summary_dict[str(m.meta.run_uuid)]['address'] = m.address
-            
-            utility = ElectricUtilityInputs.objects.filter(meta__run_uuid__in=run_uuids).only(
-                'meta__run_uuid',
-                'outage_start_time_step'
-            )
-            if len(utility) > 0:
-                for m in utility:
-                    print(m.outage_start_time_step)
-                    if m.outage_start_time_step is None:
-                        summary_dict[str(m.meta.run_uuid)]['focus'] = "Financial"
-                    else:
-                        summary_dict[str(m.meta.run_uuid)]['focus'] = "Resilience"
-            
-            tariffInputs = ElectricTariffInputs.objects.filter(meta__run_uuid__in=run_uuids).only(
-                'meta__run_uuid',
-                'urdb_rate_name'
-            )
-            if len(tariffInputs) > 0:
-                for m in tariffInputs:
-                    print(m.urdb_rate_name)
-                    if m.urdb_rate_name is None:
-                        summary_dict[str(m.meta.run_uuid)]['urdb_rate_name'] = 'Custom'
-                    else:
-                        summary_dict[str(m.meta.run_uuid)]['urdb_rate_name'] = m.urdb_rate_name
-            
-            tariffOuts = ElectricTariffOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
-                'meta__run_uuid',
-                'year_one_energy_cost_before_tax',
-                'year_one_demand_cost_before_tax',
-                'year_one_fixed_cost_before_tax',
-                'year_one_min_charge_adder_before_tax',
-                'year_one_energy_cost_before_tax_bau',
-                'year_one_demand_cost_before_tax_bau',
-                'year_one_fixed_cost_before_tax_bau',
-                'year_one_min_charge_adder_before_tax_bau',
-            )
-            if len(tariffOuts) > 0:
-                for m in tariffOuts:
-                    summary_dict[str(m.meta.run_uuid)]['year_one_savings_us_dollars'] = (m.year_one_energy_cost_before_tax_bau + m.year_one_demand_cost_before_tax_bau + m.year_one_fixed_cost_before_tax_bau + m.year_one_min_charge_adder_before_tax_bau) - (m.year_one_energy_cost_before_tax + m.year_one_demand_cost_before_tax + m.year_one_fixed_cost_before_tax + m.year_one_min_charge_adder_before_tax)
-
-            load = ElectricLoadInputs.objects.filter(meta__run_uuid__in=run_uuids).only(
-                'meta__run_uuid',
-                'loads_kw',
-                'doe_reference_name'
-            )
-            if len(load) > 0:
-                for m in load:
-                    print(m.loads_kw)
-                    if m.loads_kw is None:
-                        summary_dict[str(m.meta.run_uuid)]['doe_reference_name'] = m.doe_reference_name
-                    else:
-                        summary_dict[str(m.meta.run_uuid)]['doe_reference_name'] = 'Custom'
-
-    
-            fin = FinancialOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
-                'meta__run_uuid',
-                'npv',
-                'initial_capital_costs_after_incentives'
-            )
-            if len(fin) > 0:
-                for m in fin:
-                    print(m.npv)
-                    summary_dict[str(m.meta.run_uuid)]['npv_us_dollars'] = m.npv
-                    summary_dict[str(m.meta.run_uuid)]['net_capital_costs'] = m.initial_capital_costs_after_incentives
-            
-            batt = ElectricStorageOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
-                'meta__run_uuid',
-                'size_kw',
-                'size_kwh'
-            )
-            if len(batt) > 0:
-                for m in batt:
-                    summary_dict[str(m.meta.run_uuid)]['batt_kw'] = m.size_kw  
-                    summary_dict[str(m.meta.run_uuid)]['batt_kwh'] = m.size_kwh
-            
-            pv = PVOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
-                'meta__run_uuid',
-                'size_kw'
-            )
-            if len(pv) > 0:
-                for m in pv:
-                    summary_dict[str(m.meta.run_uuid)]['pv_kw'] = m.size_kw
-            
-            wind = WindOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
-                'meta__run_uuid',
-                'size_kw'
-            )
-            if len(wind) > 0:
-                for m in wind:
-                    summary_dict[str(m.meta.run_uuid)]['wind_kw'] = m.size_kw
-
-            gen = GeneratorOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
-                'meta__run_uuid',
-                'size_kw'
-            )
-            if len(gen) > 0:
-                for m in gen:
-                    summary_dict[str(m.meta.run_uuid)]['wind_kw'] = m.size_kw
-
-            # Create eventual response dictionary
-            return_dict = dict()
-            return_dict['user_uuid'] = run_uuid ## CHANGE!!
-            scenario_summaries = []
-            for k in summary_dict.keys():
-                scenario_summaries.append(summary_dict[k])
-            
-            return_dict['scenarios'] = scenario_summaries
-            
-            response = JsonResponse(return_dict, status=200, safe=False)
+            summary_dict = queryset_for_summary(api_metas, summary_dict)
+            response = JsonResponse(create_summary_dict(run_uuid,summary_dict), status=200, safe=False)
             return response
-        
         else:
-            response = JsonResponse({'status':'nothing!'}, status=200, safe=False)
+            response = JsonResponse({"Error": "No scenarios found for user '{}'".format(run_uuid)}, content_type='application/json', status=404)
             return response
 
     except Exception as e:
@@ -633,3 +504,149 @@ def summary(request, run_uuid):
         err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', run_uuid=run_uuid)
         err.save_to_db()
         return JsonResponse({"Error": err.message}, status=404)
+
+
+# Take summary_dict and convert it to the desired format for response. Also add any missing key/val pairs
+def create_summary_dict(run_uuid:str,summary_dict:dict):
+
+    # if these keys are missing from a `scenario` we add 0s for them, all Floats.
+    optional_keys = ["npv_us_dollars", "net_capital_costs", "year_one_savings_us_dollars", "pv_kw", "wind_kw", "gen_kw", "batt_kw", "batt_kwh"]
+
+    # Create eventual response dictionary
+    return_dict = dict()
+    return_dict['user_uuid'] = run_uuid ## CHANGE!!
+    scenario_summaries = []
+    for k in summary_dict.keys():
+
+        d = summary_dict[k]
+
+        for opt_key in optional_keys:
+            if opt_key not in d.keys():
+                d[opt_key] = 0.0
+        
+        scenario_summaries.append(d)
+    
+    return_dict['scenarios'] = scenario_summaries
+    
+    return return_dict
+
+# Query all django models for all run_uuids found for given user_uuid
+def queryset_for_summary(api_metas,summary_dict:dict):
+
+    # Loop over all the APIMetas associated with a user_uuid, do something if needed
+    for m in api_metas:
+        # print(3, meta.run_uuid) #acces Meta fields like this
+        summary_dict[str(m.run_uuid)] = dict()
+        summary_dict[str(m.run_uuid)]['status'] = m.status
+        summary_dict[str(m.run_uuid)]['run_uuid'] = str(m.run_uuid)
+        summary_dict[str(m.run_uuid)]['created'] = str(m.created)
+        
+    run_uuids = summary_dict.keys()
+
+    # Create query of all UserProvidedMeta objects where their run_uuid is in api_metas run_uuids.
+    usermeta = UserProvidedMeta.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'description',
+        'address'
+    )
+
+    if len(usermeta) > 0:
+        for m in usermeta:
+            summary_dict[str(m.meta.run_uuid)]['description'] = m.description
+            summary_dict[str(m.meta.run_uuid)]['address'] = m.address
+    
+    utility = ElectricUtilityInputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'outage_start_time_step'
+    )
+    if len(utility) > 0:
+        for m in utility:
+            if m.outage_start_time_step is None:
+                summary_dict[str(m.meta.run_uuid)]['focus'] = "Financial"
+            else:
+                summary_dict[str(m.meta.run_uuid)]['focus'] = "Resilience"
+    
+    tariffInputs = ElectricTariffInputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'urdb_rate_name'
+    )
+    if len(tariffInputs) > 0:
+        for m in tariffInputs:
+            if m.urdb_rate_name is None:
+                summary_dict[str(m.meta.run_uuid)]['urdb_rate_name'] = 'Custom'
+            else:
+                summary_dict[str(m.meta.run_uuid)]['urdb_rate_name'] = m.urdb_rate_name
+    
+    tariffOuts = ElectricTariffOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'year_one_energy_cost_before_tax',
+        'year_one_demand_cost_before_tax',
+        'year_one_fixed_cost_before_tax',
+        'year_one_min_charge_adder_before_tax',
+        'year_one_energy_cost_before_tax_bau',
+        'year_one_demand_cost_before_tax_bau',
+        'year_one_fixed_cost_before_tax_bau',
+        'year_one_min_charge_adder_before_tax_bau',
+    )
+    if len(tariffOuts) > 0:
+        for m in tariffOuts:
+            summary_dict[str(m.meta.run_uuid)]['year_one_savings_us_dollars'] = (m.year_one_energy_cost_before_tax_bau + m.year_one_demand_cost_before_tax_bau + m.year_one_fixed_cost_before_tax_bau + m.year_one_min_charge_adder_before_tax_bau) - (m.year_one_energy_cost_before_tax + m.year_one_demand_cost_before_tax + m.year_one_fixed_cost_before_tax + m.year_one_min_charge_adder_before_tax)
+
+    load = ElectricLoadInputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'loads_kw',
+        'doe_reference_name'
+    )
+    if len(load) > 0:
+        for m in load:
+            if m.loads_kw is None:
+                summary_dict[str(m.meta.run_uuid)]['doe_reference_name'] = m.doe_reference_name
+            else:
+                summary_dict[str(m.meta.run_uuid)]['doe_reference_name'] = 'Custom'
+
+
+    fin = FinancialOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'npv',
+        'initial_capital_costs_after_incentives'
+    )
+    if len(fin) > 0:
+        for m in fin:
+            summary_dict[str(m.meta.run_uuid)]['npv_us_dollars'] = m.npv
+            summary_dict[str(m.meta.run_uuid)]['net_capital_costs'] = m.initial_capital_costs_after_incentives
+    
+    batt = ElectricStorageOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'size_kw',
+        'size_kwh'
+    )
+    if len(batt) > 0:
+        for m in batt:
+            summary_dict[str(m.meta.run_uuid)]['batt_kw'] = m.size_kw  
+            summary_dict[str(m.meta.run_uuid)]['batt_kwh'] = m.size_kwh
+    
+    pv = PVOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'size_kw'
+    )
+    if len(pv) > 0:
+        for m in pv:
+            summary_dict[str(m.meta.run_uuid)]['pv_kw'] = m.size_kw
+    
+    wind = WindOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'size_kw'
+    )
+    if len(wind) > 0:
+        for m in wind:
+            summary_dict[str(m.meta.run_uuid)]['wind_kw'] = m.size_kw
+
+    gen = GeneratorOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'size_kw'
+    )
+    if len(gen) > 0:
+        for m in gen:
+            summary_dict[str(m.meta.run_uuid)]['wind_kw'] = m.size_kw
+    
+    return summary_dict
