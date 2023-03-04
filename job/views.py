@@ -436,7 +436,7 @@ def simulated_load(request):
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in simulated_load endpoint. Check log for more."}, status=500)
 
-def summary(request, run_uuid):
+def summary(request, user_uuid):
     """
     Retrieve a summary of scenarios for given user_uuid
     :param request:
@@ -469,14 +469,14 @@ def summary(request, run_uuid):
 
     # Validate that user UUID is valid.
     try:
-        uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
+        uuid.UUID(user_uuid)  # raises ValueError if not valid uuid
 
     except ValueError as e:
         if e.args[0] == "badly formed hexadecimal UUID string":
             return JsonResponse({"Error": str(e.message)}, status=404)
         else:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', run_uuid=run_uuid)
+            err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', user_uuid=user_uuid)
             err.save_to_db()
             return JsonResponse({"Error": str(err.message)}, status=404)
 
@@ -484,8 +484,8 @@ def summary(request, run_uuid):
         # Dictionary to store all results. Primary key = run_uuid and secondary key = data values from each uuid
         summary_dict = dict()
 
-        # Create Querysets: Select all objects associate with a user_uuid (using run_uuid for testing purposes). Order by `created` column
-        api_metas = APIMeta.objects.filter(run_uuid=run_uuid).only(
+        # Create Querysets: Select all objects associate with a user_uuid, Order by `created` column
+        api_metas = APIMeta.objects.filter(user_uuid=user_uuid).only(
             'run_uuid',
             'status',
             'created'
@@ -493,28 +493,112 @@ def summary(request, run_uuid):
 
         if len(api_metas) > 0:
             summary_dict = queryset_for_summary(api_metas, summary_dict)
-            response = JsonResponse(create_summary_dict(run_uuid,summary_dict), status=200, safe=False)
+            response = JsonResponse(create_summary_dict(user_uuid,summary_dict), status=200, safe=False)
             return response
         else:
-            response = JsonResponse({"Error": "No scenarios found for user '{}'".format(run_uuid)}, content_type='application/json', status=404)
+            response = JsonResponse({"Error": "No scenarios found for user '{}'".format(user_uuid)}, content_type='application/json', status=404)
             return response
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', run_uuid=run_uuid)
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', user_uuid=user_uuid)
+        err.save_to_db()
+        return JsonResponse({"Error": err.message}, status=404)
+
+def summary_by_chunk(request, user_uuid, chunk):
+
+    # Dictionary to store all results. Primary key = run_uuid and secondary key = data values from each uuid
+    summary_dict = dict()
+
+    try:
+        uuid.UUID(user_uuid)  # raises ValueError if not valid uuid
+
+    except ValueError as e:
+        if e.args[0] == "badly formed hexadecimal UUID string":
+            return JsonResponse({"Error": str(e.message)}, status=404)
+        else:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', user_uuid=user_uuid)
+            err.save_to_db()
+            return JsonResponse({"Error": str(err.message)}, status=404)
+    
+    try:
+        try:
+            # chunk size is an optional URL parameter which defines the number of chunks into which to 
+            # divide all user summary results. It must be a positive integer.
+            default_chunk_size = 30
+            chunk_size = int(request.GET.get('chunk_size') or default_chunk_size)
+            if chunk_size != float(request.GET.get('chunk_size') or default_chunk_size):
+                return JsonResponse({"Error": "Chunk size must be an integer."}, status=400)    
+        except:
+            return JsonResponse({"Error": "Chunk size must be a positive integer."}, status=400)
+        
+        try:
+            # chunk is the 1-indexed indice of the chunks for which to return results.
+            # chunk is a mandatory input from URL, different from chunk_size.
+            # It must be a positive integer.
+            chunk = int(chunk)
+            if chunk < 1:
+                response = JsonResponse({"Error": "Chunks are 1-indexed, please provide a chunk index greater than or equal to 1"}
+                    , content_type='application/json', status=400)
+                return response
+        except:
+            return JsonResponse({"Error": "Chunk number must be a 1-indexed integer."}, status=400)
+        
+        # Create Querysets: Select all objects associate with a user_uuid, Order by `created` column
+        api_metas = APIMeta.objects.filter(user_uuid=user_uuid).only(
+            'run_uuid',
+            'status',
+            'created'
+        )
+
+        # TODO handle unlinked scearios here.
+        
+        total_scenarios = len(api_metas)
+        if total_scenarios == 0:
+            response = JsonResponse({"Error": "No scenarios found for user '{}'".format(user_uuid)}, content_type='application/json', status=404)
+            return response
+        
+        # Determine total number of chunks from current query of user results based on the chunk size
+        total_chunks = total_scenarios/float(chunk_size)
+        # If the last chunk is only patially full, i.e. there is a remainder, then add 1 so when it 
+        # is converted to an integer the result will reflect the true total number of chunks
+        if total_chunks%1 > 0: 
+            total_chunks = total_chunks + 1
+        # Make sure total chunks is an integer
+        total_chunks = int(total_chunks)
+        
+        # Catch cases where user queries for a chunk that is more than the total chunks for the user
+        if chunk > total_chunks:
+            response = JsonResponse({"Error": "Chunk index {} is greater than the total number of chunks ({}) at a chunk size of {}".format(
+                chunk, total_chunks, chunk_size)}, content_type='application/json', status=400)
+            return response
+        
+        # Filter scenarios to the chunk
+        start_idx = max((chunk-1) * chunk_size, 0)
+        end_idx = min(chunk * chunk_size, total_scenarios)
+        api_metas_by_chunk = api_metas[start_idx: end_idx]
+
+        summary_dict = queryset_for_summary(api_metas_by_chunk, summary_dict)
+        response = JsonResponse(create_summary_dict(user_uuid,summary_dict), status=200, safe=False)
+        return response
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', user_uuid=user_uuid)
         err.save_to_db()
         return JsonResponse({"Error": err.message}, status=404)
 
 
 # Take summary_dict and convert it to the desired format for response. Also add any missing key/val pairs
-def create_summary_dict(run_uuid:str,summary_dict:dict):
+def create_summary_dict(user_uuid:str,summary_dict:dict):
 
     # if these keys are missing from a `scenario` we add 0s for them, all Floats.
     optional_keys = ["npv_us_dollars", "net_capital_costs", "year_one_savings_us_dollars", "pv_kw", "wind_kw", "gen_kw", "batt_kw", "batt_kwh"]
 
     # Create eventual response dictionary
     return_dict = dict()
-    return_dict['user_uuid'] = run_uuid ## CHANGE!!
+    return_dict['user_uuid'] = user_uuid
     scenario_summaries = []
     for k in summary_dict.keys():
 
