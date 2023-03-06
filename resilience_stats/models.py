@@ -374,7 +374,7 @@ class ERPElectricStorageInputs(BaseModel, models.Model):
     )
     operational_availability = models.FloatField(
         blank=True,
-        default=1.0,
+        default=0.97,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0)
@@ -455,7 +455,7 @@ class ERPPVInputs(BaseModel, models.Model):
     )    
     operational_availability = models.FloatField(
         blank=True,
-        default=1.0,
+        default=0.98,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0)
