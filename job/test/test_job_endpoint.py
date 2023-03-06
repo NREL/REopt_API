@@ -113,6 +113,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         assert('errors' in r["messages"].keys())
         assert('warnings' in r["messages"].keys())
+        assert(r['messages']['has_stacktrace']==True)
         assert(resp.status_code==400)
 
 
