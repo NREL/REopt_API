@@ -26,6 +26,11 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop
+### Minor Updates
+ ##### Changed
+ - Updated ubuntu-18.04 to ubuntu-latest in GitHub push/pull tests because 18.04 was deprecated in GitHub Actions
+
 ## v2.8.0
 ### Minor Updates
  ##### Changed
