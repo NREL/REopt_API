@@ -319,6 +319,7 @@ class InputValidatorTests(TestCase):
         validator.clean_fields()
         validator.clean()
         validator.cross_clean()
+        self.assertEquals(validator.models["ElectricUtility"].outage_probabilities, [0.5, 0.5])
         self.assertEquals(validator.is_valid, True)
 
 
