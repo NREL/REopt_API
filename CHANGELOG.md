@@ -26,7 +26,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop - 2023-02-09
+## Develop - 2023-03-06
 ### Minor Updates
 ##### Added 
  - In job/ app (v3): added **AbsorptionChillerInputs** model
@@ -34,6 +34,8 @@ Classify the change according to the following categories:
  - In `job/views.py`:
    - add new input/output models to properly save the inputs/outputs
    - add `/absorption_chiller_defaults` endpoint which calls the http.jl absorption_chiller_defaults endpoint
+##### Changed
+ - Updated ubuntu-18.04 to ubuntu-latest in GitHub push/pull tests because 18.04 was deprecated in GitHub Actions
 
 ## v2.8.0
 ##### Changed
