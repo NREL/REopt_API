@@ -1730,6 +1730,8 @@ class ElectricUtilityInputs(BaseModel, models.Model):
                     error_messages["mismatched length"] = "outage_probabilities and outage_durations must have the same length."
             else: 
                 error_messages["missing required inputs"] = "outage_durations is required if outage_probabilities is present."
+        elif self.outage_durations not in [None,[]]: 
+            self.outage_probabilities = [1/len(self.outage_durations)] * len(self.outage_durations)
 
         if error_messages:
             raise ValidationError(error_messages)
