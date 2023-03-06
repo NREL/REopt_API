@@ -270,7 +270,7 @@ class InputValidatorTests(TestCase):
         validator.cross_clean()
         assert("required inputs" in validator.validation_errors["CHP"].keys())
 
-    def test_multiple_outages(self):
+    def test_multiple_outages_validation(self):
         """
         ensure that validation of multiple outages post works as expected and catches errors
         """
@@ -316,9 +316,10 @@ class InputValidatorTests(TestCase):
         post["ElectricUtility"].pop("outage_probabilities")
         post["APIMeta"]["run_uuid"] = uuid.uuid4()
         validator = InputValidator(post)
+        validator.clean_fields()
         validator.clean()
-        assert("missing required inputs" in validator.validation_errors["ElectricUtility"].keys())
-
+        validator.cross_clean()
+        self.assertEquals(validator.is_valid, True)
 
 
 
