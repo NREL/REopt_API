@@ -26,15 +26,22 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop
+## Develop 11/21/2022
 ### Minor Updates
- ##### Changed
- - Updated ubuntu-18.04 to ubuntu-latest in GitHub push/pull tests because 18.04 was deprecated in GitHub Actions
+##### Added
+- Added access to the multiple outage stochastic/robust modeling capabilities in REopt.jl. Not all inputs and outputs are exposed, but the following are:
+    - **SiteInputs**: **min_resil_time_steps**
+    - **ElectricUtilityInputs**: **outage_start_time_steps**, **outage_durations**, **outage_probabilities**
+    - **OutageOutputs**: **expected_outage_cost**, **max_outage_cost_per_outage_duration**, **unserved_load_series**, **unserved_load_per_outage**, **microgrid_upgrade_capital_cost**, **generator_fuel_used_per_outage**
+- added test using multiple outage modeling
+##### Changed
+- use TransactionTestCase instead of TestCase (this avoids whole test being wrapped in a transaction which leads to a TransactionManagementError when doing a database query in the middle)
+- Updated ubuntu-18.04 to ubuntu-latest in GitHub push/pull tests because 18.04 was deprecated in GitHub Actions
 
 ## v2.8.0
 ### Minor Updates
- ##### Changed
- - In `reo/nested_inputs.py` v2 inputs (`defaults_dict[2]`), updated the following default values:
+##### Changed
+- In `reo/nested_inputs.py` v2 inputs (`defaults_dict[2]`), updated the following default values:
    - PV, Wind, Storage, CHP, GHP: **federal_itc_pct** to 0.30 (30%)
    - PV, Wind, Storage, CHP, GHP: ***macrs_bonus_pct** to 0.8 (80%)
 - The `ghpghx` app and Julia endpoint in `http.jl` uses the [GhpGhx.jl](https://github.com/NREL/GhpGhx.jl) Julia package instead of internal Julia scripts with git submodule for the `tess.so` file
@@ -43,26 +50,26 @@ Classify the change according to the following categories:
 
 ## v2.7.1
 ### Minor Updates
-### Added 
+##### Added 
  - In job/ app (v3): Added **addressable_load_fraction** to SpaceHeatingLoad and DomesticHotWaterLoad inputs. 
-### Changed
+##### Changed
  - Changed redis service memory settings to mitigate "out of memory" OOM issue we've been getting on production
  
 ## v2.7.0
 ### Minor Updates
- ### Changed
+##### Changed
  - In job/ app (v3): Name changes for many outputs/results. Generally, changes are for energy outputs (not costs) that include "year_one", and are changed to annual_ for scalars and to production_to_, thermal_to_ etc. for time series.
  - In job/ app (v3): Changed some _bau outputs to align with REopt.jl outputs
- ### Added 
+##### Added 
  - In job/ app (v3): Added **thermal_production_series_mmbtu_per_hour** to CHP results.
 ##### Removed
 - In job/ app (v3): Removed outputs not reported by REopt.jl
-#### Fixed
+##### Fixed
 - In job/views for `/simulated_load` endpoint: Fixed the data type conversion issues between JSON and Julia
   
 ## v2.6.0
 ### Minor Updates
-#### Added
+##### Added
 1. **REoptjlMessageOutputs** model to capture errors and warnings returned by REoptjl during input processing and post optimization
 2. Missing output fields for **ExistingBoilerOutputs** model
 3. API test `job\test\posts\all_inputs_test.json` to include all input models in a single API test
@@ -73,8 +80,7 @@ Classify the change according to the following categories:
 - add **HotThermalStorageOutputs**
 - add **ColdThermalStorageOutputs**
 - `0012_coldthermalstorageinputs....` file used to add new models to the db
-
-#### Changed
+##### Changed
 1. Default values for the following fields were changed to align them with REopt API v2 (i.e. stable, and REopt.jl) defaults. As-is, these values are aligned with REopt v1 defaults. Units were unchanged.
 - **FinancialInputs.elec_cost_escalation_rate_fraction** from 0.023 to 0.019
 - **FinancialInputs.offtaker_discount_rate_fraction** from 0.083 to 0.0564
@@ -88,17 +94,6 @@ Classify the change according to the following categories:
 - **ElectricStorageInputs.replace_cost_per_kwh** from 200 to 220
 2. Modified `julia_src\http.jl` and `julia_src\cbc\http.jl` to return status 400 when REopt responds with an error
 3. Updated `r["Messages"]` in `views.py` to include **REoptjlMessageOutputs** errors and warnings
-
-## Develop 11/21/2022
-### Minor Updates
-##### Added
-- Added access to the multiple outage stochastic/robust modeling capabilities in REopt.jl. Not all inputs and outputs are exposed, but the following are:
-    - **SiteInputs**: **min_resil_time_steps**
-    - **ElectricUtilityInputs**: **outage_start_time_steps**, **outage_durations**, **outage_probabilities**
-    - **OutageOutputs**: **expected_outage_cost**, **max_outage_cost_per_outage_duration**, **unserved_load_series**, **unserved_load_per_outage**, **microgrid_upgrade_capital_cost**, **generator_fuel_used_per_outage**
-- added test using multiple outage modeling
-##### Changed
-- use TransactionTestCase instead of TestCase (this avoids whole test being wrapped in a transaction which leads to a TransactionManagementError when doing a database query in the middle)
 
 ## v2.5.0
 ### Minor Updates
@@ -437,7 +432,7 @@ The default values changed are:
 ## v1.4.0 - 2021-01-29
 ### Major Updates
 ### Minor Updates
-## Added
+##### Added
 - `reo`/`reopt.jl`: Coincident peak rates and expected time steps can be specified. There can be a single rate and list of time steps. Or there can be multiple CP periods in a year with different rates, and then a set of time steps is specified for each rate. Peak demand occurring during each set of CP time steps is charged at the corresponding CP rate.
 
 - `reo`: Add a new **ElectricTariff** inputs and outputs: 
