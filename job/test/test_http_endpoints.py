@@ -73,6 +73,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         self.assertEqual(http_response["default_inputs"]["om_cost_per_ton"], 80.0)
         self.assertEqual(http_response["default_inputs"]["installed_cost_per_ton"], 3066.0)
         self.assertEqual(http_response["default_inputs"]["cop_thermal"], 0.74)
+        self.assertNotIn("thermal_consumption_hot_water_or_steam", http_response["default_inputs"].keys())
     
     def test_simulated_load(self):
 
