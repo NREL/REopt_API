@@ -4461,7 +4461,7 @@ class BoilerInputs(BaseModel, models.Model):
             ]
         ),
         default=list,
-        blank=True,
+        null=True,
         help_text="Fuel cost in [$/MMBtu]"
     )
 
@@ -4534,6 +4534,13 @@ class BoilerInputs(BaseModel, models.Model):
 
     # For custom validations within model.
     def clean(self):
+        error_messages = {}
+        if not self.dict.get("fuel_cost_per_mmbtu"):
+            error_messages["required inputs"] = "Must provide fuel_cost_per_mmbtu to model {}".format(self.key)
+
+        if error_messages:
+            raise ValidationError(error_messages)
+        
         self.fuel_cost_per_mmbtu = scalar_to_vector(self.fuel_cost_per_mmbtu)
 
 class BoilerOutputs(BaseModel, models.Model):
