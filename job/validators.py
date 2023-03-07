@@ -422,7 +422,7 @@ class InputValidator(object):
         """
         if "ExistingBoiler" in self.models.keys():
 
-            self.clean_time_series("ExistingBoiler", "fuel_loads_mmbtu_per_hour")
+            self.clean_time_series("ExistingBoiler", "fuel_cost_per_mmbtu")
 
             if self.models["ExistingBoiler"].efficiency is None:
                 if self.models["ExistingBoiler"].production_type == 'hot_water':
@@ -435,7 +435,7 @@ class InputValidator(object):
         """
         if "Boiler" in self.models.keys():
 
-            self.clean_time_series("ExistingBoiler", "fuel_loads_mmbtu_per_hour")
+            self.clean_time_series("Boiler", "fuel_cost_per_mmbtu")
         
         """
         ElectricLoad
