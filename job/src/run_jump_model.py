@@ -84,6 +84,10 @@ def run_jump_model(run_uuid):
     
     data.pop('user_uuid',None) # Remove user uuid from inputs dict to avoid downstream errors
 
+    # can uncomment for debugging
+    # import json
+    # json.dump(data, open("debug_inputs.json", "w"))
+
     logger.info("Running JuMP model ...")
     try:
         t_start = time.time()
