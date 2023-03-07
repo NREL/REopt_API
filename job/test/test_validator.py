@@ -270,6 +270,59 @@ class InputValidatorTests(TestCase):
         validator.cross_clean()
         assert("required inputs" in validator.validation_errors["CHP"].keys())
 
+    def test_multiple_outages_validation(self):
+        """
+        ensure that validation of multiple outages post works as expected and catches errors
+        """
+        post_file = os.path.join('job', 'test', 'posts', 'outage.json')
+        outage_post = json.load(open(post_file, 'r'))
+        outage_post["APIMeta"] = {"run_uuid": uuid.uuid4()}
+        outage_post["Meta"] = {
+            "description": "test description",
+            "address": "test address"
+        }
+        validator = InputValidator(outage_post)
+        validator.clean_fields()
+        validator.clean()
+        validator.cross_clean()
+        self.assertEquals(validator.is_valid, True)
+
+        # test mismatched length
+        post = copy.deepcopy(outage_post)
+        post["ElectricUtility"]["outage_durations"] = [10,20,30,40]
+        post["APIMeta"]["run_uuid"] = uuid.uuid4()
+        validator = InputValidator(post)
+        validator.clean()
+        assert("mismatched length" in validator.validation_errors["ElectricUtility"].keys())
+
+        # test missing outage_durations
+        post = copy.deepcopy(outage_post)
+        post["ElectricUtility"].pop("outage_durations")
+        post["APIMeta"]["run_uuid"] = uuid.uuid4()
+        validator = InputValidator(post)
+        validator.clean()
+        assert("missing required inputs" in validator.validation_errors["ElectricUtility"].keys())
+
+        # test sum of outage_probabilities != 1
+        post = copy.deepcopy(outage_post)
+        post["ElectricUtility"]["outage_probabilities"] = [0.5,0.6]
+        post["APIMeta"]["run_uuid"] = uuid.uuid4()
+        validator = InputValidator(post)
+        validator.clean()
+        assert("outage_probabilities" in validator.validation_errors["ElectricUtility"].keys())
+
+        # test missing outage_probabilities
+        post = copy.deepcopy(outage_post)
+        post["ElectricUtility"].pop("outage_probabilities")
+        post["APIMeta"]["run_uuid"] = uuid.uuid4()
+        validator = InputValidator(post)
+        validator.clean_fields()
+        validator.clean()
+        validator.cross_clean()
+        self.assertEquals(validator.models["ElectricUtility"].outage_probabilities, [0.5, 0.5])
+        self.assertEquals(validator.is_valid, True)
+
+
 
 
 
