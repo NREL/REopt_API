@@ -2991,6 +2991,7 @@ class GeneratorInputs(BaseModel, models.Model):
         help_text="Electric efficiency of the generator running at full load."
     )
     fuel_avail_gal = models.FloatField(
+        default=MAX_BIG_NUMBER*10,
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(MAX_BIG_NUMBER*10)
