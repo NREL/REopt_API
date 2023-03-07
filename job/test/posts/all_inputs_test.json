@@ -252,7 +252,7 @@
         "fuel_type": "natural_gas"
     },
     "SpaceHeatingLoad": {
-        "annual_mmbtu": null,
+        "annual_mmbtu": 8760.0,
         "doe_reference_name": "MidriseApartment",
         "monthly_mmbtu": [],
         "fuel_loads_mmbtu_per_hour": [],
@@ -260,11 +260,24 @@
         "blended_doe_reference_percents": []
     },
     "DomesticHotWaterLoad": {
-        "annual_mmbtu": null,
+        "annual_mmbtu": 8760.0,
         "doe_reference_name": "MidriseApartment",
         "monthly_mmbtu": [],
         "fuel_loads_mmbtu_per_hour": [],
         "blended_doe_reference_names": [],
         "blended_doe_reference_percents": []
+    },
+    "Boiler": {
+        "min_mmbtu_per_hour": 0.0,
+        "max_mmbtu_per_hour": 100000000.0,
+        "efficiency": 0.8,
+        "fuel_cost_per_mmbtu": 0.05,
+        "macrs_option_years": 0,
+        "macrs_bonus_fraction": 0.0,
+        "installed_cost_per_mmbtu_per_hour": 0.001,
+        "om_cost_per_mmbtu_per_hour": 0.0,
+        "om_cost_per_mmbtu": 0.0,
+        "fuel_type": "natural_gas",
+        "can_supply_steam_turbine": true
     }
 }
