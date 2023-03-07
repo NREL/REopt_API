@@ -4748,7 +4748,7 @@ class SteamTurbineInputs(BaseModel, models.Model):
             MinValueValidator(0.0),
             MaxValueValidator(700.0)
         ],
-        blank=True,
+        default=0.0,
         help_text="Alternative input to inlet steam temperature, this is the superheat amount (delta from T_saturation) to the steam turbine"
     )
 
@@ -4777,7 +4777,7 @@ class SteamTurbineInputs(BaseModel, models.Model):
             MinValueValidator(0.0),
             MaxValueValidator(5.0e3)
         ],
-        blank=True,
+        default=0.0,
         null=True,
         help_text="Annual steam turbine fixed operations and maintenance costs in $/kW"
     )

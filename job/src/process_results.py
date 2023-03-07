@@ -30,7 +30,7 @@
 from job.models import REoptjlMessageOutputs, FinancialOutputs, APIMeta, PVOutputs, ElectricStorageOutputs, ElectricTariffOutputs, SiteOutputs,\
     ElectricUtilityOutputs, GeneratorOutputs, ElectricLoadOutputs, WindOutputs, FinancialInputs, ElectricUtilityInputs, ExistingBoilerOutputs,\
     CHPInputs, CHPOutputs, ExistingChillerOutputs, CoolingLoadOutputs, HeatingLoadOutputs, HotThermalStorageOutputs, ColdThermalStorageOutputs, \
-    BoilerOutputs, SteamTurbineOutputs
+    BoilerOutputs, SteamTurbineInputs, SteamTurbineOutputs
 import logging
 log = logging.getLogger(__name__)
 import sys
@@ -99,8 +99,12 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
         # get input models that need updating
         FinancialInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["Financial"])
         ElectricUtilityInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["ElectricUtility"])
+
         if inputs_to_update["CHP"]:  # Will be an empty dictionary if CHP is not considered
             CHPInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["CHP"])
+        if inputs_to_update["SteamTurbine"]:  # Will be an empty dictionary if SteamTurbine is not considered
+            SteamTurbineInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["SteamTurbine"])
+    
     except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(
