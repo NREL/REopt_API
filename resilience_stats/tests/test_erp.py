@@ -46,6 +46,7 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         self.reopt_base_erp_help = '/dev/erp/help/'
         self.reopt_base_erp_chp_defaults = '/dev/erp/chp_defaults/?prime_mover={0}&is_chp={1}&size_kw={2}'
         self.post_sim = os.path.join('resilience_stats', 'tests', 'ERP_sim_post.json')
+        self.post_sim_large_stor = os.path.join('resilience_stats', 'tests', 'ERP_sim_large_stor_post.json')
         
         #for REopt optimization
         self.reopt_base_opt = '/dev/job/'
@@ -68,6 +69,23 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
             self.reopt_base_erp_chp_defaults.format(prime_mover, is_chp, size_kw),
             format='json'
         )
+
+    def test_erp_large_battery(self):
+        """
+        Tests calling ERP with PV, a small generator, and very large battery such that final survivial should be 1.
+        This is the same as the first test in the "Backup Generator Reliability" testset in the REopt Julia package.
+        """
+        post_sim_large_stor = json.load(open(self.post_sim_large_stor, 'rb'))
+
+        resp = self.get_response_sim(post_sim_large_stor)
+        self.assertHttpCreated(resp)
+        r_sim = json.loads(resp.content)
+        erp_run_uuid = r_sim.get('run_uuid')
+
+        resp = self.get_results_sim(erp_run_uuid)
+        results = json.loads(resp.content)
+
+        self.assertAlmostEqual(results["outputs"]["mean_cumulative_survival_final_time_step"], 1.0, places=4)
 
     def test_erp_with_reopt_run_uuid(self):
         """
