@@ -2,7 +2,7 @@
 
 julia_version = "1.8.5"
 manifest_format = "2.0"
-project_hash = "c2cdadb4ef175368e043d03d8dd75e25e020ef11"
+project_hash = "90e66426e70d2bf97b8a3e99508fcb404743b11d"
 
 [[deps.AbstractFFTs]]
 deps = ["ChainRulesCore", "LinearAlgebra"]
@@ -300,6 +300,13 @@ deps = ["GeoInterface", "RecipesBase"]
 git-tree-sha1 = "29e1ec25cfb6762f503a19495aec347acf867a9e"
 uuid = "0329782f-3d07-4b52-b9f6-d3137cf03c7a"
 version = "1.0.0"
+
+[[deps.GhpGhx]]
+git-tree-sha1 = "19a4afe42a79f22612478a87d9d938c6a5087af2"
+repo-rev = "main"
+repo-url = "https://github.com/NREL/GhpGhx.jl"
+uuid = "7ce85f02-24a8-4d69-a3f0-14b5daa7d30c"
+version = "0.1.0"
 
 [[deps.Glob]]
 git-tree-sha1 = "4df9f7e06108728ebf00a0a11edee4b29a482bb2"
@@ -692,7 +699,7 @@ git-tree-sha1 = "baf833b5219bd289c6c4e3b4788c8567ac91fb8f"
 repo-rev = "limited-gen-reliability"
 repo-url = "https://github.com/NREL/REopt.jl.git"
 uuid = "d36ad4e8-d74a-4f7a-ace1-eaea049febf6"
-version = "0.24.0"
+version = "0.25.0"
 
 [[deps.Random]]
 deps = ["SHA", "Serialization"]
