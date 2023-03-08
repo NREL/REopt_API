@@ -101,6 +101,8 @@ def process_results(results: dict, run_uuid: str) -> None:
                 CoolingLoadOutputs.create(meta=meta, **results["CoolingLoad"]).save()
             if "CHP" in results.keys():
                 CHPOutputs.create(meta=meta, **results["CHP"]).save()
+            if "AbsorptionChiller" in results.keys():
+                AbsorptionChillerOutputs.create(meta=meta, **results["AbsorptionChiller"]).save()
             if "Outages" in results.keys():
                 OutageOutputs.create(meta=meta, **results["Outages"]).save()
             # TODO process rest of results
@@ -113,46 +115,6 @@ def process_results(results: dict, run_uuid: str) -> None:
                                                                     )
         log.debug(debug_msg)
         raise e
-
-    if "Messages" in results.keys():
-        REoptjlMessageOutputs.create(meta=meta, **results["Messages"]).save()
-    if results.get("status") != "error":
-        FinancialOutputs.create(meta=meta, **results["Financial"]).save()
-        ElectricTariffOutputs.create(meta=meta, **results["ElectricTariff"]).save()
-        ElectricUtilityOutputs.create(meta=meta, **results["ElectricUtility"]).save()
-        ElectricLoadOutputs.create(meta=meta, **results["ElectricLoad"]).save()
-        SiteOutputs.create(meta=meta, **results["Site"]).save()
-        if "PV" in results.keys():
-            if isinstance(results["PV"], dict):
-                PVOutputs.create(meta=meta, **results["PV"]).save()
-            elif isinstance(results["PV"], list):
-                for pvdict in results["PV"]:
-                    PVOutputs.create(meta=meta, **pvdict).save()
-        if "ElectricStorage" in results.keys():
-            ElectricStorageOutputs.create(meta=meta, **results["ElectricStorage"]).save()
-        if "Generator" in results.keys():
-            GeneratorOutputs.create(meta=meta, **results["Generator"]).save()
-        if "Wind" in results.keys():
-            WindOutputs.create(meta=meta, **results["Wind"]).save()
-        # if "Boiler" in results.keys():
-        #     BoilerOutputs.create(meta=meta, **results["Boiler"]).save()
-        if "ExistingBoiler" in results.keys():
-            ExistingBoilerOutputs.create(meta=meta, **results["ExistingBoiler"]).save()
-        if "ExistingChiller" in results.keys():
-            ExistingChillerOutputs.create(meta=meta, **results["ExistingChiller"]).save()
-        if "HotThermalStorage" in results.keys():
-            HotThermalStorageOutputs.create(meta=meta, **results["HotThermalStorage"]).save()
-        if "ColdThermalStorage" in results.keys():
-            ColdThermalStorageOutputs.create(meta=meta, **results["ColdThermalStorage"]).save()
-        if "HeatingLoad" in results.keys():
-            HeatingLoadOutputs.create(meta=meta, **results["HeatingLoad"]).save()
-        if "CoolingLoad" in results.keys():
-            CoolingLoadOutputs.create(meta=meta, **results["CoolingLoad"]).save()
-        if "CHP" in results.keys():
-            CHPOutputs.create(meta=meta, **results["CHP"]).save()
-        if "AbsorptionChiller" in results.keys():
-            AbsorptionChillerOutputs.create(meta=meta, **results["AbsorptionChiller"]).save()
-        # TODO process rest of results
 
 def pop_result_keys(r:dict, keys_to_skip:list):
     for k in r.keys():
