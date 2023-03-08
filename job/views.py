@@ -40,7 +40,7 @@ from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, Ge
     ElectricLoadOutputs, ExistingBoilerOutputs, DomesticHotWaterLoadInputs, SiteInputs, SiteOutputs, APIMeta, \
     UserProvidedMeta, CHPInputs, CHPOutputs, CoolingLoadInputs, ExistingChillerInputs, ExistingChillerOutputs,\
     CoolingLoadOutputs, HeatingLoadOutputs, REoptjlMessageOutputs, HotThermalStorageInputs, HotThermalStorageOutputs,\
-    ColdThermalStorageInputs, ColdThermalStorageOutputs, FinancialInputs, FinancialOutputs
+    ColdThermalStorageInputs, ColdThermalStorageOutputs, FinancialInputs, FinancialOutputs, UserUnlinkedRuns
 import os
 import requests
 import numpy as np
@@ -536,11 +536,14 @@ def summary(request, user_uuid):
         summary_dict = dict()
 
         # Create Querysets: Select all objects associate with a user_uuid, Order by `created` column
-        api_metas = APIMeta.objects.filter(user_uuid=user_uuid).only(
+        scenarios = APIMeta.objects.filter(user_uuid=user_uuid).only(
             'run_uuid',
             'status',
             'created'
         )
+
+        unlinked_run_uuids = [i.run_uuid for i in UserUnlinkedRuns.objects.filter(user_uuid=user_uuid)]
+        api_metas = [s for s in scenarios if s.run_uuid not in unlinked_run_uuids]
 
         if len(api_metas) > 0:
             summary_dict = queryset_for_summary(api_metas, summary_dict)
@@ -597,13 +600,14 @@ def summary_by_chunk(request, user_uuid, chunk):
             return JsonResponse({"Error": "Chunk number must be a 1-indexed integer."}, status=400)
         
         # Create Querysets: Select all objects associate with a user_uuid, Order by `created` column
-        api_metas = APIMeta.objects.filter(user_uuid=user_uuid).only(
+        scenarios = APIMeta.objects.filter(user_uuid=user_uuid).only(
             'run_uuid',
             'status',
             'created'
         )
 
-        # TODO handle unlinked scearios here.
+        unlinked_run_uuids = [i.run_uuid for i in UserUnlinkedRuns.objects.filter(user_uuid=user_uuid)]
+        api_metas = [s for s in scenarios if s.run_uuid not in unlinked_run_uuids]
         
         total_scenarios = len(api_metas)
         if total_scenarios == 0:
@@ -639,7 +643,6 @@ def summary_by_chunk(request, user_uuid, chunk):
         err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', user_uuid=user_uuid)
         err.save_to_db()
         return JsonResponse({"Error": err.message}, status=404)
-
 
 # Take summary_dict and convert it to the desired format for response. Also add any missing key/val pairs
 def create_summary_dict(user_uuid:str,summary_dict:dict):
@@ -785,3 +788,50 @@ def queryset_for_summary(api_metas,summary_dict:dict):
             summary_dict[str(m.meta.run_uuid)]['wind_kw'] = m.size_kw
     
     return summary_dict
+
+# Unlink a user_uuid from a run_uuid.
+def unlink(request, user_uuid, run_uuid):
+
+    """
+    add an entry to the UserUnlinkedRuns for the given user_uuid and run_uuid
+    """
+    content = {'user_uuid': user_uuid, 'run_uuid': run_uuid}
+    for name, check_id in content.items():
+        try:
+            uuid.UUID(check_id)  # raises ValueError if not valid uuid
+        except ValueError as e:
+            if e.args[0] == "badly formed hexadecimal UUID string":
+                return JsonResponse({"Error": "{} {}".format(name, e.args[0]) }, status=400)
+            else:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                if name == 'user_uuid':
+                    err = UnexpectedError(exc_type, exc_value, exc_traceback, task='unlink', user_uuid=check_id)
+                if name == 'run_uuid':
+                    err = UnexpectedError(exc_type, exc_value, exc_traceback, task='unlink', run_uuid=check_id)
+                err.save_to_db()
+                return JsonResponse({"Error": str(err.message)}, status=400)
+
+    try:
+        if not APIMeta.objects.filter(user_uuid=user_uuid).exists():
+            return JsonResponse({"Error": "User {} does not exist".format(user_uuid)}, status=400)
+
+
+        runs = APIMeta.objects.filter(user_uuid=user_uuid)
+        if len(runs) == 0:
+            return JsonResponse({"Error": "Run {} does not exist".format(run_uuid)}, status=400)
+        else:
+            if runs[0].user_uuid != user_uuid:
+                return JsonResponse({"Error": "Run {} is not associated with user {}".format(run_uuid, user_uuid)}, status=400)
+
+        if not UserUnlinkedRuns.objects.filter(run_uuid=run_uuid).exists():
+            UserUnlinkedRuns.create(**content)
+            return JsonResponse({"Success": "user_uuid {} unlinked from run_uuid {}".format(user_uuid, run_uuid)},
+                                status=201)
+        else:
+            return JsonResponse({"Nothing changed": "user_uuid {} is already unlinked from run_uuid {}".format(user_uuid, run_uuid)},
+                                status=208)
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='unlink', user_uuid=user_uuid)
+        err.save_to_db()
+        return JsonResponse({"Error": err.message}, status=404)

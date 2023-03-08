@@ -192,6 +192,15 @@ class APIMeta(BaseModel, models.Model):
         help_text="Version number of the Julia package for REopt that is used to solve the problem."
     )
 
+class UserUnlinkedRuns(models.Model):
+    run_uuid = models.UUIDField(unique=True)
+    user_uuid = models.UUIDField(unique=False)
+
+    @classmethod
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
+        obj.save()
+        return obj
 
 class UserProvidedMeta(BaseModel, models.Model):
     """
