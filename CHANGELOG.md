@@ -26,6 +26,13 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop 2023-03-08
+### Minor updates
+#### Added
+- Added `summary` endpoint and `job\views.summary`
+- Added `summary_by_chunk` endpoint and `job\views.summary_by_chunk`
+- Added `unlink` endpoint and `job\views.unlink` along with **UserUnlinkedRuns**
+
 ## Develop 11/21/2022
 ### Minor Updates
 ##### Added
