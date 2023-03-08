@@ -270,7 +270,7 @@ class ERPJob(ModelResource):
                             "discharge_efficiency": stor_in["inverter_efficiency_fraction"] * stor_in["internal_efficiency_fraction"]**0.5,
                             "size_kw": 0 if stor_out is None else stor_out.get("size_kw", 0),
                             "size_kwh": 0 if stor_out is None else stor_out.get("size_kwh", 0),
-                            "starting_soc_series_fraction": [] if stor_out is None else stor_out.get("year_one_soc_series_fraction", []),
+                            "starting_soc_series_fraction": [] if stor_out is None else stor_out.get("soc_series_fraction", []),
                         }
                     )
                 except AttributeError as e: 
