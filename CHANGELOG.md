@@ -35,6 +35,11 @@ Classify the change according to the following categories:
 - In job/ app (v3), changed default ElectricLoad **year** to 2022 if user provides load data and 2017 if using CRBD
 ##### Fixed
 - In reo (v2), calculation of `net_capital_costs_plus_om` was previously missing addition sign for fuel charges. Corrected this equation.
+## Develop - 2023-03-06
+### Minor Updates
+### Added
+- In **REoptjlMessageOutputs** added a `has_stacktrace` field to denote if response has a stacktrace error or not. Default is False.
+
 ## Develop 03/08/2023
 ### Minor Updates
 ##### Changed

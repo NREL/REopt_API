@@ -4556,6 +4556,13 @@ class REoptjlMessageOutputs(BaseModel, models.Model):
         default = list,
     )
 
+    has_stacktrace = models.BooleanField(
+        blank=True,
+        default=False,
+        help_text=("REopt.jl can return a handled error with corrective instructions or an unhandled error with a stacktrace of what went wrong for further insepction."
+                    "This field is True if the error message has a stacktrace, False otherwise. Defaults to False.")
+    )
+
     def clean(self):
         pass
 
