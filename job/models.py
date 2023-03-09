@@ -330,6 +330,17 @@ class SiteInputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Area of roof in square feet available for PV siting"
     )
+    min_resil_time_steps = models.IntegerField(
+        default=0,
+        validators=[
+            MinValueValidator(0)
+        ],
+        blank=True,
+        help_text="The minimum number consecutive timesteps that load must be fully met once an outage begins. "
+                    "Only applies to multiple outage modeling using inputs outage_start_time_steps and outage_durations."
+    )
+    # don't provide mg_tech_sizes_equal_grid_sizes in the API, effectively force it to true (the REopt.jl default)
+
     CO2_emissions_reduction_min_fraction = models.FloatField(
         validators=[
             MinValueValidator(0),
@@ -659,10 +670,8 @@ class FinancialInputs(BaseModel, models.Model):
         ],
         blank=True,
         help_text=("Value placed on unmet site load during grid outages. Units are US dollars per unmet kilowatt-hour. "
-                   "The value of lost load (VoLL) is used to determine the avoided outage costs by multiplying VoLL "
-                   "[$/kWh] with the average number of hours that the critical load can be met by the energy system "
-                   "(determined by simulating outages occuring at every hour of the year), and multiplying by the mean "
-                   "critical load. Costs apply only when modeling outages using "
+                   "The value of lost load (VoLL) is used to determine outage costs by multiplying VoLL by unserved load for each outage start time and duration. "
+                   "Only applies when modeling outages using "
                    "the outage_start_time_steps, outage_durations, and outage_probabilities inputs, and do not "
                    "apply when modeling a single outage using outage_start_time_step and outage_end_time_step.")
     )
@@ -1563,6 +1572,55 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         ],
         help_text="Time step that grid outage ends. Must be greater than or equal to outage_start_time_step. Use to model a single, deterministic outage."
     )
+    outage_start_time_steps = ArrayField(
+        models.IntegerField(
+            blank=True,
+            validators=[
+                MinValueValidator(1)
+            ]
+        ),
+        blank=True,
+        default=list,
+        help_text=("A list of time steps that the grid outage may start. "
+                    "This input is used for robust optimization across multiple outages. "
+                    "The maximum (over outage_start_time_steps) of the expected value "
+                    "(over outage_durations with probabilities outage_probabilities) of "
+                    "outage cost is included in the objective function minimized by REopt."
+                )
+    )
+    outage_durations = ArrayField(
+        models.IntegerField(
+            blank=True,
+            validators=[
+                MinValueValidator(1)
+            ]
+        ),
+        blank=True,
+        default=list,
+        help_text=("One-to-one with outage_probabilities. A list of possible time step durations of the grid outage. "
+                    "This input is used for robust optimization across multiple outages. "
+                    "The maximum (over outage_start_time_steps) of the expected value "
+                    "(over outage_durations with probabilities outage_probabilities) of "
+                    "outage cost is included in the objective function minimized by REopt."
+                )
+    )
+    outage_probabilities = ArrayField(
+        models.FloatField(
+            blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1)
+            ]
+        ),
+        blank=True,
+        default=list,
+        help_text=("One-to-one with outage_durations. The probability of each duration of the grid outage. Defaults to equal probability for each duration. "
+                    "This input is used for robust optimization across multiple outages. "
+                    "The maximum (over outage_start_time_steps) of the expected value "
+                    "(over outage_durations with probabilities outage_probabilities) of "
+                    "outage cost is included in the objective function minimized by REopt."
+                )
+    )
     interconnection_limit_kw = models.FloatField(
         validators=[
             MinValueValidator(0),
@@ -1671,6 +1729,17 @@ class ElectricUtilityInputs(BaseModel, models.Model):
             if self.outage_start_time_step > self.outage_end_time_step:
                 error_messages["outage start/stop time steps"] = \
                     ('outage_end_time_step must be larger than or equal to outage_start_time_step.')
+        
+        if self.outage_probabilities not in [None,[]]:
+            if abs(1.0-sum(self.outage_probabilities)) > 1e-08:
+                error_messages["outage_probabilities"] = "outage_probabilities must have a sum of 1.0."
+            if self.outage_durations not in [None,[]]:
+                if len(self.outage_probabilities) != len(self.outage_durations):
+                    error_messages["mismatched length"] = "outage_probabilities and outage_durations must have the same length."
+            else: 
+                error_messages["missing required inputs"] = "outage_durations is required if outage_probabilities is present."
+        elif self.outage_durations not in [None,[]]: 
+            self.outage_probabilities = [1/len(self.outage_durations)] * len(self.outage_durations)
 
         if error_messages:
             raise ValidationError(error_messages)
@@ -1822,6 +1891,81 @@ class ElectricUtilityOutputs(BaseModel, models.Model):
         help_text=("Distance in meters from the site to the nearest AVERT emissions region.")
     )
 
+class OutageOutputs(BaseModel, models.Model):
+    key = "OutageOutputs"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="OutageOutputs",
+        primary_key=True
+    )
+    expected_outage_cost = models.FloatField(
+        null=True, blank=True,
+        help_text="The expected outage cost over the random outages modeled."
+    )
+    max_outage_cost_per_outage_duration = ArrayField(
+        models.FloatField(
+            blank=True,
+        ),
+        default=list, blank=True,
+        help_text="The maximum outage cost for every outage duration modeled."
+    )
+    unserved_load_series = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True,
+            ),
+            default=list, blank=True,
+        ),
+        default=list, blank=True,
+        help_text="The amount of unserved load in each outage time step for each outage start time and duration. Outage duration changes along the first dimension, outage start time step along the second, and time step in outage along the third."
+    )
+    unserved_load_per_outage = ArrayField(
+        ArrayField(
+            models.FloatField(
+                blank=True,
+            ),
+            default=list, blank=True,
+        ),
+        default=list, blank=True,
+        help_text="The total unserved load for each outage start time and duration. Outage duration changes along the first dimension and outage start time changes along the second dimention."
+    )
+    microgrid_upgrade_capital_cost = models.FloatField(
+        null=True, blank=True,
+        help_text="Total capital cost of including technologies in the microgrid."
+    )
+    generator_fuel_used_per_outage = ArrayField(
+        ArrayField(
+            models.FloatField(
+                blank=True,
+            ),
+            default=list, blank=True,
+        ),
+        default=list, blank=True,
+        help_text="Generator fuel used in each outage modeled. Outage duration changes along the first dimension and outage start time changes along the second dimention."
+    )
+    # Outputs from REopt.jl not implementing API
+    # Some of these are trickier to conclude in api because names aren't fixed. Also skipping some of these detailed dispatch outputs for now.
+    # - `storage_upgraded` Boolean that is true if it is cost optimal to include the storage system in the microgrid.
+    # - `mg_storage_upgrade_cost` The cost to include the storage system in the microgrid.
+    # - `discharge_from_storage_series` Array of storage power discharged in every outage modeled.
+    # - `PV_mg_kw` Optimal microgrid PV capacity. Note that the name `PV` can change based on user provided `PV.name`.
+    # - `PV_upgraded` Boolean that is true if it is cost optimal to include the PV system in the microgrid.
+    # - `mg_PV_upgrade_cost` The cost to include the PV system in the microgrid.
+    # - `mg_PV_to_storage_series` Array of PV power sent to the battery in every outage modeled.
+    # - `mg_PV_curtailed_series` Array of PV curtailed in every outage modeled.
+    # - `mg_PV_to_load_series` Array of PV power used to meet load in every outage modeled.
+    # - `Generator_mg_kw` Optimal microgrid Generator capacity. Note that the name `Generator` can change based on user provided `Generator.name`.
+    # - `Generator_upgraded` Boolean that is true if it is cost optimal to include the Generator in the microgrid.
+    # - `mg_Generator_upgrade_cost` The cost to include the Generator system in the microgrid.
+    # - `mg_Generator_to_storage_series` Array of Generator power sent to the battery in every outage modeled.
+    # - `mg_Generator_curtailed_series` Array of Generator curtailed in every outage modeled.
+    # - `mg_Generator_to_load_series` Array of Generator power used to meet load in every outage modeled.
+    # - `mg_Generator_fuel_used_per_outage` Array of Generator fuel used in every outage modeled.
 
 class ElectricTariffOutputs(BaseModel, models.Model):
     key = "ElectricTariffOutputs"
@@ -2029,7 +2173,7 @@ class PVInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=1.0,
+        default=0.8,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -2047,7 +2191,7 @@ class PVInputs(BaseModel, models.Model):
         help_text="Percent of the ITC value by which depreciable basis is reduced"
     )
     federal_itc_fraction = models.FloatField(
-        default=0.26,
+        default=0.3,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -2447,7 +2591,7 @@ class WindInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=1.0,
+        default=0.8,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -2465,7 +2609,7 @@ class WindInputs(BaseModel, models.Model):
         help_text="Percent of the ITC value by which depreciable basis is reduced"
     )
     federal_itc_fraction = models.FloatField(
-        default=0.26,
+        default=0.3,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -2819,7 +2963,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=1.0,
+        default=0.8,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -2837,7 +2981,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Percent of the ITC value by which depreciable basis is reduced"
     )
     total_itc_fraction = models.FloatField(
-        default=0.0,
+        default=0.3,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -3548,7 +3692,7 @@ class CHPInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=1.0,
+        default=0.8,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -3566,7 +3710,7 @@ class CHPInputs(BaseModel, models.Model):
         help_text="Percent of the ITC value by which depreciable basis is reduced"
     )
     federal_itc_fraction = models.FloatField(
-        default=0.1,
+        default=0.3,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -4689,13 +4833,13 @@ class HotThermalStorageInputs(BaseModel, models.Model):
         help_text="Thermal energy-based cost of TES (e.g. volume of the tank)"
     )
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.ZERO,
+        default=MACRS_YEARS_CHOICES.SEVEN,
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.0,
+        default=0.8,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -4713,7 +4857,7 @@ class HotThermalStorageInputs(BaseModel, models.Model):
         help_text="Percent of the ITC value by which depreciable basis is reduced"
     )
     total_itc_fraction = models.FloatField(
-        default=0.0,
+        default=0.3,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -4860,13 +5004,13 @@ class ColdThermalStorageInputs(BaseModel, models.Model):
         help_text="Thermal energy-based cost of TES (e.g. volume of the tank)"
     )
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.ZERO,
+        default=MACRS_YEARS_CHOICES.SEVEN,
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.0,
+        default=0.8,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -4884,7 +5028,7 @@ class ColdThermalStorageInputs(BaseModel, models.Model):
         help_text="Percent of the ITC value by which depreciable basis is reduced"
     )
     total_itc_fraction = models.FloatField(
-        default=0.0,
+        default=0.3,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
