@@ -34,15 +34,17 @@ Classify the change according to the following categories:
     - **ElectricUtilityInputs**: **outage_start_time_steps**, **outage_durations**, **outage_probabilities**
     - **OutageOutputs**: **expected_outage_cost**, **max_outage_cost_per_outage_duration**, **unserved_load_series**, **unserved_load_per_outage**, **microgrid_upgrade_capital_cost**, **generator_fuel_used_per_outage**
 - added test using multiple outage modeling
- - In job/ app (v3): added **AbsorptionChillerInputs** model
- - In job/ app (v3): added **AbsorptionChillerOutputs** model
- - In `job/views.py`:
-   - add new input/output models to properly save the inputs/outputs
-   - add `/absorption_chiller_defaults` endpoint which calls the http.jl absorption_chiller_defaults endpoint
+- In job/ app (v3): added **AbsorptionChillerInputs** model
+- In job/ app (v3): added **AbsorptionChillerOutputs** model
+- In `job/views.py`:
+    - add new input/output models to properly save the inputs/outputs
+    - add `/absorption_chiller_defaults` endpoint which calls the http.jl absorption_chiller_defaults endpoint
 ##### Changed
 - use TransactionTestCase instead of TestCase (this avoids whole test being wrapped in a transaction which leads to a TransactionManagementError when doing a database query in the middle)
 - Updated ubuntu-18.04 to ubuntu-latest in GitHub push/pull tests because 18.04 was deprecated in GitHub Actions
-
+- In `reo/nested_inputs.py` v2 inputs (`defaults_dict[2]`), updated the following default values:
+    - ColdTES, HotTES: **macrs_option_years** to 7 (years)
+    - ColdTES, HotTES: ***macrs_bonus_pct** to 0.8 (80%)
 ## v2.8.0
 ### Minor Updates
 ##### Changed
