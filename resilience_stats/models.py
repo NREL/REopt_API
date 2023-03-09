@@ -188,7 +188,7 @@ class ERPGeneratorInputs(BaseModel, models.Model):
         ],
         blank=True,
         null=True,
-        help_text=("Electric efficiency of generator running at half load.electric_efficiency_full_load")
+        help_text=("Electric efficiency of generator running at half load. Defaults to electric_efficiency_full_load")
     )
     electric_efficiency_full_load = models.FloatField(
         validators=[
@@ -283,7 +283,7 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
         ],
         blank=True,
         null=True,
-        help_text=("Electric efficiency of prime generator/CHP unit running at half load.electric_efficiency_full_load")
+        help_text=("Electric efficiency of prime generator/CHP unit running at half load. Defaults to electric_efficiency_full_load")
     )
     electric_efficiency_full_load = models.FloatField(
         validators=[
