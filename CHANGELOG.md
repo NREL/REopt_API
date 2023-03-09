@@ -31,6 +31,11 @@ Classify the change according to the following categories:
 ### Added
 - In **REoptjlMessageOutputs** added a `has_stacktrace` field to denote if response has a stacktrace error or not. Default is False.
 
+## Develop - 2023-03-02
+ ##### Changed
+ - In `reo/nested_inputs.py` v2 inputs (`defaults_dict[2]`), updated the following default values:
+   - ColdTES, HotTES: **macrs_option_years** to 7 (years)
+   - ColdTES, HotTES: ***macrs_bonus_pct** to 0.8 (80%)
 ## Develop 11/21/2022
 ### Minor Updates
 ##### Added
