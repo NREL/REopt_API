@@ -1122,7 +1122,7 @@ class ElectricLoadInputs(BaseModel, models.Model):
                    "https://energy.gov/eere/buildings/commercial-reference-buildings")
     )
     year = models.IntegerField(
-        default=2020,
+        default=2022,
         validators=[
             MinValueValidator(1),
             MaxValueValidator(9999)
