@@ -26,6 +26,14 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop 03/08/2022
+### Minor Updates
+##### Changed
+- Updated the following default values to job/ app (v3):
+   - PV, Wind, Storage, CHP, Hot Water Storage, Cold Water Storage, Electric Storage: **federal_itc_fraction(PV,Wind,CHP)** and **total_itc_fraction(Hot Water Storage, Cold Water Storage, Electric Storage)** to 0.3 (30%)
+   - PV, Wind, Storage, CHP, Hot Water Storage, Cold Water Storage, Electric Storage: ***macrs_bonus_fraction** to 0.8 (80%)
+   - Hot Water Storage and Cold Water Storage: **macrs_option_years** to 7 years
+   
 ## Develop - 2023-03-02
  ##### Changed
  - In `reo/nested_inputs.py` v2 inputs (`defaults_dict[2]`), updated the following default values:
