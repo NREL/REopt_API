@@ -2509,13 +2509,7 @@ nested_input_definitions = {
         "can_serve_dhw": {
           "type": "bool", "default": False,
           "description": "If GHP can serve the domestic hot water (DHW) portion of the heating load"
-        },
-        # TODO move is_hybrid_ghx into ghpghx_inputs (and an input of GhpGhx.jl)
-        "is_hybrid_ghx": {
-          "type": "bool", "default": False,
-          "description": "If the GHP system uses a hybrid GHX with auxiliary heater or cooler"
-        }, 
-               
+        },              
         "aux_heater_type": {
           "type": "str", "default": "electric",
           "description": "The type of auxiliary heater, 'electric' or 'natural_gas'"

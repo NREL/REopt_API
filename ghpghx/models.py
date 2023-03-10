@@ -216,7 +216,12 @@ class GHPGHXInputs(models.Model):
     init_sizing_factor_ft_per_peak_ton = models.FloatField(blank=True, 
         default=246.1, validators=[MinValueValidator(1.0), MaxValueValidator(5000.0)],
         help_text="Initial guess of total feet of GHX boreholes (total feet = N bores * Length bore) based on peak ton heating/cooling [ft/ton]")
+        # TODO move is_hybrid_ghx to ghpghx_inputs because we want to compete non-hybrid vs hybrid within single REopt run
 
+    # Hybrid flag
+    is_hybrid_ghx = models.BooleanField(null=True, blank=True, default=True,
+        help_text="If the GHP system uses a hybrid GHX with auxiliary heater or cooler")   
+    
 class GHPGHXOutputs(models.Model):
     # Outputs/results
 
@@ -258,7 +263,32 @@ class GHPGHXOutputs(models.Model):
         help_text="Average cooling heatpump system coefficient of performance (COP) (includes ghx pump allocation)")
     solved_eft_error_f = models.FloatField(null=True, blank=True,
         help_text="Error between the solved GHPGHX system EFT and the max or min limit for EFT")
-
+    # Hybrid
+    yearly_aux_heater_thermal_production_series_mmbtu_per_hour = ArrayField(models.FloatField(null=True, blank=True), 
+        default=list, null=True, blank=True,
+        help_text="Hourly auxiliary heater thermal production, average across simulation years [MMBtu/hr]")
+    yearly_aux_cooler_thermal_production_series_kwt = ArrayField(models.FloatField(null=True, blank=True), 
+        default=list, null=True, blank=True,
+        help_text="Hourly auxiliary cooler thermal production, average across simulation years [kW-thermal]")
+    yearly_aux_heater_electric_consumption_series_kw = ArrayField(models.FloatField(null=True, blank=True), 
+        default=list, null=True, blank=True,
+        help_text="Hourly auxiliary heater electrical consumption, average across simulation years [kW]")
+    yearly_aux_cooler_electric_consumption_series_kw = ArrayField(models.FloatField(null=True, blank=True), 
+        default=list, null=True, blank=True,
+        help_text="Hourly auxiliary cooler electrical consumption, average across simulation years [kW]")    
+    peak_aux_heater_thermal_production_mmbtu_per_hour = models.FloatField(null=True, blank=True, 
+        help_text="Peak auxiliary heater thermal production for heater sizing [MMBtu/hr]")
+    peak_aux_cooler_thermal_production_ton = models.FloatField(null=True, blank=True, 
+        help_text="Peak auxiliary cooler thermal production for cooler sizing [ton]")  
+    annual_aux_heater_electric_consumption_kwh = models.FloatField(null=True, blank=True, 
+        help_text="Annual auxiliary heater electrical consumption [kWh]")
+    annual_aux_cooler_electric_consumption_kwh = models.FloatField(null=True, blank=True, 
+        help_text="Annual auxiliary cooler electrical consumption [kWh]")      
+    end_of_year_eft_f = ArrayField(models.FloatField(null=True, blank=True), 
+        default=list, null=True, blank=True,
+        help_text="End of year entering fluid temperature for all years in the last iteration of GHX sizing [degF]")
+    aux_heat_exchange_unit_type = models.TextField(null=True, blank=True, 
+        help_text="Specifies if the auxiliary heat exchange unit is a heater or cooler")
 
 class ModelManager(object):
 
