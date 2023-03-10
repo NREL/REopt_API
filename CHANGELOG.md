@@ -34,6 +34,7 @@ Classify the change according to the following categories:
 - In `job/views.py`:
     - add new input/output models to properly save the inputs/outputs
     - add `/absorption_chiller_defaults` endpoint which calls the http.jl absorption_chiller_defaults endpoint
+- In **REoptjlMessageOutputs** added a `has_stacktrace` field to denote if response has a stacktrace error or not. Default is False.
 ##### Changed
 - Updated the following default values to job/ app (v3):
    - PV, Wind, Storage, CHP, Hot Water Storage, Cold Water Storage, Electric Storage: **federal_itc_fraction(PV,Wind,CHP)** and **total_itc_fraction(Hot Water Storage, Cold Water Storage, Electric Storage)** to 0.3 (30%)
