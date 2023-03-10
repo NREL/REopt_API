@@ -2174,7 +2174,7 @@ class PVInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=1.0,
+        default=0.8,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -2192,7 +2192,7 @@ class PVInputs(BaseModel, models.Model):
         help_text="Percent of the ITC value by which depreciable basis is reduced"
     )
     federal_itc_fraction = models.FloatField(
-        default=0.26,
+        default=0.3,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -2592,7 +2592,7 @@ class WindInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=1.0,
+        default=0.8,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -2610,7 +2610,7 @@ class WindInputs(BaseModel, models.Model):
         help_text="Percent of the ITC value by which depreciable basis is reduced"
     )
     federal_itc_fraction = models.FloatField(
-        default=0.26,
+        default=0.3,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -2964,7 +2964,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=1.0,
+        default=0.8,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -2982,7 +2982,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Percent of the ITC value by which depreciable basis is reduced"
     )
     total_itc_fraction = models.FloatField(
-        default=0.0,
+        default=0.3,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -3693,7 +3693,7 @@ class CHPInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=1.0,
+        default=0.8,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -3711,7 +3711,7 @@ class CHPInputs(BaseModel, models.Model):
         help_text="Percent of the ITC value by which depreciable basis is reduced"
     )
     federal_itc_fraction = models.FloatField(
-        default=0.1,
+        default=0.3,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -4557,6 +4557,13 @@ class REoptjlMessageOutputs(BaseModel, models.Model):
         default = list,
     )
 
+    has_stacktrace = models.BooleanField(
+        blank=True,
+        default=False,
+        help_text=("REopt.jl can return a handled error with corrective instructions or an unhandled error with a stacktrace of what went wrong for further insepction."
+                    "This field is True if the error message has a stacktrace, False otherwise. Defaults to False.")
+    )
+
     def clean(self):
         pass
 
@@ -4834,13 +4841,13 @@ class HotThermalStorageInputs(BaseModel, models.Model):
         help_text="Thermal energy-based cost of TES (e.g. volume of the tank)"
     )
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.ZERO,
+        default=MACRS_YEARS_CHOICES.SEVEN,
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.0,
+        default=0.8,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -4858,7 +4865,7 @@ class HotThermalStorageInputs(BaseModel, models.Model):
         help_text="Percent of the ITC value by which depreciable basis is reduced"
     )
     total_itc_fraction = models.FloatField(
-        default=0.0,
+        default=0.3,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -5005,13 +5012,13 @@ class ColdThermalStorageInputs(BaseModel, models.Model):
         help_text="Thermal energy-based cost of TES (e.g. volume of the tank)"
     )
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.ZERO,
+        default=MACRS_YEARS_CHOICES.SEVEN,
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.0,
+        default=0.8,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -5029,7 +5036,7 @@ class ColdThermalStorageInputs(BaseModel, models.Model):
         help_text="Percent of the ITC value by which depreciable basis is reduced"
     )
     total_itc_fraction = models.FloatField(
-        default=0.0,
+        default=0.3,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
