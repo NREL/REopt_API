@@ -389,6 +389,8 @@ def setup_scenario(self, run_uuid, data, api_version=1):
                 number_of_ghpghx = len(inputs_dict["Site"]["GHP"]["ghpghx_inputs"])
             for i in range(number_of_ghpghx):
                 ghpghx_post = inputs_dict["Site"]["GHP"]["ghpghx_inputs"][i]
+                is_hybrid_ghx = ghpghx_post.pop("is_hybrid_ghx", None)
+
                 ghpghx_post["latitude"] = inputs_dict["Site"]["latitude"]
                 ghpghx_post["longitude"] = inputs_dict["Site"]["longitude"]
                 # Only SpaceHeating portion of Heating Load gets served by GHP, unless allowed by can_serve_dhw
@@ -410,6 +412,40 @@ def setup_scenario(self, run_uuid, data, api_version=1):
                     k_by_zone = copy.deepcopy(GHPGHXInputs.ground_k_by_climate_zone)
                     climate_zone, nearest_city, geometric_flag = get_climate_zone_and_nearest_city(ghpghx_post["latitude"], ghpghx_post["longitude"], BuiltInProfile.default_cities)
                     ghpghx_post["ground_thermal_conductivity_btu_per_hr_ft_f"] = k_by_zone[climate_zone]
+                
+                # Hybrid
+                # Determine if location is heating or cooling dominated
+                if is_hybrid_ghx:
+                    determine_heat_cool_post = copy.deepcopy(ghpghx_post)
+                    determine_heat_cool_post["simulation_years"] = 2
+                    determine_heat_cool_post["max_sizing_iterations"] = 1
+                    
+                    determine_heat_cool_post_resp = client.post('/v1/ghpghx/', data=determine_heat_cool_post)
+                    determine_heat_cool_post_resp_dict = json.loads(determine_heat_cool_post_resp.content)
+                    
+                    determine_heat_cool_uuid = determine_heat_cool_post_resp_dict.get('ghp_uuid')
+                    determine_heat_cool_results_url = "/v1/ghpghx/"+determine_heat_cool_uuid+"/results/"
+                    determine_heat_cool_results_resp = client.get(determine_heat_cool_results_url) 
+                    determine_heat_cool_results_resp_dict = json.loads(determine_heat_cool_results_resp.content)
+                    temp_diff = determine_heat_cool_results_resp_dict["outputs"]["end_of_year_eft_f"][1] - determine_heat_cool_results_resp_dict["outputs"]["end_of_year_eft_f"][0]
+                    temp_diff = 0
+                    # TODO - Implement fractional sizing
+                    hybrid_sizing_flag = 1.0
+                    if temp_diff > 0:
+                        hybrid_sizing_flag = -2.0
+                    elif temp_diff < 0:
+                        hybrid_sizing_flag = -1.0
+                    
+                    ghpghx_post["hybrid_sizing_flag"] = hybrid_sizing_flag
+
+                    # Other hybrid inputs
+                    ghpghx_post["is_heating_electric"] = False
+                    if inputs_dict["Site"]["GHP"]["aux_heater_type"] == "electric":
+                        ghpghx_post["is_heating_electric"] = True
+           
+                    ghpghx_post["aux_heater_thermal_efficiency"] = inputs_dict["Site"]["GHP"]["aux_heater_thermal_efficiency"]
+                    ghpghx_post["aux_cooler_energy_use_intensity_kwe_per_kwt"] = inputs_dict["Site"]["GHP"]["aux_cooler_energy_use_intensity_kwe_per_kwt"]
+
                 # Call /ghpghx endpoint to size GHP and GHX
                 ghpghx_post_resp = client.post('/v1/ghpghx/', data=ghpghx_post)
                 ghpghx_post_resp_dict = json.loads(ghpghx_post_resp.content)
