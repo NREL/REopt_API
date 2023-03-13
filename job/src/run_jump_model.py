@@ -80,6 +80,10 @@ def run_jump_model(run_uuid):
     time_dict = dict()
     name = 'run_jump_model'
     data = get_input_dict_from_run_uuid(run_uuid)
+    data["Generator"].pop("electric_efficiency_full_load")
+    data["Generator"].pop("electric_efficiency_half_load")
+    data["Generator"]["fuel_intercept_gal_per_hr"] = 0
+    data["Generator"]["fuel_slope_gal_per_kwh"] = 0.076
     user_uuid = data.get('user_uuid')
     
     data.pop('user_uuid',None) # Remove user uuid from inputs dict to avoid downstream errors
