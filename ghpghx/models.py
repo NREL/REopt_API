@@ -220,7 +220,17 @@ class GHPGHXInputs(models.Model):
 
     # Hybrid flag
     is_hybrid_ghx = models.BooleanField(null=True, blank=True, default=True,
-        help_text="If the GHP system uses a hybrid GHX with auxiliary heater or cooler")   
+        help_text="If the GHP system uses a hybrid GHX with auxiliary heater or cooler")
+    hybrid_sizing_flag = models.FloatField(null=True, blank=True, default=1.0,
+        help_text="Possible values: -2 (size for heating), -1.0 (size for cooling), 1.0 (non-hybrid), value between 0-1 (fraction of full GHE size)") 
+    is_heating_electric = models.BooleanField(null=True, blank=True, default=True,
+        help_text="Set to True if heating is electric, false otherwise")  
+    aux_heater_thermal_efficiency = models.FloatField(null=True, blank=True, 
+        default=0.98, validators=[MinValueValidator(0.001), MaxValueValidator(10.0)],
+        help_text="The thermal efficiency (thermal_out/fuel_in) of the auxiliary heater")
+    aux_cooler_energy_use_intensity_kwe_per_kwt = models.FloatField(null=True, blank=True, 
+        default=0.2, validators=[MinValueValidator(0.001), MaxValueValidator(10.0)],
+        help_text="The energy use intensity of the auxiliary cooler [kWe/kWt]")
     
 class GHPGHXOutputs(models.Model):
     # Outputs/results

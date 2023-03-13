@@ -2521,24 +2521,12 @@ nested_input_definitions = {
           "default": 1000.0,
           "description": "Installed cost of auxiliary heater for hybrid ghx in $/MMBtu/hr based on peak thermal production"
         },
-        "aux_heater_thermal_efficiency": {
-          "type": "float",
-          "min": 0.001,
-          "max": 10.0,
-          "description": "The thermal efficiency (thermal_out/fuel_in) of the auxiliary heater"
-        },
         "aux_cooler_installed_cost_us_dollars_per_ton": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e6,
           "default": 80.0,
           "description": "Installed cost of auxiliary cooler (e.g. cooling tower) for hybrid ghx in $/ton based on peak thermal production"
-        },
-        "aux_cooler_energy_use_intensity_kwe_per_kwt": {
-          "type": "float",
-          "min": 0.001,
-          "max": 10.0,
-          "description": "The thermal efficiency (thermal_out/fuel_in) of the auxiliary heater"
         },        
         "macrs_option_years": {
           "type": "int",
