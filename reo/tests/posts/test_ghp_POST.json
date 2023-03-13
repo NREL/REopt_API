@@ -46,9 +46,7 @@
                 "cooling_efficiency_thermal_factor": 0.6,
                 "aux_heater_type": "electric",
                 "aux_heater_installed_cost_us_dollars_per_mmbtu_per_hr": 0.0,
-                "aux_heater_thermal_efficiency": 0.95,
-                "aux_cooler_installed_cost_us_dollars_per_ton": 0.0,
-                "aux_cooler_energy_use_intensity_kwe_per_kwt": 0.02
+                "aux_cooler_installed_cost_us_dollars_per_ton": 0.0
             },
             "PV":{
                 "max_kw": 0.0
