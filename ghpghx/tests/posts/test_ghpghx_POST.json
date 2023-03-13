@@ -6,5 +6,7 @@
     "tess_ghx_minimum_timesteps_per_hour": 1,
     "max_sizing_iterations": 1,
     "init_sizing_factor_ft_per_peak_ton": 300.0,
-    "is_hybrid_ghx": true
+    "is_hybrid_ghx": true,
+    "aux_heater_thermal_efficiency": 0.95,
+    "aux_cooler_energy_use_intensity_kwe_per_kwt": 0.02
 }
