@@ -15,7 +15,8 @@
     "Generator": {
         "min_turn_down_fraction": 0.0,
         "only_runs_during_grid_outage": true,
-        "sells_energy_back_to_grid": false
+        "sells_energy_back_to_grid": false,
+        "fuel_avail_gal": 660
     },
     "PV": {
         "array_type": 0,
