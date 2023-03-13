@@ -1145,6 +1145,7 @@ class GHPModel(models.Model):
     aux_heater_type = models.TextField(null=True, blank=True)
     aux_heater_installed_cost_us_dollars_per_mmbtu_per_hr = models.FloatField(null=True, blank=True)
     aux_cooler_installed_cost_us_dollars_per_ton = models.FloatField(null=True, blank=True)
+    aux_unit_capacity_sizing_factor_on_peak_load = models.FloatField(null=True, blank=True)
     macrs_option_years = models.IntegerField(null=True, blank=True)
     macrs_bonus_pct = models.FloatField(null=True, blank=True)
     macrs_itc_reduction = models.FloatField(null=True, blank=True)
