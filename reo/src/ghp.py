@@ -44,9 +44,7 @@ class GHPGHX:
         self.building_sqft = kwargs.get("building_sqft")
         self.aux_heater_type = kwargs.get("aux_heater_type")
         self.aux_heater_installed_cost_us_dollars_per_mmbtu_per_hr = kwargs.get("aux_heater_installed_cost_us_dollars_per_mmbtu_per_hr")
-        self.aux_heater_thermal_efficiency = kwargs.get("aux_heater_thermal_efficiency")
-        self.aux_cooler_installed_cost_us_dollars_per_ton = kwargs.get("aux_cooler_installed_cost_us_dollars_per_ton")
-        self.aux_cooler_energy_use_intensity_kwe_per_kwt = kwargs.get("aux_cooler_energy_use_intensity_kwe_per_kwt")         
+        self.aux_cooler_installed_cost_us_dollars_per_ton = kwargs.get("aux_cooler_installed_cost_us_dollars_per_ton")     
 
         # Heating and cooling loads served and electricity consumed by GHP
         # TODO with hybrid with auxiliary/supplemental heating/cooling devices, we may want to separate out/distiguish that energy
