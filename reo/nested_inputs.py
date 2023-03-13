@@ -2527,6 +2527,13 @@ nested_input_definitions = {
           "max": 1.0e6,
           "default": 80.0,
           "description": "Installed cost of auxiliary cooler (e.g. cooling tower) for hybrid ghx in $/ton based on peak thermal production"
+        },
+        "aux_unit_capacity_sizing_factor_on_peak_load": {
+          "type": "float",
+          "min": 1.0,
+          "max": 5.0,
+          "default": 1.2,
+          "description": "Factor on peak heating and cooling load served by the auxiliary heater/cooler used for determining heater/cooler installed capacity"
         },        
         "macrs_option_years": {
           "type": "int",

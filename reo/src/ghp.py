@@ -44,7 +44,8 @@ class GHPGHX:
         self.building_sqft = kwargs.get("building_sqft")
         self.aux_heater_type = kwargs.get("aux_heater_type")
         self.aux_heater_installed_cost_us_dollars_per_mmbtu_per_hr = kwargs.get("aux_heater_installed_cost_us_dollars_per_mmbtu_per_hr")
-        self.aux_cooler_installed_cost_us_dollars_per_ton = kwargs.get("aux_cooler_installed_cost_us_dollars_per_ton")     
+        self.aux_cooler_installed_cost_us_dollars_per_ton = kwargs.get("aux_cooler_installed_cost_us_dollars_per_ton")    
+        self.aux_unit_capacity_sizing_factor_on_peak_load = kwargs.get("aux_unit_capacity_sizing_factor_on_peak_load") 
 
         # Heating and cooling loads served and electricity consumed by GHP
         # TODO with hybrid with auxiliary/supplemental heating/cooling devices, we may want to separate out/distiguish that energy
@@ -84,8 +85,8 @@ class GHPGHX:
         # The GHX and hydronic loop cost are the y-intercepts ([$]) of the cost for each design
         self.ghx_cost = self.total_ghx_ft * self.installed_cost_ghx_us_dollars_per_ft
         self.hydronic_loop_cost = self.building_sqft * self.installed_cost_building_hydronic_loop_us_dollars_per_sqft
-        self.aux_heater_cost = self.aux_heater_installed_cost_us_dollars_per_mmbtu_per_hr * self.peak_aux_heater_thermal_production_mmbtu_per_hour
-        self.aux_cooler_cost = self.aux_cooler_installed_cost_us_dollars_per_ton * self.peak_aux_cooler_thermal_production_ton
+        self.aux_heater_cost = self.aux_heater_installed_cost_us_dollars_per_mmbtu_per_hr * self.peak_aux_heater_thermal_production_mmbtu_per_hour * self.aux_unit_capacity_sizing_factor_on_peak_load
+        self.aux_cooler_cost = self.aux_cooler_installed_cost_us_dollars_per_ton * self.peak_aux_cooler_thermal_production_ton * self.aux_unit_capacity_sizing_factor_on_peak_load
 
         # The DataManager._get_REopt_cost_curve method expects at least a two-point tech_size_for_cost_curve to
         #   to use the first value of installed_cost_us_dollars_per_kw as an absolute $ value and
