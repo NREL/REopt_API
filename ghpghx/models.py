@@ -226,7 +226,7 @@ class GHPGHXInputs(models.Model):
     is_heating_electric = models.BooleanField(null=True, blank=True, default=True,
         help_text="Set to True if heating is electric, false otherwise")  
     aux_heater_thermal_efficiency = models.FloatField(null=True, blank=True, 
-        default=0.98, validators=[MinValueValidator(0.001), MaxValueValidator(10.0)],
+        default=0.99, validators=[MinValueValidator(0.001), MaxValueValidator(10.0)],
         help_text="The thermal efficiency (thermal_out/fuel_in) of the auxiliary heater")
     aux_cooler_energy_use_intensity_kwe_per_kwt = models.FloatField(null=True, blank=True, 
         default=0.2, validators=[MinValueValidator(0.001), MaxValueValidator(10.0)],
