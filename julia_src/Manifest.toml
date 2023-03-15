@@ -734,9 +734,9 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [[deps.REopt]]
 deps = ["ArchGDAL", "CSV", "CoolProp", "DataFrames", "Dates", "DelimitedFiles", "HTTP", "JLD", "JSON", "JuMP", "LinDistFlow", "LinearAlgebra", "Logging", "MathOptInterface", "Requires", "Roots", "Statistics", "TestEnv"]
-git-tree-sha1 = "5ea6715c98a2398863b39eb33e0df681faf0410f"
+git-tree-sha1 = "3bb28641a7293713f15378205effa3f19dfdc90c"
 uuid = "d36ad4e8-d74a-4f7a-ace1-eaea049febf6"
-version = "0.26.0"
+version = "0.27.0"
 
 [[deps.Random]]
 deps = ["SHA", "Serialization"]
