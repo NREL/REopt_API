@@ -51,15 +51,17 @@ Classify the change according to the following categories:
 ### Minor Updates
 ##### Changed
 - Updated the following default values to job/ app (v3):
-   - PV, Wind, Storage, CHP, Hot Water Storage, Cold Water Storage, Electric Storage: **federal_itc_fraction(PV,Wind,CHP)** and **total_itc_fraction(Hot Water Storage, Cold Water Storage, Electric Storage)** to 0.3 (30%)
-   - PV, Wind, Storage, CHP, Hot Water Storage, Cold Water Storage, Electric Storage: ***macrs_bonus_fraction** to 0.8 (80%)
-   - Hot Water Storage and Cold Water Storage: **macrs_option_years** to 7 years
+   - **federal_itc_fraction** to 0.3 (30%) in models **PVInputs**, **WindInputs**, and **CHPInputs** 
+   - **total_itc_fraction** to 0.3 (30%) in models **HotWaterStorageInputs**, **ColdWaterStorageInputs**, and **ElectricStorageInputs**
+   - ***macrs_bonus_fraction** to 0.8 (80%) in models **PVInputs**, **WindInputs**, **CHPInputs**, PV, **HotWaterStorageInputs**, **ColdWaterStorageInputs**, and **ElectricStorageInputs**
+   - **macrs_option_years** to 7 years in models **HotWaterStorageInputs** and **ColdWaterStorageInputs**
    
 ## Develop - 2023-03-02
  ##### Changed
- - In `reo/nested_inputs.py` v2 inputs (`defaults_dict[2]`), updated the following default values:
-   - ColdTES, HotTES: **macrs_option_years** to 7 (years)
-   - ColdTES, HotTES: ***macrs_bonus_pct** to 0.8 (80%)
+ - In `reo/nested_inputs.py` v2 inputs (`defaults_dict[2]`), updated the following default values in models **ColdThermalStorageInputs**, **HotThermalStorageInputs**
+   - **macrs_option_years** to 7 (years)
+   - **macrs_bonus_pct** to 0.8 (80%)
+
 ## Develop 11/21/2022
 ### Minor Updates
 ##### Added
