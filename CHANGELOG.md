@@ -29,7 +29,13 @@ Classify the change according to the following categories:
 ## Develop 3/8/2023
 ### Minor Updates
 ##### Added 
- - Energy Resilience and Performance Tool
+ - Energy Resilience and Performance Tool:
+    - ERP jobs use the REopt Julia package's reliability metric post processing functionality added in 0.27.0
+    - Django models `ERPMeta`, `ERPGeneratorInputs`, `ERPPrimeGeneratorInputs`, `ERPElectricStorageInputs`, `ERPPVInputs`, `ERPOutageInputs`, `ERPOutputs`
+    - `/erp` endpoint to which users POST ERP inputs (calls `ERPJob()`)
+    - `/erp/<run_uuid>/results` endpoint that GETs the results of an ERP job (calls `erp_results()`) 
+    - `/erp/help` endpoint that GETs the ERP input field info (calls `erp_help()`)
+    - `/erp/chp_defaults` endpoint that GETs ERP CHP/prime generator input defaults based on parameters `prime_mover`, `is_chp`, and `size_kw` (calls `erp_chp_prime_gen_defaults()`)
 ##### Changed
  - changed `scalar_to_vector` helper function to `scalar_or_monthly_to_8760`
 
