@@ -42,4 +42,5 @@ urlpatterns = [
 
     re_path(r'^invalid_urdb/?$', reoviews.invalid_urdb),
     re_path(r'^emissions_profile/?$', reoviews.emissions_profile),
+    re_path(r'^schedule_stats/?$', reoviews.schedule_stats),
 ]
