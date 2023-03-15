@@ -30,19 +30,22 @@ Classify the change according to the following categories:
 ### Minor Updates
 ##### Added 
  - Energy Resilience and Performance Tool:
-    - ERP jobs use the REopt Julia package's reliability metric post processing functionality added in 0.27.0
-    - Django models `ERPMeta`, `ERPGeneratorInputs`, `ERPPrimeGeneratorInputs`, `ERPElectricStorageInputs`, `ERPPVInputs`, `ERPOutageInputs`, `ERPOutputs`
+    - Uses functionality added to the REopt Julia package in v0.27.0 to calculate outage survival reliability metrics for a DER scenario, which can be based on the results of a REopt optimization
+    - Django models **ERPMeta**, **ERPGeneratorInputs**, **ERPPrimeGeneratorInputs**, **ERPElectricStorageInputs**, **ERPPVInputs**, **ERPOutageInputs**, **ERPOutputs**
     - `/erp` endpoint to which users POST ERP inputs (calls `ERPJob()`)
     - `/erp/<run_uuid>/results` endpoint that GETs the results of an ERP job (calls `erp_results()`) 
     - `/erp/help` endpoint that GETs the ERP input field info (calls `erp_help()`)
     - `/erp/chp_defaults` endpoint that GETs ERP CHP/prime generator input defaults based on parameters `prime_mover`, `is_chp`, and `size_kw` (calls `erp_chp_prime_gen_defaults()`)
+    - Tests in `resilience+stats/tests/test_erp.py`
+- Added field **production_factor_series** to Django models **WindOutputs** and **PVOutputs**
 ##### Changed
- - changed `scalar_to_vector` helper function to `scalar_or_monthly_to_8760`
+ - Changed `scalar_to_vector` helper function to `scalar_or_monthly_to_8760`
+ - Changed **GeneratorInputs** fields **fuel_slope_gal_per_kwh** and **fuel_intercept_gal_per_hr** to **electric_efficiency_full_load** and **electric_efficiency_half_load** to represent the same fuel burn curve in a different way consistent with **CHPInputs**
 
 ## Develop - 2023-03-06
 ### Minor Updates
 ### Added
-- In **REoptjlMessageOutputs** added a `has_stacktrace` field to denote if response has a stacktrace error or not. Default is False.
+- In **REoptjlMessageOutputs** added a **has_stacktrace** field to denote if response has a stacktrace error or not. Default is False.
 
 ## Develop 03/08/2023
 ### Minor Updates
