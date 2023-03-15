@@ -1,6 +1,6 @@
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.8.3"
+julia_version = "1.8.5"
 manifest_format = "2.0"
 project_hash = "90e66426e70d2bf97b8a3e99508fcb404743b11d"
 
@@ -141,7 +141,7 @@ version = "4.6.1"
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
-version = "0.5.2+0"
+version = "1.0.1+0"
 
 [[deps.ConstructionBase]]
 deps = ["LinearAlgebra"]
@@ -734,9 +734,7 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [[deps.REopt]]
 deps = ["ArchGDAL", "CSV", "CoolProp", "DataFrames", "Dates", "DelimitedFiles", "HTTP", "JLD", "JSON", "JuMP", "LinDistFlow", "LinearAlgebra", "Logging", "MathOptInterface", "Requires", "Roots", "Statistics", "TestEnv"]
-git-tree-sha1 = "f283051c24339d79688b21a329d708b6e1de8b4a"
-repo-rev = "limited-gen-reliability"
-repo-url = "https://github.com/NREL/REopt.jl.git"
+git-tree-sha1 = "5ea6715c98a2398863b39eb33e0df681faf0410f"
 uuid = "d36ad4e8-d74a-4f7a-ace1-eaea049febf6"
 version = "0.26.0"
 
