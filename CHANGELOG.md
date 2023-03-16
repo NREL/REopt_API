@@ -476,7 +476,6 @@ The default values changed are:
 - `reo`: Fixes database query error the occurs when getting production runs created prior to v1.4.0    
 
 ## v1.4.0 - 2021-01-29
-### Major Updates
 ### Minor Updates
 ##### Added
 - `reo`/`reopt.jl`: Coincident peak rates and expected time steps can be specified. There can be a single rate and list of time steps. Or there can be multiple CP periods in a year with different rates, and then a set of time steps is specified for each rate. Peak demand occurring during each set of CP time steps is charged at the corresponding CP rate.
@@ -490,7 +489,6 @@ The default values changed are:
  - **total_coincident_peak_cost_bau_us_dollars**
 
 ## v1.3.0 - 2021-01-28
-### Major Updates
 ### Minor Updates
 - `reo`: New output **om_and_replacement_present_cost_after_tax_us_dollars**
 - `reo`, `*.jl`: New load **LoadProfileBoilerFuel**
@@ -528,7 +526,6 @@ The default values changed are:
 
 
 ## v1.2.0 - 2021-01-04
-### Major Updates
 ### Minor Updates
 ##### Added
 - `reo`: new inputs **outage_start_time_step** and **outage_end_time_step** to replace deprecated **outage_start_hour** and **outage_end_hour**. The latter are used as time step indices in the code, so for sub-hourly problems they do not have hourly units. For now **outage_start_hour** and **outage_end_hour** are kept in place to preserve backwards-compatibility. Also note that the new inputs are not zero-indexed.
