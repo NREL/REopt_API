@@ -32,16 +32,134 @@ import uuid
 from typing import Dict, Union
 from django.forms.models import model_to_dict
 from django.http import JsonResponse, HttpRequest
+from django.db import models
 from reo.exceptions import UnexpectedError
 from reo.models import ModelManager
 from reo.models import ScenarioModel, PVModel, StorageModel, LoadProfileModel, GeneratorModel, FinancialModel, \
     WindModel, CHPModel
 from reo.utilities import annuity
-from resilience_stats.models import ResilienceModel
+from resilience_stats.models import ResilienceModel, ERPMeta, ERPOutageInputs, ERPGeneratorInputs, ERPPrimeGeneratorInputs, ERPPVInputs, ERPElectricStorageInputs, ERPOutputs
 from resilience_stats.outage_simulator_LF import simulate_outages
 import numpy as np
 from reo.utilities import empty_record
+from django.views.decorators.http import require_http_methods
 
+@require_http_methods(["GET"])
+def erp_results(request, run_uuid):
+    try:
+        uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
+    except ValueError as e:
+        resp = {"messages": {}}
+        resp['status'] = 'Error'
+        if e.args[0] == "badly formed hexadecimal UUID string":
+            resp['messages']['error'] = str(e.args[0])
+            return JsonResponse(resp, status=400)
+        else:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            err = UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task='resilience_stats',
+                                  run_uuid=run_uuid)
+            err.save_to_db()
+            resp['messages']['error'] = str(err.message)
+            return JsonResponse(resp, status=400)
+    try:  # catch all unexpected exceptions
+        # catch specific exceptions
+        try:
+            meta = ERPMeta.objects.select_related("ERPOutageInputs").get(run_uuid=run_uuid)
+        except models.ObjectDoesNotExist as e:
+            resp = {"messages": {}}
+            resp['messages']['error'] = (
+                "run_uuid {} not in database. "
+                "If you have already submitted an ERP job, you may have "
+                "hit the results endpoint too quickly after POST'ing, "
+                "have a typo in your run_uuid, or the scenario was deleted. "
+                "If you have not, please first submit an ERP job by sending a POST request to "
+                "<version>/erp/. This will generate"
+                " ERP results that you can access from a GET request to the "
+                "<version>/erp/<run uuid>/results endpoint. ").format(run_uuid)
+            resp['status'] = 'Error'
+            return JsonResponse(resp, content_type='application/json', status=404)
+        
+        resp = meta.dict
+        resp["inputs"] = dict()
+        resp["inputs"][ERPOutageInputs.key] = meta.ERPOutageInputs.dict
+        try:
+            resp["inputs"][ERPGeneratorInputs.key] = meta.ERPGeneratorInputs.dict
+        except AttributeError:
+            pass
+        try:
+            resp["inputs"][ERPPrimeGeneratorInputs.key] = meta.ERPPrimeGeneratorInputs.dict
+        except AttributeError:
+            pass
+        try:
+            resp["inputs"][ERPPVInputs.key] = meta.ERPPVInputs.dict
+        except AttributeError:
+            pass
+        try:
+            resp["inputs"][ERPElectricStorageInputs.key] = meta.ERPElectricStorageInputs.dict
+        except AttributeError:
+            pass
+        resp["outputs"] = dict()
+        resp["messages"] = dict()
+        #TODO: save messages for ERP jobs and include here
+        # try:
+        #     msgs = meta.Message.all()
+        #     for msg in msgs:
+        #         r["messages"][msg.message_type] = msg.message
+        # except: pass
+
+        try:  
+            erp_outputs = ERPOutputs.objects.get(meta__run_uuid=run_uuid)
+        except models.ObjectDoesNotExist:
+            resp['messages']['error'] = ('ERP results are not ready. Please try again later.')
+            return JsonResponse(resp, content_type='application/json', status=404)
+
+        else:  # ERPOutputs does exist
+            resp["outputs"] = erp_outputs.dict
+            # # remove items that user does not need
+            # del results['scenariomodel']
+            # del results['id']
+
+        response = JsonResponse(resp, content_type='application/json', status=200)
+        return response
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task='erp', run_uuid=run_uuid)
+        err.save_to_db()
+        resp = {"messages": {}}
+        resp['messages']['error'] = err.message
+        resp['status'] = 'Error'
+        return JsonResponse(resp, status=500)
+
+def erp_help(request):
+    try:
+        d = dict()
+        d["reopt_run_uuid"] = ERPMeta.info_dict(ERPMeta)["reopt_run_uuid"]
+        # do models need to be passed in as arg?
+        d[ERPOutageInputs.key] = ERPOutageInputs.info_dict(ERPOutageInputs)
+        d[ERPPVInputs.key] = ERPPVInputs.info_dict(ERPPVInputs)
+        d[ERPElectricStorageInputs.key] = ERPElectricStorageInputs.info_dict(ERPElectricStorageInputs)
+        d[ERPGeneratorInputs.key] = ERPGeneratorInputs.info_dict(ERPGeneratorInputs)
+        d[ERPPrimeGeneratorInputs.key] = ERPPrimeGeneratorInputs.info_dict(ERPPrimeGeneratorInputs)
+        #TODO: add wind once implemented
+        return JsonResponse(d)
+
+    except Exception as e:
+        return JsonResponse({"Error": "Unexpected error in ERP help endpoint: {}".format(e.args[0])}, status=500)
+
+def erp_chp_prime_gen_defaults(request):
+    prime_mover = str(request.GET.get('prime_mover'))
+    is_chp = bool(request.GET.get('is_chp'))
+    size_kw = float(request.GET.get('size_kw'))
+    try:
+        d = ERPPrimeGeneratorInputs.info_dict_with_dependent_defaults(ERPPrimeGeneratorInputs, prime_mover, is_chp, size_kw)
+        return JsonResponse(d)
+
+    except TypeError as e:
+        return JsonResponse({"Error": "Invalid or missing arguments: {}".format(e.args[0])}, status=400)
+
+    except Exception as e:
+        return JsonResponse({"Error": "Unexpected error in ERP chp_defaults endpoint: {}".format(e.args[0])}, status=500)
 
 def resilience_stats(request: Union[Dict, HttpRequest], run_uuid=None):
     """
