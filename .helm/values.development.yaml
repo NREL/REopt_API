@@ -1,0 +1,11 @@
+appEnv: development
+djangoSettingsModule: reopt_api.dev_settings
+djangoReplicas: 2
+djangoMemoryRequest: "400Mi"
+djangoMemoryLimit: "1400Mi"
+celeryReplicas: 2
+celeryMemoryRequest: "200Mi"
+celeryMemoryLimit: "900Mi"
+juliaReplicas: 2
+juliaMemoryRequest: "2000Mi"
+juliaMemoryLimit: "8000Mi"
