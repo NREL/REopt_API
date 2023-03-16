@@ -36,6 +36,7 @@ Classify the change according to the following categories:
 ##### Fixed
 - In reo (v2), calculation of `net_capital_costs_plus_om` was previously missing addition sign for fuel charges. Corrected this equation.
 ## Develop 3/8/2023
+## Develop 2023-03-16
 ### Minor Updates
 ##### Added 
  - Energy Resilience and Performance Tool:
@@ -47,41 +48,24 @@ Classify the change according to the following categories:
     - `/erp/chp_defaults` endpoint that GETs ERP CHP/prime generator input defaults based on parameters `prime_mover`, `is_chp`, and `size_kw` (calls `erp_chp_prime_gen_defaults()`)
     - Tests in `resilience+stats/tests/test_erp.py`
  - Added field **production_factor_series** to Django models **WindOutputs** and **PVOutputs**
+ - In **REoptjlMessageOutputs** added a **has_stacktrace** field to denote if response has a stacktrace error or not. Default is False.
+ - Added access to the multiple outage stochastic/robust modeling capabilities in REopt.jl. Not all inputs and outputs are exposed, but the following are:
+   - **SiteInputs**: **min_resil_time_steps**
+   - **ElectricUtilityInputs**: **outage_start_time_steps**, **outage_durations**, **outage_probabilities**
+   - **OutageOutputs**: **expected_outage_cost**, **max_outage_cost_per_outage_duration**, **unserved_load_series**, **unserved_load_per_outage**, **microgrid_upgrade_capital_cost**, **generator_fuel_used_per_outage**
+ - Added test using multiple outage modeling
+ - Add /dev/schedule_stats endpoint
 ##### Changed
  - Changed `scalar_to_vector` helper function to `scalar_or_monthly_to_8760`
  - Changed **GeneratorInputs** fields **fuel_slope_gal_per_kwh** and **fuel_intercept_gal_per_hr** to **electric_efficiency_full_load** and **electric_efficiency_half_load** to represent the same fuel burn curve in a different way consistent with **CHPInputs**
-
-## Develop - 2023-03-10
-### Minor Updates
-##### Added
- - In **REoptjlMessageOutputs** added a **has_stacktrace** field to denote if response has a stacktrace error or not. Default is False.
-
-## Develop 03/08/2023
-### Minor Updates
-##### Changed
- - Updated the following default values to job/ app (v3):
-   - **federal_itc_fraction** to 0.3 (30%) in models **PVInputs**, **WindInputs**, and **CHPInputs** 
-   - **total_itc_fraction** to 0.3 (30%) in models **HotWaterStorageInputs**, **ColdWaterStorageInputs**, and **ElectricStorageInputs**
-   - ***macrs_bonus_fraction** to 0.8 (80%) in models **PVInputs**, **WindInputs**, **CHPInputs**, PV, **HotWaterStorageInputs**, **ColdWaterStorageInputs**, and **ElectricStorageInputs**
-   - **macrs_option_years** to 7 years in models **HotWaterStorageInputs** and **ColdWaterStorageInputs**
-   
-## Develop - 2023-03-02
-### Minor Updates
-##### Changed
- - In `reo/nested_inputs.py` v2 inputs (`defaults_dict[2]`), updated the following default values in models **ColdThermalStorageInputs**, **HotThermalStorageInputs**
-   - **macrs_option_years** to 7 (years)
-   - **macrs_bonus_pct** to 0.8 (80%)
-
-## Develop 11/21/2022
-### Minor Updates
-##### Added
- - Added access to the multiple outage stochastic/robust modeling capabilities in REopt.jl. Not all inputs and outputs are exposed, but the following are:
-    - **SiteInputs**: **min_resil_time_steps**
-    - **ElectricUtilityInputs**: **outage_start_time_steps**, **outage_durations**, **outage_probabilities**
-    - **OutageOutputs**: **expected_outage_cost**, **max_outage_cost_per_outage_duration**, **unserved_load_series**, **unserved_load_per_outage**, **microgrid_upgrade_capital_cost**, **generator_fuel_used_per_outage**
- - Added test using multiple outage modeling
- - Add /dev/schedule_stats endpoint
-#### Changed
+- Updated the following default values to job/ app (v3):
+  - **federal_itc_fraction** to 0.3 (30%) in models **PVInputs**, **WindInputs**, and **CHPInputs** 
+  - **total_itc_fraction** to 0.3 (30%) in models **HotWaterStorageInputs**, **ColdWaterStorageInputs**, and **ElectricStorageInputs**
+  - ***macrs_bonus_fraction** to 0.8 (80%) in models **PVInputs**, **WindInputs**, **CHPInputs**, PV, **HotWaterStorageInputs**, **ColdWaterStorageInputs**, and **ElectricStorageInputs**
+  - **macrs_option_years** to 7 years in models **HotWaterStorageInputs** and **ColdWaterStorageInputs**
+- In `reo/nested_inputs.py` v2 inputs (`defaults_dict[2]`), updated the following default values in models **ColdThermalStorageInputs**, **HotThermalStorageInputs**
+  - **macrs_option_years** to 7 (years)
+  - **macrs_bonus_pct** to 0.8 (80%)
  - In `reo/nested_inputs.py` v2 inputs (`defaults_dict[2]`), updated the following default values:
    - ColdTES, HotTES: **macrs_option_years** to 7 (years)
    - ColdTES, HotTES: ***macrs_bonus_pct** to 0.8 (80%)
@@ -90,7 +74,7 @@ Classify the change according to the following categories:
    - PV, Wind, Storage, CHP, Hot Water Storage, Cold Water Storage, Electric Storage: ***macrs_bonus_fraction** to 0.8 (80%)
    - Hot Water Storage and Cold Water Storage: **macrs_option_years** to 7 years
   Use TransactionTestCase instead of TestCase (this avoids whole test being wrapped in a transaction which leads to a TransactionManagementError when doing a database query in the middle)
- - Updated ubuntu-18.04 to ubuntu-latest in GitHub push/pull tests because 18.04 was deprecated in GitHub Actions   
+ - Updated ubuntu-18.04 to ubuntu-latest in GitHub push/pull tests because 18.04 was deprecated in GitHub Actions    
 
 ## v2.8.0
 ### Minor Updates
