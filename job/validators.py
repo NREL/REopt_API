@@ -469,13 +469,6 @@ class InputValidator(object):
                 else:
                     self.models["Generator"].om_cost_per_kw = 20.0
 
-            
-            if self.models["Generator"].__getattribute__("fuel_avail_gal") == None:
-                if self.models["Settings"].off_grid_flag==False:
-                    self.models["Generator"].fuel_avail_gal = 660.0
-                else:
-                    self.models["Generator"].fuel_avail_gal = MAX_BIG_NUMBER*10 # 1.0e8 * 10 => 1.0e9
-            
             if self.models["Generator"].__getattribute__("min_turn_down_fraction") == None:
                 if self.models["Settings"].off_grid_flag==False:
                     self.models["Generator"].min_turn_down_fraction = 0.0
