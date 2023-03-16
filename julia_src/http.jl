@@ -143,6 +143,27 @@ function reopt(req::HTTP.Request)
     end
 end
 
+function erp(req::HTTP.Request)
+	erp_inputs = JSON.parse(String(req.body))
+
+    @info "Starting ERP..."
+    error_response = Dict()
+    results = Dict()
+    try
+		results = reoptjl.backup_reliability(erp_inputs)
+    catch e
+        @error "Something went wrong in the ERP Julia code!" exception=(e, catch_backtrace())
+        error_response["error"] = sprint(showerror, e)
+    end
+    GC.gc()
+    if isempty(error_response)
+        @info "ERP ran successfully."
+        return HTTP.Response(200, JSON.json(results))
+    else
+        return HTTP.Response(500, JSON.json(error_response))
+    end
+end
+
 
 function ghpghx(req::HTTP.Request)
     inputs_dict = JSON.parse(String(req.body))
@@ -282,6 +303,7 @@ const ROUTER = HTTP.Router()
 
 HTTP.@register(ROUTER, "POST", "/job", job)
 HTTP.@register(ROUTER, "POST", "/reopt", reopt)
+HTTP.@register(ROUTER, "POST", "/erp", erp)
 HTTP.@register(ROUTER, "POST", "/ghpghx", ghpghx)
 HTTP.@register(ROUTER, "GET", "/chp_defaults", chp_defaults)
 HTTP.@register(ROUTER, "GET", "/simulated_load", simulated_load)
