@@ -107,7 +107,7 @@ Classify the change according to the following categories:
  - In job/ app (v3): Changed some _bau outputs to align with REopt.jl outputs
 ##### Added 
  - In job/ app (v3): Added **thermal_production_series_mmbtu_per_hour** to CHP results.
-#### Removed
+##### Removed
 - In job/ app (v3): Removed outputs not reported by REopt.jl
 ##### Fixed
 - In job/views for `/simulated_load` endpoint: Fixed the data type conversion issues between JSON and Julia
