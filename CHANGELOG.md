@@ -26,6 +26,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+
 ## v2.9.0
 ### Minor Updates
 ##### Added 
@@ -37,6 +38,7 @@ Classify the change according to the following categories:
     - `/erp/help` endpoint that GETs the ERP input field info (calls `erp_help()`)
     - `/erp/chp_defaults` endpoint that GETs ERP CHP/prime generator input defaults based on parameters `prime_mover`, `is_chp`, and `size_kw` (calls `erp_chp_prime_gen_defaults()`)
     - Tests in `resilience+stats/tests/test_erp.py`
+ - In job/ app (v3), added Financial **year_one_om_costs_before_tax_bau**, **lifecycle_om_costs_after_tax_bau** 
  - Added field **production_factor_series** to Django models **WindOutputs** and **PVOutputs**
  - In **REoptjlMessageOutputs** added a **has_stacktrace** field to denote if response has a stacktrace error or not. Default is False.
  - Added access to the multiple outage stochastic/robust modeling capabilities in REopt.jl. Not all inputs and outputs are exposed, but the following are:
@@ -46,6 +48,8 @@ Classify the change according to the following categories:
  - Added test using multiple outage modeling
  - Add /dev/schedule_stats endpoint
 ##### Changed
+ - In job/ app (v3), changed Financial **breakeven_cost_of_emissions_reduction_per_tonnes_CO2** to **breakeven_cost_of_emissions_reduction_per_tonne_CO2**
+- In job/ app (v3), changed default ElectricLoad **year** to 2022 if user provides load data and 2017 if using CRBD
  - Changed `scalar_to_vector` helper function to `scalar_or_monthly_to_8760`
  - Changed **GeneratorInputs** fields **fuel_slope_gal_per_kwh** and **fuel_intercept_gal_per_hr** to **electric_efficiency_full_load** and **electric_efficiency_half_load** to represent the same fuel burn curve in a different way consistent with **CHPInputs**
 - Updated the following default values to job/ app (v3):
@@ -65,6 +69,8 @@ Classify the change according to the following categories:
    - Hot Water Storage and Cold Water Storage: **macrs_option_years** to 7 years
   Use TransactionTestCase instead of TestCase (this avoids whole test being wrapped in a transaction which leads to a TransactionManagementError when doing a database query in the middle)
  - Updated ubuntu-18.04 to ubuntu-latest in GitHub push/pull tests because 18.04 was deprecated in GitHub Actions    
+##### Fixed
+- In reo (v2), calculation of `net_capital_costs_plus_om` was previously missing addition sign for fuel charges. Corrected this equation.
 
 ## v2.8.0
 ### Minor Updates
