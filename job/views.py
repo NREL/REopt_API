@@ -382,11 +382,13 @@ def peak_load_outage_times(request):
 
 def chp_defaults(request):
     inputs = {
-        "existing_boiler_production_type": request.GET.get("existing_boiler_production_type"),
+        "hot_water_or_steam": request.GET.get("hot_water_or_steam"),
         "avg_boiler_fuel_load_mmbtu_per_hour": request.GET.get("avg_boiler_fuel_load_mmbtu_per_hour"),
         "prime_mover": request.GET.get("prime_mover"),
         "size_class": request.GET.get("size_class"),
-        "boiler_efficiency": request.GET.get("boiler_efficiency")
+        "boiler_efficiency": request.GET.get("boiler_efficiency"),
+        "avg_electric_load_kw": request.GET.get("avg_electric_load_kw"),
+        "max_electric_load_kw": request.GET.get("max_electric_load_kw"),
     }
     try:
         julia_host = os.environ.get('JULIA_HOST', "julia")
