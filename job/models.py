@@ -3592,12 +3592,12 @@ class CHPInputs(BaseModel, models.Model):
     # Optional inputs
     size_class = models.IntegerField(
         validators=[
-            MinValueValidator(1),
-            MaxValueValidator(7)
+            MinValueValidator(0),
+            MaxValueValidator(6)
         ],
         null=True,
         blank=True,
-        help_text="CHP size class. Must be a strictly positive integer value"
+        help_text="CHP size class. Must be an integer value between 0 and 6"
     )
     min_kw = models.FloatField(
         default=0,
