@@ -172,6 +172,7 @@
         "om_cost_per_kwh": 0.0,
         "fuel_cost_per_gallon": 3.0,
         "electric_efficiency_full_load": 0.32329,
+        "electric_efficiency_half_load": 0.32329,
         "fuel_avail_gal": 660.0,
         "min_turn_down_fraction": 0.0,
         "only_runs_during_grid_outage": true,

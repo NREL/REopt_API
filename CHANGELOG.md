@@ -26,7 +26,8 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop 2023-03-16
+
+## v2.9.0
 ### Minor Updates
 ##### Added 
  - Energy Resilience and Performance Tool:
@@ -37,6 +38,7 @@ Classify the change according to the following categories:
     - `/erp/help` endpoint that GETs the ERP input field info (calls `erp_help()`)
     - `/erp/chp_defaults` endpoint that GETs ERP CHP/prime generator input defaults based on parameters `prime_mover`, `is_chp`, and `size_kw` (calls `erp_chp_prime_gen_defaults()`)
     - Tests in `resilience+stats/tests/test_erp.py`
+ - In job/ app (v3), added Financial **year_one_om_costs_before_tax_bau**, **lifecycle_om_costs_after_tax_bau** 
  - Added field **production_factor_series** to Django models **WindOutputs** and **PVOutputs**
  - In **REoptjlMessageOutputs** added a **has_stacktrace** field to denote if response has a stacktrace error or not. Default is False.
  - Added access to the multiple outage stochastic/robust modeling capabilities in REopt.jl. Not all inputs and outputs are exposed, but the following are:
@@ -51,6 +53,13 @@ Classify the change according to the following categories:
     - add new input/output models to properly save the inputs/outputs
     - add `/absorption_chiller_defaults` endpoint which calls the http.jl absorption_chiller_defaults endpoint
 ##### Changed
+- Update REopt.jl to v0.28.0 for job app (/dev -> v3)
+- `/job/chp_defaults` endpoint updated to take optional electric load metrics for non-heating CHP (Prime Generator in UI)
+  - Changed `/chp_defaults` input of `existing_boiler_production_type` to `hot_water_or_steam`
+  - `CHP.size_class` starting at 0 for average of other size_classes
+  - `CHP.max_size` calculated based on heating load or electric load
+- In job/ app (v3), changed Financial **breakeven_cost_of_emissions_reduction_per_tonnes_CO2** to **breakeven_cost_of_emissions_reduction_per_tonne_CO2**
+- In job/ app (v3), changed default ElectricLoad **year** to 2022 if user provides load data and 2017 if using CRBD
  - Changed `scalar_to_vector` helper function to `scalar_or_monthly_to_8760`
  - Changed **GeneratorInputs** fields **fuel_slope_gal_per_kwh** and **fuel_intercept_gal_per_hr** to **electric_efficiency_full_load** and **electric_efficiency_half_load** to represent the same fuel burn curve in a different way consistent with **CHPInputs**
 - Updated the following default values to job/ app (v3):
@@ -61,15 +70,17 @@ Classify the change according to the following categories:
 - In `reo/nested_inputs.py` v2 inputs (`defaults_dict[2]`), updated the following default values in models **ColdThermalStorageInputs**, **HotThermalStorageInputs**
   - **macrs_option_years** to 7 (years)
   - **macrs_bonus_pct** to 0.8 (80%)
- - In `reo/nested_inputs.py` v2 inputs (`defaults_dict[2]`), updated the following default values:
-   - ColdTES, HotTES: **macrs_option_years** to 7 (years)
-   - ColdTES, HotTES: ***macrs_bonus_pct** to 0.8 (80%)
- - Updated the following default values to job/ app (v3):
-   - PV, Wind, Storage, CHP, Hot Water Storage, Cold Water Storage, Electric Storage: **federal_itc_fraction(PV,Wind,CHP)** and **total_itc_fraction(Hot Water Storage, Cold Water Storage, Electric Storage)** to 0.3 (30%)
-   - PV, Wind, Storage, CHP, Hot Water Storage, Cold Water Storage, Electric Storage: ***macrs_bonus_fraction** to 0.8 (80%)
-   - Hot Water Storage and Cold Water Storage: **macrs_option_years** to 7 years
+- In `reo/nested_inputs.py` v2 inputs (`defaults_dict[2]`), updated the following default values:
+  - ColdTES, HotTES: **macrs_option_years** to 7 (years)
+  - ColdTES, HotTES: ***macrs_bonus_pct** to 0.8 (80%)
+- Updated the following default values to job/ app (v3):
+  - PV, Wind, Storage, CHP, Hot Water Storage, Cold Water Storage, Electric Storage: **federal_itc_fraction(PV,Wind,CHP)** and **total_itc_fraction(Hot Water Storage, Cold Water Storage, Electric Storage)** to 0.3 (30%)
+  - PV, Wind, Storage, CHP, Hot Water Storage, Cold Water Storage, Electric Storage: ***macrs_bonus_fraction** to 0.8 (80%)
+  - Hot Water Storage and Cold Water Storage: **macrs_option_years** to 7 years
   Use TransactionTestCase instead of TestCase (this avoids whole test being wrapped in a transaction which leads to a TransactionManagementError when doing a database query in the middle)
- - Updated ubuntu-18.04 to ubuntu-latest in GitHub push/pull tests because 18.04 was deprecated in GitHub Actions    
+- Updated ubuntu-18.04 to ubuntu-latest in GitHub push/pull tests because 18.04 was deprecated in GitHub Actions    
+##### Fixed
+- In reo (v2), calculation of `net_capital_costs_plus_om` was previously missing addition sign for fuel charges. Corrected this equation.
 
 ## v2.8.0
 ### Minor Updates
@@ -95,7 +106,7 @@ Classify the change according to the following categories:
  - In job/ app (v3): Changed some _bau outputs to align with REopt.jl outputs
 ##### Added 
  - In job/ app (v3): Added **thermal_production_series_mmbtu_per_hour** to CHP results.
-#### Removed
+##### Removed
 - In job/ app (v3): Removed outputs not reported by REopt.jl
 ##### Fixed
 - In job/views for `/simulated_load` endpoint: Fixed the data type conversion issues between JSON and Julia
@@ -464,7 +475,6 @@ The default values changed are:
 - `reo`: Fixes database query error the occurs when getting production runs created prior to v1.4.0    
 
 ## v1.4.0 - 2021-01-29
-### Major Updates
 ### Minor Updates
 ##### Added
 - `reo`/`reopt.jl`: Coincident peak rates and expected time steps can be specified. There can be a single rate and list of time steps. Or there can be multiple CP periods in a year with different rates, and then a set of time steps is specified for each rate. Peak demand occurring during each set of CP time steps is charged at the corresponding CP rate.
@@ -478,7 +488,6 @@ The default values changed are:
  - **total_coincident_peak_cost_bau_us_dollars**
 
 ## v1.3.0 - 2021-01-28
-### Major Updates
 ### Minor Updates
 - `reo`: New output **om_and_replacement_present_cost_after_tax_us_dollars**
 - `reo`, `*.jl`: New load **LoadProfileBoilerFuel**
@@ -516,7 +525,6 @@ The default values changed are:
 
 
 ## v1.2.0 - 2021-01-04
-### Major Updates
 ### Minor Updates
 ##### Added
 - `reo`: new inputs **outage_start_time_step** and **outage_end_time_step** to replace deprecated **outage_start_hour** and **outage_end_hour**. The latter are used as time step indices in the code, so for sub-hourly problems they do not have hourly units. For now **outage_start_hour** and **outage_end_hour** are kept in place to preserve backwards-compatibility. Also note that the new inputs are not zero-indexed.
