@@ -26,7 +26,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop 2023-03-16
+## v2.9.0
 ### Minor Updates
 ##### Added 
  - Energy Resilience and Performance Tool:
