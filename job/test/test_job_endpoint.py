@@ -231,7 +231,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
 
         avg_fuel_load = (post["SpaceHeatingLoad"]["annual_mmbtu"] + 
                             post["DomesticHotWaterLoad"]["annual_mmbtu"]) / 8760.0
-        inputs_chp_defaults = {"existing_boiler_production_type": post["ExistingBoiler"]["production_type"],
+        inputs_chp_defaults = {"hot_water_or_steam": post["ExistingBoiler"]["production_type"],
                             "avg_boiler_fuel_load_mmbtu_per_hour": avg_fuel_load
             }
 
@@ -241,7 +241,10 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
 
         for key in view_response["default_inputs"].keys():
             if post["CHP"].get(key) is None: # Check that default got assigned consistent with /chp_defaults
-                self.assertEquals(inputs_chp[key], view_response["default_inputs"][key])
+                if key == "max_kw":
+                    self.assertEquals(inputs_chp[key], view_response["chp_max_size_kw"])
+                else:
+                    self.assertEquals(inputs_chp[key], view_response["default_inputs"][key])
             else:  # Make sure we didn't overwrite user-input
                 self.assertEquals(inputs_chp[key], post["CHP"][key])
 
