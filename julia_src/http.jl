@@ -95,7 +95,7 @@ function reopt(req::HTTP.Request)
                 inputs_with_defaults_from_chp = [
                     :installed_cost_per_kw, :tech_sizes_for_cost_curve, :om_cost_per_kwh, 
                     :electric_efficiency_full_load, :thermal_efficiency_full_load, :min_allowable_kw,
-                    :cooling_thermal_factor, :min_turn_down_fraction, :unavailability_periods
+                    :cooling_thermal_factor, :min_turn_down_fraction, :unavailability_periods, :max_kw
                 ]
                 chp_dict = Dict(key=>getfield(model_inputs.s.chp, key) for key in inputs_with_defaults_from_chp)
             else
@@ -143,6 +143,27 @@ function reopt(req::HTTP.Request)
     end
 end
 
+function erp(req::HTTP.Request)
+	erp_inputs = JSON.parse(String(req.body))
+
+    @info "Starting ERP..."
+    error_response = Dict()
+    results = Dict()
+    try
+		results = reoptjl.backup_reliability(erp_inputs)
+    catch e
+        @error "Something went wrong in the ERP Julia code!" exception=(e, catch_backtrace())
+        error_response["error"] = sprint(showerror, e)
+    end
+    GC.gc()
+    if isempty(error_response)
+        @info "ERP ran successfully."
+        return HTTP.Response(200, JSON.json(results))
+    else
+        return HTTP.Response(500, JSON.json(error_response))
+    end
+end
+
 
 function ghpghx(req::HTTP.Request)
     inputs_dict = JSON.parse(String(req.body))
@@ -157,19 +178,21 @@ end
 
 function chp_defaults(req::HTTP.Request)
     d = JSON.parse(String(req.body))
-    keys = ["existing_boiler_production_type", 
-            "avg_boiler_fuel_load_mmbtu_per_hour",
-            "prime_mover",
-            "size_class",
-            "boiler_efficiency"]
+    string_vals = ["hot_water_or_steam", "prime_mover"]
+    float_vals = ["avg_boiler_fuel_load_mmbtu_per_hour",
+                "boiler_efficiency",
+                "avg_electric_load_kw",
+                "max_electric_load_kw"]
+    int_vals = ["size_class"]
+    all_vals = vcat(string_vals, float_vals, int_vals)
     # Process .json inputs and convert to correct type if needed
-    for k in keys
+    for k in all_vals
         if !haskey(d, k)
             d[k] = nothing
         elseif !isnothing(d[k])
-            if k in ["avg_boiler_fuel_load_mmbtu_per_hour", "boiler_efficiency"] && typeof(d[k]) == String
+            if k in float_vals && typeof(d[k]) == String
                 d[k] = parse(Float64, d[k])
-            elseif k == "size_class" && typeof(d[k]) == String
+            elseif k == int_vals && typeof(d[k]) == String
                 d[k] = parse(Int64, d[k])
             end
         end
@@ -179,11 +202,8 @@ function chp_defaults(req::HTTP.Request)
     data = Dict()
     error_response = Dict()
     try
-        data = reoptjl.get_chp_defaults_prime_mover_size_class(;hot_water_or_steam=d["existing_boiler_production_type"],
-                                                                avg_boiler_fuel_load_mmbtu_per_hour=d["avg_boiler_fuel_load_mmbtu_per_hour"],
-                                                                prime_mover=d["prime_mover"],
-                                                                size_class=d["size_class"],
-                                                                boiler_efficiency=d["boiler_efficiency"])
+        d_symb = reoptjl.dictkeys_tosymbols(d)
+        data = reoptjl.get_chp_defaults_prime_mover_size_class(;d_symb...)
     catch e
         @error "Something went wrong in the chp_defaults" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
@@ -240,6 +260,7 @@ const ROUTER = HTTP.Router()
 
 HTTP.@register(ROUTER, "POST", "/job", job)
 HTTP.@register(ROUTER, "POST", "/reopt", reopt)
+HTTP.@register(ROUTER, "POST", "/erp", erp)
 HTTP.@register(ROUTER, "POST", "/ghpghx", ghpghx)
 HTTP.@register(ROUTER, "GET", "/chp_defaults", chp_defaults)
 HTTP.@register(ROUTER, "GET", "/simulated_load", simulated_load)
