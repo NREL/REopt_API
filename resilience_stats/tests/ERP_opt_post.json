@@ -6,7 +6,7 @@
         "longitude": -118.1164613,
         "latitude": 34.5794343,
         "land_acres": 1.0
-    },
+    }, 
     "PV": {
         "min_kw": 200,
         "max_kw": 200,
