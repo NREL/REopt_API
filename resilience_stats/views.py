@@ -115,9 +115,6 @@ def erp_results(request, run_uuid):
 
         else:  # ERPOutputs does exist
             resp["outputs"] = erp_outputs.dict
-            # # remove items that user does not need
-            # del results['scenariomodel']
-            # del results['id']
 
         response = JsonResponse(resp, content_type='application/json', status=200)
         return response
