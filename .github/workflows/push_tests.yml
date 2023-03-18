@@ -1,4 +1,4 @@
-name: Built-in Tests for Push (Xpress in Ubuntu 18.04)
+name: Built-in Tests for Push (Xpress in latest Ubuntu)
 
 on:
 
@@ -10,7 +10,7 @@ on:
 jobs:
 
   test:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v2

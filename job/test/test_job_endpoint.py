@@ -27,18 +27,39 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
+import numpy as np
 from cProfile import run
 import json
 from tastypie.test import ResourceTestCaseMixin
-from django.test import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
-import os
+from django.test import TransactionTestCase 
+# Using TransactionTestCase instead of TestCase b/c this avoids whole test being wrapped in a 
+# transaction which leads to a TransactionManagementError when doing a database query in the middle.
+# Using django.test flushes database, so if you don't want this use unittest.TestCase.
 import logging
 import requests
 logging.disable(logging.CRITICAL)
 import os
 
 
-class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
+class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
+
+
+    def test_multiple_outages(self):
+
+        scenario_file = os.path.join('job', 'test', 'posts', 'outage.json')
+        scenario = json.load(open(scenario_file, 'r'))
+        resp = self.api_client.post('/dev/job/', format='json', data=scenario)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        r = json.loads(resp.content)
+        results = r["outputs"]
+        self.assertAlmostEqual(results["Outages"]["expected_outage_cost"], 4.800393567995261e6, places=-2)
+        self.assertAlmostEqual(sum(sum(np.array(results["Outages"]["unserved_load_per_outage"]))), 14274.25, places=0)
+        self.assertAlmostEqual(results["Outages"]["unserved_load_per_outage"][0][1], 10478.1, places=0)
+        self.assertAlmostEqual(results["Outages"]["microgrid_upgrade_capital_cost"], 9.075113562008379e6, places=-2)
+        self.assertAlmostEqual(results["Financial"]["lcc"], 8.9857671584e7, places=-3)
 
     def test_pv_battery_and_emissions_defaults_from_julia(self):
         """
@@ -62,6 +83,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(results["PV"]["size_kw"], 216.667, places=1)
         self.assertAlmostEqual(results["ElectricStorage"]["size_kw"], 55.9, places=1)
         self.assertAlmostEqual(results["ElectricStorage"]["size_kwh"], 78.9, places=1)
+    
         self.assertIsNotNone(results["Site"]["total_renewable_energy_fraction"])
         self.assertIsNotNone(results["Site"]["annual_emissions_tonnes_CO2"])
         self.assertIsNotNone(results["Site"]["lifecycle_emissions_tonnes_NOx"])
@@ -88,9 +110,9 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
         r = json.loads(resp.content)
         results = r["outputs"]
-
+    
         # Validate that we got off-grid response fields
-        self.assertAlmostEqual(results["Financial"]["offgrid_microgrid_lcoe_dollars_per_kwh"], 0.337, places=-3)
+        self.assertAlmostEqual(results["Financial"]     ["offgrid_microgrid_lcoe_dollars_per_kwh"], 0.337, places=-3)
         self.assertAlmostEqual(results["ElectricTariff"]["year_one_bill_before_tax"], 0.0)
         self.assertAlmostEqual(results["ElectricLoad"]["offgrid_load_met_fraction"], 0.99999, places=-2)
         self.assertAlmostEqual(sum(results["ElectricLoad"]["offgrid_load_met_series_kw"]), 8760.0, places=-1)
@@ -113,6 +135,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         assert('errors' in r["messages"].keys())
         assert('warnings' in r["messages"].keys())
+        assert(r['messages']['has_stacktrace']==True)
         assert(resp.status_code==400)
 
 
@@ -208,7 +231,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
 
         avg_fuel_load = (post["SpaceHeatingLoad"]["annual_mmbtu"] + 
                             post["DomesticHotWaterLoad"]["annual_mmbtu"]) / 8760.0
-        inputs_chp_defaults = {"existing_boiler_production_type": post["ExistingBoiler"]["production_type"],
+        inputs_chp_defaults = {"hot_water_or_steam": post["ExistingBoiler"]["production_type"],
                             "avg_boiler_fuel_load_mmbtu_per_hour": avg_fuel_load
             }
 
@@ -218,7 +241,10 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
 
         for key in view_response["default_inputs"].keys():
             if post["CHP"].get(key) is None: # Check that default got assigned consistent with /chp_defaults
-                self.assertEquals(inputs_chp[key], view_response["default_inputs"][key])
+                if key == "max_kw":
+                    self.assertEquals(inputs_chp[key], view_response["chp_max_size_kw"])
+                else:
+                    self.assertEquals(inputs_chp[key], view_response["default_inputs"][key])
             else:  # Make sure we didn't overwrite user-input
                 self.assertEquals(inputs_chp[key], post["CHP"][key])
 
@@ -254,3 +280,34 @@ class TestJobEndpoint(ResourceTestCaseMixin, TestCase):
 
             self.assertAlmostEqual(results["Financial"]["npv"], 165.21, places=-2)
             assert(resp.status_code==200)          
+
+
+    def test_peak_load_outage_times(self):
+        """
+        Purpose of this test is to test the endpoint /peak_load_outage_times 
+        """
+
+        load = [100]*8760
+        load[40*24] = 200
+        load[50*24] = 300
+        load[70*24] = 300
+        load[170*24] = 300
+        load[300*24] = 400
+        outage_inputs = {"seasonal_peaks": True,
+                        "outage_duration": 95,
+                        "critical_load": load,
+                        "start_not_center_on_peaks": False
+        }
+        expected_result = [50*24-47, 70*24-47, 170*24-47, 300*24-47]
+        resp = self.api_client.post(f'/dev/peak_load_outage_times', data=outage_inputs)
+        self.assertHttpOK(resp)
+        outage_start_time_steps = json.loads(resp.content)["outage_start_time_steps"]
+        self.assertEquals(outage_start_time_steps, expected_result)
+
+        outage_inputs["seasonal_peaks"] = False
+        outage_inputs["start_not_center_on_peaks"] = True
+        expected_result = [300*24]
+        resp = self.api_client.post(f'/dev/peak_load_outage_times', data=outage_inputs)
+        self.assertHttpOK(resp)
+        outage_start_time_steps = json.loads(resp.content)["outage_start_time_steps"]
+        self.assertEquals(outage_start_time_steps, expected_result)
