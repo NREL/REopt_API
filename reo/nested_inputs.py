@@ -2652,7 +2652,7 @@ defaults_dict = {
           },
           "macrs_bonus_pct": {
             "default": 0.8
-          } 
+          }
         },
         "Wind": {
           "om_cost_us_dollars_per_kw": {
@@ -2673,6 +2673,22 @@ defaults_dict = {
         "GHP": {
           "federal_itc_pct": {
             "default": 0.3
+          },
+          "macrs_bonus_pct": {
+            "default": 0.8
+          }
+        },
+        "ColdTES": {
+          "macrs_option_years": {
+            "default": 7
+          },
+          "macrs_bonus_pct": {
+            "default": 0.8
+          }
+        },
+        "HotTES": {
+          "macrs_option_years": {
+            "default": 7 
           },
           "macrs_bonus_pct": {
             "default": 0.8
