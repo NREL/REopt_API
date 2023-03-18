@@ -26,8 +26,8 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop
-### Minor Updates
+## v2.9.1
+### Patches
 ##### Added
 - In job/ app (v3): emissions_profile endpoint and view function that returns the emissions data for a location
 
