@@ -218,6 +218,28 @@ function chp_defaults(req::HTTP.Request)
     end
 end
 
+function emissions_profile(req::HTTP.Request)
+    d = JSON.parse(String(req.body))
+    @info "Getting emissions profile..."
+    data = Dict()
+    error_response = Dict()
+    try
+		latitude = typeof(d["latitude"]) == String ? parse(Float64, d["latitude"]) : d["latitude"]
+		longitude = typeof(d["longitude"]) == String ? parse(Float64, d["longitude"]) : d["longitude"]
+        data = reoptjl.emissions_profiles(;latitude=latitude, longitude=longitude, time_steps_per_hour=1)
+    catch e
+        @error "Something went wrong getting the emissions data" exception=(e, catch_backtrace())
+        error_response["error"] = sprint(showerror, e)
+    end
+    if isempty(error_response)
+        @info "Emissions profile determined."
+        return HTTP.Response(200, JSON.json(data))
+    else
+        @info "An error occured getting the emissions data"
+        return HTTP.Response(500, JSON.json(error_response))
+    end
+end
+
 function simulated_load(req::HTTP.Request)
     d = JSON.parse(String(req.body))
 
@@ -263,6 +285,7 @@ HTTP.@register(ROUTER, "POST", "/reopt", reopt)
 HTTP.@register(ROUTER, "POST", "/erp", erp)
 HTTP.@register(ROUTER, "POST", "/ghpghx", ghpghx)
 HTTP.@register(ROUTER, "GET", "/chp_defaults", chp_defaults)
+HTTP.@register(ROUTER, "GET", "/emissions_profile", emissions_profile)
 HTTP.@register(ROUTER, "GET", "/simulated_load", simulated_load)
 HTTP.@register(ROUTER, "GET", "/health", health)
 HTTP.serve(ROUTER, "0.0.0.0", 8081, reuseaddr=true)
