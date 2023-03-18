@@ -248,6 +248,19 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
             else:  # Make sure we didn't overwrite user-input
                 self.assertEquals(inputs_chp[key], post["CHP"][key])
 
+    def test_emissions_profile_endpoint(self):
+        # Call to the django view endpoint dev/emissions_profile which calls the http.jl endpoint
+        inputs = {
+            "latitude": 47.606211,
+            "longitude": -122.336052
+        }
+        resp = self.api_client.get(f'/dev/emissions_profile', data=inputs)
+        self.assertHttpOK(resp)
+        view_response = json.loads(resp.content)
+        self.assertEquals(view_response["meters_to_region"], 0.0)
+        self.assertEquals(view_response["region"], "Northwest")
+        self.assertEquals(len(view_response["emissions_factor_series_lb_NOx_per_kwh"]), 8760)
+
     def test_superset_input_fields(self):
             """
             Purpose of this test is to test the API's ability to accept all relevant 

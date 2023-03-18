@@ -26,6 +26,11 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v2.9.1
+### Patches
+##### Added
+- In job/ app (v3): emissions_profile endpoint and view function that returns the emissions data for a location
+
 
 ## v2.9.0
 ### Minor Updates
@@ -81,6 +86,8 @@ Classify the change according to the following categories:
 ### Minor Updates
 ##### Changed
 - In `reo/nested_inputs.py` v2 inputs (`defaults_dict[2]`), updated the following default values:
+##### Changed
+- In `reo/nested_inputs.py` v2 inputs (`defaults_dict[2]`), updated the following default values:
    - PV, Wind, Storage, CHP, GHP: **federal_itc_pct** to 0.30 (30%)
    - PV, Wind, Storage, CHP, GHP: ***macrs_bonus_pct** to 0.8 (80%)
 - The `ghpghx` app and Julia endpoint in `http.jl` uses the [GhpGhx.jl](https://github.com/NREL/GhpGhx.jl) Julia package instead of internal Julia scripts with git submodule for the `tess.so` file
@@ -90,15 +97,15 @@ Classify the change according to the following categories:
 ## v2.7.1
 ### Minor Updates
 ##### Added 
- - In job/ app (v3): Added **addressable_load_fraction** to SpaceHeatingLoad and DomesticHotWaterLoad inputs. 
+- In job/ app (v3): Added **addressable_load_fraction** to SpaceHeatingLoad and DomesticHotWaterLoad inputs. 
 ##### Changed
- - Changed redis service memory settings to mitigate "out of memory" OOM issue we've been getting on production
-
+- Changed redis service memory settings to mitigate "out of memory" OOM issue we've been getting on production
+ 
 ## v2.7.0
 ### Minor Updates
 ##### Changed
- - In job/ app (v3): Name changes for many outputs/results. Generally, changes are for energy outputs (not costs) that include "year_one", and are changed to annual_ for scalars and to production_to_, thermal_to_ etc. for time series.
- - In job/ app (v3): Changed some _bau outputs to align with REopt.jl outputs
+- In job/ app (v3): Name changes for many outputs/results. Generally, changes are for energy outputs (not costs) that include "year_one", and are changed to annual_ for scalars and to production_to_, thermal_to_ etc. for time series.
+- In job/ app (v3): Changed some _bau outputs to align with REopt.jl outputs
 ##### Added 
  - In job/ app (v3): Added **thermal_production_series_mmbtu_per_hour** to CHP results.
 ##### Removed

@@ -489,3 +489,123 @@ def simulated_load(request):
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in simulated_load endpoint. Check log for more."}, status=500)
+
+def emissions_profile(request):
+    try:
+        inputs = {
+            "latitude": request.GET['latitude'], # need to do float() to convert unicode?
+            "longitude": request.GET['longitude']
+        }
+        julia_host = os.environ.get(
+            'JULIA_HOST', 
+            "julia"
+        )
+        http_jl_response = requests.get(
+            "http://" + julia_host + ":8081/emissions_profile/", 
+            json=inputs
+        )
+        response = JsonResponse(
+            http_jl_response.json()
+        )
+        return response
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing Parameter": str(e.args[0])}, status=400)
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=400)
+
+    except Exception:
+
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.error(debug_msg)
+        return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
+
+
+# def easiur_costs(request):
+#     try:
+#         latitude = float(request.GET['latitude'])  # need float to convert unicode
+#         longitude = float(request.GET['longitude'])
+#         avg_inflation = float(request.GET['inflation'])
+
+#         easiur = EASIURCalculator( latitude=latitude, 
+#                     longitude=longitude,
+#                     inflation=avg_inflation
+#                     )
+
+#         try:
+#             response = JsonResponse({
+#                     'nox_cost_us_dollars_per_tonne_grid': easiur.grid_costs['NOx'],
+#                     'so2_cost_us_dollars_per_tonne_grid': easiur.grid_costs['SO2'],
+#                     'pm25_cost_us_dollars_per_tonne_grid': easiur.grid_costs['PM25'],
+#                     'nox_cost_us_dollars_per_tonne_onsite_fuelburn': easiur.onsite_costs['NOx'],
+#                     'so2_cost_us_dollars_per_tonne_onsite_fuelburn': easiur.onsite_costs['SO2'],
+#                     'pm25_cost_us_dollars_per_tonne_onsite_fuelburn': easiur.onsite_costs['PM25'],
+#                     'units_costs': 'US dollars per metric ton.',
+#                     'description_costs': 'Health costs of emissions from the grid and on-site fuel burn, as reported by the EASIUR model.',
+#                     'nox_cost_escalation_pct': easiur.escalation_rates['NOx'],
+#                     'so2_cost_escalation_pct': easiur.escalation_rates['SO2'],
+#                     'pm25_cost_escalation_pct': easiur.escalation_rates['PM25'],
+#                     'units_escalation': 'nominal annual percent',
+#                     'description_escalation': 'Annual nominal escalation rate (as a decimal) of public health costs of emissions.',
+#                 })
+#             return response
+#         except AttributeError as e:
+#             return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+#     except KeyError as e:
+#         return JsonResponse({"Error. Missing Parameter": str(e.args[0])}, status=500)
+
+#     except ValueError as e:
+#         return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+#     except Exception:
+
+#         exc_type, exc_value, exc_traceback = sys.exc_info()
+#         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+#                                                                             tb.format_tb(exc_traceback))
+#         log.error(debug_msg)
+#         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
+
+
+# def fuel_emissions_rates(request):
+#     try:
+
+#         try:
+#             response = JsonResponse({
+#                 'CO2': {
+#                     'generator_lb_per_gal': ValidateNestedInput.fuel_conversion_lb_CO2_per_gal,
+#                     'lb_per_mmbtu': ValidateNestedInput.fuel_conversion_lb_CO2_per_mmbtu
+#                     },
+#                 'NOx': {
+#                     'generator_lb_per_gal': ValidateNestedInput.fuel_conversion_lb_NOx_per_gal,
+#                     'lb_per_mmbtu': ValidateNestedInput.fuel_conversion_lb_NOx_per_mmbtu
+#                     },
+#                 'SO2': {
+#                     'generator_lb_per_gal': ValidateNestedInput.fuel_conversion_lb_SO2_per_gal,
+#                     'lb_per_mmbtu': ValidateNestedInput.fuel_conversion_lb_SO2_per_mmbtu
+#                     },
+#                 'PM25': {
+#                     'generator_lb_per_gal': ValidateNestedInput.fuel_conversion_lb_PM25_per_gal,
+#                     'lb_per_mmbtu': ValidateNestedInput.fuel_conversion_lb_PM25_per_mmbtu
+#                     }
+#                 })
+#             return response
+#         except AttributeError as e:
+#             return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+#     except KeyError as e:
+#         return JsonResponse({"No parameters required."}, status=500)
+
+#     except ValueError as e:
+#         return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+#     except Exception:
+
+#         exc_type, exc_value, exc_traceback = sys.exc_info()
+#         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+#                                                                             tb.format_tb(exc_traceback))
+#         log.error(debug_msg)
+#         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
