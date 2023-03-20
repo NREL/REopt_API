@@ -1911,7 +1911,7 @@ class OutageOutputs(BaseModel, models.Model):
         default=list, blank=True,
         help_text="The maximum outage cost for every outage duration modeled."
     )
-    unserved_load_series = ArrayField(
+    unserved_load_series_kw = ArrayField(
         ArrayField(
             ArrayField(
                 models.FloatField(
@@ -1924,7 +1924,7 @@ class OutageOutputs(BaseModel, models.Model):
         default=list, blank=True,
         help_text="The amount of unserved load in each outage time step for each outage start time and duration. Outage duration changes along the first dimension, outage start time step along the second, and time step in outage along the third."
     )
-    unserved_load_per_outage = ArrayField(
+    unserved_load_per_outage_kwh = ArrayField(
         ArrayField(
             models.FloatField(
                 blank=True,
@@ -1932,40 +1932,154 @@ class OutageOutputs(BaseModel, models.Model):
             default=list, blank=True,
         ),
         default=list, blank=True,
-        help_text="The total unserved load for each outage start time and duration. Outage duration changes along the first dimension and outage start time changes along the second dimention."
+        help_text="The total unserved load for each outage start time and duration. Outage duration changes along the first dimension and outage start time changes along the second dimension."
     )
     microgrid_upgrade_capital_cost = models.FloatField(
         null=True, blank=True,
         help_text="Total capital cost of including technologies in the microgrid."
     )
-    generator_fuel_used_per_outage = ArrayField(
+    storage_microgrid_upgrade_cost = models.FloatField(
+        null=True, blank=True,
+        help_text="Capital cost of including the electric storage system in the microgrid."
+    )
+    storage_discharge_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of storage power discharged in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    pv_microgrid_size_kw = models.FloatField(
+        null=True, blank=True,
+        help_text="Optimal PV capacity included in the microgrid."
+    )
+    pv_microgrid_upgrade_cost = models.FloatField(
+        null=True, blank=True,
+        help_text="Capital cost of including the PV system in the microgrid."
+    )
+    pv_to_storage_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of PV power sent to the battery in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    pv_curtailed_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of PV power curtailed in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    pv_to_load_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of PV power used to meet load in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    generator_microgrid_size_kw = models.FloatField(
+        null=True, blank=True,
+        help_text="Optimal generator capacity included in the microgrid."
+    )
+    generator_microgrid_upgrade_cost = models.FloatField(
+        null=True, blank=True,
+        help_text="Capital cost of including the generator system in the microgrid."
+    )
+    generator_to_storage_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of generator power sent to the battery in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    generator_curtailed_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of generator power curtailed in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    generator_to_load_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of generator power used to meet load in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    generator_fuel_used_per_outage_gal = ArrayField(
         ArrayField(
             models.FloatField(
                 blank=True,
             ),
-            default=list, blank=True,
+            default=list, blank=True
         ),
         default=list, blank=True,
-        help_text="Generator fuel used in each outage modeled. Outage duration changes along the first dimension and outage start time changes along the second dimention."
+        help_text="Generator fuel used in each outage modeled. Outage duration changes along the first dimension and outage start time changes along the second dimension."
     )
-    # Outputs from REopt.jl not implementing API
-    # Some of these are trickier to conclude in api because names aren't fixed. Also skipping some of these detailed dispatch outputs for now.
-    # - `storage_upgraded` Boolean that is true if it is cost optimal to include the storage system in the microgrid.
-    # - `mg_storage_upgrade_cost` The cost to include the storage system in the microgrid.
-    # - `discharge_from_storage_series` Array of storage power discharged in every outage modeled.
-    # - `PV_mg_kw` Optimal microgrid PV capacity. Note that the name `PV` can change based on user provided `PV.name`.
-    # - `PV_upgraded` Boolean that is true if it is cost optimal to include the PV system in the microgrid.
-    # - `mg_PV_upgrade_cost` The cost to include the PV system in the microgrid.
-    # - `mg_PV_to_storage_series` Array of PV power sent to the battery in every outage modeled.
-    # - `mg_PV_curtailed_series` Array of PV curtailed in every outage modeled.
-    # - `mg_PV_to_load_series` Array of PV power used to meet load in every outage modeled.
-    # - `Generator_mg_kw` Optimal microgrid Generator capacity. Note that the name `Generator` can change based on user provided `Generator.name`.
-    # - `Generator_upgraded` Boolean that is true if it is cost optimal to include the Generator in the microgrid.
-    # - `mg_Generator_upgrade_cost` The cost to include the Generator system in the microgrid.
-    # - `mg_Generator_to_storage_series` Array of Generator power sent to the battery in every outage modeled.
-    # - `mg_Generator_curtailed_series` Array of Generator curtailed in every outage modeled.
-    # - `mg_Generator_to_load_series` Array of Generator power used to meet load in every outage modeled.
-    # - `mg_Generator_fuel_used_per_outage` Array of Generator fuel used in every outage modeled.
 
 class ElectricTariffOutputs(BaseModel, models.Model):
     key = "ElectricTariffOutputs"
