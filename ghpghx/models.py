@@ -222,7 +222,7 @@ class GHPGHXInputs(models.Model):
     is_hybrid_ghx = models.BooleanField(null=True, blank=True, default=True,
         help_text="If the GHP system uses a hybrid GHX with auxiliary heater or cooler")
     hybrid_sizing_flag = models.FloatField(null=True, blank=True, default=1.0,
-        help_text="Possible values: -2 (size for heating), -1.0 (size for cooling), 1.0 (non-hybrid), value between 0-1 (fraction of full GHE size)") 
+        help_text="Possible values: -2 (size for heating), -1.0 (size for cooling), 1.0 (non-hybrid), value between 0-1 (fraction of full GHX size)") 
     is_heating_electric = models.BooleanField(null=True, blank=True, default=True,
         help_text="Set to True if heating is electric, false otherwise")  
     aux_heater_thermal_efficiency = models.FloatField(null=True, blank=True, 
@@ -294,12 +294,23 @@ class GHPGHXOutputs(models.Model):
         help_text="Annual auxiliary heater electrical consumption [kWh]")
     annual_aux_cooler_electric_consumption_kwh = models.FloatField(null=True, blank=True, 
         help_text="Annual auxiliary cooler electrical consumption [kWh]")      
-    end_of_year_eft_f = ArrayField(models.FloatField(null=True, blank=True), 
+    end_of_year_ghx_lft_f = ArrayField(models.FloatField(null=True, blank=True), 
         default=list, null=True, blank=True,
-        help_text="End of year entering fluid temperature for all years in the last iteration of GHX sizing [degF]")
+        help_text="End of year GHX leaving fluid temperature for all years in the last iteration of GHX sizing [degF]")
+    max_yearly_ghx_lft_f = ArrayField(models.FloatField(null=True, blank=True), 
+        default=list, null=True, blank=True,
+        help_text="Maximum GHX leaving fluid temperature for all years in the last iteration of GHX sizing [degF]")
+    min_yearly_ghx_lft_f = ArrayField(models.FloatField(null=True, blank=True), 
+        default=list, null=True, blank=True,
+        help_text="Minimum GHX leaving fluid temperature for all years in the last iteration of GHX sizing [degF]")
     aux_heat_exchange_unit_type = models.TextField(null=True, blank=True, 
         help_text="Specifies if the auxiliary heat exchange unit is a heater or cooler")
-
+    yearly_ghx_lft_series_f = ArrayField(models.FloatField(null=True, blank=True), 
+        default=list, null=True, blank=True,
+        help_text="Hourly GHX leaving fluid temperature (lft), average across simulation years [kW]") 
+    ghx_soln_number_of_iterations = models.IntegerField(null=True, blank=True, 
+        help_text="The number of iterations taken to get GHX sizing")
+    
 class ModelManager(object):
 
     def __init__(self):
