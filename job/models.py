@@ -907,6 +907,10 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Year one operations and maintenance cost before tax."
     )
+    year_one_om_costs_before_tax_bau = models.FloatField(
+        null=True, blank=True,
+        help_text="Year one operations and maintenance cost before tax in the BAU case."
+    )
     simple_payback_years = models.FloatField(
         null=True, blank=True,
         help_text=("Number of years until the cumulative annual cashflows turn positive. "
@@ -993,6 +997,10 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text=("Component of lifecycle costs (LCC). This value is the present value of all O&M costs, after tax.")
     )
+    lifecycle_om_costs_after_tax_bau = models.FloatField(
+        null=True, blank=True,
+        help_text=("BAU Component of lifecycle costs (LCC). This value is the present value of all O&M costs, after tax in the BAU case.")
+    )
     lifecycle_fuel_costs_after_tax = models.FloatField(
         null=True, blank=True,
         help_text=("Component of lifecycle costs (LCC). This value is the present value of all fuel costs over the analysis period, after tax.")
@@ -1056,7 +1064,7 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Total cost of NOx, SO2, and PM2.5 emissions associated with the site's energy consumption over the analysis period in the BAU case."
     )
-    breakeven_cost_of_emissions_reduction_per_tonnes_CO2 = models.FloatField(
+    breakeven_cost_of_emissions_reduction_per_tonne_CO2 = models.FloatField(
         null=True, blank=True,
         help_text=("Cost of emissions required to breakeven (NPV = 0) compared to the BAU case LCC."
                     "If the cost of health emissions were included in the objective function," 
@@ -1123,7 +1131,7 @@ class ElectricLoadInputs(BaseModel, models.Model):
                    "https://energy.gov/eere/buildings/commercial-reference-buildings")
     )
     year = models.IntegerField(
-        default=2020,
+        default=2022,
         validators=[
             MinValueValidator(1),
             MaxValueValidator(9999)
@@ -1485,7 +1493,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
                 if (possible_set[0] and not possible_set[1]) or (not possible_set[0] and possible_set[1]):
                     error_messages["required inputs"] = f"Must provide both {possible_set[0]} and {possible_set[1]}"
 
-        self.wholesale_rate = scalar_to_vector(self.wholesale_rate)
+        self.wholesale_rate = scalar_or_monthly_to_8760(self.wholesale_rate)
 
         if len(self.coincident_peak_load_charge_per_kw) > 0:
             if len(self.coincident_peak_load_active_time_steps) != len(self.coincident_peak_load_charge_per_kw):
@@ -2499,6 +2507,10 @@ class PVOutputs(BaseModel, models.Model):
         blank=True, default=list
     )
     lcoe_per_kwh = models.FloatField(null=True, blank=True)
+    production_factor_series = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default=list, blank=True
+    )
 
 
 class WindInputs(BaseModel, models.Model):
@@ -2807,6 +2819,10 @@ class WindOutputs(BaseModel, models.Model):
     electric_curtailed_series_kw = ArrayField(
             models.FloatField(null=True, blank=True), blank=True, default=list)
     lcoe_per_kwh = models.FloatField(null=True, blank=True)
+    production_factor_series = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default=list, blank=True
+    )
 
 
 class ElectricStorageInputs(BaseModel, models.Model):
@@ -3109,25 +3125,26 @@ class GeneratorInputs(BaseModel, models.Model):
         blank=True,
         help_text="Diesel cost in $/gallon"
     )
-    fuel_slope_gal_per_kwh = models.FloatField(
-        default=0.076,
+    electric_efficiency_half_load = models.FloatField(
         validators=[
             MinValueValidator(0.0),
-            MaxValueValidator(10.0)
+            MaxValueValidator(1.0)
         ],
         blank=True,
-        help_text="Generator fuel burn rate in gallons/kWh."
+        null=True,
+        help_text="Electric efficiency of the generator running at half load. Defaults to electric_efficiency_full_load."
     )
-    fuel_intercept_gal_per_hr = models.FloatField(
-        default=0.0,
+    electric_efficiency_full_load = models.FloatField(
+        default=0.34,
         validators=[
             MinValueValidator(0.0),
-            MaxValueValidator(10.0)
+            MaxValueValidator(1.0)
         ],
         blank=True,
-        help_text="Generator fuel consumption curve y-intercept in gallons per hour."
+        help_text="Electric efficiency of the generator running at full load."
     )
     fuel_avail_gal = models.FloatField(
+        default=MAX_BIG_NUMBER*10,
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(MAX_BIG_NUMBER*10)
@@ -3392,6 +3409,11 @@ class GeneratorInputs(BaseModel, models.Model):
         help_text="Per kW replacement cost for generator capacity. Replacement costs are considered tax deductible."
     )
 
+    def clean(self):
+        if not self.electric_efficiency_half_load:
+            self.electric_efficiency_half_load = self.electric_efficiency_full_load
+
+
 
 class GeneratorOutputs(BaseModel, models.Model):
     key = "GeneratorOutputs"
@@ -3587,12 +3609,12 @@ class CHPInputs(BaseModel, models.Model):
     # Optional inputs
     size_class = models.IntegerField(
         validators=[
-            MinValueValidator(1),
-            MaxValueValidator(7)
+            MinValueValidator(0),
+            MaxValueValidator(6)
         ],
         null=True,
         blank=True,
-        help_text="CHP size class. Must be a strictly positive integer value"
+        help_text="CHP size class. Must be an integer value between 0 and 6"
     )
     min_kw = models.FloatField(
         default=0,
@@ -3909,7 +3931,7 @@ class CHPInputs(BaseModel, models.Model):
         if error_messages:
             raise ValidationError(error_messages)
 
-        self.fuel_cost_per_mmbtu = scalar_to_vector(self.fuel_cost_per_mmbtu)
+        self.fuel_cost_per_mmbtu = scalar_or_monthly_to_8760(self.fuel_cost_per_mmbtu)
 
         if self.emissions_factor_lb_CO2_per_mmbtu == None:
             self.emissions_factor_lb_CO2_per_mmbtu = FUEL_DEFAULTS["emissions_factor_lb_CO2_per_mmbtu"].get(self.fuel_type, 0.0)
@@ -4448,8 +4470,7 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         blank=True,
         help_text=("The ExistingBoiler default operating cost is zero. Please provide this field to include non-zero BAU heating costs."
                     "The `fuel_cost_per_mmbtu` can be a scalar, a list of 12 monthly values, or a time series of values for every time step."
-                    "If a scalar or a vector of 12 values are provided, then the value is scaled up to 8760 values."
-                    "If a vector of 8760, 17520, or 35040 values is provided, it is adjusted to match timesteps per hour in the optimization.")
+                    "If a vector of length 8760, 17520, or 35040 is provided, it is adjusted to match timesteps per hour in the optimization.")
     )
 
     fuel_type = models.TextField(
@@ -4476,7 +4497,7 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         if error_messages:
             raise ValidationError(error_messages)
         
-        self.fuel_cost_per_mmbtu = scalar_to_vector(self.fuel_cost_per_mmbtu)
+        self.fuel_cost_per_mmbtu = scalar_or_monthly_to_8760(self.fuel_cost_per_mmbtu)
 
         if self.emissions_factor_lb_CO2_per_mmbtu == None:
             self.emissions_factor_lb_CO2_per_mmbtu = FUEL_DEFAULTS["emissions_factor_lb_CO2_per_mmbtu"].get(self.fuel_type, 0.0)
@@ -4561,7 +4582,7 @@ class REoptjlMessageOutputs(BaseModel, models.Model):
         blank=True,
         default=False,
         help_text=("REopt.jl can return a handled error with corrective instructions or an unhandled error with a stacktrace of what went wrong for further insepction."
-                    "This field is True if the error message has a stacktrace, False otherwise. Defaults to False.")
+                    "This field is True if the error message has a stacktrace, otherwise False.")
     )
 
     def clean(self):
@@ -4700,7 +4721,7 @@ class REoptjlMessageOutputs(BaseModel, models.Model):
 
 #     # For custom validations within model.
 #     def clean(self):
-#         self.fuel_cost_per_mmbtu = scalar_to_vector(self.fuel_cost_per_mmbtu)
+#         self.fuel_cost_per_mmbtu = scalar_or_monthly_to_8760(self.fuel_cost_per_mmbtu)
 
 # class BoilerOutputs(BaseModel, models.Model):
 
@@ -5693,7 +5714,7 @@ def get_input_dict_from_run_uuid(run_uuid:str):
 If a scalar was provided where API expects a vector, extend it to 8760
 Upsampling handled in InputValidator.cross_clean
 '''
-def scalar_to_vector(vec:list):
+def scalar_or_monthly_to_8760(vec:list):
     if len(vec) == 1: # scalar length is provided
         return vec * 8760
     elif len(vec) == 12: # Monthly costs were provided

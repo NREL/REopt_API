@@ -231,7 +231,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
 
         avg_fuel_load = (post["SpaceHeatingLoad"]["annual_mmbtu"] + 
                             post["DomesticHotWaterLoad"]["annual_mmbtu"]) / 8760.0
-        inputs_chp_defaults = {"existing_boiler_production_type": post["ExistingBoiler"]["production_type"],
+        inputs_chp_defaults = {"hot_water_or_steam": post["ExistingBoiler"]["production_type"],
                             "avg_boiler_fuel_load_mmbtu_per_hour": avg_fuel_load
             }
 
@@ -241,9 +241,25 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
 
         for key in view_response["default_inputs"].keys():
             if post["CHP"].get(key) is None: # Check that default got assigned consistent with /chp_defaults
-                self.assertEquals(inputs_chp[key], view_response["default_inputs"][key])
+                if key == "max_kw":
+                    self.assertEquals(inputs_chp[key], view_response["chp_max_size_kw"])
+                else:
+                    self.assertEquals(inputs_chp[key], view_response["default_inputs"][key])
             else:  # Make sure we didn't overwrite user-input
                 self.assertEquals(inputs_chp[key], post["CHP"][key])
+
+    def test_emissions_profile_endpoint(self):
+        # Call to the django view endpoint dev/emissions_profile which calls the http.jl endpoint
+        inputs = {
+            "latitude": 47.606211,
+            "longitude": -122.336052
+        }
+        resp = self.api_client.get(f'/dev/emissions_profile', data=inputs)
+        self.assertHttpOK(resp)
+        view_response = json.loads(resp.content)
+        self.assertEquals(view_response["meters_to_region"], 0.0)
+        self.assertEquals(view_response["region"], "Northwest")
+        self.assertEquals(len(view_response["emissions_factor_series_lb_NOx_per_kwh"]), 8760)
 
     def test_superset_input_fields(self):
             """
