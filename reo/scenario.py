@@ -427,7 +427,7 @@ def setup_scenario(self, run_uuid, data, api_version=1):
                     determine_heat_cool_results_url = "/v1/ghpghx/"+determine_heat_cool_uuid+"/results/"
                     determine_heat_cool_results_resp = client.get(determine_heat_cool_results_url) 
                     determine_heat_cool_results_resp_dict = json.loads(determine_heat_cool_results_resp.content)
-                    temp_diff = determine_heat_cool_results_resp_dict["outputs"]["end_of_year_eft_f"][1] - determine_heat_cool_results_resp_dict["outputs"]["end_of_year_eft_f"][0]
+                    temp_diff = determine_heat_cool_results_resp_dict["outputs"]["end_of_year_ghx_lft_f"][1] - determine_heat_cool_results_resp_dict["outputs"]["end_of_year_ghx_lft_f"][0]
 
                     # TODO - Implement fractional sizing
                     hybrid_sizing_flag = 1.0
