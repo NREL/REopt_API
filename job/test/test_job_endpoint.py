@@ -311,11 +311,3 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         self.assertHttpOK(resp)
         outage_start_time_steps = json.loads(resp.content)["outage_start_time_steps"]
         self.assertEquals(outage_start_time_steps, expected_result)
-    
-    def test_summary_endpoints(self):
-
-        user_uuid = "501d1dd9-9779-470b-a631-01c5fbdee570"
-        resp = self.api_client.get(f'/dev/user/{user_uuid}/summary')
-        summary = json.loads(resp.content)
-
-        print(len(summary['scenarios']))
