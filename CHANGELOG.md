@@ -33,6 +33,9 @@ Classify the change according to the following categories:
 - Added `summary_by_chunk` endpoint and `job\views.summary_by_chunk`
 - Added `unlink` endpoint and `job\views.unlink` along with **UserUnlinkedRuns**
 
+#### Changed
+- `job\api.py` to save user_uuid and webtool_uuid to **APIMeta** data model for each request
+
 ## v2.9.1
 ### Patches
 ##### Added
