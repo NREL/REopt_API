@@ -32,6 +32,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.http import HttpResponse
 from reo.api import Job
 from resilience_stats.api import OutageSimJob
+from resilience_stats.api import ERPJob
 from tastypie.api import Api
 from reo import views
 from job.api import Job as DevJob
@@ -58,6 +59,7 @@ dev_api = Api(api_name='dev')
 dev_api.register(DevJob())
 dev_api.register(FutureCostsAPI())
 dev_api.register(GHPGHXJob())
+dev_api.register(ERPJob())
 
 
 def page_not_found(request, url):
@@ -75,41 +77,34 @@ urlpatterns = [
     re_path(r'^_health/?$', views.health, name='health'),
     
     path('v1/', include('reo.urls')),
-    path('v1/', include('resilience_stats.urls')),
+    path('v1/', include('resilience_stats.urls_v1_v2')),
     path('v1/', include('proforma.urls')),
     path('v1/', include('load_builder.urls')),
     path('v1/', include('summary.urls')),
     path('v1/', include('ghpghx.urls')),
-    re_path(r'', include(v1_api.urls), name='job'),
-    re_path(r'', include(v1_api.urls), name='outagesimjob'),
-    re_path(r'', include(v1_api.urls), name='ghpghx'),
+    re_path(r'', include(v1_api.urls)),
 
+    path('v2/', include('resilience_stats.urls_v1_v2')),
     path('v2/', include('reo.urls_v2')),
-    path('v2/', include('resilience_stats.urls')),
     path('v2/', include('proforma.urls')),
     path('v2/', include('load_builder.urls')),
     path('v2/', include('summary.urls')),
     path('v2/', include('ghpghx.urls')),
-    re_path(r'', include(v2_api.urls), name='job'),
-    re_path(r'', include(v2_api.urls), name='outagesimjob'),
-    re_path(r'', include(v2_api.urls), name='ghpghx'),
+    re_path(r'', include(v2_api.urls)),
 
     path('stable/', include('reo.urls_v2')),
-    path('stable/', include('resilience_stats.urls')),
+    path('stable/', include('resilience_stats.urls_v1_v2')),
     path('stable/', include('proforma.urls')),
     path('stable/', include('load_builder.urls')),
     path('stable/', include('summary.urls')),
     path('stable/', include('ghpghx.urls')),
-    re_path(r'', include(stable_api.urls), name='job'),
-    re_path(r'', include(stable_api.urls), name='outagesimjob'),
-    re_path(r'', include(stable_api.urls), name='ghpghx'),
+    re_path(r'', include(stable_api.urls)),
 
     path('dev/', include('job.urls')),
+    path('dev/', include('resilience_stats.urls_v3plus')),
     path('dev/', include('futurecosts.urls')),
-    path('dev/', include('ghpghx.urls')),    
-    re_path(r'', include(dev_api.urls), name='job'),
-    re_path(r'', include(dev_api.urls), name='futurecosts'),
-    re_path(r'', include(dev_api.urls), name='ghpghx'),
+    path('dev/', include('ghpghx.urls')),
+    re_path(r'', include(dev_api.urls)),
 
     re_path(r'(.*)', page_not_found, name='404'),
     ]

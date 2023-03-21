@@ -27,20 +27,12 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-from . import views
-from reo import views as reoviews
 from django.urls import re_path
 
+from . import views
+
 urlpatterns = [
-    re_path(r'^job/(?P<run_uuid>[0-9a-f-]+)/results/?$', views.results),
-    re_path(r'^help/?$', views.help),
-    re_path(r'^job/inputs/?$', views.inputs),
-    re_path(r'^job/outputs/?$', views.outputs),
-    re_path(r'^chp_defaults/?$', views.chp_defaults),
-    re_path(r'^emissions_profile/?$', views.emissions_profile),
-    re_path(r'^simulated_load/?$', views.simulated_load),
-    re_path(r'^ghp_efficiency_thermal_factors/?$', views.ghp_efficiency_thermal_factors),
-    re_path(r'^peak_load_outage_times/?$', views.peak_load_outage_times),
-    re_path(r'^invalid_urdb/?$', reoviews.invalid_urdb),
-    re_path(r'^schedule_stats/?$', reoviews.schedule_stats),
+    re_path(r'^erp/(?P<run_uuid>[0-9a-f-]+)/results/?$', views.erp_results),
+    re_path(r'^erp/help/?$', views.erp_help),
+    re_path(r'^erp/chp_defaults/?$', views.erp_chp_prime_gen_defaults),
 ]

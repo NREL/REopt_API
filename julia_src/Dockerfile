@@ -1,6 +1,6 @@
 FROM reopt/xpressbase AS xpress
 
-FROM julia:1.8
+FROM julia:1.8.5
 
 # Install NREL root certs for machines running on NREL's network.
 ARG NREL_ROOT_CERT_URL_ROOT=""
