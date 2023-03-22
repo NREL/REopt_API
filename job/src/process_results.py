@@ -34,6 +34,7 @@ from job.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorageOutp
                         ExistingChillerOutputs, CoolingLoadOutputs, HeatingLoadOutputs,\
                         HotThermalStorageOutputs, ColdThermalStorageOutputs, OutageOutputs,\
                         REoptjlMessageOutputs
+import numpy as np
 import sys
 import traceback as tb
 import logging
@@ -89,6 +90,12 @@ def process_results(results: dict, run_uuid: str) -> None:
             if "CHP" in results.keys():
                 CHPOutputs.create(meta=meta, **results["CHP"]).save()
             if "Outages" in results.keys():
+                for multi_dim_array_name in ["unserved_load_series_kw", "unserved_load_per_outage_kwh", 
+                                            "storage_discharge_series_kw", "pv_to_storage_series_kw", 
+                                            "pv_curtailed_series_kw", "pv_to_load_series_kw", 
+                                            "generator_to_storage_series_kw", "generator_curtailed_series_kw", 
+                                            "generator_to_load_series_kw", "generator_fuel_used_per_outage_gal"]:
+                    results["Outages"][multi_dim_array_name] = np.transpose(results["Outages"][multi_dim_array_name])
                 OutageOutputs.create(meta=meta, **results["Outages"]).save()
             # TODO process rest of results
     except Exception as e:
