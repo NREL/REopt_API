@@ -2081,6 +2081,72 @@ class OutageOutputs(BaseModel, models.Model):
         default=list, blank=True,
         help_text="Generator fuel used in each outage modeled. Outage duration changes along the first dimension and outage start time changes along the second dimension."
     )
+    chp_microgrid_size_kw = models.FloatField(
+        null=True, blank=True,
+        help_text="Optimal CHP electric capacity included in the microgrid."
+    )
+    chp_microgrid_upgrade_cost = models.FloatField(
+        null=True, blank=True,
+        help_text="Capital cost of including the CHP system in the microgrid."
+    )
+    chp_to_storage_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of CHP power sent to the battery in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    chp_curtailed_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of CHP power curtailed in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    chp_to_load_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of CHP power used to meet load in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    chp_fuel_used_per_outage_mmbtu = ArrayField(
+        ArrayField(
+            models.FloatField(
+                blank=True,
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text="CHP fuel used in each outage modeled. Outage duration changes along the first dimension and outage start time changes along the second dimension."
+    )
 
 class ElectricTariffOutputs(BaseModel, models.Model):
     key = "ElectricTariffOutputs"
