@@ -60,6 +60,7 @@
         "offtaker_tax_rate_fraction": 0.0,
         "owner_discount_rate_fraction": 0.1,
         "offtaker_discount_rate_fraction": 0.03,
-        "elec_cost_escalation_rate_fraction": 0.023
+        "elec_cost_escalation_rate_fraction": 0.023,
+        "microgrid_upgrade_cost_fraction": 0.3
     }
 }
