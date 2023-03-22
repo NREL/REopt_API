@@ -216,13 +216,17 @@ class GHPGHXInputs(models.Model):
     init_sizing_factor_ft_per_peak_ton = models.FloatField(blank=True, 
         default=246.1, validators=[MinValueValidator(1.0), MaxValueValidator(5000.0)],
         help_text="Initial guess of total feet of GHX boreholes (total feet = N bores * Length bore) based on peak ton heating/cooling [ft/ton]")
-        # TODO move is_hybrid_ghx to ghpghx_inputs because we want to compete non-hybrid vs hybrid within single REopt run
 
     # Hybrid flag
     is_hybrid_ghx = models.BooleanField(null=True, blank=True, default=True,
         help_text="If the GHP system uses a hybrid GHX with auxiliary heater or cooler")
+    hybrid_ghx_sizing_method = models.TextField(null=True, blank=True, default="None",
+        help_text="Possible values: 'Fractional' (user inputs fraction of full GHX size), 'Automatic' (REopt determines based on the smaller heating or cooling load), 'None' (non-hybrid)")
     hybrid_sizing_flag = models.FloatField(null=True, blank=True, default=1.0,
         help_text="Possible values: -2 (size for heating), -1.0 (size for cooling), 1.0 (non-hybrid), value between 0-1 (fraction of full GHX size)") 
+    hybrid_ghx_sizing_fraction = models.FloatField(null=True, blank=True, default=0.6,
+        validators=[MinValueValidator(0.1), MaxValueValidator(1.0)],
+        help_text="Applies fraction to full GHX size for hybrid sizing (value between 0.1 - 1.0)")
     is_heating_electric = models.BooleanField(null=True, blank=True, default=True,
         help_text="Set to True if heating is electric, false otherwise")  
     aux_heater_thermal_efficiency = models.FloatField(null=True, blank=True, 
