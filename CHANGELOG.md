@@ -26,11 +26,18 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop 3/22/23
+### Minor Updates
+##### Added
+- REopt.jl outage outputs not yet integrated into the API: **OutageOutputs** fields **storage_microgrid_upgrade_cost**, **storage_discharge_series_kw**, **pv_microgrid_size_kw**, **pv_microgrid_upgrade_cost**, **pv_to_storage_series_kw**, **pv_curtailed_series_kw**, **pv_to_load_series_kw**, **generator_microgrid_size_kw**, **generator_microgrid_upgrade_cost**, **generator_to_storage_series_kw**, **generator_curtailed_series_kw**, **generator_to_load_series_kw**
+##### Changed
+- Default **FinancialInputs** field **microgrid_upgrade_cost_fraction** to 0
+- Add missing units to **OutageOutputs** field names: **unserved_load_series_kw**, **unserved_load_per_outage_kwh**, **generator_fuel_used_per_outage_gal**
+
 ## v2.9.1
 ### Patches
 ##### Added
 - In job/ app (v3): emissions_profile endpoint and view function that returns the emissions data for a location
-
 
 ## v2.9.0
 ### Minor Updates
