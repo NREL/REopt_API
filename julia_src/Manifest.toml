@@ -734,8 +734,8 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [[deps.REopt]]
 deps = ["ArchGDAL", "CSV", "CoolProp", "DataFrames", "Dates", "DelimitedFiles", "HTTP", "JLD", "JSON", "JuMP", "LinDistFlow", "LinearAlgebra", "Logging", "MathOptInterface", "Requires", "Roots", "Statistics", "TestEnv"]
-git-tree-sha1 = "7ec9016f78aa5919697df086f266b70bfbd0967b"
-repo-rev = "outages-output-names"
+git-tree-sha1 = "1f69486157a09fc7f8599a91cef38ff26dfb3cac"
+repo-rev = "mgchp-outputs"
 repo-url = "https://github.com/NREL/REopt.jl.git"
 uuid = "d36ad4e8-d74a-4f7a-ace1-eaea049febf6"
 version = "0.28.1"
