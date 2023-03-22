@@ -676,6 +676,7 @@ class FinancialInputs(BaseModel, models.Model):
                    "apply when modeling a single outage using outage_start_time_step and outage_end_time_step.")
     )
     microgrid_upgrade_cost_fraction = models.FloatField(
+        default=0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -872,7 +873,7 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text=("Cost to make a distributed energy system islandable from the grid. Determined by multiplying the "
             "total capital costs of resultant energy systems from REopt (such as PV and Storage system) with the input "
-            "value for microgrid_upgrade_cost_fraction (which defaults to 0.30).")
+            "value for microgrid_upgrade_cost_fraction (which defaults to 0).")
     )
     initial_capital_costs = models.FloatField(
         null=True, blank=True,
