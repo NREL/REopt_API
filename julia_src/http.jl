@@ -95,7 +95,8 @@ function reopt(req::HTTP.Request)
                 inputs_with_defaults_from_chp = [
                     :installed_cost_per_kw, :tech_sizes_for_cost_curve, :om_cost_per_kwh, 
                     :electric_efficiency_full_load, :thermal_efficiency_full_load, :min_allowable_kw,
-                    :cooling_thermal_factor, :min_turn_down_fraction, :unavailability_periods, :max_kw
+                    :cooling_thermal_factor, :min_turn_down_fraction, :unavailability_periods, :max_kw,
+                    :size_class, :electric_efficiency_half_load, :thermal_efficiency_half_load
                 ]
                 chp_dict = Dict(key=>getfield(model_inputs.s.chp, key) for key in inputs_with_defaults_from_chp)
             else
