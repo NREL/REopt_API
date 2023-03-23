@@ -1,17 +1,25 @@
 {
     "Settings": {
-        "run_bau": false
+        "run_bau": false,
+        "optimality_tolerance": 0.1
     },
     "Site": {
         "longitude": -105.1686,
         "latitude": 39.7407,
-        "min_resil_time_steps": 15
+        "min_resil_time_steps": 5
     },
     "ElectricUtility": {
         "outage_start_time_steps": [5100, 5200],
-        "outage_durations": [10,20],
-        "outage_probabilities": [0.8,0.2]
+        "outage_durations": [5],
+        "outage_probabilities": [1]
     },
+    "CHP": {
+        "thermal_efficiency_full_load": 0.0,
+        "prime_mover": "recip_engine",
+        "fuel_cost_per_mmbtu": 12.0,
+        "min_kw": 150.0,
+        "max_kw": 150.0
+    },    
     "Generator": {
         "min_turn_down_fraction": 0.0,
         "only_runs_during_grid_outage": true,
