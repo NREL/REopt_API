@@ -56,9 +56,6 @@ from resilience_stats.validators import validate_run_uuid
 from resilience_stats.views import run_outage_sim
 
 
-# POST data:{"run_uuid": UUID, "bau": True}
-
-
 class ERPJob(ModelResource):
 
     class Meta:
@@ -92,7 +89,7 @@ class ERPJob(ModelResource):
 
         meta_dict = {
             "run_uuid": erp_run_uuid,
-            "reopt_version": "0.28.0",
+            "reopt_version": "0.29.0",
             "status": "Validating..."
         }
 
@@ -169,9 +166,9 @@ class ERPJob(ModelResource):
                 ## Outage ##
                 critical_loads_kw = reopt_run_meta.ElectricLoadOutputs.dict["critical_load_series_kw"]
                 update_user_dict_with_values_from_reopt("Outage", {"critical_loads_kw": critical_loads_kw})
-                # TODO: set max_outage_duration based on reopt outage inputs when multiple outage PR merged
-                # if bundle.data["Outage"].get("max_outage_duration", None) is None: 
-                #     bundle.data["Outage"]["max_outage_duration"] = max(reopt_run_meta.ElectricUtilityInputs.dict["outage_durations"])
+                update_user_dict_with_values_from_reopt("Outage", {
+                    "max_outage_duration": max(reopt_run_meta.ElectricUtilityInputs.dict["outage_durations"])
+                })
 
                 ## Generator ##
                 try:
