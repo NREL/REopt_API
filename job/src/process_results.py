@@ -97,7 +97,8 @@ def process_results(results: dict, run_uuid: str) -> None:
                                             "generator_to_load_series_kw", "generator_fuel_used_per_outage_gal",
                                             "chp_to_storage_series_kw", "chp_curtailed_series_kw", 
                                             "chp_to_load_series_kw", "chp_fuel_used_per_outage_mmbtu"]:
-                    results["Outages"][multi_dim_array_name] = np.transpose(results["Outages"][multi_dim_array_name]).tolist()
+                    if multi_dim_array_name in results["Outages"]:
+                        results["Outages"][multi_dim_array_name] = np.transpose(results["Outages"][multi_dim_array_name]).tolist()
                 OutageOutputs.create(meta=meta, **results["Outages"]).save()
             # TODO process rest of results
     except Exception as e:
