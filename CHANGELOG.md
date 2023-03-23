@@ -26,7 +26,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop 3/22/23
+## v2.10.0
 ### Minor Updates
 ##### Added
 - REopt.jl outage outputs not yet integrated into the API: **OutageOutputs** fields **storage_microgrid_upgrade_cost**, **storage_discharge_series_kw**, **pv_microgrid_size_kw**, **pv_microgrid_upgrade_cost**, **pv_to_storage_series_kw**, **pv_curtailed_series_kw**, **pv_to_load_series_kw**, **generator_microgrid_size_kw**, **generator_microgrid_upgrade_cost**, **generator_to_storage_series_kw**, **generator_curtailed_series_kw**, **generator_to_load_series_kw**, **chp_microgrid_size_kw**, **chp_microgrid_upgrade_cost**, **chp_to_storage_series_kw**, **chp_curtailed_series_kw**, **chp_to_load_series_kw**, **chp_fuel_used_per_outage_mmbtu**

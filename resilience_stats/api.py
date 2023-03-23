@@ -56,9 +56,6 @@ from resilience_stats.validators import validate_run_uuid
 from resilience_stats.views import run_outage_sim
 
 
-# POST data:{"run_uuid": UUID, "bau": True}
-
-
 class ERPJob(ModelResource):
 
     class Meta:
