@@ -216,10 +216,8 @@ class GHPGHXInputs(models.Model):
     init_sizing_factor_ft_per_peak_ton = models.FloatField(blank=True, 
         default=246.1, validators=[MinValueValidator(1.0), MaxValueValidator(5000.0)],
         help_text="Initial guess of total feet of GHX boreholes (total feet = N bores * Length bore) based on peak ton heating/cooling [ft/ton]")
-
+ 
     # Hybrid flag
-    is_hybrid_ghx = models.BooleanField(null=True, blank=True, default=True,
-        help_text="If the GHP system uses a hybrid GHX with auxiliary heater or cooler")
     hybrid_ghx_sizing_method = models.TextField(null=True, blank=True, default="None",
         help_text="Possible values: 'Fractional' (user inputs fraction of full GHX size), 'Automatic' (REopt determines based on the smaller heating or cooling load), 'None' (non-hybrid)")
     hybrid_sizing_flag = models.FloatField(null=True, blank=True, default=1.0,
