@@ -36,7 +36,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         self.assertEqual(http_response["size_class"], 3)
         self.assertGreater(http_response["chp_elec_size_heuristic_kw"], 3500.0)
 
-        # Check that size_class logic is the same, but we shifted it to 1-indexed instead of 0-indexed
+        # Check that size_class logic is the same
         # Modify input names for v2
         inputs_v2 = {
             "existing_boiler_production_type_steam_or_hw": inputs["hot_water_or_steam"],
