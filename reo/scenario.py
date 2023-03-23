@@ -49,7 +49,7 @@ from reo.src.techs import PV, Util, Wind, Generator, CHP, Boiler, ElectricChille
 from reo.src import ghp
 from celery import shared_task, Task
 from reo.models import ModelManager
-from reo.exceptions import REoptError, UnexpectedError, LoadProfileError, WindDownloadError, PVWattsDownloadError, RequestError
+from reo.exceptions import REoptError, UnexpectedError, LoadProfileError, WindDownloadError, PVWattsDownloadError, RequestError, GHXMaxIterationsError
 from tastypie.test import TestApiClient
 from reo.utilities import TONHOUR_TO_KWHT, get_climate_zone_and_nearest_city
 from ghpghx.models import GHPGHXInputs
@@ -438,9 +438,9 @@ def setup_scenario(self, run_uuid, data, api_version=1):
                     ghpghx_post["hybrid_sizing_flag"] = hybrid_sizing_flag
 
                 elif hybrid_ghx_sizing_method == "Fractional":
-                    hybrid_ghx_sizing_fraction = ghpghx_post.pop("hybrid_ghx_sizing_fraction", None)
-                    if hybrid_ghx_sizing_fraction is not None:
-                        ghpghx_post["hybrid_sizing_flag"] = hybrid_ghx_sizing_fraction
+                    # TODO: Update if default fractional sizing changes
+                    hybrid_ghx_sizing_fraction = ghpghx_post.pop("hybrid_ghx_sizing_fraction", 0.6)
+                    ghpghx_post["hybrid_sizing_flag"] = hybrid_ghx_sizing_fraction
 
                 # Other hybrid inputs
                 ghpghx_post["is_heating_electric"] = False
@@ -454,6 +454,12 @@ def setup_scenario(self, run_uuid, data, api_version=1):
                 ghpghx_results_url = "/v1/ghpghx/"+ghpghx_uuid_list[i]+"/results/"
                 ghpghx_results_resp = client.get(ghpghx_results_url)  # same as doing ghpModelManager.make_response(ghp_uuid)
                 ghpghx_results_resp_dict = json.loads(ghpghx_results_resp.content)
+
+                if ghpghx_results_resp_dict["outputs"]["ghx_soln_number_of_iterations"] == ghpghx_results_resp_dict["inputs"]["max_sizing_iterations"]:
+                    ghx_error = GHXMaxIterationsError(task=self.name, run_uuid=run_uuid, user_uuid=inputs_dict.get('user_uuid'))
+                    ghx_error.save_to_db()
+                    raise ghx_error
+
                 ghp_option_list.append(ghp.GHPGHX(dfm=dfm,
                                                     response=ghpghx_results_resp_dict,
                                                     **inputs_dict["Site"]["GHP"]))
@@ -523,6 +529,9 @@ def setup_scenario(self, run_uuid, data, api_version=1):
             e.run_uuid = run_uuid
             e.user_uuid = self.data['inputs']['Scenario'].get('user_uuid')
             e.save_to_db()
+            raise e
+
+        if isinstance(e, GHXMaxIterationsError):
             raise e
 
         if hasattr(e, 'args'):
