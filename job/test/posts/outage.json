@@ -5,14 +5,16 @@
     "Site": {
         "longitude": -105.1686,
         "latitude": 39.7407,
-        "min_resil_time_steps": 15
+        "min_resil_time_steps": 5
     },
     "ElectricUtility": {
         "outage_start_time_steps": [5100, 5200],
-        "outage_durations": [10,20],
-        "outage_probabilities": [0.8,0.2]
+        "outage_durations": [5],
+        "outage_probabilities": [1]
     },
     "Generator": {
+        "min_kw": 1736.84,
+        "max_kw": 1736.84,
         "min_turn_down_fraction": 0.0,
         "only_runs_during_grid_outage": true,
         "sells_energy_back_to_grid": false,
@@ -20,7 +22,16 @@
         "electric_efficiency_full_load": 0.323289797,
         "electric_efficiency_half_load": 0.323289797
     },
+    "CHP": {
+        "thermal_efficiency_full_load": 0.0,
+        "prime_mover": "recip_engine",
+        "fuel_cost_per_mmbtu": 12.0,
+        "min_kw": 150.0,
+        "max_kw": 150.0
+    }, 
     "PV": {
+        "min_kw": 282.3629,
+        "max_kw": 282.3629,
         "array_type": 0,
         "installed_cost_per_kw": 1600,
         "om_cost_per_kw": 16,
@@ -44,6 +55,10 @@
         "urdb_label": "5e611fec5457a3665e019406"
     },
     "ElectricStorage": {
+        "min_kw": 701.97,
+        "max_kw": 701.97,
+        "min_kwh": 3441.15,
+        "max_kwh": 3441.15,
         "can_grid_charge": false,
         "total_itc_fraction": 0.26,
         "macrs_itc_reduction": 0.5,
@@ -60,6 +75,7 @@
         "offtaker_tax_rate_fraction": 0.0,
         "owner_discount_rate_fraction": 0.1,
         "offtaker_discount_rate_fraction": 0.03,
-        "elec_cost_escalation_rate_fraction": 0.023
+        "elec_cost_escalation_rate_fraction": 0.023,
+        "microgrid_upgrade_cost_fraction": 0.3
     }
 }
