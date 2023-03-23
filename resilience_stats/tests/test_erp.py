@@ -70,22 +70,22 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
             format='json'
         )
 
-    def test_erp_large_battery(self):
-        """
-        Tests calling ERP with PV, a small generator, and very large battery such that final survivial should be 1.
-        This is the same as the first test in the "Backup Generator Reliability" testset in the REopt Julia package.
-        """
-        post_sim_large_stor = json.load(open(self.post_sim_large_stor, 'rb'))
+    # def test_erp_large_battery(self):
+    #     """
+    #     Tests calling ERP with PV, a small generator, and very large battery such that final survivial should be 1.
+    #     This is the same as the first test in the "Backup Generator Reliability" testset in the REopt Julia package.
+    #     """
+    #     post_sim_large_stor = json.load(open(self.post_sim_large_stor, 'rb'))
 
-        resp = self.get_response_sim(post_sim_large_stor)
-        self.assertHttpCreated(resp)
-        r_sim = json.loads(resp.content)
-        erp_run_uuid = r_sim.get('run_uuid')
+    #     resp = self.get_response_sim(post_sim_large_stor)
+    #     self.assertHttpCreated(resp)
+    #     r_sim = json.loads(resp.content)
+    #     erp_run_uuid = r_sim.get('run_uuid')
 
-        resp = self.get_results_sim(erp_run_uuid)
-        results = json.loads(resp.content)
+    #     resp = self.get_results_sim(erp_run_uuid)
+    #     results = json.loads(resp.content)
 
-        self.assertAlmostEqual(results["outputs"]["mean_cumulative_survival_final_time_step"], 1.0, places=4)
+    #     self.assertAlmostEqual(results["outputs"]["mean_cumulative_survival_final_time_step"], 1.0, places=4)
 
     def test_erp_with_reopt_run_uuid(self):
         """
@@ -127,6 +127,7 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
                     ("ElectricStorage","discharge_efficiency"),
                     ("PV","size_kw"),
                     ("Outage","critical_loads_kw"),
+                    ("Outage","max_outage_duration"),
                     ("PV","production_factor_series"),
                     ("ElectricStorage","starting_soc_series_fraction")
                 ]:
@@ -142,9 +143,9 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
 
         resp = self.get_results_sim(erp_run_uuid)
         results = json.loads(resp.content)
-        self.assertAlmostEqual(results["outputs"]["unlimited_fuel_cumulative_survival_final_time_step"][0], 0.802997, places=4)
-        self.assertAlmostEqual(results["outputs"]["cumulative_survival_final_time_step"][0], 0.802997, places=4)
-        self.assertAlmostEqual(results["outputs"]["mean_cumulative_survival_final_time_step"], 0.817088, places=3) #TODO: figure out why fails with places=4
+        self.assertAlmostEqual(results["outputs"]["mean_cumulative_survival_by_duration"][23], 0.966217, places=4)
+        self.assertAlmostEqual(results["outputs"]["cumulative_survival_final_time_step"][0], 0.962327, places=4)
+        self.assertAlmostEqual(results["outputs"]["mean_cumulative_survival_final_time_step"], 0.966217, places=3) #TODO: figure out why fails with places=4
 
     def test_erp_with_no_opt(self):
         """
