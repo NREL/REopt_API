@@ -1,7 +1,6 @@
 {
     "Settings": {
-        "run_bau": false,
-        "optimality_tolerance": 0.1
+        "run_bau": false
     },
     "Site": {
         "longitude": -105.1686,
@@ -13,14 +12,9 @@
         "outage_durations": [5],
         "outage_probabilities": [1]
     },
-    "CHP": {
-        "thermal_efficiency_full_load": 0.0,
-        "prime_mover": "recip_engine",
-        "fuel_cost_per_mmbtu": 12.0,
-        "min_kw": 150.0,
-        "max_kw": 150.0
-    },    
     "Generator": {
+        "min_kw": 1736.84,
+        "max_kw": 1736.84,
         "min_turn_down_fraction": 0.0,
         "only_runs_during_grid_outage": true,
         "sells_energy_back_to_grid": false,
@@ -29,6 +23,8 @@
         "electric_efficiency_half_load": 0.323289797
     },
     "PV": {
+        "min_kw": 282.3629,
+        "max_kw": 282.3629,
         "array_type": 0,
         "installed_cost_per_kw": 1600,
         "om_cost_per_kw": 16,
@@ -52,6 +48,10 @@
         "urdb_label": "5e611fec5457a3665e019406"
     },
     "ElectricStorage": {
+        "min_kw": 701.97,
+        "max_kw": 701.97,
+        "min_kwh": 3441.15,
+        "max_kwh": 3441.15,
         "can_grid_charge": false,
         "total_itc_fraction": 0.26,
         "macrs_itc_reduction": 0.5,
