@@ -5,7 +5,8 @@
     "Site": {
         "longitude": -118.1164613,
         "latitude": 34.5794343,
-        "land_acres": 1.0
+        "land_acres": 1.0,
+        "min_resil_time_steps": 0
     }, 
     "PV": {
         "min_kw": 200,
@@ -44,6 +45,11 @@
     },
     "ElectricTariff": {
         "urdb_label": "5ed6c1a15457a3367add15ae"
+    },
+    "ElectricUtility": {
+        "outage_start_time_steps": [1000],
+        "outage_durations": [24],
+        "outage_probabilities": [1]
     },
     "Financial": {
         "elec_cost_escalation_rate_fraction": 0.026,

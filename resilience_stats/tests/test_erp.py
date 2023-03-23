@@ -127,6 +127,7 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
                     ("ElectricStorage","discharge_efficiency"),
                     ("PV","size_kw"),
                     ("Outage","critical_loads_kw"),
+                    ("Outage","max_outage_duration"),
                     ("PV","production_factor_series"),
                     ("ElectricStorage","starting_soc_series_fraction")
                 ]:
@@ -142,9 +143,9 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
 
         resp = self.get_results_sim(erp_run_uuid)
         results = json.loads(resp.content)
-        self.assertAlmostEqual(results["outputs"]["unlimited_fuel_cumulative_survival_final_time_step"][0], 0.802997, places=4)
-        self.assertAlmostEqual(results["outputs"]["cumulative_survival_final_time_step"][0], 0.802997, places=4)
-        self.assertAlmostEqual(results["outputs"]["mean_cumulative_survival_final_time_step"], 0.817088, places=3) #TODO: figure out why fails with places=4
+        self.assertAlmostEqual(results["outputs"]["mean_cumulative_survival_by_duration"][23], 0.966217, places=4)
+        self.assertAlmostEqual(results["outputs"]["cumulative_survival_final_time_step"][0], 0.962327, places=4)
+        self.assertAlmostEqual(results["outputs"]["mean_cumulative_survival_final_time_step"], 0.966217, places=3) #TODO: figure out why fails with places=4
 
     def test_erp_with_no_opt(self):
         """
