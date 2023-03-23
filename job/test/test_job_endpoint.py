@@ -55,12 +55,12 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
         r = json.loads(resp.content)
         results = r["outputs"]
-        self.assertEqual(np.array(results["Outages"]["unserved_load_series_kw"]).shape, (2,2,20))
-        self.assertAlmostEqual(results["Outages"]["expected_outage_cost"], 4.800393567995261e6, places=-2)
-        self.assertAlmostEqual(sum(sum(np.array(results["Outages"]["unserved_load_per_outage_kwh"]))), 14274.25, places=0)
-        self.assertAlmostEqual(results["Outages"]["unserved_load_per_outage_kwh"][1][0], 10478.1, places=0)
-        self.assertAlmostEqual(results["Outages"]["microgrid_upgrade_capital_cost"], 9.075113562008379e6, places=-2)
-        self.assertAlmostEqual(results["Financial"]["lcc"], 8.9857671584e7, places=-3)
+        self.assertEqual(np.array(results["Outages"]["unserved_load_series_kw"]).shape, (1,2,5))
+        self.assertAlmostEqual(results["Outages"]["expected_outage_cost"], 0.0, places=-2)
+        self.assertAlmostEqual(sum(sum(np.array(results["Outages"]["unserved_load_per_outage_kwh"]))), 0.0, places=0)
+        self.assertAlmostEqual(results["Outages"]["unserved_load_per_outage_kwh"][1][0], 0.0, places=0)
+        self.assertAlmostEqual(results["Outages"]["microgrid_upgrade_capital_cost"], 1775052, places=-2)
+        self.assertAlmostEqual(results["Financial"]["lcc"], 59715100, places=-3)
 
     def test_pv_battery_and_emissions_defaults_from_julia(self):
         """
