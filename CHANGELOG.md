@@ -33,6 +33,8 @@ Classify the change according to the following categories:
 ##### Changed
 - Default **FinancialInputs** field **microgrid_upgrade_cost_fraction** to 0
 - Add missing units to **OutageOutputs** field names: **unserved_load_series_kw**, **unserved_load_per_outage_kwh**, **generator_fuel_used_per_outage_gal**
+##### Fixed
+- Default ERP **OutageInputs** **max_outage_duration** to max value in **ElectricUtility** **outage_durations** if **reopt_run_uuid** provided for ERP job
 
 ## v2.9.1
 ### Patches
