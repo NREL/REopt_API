@@ -70,22 +70,22 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
             format='json'
         )
 
-    # def test_erp_large_battery(self):
-    #     """
-    #     Tests calling ERP with PV, a small generator, and very large battery such that final survivial should be 1.
-    #     This is the same as the first test in the "Backup Generator Reliability" testset in the REopt Julia package.
-    #     """
-    #     post_sim_large_stor = json.load(open(self.post_sim_large_stor, 'rb'))
+    def test_erp_large_battery(self):
+        """
+        Tests calling ERP with PV, a small generator, and very large battery such that final survivial should be 1.
+        This is the same as the first test in the "Backup Generator Reliability" testset in the REopt Julia package.
+        """
+        post_sim_large_stor = json.load(open(self.post_sim_large_stor, 'rb'))
 
-    #     resp = self.get_response_sim(post_sim_large_stor)
-    #     self.assertHttpCreated(resp)
-    #     r_sim = json.loads(resp.content)
-    #     erp_run_uuid = r_sim.get('run_uuid')
+        resp = self.get_response_sim(post_sim_large_stor)
+        self.assertHttpCreated(resp)
+        r_sim = json.loads(resp.content)
+        erp_run_uuid = r_sim.get('run_uuid')
 
-    #     resp = self.get_results_sim(erp_run_uuid)
-    #     results = json.loads(resp.content)
+        resp = self.get_results_sim(erp_run_uuid)
+        results = json.loads(resp.content)
 
-    #     self.assertAlmostEqual(results["outputs"]["mean_cumulative_survival_final_time_step"], 1.0, places=4)
+        self.assertAlmostEqual(results["outputs"]["mean_cumulative_survival_final_time_step"], 1.0, places=4)
 
     def test_erp_with_reopt_run_uuid(self):
         """
