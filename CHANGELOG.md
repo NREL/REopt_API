@@ -26,6 +26,12 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v2.10.1
+### Patches
+- Make **ERPOutageInputs** field **max_outage_duration** required
+- In ERP inputs processing, check that **ElectricUtility** **outage_durations** is not empty before calculating max
+- Respond with validation error if **max_outage_duration** not provided and can't be calculated
+
 ## v2.10.0
 ### Minor Updates
 ##### Added
