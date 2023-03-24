@@ -166,9 +166,10 @@ class ERPJob(ModelResource):
                 ## Outage ##
                 critical_loads_kw = reopt_run_meta.ElectricLoadOutputs.dict["critical_load_series_kw"]
                 update_user_dict_with_values_from_reopt("Outage", {"critical_loads_kw": critical_loads_kw})
-                update_user_dict_with_values_from_reopt("Outage", {
-                    "max_outage_duration": max(reopt_run_meta.ElectricUtilityInputs.dict["outage_durations"])
-                })
+                if len(reopt_run_meta.ElectricUtilityInputs.dict["outage_durations"]) > 0:
+                    update_user_dict_with_values_from_reopt("Outage", {
+                        "max_outage_duration": max(reopt_run_meta.ElectricUtilityInputs.dict["outage_durations"])
+                    })
 
                 ## Generator ##
                 try:
