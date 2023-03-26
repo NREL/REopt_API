@@ -20,8 +20,9 @@ function job(req::HTTP.Request)
 	end
     optimizer = backend(m)
 	finalize(optimizer)
-	GC.gc()
     Xpress.postsolve(optimizer.inner)
+	empty!(m)
+	GC.gc()
 	if isempty(error_response)
     	@info "REopt model solved with status $(results["status"])."
     	return HTTP.Response(200, JSON.json(results))
@@ -116,8 +117,11 @@ function reopt(req::HTTP.Request)
 	if typeof(ms) <: AbstractArray
 		finalize(backend(ms[1]))
 		finalize(backend(ms[2]))
+		empty!(ms[1])
+		empty!(ms[2])
 	else
 		finalize(backend(ms))
+		empty!(ms)
 	end
     GC.gc()
 
