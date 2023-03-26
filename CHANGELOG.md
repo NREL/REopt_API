@@ -26,7 +26,6 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-### Patches
 ## v2.10.0
 ### Minor Updates
 ##### Added
