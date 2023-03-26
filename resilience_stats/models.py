@@ -496,8 +496,6 @@ class ERPOutageInputs(BaseModel, models.Model):
         related_name="ERPOutageInputs"
     )
     max_outage_duration = models.IntegerField(
-        blank=True,
-        default=336,
         validators=[
             MinValueValidator(1),
             MaxValueValidator(672),
