@@ -8,4 +8,4 @@ celeryMemoryRequest: "900Mi"
 celeryMemoryLimit: "900Mi"
 juliaReplicas: 20
 juliaMemoryRequest: "8000Mi"
-juliaMemoryLimit: "8000Mi"
+juliaMemoryLimit: "16000Mi"
