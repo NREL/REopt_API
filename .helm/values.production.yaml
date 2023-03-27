@@ -6,8 +6,8 @@ djangoMemoryLimit: "2800Mi"
 celeryReplicas: 20
 celeryMemoryRequest: "1000Mi"
 celeryMemoryLimit: "3000Mi"
-juliaReplicas: 20
-juliaCpuRequest: "1000m"
+juliaReplicas: 12
+juliaCpuRequest: "500m"
 juliaCpuLimit: "4000m"
-juliaMemoryRequest: "8000Mi"
-juliaMemoryLimit: "12000Mi"
+juliaMemoryRequest: "12000Mi"
+juliaMemoryLimit: "16000Mi"
