@@ -20,6 +20,6 @@ celeryMemoryRequest: "700Mi"
 celeryMemoryLimit: "700Mi"
 juliaReplicas: 2
 juliaCpuRequest: "2000m"
-juliaCpuLimit: "4000m"
+juliaCpuLimit: "2000m"
 juliaMemoryRequest: "3000Mi"
 juliaMemoryLimit: "3000Mi"
