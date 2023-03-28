@@ -49,6 +49,7 @@ spec:
             failureThreshold: 10
           resources:
             requests:
+              cpu: {{ .Values.juliaCpuRequest | quote }}
               memory: {{ .Values.juliaMemoryRequest | quote }}
             limits:
               cpu: {{ .Values.juliaCpuLimit | quote }}
