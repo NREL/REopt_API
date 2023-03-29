@@ -1,7 +1,7 @@
 appEnv: staging
 djangoSettingsModule: reopt_api.staging_settings
 juliaReplicas: 2
-juliaCpuRequest: "2000m"
+juliaCpuRequest: "500m"
 juliaCpuLimit: "2000m"
-juliaMemoryRequest: "8000Mi"
-juliaMemoryLimit: "8000Mi"
+juliaMemoryRequest: "3000Mi"
+juliaMemoryLimit: "3000Mi"
