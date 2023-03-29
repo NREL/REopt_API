@@ -402,6 +402,16 @@ class InputValidator(object):
                 if self.models["ElectricUtility"].outage_end_time_step > max_ts:
                     self.add_validation_error("ElectricUtility", "outage_end_time_step",
                                               f"Value is greater than the max allowable ({max_ts})")
+            if self.models["ElectricUtility"].outage_start_time_steps:
+                max_start_time_step_input = max(self.models["ElectricUtility"].outage_start_time_steps)
+                if max_start_time_step_input > max_ts:
+                    self.add_validation_error("ElectricUtility", "outage_start_time_steps",
+                                                f"Value is greater than the max allowable ({max_ts})")
+
+                if self.models["ElectricUtility"].outage_durations:
+                    if max_start_time_step_input + max(self.models["ElectricUtility"].outage_durations) > max_ts:
+                        self.add_validation_error("ElectricUtility", "outage_durations",
+                                                f"Value is greater than the max allowable ({max_ts} - {max_start_time_step_input})")
         
         """
         CoolingLoad
@@ -457,13 +467,6 @@ class InputValidator(object):
                 else:
                     self.models["Generator"].om_cost_per_kw = 20.0
 
-            
-            if self.models["Generator"].__getattribute__("fuel_avail_gal") == None:
-                if self.models["Settings"].off_grid_flag==False:
-                    self.models["Generator"].fuel_avail_gal = 660.0
-                else:
-                    self.models["Generator"].fuel_avail_gal = MAX_BIG_NUMBER*10 # 1.0e8 * 10 => 1.0e9
-            
             if self.models["Generator"].__getattribute__("min_turn_down_fraction") == None:
                 if self.models["Settings"].off_grid_flag==False:
                     self.models["Generator"].min_turn_down_fraction = 0.0

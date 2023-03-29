@@ -43,6 +43,8 @@ from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, Ge
     ColdThermalStorageInputs, ColdThermalStorageOutputs
 import os
 import requests
+import numpy as np
+import json
 import logging
 log = logging.getLogger(__name__)
 
@@ -147,7 +149,7 @@ def results(request, run_uuid):
     try:
         # get all required inputs/outputs
         meta = APIMeta.objects.select_related(
-            "Settings",
+            'Settings',
             'FinancialInputs', 'FinancialOutputs',
             'SiteInputs', 'SiteOutputs',
             'ElectricLoadInputs',
@@ -254,6 +256,7 @@ def results(request, run_uuid):
                     k = txt.split(',')[0]
                     v = txt.split(',')[1:]
                     r["messages"][msg_type][k] = v
+            r["messages"]["has_stacktrace"] = reopt_messages["has_stacktrace"]            
         except: pass
 
         try:
@@ -285,6 +288,8 @@ def results(request, run_uuid):
         except: pass
         # try: r["outputs"]["Boiler"] = meta.BoilerOutputs.dict
         # except: pass
+        try: r["outputs"]["Outages"] = meta.OutageOutputs.dict
+        except: pass
 
         try: r["outputs"]["HotThermalStorage"] = meta.HotThermalStorageOutputs.dict
         except: pass
@@ -320,15 +325,65 @@ def results(request, run_uuid):
 
     return JsonResponse(r)
 
+def peak_load_outage_times(request):
+    try:
+        post_body = json.loads(request.body)
+        seasonal_peaks = bool(post_body.get("seasonal_peaks"))
+        outage_duration = int(post_body.get("outage_duration"))
+        critical_load = np.array(list(post_body.get("critical_load")))
+        start_not_center_on_peaks = bool(post_body.get("start_not_center_on_peaks"))
+        
+        if seasonal_peaks:
+            winter_start = 334*24
+            spring_start = 60*24
+            summer_start = 152*24
+            autumn_start = 244*24
+            winter_load = np.append(critical_load[winter_start:], critical_load[0:spring_start])
+            spring_load = critical_load[spring_start:summer_start]
+            summer_load = critical_load[summer_start:autumn_start]
+            autumn_load = critical_load[autumn_start:winter_start]
+            peaks = np.array([
+                (np.argmax(winter_load) + winter_start) % 8760, 
+                np.argmax(spring_load) + spring_start, 
+                np.argmax(summer_load) + summer_start, 
+                np.argmax(autumn_load) + autumn_start
+            ])
+        else:
+            peaks = np.array([np.argmax(critical_load)])
+        if start_not_center_on_peaks: 
+            outage_start_time_steps = peaks
+        else:
+            outage_start_time_steps = peaks - int(outage_duration / 2)
+
+        return JsonResponse(
+            {"outage_start_time_steps": outage_start_time_steps.tolist()}, 
+            status=200
+        )
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=400)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=400)
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected error in outage_times_based_on_load_peaks endpoint. Check log for more."}, status=500)
 
 def chp_defaults(request):
     inputs = {
-        "existing_boiler_production_type": request.GET.get("existing_boiler_production_type"),
+        "hot_water_or_steam": request.GET.get("hot_water_or_steam"),
         "avg_boiler_fuel_load_mmbtu_per_hour": request.GET.get("avg_boiler_fuel_load_mmbtu_per_hour"),
         "prime_mover": request.GET.get("prime_mover"),
-        "size_class": request.GET.get("size_class"),
-        "boiler_efficiency": request.GET.get("boiler_efficiency")
+        "boiler_efficiency": request.GET.get("boiler_efficiency"),
+        "avg_electric_load_kw": request.GET.get("avg_electric_load_kw"),
+        "max_electric_load_kw": request.GET.get("max_electric_load_kw"),
     }
+    if (request.GET.get("size_class")):
+        inputs["size_class"] = int(request.GET.get("size_class"))
     try:
         julia_host = os.environ.get('JULIA_HOST', "julia")
         http_jl_response = requests.get("http://" + julia_host + ":8081/chp_defaults/", json=inputs)
@@ -338,10 +393,10 @@ def chp_defaults(request):
         return response
 
     except ValueError as e:
-        return JsonResponse({"Error": str(e.args[0])}, status=500)
+        return JsonResponse({"Error": str(e.args[0])}, status=400)
 
     except KeyError as e:
-        return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=400)
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -435,3 +490,123 @@ def simulated_load(request):
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in simulated_load endpoint. Check log for more."}, status=500)
+
+def emissions_profile(request):
+    try:
+        inputs = {
+            "latitude": request.GET['latitude'], # need to do float() to convert unicode?
+            "longitude": request.GET['longitude']
+        }
+        julia_host = os.environ.get(
+            'JULIA_HOST', 
+            "julia"
+        )
+        http_jl_response = requests.get(
+            "http://" + julia_host + ":8081/emissions_profile/", 
+            json=inputs
+        )
+        response = JsonResponse(
+            http_jl_response.json()
+        )
+        return response
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing Parameter": str(e.args[0])}, status=400)
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=400)
+
+    except Exception:
+
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.error(debug_msg)
+        return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
+
+
+# def easiur_costs(request):
+#     try:
+#         latitude = float(request.GET['latitude'])  # need float to convert unicode
+#         longitude = float(request.GET['longitude'])
+#         avg_inflation = float(request.GET['inflation'])
+
+#         easiur = EASIURCalculator( latitude=latitude, 
+#                     longitude=longitude,
+#                     inflation=avg_inflation
+#                     )
+
+#         try:
+#             response = JsonResponse({
+#                     'nox_cost_us_dollars_per_tonne_grid': easiur.grid_costs['NOx'],
+#                     'so2_cost_us_dollars_per_tonne_grid': easiur.grid_costs['SO2'],
+#                     'pm25_cost_us_dollars_per_tonne_grid': easiur.grid_costs['PM25'],
+#                     'nox_cost_us_dollars_per_tonne_onsite_fuelburn': easiur.onsite_costs['NOx'],
+#                     'so2_cost_us_dollars_per_tonne_onsite_fuelburn': easiur.onsite_costs['SO2'],
+#                     'pm25_cost_us_dollars_per_tonne_onsite_fuelburn': easiur.onsite_costs['PM25'],
+#                     'units_costs': 'US dollars per metric ton.',
+#                     'description_costs': 'Health costs of emissions from the grid and on-site fuel burn, as reported by the EASIUR model.',
+#                     'nox_cost_escalation_pct': easiur.escalation_rates['NOx'],
+#                     'so2_cost_escalation_pct': easiur.escalation_rates['SO2'],
+#                     'pm25_cost_escalation_pct': easiur.escalation_rates['PM25'],
+#                     'units_escalation': 'nominal annual percent',
+#                     'description_escalation': 'Annual nominal escalation rate (as a decimal) of public health costs of emissions.',
+#                 })
+#             return response
+#         except AttributeError as e:
+#             return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+#     except KeyError as e:
+#         return JsonResponse({"Error. Missing Parameter": str(e.args[0])}, status=500)
+
+#     except ValueError as e:
+#         return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+#     except Exception:
+
+#         exc_type, exc_value, exc_traceback = sys.exc_info()
+#         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+#                                                                             tb.format_tb(exc_traceback))
+#         log.error(debug_msg)
+#         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
+
+
+# def fuel_emissions_rates(request):
+#     try:
+
+#         try:
+#             response = JsonResponse({
+#                 'CO2': {
+#                     'generator_lb_per_gal': ValidateNestedInput.fuel_conversion_lb_CO2_per_gal,
+#                     'lb_per_mmbtu': ValidateNestedInput.fuel_conversion_lb_CO2_per_mmbtu
+#                     },
+#                 'NOx': {
+#                     'generator_lb_per_gal': ValidateNestedInput.fuel_conversion_lb_NOx_per_gal,
+#                     'lb_per_mmbtu': ValidateNestedInput.fuel_conversion_lb_NOx_per_mmbtu
+#                     },
+#                 'SO2': {
+#                     'generator_lb_per_gal': ValidateNestedInput.fuel_conversion_lb_SO2_per_gal,
+#                     'lb_per_mmbtu': ValidateNestedInput.fuel_conversion_lb_SO2_per_mmbtu
+#                     },
+#                 'PM25': {
+#                     'generator_lb_per_gal': ValidateNestedInput.fuel_conversion_lb_PM25_per_gal,
+#                     'lb_per_mmbtu': ValidateNestedInput.fuel_conversion_lb_PM25_per_mmbtu
+#                     }
+#                 })
+#             return response
+#         except AttributeError as e:
+#             return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+#     except KeyError as e:
+#         return JsonResponse({"No parameters required."}, status=500)
+
+#     except ValueError as e:
+#         return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+#     except Exception:
+
+#         exc_type, exc_value, exc_traceback = sys.exc_info()
+#         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+#                                                                             tb.format_tb(exc_traceback))
+#         log.error(debug_msg)
+#         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
