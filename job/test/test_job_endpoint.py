@@ -289,8 +289,8 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
 
         load = [100]*8760
         load[40*24] = 200
-        load[50*24] = 300
-        load[70*24] = 300
+        load[50*24-1] = 300
+        load[70*24+13] = 300
         load[170*24] = 300
         load[243*24] = 400
         outage_inputs = {"seasonal_peaks": True,
@@ -298,16 +298,18 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
                         "critical_load": load,
                         "start_not_center_on_peaks": False
         }
-        expected_result = [50*24-47, 70*24-47, 170*24-47, 243*24-47]
+        expected_time_steps = [50*24-1-47, 70*24+13-47, 170*24-47, 243*24-47]
+        expected_hours_of_day = [0, 14, 1, 1]
         resp = self.api_client.post(f'/dev/peak_load_outage_times', data=outage_inputs)
         self.assertHttpOK(resp)
-        outage_start_time_steps = json.loads(resp.content)["outage_start_time_steps"]
-        self.assertEquals(outage_start_time_steps, expected_result)
+        resp = json.loads(resp.content)
+        self.assertEquals(resp["outage_start_time_steps"], expected_time_steps)
+        self.assertEquals(resp["outage_start_hours_of_day"], expected_hours_of_day)
 
         outage_inputs["seasonal_peaks"] = False
         outage_inputs["start_not_center_on_peaks"] = True
-        expected_result = [243*24]
+        expected_time_steps = [243*24]
         resp = self.api_client.post(f'/dev/peak_load_outage_times', data=outage_inputs)
         self.assertHttpOK(resp)
-        outage_start_time_steps = json.loads(resp.content)["outage_start_time_steps"]
-        self.assertEquals(outage_start_time_steps, expected_result)
+        resp = json.loads(resp.content)
+        self.assertEquals(resp["outage_start_time_steps"], expected_time_steps)
