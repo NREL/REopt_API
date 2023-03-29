@@ -356,7 +356,9 @@ def peak_load_outage_times(request):
             outage_start_time_steps = peaks - int(outage_duration / 2)
 
         return JsonResponse(
-            {"outage_start_time_steps": outage_start_time_steps.tolist()},
+            {"outage_start_time_steps": outage_start_time_steps.tolist(), 
+            "outage_start_days": int(round(outage_start_time_steps/24,0)).tolist(), 
+            "outage_start_hours_of_day": (outage_start_time_steps % 24).tolist()},
             status=200
         )
 
