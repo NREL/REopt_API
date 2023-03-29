@@ -32,15 +32,29 @@ Classify the change according to the following categories:
 - Added `summary` endpoint and `job\views.summary`
 - Added `summary_by_chunk` endpoint and `job\views.summary_by_chunk`
 - Added `unlink` endpoint and `job\views.unlink` along with **UserUnlinkedRuns**
-
 #### Changed
 - `job\api.py` to save user_uuid and webtool_uuid to **APIMeta** data model for each request
+
+## v2.10.1
+### Patches
+- Make **ERPOutageInputs** field **max_outage_duration** required
+- In ERP inputs processing, check that **ElectricUtility** **outage_durations** is not empty before calculating max
+- Respond with validation error if **max_outage_duration** not provided and can't be calculated
+
+## v2.10.0
+### Minor Updates
+##### Added
+- REopt.jl outage outputs not yet integrated into the API: **OutageOutputs** fields **storage_microgrid_upgrade_cost**, **storage_discharge_series_kw**, **pv_microgrid_size_kw**, **pv_microgrid_upgrade_cost**, **pv_to_storage_series_kw**, **pv_curtailed_series_kw**, **pv_to_load_series_kw**, **generator_microgrid_size_kw**, **generator_microgrid_upgrade_cost**, **generator_to_storage_series_kw**, **generator_curtailed_series_kw**, **generator_to_load_series_kw**, **chp_microgrid_size_kw**, **chp_microgrid_upgrade_cost**, **chp_to_storage_series_kw**, **chp_curtailed_series_kw**, **chp_to_load_series_kw**, **chp_fuel_used_per_outage_mmbtu**
+##### Changed
+- Default **FinancialInputs** field **microgrid_upgrade_cost_fraction** to 0
+- Add missing units to **OutageOutputs** field names: **unserved_load_series_kw**, **unserved_load_per_outage_kwh**, **generator_fuel_used_per_outage_gal**
+##### Fixed
+- Default ERP **OutageInputs** **max_outage_duration** to max value in **ElectricUtility** **outage_durations** if **reopt_run_uuid** provided for ERP job
 
 ## v2.9.1
 ### Patches
 ##### Added
 - In job/ app (v3): emissions_profile endpoint and view function that returns the emissions data for a location
-
 
 ## v2.9.0
 ### Minor Updates

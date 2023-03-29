@@ -290,6 +290,7 @@ class InputValidatorTests(TestCase):
         # test mismatched length
         post = copy.deepcopy(outage_post)
         post["ElectricUtility"]["outage_durations"] = [10,20,30,40]
+        post["ElectricUtility"]["outage_probabilities"] = [0.8,0.2]
         post["APIMeta"]["run_uuid"] = uuid.uuid4()
         validator = InputValidator(post)
         validator.clean()
@@ -305,6 +306,7 @@ class InputValidatorTests(TestCase):
 
         # test sum of outage_probabilities != 1
         post = copy.deepcopy(outage_post)
+        post["ElectricUtility"]["outage_durations"] = [10,20]
         post["ElectricUtility"]["outage_probabilities"] = [0.5,0.6]
         post["APIMeta"]["run_uuid"] = uuid.uuid4()
         validator = InputValidator(post)
@@ -313,6 +315,7 @@ class InputValidatorTests(TestCase):
 
         # test missing outage_probabilities
         post = copy.deepcopy(outage_post)
+        post["ElectricUtility"]["outage_durations"] = [10,20]
         post["ElectricUtility"].pop("outage_probabilities")
         post["APIMeta"]["run_uuid"] = uuid.uuid4()
         validator = InputValidator(post)
