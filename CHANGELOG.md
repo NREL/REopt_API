@@ -26,10 +26,83 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v2.10.1
+### Patches
+- Make **ERPOutageInputs** field **max_outage_duration** required
+- In ERP inputs processing, check that **ElectricUtility** **outage_durations** is not empty before calculating max
+- Respond with validation error if **max_outage_duration** not provided and can't be calculated
+
+## v2.10.0
+### Minor Updates
+##### Added
+- REopt.jl outage outputs not yet integrated into the API: **OutageOutputs** fields **storage_microgrid_upgrade_cost**, **storage_discharge_series_kw**, **pv_microgrid_size_kw**, **pv_microgrid_upgrade_cost**, **pv_to_storage_series_kw**, **pv_curtailed_series_kw**, **pv_to_load_series_kw**, **generator_microgrid_size_kw**, **generator_microgrid_upgrade_cost**, **generator_to_storage_series_kw**, **generator_curtailed_series_kw**, **generator_to_load_series_kw**, **chp_microgrid_size_kw**, **chp_microgrid_upgrade_cost**, **chp_to_storage_series_kw**, **chp_curtailed_series_kw**, **chp_to_load_series_kw**, **chp_fuel_used_per_outage_mmbtu**
+##### Changed
+- Default **FinancialInputs** field **microgrid_upgrade_cost_fraction** to 0
+- Add missing units to **OutageOutputs** field names: **unserved_load_series_kw**, **unserved_load_per_outage_kwh**, **generator_fuel_used_per_outage_gal**
+##### Fixed
+- Default ERP **OutageInputs** **max_outage_duration** to max value in **ElectricUtility** **outage_durations** if **reopt_run_uuid** provided for ERP job
+
+## v2.9.1
+### Patches
+##### Added
+- In job/ app (v3): emissions_profile endpoint and view function that returns the emissions data for a location
+
+## v2.9.0
+### Minor Updates
+##### Added 
+ - Energy Resilience and Performance Tool:
+    - Uses functionality added to the REopt Julia package in v0.27.0 to calculate outage survival reliability metrics for a DER scenario, which can be based on the results of a REopt optimization
+    - Django models **ERPMeta**, **ERPGeneratorInputs**, **ERPPrimeGeneratorInputs**, **ERPElectricStorageInputs**, **ERPPVInputs**, **ERPOutageInputs**, **ERPOutputs**
+    - `/erp` endpoint to which users POST ERP inputs (calls `ERPJob()`)
+    - `/erp/<run_uuid>/results` endpoint that GETs the results of an ERP job (calls `erp_results()`) 
+    - `/erp/help` endpoint that GETs the ERP input field info (calls `erp_help()`)
+    - `/erp/chp_defaults` endpoint that GETs ERP CHP/prime generator input defaults based on parameters `prime_mover`, `is_chp`, and `size_kw` (calls `erp_chp_prime_gen_defaults()`)
+    - Tests in `resilience+stats/tests/test_erp.py`
+ - In job/ app (v3), added Financial **year_one_om_costs_before_tax_bau**, **lifecycle_om_costs_after_tax_bau** 
+ - Added field **production_factor_series** to Django models **WindOutputs** and **PVOutputs**
+ - In **REoptjlMessageOutputs** added a **has_stacktrace** field to denote if response has a stacktrace error or not. Default is False.
+ - Added access to the multiple outage stochastic/robust modeling capabilities in REopt.jl. Not all inputs and outputs are exposed, but the following are:
+   - **SiteInputs**: **min_resil_time_steps**
+   - **ElectricUtilityInputs**: **outage_start_time_steps**, **outage_durations**, **outage_probabilities**
+   - **OutageOutputs**: **expected_outage_cost**, **max_outage_cost_per_outage_duration**, **unserved_load_series**, **unserved_load_per_outage**, **microgrid_upgrade_capital_cost**, **generator_fuel_used_per_outage**
+ - Added test using multiple outage modeling
+ - Add /dev/schedule_stats endpoint
+##### Changed
+- Update REopt.jl to v0.28.0 for job app (/dev -> v3)
+- `/job/chp_defaults` endpoint updated to take optional electric load metrics for non-heating CHP (Prime Generator in UI)
+  - Changed `/chp_defaults` input of `existing_boiler_production_type` to `hot_water_or_steam`
+  - `CHP.size_class` starting at 0 for average of other size_classes
+  - `CHP.max_size` calculated based on heating load or electric load
+- In job/ app (v3), changed Financial **breakeven_cost_of_emissions_reduction_per_tonnes_CO2** to **breakeven_cost_of_emissions_reduction_per_tonne_CO2**
+- In job/ app (v3), changed default ElectricLoad **year** to 2022 if user provides load data and 2017 if using CRBD
+ - Changed `scalar_to_vector` helper function to `scalar_or_monthly_to_8760`
+ - Changed **GeneratorInputs** fields **fuel_slope_gal_per_kwh** and **fuel_intercept_gal_per_hr** to **electric_efficiency_full_load** and **electric_efficiency_half_load** to represent the same fuel burn curve in a different way consistent with **CHPInputs**
+- Updated the following default values to job/ app (v3):
+  - **federal_itc_fraction** to 0.3 (30%) in models **PVInputs**, **WindInputs**, and **CHPInputs** 
+  - **total_itc_fraction** to 0.3 (30%) in models **HotWaterStorageInputs**, **ColdWaterStorageInputs**, and **ElectricStorageInputs**
+  - ***macrs_bonus_fraction** to 0.8 (80%) in models **PVInputs**, **WindInputs**, **CHPInputs**, PV, **HotWaterStorageInputs**, **ColdWaterStorageInputs**, and **ElectricStorageInputs**
+  - **macrs_option_years** to 7 years in models **HotWaterStorageInputs** and **ColdWaterStorageInputs**
+- In `reo/nested_inputs.py` v2 inputs (`defaults_dict[2]`), updated the following default values in models **ColdThermalStorageInputs**, **HotThermalStorageInputs**
+  - **macrs_option_years** to 7 (years)
+  - **macrs_bonus_pct** to 0.8 (80%)
+- In `reo/nested_inputs.py` v2 inputs (`defaults_dict[2]`), updated the following default values:
+  - ColdTES, HotTES: **macrs_option_years** to 7 (years)
+  - ColdTES, HotTES: ***macrs_bonus_pct** to 0.8 (80%)
+- Updated the following default values to job/ app (v3):
+  - PV, Wind, Storage, CHP, Hot Water Storage, Cold Water Storage, Electric Storage: **federal_itc_fraction(PV,Wind,CHP)** and **total_itc_fraction(Hot Water Storage, Cold Water Storage, Electric Storage)** to 0.3 (30%)
+  - PV, Wind, Storage, CHP, Hot Water Storage, Cold Water Storage, Electric Storage: ***macrs_bonus_fraction** to 0.8 (80%)
+  - Hot Water Storage and Cold Water Storage: **macrs_option_years** to 7 years
+  Use TransactionTestCase instead of TestCase (this avoids whole test being wrapped in a transaction which leads to a TransactionManagementError when doing a database query in the middle)
+- Updated ubuntu-18.04 to ubuntu-latest in GitHub push/pull tests because 18.04 was deprecated in GitHub Actions    
+##### Fixed
+- In reo (v2), calculation of `net_capital_costs_plus_om` was previously missing addition sign for fuel charges. Corrected this equation.
+
 ## v2.8.0
 ### Minor Updates
- ##### Changed
- - In `reo/nested_inputs.py` v2 inputs (`defaults_dict[2]`), updated the following default values:
+##### Changed
+- In `reo/nested_inputs.py` v2 inputs (`defaults_dict[2]`), updated the following default values:
+##### Changed
+- In `reo/nested_inputs.py` v2 inputs (`defaults_dict[2]`), updated the following default values:
    - PV, Wind, Storage, CHP, GHP: **federal_itc_pct** to 0.30 (30%)
    - PV, Wind, Storage, CHP, GHP: ***macrs_bonus_pct** to 0.8 (80%)
 - The `ghpghx` app and Julia endpoint in `http.jl` uses the [GhpGhx.jl](https://github.com/NREL/GhpGhx.jl) Julia package instead of internal Julia scripts with git submodule for the `tess.so` file
@@ -38,26 +111,26 @@ Classify the change according to the following categories:
 
 ## v2.7.1
 ### Minor Updates
-### Added 
- - In job/ app (v3): Added **addressable_load_fraction** to SpaceHeatingLoad and DomesticHotWaterLoad inputs. 
-### Changed
- - Changed redis service memory settings to mitigate "out of memory" OOM issue we've been getting on production
+##### Added 
+- In job/ app (v3): Added **addressable_load_fraction** to SpaceHeatingLoad and DomesticHotWaterLoad inputs. 
+##### Changed
+- Changed redis service memory settings to mitigate "out of memory" OOM issue we've been getting on production
  
 ## v2.7.0
 ### Minor Updates
- ### Changed
- - In job/ app (v3): Name changes for many outputs/results. Generally, changes are for energy outputs (not costs) that include "year_one", and are changed to annual_ for scalars and to production_to_, thermal_to_ etc. for time series.
- - In job/ app (v3): Changed some _bau outputs to align with REopt.jl outputs
- ### Added 
+##### Changed
+- In job/ app (v3): Name changes for many outputs/results. Generally, changes are for energy outputs (not costs) that include "year_one", and are changed to annual_ for scalars and to production_to_, thermal_to_ etc. for time series.
+- In job/ app (v3): Changed some _bau outputs to align with REopt.jl outputs
+##### Added 
  - In job/ app (v3): Added **thermal_production_series_mmbtu_per_hour** to CHP results.
 ##### Removed
 - In job/ app (v3): Removed outputs not reported by REopt.jl
-#### Fixed
+##### Fixed
 - In job/views for `/simulated_load` endpoint: Fixed the data type conversion issues between JSON and Julia
   
 ## v2.6.0
 ### Minor Updates
-#### Added
+##### Added
 1. **REoptjlMessageOutputs** model to capture errors and warnings returned by REoptjl during input processing and post optimization
 2. Missing output fields for **ExistingBoilerOutputs** model
 3. API test `job\test\posts\all_inputs_test.json` to include all input models in a single API test
@@ -68,8 +141,7 @@ Classify the change according to the following categories:
 - add **HotThermalStorageOutputs**
 - add **ColdThermalStorageOutputs**
 - `0012_coldthermalstorageinputs....` file used to add new models to the db
-
-#### Changed
+##### Changed
 1. Default values for the following fields were changed to align them with REopt API v2 (i.e. stable, and REopt.jl) defaults. As-is, these values are aligned with REopt v1 defaults. Units were unchanged.
 - **FinancialInputs.elec_cost_escalation_rate_fraction** from 0.023 to 0.019
 - **FinancialInputs.offtaker_discount_rate_fraction** from 0.083 to 0.0564
@@ -102,7 +174,7 @@ In `job/validators.py:
 - add time series length validation on **CoolingLoadInputs->thermal_loads_ton** and **CoolingLoadInputs->per_time_step_fractions_of_electric_load**
 In `job/views.py`:
 - add new input/output models to properly save the inputs/outputs
-    
+
 ## v2.4.0
 ### Minor Updates
 ##### Added 
@@ -122,6 +194,7 @@ In `job/views.py`:
 Lookback charge parameters expected from the URDB API call were changed to the non-caplitalized format, so they are now used properly.
 
 ## v2.3.0
+### Minor Updates
 ##### Changed
 The following name changes were made in the `job/` endpoint and `julia_src/http.jl`: 
  - Change "_pct" to "_rate_fraction" for input and output names containing "discount", "escalation", and "tax_pct" (financial terms)
@@ -419,9 +492,8 @@ The default values changed are:
 - `reo`: Fixes database query error the occurs when getting production runs created prior to v1.4.0    
 
 ## v1.4.0 - 2021-01-29
-### Major Updates
 ### Minor Updates
-## Added
+##### Added
 - `reo`/`reopt.jl`: Coincident peak rates and expected time steps can be specified. There can be a single rate and list of time steps. Or there can be multiple CP periods in a year with different rates, and then a set of time steps is specified for each rate. Peak demand occurring during each set of CP time steps is charged at the corresponding CP rate.
 
 - `reo`: Add a new **ElectricTariff** inputs and outputs: 
@@ -433,7 +505,6 @@ The default values changed are:
  - **total_coincident_peak_cost_bau_us_dollars**
 
 ## v1.3.0 - 2021-01-28
-### Major Updates
 ### Minor Updates
 - `reo`: New output **om_and_replacement_present_cost_after_tax_us_dollars**
 - `reo`, `*.jl`: New load **LoadProfileBoilerFuel**
@@ -471,7 +542,6 @@ The default values changed are:
 
 
 ## v1.2.0 - 2021-01-04
-### Major Updates
 ### Minor Updates
 ##### Added
 - `reo`: new inputs **outage_start_time_step** and **outage_end_time_step** to replace deprecated **outage_start_hour** and **outage_end_hour**. The latter are used as time step indices in the code, so for sub-hourly problems they do not have hourly units. For now **outage_start_hour** and **outage_end_hour** are kept in place to preserve backwards-compatibility. Also note that the new inputs are not zero-indexed.
