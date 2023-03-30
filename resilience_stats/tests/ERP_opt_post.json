@@ -28,7 +28,8 @@
         "min_kw": 200,
         "max_kw": 200,
         "prime_mover": "recip_engine",
-        "fuel_cost_per_mmbtu": 1
+        "fuel_cost_per_mmbtu": 1,
+        "electric_efficiency_full_load": 0.34
     },
     "ElectricStorage": {
         "min_kw": 50,
