@@ -517,6 +517,8 @@ class FuelTariffModel(models.Model):
 
 
 class PVModel(models.Model):
+    class Meta():
+        index_together = [['run_uuid']]
 
     #Inputs
     run_uuid = models.UUIDField(unique=False)
@@ -1186,6 +1188,9 @@ class MessageModel(models.Model):
                 }
     }
     """
+    class Meta():
+        index_together = [['run_uuid']]
+
     message_type = models.TextField(null=True, blank=True, default='')
     message = models.TextField(null=True, blank=True, default='')
     run_uuid = models.UUIDField(unique=False)
