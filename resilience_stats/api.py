@@ -187,6 +187,10 @@ class ERPJob(ModelResource):
                 except AttributeError as e: 
                     pass
                 if "Generator" in bundle.data:
+                    if (bundle.data["Generator"].get("electric_efficiency_half_load", None) is None and 
+                        bundle.data["Generator"].get("electric_efficiency_full_load", None) is not None):
+                        bundle.data["Generator"]["electric_efficiency_half_load"] = bundle.data["Generator"]["electric_efficiency_full_load"]
+
                     try:
                         gen_in = reopt_run_meta.GeneratorInputs.dict
                         update_user_dict_with_values_from_reopt(
@@ -213,6 +217,11 @@ class ERPJob(ModelResource):
                 except AttributeError as e: 
                     pass
                 if "PrimeGenerator" in bundle.data:
+                    if (bundle.data["PrimeGenerator"].get("electric_efficiency_half_load", None) is None and 
+                        bundle.data["PrimeGenerator"].get("electric_efficiency_full_load", None) is not None):
+                        bundle.data["PrimeGenerator"]["electric_efficiency_half_load"] = bundle.data["PrimeGenerator"]["electric_efficiency_full_load"]
+
+                    bundle.data.get("PrimeGenerator")
                     try:
                         chp_or_prime_in = reopt_run_meta.CHPInputs.dict
                         update_user_dict_with_values_from_reopt(
