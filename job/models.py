@@ -3325,6 +3325,16 @@ class GeneratorInputs(BaseModel, models.Model):
         null=True,
         help_text="On-site generator fuel available in gallons per year."
     )
+    fuel_higher_heating_value_kwh_per_gal = models.FloatField(
+        default=40.7,
+        validators=[
+            MinValueValidator(1e-6),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        blank=True,
+        null=True,
+        help_text="Higher heating value of the generator fuel in kWh/gal. Defaults to the HHV of diesel."
+    )
     min_turn_down_fraction = models.FloatField(
         validators=[
             MinValueValidator(0.0),
