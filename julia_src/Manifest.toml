@@ -734,8 +734,8 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [[deps.REopt]]
 deps = ["ArchGDAL", "CSV", "CoolProp", "DataFrames", "Dates", "DelimitedFiles", "HTTP", "JLD", "JSON", "JuMP", "LinDistFlow", "LinearAlgebra", "Logging", "MathOptInterface", "Requires", "Roots", "Statistics", "TestEnv"]
-git-tree-sha1 = "8e029a1b1e8f826ac7df4b0d90e3eaac84b691c3"
-repo-rev = "debug-erp-fuel-burn"
+git-tree-sha1 = "aa45bbf17bc826fcd277a027c249b4724250a7ff"
+repo-rev = "gen-hhv"
 repo-url = "https://github.com/NREL/REopt.jl.git"
 uuid = "d36ad4e8-d74a-4f7a-ace1-eaea049febf6"
 version = "0.29.0"
