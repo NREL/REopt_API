@@ -26,6 +26,16 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v2.11.0
+### Minor Updates
+##### Added
+- Enabled hybrid GHX sizing within the GHP model through the **hybrid_ghx_sizing_method** variable
+	- User is able to select "Automatic" (REopt sizes GHX based on the smaller of the heating or cooling load), "Fractional" (GHX size is a user-defined fraction of the non-hybrid GHX size), or "None" (non-hybrid)
+	- Auxiliary heater and cooler are both currently only electric
+	- Outputs added to track the thermal production, electrical consumption, and size of the auxiliary unit
+##### Changed
+- Updated default value **init_sizing_factor_ft_per_peak_ton** from 246.1 to 75 for the `/ghpghx` endpoint
+
 ## v2.10.1
 ### Patches
 - Make **ERPOutageInputs** field **max_outage_duration** required
