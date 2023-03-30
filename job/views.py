@@ -662,9 +662,9 @@ def create_summary_dict(user_uuid:str,summary_dict:dict):
 
         d = summary_dict[k]
 
-        for opt_key in optional_keys:
-            if opt_key not in d.keys():
-                d[opt_key] = 0.0
+        # for opt_key in optional_keys:
+        #     if opt_key not in d.keys():
+        #         d[opt_key] = 0.0
         
         scenario_summaries.append(d)
     
