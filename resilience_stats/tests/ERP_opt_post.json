@@ -24,9 +24,11 @@
         "azimuth": 180.0,
         "federal_rebate_per_kw": 350.0
     },
-    "Generator": {
+    "CHP": {
         "min_kw": 200,
-        "max_kw": 200
+        "max_kw": 200,
+        "prime_mover": "recip_engine",
+        "fuel_cost_per_mmbtu": 1
     },
     "ElectricStorage": {
         "min_kw": 50,
