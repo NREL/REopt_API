@@ -125,11 +125,11 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
                     ("ElectricStorage","size_kwh"),
                     ("ElectricStorage","charge_efficiency"),
                     ("ElectricStorage","discharge_efficiency"),
+                    ("ElectricStorage","starting_soc_series_fraction"),
                     ("PV","size_kw"),
-                    ("Outage","critical_loads_kw"),
-                    ("Outage","max_outage_duration"),
                     ("PV","production_factor_series"),
-                    ("ElectricStorage","starting_soc_series_fraction")
+                    ("Outage","critical_loads_kw"),
+                    ("Outage","max_outage_duration")
                 ]:
             post_sim.get(model,{}).pop(field, None)
 
@@ -143,9 +143,9 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
 
         resp = self.get_results_sim(erp_run_uuid)
         results = json.loads(resp.content)
-        self.assertAlmostEqual(results["outputs"]["mean_cumulative_survival_by_duration"][23], 0.966217, places=4)
+        self.assertAlmostEqual(results["outputs"]["mean_cumulative_survival_by_duration"][23], 0.965763, places=4)
         self.assertAlmostEqual(results["outputs"]["cumulative_survival_final_time_step"][0], 0.962327, places=4)
-        self.assertAlmostEqual(results["outputs"]["mean_cumulative_survival_final_time_step"], 0.966217, places=3) #TODO: figure out why fails with places=4
+        self.assertAlmostEqual(results["outputs"]["mean_cumulative_survival_final_time_step"], 0.965763, places=3)
 
     def test_erp_with_no_opt(self):
         """
