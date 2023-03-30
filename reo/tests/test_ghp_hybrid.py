@@ -73,7 +73,12 @@ class GHPTest(ResourceTestCaseMixin, TestCase):
         # Output number of boreholes and heatpump sizing 
         n_boreholes = d["outputs"]["Scenario"]["Site"]["GHP"]["ghpghx_chosen_outputs"]["number_of_boreholes"]
         heatpump_tons = d["outputs"]["Scenario"]["Site"]["GHP"]["ghpghx_chosen_outputs"]["peak_combined_heatpump_thermal_ton"]
+        aux_cooler_annual_thermal_production_kwht = sum(d["outputs"]["Scenario"]["Site"]["GHP"]["ghpghx_chosen_outputs"]["yearly_aux_cooler_thermal_production_series_kwt"])
+        aux_heater_annual_thermal_production_mmbtu = sum(d["outputs"]["Scenario"]["Site"]["GHP"]["ghpghx_chosen_outputs"]["yearly_aux_heater_thermal_production_series_mmbtu_per_hour"])
+        
         # Comparison to TESS exe range
         # TODO: Number of boreholes vary between runs with the same input
         # self.assertAlmostEqual(n_boreholes, 45)
         self.assertAlmostEqual(heatpump_tons, 824.927)
+        self.assertAlmostEqual(aux_cooler_annual_thermal_production_kwht, 0.0)
+        self.assertGreater(aux_heater_annual_thermal_production_mmbtu, 480.0)
