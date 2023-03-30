@@ -192,6 +192,15 @@ class APIMeta(BaseModel, models.Model):
         help_text="Version number of the Julia package for REopt that is used to solve the problem."
     )
 
+class UserUnlinkedRuns(models.Model):
+    run_uuid = models.UUIDField(unique=True)
+    user_uuid = models.UUIDField(unique=False)
+
+    @classmethod
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
+        obj.save()
+        return obj
 
 class UserProvidedMeta(BaseModel, models.Model):
     """
@@ -2926,7 +2935,7 @@ class WindInputs(BaseModel, models.Model):
         default=list, blank=True,
         help_text=("Optional user-defined production factors. Must be normalized to units of kW-AC/kW-DC nameplate, "
                    "representing the AC power (kW) output per 1 kW-DC of system capacity in each time step. "
-                   "The series must be one year (January through December) of hourly, 30-minute, or 15-minute PV "
+                   "The series must be one year (January through December) of hourly, 30-minute, or 15-minute  "
                    "generation data.")
     )
     can_net_meter = models.BooleanField(

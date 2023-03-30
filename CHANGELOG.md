@@ -26,6 +26,15 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop 2023-03-20
+### Minor updates
+#### Added
+- Added `summary` endpoint and `job\views.summary`
+- Added `summary_by_chunk` endpoint and `job\views.summary_by_chunk`
+- Added `unlink` endpoint and `job\views.unlink` along with **UserUnlinkedRuns**
+#### Changed
+- `job\api.py` to save user_uuid and webtool_uuid to **APIMeta** data model for each request
+
 ## v2.10.1
 ### Patches
 - Make **ERPOutageInputs** field **max_outage_duration** required
