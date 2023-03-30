@@ -789,7 +789,7 @@ def queryset_for_summary(api_metas,summary_dict:dict):
     )
     if len(gen) > 0:
         for m in gen:
-            summary_dict[str(m.meta.run_uuid)]['wind_kw'] = m.size_kw
+            summary_dict[str(m.meta.run_uuid)]['gen_kw'] = m.size_kw
     
     return summary_dict
 
