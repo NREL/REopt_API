@@ -47,6 +47,7 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         self.reopt_base_erp_chp_defaults = '/dev/erp/chp_defaults/?prime_mover={0}&is_chp={1}&size_kw={2}'
         self.post_sim = os.path.join('resilience_stats', 'tests', 'ERP_sim_post.json')
         self.post_sim_large_stor = os.path.join('resilience_stats', 'tests', 'ERP_sim_large_stor_post.json')
+        self.post_sim_only = os.path.join('resilience_stats', 'tests', 'ERP_sim_only_post.json')
         
         #for REopt optimization
         self.reopt_base_opt = '/dev/job/'
@@ -153,7 +154,7 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         Same as the second to last test in the "Backup Generator Reliability" testset in the REopt Julia package.
         """
         
-        post_sim = json.load(open(self.post_sim, 'rb'))
+        post_sim = json.load(open(self.post_sim_only, 'rb'))
 
         resp = self.get_response_sim(post_sim)
         self.assertHttpCreated(resp)
