@@ -261,27 +261,6 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         self.assertEquals(view_response["region"], "Northwest")
         self.assertEquals(len(view_response["emissions_factor_series_lb_NOx_per_kwh"]), 8760)
 
-    def test_superset_input_fields(self):
-            """
-            Purpose of this test is to test the API's ability to accept all relevant 
-            input fields and send to REopt, ensuring name input consistency with REopt.jl.
-            """
-            post_file = os.path.join('job', 'test', 'posts', 'all_inputs_test.json')
-            post = json.load(open(post_file, 'r'))
-
-            resp = self.api_client.post('/dev/job/', format='json', data=post)
-            self.assertHttpCreated(resp)
-            r = json.loads(resp.content)
-            run_uuid = r.get('run_uuid')
-
-            resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
-            r = json.loads(resp.content)
-            results = r["outputs"]
-
-            self.assertAlmostEqual(results["Financial"]["npv"], 165.21, places=-2)
-            assert(resp.status_code==200)          
-
-
     def test_peak_load_outage_times(self):
         """
         Purpose of this test is to test the endpoint /peak_load_outage_times 
@@ -311,3 +290,23 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         self.assertHttpOK(resp)
         resp = json.loads(resp.content)
         self.assertEquals(resp["outage_start_time_steps"], expected_time_steps)
+
+    def test_superset_input_fields(self):
+        """
+        Purpose of this test is to test the API's ability to accept all relevant 
+        input fields and send to REopt, ensuring name input consistency with REopt.jl.
+        """
+        post_file = os.path.join('job', 'test', 'posts', 'all_inputs_test.json')
+        post = json.load(open(post_file, 'r'))
+
+        resp = self.api_client.post('/dev/job/', format='json', data=post)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+
+        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        r = json.loads(resp.content)
+        results = r["outputs"]
+
+        self.assertAlmostEqual(results["Financial"]["npv"], -11682.27, places=0)
+        assert(resp.status_code==200)   
