@@ -663,7 +663,7 @@ class FinancialInputs(BaseModel, models.Model):
                    "generator(s).")
     )
     value_of_lost_load_per_kwh = models.FloatField(
-        default=100,
+        default=0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1e6)
