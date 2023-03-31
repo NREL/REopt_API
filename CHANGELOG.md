@@ -35,7 +35,7 @@ Classify the change according to the following categories:
 - Default **FinancialInputs** field **value_of_lost_load_per_kwh** to zero
 - Default **SiteInputs** field **min_resil_time_steps** to max value in **ElectricUtilityInputs** **outage_durations**
 ##### Fixed
-- A 0-indexing off by one bug in the `peak_load_outage_times` view/endpoint
+- A 0-indexing off by one bug in the `peak_load_outage_times` view/endpoint where seasons were defined as starting on 2nd days of months
 - If user specifies **ERPGeneratorInputs**/**ERPPrimeGeneratorInputs** **electric_efficiency_full_load** but not **electric_efficiency_half_load** in ERP post, don't use the REopt **GeneratorInputs**/**CHPInputs** **electric_efficiency_half_load**, instead let **ERPGeneratorInputs**/**ERPPrimeGeneratorInputs** **electric_efficiency_half_load** default to **electric_efficiency_full_load**
 
 ## v2.10.1
