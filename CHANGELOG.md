@@ -31,6 +31,9 @@ Classify the change according to the following categories:
 ##### Added
 - Add **GeneratorInputs** field **fuel_higher_heating_value_kwh_per_gal**, which defaults to 40.7 (diesel)
 - Add CHP to ERP testing
+##### Changed
+- Default **FinancialInputs** field **value_of_lost_load_per_kwh** to zero
+- Default **SiteInputs** field **min_resil_time_steps** to max value in **ElectricUtilityInputs** **outage_durations**
 ##### Fixed
 - A 0-indexing off by one bug in the `peak_load_outage_times` view/endpoint
 - If user specifies **ERPGeneratorInputs**/**ERPPrimeGeneratorInputs** **electric_efficiency_full_load** but not **electric_efficiency_half_load** in ERP post, don't use the REopt **GeneratorInputs**/**CHPInputs** **electric_efficiency_half_load**, instead let **ERPGeneratorInputs**/**ERPPrimeGeneratorInputs** **electric_efficiency_half_load** default to **electric_efficiency_full_load**
