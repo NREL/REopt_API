@@ -412,6 +412,8 @@ class InputValidator(object):
                     if max_start_time_step_input + max(self.models["ElectricUtility"].outage_durations) > max_ts:
                         self.add_validation_error("ElectricUtility", "outage_durations",
                                                 f"Value is greater than the max allowable ({max_ts} - {max_start_time_step_input})")
+                    if not self.models["Site"].min_resil_time_steps:
+                        self.models["Site"].min_resil_time_steps = max(self.models["ElectricUtility"].outage_durations)
         
         """
         CoolingLoad

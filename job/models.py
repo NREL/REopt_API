@@ -331,10 +331,10 @@ class SiteInputs(BaseModel, models.Model):
         help_text="Area of roof in square feet available for PV siting"
     )
     min_resil_time_steps = models.IntegerField(
-        default=0,
         validators=[
             MinValueValidator(0)
         ],
+        null=True, 
         blank=True,
         help_text="The minimum number consecutive timesteps that load must be fully met once an outage begins. "
                     "Only applies to multiple outage modeling using inputs outage_start_time_steps and outage_durations."
