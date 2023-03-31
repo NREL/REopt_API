@@ -61,7 +61,8 @@
         "analysis_years": 20,
         "offtaker_tax_rate_fraction": 0.4,
         "owner_tax_rate_fraction": 0.4,
-        "om_cost_escalation_rate_fraction": 0.025
+        "om_cost_escalation_rate_fraction": 0.025,
+        "value_of_lost_load_per_kwh": 100
     },
     "ElectricLoad": {
         "doe_reference_name": "Hospital",
