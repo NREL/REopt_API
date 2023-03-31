@@ -44,7 +44,7 @@ from job.src.run_jump_model import run_jump_model
 from reo.exceptions import UnexpectedError, REoptError
 from job.models import APIMeta
 log = logging.getLogger(__name__)
-
+ 
 
 def return400(data: dict, validator: InputValidator):
     data["status"] = (
