@@ -44,5 +44,6 @@ urlpatterns = [
     re_path(r'^user/(?P<user_uuid>[0-9a-f-]+)/unlink/(?P<run_uuid>[0-9a-f-]+)/?$', views.unlink),
     re_path(r'^peak_load_outage_times/?$', views.peak_load_outage_times),
     re_path(r'^invalid_urdb/?$', reoviews.invalid_urdb),
+    re_path(r'^easiur_costs/?$', reoviews.easiur_costs),
     re_path(r'^schedule_stats/?$', reoviews.schedule_stats),
 ]

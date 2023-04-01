@@ -340,10 +340,10 @@ class SiteInputs(BaseModel, models.Model):
         help_text="Area of roof in square feet available for PV siting"
     )
     min_resil_time_steps = models.IntegerField(
-        default=0,
         validators=[
             MinValueValidator(0)
         ],
+        null=True, 
         blank=True,
         help_text="The minimum number consecutive timesteps that load must be fully met once an outage begins. "
                     "Only applies to multiple outage modeling using inputs outage_start_time_steps and outage_durations."
@@ -672,7 +672,7 @@ class FinancialInputs(BaseModel, models.Model):
                    "generator(s).")
     )
     value_of_lost_load_per_kwh = models.FloatField(
-        default=100,
+        default=0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1e6)
@@ -3333,6 +3333,16 @@ class GeneratorInputs(BaseModel, models.Model):
         blank=True,
         null=True,
         help_text="On-site generator fuel available in gallons per year."
+    )
+    fuel_higher_heating_value_kwh_per_gal = models.FloatField(
+        default=40.7,
+        validators=[
+            MinValueValidator(1e-6),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        blank=True,
+        null=True,
+        help_text="Higher heating value of the generator fuel in kWh/gal. Defaults to the HHV of diesel."
     )
     min_turn_down_fraction = models.FloatField(
         validators=[
