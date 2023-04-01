@@ -261,27 +261,6 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         self.assertEquals(view_response["region"], "Northwest")
         self.assertEquals(len(view_response["emissions_factor_series_lb_NOx_per_kwh"]), 8760)
 
-    def test_superset_input_fields(self):
-            """
-            Purpose of this test is to test the API's ability to accept all relevant 
-            input fields and send to REopt, ensuring name input consistency with REopt.jl.
-            """
-            post_file = os.path.join('job', 'test', 'posts', 'all_inputs_test.json')
-            post = json.load(open(post_file, 'r'))
-
-            resp = self.api_client.post('/dev/job/', format='json', data=post)
-            self.assertHttpCreated(resp)
-            r = json.loads(resp.content)
-            run_uuid = r.get('run_uuid')
-
-            resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
-            r = json.loads(resp.content)
-            results = r["outputs"]
-
-            self.assertAlmostEqual(results["Financial"]["npv"], 165.21, places=-2)
-            assert(resp.status_code==200)          
-
-
     def test_peak_load_outage_times(self):
         """
         Purpose of this test is to test the endpoint /peak_load_outage_times 
@@ -289,25 +268,45 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
 
         load = [100]*8760
         load[40*24] = 200
-        load[50*24] = 300
-        load[70*24] = 300
+        load[50*24-1] = 300
+        load[70*24+13] = 300
         load[170*24] = 300
-        load[300*24] = 400
+        load[243*24] = 400
         outage_inputs = {"seasonal_peaks": True,
                         "outage_duration": 95,
                         "critical_load": load,
                         "start_not_center_on_peaks": False
         }
-        expected_result = [50*24-47, 70*24-47, 170*24-47, 300*24-47]
+        expected_time_steps = [50*24-1-47, 70*24+13-47, 170*24-47, 243*24-47]
         resp = self.api_client.post(f'/dev/peak_load_outage_times', data=outage_inputs)
         self.assertHttpOK(resp)
-        outage_start_time_steps = json.loads(resp.content)["outage_start_time_steps"]
-        self.assertEquals(outage_start_time_steps, expected_result)
+        resp = json.loads(resp.content)
+        self.assertEquals(resp["outage_start_time_steps"], expected_time_steps)
 
         outage_inputs["seasonal_peaks"] = False
         outage_inputs["start_not_center_on_peaks"] = True
-        expected_result = [300*24]
+        expected_time_steps = [243*24]
         resp = self.api_client.post(f'/dev/peak_load_outage_times', data=outage_inputs)
         self.assertHttpOK(resp)
-        outage_start_time_steps = json.loads(resp.content)["outage_start_time_steps"]
-        self.assertEquals(outage_start_time_steps, expected_result)
+        resp = json.loads(resp.content)
+        self.assertEquals(resp["outage_start_time_steps"], expected_time_steps)
+
+    def test_superset_input_fields(self):
+        """
+        Purpose of this test is to test the API's ability to accept all relevant 
+        input fields and send to REopt, ensuring name input consistency with REopt.jl.
+        """
+        post_file = os.path.join('job', 'test', 'posts', 'all_inputs_test.json')
+        post = json.load(open(post_file, 'r'))
+
+        resp = self.api_client.post('/dev/job/', format='json', data=post)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+
+        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        r = json.loads(resp.content)
+        results = r["outputs"]
+
+        self.assertAlmostEqual(results["Financial"]["npv"], -11682.27, places=0)
+        assert(resp.status_code==200)   

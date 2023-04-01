@@ -705,6 +705,7 @@ def get_erp_input_dict_from_run_uuid(run_uuid:str):
     try: 
         gen = meta.ERPPrimeGeneratorInputs.dict
         gen.pop("prime_mover")
+        gen.pop("is_chp")
 
         # Temp conversions until extend input structure changes to julia
         # convert efficiency to slope/intercept in gen dict
