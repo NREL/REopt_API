@@ -35,6 +35,28 @@ Classify the change according to the following categories:
 #### Changed
 - `job\api.py` to save user_uuid and webtool_uuid to **APIMeta** data model for each request
 
+## Develop
+### Minor Updates
+##### Added
+- Add **GeneratorInputs** field **fuel_higher_heating_value_kwh_per_gal**, which defaults to 40.7 (diesel)
+- Add CHP to ERP testing
+##### Changed
+- Default **FinancialInputs** field **value_of_lost_load_per_kwh** to zero
+- Default **SiteInputs** field **min_resil_time_steps** to max value in **ElectricUtilityInputs** **outage_durations**
+##### Fixed
+- A 0-indexing off by one bug in the `peak_load_outage_times` view/endpoint where seasons were defined as starting on 2nd days of months
+- If user specifies **ERPGeneratorInputs**/**ERPPrimeGeneratorInputs** **electric_efficiency_full_load** but not **electric_efficiency_half_load** in ERP post, don't use the REopt **GeneratorInputs**/**CHPInputs** **electric_efficiency_half_load**, instead let **ERPGeneratorInputs**/**ERPPrimeGeneratorInputs** **electric_efficiency_half_load** default to **electric_efficiency_full_load**
+
+## v2.11.0
+### Minor Updates
+##### Added
+- Enabled hybrid GHX sizing within the GHP model through the **hybrid_ghx_sizing_method** variable
+	- User is able to select "Automatic" (REopt sizes GHX based on the smaller of the heating or cooling load), "Fractional" (GHX size is a user-defined fraction of the non-hybrid GHX size), or "None" (non-hybrid)
+	- Auxiliary heater and cooler are both currently only electric
+	- Outputs added to track the thermal production, electrical consumption, and size of the auxiliary unit
+##### Changed
+- Updated default value **init_sizing_factor_ft_per_peak_ton** from 246.1 to 75 for the `/ghpghx` endpoint
+
 ## v2.10.1
 ### Patches
 - Make **ERPOutageInputs** field **max_outage_duration** required

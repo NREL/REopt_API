@@ -2509,7 +2509,32 @@ nested_input_definitions = {
         "can_serve_dhw": {
           "type": "bool", "default": False,
           "description": "If GHP can serve the domestic hot water (DHW) portion of the heating load"
+        },              
+        "aux_heater_type": {
+          "type": "str", "default": "electric",
+          "description": "The type of auxiliary heater, 'electric' or 'natural_gas'"
         },
+        "aux_heater_installed_cost_us_dollars_per_mmbtu_per_hr": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e6,
+          "default": 26000.0,
+          "description": "Installed cost of auxiliary heater for hybrid ghx in $/MMBtu/hr based on peak thermal production"
+        },
+        "aux_cooler_installed_cost_us_dollars_per_ton": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0e6,
+          "default": 400.0,
+          "description": "Installed cost of auxiliary cooler (e.g. cooling tower) for hybrid ghx in $/ton based on peak thermal production"
+        },
+        "aux_unit_capacity_sizing_factor_on_peak_load": {
+          "type": "float",
+          "min": 1.0,
+          "max": 5.0,
+          "default": 1.2,
+          "description": "Factor on peak heating and cooling load served by the auxiliary heater/cooler used for determining heater/cooler installed capacity"
+        },        
         "macrs_option_years": {
           "type": "int",
           "restrict_to": macrs_schedules,
