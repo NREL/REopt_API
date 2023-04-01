@@ -10,16 +10,13 @@ redisHost: "{{ .Chart.Name }}-redis-service"
 redisPort: 6379
 djangoReplicas: 2
 djangoCpuRequest: "100m"
-djangoCpuLimit: "4000m"
 djangoMemoryRequest: "1600Mi"
 djangoMemoryLimit: "1600Mi"
 celeryReplicas: 2
 celeryCpuRequest: "100m"
-celeryCpuLimit: "800m"
 celeryMemoryRequest: "700Mi"
 celeryMemoryLimit: "700Mi"
 juliaReplicas: 2
 juliaCpuRequest: "300m"
-juliaCpuLimit: "4000m"
 juliaMemoryRequest: "3000Mi"
 juliaMemoryLimit: "3000Mi"
