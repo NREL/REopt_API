@@ -335,9 +335,9 @@ def peak_load_outage_times(request):
         
         if seasonal_peaks:
             winter_start = 334*24
-            spring_start = 60*24
-            summer_start = 152*24
-            autumn_start = 244*24
+            spring_start = 59*24
+            summer_start = 151*24
+            autumn_start = 243*24
             winter_load = np.append(critical_load[winter_start:], critical_load[0:spring_start])
             spring_load = critical_load[spring_start:summer_start]
             summer_load = critical_load[summer_start:autumn_start]
@@ -356,7 +356,7 @@ def peak_load_outage_times(request):
             outage_start_time_steps = peaks - int(outage_duration / 2)
 
         return JsonResponse(
-            {"outage_start_time_steps": outage_start_time_steps.tolist()}, 
+            {"outage_start_time_steps": outage_start_time_steps.tolist()},
             status=200
         )
 
