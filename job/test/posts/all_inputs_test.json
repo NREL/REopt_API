@@ -8,7 +8,7 @@
         "owner_discount_rate_fraction": 0.083,
         "owner_tax_rate_fraction": 0.26,
         "third_party_ownership": false,
-        "value_of_lost_load_per_kwh": 100.0,
+        "value_of_lost_load_per_kwh": 0.0,
         "microgrid_upgrade_cost_fraction": 0.3,
         "offgrid_other_capital_costs": 0.0,
         "offgrid_other_annual_costs": 0.0,
@@ -49,7 +49,8 @@
         "renewable_electricity_min_fraction": null,
         "renewable_electricity_max_fraction": null,
         "include_exported_elec_emissions_in_total": true,
-        "include_exported_renewable_electricity_in_total": true
+        "include_exported_renewable_electricity_in_total": true,
+        "min_resil_time_steps": 100
     },
     "Settings": {
         "timeout_seconds": 420,
@@ -125,8 +126,9 @@
         "coincident_peak_load_charge_per_kw": []
     },
     "ElectricUtility": {
-        "outage_start_time_step": null,
-        "outage_end_time_step": null,
+        "outage_start_time_steps": [1],
+        "outage_durations": [100],
+        "outage_probabilities": [1],
         "interconnection_limit_kw": 1000000000.0,
         "net_metering_limit_kw": 0.0,
         "emissions_region": "",
@@ -171,9 +173,10 @@
         "om_cost_per_kw": 10.0,
         "om_cost_per_kwh": 0.0,
         "fuel_cost_per_gallon": 3.0,
-        "fuel_slope_gal_per_kwh": 0.076,
-        "fuel_intercept_gal_per_hr": 0.0,
+        "electric_efficiency_full_load": 0.32329,
+        "electric_efficiency_half_load": 0.32329,
         "fuel_avail_gal": 660.0,
+        "fuel_higher_heating_value_kwh_per_gal": 40.7,
         "min_turn_down_fraction": 0.0,
         "only_runs_during_grid_outage": true,
         "sells_energy_back_to_grid": false,

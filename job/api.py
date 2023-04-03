@@ -44,7 +44,7 @@ from job.src.run_jump_model import run_jump_model
 from reo.exceptions import UnexpectedError, REoptError
 from job.models import APIMeta
 log = logging.getLogger(__name__)
-
+ 
 
 def return400(data: dict, validator: InputValidator):
     data["status"] = (
@@ -101,8 +101,8 @@ class Job(ModelResource):
         meta = {
             "run_uuid": run_uuid,
             "api_version": 3,
-            "reopt_version": "0.18.0",
-            "status": "validating..."
+            "reopt_version": "0.30.0",
+            "status": "Validating..."
         }
         bundle.data.update({"APIMeta": meta})
 

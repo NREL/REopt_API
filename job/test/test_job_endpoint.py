@@ -55,11 +55,11 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
         r = json.loads(resp.content)
         results = r["outputs"]
-        self.assertAlmostEqual(results["Outages"]["expected_outage_cost"], 4.800393567995261e6, places=-2)
-        self.assertAlmostEqual(sum(sum(np.array(results["Outages"]["unserved_load_per_outage"]))), 14274.25, places=0)
-        self.assertAlmostEqual(results["Outages"]["unserved_load_per_outage"][0][1], 10478.1, places=0)
-        self.assertAlmostEqual(results["Outages"]["microgrid_upgrade_capital_cost"], 9.075113562008379e6, places=-2)
-        self.assertAlmostEqual(results["Financial"]["lcc"], 8.9857671584e7, places=-3)
+        self.assertEqual(np.array(results["Outages"]["unserved_load_series_kw"]).shape, (1,2,5))
+        self.assertAlmostEqual(results["Outages"]["expected_outage_cost"], 0.0, places=-2)
+        self.assertAlmostEqual(sum(sum(np.array(results["Outages"]["unserved_load_per_outage_kwh"]))), 0.0, places=0)
+        self.assertAlmostEqual(results["Outages"]["microgrid_upgrade_capital_cost"], 1927766, places=-2)
+        self.assertAlmostEqual(results["Financial"]["lcc"], 59597421, places=-3)
 
     def test_pv_battery_and_emissions_defaults_from_julia(self):
         """
@@ -231,7 +231,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
 
         avg_fuel_load = (post["SpaceHeatingLoad"]["annual_mmbtu"] + 
                             post["DomesticHotWaterLoad"]["annual_mmbtu"]) / 8760.0
-        inputs_chp_defaults = {"existing_boiler_production_type": post["ExistingBoiler"]["production_type"],
+        inputs_chp_defaults = {"hot_water_or_steam": post["ExistingBoiler"]["production_type"],
                             "avg_boiler_fuel_load_mmbtu_per_hour": avg_fuel_load
             }
 
@@ -241,30 +241,25 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
 
         for key in view_response["default_inputs"].keys():
             if post["CHP"].get(key) is None: # Check that default got assigned consistent with /chp_defaults
-                self.assertEquals(inputs_chp[key], view_response["default_inputs"][key])
+                if key == "max_kw":
+                    self.assertEquals(inputs_chp[key], view_response["chp_max_size_kw"])
+                else:
+                    self.assertEquals(inputs_chp[key], view_response["default_inputs"][key])
             else:  # Make sure we didn't overwrite user-input
                 self.assertEquals(inputs_chp[key], post["CHP"][key])
 
-    def test_superset_input_fields(self):
-            """
-            Purpose of this test is to test the API's ability to accept all relevant 
-            input fields and send to REopt, ensuring name input consistency with REopt.jl.
-            """
-            post_file = os.path.join('job', 'test', 'posts', 'all_inputs_test.json')
-            post = json.load(open(post_file, 'r'))
-
-            resp = self.api_client.post('/dev/job/', format='json', data=post)
-            self.assertHttpCreated(resp)
-            r = json.loads(resp.content)
-            run_uuid = r.get('run_uuid')
-
-            resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
-            r = json.loads(resp.content)
-            results = r["outputs"]
-
-            self.assertAlmostEqual(results["Financial"]["npv"], 165.21, places=-2)
-            assert(resp.status_code==200)          
-
+    def test_emissions_profile_endpoint(self):
+        # Call to the django view endpoint dev/emissions_profile which calls the http.jl endpoint
+        inputs = {
+            "latitude": 47.606211,
+            "longitude": -122.336052
+        }
+        resp = self.api_client.get(f'/dev/emissions_profile', data=inputs)
+        self.assertHttpOK(resp)
+        view_response = json.loads(resp.content)
+        self.assertEquals(view_response["meters_to_region"], 0.0)
+        self.assertEquals(view_response["region"], "Northwest")
+        self.assertEquals(len(view_response["emissions_factor_series_lb_NOx_per_kwh"]), 8760)
 
     def test_peak_load_outage_times(self):
         """
@@ -273,33 +268,37 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
 
         load = [100]*8760
         load[40*24] = 200
-        load[50*24] = 300
-        load[70*24] = 300
+        load[50*24-1] = 300
+        load[70*24+13] = 300
         load[170*24] = 300
-        load[300*24] = 400
+        load[243*24] = 400
         outage_inputs = {"seasonal_peaks": True,
                         "outage_duration": 95,
                         "critical_load": load,
                         "start_not_center_on_peaks": False
         }
-        expected_result = [50*24-47, 70*24-47, 170*24-47, 300*24-47]
+        expected_time_steps = [50*24-1-47, 70*24+13-47, 170*24-47, 243*24-47]
         resp = self.api_client.post(f'/dev/peak_load_outage_times', data=outage_inputs)
         self.assertHttpOK(resp)
-        outage_start_time_steps = json.loads(resp.content)["outage_start_time_steps"]
-        self.assertEquals(outage_start_time_steps, expected_result)
+        resp = json.loads(resp.content)
+        self.assertEquals(resp["outage_start_time_steps"], expected_time_steps)
 
         outage_inputs["seasonal_peaks"] = False
         outage_inputs["start_not_center_on_peaks"] = True
-        expected_result = [300*24]
+        expected_time_steps = [243*24]
         resp = self.api_client.post(f'/dev/peak_load_outage_times', data=outage_inputs)
         self.assertHttpOK(resp)
-        outage_start_time_steps = json.loads(resp.content)["outage_start_time_steps"]
-        self.assertEquals(outage_start_time_steps, expected_result)
+        resp = json.loads(resp.content)
+        self.assertEquals(resp["outage_start_time_steps"], expected_time_steps)
 
-    def test_steamturbine_defaults_from_julia(self):
-        # Test that the inputs_with_defaults_set_in_julia feature worked for SteamTurbine, consistent with /steamturbine_defaults
-        post_file = os.path.join('job', 'test', 'posts', 'steamturbine_defaults_post.json')
+    def test_superset_input_fields(self):
+        """
+        Purpose of this test is to test the API's ability to accept all relevant 
+        input fields and send to REopt, ensuring name input consistency with REopt.jl.
+        """
+        post_file = os.path.join('job', 'test', 'posts', 'all_inputs_test.json')
         post = json.load(open(post_file, 'r'))
+
         resp = self.api_client.post('/dev/job/', format='json', data=post)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
@@ -307,7 +306,17 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
 
         resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
         r = json.loads(resp.content)
+        results = r["outputs"]
 
+        self.assertAlmostEqual(results["Financial"]["npv"], -11682.27, places=0)
+        assert(resp.status_code==200)   
+
+    def test_steamturbine_defaults_from_julia(self):
+        # Test that the inputs_with_defaults_set_in_julia feature worked for SteamTurbine, consistent with /steamturbine_defaults
+        post_file = os.path.join('job', 'test', 'posts', 'steamturbine_defaults_post.json')
+        post = json.load(open(post_file, 'r'))
+
+        
         inputs_steamturbine = r["inputs"]["SteamTurbine"]
 
         avg_fuel_load = (post["SpaceHeatingLoad"]["annual_mmbtu"] + 
