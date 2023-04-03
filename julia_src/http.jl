@@ -245,6 +245,29 @@ function emissions_profile(req::HTTP.Request)
     end
 end
 
+function easiur_costs(req::HTTP.Request)
+    d = JSON.parse(String(req.body))
+    @info "Getting EASIUR health emissions cost data..."
+    data = Dict()
+    error_response = Dict()
+    try
+		latitude = typeof(d["latitude"]) == String ? parse(Float64, d["latitude"]) : d["latitude"]
+		longitude = typeof(d["longitude"]) == String ? parse(Float64, d["longitude"]) : d["longitude"]
+		inflation = typeof(d["inflation"]) == String ? parse(Float64, d["inflation"]) : d["inflation"]
+        data = reoptjl.easiur_costs(;latitude=latitude, longitude=longitude, inflation=inflation)
+    catch e
+        @error "Something went wrong getting the health emissions cost data" exception=(e, catch_backtrace())
+        error_response["error"] = sprint(showerror, e)
+    end
+    if isempty(error_response)
+        @info "Health emissions cost data determined."
+        return HTTP.Response(200, JSON.json(data))
+    else
+        @info "An error occured getting the health emissions cost data"
+        return HTTP.Response(500, JSON.json(error_response))
+    end
+end
+
 function simulated_load(req::HTTP.Request)
     d = JSON.parse(String(req.body))
 
