@@ -254,7 +254,7 @@ function easiur_costs(req::HTTP.Request)
 		latitude = typeof(d["latitude"]) == String ? parse(Float64, d["latitude"]) : d["latitude"]
 		longitude = typeof(d["longitude"]) == String ? parse(Float64, d["longitude"]) : d["longitude"]
 		inflation = typeof(d["inflation"]) == String ? parse(Float64, d["inflation"]) : d["inflation"]
-        data = reoptjl.easiur_costs(;latitude=latitude, longitude=longitude, inflation=inflation)
+        data = reoptjl.easiur_data(;latitude=latitude, longitude=longitude, inflation=inflation)
     catch e
         @error "Something went wrong getting the health emissions cost data" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
