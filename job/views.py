@@ -385,11 +385,12 @@ def chp_defaults(request):
         "hot_water_or_steam": request.GET.get("hot_water_or_steam"),
         "avg_boiler_fuel_load_mmbtu_per_hour": request.GET.get("avg_boiler_fuel_load_mmbtu_per_hour"),
         "prime_mover": request.GET.get("prime_mover"),
-        "size_class": request.GET.get("size_class"),
         "boiler_efficiency": request.GET.get("boiler_efficiency"),
         "avg_electric_load_kw": request.GET.get("avg_electric_load_kw"),
         "max_electric_load_kw": request.GET.get("max_electric_load_kw"),
     }
+    if (request.GET.get("size_class")):
+        inputs["size_class"] = int(request.GET.get("size_class"))
     try:
         julia_host = os.environ.get('JULIA_HOST', "julia")
         http_jl_response = requests.get("http://" + julia_host + ":8081/chp_defaults/", json=inputs)

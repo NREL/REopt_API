@@ -21,7 +21,16 @@ class GHPGHX:
         self.length_boreholes_ft = response["outputs"]["length_boreholes_ft"]
         self.yearly_total_electric_consumption_series_kw = response["outputs"]["yearly_total_electric_consumption_series_kw"]
         self.peak_combined_heatpump_thermal_ton = response["outputs"]["peak_combined_heatpump_thermal_ton"]
-
+        # Hybrid fields
+        self.yearly_aux_heater_thermal_production_series_mmbtu_per_hour = response["outputs"]["yearly_aux_heater_thermal_production_series_mmbtu_per_hour"]
+        self.yearly_aux_cooler_thermal_production_series_kwt = response["outputs"]["yearly_aux_cooler_thermal_production_series_kwt"]
+        self.yearly_aux_heater_electric_consumption_series_kw = response["outputs"]["yearly_aux_heater_electric_consumption_series_kw"]
+        self.yearly_aux_cooler_electric_consumption_series_kw = response["outputs"]["yearly_aux_cooler_electric_consumption_series_kw"]
+        self.peak_aux_heater_thermal_production_mmbtu_per_hour = response["outputs"]["peak_aux_heater_thermal_production_mmbtu_per_hour"]
+        self.peak_aux_cooler_thermal_production_ton = response["outputs"]["peak_aux_cooler_thermal_production_ton"]
+        self.annual_aux_heater_electric_consumption_kwh = response["outputs"]["annual_aux_heater_electric_consumption_kwh"]
+        self.annual_aux_cooler_electric_consumption_kwh = response["outputs"]["annual_aux_cooler_electric_consumption_kwh"]
+        self.aux_heat_exchange_unit_type = response["outputs"]["aux_heat_exchange_unit_type"]
 
         if kwargs.get("require_ghp_purchase"):
             self.require_ghp_purchase = 1
@@ -33,6 +42,10 @@ class GHPGHX:
         self.installed_cost_building_hydronic_loop_us_dollars_per_sqft = kwargs.get("installed_cost_building_hydronic_loop_us_dollars_per_sqft")
         self.om_cost_us_dollars_per_sqft_year = kwargs.get("om_cost_us_dollars_per_sqft_year")
         self.building_sqft = kwargs.get("building_sqft")
+        self.aux_heater_type = kwargs.get("aux_heater_type")
+        self.aux_heater_installed_cost_us_dollars_per_mmbtu_per_hr = kwargs.get("aux_heater_installed_cost_us_dollars_per_mmbtu_per_hr")
+        self.aux_cooler_installed_cost_us_dollars_per_ton = kwargs.get("aux_cooler_installed_cost_us_dollars_per_ton")    
+        self.aux_unit_capacity_sizing_factor_on_peak_load = kwargs.get("aux_unit_capacity_sizing_factor_on_peak_load") 
 
         # Heating and cooling loads served and electricity consumed by GHP
         # TODO with hybrid with auxiliary/supplemental heating/cooling devices, we may want to separate out/distiguish that energy
@@ -50,6 +63,17 @@ class GHPGHX:
 
         self.setup_om_cost()
 
+        # TODO finish fuel/cost/emissions
+        # if self.aux_heater_type == "natural_gas":
+        #     self.fuel_burn_series_mmbtu_per_hour = [self.yearly_aux_heater_thermal_production_series_mmbtu_per_hour[i] / self.aux_heater_thermal_efficiency 
+        #                                                 for i in range(len(self.yearly_aux_heater_thermal_production_series_mmbtu_per_hour))]
+        #     self.aux_heater_yearly_fuel_burn_mmbtu = sum(self.fuel_burn_series_mmbtu_per_hour)
+        #     self.yearly_emissions_lb_CO2 = dfm.boiler.emissions_factor_lb_CO2_per_mmbtu * self.aux_heater_yearly_fuel_burn_mmbtu
+        #     self.yearly_emissions_lb_NOx = dfm.boiler.emissions_factor_lb_NOx_per_mmbtu * self.aux_heater_yearly_fuel_burn_mmbtu
+        #     self.yearly_emissions_lb_SOx = dfm.boiler.emissions_factor_lb_SOx_per_mmbtu * self.aux_heater_yearly_fuel_burn_mmbtu
+        #     self.yearly_emissions_lb_PM25 = dfm.boiler.emissions_factor_lb_PM25_per_mmbtu * self.aux_heater_yearly_fuel_burn_mmbtu
+
+
         dfm.add_ghp(self)
     
     def setup_installed_cost_curve(self):
@@ -61,14 +85,17 @@ class GHPGHX:
         # The GHX and hydronic loop cost are the y-intercepts ([$]) of the cost for each design
         self.ghx_cost = self.total_ghx_ft * self.installed_cost_ghx_us_dollars_per_ft
         self.hydronic_loop_cost = self.building_sqft * self.installed_cost_building_hydronic_loop_us_dollars_per_sqft
+        self.aux_heater_cost = self.aux_heater_installed_cost_us_dollars_per_mmbtu_per_hr * self.peak_aux_heater_thermal_production_mmbtu_per_hour * self.aux_unit_capacity_sizing_factor_on_peak_load
+        self.aux_cooler_cost = self.aux_cooler_installed_cost_us_dollars_per_ton * self.peak_aux_cooler_thermal_production_ton * self.aux_unit_capacity_sizing_factor_on_peak_load
 
         # The DataManager._get_REopt_cost_curve method expects at least a two-point tech_size_for_cost_curve to
         #   to use the first value of installed_cost_us_dollars_per_kw as an absolute $ value and
         #   the initial slope is based on the heat pump size (e.g. $/ton) of the cost curve for
         #   building a rebate-based cost curve if there are less-than big_number maximum incentives
         self.tech_size_for_cost_curve = [0.0, big_number]
-        self.installed_cost_us_dollars_per_kw = [self.ghx_cost + self.hydronic_loop_cost, 
-                                                self.installed_cost_heatpump_us_dollars_per_ton]
+        self.installed_cost_us_dollars_per_kw = [self.ghx_cost + self.hydronic_loop_cost + 
+                                                 self.aux_heater_cost + self.aux_cooler_cost, 
+                                                 self.installed_cost_heatpump_us_dollars_per_ton]
 
         # Using a separate call to _get_REopt_cost_curve in data_manager for "ghp" (not included in "available_techs")
         #    and then use the value below for heat pump capacity to calculate the final absolute cost for GHP
