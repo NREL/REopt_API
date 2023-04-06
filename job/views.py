@@ -40,7 +40,7 @@ from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, Ge
     ElectricLoadOutputs, ExistingBoilerOutputs, DomesticHotWaterLoadInputs, SiteInputs, SiteOutputs, APIMeta, \
     UserProvidedMeta, CHPInputs, CHPOutputs, CoolingLoadInputs, ExistingChillerInputs, ExistingChillerOutputs,\
     CoolingLoadOutputs, HeatingLoadOutputs, REoptjlMessageOutputs, HotThermalStorageInputs, HotThermalStorageOutputs,\
-    ColdThermalStorageInputs, ColdThermalStorageOutputs
+    ColdThermalStorageInputs, ColdThermalStorageOutputs, AbsorptionChillerInputs, AbsorptionChillerOutputs
 import os
 import requests
 import numpy as np
@@ -80,6 +80,7 @@ def help(request):
         d["DomesticHotWaterLoad"] = DomesticHotWaterLoadInputs.info_dict(DomesticHotWaterLoadInputs)
         d["Site"] = SiteInputs.info_dict(SiteInputs)
         d["CHP"] = CHPInputs.info_dict(CHPInputs)
+        d["AbsorptionChiller"] = AbsorptionChillerInputs.info_dict(AbsorptionChillerInputs)
         return JsonResponse(d)
 
     except Exception as e:
@@ -122,6 +123,7 @@ def outputs(request):
         d["HeatingLoad"] = HeatingLoadOutputs.info_dict(HeatingLoadOutputs)
         d["CoolingLoad"] = CoolingLoadOutputs.info_dict(CoolingLoadOutputs)
         d["CHP"] = CHPOutputs.info_dict(CHPOutputs)
+        d["AbsorptionChiller"] = AbsorptionChillerOutputs.info_dict(AbsorptionChillerOutputs)
         d["Messages"] = REoptjlMessageOutputs.info_dict(REoptjlMessageOutputs)
         return JsonResponse(d)
 
@@ -235,6 +237,9 @@ def results(request, run_uuid):
     try: r["inputs"]["CHP"] = meta.CHPInputs.dict
     except: pass
 
+    try: r["inputs"]["AbsorptionChiller"] = meta.AbsorptionChillerInputs.dict
+    except: pass
+
     try:
         r["outputs"] = dict()
         r["messages"] = dict()
@@ -296,6 +301,8 @@ def results(request, run_uuid):
         try: r["outputs"]["ColdThermalStorage"] = meta.ColdThermalStorageOutputs.dict
         except: pass
         try: r["outputs"]["CHP"] = meta.CHPOutputs.dict
+        except: pass
+        try: r["outputs"]["AbsorptionChiller"] = meta.AbsorptionChillerOutputs.dict
         except: pass
         try: r["outputs"]["HeatingLoad"] = meta.HeatingLoadOutputs.dict
         except: pass
@@ -404,6 +411,35 @@ def chp_defaults(request):
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in chp_defaults endpoint. Check log for more."}, status=500)
+
+def absorption_chiller_defaults(request):
+    inputs = {
+        "thermal_consumption_hot_water_or_steam": request.GET.get("thermal_consumption_hot_water_or_steam"), 
+        "chp_prime_mover": request.GET.get("chp_prime_mover"),
+        "boiler_type": request.GET.get("boiler_type"),
+        "load_max_tons": request.GET.get("load_max_tons")
+    }
+    try:
+        julia_host = os.environ.get('JULIA_HOST', "julia")
+        http_jl_response = requests.get("http://" + julia_host + ":8081/absorption_chiller_defaults/", json=inputs)
+        response = JsonResponse(
+            http_jl_response.json()
+        )
+        return response
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected error in absorption_chiller_defaults endpoint. Check log for more."}, status=500)
+
 
 def simulated_load(request):
     try:

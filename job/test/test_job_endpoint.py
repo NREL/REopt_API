@@ -180,7 +180,8 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
                 "electric_efficiency_half_load": 0.35,
                 "min_turn_down_fraction": 0.1,
                 "thermal_efficiency_full_load": 0.45,
-                "thermal_efficiency_half_load": 0.45
+                "thermal_efficiency_half_load": 0.45,
+                "cooling_thermal_factor": 0.8
             },
             "HotThermalStorage":{
                 "min_gal":2500,
@@ -189,6 +190,10 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
             "ColdThermalStorage":{
                 "min_gal":2500,
                 "max_gal":2500
+            },
+            "AbsorptionChiller":{
+                "min_ton":10,
+                "max_ton":10
             }
         }
 
@@ -209,6 +214,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         self.assertIn("HeatingLoad", list(results.keys()))
         self.assertIn("HotThermalStorage", list(results.keys()))
         self.assertIn("ColdThermalStorage", list(results.keys()))
+        self.assertIn("AbsorptionChiller", list(results.keys()))
 
 
     def test_chp_defaults_from_julia(self):
