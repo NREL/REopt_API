@@ -82,7 +82,11 @@ function reopt(req::HTTP.Request)
 	else
 		# Catch handled/unhandled exceptions in optimization
 		try
-			results = reoptjl.run_reopt(ms, model_inputs)
+			if run_bau
+                results = reoptjl.run_reopt(ms, model_inputs, threads=false)
+            else
+                results = reoptjl.run_reopt(ms, model_inputs)
+            end
 			inputs_with_defaults_from_easiur = [
 				:NOx_grid_cost_per_tonne, :SO2_grid_cost_per_tonne, :PM25_grid_cost_per_tonne, 
 				:NOx_onsite_fuelburn_cost_per_tonne, :SO2_onsite_fuelburn_cost_per_tonne, :PM25_onsite_fuelburn_cost_per_tonne,
