@@ -87,4 +87,5 @@ spec:
               cpu: {{ .Values.djangoCpuRequest | quote }}
               memory: {{ .Values.djangoMemoryRequest | quote }}
             limits:
+              cpu: {{ .Values.djangoCpuLimit | quote }}
               memory: {{ .Values.djangoMemoryLimit | quote }}
