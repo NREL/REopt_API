@@ -77,4 +77,5 @@ spec:
               cpu: {{ .Values.celeryCpuRequest | quote }}
               memory: {{ .Values.celeryMemoryRequest | quote }}
             limits:
+              cpu: {{ .Values.celeryCpuLimit | quote }}
               memory: {{ .Values.celeryMemoryLimit | quote }}
