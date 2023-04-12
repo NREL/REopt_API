@@ -699,14 +699,15 @@ def queryset_for_summary(api_metas,summary_dict:dict):
     
     utility = ElectricUtilityInputs.objects.filter(meta__run_uuid__in=run_uuids).only(
         'meta__run_uuid',
+        'outage_start_time_step',
         'outage_start_time_steps'
     )
     if len(utility) > 0:
         for m in utility:
-            if m.outage_start_time_steps is None:
-                summary_dict[str(m.meta.run_uuid)]['focus'] = "Financial"
-            else:
+            if m.outage_start_time_step is not None or m.outage_start_time_steps is not None:
                 summary_dict[str(m.meta.run_uuid)]['focus'] = "Resilience"
+            else:
+                summary_dict[str(m.meta.run_uuid)]['focus'] = "Financial"
     
     tariffInputs = ElectricTariffInputs.objects.filter(meta__run_uuid__in=run_uuids).only(
         'meta__run_uuid',
