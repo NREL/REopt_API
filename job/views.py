@@ -388,7 +388,8 @@ def chp_defaults(request):
         julia_host = os.environ.get('JULIA_HOST', "julia")
         http_jl_response = requests.get("http://" + julia_host + ":8081/chp_defaults/", json=inputs)
         response = JsonResponse(
-            http_jl_response.json()
+            http_jl_response.json(),
+            status=http_jl_response.status_code
         )
         return response
 
@@ -473,7 +474,8 @@ def simulated_load(request):
         julia_host = os.environ.get('JULIA_HOST', "julia")
         http_jl_response = requests.get("http://" + julia_host + ":8081/simulated_load/", json=inputs)
         response = JsonResponse(
-            http_jl_response.json()
+            http_jl_response.json(),
+            status=http_jl_response.status_code
         )
         
         return response
@@ -506,7 +508,8 @@ def emissions_profile(request):
             json=inputs
         )
         response = JsonResponse(
-            http_jl_response.json()
+            http_jl_response.json(),
+            status=http_jl_response.status_code
         )
         return response
 
@@ -541,7 +544,8 @@ def easiur_costs(request):
             json=inputs
         )
         response = JsonResponse(
-            http_jl_response.json()
+            http_jl_response.json(),
+            status=http_jl_response.status_code
         )
         return response
 
