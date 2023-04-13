@@ -33,7 +33,7 @@ from job.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorageOutp
                         ElectricUtilityInputs, ExistingBoilerOutputs, CHPOutputs, CHPInputs, \
                         ExistingChillerOutputs, CoolingLoadOutputs, HeatingLoadOutputs,\
                         HotThermalStorageOutputs, ColdThermalStorageOutputs, OutageOutputs,\
-                        REoptjlMessageOutputs
+                        REoptjlMessageOutputs, AbsorptionChillerOutputs
 import numpy as np
 import sys
 import traceback as tb
@@ -89,6 +89,8 @@ def process_results(results: dict, run_uuid: str) -> None:
                 CoolingLoadOutputs.create(meta=meta, **results["CoolingLoad"]).save()
             if "CHP" in results.keys():
                 CHPOutputs.create(meta=meta, **results["CHP"]).save()
+            if "AbsorptionChiller" in results.keys():
+                AbsorptionChillerOutputs.create(meta=meta, **results["AbsorptionChiller"]).save()
             if "Outages" in results.keys():
                 for multi_dim_array_name in ["unserved_load_series_kw", "unserved_load_per_outage_kwh", 
                                             "storage_discharge_series_kw", "pv_to_storage_series_kw", 
