@@ -46,6 +46,35 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         v2_response = json.loads(resp.content)
         self.assertEqual(http_response["size_class"], v2_response["size_class"])
 
+    def test_absorption_chiller_defaults(self):
+
+        inputs = {"thermal_consumption_hot_water_or_steam": "hot_water",
+                "load_max_tons": 50
+        }
+
+        # Direct call of the http.jl endpoint /absorption_chiller_defaults
+        julia_host = os.environ.get('JULIA_HOST', "julia")
+        response = requests.get("http://" + julia_host + ":8081/absorption_chiller_defaults/", json=inputs)
+        http_response = response.json()
+
+        # Call to the django view endpoint /absorption_chiller_defaults which calls the http.jl endpoint
+        resp = self.api_client.get(f'/dev/absorption_chiller_defaults', data=inputs)
+        view_response = json.loads(resp.content)
+
+        mismatch = []
+        for k, v in http_response["default_inputs"].items():
+            if v != view_response["default_inputs"][k]:
+                mismatch.append(k)
+        
+        self.assertEqual(mismatch, [])
+
+        # Check the endpoint logic with the expected selection
+        self.assertEqual(http_response["thermal_consumption_hot_water_or_steam"], "hot_water")
+        self.assertEqual(http_response["default_inputs"]["om_cost_per_ton"], 80.0)
+        self.assertEqual(http_response["default_inputs"]["installed_cost_per_ton"], 3066.0)
+        self.assertEqual(http_response["default_inputs"]["cop_thermal"], 0.74)
+        self.assertNotIn("thermal_consumption_hot_water_or_steam", http_response["default_inputs"].keys())
+    
     def test_simulated_load(self):
 
         # Test heating load because REopt.jl separates SpaceHeating and DHW, so had to aggregate for this endpoint
