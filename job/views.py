@@ -791,6 +791,14 @@ def queryset_for_summary(api_metas,summary_dict:dict):
     if len(gen) > 0:
         for m in gen:
             summary_dict[str(m.meta.run_uuid)]['gen_kw'] = m.size_kw
+
+    chpOutputs = CHPOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+            'meta__run_uuid',
+            'size_kw'
+    )
+    if len(chpOutputs) > 0:
+        for m in chpOutputs:
+            summary_dict[str(m.meta.run_uuid)]['chp_kw'] = m.size_kw
     
     return summary_dict
 
