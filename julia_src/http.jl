@@ -232,6 +232,9 @@ function emissions_profile(req::HTTP.Request)
 		latitude = typeof(d["latitude"]) == String ? parse(Float64, d["latitude"]) : d["latitude"]
 		longitude = typeof(d["longitude"]) == String ? parse(Float64, d["longitude"]) : d["longitude"]
         data = reoptjl.emissions_profiles(;latitude=latitude, longitude=longitude, time_steps_per_hour=1)
+        if haskey(data, "error")
+            error_response = data
+        end
     catch e
         @error "Something went wrong getting the emissions data" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
@@ -255,6 +258,9 @@ function easiur_costs(req::HTTP.Request)
 		longitude = typeof(d["longitude"]) == String ? parse(Float64, d["longitude"]) : d["longitude"]
 		inflation = typeof(d["inflation"]) == String ? parse(Float64, d["inflation"]) : d["inflation"]
         data = reoptjl.easiur_data(;latitude=latitude, longitude=longitude, inflation=inflation)
+        if haskey(data, "error")
+            error_response = data
+        end
     catch e
         @error "Something went wrong getting the health emissions cost data" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
