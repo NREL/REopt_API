@@ -233,19 +233,16 @@ function emissions_profile(req::HTTP.Request)
 		longitude = typeof(d["longitude"]) == String ? parse(Float64, d["longitude"]) : d["longitude"]
         data = reoptjl.emissions_profiles(;latitude=latitude, longitude=longitude, time_steps_per_hour=1)
         if haskey(data, "error")
-            error_response = data
+            @info "An error occured getting the emissions data"
+            return HTTP.Response(400, JSON.json(data))
         end
     catch e
         @error "Something went wrong getting the emissions data" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
-    end
-    if isempty(error_response)
-        @info "Emissions profile determined."
-        return HTTP.Response(200, JSON.json(data))
-    else
-        @info "An error occured getting the emissions data"
         return HTTP.Response(500, JSON.json(error_response))
     end
+    @info "Emissions profile determined."
+    return HTTP.Response(200, JSON.json(data))
 end
 
 function easiur_costs(req::HTTP.Request)
@@ -259,19 +256,16 @@ function easiur_costs(req::HTTP.Request)
 		inflation = typeof(d["inflation"]) == String ? parse(Float64, d["inflation"]) : d["inflation"]
         data = reoptjl.easiur_data(;latitude=latitude, longitude=longitude, inflation=inflation)
         if haskey(data, "error")
-            error_response = data
+            @info "An error occured getting the health emissions cost data"
+            return HTTP.Response(400, JSON.json(data))
         end
     catch e
         @error "Something went wrong getting the health emissions cost data" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
-    end
-    if isempty(error_response)
-        @info "Health emissions cost data determined."
-        return HTTP.Response(200, JSON.json(data))
-    else
-        @info "An error occured getting the health emissions cost data"
         return HTTP.Response(500, JSON.json(error_response))
     end
+    @info "Health emissions cost data determined."
+    return HTTP.Response(200, JSON.json(data))
 end
 
 function simulated_load(req::HTTP.Request)
