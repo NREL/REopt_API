@@ -29,7 +29,7 @@ RUN apt-get update && apt-get install -y \
     gfortran
 
 # Install Julia packages
-ENV JULIA_NUM_THREADS=1
+ENV JULIA_NUM_THREADS=2
 WORKDIR /opt/julia_src/
 COPY . .
 RUN julia --project="." -e 'import Pkg; Pkg.instantiate();'
