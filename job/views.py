@@ -704,7 +704,7 @@ def queryset_for_summary(api_metas,summary_dict:dict):
     )
     if len(utility) > 0:
         for m in utility:
-            if m.outage_start_time_step is None or m.outage_start_time_steps is None:
+            if len(m.outage_start_time_steps) == 0:
                 summary_dict[str(m.meta.run_uuid)]['focus'] = "Financial"
             else:
                 summary_dict[str(m.meta.run_uuid)]['focus'] = "Resilience"
