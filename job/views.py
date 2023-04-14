@@ -828,13 +828,26 @@ def queryset_for_summary(api_metas,summary_dict:dict):
         for m in gen:
             summary_dict[str(m.meta.run_uuid)]['gen_kw'] = m.size_kw
 
+    # assumes run_uuids exist in both CHPInputs and CHPOutputs
+    chpInputs = CHPInputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+            'meta__run_uuid',
+            'thermal_efficiency_full_load'
+    )
+    thermal_efficiency_full_load = dict()
+    if len(chpInputs) > 0:
+        for m in chpInputs:
+            thermal_efficiency_full_load[str(m.meta.run_uuid)] = m.thermal_efficiency_full_load
+    
     chpOutputs = CHPOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
             'meta__run_uuid',
             'size_kw'
     )
     if len(chpOutputs) > 0:
         for m in chpOutputs:
-            summary_dict[str(m.meta.run_uuid)]['chp_kw'] = m.size_kw
+            if thermal_efficiency_full_load[str(m.meta.run_uuid)] == 0:
+                summary_dict[str(m.meta.run_uuid)]['prime_gen_kw'] = m.size_kw
+            else:
+                summary_dict[str(m.meta.run_uuid)]['chp_kw'] = m.size_kw
     
     return summary_dict
 
