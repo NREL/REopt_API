@@ -83,7 +83,7 @@ function reopt(req::HTTP.Request)
 		# Catch handled/unhandled exceptions in optimization
 		try
 			if run_bau
-                results = reoptjl.run_reopt(ms, model_inputs, threads=true)
+                results = reoptjl.run_reopt(ms, model_inputs)
             else
                 results = reoptjl.run_reopt(ms, model_inputs)
             end
