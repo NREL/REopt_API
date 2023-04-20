@@ -94,6 +94,11 @@ Classify the change according to the following categories:
    - **OutageOutputs**: **expected_outage_cost**, **max_outage_cost_per_outage_duration**, **unserved_load_series**, **unserved_load_per_outage**, **microgrid_upgrade_capital_cost**, **generator_fuel_used_per_outage**
  - Added test using multiple outage modeling
  - Add /dev/schedule_stats endpoint
+ - In job/ app (v3): added **AbsorptionChillerInputs** model
+- In job/ app (v3): added **AbsorptionChillerOutputs** model
+- In `job/views.py`:
+    - add new input/output models to properly save the inputs/outputs
+    - add `/absorption_chiller_defaults` endpoint which calls the http.jl absorption_chiller_defaults endpoint
 ##### Changed
 - Update REopt.jl to v0.28.0 for job app (/dev -> v3)
 - `/job/chp_defaults` endpoint updated to take optional electric load metrics for non-heating CHP (Prime Generator in UI)
