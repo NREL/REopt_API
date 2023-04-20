@@ -56,6 +56,8 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         r = json.loads(resp.content)
         results = r["outputs"]
         self.assertEqual(np.array(results["Outages"]["unserved_load_series_kw"]).shape, (1,2,5))
+        self.assertEqual(np.array(results["Outages"]["generator_fuel_used_per_outage_gal"]).shape, (1,2))
+        self.assertEqual(np.array(results["Outages"]["chp_fuel_used_per_outage_mmbtu"]).shape, (1,2))
         self.assertAlmostEqual(results["Outages"]["expected_outage_cost"], 0.0, places=-2)
         self.assertAlmostEqual(sum(sum(np.array(results["Outages"]["unserved_load_per_outage_kwh"]))), 0.0, places=0)
         self.assertAlmostEqual(results["Outages"]["microgrid_upgrade_capital_cost"], 1927766, places=-2)
