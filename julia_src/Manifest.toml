@@ -734,11 +734,9 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [[deps.REopt]]
 deps = ["ArchGDAL", "CSV", "CoolProp", "DataFrames", "Dates", "DelimitedFiles", "HTTP", "JLD", "JSON", "JuMP", "LinDistFlow", "LinearAlgebra", "Logging", "MathOptInterface", "Requires", "Roots", "Statistics", "TestEnv"]
-git-tree-sha1 = "6cb86c34b9063a2556ccef30516fb6ed45dfeec2"
-repo-rev = "export-easiur"
-repo-url = "https://github.com/NREL/REopt.jl.git"
+git-tree-sha1 = "581389fc41858488802c0e2fb524ee7a20c589e0"
 uuid = "d36ad4e8-d74a-4f7a-ace1-eaea049febf6"
-version = "0.30.0"
+version = "0.31.0"
 
 [[deps.Random]]
 deps = ["SHA", "Serialization"]
