@@ -39,9 +39,9 @@ urlpatterns = [
     re_path(r'^chp_defaults/?$', views.chp_defaults),
     re_path(r'^absorption_chiller_defaults/?$', views.absorption_chiller_defaults),
     re_path(r'^emissions_profile/?$', views.emissions_profile),
+    re_path(r'^easiur_costs/?$', views.easiur_costs),
     re_path(r'^simulated_load/?$', views.simulated_load),
     re_path(r'^peak_load_outage_times/?$', views.peak_load_outage_times),
     re_path(r'^invalid_urdb/?$', reoviews.invalid_urdb),
-    re_path(r'^easiur_costs/?$', reoviews.easiur_costs),
     re_path(r'^schedule_stats/?$', reoviews.schedule_stats),
 ]

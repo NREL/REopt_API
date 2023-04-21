@@ -26,6 +26,11 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop easiur
+### Minor Updates
+##### Changed
+- Changed the v3/easiur_costs endpoint to call a v3 specific view that uses the REopt julia package's EASIUR functionality instead of calling the v1/v2 easiur_costs view
+
 ## Develop
 ### Minor Updates
 ##### Added

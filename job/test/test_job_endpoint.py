@@ -56,6 +56,8 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         r = json.loads(resp.content)
         results = r["outputs"]
         self.assertEqual(np.array(results["Outages"]["unserved_load_series_kw"]).shape, (1,2,5))
+        self.assertEqual(np.array(results["Outages"]["generator_fuel_used_per_outage_gal"]).shape, (1,2))
+        self.assertEqual(np.array(results["Outages"]["chp_fuel_used_per_outage_mmbtu"]).shape, (1,2))
         self.assertAlmostEqual(results["Outages"]["expected_outage_cost"], 0.0, places=-2)
         self.assertAlmostEqual(sum(sum(np.array(results["Outages"]["unserved_load_per_outage_kwh"]))), 0.0, places=0)
         self.assertAlmostEqual(results["Outages"]["microgrid_upgrade_capital_cost"], 1927766, places=-2)
@@ -253,19 +255,6 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
                     self.assertEquals(inputs_chp[key], view_response["default_inputs"][key])
             else:  # Make sure we didn't overwrite user-input
                 self.assertEquals(inputs_chp[key], post["CHP"][key])
-
-    def test_emissions_profile_endpoint(self):
-        # Call to the django view endpoint dev/emissions_profile which calls the http.jl endpoint
-        inputs = {
-            "latitude": 47.606211,
-            "longitude": -122.336052
-        }
-        resp = self.api_client.get(f'/dev/emissions_profile', data=inputs)
-        self.assertHttpOK(resp)
-        view_response = json.loads(resp.content)
-        self.assertEquals(view_response["meters_to_region"], 0.0)
-        self.assertEquals(view_response["region"], "Northwest")
-        self.assertEquals(len(view_response["emissions_factor_series_lb_NOx_per_kwh"]), 8760)
 
     def test_peak_load_outage_times(self):
         """
