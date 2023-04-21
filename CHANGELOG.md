@@ -26,12 +26,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop easiur
-### Minor Updates
-##### Changed
-- Changed the v3/easiur_costs endpoint to call a v3 specific view that uses the REopt julia package's EASIUR functionality instead of calling the v1/v2 easiur_costs view
-
-## Develop
+## Develop 4/21/23
 ### Minor Updates
 ##### Added
 - Add **GeneratorInputs** field **fuel_higher_heating_value_kwh_per_gal**, which defaults to 40.7 (diesel)
@@ -39,6 +34,7 @@ Classify the change according to the following categories:
 ##### Changed
 - Default **FinancialInputs** field **value_of_lost_load_per_kwh** to zero
 - Default **SiteInputs** field **min_resil_time_steps** to max value in **ElectricUtilityInputs** **outage_durations**
+- Changed the v3/easiur_costs endpoint to call a v3 specific view that uses the REopt julia package's EASIUR functionality instead of calling the v1/v2 easiur_costs view
 ##### Fixed
 - A 0-indexing off by one bug in the `peak_load_outage_times` view/endpoint where seasons were defined as starting on 2nd days of months
 - If user specifies **ERPGeneratorInputs**/**ERPPrimeGeneratorInputs** **electric_efficiency_full_load** but not **electric_efficiency_half_load** in ERP post, don't use the REopt **GeneratorInputs**/**CHPInputs** **electric_efficiency_half_load**, instead let **ERPGeneratorInputs**/**ERPPrimeGeneratorInputs** **electric_efficiency_half_load** default to **electric_efficiency_full_load**
