@@ -340,10 +340,10 @@ class SiteInputs(BaseModel, models.Model):
         help_text="Area of roof in square feet available for PV siting"
     )
     min_resil_time_steps = models.IntegerField(
-        default=0,
         validators=[
             MinValueValidator(0)
         ],
+        null=True, 
         blank=True,
         help_text="The minimum number consecutive timesteps that load must be fully met once an outage begins. "
                     "Only applies to multiple outage modeling using inputs outage_start_time_steps and outage_durations."
@@ -672,7 +672,7 @@ class FinancialInputs(BaseModel, models.Model):
                    "generator(s).")
     )
     value_of_lost_load_per_kwh = models.FloatField(
-        default=100,
+        default=0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1e6)
@@ -3334,6 +3334,16 @@ class GeneratorInputs(BaseModel, models.Model):
         null=True,
         help_text="On-site generator fuel available in gallons per year."
     )
+    fuel_higher_heating_value_kwh_per_gal = models.FloatField(
+        default=40.7,
+        validators=[
+            MinValueValidator(1e-6),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        blank=True,
+        null=True,
+        help_text="Higher heating value of the generator fuel in kWh/gal. Defaults to the HHV of diesel."
+    )
     min_turn_down_fraction = models.FloatField(
         validators=[
             MinValueValidator(0.0),
@@ -5813,6 +5823,197 @@ class CoolingLoadOutputs(BaseModel, models.Model):
     def clean(self):
         pass
 
+class AbsorptionChillerInputs(BaseModel, models.Model):
+    key = "AbsorptionChiller"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="AbsorptionChillerInputs",
+        primary_key=True
+    )
+
+    PRODUCTION_TYPE = models.TextChoices('PRODUCTION_TYPE', (
+        'steam',
+        'hot_water'
+    ))
+
+    thermal_consumption_hot_water_or_steam = models.TextField(
+        blank=True,
+        null=True,
+        choices=PRODUCTION_TYPE.choices,
+        help_text="Boiler thermal production type, hot water or steam"
+    )
+
+    installed_cost_per_ton = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        help_text=("Thermal power-based cost of absorption chiller [$/ton] (3.5 ton to 1 kWt)")
+    )
+    
+    min_ton = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default = 0.0,
+        help_text=("Minimum thermal power size constraint for optimization [ton]")
+    )
+
+    max_ton = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default = MAX_BIG_NUMBER,
+        help_text=("Maximum thermal power size constraint for optimization [ton]")
+    )
+
+    cop_thermal = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        help_text=("Absorption chiller system coefficient of performance - conversion of hot thermal power input "
+                    "to usable cooling thermal energy output")
+    )
+
+    cop_electric = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default=14.1,
+        help_text=("Absorption chiller electric consumption CoP from cooling tower heat rejection - conversion of electric power input "
+                    "to usable cooling thermal energy output")
+    )
+
+    om_cost_per_ton = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        help_text=("Yearly fixed O&M cost [$/ton]")
+    )
+
+    macrs_option_years = models.IntegerField(
+        default=MACRS_YEARS_CHOICES.ZERO,
+        choices=MACRS_YEARS_CHOICES.choices,
+        blank=True,
+        help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
+    )
+
+    macrs_bonus_fraction = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
+    )
+
+    def clean(self):
+        pass
+
+    
+
+
+class AbsorptionChillerOutputs(BaseModel, models.Model):
+    key = "AbsorptionChiller"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="AbsorptionChillerOutputs",
+        primary_key=True
+    )
+
+    size_kw = models.FloatField(
+        null=True, blank=True,
+        help_text="Thermal power capacity of the absorption chiller [kW]"
+    )
+    
+    size_ton = models.FloatField(
+        null=True, blank=True,
+        help_text="Thermal power capacity of the absorption chiller [ton]"
+    )
+
+    thermal_to_storage_series_ton = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        null=True,
+        help_text=("Year one hourly time series of absorption chiller thermal to cold TES [Ton]")
+    )
+
+    thermal_to_load_series_ton = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        null=True,
+        help_text=("Year one hourly time series of absorption chiller thermal to cooling load [Ton]")
+    )
+
+    thermal_consumption_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        null=True,
+        help_text=("Year one hourly time series of absorption chiller electric consumption [kW]")
+    )
+
+    annual_thermal_consumption_mmbtu = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=("Year one absorption chiller electric consumption [kWh]")
+    )
+
+    annual_thermal_production_tonhour = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=("Year one absorption chiller thermal production [Ton Hour")
+    )
+    electric_consumption_series_kw = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        null=True,
+        help_text=("Year one hourly time series of absorption chiller electric consumption [kW]")
+    )
+
+    annual_electric_consumption_kwh = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=("Year one absorption chiller electric consumption [kWh]")
+    )
+
+    def clean(self):
+        pass
+
+
 def get_input_dict_from_run_uuid(run_uuid:str):
     """
     Construct the input dict for REopt.run_reopt
@@ -5888,6 +6089,9 @@ def get_input_dict_from_run_uuid(run_uuid:str):
     
     try: d["CHP"] = filter_none_and_empty_array(meta.CHPInputs.dict)
     except: pass    
+
+    try: d["AbsorptionChiller"] = filter_none_and_empty_array(meta.AbsorptionChillerInputs.dict)
+    except: pass  
 
     return d
 

@@ -40,7 +40,8 @@ from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, Ge
     ElectricLoadOutputs, ExistingBoilerOutputs, DomesticHotWaterLoadInputs, SiteInputs, SiteOutputs, APIMeta, \
     UserProvidedMeta, CHPInputs, CHPOutputs, CoolingLoadInputs, ExistingChillerInputs, ExistingChillerOutputs,\
     CoolingLoadOutputs, HeatingLoadOutputs, REoptjlMessageOutputs, HotThermalStorageInputs, HotThermalStorageOutputs,\
-    ColdThermalStorageInputs, ColdThermalStorageOutputs, FinancialInputs, FinancialOutputs, UserUnlinkedRuns
+    ColdThermalStorageInputs, ColdThermalStorageOutputs, AbsorptionChillerInputs, AbsorptionChillerOutputs,\
+    FinancialInputs, FinancialOutputs, UserUnlinkedRuns
 import os
 import requests
 import numpy as np
@@ -80,6 +81,7 @@ def help(request):
         d["DomesticHotWaterLoad"] = DomesticHotWaterLoadInputs.info_dict(DomesticHotWaterLoadInputs)
         d["Site"] = SiteInputs.info_dict(SiteInputs)
         d["CHP"] = CHPInputs.info_dict(CHPInputs)
+        d["AbsorptionChiller"] = AbsorptionChillerInputs.info_dict(AbsorptionChillerInputs)
         return JsonResponse(d)
 
     except Exception as e:
@@ -122,6 +124,7 @@ def outputs(request):
         d["HeatingLoad"] = HeatingLoadOutputs.info_dict(HeatingLoadOutputs)
         d["CoolingLoad"] = CoolingLoadOutputs.info_dict(CoolingLoadOutputs)
         d["CHP"] = CHPOutputs.info_dict(CHPOutputs)
+        d["AbsorptionChiller"] = AbsorptionChillerOutputs.info_dict(AbsorptionChillerOutputs)
         d["Messages"] = REoptjlMessageOutputs.info_dict(REoptjlMessageOutputs)
         return JsonResponse(d)
 
@@ -235,6 +238,9 @@ def results(request, run_uuid):
     try: r["inputs"]["CHP"] = meta.CHPInputs.dict
     except: pass
 
+    try: r["inputs"]["AbsorptionChiller"] = meta.AbsorptionChillerInputs.dict
+    except: pass
+
     try:
         r["outputs"] = dict()
         r["messages"] = dict()
@@ -297,6 +303,8 @@ def results(request, run_uuid):
         except: pass
         try: r["outputs"]["CHP"] = meta.CHPOutputs.dict
         except: pass
+        try: r["outputs"]["AbsorptionChiller"] = meta.AbsorptionChillerOutputs.dict
+        except: pass
         try: r["outputs"]["HeatingLoad"] = meta.HeatingLoadOutputs.dict
         except: pass
         try: r["outputs"]["CoolingLoad"] = meta.CoolingLoadOutputs.dict
@@ -335,9 +343,9 @@ def peak_load_outage_times(request):
         
         if seasonal_peaks:
             winter_start = 334*24
-            spring_start = 60*24
-            summer_start = 152*24
-            autumn_start = 244*24
+            spring_start = 59*24
+            summer_start = 151*24
+            autumn_start = 243*24
             winter_load = np.append(critical_load[winter_start:], critical_load[0:spring_start])
             spring_load = critical_load[spring_start:summer_start]
             summer_load = critical_load[summer_start:autumn_start]
@@ -356,7 +364,7 @@ def peak_load_outage_times(request):
             outage_start_time_steps = peaks - int(outage_duration / 2)
 
         return JsonResponse(
-            {"outage_start_time_steps": outage_start_time_steps.tolist()}, 
+            {"outage_start_time_steps": outage_start_time_steps.tolist()},
             status=200
         )
 
@@ -388,7 +396,8 @@ def chp_defaults(request):
         julia_host = os.environ.get('JULIA_HOST', "julia")
         http_jl_response = requests.get("http://" + julia_host + ":8081/chp_defaults/", json=inputs)
         response = JsonResponse(
-            http_jl_response.json()
+            http_jl_response.json(),
+            status=http_jl_response.status_code
         )
         return response
 
@@ -404,6 +413,35 @@ def chp_defaults(request):
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in chp_defaults endpoint. Check log for more."}, status=500)
+
+def absorption_chiller_defaults(request):
+    inputs = {
+        "thermal_consumption_hot_water_or_steam": request.GET.get("thermal_consumption_hot_water_or_steam"), 
+        "chp_prime_mover": request.GET.get("chp_prime_mover"),
+        "boiler_type": request.GET.get("boiler_type"),
+        "load_max_tons": request.GET.get("load_max_tons")
+    }
+    try:
+        julia_host = os.environ.get('JULIA_HOST', "julia")
+        http_jl_response = requests.get("http://" + julia_host + ":8081/absorption_chiller_defaults/", json=inputs)
+        response = JsonResponse(
+            http_jl_response.json()
+        )
+        return response
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected error in absorption_chiller_defaults endpoint. Check log for more."}, status=500)
+
 
 def simulated_load(request):
     try:
@@ -473,7 +511,8 @@ def simulated_load(request):
         julia_host = os.environ.get('JULIA_HOST', "julia")
         http_jl_response = requests.get("http://" + julia_host + ":8081/simulated_load/", json=inputs)
         response = JsonResponse(
-            http_jl_response.json()
+            http_jl_response.json(),
+            status=http_jl_response.status_code
         )
         
         return response
@@ -877,7 +916,8 @@ def emissions_profile(request):
             json=inputs
         )
         response = JsonResponse(
-            http_jl_response.json()
+            http_jl_response.json(),
+            status=http_jl_response.status_code
         )
         return response
 
@@ -896,51 +936,40 @@ def emissions_profile(request):
         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
 
 
-# def easiur_costs(request):
-#     try:
-#         latitude = float(request.GET['latitude'])  # need float to convert unicode
-#         longitude = float(request.GET['longitude'])
-#         avg_inflation = float(request.GET['inflation'])
+def easiur_costs(request):
+    try:
+        inputs = {
+            "latitude": request.GET['latitude'], # need to do float() to convert unicode?
+            "longitude": request.GET['longitude'],
+            "inflation": request.GET['inflation']
+        }
+        julia_host = os.environ.get(
+            'JULIA_HOST', 
+            "julia"
+        )
+        http_jl_response = requests.get(
+            "http://" + julia_host + ":8081/easiur_costs/", 
+            json=inputs
+        )
+        response = JsonResponse(
+            http_jl_response.json(),
+            status=http_jl_response.status_code
+        )
+        return response
 
-#         easiur = EASIURCalculator( latitude=latitude, 
-#                     longitude=longitude,
-#                     inflation=avg_inflation
-#                     )
+    except KeyError as e:
+        return JsonResponse({"Error. Missing Parameter": str(e.args[0])}, status=400)
 
-#         try:
-#             response = JsonResponse({
-#                     'nox_cost_us_dollars_per_tonne_grid': easiur.grid_costs['NOx'],
-#                     'so2_cost_us_dollars_per_tonne_grid': easiur.grid_costs['SO2'],
-#                     'pm25_cost_us_dollars_per_tonne_grid': easiur.grid_costs['PM25'],
-#                     'nox_cost_us_dollars_per_tonne_onsite_fuelburn': easiur.onsite_costs['NOx'],
-#                     'so2_cost_us_dollars_per_tonne_onsite_fuelburn': easiur.onsite_costs['SO2'],
-#                     'pm25_cost_us_dollars_per_tonne_onsite_fuelburn': easiur.onsite_costs['PM25'],
-#                     'units_costs': 'US dollars per metric ton.',
-#                     'description_costs': 'Health costs of emissions from the grid and on-site fuel burn, as reported by the EASIUR model.',
-#                     'nox_cost_escalation_pct': easiur.escalation_rates['NOx'],
-#                     'so2_cost_escalation_pct': easiur.escalation_rates['SO2'],
-#                     'pm25_cost_escalation_pct': easiur.escalation_rates['PM25'],
-#                     'units_escalation': 'nominal annual percent',
-#                     'description_escalation': 'Annual nominal escalation rate (as a decimal) of public health costs of emissions.',
-#                 })
-#             return response
-#         except AttributeError as e:
-#             return JsonResponse({"Error": str(e.args[0])}, status=500)
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=400)
 
-#     except KeyError as e:
-#         return JsonResponse({"Error. Missing Parameter": str(e.args[0])}, status=500)
+    except Exception:
 
-#     except ValueError as e:
-#         return JsonResponse({"Error": str(e.args[0])}, status=500)
-
-#     except Exception:
-
-#         exc_type, exc_value, exc_traceback = sys.exc_info()
-#         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
-#                                                                             tb.format_tb(exc_traceback))
-#         log.error(debug_msg)
-#         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
-
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.error(debug_msg)
+        return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
 
 # def fuel_emissions_rates(request):
 #     try:
