@@ -98,8 +98,8 @@ class LoadProfileChillerThermal(BuiltInProfile):
                 combine_loadlist.append(list(partial_load_list))
 
             # In the case where the user supplies a list of doe_reference_names and percent shares
-            # WITHOUT an annual_energy (tonhour) value, then we use the weighted average (by percent_share)
-            #  of the fraction of total electric load
+            # WITHOUT an annual_energy or monthly_totals_energy (tonhour) values, then we use the
+            # weighted average (by percent_share) of the fraction of total electric load
             if kwargs.get('annual_energy') is None and kwargs.get('monthly_totals_energy') is None:
                 for i, building in enumerate(doe_reference_name):
                     default_fraction = np.array(self.get_default_fraction_of_total_electric(building))
