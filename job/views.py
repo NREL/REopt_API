@@ -40,7 +40,8 @@ from job.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, Ge
     ElectricLoadOutputs, ExistingBoilerOutputs, DomesticHotWaterLoadInputs, SiteInputs, SiteOutputs, APIMeta, \
     UserProvidedMeta, CHPInputs, CHPOutputs, CoolingLoadInputs, ExistingChillerInputs, ExistingChillerOutputs,\
     CoolingLoadOutputs, HeatingLoadOutputs, REoptjlMessageOutputs, HotThermalStorageInputs, HotThermalStorageOutputs,\
-    ColdThermalStorageInputs, ColdThermalStorageOutputs, AbsorptionChillerInputs, AbsorptionChillerOutputs, FinancialInputs, FinancialOutputs, UserUnlinkedRuns
+    ColdThermalStorageInputs, ColdThermalStorageOutputs, AbsorptionChillerInputs, AbsorptionChillerOutputs,\
+    FinancialInputs, FinancialOutputs, UserUnlinkedRuns
 import os
 import requests
 import numpy as np
@@ -395,7 +396,8 @@ def chp_defaults(request):
         julia_host = os.environ.get('JULIA_HOST', "julia")
         http_jl_response = requests.get("http://" + julia_host + ":8081/chp_defaults/", json=inputs)
         response = JsonResponse(
-            http_jl_response.json()
+            http_jl_response.json(),
+            status=http_jl_response.status_code
         )
         return response
 
@@ -509,7 +511,8 @@ def simulated_load(request):
         julia_host = os.environ.get('JULIA_HOST', "julia")
         http_jl_response = requests.get("http://" + julia_host + ":8081/simulated_load/", json=inputs)
         response = JsonResponse(
-            http_jl_response.json()
+            http_jl_response.json(),
+            status=http_jl_response.status_code
         )
         
         return response
@@ -913,7 +916,8 @@ def emissions_profile(request):
             json=inputs
         )
         response = JsonResponse(
-            http_jl_response.json()
+            http_jl_response.json(),
+            status=http_jl_response.status_code
         )
         return response
 
@@ -932,51 +936,40 @@ def emissions_profile(request):
         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
 
 
-# def easiur_costs(request):
-#     try:
-#         latitude = float(request.GET['latitude'])  # need float to convert unicode
-#         longitude = float(request.GET['longitude'])
-#         avg_inflation = float(request.GET['inflation'])
+def easiur_costs(request):
+    try:
+        inputs = {
+            "latitude": request.GET['latitude'], # need to do float() to convert unicode?
+            "longitude": request.GET['longitude'],
+            "inflation": request.GET['inflation']
+        }
+        julia_host = os.environ.get(
+            'JULIA_HOST', 
+            "julia"
+        )
+        http_jl_response = requests.get(
+            "http://" + julia_host + ":8081/easiur_costs/", 
+            json=inputs
+        )
+        response = JsonResponse(
+            http_jl_response.json(),
+            status=http_jl_response.status_code
+        )
+        return response
 
-#         easiur = EASIURCalculator( latitude=latitude, 
-#                     longitude=longitude,
-#                     inflation=avg_inflation
-#                     )
+    except KeyError as e:
+        return JsonResponse({"Error. Missing Parameter": str(e.args[0])}, status=400)
 
-#         try:
-#             response = JsonResponse({
-#                     'nox_cost_us_dollars_per_tonne_grid': easiur.grid_costs['NOx'],
-#                     'so2_cost_us_dollars_per_tonne_grid': easiur.grid_costs['SO2'],
-#                     'pm25_cost_us_dollars_per_tonne_grid': easiur.grid_costs['PM25'],
-#                     'nox_cost_us_dollars_per_tonne_onsite_fuelburn': easiur.onsite_costs['NOx'],
-#                     'so2_cost_us_dollars_per_tonne_onsite_fuelburn': easiur.onsite_costs['SO2'],
-#                     'pm25_cost_us_dollars_per_tonne_onsite_fuelburn': easiur.onsite_costs['PM25'],
-#                     'units_costs': 'US dollars per metric ton.',
-#                     'description_costs': 'Health costs of emissions from the grid and on-site fuel burn, as reported by the EASIUR model.',
-#                     'nox_cost_escalation_pct': easiur.escalation_rates['NOx'],
-#                     'so2_cost_escalation_pct': easiur.escalation_rates['SO2'],
-#                     'pm25_cost_escalation_pct': easiur.escalation_rates['PM25'],
-#                     'units_escalation': 'nominal annual percent',
-#                     'description_escalation': 'Annual nominal escalation rate (as a decimal) of public health costs of emissions.',
-#                 })
-#             return response
-#         except AttributeError as e:
-#             return JsonResponse({"Error": str(e.args[0])}, status=500)
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=400)
 
-#     except KeyError as e:
-#         return JsonResponse({"Error. Missing Parameter": str(e.args[0])}, status=500)
+    except Exception:
 
-#     except ValueError as e:
-#         return JsonResponse({"Error": str(e.args[0])}, status=500)
-
-#     except Exception:
-
-#         exc_type, exc_value, exc_traceback = sys.exc_info()
-#         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
-#                                                                             tb.format_tb(exc_traceback))
-#         log.error(debug_msg)
-#         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
-
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.error(debug_msg)
+        return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
 
 # def fuel_emissions_rates(request):
 #     try:
