@@ -26,7 +26,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop 4/21/23
+## v2.12.0
 ### Minor Updates
 ##### Added
 - Added `summary` endpoint and `job\views.summary`
