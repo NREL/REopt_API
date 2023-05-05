@@ -44,7 +44,7 @@ from job.src.run_jump_model import run_jump_model
 from reo.exceptions import UnexpectedError, REoptError
 from job.models import APIMeta
 log = logging.getLogger(__name__)
-
+ 
 
 def return400(data: dict, validator: InputValidator):
     data["status"] = (
@@ -98,13 +98,40 @@ class Job(ModelResource):
 
     def obj_create(self, bundle, **kwargs):
         run_uuid = str(uuid.uuid4())
+
+        if 'user_uuid' in bundle.data.keys():
+
+            if type(bundle.data['user_uuid']) == str:
+                if len(bundle.data['user_uuid']) == len(run_uuid):
+                    user_uuid = bundle.data['user_uuid']
+                else:
+                    user_uuid = ''
+        else:
+            user_uuid = None
+        
+        if 'webtool_uuid' in bundle.data.keys():
+
+            if type(bundle.data['webtool_uuid']) == str:
+                if len(bundle.data['webtool_uuid']) == len(run_uuid):
+                    webtool_uuid = bundle.data['webtool_uuid']
+                else:
+                    webtool_uuid = ''
+        else:
+            webtool_uuid = None
+        
         meta = {
             "run_uuid": run_uuid,
             "api_version": 3,
-            "reopt_version": "0.29.0",
+            "reopt_version": "0.30.0",
             "status": "Validating..."
         }
         bundle.data.update({"APIMeta": meta})
+
+        if user_uuid is not None:
+            bundle.data['APIMeta']['user_uuid'] = user_uuid
+        
+        if webtool_uuid is not None:
+            bundle.data['APIMeta']['webtool_uuid'] = webtool_uuid
 
         log.addFilter(UUIDFilter(run_uuid))
 

@@ -24,9 +24,12 @@
         "azimuth": 180.0,
         "federal_rebate_per_kw": 350.0
     },
-    "Generator": {
+    "CHP": {
         "min_kw": 200,
-        "max_kw": 200
+        "max_kw": 200,
+        "prime_mover": "recip_engine",
+        "fuel_cost_per_mmbtu": 1,
+        "electric_efficiency_full_load": 0.34
     },
     "ElectricStorage": {
         "min_kw": 50,
@@ -58,7 +61,8 @@
         "analysis_years": 20,
         "offtaker_tax_rate_fraction": 0.4,
         "owner_tax_rate_fraction": 0.4,
-        "om_cost_escalation_rate_fraction": 0.025
+        "om_cost_escalation_rate_fraction": 0.025,
+        "value_of_lost_load_per_kwh": 100
     },
     "ElectricLoad": {
         "doe_reference_name": "Hospital",

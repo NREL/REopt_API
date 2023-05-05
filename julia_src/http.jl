@@ -223,6 +223,48 @@ function chp_defaults(req::HTTP.Request)
     end
 end
 
+function absorption_chiller_defaults(req::HTTP.Request)
+	d = JSON.parse(String(req.body))
+    keys = ["thermal_consumption_hot_water_or_steam", 
+            "chp_prime_mover",
+            "boiler_type",
+            "load_max_tons"]
+    # Process .json inputs and convert to correct type if needed
+    for k in keys
+        if !haskey(d, k)
+            d[k] = nothing
+        elseif !isnothing(d[k])
+            if k in ["load_max_tons"] && typeof(d[k]) == String
+                d[k] = parse(Float64, d[k])
+            elseif k in ["load_max_tons"] && typeof(d[k]) == Int64
+                d[k] = convert(Float64, d[k])
+            end
+        end
+    end
+
+    @info "Getting AbsorptionChiller defaults..."
+    data = Dict()
+    error_response = Dict()
+    try
+        data = reoptjl.get_absorption_chiller_defaults(;
+			thermal_consumption_hot_water_or_steam=d["thermal_consumption_hot_water_or_steam"],
+			chp_prime_mover=d["chp_prime_mover"],
+			boiler_type=d["boiler_type"],
+			load_max_tons=d["load_max_tons"])
+    catch e
+        @error "Something went wrong in the absorption_chiller_defaults" exception=(e, catch_backtrace())
+        error_response["error"] = sprint(showerror, e)
+    end
+    if isempty(error_response)
+        @info "AbsorptionChiller defaults determined."
+		response = data
+        return HTTP.Response(200, JSON.json(response))
+    else
+        @info "An error occured in the absorption_chiller_defaults endpoint"
+        return HTTP.Response(500, JSON.json(error_response))
+    end
+end
+
 function emissions_profile(req::HTTP.Request)
     d = JSON.parse(String(req.body))
     @info "Getting emissions profile..."
@@ -232,17 +274,40 @@ function emissions_profile(req::HTTP.Request)
 		latitude = typeof(d["latitude"]) == String ? parse(Float64, d["latitude"]) : d["latitude"]
 		longitude = typeof(d["longitude"]) == String ? parse(Float64, d["longitude"]) : d["longitude"]
         data = reoptjl.emissions_profiles(;latitude=latitude, longitude=longitude, time_steps_per_hour=1)
+        if haskey(data, "error")
+            @info "An error occured getting the emissions data"
+            return HTTP.Response(400, JSON.json(data))
+        end
     catch e
         @error "Something went wrong getting the emissions data" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
-    end
-    if isempty(error_response)
-        @info "Emissions profile determined."
-        return HTTP.Response(200, JSON.json(data))
-    else
-        @info "An error occured getting the emissions data"
         return HTTP.Response(500, JSON.json(error_response))
     end
+    @info "Emissions profile determined."
+    return HTTP.Response(200, JSON.json(data))
+end
+
+function easiur_costs(req::HTTP.Request)
+    d = JSON.parse(String(req.body))
+    @info "Getting EASIUR health emissions cost data..."
+    data = Dict()
+    error_response = Dict()
+    try
+		latitude = typeof(d["latitude"]) == String ? parse(Float64, d["latitude"]) : d["latitude"]
+		longitude = typeof(d["longitude"]) == String ? parse(Float64, d["longitude"]) : d["longitude"]
+		inflation = typeof(d["inflation"]) == String ? parse(Float64, d["inflation"]) : d["inflation"]
+        data = reoptjl.easiur_data(;latitude=latitude, longitude=longitude, inflation=inflation)
+        if haskey(data, "error")
+            @info "An error occured getting the health emissions cost data"
+            return HTTP.Response(400, JSON.json(data))
+        end
+    catch e
+        @error "Something went wrong getting the health emissions cost data" exception=(e, catch_backtrace())
+        error_response["error"] = sprint(showerror, e)
+        return HTTP.Response(500, JSON.json(error_response))
+    end
+    @info "Health emissions cost data determined."
+    return HTTP.Response(200, JSON.json(data))
 end
 
 function simulated_load(req::HTTP.Request)
@@ -291,6 +356,8 @@ HTTP.@register(ROUTER, "POST", "/erp", erp)
 HTTP.@register(ROUTER, "POST", "/ghpghx", ghpghx)
 HTTP.@register(ROUTER, "GET", "/chp_defaults", chp_defaults)
 HTTP.@register(ROUTER, "GET", "/emissions_profile", emissions_profile)
+HTTP.@register(ROUTER, "GET", "/easiur_costs", easiur_costs)
 HTTP.@register(ROUTER, "GET", "/simulated_load", simulated_load)
+HTTP.@register(ROUTER, "GET", "/absorption_chiller_defaults", absorption_chiller_defaults)
 HTTP.@register(ROUTER, "GET", "/health", health)
 HTTP.serve(ROUTER, "0.0.0.0", 8081, reuseaddr=true)
