@@ -43,6 +43,7 @@ Classify the change according to the following categories:
 - A 0-indexing off by one bug in the `peak_load_outage_times` view/endpoint where seasons were defined as starting on 2nd days of months
 - If user specifies **ERPGeneratorInputs**/**ERPPrimeGeneratorInputs** **electric_efficiency_full_load** but not **electric_efficiency_half_load** in ERP post, don't use the REopt **GeneratorInputs**/**CHPInputs** **electric_efficiency_half_load**, instead let **ERPGeneratorInputs**/**ERPPrimeGeneratorInputs** **electric_efficiency_half_load** default to **electric_efficiency_full_load**
 - In **LoadProfileChillerThermal**, add check that user hasn't supplied monthly energy, in addition to checking annual energy, before using electric load to calculate cooling load
+- A couple ERP survival probability calculation fixes by updating to REopt.jl 0.32.1 
 
 ## v2.11.0
 ### Minor Updates
