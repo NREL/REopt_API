@@ -229,7 +229,7 @@ class InputValidator(object):
         """
         def cross_clean_pv(pvmodel):
             if pvmodel.__getattribute__("tilt") == None:
-                if pvmodel.__getattribute__("array_type") == "ROOFTOP_FIXED":
+                if pvmodel.__getattribute__("array_type") == pvmodel.ARRAY_TYPE_CHOICES.ROOFTOP_FIXED:
                     pvmodel.__setattr__("tilt", 10)
                 else:
                     pvmodel.__setattr__("tilt", abs(self.models["Site"].__getattribute__("latitude")))
