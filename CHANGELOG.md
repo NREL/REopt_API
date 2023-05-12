@@ -26,6 +26,11 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop
+### Minor Updates
+##### Fixed
+- Fix array_type enum check in `cross_clean_pv()`(value stored as int not string)
+
 ## v2.12.0
 ### Minor Updates
 ##### Added

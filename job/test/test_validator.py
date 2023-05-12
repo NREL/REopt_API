@@ -325,6 +325,26 @@ class InputValidatorTests(TestCase):
         self.assertEquals(validator.models["ElectricUtility"].outage_probabilities, [0.5, 0.5])
         self.assertEquals(validator.is_valid, True)
 
+    def test_pv_tilt_defaults(self):
+        post = copy.deepcopy(self.post)
+        post["APIMeta"]["run_uuid"] = uuid.uuid4()
+        del(post["ElectricStorage"])
+        del(post["CHP"])
+        del(post["PV"]["tilt"])
+        validator = InputValidator(post)
+        validator.clean_fields()
+        validator.clean()
+        validator.cross_clean()
+        self.assertEquals(validator.models["PV"].tilt, 10)
+
+        post["APIMeta"]["run_uuid"] = uuid.uuid4()
+        post["PV"]["array_type"] = 0
+        validator = InputValidator(post)
+        validator.clean_fields()
+        validator.clean()
+        validator.cross_clean()
+        self.assertAlmostEquals(validator.models["PV"].tilt, post["Site"]["latitude"], places=-3)
+
 
 
 
