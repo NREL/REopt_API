@@ -432,7 +432,7 @@ class ERPElectricStorageInputs(BaseModel, models.Model):
     )
     num_battery_bins = models.IntegerField(
         blank=True,
-        default=100,
+        null=True,
         validators=[
             MinValueValidator(10),
             MaxValueValidator(2000)
@@ -448,6 +448,11 @@ class ERPElectricStorageInputs(BaseModel, models.Model):
         ],
         help_text=("Minimum battery state of charge allowed during an outage")
     )
+
+    def clean(self):
+        if self.num_battery_bins is None:
+            self.num_battery_bins = 20 * self.size_kwh / self.size_kw
+
 
 class ERPPVInputs(BaseModel, models.Model):
     key = "PV"
