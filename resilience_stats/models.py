@@ -434,9 +434,10 @@ class ERPElectricStorageInputs(BaseModel, models.Model):
         blank=True,
         default=100,
         validators=[
-            MinValueValidator(1),
+            MinValueValidator(10),
+            MaxValueValidator(2000)
         ],
-        help_text=("Number of bins for modeling battery state of charge")
+        help_text=("Number of bins for discretely modeling battery state of charge")
     )
     minimum_soc_fraction = models.FloatField(
         blank=True,
