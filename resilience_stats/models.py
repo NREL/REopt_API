@@ -434,7 +434,7 @@ class ERPElectricStorageInputs(BaseModel, models.Model):
         blank=True,
         null=True,
         validators=[
-            MinValueValidator(10),
+            MinValueValidator(1),
             MaxValueValidator(2000)
         ],
         help_text=("Number of bins for discretely modeling battery state of charge")
