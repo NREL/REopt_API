@@ -451,7 +451,7 @@ class ERPElectricStorageInputs(BaseModel, models.Model):
 
     def clean(self):
         if self.num_battery_bins is None:
-            self.num_battery_bins = 20 * self.size_kwh / self.size_kw
+            self.num_battery_bins = round(20 * self.size_kwh / self.size_kw)
 
 
 class ERPPVInputs(BaseModel, models.Model):
