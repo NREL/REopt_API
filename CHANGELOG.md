@@ -30,6 +30,8 @@ Classify the change according to the following categories:
 ### Minor Updates
 ##### Fixed
 - Fix array_type enum check in `cross_clean_pv()`(value stored as int not string)
+- Calculate `ERPElectricStorageInputs` **num_battery_bins** default based on battery duration to prevent significant discretization error
+- Set max on `ERPElectricStorageInputs` **num_battery_bins** to limit memory usage
 
 ## v2.12.0
 ### Minor Updates
