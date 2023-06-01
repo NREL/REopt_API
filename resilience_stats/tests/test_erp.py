@@ -48,12 +48,12 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         self.post_sim = os.path.join('resilience_stats', 'tests', 'ERP_sim_post.json')
         self.post_sim_large_stor = os.path.join('resilience_stats', 'tests', 'ERP_sim_large_stor_post.json')
         self.post_sim_only = os.path.join('resilience_stats', 'tests', 'ERP_sim_only_post.json')
-        self.post_sim_long_dur_stor = os.path.join('resilience_stats', 'tests', 'ERP_sim_long_dur_stor_post')
+        self.post_sim_long_dur_stor = os.path.join('resilience_stats', 'tests', 'ERP_sim_long_dur_stor_post.json')
         #for REopt optimization
         self.reopt_base_opt = '/dev/job/'
         self.reopt_base_opt_results = '/dev/job/{}/results'
         self.post_opt = os.path.join('resilience_stats', 'tests', 'ERP_opt_post.json')
-        self.post_opt_long_dur_stor = os.path.join('resilience_stats', 'tests', 'ERP_opt_long_dur_stor_post')
+        self.post_opt_long_dur_stor = os.path.join('resilience_stats', 'tests', 'ERP_opt_long_dur_stor_post.json')
 
     def get_response_opt(self, data):
         return self.api_client.post(self.reopt_base_opt, format='json', data=data)
@@ -87,6 +87,8 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         results_opt = json.loads(resp.content)["outputs"]
 
         post_sim = json.load(open(self.post_sim_long_dur_stor, 'rb'))
+        post_sim["ElectricStorage"]["starting_soc_series_fraction"] = results_opt["ElectricStorage"]["soc_series_fraction"]
+        post_sim["Outage"]["critical_loads_kw"] = results_opt["ElectricLoad"]["critical_load_series_kw"]
         resp = self.get_response_sim(post_sim)
         self.assertHttpCreated(resp)
         r_sim = json.loads(resp.content)
