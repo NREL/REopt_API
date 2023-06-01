@@ -48,11 +48,12 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         self.post_sim = os.path.join('resilience_stats', 'tests', 'ERP_sim_post.json')
         self.post_sim_large_stor = os.path.join('resilience_stats', 'tests', 'ERP_sim_large_stor_post.json')
         self.post_sim_only = os.path.join('resilience_stats', 'tests', 'ERP_sim_only_post.json')
-        
+        self.post_sim_long_dur_stor = os.path.join('resilience_stats', 'tests', 'ERP_sim_long_dur_stor_post')
         #for REopt optimization
         self.reopt_base_opt = '/dev/job/'
         self.reopt_base_opt_results = '/dev/job/{}/results'
         self.post_opt = os.path.join('resilience_stats', 'tests', 'ERP_opt_post.json')
+        self.post_opt_long_dur_stor = os.path.join('resilience_stats', 'tests', 'ERP_opt_long_dur_stor_post')
 
     def get_response_opt(self, data):
         return self.api_client.post(self.reopt_base_opt, format='json', data=data)
@@ -76,28 +77,7 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         )
 
     def test_erp_long_duration_battery(self):
-        post_opt = {
-            "Site": {
-                "longitude": -106.42077256104001,
-                "latitude": 31.810468380036337
-            },
-            "ElectricStorage": {
-                "min_kw": 400,
-                "max_kw": 400,
-                "min_kwh": 40000,
-                "max_kwh": 40000,
-                "soc_min_fraction": 0.8,
-                "soc_init_fraction": 0.9
-            },
-            "ElectricLoad": {
-                "doe_reference_name": "FlatLoad",
-                "annual_kwh": 17520000.0,
-                "critical_load_fraction": 0.2
-            },
-            "ElectricTariff": {
-                "urdb_label": "5ed6c1a15457a3367add15ae"
-            }
-        }
+        post_opt = json.load(open(self.post_opt_long_dur_stor, 'rb'))
         resp = self.get_response_opt(post_opt)
         self.assertHttpCreated(resp)
         r_opt = json.loads(resp.content)
@@ -106,31 +86,7 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         resp = self.get_results_opt(reopt_run_uuid)
         results_opt = json.loads(resp.content)["outputs"]
 
-        post_sim = {
-            "Generator": {
-                "size_kw": 0,
-                "operational_availability": 1.0, 
-                "failure_to_start": 0.0, 
-                "mean_time_to_failure": 10000000000,
-                "fuel_avail_gal": 0
-            },
-            "ElectricStorage": {
-                "size_kw": 400,
-                "size_kwh": 40000,
-                "charge_efficiency": 1,
-                "discharge_efficiency": 1,
-                "operational_availability": 1.0,
-                "minimum_soc_fraction": 0.0,
-                "starting_soc_series_fraction": results_opt["ElectricStorage"]["soc_series_fraction"]
-            },
-            "PV": {
-                "operational_availability": 1.0
-            },
-            "Outage": {
-                "max_outage_duration": 100,
-                "critical_loads_kw": results_opt["ElectricLoad"]["critical_load_series_kw"]
-            }
-        }
+        post_sim = json.load(open(self.post_sim_long_dur_stor, 'rb'))
         resp = self.get_response_sim(post_sim)
         self.assertHttpCreated(resp)
         r_sim = json.loads(resp.content)
