@@ -41,6 +41,8 @@ import copy
 import logging
 import os
 import json
+from ghpghx.models import GHPGHXInputs
+from ghpghx.models import ModelManager as ghpModelManager
 
 log = logging.getLogger(__name__)
 
@@ -5733,7 +5735,7 @@ class GHPInputs(BaseModel, models.Model):
         help_text=("GhpGhx.jl inputs/POST to ghpghx app")
     )
 
-    # TODO do we need this? What would it do? Need to process this into ghpghx_responses...
+    # See clean() for assigning ghpghx_responses with ghpghx_response_uuids from /ghpghx database
     ghpghx_response_uuids = ArrayField(
         models.TextField(
             blank=True
@@ -5876,7 +5878,13 @@ class GHPInputs(BaseModel, models.Model):
 
     def clean(self):
         # perform custom validation here.
-        pass
+        # Get ghpghx_responses from /ghpghx database
+        if self.ghpghx_response_uuids not in [None, []]:
+            self.ghpghx_responses = []
+            for ghp_uuid in self.ghpghx_response_uuids:
+                self.ghpghx_responses.append(ghpModelManager.make_response(ghp_uuid))
+            # Remove this field from the POST because it's only relevant for the API and will throw an error in REopt.jl
+            self.ghpghx_response_uuids = None
 
 class GHPOutputs(BaseModel, models.Model):
     key = "GHPOutputs"
