@@ -6269,6 +6269,13 @@ class GHPInputs(BaseModel, models.Model):
 
     def clean(self):
         # perform custom validation here.
+        error_messages = {}
+        if not self.dict.get("building_sqft"):
+            error_messages["required inputs"] = "Must provide building_sqft to model {}".format(self.key)
+
+        if error_messages:
+            raise ValidationError(error_messages)
+                
         # Get ghpghx_responses from /ghpghx database
         if self.ghpghx_response_uuids not in [None, []]:
             self.ghpghx_responses = []
