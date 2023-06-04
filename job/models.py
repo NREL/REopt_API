@@ -194,6 +194,15 @@ class APIMeta(BaseModel, models.Model):
         help_text="Version number of the Julia package for REopt that is used to solve the problem."
     )
 
+class UserUnlinkedRuns(models.Model):
+    run_uuid = models.UUIDField(unique=True)
+    user_uuid = models.UUIDField(unique=False)
+
+    @classmethod
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
+        obj.save()
+        return obj
 
 class UserProvidedMeta(BaseModel, models.Model):
     """
@@ -333,10 +342,10 @@ class SiteInputs(BaseModel, models.Model):
         help_text="Area of roof in square feet available for PV siting"
     )
     min_resil_time_steps = models.IntegerField(
-        default=0,
         validators=[
             MinValueValidator(0)
         ],
+        null=True, 
         blank=True,
         help_text="The minimum number consecutive timesteps that load must be fully met once an outage begins. "
                     "Only applies to multiple outage modeling using inputs outage_start_time_steps and outage_durations."
@@ -665,7 +674,7 @@ class FinancialInputs(BaseModel, models.Model):
                    "generator(s).")
     )
     value_of_lost_load_per_kwh = models.FloatField(
-        default=100,
+        default=0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1e6)
@@ -678,6 +687,7 @@ class FinancialInputs(BaseModel, models.Model):
                    "apply when modeling a single outage using outage_start_time_step and outage_end_time_step.")
     )
     microgrid_upgrade_cost_fraction = models.FloatField(
+        default=0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -874,7 +884,7 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text=("Cost to make a distributed energy system islandable from the grid. Determined by multiplying the "
             "total capital costs of resultant energy systems from REopt (such as PV and Storage system) with the input "
-            "value for microgrid_upgrade_cost_fraction (which defaults to 0.30).")
+            "value for microgrid_upgrade_cost_fraction (which defaults to 0).")
     )
     initial_capital_costs = models.FloatField(
         null=True, blank=True,
@@ -1913,7 +1923,7 @@ class OutageOutputs(BaseModel, models.Model):
         default=list, blank=True,
         help_text="The maximum outage cost for every outage duration modeled."
     )
-    unserved_load_series = ArrayField(
+    unserved_load_series_kw = ArrayField(
         ArrayField(
             ArrayField(
                 models.FloatField(
@@ -1926,7 +1936,7 @@ class OutageOutputs(BaseModel, models.Model):
         default=list, blank=True,
         help_text="The amount of unserved load in each outage time step for each outage start time and duration. Outage duration changes along the first dimension, outage start time step along the second, and time step in outage along the third."
     )
-    unserved_load_per_outage = ArrayField(
+    unserved_load_per_outage_kwh = ArrayField(
         ArrayField(
             models.FloatField(
                 blank=True,
@@ -1934,40 +1944,220 @@ class OutageOutputs(BaseModel, models.Model):
             default=list, blank=True,
         ),
         default=list, blank=True,
-        help_text="The total unserved load for each outage start time and duration. Outage duration changes along the first dimension and outage start time changes along the second dimention."
+        help_text="The total unserved load for each outage start time and duration. Outage duration changes along the first dimension and outage start time changes along the second dimension."
     )
     microgrid_upgrade_capital_cost = models.FloatField(
         null=True, blank=True,
         help_text="Total capital cost of including technologies in the microgrid."
     )
-    generator_fuel_used_per_outage = ArrayField(
+    storage_microgrid_upgrade_cost = models.FloatField(
+        null=True, blank=True,
+        help_text="Capital cost of including the electric storage system in the microgrid."
+    )
+    storage_discharge_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of storage power discharged in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    pv_microgrid_size_kw = models.FloatField(
+        null=True, blank=True,
+        help_text="Optimal PV capacity included in the microgrid."
+    )
+    pv_microgrid_upgrade_cost = models.FloatField(
+        null=True, blank=True,
+        help_text="Capital cost of including the PV system in the microgrid."
+    )
+    pv_to_storage_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of PV power sent to the battery in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    pv_curtailed_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of PV power curtailed in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    pv_to_load_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of PV power used to meet load in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    generator_microgrid_size_kw = models.FloatField(
+        null=True, blank=True,
+        help_text="Optimal generator capacity included in the microgrid."
+    )
+    generator_microgrid_upgrade_cost = models.FloatField(
+        null=True, blank=True,
+        help_text="Capital cost of including the generator system in the microgrid."
+    )
+    generator_to_storage_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of generator power sent to the battery in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    generator_curtailed_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of generator power curtailed in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    generator_to_load_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of generator power used to meet load in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    generator_fuel_used_per_outage_gal = ArrayField(
         ArrayField(
             models.FloatField(
                 blank=True,
             ),
-            default=list, blank=True,
+            default=list, blank=True
         ),
         default=list, blank=True,
-        help_text="Generator fuel used in each outage modeled. Outage duration changes along the first dimension and outage start time changes along the second dimention."
+        help_text="Generator fuel used in each outage modeled. Outage duration changes along the first dimension and outage start time changes along the second dimension."
     )
-    # Outputs from REopt.jl not implementing API
-    # Some of these are trickier to conclude in api because names aren't fixed. Also skipping some of these detailed dispatch outputs for now.
-    # - `storage_upgraded` Boolean that is true if it is cost optimal to include the storage system in the microgrid.
-    # - `mg_storage_upgrade_cost` The cost to include the storage system in the microgrid.
-    # - `discharge_from_storage_series` Array of storage power discharged in every outage modeled.
-    # - `PV_mg_kw` Optimal microgrid PV capacity. Note that the name `PV` can change based on user provided `PV.name`.
-    # - `PV_upgraded` Boolean that is true if it is cost optimal to include the PV system in the microgrid.
-    # - `mg_PV_upgrade_cost` The cost to include the PV system in the microgrid.
-    # - `mg_PV_to_storage_series` Array of PV power sent to the battery in every outage modeled.
-    # - `mg_PV_curtailed_series` Array of PV curtailed in every outage modeled.
-    # - `mg_PV_to_load_series` Array of PV power used to meet load in every outage modeled.
-    # - `Generator_mg_kw` Optimal microgrid Generator capacity. Note that the name `Generator` can change based on user provided `Generator.name`.
-    # - `Generator_upgraded` Boolean that is true if it is cost optimal to include the Generator in the microgrid.
-    # - `mg_Generator_upgrade_cost` The cost to include the Generator system in the microgrid.
-    # - `mg_Generator_to_storage_series` Array of Generator power sent to the battery in every outage modeled.
-    # - `mg_Generator_curtailed_series` Array of Generator curtailed in every outage modeled.
-    # - `mg_Generator_to_load_series` Array of Generator power used to meet load in every outage modeled.
-    # - `mg_Generator_fuel_used_per_outage` Array of Generator fuel used in every outage modeled.
+    chp_microgrid_size_kw = models.FloatField(
+        null=True, blank=True,
+        help_text="Optimal CHP electric capacity included in the microgrid."
+    )
+    chp_microgrid_upgrade_cost = models.FloatField(
+        null=True, blank=True,
+        help_text="Capital cost of including the CHP system in the microgrid."
+    )
+    chp_to_storage_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of CHP power sent to the battery in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    chp_curtailed_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of CHP power curtailed in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    chp_to_load_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of CHP power used to meet load in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    chp_fuel_used_per_outage_mmbtu = ArrayField(
+        ArrayField(
+            models.FloatField(
+                blank=True,
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text="CHP fuel used in each outage modeled. Outage duration changes along the first dimension and outage start time changes along the second dimension."
+    )
 
 class ElectricTariffOutputs(BaseModel, models.Model):
     key = "ElectricTariffOutputs"
@@ -2747,7 +2937,7 @@ class WindInputs(BaseModel, models.Model):
         default=list, blank=True,
         help_text=("Optional user-defined production factors. Must be normalized to units of kW-AC/kW-DC nameplate, "
                    "representing the AC power (kW) output per 1 kW-DC of system capacity in each time step. "
-                   "The series must be one year (January through December) of hourly, 30-minute, or 15-minute PV "
+                   "The series must be one year (January through December) of hourly, 30-minute, or 15-minute  "
                    "generation data.")
     )
     can_net_meter = models.BooleanField(
@@ -3145,6 +3335,16 @@ class GeneratorInputs(BaseModel, models.Model):
         blank=True,
         null=True,
         help_text="On-site generator fuel available in gallons per year."
+    )
+    fuel_higher_heating_value_kwh_per_gal = models.FloatField(
+        default=40.7,
+        validators=[
+            MinValueValidator(1e-6),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        blank=True,
+        null=True,
+        help_text="Higher heating value of the generator fuel in kWh/gal. Defaults to the HHV of diesel."
     )
     min_turn_down_fraction = models.FloatField(
         validators=[
@@ -5625,6 +5825,197 @@ class CoolingLoadOutputs(BaseModel, models.Model):
     def clean(self):
         pass
 
+class AbsorptionChillerInputs(BaseModel, models.Model):
+    key = "AbsorptionChiller"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="AbsorptionChillerInputs",
+        primary_key=True
+    )
+
+    PRODUCTION_TYPE = models.TextChoices('PRODUCTION_TYPE', (
+        'steam',
+        'hot_water'
+    ))
+
+    thermal_consumption_hot_water_or_steam = models.TextField(
+        blank=True,
+        null=True,
+        choices=PRODUCTION_TYPE.choices,
+        help_text="Boiler thermal production type, hot water or steam"
+    )
+
+    installed_cost_per_ton = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        help_text=("Thermal power-based cost of absorption chiller [$/ton] (3.5 ton to 1 kWt)")
+    )
+    
+    min_ton = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default = 0.0,
+        help_text=("Minimum thermal power size constraint for optimization [ton]")
+    )
+
+    max_ton = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default = MAX_BIG_NUMBER,
+        help_text=("Maximum thermal power size constraint for optimization [ton]")
+    )
+
+    cop_thermal = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        help_text=("Absorption chiller system coefficient of performance - conversion of hot thermal power input "
+                    "to usable cooling thermal energy output")
+    )
+
+    cop_electric = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default=14.1,
+        help_text=("Absorption chiller electric consumption CoP from cooling tower heat rejection - conversion of electric power input "
+                    "to usable cooling thermal energy output")
+    )
+
+    om_cost_per_ton = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        help_text=("Yearly fixed O&M cost [$/ton]")
+    )
+
+    macrs_option_years = models.IntegerField(
+        default=MACRS_YEARS_CHOICES.ZERO,
+        choices=MACRS_YEARS_CHOICES.choices,
+        blank=True,
+        help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
+    )
+
+    macrs_bonus_fraction = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
+    )
+
+    def clean(self):
+        pass
+
+    
+
+
+class AbsorptionChillerOutputs(BaseModel, models.Model):
+    key = "AbsorptionChiller"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="AbsorptionChillerOutputs",
+        primary_key=True
+    )
+
+    size_kw = models.FloatField(
+        null=True, blank=True,
+        help_text="Thermal power capacity of the absorption chiller [kW]"
+    )
+    
+    size_ton = models.FloatField(
+        null=True, blank=True,
+        help_text="Thermal power capacity of the absorption chiller [ton]"
+    )
+
+    thermal_to_storage_series_ton = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        null=True,
+        help_text=("Year one hourly time series of absorption chiller thermal to cold TES [Ton]")
+    )
+
+    thermal_to_load_series_ton = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        null=True,
+        help_text=("Year one hourly time series of absorption chiller thermal to cooling load [Ton]")
+    )
+
+    thermal_consumption_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        null=True,
+        help_text=("Year one hourly time series of absorption chiller electric consumption [kW]")
+    )
+
+    annual_thermal_consumption_mmbtu = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=("Year one absorption chiller electric consumption [kWh]")
+    )
+
+    annual_thermal_production_tonhour = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=("Year one absorption chiller thermal production [Ton Hour")
+    )
+    electric_consumption_series_kw = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        null=True,
+        help_text=("Year one hourly time series of absorption chiller electric consumption [kW]")
+    )
+
+    annual_electric_consumption_kwh = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=("Year one absorption chiller electric consumption [kWh]")
+    )
+
+    def clean(self):
+        pass
+
+
 class GHPInputs(BaseModel, models.Model):
     key = "GHP"
 
@@ -5980,6 +6371,9 @@ def get_input_dict_from_run_uuid(run_uuid:str):
     
     try: d["CHP"] = filter_none_and_empty_array(meta.CHPInputs.dict)
     except: pass    
+
+    try: d["AbsorptionChiller"] = filter_none_and_empty_array(meta.AbsorptionChillerInputs.dict)
+    except: pass  
 
     try: d["GHP"] = filter_none_and_empty_array(meta.GHPInputs.dict)
     except: pass   

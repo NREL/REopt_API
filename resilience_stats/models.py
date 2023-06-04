@@ -294,7 +294,7 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
         help_text=("Electric efficiency of prime generator/CHP unit running at full load.")
     )
 
-    def op_avail(prime_mover, is_chp, size_kw):
+    def op_avail(self, prime_mover, is_chp, size_kw):
         size_class_index = 1 if (
                 prime_mover == "recip_engine" and size_kw > 800
             ) or (
@@ -315,7 +315,7 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
                 }
             }[is_chp][prime_mover][size_class_index]
         
-    def mttf(prime_mover, is_chp, size_kw):
+    def mttf(self, prime_mover, is_chp, size_kw):
         size_class_index = 1 if (
                 prime_mover == "recip_engine" and size_kw > 800
             ) or (
@@ -337,12 +337,15 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
             }[is_chp][prime_mover][size_class_index]
 
     def clean(self):
+        prime_mover = str(self.prime_mover)
+        is_chp = bool(self.is_chp)
+        size_kw = float(self.size_kw)
         if not self.electric_efficiency_half_load:
             self.electric_efficiency_half_load = self.electric_efficiency_full_load
         if not self.operational_availability:
-            self.operational_availability = self.op_avail(self.prime_mover, self.is_chp, self.size_kw)
+            self.operational_availability = self.op_avail(prime_mover, is_chp, size_kw)
         if not self.mean_time_to_failure:
-            self.mean_time_to_failure = self.mttf(self.prime_mover, self.is_chp, self.size_kw)
+            self.mean_time_to_failure = self.mttf(prime_mover, is_chp, size_kw)
         error_messages = {}
         if self.operational_availability is None and self.mean_time_to_failure is None:
             error_messages["required inputs"] = "Must provide operational_availability and mean_time_to_failure to model {} with the specified prime_mover".format(self.key)
@@ -360,8 +363,8 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
 
     def info_dict_with_dependent_defaults(self, prime_mover:str, is_chp:bool, size_kw:float):
         d = self.info_dict(self)
-        d["operational_availability"]["default"] = self.op_avail(prime_mover, is_chp, size_kw)
-        d["mean_time_to_failure"]["default"] = self.mttf(prime_mover, is_chp, size_kw)
+        d["operational_availability"]["default"] = self.op_avail(self, prime_mover, is_chp, size_kw)
+        d["mean_time_to_failure"]["default"] = self.mttf(self, prime_mover, is_chp, size_kw)
         return d
 
 class ERPElectricStorageInputs(BaseModel, models.Model):
@@ -493,8 +496,6 @@ class ERPOutageInputs(BaseModel, models.Model):
         related_name="ERPOutageInputs"
     )
     max_outage_duration = models.IntegerField(
-        blank=True,
-        default=336,
         validators=[
             MinValueValidator(1),
             MaxValueValidator(672),
@@ -704,6 +705,7 @@ def get_erp_input_dict_from_run_uuid(run_uuid:str):
     try: 
         gen = meta.ERPPrimeGeneratorInputs.dict
         gen.pop("prime_mover")
+        gen.pop("is_chp")
 
         # Temp conversions until extend input structure changes to julia
         # convert efficiency to slope/intercept in gen dict

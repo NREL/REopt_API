@@ -56,9 +56,6 @@ from resilience_stats.validators import validate_run_uuid
 from resilience_stats.views import run_outage_sim
 
 
-# POST data:{"run_uuid": UUID, "bau": True}
-
-
 class ERPJob(ModelResource):
 
     class Meta:
@@ -92,7 +89,7 @@ class ERPJob(ModelResource):
 
         meta_dict = {
             "run_uuid": erp_run_uuid,
-            "reopt_version": "0.28.0",
+            "reopt_version": "0.30.0",
             "status": "Validating..."
         }
 
@@ -169,9 +166,15 @@ class ERPJob(ModelResource):
                 ## Outage ##
                 critical_loads_kw = reopt_run_meta.ElectricLoadOutputs.dict["critical_load_series_kw"]
                 update_user_dict_with_values_from_reopt("Outage", {"critical_loads_kw": critical_loads_kw})
-                # TODO: set max_outage_duration based on reopt outage inputs when multiple outage PR merged
-                # if bundle.data["Outage"].get("max_outage_duration", None) is None: 
-                #     bundle.data["Outage"]["max_outage_duration"] = max(reopt_run_meta.ElectricUtilityInputs.dict["outage_durations"])
+                if len(reopt_run_meta.ElectricUtilityInputs.dict["outage_durations"]) > 0:
+                    update_user_dict_with_values_from_reopt("Outage", {
+                        "max_outage_duration": max(reopt_run_meta.ElectricUtilityInputs.dict["outage_durations"])
+                    })
+                if bundle.data.get("Outage", {}).get("max_outage_duration",None) is None:
+                    add_validation_err_msg_and_raise_400_response(
+                        meta_dict, 
+                        "You must provide Outage max_outage_duration or the reopt_run_uuid of an optimization where ElectricUtility outage_durations was provided."
+                    )
 
                 ## Generator ##
                 try:
@@ -184,6 +187,10 @@ class ERPJob(ModelResource):
                 except AttributeError as e: 
                     pass
                 if "Generator" in bundle.data:
+                    if (bundle.data["Generator"].get("electric_efficiency_half_load", None) is None and 
+                        bundle.data["Generator"].get("electric_efficiency_full_load", None) is not None):
+                        bundle.data["Generator"]["electric_efficiency_half_load"] = bundle.data["Generator"]["electric_efficiency_full_load"]
+
                     try:
                         gen_in = reopt_run_meta.GeneratorInputs.dict
                         update_user_dict_with_values_from_reopt(
@@ -210,6 +217,11 @@ class ERPJob(ModelResource):
                 except AttributeError as e: 
                     pass
                 if "PrimeGenerator" in bundle.data:
+                    if (bundle.data["PrimeGenerator"].get("electric_efficiency_half_load", None) is None and 
+                        bundle.data["PrimeGenerator"].get("electric_efficiency_full_load", None) is not None):
+                        bundle.data["PrimeGenerator"]["electric_efficiency_half_load"] = bundle.data["PrimeGenerator"]["electric_efficiency_full_load"]
+
+                    bundle.data.get("PrimeGenerator")
                     try:
                         chp_or_prime_in = reopt_run_meta.CHPInputs.dict
                         update_user_dict_with_values_from_reopt(

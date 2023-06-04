@@ -290,6 +290,7 @@ class InputValidatorTests(TestCase):
         # test mismatched length
         post = copy.deepcopy(outage_post)
         post["ElectricUtility"]["outage_durations"] = [10,20,30,40]
+        post["ElectricUtility"]["outage_probabilities"] = [0.8,0.2]
         post["APIMeta"]["run_uuid"] = uuid.uuid4()
         validator = InputValidator(post)
         validator.clean()
@@ -305,6 +306,7 @@ class InputValidatorTests(TestCase):
 
         # test sum of outage_probabilities != 1
         post = copy.deepcopy(outage_post)
+        post["ElectricUtility"]["outage_durations"] = [10,20]
         post["ElectricUtility"]["outage_probabilities"] = [0.5,0.6]
         post["APIMeta"]["run_uuid"] = uuid.uuid4()
         validator = InputValidator(post)
@@ -313,6 +315,7 @@ class InputValidatorTests(TestCase):
 
         # test missing outage_probabilities
         post = copy.deepcopy(outage_post)
+        post["ElectricUtility"]["outage_durations"] = [10,20]
         post["ElectricUtility"].pop("outage_probabilities")
         post["APIMeta"]["run_uuid"] = uuid.uuid4()
         validator = InputValidator(post)
@@ -321,6 +324,26 @@ class InputValidatorTests(TestCase):
         validator.cross_clean()
         self.assertEquals(validator.models["ElectricUtility"].outage_probabilities, [0.5, 0.5])
         self.assertEquals(validator.is_valid, True)
+
+    def test_pv_tilt_defaults(self):
+        post = copy.deepcopy(self.post)
+        post["APIMeta"]["run_uuid"] = uuid.uuid4()
+        del(post["ElectricStorage"])
+        del(post["CHP"])
+        del(post["PV"]["tilt"])
+        validator = InputValidator(post)
+        validator.clean_fields()
+        validator.clean()
+        validator.cross_clean()
+        self.assertEquals(validator.models["PV"].tilt, 10)
+
+        post["APIMeta"]["run_uuid"] = uuid.uuid4()
+        post["PV"]["array_type"] = 0
+        validator = InputValidator(post)
+        validator.clean_fields()
+        validator.clean()
+        validator.cross_clean()
+        self.assertAlmostEquals(validator.models["PV"].tilt, post["Site"]["latitude"], places=-3)
 
 
 
