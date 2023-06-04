@@ -257,3 +257,18 @@ class SaveToDatabase(REoptError):
             message = "Error saving to database."
         super(SaveToDatabase, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid,
                                               message=message, traceback=debug_msg)
+
+class GHXMaxIterationsError(REoptError):
+    """
+    Catches the case where GHX sizing hits the maximum number of iterations indicating GHP solution may not have converged
+
+    Attributes:
+        message - explanation of the error
+    """
+
+    __name__ = 'GHXMaxIterationsError'
+
+    def __init__(self, task='', run_uuid='', user_uuid=''):
+        message = "The GHX sizing solution did not converge. This particular scenario may be difficult or impossible for the current REopt model to solve. Try adjusting the 'GHX simulation solver initial guess (ft/ton)' variable."
+        super(GHXMaxIterationsError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid,
+                                                message=message, traceback='')

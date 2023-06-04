@@ -19,7 +19,7 @@ else:
 # Note that the app currently has threading issues, so we explicitly want a
 # non-thread worker process model.
 worker_class = "sync"
-threads = 2
+threads = 1
 
 # Log access log details to stdout.
 accesslog = '-'

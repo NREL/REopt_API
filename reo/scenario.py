@@ -49,7 +49,7 @@ from reo.src.techs import PV, Util, Wind, Generator, CHP, Boiler, ElectricChille
 from reo.src import ghp
 from celery import shared_task, Task
 from reo.models import ModelManager
-from reo.exceptions import REoptError, UnexpectedError, LoadProfileError, WindDownloadError, PVWattsDownloadError, RequestError
+from reo.exceptions import REoptError, UnexpectedError, LoadProfileError, WindDownloadError, PVWattsDownloadError, RequestError, GHXMaxIterationsError
 from tastypie.test import TestApiClient
 from reo.utilities import TONHOUR_TO_KWHT, get_climate_zone_and_nearest_city
 from ghpghx.models import GHPGHXInputs
@@ -389,6 +389,8 @@ def setup_scenario(self, run_uuid, data, api_version=1):
                 number_of_ghpghx = len(inputs_dict["Site"]["GHP"]["ghpghx_inputs"])
             for i in range(number_of_ghpghx):
                 ghpghx_post = inputs_dict["Site"]["GHP"]["ghpghx_inputs"][i]
+                hybrid_ghx_sizing_method = ghpghx_post.pop("hybrid_ghx_sizing_method", None)
+                
                 ghpghx_post["latitude"] = inputs_dict["Site"]["latitude"]
                 ghpghx_post["longitude"] = inputs_dict["Site"]["longitude"]
                 # Only SpaceHeating portion of Heating Load gets served by GHP, unless allowed by can_serve_dhw
@@ -413,6 +415,41 @@ def setup_scenario(self, run_uuid, data, api_version=1):
                     ground_k_resp = client.get(f'/dev/ghpghx/ground_conductivity', data=ground_k_inputs)
                     ground_k_response = json.loads(ground_k_resp.content)
                     ghpghx_post["ground_thermal_conductivity_btu_per_hr_ft_f"] = ground_k_response["thermal_conductivity"]
+                
+                # Hybrid
+                # Determine if location is heating or cooling dominated
+                if hybrid_ghx_sizing_method == "Automatic":
+                    determine_heat_cool_post = copy.deepcopy(ghpghx_post)
+                    determine_heat_cool_post["simulation_years"] = 2
+                    determine_heat_cool_post["max_sizing_iterations"] = 1
+
+                    determine_heat_cool_post_resp = client.post('/v1/ghpghx/', data=determine_heat_cool_post)
+                    determine_heat_cool_post_resp_dict = json.loads(determine_heat_cool_post_resp.content)
+                    
+                    determine_heat_cool_uuid = determine_heat_cool_post_resp_dict.get('ghp_uuid')
+                    determine_heat_cool_results_url = "/v1/ghpghx/"+determine_heat_cool_uuid+"/results/"
+                    determine_heat_cool_results_resp = client.get(determine_heat_cool_results_url) 
+                    determine_heat_cool_results_resp_dict = json.loads(determine_heat_cool_results_resp.content)
+                    temp_diff = determine_heat_cool_results_resp_dict["outputs"]["end_of_year_ghx_lft_f"][1] - determine_heat_cool_results_resp_dict["outputs"]["end_of_year_ghx_lft_f"][0]
+
+                    hybrid_sizing_flag = 1.0
+                    if temp_diff > 0:
+                        hybrid_sizing_flag = -2.0
+                    elif temp_diff < 0:
+                        hybrid_sizing_flag = -1.0
+
+                    ghpghx_post["hybrid_sizing_flag"] = hybrid_sizing_flag
+
+                elif hybrid_ghx_sizing_method == "Fractional":
+                    # TODO: Update if default fractional sizing changes
+                    hybrid_ghx_sizing_fraction = ghpghx_post.pop("hybrid_ghx_sizing_fraction", 0.6)
+                    ghpghx_post["hybrid_sizing_flag"] = hybrid_ghx_sizing_fraction
+
+                # Other hybrid inputs
+                ghpghx_post["is_heating_electric"] = False
+                if inputs_dict["Site"]["GHP"]["aux_heater_type"] == "electric":
+                    ghpghx_post["is_heating_electric"] = True
+        
                 # Call /ghpghx endpoint to size GHP and GHX
                 ghpghx_post_resp = client.post('/v1/ghpghx/', data=ghpghx_post)
                 ghpghx_post_resp_dict = json.loads(ghpghx_post_resp.content)
@@ -420,6 +457,12 @@ def setup_scenario(self, run_uuid, data, api_version=1):
                 ghpghx_results_url = "/v1/ghpghx/"+ghpghx_uuid_list[i]+"/results/"
                 ghpghx_results_resp = client.get(ghpghx_results_url)  # same as doing ghpModelManager.make_response(ghp_uuid)
                 ghpghx_results_resp_dict = json.loads(ghpghx_results_resp.content)
+
+                if ghpghx_results_resp_dict["outputs"]["ghx_soln_number_of_iterations"] == ghpghx_results_resp_dict["inputs"]["max_sizing_iterations"]:
+                    ghx_error = GHXMaxIterationsError(task=self.name, run_uuid=run_uuid, user_uuid=inputs_dict.get('user_uuid'))
+                    ghx_error.save_to_db()
+                    raise ghx_error
+
                 ghp_option_list.append(ghp.GHPGHX(dfm=dfm,
                                                     response=ghpghx_results_resp_dict,
                                                     **inputs_dict["Site"]["GHP"]))
@@ -489,6 +532,9 @@ def setup_scenario(self, run_uuid, data, api_version=1):
             e.run_uuid = run_uuid
             e.user_uuid = self.data['inputs']['Scenario'].get('user_uuid')
             e.save_to_db()
+            raise e
+
+        if isinstance(e, GHXMaxIterationsError):
             raise e
 
         if hasattr(e, 'args'):

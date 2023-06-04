@@ -49,13 +49,13 @@
                 "minimum_soc_fraction": 0.0,
                 "operational_availability": 1.0
         },
-        "Generator": {
+        "PrimeGenerator": {
                 "num_generators": 2, 
                 "size_kw": 200,
+                "is_chp": true,
                 "operational_availability": 0.9,
                 "failure_to_start": 0.02,
-                "mean_time_to_failure": 200,
-                "fuel_avail_gal": 1000000000
+                "mean_time_to_failure": 200
         },
         "PV": {
                 "size_kw": 2552,
