@@ -28,15 +28,27 @@ Classify the change according to the following categories:
 
 ## Develop
 ### Minor Updates
+##### Fixed
+- Fix array_type enum check in `cross_clean_pv()`(value stored as int not string)
+
+## v2.12.0
+### Minor Updates
 ##### Added
+- Added `summary` endpoint and `job\views.summary`
+- Added `summary_by_chunk` endpoint and `job\views.summary_by_chunk`
+- Added `unlink` endpoint and `job\views.unlink` along with **UserUnlinkedRuns**
 - Add **GeneratorInputs** field **fuel_higher_heating_value_kwh_per_gal**, which defaults to 40.7 (diesel)
 - Add CHP to ERP testing
 ##### Changed
 - Default **FinancialInputs** field **value_of_lost_load_per_kwh** to zero
 - Default **SiteInputs** field **min_resil_time_steps** to max value in **ElectricUtilityInputs** **outage_durations**
+- Changed the v3/easiur_costs endpoint to call a v3 specific view that uses the REopt julia package's EASIUR functionality instead of calling the v1/v2 easiur_costs view
+- `job\api.py` to save user_uuid and webtool_uuid to **APIMeta** data model for each request
 ##### Fixed
 - A 0-indexing off by one bug in the `peak_load_outage_times` view/endpoint where seasons were defined as starting on 2nd days of months
 - If user specifies **ERPGeneratorInputs**/**ERPPrimeGeneratorInputs** **electric_efficiency_full_load** but not **electric_efficiency_half_load** in ERP post, don't use the REopt **GeneratorInputs**/**CHPInputs** **electric_efficiency_half_load**, instead let **ERPGeneratorInputs**/**ERPPrimeGeneratorInputs** **electric_efficiency_half_load** default to **electric_efficiency_full_load**
+- In **LoadProfileChillerThermal**, add check that user hasn't supplied monthly energy, in addition to checking annual energy, before using electric load to calculate cooling load
+- A couple ERP survival probability calculation fixes by updating to REopt.jl 0.32.1 
 
 ## v2.11.0
 ### Minor Updates
@@ -89,6 +101,11 @@ Classify the change according to the following categories:
    - **OutageOutputs**: **expected_outage_cost**, **max_outage_cost_per_outage_duration**, **unserved_load_series**, **unserved_load_per_outage**, **microgrid_upgrade_capital_cost**, **generator_fuel_used_per_outage**
  - Added test using multiple outage modeling
  - Add /dev/schedule_stats endpoint
+ - In job/ app (v3): added **AbsorptionChillerInputs** model
+- In job/ app (v3): added **AbsorptionChillerOutputs** model
+- In `job/views.py`:
+    - add new input/output models to properly save the inputs/outputs
+    - add `/absorption_chiller_defaults` endpoint which calls the http.jl absorption_chiller_defaults endpoint
 ##### Changed
 - Update REopt.jl to v0.28.0 for job app (/dev -> v3)
 - `/job/chp_defaults` endpoint updated to take optional electric load metrics for non-heating CHP (Prime Generator in UI)
