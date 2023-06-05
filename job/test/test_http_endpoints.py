@@ -73,6 +73,35 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         self.assertEqual(http_response["size_class"], 2)
         self.assertGreater(http_response["chp_size_based_on_avg_heating_load_kw"], 574.419)
 
+    def test_absorption_chiller_defaults(self):
+
+        inputs = {"thermal_consumption_hot_water_or_steam": "hot_water",
+                "load_max_tons": 50
+        }
+
+        # Direct call of the http.jl endpoint /absorption_chiller_defaults
+        julia_host = os.environ.get('JULIA_HOST', "julia")
+        response = requests.get("http://" + julia_host + ":8081/absorption_chiller_defaults/", json=inputs)
+        http_response = response.json()
+
+        # Call to the django view endpoint /absorption_chiller_defaults which calls the http.jl endpoint
+        resp = self.api_client.get(f'/dev/absorption_chiller_defaults', data=inputs)
+        view_response = json.loads(resp.content)
+
+        mismatch = []
+        for k, v in http_response["default_inputs"].items():
+            if v != view_response["default_inputs"][k]:
+                mismatch.append(k)
+        
+        self.assertEqual(mismatch, [])
+
+        # Check the endpoint logic with the expected selection
+        self.assertEqual(http_response["thermal_consumption_hot_water_or_steam"], "hot_water")
+        self.assertEqual(http_response["default_inputs"]["om_cost_per_ton"], 80.0)
+        self.assertEqual(http_response["default_inputs"]["installed_cost_per_ton"], 3066.0)
+        self.assertEqual(http_response["default_inputs"]["cop_thermal"], 0.74)
+        self.assertNotIn("thermal_consumption_hot_water_or_steam", http_response["default_inputs"].keys())
+    
     def test_simulated_load(self):
 
         # Test heating load because REopt.jl separates SpaceHeating and DHW, so had to aggregate for this endpoint
@@ -113,6 +142,50 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         resp = self.api_client.get(f'/v2/simulated_load', data=inputs)
         v2_response = json.loads(resp.content)   
         assert("Error" in v2_response.keys())
+
+    def test_emissions_profile_endpoint(self):
+        # Call to the django view endpoint dev/emissions_profile which calls the http.jl endpoint
+        inputs = {
+            "latitude": 47.606211,
+            "longitude": -122.336052
+        }
+        resp = self.api_client.get(f'/dev/emissions_profile', data=inputs)
+        self.assertHttpOK(resp)
+        view_response = json.loads(resp.content)
+        self.assertEquals(view_response["meters_to_region"], 0.0)
+        self.assertEquals(view_response["region"], "Northwest")
+        self.assertEquals(len(view_response["emissions_factor_series_lb_NOx_per_kwh"]), 8760)
+        inputs = {
+            "latitude": 47.606211,
+            "longitude": 122.336052
+        }
+        resp = self.api_client.get(f'/dev/emissions_profile', data=inputs)
+        self.assertHttpBadRequest(resp)
+        view_response = json.loads(resp.content)
+        self.assertTrue("error" in view_response)
+
+    def test_easiur_endpoint(self):
+        # Call to the django view endpoint dev/easiur_costs which calls the http.jl endpoint
+        inputs = {
+            "latitude": 47.606211,
+            "longitude": -122.336052,
+            "inflation": 0.025
+        }
+        resp = self.api_client.get(f'/dev/easiur_costs', data=inputs)
+        self.assertHttpOK(resp)
+        view_response = json.loads(resp.content)
+        for ekey in ["NOx", "SO2", "PM25"]:
+            for key_format in ["{}_grid_cost_per_tonne", "{}_onsite_fuelburn_cost_per_tonne", "{}_cost_escalation_rate_fraction"]:
+                self.assertTrue(type(view_response[key_format.format(ekey)]) == float)
+        inputs = {
+            "latitude": 47.606211,
+            "longitude": 122.336052,
+            "inflation": 0.025
+        }
+        resp = self.api_client.get(f'/dev/easiur_costs', data=inputs)
+        self.assertHttpBadRequest(resp)
+        view_response = json.loads(resp.content)
+        self.assertTrue("error" in view_response)
 
 # For POSTing to an endpoint which returns a `run_uuid` to later GET the results from the database
 # resp = self.api_client.post('/dev/job/', format='json', data=scenario))

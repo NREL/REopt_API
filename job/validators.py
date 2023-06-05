@@ -31,8 +31,8 @@ import logging
 import pandas as pd
 from job.models import MAX_BIG_NUMBER, APIMeta, ExistingBoilerInputs, UserProvidedMeta, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
     FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs, SpaceHeatingLoadInputs, \
-    DomesticHotWaterLoadInputs, CHPInputs, CoolingLoadInputs, ExistingChillerInputs, HotThermalStorageInputs, ColdThermalStorageInputs, BoilerInputs, \
-    SteamTurbineInputs
+    DomesticHotWaterLoadInputs, CHPInputs, CoolingLoadInputs, ExistingChillerInputs, HotThermalStorageInputs, ColdThermalStorageInputs, \
+    AbsorptionChillerInputs, BoilerInputs, SteamTurbineInputs
 from django.core.exceptions import ValidationError
 from pyproj import Proj
 from typing import Tuple
@@ -104,6 +104,7 @@ class InputValidator(object):
             BoilerInputs,
             HotThermalStorageInputs,
             ColdThermalStorageInputs,
+            AbsorptionChillerInputs,
             SteamTurbineInputs
         )
         self.pvnames = []
@@ -230,7 +231,7 @@ class InputValidator(object):
         """
         def cross_clean_pv(pvmodel):
             if pvmodel.__getattribute__("tilt") == None:
-                if pvmodel.__getattribute__("array_type") == "ROOFTOP_FIXED":
+                if pvmodel.__getattribute__("array_type") == pvmodel.ARRAY_TYPE_CHOICES.ROOFTOP_FIXED:
                     pvmodel.__setattr__("tilt", 10)
                 else:
                     pvmodel.__setattr__("tilt", abs(self.models["Site"].__getattribute__("latitude")))
