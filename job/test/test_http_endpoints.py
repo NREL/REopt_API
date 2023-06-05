@@ -44,7 +44,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         }
         resp = self.api_client.get(f'/v2/chp_defaults', data=inputs_v2)
         v2_response = json.loads(resp.content)
-        self.assertEqual(http_response["size_class"], v2_response["size_class"]+1)
+        self.assertEqual(http_response["size_class"], v2_response["size_class"])
     
     def test_steamturbine_defaults(self):
 
