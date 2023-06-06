@@ -818,25 +818,42 @@ class FinancialInputs(BaseModel, models.Model):
         null=True,
         help_text=("Annual nominal escalation rate of the public health cost of 1 tonne of PM2.5 emissions (as a decimal). The default value is calculated from the EASIUR model for a height of 150m.")
     )
-
-    # boiler_fuel_escalation_rate_fraction = models.FloatField(
-    #     default=0.034,
-    #     validators=[
-    #         MinValueValidator(-1),
-    #         MaxValueValidator(1)
-    #     ],
-    #     blank=True,
-    #     help_text=("Annual nominal boiler fuel cost escalation rate")
-    # )
-    # chp_fuel_escalation_rate_fraction = models.FloatField(
-    #     default=0.034,
-    #     validators=[
-    #         MinValueValidator(-1),
-    #         MaxValueValidator(1)
-    #     ],
-    #     blank=True,
-    #     help_text=("Annual nominal chp fuel cost escalation rate")
-    # )
+    generator_fuel_cost_escalation_rate_fraction = models.FloatField(
+        default=0.027,
+        validators=[
+            MinValueValidator(-1),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text=("Annual nominal boiler fuel cost escalation rate")
+    )    
+    existing_boiler_fuel_escalation_rate_fraction = models.FloatField(
+        default=0.034,
+        validators=[
+            MinValueValidator(-1),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text=("Annual nominal existing boiler fuel cost escalation rate")
+    )
+    boiler_fuel_escalation_rate_fraction = models.FloatField(
+        default=0.034,
+        validators=[
+            MinValueValidator(-1),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text=("Annual nominal boiler fuel cost escalation rate")
+    )
+    chp_fuel_escalation_rate_fraction = models.FloatField(
+        default=0.034,
+        validators=[
+            MinValueValidator(-1),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text=("Annual nominal chp fuel cost escalation rate")
+    )
 
     def clean(self):
         if not self.third_party_ownership:
