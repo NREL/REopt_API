@@ -214,16 +214,22 @@ function chp_defaults(req::HTTP.Request)
             end
         end
     end
-    println(d)  
 
     @info "Getting CHP defaults..."
     data = Dict()
     error_response = Dict()
     try
         d_symb = reoptjl.dictkeys_tosymbols(d)
-        data = reoptjl.get_chp_defaults_prime_mover_size_class(;d_symb...)
+        if haskey(d_symb, :prime_mover) && d_symb[:prime_mover] == "steam_turbine"
+            # delete!(d_symb, :prime_mover)
+            data = reoptjl.get_steam_turbine_defaults_size_class(;
+                    avg_boiler_fuel_load_mmbtu_per_hour=get(d_symb, :avg_boiler_fuel_load_mmbtu_per_hour, nothing),
+                    size_class=get(d_symb, :size_class, nothing))
+        else
+            data = reoptjl.get_chp_defaults_prime_mover_size_class(;d_symb...)
+        end
     catch e
-        @error "Something went wrong in the chp_defaults" exception=(e, catch_backtrace())
+        @error "Something went wrong in the chp_defaults endpoint" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
     end
     if isempty(error_response)
@@ -274,47 +280,6 @@ function absorption_chiller_defaults(req::HTTP.Request)
         return HTTP.Response(200, JSON.json(response))
     else
         @info "An error occured in the absorption_chiller_defaults endpoint"
-        return HTTP.Response(500, JSON.json(error_response))
-    end
-end
-
-# Should this accept all inputs provided in `get_steam_turbine_defaults_size_class` docstring in REopt.jl?
-function steamturbine_defaults(req::HTTP.Request)
-
-    d = JSON.parse(String(req.body))
-    keys = ["avg_boiler_fuel_load_mmbtu_per_hour",
-            "size_class"
-    ]
-    # Process .json inputs and convert to correct type if needed
-    for k in keys
-        if !haskey(d, k)
-            d[k] = nothing
-        elseif !isnothing(d[k])
-            if k == "avg_boiler_fuel_load_mmbtu_per_hour" && typeof(d[k]) == String
-                d[k] = parse(Float64, d[k])
-            elseif k == "size_class" && typeof(d[k]) == String
-                d[k] = parse(Int64, d[k])
-            end
-        end
-    end
-
-    @info "Getting SteamTurbine defaults..."
-    data = Dict()
-    error_response = Dict()
-    try
-        data = reoptjl.get_steam_turbine_defaults_size_class(;avg_boiler_fuel_load_mmbtu_per_hour=d["avg_boiler_fuel_load_mmbtu_per_hour"],
-                                                            size_class=d["size_class"]
-        )
-    catch e
-        @error "Something went wrong in the steamturbine_defaults" exception=(e, catch_backtrace())
-        error_response["error"] = sprint(showerror, e)
-    end
-    if isempty(error_response)
-        @info "SteamTurbine defaults determined."
-		response = data
-        return HTTP.Response(200, JSON.json(response))
-    else
-        @info "An error occured in the steamturbine_defaults endpoint"
         return HTTP.Response(500, JSON.json(error_response))
     end
 end
@@ -409,7 +374,6 @@ HTTP.@register(ROUTER, "POST", "/reopt", reopt)
 HTTP.@register(ROUTER, "POST", "/erp", erp)
 HTTP.@register(ROUTER, "POST", "/ghpghx", ghpghx)
 HTTP.@register(ROUTER, "GET", "/chp_defaults", chp_defaults)
-HTTP.@register(ROUTER, "GET", "/steamturbine_defaults", steamturbine_defaults)
 HTTP.@register(ROUTER, "GET", "/emissions_profile", emissions_profile)
 HTTP.@register(ROUTER, "GET", "/easiur_costs", easiur_costs)
 HTTP.@register(ROUTER, "GET", "/simulated_load", simulated_load)

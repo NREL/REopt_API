@@ -387,32 +387,6 @@ def peak_load_outage_times(request):
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in outage_times_based_on_load_peaks endpoint. Check log for more."}, status=500)
-
-def steamturbine_defaults(request):
-    inputs = {
-        "avg_boiler_fuel_load_mmbtu_per_hour": request.GET.get("avg_boiler_fuel_load_mmbtu_per_hour"),
-        "size_class": request.GET.get("size_class")
-    }
-    try:
-        julia_host = os.environ.get('JULIA_HOST', "julia")
-        http_jl_response = requests.get("http://" + julia_host + ":8081/steamturbine_defaults/", json=inputs)
-        response = JsonResponse(
-            http_jl_response.json()
-        )
-        return response
-    
-    except ValueError as e:
-        return JsonResponse({"Error": str(e.args[0])}, status=500)
-
-    except KeyError as e:
-        return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
-
-    except Exception:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
-                                                                            tb.format_tb(exc_traceback))
-        log.debug(debug_msg)
-        return JsonResponse({"Error": "Unexpected error in steamturbine_defaults endpoint. Check log for more."}, status=500)
     
 def chp_defaults(request):
     inputs = {
