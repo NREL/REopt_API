@@ -4672,12 +4672,12 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         help_text="Existing boiler fuel type, one of natural_gas, landfill_bio_gas, propane, diesel_oil"
     )
 
-    # can_supply_steam_turbine = models.BooleanField(
-    #     default=False,
-    #     blank=True,
-    #     null=True,
-    #     help_text="If the boiler can supply steam to the steam turbine for electric production"
-    # )
+    can_supply_steam_turbine = models.BooleanField(
+        default=False,
+        blank=True,
+        null=True,
+        help_text="If the boiler can supply steam to the steam turbine for electric production"
+    )
 
     # For custom validations within model.
     def clean(self):
