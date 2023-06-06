@@ -5023,7 +5023,7 @@ class SteamTurbineInputs(BaseModel, models.Model):
         help_text="Maximum steam turbine size constraint for optimization"
     )
 
-    ## default values for these fields is determined via steamturbine_defaults returned from REoptInputs() call in http.jl
+    ## default values for these fields are returned from REoptInputs() call in http.jl
     size_class = models.IntegerField(
         null=True,
         choices=SIZE_CLASS_LIST.choices,

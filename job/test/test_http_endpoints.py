@@ -49,16 +49,17 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
     def test_steamturbine_defaults(self):
 
         inputs = {
+            "prime_mover": "steam_turbine",
             "avg_boiler_fuel_load_mmbtu_per_hour": 28.0
         }
 
-        # Direct call of the http.jl endpoint /steamturbine_defaults
+        # Direct call of the http.jl endpoint /chp_defaults
         julia_host = os.environ.get('JULIA_HOST', "julia")
-        response = requests.get("http://" + julia_host + ":8081/steamturbine_defaults/", json=inputs)
+        response = requests.get("http://" + julia_host + ":8081/chp_defaults/", json=inputs)
         http_response = response.json()
 
-        # Call to the django view endpoint /steamturbine_defaults which calls the http.jl endpoint
-        resp = self.api_client.get(f'/dev/steamturbine_defaults', data=inputs)
+        # Call to the django view endpoint /chp_defaults which calls the http.jl endpoint
+        resp = self.api_client.get(f'/dev/chp_defaults', data=inputs)
         view_response = json.loads(resp.content)
 
         mismatch = []
@@ -70,7 +71,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
 
         # Check the endpoint logic with the expected selection
         self.assertEqual(http_response["prime_mover"], "steam_turbine")
-        self.assertEqual(http_response["size_class"], 2)
+        self.assertEqual(http_response["size_class"], 1)
         self.assertGreater(http_response["chp_size_based_on_avg_heating_load_kw"], 574.419)
 
     def test_absorption_chiller_defaults(self):
