@@ -32,6 +32,9 @@ Classify the change according to the following categories:
 - Fix array_type enum check in `cross_clean_pv()`(value stored as int not string)
 - Calculate `ERPElectricStorageInputs` **num_battery_bins** default based on battery duration to prevent significant discretization error
 - Set max on `ERPElectricStorageInputs` **num_battery_bins** to limit memory usage
+- Make time step values returned from peak_load_outage_times endpoint 1-indexed
+- Don't let peak_load_outage_times endpoint return a time step less than 1
+- Fix validation of outage_durations considering that durations include the start time step
 
 ## v2.12.0
 ### Minor Updates
