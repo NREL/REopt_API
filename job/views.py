@@ -361,7 +361,7 @@ def peak_load_outage_times(request):
         if start_not_center_on_peaks: 
             outage_start_time_steps = peaks
         else:
-            outage_start_time_steps = peaks - int(outage_duration / 2)
+            outage_start_time_steps = max(1,peaks - int(outage_duration / 2))
 
         return JsonResponse(
             {"outage_start_time_steps": outage_start_time_steps.tolist()},
