@@ -43,7 +43,6 @@ import os
 
 class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
 
-
     def test_multiple_outages(self):
 
         scenario_file = os.path.join('job', 'test', 'posts', 'outage.json')
