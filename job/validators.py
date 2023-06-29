@@ -411,7 +411,7 @@ class InputValidator(object):
                                                 f"Value is greater than the max allowable ({max_ts})")
 
                 if self.models["ElectricUtility"].outage_durations:
-                    if max_start_time_step_input + max(self.models["ElectricUtility"].outage_durations) > max_ts:
+                    if max_start_time_step_input + max(self.models["ElectricUtility"].outage_durations) - 1 > max_ts:
                         self.add_validation_error("ElectricUtility", "outage_durations",
                                                 f"Value is greater than the max allowable ({max_ts} - {max_start_time_step_input})")
                     if not self.models["Site"].min_resil_time_steps:
@@ -424,9 +424,11 @@ class InputValidator(object):
 
             if len(self.models["CoolingLoad"].thermal_loads_ton) > 0:
                 self.clean_time_series("CoolingLoad", "thermal_loads_ton")
-
-            if len(self.models["CoolingLoad"].per_time_step_fractions_of_electric_load) > 0:
+            elif len(self.models["CoolingLoad"].per_time_step_fractions_of_electric_load) > 0:
                 self.clean_time_series("CoolingLoad", "per_time_step_fractions_of_electric_load")
+            else:  # Using DOE commercial reference buildings
+                if self.models["CoolingLoad"].doe_reference_name == None and not self.models["CoolingLoad"].blended_doe_reference_names:
+                    assign_ref_buildings_from_electric_load(self, "CoolingLoad")                
             
         """
         ExistingBoiler
@@ -495,16 +497,10 @@ class InputValidator(object):
         if "DomesticHotWaterLoad" in self.models.keys():
             self.clean_time_series("DomesticHotWaterLoad", "fuel_loads_mmbtu_per_hour")
 
-            # If empty key is provided, then check if doe_reference_names are provided in ElectricLoad
-            if self.models["DomesticHotWaterLoad"].doe_reference_name == None and not self.models["DomesticHotWaterLoad"].blended_doe_reference_names:
-                if self.models["ElectricLoad"].doe_reference_name != "":
-                    self.models["DomesticHotWaterLoad"].__setattr__("doe_reference_name", self.models["ElectricLoad"].__getattribute__("doe_reference_name"))
-                elif len(self.models["ElectricLoad"].blended_doe_reference_names) > 0:
-                    self.models["DomesticHotWaterLoad"].__setattr__("blended_doe_reference_names", self.models["ElectricLoad"].__getattribute__("blended_doe_reference_names"))
-                    self.models["DomesticHotWaterLoad"].__setattr__("blended_doe_reference_percents", self.models["ElectricLoad"].__getattribute__("blended_doe_reference_percents"))
-                else:
-                    self.add_validation_error("DomesticHotWaterLoad", "doe_reference_name",
-                                              f"Must provide DOE commercial reference building profiles either under SpaceHeatingLoad or ElectricLoad")
+            # If using DOE reference building input(s) (not fuel_load_mmbtu_per_hour), and no reference building(s) provided, assign to electric load building(s)
+            if not self.models["DomesticHotWaterLoad"].fuel_loads_mmbtu_per_hour:
+                if self.models["DomesticHotWaterLoad"].doe_reference_name == None and not self.models["DomesticHotWaterLoad"].blended_doe_reference_names:
+                    assign_ref_buildings_from_electric_load(self, "DomesticHotWaterLoad")
         
         """
         SpaceHeatingLoad
@@ -512,17 +508,21 @@ class InputValidator(object):
         if "SpaceHeatingLoad" in self.models.keys():
             self.clean_time_series("SpaceHeatingLoad", "fuel_loads_mmbtu_per_hour")
 
-            # If empty key is provided, then check if doe_reference_names are provided in ElectricLoad
-            if self.models["SpaceHeatingLoad"].doe_reference_name == None and not self.models["SpaceHeatingLoad"].blended_doe_reference_names:
-                if self.models["ElectricLoad"].doe_reference_name != "":
-                    self.models["SpaceHeatingLoad"].__setattr__("doe_reference_name", self.models["ElectricLoad"].__getattribute__("doe_reference_name"))
-                elif len(self.models["ElectricLoad"].blended_doe_reference_names) > 0:
-                    self.models["SpaceHeatingLoad"].__setattr__("blended_doe_reference_names", self.models["ElectricLoad"].__getattribute__("blended_doe_reference_names"))
-                    self.models["SpaceHeatingLoad"].__setattr__("blended_doe_reference_percents", self.models["ElectricLoad"].__getattribute__("blended_doe_reference_percents"))
-                else:
-                    self.add_validation_error("SpaceHeatingLoad", "doe_reference_name",
-                                              f"Must provide DOE commercial reference building profiles either under SpaceHeatingLoad or ElectricLoad")
+            # If using DOE reference building input(s) (not fuel_load_mmbtu_per_hour), and no reference building(s) provided, assign to electric load building(s)
+            if not self.models["SpaceHeatingLoad"].fuel_loads_mmbtu_per_hour:
+                if self.models["SpaceHeatingLoad"].doe_reference_name == None and not self.models["SpaceHeatingLoad"].blended_doe_reference_names:
+                    assign_ref_buildings_from_electric_load(self, "SpaceHeatingLoad")
         
+        def assign_ref_buildings_from_electric_load(self, load_to_assign):
+            if self.models["ElectricLoad"].doe_reference_name != "":
+                self.models[load_to_assign].__setattr__("doe_reference_name", self.models["ElectricLoad"].__getattribute__("doe_reference_name"))
+            elif len(self.models["ElectricLoad"].blended_doe_reference_names) > 0:
+                self.models[load_to_assign].__setattr__("blended_doe_reference_names", self.models["ElectricLoad"].__getattribute__("blended_doe_reference_names"))
+                self.models[load_to_assign].__setattr__("blended_doe_reference_percents", self.models["ElectricLoad"].__getattribute__("blended_doe_reference_percents"))
+            else:
+                self.add_validation_error(load_to_assign, "doe_reference_name",
+                                        f"Must provide DOE commercial reference building profiles either under {load_to_assign} or ElectricLoad")
+
         """
         Off-grid input keys validation
         """

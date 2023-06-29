@@ -351,17 +351,17 @@ def peak_load_outage_times(request):
             summer_load = critical_load[summer_start:autumn_start]
             autumn_load = critical_load[autumn_start:winter_start]
             peaks = np.array([
-                (np.argmax(winter_load) + winter_start) % 8760, 
-                np.argmax(spring_load) + spring_start, 
-                np.argmax(summer_load) + summer_start, 
-                np.argmax(autumn_load) + autumn_start
+                (np.argmax(winter_load) + winter_start) % 8760 + 1, 
+                np.argmax(spring_load) + spring_start + 1, 
+                np.argmax(summer_load) + summer_start + 1, 
+                np.argmax(autumn_load) + autumn_start + 1
             ])
         else:
-            peaks = np.array([np.argmax(critical_load)])
+            peaks = np.array([np.argmax(critical_load) + 1])
         if start_not_center_on_peaks: 
             outage_start_time_steps = peaks
         else:
-            outage_start_time_steps = peaks - int(outage_duration / 2)
+            outage_start_time_steps = np.maximum(1,peaks - int(outage_duration / 2))
 
         return JsonResponse(
             {"outage_start_time_steps": outage_start_time_steps.tolist()},
