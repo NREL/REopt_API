@@ -901,18 +901,18 @@ def unlink(request, user_uuid, run_uuid):
         err.save_to_db()
         return JsonResponse({"Error": err.message}, status=404)
 
-def emissions_profile(request):
+def avert_emissions_profile(request):
     try:
         inputs = {
             "latitude": request.GET['latitude'], # need to do float() to convert unicode?
-            "longitude": request.GET['longitude']
+            "longitude": request.GET['longitude'],
         }
         julia_host = os.environ.get(
             'JULIA_HOST', 
             "julia"
         )
         http_jl_response = requests.get(
-            "http://" + julia_host + ":8081/emissions_profile/", 
+            "http://" + julia_host + ":8081/avert_emissions_profile/", 
             json=inputs
         )
         response = JsonResponse(

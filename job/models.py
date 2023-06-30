@@ -347,6 +347,7 @@ class SiteInputs(BaseModel, models.Model):
         blank=True,
         help_text="The minimum number consecutive timesteps that load must be fully met once an outage begins. "
                     "Only applies to multiple outage modeling using inputs outage_start_time_steps and outage_durations."
+                    "If no value is provided, will default to max([ElectricUtility].outage_durations)."
     )
     # don't provide mg_tech_sizes_equal_grid_sizes in the API, effectively force it to true (the REopt.jl default)
 

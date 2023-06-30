@@ -116,13 +116,13 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         v2_response = json.loads(resp.content)   
         assert("Error" in v2_response.keys())
 
-    def test_emissions_profile_endpoint(self):
-        # Call to the django view endpoint dev/emissions_profile which calls the http.jl endpoint
+    def test_avert_emissions_profile_endpoint(self):
+        # Call to the django view endpoint dev/avert_emissions_profile which calls the http.jl endpoint
         inputs = {
             "latitude": 47.606211,
             "longitude": -122.336052
         }
-        resp = self.api_client.get(f'/dev/emissions_profile', data=inputs)
+        resp = self.api_client.get(f'/dev/avert_emissions_profile', data=inputs)
         self.assertHttpOK(resp)
         view_response = json.loads(resp.content)
         self.assertEquals(view_response["meters_to_region"], 0.0)
@@ -132,7 +132,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
             "latitude": 47.606211,
             "longitude": 122.336052
         }
-        resp = self.api_client.get(f'/dev/emissions_profile', data=inputs)
+        resp = self.api_client.get(f'/dev/avert_emissions_profile', data=inputs)
         self.assertHttpBadRequest(resp)
         view_response = json.loads(resp.content)
         self.assertTrue("error" in view_response)

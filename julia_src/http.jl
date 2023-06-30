@@ -265,7 +265,7 @@ function absorption_chiller_defaults(req::HTTP.Request)
     end
 end
 
-function emissions_profile(req::HTTP.Request)
+function avert_emissions_profile(req::HTTP.Request)
     d = JSON.parse(String(req.body))
     @info "Getting emissions profile..."
     data = Dict()
@@ -273,7 +273,7 @@ function emissions_profile(req::HTTP.Request)
     try
 		latitude = typeof(d["latitude"]) == String ? parse(Float64, d["latitude"]) : d["latitude"]
 		longitude = typeof(d["longitude"]) == String ? parse(Float64, d["longitude"]) : d["longitude"]
-        data = reoptjl.emissions_profiles(;latitude=latitude, longitude=longitude, time_steps_per_hour=1)
+        data = reoptjl.avert_emissions_profiles(;latitude=latitude, longitude=longitude, time_steps_per_hour=1)
         if haskey(data, "error")
             @info "An error occured getting the emissions data"
             return HTTP.Response(400, JSON.json(data))
@@ -355,7 +355,7 @@ HTTP.@register(ROUTER, "POST", "/reopt", reopt)
 HTTP.@register(ROUTER, "POST", "/erp", erp)
 HTTP.@register(ROUTER, "POST", "/ghpghx", ghpghx)
 HTTP.@register(ROUTER, "GET", "/chp_defaults", chp_defaults)
-HTTP.@register(ROUTER, "GET", "/emissions_profile", emissions_profile)
+HTTP.@register(ROUTER, "GET", "/avert_emissions_profile", avert_emissions_profile)
 HTTP.@register(ROUTER, "GET", "/easiur_costs", easiur_costs)
 HTTP.@register(ROUTER, "GET", "/simulated_load", simulated_load)
 HTTP.@register(ROUTER, "GET", "/absorption_chiller_defaults", absorption_chiller_defaults)
