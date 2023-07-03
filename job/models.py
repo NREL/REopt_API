@@ -3271,7 +3271,7 @@ class GeneratorInputs(BaseModel, models.Model):
         help_text="Maximum diesel generator size constraint for optimization. Set to zero to disable PV"
     )
     installed_cost_per_kw = models.FloatField(
-        default=500,
+        default=650,
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(1.0e5)
