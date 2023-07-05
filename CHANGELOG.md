@@ -26,10 +26,11 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop
-### Patches
-- Update `Generator` **installed_cost_per_kw** from 500 to 650 if **only_runs_during_grid_outage** is _true_ or 800 if _false_
-- Add `test_other_conditional_inputs` method in `job/test/test_validator.py` to test inputs with defaults or overrides based on other input values within the same model
+## Develop v2.14.0
+### Minor Updates
+##### Fixed
+- In job/ app (v3), updated `Generator` **installed_cost_per_kw** from 500 to 650 if **only_runs_during_grid_outage** is _true_ or 800 if _false_
+- Added `test_other_conditional_inputs` method in `job/test/test_validator.py` to test inputs with defaults or overrides based on other input values within the same model
 
 ## v2.13.0
 ### Minor Updates
