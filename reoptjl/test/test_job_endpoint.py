@@ -41,7 +41,7 @@ logging.disable(logging.CRITICAL)
 import os
 
 
-class TestReoptjlEndpoint(ResourceTestCaseMixin, TransactionTestCase):
+class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
 
 
     def test_multiple_outages(self):
