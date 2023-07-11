@@ -6,4 +6,6 @@ python checkdb.py
 
 python manage.py showmigrations --plan
 
+python manage.py rename_app job reoptjl
+
 python manage.py migrate
