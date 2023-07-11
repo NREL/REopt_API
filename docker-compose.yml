@@ -43,7 +43,8 @@ services:
       dockerfile: Dockerfile
     image: base-api-image
     command:  >
-      "python manage.py migrate
+      "python manage.py rename_app job reoptjl --noinput
+      && python manage.py migrate --noinput
       && /opt/reopt/bin/wait-for-it.bash -t 0 julia:8081 -- python manage.py runserver 0.0.0.0:8000"
     environment:
       - APP_ENV=local

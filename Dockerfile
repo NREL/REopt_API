@@ -15,6 +15,7 @@ COPY . /opt/reopt
 # Install python packages
 WORKDIR /opt/reopt
 RUN ["pip", "install", "-r", "requirements.txt"]
+RUN ["python3", "-m", "pip", "install", "--extra-index-url", "https://github.com/tonioo/django-rename-app/django-rename-app@10c87d62bfc14853379f6a0505f53ba4532848ab/","django-rename-app"]
 
 EXPOSE 8000
 ENTRYPOINT ["/bin/bash", "-c"]
