@@ -58,7 +58,7 @@ def make_error_resp(msg):
 
 def help(request):
     """
-    used for reoptjl/inputs. keeping the help endpoint behavior from v1
+    used for job/inputs. keeping the help endpoint behavior from v1
     """
     try:
         d = dict()
@@ -91,9 +91,9 @@ def help(request):
 # TODO document inputs and outputs endpoints in Analysis wiki once deployed
 def inputs(request):
     """
-    Served at host/reoptjl/inputs
+    Served at host/job/inputs
     :param request: 
-    :return: JSON response with all reoptjl inputs
+    :return: JSON response with all job inputs
     """
     resp = help(request)
     return resp
@@ -101,8 +101,8 @@ def inputs(request):
 
 def outputs(request):
     """
-    Served at host/reoptjl/outputs
-    :return: JSON response with all reoptjl outputs
+    Served at host/job/outputs
+    :return: JSON response with all job outputs
     """
 
     try:
@@ -134,7 +134,7 @@ def outputs(request):
 
 def results(request, run_uuid):
     """
-    results endpoint for reoptjls
+    results endpoint for reoptjl jobs
     """
     try:
         uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
