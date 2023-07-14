@@ -137,6 +137,8 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         view_response = json.loads(resp.content)
         self.assertTrue("error" in view_response)
 
+    ## TODO: test cambium_emissions_profile_endpoint(self)
+
     def test_easiur_endpoint(self):
         # Call to the django view endpoint dev/easiur_costs which calls the http.jl endpoint
         inputs = {

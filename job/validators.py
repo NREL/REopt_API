@@ -416,6 +416,9 @@ class InputValidator(object):
                                                 f"Value is greater than the max allowable ({max_ts} - {max_start_time_step_input})")
                     if not self.models["Site"].min_resil_time_steps:
                         self.models["Site"].min_resil_time_steps = max(self.models["ElectricUtility"].outage_durations)
+            if self.models["ElectricUtility"].__getattribute__("cambium_levelization_years") == None:
+                self.models["ElectricUtility"].cambium_levelization_years = self.models["Financial"].analysis_years
+
         
         """
         CoolingLoad

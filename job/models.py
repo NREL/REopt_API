@@ -46,7 +46,7 @@ log = logging.getLogger(__name__)
 
 """
 Guidance:
-- start all Model fields with required fields (do not need to include `blank` b/c the default value of blank is False)
+- start all Model fields with required fields (do not need to include `blank` b/c the default value of blank is False. Set blank=True to allow field to be blank)
 - TextField and CharField should not have null=True
 - description: use square brackets for units, eg. [dollars per kWh]
 - Output models need to have null=True, blank=True for cases when results are not generated 
@@ -1172,21 +1172,18 @@ class ElectricLoadInputs(BaseModel, models.Model):
                    )
     )
     loads_kw_is_net = models.BooleanField(
-        null=True,
         blank=True,
         default=True,
         help_text=("If there is existing PV, must specify whether provided load is the net load after existing PV or "
                    "not.")
     )
     critical_loads_kw_is_net = models.BooleanField(
-        null=True,
         blank=True,
         default=False,
         help_text=("If there is existing PV, must specify whether provided load is the net load after existing PV or "
                    "not.")
     )
     critical_load_fraction = models.FloatField(
-        null=True,
         blank=True,
         default = 0.5,
         validators=[
@@ -1650,14 +1647,50 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Upper limit on the total capacity of technologies that can participate in net metering agreement."
     )
-    emissions_region = models.TextField(
+    allow_simultaneous_export_import = models.BooleanField(
         blank=True,
-        help_text=("Name of the AVERT emissions region to use. Options are: "
-                "'California', 'Central', 'Florida', 'Mid-Atlantic', 'Midwest', 'Carolinas', "
-                "'New England', 'Northwest', 'New York', 'Rocky Mountains', 'Southeast', 'Southwest', "
-                "'Tennessee', 'Texas', 'Alaska', 'Hawaii (except Oahu)', 'Hawaii (Oahu)'. "
-                "If emissions_factor_series_lb_<pollutant>_per_kwh inputs are not provided, "
-                "emissions_region overrides latitude and longitude in determining emissions factors.")
+        default = True,
+        help_text=("If true the site has two meters (in effect).")
+    )
+    cambium_scenario = models.TextField(
+        blank=True,
+        default = "Mid-case",
+        help_text=("Cambium Scenario for evolution of electricity sector (see Cambium documentation for descriptions)."
+                   "Options: ['Mid-case', 'Low Renewable Energy and Battery Costs', 'High Renewable Energy and Battery Costs', 'Electricifcation', 'Low Natural Gas Price', 'High Natural Gas Price', 'Mid-case with 95% Decarbonization by 2050', 'Mid-case with 100% Decarbonization by 2035', 'Mid-case (with tax credit phaseout)', 'Low Renewable Energy and Battery Costs (with tax credit phaseout)']")
+    )
+    cambium_location_type = models.TextField(
+        blank=True,
+        default = "States",
+        help_text=("Geographic boundary at which emissions are calculated. Options: ['Nations', 'GEA Regions', 'States', 'Balancing Areas'].")
+    )
+    cambium_metric_col = models.TextField(
+        blank=True,
+        default = "lrmer_co2e",
+        help_text=("Emissions metric used. Default is Long-run marginal emissions rate for CO2-equivalant, combined combustion and pre-combustion emissions rates. Options: See metric definitions and names in the Cambium documentation.")
+    )
+    cambium_start_year = models.IntegerField(
+        default=2024,
+        validators=[
+            MinValueValidator(2023),
+            MaxValueValidator(2050)
+        ],
+        blank=True,
+        help_text="First year of operation of system. Emissions will be levelized starting in this year for the duration of cambium_levelization_years."
+    )
+    cambium_levelization_years = models.IntegerField(
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(1000)
+        ],
+        blank=True,
+        null=True,
+        help_text=("Expected lifetime or analysis period of the intervention being studied. "
+                    "Emissions will be averaged over this period. Default: analysis_years (from Financial struct)")
+    )
+    co2_from_avert = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text="Default is to use Cambium data for CO2 grid emissions. Set to `true` to instead use data from the EPA's AVERT database. "
     )
     emissions_factor_series_lb_CO2_per_kwh = ArrayField(
         models.FloatField(
@@ -1665,6 +1698,24 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         ),
         default=list, blank=True,
         help_text=("CO2 emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.")
+    )
+    emissions_factor_CO2_decrease_fraction = models.FloatField(
+        default=0.01174,
+        validators=[
+            MinValueValidator(-1),
+            MaxValueValidator(1)
+        ],
+        null=True, blank=True,
+        help_text="Annual percent decrease in the total annual CO2 marginal emissions rate of the grid. A negative value indicates an annual increase."
+    )
+    avert_emissions_region = models.TextField(
+        blank=True,
+        help_text=("Name of the AVERT emissions region to use. Options are: "
+                "'California', 'Central', 'Florida', 'Mid-Atlantic', 'Midwest', 'Carolinas', "
+                "'New England', 'Northwest', 'New York', 'Rocky Mountains', 'Southeast', 'Southwest', "
+                "'Tennessee', 'Texas', 'Alaska', 'Hawaii (except Oahu)', 'Hawaii (Oahu)'. "
+                "If emissions_factor_series_lb_<pollutant>_per_kwh inputs are not provided, "
+                "avert_emissions_region overrides latitude and longitude in determining emissions factors.")
     )
     emissions_factor_series_lb_NOx_per_kwh = ArrayField(
         models.FloatField(
@@ -1687,15 +1738,7 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         default=list, blank=True,
         help_text=("PM2.5 emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.")
     )
-    emissions_factor_CO2_decrease_fraction = models.FloatField(
-        default=0.01174,
-        validators=[
-            MinValueValidator(-1),
-            MaxValueValidator(1)
-        ],
-        null=True, blank=True,
-        help_text="Annual percent decrease in the total annual CO2 marginal emissions rate of the grid. A negative value indicates an annual increase."
-    )
+    
     emissions_factor_NOx_decrease_fraction = models.FloatField(
         default=0.01174,
         validators=[
@@ -1723,8 +1766,6 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Annual percent decrease in the total annual PM2.5 marginal emissions rate of the grid. A negative value indicates an annual increase."
     )
-
-    # TODO add: allow_simultaneous_export_import, multiple outages inputs, emissions inputs
 
     def clean(self):
         error_messages = {}
@@ -1892,14 +1933,21 @@ class ElectricUtilityOutputs(BaseModel, models.Model):
                     "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
                     "Otherwise, it accounts for emissions offset from any export to the grid.")
     )
-    emissions_region = models.TextField(
+    avert_emissions_region = models.TextField(
         blank=True,
-        help_text=("Name of the AVERT emissions region used. Determined from site longitude and latitude if "
-                "emissions_region and emissions_factor_series_lb_<pollutant>_per_kwh inputs were not provided.")
+        help_text=("Name of the AVERT emissions region. Determined from site longitude and latitude if "
+                "avert_emissions_region and emissions_factor_series_lb_<pollutant>_per_kwh inputs were not provided. "
+                "Used to populate health emissions factors by default and climate emissions factors if co2_from_avert is set to true.")
     )
-    distance_to_emissions_region_meters = models.FloatField(
+    distance_to_avert_emissions_region_meters = models.FloatField(
         null=True, blank=True,
         help_text=("Distance in meters from the site to the nearest AVERT emissions region.")
+    )
+    cambium_emissions_region = models.TextField(
+        blank=True,
+        help_text=("Name of the Cambium emissions region used for climate emissions for grid electricity. " 
+                   "Determined from site longitude and latitude and the cambium_location_type if "
+                   "custom emissions_factor_series_lb_CO2_per_kwh not provided and co2_from_avert is false.")
     )
 
 class OutageOutputs(BaseModel, models.Model):
