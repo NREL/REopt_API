@@ -3272,15 +3272,15 @@ class GeneratorInputs(BaseModel, models.Model):
         help_text="Maximum diesel generator size constraint for optimization. Set to zero to disable PV"
     )
     installed_cost_per_kw = models.FloatField(
-        default=500,
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(1.0e5)
         ],
         blank=True,
+        null=True,
         help_text="Installed diesel generator cost in $/kW"
     )
-    om_cost_per_kw = models.FloatField(
+    om_cost_per_kw = models.FloatField( #depends on Settings.off_grid_flag
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(1.0e3)
@@ -3602,6 +3602,8 @@ class GeneratorInputs(BaseModel, models.Model):
     )
 
     def clean(self):
+        if not self.installed_cost_per_kw:
+            self.installed_cost_per_kw = 650.0 if self.only_runs_during_grid_outage else 800.0
         if not self.electric_efficiency_half_load:
             self.electric_efficiency_half_load = self.electric_efficiency_full_load
 

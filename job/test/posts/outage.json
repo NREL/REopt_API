@@ -13,6 +13,7 @@
         "outage_probabilities": [1]
     },
     "Generator": {
+        "installed_cost_per_kw": 500,
         "min_kw": 1736.84,
         "max_kw": 1736.84,
         "min_turn_down_fraction": 0.0,

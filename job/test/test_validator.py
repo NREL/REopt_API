@@ -33,6 +33,7 @@ import copy
 import uuid
 from django.test import TestCase
 from job.validators import InputValidator
+from job.models import FUEL_DEFAULTS
 
 
 class InputValidatorTests(TestCase):
@@ -178,8 +179,7 @@ class InputValidatorTests(TestCase):
         self.assertAlmostEqual(validator.models["Generator"].replacement_year, 7)
         self.assertAlmostEqual(validator.models["Generator"].replace_cost_per_kw, 200.0)
 
-    def existing_boiler_validation(self):
-
+    def test_existing_boiler_validation(self):
         """
         Validate clean, cross-clean methods are working as expected
         """
@@ -345,7 +345,46 @@ class InputValidatorTests(TestCase):
         validator.cross_clean()
         self.assertAlmostEquals(validator.models["PV"].tilt, post["Site"]["latitude"], places=-3)
 
+    def test_other_conditional_defaults(self):
+        """
+        Validate defaults that are based on other inputs in the same model are set properly in clean method
+        """
+        # Remove/change inputs that we want to check defaulting of
+        post_file = os.path.join('job', 'test', 'posts', 'all_inputs_test.json')
+        post = json.load(open(post_file, 'r'))
+        post["APIMeta"] = {"run_uuid": uuid.uuid4()}
 
+        post["ElectricLoad"]["year"] = 2020
+        post["SpaceHeatingLoad"]["year"] = 2020
+        #TODO: uncomment when CoolingLoad added to all_inputs_test.json
+        # post["CoolingLoad"]["year"] = 2020
+        post["ElectricUtility"]["outage_durations"] = [10,20]
+        del(post["ElectricUtility"]["outage_probabilities"])
+        del(post["Financial"]["owner_tax_rate_fraction"])
+        del(post["Financial"]["owner_discount_rate_fraction"])
+        del(post["Generator"]["installed_cost_per_kw"])
+        #TODO: uncomment when CHP added to all_inputs_test.json
+        # del(post["CHP"]["electric_efficiency_half_load"])
+        # del(post["CHP"]["emissions_factor_lb_CO2_per_mmbtu"])        
+        del(post["ExistingBoiler"]["emissions_factor_lb_CO2_per_mmbtu"])        
+        
+        # Create validator and call clean method
+        validator = InputValidator(post)
+        validator.clean_fields()
+        validator.clean()
 
+        # Check conditional defaults
+        self.assertEqual(validator.models["ElectricLoad"].year, 2017)
+        self.assertEqual(validator.models["ElectricLoad"].year, 2017)
+        #TODO: uncomment when CoolingLoad added to all_inputs_test.json
+        # self.assertEqual(validator.models["CoolingLoad"].year, 2017)
+        self.assertEqual(validator.models["ElectricUtility"].outage_probabilities, [0.5,0.5])
+        self.assertEqual(validator.models["Financial"].owner_tax_rate_fraction, post["Financial"]["offtaker_tax_rate_fraction"])
+        self.assertEqual(validator.models["Financial"].owner_discount_rate_fraction, post["Financial"]["offtaker_discount_rate_fraction"])
+        self.assertEqual(validator.models["Generator"].installed_cost_per_kw, 650)
+        #TODO: uncomment when CHP added to all_inputs_test.json
+        # self.assertEqual(validator.models["CHP"].electric_efficiency_half_load, post["CHP"]["electric_efficiency_full_load"])
+        # self.assertEqual(validator.models["CHP"].emissions_factor_lb_CO2_per_mmbtu, FUEL_DEFAULTS[post["CHP"]["fuel_type"]])
+        self.assertEqual(validator.models["ExistingBoiler"].emissions_factor_lb_CO2_per_mmbtu, FUEL_DEFAULTS["emissions_factor_lb_CO2_per_mmbtu"][post["ExistingBoiler"]["fuel_type"]])
 
 
