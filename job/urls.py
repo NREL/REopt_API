@@ -39,6 +39,7 @@ urlpatterns = [
     re_path(r'^chp_defaults/?$', views.chp_defaults),
     re_path(r'^absorption_chiller_defaults/?$', views.absorption_chiller_defaults),
     re_path(r'^avert_emissions_profile/?$', views.avert_emissions_profile),
+    re_path(r'^cambium_emissions_profile/?$', views.cambium_emissions_profile),
     re_path(r'^easiur_costs/?$', views.easiur_costs),
     re_path(r'^simulated_load/?$', views.simulated_load),
     re_path(r'^user/(?P<user_uuid>[0-9a-f-]+)/summary/?$', views.summary),

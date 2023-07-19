@@ -120,7 +120,8 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         # Call to the django view endpoint dev/avert_emissions_profile which calls the http.jl endpoint
         inputs = {
             "latitude": 47.606211,
-            "longitude": -122.336052
+            "longitude": -122.336052,
+            "load_year": 2021
         }
         resp = self.api_client.get(f'/dev/avert_emissions_profile', data=inputs)
         self.assertHttpOK(resp)
@@ -130,7 +131,8 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         self.assertEquals(len(view_response["emissions_factor_series_lb_NOx_per_kwh"]), 8760)
         inputs = {
             "latitude": 47.606211,
-            "longitude": 122.336052
+            "longitude": 122.336052,
+            "load_year": 2022
         }
         resp = self.api_client.get(f'/dev/avert_emissions_profile', data=inputs)
         self.assertHttpBadRequest(resp)

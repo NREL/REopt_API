@@ -1687,6 +1687,11 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         help_text=("Expected lifetime or analysis period of the intervention being studied. "
                     "Emissions will be averaged over this period. Default: analysis_years (from Financial struct)")
     )
+    cambium_grid_level = models.TextField(
+        blank=True,
+        default = "enduse",
+        help_text=("Impacts grid climate emissions calculation. Options: enduse or busbar. Busbar refers to point where bulk generating stations connect to grid; enduse refers to point of consumption (includes distribution loss rate).")
+    )
     co2_from_avert = models.BooleanField(
         default=False,
         blank=True,

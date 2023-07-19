@@ -267,25 +267,64 @@ end
 
 function avert_emissions_profile(req::HTTP.Request)
     d = JSON.parse(String(req.body))
-    @info "Getting emissions profile..."
+    @info "Getting AVERT emissions profiles..."
     data = Dict()
     error_response = Dict()
     try
 		latitude = typeof(d["latitude"]) == String ? parse(Float64, d["latitude"]) : d["latitude"]
 		longitude = typeof(d["longitude"]) == String ? parse(Float64, d["longitude"]) : d["longitude"]
-        data = reoptjl.avert_emissions_profiles(;latitude=latitude, longitude=longitude, time_steps_per_hour=1)
+        load_year = typeof(d["load_year"]) == String ? parse(Int, d["load_year"]) : d["load_year"]
+        data = reoptjl.avert_emissions_profiles(;latitude=latitude, longitude=longitude, time_steps_per_hour=1, load_year=load_year)
         if haskey(data, "error")
-            @info "An error occured getting the emissions data"
+            @info "An error occured getting the AVERT emissions data"
             return HTTP.Response(400, JSON.json(data))
         end
     catch e
-        @error "Something went wrong getting the emissions data" exception=(e, catch_backtrace())
+        @error "Something went wrong getting the AVERT emissions data" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
         return HTTP.Response(500, JSON.json(error_response))
     end
-    @info "Emissions profile determined."
+    @info "AVERT emissions profiles determined."
     return HTTP.Response(200, JSON.json(data))
 end
+
+function cambium_emissions_profile(req::HTTP.Request)
+    d = JSON.parse(String(req.body))
+    @info "Getting Cambium emissions profile..."
+    data = Dict()
+    error_response = Dict()
+    try
+		
+        latitude = typeof(d["latitude"]) == String ? parse(Float64, d["latitude"]) : d["latitude"]
+		longitude = typeof(d["longitude"]) == String ? parse(Float64, d["longitude"]) : d["longitude"]
+        start_year = typeof(d["start_year"]) == String ? parse(Int, d["start_year"]) : d["start_year"]
+        lifetime = typeof(d["lifetime"]) == String ? parse(Int, d["lifetime"]) : d["lifetime"]
+        load_year = typeof(d["load_year"]) == String ? parse(Int, d["load_year"]) : d["load_year"]
+
+        data = reoptjl.cambium_emissions_profile(;scenario= d["scenario"],
+                                                location_type = d["location_type"],  
+                                                latitude=latitude, 
+                                                longitude=longitude, 
+                                                start_year=start_year,
+                                                lifetime=lifetime,
+                                                metric_col=d["metric_col"],
+                                                grid_level=d["grid_level"],
+                                                time_steps_per_hour=1, 
+                                                load_year=load_year
+                                                )
+        if haskey(data, "error")
+            @info "An error occured getting the Cambium emissions data"
+            return HTTP.Response(400, JSON.json(data))
+        end
+    catch e
+        @error "Something went wrong getting the Cambium emissions data" exception=(e, catch_backtrace())
+        error_response["error"] = sprint(showerror, e)
+        return HTTP.Response(500, JSON.json(error_response))
+    end
+    @info "Cambium emissions profile determined."
+    return HTTP.Response(200, JSON.json(data))
+end
+
 
 function easiur_costs(req::HTTP.Request)
     d = JSON.parse(String(req.body))
