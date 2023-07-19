@@ -139,7 +139,31 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         view_response = json.loads(resp.content)
         self.assertTrue("error" in view_response)
 
-    ## TODO: test cambium_emissions_profile_endpoint(self)
+    def test_cambium_emissions_profile_endpoint(self):
+        # Call to the django view endpoint dev/cambium_emissions_profile which calls the http.jl endpoint
+        inputs = {
+            "load_year": 2021,
+            "scenario": "Electricifcation",
+            "location_type": "GEA Regions", 
+            "latitude": 47.606211, # Seattle 
+            "longitude": -122.336052, # Seattle 
+            "start_year": 2025,
+            "lifetime": 25,
+            "metric_col": "lrmer_co2_c",
+            "grid_level": "enduse",
+            "load_year": 2018
+        }
+        resp = self.api_client.get(f'/dev/cambium_emissions_profile', data=inputs)
+        self.assertHttpOK(resp)
+        view_response = json.loads(resp.content)
+        self.assertEquals(view_response["metric_col"], "lrmer_co2_c")
+        self.assertEquals(view_response["location"], "NWPPc") 
+        self.assertEquals(len(view_response["emissions_factor_series_lb_CO2_per_kwh"]), 8760)
+        inputs["longitude"] = 122.336052 # China
+        resp = self.api_client.get(f'/dev/cambium_emissions_profile', data=inputs)
+        self.assertHttpBadRequest(resp) # TODO: check this
+        view_response = json.loads(resp.content)
+        self.assertTrue("error" in view_response)
 
     def test_easiur_endpoint(self):
         # Call to the django view endpoint dev/easiur_costs which calls the http.jl endpoint
