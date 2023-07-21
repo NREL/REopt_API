@@ -1942,7 +1942,9 @@ class ElectricUtilityOutputs(BaseModel, models.Model):
         blank=True,
         help_text=("Name of the AVERT emissions region. Determined from site longitude and latitude if "
                 "avert_emissions_region and emissions_factor_series_lb_<pollutant>_per_kwh inputs were not provided. "
-                "Used to populate health emissions factors by default and climate emissions factors if co2_from_avert is set to true.")
+                "Used to populate health emissions factors by default and climate emissions factors if co2_from_avert is set to true."
+                "Can be one of: [California', 'Central', 'Florida', 'Mid-Atlantic', 'Midwest', 'Carolinas', 'New England', "
+                " 'Northwest', 'New York', 'Rocky Mountains', 'Southeast', 'Southwest', 'Tennessee', 'Texas','Alaska', 'Hawaii (except Oahu)', 'Hawaii (Oahu)'] ")
     )
     distance_to_avert_emissions_region_meters = models.FloatField(
         null=True, blank=True,
