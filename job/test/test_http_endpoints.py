@@ -126,8 +126,8 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         resp = self.api_client.get(f'/dev/avert_emissions_profile', data=inputs)
         self.assertHttpOK(resp)
         view_response = json.loads(resp.content)
-        self.assertEquals(view_response["meters_to_region"], 0.0)
-        self.assertEquals(view_response["region"], "Northwest")
+        self.assertEquals(view_response["avert_meters_to_region"], 0.0)
+        self.assertEquals(view_response["avert_region"], "Northwest")
         self.assertEquals(len(view_response["emissions_factor_series_lb_NOx_per_kwh"]), 8760)
         inputs = {
             "latitude": 47.606211,
