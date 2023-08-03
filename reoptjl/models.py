@@ -1705,13 +1705,12 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         help_text=("CO2 emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.")
     )
     emissions_factor_CO2_decrease_fraction = models.FloatField(
-        default=0.01174,
         validators=[
-            MinValueValidator(-1),
-            MaxValueValidator(1)
+            MinValueValidator(-3),
+            MaxValueValidator(3)
         ],
         null=True, blank=True,
-        help_text="Annual percent decrease in the total annual CO2 marginal emissions rate of the grid. A negative value indicates an annual increase."
+        help_text="Not applied with use of Cambium data for climate emissions. Annual percent decrease in the total annual CO2 emissions rate of the grid. A negative value indicates an annual increase."
     )
     avert_emissions_region = models.TextField(
         blank=True,
@@ -1745,7 +1744,7 @@ class ElectricUtilityInputs(BaseModel, models.Model):
     )
     
     emissions_factor_NOx_decrease_fraction = models.FloatField(
-        default=0.01174,
+        default=0.02163,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -1754,7 +1753,7 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         help_text="Annual percent decrease in the total annual NOx marginal emissions rate of the grid. A negative value indicates an annual increase."
     )
     emissions_factor_SO2_decrease_fraction = models.FloatField(
-        default=0.01174,
+        default=0.02163,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -1763,7 +1762,7 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         help_text="Annual percent decrease in the total annual SO2 marginal emissions rate of the grid. A negative value indicates an annual increase."
     )
     emissions_factor_PM25_decrease_fraction = models.FloatField(
-        default=0.01174,
+        default=0.02163,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -1797,6 +1796,11 @@ class ElectricUtilityInputs(BaseModel, models.Model):
                 error_messages["missing required inputs"] = "outage_durations is required if outage_probabilities is present."
         elif self.outage_durations not in [None,[]]: 
             self.outage_probabilities = [1/len(self.outage_durations)] * len(self.outage_durations)
+
+        if self.co2_from_avert or len(self.emissions_factor_series_lb_CO2_per_kwh) > 0:
+            self.emissions_factor_CO2_decrease_fraction = 0.02163
+        else:
+            self.emissions_factor_CO2_decrease_fraction = 0.0 
 
         if error_messages:
             raise ValidationError(error_messages)
