@@ -48,13 +48,18 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         self.post_sim = os.path.join('resilience_stats', 'tests', 'ERP_sim_post.json')
         self.post_sim_large_stor = os.path.join('resilience_stats', 'tests', 'ERP_sim_large_stor_post.json')
         self.post_sim_only = os.path.join('resilience_stats', 'tests', 'ERP_sim_only_post.json')
-        
+        self.post_sim_long_dur_stor = os.path.join('resilience_stats', 'tests', 'ERP_sim_long_dur_stor_post.json')
         #for REopt optimization
         self.reopt_base_opt = '/dev/job/'
+        self.reopt_base_opt_results = '/dev/job/{}/results'
         self.post_opt = os.path.join('resilience_stats', 'tests', 'ERP_opt_post.json')
+        self.post_opt_long_dur_stor = os.path.join('resilience_stats', 'tests', 'ERP_opt_long_dur_stor_post.json')
 
     def get_response_opt(self, data):
         return self.api_client.post(self.reopt_base_opt, format='json', data=data)
+    
+    def get_results_opt(self, run_uuid):
+        return self.api_client.get(self.reopt_base_opt_results.format(run_uuid))
 
     def get_response_sim(self, data_sim):
         return self.api_client.post(self.reopt_base_erp, format='json', data=data_sim)
@@ -71,6 +76,31 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
             format='json'
         )
 
+    def test_erp_long_duration_battery(self):
+        post_opt = json.load(open(self.post_opt_long_dur_stor, 'rb'))
+        resp = self.get_response_opt(post_opt)
+        self.assertHttpCreated(resp)
+        r_opt = json.loads(resp.content)
+        reopt_run_uuid = r_opt.get('run_uuid')
+        assert(reopt_run_uuid is not None)
+        resp = self.get_results_opt(reopt_run_uuid)
+        results_opt = json.loads(resp.content)["outputs"]
+
+        post_sim = json.load(open(self.post_sim_long_dur_stor, 'rb'))
+        post_sim["ElectricStorage"]["starting_soc_series_fraction"] = results_opt["ElectricStorage"]["soc_series_fraction"]
+        post_sim["Outage"]["critical_loads_kw"] = results_opt["ElectricLoad"]["critical_load_series_kw"]
+        resp = self.get_response_sim(post_sim)
+        self.assertHttpCreated(resp)
+        r_sim = json.loads(resp.content)
+        erp_run_uuid = r_sim.get('run_uuid')
+        resp = self.get_results_sim(erp_run_uuid)
+        results_sim = json.loads(resp.content)["outputs"]
+
+        expected_result = ([1]*79)+[0.999543,0.994178,0.9871,0.97774,0.965753,0.949429,0.926712,0.899543,0.863584,0.826712,0.785616,0.736416,0.683105,0.626256,0.571005,0.519064,0.47226,0.429909,0.391553,0.357306,0]
+        #TODO: resolve bug where unlimted fuel markov portion of results goes to zero 1 timestep early
+        for i in range(99):#min(length(simresults["probs_of_surviving"]), reliability_inputs["max_outage_duration"])
+            self.assertAlmostEqual(results_sim["mean_cumulative_survival_by_duration"][i], expected_result[i], places=4)
+        
     def test_erp_large_battery(self):
         """
         Tests calling ERP with PV, a small generator, and very large battery such that final survivial should be 1.
