@@ -6,8 +6,8 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('job', '0035_boilerinputs_boileroutputs_steamturbineinputs_and_more'),
-        ('job', '0036_merge_20230424_1645'),
+        ('reoptjl', '0035_boilerinputs_boileroutputs_steamturbineinputs_and_more'),
+        ('reoptjl', '0036_merge_20230424_1645'),
     ]
 
     operations = [

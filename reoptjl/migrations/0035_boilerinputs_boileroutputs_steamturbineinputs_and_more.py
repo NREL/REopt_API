@@ -4,20 +4,20 @@ import django.contrib.postgres.fields
 import django.core.validators
 from django.db import migrations, models
 import django.db.models.deletion
-import job.models
+import reoptjl.models
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('job', '0034_alter_financialinputs_value_of_lost_load_per_kwh_and_more'),
+        ('reoptjl', '0034_alter_financialinputs_value_of_lost_load_per_kwh_and_more'),
     ]
 
     operations = [
         migrations.CreateModel(
             name='BoilerInputs',
             fields=[
-                ('meta', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, related_name='BoilerInputs', serialize=False, to='job.apimeta')),
+                ('meta', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, related_name='BoilerInputs', serialize=False, to='reoptjl.apimeta')),
                 ('min_mmbtu_per_hour', models.FloatField(default=0.0, help_text='Minimum thermal power size', validators=[django.core.validators.MinValueValidator(0.0), django.core.validators.MaxValueValidator(100000000.0)])),
                 ('max_mmbtu_per_hour', models.FloatField(default=0.0, help_text='Maximum thermal power size', validators=[django.core.validators.MinValueValidator(0.0), django.core.validators.MaxValueValidator(100000000.0)])),
                 ('efficiency', models.FloatField(default=0.8, help_text='New boiler system efficiency - conversion of fuel to usable heating thermal energy.', null=True, validators=[django.core.validators.MinValueValidator(0.0), django.core.validators.MaxValueValidator(1.0)])),
@@ -30,12 +30,12 @@ class Migration(migrations.Migration):
                 ('fuel_type', models.TextField(blank=True, choices=[('natural_gas', 'Natural Gas'), ('landfill_bio_gas', 'Landfill Bio Gas'), ('propane', 'Propane'), ('diesel_oil', 'Diesel Oil'), ('uranium', 'Uranium')], default='natural_gas', help_text='Existing boiler fuel type, one of natural_gas, landfill_bio_gas, propane, diesel_oil, uranium', null=True)),
                 ('can_supply_steam_turbine', models.BooleanField(blank=True, default=True, help_text='If the boiler can supply steam to the steam turbine for electric production', null=True)),
             ],
-            bases=(job.models.BaseModel, models.Model),
+            bases=(reoptjl.models.BaseModel, models.Model),
         ),
         migrations.CreateModel(
             name='BoilerOutputs',
             fields=[
-                ('meta', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, related_name='BoilerOutputs', serialize=False, to='job.apimeta')),
+                ('meta', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, related_name='BoilerOutputs', serialize=False, to='reoptjl.apimeta')),
                 ('fuel_consumption_series_mmbtu_per_hour', django.contrib.postgres.fields.ArrayField(base_field=models.FloatField(blank=True, null=True), default=list, size=None)),
                 ('thermal_to_load_series_mmbtu_per_hour', django.contrib.postgres.fields.ArrayField(base_field=models.FloatField(blank=True, null=True), default=list, size=None)),
                 ('year_one_fuel_cost_before_tax', models.FloatField(blank=True, null=True)),
@@ -48,12 +48,12 @@ class Migration(migrations.Migration):
                 ('lifecycle_fuel_cost_after_tax', models.FloatField(blank=True, null=True)),
                 ('annual_thermal_production_mmbtu', models.FloatField(blank=True, null=True)),
             ],
-            bases=(job.models.BaseModel, models.Model),
+            bases=(reoptjl.models.BaseModel, models.Model),
         ),
         migrations.CreateModel(
             name='SteamTurbineInputs',
             fields=[
-                ('meta', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, related_name='SteamTurbineInputs', serialize=False, to='job.apimeta')),
+                ('meta', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, related_name='SteamTurbineInputs', serialize=False, to='reoptjl.apimeta')),
                 ('min_kw', models.FloatField(blank=True, default=0.0, help_text='Minimum steam turbine size constraint for optimization', validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(1000000000.0)])),
                 ('max_kw', models.FloatField(blank=True, default=0.0, help_text='Maximum steam turbine size constraint for optimization', validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(1000000000.0)])),
                 ('size_class', models.IntegerField(blank=True, choices=[(0, 'Zero'), (1, 'One'), (2, 'Two'), (4, 'Four')], help_text='Steam turbine size class for using appropriate default inputs', null=True)),
@@ -78,12 +78,12 @@ class Migration(migrations.Migration):
                 ('macrs_option_years', models.IntegerField(blank=True, choices=[(0, 'Zero'), (5, 'Five'), (7, 'Seven')], default=0, help_text='Duration over which accelerated depreciation will occur. Set to zero to disable')),
                 ('macrs_bonus_fraction', models.FloatField(blank=True, default=1.0, help_text='Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation', validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(1)])),
             ],
-            bases=(job.models.BaseModel, models.Model),
+            bases=(reoptjl.models.BaseModel, models.Model),
         ),
         migrations.CreateModel(
             name='SteamTurbineOutputs',
             fields=[
-                ('meta', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, related_name='SteamTurbineOutputs', serialize=False, to='job.apimeta')),
+                ('meta', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, related_name='SteamTurbineOutputs', serialize=False, to='reoptjl.apimeta')),
                 ('size_kw', models.FloatField(blank=True, null=True)),
                 ('annual_thermal_consumption_mmbtu', models.FloatField(blank=True, null=True)),
                 ('annual_electric_production_kwh', models.FloatField(blank=True, null=True)),
@@ -96,7 +96,7 @@ class Migration(migrations.Migration):
                 ('thermal_to_storage_series_mmbtu_per_hour', django.contrib.postgres.fields.ArrayField(base_field=models.FloatField(blank=True, null=True), default=list, size=None)),
                 ('thermal_to_load_series_mmbtu_per_hour', django.contrib.postgres.fields.ArrayField(base_field=models.FloatField(blank=True, null=True), default=list, size=None)),
             ],
-            bases=(job.models.BaseModel, models.Model),
+            bases=(reoptjl.models.BaseModel, models.Model),
         ),
         migrations.AlterField(
             model_name='electrictariffinputs',
