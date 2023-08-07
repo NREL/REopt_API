@@ -209,7 +209,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
             }            
         }
 
-        ghpghx_response_file = os.path.join('job', 'test', 'posts', 'ghpghx_response.json')
+        ghpghx_response_file = os.path.join('reoptjl', 'test', 'posts', 'ghpghx_response.json')
         ghpghx_response = json.load(open(ghpghx_response_file, 'r'))
         scenario["GHP"]["ghpghx_responses"] = [ghpghx_response]
 
