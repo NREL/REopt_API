@@ -1,0 +1,23 @@
+{
+        "Generator": {
+            "size_kw": 0,
+            "operational_availability": 1.0, 
+            "failure_to_start": 0.0, 
+            "mean_time_to_failure": 10000000000,
+            "fuel_avail_gal": 0
+        },
+        "ElectricStorage": {
+            "size_kw": 400,
+            "size_kwh": 40000,
+            "charge_efficiency": 1,
+            "discharge_efficiency": 1,
+            "operational_availability": 1.0,
+            "minimum_soc_fraction": 0.0
+        },
+        "PV": {
+            "operational_availability": 1.0
+        },
+        "Outage": {
+            "max_outage_duration": 100
+        }
+}

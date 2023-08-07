@@ -35,7 +35,7 @@ from resilience_stats.api import OutageSimJob
 from resilience_stats.api import ERPJob
 from tastypie.api import Api
 from reo import views
-from job.api import Job as DevJob
+from reoptjl.api import Job as DevJob
 from futurecosts.api import FutureCostsAPI
 from ghpghx.resources import GHPGHXJob
 from reo.api import Job2
@@ -100,7 +100,7 @@ urlpatterns = [
     path('stable/', include('ghpghx.urls')),
     re_path(r'', include(stable_api.urls)),
 
-    path('dev/', include('job.urls')),
+    path('dev/', include('reoptjl.urls')),
     path('dev/', include('resilience_stats.urls_v3plus')),
     path('dev/', include('futurecosts.urls')),
     path('dev/', include('ghpghx.urls')),
