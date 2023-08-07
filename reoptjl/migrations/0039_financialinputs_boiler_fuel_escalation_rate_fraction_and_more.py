@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('job', '0038_existingboilerinputs_can_supply_steam_turbine'),
+        ('reoptjl', '0038_existingboilerinputs_can_supply_steam_turbine'),
     ]
 
     operations = [
