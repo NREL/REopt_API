@@ -35,6 +35,7 @@ import copy
 import csv
 import json
 import pandas as pd
+import requests
 import logging
 from django.http import JsonResponse
 from django.http import HttpResponse
@@ -42,8 +43,6 @@ from django.template import  loader
 from django.views.decorators.csrf import csrf_exempt
 from ghpghx.resources import UUIDFilter
 from ghpghx.models import ModelManager, GHPGHXInputs
-from reo.utilities import get_climate_zone_and_nearest_city
-from reo.src.load_profile import BuiltInProfile
 
 log = logging.getLogger(__name__)
 
@@ -115,15 +114,14 @@ def ground_conductivity(request):
         latitude = float(request.GET['latitude'])  # need float to convert unicode
         longitude = float(request.GET['longitude'])
 
-        climate_zone, nearest_city, geometric_flag = get_climate_zone_and_nearest_city(latitude, longitude, BuiltInProfile.default_cities)
-        k_by_zone = copy.deepcopy(GHPGHXInputs.ground_k_by_climate_zone)
-        k = k_by_zone[climate_zone]
+        inputs_dict = {"latitude": latitude,
+                        "longitude": longitude}
 
+        julia_host = os.environ.get('JULIA_HOST', "julia")
+        http_jl_response = requests.get("http://" + julia_host + ":8081/ground_conductivity/", json=inputs_dict)
+        
         response = JsonResponse(
-            {
-                "climate_zone": climate_zone,
-                "thermal_conductivity": k
-            }
+            http_jl_response.json()
         )
         return response
 

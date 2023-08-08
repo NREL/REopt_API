@@ -1,0 +1,72 @@
+{
+    "Settings": {
+        "run_bau": false
+    },
+    "Site": {
+        "longitude": -118.1164613,
+        "latitude": 34.5794343,
+        "land_acres": 1.0,
+        "min_resil_time_steps": 0
+    }, 
+    "PV": {
+        "min_kw": 200,
+        "max_kw": 200,
+        "macrs_bonus_fraction": 0.4,
+        "installed_cost_per_kw": 2000.0,
+        "tilt": 34.579,
+        "degradation_fraction": 0.005,
+        "macrs_option_years": 5,
+        "federal_itc_fraction": 0.3,
+        "module_type": 0,
+        "array_type": 1,
+        "om_cost_per_kw": 16.0,
+        "macrs_itc_reduction": 0.5,
+        "azimuth": 180.0,
+        "federal_rebate_per_kw": 350.0
+    },
+    "CHP": {
+        "min_kw": 200,
+        "max_kw": 200,
+        "prime_mover": "recip_engine",
+        "fuel_cost_per_mmbtu": 1,
+        "electric_efficiency_full_load": 0.34
+    },
+    "ElectricStorage": {
+        "min_kw": 50,
+        "max_kw": 50,
+        "min_kwh": 1000,
+        "max_kwh": 1000,
+        "total_rebate_per_kw": 100.0,
+        "macrs_option_years": 5,
+        "can_grid_charge": true,
+        "macrs_bonus_fraction": 0.4,
+        "replace_cost_per_kw": 460.0,
+        "replace_cost_per_kwh": 230.0,
+        "installed_cost_per_kw": 1000.0,
+        "installed_cost_per_kwh": 500.0,
+        "total_itc_fraction": 0.0
+    },
+    "ElectricTariff": {
+        "urdb_label": "5ed6c1a15457a3367add15ae"
+    },
+    "ElectricUtility": {
+        "outage_start_time_steps": [1000],
+        "outage_durations": [24],
+        "outage_probabilities": [1]
+    },
+    "Financial": {
+        "elec_cost_escalation_rate_fraction": 0.026,
+        "offtaker_discount_rate_fraction": 0.081,
+        "owner_discount_rate_fraction": 0.081,
+        "analysis_years": 20,
+        "offtaker_tax_rate_fraction": 0.4,
+        "owner_tax_rate_fraction": 0.4,
+        "om_cost_escalation_rate_fraction": 0.025,
+        "value_of_lost_load_per_kwh": 100
+    },
+    "ElectricLoad": {
+        "doe_reference_name": "Hospital",
+        "annual_kwh": 1000000.0,
+        "year": 2017
+    } 
+}
