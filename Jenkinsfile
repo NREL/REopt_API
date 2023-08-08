@@ -14,9 +14,7 @@ pipeline {
     DEVELOPMENT_TEMP_BASE_DOMAIN = credentials("reopt-api-development-temp-base-domain")
     STAGING_BASE_DOMAIN = credentials("reopt-api-staging-base-domain")
     STAGING_TEMP_BASE_DOMAIN = credentials("reopt-api-staging-temp-base-domain")
-    // FIXME: Restore after testing new deploys and ready to switch.
-    // PRODUCTION_DOMAIN = credentials("reopt-api-production-domain")
-    PRODUCTION_DOMAIN = credentials("reopt-api-production-temp-domain")
+    PRODUCTION_DOMAIN = credentials("reopt-api-production-domain")
     XPRESS_LICENSE_HOST = credentials("reopt-api-xpress-license-host")
     NREL_ROOT_CERT_URL_ROOT = credentials("reopt-api-nrel-root-cert-url-root")
   }
