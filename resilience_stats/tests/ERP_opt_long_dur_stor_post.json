@@ -1,0 +1,22 @@
+{
+        "Site": {
+                "longitude": -106.42077256104001,
+                "latitude": 31.810468380036337
+        },
+        "ElectricStorage": {
+                "min_kw": 400,
+                "max_kw": 400,
+                "min_kwh": 40000,
+                "max_kwh": 40000,
+                "soc_min_fraction": 0.8,
+                "soc_init_fraction": 0.9
+        },
+        "ElectricLoad": {
+                "doe_reference_name": "FlatLoad",
+                "annual_kwh": 17520000.0,
+                "critical_load_fraction": 0.2
+        },
+        "ElectricTariff": {
+                "urdb_label": "5ed6c1a15457a3367add15ae"
+        }
+}
