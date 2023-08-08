@@ -73,7 +73,8 @@ INSTALLED_APPS = (
     'django_celery_results',
     'django_extensions',
     'reoptjl',
-    'ghpghx'
+    'ghpghx',
+    'django_rename_app'
 )
 
 MIDDLEWARE_CLASSES = (
@@ -162,8 +163,7 @@ CELERY_IMPORTS = (
     'django_extensions',
     'reoptjl.api',
     'reoptjl.src.run_jump_model',
-    'ghpghx',
-    'django_rename_app'
+    'ghpghx'
 )
 
 # Static files (CSS, JavaScript, Images)
