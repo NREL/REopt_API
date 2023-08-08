@@ -517,6 +517,8 @@ class FuelTariffModel(models.Model):
 
 
 class PVModel(models.Model):
+    class Meta():
+        index_together = [['run_uuid']]
 
     #Inputs
     run_uuid = models.UUIDField(unique=False)
@@ -1141,6 +1143,11 @@ class GHPModel(models.Model):
     ghpghx_response_uuids = ArrayField(models.TextField(null=True, blank=True), default=list, null=True)
     ghpghx_responses = ArrayField(PickledObjectField(null=True, editable=True), null=True, default=list)
     can_serve_dhw = models.BooleanField(null=True, blank=True)
+    
+    aux_heater_type = models.TextField(null=True, blank=True)
+    aux_heater_installed_cost_us_dollars_per_mmbtu_per_hr = models.FloatField(null=True, blank=True)
+    aux_cooler_installed_cost_us_dollars_per_ton = models.FloatField(null=True, blank=True)
+    aux_unit_capacity_sizing_factor_on_peak_load = models.FloatField(null=True, blank=True)
     macrs_option_years = models.IntegerField(null=True, blank=True)
     macrs_bonus_pct = models.FloatField(null=True, blank=True)
     macrs_itc_reduction = models.FloatField(null=True, blank=True)
@@ -1181,6 +1188,9 @@ class MessageModel(models.Model):
                 }
     }
     """
+    class Meta():
+        index_together = [['run_uuid']]
+
     message_type = models.TextField(null=True, blank=True, default='')
     message = models.TextField(null=True, blank=True, default='')
     run_uuid = models.UUIDField(unique=False)
