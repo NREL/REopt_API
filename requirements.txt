@@ -9,7 +9,7 @@ bandit==1.7.1
 billiard==3.6.4.0
 cachetools==4.2.4
 celery==5.2.3
-certifi==2021.10.8
+certifi==2022.12.7
 cffi==1.15.0
 chardet==4.0.0
 charset-normalizer==2.0.10
@@ -36,7 +36,7 @@ Fiona==1.8.20
 future==0.18.3
 geopandas==0.10.2
 gitdb==4.0.9
-GitPython==3.1.26
+GitPython==3.1.30
 google-api-core==2.4.0
 google-api-python-client==2.36.0
 google-auth==1.35.0
