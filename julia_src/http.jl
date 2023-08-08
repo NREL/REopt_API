@@ -334,6 +334,10 @@ function simulated_load(req::HTTP.Request)
         d["percent_share"] = convert(Vector{Float64}, d["percent_share"])
     end
 
+    if "cooling_pct_share" in keys(d) && typeof(d["cooling_pct_share"]) <: Vector{}
+        d["cooling_pct_share"] = convert(Vector{Float64}, d["cooling_pct_share"])
+    end
+
     @info "Getting CRB Loads..."
     data = Dict()
     error_response = Dict()
