@@ -72,7 +72,7 @@ INSTALLED_APPS = (
     'futurecosts',
     'django_celery_results',
     'django_extensions',
-    'job',
+    'reoptjl',
     'ghpghx'
 )
 
@@ -140,7 +140,7 @@ USE_TZ = True
 # Results backend
 CELERY_RESULT_BACKEND = 'django-db'
 
-CELERY_WORKER_MAX_MEMORY_PER_CHILD = 4000000  # 4 GB
+CELERY_WORKER_MAX_MEMORY_PER_CHILD = 4000000  # 6 GB
 # we have been resetting celery workers by max memory due to a memory growth problem.
 # this problem may be fixed by removing PyJulia, but can't view Rancher metrics yet.
 # Once we can confirm that we no longer have a memory grwoth issue we can disable this setting.
@@ -160,8 +160,8 @@ CELERY_IMPORTS = (
     'futurecosts.api',
     'futurecosts.tasks',
     'django_extensions',
-    'job.api',
-    'job.src.run_jump_model',
+    'reoptjl.api',
+    'reoptjl.src.run_jump_model',
     'ghpghx'
 )
 

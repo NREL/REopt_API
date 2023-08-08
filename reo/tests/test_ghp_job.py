@@ -88,6 +88,11 @@ class GHPTest(ResourceTestCaseMixin, TestCase):
         ghp_uuid = d["outputs"]["Scenario"]["Site"]["GHP"]["ghp_chosen_uuid"]
         print("GHP uuid chosen = ", ghp_uuid)
 
+        # TODO add natural_gas option with fuel cost and emissions - FIX to "boiler" fuel cost/emissions
+        # Still need to confirm the first cut at passing boiler emissions from dfm in ghp works, but also
+        # need to create a separate yearly GHP emissions param for reopt_model and zero out when no GHP
+        # also need to link aux heater fuel cost with fuel_params and fuel_tariff to get pwf_fuel for LCC cost
+
         # Test GHP serving addressable fraction of space heating with VAV efficiency thermal knockdown
         heating_served_mmbtu = sum(d["outputs"]["Scenario"]["Site"]["GHP"]["ghpghx_chosen_outputs"]["heating_thermal_load_mmbtu_per_hr"])
         expected_heating_served_mmbtu = 12000 * 0.8 * 0.9 * 0.7 * 0.85  # (fuel_mmbtu * boiler_effic * addressable_load * space_heat_frac * space_heating_efficiency_thermal_factor)
