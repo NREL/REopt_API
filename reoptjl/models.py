@@ -827,7 +827,7 @@ class FinancialInputs(BaseModel, models.Model):
         blank=True,
         help_text=("Annual nominal boiler fuel cost escalation rate")
     )    
-    existing_boiler_fuel_escalation_rate_fraction = models.FloatField(
+    existing_boiler_fuel_cost_escalation_rate_fraction = models.FloatField(
         default=0.034,
         validators=[
             MinValueValidator(-1),
@@ -836,7 +836,7 @@ class FinancialInputs(BaseModel, models.Model):
         blank=True,
         help_text=("Annual nominal existing boiler fuel cost escalation rate")
     )
-    boiler_fuel_escalation_rate_fraction = models.FloatField(
+    boiler_fuel_cost_escalation_rate_fraction = models.FloatField(
         default=0.034,
         validators=[
             MinValueValidator(-1),
@@ -845,7 +845,7 @@ class FinancialInputs(BaseModel, models.Model):
         blank=True,
         help_text=("Annual nominal boiler fuel cost escalation rate")
     )
-    chp_fuel_escalation_rate_fraction = models.FloatField(
+    chp_fuel_cost_escalation_rate_fraction = models.FloatField(
         default=0.034,
         validators=[
             MinValueValidator(-1),
