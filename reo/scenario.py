@@ -409,9 +409,12 @@ def setup_scenario(self, run_uuid, data, api_version=1):
                 client = TestApiClient()
                 # Update ground thermal conductivity based on climate zone if not user-input
                 if not ghpghx_post.get("ground_thermal_conductivity_btu_per_hr_ft_f"):
-                    k_by_zone = copy.deepcopy(GHPGHXInputs.ground_k_by_climate_zone)
-                    climate_zone, nearest_city, geometric_flag = get_climate_zone_and_nearest_city(ghpghx_post["latitude"], ghpghx_post["longitude"], BuiltInProfile.default_cities)
-                    ghpghx_post["ground_thermal_conductivity_btu_per_hr_ft_f"] = k_by_zone[climate_zone]
+                    ground_k_inputs = {"latitude": ghpghx_post["latitude"],
+                                    "longitude": ghpghx_post["longitude"]}
+                    # Call to the django view endpoint /ghp_efficiency_thermal_factors which calls the http.jl endpoint
+                    ground_k_resp = client.get(f'/dev/ghpghx/ground_conductivity', data=ground_k_inputs)
+                    ground_k_response = json.loads(ground_k_resp.content)
+                    ghpghx_post["ground_thermal_conductivity_btu_per_hr_ft_f"] = ground_k_response["thermal_conductivity"]
                 
                 # Hybrid
                 # Determine if location is heating or cooling dominated

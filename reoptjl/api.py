@@ -42,6 +42,8 @@ from reoptjl.validators import InputValidator
 # from reo.src.profiler import Profiler  # TODO use Profiler?
 from reoptjl.src.run_jump_model import run_jump_model
 from reo.exceptions import UnexpectedError, REoptError
+from ghpghx.models import GHPGHXInputs
+from django.core.exceptions import ValidationError
 from reoptjl.models import APIMeta
 log = logging.getLogger(__name__)
  
@@ -147,9 +149,22 @@ class Job(ModelResource):
         if test_case.startswith('check_http/'):
             bundle.data['APIMeta']['job_type'] = 'Monitoring'
 
+        # Validate ghpghx_inputs, if applicable
+        ghpghx_inputs_validation_errors = []
+        if bundle.data.get("GHP") is not None and \
+            bundle.data["GHP"].get("ghpghx_inputs") not in [None, []] and \
+            bundle.data["GHP"].get("ghpghx_response_uuids") in [None, []]:
+            for ghpghx_inputs in bundle.data["GHP"]["ghpghx_inputs"]:
+                ghpghxM = GHPGHXInputs(**ghpghx_inputs)
+                try:
+                    # Validate individual model fields
+                    ghpghxM.clean_fields()
+                except ValidationError as ve:
+                    ghpghx_inputs_validation_errors += [key + ": " + val[i] + " " for key, val in ve.message_dict.items() for i in range(len(val))]            
+
         # Validate inputs
         try:
-            input_validator = InputValidator(bundle.data)
+            input_validator = InputValidator(bundle.data, ghpghx_inputs_validation_errors=ghpghx_inputs_validation_errors)
             input_validator.clean_fields()  # step 1 check field values
             if not input_validator.is_valid:
                 return400(meta, input_validator)
