@@ -127,7 +127,7 @@ function reopt(req::HTTP.Request)
 				"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_easiur),
 				"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert),
                 "CHP" => chp_dict,
-				"SteamTurbine" => steamturbine_dict
+				"SteamTurbine" => steamturbine_dict,
                 "GHP" => ghp_dict
 			)            
 		catch e
