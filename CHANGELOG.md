@@ -26,6 +26,16 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop 2023-08-07
+### Minor Updates
+##### Added
+- Add `GHP` to `job` app for v3
+- Add `/ghp_efficiency_thermal_factors` endpoint to `job` app for v
+##### Changed
+- Update a couple of GHP functions to use the GhpGhx.jl package instead of previous Julia scripts and data from v2
+##### Fixed
+- Fixed a type mismatch bug in the `simulated_load` function within http.jl
+
 ## v2.14.0
 ### Minor Updates
 ##### Fixed

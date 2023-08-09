@@ -34,7 +34,7 @@ from reoptjl.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorage
                         ExistingChillerOutputs, CoolingLoadOutputs, HeatingLoadOutputs,\
                         HotThermalStorageOutputs, ColdThermalStorageOutputs, OutageOutputs,\
                         REoptjlMessageOutputs, AbsorptionChillerOutputs, BoilerOutputs, SteamTurbineInputs, \
-                        SteamTurbineOutputs
+                        SteamTurbineOutputs, GHPInputs, GHPOutputs
 import sys
 import traceback as tb
 import logging
@@ -104,6 +104,8 @@ def process_results(results: dict, run_uuid: str) -> None:
                 OutageOutputs.create(meta=meta, **results["Outages"]).save()
             if "SteamTurbine" in results.keys():
                 SteamTurbineOutputs.create(meta=meta, **results["SteamTurbine"]).save()
+            if "GHP" in results.keys():
+                GHPOutputs.create(meta=meta, **results["GHP"]).save() 
             # TODO process rest of results
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -141,6 +143,8 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
         if inputs_to_update["SteamTurbine"]:  # Will be an empty dictionary if SteamTurbine is not considered
             SteamTurbineInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["SteamTurbine"])
     
+        if inputs_to_update["GHP"]:
+            GHPInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["GHP"])
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(
