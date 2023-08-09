@@ -188,14 +188,25 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         view_response = json.loads(resp.content)
         self.assertTrue("error" in view_response)
 
-# For POSTing to an endpoint which returns a `run_uuid` to later GET the results from the database
-# resp = self.api_client.post('/dev/job/', format='json', data=scenario))
-# self.assertHttpCreated(resp)
-# r = json.loads(resp.content)
-# run_uuid = r.get('run_uuid')
+    def test_ghp_endpoints(self):
+        # Test /ghp_efficiency_thermal_factors
+        inputs_dict = {"latitude": 37.78,
+                        "longitude": -122.45,
+                        "doe_reference_name": "MediumOffice"}
 
-# This method is used for calling a REopt_API endpoint (/ghpghx) from within the scenario.py celery task
-# client = TestApiClient()
-# ghpghx_results_url = "/v1/ghpghx/"+ghpghx_uuid_list[i]+"/results/"
-# ghpghx_results_resp = client.get(ghpghx_results_url)  # same as doing ghpModelManager.make_response(ghp_uuid)
-# ghpghx_results_resp_dict = json.loads(ghpghx_results_resp.content)
+        # Call to the django view endpoint /ghp_efficiency_thermal_factors which calls the http.jl endpoint
+        resp = self.api_client.get(f'/dev/ghp_efficiency_thermal_factors', data=inputs_dict)
+        view_response = json.loads(resp.content)
+
+        self.assertEqual(view_response["cooling_efficiency_thermal_factor"], 0.43)
+        self.assertEqual(view_response["space_heating_efficiency_thermal_factor"], 0.46)
+
+        # Test /ghpghx/ground_conductivity
+        inputs_dict = {"latitude": 37.78,
+                        "longitude": -122.45}
+
+        # Call to the django view endpoint /ghpghx/ground_conductivity which calls the http.jl endpoint
+        resp = self.api_client.get(f'/dev/ghpghx/ground_conductivity', data=inputs_dict)
+        view_response = json.loads(resp.content)
+
+        self.assertEqual(view_response["thermal_conductivity"], 1.117)

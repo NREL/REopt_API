@@ -41,7 +41,8 @@ from reoptjl.models import Settings, PVInputs, ElectricStorageInputs, WindInputs
     UserProvidedMeta, CHPInputs, CHPOutputs, CoolingLoadInputs, ExistingChillerInputs, ExistingChillerOutputs,\
     CoolingLoadOutputs, HeatingLoadOutputs, REoptjlMessageOutputs, HotThermalStorageInputs, HotThermalStorageOutputs,\
     ColdThermalStorageInputs, ColdThermalStorageOutputs, AbsorptionChillerInputs, AbsorptionChillerOutputs,\
-    FinancialInputs, FinancialOutputs, UserUnlinkedRuns, BoilerInputs, BoilerOutputs, SteamTurbineInputs, SteamTurbineOutputs
+    FinancialInputs, FinancialOutputs, UserUnlinkedRuns, BoilerInputs, BoilerOutputs, SteamTurbineInputs, \
+    SteamTurbineOutputs, GHPInputs, GHPOutputs
 import os
 import requests
 import numpy as np
@@ -83,6 +84,7 @@ def help(request):
         d["CHP"] = CHPInputs.info_dict(CHPInputs)
         d["AbsorptionChiller"] = AbsorptionChillerInputs.info_dict(AbsorptionChillerInputs)
         d["SteamTurbine"] = SteamTurbineInputs.info_dict(SteamTurbineInputs)
+        d["GHP"] = GHPInputs.info_dict(GHPInputs)
         return JsonResponse(d)
 
     except Exception as e:
@@ -126,6 +128,7 @@ def outputs(request):
         d["CoolingLoad"] = CoolingLoadOutputs.info_dict(CoolingLoadOutputs)
         d["CHP"] = CHPOutputs.info_dict(CHPOutputs)
         d["AbsorptionChiller"] = AbsorptionChillerOutputs.info_dict(AbsorptionChillerOutputs)
+        d["GHP"] = GHPOutputs.info_dict(GHPOutputs)
         d["Messages"] = REoptjlMessageOutputs.info_dict(REoptjlMessageOutputs)
         d["SteamTurbine"] = SteamTurbineOutputs.info_dict(SteamTurbineOutputs)
         return JsonResponse(d)
@@ -245,6 +248,8 @@ def results(request, run_uuid):
 
     try: r["inputs"]["SteamTurbine"] = meta.SteamTurbineInputs.dict
     except: pass
+    try: r["inputs"]["GHP"] = meta.GHPInputs.dict
+    except: pass    
 
     try:
         r["outputs"] = dict()
@@ -316,6 +321,8 @@ def results(request, run_uuid):
         except: pass
         try: r["outputs"]["SteamTurbine"] = meta.SteamTurbineOutputs.dict
         except: pass
+        try: r["outputs"]["GHP"] = meta.GHPOutputs.dict
+        except: pass        
 
         for d in r["outputs"].values():
             if isinstance(d, dict):
@@ -537,6 +544,47 @@ def simulated_load(request):
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in simulated_load endpoint. Check log for more."}, status=500)
 
+def ghp_efficiency_thermal_factors(request):
+    """
+    GET default GHP heating and cooling thermal efficiency factors based on the climate zone from the lat/long input
+    param: latitude: latitude of the site location
+    param: longitude: longitude of the site location
+    param: doe_reference_name: commercial reference building name
+    return: climate_zone: climate zone of the site location
+    return: nearest_city: nearest major city from the lat/long used for ASHRAE climate zone
+    return: space_heating_efficiency_thermal_factor: default value for GHP.space_heating_efficiency_thermal_factor
+    return: cooling_efficiency_thermal_factor: default value for GHP.cooling_efficiency_thermal_factor
+    """    
+    try:
+        latitude = float(request.GET['latitude'])  # need float to convert unicode
+        longitude = float(request.GET['longitude'])
+        doe_reference_name = request.GET['doe_reference_name']
+
+        inputs_dict = {"latitude": latitude,
+                        "longitude": longitude,
+                        "doe_reference_name": doe_reference_name}
+
+        julia_host = os.environ.get('JULIA_HOST', "julia")
+        http_jl_response = requests.get("http://" + julia_host + ":8081/ghp_efficiency_thermal_factors/", json=inputs_dict)
+        response = JsonResponse(
+            http_jl_response.json()
+        )
+        return response
+    
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected error in ghp_efficiency_thermal_factors endpoint. Check log for more."}, status=500)
+
+    
 def summary(request, user_uuid):
     """
     Retrieve a summary of scenarios for given user_uuid
