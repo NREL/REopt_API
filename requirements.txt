@@ -20,7 +20,7 @@ click-repl==0.2.0
 cligj==0.7.2
 colorama==0.4.4
 CoolProp==6.4.1
-cryptography==36.0.1
+cryptography==41.0.3
 Cython==0.29.26
 decorator==5.1.1
 deepdish==0.3.7
