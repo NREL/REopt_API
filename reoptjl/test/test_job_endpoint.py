@@ -195,8 +195,23 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
             "AbsorptionChiller":{
                 "min_ton":10,
                 "max_ton":10
-            }
+            },
+            "GHP": {
+                "building_sqft": 50000.0,
+                "require_ghp_purchase": True,
+                "space_heating_efficiency_thermal_factor": 0.85,
+                "cooling_efficiency_thermal_factor": 0.6,
+                "ghpghx_inputs": [
+                    {
+                    "max_sizing_iterations": 1
+                    }
+                ]
+            }            
         }
+
+        ghpghx_response_file = os.path.join('reoptjl', 'test', 'posts', 'ghpghx_response.json')
+        ghpghx_response = json.load(open(ghpghx_response_file, 'r'))
+        scenario["GHP"]["ghpghx_responses"] = [ghpghx_response]
 
         resp = self.api_client.post('/dev/job/', format='json', data=scenario)
         self.assertHttpCreated(resp)
@@ -214,8 +229,9 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         self.assertIn("ExistingBoiler", list(results.keys()))
         self.assertIn("HeatingLoad", list(results.keys()))
         self.assertIn("HotThermalStorage", list(results.keys()))
-        self.assertIn("ColdThermalStorage", list(results.keys()))
+        self.assertIn("ColdThermalStorage", list(results.keys()))      
         self.assertIn("AbsorptionChiller", list(results.keys()))
+        self.assertIn("GHP", list(results.keys()))
 
 
     def test_chp_defaults_from_julia(self):

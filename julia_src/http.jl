@@ -103,10 +103,20 @@ function reopt(req::HTTP.Request)
             else
                 chp_dict = Dict()
             end
+            if haskey(d, "GHP")
+                inputs_with_defaults_from_ghp = [
+                    :space_heating_efficiency_thermal_factor,
+                    :cooling_efficiency_thermal_factor
+                ]
+                ghp_dict = Dict(key=>getfield(model_inputs.s.ghp_option_list[1], key) for key in inputs_with_defaults_from_ghp)
+            else
+                ghp_dict = Dict()
+            end
 			inputs_with_defaults_set_in_julia = Dict(
 				"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_easiur),
 				"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert),
-                "CHP" => chp_dict
+                "CHP" => chp_dict,
+                "GHP" => ghp_dict
 			)            
 		catch e
 			@error "Something went wrong in REopt optimization!" exception=(e, catch_backtrace())
@@ -343,6 +353,66 @@ function simulated_load(req::HTTP.Request)
     end
 end
 
+function ghp_efficiency_thermal_factors(req::HTTP.Request)
+    d = JSON.parse(String(req.body))
+
+    @info "Getting ghp_efficiency_thermal_factors..."
+    # The REopt.jl function assumes the REopt input dictionary is being mutated, so put in that form
+    data = Dict([("Site", Dict([("latitude", d["latitude"]), ("longitude", d["longitude"])])),
+                 ("SpaceHeatingLoad", Dict([("doe_reference_name", d["doe_reference_name"])])),
+                 ("CoolingLoad", Dict([("doe_reference_name", d["doe_reference_name"])])),
+                 ("GHP", Dict())])
+    error_response = Dict()
+    nearest_city = ""
+    climate_zone = ""
+    try
+        for factor in ["space_heating", "cooling"]
+            nearest_city, climate_zone = reoptjl.assign_thermal_factor!(data, factor)
+        end        
+    catch e
+        @error "Something went wrong in the ghp_efficiency_thermal_factors" exception=(e, catch_backtrace())
+        error_response["error"] = sprint(showerror, e)
+    end
+    if isempty(error_response)
+        @info "ghp_efficiency_thermal_factors determined."
+		response = Dict([("doe_reference_name", d["doe_reference_name"]),
+                            ("nearest_city", nearest_city),
+                            ("climate_zone", climate_zone), 
+                          data["GHP"]...])
+        return HTTP.Response(200, JSON.json(response))
+    else
+        @info "An error occured in the ghp_efficiency_thermal_factors endpoint"
+        return HTTP.Response(500, JSON.json(error_response))
+    end
+end
+
+function ground_conductivity(req::HTTP.Request)
+    d = JSON.parse(String(req.body))
+
+    @info "Getting ground_conductivity..."
+    error_response = Dict()
+    nearest_city = ""
+    climate_zone = ""
+    ground_thermal_conductivity = 0.01
+    try
+        nearest_city, climate_zone = reoptjl.find_ashrae_zone_city(d["latitude"], d["longitude"], get_zone=true)    
+        ground_thermal_conductivity = GhpGhx.ground_k_by_climate_zone[climate_zone]
+    catch e
+        @error "Something went wrong in the ground_conductivity" exception=(e, catch_backtrace())
+        error_response["error"] = sprint(showerror, e)
+    end
+    if isempty(error_response)
+        @info "ground_conductivity determined."
+		response = Dict([("climate_zone", climate_zone),
+                         ("nearest_city", nearest_city),
+                         ("thermal_conductivity", ground_thermal_conductivity)])
+        return HTTP.Response(200, JSON.json(response))
+    else
+        @info "An error occured in the ground_conductivity endpoint"
+        return HTTP.Response(500, JSON.json(error_response))
+    end
+end
+
 function health(req::HTTP.Request)
     return HTTP.Response(200, JSON.json(Dict("Julia-api"=>"healthy!")))
 end
@@ -359,5 +429,7 @@ HTTP.@register(ROUTER, "GET", "/emissions_profile", emissions_profile)
 HTTP.@register(ROUTER, "GET", "/easiur_costs", easiur_costs)
 HTTP.@register(ROUTER, "GET", "/simulated_load", simulated_load)
 HTTP.@register(ROUTER, "GET", "/absorption_chiller_defaults", absorption_chiller_defaults)
+HTTP.@register(ROUTER, "GET", "/ghp_efficiency_thermal_factors", ghp_efficiency_thermal_factors)
+HTTP.@register(ROUTER, "GET", "/ground_conductivity", ground_conductivity)
 HTTP.@register(ROUTER, "GET", "/health", health)
 HTTP.serve(ROUTER, "0.0.0.0", 8081, reuseaddr=true)

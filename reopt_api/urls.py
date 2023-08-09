@@ -58,6 +58,7 @@ stable_api.register(GHPGHXJob())
 dev_api = Api(api_name='dev')
 dev_api.register(DevJob())
 dev_api.register(FutureCostsAPI())
+dev_api.register(GHPGHXJob())
 dev_api.register(ERPJob())
 
 
@@ -102,6 +103,7 @@ urlpatterns = [
     path('dev/', include('reoptjl.urls')),
     path('dev/', include('resilience_stats.urls_v3plus')),
     path('dev/', include('futurecosts.urls')),
+    path('dev/', include('ghpghx.urls')),
     re_path(r'', include(dev_api.urls)),
 
     re_path(r'(.*)', page_not_found, name='404'),
