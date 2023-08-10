@@ -48,4 +48,5 @@ urlpatterns = [
     re_path(r'^peak_load_outage_times/?$', views.peak_load_outage_times),
     re_path(r'^invalid_urdb/?$', reoviews.invalid_urdb),
     re_path(r'^schedule_stats/?$', reoviews.schedule_stats),
+    re_path(r'^get_existing_chiller_default_cop/?$', views.get_existing_chiller_default_cop),
 ]
