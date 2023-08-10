@@ -112,11 +112,20 @@ function reopt(req::HTTP.Request)
             else
                 ghp_dict = Dict()
             end
+            if haskey(d, "CoolingLoad")
+                inputs_with_defaults_from_chiller = [
+                    :cop
+                ]
+                chiller_dict = Dict(key=>getfield(model_inputs.s.existing_chiller, key) for key in inputs_with_defaults_from_chiller)
+            else
+                chiller_dict = Dict()
+            end          
 			inputs_with_defaults_set_in_julia = Dict(
 				"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_easiur),
 				"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert),
                 "CHP" => chp_dict,
-                "GHP" => ghp_dict
+                "GHP" => ghp_dict,
+                "ExistingChiller" => chiller_dict
 			)            
 		catch e
 			@error "Something went wrong in REopt optimization!" exception=(e, catch_backtrace())
