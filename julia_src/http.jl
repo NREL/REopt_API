@@ -430,6 +430,27 @@ function health(req::HTTP.Request)
     return HTTP.Response(200, JSON.json(Dict("Julia-api"=>"healthy!")))
 end
 
+function get_existing_chiller_default_cop(req:HTTP.Request)
+    d = JSON.parse(String(req.body))
+    
+    @info "Getting default existing chiller COP..."
+    try
+        chiller_cop = reoptjl.(d["existing_chiller_max_thermal_factor_on_peak_load"], 
+                    d["max_load_kw"],
+                    d["max_load_kw_thermal"])      
+    catch e
+        @error "Something went wrong in the get_existing_chiller_default_cop" exception=(e, catch_backtrace())
+        error_response["error"] = sprint(showerror, e)
+    end
+    if isempty(error_response)
+        @info("Default existing chiller COP detected.")
+        response = Dict([("chiller_cop", chiller_cop)])
+    else
+        @info "An error occured in the ground_conductivity endpoint"
+        return HTTP.Response(500, JSON.json(error_response))
+    end
+end    
+
 # define REST endpoints to dispatch to "service" functions
 const ROUTER = HTTP.Router()
 
@@ -445,4 +466,5 @@ HTTP.@register(ROUTER, "GET", "/absorption_chiller_defaults", absorption_chiller
 HTTP.@register(ROUTER, "GET", "/ghp_efficiency_thermal_factors", ghp_efficiency_thermal_factors)
 HTTP.@register(ROUTER, "GET", "/ground_conductivity", ground_conductivity)
 HTTP.@register(ROUTER, "GET", "/health", health)
+HTTP.@register(ROUTER, "GET", "/get_existing_chiller_default_cop", get_existing_chiller_default_cop)
 HTTP.serve(ROUTER, "0.0.0.0", 8081, reuseaddr=true)
