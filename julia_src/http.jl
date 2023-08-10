@@ -430,7 +430,7 @@ function health(req::HTTP.Request)
     return HTTP.Response(200, JSON.json(Dict("Julia-api"=>"healthy!")))
 end
 
-function get_existing_chiller_default_cop(req:HTTP.Request)
+function get_existing_chiller_default_cop(req::HTTP.Request)
     d = JSON.parse(String(req.body))
     
     @info "Getting default existing chiller COP..."
@@ -444,7 +444,7 @@ function get_existing_chiller_default_cop(req:HTTP.Request)
     end
     if isempty(error_response)
         @info("Default existing chiller COP detected.")
-        response = Dict([("chiller_cop", chiller_cop)])
+        response = Dict([("existing_chiller_cop", chiller_cop)])
     else
         @info "An error occured in the ground_conductivity endpoint"
         return HTTP.Response(500, JSON.json(error_response))
