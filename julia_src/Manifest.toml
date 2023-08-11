@@ -156,10 +156,10 @@ uuid = "e084ae63-2819-5025-826e-f8e611a84251"
 version = "0.1.0"
 
 [[deps.CoolProp_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "6b492e9aafcd6016d5aca105567ed2271c423015"
+deps = ["Artifacts", "JLLWrappers", "Libdl"]
+git-tree-sha1 = "3e707957390c96dbe6184dc27eb6da2f5d2e6aac"
 uuid = "3351c21f-4feb-5f29-afb9-f4fcb0e27549"
-version = "6.4.3+0"
+version = "6.5.0+0"
 
 [[deps.Crayons]]
 git-tree-sha1 = "249fe38abf76d48563e2f4556bebd215aa317e15"
@@ -734,11 +734,9 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [[deps.REopt]]
 deps = ["ArchGDAL", "CSV", "CoolProp", "DataFrames", "Dates", "DelimitedFiles", "HTTP", "JLD", "JSON", "JuMP", "LinDistFlow", "LinearAlgebra", "Logging", "MathOptInterface", "Requires", "Roots", "Statistics", "TestEnv"]
-git-tree-sha1 = "a96c4998b4be4dd50e6143078df61921a3a30494"
-repo-rev = "steamturbine_bugfix"
-repo-url = "https://github.com/NREL/REopt.jl.git"
+git-tree-sha1 = "17e39d318a6a158072d9b0f323e6b0a92d276e9c"
 uuid = "d36ad4e8-d74a-4f7a-ace1-eaea049febf6"
-version = "0.32.4"
+version = "0.32.5"
 
 [[deps.Random]]
 deps = ["SHA", "Serialization"]
@@ -882,9 +880,9 @@ uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [[deps.TestEnv]]
 deps = ["Pkg"]
-git-tree-sha1 = "c7c98d2bb491261207459c55ce041a68fd1b477b"
+git-tree-sha1 = "dca851f0824deaf6a73ef1308fe7b2c53239c710"
 uuid = "1e6cf692-eddd-4d53-88a5-2d735e33781b"
-version = "1.100.0"
+version = "1.100.1"
 
 [[deps.Thrift_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "boost_jll"]
@@ -912,9 +910,9 @@ uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 
 [[deps.Unitful]]
 deps = ["ConstructionBase", "Dates", "InverseFunctions", "LinearAlgebra", "Random"]
-git-tree-sha1 = "1cd9b6d3f637988ca788007b7466c132feebe263"
+git-tree-sha1 = "64eb17acef1d9734cf09967539818f38093d9b35"
 uuid = "1986cc42-f94f-5a68-af5c-568840ba703d"
-version = "1.16.1"
+version = "1.16.2"
 
 [[deps.WeakRefStrings]]
 deps = ["DataAPI", "InlineStrings", "Parsers"]
