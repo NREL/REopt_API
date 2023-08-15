@@ -26,6 +26,24 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop 2023-08-07
+### Minor Updates
+##### Added
+- Add `GHP` to `job` app for v3
+- Add `/ghp_efficiency_thermal_factors` endpoint to `job` app for v
+##### Changed
+- Update a couple of GHP functions to use the GhpGhx.jl package instead of previous Julia scripts and data from v2
+##### Fixed
+- Fixed a type mismatch bug in the `simulated_load` function within http.jl
+
+## v2.14.0
+### Minor Updates
+##### Fixed
+- In reoptjl/ app (v3), updated `Generator` **installed_cost_per_kw** from 500 to 650 if **only_runs_during_grid_outage** is _true_ or 800 if _false_
+- Added `test_other_conditional_inputs` method in `job/test/test_validator.py` to test inputs with defaults or overrides based on other input values within the same model
+#### Changed
+- Changed name of "job" app (folder) to "reoptjl". Note that name has been updated throughout the CHANGELOG as well.
+
 ## v2.13.0
 ### Minor Updates
 ##### Fixed
@@ -39,16 +57,16 @@ Classify the change according to the following categories:
 ## v2.12.0
 ### Minor Updates
 ##### Added
-- Added `summary` endpoint and `job\views.summary`
-- Added `summary_by_chunk` endpoint and `job\views.summary_by_chunk`
-- Added `unlink` endpoint and `job\views.unlink` along with **UserUnlinkedRuns**
+- Added `summary` endpoint and `reoptjl/views.summary`
+- Added `summary_by_chunk` endpoint and `reoptjl/views.summary_by_chunk`
+- Added `unlink` endpoint and `reoptjl/views.unlink` along with **UserUnlinkedRuns**
 - Add **GeneratorInputs** field **fuel_higher_heating_value_kwh_per_gal**, which defaults to 40.7 (diesel)
 - Add CHP to ERP testing
 ##### Changed
 - Default **FinancialInputs** field **value_of_lost_load_per_kwh** to zero
 - Default **SiteInputs** field **min_resil_time_steps** to max value in **ElectricUtilityInputs** **outage_durations**
 - Changed the v3/easiur_costs endpoint to call a v3 specific view that uses the REopt julia package's EASIUR functionality instead of calling the v1/v2 easiur_costs view
-- `job\api.py` to save user_uuid and webtool_uuid to **APIMeta** data model for each request
+- `reoptjl/api.py` to save user_uuid and webtool_uuid to **APIMeta** data model for each request
 ##### Fixed
 - A 0-indexing off by one bug in the `peak_load_outage_times` view/endpoint where seasons were defined as starting on 2nd days of months
 - If user specifies **ERPGeneratorInputs**/**ERPPrimeGeneratorInputs** **electric_efficiency_full_load** but not **electric_efficiency_half_load** in ERP post, don't use the REopt **GeneratorInputs**/**CHPInputs** **electric_efficiency_half_load**, instead let **ERPGeneratorInputs**/**ERPPrimeGeneratorInputs** **electric_efficiency_half_load** default to **electric_efficiency_full_load**
@@ -84,7 +102,7 @@ Classify the change according to the following categories:
 ## v2.9.1
 ### Patches
 ##### Added
-- In job/ app (v3): emissions_profile endpoint and view function that returns the emissions data for a location
+- In reoptjl app (v3): emissions_profile endpoint and view function that returns the emissions data for a location
 
 ## v2.9.0
 ### Minor Updates
@@ -97,7 +115,7 @@ Classify the change according to the following categories:
     - `/erp/help` endpoint that GETs the ERP input field info (calls `erp_help()`)
     - `/erp/chp_defaults` endpoint that GETs ERP CHP/prime generator input defaults based on parameters `prime_mover`, `is_chp`, and `size_kw` (calls `erp_chp_prime_gen_defaults()`)
     - Tests in `resilience+stats/tests/test_erp.py`
- - In job/ app (v3), added Financial **year_one_om_costs_before_tax_bau**, **lifecycle_om_costs_after_tax_bau** 
+ - In reoptjl app (v3), added Financial **year_one_om_costs_before_tax_bau**, **lifecycle_om_costs_after_tax_bau** 
  - Added field **production_factor_series** to Django models **WindOutputs** and **PVOutputs**
  - In **REoptjlMessageOutputs** added a **has_stacktrace** field to denote if response has a stacktrace error or not. Default is False.
  - Added access to the multiple outage stochastic/robust modeling capabilities in REopt.jl. Not all inputs and outputs are exposed, but the following are:
@@ -106,22 +124,22 @@ Classify the change according to the following categories:
    - **OutageOutputs**: **expected_outage_cost**, **max_outage_cost_per_outage_duration**, **unserved_load_series**, **unserved_load_per_outage**, **microgrid_upgrade_capital_cost**, **generator_fuel_used_per_outage**
  - Added test using multiple outage modeling
  - Add /dev/schedule_stats endpoint
- - In job/ app (v3): added **AbsorptionChillerInputs** model
-- In job/ app (v3): added **AbsorptionChillerOutputs** model
-- In `job/views.py`:
+ - In reoptjl app (v3): added **AbsorptionChillerInputs** model
+- In reoptjl app (v3): added **AbsorptionChillerOutputs** model
+- In `reoptjl/views.py`:
     - add new input/output models to properly save the inputs/outputs
     - add `/absorption_chiller_defaults` endpoint which calls the http.jl absorption_chiller_defaults endpoint
 ##### Changed
-- Update REopt.jl to v0.28.0 for job app (/dev -> v3)
-- `/job/chp_defaults` endpoint updated to take optional electric load metrics for non-heating CHP (Prime Generator in UI)
+- Update REopt.jl to v0.28.0 for reoptjl app (/dev -> v3)
+- `/reoptjl/chp_defaults` endpoint updated to take optional electric load metrics for non-heating CHP (Prime Generator in UI)
   - Changed `/chp_defaults` input of `existing_boiler_production_type` to `hot_water_or_steam`
   - `CHP.size_class` starting at 0 for average of other size_classes
   - `CHP.max_size` calculated based on heating load or electric load
-- In job/ app (v3), changed Financial **breakeven_cost_of_emissions_reduction_per_tonnes_CO2** to **breakeven_cost_of_emissions_reduction_per_tonne_CO2**
-- In job/ app (v3), changed default ElectricLoad **year** to 2022 if user provides load data and 2017 if using CRBD
+- In reoptjl app (v3), changed Financial **breakeven_cost_of_emissions_reduction_per_tonnes_CO2** to **breakeven_cost_of_emissions_reduction_per_tonne_CO2**
+- In reoptjl app (v3), changed default ElectricLoad **year** to 2022 if user provides load data and 2017 if using CRBD
  - Changed `scalar_to_vector` helper function to `scalar_or_monthly_to_8760`
  - Changed **GeneratorInputs** fields **fuel_slope_gal_per_kwh** and **fuel_intercept_gal_per_hr** to **electric_efficiency_full_load** and **electric_efficiency_half_load** to represent the same fuel burn curve in a different way consistent with **CHPInputs**
-- Updated the following default values to job/ app (v3):
+- Updated the following default values to reoptjl app (v3):
   - **federal_itc_fraction** to 0.3 (30%) in models **PVInputs**, **WindInputs**, and **CHPInputs** 
   - **total_itc_fraction** to 0.3 (30%) in models **HotWaterStorageInputs**, **ColdWaterStorageInputs**, and **ElectricStorageInputs**
   - ***macrs_bonus_fraction** to 0.8 (80%) in models **PVInputs**, **WindInputs**, **CHPInputs**, PV, **HotWaterStorageInputs**, **ColdWaterStorageInputs**, and **ElectricStorageInputs**
@@ -132,7 +150,7 @@ Classify the change according to the following categories:
 - In `reo/nested_inputs.py` v2 inputs (`defaults_dict[2]`), updated the following default values:
   - ColdTES, HotTES: **macrs_option_years** to 7 (years)
   - ColdTES, HotTES: ***macrs_bonus_pct** to 0.8 (80%)
-- Updated the following default values to job/ app (v3):
+- Updated the following default values to reoptjl app (v3):
   - PV, Wind, Storage, CHP, Hot Water Storage, Cold Water Storage, Electric Storage: **federal_itc_fraction(PV,Wind,CHP)** and **total_itc_fraction(Hot Water Storage, Cold Water Storage, Electric Storage)** to 0.3 (30%)
   - PV, Wind, Storage, CHP, Hot Water Storage, Cold Water Storage, Electric Storage: ***macrs_bonus_fraction** to 0.8 (80%)
   - Hot Water Storage and Cold Water Storage: **macrs_option_years** to 7 years
@@ -156,28 +174,28 @@ Classify the change according to the following categories:
 ## v2.7.1
 ### Minor Updates
 ##### Added 
-- In job/ app (v3): Added **addressable_load_fraction** to SpaceHeatingLoad and DomesticHotWaterLoad inputs. 
+- In reoptjl app (v3): Added **addressable_load_fraction** to SpaceHeatingLoad and DomesticHotWaterLoad inputs. 
 ##### Changed
 - Changed redis service memory settings to mitigate "out of memory" OOM issue we've been getting on production
  
 ## v2.7.0
 ### Minor Updates
 ##### Changed
-- In job/ app (v3): Name changes for many outputs/results. Generally, changes are for energy outputs (not costs) that include "year_one", and are changed to annual_ for scalars and to production_to_, thermal_to_ etc. for time series.
-- In job/ app (v3): Changed some _bau outputs to align with REopt.jl outputs
+- In reoptjl app (v3): Name changes for many outputs/results. Generally, changes are for energy outputs (not costs) that include "year_one", and are changed to annual_ for scalars and to production_to_, thermal_to_ etc. for time series.
+- In reoptjl app (v3): Changed some _bau outputs to align with REopt.jl outputs
 ##### Added 
- - In job/ app (v3): Added **thermal_production_series_mmbtu_per_hour** to CHP results.
+ - In reoptjl app (v3): Added **thermal_production_series_mmbtu_per_hour** to CHP results.
 ##### Removed
-- In job/ app (v3): Removed outputs not reported by REopt.jl
+- In reoptjl app (v3): Removed outputs not reported by REopt.jl
 ##### Fixed
-- In job/views for `/simulated_load` endpoint: Fixed the data type conversion issues between JSON and Julia
+- In reoptjl/views for `/simulated_load` endpoint: Fixed the data type conversion issues between JSON and Julia
   
 ## v2.6.0
 ### Minor Updates
 ##### Added
 1. **REoptjlMessageOutputs** model to capture errors and warnings returned by REoptjl during input processing and post optimization
 2. Missing output fields for **ExistingBoilerOutputs** model
-3. API test `job\test\posts\all_inputs_test.json` to include all input models in a single API test
+3. API test `reoptjl/test\posts\all_inputs_test.json` to include all input models in a single API test
 - added **HotThermalStorageInputs** model
 - added **HotThermalStorageOutputs** model
 - added **ColdThermalStorageInputs** model
@@ -204,30 +222,30 @@ Classify the change according to the following categories:
 ### Minor Updates
 ##### Added
 - `0011_coolingloadinputs....` file used to add new models to the db
-In `job/models.py`:
+In `reoptjl/models.py`:
 - added **ExistingChillerInputs** model
 - added **ExistingChillerOutputs** model
 - added **CoolingLoadInputs** model
 - added **CoolingLoadOutputs** model
 - added **HeatingLoadOutputs** model
-In `job/process_results.py`: 
+In `reoptjl/process_results.py`: 
 - add **ExistingChillerOutputs** 
 - add **CoolingLoadOutputs**
 - add **HeatingLoadOutputs**
-In `job/validators.py:
+In `reoptjl/validators.py:
 - add time series length validation on **CoolingLoadInputs->thermal_loads_ton** and **CoolingLoadInputs->per_time_step_fractions_of_electric_load**
-In `job/views.py`:
+In `reoptjl/views.py`:
 - add new input/output models to properly save the inputs/outputs
 
 ## v2.4.0
 ### Minor Updates
 ##### Added 
-- In `job/models.py`:
+- In `reoptjl/models.py`:
   - add **CHPInputs** model
   - add **CHPOutputs** model
-- In `job/process_results.py` add **CHPOutputs**
-- In `job/validators.py` add new input models
-- In `job/views.py`:
+- In `reoptjl/process_results.py` add **CHPOutputs**
+- In `reoptjl/validators.py` add new input models
+- In `reoptjl/views.py`:
   - add new input/output models to properly save the inputs/outputs
   - add `/chp_defaults` endpoint which calls the http.jl chp_defaults endpoint
   - add `/simulated_load` endpoint which calls the http.jl simulated_load endpoint    
@@ -240,7 +258,7 @@ Lookback charge parameters expected from the URDB API call were changed to the n
 ## v2.3.0
 ### Minor Updates
 ##### Changed
-The following name changes were made in the `job/` endpoint and `julia_src/http.jl`: 
+The following name changes were made in the `reoptjl/` endpoint and `julia_src/http.jl`: 
  - Change "_pct" to "_rate_fraction" for input and output names containing "discount", "escalation", and "tax_pct" (financial terms)
  - Change "_pct" to "_fraction" for all other input and output names (e.g., "min_soc_", "min_turndown_")
  - Change **prod_factor_series** to **production_factor_series**
@@ -252,19 +270,19 @@ The following name changes were made in the `job/` endpoint and `julia_src/http.
 ### Minor Updates 
 ##### Fixed
 - Require ElectricTariff key in inputs when **Settings.off_grid_flag** is false
-- Create and save **ElectricUtilityInputs** model if ElectricUtility key not provided in inputs when **Settings.off_grid_flag** is false, in order to use the default inputs in `job/models.py`
+- Create and save **ElectricUtilityInputs** model if ElectricUtility key not provided in inputs when **Settings.off_grid_flag** is false, in order to use the default inputs in `reoptjl/models.py`
 - Added message to `messages()` to alert user if valid ElectricUtility input is provided when **Settings.off_grid_flag** is true
 - Register 
 - Make all urls available from stable/ also available from v2/. Includes registering `OutageSimJob()` and `GHPGHXJob()` to the 'v2' API and adding missing paths to urlpatterns in `urls.py`.
 ##### Changed
-- `job/models.py`: 
+- `reoptjl/models.py`: 
     - remove Generator `fuel_slope_gal_per_kwh` and `fuel_intercept_gal_per_hr` defaults based on size, keep defaults independent of size 
 	- changed `get_input_dict_from_run_uuid` to accomodate new models
 	- changed **ElectricLoadInputs.wholesale_rate** to use `scalar_to_vector` function
-- `job/validators.py`: Align PV tilt and aziumth defaults with API v2 behavior, based on location and PV type
+- `reoptjl/validators.py`: Align PV tilt and aziumth defaults with API v2 behavior, based on location and PV type
 ##### Added 
 - `0005_boilerinputs....` file used to add new models to the db
-- `job/` endpoint: Add inputs and validation to model off-grid wind 
+- `reoptjl/` endpoint: Add inputs and validation to model off-grid wind 
 - added **ExistingBoilerInputs** model
 - added **ExistingBoilerOutputs** model
 - added **SpaceHeatingLoadInputs** model
@@ -289,16 +307,16 @@ The following name changes were made in the `job/` endpoint and `julia_src/http.
     - add `year_one_emissions_tonnes_<pollutant>`, `year_one_emissions_from_fuelburn_tonnes_<pollutant>`, `lifecycle_emissions_tonnes_<pollutant>`, and `lifecycle_emissions_from_fuelburn_tonnes_<pollutant>` for CO2, NOx, SO2, and PM25
 - **FinancialOutputs**
     - add `breakeven_cost_of_emissions_reduction_per_tonnes_CO2`
-In `job/process_results.py`: 
+In `reoptjl/process_results.py`: 
 - add **HotThermalStorageOutputs**
 - add **ExistingBoilerOutputs**
-In `job/test/test_job_endpoint.py`: 
+In `reoptjl/test/test_job_endpoint.py`: 
 - test that AVERT and EASIUR defaults for emissions inputs not provided by user are passed back from REopt.jl and saved in database
 - add a testcase to validate that API is accepting/returning fields related to new models.
-In `'job/validators.py`:
+In `'reoptjl/validators.py`:
 - add new input models
 - added `update_pv_defaults_offgrid()` to prevent validation failure when PV is not provided as input
-In `job/views.py`:
+In `reoptjl/views.py`:
 - Added **SiteInputs** to `help` endpoint
 - Added **SiteOutputs** to `outputs` endpoint
 - add new input/output models to properly save the inputs/outputs
@@ -309,7 +327,7 @@ In `job/views.py`:
 - The `/stable` URL now correctly calls the `v2` version of the REopt model (`/job` endpoint)
 - Don't trigger Built-in Tests workflow on a push that only changes README.md and/or CHANGELOG.md
 - Avoid triggering duplicate GitHub workflows. When pushing to a branch that's in a PR, only trigger tests on the push not on the PR sync also.
-In `job/models.py` : 
+In `reoptjl/models.py` : 
 - **Settings**
     - Added **off_grid_flag**
     - Changed **run_bau** to be nullable
@@ -399,14 +417,14 @@ In `job/models.py` :
     - Changed field name **lifecycle_fuel_cost** to **lifecycle_fuel_cost_after_tax**
     - Changed field name **lifecycle_fixed_om_cost** to **lifecycle_fixed_om_cost_after_tax**
 
-`job/run_jump_model.py` - Remove `run_uuid` key from input dictionary before running REopt to avoid downstream errors from REopt.jl
-`job/validators.py`
+`reoptjl/run_jump_model.py` - Remove `run_uuid` key from input dictionary before running REopt to avoid downstream errors from REopt.jl
+`reoptjl/validators.py`
     - Changed **ElectricTariffInputs** to validate if **ElectricTariff** key exists in inputs
     - Added message to `messages()` to alert user if valid ElectricTariff input is provided when **Settings.off_grid_flag** is true.
     - Added message to `messages()` to alert user of technologies which can be modeled when **Settings.off_grid_flag** is true.
     - Added validation error to alert user of input keys which can't be modeled when **Settings.off_grid_flag** is true.
-`job/views.py` - Changed validation code to try to save **ElectricTariffInputs**
-`job/test_job_endpoint.py` - Added test to validate API off-grid functionality
+`reoptjl/views.py` - Changed validation code to try to save **ElectricTariffInputs**
+`reoptjl/test_job_endpoint.py` - Added test to validate API off-grid functionality
 - Added migration file `0005_remove_...` which contains the data model for all Added and Changed fields
 
 ## v2.0.3
