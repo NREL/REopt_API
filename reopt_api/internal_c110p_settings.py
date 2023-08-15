@@ -69,8 +69,7 @@ INSTALLED_APPS = (
     'resilience_stats',
     'django_celery_results',
     'django_extensions',
-    'ghpghx',
-    'django_rename_app'
+    'ghpghx'
     )
 
 MIDDLEWARE_CLASSES = (

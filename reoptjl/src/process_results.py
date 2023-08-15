@@ -33,7 +33,8 @@ from reoptjl.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorage
                         ElectricUtilityInputs, ExistingBoilerOutputs, CHPOutputs, CHPInputs, \
                         ExistingChillerOutputs, CoolingLoadOutputs, HeatingLoadOutputs,\
                         HotThermalStorageOutputs, ColdThermalStorageOutputs, OutageOutputs,\
-                        REoptjlMessageOutputs, AbsorptionChillerOutputs
+                        REoptjlMessageOutputs, AbsorptionChillerOutputs, GHPInputs, GHPOutputs,\
+                        ExistingChillerInputs
 import numpy as np
 import sys
 import traceback as tb
@@ -102,6 +103,8 @@ def process_results(results: dict, run_uuid: str) -> None:
                     if multi_dim_array_name in results["Outages"]:
                         results["Outages"][multi_dim_array_name] = np.transpose(results["Outages"][multi_dim_array_name]).tolist()
                 OutageOutputs.create(meta=meta, **results["Outages"]).save()
+            if "GHP" in results.keys():
+                GHPOutputs.create(meta=meta, **results["GHP"]).save() 
             # TODO process rest of results
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -135,6 +138,14 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
         ElectricUtilityInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["ElectricUtility"])
         if inputs_to_update["CHP"]:  # Will be an empty dictionary if CHP is not considered
             CHPInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["CHP"])
+        if inputs_to_update["GHP"]:
+            GHPInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["GHP"])
+        if inputs_to_update["ExistingChiller"]:
+            if not ExistingChillerInputs.objects.filter(meta__run_uuid=run_uuid):
+                meta = APIMeta.objects.get(run_uuid=run_uuid)
+                ExistingChillerInputs.create(meta=meta, **inputs_to_update["ExistingChiller"]).save()
+            else:
+                ExistingChillerInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["ExistingChiller"])
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(
