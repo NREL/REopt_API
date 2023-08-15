@@ -50,7 +50,7 @@ logger = get_task_logger(__name__)
 from reo.exceptions import SaveToDatabase, UnexpectedError, REoptFailedToStartError
 
 from reo.models import ScenarioModel, FinancialModel
-from job.models import APIMeta
+from reoptjl.models import APIMeta
 from resilience_stats.models import ResilienceModel, ERPMeta, ERPOutageInputs, ERPGeneratorInputs, ERPPrimeGeneratorInputs, ERPPVInputs, ERPElectricStorageInputs, ERPOutputs, get_erp_input_dict_from_run_uuid
 from resilience_stats.validators import validate_run_uuid
 from resilience_stats.views import run_outage_sim
