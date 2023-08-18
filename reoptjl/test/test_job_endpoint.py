@@ -323,7 +323,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
 
     def test_steamturbine_defaults_from_julia(self):
         # Test that the inputs_with_defaults_set_in_julia feature worked for SteamTurbine, consistent with /chp_defaults
-        post_file = os.path.join('job', 'test', 'posts', 'steamturbine_defaults_post.json')
+        post_file = os.path.join('reoptjl', 'test', 'posts', 'steamturbine_defaults_post.json')
         post = json.load(open(post_file, 'r'))
 
         # Call http.jl /reopt to run SteamTurbine scenario and get results for defaults from julia checking
