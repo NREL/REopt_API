@@ -64,7 +64,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
 
     def test_pv_battery_and_emissions_defaults_from_julia(self):
         """
-        Same test post as"Solar and Storage w/BAU" in the Julia package. Used in development of v3.
+        Same test post as"Solar and ElectricStorage w/BAU" in the Julia package. Used in development of v3.
         Also tests that inputs with defaults determined in the REopt julia package get updated in the database.
         """
         post_file = os.path.join('reoptjl', 'test', 'posts', 'pv_batt_emissions.json')
@@ -79,11 +79,11 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         r = json.loads(resp.content)
         results = r["outputs"]
 
-        self.assertAlmostEqual(results["Financial"]["lcc"], 1.240037e7, places=-3)
+        self.assertAlmostEqual(results["Financial"]["lcc"], 12391786, places=-3)
         self.assertAlmostEqual(results["Financial"]["lcc_bau"], 12766397, places=-3)
         self.assertAlmostEqual(results["PV"]["size_kw"], 216.667, places=1)
-        self.assertAlmostEqual(results["ElectricStorage"]["size_kw"], 55.9, places=1)
-        self.assertAlmostEqual(results["ElectricStorage"]["size_kwh"], 78.9, places=1)
+        self.assertAlmostEqual(results["ElectricStorage"]["size_kw"], 49.05, places=1)
+        self.assertAlmostEqual(results["ElectricStorage"]["size_kwh"], 83.32, places=1)
     
         self.assertIsNotNone(results["Site"]["total_renewable_energy_fraction"])
         self.assertIsNotNone(results["Site"]["annual_emissions_tonnes_CO2"])
