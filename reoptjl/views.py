@@ -506,14 +506,14 @@ def simulated_load(request):
         for key in valid_keys:
             for key_type in other_keys_types:
                 if key_type in key:
-                    value = request.GET.get(key)
-                    if value is not None:
-                        if type(value) == list:
-                            monthly_list  = [request.GET.get(key+'[{}]'.format(i)) for i in range(12)]
-                            k = key.split('[')[0]
-                            inputs[k] = [float(i) for i in monthly_list]
-                        else:
-                            inputs[key] = float(value)
+                    if (key_type in ["monthly", "addressable"]) and request.GET.get(key + "[0]") is not None:
+                        try: 
+                            monthly_list  = [float(request.GET.get(key+'[{}]'.format(i))) for i in range(12)]
+                            inputs[key] = monthly_list
+                        except: 
+                            return JsonResponse({"Error. Monthly data does not contain 12 valid entries"})
+                    elif request.GET.get(key) is not None:
+                        inputs[key] = float(request.GET.get(key))
 
         julia_host = os.environ.get('JULIA_HOST', "julia")
         http_jl_response = requests.get("http://" + julia_host + ":8081/simulated_load/", json=inputs)

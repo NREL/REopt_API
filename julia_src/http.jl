@@ -339,13 +339,14 @@ function simulated_load(req::HTTP.Request)
         end
     end
 
-    if "percent_share" in keys(d) && typeof(d["percent_share"]) <: Vector{}
-        d["percent_share"] = convert(Vector{Float64}, d["percent_share"])
-    end
-
-    if "cooling_pct_share" in keys(d) && typeof(d["cooling_pct_share"]) <: Vector{}
-        d["cooling_pct_share"] = convert(Vector{Float64}, d["cooling_pct_share"])
-    end
+    # Convert vectors which come in as Vector{Any} to Vector{Float} (within Vector{<:Real})
+    vector_types = ["percent_share", "cooling_pct_share", "monthly_kwh", "monthly_mmbtu", 
+                    "monthly_tonhour", "addressable_load_fraction"]
+    for key in vector_types
+        if key in keys(d) && typeof(d[key]) <: Vector{}
+            d[key] = convert(Vector{Float64}, d[key])
+        end
+    end 
 
     @info "Getting CRB Loads..."
     data = Dict()
