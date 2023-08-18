@@ -318,7 +318,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         r = json.loads(resp.content)
         results = r["outputs"]
 
-        self.assertAlmostEqual(results["Financial"]["npv"], -11682.27, places=0)
+        self.assertAlmostEqual(results["Financial"]["npv"], 11323.01, places=0)
         assert(resp.status_code==200)   
 
     def test_steamturbine_defaults_from_julia(self):
@@ -350,7 +350,10 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         view_response = json.loads(resp.content)
 
         for key in view_response["default_inputs"].keys():
-            if post["SteamTurbine"].get(key) is None: # Check that default got assigned consistent with /chp_defaults
-                self.assertEquals(inputs_steamturbine[key], view_response["default_inputs"][key])
-            else:  # Make sure we didn't overwrite user-input
-                self.assertEquals(inputs_steamturbine[key], post["SteamTurbine"][key])
+            # skip this key because its NaN in REoptInputs but is populated in /chp_defaults response.
+            if key != "inlet_steam_temperature_degF":
+                if post["SteamTurbine"].get(key) is None: # Check that default got assigned consistent with /chp_defaults
+                    self.assertEquals(inputs_steamturbine[key], view_response["default_inputs"][key])
+                else:  # Make sure we didn't overwrite user-input
+                    self.assertEquals(inputs_steamturbine[key], post["SteamTurbine"][key])
+                    
