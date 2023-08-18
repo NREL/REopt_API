@@ -64,7 +64,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
 
     def test_pv_battery_and_emissions_defaults_from_julia(self):
         """
-        Same test post as"Solar and ElectricStorage w/BAU" in the Julia package. Used in development of v3.
+        Same test post as "Solar and ElectricStorage w/BAU" in the Julia package. Used in development of v3.
         Also tests that inputs with defaults determined in the REopt julia package get updated in the database.
         """
         post_file = os.path.join('reoptjl', 'test', 'posts', 'pv_batt_emissions.json')
