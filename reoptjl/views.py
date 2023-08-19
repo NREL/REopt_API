@@ -577,6 +577,43 @@ def ghp_efficiency_thermal_factors(request):
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in ghp_efficiency_thermal_factors endpoint. Check log for more."}, status=500)
 
+def get_existing_chiller_default_cop(request):
+    """
+    GET default existing chiller COP using the max thermal cooling load.
+    param: existing_chiller_max_thermal_factor_on_peak_load: max thermal factor on peak cooling load, i.e., "oversizing" of existing chiller [fraction]
+    param: max_load_kw: maximum electrical load [kW]
+    param: max_load_kw_thermal: maximum thermal cooling load [kW]
+    return: existing_chiller_cop: default COP of existing chiller [fraction]  
+    """
+    try:
+        existing_chiller_max_thermal_factor_on_peak_load = float(request.GET['existing_chiller_max_thermal_factor_on_peak_load'])  # need float to convert unicode
+        max_load_kw = float(request.GET['max_load_kw'])
+        max_load_kw_thermal = float(request.GET['max_load_kw_thermal'])
+
+        inputs_dict = {"existing_chiller_max_thermal_factor_on_peak_load": existing_chiller_max_thermal_factor_on_peak_load,
+                        "max_load_kw": max_load_kw,
+                        "max_load_kw_thermal": max_load_kw_thermal}
+
+        julia_host = os.environ.get('JULIA_HOST', "julia")
+        http_jl_response = requests.get("http://" + julia_host + ":8081/get_existing_chiller_default_cop/", json=inputs_dict)
+        response = JsonResponse(
+            http_jl_response.json()
+        )
+        return response
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected error in get_existing_chiller_default_cop endpoint. Check log for more."}, status=500)
+
     
 def summary(request, user_uuid):
     """

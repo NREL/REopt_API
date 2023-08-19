@@ -30,7 +30,8 @@ Classify the change according to the following categories:
 ### Minor Updates
 ##### Added
 - Add `GHP` to `job` app for v3
-- Add `/ghp_efficiency_thermal_factors` endpoint to `job` app for v
+- Add `/ghp_efficiency_thermal_factors` endpoint to `job` app for v3
+- Add `/get_existing_chiller_default_cop` endpoint to `job` app for v3
 ##### Changed
 - Update a couple of GHP functions to use the GhpGhx.jl package instead of previous Julia scripts and data from v2
 ##### Fixed
