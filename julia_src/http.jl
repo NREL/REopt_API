@@ -339,13 +339,14 @@ function simulated_load(req::HTTP.Request)
         end
     end
 
-    if "percent_share" in keys(d) && typeof(d["percent_share"]) <: Vector{}
-        d["percent_share"] = convert(Vector{Float64}, d["percent_share"])
-    end
-
-    if "cooling_pct_share" in keys(d) && typeof(d["cooling_pct_share"]) <: Vector{}
-        d["cooling_pct_share"] = convert(Vector{Float64}, d["cooling_pct_share"])
-    end
+    # Convert vectors which come in as Vector{Any} to Vector{Float} (within Vector{<:Real})
+    vector_types = ["percent_share", "cooling_pct_share", "monthly_kwh", "monthly_mmbtu", 
+                    "monthly_tonhour", "addressable_load_fraction"]
+    for key in vector_types
+        if key in keys(d) && typeof(d[key]) <: Vector{}
+            d[key] = convert(Vector{Float64}, d[key])
+        end
+    end 
 
     @info "Getting CRB Loads..."
     data = Dict()
@@ -430,6 +431,37 @@ function health(req::HTTP.Request)
     return HTTP.Response(200, JSON.json(Dict("Julia-api"=>"healthy!")))
 end
 
+function get_existing_chiller_default_cop(req::HTTP.Request)
+    d = JSON.parse(String(req.body))
+    chiller_cop = nothing
+
+    for key in ["existing_chiller_max_thermal_factor_on_peak_load","max_load_kw","max_load_kw_thermal"]
+        if !(key in keys(d))
+            d[key] = nothing
+        end
+    end
+    
+    @info "Getting default existing chiller COP..."
+    error_response = Dict()
+    try
+        chiller_cop = reoptjl.get_existing_chiller_default_cop(;
+                existing_chiller_max_thermal_factor_on_peak_load=d["existing_chiller_max_thermal_factor_on_peak_load"], 
+                max_load_kw=d["max_load_kw"],
+                max_load_kw_thermal=d["max_load_kw_thermal"])      
+    catch e
+        @error "Something went wrong in the get_existing_chiller_default_cop" exception=(e, catch_backtrace())
+        error_response["error"] = sprint(showerror, e)
+    end
+    if isempty(error_response)
+        @info("Default existing chiller COP detected.")
+        response = Dict([("existing_chiller_cop", chiller_cop)])
+        return HTTP.Response(200, JSON.json(response))
+    else
+        @info "An error occured in the get_existing_chiller_default_cop endpoint"
+        return HTTP.Response(500, JSON.json(error_response))
+    end
+end    
+
 # define REST endpoints to dispatch to "service" functions
 const ROUTER = HTTP.Router()
 
@@ -445,4 +477,5 @@ HTTP.register!(ROUTER, "GET", "/absorption_chiller_defaults", absorption_chiller
 HTTP.register!(ROUTER, "GET", "/ghp_efficiency_thermal_factors", ghp_efficiency_thermal_factors)
 HTTP.register!(ROUTER, "GET", "/ground_conductivity", ground_conductivity)
 HTTP.register!(ROUTER, "GET", "/health", health)
+HTTP.register!(ROUTER, "GET", "/get_existing_chiller_default_cop", get_existing_chiller_default_cop)
 HTTP.serve(ROUTER, "0.0.0.0", 8081, reuseaddr=true)
