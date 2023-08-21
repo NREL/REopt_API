@@ -210,3 +210,17 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         view_response = json.loads(resp.content)
 
         self.assertEqual(view_response["thermal_conductivity"], 1.117)
+
+    def test_default_existing_chiller_cop(self):
+        inputs_dict = {
+            "existing_chiller_max_thermal_factor_on_peak_load":1.25,
+            "max_load_kw": 50,
+            "max_load_kw_thermal":100
+        }
+
+        # Call to the django view endpoint /ghp_efficiency_thermal_factors which calls the http.jl endpoint
+        resp = self.api_client.get(f'/dev/get_existing_chiller_default_cop', data=inputs_dict)
+        view_response = json.loads(resp.content)
+        print(view_response)
+
+        self.assertEqual(view_response["existing_chiller_cop"], 4.4)
