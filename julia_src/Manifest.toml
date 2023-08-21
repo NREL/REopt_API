@@ -734,11 +734,9 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [[deps.REopt]]
 deps = ["ArchGDAL", "CSV", "CoolProp", "DataFrames", "Dates", "DelimitedFiles", "HTTP", "JLD", "JSON", "JuMP", "LinDistFlow", "LinearAlgebra", "Logging", "MathOptInterface", "Requires", "Roots", "Statistics", "TestEnv"]
-git-tree-sha1 = "37fbff771f638c44bf0f4a4f32c9ea7acb2da3fd"
-repo-rev = "boiler_stmturbine_debug"
-repo-url = "https://github.com/NREL/REopt.jl.git"
+git-tree-sha1 = "dc4c1dee6bff928e6c23b173e13392ddeae8c975"
 uuid = "d36ad4e8-d74a-4f7a-ace1-eaea049febf6"
-version = "0.32.4"
+version = "0.32.6"
 
 [[deps.Random]]
 deps = ["SHA", "Serialization"]
