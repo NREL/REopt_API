@@ -1,0 +1,60 @@
+{
+    "DomesticHotWaterLoad": {
+        "annual_mmbtu": 4380.0,
+        "doe_reference_name": "FlatLoad"
+    },
+    "ElectricTariff": {
+        "urdb_label": "5e1676e95457a3f87673e3b0",
+        "wholesale_rate": 0.04
+    },
+    "Site": {
+        "latitude": 37.78,
+        "longitude": -122.45
+    },
+    "ElectricLoad": {
+        "annual_kwh": 8.76e6,
+        "doe_reference_name": "FlatLoad"
+    },
+    "Boiler": {
+        "fuel_cost_per_mmbtu": [
+            5,
+            10,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5
+        ],
+        "max_mmbtu_per_hour": 1.0e9,
+        "om_cost_per_mmbtu_per_hour": 0.0,
+        "installed_cost_per_mmbtu_per_hour": 0.001
+    },
+    "SpaceHeatingLoad": {
+        "annual_mmbtu": 4380.0,
+        "doe_reference_name": "FlatLoad"
+    },
+    "ExistingBoiler": {
+        "fuel_cost_per_mmbtu": [
+            10,
+            2,
+            10,
+            10,
+            10,
+            10,
+            10,
+            10,
+            10,
+            10,
+            10,
+            10
+        ],
+        "fuel_type": "natural_gas",
+        "efficiency": 0.8,
+        "production_type": "steam"
+    }
+}

@@ -1,0 +1,30 @@
+{
+    "DomesticHotWaterLoad": {
+        "annual_mmbtu": 67140.53099999999,
+        "doe_reference_name": "Hospital"
+    },
+    "ElectricTariff": {
+        "urdb_label": "5e1676e95457a3f87673e3b0"
+    },
+    "Site": {
+        "latitude": 37.78,
+        "longitude": -122.45
+    },
+    "ElectricLoad": {
+        "annual_kwh": 3.876408500000039e7,
+        "doe_reference_name": "Hospital"
+    },
+    "SpaceHeatingLoad": {
+        "annual_mmbtu": 1.15709155e6,
+        "doe_reference_name": "Hospital"
+    },
+    "SteamTurbine": {
+        "max_kw": 2000
+    },
+    "ExistingBoiler": {
+        "fuel_cost_per_mmbtu": 10.0,
+        "efficiency": 0.8,
+        "can_supply_steam_turbine": true,
+        "production_type": "steam"
+    }
+}

@@ -29,11 +29,15 @@ Classify the change according to the following categories:
 ## Develop 2023-08-07
 ### Minor Updates
 ##### Added
-- Add `GHP` to `job` app for v3
-- Add `/ghp_efficiency_thermal_factors` endpoint to `job` app for v3
-- Add `/get_existing_chiller_default_cop` endpoint to `job` app for v3
+- Add `GHP` to `reoptjl` app for v3
+- Add `Boiler` to `reoptjl` app for v3 along with appropriate tests
+- Add `SteamTurbine` to `reoptjl` app for v3 along with appropriate tests
+- Add `/ghp_efficiency_thermal_factors` endpoint to `reoptjl` app for v3
+- Add `/get_existing_chiller_default_cop` endpoint to `reoptjl` app for v3
+- Add `/get_chp_defaults` endpoint to `reoptjl` app
 ##### Changed
 - Update a couple of GHP functions to use the GhpGhx.jl package instead of previous Julia scripts and data from v2
+- Update `julia_src/` TOML files to point to **REopt.jlv0.32.6**
 ##### Fixed
 - Fixed a type mismatch bug in the `simulated_load` function within http.jl
 
