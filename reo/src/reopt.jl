@@ -400,6 +400,16 @@ function add_storage_op_constraints(m, p)
 		)
 	)
 
+    # COPIED FROM MOSEL, for reference for when dvStorageToGrid is possible
+    # !Prevent storage from charging and discharging within same timestep
+    # forall (l in Loc, ts in TimeStep) do
+    #     dvElecToStor(l,ts) <= MaxStorageSizeKW(l) * binBattCharge(l,ts)
+    #     dvElecFromStor(l,ts) <= MaxStorageSizeKW(l) * binBattDischarge(l,ts)
+    #     binBattDischarge(l,ts) + binBattCharge(l,ts) <= 1
+    #     binBattCharge (l,ts) is_binary
+    #     binBattDischarge (l,ts) is_binary
+    # end-do
+
 	# Constraint (4j)-1: Reconcile state-of-charge for (hot) thermal storage
 	@constraint(m, HotTESInventoryCon[b in p.HotTES, ts in p.TimeStep],
     	        m[:dvStorageSOC][b,ts] == m[:dvStorageSOC][b,ts-1] + p.TimeStepScaling * (
