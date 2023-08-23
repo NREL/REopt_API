@@ -938,7 +938,8 @@ function reopt_run(m, p::Parameter)
 		add_no_grid_export_constraint(m, p)
 	end
 
-	#don't allow curtailment or sales of stroage
+    # FORCING dvStorageToGrid to zero; no option to enable this from inputs
+	#don't allow curtailment or sales of storage
 	for ts in p.TimeStep
 		for u in p.StorageSalesTiers
 			fix(m[:dvStorageToGrid][u,ts], 0.0, force=true)
