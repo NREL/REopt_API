@@ -33,8 +33,8 @@ from reoptjl.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorage
                         ElectricUtilityInputs, ExistingBoilerOutputs, CHPOutputs, CHPInputs, \
                         ExistingChillerOutputs, CoolingLoadOutputs, HeatingLoadOutputs,\
                         HotThermalStorageOutputs, ColdThermalStorageOutputs, OutageOutputs,\
-                        REoptjlMessageOutputs, AbsorptionChillerOutputs, GHPInputs, GHPOutputs,\
-                        ExistingChillerInputs
+                        REoptjlMessageOutputs, AbsorptionChillerOutputs, BoilerOutputs, SteamTurbineInputs, \
+                        SteamTurbineOutputs, GHPInputs, GHPOutputs, ExistingChillerInputs
 import numpy as np
 import sys
 import traceback as tb
@@ -74,8 +74,8 @@ def process_results(results: dict, run_uuid: str) -> None:
                 GeneratorOutputs.create(meta=meta, **results["Generator"]).save()
             if "Wind" in results.keys():
                 WindOutputs.create(meta=meta, **results["Wind"]).save()
-            # if "Boiler" in results.keys():
-            #     BoilerOutputs.create(meta=meta, **results["Boiler"]).save()
+            if "Boiler" in results.keys():
+                BoilerOutputs.create(meta=meta, **results["Boiler"]).save()
             if "ExistingBoiler" in results.keys():
                 ExistingBoilerOutputs.create(meta=meta, **results["ExistingBoiler"]).save()
             if "ExistingChiller" in results.keys():
@@ -103,6 +103,8 @@ def process_results(results: dict, run_uuid: str) -> None:
                     if multi_dim_array_name in results["Outages"]:
                         results["Outages"][multi_dim_array_name] = np.transpose(results["Outages"][multi_dim_array_name]).tolist()
                 OutageOutputs.create(meta=meta, **results["Outages"]).save()
+            if "SteamTurbine" in results.keys():
+                SteamTurbineOutputs.create(meta=meta, **results["SteamTurbine"]).save()
             if "GHP" in results.keys():
                 GHPOutputs.create(meta=meta, **results["GHP"]).save() 
             # TODO process rest of results
@@ -136,8 +138,12 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
         # get input models that need updating
         FinancialInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["Financial"])
         ElectricUtilityInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["ElectricUtility"])
+
         if inputs_to_update["CHP"]:  # Will be an empty dictionary if CHP is not considered
             CHPInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["CHP"])
+        if inputs_to_update["SteamTurbine"]:  # Will be an empty dictionary if SteamTurbine is not considered
+            SteamTurbineInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["SteamTurbine"])
+    
         if inputs_to_update["GHP"]:
             GHPInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["GHP"])
         if inputs_to_update["ExistingChiller"]:

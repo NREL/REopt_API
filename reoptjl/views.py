@@ -41,7 +41,8 @@ from reoptjl.models import Settings, PVInputs, ElectricStorageInputs, WindInputs
     UserProvidedMeta, CHPInputs, CHPOutputs, CoolingLoadInputs, ExistingChillerInputs, ExistingChillerOutputs,\
     CoolingLoadOutputs, HeatingLoadOutputs, REoptjlMessageOutputs, HotThermalStorageInputs, HotThermalStorageOutputs,\
     ColdThermalStorageInputs, ColdThermalStorageOutputs, AbsorptionChillerInputs, AbsorptionChillerOutputs,\
-    FinancialInputs, FinancialOutputs, UserUnlinkedRuns, GHPInputs, GHPOutputs
+    FinancialInputs, FinancialOutputs, UserUnlinkedRuns, BoilerInputs, BoilerOutputs, SteamTurbineInputs, \
+    SteamTurbineOutputs, GHPInputs, GHPOutputs
 import os
 import requests
 import numpy as np
@@ -74,7 +75,7 @@ def help(request):
         d["CoolingLoad"] = CoolingLoadInputs.info_dict(CoolingLoadInputs)
         d["ExistingChiller"] = ExistingChillerInputs.info_dict(ExistingChillerInputs)
         d["ExistingBoiler"] = ExistingBoilerInputs.info_dict(ExistingBoilerInputs)
-        # d["Boiler"] = BoilerInputs.info_dict(BoilerInputs)
+        d["Boiler"] = BoilerInputs.info_dict(BoilerInputs)
         d["HotThermalStorage"] = HotThermalStorageInputs.info_dict(HotThermalStorageInputs)
         d["ColdThermalStorage"] = ColdThermalStorageInputs.info_dict(ColdThermalStorageInputs)
         d["SpaceHeatingLoad"] = SpaceHeatingLoadInputs.info_dict(SpaceHeatingLoadInputs)
@@ -82,6 +83,7 @@ def help(request):
         d["Site"] = SiteInputs.info_dict(SiteInputs)
         d["CHP"] = CHPInputs.info_dict(CHPInputs)
         d["AbsorptionChiller"] = AbsorptionChillerInputs.info_dict(AbsorptionChillerInputs)
+        d["SteamTurbine"] = SteamTurbineInputs.info_dict(SteamTurbineInputs)
         d["GHP"] = GHPInputs.info_dict(GHPInputs)
         return JsonResponse(d)
 
@@ -118,7 +120,7 @@ def outputs(request):
         d["Generator"] = GeneratorOutputs.info_dict(GeneratorOutputs)
         d["ExistingChiller"] = ExistingChillerOutputs.info_dict(ExistingChillerOutputs)
         d["ExistingBoiler"] = ExistingBoilerOutputs.info_dict(ExistingBoilerOutputs)
-        # d["Boiler"] = BoilerOutputs.info_dict(BoilerOutputs)
+        d["Boiler"] = BoilerOutputs.info_dict(BoilerOutputs)
         d["HotThermalStorage"] = HotThermalStorageOutputs.info_dict(HotThermalStorageOutputs)
         d["ColdThermalStorage"] = ColdThermalStorageOutputs.info_dict(ColdThermalStorageOutputs)
         d["Site"] = SiteOutputs.info_dict(SiteOutputs)
@@ -128,6 +130,7 @@ def outputs(request):
         d["AbsorptionChiller"] = AbsorptionChillerOutputs.info_dict(AbsorptionChillerOutputs)
         d["GHP"] = GHPOutputs.info_dict(GHPOutputs)
         d["Messages"] = REoptjlMessageOutputs.info_dict(REoptjlMessageOutputs)
+        d["SteamTurbine"] = SteamTurbineOutputs.info_dict(SteamTurbineOutputs)
         return JsonResponse(d)
 
     except Exception as e:
@@ -222,8 +225,8 @@ def results(request, run_uuid):
     try: r["inputs"]["ExistingBoiler"] = meta.ExistingBoilerInputs.dict
     except: pass
 
-    # try: r["inputs"]["Boiler"] = meta.BoilerInputs.dict
-    # except: pass
+    try: r["inputs"]["Boiler"] = meta.BoilerInputs.dict
+    except: pass
 
     try: r["inputs"]["HotThermalStorage"] = meta.HotThermalStorageInputs.dict
     except: pass
@@ -243,6 +246,8 @@ def results(request, run_uuid):
     try: r["inputs"]["AbsorptionChiller"] = meta.AbsorptionChillerInputs.dict
     except: pass
 
+    try: r["inputs"]["SteamTurbine"] = meta.SteamTurbineInputs.dict
+    except: pass
     try: r["inputs"]["GHP"] = meta.GHPInputs.dict
     except: pass    
 
@@ -297,8 +302,8 @@ def results(request, run_uuid):
         except: pass
         try: r["outputs"]["ExistingBoiler"] = meta.ExistingBoilerOutputs.dict
         except: pass
-        # try: r["outputs"]["Boiler"] = meta.BoilerOutputs.dict
-        # except: pass
+        try: r["outputs"]["Boiler"] = meta.BoilerOutputs.dict
+        except: pass
         try: r["outputs"]["Outages"] = meta.OutageOutputs.dict
         except: pass
 
@@ -313,6 +318,8 @@ def results(request, run_uuid):
         try: r["outputs"]["HeatingLoad"] = meta.HeatingLoadOutputs.dict
         except: pass
         try: r["outputs"]["CoolingLoad"] = meta.CoolingLoadOutputs.dict
+        except: pass
+        try: r["outputs"]["SteamTurbine"] = meta.SteamTurbineOutputs.dict
         except: pass
         try: r["outputs"]["GHP"] = meta.GHPOutputs.dict
         except: pass        
@@ -387,7 +394,7 @@ def peak_load_outage_times(request):
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in outage_times_based_on_load_peaks endpoint. Check log for more."}, status=500)
-
+    
 def chp_defaults(request):
     inputs = {
         "hot_water_or_steam": request.GET.get("hot_water_or_steam"),
