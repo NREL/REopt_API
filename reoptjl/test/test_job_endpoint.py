@@ -60,11 +60,11 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         self.assertAlmostEqual(results["Outages"]["expected_outage_cost"], 0.0, places=-2)
         self.assertAlmostEqual(sum(sum(np.array(results["Outages"]["unserved_load_per_outage_kwh"]))), 0.0, places=0)
         self.assertAlmostEqual(results["Outages"]["microgrid_upgrade_capital_cost"], 1927766, places=-2)
-        self.assertAlmostEqual(results["Financial"]["lcc"], 59597421, places=-3)
+        self.assertAlmostEqual(results["Financial"]["lcc"], 59658835, places=-3)
 
     def test_pv_battery_and_emissions_defaults_from_julia(self):
         """
-        Same test post as"Solar and Storage w/BAU" in the Julia package. Used in development of v3.
+        Same test post as "Solar and ElectricStorage w/BAU" in the Julia package. Used in development of v3.
         Also tests that inputs with defaults determined in the REopt julia package get updated in the database.
         """
         post_file = os.path.join('reoptjl', 'test', 'posts', 'pv_batt_emissions.json')
@@ -79,11 +79,11 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         r = json.loads(resp.content)
         results = r["outputs"]
 
-        self.assertAlmostEqual(results["Financial"]["lcc"], 1.240037e7, places=-3)
+        self.assertAlmostEqual(results["Financial"]["lcc"], 12391786, places=-3)
         self.assertAlmostEqual(results["Financial"]["lcc_bau"], 12766397, places=-3)
         self.assertAlmostEqual(results["PV"]["size_kw"], 216.667, places=1)
-        self.assertAlmostEqual(results["ElectricStorage"]["size_kw"], 55.9, places=1)
-        self.assertAlmostEqual(results["ElectricStorage"]["size_kwh"], 78.9, places=1)
+        self.assertAlmostEqual(results["ElectricStorage"]["size_kw"], 49.05, places=1)
+        self.assertAlmostEqual(results["ElectricStorage"]["size_kwh"], 83.32, places=1)
     
         self.assertIsNotNone(results["Site"]["total_renewable_energy_fraction"])
         self.assertIsNotNone(results["Site"]["annual_emissions_tonnes_CO2"])
@@ -318,5 +318,42 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         r = json.loads(resp.content)
         results = r["outputs"]
 
-        self.assertAlmostEqual(results["Financial"]["npv"], -11682.27, places=0)
+        self.assertAlmostEqual(results["Financial"]["npv"], 11323.01, places=0)
         assert(resp.status_code==200)   
+
+    def test_steamturbine_defaults_from_julia(self):
+        # Test that the inputs_with_defaults_set_in_julia feature worked for SteamTurbine, consistent with /chp_defaults
+        post_file = os.path.join('reoptjl', 'test', 'posts', 'steamturbine_defaults_post.json')
+        post = json.load(open(post_file, 'r'))
+
+        # Call http.jl /reopt to run SteamTurbine scenario and get results for defaults from julia checking
+        resp = self.api_client.post('/dev/job/', format='json', data=post)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+
+        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        r = json.loads(resp.content)
+
+        inputs_steamturbine = r["inputs"]["SteamTurbine"]
+
+        avg_fuel_load = (post["SpaceHeatingLoad"]["annual_mmbtu"] + 
+                            post["DomesticHotWaterLoad"]["annual_mmbtu"]) / 8760.0
+        
+        inputs_steamturbine_defaults = {
+            "prime_mover": "steam_turbine",
+            "avg_boiler_fuel_load_mmbtu_per_hour": avg_fuel_load
+        }
+
+        # Call to the django view endpoint /chp_defaults which calls the http.jl endpoint
+        resp = self.api_client.get(f'/dev/chp_defaults', data=inputs_steamturbine_defaults)
+        view_response = json.loads(resp.content)
+
+        for key in view_response["default_inputs"].keys():
+            # skip this key because its NaN in REoptInputs but is populated in /chp_defaults response.
+            if key != "inlet_steam_temperature_degF":
+                if post["SteamTurbine"].get(key) is None: # Check that default got assigned consistent with /chp_defaults
+                    self.assertEquals(inputs_steamturbine[key], view_response["default_inputs"][key])
+                else:  # Make sure we didn't overwrite user-input
+                    self.assertEquals(inputs_steamturbine[key], post["SteamTurbine"][key])
+                    

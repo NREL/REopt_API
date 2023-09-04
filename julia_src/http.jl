@@ -103,6 +103,17 @@ function reopt(req::HTTP.Request)
             else
                 chp_dict = Dict()
             end
+			if haskey(d, "SteamTurbine")
+				inputs_with_defaults_from_steamturbine = [
+					:size_class, :gearbox_generator_efficiency, :isentropic_efficiency, 
+					:inlet_steam_pressure_psig, :inlet_steam_temperature_degF, :installed_cost_per_kw, :om_cost_per_kwh, 
+					:outlet_steam_pressure_psig, :net_to_gross_electric_ratio, :electric_produced_to_thermal_consumed_ratio,
+                    :thermal_produced_to_thermal_consumed_ratio
+				]
+				steamturbine_dict = Dict(key=>getfield(model_inputs.s.steam_turbine, key) for key in inputs_with_defaults_from_steamturbine)
+			else
+				steamturbine_dict = Dict()
+			end
             if haskey(d, "GHP")
                 inputs_with_defaults_from_ghp = [
                     :space_heating_efficiency_thermal_factor,
@@ -112,11 +123,21 @@ function reopt(req::HTTP.Request)
             else
                 ghp_dict = Dict()
             end
+            if haskey(d, "CoolingLoad")
+                inputs_with_defaults_from_chiller = [
+                    :cop
+                ]
+                chiller_dict = Dict(key=>getfield(model_inputs.s.existing_chiller, key) for key in inputs_with_defaults_from_chiller)
+            else
+                chiller_dict = Dict()
+            end          
 			inputs_with_defaults_set_in_julia = Dict(
 				"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_easiur),
 				"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert),
                 "CHP" => chp_dict,
-                "GHP" => ghp_dict
+				"SteamTurbine" => steamturbine_dict,
+                "GHP" => ghp_dict,
+                "ExistingChiller" => chiller_dict
 			)            
 		catch e
 			@error "Something went wrong in REopt optimization!" exception=(e, catch_backtrace())
@@ -218,9 +239,16 @@ function chp_defaults(req::HTTP.Request)
     error_response = Dict()
     try
         d_symb = reoptjl.dictkeys_tosymbols(d)
-        data = reoptjl.get_chp_defaults_prime_mover_size_class(;d_symb...)
+        if haskey(d_symb, :prime_mover) && d_symb[:prime_mover] == "steam_turbine"
+            # delete!(d_symb, :prime_mover)
+            data = reoptjl.get_steam_turbine_defaults_size_class(;
+                    avg_boiler_fuel_load_mmbtu_per_hour=get(d_symb, :avg_boiler_fuel_load_mmbtu_per_hour, nothing),
+                    size_class=get(d_symb, :size_class, nothing))
+        else
+            data = reoptjl.get_chp_defaults_prime_mover_size_class(;d_symb...)
+        end
     catch e
-        @error "Something went wrong in the chp_defaults" exception=(e, catch_backtrace())
+        @error "Something went wrong in the chp_defaults endpoint" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
     end
     if isempty(error_response)
@@ -330,9 +358,14 @@ function simulated_load(req::HTTP.Request)
         end
     end
 
-    if "percent_share" in keys(d) && typeof(d["percent_share"]) <: Vector{}
-        d["percent_share"] = convert(Vector{Float64}, d["percent_share"])
-    end
+    # Convert vectors which come in as Vector{Any} to Vector{Float} (within Vector{<:Real})
+    vector_types = ["percent_share", "cooling_pct_share", "monthly_kwh", "monthly_mmbtu", 
+                    "monthly_tonhour", "addressable_load_fraction"]
+    for key in vector_types
+        if key in keys(d) && typeof(d[key]) <: Vector{}
+            d[key] = convert(Vector{Float64}, d[key])
+        end
+    end 
 
     @info "Getting CRB Loads..."
     data = Dict()
@@ -417,19 +450,51 @@ function health(req::HTTP.Request)
     return HTTP.Response(200, JSON.json(Dict("Julia-api"=>"healthy!")))
 end
 
+function get_existing_chiller_default_cop(req::HTTP.Request)
+    d = JSON.parse(String(req.body))
+    chiller_cop = nothing
+
+    for key in ["existing_chiller_max_thermal_factor_on_peak_load","max_load_kw","max_load_kw_thermal"]
+        if !(key in keys(d))
+            d[key] = nothing
+        end
+    end
+    
+    @info "Getting default existing chiller COP..."
+    error_response = Dict()
+    try
+        chiller_cop = reoptjl.get_existing_chiller_default_cop(;
+                existing_chiller_max_thermal_factor_on_peak_load=d["existing_chiller_max_thermal_factor_on_peak_load"], 
+                max_load_kw=d["max_load_kw"],
+                max_load_kw_thermal=d["max_load_kw_thermal"])      
+    catch e
+        @error "Something went wrong in the get_existing_chiller_default_cop" exception=(e, catch_backtrace())
+        error_response["error"] = sprint(showerror, e)
+    end
+    if isempty(error_response)
+        @info("Default existing chiller COP detected.")
+        response = Dict([("existing_chiller_cop", chiller_cop)])
+        return HTTP.Response(200, JSON.json(response))
+    else
+        @info "An error occured in the get_existing_chiller_default_cop endpoint"
+        return HTTP.Response(500, JSON.json(error_response))
+    end
+end    
+
 # define REST endpoints to dispatch to "service" functions
 const ROUTER = HTTP.Router()
 
-HTTP.@register(ROUTER, "POST", "/job", job)
-HTTP.@register(ROUTER, "POST", "/reopt", reopt)
-HTTP.@register(ROUTER, "POST", "/erp", erp)
-HTTP.@register(ROUTER, "POST", "/ghpghx", ghpghx)
-HTTP.@register(ROUTER, "GET", "/chp_defaults", chp_defaults)
-HTTP.@register(ROUTER, "GET", "/emissions_profile", emissions_profile)
-HTTP.@register(ROUTER, "GET", "/easiur_costs", easiur_costs)
-HTTP.@register(ROUTER, "GET", "/simulated_load", simulated_load)
-HTTP.@register(ROUTER, "GET", "/absorption_chiller_defaults", absorption_chiller_defaults)
-HTTP.@register(ROUTER, "GET", "/ghp_efficiency_thermal_factors", ghp_efficiency_thermal_factors)
-HTTP.@register(ROUTER, "GET", "/ground_conductivity", ground_conductivity)
-HTTP.@register(ROUTER, "GET", "/health", health)
+HTTP.register!(ROUTER, "POST", "/job", job)
+HTTP.register!(ROUTER, "POST", "/reopt", reopt)
+HTTP.register!(ROUTER, "POST", "/erp", erp)
+HTTP.register!(ROUTER, "POST", "/ghpghx", ghpghx)
+HTTP.register!(ROUTER, "GET", "/chp_defaults", chp_defaults)
+HTTP.register!(ROUTER, "GET", "/emissions_profile", emissions_profile)
+HTTP.register!(ROUTER, "GET", "/easiur_costs", easiur_costs)
+HTTP.register!(ROUTER, "GET", "/simulated_load", simulated_load)
+HTTP.register!(ROUTER, "GET", "/absorption_chiller_defaults", absorption_chiller_defaults)
+HTTP.register!(ROUTER, "GET", "/ghp_efficiency_thermal_factors", ghp_efficiency_thermal_factors)
+HTTP.register!(ROUTER, "GET", "/ground_conductivity", ground_conductivity)
+HTTP.register!(ROUTER, "GET", "/health", health)
+HTTP.register!(ROUTER, "GET", "/get_existing_chiller_default_cop", get_existing_chiller_default_cop)
 HTTP.serve(ROUTER, "0.0.0.0", 8081, reuseaddr=true)
