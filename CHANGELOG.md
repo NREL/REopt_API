@@ -26,7 +26,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop 2023-08-07
+## v2.15.0
 ### Minor Updates
 ##### Added
 - Add `GHP` to `reoptjl` app for v3
