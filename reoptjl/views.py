@@ -593,13 +593,11 @@ def get_existing_chiller_default_cop(request):
     return: existing_chiller_cop: default COP of existing chiller [fraction]  
     """
     try:
-        existing_chiller_max_thermal_factor_on_peak_load = float(request.GET['existing_chiller_max_thermal_factor_on_peak_load'])  # need float to convert unicode
-        max_load_kw = float(request.GET['max_load_kw'])
-        max_load_kw_thermal = float(request.GET['max_load_kw_thermal'])
-
-        inputs_dict = {"existing_chiller_max_thermal_factor_on_peak_load": existing_chiller_max_thermal_factor_on_peak_load,
-                        "max_load_kw": max_load_kw,
-                        "max_load_kw_thermal": max_load_kw_thermal}
+        inputs_dict = {}
+        for key in ['existing_chiller_max_thermal_factor_on_peak_load','max_load_kw','max_load_kw_thermal']:
+            inputs_dict[key] = request.GET.get(key)
+            if inputs_dict[key] is not None:
+                inputs_dict[key] = float(inputs_dict[key])
 
         julia_host = os.environ.get('JULIA_HOST', "julia")
         http_jl_response = requests.get("http://" + julia_host + ":8081/get_existing_chiller_default_cop/", json=inputs_dict)
