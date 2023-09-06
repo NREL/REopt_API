@@ -596,6 +596,7 @@ def get_existing_chiller_default_cop(request):
         inputs_dict = {}
         for key in ['existing_chiller_max_thermal_factor_on_peak_load','max_load_kw','max_load_kw_thermal']:
             inputs_dict[key] = request.GET.get(key)
+            # allow empty keys to be None, convert all other inputs to floats
             if inputs_dict[key] is not None:
                 inputs_dict[key] = float(inputs_dict[key])
 
