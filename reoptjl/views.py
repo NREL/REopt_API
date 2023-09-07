@@ -599,6 +599,8 @@ def get_existing_chiller_default_cop(request):
             # allow empty keys to be None, convert all other inputs to floats
             if inputs_dict[key] is not None:
                 inputs_dict[key] = float(inputs_dict[key])
+            elif key == 'existing_chiller_max_thermal_factor_on_peak_load':
+                inputs_dict[key] = 1.25  #default value
 
         julia_host = os.environ.get('JULIA_HOST', "julia")
         http_jl_response = requests.get("http://" + julia_host + ":8081/get_existing_chiller_default_cop/", json=inputs_dict)
