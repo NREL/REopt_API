@@ -26,6 +26,11 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop 2023/09/06
+### Minor Updates
+##### Fixed
+- Fixed a bug in the `get_existing_chiller_default_cop` endpoint not accepting blank/null inputs that are optional
+
 ## v2.15.0
 ### Minor Updates
 ##### Added
