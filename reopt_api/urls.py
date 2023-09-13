@@ -52,7 +52,6 @@ v2_api.register(GHPGHXJob())
 
 v3_api = Api(api_name='v3')
 v3_api.register(REoptJLJob())
-v3_api.register(FutureCostsAPI())
 v3_api.register(GHPGHXJob())
 v3_api.register(ERPJob())
 
