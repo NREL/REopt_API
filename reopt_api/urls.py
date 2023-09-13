@@ -35,7 +35,7 @@ from resilience_stats.api import OutageSimJob
 from resilience_stats.api import ERPJob
 from tastypie.api import Api
 from reo import views
-from reoptjl.api import Job as DevJob
+from reoptjl.api import Job as REoptJLJob
 from futurecosts.api import FutureCostsAPI
 from ghpghx.resources import GHPGHXJob
 from reo.api import Job2
@@ -50,13 +50,19 @@ v2_api.register(Job2())
 v2_api.register(OutageSimJob())
 v2_api.register(GHPGHXJob())
 
+v3_api = Api(api_name='v3')
+v3_api.register(REoptJLJob())
+v3_api.register(FutureCostsAPI())
+v3_api.register(GHPGHXJob())
+v3_api.register(ERPJob())
+
 stable_api = Api(api_name='stable')
 stable_api.register(Job2())
 stable_api.register(OutageSimJob())
 stable_api.register(GHPGHXJob())
 
 dev_api = Api(api_name='dev')
-dev_api.register(DevJob())
+dev_api.register(REoptJLJob())
 dev_api.register(FutureCostsAPI())
 dev_api.register(GHPGHXJob())
 dev_api.register(ERPJob())
@@ -91,6 +97,14 @@ urlpatterns = [
     path('v2/', include('summary.urls')),
     path('v2/', include('ghpghx.urls')),
     re_path(r'', include(v2_api.urls)),
+
+    path('v3/', include('reoptjl.urls')),
+    path('v3/', include('resilience_stats.urls_v3plus')),
+    path('v3/', include('ghpghx.urls')),
+    path('v3/', include('load_builder.urls')),
+    # TODO proforma for v3
+    # (summary is within reoptjl.urls)
+    re_path(r'', include(v3_api.urls)),
 
     path('stable/', include('reo.urls_v2')),
     path('stable/', include('resilience_stats.urls_v1_v2')),
