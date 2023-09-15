@@ -542,7 +542,7 @@ class InputValidator(object):
         
         def validate_offgrid_keys(self):
             # From https://github.com/NREL/REopt.jl/blob/4b0fb7f6556b2b6e9a9a7e8fa65398096fb6610f/src/core/scenario.jl#L88         
-            valid_input_keys_offgrid = ["PV", "Wind", "ElectricStorage", "Generator", "Settings", "Site", "Financial", "ElectricLoad", "ElectricTariff", "ElectricUtility"]
+            valid_input_keys_offgrid = ["PV", "Wind", "ElectricStorage", "Generator", "Settings", "Site", "Financial", "ElectricLoad", "ElectricTariff", "ElectricUtility", "Meta"]
 
             invalid_input_keys_offgrid = list(set(list(self.models.keys()))-set(valid_input_keys_offgrid))
             if 'APIMeta' in invalid_input_keys_offgrid:
