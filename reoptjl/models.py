@@ -4819,6 +4819,8 @@ class BoilerInputs(BaseModel, models.Model):
     ))
 
     min_mmbtu_per_hour = models.FloatField(
+        null=True,
+        blank=True,
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(MAX_BIG_NUMBER)
@@ -4828,11 +4830,13 @@ class BoilerInputs(BaseModel, models.Model):
     )
 
     max_mmbtu_per_hour = models.FloatField(
+        null=True,
+        blank=True,        
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(MAX_BIG_NUMBER)
         ],
-        default=0.0,
+        default=1.0E7,
         help_text="Maximum thermal power size"
     )
 
@@ -4842,6 +4846,7 @@ class BoilerInputs(BaseModel, models.Model):
             MaxValueValidator(1.0)
         ],
         null=True,
+        blank=True,
         default=0.8,
         help_text="New boiler system efficiency - conversion of fuel to usable heating thermal energy."
     )
@@ -5009,6 +5014,7 @@ class SteamTurbineInputs(BaseModel, models.Model):
         FOUR = 4
 
     min_kw = models.FloatField(
+        null=True,        
         default=0.0,
         validators=[
             MinValueValidator(0),
@@ -5018,7 +5024,8 @@ class SteamTurbineInputs(BaseModel, models.Model):
         help_text="Minimum steam turbine size constraint for optimization"
     )
     max_kw = models.FloatField(
-        default=0.0,
+        null=True,        
+        default=MAX_BIG_NUMBER,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e9)
@@ -5137,6 +5144,7 @@ class SteamTurbineInputs(BaseModel, models.Model):
     )
 
     is_condensing = models.BooleanField(
+        null=True,        
         blank=True,
         default = False,
         help_text="Steam turbine type, if it is a condensing turbine which produces no useful thermal (max electric output)"
@@ -5144,6 +5152,7 @@ class SteamTurbineInputs(BaseModel, models.Model):
 
     inlet_steam_superheat_degF = models.FloatField(
         null=True,
+        blank=True,
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(700.0)
@@ -5153,6 +5162,7 @@ class SteamTurbineInputs(BaseModel, models.Model):
     )
 
     outlet_steam_min_vapor_fraction = models.FloatField(
+        null=True,        
         default=0.8,
         validators=[
             MinValueValidator(0.0),
@@ -5179,10 +5189,12 @@ class SteamTurbineInputs(BaseModel, models.Model):
         ],
         default=0.0,
         null=True,
+        blank=True,
         help_text="Annual steam turbine fixed operations and maintenance costs in $/kW"
     )
 
     can_net_meter = models.BooleanField(
+        null=True,
         blank=True,
         default = False,
         help_text=("True/False for if technology has option to participate in net metering agreement with utility. "
@@ -5191,6 +5203,7 @@ class SteamTurbineInputs(BaseModel, models.Model):
     )
 
     can_wholesale = models.BooleanField(
+        null=True,
         blank=True,
         default = False,
         help_text=("True/False for if technology has option to export energy that is compensated at the wholesale_rate. "
@@ -5198,6 +5211,7 @@ class SteamTurbineInputs(BaseModel, models.Model):
                    "Note that if off-grid is true, can_wholesale is always set to False.")
     )
     can_export_beyond_nem_limit = models.BooleanField(
+        null=True,
         blank=True,
         default = False,
         help_text=("True/False for if technology can export energy beyond the annual site load (and be compensated for "
@@ -5207,6 +5221,7 @@ class SteamTurbineInputs(BaseModel, models.Model):
 
     can_curtail = models.BooleanField(
         default=False,
+        null=True,
         blank=True,
         help_text="True/False for if technology has the ability to curtail energy production."
     )
@@ -5214,6 +5229,7 @@ class SteamTurbineInputs(BaseModel, models.Model):
     macrs_option_years = models.IntegerField(
         default=MACRS_YEARS_CHOICES.ZERO,
         choices=MACRS_YEARS_CHOICES.choices,
+        null=True,
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
@@ -5224,6 +5240,7 @@ class SteamTurbineInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(1)
         ],
+        null=True,
         blank=True,
         help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
     )
@@ -6431,6 +6448,7 @@ class GHPInputs(BaseModel, models.Model):
 
     # REQUIRED FOR GHP
     building_sqft = models.FloatField(
+        null=True,
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(MAX_BIG_NUMBER)

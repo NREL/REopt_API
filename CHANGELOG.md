@@ -26,6 +26,13 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop 2023/09/06
+### Minor Updates
+##### Added
+- /v3 endpoints which use the reoptjl app and the REopt.jl Julia package, but /stable still points to /v2 so this is not a breaking change
+##### Fixed
+- Fixed a bug in the `get_existing_chiller_default_cop` endpoint not accepting blank/null inputs that are optional
+
 ## v2.15.0
 ### Minor Updates
 ##### Added
