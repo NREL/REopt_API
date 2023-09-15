@@ -212,10 +212,11 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         self.assertEqual(view_response["thermal_conductivity"], 1.117)
 
     def test_default_existing_chiller_cop(self):
+        # Test 1: full dictionary
         inputs_dict = {
             "existing_chiller_max_thermal_factor_on_peak_load":1.25,
             "max_load_kw": 50,
-            "max_load_kw_thermal":100
+            "max_load_ton":10
         }
 
         # Call to the django view endpoint /get_existing_chiller_default_cop which calls the http.jl endpoint
@@ -225,7 +226,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
 
         self.assertEqual(view_response["existing_chiller_cop"], 4.4)
 
-        # Test empty dictionary, which should return unknown value
+        # Test 2: empty dictionary, which should return unknown value
         inputs_dict = {}
 
         # Call to the django view endpoint /get_existing_chiller_default_cop which calls the http.jl endpoint
@@ -235,4 +236,43 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
 
         self.assertEqual(view_response["existing_chiller_cop"], 4.545)
 
-        
+        # Test 3: Check that "existing_chiller_max_thermal_factor_on_peak_load" can influence the COP; accept max_load_ton empty string
+        inputs_dict = {
+            "existing_chiller_max_thermal_factor_on_peak_load":1000,
+            "max_load_kw": 5,
+            "max_load_ton":""
+        }
+
+        # Call to the django view endpoint /get_existing_chiller_default_cop which calls the http.jl endpoint
+        resp = self.api_client.get(f'/dev/get_existing_chiller_default_cop', data=inputs_dict)
+        view_response = json.loads(resp.content)
+        print(view_response)
+
+        self.assertEqual(view_response["existing_chiller_cop"], 4.69)
+
+        # Test 4: max_load_ton empty string 
+        inputs_dict = {
+            "max_load_ton":90,
+            "max_load_kw":""
+        }
+
+        # Call to the django view endpoint /get_existing_chiller_default_cop which calls the http.jl endpoint
+        resp = self.api_client.get(f'/dev/get_existing_chiller_default_cop', data=inputs_dict)
+        view_response = json.loads(resp.content)
+        print(view_response)
+
+        self.assertEqual(view_response["existing_chiller_cop"], 4.69)
+
+        #Test 5: max_load_kw only, small value yields low COP
+        inputs_dict = {
+            "max_load_kw":1
+        }
+
+        # Call to the django view endpoint /get_existing_chiller_default_cop which calls the http.jl endpoint
+        resp = self.api_client.get(f'/dev/get_existing_chiller_default_cop', data=inputs_dict)
+        view_response = json.loads(resp.content)
+        print(view_response)
+
+        self.assertEqual(view_response["existing_chiller_cop"], 4.4)
+
+
