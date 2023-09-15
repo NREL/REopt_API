@@ -594,17 +594,17 @@ def get_existing_chiller_default_cop(request):
     """
     try:
         existing_chiller_max_thermal_factor_on_peak_load = request.GET.get('existing_chiller_max_thermal_factor_on_peak_load')
-        if existing_chiller_max_thermal_factor_on_peak_load is not None:
+        if existing_chiller_max_thermal_factor_on_peak_load not in [None, ""]:
             existing_chiller_max_thermal_factor_on_peak_load = float(existing_chiller_max_thermal_factor_on_peak_load)
         else: 
             existing_chiller_max_thermal_factor_on_peak_load = 1.25  # default from REopt.jl
 
         max_load_kw = request.GET.get('max_load_kw')
-        if max_load_kw is not None:
+        if max_load_kw not in [None, ""]:
             max_load_kw = float(max_load_kw)
 
         max_load_ton = request.GET.get('max_load_ton')
-        if max_load_ton is not None:
+        if max_load_ton not in [None, ""]:
             max_load_kw_thermal = float(max_load_ton) * 3.51685  # kWh thermal per ton-hour
         else: 
             max_load_kw_thermal = None
