@@ -589,7 +589,7 @@ def get_existing_chiller_default_cop(request):
     GET default existing chiller COP using the max thermal cooling load.
     param: existing_chiller_max_thermal_factor_on_peak_load: max thermal factor on peak cooling load, i.e., "oversizing" of existing chiller [fraction]
     param: max_load_kw: maximum electrical load [kW]
-    param: max_load_kw_thermal: maximum thermal cooling load [kW]
+    param: max_load_ton: maximum thermal cooling load [ton]
     return: existing_chiller_cop: default COP of existing chiller [fraction]  
     """
     try:
