@@ -602,6 +602,8 @@ def get_existing_chiller_default_cop(request):
         max_load_kw = request.GET.get('max_load_kw')
         if max_load_kw not in [None, ""]:
             max_load_kw = float(max_load_kw)
+        else: 
+            max_load_kw = None
 
         max_load_ton = request.GET.get('max_load_ton')
         if max_load_ton not in [None, ""]:
