@@ -133,6 +133,12 @@ class ERPJob(ModelResource):
                         meta_dict, 
                         "To include PV, you must provide PV production_factor_series or the reopt_run_uuid of an optimization that considered PV."
                     )
+                if bundle.data.get("Wind",{}).get("size_kw", 0) > 0 and \
+                    len(bundle.data.get("Wind",{}).get("production_factor_series", [])) != 8760: #TODO: handle subhourly
+                    add_validation_err_msg_and_raise_400_response(
+                        meta_dict, 
+                        "To include Wind, you must provide Wind production_factor_series or the reopt_run_uuid of an optimization that considered Wind."
+                    )
                 #TODO: error if no outage inputs and no reopt run_uuid
             else:
                 #TODO: put in helper function for more readable code
@@ -246,7 +252,7 @@ class ERPJob(ModelResource):
                         len(bundle.data.get("PV",{}).get("production_factor_series", [])) == 0:
                     add_validation_err_msg_and_raise_400_response(
                         meta_dict, 
-                        "To include PV, you must provide PV production_factor_series or the reopt_run_uuid of an optimization that considered PV."
+                        "To include PV, you must provide PV size_kw and production_factor_series or the reopt_run_uuid of an optimization that considered PV."
                     )
                 reopt_pv_size_kw = 0
                 pv_prod_series = np.zeros(len(critical_loads_kw))
@@ -265,7 +271,26 @@ class ERPJob(ModelResource):
                             bundle.data["PV"]["production_factor_series"] = (pv_prod_series/reopt_pv_size_kw).tolist()
                         else: # PV considered in optimization but optimal sizes all 0. Use prod factor of first PV.
                             bundle.data["PV"]["production_factor_series"] = pvs[0].dict.get("production_factor_series")
-                                    
+                      
+                ## Wind ##
+                try:
+                    wind_out = reopt_run_meta.WindOutputs.dict
+                    if wind_out.get("size_kw") > 0 or "Wind" in bundle.data:
+                        update_user_dict_with_values_from_reopt(
+                            "Wind", 
+                            {
+                                "size_kw": wind_out.get("size_kw"),
+                                "production_factor_series": wind_out.get("production_factor_series")
+                            }
+                        )                      
+                except AttributeError as e: 
+                    if bundle.data.get("Wind",{}).get("size_kw", 0) > 0 and \
+                        len(bundle.data.get("Wind",{}).get("production_factor_series", [])) == 0:
+                        add_validation_err_msg_and_raise_400_response(
+                            meta_dict, 
+                            "To include Wind, you must provide Wind size_kw and production_factor_series or the reopt_run_uuid of an optimization that considered Wind."
+                        )
+       
                 ## ElectricStorage ##
                 stor_out = None
                 try:
