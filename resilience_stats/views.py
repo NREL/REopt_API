@@ -38,7 +38,7 @@ from reo.models import ModelManager
 from reo.models import ScenarioModel, PVModel, StorageModel, LoadProfileModel, GeneratorModel, FinancialModel, \
     WindModel, CHPModel
 from reo.utilities import annuity
-from resilience_stats.models import ResilienceModel, ERPMeta, ERPOutageInputs, ERPGeneratorInputs, ERPPrimeGeneratorInputs, ERPPVInputs, ERPElectricStorageInputs, ERPOutputs
+from resilience_stats.models import ResilienceModel, ERPMeta, ERPOutageInputs, ERPGeneratorInputs, ERPPrimeGeneratorInputs, ERPPVInputs,ERPWindInputs, ERPElectricStorageInputs, ERPOutputs
 from resilience_stats.outage_simulator_LF import simulate_outages
 import numpy as np
 from reo.utilities import empty_record
@@ -95,6 +95,10 @@ def erp_results(request, run_uuid):
         except AttributeError:
             pass
         try:
+            resp["inputs"][ERPWindInputs.key] = meta.ERPWindInputs.dict
+        except AttributeError:
+            pass
+        try:
             resp["inputs"][ERPElectricStorageInputs.key] = meta.ERPElectricStorageInputs.dict
         except AttributeError:
             pass
@@ -135,6 +139,7 @@ def erp_help(request):
         # do models need to be passed in as arg?
         d[ERPOutageInputs.key] = ERPOutageInputs.info_dict(ERPOutageInputs)
         d[ERPPVInputs.key] = ERPPVInputs.info_dict(ERPPVInputs)
+        d[ERPWindInputs.key] = ERPWindInputs.info_dict(ERPWindInputs)
         d[ERPElectricStorageInputs.key] = ERPElectricStorageInputs.info_dict(ERPElectricStorageInputs)
         d[ERPGeneratorInputs.key] = ERPGeneratorInputs.info_dict(ERPGeneratorInputs)
         d[ERPPrimeGeneratorInputs.key] = ERPPrimeGeneratorInputs.info_dict(ERPPrimeGeneratorInputs)
