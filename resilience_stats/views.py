@@ -38,7 +38,7 @@ from reo.models import ModelManager
 from reo.models import ScenarioModel, PVModel, StorageModel, LoadProfileModel, GeneratorModel, FinancialModel, \
     WindModel, CHPModel
 from reo.utilities import annuity
-from resilience_stats.models import ResilienceModel, ERPMeta, ERPOutageInputs, ERPGeneratorInputs, ERPPrimeGeneratorInputs, ERPPVInputs,ERPWindInputs, ERPElectricStorageInputs, ERPOutputs
+from resilience_stats.models import ResilienceModel, ERPMeta, ERPOutageInputs, ERPGeneratorInputs, ERPPrimeGeneratorInputs, ERPPVInputs, ERPWindInputs, ERPElectricStorageInputs, ERPOutputs
 from resilience_stats.outage_simulator_LF import simulate_outages
 import numpy as np
 from reo.utilities import empty_record
