@@ -32,7 +32,7 @@ import uuid
 from typing import Dict, Union
 from django.forms.models import model_to_dict
 from django.http import JsonResponse, HttpRequest
-from django.db import models
+from django.db import models as dbmodels
 from reo.exceptions import UnexpectedError
 from reo.models import ModelManager
 from reo.models import ScenarioModel, PVModel, StorageModel, LoadProfileModel, GeneratorModel, FinancialModel, \
@@ -65,7 +65,7 @@ def erp_results(request, run_uuid):
         # catch specific exceptions
         try:
             meta = ERPMeta.objects.select_related("ERPOutageInputs").get(run_uuid=run_uuid)
-        except models.ObjectDoesNotExist as e:
+        except dbmodels.ObjectDoesNotExist as e:
             resp = {"messages": {}}
             resp['messages']['error'] = (
                 "run_uuid {} not in database. "
@@ -109,7 +109,7 @@ def erp_results(request, run_uuid):
 
         try:  
             erp_outputs = ERPOutputs.objects.get(meta__run_uuid=run_uuid)
-        except models.ObjectDoesNotExist:
+        except dbmodels.ObjectDoesNotExist:
             resp['messages']['error'] = ('ERP results are not ready. Please try again later.')
             return JsonResponse(resp, content_type='application/json', status=404)
 
