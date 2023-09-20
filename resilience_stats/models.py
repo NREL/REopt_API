@@ -545,7 +545,7 @@ class ERPOutputs(BaseModel, models.Model):
         default=list,
         help_text=("The probability, averaged over outages starting at each hour of the year, of having sufficient fuel to survive up to and including each hour of max_outage_duration.")
     )
-    fuel_outage_survival_final_time_step = ArrayField(
+    fuel_survival_final_time_step = ArrayField(
         models.IntegerField(blank=True),
         blank=True,
         default=list,
