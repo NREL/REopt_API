@@ -49,4 +49,5 @@ urlpatterns = [
     re_path(r'^invalid_urdb/?$', reoviews.invalid_urdb),
     re_path(r'^schedule_stats/?$', reoviews.schedule_stats),
     re_path(r'^get_existing_chiller_default_cop/?$', views.get_existing_chiller_default_cop),
+    re_path(r'^summary_by_runuuids/?$', views.summary_by_runuuids)
 ]

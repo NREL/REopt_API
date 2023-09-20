@@ -635,7 +635,69 @@ def get_existing_chiller_default_cop(request):
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in get_existing_chiller_default_cop endpoint. Check log for more."}, status=500)
 
+# Inputs: 1-many run_uuids as single comma separated string
+# This function will query those UUIDs and return as summary endpoint
+# Output: list of JSONs
+def summary_by_runuuids(request):
+
+    run_uuids = json.loads(request.body)['run_uuids']
+
+    if len(run_uuids) == 0:
+        return JsonResponse({'Error': 'Must provide one or more run_uuids'}, status=400)
+
+    # Validate that user UUID is valid.
+    for r_uuid in run_uuids:
+
+        if type(r_uuid) != str:
+            return JsonResponse({'Error': 'Provided run_uuids type error, must be string. ' + str(r_uuid)}, status=400)
+        
+        try:
+            uuid.UUID(r_uuid)  # raises ValueError if not valid uuid
+
+        except ValueError as e:
+            if e.args[0] == "badly formed hexadecimal UUID string":
+                return JsonResponse({"Error": str(e.message)}, status=404)
+            else:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary_by_runuuids', run_uuids=run_uuids)
+                err.save_to_db()
+                return JsonResponse({"Error": str(err.message)}, status=404)
     
+    try:
+        # Dictionary to store all results. Primary key = run_uuid and secondary key = data values from each uuid
+        summary_dict = dict()
+
+        # Create Querysets: Select all objects associate with a user_uuid, Order by `created` column
+        scenarios = APIMeta.objects.filter(run_uuid__in=run_uuids).only(
+            'run_uuid',
+            'status',
+            'created'
+        ).order_by("-created")
+
+        if len(scenarios) > 0:
+            summary_dict = queryset_for_summary(scenarios, summary_dict)
+
+            # Create eventual response dictionary
+            return_dict = dict()
+            # return_dict['user_uuid'] = user_uuid # no user uuid
+            scenario_summaries = []
+            for k in summary_dict.keys():
+                scenario_summaries.append(summary_dict[k])
+            
+            return_dict['scenarios'] = scenario_summaries
+
+            response = JsonResponse(return_dict, status=200, safe=False)
+            return response
+        else:
+            response = JsonResponse({"Error": "No scenarios found for run_uuids '{}'".format(run_uuids)}, content_type='application/json', status=404)
+            return response
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary_by_runuuids', run_uuids=run_uuids)
+        err.save_to_db()
+        return JsonResponse({"Error": err.message}, status=404)
+
 def summary(request, user_uuid):
     """
     Retrieve a summary of scenarios for given user_uuid
