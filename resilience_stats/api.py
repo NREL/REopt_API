@@ -34,6 +34,7 @@ import numpy as np
 import requests
 import traceback
 import os
+import time
 
 from celery import shared_task
 from django.core.exceptions import ValidationError
@@ -440,6 +441,7 @@ def process_erp_results(results: dict, run_uuid: str) -> None:
     Saves ERP results returned from the Julia API in the backend database.
     Called in resilience_stats/run_erp_task (a celery task)
     """
+    time.sleep(15)
     #TODO: get success or error status from julia
     meta = ERPMeta.objects.get(run_uuid=run_uuid)
     meta.status = 'Completed' #results.get("status")
