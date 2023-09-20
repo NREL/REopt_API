@@ -1,4 +1,4 @@
-REopt API
+REopt® API
 =========
 The REopt® model in this repository is a free, open-source, development version of the [REopt API](https://developer.nrel.gov/docs/energy-optimization/reopt/). A production version of the REopt API lies behind the [REopt Web Tool](https://reopt.nrel.gov/tool).
 
