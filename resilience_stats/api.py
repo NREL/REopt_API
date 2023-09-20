@@ -410,7 +410,10 @@ def run_erp_task(run_uuid):
         response_json = response.json()
         if response.status_code == 500:
             raise REoptFailedToStartError(task=name, message=response_json["error"], run_uuid=run_uuid, user_uuid=user_uuid)
-
+        logger.info("ERP run successful.")
+        process_erp_results(response_json, run_uuid)
+        logger.info("ERP results processing successful.")
+        
     except Exception as e:
         if isinstance(e, REoptFailedToStartError):
             raise e
@@ -422,10 +425,7 @@ def run_erp_task(run_uuid):
         logger.error("ERP raised an unexpected error: UUID: " + str(run_uuid))
         raise UnexpectedError(exc_type, exc_value, traceback.format_tb(exc_traceback), task=name, run_uuid=run_uuid,
                               user_uuid=user_uuid)
-    else:
-        logger.info("ERP run successful.")
-
-    process_erp_results(response_json, run_uuid)
+    
     return True
 
 def process_erp_results(results: dict, run_uuid: str) -> None:
