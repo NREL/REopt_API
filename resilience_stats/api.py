@@ -38,6 +38,7 @@ import os
 from celery import shared_task
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
+from django.db import models as dbmodels
 from tastypie.authorization import ReadOnlyAuthorization
 from tastypie.bundle import Bundle
 from tastypie.exceptions import ImmediateHttpResponse
@@ -150,7 +151,7 @@ class ERPJob(ModelResource):
                     reopt_run_meta = APIMeta.objects.select_related(
                         "ElectricLoadOutputs",
                     ).get(run_uuid=reopt_run_uuid)
-                except:
+                except dbmodels.ObjectDoesNotExist as e:
                     # Handle non-existent REopt runs
                     add_validation_err_msg_and_raise_400_response(
                         meta_dict, 
@@ -164,6 +165,12 @@ class ERPJob(ModelResource):
                     bundle.data[user_dict_key] = reopt_dict
 
                 ## Outage ##
+                if not hasattr(reopt_run_meta, 'ElectricLoadOutputs'):
+                    # Handle incomplete REopt runs
+                    add_validation_err_msg_and_raise_400_response(
+                        meta_dict, 
+                        "REopt optimization with run_uuid {} has not yet completed. Please try again later.".format(reopt_run_uuid)
+                    )
                 critical_loads_kw = reopt_run_meta.ElectricLoadOutputs.dict["critical_load_series_kw"]
                 update_user_dict_with_values_from_reopt("Outage", {"critical_loads_kw": critical_loads_kw})
                 if len(reopt_run_meta.ElectricUtilityInputs.dict["outage_durations"]) > 0:
