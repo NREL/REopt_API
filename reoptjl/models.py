@@ -1912,6 +1912,19 @@ class OutageOutputs(BaseModel, models.Model):
         default=list, blank=True,
         help_text="The maximum outage cost for every outage duration modeled."
     )
+    critical_loads_per_outage_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True,
+            ),
+            default=list, blank=True,
+        ),
+        default=list, blank=True,
+        help_text="The critical load in each outage time step for each outage start time and duration. Outage duration changes along the first dimension, outage start time step along the second, and time step in outage along the third."
+    )    
     unserved_load_series_kw = ArrayField(
         ArrayField(
             ArrayField(
@@ -1955,6 +1968,22 @@ class OutageOutputs(BaseModel, models.Model):
         ),
         default=list, blank=True,
         help_text=("Array of storage power discharged in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    soc_series_fraction = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of storage state of charge (SOC) in every outage modeled. "
                     "Outage duration changes along the first dimension, "
                     "outage start time changes along the second dimension, "
                     "and hour within outage changes along the third dimension.")
@@ -2015,6 +2044,62 @@ class OutageOutputs(BaseModel, models.Model):
                     "outage start time changes along the second dimension, "
                     "and hour within outage changes along the third dimension.")
     )
+    wind_microgrid_size_kw = models.FloatField(
+        null=True, blank=True,
+        help_text="Optimal Wind capacity included in the microgrid."
+    )
+    wind_microgrid_upgrade_cost = models.FloatField(
+        null=True, blank=True,
+        help_text="Capital cost of including the Wind system in the microgrid."
+    )
+    wind_to_storage_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of Wind power sent to the battery in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    wind_curtailed_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of Wind power curtailed in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    wind_to_load_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of Wind power used to meet load in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )    
     generator_microgrid_size_kw = models.FloatField(
         null=True, blank=True,
         help_text="Optimal generator capacity included in the microgrid."
