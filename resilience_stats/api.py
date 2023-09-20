@@ -133,16 +133,7 @@ class ERPJob(ModelResource):
                         meta_dict, 
                         "To include PV, you must provide PV production_factor_series or the reopt_run_uuid of an optimization that considered PV."
                     )
-                if bundle.data.get("Outage",{}).get("max_outage_duration", None) is None:
-                    add_validation_err_msg_and_raise_400_response(
-                        meta_dict, 
-                        "You must provide Outage max_outage_duration or the reopt_run_uuid of an optimization that considered an outage(s)."
-                    )
-                if not bundle.data.get("Outage",{}).get("critical_loads_kw", []):
-                    add_validation_err_msg_and_raise_400_response(
-                        meta_dict, 
-                        "You must provide Outage critical_loads_kw or the reopt_run_uuid of an optimization."
-                    )
+                #TODO: error if no outage inputs and no reopt run_uuid
             else:
                 #TODO: put in helper function for more readable code
                 try:
