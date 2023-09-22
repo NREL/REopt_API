@@ -1,32 +1,4 @@
-# *********************************************************************************
-# REopt, Copyright (c) 2019-2020, Alliance for Sustainable Energy, LLC.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without modification,
-# are permitted provided that the following conditions are met:
-#
-# Redistributions of source code must retain the above copyright notice, this list
-# of conditions and the following disclaimer.
-#
-# Redistributions in binary form must reproduce the above copyright notice, this
-# list of conditions and the following disclaimer in the documentation and/or other
-# materials provided with the distribution.
-#
-# Neither the name of the copyright holder nor the names of its contributors may be
-# used to endorse or promote products derived from this software without specific
-# prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-# IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-# OF THE POSSIBILITY OF SUCH DAMAGE.
-# *********************************************************************************
+# REopt®, Copyright (c) Alliance for Sustainable Energy, LLC. See also https://github.com/NREL/REopt_API/blob/master/LICENSE.
 from django.db import models
 import uuid
 import sys
@@ -589,22 +561,24 @@ def get_existing_chiller_default_cop(request):
     GET default existing chiller COP using the max thermal cooling load.
     param: existing_chiller_max_thermal_factor_on_peak_load: max thermal factor on peak cooling load, i.e., "oversizing" of existing chiller [fraction]
     param: max_load_kw: maximum electrical load [kW]
-    param: max_load_kw_thermal: maximum thermal cooling load [kW]
+    param: max_load_ton: maximum thermal cooling load [ton]
     return: existing_chiller_cop: default COP of existing chiller [fraction]  
     """
     try:
         existing_chiller_max_thermal_factor_on_peak_load = request.GET.get('existing_chiller_max_thermal_factor_on_peak_load')
-        if existing_chiller_max_thermal_factor_on_peak_load is not None:
+        if existing_chiller_max_thermal_factor_on_peak_load not in [None, ""]:
             existing_chiller_max_thermal_factor_on_peak_load = float(existing_chiller_max_thermal_factor_on_peak_load)
         else: 
             existing_chiller_max_thermal_factor_on_peak_load = 1.25  # default from REopt.jl
 
         max_load_kw = request.GET.get('max_load_kw')
-        if max_load_kw is not None:
+        if max_load_kw not in [None, ""]:
             max_load_kw = float(max_load_kw)
+        else: 
+            max_load_kw = None
 
         max_load_ton = request.GET.get('max_load_ton')
-        if max_load_ton is not None:
+        if max_load_ton not in [None, ""]:
             max_load_kw_thermal = float(max_load_ton) * 3.51685  # kWh thermal per ton-hour
         else: 
             max_load_kw_thermal = None
