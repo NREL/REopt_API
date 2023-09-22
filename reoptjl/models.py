@@ -1987,6 +1987,10 @@ class OutageOutputs(BaseModel, models.Model):
                     "outage start time changes along the second dimension, "
                     "and hour within outage changes along the third dimension.")
     )
+    electric_storage_microgrid_upgraded = models.BooleanField(
+        null=True, blank=True,
+        help_text=("True/False for if ElectricStorage is included in the microgrid.")
+    )
     pv_microgrid_size_kw = models.FloatField(
         null=True, blank=True,
         help_text="Optimal PV capacity included in the microgrid."
