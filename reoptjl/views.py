@@ -294,7 +294,7 @@ def results(request, run_uuid):
         try: r["outputs"]["SteamTurbine"] = meta.SteamTurbineOutputs.dict
         except: pass
         try: r["outputs"]["GHP"] = meta.GHPOutputs.dict
-        except: pass        
+        except: pass
 
         for d in r["outputs"].values():
             if isinstance(d, dict):
