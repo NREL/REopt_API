@@ -6448,6 +6448,81 @@ class GHPInputs(BaseModel, models.Model):
         help_text="Cooling efficiency factor (annual average) to account for reduced cooling thermal load from GHP retrofit (e.g. reduced reheat)"
     )
 
+    ghx_useful_life_years = models.IntegerField(
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(75)
+        ],
+        blank=True,
+        default=50,
+        help_text="Lifetime of geothermal heat exchanger being modeled in years. This is used to calculate residual value at end of REopt analysis period."
+    )
+
+    # should we remove this or make it not accessible through API?
+    ghx_only_capital_cost = models.IntegerField(
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        blank=True,
+        null=True,
+        help_text="User can provide capital cost of geothermal heat exchanger."
+    )
+
+    # should we remove this or make it not accessible through API?
+    aux_heater_type = models.TextField(
+        blank=True,
+        null=True,
+        help_text="This field only accepts \"electric\" as the auxillary heater type."
+    )
+
+    # should we remove this or make it not accessible through API?
+    is_ghx_hybrid = models.BooleanField(
+        blank=True,
+        null=True,
+        help_text="...."
+    )
+
+    aux_heater_installed_cost_per_mmbtu_per_hr = models.FloatField(
+        validators=[
+            MinValueValidator(1.0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        blank=True,
+        default=26000.00,
+        help_text="...."
+    )
+
+    aux_cooler_installed_cost_per_ton = models.FloatField(
+        validators=[
+            MinValueValidator(1.0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        blank=True,
+        default=400.00,
+        help_text="...."
+    )
+
+    aux_unit_capacity_sizing_factor_on_peak_load = models.FloatField(
+        validators=[
+            MinValueValidator(1.0),
+            MaxValueValidator(5.0)
+        ],
+        blank=True,
+        default=1.2,
+        help_text="...."
+    )
+
+    avoided_capex_by_ghp_present_value = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        blank=True,
+        default=0.0,
+        help_text="...."
+    )
+
     ghpghx_inputs = ArrayField(
         models.JSONField(
             null=True,
@@ -6616,7 +6691,7 @@ class GHPInputs(BaseModel, models.Model):
             self.ghpghx_response_uuids = None
 
 class GHPOutputs(BaseModel, models.Model):
-    key = "GHPOutputs"
+    key = "GHP"
 
     meta = models.OneToOneField(
         to=APIMeta,
@@ -6632,6 +6707,7 @@ class GHPOutputs(BaseModel, models.Model):
             models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
     cooling_thermal_load_reduction_with_ghp_ton = ArrayField(
             models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
+    ghx_residual_value_present_value = models.FloatField(null=True, blank=True)
 
 
 def get_input_dict_from_run_uuid(run_uuid:str):
