@@ -30,6 +30,7 @@ Classify the change according to the following categories:
 ### Minor Updates
 ##### Added
 - /v3 endpoints which use the reoptjl app and the REopt.jl Julia package, but /stable still points to /v2 so this is not a breaking change
+ - Django model **ERPWindInputs**, used in `ERPJob()`, `erp_help()`, and `erp_results()`
 ##### Fixed
 - Fixed a bug in the `get_existing_chiller_default_cop` endpoint not accepting blank/null inputs that are optional
 
@@ -126,7 +127,7 @@ Classify the change according to the following categories:
     - `/erp/<run_uuid>/results` endpoint that GETs the results of an ERP job (calls `erp_results()`) 
     - `/erp/help` endpoint that GETs the ERP input field info (calls `erp_help()`)
     - `/erp/chp_defaults` endpoint that GETs ERP CHP/prime generator input defaults based on parameters `prime_mover`, `is_chp`, and `size_kw` (calls `erp_chp_prime_gen_defaults()`)
-    - Tests in `resilience+stats/tests/test_erp.py`
+    - Tests in `resilience_stats/tests/test_erp.py`
  - In reoptjl app (v3), added Financial **year_one_om_costs_before_tax_bau**, **lifecycle_om_costs_after_tax_bau** 
  - Added field **production_factor_series** to Django models **WindOutputs** and **PVOutputs**
  - In **REoptjlMessageOutputs** added a **has_stacktrace** field to denote if response has a stacktrace error or not. Default is False.

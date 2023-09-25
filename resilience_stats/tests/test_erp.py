@@ -17,14 +17,14 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         self.reopt_base_erp_results = '/dev/erp/{}/results/'
         self.reopt_base_erp_help = '/dev/erp/help/'
         self.reopt_base_erp_chp_defaults = '/dev/erp/chp_defaults/?prime_mover={0}&is_chp={1}&size_kw={2}'
-        self.post_sim = os.path.join('resilience_stats', 'tests', 'ERP_sim_post.json')
+        self.post_sim_gens_batt_pv_wind = os.path.join('resilience_stats', 'tests', 'ERP_sim_gens_batt_pv_wind_post.json')
         self.post_sim_large_stor = os.path.join('resilience_stats', 'tests', 'ERP_sim_large_stor_post.json')
         self.post_sim_only = os.path.join('resilience_stats', 'tests', 'ERP_sim_only_post.json')
         self.post_sim_long_dur_stor = os.path.join('resilience_stats', 'tests', 'ERP_sim_long_dur_stor_post.json')
         #for REopt optimization
         self.reopt_base_opt = '/dev/job/'
         self.reopt_base_opt_results = '/dev/job/{}/results'
-        self.post_opt = os.path.join('resilience_stats', 'tests', 'ERP_opt_post.json')
+        self.post_opt_gens_batt_pv_wind = os.path.join('resilience_stats', 'tests', 'ERP_opt_gens_batt_pv_wind_post.json')
         self.post_opt_long_dur_stor = os.path.join('resilience_stats', 'tests', 'ERP_opt_long_dur_stor_post.json')
 
     def get_response_opt(self, data):
@@ -98,7 +98,7 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         This used to be the same as the last test in the "Backup Generator Reliability" testset in the REopt Julia package, but need to make consistent again.
         """
 
-        data = json.load(open(self.post_opt, 'rb'))
+        data = json.load(open(self.post_opt_gens_batt_pv_wind, 'rb'))
         data["Settings"]["optimality_tolerance"] = 1.0e-2 # REopt_tol per line 38.
         resp = self.get_response_opt(data)
         self.assertHttpCreated(resp)
@@ -106,7 +106,7 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         reopt_run_uuid = r_opt.get('run_uuid')
 
         assert(reopt_run_uuid is not None)
-        post_sim = json.load(open(self.post_sim, 'rb'))
+        post_sim = json.load(open(self.post_sim_gens_batt_pv_wind, 'rb'))
         post_sim["reopt_run_uuid"] = reopt_run_uuid
         post_sim["ElectricStorage"]["starting_soc_series_fraction"] = 8760 * [1]
 
@@ -132,6 +132,8 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
                     ("ElectricStorage","starting_soc_series_fraction"),
                     ("PV","size_kw"),
                     ("PV","production_factor_series"),
+                    ("Wind","size_kw"),
+                    ("Wind","production_factor_series"),
                     ("Outage","critical_loads_kw"),
                     ("Outage","max_outage_duration")
                 ]:
