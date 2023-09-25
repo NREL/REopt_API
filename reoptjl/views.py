@@ -561,22 +561,24 @@ def get_existing_chiller_default_cop(request):
     GET default existing chiller COP using the max thermal cooling load.
     param: existing_chiller_max_thermal_factor_on_peak_load: max thermal factor on peak cooling load, i.e., "oversizing" of existing chiller [fraction]
     param: max_load_kw: maximum electrical load [kW]
-    param: max_load_kw_thermal: maximum thermal cooling load [kW]
+    param: max_load_ton: maximum thermal cooling load [ton]
     return: existing_chiller_cop: default COP of existing chiller [fraction]  
     """
     try:
         existing_chiller_max_thermal_factor_on_peak_load = request.GET.get('existing_chiller_max_thermal_factor_on_peak_load')
-        if existing_chiller_max_thermal_factor_on_peak_load is not None:
+        if existing_chiller_max_thermal_factor_on_peak_load not in [None, ""]:
             existing_chiller_max_thermal_factor_on_peak_load = float(existing_chiller_max_thermal_factor_on_peak_load)
         else: 
             existing_chiller_max_thermal_factor_on_peak_load = 1.25  # default from REopt.jl
 
         max_load_kw = request.GET.get('max_load_kw')
-        if max_load_kw is not None:
+        if max_load_kw not in [None, ""]:
             max_load_kw = float(max_load_kw)
+        else: 
+            max_load_kw = None
 
         max_load_ton = request.GET.get('max_load_ton')
-        if max_load_ton is not None:
+        if max_load_ton not in [None, ""]:
             max_load_kw_thermal = float(max_load_ton) * 3.51685  # kWh thermal per ton-hour
         else: 
             max_load_kw_thermal = None

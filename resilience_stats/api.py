@@ -10,6 +10,7 @@ import os
 from celery import shared_task
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
+from django.db import models as dbmodels
 from tastypie.authorization import ReadOnlyAuthorization
 from tastypie.bundle import Bundle
 from tastypie.exceptions import ImmediateHttpResponse
@@ -111,7 +112,16 @@ class ERPJob(ModelResource):
                         meta_dict, 
                         "To include Wind, you must provide Wind production_factor_series or the reopt_run_uuid of an optimization that considered Wind."
                     )
-                #TODO: error if no outage inputs and no reopt run_uuid
+                if bundle.data.get("Outage",{}).get("max_outage_duration", None) is None:
+                    add_validation_err_msg_and_raise_400_response(
+                        meta_dict, 
+                        "You must provide Outage max_outage_duration or the reopt_run_uuid of an optimization that considered an outage(s)."
+                    )
+                if not bundle.data.get("Outage",{}).get("critical_loads_kw", []):
+                    add_validation_err_msg_and_raise_400_response(
+                        meta_dict, 
+                        "You must provide Outage critical_loads_kw or the reopt_run_uuid of an optimization."
+                    )
             else:
                 #TODO: put in helper function for more readable code
                 try:
@@ -128,7 +138,7 @@ class ERPJob(ModelResource):
                     reopt_run_meta = APIMeta.objects.select_related(
                         "ElectricLoadOutputs",
                     ).get(run_uuid=reopt_run_uuid)
-                except:
+                except dbmodels.ObjectDoesNotExist as e:
                     # Handle non-existent REopt runs
                     add_validation_err_msg_and_raise_400_response(
                         meta_dict, 
@@ -142,6 +152,12 @@ class ERPJob(ModelResource):
                     bundle.data[user_dict_key] = reopt_dict
 
                 ## Outage ##
+                if not hasattr(reopt_run_meta, 'ElectricLoadOutputs'):
+                    # Handle incomplete REopt runs
+                    add_validation_err_msg_and_raise_400_response(
+                        meta_dict, 
+                        "REopt optimization with run_uuid {} has not yet completed. Please try again later.".format(reopt_run_uuid)
+                    )
                 critical_loads_kw = reopt_run_meta.ElectricLoadOutputs.dict["critical_load_series_kw"]
                 update_user_dict_with_values_from_reopt("Outage", {"critical_loads_kw": critical_loads_kw})
                 if len(reopt_run_meta.ElectricUtilityInputs.dict["outage_durations"]) > 0:
@@ -408,7 +424,10 @@ def run_erp_task(run_uuid):
         response_json = response.json()
         if response.status_code == 500:
             raise REoptFailedToStartError(task=name, message=response_json["error"], run_uuid=run_uuid, user_uuid=user_uuid)
-
+        logger.info("ERP run successful.")
+        process_erp_results(response_json, run_uuid)
+        logger.info("ERP results processing successful.")
+        
     except Exception as e:
         if isinstance(e, REoptFailedToStartError):
             raise e
@@ -420,10 +439,7 @@ def run_erp_task(run_uuid):
         logger.error("ERP raised an unexpected error: UUID: " + str(run_uuid))
         raise UnexpectedError(exc_type, exc_value, traceback.format_tb(exc_traceback), task=name, run_uuid=run_uuid,
                               user_uuid=user_uuid)
-    else:
-        logger.info("ERP run successful.")
-
-    process_erp_results(response_json, run_uuid)
+    
     return True
 
 def process_erp_results(results: dict, run_uuid: str) -> None:
@@ -435,7 +451,6 @@ def process_erp_results(results: dict, run_uuid: str) -> None:
     meta = ERPMeta.objects.get(run_uuid=run_uuid)
     meta.status = 'Completed' #results.get("status")
     meta.save(update_fields=['status'])
-    results.pop("marginal_outage_survival_final_time_step",None)
     ERPOutputs.create(meta=meta, **results).save()
     
 
