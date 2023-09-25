@@ -33,6 +33,12 @@ Classify the change according to the following categories:
  - Django model **ERPWindInputs**, used in `ERPJob()`, `erp_help()`, and `erp_results()`
 ##### Fixed
 - Fixed a bug in the `get_existing_chiller_default_cop` endpoint not accepting blank/null inputs that are optional
+- Added `OutageOutputs` field **electric_storage_microgrid_upgraded** to `reoptjl/models.py`
+- In `ERPJob`, handle the `/erp` endpoint being hit before the REopt optimization associated with the provided **reopt_run_uuid** has not yet completed
+- Catch and handle exceptions thrown in `process_erp_results`
+- Throw error if user tries to run ERP without **max_outage_duration** or the **reopt_run_uuid** of a resilience optimization
+##### Changed
+- Changed `backup_reliability` results key from **fuel_outage_survival_final_time_step** to **fuel_survival_final_time_step** for consistency with other keys
 
 ## v2.15.0
 ### Minor Updates
