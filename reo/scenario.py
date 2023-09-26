@@ -384,7 +384,7 @@ def setup_scenario(self, run_uuid, data, api_version=1):
                     ground_k_inputs = {"latitude": ghpghx_post["latitude"],
                                     "longitude": ghpghx_post["longitude"]}
                     # Call to the django view endpoint /ghp_efficiency_thermal_factors which calls the http.jl endpoint
-                    ground_k_resp = client.get(f'/dev/ghpghx/ground_conductivity', data=ground_k_inputs)
+                    ground_k_resp = client.get(f'/v3/ghpghx/ground_conductivity', data=ground_k_inputs)
                     ground_k_response = json.loads(ground_k_resp.content)
                     ghpghx_post["ground_thermal_conductivity_btu_per_hr_ft_f"] = ground_k_response["thermal_conductivity"]
                 
