@@ -1,32 +1,4 @@
-# *********************************************************************************
-# REopt, Copyright (c) 2019-2020, Alliance for Sustainable Energy, LLC.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without modification,
-# are permitted provided that the following conditions are met:
-#
-# Redistributions of source code must retain the above copyright notice, this list
-# of conditions and the following disclaimer.
-#
-# Redistributions in binary form must reproduce the above copyright notice, this
-# list of conditions and the following disclaimer in the documentation and/or other
-# materials provided with the distribution.
-#
-# Neither the name of the copyright holder nor the names of its contributors may be
-# used to endorse or promote products derived from this software without specific
-# prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-# IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-# OF THE POSSIBILITY OF SUCH DAMAGE.
-# *********************************************************************************
+# REopt®, Copyright (c) Alliance for Sustainable Energy, LLC. See also https://github.com/NREL/REopt_API/blob/master/LICENSE.
 import json
 import sys
 import uuid
@@ -38,6 +10,7 @@ import os
 from celery import shared_task
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
+from django.db import models as dbmodels
 from tastypie.authorization import ReadOnlyAuthorization
 from tastypie.bundle import Bundle
 from tastypie.exceptions import ImmediateHttpResponse
@@ -51,7 +24,7 @@ from reo.exceptions import SaveToDatabase, UnexpectedError, REoptFailedToStartEr
 
 from reo.models import ScenarioModel, FinancialModel
 from reoptjl.models import APIMeta
-from resilience_stats.models import ResilienceModel, ERPMeta, ERPOutageInputs, ERPGeneratorInputs, ERPPrimeGeneratorInputs, ERPPVInputs, ERPElectricStorageInputs, ERPOutputs, get_erp_input_dict_from_run_uuid
+from resilience_stats.models import ResilienceModel, ERPMeta, ERPOutageInputs, ERPGeneratorInputs, ERPPrimeGeneratorInputs, ERPPVInputs, ERPWindInputs, ERPElectricStorageInputs, ERPOutputs, get_erp_input_dict_from_run_uuid
 from resilience_stats.validators import validate_run_uuid
 from resilience_stats.views import run_outage_sim
 
@@ -133,7 +106,22 @@ class ERPJob(ModelResource):
                         meta_dict, 
                         "To include PV, you must provide PV production_factor_series or the reopt_run_uuid of an optimization that considered PV."
                     )
-                #TODO: error if no outage inputs and no reopt run_uuid
+                if bundle.data.get("Wind",{}).get("size_kw", 0) > 0 and \
+                    len(bundle.data.get("Wind",{}).get("production_factor_series", [])) != 8760: #TODO: handle subhourly
+                    add_validation_err_msg_and_raise_400_response(
+                        meta_dict, 
+                        "To include Wind, you must provide Wind production_factor_series or the reopt_run_uuid of an optimization that considered Wind."
+                    )
+                if bundle.data.get("Outage",{}).get("max_outage_duration", None) is None:
+                    add_validation_err_msg_and_raise_400_response(
+                        meta_dict, 
+                        "You must provide Outage max_outage_duration or the reopt_run_uuid of an optimization that considered an outage(s)."
+                    )
+                if not bundle.data.get("Outage",{}).get("critical_loads_kw", []):
+                    add_validation_err_msg_and_raise_400_response(
+                        meta_dict, 
+                        "You must provide Outage critical_loads_kw or the reopt_run_uuid of an optimization."
+                    )
             else:
                 #TODO: put in helper function for more readable code
                 try:
@@ -150,7 +138,7 @@ class ERPJob(ModelResource):
                     reopt_run_meta = APIMeta.objects.select_related(
                         "ElectricLoadOutputs",
                     ).get(run_uuid=reopt_run_uuid)
-                except:
+                except dbmodels.ObjectDoesNotExist as e:
                     # Handle non-existent REopt runs
                     add_validation_err_msg_and_raise_400_response(
                         meta_dict, 
@@ -164,6 +152,12 @@ class ERPJob(ModelResource):
                     bundle.data[user_dict_key] = reopt_dict
 
                 ## Outage ##
+                if not hasattr(reopt_run_meta, 'ElectricLoadOutputs'):
+                    # Handle incomplete REopt runs
+                    add_validation_err_msg_and_raise_400_response(
+                        meta_dict, 
+                        "REopt optimization with run_uuid {} has not yet completed. Please try again later.".format(reopt_run_uuid)
+                    )
                 critical_loads_kw = reopt_run_meta.ElectricLoadOutputs.dict["critical_load_series_kw"]
                 update_user_dict_with_values_from_reopt("Outage", {"critical_loads_kw": critical_loads_kw})
                 if len(reopt_run_meta.ElectricUtilityInputs.dict["outage_durations"]) > 0:
@@ -246,7 +240,7 @@ class ERPJob(ModelResource):
                         len(bundle.data.get("PV",{}).get("production_factor_series", [])) == 0:
                     add_validation_err_msg_and_raise_400_response(
                         meta_dict, 
-                        "To include PV, you must provide PV production_factor_series or the reopt_run_uuid of an optimization that considered PV."
+                        "To include PV, you must provide PV size_kw and production_factor_series or the reopt_run_uuid of an optimization that considered PV."
                     )
                 reopt_pv_size_kw = 0
                 pv_prod_series = np.zeros(len(critical_loads_kw))
@@ -265,7 +259,26 @@ class ERPJob(ModelResource):
                             bundle.data["PV"]["production_factor_series"] = (pv_prod_series/reopt_pv_size_kw).tolist()
                         else: # PV considered in optimization but optimal sizes all 0. Use prod factor of first PV.
                             bundle.data["PV"]["production_factor_series"] = pvs[0].dict.get("production_factor_series")
-                                    
+                      
+                ## Wind ##
+                try:
+                    wind_out = reopt_run_meta.WindOutputs.dict
+                    if wind_out.get("size_kw") > 0 or "Wind" in bundle.data:
+                        update_user_dict_with_values_from_reopt(
+                            "Wind", 
+                            {
+                                "size_kw": wind_out.get("size_kw"),
+                                "production_factor_series": wind_out.get("production_factor_series")
+                            }
+                        )                      
+                except AttributeError as e: 
+                    if bundle.data.get("Wind",{}).get("size_kw", 0) > 0 and \
+                        len(bundle.data.get("Wind",{}).get("production_factor_series", [])) == 0:
+                        add_validation_err_msg_and_raise_400_response(
+                            meta_dict, 
+                            "To include Wind, you must provide Wind size_kw and production_factor_series or the reopt_run_uuid of an optimization that considered Wind."
+                        )
+       
                 ## ElectricStorage ##
                 stor_out = None
                 try:
@@ -293,6 +306,7 @@ class ERPJob(ModelResource):
                 ERPGeneratorInputs,
                 ERPPrimeGeneratorInputs,
                 ERPPVInputs,
+                ERPWindInputs,
                 ERPElectricStorageInputs
             ):
                 try:
@@ -410,7 +424,10 @@ def run_erp_task(run_uuid):
         response_json = response.json()
         if response.status_code == 500:
             raise REoptFailedToStartError(task=name, message=response_json["error"], run_uuid=run_uuid, user_uuid=user_uuid)
-
+        logger.info("ERP run successful.")
+        process_erp_results(response_json, run_uuid)
+        logger.info("ERP results processing successful.")
+        
     except Exception as e:
         if isinstance(e, REoptFailedToStartError):
             raise e
@@ -422,10 +439,7 @@ def run_erp_task(run_uuid):
         logger.error("ERP raised an unexpected error: UUID: " + str(run_uuid))
         raise UnexpectedError(exc_type, exc_value, traceback.format_tb(exc_traceback), task=name, run_uuid=run_uuid,
                               user_uuid=user_uuid)
-    else:
-        logger.info("ERP run successful.")
-
-    process_erp_results(response_json, run_uuid)
+    
     return True
 
 def process_erp_results(results: dict, run_uuid: str) -> None:
@@ -437,7 +451,6 @@ def process_erp_results(results: dict, run_uuid: str) -> None:
     meta = ERPMeta.objects.get(run_uuid=run_uuid)
     meta.status = 'Completed' #results.get("status")
     meta.save(update_fields=['status'])
-    results.pop("marginal_outage_survival_final_time_step",None)
     ERPOutputs.create(meta=meta, **results).save()
     
 

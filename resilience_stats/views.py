@@ -1,44 +1,16 @@
-# *********************************************************************************
-# REopt, Copyright (c) 2019-2020, Alliance for Sustainable Energy, LLC.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without modification,
-# are permitted provided that the following conditions are met:
-#
-# Redistributions of source code must retain the above copyright notice, this list
-# of conditions and the following disclaimer.
-#
-# Redistributions in binary form must reproduce the above copyright notice, this
-# list of conditions and the following disclaimer in the documentation and/or other
-# materials provided with the distribution.
-#
-# Neither the name of the copyright holder nor the names of its contributors may be
-# used to endorse or promote products derived from this software without specific
-# prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-# IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-# OF THE POSSIBILITY OF SUCH DAMAGE.
-# *********************************************************************************
+# REopt®, Copyright (c) Alliance for Sustainable Energy, LLC. See also https://github.com/NREL/REopt_API/blob/master/LICENSE.
 import sys
 import uuid
 from typing import Dict, Union
 from django.forms.models import model_to_dict
 from django.http import JsonResponse, HttpRequest
-from django.db import models
+from django.db import models as dbmodels
 from reo.exceptions import UnexpectedError
 from reo.models import ModelManager
 from reo.models import ScenarioModel, PVModel, StorageModel, LoadProfileModel, GeneratorModel, FinancialModel, \
     WindModel, CHPModel
 from reo.utilities import annuity
-from resilience_stats.models import ResilienceModel, ERPMeta, ERPOutageInputs, ERPGeneratorInputs, ERPPrimeGeneratorInputs, ERPPVInputs, ERPElectricStorageInputs, ERPOutputs
+from resilience_stats.models import ResilienceModel, ERPMeta, ERPOutageInputs, ERPGeneratorInputs, ERPPrimeGeneratorInputs, ERPPVInputs, ERPWindInputs, ERPElectricStorageInputs, ERPOutputs
 from resilience_stats.outage_simulator_LF import simulate_outages
 import numpy as np
 from reo.utilities import empty_record
@@ -65,7 +37,7 @@ def erp_results(request, run_uuid):
         # catch specific exceptions
         try:
             meta = ERPMeta.objects.select_related("ERPOutageInputs").get(run_uuid=run_uuid)
-        except models.ObjectDoesNotExist as e:
+        except dbmodels.ObjectDoesNotExist as e:
             resp = {"messages": {}}
             resp['messages']['error'] = (
                 "run_uuid {} not in database. "
@@ -95,6 +67,10 @@ def erp_results(request, run_uuid):
         except AttributeError:
             pass
         try:
+            resp["inputs"][ERPWindInputs.key] = meta.ERPWindInputs.dict
+        except AttributeError:
+            pass
+        try:
             resp["inputs"][ERPElectricStorageInputs.key] = meta.ERPElectricStorageInputs.dict
         except AttributeError:
             pass
@@ -109,7 +85,7 @@ def erp_results(request, run_uuid):
 
         try:  
             erp_outputs = ERPOutputs.objects.get(meta__run_uuid=run_uuid)
-        except models.ObjectDoesNotExist:
+        except dbmodels.ObjectDoesNotExist:
             resp['messages']['error'] = ('ERP results are not ready. Please try again later.')
             return JsonResponse(resp, content_type='application/json', status=404)
 
@@ -135,6 +111,7 @@ def erp_help(request):
         # do models need to be passed in as arg?
         d[ERPOutageInputs.key] = ERPOutageInputs.info_dict(ERPOutageInputs)
         d[ERPPVInputs.key] = ERPPVInputs.info_dict(ERPPVInputs)
+        d[ERPWindInputs.key] = ERPWindInputs.info_dict(ERPWindInputs)
         d[ERPElectricStorageInputs.key] = ERPElectricStorageInputs.info_dict(ERPElectricStorageInputs)
         d[ERPGeneratorInputs.key] = ERPGeneratorInputs.info_dict(ERPGeneratorInputs)
         d[ERPPrimeGeneratorInputs.key] = ERPPrimeGeneratorInputs.info_dict(ERPPrimeGeneratorInputs)
