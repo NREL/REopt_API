@@ -24,19 +24,16 @@ v2_api.register(GHPGHXJob())
 
 v3_api = Api(api_name='v3')
 v3_api.register(REoptJLJob())
-v3_api.register(GHPGHXJob())
 v3_api.register(ERPJob())
+v3_api.register(GHPGHXJob())
 
 stable_api = Api(api_name='stable')
-stable_api.register(Job2())
-stable_api.register(OutageSimJob())
+stable_api.register(REoptJLJob())
+stable_api.register(ERPJob())
 stable_api.register(GHPGHXJob())
 
 dev_api = Api(api_name='dev')
-dev_api.register(REoptJLJob())
 dev_api.register(FutureCostsAPI())
-dev_api.register(GHPGHXJob())
-dev_api.register(ERPJob())
 
 
 def page_not_found(request, url):
@@ -77,12 +74,12 @@ urlpatterns = [
     # (summary is within reoptjl.urls)
     re_path(r'', include(v3_api.urls)),
 
-    path('stable/', include('reo.urls_v2')),
-    path('stable/', include('resilience_stats.urls_v1_v2')),
-    path('stable/', include('proforma.urls')),
-    path('stable/', include('load_builder.urls')),
-    path('stable/', include('summary.urls')),
+    path('stable/', include('reoptjl.urls')),
+    path('stable/', include('resilience_stats.urls_v3plus')),
     path('stable/', include('ghpghx.urls')),
+    path('stable/', include('load_builder.urls')),
+    # TODO proforma for v3
+    # (summary is within reoptjl.urls)
     re_path(r'', include(stable_api.urls)),
 
     path('dev/', include('reoptjl.urls')),
