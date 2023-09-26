@@ -103,7 +103,7 @@ class ERPGeneratorInputs(BaseModel, models.Model):
         ],
         default=0.995, 
         blank=True,
-        help_text=("Fraction of year generators not down for maintenance")
+        help_text=("Fraction of the year that each generator unit is not down for maintenance")
     )
     failure_to_start = models.FloatField(
         validators=[
@@ -212,7 +212,7 @@ class ERPPrimeGeneratorInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        help_text=("Fraction of year prime generator/CHP units are not down for maintenance")
+        help_text=("Fraction of the year that each prime generator/CHP unit is not down for maintenance")
     )
     failure_to_start = models.FloatField(
         validators=[
@@ -354,7 +354,7 @@ class ERPElectricStorageInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(1.0)
         ],
-        help_text=("Fraction of year battery system not down for maintenance")
+        help_text=("Fraction of the year that the battery system is not down for maintenance")
     )
     size_kw = models.FloatField(
         blank=True,
@@ -441,7 +441,7 @@ class ERPPVInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(1.0)
         ],
-        help_text=("Fraction of year PV system not down for maintenance")
+        help_text=("Fraction of the year that the PV system is not down for maintenance")
     )
     size_kw = models.FloatField(
         blank=True,
@@ -452,7 +452,7 @@ class ERPPVInputs(BaseModel, models.Model):
         ],
         help_text=("PV system capacity")
     )
-    #TODO: add _kw_per_kw_rated?
+    #TODO: add units to name (_kw_per_kw_rated)?
     production_factor_series = ArrayField(
         models.FloatField(
             validators=[
@@ -463,6 +463,45 @@ class ERPPVInputs(BaseModel, models.Model):
         blank=True,
         default=list,
         help_text=("PV system output at each timestep, normalized to PV system size. Must be hourly (8,760 samples).")
+    )
+
+class ERPWindInputs(BaseModel, models.Model):
+    key = "Wind"
+    meta = models.OneToOneField(
+        ERPMeta,
+        on_delete=models.CASCADE,
+        primary_key=True,
+        related_name="ERPWindInputs"
+    )    
+    operational_availability = models.FloatField(
+        blank=True,
+        default=0.97,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0)
+        ],
+        help_text=("Fraction of the year that the wind system is not down for maintenance")
+    )
+    size_kw = models.FloatField(
+        blank=True,
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        help_text=("Wind system capacity")
+    )
+    #TODO: add units to name (_kw_per_kw_rated)?
+    production_factor_series = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1)
+            ]
+        ),
+        blank=True,
+        default=list,
+        help_text=("Wind system output at each timestep, normalized to wind system size. Must be hourly (8,760 samples).")
     )
 
 class ERPOutageInputs(BaseModel, models.Model):
@@ -517,7 +556,7 @@ class ERPOutputs(BaseModel, models.Model):
         default=list,
         help_text=("The probability, averaged over outages starting at each hour of the year, of having sufficient fuel to survive up to and including each hour of max_outage_duration.")
     )
-    fuel_outage_survival_final_time_step = ArrayField(
+    fuel_survival_final_time_step = ArrayField(
         models.IntegerField(blank=True),
         blank=True,
         default=list,
@@ -660,6 +699,9 @@ def get_erp_input_dict_from_run_uuid(run_uuid:str):
     except: pass
     try:
         d.update(add_tech_prefixes(filter_none_and_empty_array(meta.ERPPVInputs.dict),"pv"))
+    except: pass
+    try:
+        d.update(add_tech_prefixes(filter_none_and_empty_array(meta.ERPWindInputs.dict),"wind"))
     except: pass
     gen_dicts = []
     try: 
