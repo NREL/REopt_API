@@ -26,19 +26,29 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop 2023/09/06
+## v3.0.0
+### Major Updates
+##### Changed
+- Changed /stable URLs to point to /v3, using the REopt.jl package as the backbone of the API
+- License and copyright of the repository
 ### Minor Updates
 ##### Added
-- /v3 endpoints which use the reoptjl app and the REopt.jl Julia package, but /stable still points to /v2 so this is not a breaking change
- - Django model **ERPWindInputs**, used in `ERPJob()`, `erp_help()`, and `erp_results()`
+- Added `OutageOutputs` field **electric_storage_microgrid_upgraded** to `reoptjl/models.py`
 ##### Fixed
 - Fixed a bug in the `get_existing_chiller_default_cop` endpoint not accepting blank/null inputs that are optional
-- Added `OutageOutputs` field **electric_storage_microgrid_upgraded** to `reoptjl/models.py`
 - In `ERPJob`, handle the `/erp` endpoint being hit before the REopt optimization associated with the provided **reopt_run_uuid** has not yet completed
 - Catch and handle exceptions thrown in `process_erp_results`
 - Throw error if user tries to run ERP without **max_outage_duration** or the **reopt_run_uuid** of a resilience optimization
 ##### Changed
 - Changed `backup_reliability` results key from **fuel_outage_survival_final_time_step** to **fuel_survival_final_time_step** for consistency with other keys
+
+## v2.16.0
+### Minor Updates
+##### Added
+- /v3 endpoints which use the reoptjl app and the REopt.jl Julia package, but /stable still points to /v2 so this is not a breaking change
+ - Django model **ERPWindInputs**, used in `ERPJob()`, `erp_help()`, and `erp_results()`
+##### Changed
+- Modified production k8s server resources to best match v3 resource consumption (v2 will still work fine, but may have less throughput)
 
 ## v2.15.0
 ### Minor Updates
