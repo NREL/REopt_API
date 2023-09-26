@@ -4,13 +4,13 @@ import uuid
 from typing import Dict, Union
 from django.forms.models import model_to_dict
 from django.http import JsonResponse, HttpRequest
-from django.db import models
+from django.db import models as dbmodels
 from reo.exceptions import UnexpectedError
 from reo.models import ModelManager
 from reo.models import ScenarioModel, PVModel, StorageModel, LoadProfileModel, GeneratorModel, FinancialModel, \
     WindModel, CHPModel
 from reo.utilities import annuity
-from resilience_stats.models import ResilienceModel, ERPMeta, ERPOutageInputs, ERPGeneratorInputs, ERPPrimeGeneratorInputs, ERPPVInputs, ERPElectricStorageInputs, ERPOutputs
+from resilience_stats.models import ResilienceModel, ERPMeta, ERPOutageInputs, ERPGeneratorInputs, ERPPrimeGeneratorInputs, ERPPVInputs, ERPWindInputs, ERPElectricStorageInputs, ERPOutputs
 from resilience_stats.outage_simulator_LF import simulate_outages
 import numpy as np
 from reo.utilities import empty_record
@@ -37,7 +37,7 @@ def erp_results(request, run_uuid):
         # catch specific exceptions
         try:
             meta = ERPMeta.objects.select_related("ERPOutageInputs").get(run_uuid=run_uuid)
-        except models.ObjectDoesNotExist as e:
+        except dbmodels.ObjectDoesNotExist as e:
             resp = {"messages": {}}
             resp['messages']['error'] = (
                 "run_uuid {} not in database. "
@@ -67,6 +67,10 @@ def erp_results(request, run_uuid):
         except AttributeError:
             pass
         try:
+            resp["inputs"][ERPWindInputs.key] = meta.ERPWindInputs.dict
+        except AttributeError:
+            pass
+        try:
             resp["inputs"][ERPElectricStorageInputs.key] = meta.ERPElectricStorageInputs.dict
         except AttributeError:
             pass
@@ -81,7 +85,7 @@ def erp_results(request, run_uuid):
 
         try:  
             erp_outputs = ERPOutputs.objects.get(meta__run_uuid=run_uuid)
-        except models.ObjectDoesNotExist:
+        except dbmodels.ObjectDoesNotExist:
             resp['messages']['error'] = ('ERP results are not ready. Please try again later.')
             return JsonResponse(resp, content_type='application/json', status=404)
 
@@ -107,6 +111,7 @@ def erp_help(request):
         # do models need to be passed in as arg?
         d[ERPOutageInputs.key] = ERPOutageInputs.info_dict(ERPOutageInputs)
         d[ERPPVInputs.key] = ERPPVInputs.info_dict(ERPPVInputs)
+        d[ERPWindInputs.key] = ERPWindInputs.info_dict(ERPWindInputs)
         d[ERPElectricStorageInputs.key] = ERPElectricStorageInputs.info_dict(ERPElectricStorageInputs)
         d[ERPGeneratorInputs.key] = ERPGeneratorInputs.info_dict(ERPGeneratorInputs)
         d[ERPPrimeGeneratorInputs.key] = ERPPrimeGeneratorInputs.info_dict(ERPPrimeGeneratorInputs)
