@@ -82,10 +82,7 @@ urlpatterns = [
     # (summary is within reoptjl.urls)
     re_path(r'', include(stable_api.urls)),
 
-    path('dev/', include('reoptjl.urls')),
-    path('dev/', include('resilience_stats.urls_v3plus')),
     path('dev/', include('futurecosts.urls')),
-    path('dev/', include('ghpghx.urls')),
     re_path(r'', include(dev_api.urls)),
 
     re_path(r'(.*)', page_not_found, name='404'),
