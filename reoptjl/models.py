@@ -1,32 +1,4 @@
-# *********************************************************************************
-# REopt, Copyright (c) 2019-2020, Alliance for Sustainable Energy, LLC.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without modification,
-# are permitted provided that the following conditions are met:
-#
-# Redistributions of source code must retain the above copyright notice, this list
-# of conditions and the following disclaimer.
-#
-# Redistributions in binary form must reproduce the above copyright notice, this
-# list of conditions and the following disclaimer in the documentation and/or other
-# materials provided with the distribution.
-#
-# Neither the name of the copyright holder nor the names of its contributors may be
-# used to endorse or promote products derived from this software without specific
-# prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-# IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-# OF THE POSSIBILITY OF SUCH DAMAGE.
-# *********************************************************************************
+# REopt®, Copyright (c) Alliance for Sustainable Energy, LLC. See also https://github.com/NREL/REopt_API/blob/master/LICENSE.
 import math
 from django.db import models
 from django.db.models.fields import NOT_PROVIDED
@@ -1940,6 +1912,19 @@ class OutageOutputs(BaseModel, models.Model):
         default=list, blank=True,
         help_text="The maximum outage cost for every outage duration modeled."
     )
+    critical_loads_per_outage_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True,
+            ),
+            default=list, blank=True,
+        ),
+        default=list, blank=True,
+        help_text="The critical load in each outage time step for each outage start time and duration. Outage duration changes along the first dimension, outage start time step along the second, and time step in outage along the third."
+    )    
     unserved_load_series_kw = ArrayField(
         ArrayField(
             ArrayField(
@@ -1986,6 +1971,26 @@ class OutageOutputs(BaseModel, models.Model):
                     "Outage duration changes along the first dimension, "
                     "outage start time changes along the second dimension, "
                     "and hour within outage changes along the third dimension.")
+    )
+    soc_series_fraction = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of storage state of charge (SOC) in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    electric_storage_microgrid_upgraded = models.BooleanField(
+        null=True, blank=True,
+        help_text=("True/False for if ElectricStorage is included in the microgrid.")
     )
     pv_microgrid_size_kw = models.FloatField(
         null=True, blank=True,
@@ -2043,6 +2048,62 @@ class OutageOutputs(BaseModel, models.Model):
                     "outage start time changes along the second dimension, "
                     "and hour within outage changes along the third dimension.")
     )
+    wind_microgrid_size_kw = models.FloatField(
+        null=True, blank=True,
+        help_text="Optimal Wind capacity included in the microgrid."
+    )
+    wind_microgrid_upgrade_cost = models.FloatField(
+        null=True, blank=True,
+        help_text="Capital cost of including the Wind system in the microgrid."
+    )
+    wind_to_storage_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of Wind power sent to the battery in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    wind_curtailed_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of Wind power curtailed in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    wind_to_load_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of Wind power used to meet load in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )    
     generator_microgrid_size_kw = models.FloatField(
         null=True, blank=True,
         help_text="Optimal generator capacity included in the microgrid."
