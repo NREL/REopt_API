@@ -21,7 +21,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         http_response = response.json()
 
         # Call to the django view endpoint /chp_defaults which calls the http.jl endpoint
-        resp = self.api_client.get(f'/dev/chp_defaults', data=inputs)
+        resp = self.api_client.get(f'/v3/chp_defaults', data=inputs)
         view_response = json.loads(resp.content)
 
         mismatch = []
@@ -59,7 +59,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         http_response = response.json()
 
         # Call to the django view endpoint /chp_defaults which calls the http.jl endpoint
-        resp = self.api_client.get(f'/dev/chp_defaults', data=inputs)
+        resp = self.api_client.get(f'/v3/chp_defaults', data=inputs)
         view_response = json.loads(resp.content)
 
         mismatch = []
@@ -86,7 +86,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         http_response = response.json()
 
         # Call to the django view endpoint /absorption_chiller_defaults which calls the http.jl endpoint
-        resp = self.api_client.get(f'/dev/absorption_chiller_defaults', data=inputs)
+        resp = self.api_client.get(f'/v3/absorption_chiller_defaults', data=inputs)
         view_response = json.loads(resp.content)
 
         mismatch = []
@@ -112,8 +112,8 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
                 "longitude": -122.45
         }
 
-        # The /dev/simulated_load endpoint calls the http.jl /simulated_load endpoint
-        response = self.api_client.get(f'/dev/simulated_load', data=inputs)
+        # The /v3/simulated_load endpoint calls the http.jl /simulated_load endpoint
+        response = self.api_client.get(f'/v3/simulated_load', data=inputs)
         http_response = json.loads(response.content)
 
         # Call to the v2 /simulated_load to check for consistency
@@ -129,8 +129,8 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         inputs["percent_share[0]"] = 25.0
         inputs["percent_share[1]"] = 100.0 - inputs["percent_share[0]"]
         
-        # The /dev/simulated_load endpoint calls the http.jl /simulated_load endpoint
-        response = self.api_client.get(f'/dev/simulated_load', data=inputs)
+        # The /v3/simulated_load endpoint calls the http.jl /simulated_load endpoint
+        response = self.api_client.get(f'/v3/simulated_load', data=inputs)
         http_response = json.loads(response.content)
 
         # Call to the v2 /simulated_load to check for consistency
@@ -150,7 +150,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
             "latitude": 47.606211,
             "longitude": -122.336052
         }
-        resp = self.api_client.get(f'/dev/emissions_profile', data=inputs)
+        resp = self.api_client.get(f'/v3/emissions_profile', data=inputs)
         self.assertHttpOK(resp)
         view_response = json.loads(resp.content)
         self.assertEquals(view_response["meters_to_region"], 0.0)
@@ -160,7 +160,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
             "latitude": 47.606211,
             "longitude": 122.336052
         }
-        resp = self.api_client.get(f'/dev/emissions_profile', data=inputs)
+        resp = self.api_client.get(f'/v3/emissions_profile', data=inputs)
         self.assertHttpBadRequest(resp)
         view_response = json.loads(resp.content)
         self.assertTrue("error" in view_response)
@@ -172,7 +172,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
             "longitude": -122.336052,
             "inflation": 0.025
         }
-        resp = self.api_client.get(f'/dev/easiur_costs', data=inputs)
+        resp = self.api_client.get(f'/v3/easiur_costs', data=inputs)
         self.assertHttpOK(resp)
         view_response = json.loads(resp.content)
         for ekey in ["NOx", "SO2", "PM25"]:
@@ -183,7 +183,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
             "longitude": 122.336052,
             "inflation": 0.025
         }
-        resp = self.api_client.get(f'/dev/easiur_costs', data=inputs)
+        resp = self.api_client.get(f'/v3/easiur_costs', data=inputs)
         self.assertHttpBadRequest(resp)
         view_response = json.loads(resp.content)
         self.assertTrue("error" in view_response)
@@ -195,7 +195,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
                         "doe_reference_name": "MediumOffice"}
 
         # Call to the django view endpoint /ghp_efficiency_thermal_factors which calls the http.jl endpoint
-        resp = self.api_client.get(f'/dev/ghp_efficiency_thermal_factors', data=inputs_dict)
+        resp = self.api_client.get(f'/v3/ghp_efficiency_thermal_factors', data=inputs_dict)
         view_response = json.loads(resp.content)
 
         self.assertEqual(view_response["cooling_efficiency_thermal_factor"], 0.43)
@@ -206,7 +206,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
                         "longitude": -122.45}
 
         # Call to the django view endpoint /ghpghx/ground_conductivity which calls the http.jl endpoint
-        resp = self.api_client.get(f'/dev/ghpghx/ground_conductivity', data=inputs_dict)
+        resp = self.api_client.get(f'/v3/ghpghx/ground_conductivity', data=inputs_dict)
         view_response = json.loads(resp.content)
 
         self.assertEqual(view_response["thermal_conductivity"], 1.117)
@@ -220,7 +220,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         }
 
         # Call to the django view endpoint /get_existing_chiller_default_cop which calls the http.jl endpoint
-        resp = self.api_client.get(f'/dev/get_existing_chiller_default_cop', data=inputs_dict)
+        resp = self.api_client.get(f'/v3/get_existing_chiller_default_cop', data=inputs_dict)
         view_response = json.loads(resp.content)
         print(view_response)
 
@@ -230,7 +230,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         inputs_dict = {}
 
         # Call to the django view endpoint /get_existing_chiller_default_cop which calls the http.jl endpoint
-        resp = self.api_client.get(f'/dev/get_existing_chiller_default_cop', data=inputs_dict)
+        resp = self.api_client.get(f'/v3/get_existing_chiller_default_cop', data=inputs_dict)
         view_response = json.loads(resp.content)
         print(view_response)
 
@@ -244,7 +244,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         }
 
         # Call to the django view endpoint /get_existing_chiller_default_cop which calls the http.jl endpoint
-        resp = self.api_client.get(f'/dev/get_existing_chiller_default_cop', data=inputs_dict)
+        resp = self.api_client.get(f'/v3/get_existing_chiller_default_cop', data=inputs_dict)
         view_response = json.loads(resp.content)
         print(view_response)
 
@@ -257,7 +257,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         }
 
         # Call to the django view endpoint /get_existing_chiller_default_cop which calls the http.jl endpoint
-        resp = self.api_client.get(f'/dev/get_existing_chiller_default_cop', data=inputs_dict)
+        resp = self.api_client.get(f'/v3/get_existing_chiller_default_cop', data=inputs_dict)
         view_response = json.loads(resp.content)
         print(view_response)
 
@@ -269,7 +269,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         }
 
         # Call to the django view endpoint /get_existing_chiller_default_cop which calls the http.jl endpoint
-        resp = self.api_client.get(f'/dev/get_existing_chiller_default_cop', data=inputs_dict)
+        resp = self.api_client.get(f'/v3/get_existing_chiller_default_cop', data=inputs_dict)
         view_response = json.loads(resp.content)
         print(view_response)
 

@@ -13,17 +13,17 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         super(ERPTests, self).setUp()
 
         #for ERP simulation
-        self.reopt_base_erp = '/dev/erp/'
-        self.reopt_base_erp_results = '/dev/erp/{}/results/'
-        self.reopt_base_erp_help = '/dev/erp/help/'
-        self.reopt_base_erp_chp_defaults = '/dev/erp/chp_defaults/?prime_mover={0}&is_chp={1}&size_kw={2}'
+        self.reopt_base_erp = '/v3/erp/'
+        self.reopt_base_erp_results = '/v3/erp/{}/results/'
+        self.reopt_base_erp_help = '/v3/erp/help/'
+        self.reopt_base_erp_chp_defaults = '/v3/erp/chp_defaults/?prime_mover={0}&is_chp={1}&size_kw={2}'
         self.post_sim_gens_batt_pv_wind = os.path.join('resilience_stats', 'tests', 'ERP_sim_gens_batt_pv_wind_post.json')
         self.post_sim_large_stor = os.path.join('resilience_stats', 'tests', 'ERP_sim_large_stor_post.json')
         self.post_sim_only = os.path.join('resilience_stats', 'tests', 'ERP_sim_only_post.json')
         self.post_sim_long_dur_stor = os.path.join('resilience_stats', 'tests', 'ERP_sim_long_dur_stor_post.json')
         #for REopt optimization
-        self.reopt_base_opt = '/dev/job/'
-        self.reopt_base_opt_results = '/dev/job/{}/results'
+        self.reopt_base_opt = '/v3/job/'
+        self.reopt_base_opt_results = '/v3/job/{}/results'
         self.post_opt_gens_batt_pv_wind = os.path.join('resilience_stats', 'tests', 'ERP_opt_gens_batt_pv_wind_post.json')
         self.post_opt_long_dur_stor = os.path.join('resilience_stats', 'tests', 'ERP_opt_long_dur_stor_post.json')
 
