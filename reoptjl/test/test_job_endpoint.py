@@ -19,11 +19,11 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
 
         scenario_file = os.path.join('reoptjl', 'test', 'posts', 'outage.json')
         scenario = json.load(open(scenario_file, 'r'))
-        resp = self.api_client.post('/dev/job/', format='json', data=scenario)
+        resp = self.api_client.post('/v3/job/', format='json', data=scenario)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
-        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
         r = json.loads(resp.content)
         results = r["outputs"]
         self.assertEqual(np.array(results["Outages"]["unserved_load_series_kw"]).shape, (1,2,5))
@@ -42,12 +42,12 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         post_file = os.path.join('reoptjl', 'test', 'posts', 'pv_batt_emissions.json')
         post = json.load(open(post_file, 'r'))
 
-        resp = self.api_client.post('/dev/job/', format='json', data=post)
+        resp = self.api_client.post('/v3/job/', format='json', data=post)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
 
-        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
         r = json.loads(resp.content)
         results = r["outputs"]
 
@@ -75,12 +75,12 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         post_file = os.path.join('reoptjl', 'test', 'posts', 'off_grid_defaults.json')
         post = json.load(open(post_file, 'r'))
 
-        resp = self.api_client.post('/dev/job/', format='json', data=post)
+        resp = self.api_client.post('/v3/job/', format='json', data=post)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
 
-        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
         r = json.loads(resp.content)
         results = r["outputs"]
     
@@ -99,12 +99,12 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         post_file = os.path.join('reoptjl', 'test', 'posts', 'handle_reopt_error.json')
         post = json.load(open(post_file, 'r'))
 
-        resp = self.api_client.post('/dev/job/', format='json', data=post)
+        resp = self.api_client.post('/v3/job/', format='json', data=post)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
 
-        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
         r = json.loads(resp.content)
         assert('errors' in r["messages"].keys())
         assert('warnings' in r["messages"].keys())
@@ -185,12 +185,12 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         ghpghx_response = json.load(open(ghpghx_response_file, 'r'))
         scenario["GHP"]["ghpghx_responses"] = [ghpghx_response]
 
-        resp = self.api_client.post('/dev/job/', format='json', data=scenario)
+        resp = self.api_client.post('/v3/job/', format='json', data=scenario)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         
-        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
         r = json.loads(resp.content)
         inputs = r["inputs"]
         results = r["outputs"]
@@ -214,12 +214,12 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         # Default ExistingBoiler efficiency for production_type = steam is 0.75
         post["SpaceHeatingLoad"]["annual_mmbtu"] = 8760 * 8 / 0.75
         post["DomesticHotWaterLoad"]["annual_mmbtu"] = 8760 * 8 / 0.75
-        resp = self.api_client.post('/dev/job/', format='json', data=post)
+        resp = self.api_client.post('/v3/job/', format='json', data=post)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
 
-        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
         r = json.loads(resp.content)
 
         inputs_chp = r["inputs"]["CHP"]
@@ -231,7 +231,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
             }
 
         # Call to the django view endpoint /chp_defaults which calls the http.jl endpoint
-        resp = self.api_client.get(f'/dev/chp_defaults', data=inputs_chp_defaults)
+        resp = self.api_client.get(f'/v3/chp_defaults', data=inputs_chp_defaults)
         view_response = json.loads(resp.content)
 
         for key in view_response["default_inputs"].keys():
@@ -260,7 +260,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
                         "start_not_center_on_peaks": False
         }
         expected_time_steps = [50*24-1-47+1, 70*24+13-47+1, 170*24-47+1, 243*24-47+1]
-        resp = self.api_client.post(f'/dev/peak_load_outage_times', data=outage_inputs)
+        resp = self.api_client.post(f'/v3/peak_load_outage_times', data=outage_inputs)
         self.assertHttpOK(resp)
         resp = json.loads(resp.content)
         self.assertEquals(resp["outage_start_time_steps"], expected_time_steps)
@@ -268,7 +268,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         outage_inputs["seasonal_peaks"] = False
         outage_inputs["start_not_center_on_peaks"] = True
         expected_time_steps = [243*24+1]
-        resp = self.api_client.post(f'/dev/peak_load_outage_times', data=outage_inputs)
+        resp = self.api_client.post(f'/v3/peak_load_outage_times', data=outage_inputs)
         self.assertHttpOK(resp)
         resp = json.loads(resp.content)
         self.assertEquals(resp["outage_start_time_steps"], expected_time_steps)
@@ -281,12 +281,12 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         post_file = os.path.join('reoptjl', 'test', 'posts', 'all_inputs_test.json')
         post = json.load(open(post_file, 'r'))
 
-        resp = self.api_client.post('/dev/job/', format='json', data=post)
+        resp = self.api_client.post('/v3/job/', format='json', data=post)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
 
-        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
         r = json.loads(resp.content)
         results = r["outputs"]
 
@@ -299,12 +299,12 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         post = json.load(open(post_file, 'r'))
 
         # Call http.jl /reopt to run SteamTurbine scenario and get results for defaults from julia checking
-        resp = self.api_client.post('/dev/job/', format='json', data=post)
+        resp = self.api_client.post('/v3/job/', format='json', data=post)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
 
-        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
         r = json.loads(resp.content)
 
         inputs_steamturbine = r["inputs"]["SteamTurbine"]
@@ -318,7 +318,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         }
 
         # Call to the django view endpoint /chp_defaults which calls the http.jl endpoint
-        resp = self.api_client.get(f'/dev/chp_defaults', data=inputs_steamturbine_defaults)
+        resp = self.api_client.get(f'/v3/chp_defaults', data=inputs_steamturbine_defaults)
         view_response = json.loads(resp.content)
 
         for key in view_response["default_inputs"].keys():
