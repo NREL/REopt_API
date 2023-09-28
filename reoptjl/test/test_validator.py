@@ -107,7 +107,8 @@ class InputValidatorTests(TestCase):
         self.assertAlmostEqual(validator.models["ElectricLoad"].critical_load_fraction, 1.0)
         self.assertAlmostEqual(validator.models["ElectricLoad"].min_load_met_annual_fraction, 0.99999)
 
-        self.assertAlmostEqual(validator.models["Generator"].om_cost_per_kw, 20)
+        self.assertAlmostEqual(validator.models["Generator"].installed_cost_per_kw, 880)
+        self.assertAlmostEqual(validator.models["Generator"].om_cost_per_kw, 10)
         self.assertAlmostEqual(validator.models["Generator"].fuel_avail_gal, 1.0e9)
         self.assertAlmostEqual(validator.models["Generator"].min_turn_down_fraction, 0.15)
         self.assertAlmostEqual(validator.models["Generator"].replacement_year, 10)
@@ -116,7 +117,7 @@ class InputValidatorTests(TestCase):
         ## Test that some defaults can be overriden below
 
         post["ElectricLoad"]["operating_reserve_required_fraction"] = 0.2
-        post["ElectricLoad"]["critical_load_fraction"] = 0.95
+        post["ElectricLoad"]["critical_load_fraction"] = 0.95 # cant override
         post["ElectricLoad"]["min_load_met_annual_fraction"] = 0.95
         
         post["Generator"]["om_cost_per_kw"] = 21
