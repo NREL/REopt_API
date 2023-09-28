@@ -320,8 +320,8 @@ uuid = "0329782f-3d07-4b52-b9f6-d3137cf03c7a"
 version = "1.0.1"
 
 [[deps.GhpGhx]]
-git-tree-sha1 = "2a5a080efe4c9bc2fa75f5eeeb9701b15302bf83"
-repo-rev = "add_hybrid_sizing_indicator"
+git-tree-sha1 = "bddcbcddc9a4ae7ae4f1ea7d4d8ccf38507d4071"
+repo-rev = "main"
 repo-url = "https://github.com/NREL/GhpGhx.jl.git"
 uuid = "7ce85f02-24a8-4d69-a3f0-14b5daa7d30c"
 version = "0.1.0"
@@ -713,11 +713,11 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [[deps.REopt]]
 deps = ["ArchGDAL", "CSV", "CoolProp", "DataFrames", "Dates", "DelimitedFiles", "HTTP", "JLD", "JSON", "JuMP", "LinDistFlow", "LinearAlgebra", "Logging", "MathOptInterface", "Requires", "Roots", "Statistics", "TestEnv"]
-git-tree-sha1 = "772d150c92be43ed073f30408ee9eeb1a49360fa"
-repo-rev = "264-enable-hybrid-ghp-capability-in-reopt"
+git-tree-sha1 = "ce6b0dcd08059a17978b61355cfb427bcf5350e6"
+repo-rev = "centralized-ghp"
 repo-url = "https://github.com/NREL/REopt.jl.git"
 uuid = "d36ad4e8-d74a-4f7a-ace1-eaea049febf6"
-version = "0.32.6"
+version = "0.33.0"
 
 [[deps.Random]]
 deps = ["SHA", "Serialization"]
