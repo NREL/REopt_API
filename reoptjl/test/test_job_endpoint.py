@@ -328,4 +328,23 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
                     self.assertEquals(inputs_steamturbine[key], view_response["default_inputs"][key])
                 else:  # Make sure we didn't overwrite user-input
                     self.assertEquals(inputs_steamturbine[key], post["SteamTurbine"][key])
-                    
+
+    def test_steamturbine_defaults_from_julia(self):
+        post_file = os.path.join('reoptjl', 'test', 'posts', 'hybrid_ghp.json')
+        post = json.load(open(post_file, 'r'))
+
+        post['GHP']['ghpghx_inputs'][1]['hybrid_ghx_sizing_method'] = 'Automatic'
+        post['GHP']['avoided_capex_by_ghp_present_value'] = 1.0e6
+        post['GHP']['ghx_useful_life_years'] = 35
+
+        # Call http.jl /reopt to run SteamTurbine scenario and get results for defaults from julia checking
+        resp = self.api_client.post('/dev/job/', format='json', data=post)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+
+        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        r = json.loads(resp.content)
+
+        # calculated_ghx_residual_value 117053.08189056128
+        self.assertAlmostEqual(r["outputs"]["GHP"]["ghx_residual_value_present_value"], 117053.08189056128, places=0)
