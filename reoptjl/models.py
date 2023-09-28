@@ -68,6 +68,13 @@ FUEL_DEFAULTS = {
     }
 }
 
+WIND_COST_DEFAULTS = { # size_class_to_installed_cost 
+    "residential" : 11950.0,
+    "commercial" : 7390.0,
+    "medium" : 4440.0,
+    "large" : 3450.0
+}
+
 def at_least_one_set(model, possible_sets):
     """
     Check if at least one set of possible_sets are defined in the Model.dict
@@ -2847,7 +2854,7 @@ class WindInputs(BaseModel, models.Model):
         ],
         blank=True,
         null=True,
-        help_text="Installed cost in $/kW. Default determined based on size_class."
+        help_text="Installed cost in $/kW. Default cost is determined based on size_class."
     )
     om_cost_per_kw = models.FloatField(
         default=36,
@@ -3053,8 +3060,11 @@ class WindInputs(BaseModel, models.Model):
         blank=True,
         help_text="Only applicable when off_grid_flag=True; defaults to 0.5 (50 pct) for off-grid scenarios and fixed at 0 otherwise."
             "Required operating reserves applied to each timestep as a fraction of wind generation serving load in that timestep."
-    ) 
+    )
 
+    def clean(self):
+        if self.size_class != "":
+            self.installed_cost_per_kw = WIND_COST_DEFAULTS.get(self.size_class, None) # will get set in REopt.jl if size_class not supplied
 
 class WindOutputs(BaseModel, models.Model):
     key = "WindOutputs"
