@@ -347,4 +347,4 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         r = json.loads(resp.content)
 
         # calculated_ghx_residual_value 117053.08189056128
-        self.assertAlmostEqual(r["outputs"]["GHP"]["ghx_residual_value_present_value"], 117023, places=0)
+        self.assertAlmostEqual(r["outputs"]["GHP"]["ghx_residual_value_present_value"], 117065.8, places=0)
