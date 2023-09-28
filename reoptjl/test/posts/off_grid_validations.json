@@ -7,7 +7,9 @@
         "latitude": 34.5794343
     },
     "PV": {},
-    "Wind": {},
+    "Wind": {
+        "size_class": "commercial"
+    },
     "Generator": {
         "min_kw": 100,
         "max_kw": 100
