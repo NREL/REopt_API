@@ -69,10 +69,10 @@ FUEL_DEFAULTS = {
 }
 
 WIND_COST_DEFAULTS = { # size_class_to_installed_cost 
-    "residential" : 11950.0,
-    "commercial" : 7390.0,
-    "medium" : 4440.0,
-    "large" : 3450.0
+    "residential" : 6339.0,
+    "commercial" : 4760.0,
+    "medium" : 3137.0,
+    "large" : 2386.0
 }
 
 def at_least_one_set(model, possible_sets):
