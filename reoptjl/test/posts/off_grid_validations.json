@@ -9,7 +9,6 @@
     "PV": {},
     "Wind": {},
     "Generator": {
-        "installed_cost_per_kw": 700,
         "min_kw": 100,
         "max_kw": 100
     },
