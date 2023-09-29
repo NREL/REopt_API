@@ -201,14 +201,14 @@ class InputValidator(object):
         """
 
         """
-        PV tilt set to latitude if not provided and production_factor_series validated
+        PV validation
         """
         def cross_clean_pv(pvmodel):
             if pvmodel.__getattribute__("tilt") == None:
                 if pvmodel.__getattribute__("array_type") == pvmodel.ARRAY_TYPE_CHOICES.ROOFTOP_FIXED:
                     pvmodel.__setattr__("tilt", 10)
                 else:
-                    pvmodel.__setattr__("tilt", abs(self.models["Site"].__getattribute__("latitude")))
+                    pvmodel.__setattr__("tilt", 20)
             
             if pvmodel.__getattribute__("azimuth") == None:
                 if self.models["Site"].__getattribute__("latitude") >= 0:
@@ -276,7 +276,7 @@ class InputValidator(object):
         Wind model validation
         1. If wind resource not provided, add a validation error if lat/lon not within WindToolkit data set
         2. If prod factor or resource data provided, validate_time_series for each
-        NOTE: if size_class is not provided it is determined in the Julia package based off of average load.
+        NOTE: if size_class is not provided: size_class is determined in the Julia package based off of average load and wind installed_cost_per_kw is determined based on size_class.
         """
         if "Wind" in self.models.keys():
             if self.models["Wind"].__getattribute__("max_kw") > 0:
@@ -454,9 +454,15 @@ class InputValidator(object):
 
             if self.models["Generator"].__getattribute__("om_cost_per_kw") == None:
                 if self.models["Settings"].off_grid_flag==False:
-                    self.models["Generator"].om_cost_per_kw = 10.0
-                else:
                     self.models["Generator"].om_cost_per_kw = 20.0
+                    if self.models["Generator"].only_runs_during_grid_outage:
+                        self.models["Generator"].installed_cost_per_kw = 650.0
+                    else: 
+                        self.models["Generator"].installed_cost_per_kw = 800.0
+                    self.models["Generator"]
+                else:
+                    self.models["Generator"].om_cost_per_kw = 10.0
+                    self.models["Generator"].installed_cost_per_kw = 880.0
 
             if self.models["Generator"].__getattribute__("min_turn_down_fraction") == None:
                 if self.models["Settings"].off_grid_flag==False:
