@@ -21,7 +21,9 @@
         "sells_energy_back_to_grid": false,
         "fuel_avail_gal": 660,
         "electric_efficiency_full_load": 0.323289797,
-        "electric_efficiency_half_load": 0.323289797
+        "electric_efficiency_half_load": 0.323289797,
+        "om_cost_per_kw": 10.0,
+        "fuel_cost_per_gallon": 3.0
     },
     "CHP": {
         "thermal_efficiency_full_load": 0.0,
@@ -39,7 +41,8 @@
         "federal_itc_fraction": 0.26,
         "macrs_bonus_fraction": 1.0,
         "macrs_option_years": 5,
-        "macrs_itc_reduction": 0.5
+        "macrs_itc_reduction": 0.5,
+        "tilt": 39.7407
     },
     "ElectricLoad": {
         "year": 2020,
@@ -77,6 +80,10 @@
         "owner_discount_rate_fraction": 0.1,
         "offtaker_discount_rate_fraction": 0.03,
         "elec_cost_escalation_rate_fraction": 0.023,
-        "microgrid_upgrade_cost_fraction": 0.3
+        "microgrid_upgrade_cost_fraction": 0.3,
+        "existing_boiler_fuel_cost_escalation_rate_fraction": 0.034, 
+        "boiler_fuel_cost_escalation_rate_fraction": 0.034,
+        "chp_fuel_cost_escalation_rate_fraction": 0.034,
+        "generator_fuel_cost_escalation_rate_fraction": 0.027
     }
 }
