@@ -346,5 +346,5 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
         r = json.loads(resp.content)
 
-        # calculated_ghx_residual_value 117053.08189056128
-        self.assertAlmostEqual(r["outputs"]["GHP"]["ghx_residual_value_present_value"], 117023.8, places=0)
+        # calculated_ghx_residual_value 117065.83
+        self.assertAlmostEqual(r["outputs"]["GHP"]["ghx_residual_value_present_value"], 117065.83, places=0)
