@@ -68,6 +68,13 @@ FUEL_DEFAULTS = {
     }
 }
 
+WIND_COST_DEFAULTS = { # size_class_to_installed_cost 
+    "residential" : 6339.0,
+    "commercial" : 4760.0,
+    "medium" : 3137.0,
+    "large" : 2386.0
+}
+
 def at_least_one_set(model, possible_sets):
     """
     Check if at least one set of possible_sets are defined in the Model.dict
@@ -582,7 +589,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text="Analysis period in years. Must be integer."
     )
     elec_cost_escalation_rate_fraction = models.FloatField(
-        default=0.019,
+        default=0.017,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -591,7 +598,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text="Annual nominal utility electricity cost escalation rate."
     )
     offtaker_discount_rate_fraction = models.FloatField(
-        default=0.0564,
+        default=0.0638,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -619,7 +626,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text="Annual nominal O&M cost escalation rate"
     )
     owner_discount_rate_fraction = models.FloatField(
-        default=0.0564,
+        default=0.0638,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -793,7 +800,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text=("Annual nominal escalation rate of the public health cost of 1 tonne of PM2.5 emissions (as a decimal). The default value is calculated from the EASIUR model for a height of 150m.")
     )
     generator_fuel_cost_escalation_rate_fraction = models.FloatField(
-        default=0.027,
+        default=0.012,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -802,7 +809,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text=("Annual nominal boiler fuel cost escalation rate")
     )    
     existing_boiler_fuel_cost_escalation_rate_fraction = models.FloatField(
-        default=0.034,
+        default=0.015,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -811,7 +818,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text=("Annual nominal existing boiler fuel cost escalation rate")
     )
     boiler_fuel_cost_escalation_rate_fraction = models.FloatField(
-        default=0.034,
+        default=0.015,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -820,7 +827,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text=("Annual nominal boiler fuel cost escalation rate")
     )
     chp_fuel_cost_escalation_rate_fraction = models.FloatField(
-        default=0.034,
+        default=0.015,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -2419,7 +2426,7 @@ class PVInputs(BaseModel, models.Model):
         help_text="Maximum PV size constraint for optimization (upper bound on additional capacity beyond existing_kw). Set to zero to disable PV"
     )
     installed_cost_per_kw = models.FloatField(
-        default=1592,
+        default=1790,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e5)
@@ -2428,7 +2435,7 @@ class PVInputs(BaseModel, models.Model):
         help_text="Installed PV cost in $/kW"
     )
     om_cost_per_kw = models.FloatField(
-        default=17,
+        default=18,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e3)
@@ -2669,7 +2676,7 @@ class PVInputs(BaseModel, models.Model):
         ],
         blank=True,
         null=True,
-        help_text="PV system tilt. If PV system type is rooftop-fixed, then tilt=10 degrees, else tilt=abs(site.latitude)"
+        help_text="PV system tilt. If PV system type is rooftop-fixed, then tilt=10 degrees, else tilt=20 degrees"
     )
     location = models.TextField(
         default=PV_LOCATION_CHOICES.BOTH,
@@ -2841,16 +2848,16 @@ class WindInputs(BaseModel, models.Model):
         help_text="Maximum size constraint for optimization."
     )
     installed_cost_per_kw = models.FloatField(
-        default=1600,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e5)
         ],
         blank=True,
-        help_text="Installed cost in $/kW"
+        null=True,
+        help_text="Installed cost in $/kW. Default cost is determined based on size_class."
     )
     om_cost_per_kw = models.FloatField(
-        default=35,
+        default=36,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e3)
@@ -3044,7 +3051,6 @@ class WindInputs(BaseModel, models.Model):
         blank=True,
         help_text="True/False for if technology has the ability to curtail energy production."
     )
-
     operating_reserve_required_fraction = models.FloatField(
         validators=[
             MinValueValidator(0.0),
@@ -3056,6 +3062,9 @@ class WindInputs(BaseModel, models.Model):
             "Required operating reserves applied to each timestep as a fraction of wind generation serving load in that timestep."
     )
 
+    def clean(self):
+        if self.size_class != "":
+            self.installed_cost_per_kw = WIND_COST_DEFAULTS.get(self.size_class, None) # will get set in REopt.jl if size_class not supplied
 
 class WindOutputs(BaseModel, models.Model):
     key = "WindOutputs"
@@ -3181,7 +3190,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Flag to set whether the battery can be charged from the grid, or just onsite generation."
     )
     installed_cost_per_kw = models.FloatField(
-        default=775.0,
+        default=910.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -3190,7 +3199,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Total upfront battery power capacity costs (e.g. inverter and balance of power systems)"
     )
     installed_cost_per_kwh = models.FloatField(
-        default=388.0,
+        default=455.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -3199,7 +3208,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Total upfront battery costs"
     )
     replace_cost_per_kw = models.FloatField(
-        default=440.0,
+        default=715.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -3208,7 +3217,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Battery power capacity replacement cost at time of replacement year"
     )
     replace_cost_per_kwh = models.FloatField(
-        default=220.0,
+        default=318.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -3396,7 +3405,7 @@ class GeneratorInputs(BaseModel, models.Model):
         help_text="Electric efficiency of the generator running at half load. Defaults to electric_efficiency_full_load."
     )
     electric_efficiency_full_load = models.FloatField(
-        default=0.34,
+        default=0.322,
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(1.0)
@@ -3681,8 +3690,6 @@ class GeneratorInputs(BaseModel, models.Model):
     )
 
     def clean(self):
-        if not self.installed_cost_per_kw:
-            self.installed_cost_per_kw = 650.0 if self.only_runs_during_grid_outage else 800.0
         if not self.electric_efficiency_half_load:
             self.electric_efficiency_half_load = self.electric_efficiency_full_load
 
