@@ -277,6 +277,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         """
         Purpose of this test is to test the API's ability to accept all relevant 
         input fields and send to REopt, ensuring name input consistency with REopt.jl.
+        Note: Does not currently test CHP inputs
         """
         post_file = os.path.join('reoptjl', 'test', 'posts', 'all_inputs_test.json')
         post = json.load(open(post_file, 'r'))
