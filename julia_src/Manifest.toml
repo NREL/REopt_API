@@ -713,8 +713,8 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [[deps.REopt]]
 deps = ["ArchGDAL", "CSV", "CoolProp", "DataFrames", "Dates", "DelimitedFiles", "HTTP", "JLD", "JSON", "JuMP", "LinDistFlow", "LinearAlgebra", "Logging", "MathOptInterface", "Requires", "Roots", "Statistics", "TestEnv"]
-git-tree-sha1 = "ce6b0dcd08059a17978b61355cfb427bcf5350e6"
-repo-rev = "centralized-ghp"
+git-tree-sha1 = "4b1563a826ca59c18d5f87efe94f8b70ea2c18e0"
+repo-rev = "master"
 repo-url = "https://github.com/NREL/REopt.jl.git"
 uuid = "d36ad4e8-d74a-4f7a-ace1-eaea049febf6"
 version = "0.33.0"
