@@ -26,8 +26,9 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop
-### Changed
+## v3.1.0
+### Major Updates
+#### Changed
 - ANNUAL UPDATE TO DEFAULT VALUES. Changes outlined below with (old value) --> (new value). See user manual for references. 
   - Owner Discount rate, nominal (%): : **Financial** **owner_discount_rate_fraction** 0.0564	--> 0.0638
   - Offtaker Discount rate, nominal (%): **Financial**  **offtaker_discount_rate_fraction** 0.0564 --> 0.0638
