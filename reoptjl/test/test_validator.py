@@ -102,12 +102,14 @@ class InputValidatorTests(TestCase):
 
         self.assertAlmostEqual(validator.models["Wind"].operating_reserve_required_fraction, 0.5)
         self.assertAlmostEqual(validator.models["PV"].operating_reserve_required_fraction, 0.25)
+        self.assertEqual(validator.models["Wind"].installed_cost_per_kw, 4760.0) # set based on size_class
 
         self.assertAlmostEqual(validator.models["ElectricLoad"].operating_reserve_required_fraction, 0.1)
         self.assertAlmostEqual(validator.models["ElectricLoad"].critical_load_fraction, 1.0)
         self.assertAlmostEqual(validator.models["ElectricLoad"].min_load_met_annual_fraction, 0.99999)
 
-        self.assertAlmostEqual(validator.models["Generator"].om_cost_per_kw, 20)
+        self.assertAlmostEqual(validator.models["Generator"].installed_cost_per_kw, 880)
+        self.assertAlmostEqual(validator.models["Generator"].om_cost_per_kw, 10)
         self.assertAlmostEqual(validator.models["Generator"].fuel_avail_gal, 1.0e9)
         self.assertAlmostEqual(validator.models["Generator"].min_turn_down_fraction, 0.15)
         self.assertAlmostEqual(validator.models["Generator"].replacement_year, 10)
@@ -116,7 +118,7 @@ class InputValidatorTests(TestCase):
         ## Test that some defaults can be overriden below
 
         post["ElectricLoad"]["operating_reserve_required_fraction"] = 0.2
-        post["ElectricLoad"]["critical_load_fraction"] = 0.95
+        post["ElectricLoad"]["critical_load_fraction"] = 0.95 # cant override
         post["ElectricLoad"]["min_load_met_annual_fraction"] = 0.95
         
         post["Generator"]["om_cost_per_kw"] = 21
@@ -320,7 +322,7 @@ class InputValidatorTests(TestCase):
         validator.clean_fields()
         validator.clean()
         validator.cross_clean()
-        self.assertAlmostEquals(validator.models["PV"].tilt, post["Site"]["latitude"], places=-3)
+        self.assertAlmostEquals(validator.models["PV"].tilt, 20)
 
 
     def boiler_validation(self):
@@ -338,7 +340,7 @@ class InputValidatorTests(TestCase):
         validator.cross_clean()
         self.assertEquals(validator.is_valid, True)
 
-        # Update with Boiler test fields
+        # TODO: Update with Boiler test fields
         # self.assertAlmostEqual(validator.models["ExistingBoiler"].emissions_factor_lb_CO2_per_mmbtu, 117, places=-1)
         # self.assertAlmostEqual(len(validator.models["ExistingBoiler"].fuel_cost_per_mmbtu), 8760)
         # self.assertAlmostEqual(sum(validator.models["ExistingBoiler"].fuel_cost_per_mmbtu), 8760*0.5)
