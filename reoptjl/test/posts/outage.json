@@ -39,8 +39,7 @@
         "federal_itc_fraction": 0.26,
         "macrs_bonus_fraction": 1.0,
         "macrs_option_years": 5,
-        "macrs_itc_reduction": 0.5,
-        "tilt": 39.7407
+        "macrs_itc_reduction": 0.5
     },
     "ElectricLoad": {
         "year": 2020,
