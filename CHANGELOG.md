@@ -26,6 +26,14 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop - 2023-09-29
+### Major Updates
+##### Added
+- Added ability to run hybrid GHX using REopt API v3.
+- Added ability to run centralized GHP scenarios using REopt API.
+##### Fixed
+- Fixed `test_thermal_in_results` to account for missing required inputs.
+
 ## v3.1.0
 ### Major Updates
 #### Changed
