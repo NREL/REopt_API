@@ -116,76 +116,11 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         """
         Purpose of this test is to check that the expected thermal loads, techs, and storage are included in the results
         """
-        scenario = {
-            "Settings": {"run_bau": False},
-            "Site": {"longitude": -118.1164613, "latitude": 34.5794343},
-            "ElectricTariff": {"urdb_label": "5ed6c1a15457a3367add15ae"},
-            "PV": {"max_kw": 0.0},
-            "ElectricStorage":{"max_kw": 0.0, "max_kwh": 0.0},
-            "ElectricLoad": {
-                "blended_doe_reference_names": ["Hospital", "LargeOffice"],
-                "blended_doe_reference_percents": [0.75, 0.25],              
-                "annual_kwh": 876000.0
-            },
-            "CoolingLoad": {
-                "doe_reference_name": "Hospital",
-                "annual_tonhour": 5000.0
-            },
-            "SpaceHeatingLoad": {
-                "doe_reference_name": "Hospital",
-                "annual_mmbtu": 500.0
-            },
-            "ExistingBoiler": {
-                "efficiency": 0.72,
-                "production_type": "steam",
-                "fuel_cost_per_mmbtu": 10
-            },
-            "ExistingChiller": {
-                "cop": 3.4,
-                "max_thermal_factor_on_peak_load": 1.25
-            },
-            "CHP": {
-                "prime_mover": "recip_engine",
-                "fuel_cost_per_mmbtu": 10,
-                "min_kw": 100,
-                "max_kw": 100,
-                "electric_efficiency_full_load": 0.35,
-                "electric_efficiency_half_load": 0.35,
-                "min_turn_down_fraction": 0.1,
-                "thermal_efficiency_full_load": 0.45,
-                "thermal_efficiency_half_load": 0.45,
-                "cooling_thermal_factor": 0.8
-            },
-            "HotThermalStorage":{
-                "min_gal":2500,
-                "max_gal":2500
-            },
-            "ColdThermalStorage":{
-                "min_gal":2500,
-                "max_gal":2500
-            },
-            "AbsorptionChiller":{
-                "min_ton":10,
-                "max_ton":10
-            },
-            "GHP": {
-                "building_sqft": 50000.0,
-                "require_ghp_purchase": True,
-                "space_heating_efficiency_thermal_factor": 0.85,
-                "cooling_efficiency_thermal_factor": 0.6,
-                "ghpghx_inputs": [
-                    {
-                    "max_sizing_iterations": 1
-                    }
-                ]
-            }            
-        }
 
-        ghpghx_response_file = os.path.join('reoptjl', 'test', 'posts', 'ghpghx_response.json')
-        ghpghx_response = json.load(open(ghpghx_response_file, 'r'))
-        scenario["GHP"]["ghpghx_responses"] = [ghpghx_response]
+        post_file = os.path.join('reoptjl', 'test', 'posts', 'test_thermal_in_results.json') #includes GhpGhx responses
+        post = json.load(open(post_file, 'r'))
 
-        resp = self.api_client.post('/v3/job/', format='json', data=scenario)
+        resp = self.api_client.post('/v3/job/', format='json', data=post)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
@@ -329,4 +264,23 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
                     self.assertEquals(inputs_steamturbine[key], view_response["default_inputs"][key])
                 else:  # Make sure we didn't overwrite user-input
                     self.assertEquals(inputs_steamturbine[key], post["SteamTurbine"][key])
-                    
+
+    def test_hybridghp(self):
+        post_file = os.path.join('reoptjl', 'test', 'posts', 'hybrid_ghp.json')
+        post = json.load(open(post_file, 'r'))
+
+        post['GHP']['ghpghx_inputs'][0]['hybrid_ghx_sizing_method'] = 'Automatic'
+        post['GHP']['avoided_capex_by_ghp_present_value'] = 1.0e6
+        post['GHP']['ghx_useful_life_years'] = 35
+
+        # Call http.jl /reopt to run SteamTurbine scenario and get results for defaults from julia checking
+        resp = self.api_client.post('/v3/job/', format='json', data=post)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+
+        resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
+        r = json.loads(resp.content)
+
+        # calculated_ghx_residual_value 117065.83
+        self.assertAlmostEqual(r["outputs"]["GHP"]["ghx_residual_value_present_value"], 117065.83, places=0)

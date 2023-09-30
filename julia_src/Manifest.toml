@@ -308,7 +308,7 @@ uuid = "0329782f-3d07-4b52-b9f6-d3137cf03c7a"
 version = "1.0.1"
 
 [[deps.GhpGhx]]
-git-tree-sha1 = "c74e436a02552a1d20bae5c6b84bb27cf33e8eb9"
+git-tree-sha1 = "bddcbcddc9a4ae7ae4f1ea7d4d8ccf38507d4071"
 repo-rev = "main"
 repo-url = "https://github.com/NREL/GhpGhx.jl.git"
 uuid = "7ce85f02-24a8-4d69-a3f0-14b5daa7d30c"
