@@ -26,7 +26,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop - 2023-09-29
+## v3.2.0
 ### Minor Updates
 ##### Added
 - Added ability to run hybrid GHX using REopt API v3.
