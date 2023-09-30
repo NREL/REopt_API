@@ -1,0 +1,56 @@
+{
+    "Site": {
+        "latitude": 37.78, 
+        "longitude": -122.45
+    },
+    "Financial": {
+        "analysis_years": 25,
+        "om_cost_escalation_rate_fraction": 0.025,
+        "elec_cost_escalation_rate_fraction": 0.023,
+        "boiler_fuel_cost_escalation_rate_fraction": 0.034,
+        "offtaker_discount_rate_fraction": 0.083,
+        "offtaker_tax_rate_fraction": 0.26
+    },
+    "ElectricLoad": {
+        "doe_reference_name": "Hospital"
+    },
+    "ElectricTariff": {
+        "urdb_label": "5cef0a415457a33576f60fe2"
+    },
+    "SpaceHeatingLoad": {
+        "doe_reference_name": "Hospital"
+    },
+    "DomesticHotWaterLoad": {
+        "doe_reference_name": "Hospital",
+        "annual_mmbtu": 3000
+    },    
+    "ExistingBoiler": {
+        "fuel_cost_per_mmbtu": 10.0
+    },
+    "CoolingLoad": {
+        "doe_reference_name": "Hospital"
+    },
+    "GHP": {
+        "require_ghp_purchase": true,
+        "building_sqft": 50000.0,
+        "can_serve_dhw": false,
+        "space_heating_efficiency_thermal_factor": 0.85,
+        "cooling_efficiency_thermal_factor": 0.6,
+        "ghpghx_inputs": [{
+            "borehole_depth_ft": 400.0,
+            "simulation_years": 20,
+            "solver_eft_tolerance_f": 2.0,
+            "ghx_model": "TESS",
+            "tess_ghx_minimum_timesteps_per_hour": 1,
+            "max_sizing_iterations": 10,
+            "init_sizing_factor_ft_per_peak_ton": 300.0   
+        }]
+    },    
+    "PV": {
+        "max_kw": 0.0
+      },
+    "ElectricStorage": {
+        "max_kw": 0.0,
+        "max_kwh": 0.0
+    }
+}

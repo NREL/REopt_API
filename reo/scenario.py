@@ -392,6 +392,7 @@ def setup_scenario(self, run_uuid, data, api_version=1):
                 # Determine if location is heating or cooling dominated
                 if hybrid_ghx_sizing_method == "Automatic":
                     determine_heat_cool_post = copy.deepcopy(ghpghx_post)
+                    determine_heat_cool_post["hybrid_auto_ghx_sizing_flag"] = True
                     determine_heat_cool_post["simulation_years"] = 2
                     determine_heat_cool_post["max_sizing_iterations"] = 1
 

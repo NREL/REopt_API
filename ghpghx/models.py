@@ -174,6 +174,7 @@ class GHPGHXInputs(models.Model):
     # Hybrid flag
     hybrid_ghx_sizing_method = models.TextField(null=True, blank=True, default="None",
         help_text="Possible values: 'Fractional' (user inputs fraction of full GHX size), 'Automatic' (REopt determines based on the smaller heating or cooling load), 'None' (non-hybrid)")
+    hybrid_auto_ghx_sizing_flag = models.BooleanField(blank=True, null=True, default=False)
     hybrid_sizing_flag = models.FloatField(null=True, blank=True, default=1.0,
         help_text="Possible values: -2 (size for heating), -1.0 (size for cooling), 1.0 (non-hybrid), value between 0-1 (fraction of full GHX size)") 
     hybrid_ghx_sizing_fraction = models.FloatField(null=True, blank=True, default=0.6,
@@ -266,6 +267,8 @@ class GHPGHXOutputs(models.Model):
         help_text="Hourly GHX leaving fluid temperature (lft), average across simulation years [kW]") 
     ghx_soln_number_of_iterations = models.IntegerField(null=True, blank=True, 
         help_text="The number of iterations taken to get GHX sizing")
+    heat_pump_configuration = models.TextField(null=True, blank=True, 
+        help_text="Specifies if the auxiliary heat exchange unit is a heater or cooler")
     
 class ModelManager(object):
 

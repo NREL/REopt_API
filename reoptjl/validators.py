@@ -541,6 +541,9 @@ class InputValidator(object):
         GHP - just check for ghpghx_inputs errors from /ghpghx app
         """
         if "GHP" in self.models.keys():
+            if self.models["GHP"].__getattribute__("ghx_useful_life_years") < self.models["Financial"].__getattribute__("analysis_years"):
+                self.models["GHP"].ghx_useful_life_years = self.models["Financial"].analysis_years
+                
             if self.ghpghx_inputs_errors not in [None, []]:
                 self.add_validation_error("GHP", "ghpghx_inputs", str(self.ghpghx_inputs_errors))
 
