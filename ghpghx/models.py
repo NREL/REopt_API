@@ -188,6 +188,8 @@ class GHPGHXInputs(models.Model):
     aux_cooler_energy_use_intensity_kwe_per_kwt = models.FloatField(null=True, blank=True, 
         default=0.02, validators=[MinValueValidator(0.001), MaxValueValidator(1.0)],
         help_text="The energy use intensity of the auxiliary cooler [kWe/kWt]")
+    heat_pump_configuration = models.TextField(null=True, blank=True, 
+        help_text="Specifies if the auxiliary heat exchange unit is a heater or cooler")    
     
 class GHPGHXOutputs(models.Model):
     # Outputs/results
