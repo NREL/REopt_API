@@ -43,7 +43,8 @@
             "ghx_model": "TESS",
             "tess_ghx_minimum_timesteps_per_hour": 1,
             "max_sizing_iterations": 10,
-            "init_sizing_factor_ft_per_peak_ton": 300.0   
+            "init_sizing_factor_ft_per_peak_ton": 300.0,
+            "heat_pump_configuration": "WSHP"   
         }]
     },    
     "PV": {

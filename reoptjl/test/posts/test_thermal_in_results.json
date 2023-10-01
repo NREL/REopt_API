@@ -75,7 +75,8 @@
         "cooling_efficiency_thermal_factor": 0.6,
         "ghpghx_inputs": [
             {
-                "max_sizing_iterations": 1
+                "max_sizing_iterations": 1,
+                "heat_pump_configuration": "WSHP"
             }
         ],
         "ghpghx_responses": [
