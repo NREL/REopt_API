@@ -26,14 +26,6 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## v3.2.0
-### Minor Updates
-##### Added
-- Added ability to run hybrid GHX using REopt API v3.
-- Added ability to run centralized GHP scenarios using REopt API.
-##### Fixed
-- Fixed `test_thermal_in_results` to account for missing required inputs.
-
 ## v3.1.0
 ### Major Updates
 #### Changed
@@ -60,6 +52,12 @@ Classify the change according to the following categories:
   - Fixed O&M ($/kW/yr): **Generator** **om_cost_per_kw** Grid connected: 10 Off-grid: 20 --> Grid connected: 20 Off-grid: 10
   - System capital cost ($/kW) by Class: **Wind** **size_class_to_installed_cost**	residential - 5675 commercial - 4300 medium - 2766 large - 2239 --> residential - 6339 commercial - 4760 medium - 3137 large - 2386
   - O&M cost ($/kW/year): **Wind** **om_cost_per_kw** 35 --> 36
+### Minor Updates
+##### Added
+- Added ability to run hybrid GHX using REopt API v3.
+- Added ability to run centralized GHP scenarios using REopt API.
+##### Fixed
+- Fixed `test_thermal_in_results` to account for missing required inputs. 
   
 ## v3.0.0
 ### Major Updates
