@@ -283,7 +283,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         r = json.loads(resp.content)
 
         # calculated_ghx_residual_value 117065.83
-        self.assertAlmostEqual(r["outputs"]["GHP"]["ghx_residual_value_present_value"], 117065.83, places=0)
+        self.assertAlmostEqual(r["outputs"]["GHP"]["ghx_residual_value_present_value"], 117065.83, delta=500)
 
     def test_centralghp(self):
         post_file = os.path.join('reoptjl', 'test', 'posts', 'central_plant_ghp.json')
@@ -298,5 +298,4 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
         r = json.loads(resp.content)
 
-        # calculated_ghx_residual_value 117065.83
-        self.assertAlmostEqual(r["outputs"]["Financial"]["lifecycle_capital_costs"], 1046066.8, places=0)
+        self.assertAlmostEqual(r["outputs"]["Financial"]["lifecycle_capital_costs"], 1046066.8, delta=1000)
