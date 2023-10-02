@@ -284,3 +284,19 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
 
         # calculated_ghx_residual_value 117065.83
         self.assertAlmostEqual(r["outputs"]["GHP"]["ghx_residual_value_present_value"], 117065.83, places=0)
+
+    def test_centralghp(self):
+        post_file = os.path.join('reoptjl', 'test', 'posts', 'central_plant_ghp.json')
+        post = json.load(open(post_file, 'r'))
+
+        # Call http.jl /reopt to run the central plant GHP scenario and get results for defaults from julia checking
+        resp = self.api_client.post('/v3/job/', format='json', data=post)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+
+        resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
+        r = json.loads(resp.content)
+
+        # calculated_ghx_residual_value 117065.83
+        self.assertAlmostEqual(r["outputs"]["GHP"]["lifecycle_capital_costs"], 1161672.7, places=0)
