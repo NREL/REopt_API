@@ -127,6 +127,28 @@ class GHPGHXInputs(models.Model):
         default=_get_cop_map,
         help_text="Heat pump coefficient of performance (COP) map: list of dictionaries, each with 3 keys: 1) EFT, 2) HeatingCOP, 3) CoolingCOP")
 
+    def _get_wwhp_heating_cop_map():
+        hp_cop_filepath = os.path.join('ghpghx', 'tests', 'posts', "wwhp_heating_heatpump_cop_map.csv" )
+        heatpump_copmap_df = pd.read_csv(hp_cop_filepath)
+        heatpump_copmap_list_of_dict = heatpump_copmap_df.to_dict('records')
+        return heatpump_copmap_list_of_dict
+
+    wwhp_cop_map_eft_heating = ArrayField(
+        PickledObjectField(editable=True), null=True,
+        default=_get_wwhp_heating_cop_map,
+        help_text="WWHP heating heat pump coefficient of performance (COP) map: list of dictionaries, each with the key 'EFT' followed by keys representing temperature setpoints")
+
+    def _get_wwhp_cooling_cop_map():
+        hp_cop_filepath = os.path.join('ghpghx', 'tests', 'posts', "wwhp_cooling_heatpump_cop_map.csv" )
+        heatpump_copmap_df = pd.read_csv(hp_cop_filepath)
+        heatpump_copmap_list_of_dict = heatpump_copmap_df.to_dict('records')
+        return heatpump_copmap_list_of_dict
+        
+    wwhp_cop_map_eft_cooling = ArrayField(
+        PickledObjectField(editable=True), null=True,
+        default=_get_wwhp_cooling_cop_map,
+        help_text="WWHP cooling heat pump coefficient of performance (COP) map: list of dictionaries, each with the key 'EFT' followed by keys representing temperature setpoints")
+    
     """
     TODO define custom clean_cop_map()
     def clean_cop_map(self):
@@ -188,8 +210,41 @@ class GHPGHXInputs(models.Model):
     aux_cooler_energy_use_intensity_kwe_per_kwt = models.FloatField(null=True, blank=True, 
         default=0.02, validators=[MinValueValidator(0.001), MaxValueValidator(1.0)],
         help_text="The energy use intensity of the auxiliary cooler [kWe/kWt]")
-    heat_pump_configuration = models.TextField(null=True, blank=True, 
-        help_text="Specifies if the auxiliary heat exchange unit is a heater or cooler")    
+    
+    # Central plant variables
+    heat_pump_configuration = models.TextField(null=True, blank=True, default="WSHP",
+        help_text="Specifies if the GHP system is centralized (WWHP) or decentralized (WSHP)")    
+    wwhp_cooling_setpoint_f = models.FloatField(blank=True, 
+        default=55.0, validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
+        help_text="Setpoint temperature of the chilled water cooling loop [degF]")
+    wwhp_heating_setpoint_f = models.FloatField(blank=True, 
+        default=140.0, validators=[MinValueValidator(0.0), MaxValueValidator(250.0)],
+        help_text="Setpoint temperature of the space heating hot water loop [degF]")
+    wwhp_heating_pump_fluid_flow_rate_gpm_per_ton = models.FloatField(blank=True, 
+        default=3.0, validators=[MinValueValidator(0.1), MaxValueValidator(10.0)],
+        help_text="Volumetric flow rate of the fluid in the hydronic space heating loop per peak ton heating [GPM/ton]")
+    wwhp_cooling_pump_fluid_flow_rate_gpm_per_ton = models.FloatField(blank=True, 
+        default=3.0, validators=[MinValueValidator(0.1), MaxValueValidator(10.0)],
+        help_text="Volumetric flow rate of the fluid in the hydronic chilled water cooling loop per peak ton cooling [GPM/ton]")
+    wwhp_heating_pump_power_watt_per_gpm = models.FloatField(blank=True, 
+        default=15.0, validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
+        help_text="Pumping power required for a given volumetric flow rate of the fluid through the heating pump [Watt/GPM]")
+    wwhp_cooling_pump_power_watt_per_gpm = models.FloatField(blank=True, 
+        default=15.0, validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
+        help_text="Pumping power required for a given volumetric flow rate of the fluid through the cooling pump [Watt/GPM]")    
+    wwhp_heating_pump_min_speed_fraction = models.FloatField(blank=True, 
+        default=0.1, validators=[MinValueValidator(0.0), MaxValueValidator(1.0)],
+        help_text="The minimum turndown fraction of the WWHP heating pump. 1.0 is a constant speed pump.")
+    wwhp_cooling_pump_min_speed_fraction = models.FloatField(blank=True, 
+        default=0.1, validators=[MinValueValidator(0.0), MaxValueValidator(1.0)],
+        help_text="The minimum turndown fraction of the WWHP cooling pump. 1.0 is a constant speed pump.")
+    wwhp_heating_pump_power_exponent = models.FloatField(blank=True, 
+        default=2.2, validators=[MinValueValidator(0.1), MaxValueValidator(10.0)],
+        help_text="The WWHP heating pump power curve exponent")
+    wwhp_cooling_pump_power_exponent = models.FloatField(blank=True, 
+        default=2.2, validators=[MinValueValidator(0.1), MaxValueValidator(10.0)],
+        help_text="The WWHP cooling pump power curve exponent")
+
     
 class GHPGHXOutputs(models.Model):
     # Outputs/results
