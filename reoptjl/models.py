@@ -4812,7 +4812,9 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
     lifecycle_fuel_cost_after_tax = models.FloatField(null=True, blank=True)
     lifecycle_fuel_cost_after_tax_bau = models.FloatField(null=True, blank=True)
     annual_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
+    annual_thermal_production_mmbtu_bau = models.FloatField(null=True, blank=True)
     year_one_fuel_cost_before_tax = models.FloatField(null=True, blank=True)
+    year_one_fuel_cost_before_tax_bau = models.FloatField(null=True, blank=True)
 
     thermal_to_storage_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
