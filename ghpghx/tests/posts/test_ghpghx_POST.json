@@ -8,5 +8,6 @@
     "init_sizing_factor_ft_per_peak_ton": 300.0,
     "hybrid_ghx_sizing_method": "None",
     "aux_heater_thermal_efficiency": 0.95,
-    "aux_cooler_energy_use_intensity_kwe_per_kwt": 0.02
+    "aux_cooler_energy_use_intensity_kwe_per_kwt": 0.02,
+    "heat_pump_configuration": "WSHP"
 }

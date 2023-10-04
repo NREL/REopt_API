@@ -1,0 +1,65 @@
+{
+    "Site": {
+        "latitude": 41.878, 
+        "longitude": -87.63
+    },
+    "Financial": {
+        "analysis_years": 25,
+        "om_cost_escalation_rate_fraction": 0.025,
+        "elec_cost_escalation_rate_fraction": 0.023,
+        "boiler_fuel_cost_escalation_rate_fraction": 0.034,
+        "offtaker_discount_rate_fraction": 0.083,
+        "offtaker_tax_rate_fraction": 0.26
+    },
+    "ElectricLoad": {
+        "doe_reference_name": "LargeOffice"
+    },
+    "ElectricTariff": {
+        "urdb_label": "5cef0a415457a33576f60fe2"
+    },
+    "SpaceHeatingLoad": {
+        "doe_reference_name": "LargeOffice"
+    },
+    "DomesticHotWaterLoad": {
+        "doe_reference_name": "LargeOffice",
+        "annual_mmbtu": 3000
+    },    
+    "ExistingBoiler": {
+        "fuel_cost_per_mmbtu": 10.0
+    },
+    "CoolingLoad": {
+        "doe_reference_name": "LargeOffice"
+    },
+    "GHP": {
+        "require_ghp_purchase": true,
+        "building_sqft": 50000.0,
+        "can_serve_dhw": false,
+        "space_heating_efficiency_thermal_factor": 0.85,
+        "cooling_efficiency_thermal_factor": 0.6,
+        "installed_cost_wwhp_heating_pump_per_ton": 700.0,
+        "installed_cost_wwhp_cooling_pump_per_ton": 700.0,
+        "heatpump_capacity_sizing_factor_on_peak_load": 1.1,
+        "installed_cost_ghx_per_ft": 14.0,
+        "macrs_option_years": 5,
+        "macrs_bonus_fraction": 0.0,
+        "macrs_itc_reduction": 0.5,
+        "federal_itc_fraction": 0.3,
+        "ghpghx_inputs": [{
+            "borehole_depth_ft": 400.0,
+            "simulation_years": 20,
+            "solver_eft_tolerance_f": 2.0,
+            "ghx_model": "TESS",
+            "tess_ghx_minimum_timesteps_per_hour": 1,
+            "max_sizing_iterations": 10,
+            "init_sizing_factor_ft_per_peak_ton": 300.0,
+            "heat_pump_configuration": "WWHP"   
+        }]
+    },    
+    "PV": {
+        "max_kw": 0.0
+      },
+    "ElectricStorage": {
+        "max_kw": 0.0,
+        "max_kwh": 0.0
+    }
+}
