@@ -1005,6 +1005,11 @@ class FinancialOutputs(BaseModel, models.Model):
         help_text=("Component of lifecycle costs (LCC). This value is the present value of all fuel costs over the analysis period, after tax.")
     )
 
+    lifecycle_fuel_costs_after_tax_bau = models.FloatField(
+        null=True, blank=True,
+        help_text=("Component of lifecycle costs (LCC). This value is the present value of all fuel costs over the analysis period, after tax in the BAU case.")
+    )
+
     lifecycle_chp_standby_cost_after_tax = models.FloatField(
         null=True, blank=True,
         help_text=("Component of lifecycle costs (LCC). This value is the present value of all CHP standby charges, after tax.")
@@ -4626,11 +4631,23 @@ class ExistingChillerOutputs(BaseModel, models.Model):
         help_text=("Annual chiller electric consumption [kWh]")
     )
 
+    annual_electric_consumption_kwh_bau = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=("Annual chiller electric consumption for BAU case [kWh]")
+    )    
+
     annual_thermal_production_tonhour = models.FloatField(
         null=True,
         blank=True,
-        help_text=("Annual chiller thermal production [Ton Hour")
+        help_text=("Annual chiller thermal production [Ton Hour]")
     )
+
+    annual_thermal_production_tonhour_bau = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=("Annual chiller thermal production for BAU case [Ton Hour]")
+    )        
 
     def clean(self):
         pass
@@ -4803,6 +4820,7 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
     )
 
     annual_fuel_consumption_mmbtu = models.FloatField(null=True, blank=True)
+    annual_fuel_consumption_mmbtu_bau = models.FloatField(null=True, blank=True)
 
     fuel_consumption_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
