@@ -26,6 +26,39 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.1.0
+### Major Updates
+#### Changed
+- ANNUAL UPDATE TO DEFAULT VALUES. Changes outlined below with (old value) --> (new value). See user manual for references. 
+  - Owner Discount rate, nominal (%): : **Financial** **owner_discount_rate_fraction** 0.0564	--> 0.0638
+  - Offtaker Discount rate, nominal (%): **Financial**  **offtaker_discount_rate_fraction** 0.0564 --> 0.0638
+  - Electricity cost escalation rate, nominal (%): **Financial** **elec_cost_escalation_rate_fraction** 0.019	--> 0.017
+  - Existing boiler fuel cost escalation rate, nominal (%): **Financial**  **existing_boiler_fuel_cost_escalation_rate_fraction**	0.034	--> 0.015
+  - Boiler fuel cost escalation rate, nominal (%): **Financial** **boiler_fuel_cost_escalation_rate_fraction**	0.034	--> 0.015
+  - CHP fuel cost escalation rate, nominal (%): **Financial**  **chp_fuel_cost_escalation_rate_fraction**	0.034	--> 0.015
+  - Generator fuel cost escalation rate, nominal (%): **Financial**  **generator_fuel_cost_escalation_rate_fraction**	0.027	--> 0.012
+  - Array tilt – Ground mount, Fixed: **PV** **tilt** latitude	--> 20
+  - O&M cost ($/kW/year): **PV** **om_cost_per_kw**	17	--> 18
+  - System capital cost ($/kW): **PV** **installed_cost_per_kw**	1592	--> 1790
+  - Energy capacity cost ($/kWh): **ElectricStorage** **installed_cost_per_kwh**	388	--> 455
+  - Power capacity cost ($/kW): **ElectricStorage**	**installed_cost_per_kw**	775	--> 910
+  - Energy capacity replacement cost ($/kWh): **ElectricStorage** **replace_cost_per_kwh**	220	--> 318
+  - Power capacity replacement cost ($/kW): **ElectricStorage**	**replace_cost_per_kw**	440	--> 715
+  - Fuel burn rate by generator capacity (gal/kWh): **Generator** **fuel_slope_gal_per_kwh**	0.076	--> removed and replaced with full and half-load efficiencies
+  - Electric efficiency at 100% load (% HHV-basis): **Generator** **electric_efficiency_full_load**	N/A - new input	--> 0.322
+  - Electric efficiency at 50% load (% HHV-basis): **Generator** **electric_efficiency_half_load**	N/A - new input	--> 0.322
+  - Generator fuel higher heating value (HHV): **Generator** **fuel_higher_heating_value_kwh_per_gal**	N/A - new input	--> 40.7
+  - System capital cost ($/kW): **Generator**  **installed_cost_per_kw** 500	--> $650 if the generator only runs during outages; $800 if it is allowed to run parallel with the grid; $880 for off-grid
+  - Fixed O&M ($/kW/yr): **Generator** **om_cost_per_kw** Grid connected: 10 Off-grid: 20 --> Grid connected: 20 Off-grid: 10
+  - System capital cost ($/kW) by Class: **Wind** **size_class_to_installed_cost**	residential - 5675 commercial - 4300 medium - 2766 large - 2239 --> residential - 6339 commercial - 4760 medium - 3137 large - 2386
+  - O&M cost ($/kW/year): **Wind** **om_cost_per_kw** 35 --> 36
+### Minor Updates
+##### Added
+- Added ability to run hybrid GHX using REopt API v3.
+- Added ability to run centralized GHP scenarios using REopt API.
+##### Fixed
+- Fixed `test_thermal_in_results` to account for missing required inputs. 
+  
 ## v3.0.0
 ### Major Updates
 ##### Changed
