@@ -932,6 +932,23 @@ def queryset_for_summary(api_metas,summary_dict:dict):
             else:
                 summary_dict[str(m.meta.run_uuid)]['chp_kw'] = m.size_kw
     
+    ghpOutputs = GHPOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+            'meta__run_uuid',
+            'ghp_option_chosen',
+            'ghpghx_chosen_outputs',
+            'size_heat_pump_ton',
+            'size_wwhp_heating_pump_ton',
+            'size_wwhp_cooling_pump_ton'
+    )
+    if len(ghpOutputs) > 0:
+        for m in ghpOutputs:
+            if m.ghp_option_chosen > 0:
+                if m.size_heat_pump_ton > 0:
+                    summary_dict[str(m.meta.run_uuid)]['ghp_ton'] = m.size_heat_pump_ton
+                else:
+                    summary_dict[str(m.meta.run_uuid)]['ghp_ton'] = str(round(m.size_wwhp_cooling_pump_ton,2) +',' + round(m.size_wwhp_heating_pump_ton,2))
+                summary_dict[str(m.meta.run_uuid)]['ghp_n_bores'] = m.ghpghx_chosen_outputs['number_of_boreholes']
+    
     return summary_dict
 
 # Unlink a user_uuid from a run_uuid.
