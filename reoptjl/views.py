@@ -943,10 +943,10 @@ def queryset_for_summary(api_metas,summary_dict:dict):
     if len(ghpOutputs) > 0:
         for m in ghpOutputs:
             if m.ghp_option_chosen > 0:
-                if m.size_heat_pump_ton > 0:
+                if m.size_heat_pump_ton is not None:
                     summary_dict[str(m.meta.run_uuid)]['ghp_ton'] = m.size_heat_pump_ton
                 else:
-                    summary_dict[str(m.meta.run_uuid)]['ghp_ton'] = str(round(m.size_wwhp_cooling_pump_ton,2) +',' + round(m.size_wwhp_heating_pump_ton,2))
+                    summary_dict[str(m.meta.run_uuid)]['ghp_ton'] = str(round(m.size_wwhp_cooling_pump_ton,2)) + ',' + str(round(m.size_wwhp_heating_pump_ton,2))
                 summary_dict[str(m.meta.run_uuid)]['ghp_n_bores'] = m.ghpghx_chosen_outputs['number_of_boreholes']
     
     return summary_dict
