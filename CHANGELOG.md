@@ -26,7 +26,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## v3.2.0
+## v3.1.1
 ### Minor Updates
 ##### Added
 - Add GHP system sizes and borehole count in `queryset_for_summary()` function which is used for user runs summary information.
