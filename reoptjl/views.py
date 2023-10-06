@@ -635,6 +635,65 @@ def get_existing_chiller_default_cop(request):
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in get_existing_chiller_default_cop endpoint. Check log for more."}, status=500)
 
+
+def portfolio_ids_for_user_uuid(request, user_uuid):
+
+    # Validate that user UUID is valid.
+    try:
+        uuid.UUID(user_uuid)  # raises ValueError if not valid uuid
+
+    except ValueError as e:
+        if e.args[0] == "badly formed hexadecimal UUID string":
+            return JsonResponse({"Error": str(e.message)}, status=404)
+        else:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', user_uuid=user_uuid)
+            err.save_to_db()
+            return JsonResponse({"Error": str(err.message)}, status=404)
+    
+    try:
+        # Dictionary to store all results. Primary key = portfolio_uuid and secondary key = array of run_uuids tied to each portfolio uuid
+        summary_dict = dict()
+
+        # Create Querysets: Select all objects associate with a user_uuid, portfolio_uuid="", Order by `created` column
+        portfolio_ids = APIMeta.objects.filter(
+            user_uuid=user_uuid
+        ).exclude(
+            portfolio_uuid=""
+        ).only(
+            'portfolio_uuid',
+            'created'
+        ).order_by("-created")
+
+        if len(portfolio_ids) > 0:
+            # Loop over all the APIMetas associated with a user_uuid, do something if needed
+            for p in portfolio_ids:
+                # print(3, meta.run_uuid) #acces Meta fields like this
+                summary_dict[str(p.portfolio_uuid)] = dict()
+                summary_dict[str(p.portfolio_uuid)]['run_uuids'] = []
+
+                # Create query of all UserProvidedMeta objects where their run_uuid is in api_metas run_uuids.
+                run_uuids = APIMeta.objects.filter(portfolio_uuid=p.portfolio_uuid).only(
+                    'run_uuid'
+                )
+                
+                if len(run_uuids) > 0:
+                    for r in run_uuids:
+                        summary_dict[str(p.portfolio_uuid)]['run_uuids'].append(r.run_uuid)
+            
+            response = JsonResponse(summary_dict, status=200, safe=False)
+            return response
+        else:
+            response = JsonResponse({"Error": "No scenarios portfolios found for user_uuids '{}'".format(user_uuid)}, content_type='application/json', status=404)
+            return response
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', user_uuid=user_uuid)
+        err.save_to_db()
+        return JsonResponse({"Error": err.message}, status=404)
+
+
 # Inputs: 1-many run_uuids as single comma separated string
 # This function will query those UUIDs and return as summary endpoint
 # Output: list of JSONs
@@ -746,8 +805,12 @@ def summary(request, user_uuid):
         # Dictionary to store all results. Primary key = run_uuid and secondary key = data values from each uuid
         summary_dict = dict()
 
-        # Create Querysets: Select all objects associate with a user_uuid, Order by `created` column
-        scenarios = APIMeta.objects.filter(user_uuid=user_uuid).only(
+        # Create Querysets: Select all objects associate with a user_uuid, portfolio_uuid="", Order by `created` column
+        scenarios = APIMeta.objects.filter(
+            user_uuid=user_uuid
+        ).filter(
+            portfolio_uuid=""
+        ).only(
             'run_uuid',
             'status',
             'created'
@@ -810,8 +873,12 @@ def summary_by_chunk(request, user_uuid, chunk):
         except:
             return JsonResponse({"Error": "Chunk number must be a 1-indexed integer."}, status=400)
         
-        # Create Querysets: Select all objects associate with a user_uuid, Order by `created` column
-        scenarios = APIMeta.objects.filter(user_uuid=user_uuid).only(
+        # Create Querysets: Select all objects associate with a user_uuid, portfolio_uuid="", Order by `created` column
+        scenarios = APIMeta.objects.filter(
+            user_uuid=user_uuid
+        ).filter(
+            portfolio_uuid=""
+        ).only(
             'run_uuid',
             'status',
             'created'
@@ -940,7 +1007,10 @@ def queryset_for_summary(api_metas,summary_dict:dict):
     )
     if len(tariffOuts) > 0:
         for m in tariffOuts:
-            summary_dict[str(m.meta.run_uuid)]['year_one_savings_us_dollars'] = (m.year_one_energy_cost_before_tax_bau + m.year_one_demand_cost_before_tax_bau + m.year_one_fixed_cost_before_tax_bau + m.year_one_min_charge_adder_before_tax_bau) - (m.year_one_energy_cost_before_tax + m.year_one_demand_cost_before_tax + m.year_one_fixed_cost_before_tax + m.year_one_min_charge_adder_before_tax)
+            try:
+                summary_dict[str(m.meta.run_uuid)]['year_one_savings_us_dollars'] = (m.year_one_energy_cost_before_tax_bau + m.year_one_demand_cost_before_tax_bau + m.year_one_fixed_cost_before_tax_bau + m.year_one_min_charge_adder_before_tax_bau) - (m.year_one_energy_cost_before_tax + m.year_one_demand_cost_before_tax + m.year_one_fixed_cost_before_tax + m.year_one_min_charge_adder_before_tax)
+            except:
+                summary_dict[str(m.meta.run_uuid)]['year_one_savings_us_dollars'] = 0.0 # run_bau = false
 
     load = ElectricLoadInputs.objects.filter(meta__run_uuid__in=run_uuids).only(
         'meta__run_uuid',
