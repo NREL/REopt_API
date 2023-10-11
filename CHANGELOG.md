@@ -26,6 +26,11 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop 2023-10-11
+### Minor Updates
+##### Changed
+- Changed upper limit on `CHPInputs.size_class` to 7 to reflect changes in CHP defaults.
+
 ## v3.1.1
 ### Minor Updates
 ##### Added
