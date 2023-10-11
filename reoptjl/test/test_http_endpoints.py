@@ -222,7 +222,6 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         # Call to the django view endpoint /get_existing_chiller_default_cop which calls the http.jl endpoint
         resp = self.api_client.get(f'/v3/get_existing_chiller_default_cop', data=inputs_dict)
         view_response = json.loads(resp.content)
-        print(view_response)
 
         self.assertEqual(view_response["existing_chiller_cop"], 4.4)
 
@@ -232,7 +231,6 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         # Call to the django view endpoint /get_existing_chiller_default_cop which calls the http.jl endpoint
         resp = self.api_client.get(f'/v3/get_existing_chiller_default_cop', data=inputs_dict)
         view_response = json.loads(resp.content)
-        print(view_response)
 
         self.assertEqual(view_response["existing_chiller_cop"], 4.545)
 
@@ -246,7 +244,6 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         # Call to the django view endpoint /get_existing_chiller_default_cop which calls the http.jl endpoint
         resp = self.api_client.get(f'/v3/get_existing_chiller_default_cop', data=inputs_dict)
         view_response = json.loads(resp.content)
-        print(view_response)
 
         self.assertEqual(view_response["existing_chiller_cop"], 4.69)
 
@@ -259,7 +256,6 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         # Call to the django view endpoint /get_existing_chiller_default_cop which calls the http.jl endpoint
         resp = self.api_client.get(f'/v3/get_existing_chiller_default_cop', data=inputs_dict)
         view_response = json.loads(resp.content)
-        print(view_response)
 
         self.assertEqual(view_response["existing_chiller_cop"], 4.69)
 
@@ -271,7 +267,6 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         # Call to the django view endpoint /get_existing_chiller_default_cop which calls the http.jl endpoint
         resp = self.api_client.get(f'/v3/get_existing_chiller_default_cop', data=inputs_dict)
         view_response = json.loads(resp.content)
-        print(view_response)
 
         self.assertEqual(view_response["existing_chiller_cop"], 4.4)
 
