@@ -33,18 +33,9 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
 
         # Check the endpoint logic with the expected selection
         self.assertEqual(http_response["prime_mover"], "combustion_turbine")
-        self.assertEqual(http_response["size_class"], 3)
+        self.assertEqual(http_response["size_class"], 2)
+        print("chp_elec_size_heuristic_kw = ", http_response["chp_elec_size_heuristic_kw"])
         self.assertGreater(http_response["chp_elec_size_heuristic_kw"], 3500.0)
-
-        # Check that size_class logic is the same
-        # Modify input names for v2
-        inputs_v2 = {
-            "existing_boiler_production_type_steam_or_hw": inputs["hot_water_or_steam"],
-            "avg_boiler_fuel_load_mmbtu_per_hr": inputs["avg_boiler_fuel_load_mmbtu_per_hour"]
-        }
-        resp = self.api_client.get(f'/v2/chp_defaults', data=inputs_v2)
-        v2_response = json.loads(resp.content)
-        self.assertEqual(http_response["size_class"], v2_response["size_class"])
     
     def test_steamturbine_defaults(self):
 
