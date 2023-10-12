@@ -34,7 +34,6 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         # Check the endpoint logic with the expected selection
         self.assertEqual(http_response["prime_mover"], "combustion_turbine")
         self.assertEqual(http_response["size_class"], 2)
-        print("chp_elec_size_heuristic_kw = ", http_response["chp_elec_size_heuristic_kw"])
         self.assertGreater(http_response["chp_elec_size_heuristic_kw"], 3500.0)
     
     def test_steamturbine_defaults(self):
