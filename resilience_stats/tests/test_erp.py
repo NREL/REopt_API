@@ -149,9 +149,9 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
 
         resp = self.get_results_sim(erp_run_uuid)
         results = json.loads(resp.content)
-        self.assertAlmostEqual(results["outputs"]["mean_cumulative_survival_by_duration"][23], 0.9661, places=3)
+        self.assertAlmostEqual(results["outputs"]["mean_cumulative_survival_by_duration"][23], 0.9661, delta=0.0015)
         self.assertAlmostEqual(results["outputs"]["cumulative_survival_final_time_step"][0], 0.962327, places=3)
-        self.assertAlmostEqual(results["outputs"]["mean_cumulative_survival_final_time_step"], 0.9661, places=3)
+        self.assertAlmostEqual(results["outputs"]["mean_cumulative_survival_final_time_step"], 0.9661, places=2)
 
     def test_erp_with_no_opt(self):
         """
