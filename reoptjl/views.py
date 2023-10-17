@@ -434,7 +434,7 @@ def simulated_load(request):
         valid_keys = ["doe_reference_name","latitude","longitude","load_type","percent_share","annual_kwh",
                         "monthly_totals_kwh","annual_mmbtu","annual_fraction","annual_tonhour","monthly_tonhour",
                         "monthly_mmbtu","monthly_fraction","max_thermal_factor_on_peak_load","chiller_cop",
-                        "addressable_load_fraction", "cooling_doe_ref_name", "cooling_pct_share"]
+                        "addressable_load_fraction", "cooling_doe_ref_name", "cooling_pct_share", "boiler_efficiency"]
         for key in request.GET.keys():
             k = key
             if "[" in key:
