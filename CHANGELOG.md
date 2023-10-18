@@ -26,14 +26,86 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop 2023-08-07
+## Develop 2023-10-11
+### Minor Updates
+##### Changed
+- Updates to CHP cost and performance defaults, from updating REopt.jl
+- Changed upper limit on `CHPInputs.size_class` to 7 to reflect changes in CHP defaults.
+
+## v3.1.1
 ### Minor Updates
 ##### Added
-- Add `GHP` to `job` app for v3
-- Add `/ghp_efficiency_thermal_factors` endpoint to `job` app for v3
-- Add `/get_existing_chiller_default_cop` endpoint to `job` app for v3
+- Add GHP system sizes and borehole count in `queryset_for_summary()` function which is used for user runs summary information.
+
+## v3.1.0
+### Major Updates
+#### Changed
+- ANNUAL UPDATE TO DEFAULT VALUES. Changes outlined below with (old value) --> (new value). See user manual for references. 
+  - Owner Discount rate, nominal (%): : **Financial** **owner_discount_rate_fraction** 0.0564	--> 0.0638
+  - Offtaker Discount rate, nominal (%): **Financial**  **offtaker_discount_rate_fraction** 0.0564 --> 0.0638
+  - Electricity cost escalation rate, nominal (%): **Financial** **elec_cost_escalation_rate_fraction** 0.019	--> 0.017
+  - Existing boiler fuel cost escalation rate, nominal (%): **Financial**  **existing_boiler_fuel_cost_escalation_rate_fraction**	0.034	--> 0.015
+  - Boiler fuel cost escalation rate, nominal (%): **Financial** **boiler_fuel_cost_escalation_rate_fraction**	0.034	--> 0.015
+  - CHP fuel cost escalation rate, nominal (%): **Financial**  **chp_fuel_cost_escalation_rate_fraction**	0.034	--> 0.015
+  - Generator fuel cost escalation rate, nominal (%): **Financial**  **generator_fuel_cost_escalation_rate_fraction**	0.027	--> 0.012
+  - Array tilt – Ground mount, Fixed: **PV** **tilt** latitude	--> 20
+  - O&M cost ($/kW/year): **PV** **om_cost_per_kw**	17	--> 18
+  - System capital cost ($/kW): **PV** **installed_cost_per_kw**	1592	--> 1790
+  - Energy capacity cost ($/kWh): **ElectricStorage** **installed_cost_per_kwh**	388	--> 455
+  - Power capacity cost ($/kW): **ElectricStorage**	**installed_cost_per_kw**	775	--> 910
+  - Energy capacity replacement cost ($/kWh): **ElectricStorage** **replace_cost_per_kwh**	220	--> 318
+  - Power capacity replacement cost ($/kW): **ElectricStorage**	**replace_cost_per_kw**	440	--> 715
+  - Fuel burn rate by generator capacity (gal/kWh): **Generator** **fuel_slope_gal_per_kwh**	0.076	--> removed and replaced with full and half-load efficiencies
+  - Electric efficiency at 100% load (% HHV-basis): **Generator** **electric_efficiency_full_load**	N/A - new input	--> 0.322
+  - Electric efficiency at 50% load (% HHV-basis): **Generator** **electric_efficiency_half_load**	N/A - new input	--> 0.322
+  - Generator fuel higher heating value (HHV): **Generator** **fuel_higher_heating_value_kwh_per_gal**	N/A - new input	--> 40.7
+  - System capital cost ($/kW): **Generator**  **installed_cost_per_kw** 500	--> $650 if the generator only runs during outages; $800 if it is allowed to run parallel with the grid; $880 for off-grid
+  - Fixed O&M ($/kW/yr): **Generator** **om_cost_per_kw** Grid connected: 10 Off-grid: 20 --> Grid connected: 20 Off-grid: 10
+  - System capital cost ($/kW) by Class: **Wind** **size_class_to_installed_cost**	residential - 5675 commercial - 4300 medium - 2766 large - 2239 --> residential - 6339 commercial - 4760 medium - 3137 large - 2386
+  - O&M cost ($/kW/year): **Wind** **om_cost_per_kw** 35 --> 36
+### Minor Updates
+##### Added
+- Added ability to run hybrid GHX using REopt API v3.
+- Added ability to run centralized GHP scenarios using REopt API.
+##### Fixed
+- Fixed `test_thermal_in_results` to account for missing required inputs. 
+  
+## v3.0.0
+### Major Updates
+##### Changed
+- Changed /stable URLs to point to /v3, using the REopt.jl package as the backbone of the API
+- License and copyright of the repository
+### Minor Updates
+##### Added
+- Added `OutageOutputs` field **electric_storage_microgrid_upgraded** to `reoptjl/models.py`
+##### Fixed
+- Fixed a bug in the `get_existing_chiller_default_cop` endpoint not accepting blank/null inputs that are optional
+- In `ERPJob`, handle the `/erp` endpoint being hit before the REopt optimization associated with the provided **reopt_run_uuid** has not yet completed
+- Catch and handle exceptions thrown in `process_erp_results`
+- Throw error if user tries to run ERP without **max_outage_duration** or the **reopt_run_uuid** of a resilience optimization
+##### Changed
+- Changed `backup_reliability` results key from **fuel_outage_survival_final_time_step** to **fuel_survival_final_time_step** for consistency with other keys
+
+## v2.16.0
+### Minor Updates
+##### Added
+- /v3 endpoints which use the reoptjl app and the REopt.jl Julia package, but /stable still points to /v2 so this is not a breaking change
+ - Django model **ERPWindInputs**, used in `ERPJob()`, `erp_help()`, and `erp_results()`
+##### Changed
+- Modified production k8s server resources to best match v3 resource consumption (v2 will still work fine, but may have less throughput)
+
+## v2.15.0
+### Minor Updates
+##### Added
+- Add `GHP` to `reoptjl` app for v3
+- Add `Boiler` to `reoptjl` app for v3 along with appropriate tests
+- Add `SteamTurbine` to `reoptjl` app for v3 along with appropriate tests
+- Add `/ghp_efficiency_thermal_factors` endpoint to `reoptjl` app for v3
+- Add `/get_existing_chiller_default_cop` endpoint to `reoptjl` app for v3
+- Add `/get_chp_defaults` endpoint to `reoptjl` app
 ##### Changed
 - Update a couple of GHP functions to use the GhpGhx.jl package instead of previous Julia scripts and data from v2
+- Update `julia_src/` TOML files to point to **REopt.jlv0.32.6**
 ##### Fixed
 - Fixed a type mismatch bug in the `simulated_load` function within http.jl
 
@@ -115,7 +187,7 @@ Classify the change according to the following categories:
     - `/erp/<run_uuid>/results` endpoint that GETs the results of an ERP job (calls `erp_results()`) 
     - `/erp/help` endpoint that GETs the ERP input field info (calls `erp_help()`)
     - `/erp/chp_defaults` endpoint that GETs ERP CHP/prime generator input defaults based on parameters `prime_mover`, `is_chp`, and `size_kw` (calls `erp_chp_prime_gen_defaults()`)
-    - Tests in `resilience+stats/tests/test_erp.py`
+    - Tests in `resilience_stats/tests/test_erp.py`
  - In reoptjl app (v3), added Financial **year_one_om_costs_before_tax_bau**, **lifecycle_om_costs_after_tax_bau** 
  - Added field **production_factor_series** to Django models **WindOutputs** and **PVOutputs**
  - In **REoptjlMessageOutputs** added a **has_stacktrace** field to denote if response has a stacktrace error or not. Default is False.

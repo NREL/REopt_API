@@ -103,6 +103,17 @@ function reopt(req::HTTP.Request)
             else
                 chp_dict = Dict()
             end
+			if haskey(d, "SteamTurbine")
+				inputs_with_defaults_from_steamturbine = [
+					:size_class, :gearbox_generator_efficiency, :isentropic_efficiency, 
+					:inlet_steam_pressure_psig, :inlet_steam_temperature_degF, :installed_cost_per_kw, :om_cost_per_kwh, 
+					:outlet_steam_pressure_psig, :net_to_gross_electric_ratio, :electric_produced_to_thermal_consumed_ratio,
+                    :thermal_produced_to_thermal_consumed_ratio
+				]
+				steamturbine_dict = Dict(key=>getfield(model_inputs.s.steam_turbine, key) for key in inputs_with_defaults_from_steamturbine)
+			else
+				steamturbine_dict = Dict()
+			end
             if haskey(d, "GHP")
                 inputs_with_defaults_from_ghp = [
                     :space_heating_efficiency_thermal_factor,
@@ -124,6 +135,7 @@ function reopt(req::HTTP.Request)
 				"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_easiur),
 				"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert),
                 "CHP" => chp_dict,
+				"SteamTurbine" => steamturbine_dict,
                 "GHP" => ghp_dict,
                 "ExistingChiller" => chiller_dict
 			)            
@@ -227,9 +239,16 @@ function chp_defaults(req::HTTP.Request)
     error_response = Dict()
     try
         d_symb = reoptjl.dictkeys_tosymbols(d)
-        data = reoptjl.get_chp_defaults_prime_mover_size_class(;d_symb...)
+        if haskey(d_symb, :prime_mover) && d_symb[:prime_mover] == "steam_turbine"
+            # delete!(d_symb, :prime_mover)
+            data = reoptjl.get_steam_turbine_defaults_size_class(;
+                    avg_boiler_fuel_load_mmbtu_per_hour=get(d_symb, :avg_boiler_fuel_load_mmbtu_per_hour, nothing),
+                    size_class=get(d_symb, :size_class, nothing))
+        else
+            data = reoptjl.get_chp_defaults_prime_mover_size_class(;d_symb...)
+        end
     catch e
-        @error "Something went wrong in the chp_defaults" exception=(e, catch_backtrace())
+        @error "Something went wrong in the chp_defaults endpoint" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
     end
     if isempty(error_response)
@@ -504,18 +523,18 @@ end
 # define REST endpoints to dispatch to "service" functions
 const ROUTER = HTTP.Router()
 
-HTTP.@register(ROUTER, "POST", "/job", job)
-HTTP.@register(ROUTER, "POST", "/reopt", reopt)
-HTTP.@register(ROUTER, "POST", "/erp", erp)
-HTTP.@register(ROUTER, "POST", "/ghpghx", ghpghx)
-HTTP.@register(ROUTER, "GET", "/chp_defaults", chp_defaults)
-HTTP.@register(ROUTER, "GET", "/avert_emissions_profile", avert_emissions_profile)
-#HTTP.@register(ROUTER, "GET", "/cambium_emissions_profile", cambium_emissions_profile)
-HTTP.@register(ROUTER, "GET", "/easiur_costs", easiur_costs)
-HTTP.@register(ROUTER, "GET", "/simulated_load", simulated_load)
-HTTP.@register(ROUTER, "GET", "/absorption_chiller_defaults", absorption_chiller_defaults)
-HTTP.@register(ROUTER, "GET", "/ghp_efficiency_thermal_factors", ghp_efficiency_thermal_factors)
-HTTP.@register(ROUTER, "GET", "/ground_conductivity", ground_conductivity)
-HTTP.@register(ROUTER, "GET", "/health", health)
-HTTP.@register(ROUTER, "GET", "/get_existing_chiller_default_cop", get_existing_chiller_default_cop)
+HTTP.register!(ROUTER, "POST", "/job", job)
+HTTP.register!(ROUTER, "POST", "/reopt", reopt)
+HTTP.register!(ROUTER, "POST", "/erp", erp)
+HTTP.register!(ROUTER, "POST", "/ghpghx", ghpghx)
+HTTP.register!(ROUTER, "GET", "/chp_defaults", chp_defaults)
+HTTP.register(ROUTER, "GET", "/avert_emissions_profile", avert_emissions_profile)
+#HTTP.register(ROUTER, "GET", "/cambium_emissions_profile", cambium_emissions_profile)
+HTTP.register!(ROUTER, "GET", "/easiur_costs", easiur_costs)
+HTTP.register!(ROUTER, "GET", "/simulated_load", simulated_load)
+HTTP.register!(ROUTER, "GET", "/absorption_chiller_defaults", absorption_chiller_defaults)
+HTTP.register!(ROUTER, "GET", "/ghp_efficiency_thermal_factors", ghp_efficiency_thermal_factors)
+HTTP.register!(ROUTER, "GET", "/ground_conductivity", ground_conductivity)
+HTTP.register!(ROUTER, "GET", "/health", health)
+HTTP.register!(ROUTER, "GET", "/get_existing_chiller_default_cop", get_existing_chiller_default_cop)
 HTTP.serve(ROUTER, "0.0.0.0", 8081, reuseaddr=true)

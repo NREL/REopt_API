@@ -1,38 +1,10 @@
-# *********************************************************************************
-# REopt, Copyright (c) 2019-2020, Alliance for Sustainable Energy, LLC.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without modification,
-# are permitted provided that the following conditions are met:
-#
-# Redistributions of source code must retain the above copyright notice, this list
-# of conditions and the following disclaimer.
-#
-# Redistributions in binary form must reproduce the above copyright notice, this
-# list of conditions and the following disclaimer in the documentation and/or other
-# materials provided with the distribution.
-#
-# Neither the name of the copyright holder nor the names of its contributors may be
-# used to endorse or promote products derived from this software without specific
-# prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-# IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-# OF THE POSSIBILITY OF SUCH DAMAGE.
-# *********************************************************************************
+# REopt®, Copyright (c) Alliance for Sustainable Energy, LLC. See also https://github.com/NREL/REopt_API/blob/master/LICENSE.
 import logging
 import pandas as pd
 from reoptjl.models import MAX_BIG_NUMBER, APIMeta, ExistingBoilerInputs, UserProvidedMeta, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
     FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs, SpaceHeatingLoadInputs, \
     DomesticHotWaterLoadInputs, CHPInputs, CoolingLoadInputs, ExistingChillerInputs, HotThermalStorageInputs, ColdThermalStorageInputs, \
-    AbsorptionChillerInputs, GHPInputs
+    AbsorptionChillerInputs, BoilerInputs, SteamTurbineInputs, GHPInputs
 from django.core.exceptions import ValidationError
 from pyproj import Proj
 from typing import Tuple
@@ -102,9 +74,11 @@ class InputValidator(object):
             SpaceHeatingLoadInputs,
             DomesticHotWaterLoadInputs,
             CHPInputs,
+            BoilerInputs,
             HotThermalStorageInputs,
             ColdThermalStorageInputs,
             AbsorptionChillerInputs,
+            SteamTurbineInputs,
             GHPInputs
         )
         self.pvnames = []
@@ -227,14 +201,14 @@ class InputValidator(object):
         """
 
         """
-        PV tilt set to latitude if not provided and production_factor_series validated
+        PV validation
         """
         def cross_clean_pv(pvmodel):
             if pvmodel.__getattribute__("tilt") == None:
                 if pvmodel.__getattribute__("array_type") == pvmodel.ARRAY_TYPE_CHOICES.ROOFTOP_FIXED:
                     pvmodel.__setattr__("tilt", 10)
                 else:
-                    pvmodel.__setattr__("tilt", abs(self.models["Site"].__getattribute__("latitude")))
+                    pvmodel.__setattr__("tilt", 20)
             
             if pvmodel.__getattribute__("azimuth") == None:
                 if self.models["Site"].__getattribute__("latitude") >= 0:
@@ -302,7 +276,7 @@ class InputValidator(object):
         Wind model validation
         1. If wind resource not provided, add a validation error if lat/lon not within WindToolkit data set
         2. If prod factor or resource data provided, validate_time_series for each
-        NOTE: if size_class is not provided it is determined in the Julia package based off of average load.
+        NOTE: if size_class is not provided: size_class is determined in the Julia package based off of average load and wind installed_cost_per_kw is determined based on size_class.
         """
         if "Wind" in self.models.keys():
             if self.models["Wind"].__getattribute__("max_kw") > 0:
@@ -337,8 +311,8 @@ class InputValidator(object):
         if "ElectricTariff" in self.models.keys():
 
             for key, time_series in zip(
-                ["ElectricTariff",              "ElectricTariff"],
-                ["tou_energy_rates_per_kwh",    "wholesale_rate"]
+                ["ElectricTariff",              "ElectricTariff",   "ElectricTariff"],
+                ["tou_energy_rates_per_kwh",    "wholesale_rate",   "export_rate_beyond_net_metering_limit"]
             ):
                 self.clean_time_series(key, time_series)
 
@@ -440,11 +414,20 @@ class InputValidator(object):
         """
         if "ExistingBoiler" in self.models.keys():
 
+            self.clean_time_series("ExistingBoiler", "fuel_cost_per_mmbtu")
+
             if self.models["ExistingBoiler"].efficiency is None:
                 if self.models["ExistingBoiler"].production_type == 'hot_water':
                     self.models["ExistingBoiler"].efficiency = 0.8
                 else:
                     self.models["ExistingBoiler"].efficiency = 0.75
+        
+        """
+        Boiler
+        """
+        if "Boiler" in self.models.keys():
+
+            self.clean_time_series("Boiler", "fuel_cost_per_mmbtu")
         
         """
         ElectricLoad
@@ -474,9 +457,15 @@ class InputValidator(object):
 
             if self.models["Generator"].__getattribute__("om_cost_per_kw") == None:
                 if self.models["Settings"].off_grid_flag==False:
-                    self.models["Generator"].om_cost_per_kw = 10.0
-                else:
                     self.models["Generator"].om_cost_per_kw = 20.0
+                    if self.models["Generator"].only_runs_during_grid_outage:
+                        self.models["Generator"].installed_cost_per_kw = 650.0
+                    else: 
+                        self.models["Generator"].installed_cost_per_kw = 800.0
+                    self.models["Generator"]
+                else:
+                    self.models["Generator"].om_cost_per_kw = 10.0
+                    self.models["Generator"].installed_cost_per_kw = 880.0
 
             if self.models["Generator"].__getattribute__("min_turn_down_fraction") == None:
                 if self.models["Settings"].off_grid_flag==False:
@@ -534,7 +523,7 @@ class InputValidator(object):
         
         def validate_offgrid_keys(self):
             # From https://github.com/NREL/REopt.jl/blob/4b0fb7f6556b2b6e9a9a7e8fa65398096fb6610f/src/core/scenario.jl#L88         
-            valid_input_keys_offgrid = ["PV", "Wind", "ElectricStorage", "Generator", "Settings", "Site", "Financial", "ElectricLoad", "ElectricTariff", "ElectricUtility"]
+            valid_input_keys_offgrid = ["PV", "Wind", "ElectricStorage", "Generator", "Settings", "Site", "Financial", "ElectricLoad", "ElectricTariff", "ElectricUtility", "Meta"]
 
             invalid_input_keys_offgrid = list(set(list(self.models.keys()))-set(valid_input_keys_offgrid))
             if 'APIMeta' in invalid_input_keys_offgrid:
@@ -555,6 +544,9 @@ class InputValidator(object):
         GHP - just check for ghpghx_inputs errors from /ghpghx app
         """
         if "GHP" in self.models.keys():
+            if self.models["GHP"].__getattribute__("ghx_useful_life_years") < self.models["Financial"].__getattribute__("analysis_years"):
+                self.models["GHP"].ghx_useful_life_years = self.models["Financial"].analysis_years
+                
             if self.ghpghx_inputs_errors not in [None, []]:
                 self.add_validation_error("GHP", "ghpghx_inputs", str(self.ghpghx_inputs_errors))
 

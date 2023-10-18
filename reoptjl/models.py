@@ -1,32 +1,4 @@
-# *********************************************************************************
-# REopt, Copyright (c) 2019-2020, Alliance for Sustainable Energy, LLC.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without modification,
-# are permitted provided that the following conditions are met:
-#
-# Redistributions of source code must retain the above copyright notice, this list
-# of conditions and the following disclaimer.
-#
-# Redistributions in binary form must reproduce the above copyright notice, this
-# list of conditions and the following disclaimer in the documentation and/or other
-# materials provided with the distribution.
-#
-# Neither the name of the copyright holder nor the names of its contributors may be
-# used to endorse or promote products derived from this software without specific
-# prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-# IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-# OF THE POSSIBILITY OF SUCH DAMAGE.
-# *********************************************************************************
+# REopt®, Copyright (c) Alliance for Sustainable Energy, LLC. See also https://github.com/NREL/REopt_API/blob/master/LICENSE.
 import math
 from django.db import models
 from django.db.models.fields import NOT_PROVIDED
@@ -94,6 +66,13 @@ FUEL_DEFAULTS = {
         "propane" : 0.009906836,
         "diesel_oil" : 0.0
     }
+}
+
+WIND_COST_DEFAULTS = { # size_class_to_installed_cost 
+    "residential" : 6339.0,
+    "commercial" : 4760.0,
+    "medium" : 3137.0,
+    "large" : 2386.0
 }
 
 def at_least_one_set(model, possible_sets):
@@ -611,7 +590,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text="Analysis period in years. Must be integer."
     )
     elec_cost_escalation_rate_fraction = models.FloatField(
-        default=0.019,
+        default=0.017,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -620,7 +599,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text="Annual nominal utility electricity cost escalation rate."
     )
     offtaker_discount_rate_fraction = models.FloatField(
-        default=0.0564,
+        default=0.0638,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -648,7 +627,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text="Annual nominal O&M cost escalation rate"
     )
     owner_discount_rate_fraction = models.FloatField(
-        default=0.0564,
+        default=0.0638,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -821,25 +800,42 @@ class FinancialInputs(BaseModel, models.Model):
         null=True,
         help_text=("Annual nominal escalation rate of the public health cost of 1 tonne of PM2.5 emissions (as a decimal). The default value is calculated from the EASIUR model for a height of 150m.")
     )
-
-    # boiler_fuel_escalation_rate_fraction = models.FloatField(
-    #     default=0.034,
-    #     validators=[
-    #         MinValueValidator(-1),
-    #         MaxValueValidator(1)
-    #     ],
-    #     blank=True,
-    #     help_text=("Annual nominal boiler fuel cost escalation rate")
-    # )
-    # chp_fuel_escalation_rate_fraction = models.FloatField(
-    #     default=0.034,
-    #     validators=[
-    #         MinValueValidator(-1),
-    #         MaxValueValidator(1)
-    #     ],
-    #     blank=True,
-    #     help_text=("Annual nominal chp fuel cost escalation rate")
-    # )
+    generator_fuel_cost_escalation_rate_fraction = models.FloatField(
+        default=0.012,
+        validators=[
+            MinValueValidator(-1),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text=("Annual nominal boiler fuel cost escalation rate")
+    )    
+    existing_boiler_fuel_cost_escalation_rate_fraction = models.FloatField(
+        default=0.015,
+        validators=[
+            MinValueValidator(-1),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text=("Annual nominal existing boiler fuel cost escalation rate")
+    )
+    boiler_fuel_cost_escalation_rate_fraction = models.FloatField(
+        default=0.015,
+        validators=[
+            MinValueValidator(-1),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text=("Annual nominal boiler fuel cost escalation rate")
+    )
+    chp_fuel_cost_escalation_rate_fraction = models.FloatField(
+        default=0.015,
+        validators=[
+            MinValueValidator(-1),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text=("Annual nominal chp fuel cost escalation rate")
+    )
 
     def clean(self):
         if not self.third_party_ownership:
@@ -1008,6 +1004,11 @@ class FinancialOutputs(BaseModel, models.Model):
     lifecycle_fuel_costs_after_tax = models.FloatField(
         null=True, blank=True,
         help_text=("Component of lifecycle costs (LCC). This value is the present value of all fuel costs over the analysis period, after tax.")
+    )
+
+    lifecycle_fuel_costs_after_tax_bau = models.FloatField(
+        null=True, blank=True,
+        help_text=("Component of lifecycle costs (LCC). This value is the present value of all fuel costs over the analysis period, after tax in the BAU case.")
     )
 
     lifecycle_chp_standby_cost_after_tax = models.FloatField(
@@ -1418,7 +1419,6 @@ class ElectricTariffInputs(BaseModel, models.Model):
     export_rate_beyond_net_metering_limit = ArrayField(
         models.FloatField(
             blank=True,
-            default=0,
             validators=[
                 MinValueValidator(0)
             ]
@@ -1495,6 +1495,7 @@ class ElectricTariffInputs(BaseModel, models.Model):
                     error_messages["required inputs"] = f"Must provide both {possible_set[0]} and {possible_set[1]}"
 
         self.wholesale_rate = scalar_or_monthly_to_8760(self.wholesale_rate)
+        self.export_rate_beyond_net_metering_limit = scalar_or_monthly_to_8760(self.export_rate_beyond_net_metering_limit)
 
         if len(self.coincident_peak_load_charge_per_kw) > 0:
             if len(self.coincident_peak_load_active_time_steps) != len(self.coincident_peak_load_charge_per_kw):
@@ -1983,6 +1984,19 @@ class OutageOutputs(BaseModel, models.Model):
         default=list, blank=True,
         help_text="The maximum outage cost for every outage duration modeled."
     )
+    critical_loads_per_outage_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True,
+            ),
+            default=list, blank=True,
+        ),
+        default=list, blank=True,
+        help_text="The critical load in each outage time step for each outage start time and duration. Outage duration changes along the first dimension, outage start time step along the second, and time step in outage along the third."
+    )    
     unserved_load_series_kw = ArrayField(
         ArrayField(
             ArrayField(
@@ -2029,6 +2043,26 @@ class OutageOutputs(BaseModel, models.Model):
                     "Outage duration changes along the first dimension, "
                     "outage start time changes along the second dimension, "
                     "and hour within outage changes along the third dimension.")
+    )
+    soc_series_fraction = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of storage state of charge (SOC) in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    electric_storage_microgrid_upgraded = models.BooleanField(
+        null=True, blank=True,
+        help_text=("True/False for if ElectricStorage is included in the microgrid.")
     )
     pv_microgrid_size_kw = models.FloatField(
         null=True, blank=True,
@@ -2086,6 +2120,62 @@ class OutageOutputs(BaseModel, models.Model):
                     "outage start time changes along the second dimension, "
                     "and hour within outage changes along the third dimension.")
     )
+    wind_microgrid_size_kw = models.FloatField(
+        null=True, blank=True,
+        help_text="Optimal Wind capacity included in the microgrid."
+    )
+    wind_microgrid_upgrade_cost = models.FloatField(
+        null=True, blank=True,
+        help_text="Capital cost of including the Wind system in the microgrid."
+    )
+    wind_to_storage_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of Wind power sent to the battery in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    wind_curtailed_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of Wind power curtailed in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )
+    wind_to_load_series_kw = ArrayField(
+        ArrayField(
+            ArrayField(
+                models.FloatField(
+                    blank=True,
+                ),
+                default=list, blank=True
+            ),
+            default=list, blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Array of Wind power used to meet load in every outage modeled. "
+                    "Outage duration changes along the first dimension, "
+                    "outage start time changes along the second dimension, "
+                    "and hour within outage changes along the third dimension.")
+    )    
     generator_microgrid_size_kw = models.FloatField(
         null=True, blank=True,
         help_text="Optimal generator capacity included in the microgrid."
@@ -2401,7 +2491,7 @@ class PVInputs(BaseModel, models.Model):
         help_text="Maximum PV size constraint for optimization (upper bound on additional capacity beyond existing_kw). Set to zero to disable PV"
     )
     installed_cost_per_kw = models.FloatField(
-        default=1592,
+        default=1790,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e5)
@@ -2410,7 +2500,7 @@ class PVInputs(BaseModel, models.Model):
         help_text="Installed PV cost in $/kW"
     )
     om_cost_per_kw = models.FloatField(
-        default=17,
+        default=18,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e3)
@@ -2651,7 +2741,7 @@ class PVInputs(BaseModel, models.Model):
         ],
         blank=True,
         null=True,
-        help_text="PV system tilt. If PV system type is rooftop-fixed, then tilt=10 degrees, else tilt=abs(site.latitude)"
+        help_text="PV system tilt. If PV system type is rooftop-fixed, then tilt=10 degrees, else tilt=20 degrees"
     )
     location = models.TextField(
         default=PV_LOCATION_CHOICES.BOTH,
@@ -2823,16 +2913,16 @@ class WindInputs(BaseModel, models.Model):
         help_text="Maximum size constraint for optimization."
     )
     installed_cost_per_kw = models.FloatField(
-        default=1600,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e5)
         ],
         blank=True,
-        help_text="Installed cost in $/kW"
+        null=True,
+        help_text="Installed cost in $/kW. Default cost is determined based on size_class."
     )
     om_cost_per_kw = models.FloatField(
-        default=35,
+        default=36,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e3)
@@ -3026,7 +3116,6 @@ class WindInputs(BaseModel, models.Model):
         blank=True,
         help_text="True/False for if technology has the ability to curtail energy production."
     )
-
     operating_reserve_required_fraction = models.FloatField(
         validators=[
             MinValueValidator(0.0),
@@ -3038,6 +3127,9 @@ class WindInputs(BaseModel, models.Model):
             "Required operating reserves applied to each timestep as a fraction of wind generation serving load in that timestep."
     )
 
+    def clean(self):
+        if self.size_class != "":
+            self.installed_cost_per_kw = WIND_COST_DEFAULTS.get(self.size_class, None) # will get set in REopt.jl if size_class not supplied
 
 class WindOutputs(BaseModel, models.Model):
     key = "WindOutputs"
@@ -3163,7 +3255,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Flag to set whether the battery can be charged from the grid, or just onsite generation."
     )
     installed_cost_per_kw = models.FloatField(
-        default=775.0,
+        default=910.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -3172,7 +3264,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Total upfront battery power capacity costs (e.g. inverter and balance of power systems)"
     )
     installed_cost_per_kwh = models.FloatField(
-        default=388.0,
+        default=455.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -3181,7 +3273,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Total upfront battery costs"
     )
     replace_cost_per_kw = models.FloatField(
-        default=440.0,
+        default=715.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -3190,7 +3282,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Battery power capacity replacement cost at time of replacement year"
     )
     replace_cost_per_kwh = models.FloatField(
-        default=220.0,
+        default=318.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -3378,7 +3470,7 @@ class GeneratorInputs(BaseModel, models.Model):
         help_text="Electric efficiency of the generator running at half load. Defaults to electric_efficiency_full_load."
     )
     electric_efficiency_full_load = models.FloatField(
-        default=0.34,
+        default=0.322,
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(1.0)
@@ -3663,8 +3755,6 @@ class GeneratorInputs(BaseModel, models.Model):
     )
 
     def clean(self):
-        if not self.installed_cost_per_kw:
-            self.installed_cost_per_kw = 650.0 if self.only_runs_during_grid_outage else 800.0
         if not self.electric_efficiency_half_load:
             self.electric_efficiency_half_load = self.electric_efficiency_full_load
 
@@ -3865,11 +3955,11 @@ class CHPInputs(BaseModel, models.Model):
     size_class = models.IntegerField(
         validators=[
             MinValueValidator(0),
-            MaxValueValidator(6)
+            MaxValueValidator(7)
         ],
         null=True,
         blank=True,
-        help_text="CHP size class. Must be an integer value between 0 and 6"
+        help_text="CHP size class. Must be an integer value between 0 and 7"
     )
     min_kw = models.FloatField(
         default=0,
@@ -4601,11 +4691,23 @@ class ExistingChillerOutputs(BaseModel, models.Model):
         help_text=("Annual chiller electric consumption [kWh]")
     )
 
+    annual_electric_consumption_kwh_bau = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=("Annual chiller electric consumption for BAU case [kWh]")
+    )    
+
     annual_thermal_production_tonhour = models.FloatField(
         null=True,
         blank=True,
-        help_text=("Annual chiller thermal production [Ton Hour")
+        help_text=("Annual chiller thermal production [Ton Hour]")
     )
+
+    annual_thermal_production_tonhour_bau = models.FloatField(
+        null=True,
+        blank=True,
+        help_text=("Annual chiller thermal production for BAU case [Ton Hour]")
+    )        
 
     def clean(self):
         pass
@@ -4736,12 +4838,12 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         help_text="Existing boiler fuel type, one of natural_gas, landfill_bio_gas, propane, diesel_oil"
     )
 
-    # can_supply_steam_turbine = models.BooleanField(
-    #     default=False,
-    #     blank=True,
-    #     null=True,
-    #     help_text="If the boiler can supply steam to the steam turbine for electric production"
-    # )
+    can_supply_steam_turbine = models.BooleanField(
+        default=False,
+        blank=True,
+        null=True,
+        help_text="If the boiler can supply steam to the steam turbine for electric production"
+    )
 
     # For custom validations within model.
     def clean(self):
@@ -4778,6 +4880,7 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
     )
 
     annual_fuel_consumption_mmbtu = models.FloatField(null=True, blank=True)
+    annual_fuel_consumption_mmbtu_bau = models.FloatField(null=True, blank=True)
 
     fuel_consumption_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
@@ -4787,7 +4890,9 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
     lifecycle_fuel_cost_after_tax = models.FloatField(null=True, blank=True)
     lifecycle_fuel_cost_after_tax_bau = models.FloatField(null=True, blank=True)
     annual_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
+    annual_thermal_production_mmbtu_bau = models.FloatField(null=True, blank=True)
     year_one_fuel_cost_before_tax = models.FloatField(null=True, blank=True)
+    year_one_fuel_cost_before_tax_bau = models.FloatField(null=True, blank=True)
 
     thermal_to_storage_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
@@ -4843,177 +4948,516 @@ class REoptjlMessageOutputs(BaseModel, models.Model):
     def clean(self):
         pass
 
-# # Uncomment to enable Boiler functionality
-# class BoilerInputs(BaseModel, models.Model):
-#     key = "Boiler"
+class BoilerInputs(BaseModel, models.Model):
+    key = "Boiler"
 
-#     meta = models.OneToOneField(
-#         APIMeta,
-#         on_delete=models.CASCADE,
-#         related_name="BoilerInputs",
-#         primary_key=True
-#     )
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="BoilerInputs",
+        primary_key=True
+    )
 
-#     FUEL_TYPE_LIST = models.TextChoices('FUEL_TYPE_LIST', (
-#         "natural_gas",
-#         "landfill_bio_gas",
-#         "propane",
-#         "diesel_oil",
-#         "uranium"
-#     ))
+    FUEL_TYPE_LIST = models.TextChoices('FUEL_TYPE_LIST', (
+        "natural_gas",
+        "landfill_bio_gas",
+        "propane",
+        "diesel_oil",
+        "uranium"
+    ))
 
-#     min_mmbtu_per_hour = models.FloatField(
-#         validators=[
-#             MinValueValidator(0.0),
-#             MaxValueValidator(1.0e9)
-#         ],
-#         null=True,
-#         blank=True,
-#         default=0.0,
-#         help_text="Minimum thermal power size"
-#     )
+    min_mmbtu_per_hour = models.FloatField(
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        default=0.0,
+        help_text="Minimum thermal power size"
+    )
 
-#     max_mmbtu_per_hour = models.FloatField(
-#         validators=[
-#             MinValueValidator(0.0),
-#             MaxValueValidator(1.0e9)
-#         ],
-#         null=True,
-#         blank=True,
-#         default=0.0,
-#         help_text="Maximum thermal power size"
-#     )
+    max_mmbtu_per_hour = models.FloatField(
+        null=True,
+        blank=True,        
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        default=1.0E7,
+        help_text="Maximum thermal power size"
+    )
 
-#     efficiency = models.FloatField(
-#         validators=[
-#             MinValueValidator(0.0),
-#             MaxValueValidator(1.0)
-#         ],
-#         null=True,
-#         blank=True,
-#         default=0.8,
-#         help_text="New boiler system efficiency - conversion of fuel to usable heating thermal energy."
-#     )
+    efficiency = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0)
+        ],
+        null=True,
+        blank=True,
+        default=0.8,
+        help_text="New boiler system efficiency - conversion of fuel to usable heating thermal energy."
+    )
 
-#     fuel_cost_per_mmbtu = ArrayField(
-#         models.FloatField(
-#             blank=True,
-#             validators=[
-#                 MinValueValidator(0)
-#             ]
-#         ),
-#         default=list,
-#         blank=True,
-#         help_text="Fuel cost in [$/MMBtu]"
-#     )
+    fuel_cost_per_mmbtu = ArrayField(
+        models.FloatField(
+            blank=True,
+            validators=[
+                MinValueValidator(0)
+            ]
+        ),
+        default=list,
+        null=True,
+        help_text="Fuel cost in [$/MMBtu]"
+    )
 
-#     macrs_option_years = models.IntegerField(
-#         default=MACRS_YEARS_CHOICES.ZERO,
-#         choices=MACRS_YEARS_CHOICES.choices,
-#         blank=True,
-#         null=True,
-#         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
-#     )
+    macrs_option_years = models.IntegerField(
+        default=MACRS_YEARS_CHOICES.ZERO,
+        choices=MACRS_YEARS_CHOICES.choices,
+        blank=True,
+        null=True,
+        help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
+    )
 
-#     macrs_bonus_fraction = models.FloatField(
-#         default=0.0,
-#         validators=[
-#             MinValueValidator(0),
-#             MaxValueValidator(1)
-#         ],
-#         blank=True,
-#         null=True,
-#         help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
-#     )
+    macrs_bonus_fraction = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        null=True,
+        help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
+    )
 
-#     installed_cost_per_mmbtu_per_hour = models.FloatField(
-#         default=293000.0,
-#         validators=[
-#             MinValueValidator(0),
-#             MaxValueValidator(1.0e9)
-#         ],
-#         blank=True,
-#         null=True,
-#         help_text="Thermal power-based cost"
-#     )
+    installed_cost_per_mmbtu_per_hour = models.FloatField(
+        default=293000.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        blank=True,
+        null=True,
+        help_text="Thermal power-based cost"
+    )
 
-#     om_cost_per_mmbtu_per_hour = models.FloatField(
-#         default=2930.0,
-#         validators=[
-#             MinValueValidator(0),
-#             MaxValueValidator(1.0e9)
-#         ],
-#         blank=True,
-#         null=True,
-#         help_text="Thermal power-based fixed O&M cost"
-#     )
+    om_cost_per_mmbtu_per_hour = models.FloatField(
+        default=2930.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        blank=True,
+        null=True,
+        help_text="Thermal power-based fixed O&M cost"
+    )
 
-#     om_cost_per_mmbtu = models.FloatField(
-#         default=0.0,
-#         validators=[
-#             MinValueValidator(0),
-#             MaxValueValidator(1.0e9)
-#         ],
-#         blank=True,
-#         null=True,
-#         help_text="Thermal energy-based variable O&M cost"
-#     )
+    om_cost_per_mmbtu = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        blank=True,
+        null=True,
+        help_text="Thermal energy-based variable O&M cost"
+    )
 
-#     fuel_type = models.TextField(
-#         default=FUEL_TYPE_LIST.natural_gas,
-#         choices=FUEL_TYPE_LIST.choices,
-#         blank=True,
-#         null=True,
-#         help_text="Existing boiler fuel type, one of natural_gas, landfill_bio_gas, propane, diesel_oil, uranium"
-#     )
+    fuel_type = models.TextField(
+        default=FUEL_TYPE_LIST.natural_gas,
+        choices=FUEL_TYPE_LIST.choices,
+        blank=True,
+        null=True,
+        help_text="Existing boiler fuel type, one of natural_gas, landfill_bio_gas, propane, diesel_oil, uranium"
+    )
 
-#     can_supply_steam_turbine = models.BooleanField(
-#         default=True,
-#         blank=True,
-#         null=True,
-#         help_text="If the boiler can supply steam to the steam turbine for electric production"
-#     )
+    can_supply_steam_turbine = models.BooleanField(
+        default=True,
+        blank=True,
+        null=True,
+        help_text="If the boiler can supply steam to the steam turbine for electric production"
+    )
 
-#     # For custom validations within model.
-#     def clean(self):
-#         self.fuel_cost_per_mmbtu = scalar_or_monthly_to_8760(self.fuel_cost_per_mmbtu)
+    # For custom validations within model.
+    def clean(self):
+        error_messages = {}
+        if not self.dict.get("fuel_cost_per_mmbtu"):
+            error_messages["required inputs"] = "Must provide fuel_cost_per_mmbtu to model {}".format(self.key)
 
-# class BoilerOutputs(BaseModel, models.Model):
+        if error_messages:
+            raise ValidationError(error_messages)
+        
+        self.fuel_cost_per_mmbtu = scalar_or_monthly_to_8760(self.fuel_cost_per_mmbtu)
 
-#     key = "Boiler"
+class BoilerOutputs(BaseModel, models.Model):
 
-#     meta = models.OneToOneField(
-#         APIMeta,
-#         on_delete=models.CASCADE,
-#         related_name="BoilerOutputs",
-#         primary_key=True
-#     )
+    key = "Boiler"
 
-#     annual_fuel_consumption_mmbtu = models.FloatField(null=True, blank=True)
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="BoilerOutputs",
+        primary_key=True
+    )
 
-#     fuel_consumption_series_mmbtu_per_hour = ArrayField(
-#         models.FloatField(null=True, blank=True),
-#         default=list,
-#     )
+    fuel_consumption_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
 
-#     lifecycle_fuel_cost = models.FloatField(null=True, blank=True)
-#     lifecycle_per_unit_prod_om_costs = models.FloatField(null=True, blank=True)
-#     lifecycle_fuel_cost_bau = models.FloatField(null=True, blank=True)
-#     annual_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
-#     year_one_fuel_cost = models.FloatField(null=True, blank=True)
+    thermal_to_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    year_one_fuel_cost_before_tax = models.FloatField(
+        null=True, blank=True
+    )
+
+    thermal_to_steamturbine_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    thermal_production_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    thermal_to_storage_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    size_mmbtu_per_hour = models.FloatField(null=True, blank=True)
+
+    annual_fuel_consumption_mmbtu = models.FloatField(null=True, blank=True)
+
+    lifecycle_per_unit_prod_om_costs = models.FloatField(
+        null=True, blank=True
+    )
+
+    lifecycle_fuel_cost_after_tax = models.FloatField(
+        null=True, blank=True
+    )
+
+    annual_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
+
+
+class SteamTurbineInputs(BaseModel, models.Model):
+
+    key = "SteamTurbine"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="SteamTurbineInputs",
+        primary_key=True
+    )
+
+    class SIZE_CLASS_LIST(models.IntegerChoices):
+        ZERO = 0,
+        ONE = 1
+        TWO = 2
+        FOUR = 4
+
+    min_kw = models.FloatField(
+        null=True,        
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Minimum steam turbine size constraint for optimization"
+    )
+    max_kw = models.FloatField(
+        null=True,        
+        default=MAX_BIG_NUMBER,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Maximum steam turbine size constraint for optimization"
+    )
+
+    ## default values for these fields are returned from REoptInputs() call in http.jl
+    size_class = models.IntegerField(
+        null=True,
+        choices=SIZE_CLASS_LIST.choices,
+        blank=True,
+        help_text="Steam turbine size class for using appropriate default inputs"
+    )
+
+    gearbox_generator_efficiency = models.FloatField(
+        null=True,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        help_text="Combined gearbox (if applicable) and electric motor/generator efficiency"
+    )
+
+    isentropic_efficiency = models.FloatField(
+        null=True,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        help_text="Combined gearbox (if applicable) and electric motor/generator efficiency"
+    )
+
+    inlet_steam_pressure_psig = models.FloatField(
+        null=True,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(5.0e3)
+        ],
+        blank=True,
+        help_text="Inlet steam pressure to the steam turbine"
+    )
+
+    inlet_steam_temperature_degF = models.FloatField(
+        null=True,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1300.0)
+        ],
+        blank=True,
+        help_text="Inlet steam temperature to the steam turbine"
+    )
+
+    installed_cost_per_kw = models.FloatField(
+        null=True,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e5)
+        ],
+        blank=True,
+        help_text="Installed steam turbine cost in $/kW"
+    )
+
+    om_cost_per_kwh = models.FloatField(
+        null=True,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e2)
+        ],
+        blank=True,
+        help_text="Steam turbine per unit production (variable) operations and maintenance costs in $/kWh"
+    )
+
+    outlet_steam_pressure_psig = models.FloatField(
+        null=True,
+        validators=[
+            MinValueValidator(-14.7),
+            MaxValueValidator(1.0e3)
+        ],
+        blank=True,
+        help_text="Outlet steam pressure from the steam turbine (to the condenser or heat recovery unit)"
+    )
+
+    net_to_gross_electric_ratio = models.FloatField(
+        null=True,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        help_text="Efficiency factor to account for auxiliary loads such as pumps, controls, lights, etc"
+    )
+
+    # Other input fields
+    electric_produced_to_thermal_consumed_ratio = models.FloatField(
+        null=True,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        help_text="Simplified input as alternative to detailed calculations from inlet and outlet steam conditions"
+    )
     
-#     thermal_to_storage_series_mmbtu_per_hour = ArrayField(
-#         models.FloatField(null=True, blank=True),
-#         default = list,
-#     )
-#     year_one_thermal_production_mmbtu_per_hour = ArrayField(
-#         models.FloatField(null=True, blank=True),
-#         default = list,
-#     )
-#     thermal_to_load_series_mmbtu_per_hour = ArrayField(
-#         models.FloatField(null=True, blank=True),
-#         default = list,
-#     )
+    thermal_produced_to_thermal_consumed_ratio = models.FloatField(
+        null=True,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        help_text="Simplified input as alternative to detailed calculations from condensing outlet steam"
+    )
+
+    is_condensing = models.BooleanField(
+        null=True,        
+        blank=True,
+        default = False,
+        help_text="Steam turbine type, if it is a condensing turbine which produces no useful thermal (max electric output)"
+    )
+
+    inlet_steam_superheat_degF = models.FloatField(
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(700.0)
+        ],
+        default=0.0,
+        help_text="Alternative input to inlet steam temperature, this is the superheat amount (delta from T_saturation) to the steam turbine"
+    )
+
+    outlet_steam_min_vapor_fraction = models.FloatField(
+        null=True,        
+        default=0.8,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        help_text="Minimum practical vapor fraction of steam at the exit of the steam turbine"
+    )
+
+    isentropic_efficiency = models.FloatField(
+        null=True,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        help_text="Steam turbine isentropic efficiency - uses inlet T/P and outlet T/P/X to get power out"
+    )
+
+    om_cost_per_kw = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(5.0e3)
+        ],
+        default=0.0,
+        null=True,
+        blank=True,
+        help_text="Annual steam turbine fixed operations and maintenance costs in $/kW"
+    )
+
+    can_net_meter = models.BooleanField(
+        null=True,
+        blank=True,
+        default = False,
+        help_text=("True/False for if technology has option to participate in net metering agreement with utility. "
+                   "Note that a technology can only participate in either net metering or wholesale rates (not both)."
+                   "Note that if off-grid is true, net metering is always set to False.")
+    )
+
+    can_wholesale = models.BooleanField(
+        null=True,
+        blank=True,
+        default = False,
+        help_text=("True/False for if technology has option to export energy that is compensated at the wholesale_rate. "
+                   "Note that a technology can only participate in either net metering or wholesale rates (not both)."
+                   "Note that if off-grid is true, can_wholesale is always set to False.")
+    )
+    can_export_beyond_nem_limit = models.BooleanField(
+        null=True,
+        blank=True,
+        default = False,
+        help_text=("True/False for if technology can export energy beyond the annual site load (and be compensated for "
+                   "that energy at the export_rate_beyond_net_metering_limit)."
+                   "Note that if off-grid is true, can_export_beyond_nem_limit is always set to False.")
+    )
+
+    can_curtail = models.BooleanField(
+        default=False,
+        null=True,
+        blank=True,
+        help_text="True/False for if technology has the ability to curtail energy production."
+    )
+
+    macrs_option_years = models.IntegerField(
+        default=MACRS_YEARS_CHOICES.ZERO,
+        choices=MACRS_YEARS_CHOICES.choices,
+        null=True,
+        blank=True,
+        help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
+    )
+
+    macrs_bonus_fraction = models.FloatField(
+        default=1.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        null=True,
+        blank=True,
+        help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
+    )
+
+    def clean(self):
+        pass
+
+class SteamTurbineOutputs(BaseModel, models.Model):
+
+    key = "SteamTurbine"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="SteamTurbineOutputs",
+        primary_key=True
+    )
+
+
+    size_kw = models.FloatField(
+        null=True, blank=True
+    )
+
+    annual_thermal_consumption_mmbtu = models.FloatField(
+        null=True, blank=True
+    )
+
+    annual_electric_production_kwh = models.FloatField(
+        null=True, blank=True
+    )
+
+    annual_thermal_production_mmbtu = models.FloatField(
+        null=True, blank=True
+    )
+
+    thermal_consumption_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    electric_production_series_kw = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    electric_to_grid_series_kw = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    electric_to_storage_series_kw = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    electric_to_load_series_kw = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    thermal_to_storage_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    thermal_to_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
 
 class HotThermalStorageInputs(BaseModel, models.Model):
     key = "HotThermalStorage"
@@ -6106,6 +6550,28 @@ class GHPInputs(BaseModel, models.Model):
         help_text="Installed heating heat pump cost in $/ton (based on peak coincident cooling+heating thermal load)"
     )
 
+    installed_cost_wwhp_heating_pump_per_ton = models.FloatField(
+        default=700.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e5)
+        ],
+        blank=True,
+        null=True,
+        help_text="Installed WWHP heating heat pump cost in $/ton (based on peak heating thermal load)"
+    )
+
+    installed_cost_wwhp_cooling_pump_per_ton = models.FloatField(
+        default=700.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e5)
+        ],
+        blank=True,
+        null=True,
+        help_text="Installed WWHP cooling heat pump cost in $/ton (based on peak cooling thermal load)"
+    )
+
     heatpump_capacity_sizing_factor_on_peak_load = models.FloatField(
         default=1.1,
         validators=[
@@ -6152,6 +6618,7 @@ class GHPInputs(BaseModel, models.Model):
 
     # REQUIRED FOR GHP
     building_sqft = models.FloatField(
+        null=True,
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(MAX_BIG_NUMBER)
@@ -6177,6 +6644,81 @@ class GHPInputs(BaseModel, models.Model):
         blank=True,
         null=True,
         help_text="Cooling efficiency factor (annual average) to account for reduced cooling thermal load from GHP retrofit (e.g. reduced reheat)"
+    )
+
+    ghx_useful_life_years = models.IntegerField(
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(75)
+        ],
+        blank=True,
+        default=50,
+        help_text="Lifetime of geothermal heat exchanger being modeled in years. This is used to calculate residual value at end of REopt analysis period. If this value is less than Financial.analysis_years, its set to Financial.analysis_years."
+    )
+
+    # This field is calculated in REopt and should not be provided by a user.
+    ghx_only_capital_cost = models.IntegerField(
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        blank=True,
+        null=True,
+        help_text="Capital cost of geothermal heat exchanger which is calculated by REopt automatically. User does not need to provide this input."
+    )
+
+    # This field can only be set to "electric," user does not need to provide this information.
+    aux_heater_type = models.TextField(
+        blank=True,
+        null=True,
+        help_text="This field only accepts \"electric\" as the auxillary heater type. User does not need to provide this information."
+    )
+
+    # User does not need to provide this field.
+    is_ghx_hybrid = models.BooleanField(
+        blank=True,
+        null=True,
+        help_text="REopt derived indicator for hybrid Ghx"
+    )
+
+    aux_heater_installed_cost_per_mmbtu_per_hr = models.FloatField(
+        validators=[
+            MinValueValidator(1.0),
+            MaxValueValidator(1.0e6)
+        ],
+        blank=True,
+        default=26000.00,
+        help_text="Installed cost of auxiliary heater for hybrid ghx in $/MMBtu/hr based on peak thermal production."
+    )
+
+    aux_cooler_installed_cost_per_ton = models.FloatField(
+        validators=[
+            MinValueValidator(1.0),
+            MaxValueValidator(1.0e6)
+        ],
+        blank=True,
+        default=400.00,
+        help_text="Installed cost of auxiliary cooler (e.g. cooling tower) for hybrid ghx in $/ton based on peak thermal production"
+    )
+
+    aux_unit_capacity_sizing_factor_on_peak_load = models.FloatField(
+        validators=[
+            MinValueValidator(1.0),
+            MaxValueValidator(5.0)
+        ],
+        blank=True,
+        default=1.2,
+        help_text="Factor on peak heating and cooling load served by the auxiliary heater/cooler used for determining heater/cooler installed capacity"
+    )
+
+    avoided_capex_by_ghp_present_value = models.FloatField(
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        blank=True,
+        default=0.0,
+        help_text="Expected cost of HVAC upgrades avoided due to GHP tech over Financial.analysis_years"
     )
 
     ghpghx_inputs = ArrayField(
@@ -6347,7 +6889,7 @@ class GHPInputs(BaseModel, models.Model):
             self.ghpghx_response_uuids = None
 
 class GHPOutputs(BaseModel, models.Model):
-    key = "GHPOutputs"
+    key = "GHP"
 
     meta = models.OneToOneField(
         to=APIMeta,
@@ -6359,10 +6901,13 @@ class GHPOutputs(BaseModel, models.Model):
     ghp_option_chosen = models.IntegerField(null=True, blank=True)
     ghpghx_chosen_outputs = models.JSONField(null=True, editable=True)
     size_heat_pump_ton = models.FloatField(null=True, blank=True)  # This includes a factor on the peak coincident heating+cooling load
+    size_wwhp_heating_pump_ton = models.FloatField(null=True, blank=True)  # This includes a factor on the peak heating load
+    size_wwhp_cooling_pump_ton = models.FloatField(null=True, blank=True)  # This includes a factor on the peak cooling load
     space_heating_thermal_load_reduction_with_ghp_mmbtu_per_hour = ArrayField(
             models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
     cooling_thermal_load_reduction_with_ghp_ton = ArrayField(
             models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
+    ghx_residual_value_present_value = models.FloatField(null=True, blank=True)
 
 
 def get_input_dict_from_run_uuid(run_uuid:str):
@@ -6420,8 +6965,8 @@ def get_input_dict_from_run_uuid(run_uuid:str):
     try: d["ExistingChiller"] = filter_none_and_empty_array(meta.ExistingChillerInputs.dict)
     except: pass
 
-    # try: d["Boiler"] = filter_none_and_empty_array(meta.BoilerInputs.dict)
-    # except: pass
+    try: d["Boiler"] = filter_none_and_empty_array(meta.BoilerInputs.dict)
+    except: pass
 
     try: d["ExistingBoiler"] = filter_none_and_empty_array(meta.ExistingBoilerInputs.dict)
     except: pass
@@ -6439,7 +6984,10 @@ def get_input_dict_from_run_uuid(run_uuid:str):
     except: pass
     
     try: d["CHP"] = filter_none_and_empty_array(meta.CHPInputs.dict)
-    except: pass    
+    except: pass
+
+    try: d["SteamTurbine"] = filter_none_and_empty_array(meta.SteamTurbineInputs.dict)
+    except: pass
 
     try: d["AbsorptionChiller"] = filter_none_and_empty_array(meta.AbsorptionChillerInputs.dict)
     except: pass  

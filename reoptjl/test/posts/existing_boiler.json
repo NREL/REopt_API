@@ -6,6 +6,9 @@
     "ExistingBoiler": {
         "fuel_cost_per_mmbtu": 0.5
     },
+    "Boiler": {
+        "fuel_cost_per_mmbtu": 0.25
+    },
     "HotThermalStorage":{
         "max_gal":2500
     },

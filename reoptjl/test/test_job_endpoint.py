@@ -1,32 +1,4 @@
-# *********************************************************************************
-# REopt, Copyright (c) 2019-2020, Alliance for Sustainable Energy, LLC.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without modification,
-# are permitted provided that the following conditions are met:
-#
-# Redistributions of source code must retain the above copyright notice, this list
-# of conditions and the following disclaimer.
-#
-# Redistributions in binary form must reproduce the above copyright notice, this
-# list of conditions and the following disclaimer in the documentation and/or other
-# materials provided with the distribution.
-#
-# Neither the name of the copyright holder nor the names of its contributors may be
-# used to endorse or promote products derived from this software without specific
-# prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-# IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-# OF THE POSSIBILITY OF SUCH DAMAGE.
-# *********************************************************************************
+# REopt®, Copyright (c) Alliance for Sustainable Energy, LLC. See also https://github.com/NREL/REopt_API/blob/master/LICENSE.
 import numpy as np
 from cProfile import run
 import json
@@ -47,11 +19,11 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
 
         scenario_file = os.path.join('reoptjl', 'test', 'posts', 'outage.json')
         scenario = json.load(open(scenario_file, 'r'))
-        resp = self.api_client.post('/dev/job/', format='json', data=scenario)
+        resp = self.api_client.post('/v3/job/', format='json', data=scenario)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
-        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
         r = json.loads(resp.content)
         results = r["outputs"]
         self.assertEqual(np.array(results["Outages"]["unserved_load_series_kw"]).shape, (1,2,5))
@@ -59,8 +31,8 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         self.assertEqual(np.array(results["Outages"]["chp_fuel_used_per_outage_mmbtu"]).shape, (1,2))
         self.assertAlmostEqual(results["Outages"]["expected_outage_cost"], 0.0, places=-2)
         self.assertAlmostEqual(sum(sum(np.array(results["Outages"]["unserved_load_per_outage_kwh"]))), 0.0, places=0)
-        self.assertAlmostEqual(results["Outages"]["microgrid_upgrade_capital_cost"], 1927766, places=-2)
-        self.assertAlmostEqual(results["Financial"]["lcc"], 59658835, places=-3)
+        self.assertAlmostEqual(results["Outages"]["microgrid_upgrade_capital_cost"], 1971108, places=-2)
+        self.assertAlmostEqual(results["Financial"]["lcc"], 59865241, places=-3)
 
     def test_pv_battery_and_emissions_defaults_from_julia(self):
         """
@@ -70,12 +42,12 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         post_file = os.path.join('reoptjl', 'test', 'posts', 'pv_batt_emissions.json')
         post = json.load(open(post_file, 'r'))
 
-        resp = self.api_client.post('/dev/job/', format='json', data=post)
+        resp = self.api_client.post('/v3/job/', format='json', data=post)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
 
-        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
         r = json.loads(resp.content)
         results = r["outputs"]
 
@@ -103,12 +75,12 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         post_file = os.path.join('reoptjl', 'test', 'posts', 'off_grid_defaults.json')
         post = json.load(open(post_file, 'r'))
 
-        resp = self.api_client.post('/dev/job/', format='json', data=post)
+        resp = self.api_client.post('/v3/job/', format='json', data=post)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
 
-        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
         r = json.loads(resp.content)
         results = r["outputs"]
     
@@ -127,12 +99,12 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         post_file = os.path.join('reoptjl', 'test', 'posts', 'handle_reopt_error.json')
         post = json.load(open(post_file, 'r'))
 
-        resp = self.api_client.post('/dev/job/', format='json', data=post)
+        resp = self.api_client.post('/v3/job/', format='json', data=post)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
 
-        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
         r = json.loads(resp.content)
         assert('errors' in r["messages"].keys())
         assert('warnings' in r["messages"].keys())
@@ -144,81 +116,16 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         """
         Purpose of this test is to check that the expected thermal loads, techs, and storage are included in the results
         """
-        scenario = {
-            "Settings": {"run_bau": False},
-            "Site": {"longitude": -118.1164613, "latitude": 34.5794343},
-            "ElectricTariff": {"urdb_label": "5ed6c1a15457a3367add15ae"},
-            "PV": {"max_kw": 0.0},
-            "ElectricStorage":{"max_kw": 0.0, "max_kwh": 0.0},
-            "ElectricLoad": {
-                "blended_doe_reference_names": ["Hospital", "LargeOffice"],
-                "blended_doe_reference_percents": [0.75, 0.25],              
-                "annual_kwh": 876000.0
-            },
-            "CoolingLoad": {
-                "doe_reference_name": "Hospital",
-                "annual_tonhour": 5000.0
-            },
-            "SpaceHeatingLoad": {
-                "doe_reference_name": "Hospital",
-                "annual_mmbtu": 500.0
-            },
-            "ExistingBoiler": {
-                "efficiency": 0.72,
-                "production_type": "steam",
-                "fuel_cost_per_mmbtu": 10
-            },
-            "ExistingChiller": {
-                "cop": 3.4,
-                "max_thermal_factor_on_peak_load": 1.25
-            },
-            "CHP": {
-                "prime_mover": "recip_engine",
-                "fuel_cost_per_mmbtu": 10,
-                "min_kw": 100,
-                "max_kw": 100,
-                "electric_efficiency_full_load": 0.35,
-                "electric_efficiency_half_load": 0.35,
-                "min_turn_down_fraction": 0.1,
-                "thermal_efficiency_full_load": 0.45,
-                "thermal_efficiency_half_load": 0.45,
-                "cooling_thermal_factor": 0.8
-            },
-            "HotThermalStorage":{
-                "min_gal":2500,
-                "max_gal":2500
-            },
-            "ColdThermalStorage":{
-                "min_gal":2500,
-                "max_gal":2500
-            },
-            "AbsorptionChiller":{
-                "min_ton":10,
-                "max_ton":10
-            },
-            "GHP": {
-                "building_sqft": 50000.0,
-                "require_ghp_purchase": True,
-                "space_heating_efficiency_thermal_factor": 0.85,
-                "cooling_efficiency_thermal_factor": 0.6,
-                "ghpghx_inputs": [
-                    {
-                    "max_sizing_iterations": 1
-                    }
-                ]
-            }            
-        }
 
-        ghpghx_response_file = os.path.join('reoptjl', 'test', 'posts', 'ghpghx_response.json')
-        ghpghx_response = json.load(open(ghpghx_response_file, 'r'))
-        scenario["GHP"]["ghpghx_responses"] = [ghpghx_response]
+        post_file = os.path.join('reoptjl', 'test', 'posts', 'test_thermal_in_results.json') #includes GhpGhx responses
+        post = json.load(open(post_file, 'r'))
 
-        resp = self.api_client.post('/dev/job/', format='json', data=scenario)
+        resp = self.api_client.post('/v3/job/', format='json', data=post)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         
-        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
         r = json.loads(resp.content)
         inputs = r["inputs"]
         results = r["outputs"]
@@ -242,12 +149,12 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         # Default ExistingBoiler efficiency for production_type = steam is 0.75
         post["SpaceHeatingLoad"]["annual_mmbtu"] = 8760 * 8 / 0.75
         post["DomesticHotWaterLoad"]["annual_mmbtu"] = 8760 * 8 / 0.75
-        resp = self.api_client.post('/dev/job/', format='json', data=post)
+        resp = self.api_client.post('/v3/job/', format='json', data=post)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
 
-        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
         r = json.loads(resp.content)
 
         inputs_chp = r["inputs"]["CHP"]
@@ -259,7 +166,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
             }
 
         # Call to the django view endpoint /chp_defaults which calls the http.jl endpoint
-        resp = self.api_client.get(f'/dev/chp_defaults', data=inputs_chp_defaults)
+        resp = self.api_client.get(f'/v3/chp_defaults', data=inputs_chp_defaults)
         view_response = json.loads(resp.content)
 
         for key in view_response["default_inputs"].keys():
@@ -288,7 +195,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
                         "start_not_center_on_peaks": False
         }
         expected_time_steps = [50*24-1-47+1, 70*24+13-47+1, 170*24-47+1, 243*24-47+1]
-        resp = self.api_client.post(f'/dev/peak_load_outage_times', data=outage_inputs)
+        resp = self.api_client.post(f'/v3/peak_load_outage_times', data=outage_inputs)
         self.assertHttpOK(resp)
         resp = json.loads(resp.content)
         self.assertEquals(resp["outage_start_time_steps"], expected_time_steps)
@@ -296,7 +203,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         outage_inputs["seasonal_peaks"] = False
         outage_inputs["start_not_center_on_peaks"] = True
         expected_time_steps = [243*24+1]
-        resp = self.api_client.post(f'/dev/peak_load_outage_times', data=outage_inputs)
+        resp = self.api_client.post(f'/v3/peak_load_outage_times', data=outage_inputs)
         self.assertHttpOK(resp)
         resp = json.loads(resp.content)
         self.assertEquals(resp["outage_start_time_steps"], expected_time_steps)
@@ -305,18 +212,90 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         """
         Purpose of this test is to test the API's ability to accept all relevant 
         input fields and send to REopt, ensuring name input consistency with REopt.jl.
+        Note: Does not currently test CHP inputs
         """
         post_file = os.path.join('reoptjl', 'test', 'posts', 'all_inputs_test.json')
         post = json.load(open(post_file, 'r'))
 
-        resp = self.api_client.post('/dev/job/', format='json', data=post)
+        resp = self.api_client.post('/v3/job/', format='json', data=post)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
 
-        resp = self.api_client.get(f'/dev/job/{run_uuid}/results')
+        resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
         r = json.loads(resp.content)
         results = r["outputs"]
 
-        self.assertAlmostEqual(results["Financial"]["npv"], -11682.27, places=0)
+        self.assertAlmostEqual(results["Financial"]["npv"], 11323.01, places=0)
         assert(resp.status_code==200)   
+
+    def test_steamturbine_defaults_from_julia(self):
+        # Test that the inputs_with_defaults_set_in_julia feature worked for SteamTurbine, consistent with /chp_defaults
+        post_file = os.path.join('reoptjl', 'test', 'posts', 'steamturbine_defaults_post.json')
+        post = json.load(open(post_file, 'r'))
+
+        # Call http.jl /reopt to run SteamTurbine scenario and get results for defaults from julia checking
+        resp = self.api_client.post('/v3/job/', format='json', data=post)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+
+        resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
+        r = json.loads(resp.content)
+
+        inputs_steamturbine = r["inputs"]["SteamTurbine"]
+
+        avg_fuel_load = (post["SpaceHeatingLoad"]["annual_mmbtu"] + 
+                            post["DomesticHotWaterLoad"]["annual_mmbtu"]) / 8760.0
+        
+        inputs_steamturbine_defaults = {
+            "prime_mover": "steam_turbine",
+            "avg_boiler_fuel_load_mmbtu_per_hour": avg_fuel_load
+        }
+
+        # Call to the django view endpoint /chp_defaults which calls the http.jl endpoint
+        resp = self.api_client.get(f'/v3/chp_defaults', data=inputs_steamturbine_defaults)
+        view_response = json.loads(resp.content)
+
+        for key in view_response["default_inputs"].keys():
+            # skip this key because its NaN in REoptInputs but is populated in /chp_defaults response.
+            if key != "inlet_steam_temperature_degF":
+                if post["SteamTurbine"].get(key) is None: # Check that default got assigned consistent with /chp_defaults
+                    self.assertEquals(inputs_steamturbine[key], view_response["default_inputs"][key])
+                else:  # Make sure we didn't overwrite user-input
+                    self.assertEquals(inputs_steamturbine[key], post["SteamTurbine"][key])
+
+    def test_hybridghp(self):
+        post_file = os.path.join('reoptjl', 'test', 'posts', 'hybrid_ghp.json')
+        post = json.load(open(post_file, 'r'))
+
+        post['GHP']['ghpghx_inputs'][0]['hybrid_ghx_sizing_method'] = 'Automatic'
+        post['GHP']['avoided_capex_by_ghp_present_value'] = 1.0e6
+        post['GHP']['ghx_useful_life_years'] = 35
+
+        # Call http.jl /reopt to run SteamTurbine scenario and get results for defaults from julia checking
+        resp = self.api_client.post('/v3/job/', format='json', data=post)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+
+        resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
+        r = json.loads(resp.content)
+
+        # calculated_ghx_residual_value 117065.83
+        self.assertAlmostEqual(r["outputs"]["GHP"]["ghx_residual_value_present_value"], 117065.83, delta=500)
+
+    def test_centralghp(self):
+        post_file = os.path.join('reoptjl', 'test', 'posts', 'central_plant_ghp.json')
+        post = json.load(open(post_file, 'r'))
+
+        # Call http.jl /reopt to run the central plant GHP scenario and get results for defaults from julia checking
+        resp = self.api_client.post('/v3/job/', format='json', data=post)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+
+        resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
+        r = json.loads(resp.content)
+
+        self.assertAlmostEqual(r["outputs"]["Financial"]["lifecycle_capital_costs"], 1046066.8, delta=1000)

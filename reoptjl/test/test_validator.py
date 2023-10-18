@@ -1,32 +1,4 @@
-# *********************************************************************************
-# REopt, Copyright (c) 2019-2020, Alliance for Sustainable Energy, LLC.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without modification,
-# are permitted provided that the following conditions are met:
-#
-# Redistributions of source code must retain the above copyright notice, this list
-# of conditions and the following disclaimer.
-#
-# Redistributions in binary form must reproduce the above copyright notice, this
-# list of conditions and the following disclaimer in the documentation and/or other
-# materials provided with the distribution.
-#
-# Neither the name of the copyright holder nor the names of its contributors may be
-# used to endorse or promote products derived from this software without specific
-# prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-# IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-# OF THE POSSIBILITY OF SUCH DAMAGE.
-# *********************************************************************************
+# REopt®, Copyright (c) Alliance for Sustainable Energy, LLC. See also https://github.com/NREL/REopt_API/blob/master/LICENSE.
 import json
 import os
 import copy
@@ -130,12 +102,14 @@ class InputValidatorTests(TestCase):
 
         self.assertAlmostEqual(validator.models["Wind"].operating_reserve_required_fraction, 0.5)
         self.assertAlmostEqual(validator.models["PV"].operating_reserve_required_fraction, 0.25)
+        self.assertEqual(validator.models["Wind"].installed_cost_per_kw, 4760.0) # set based on size_class
 
         self.assertAlmostEqual(validator.models["ElectricLoad"].operating_reserve_required_fraction, 0.1)
         self.assertAlmostEqual(validator.models["ElectricLoad"].critical_load_fraction, 1.0)
         self.assertAlmostEqual(validator.models["ElectricLoad"].min_load_met_annual_fraction, 0.99999)
 
-        self.assertAlmostEqual(validator.models["Generator"].om_cost_per_kw, 20)
+        self.assertAlmostEqual(validator.models["Generator"].installed_cost_per_kw, 880)
+        self.assertAlmostEqual(validator.models["Generator"].om_cost_per_kw, 10)
         self.assertAlmostEqual(validator.models["Generator"].fuel_avail_gal, 1.0e9)
         self.assertAlmostEqual(validator.models["Generator"].min_turn_down_fraction, 0.15)
         self.assertAlmostEqual(validator.models["Generator"].replacement_year, 10)
@@ -144,7 +118,7 @@ class InputValidatorTests(TestCase):
         ## Test that some defaults can be overriden below
 
         post["ElectricLoad"]["operating_reserve_required_fraction"] = 0.2
-        post["ElectricLoad"]["critical_load_fraction"] = 0.95
+        post["ElectricLoad"]["critical_load_fraction"] = 0.95 # cant override
         post["ElectricLoad"]["min_load_met_annual_fraction"] = 0.95
         
         post["Generator"]["om_cost_per_kw"] = 21
@@ -178,7 +152,7 @@ class InputValidatorTests(TestCase):
         self.assertAlmostEqual(validator.models["Generator"].replacement_year, 7)
         self.assertAlmostEqual(validator.models["Generator"].replace_cost_per_kw, 200.0)
 
-    def existing_boiler_validation(self):
+    def existingboiler_boiler_validation(self):
 
         """
         Validate clean, cross-clean methods are working as expected
@@ -197,6 +171,9 @@ class InputValidatorTests(TestCase):
         self.assertAlmostEqual(validator.models["ExistingBoiler"].emissions_factor_lb_CO2_per_mmbtu, 117, places=-1)
         self.assertAlmostEqual(len(validator.models["ExistingBoiler"].fuel_cost_per_mmbtu), 8760)
         self.assertAlmostEqual(sum(validator.models["ExistingBoiler"].fuel_cost_per_mmbtu), 8760*0.5)
+
+        self.assertAlmostEqual(len(validator.models["Boiler"].fuel_cost_per_mmbtu), 8760)
+        self.assertAlmostEqual(sum(validator.models["Boiler"].fuel_cost_per_mmbtu), 8760*0.25)
         
         # Ensure Hot Thermal Storage System parameter is loaded from json
         self.assertAlmostEqual(validator.models["HotThermalStorage"].max_gal, 2500.0)
@@ -204,6 +181,7 @@ class InputValidatorTests(TestCase):
         # Validate 12 month fuel cost vector gets scaled correctly
 
         post["ExistingBoiler"]["fuel_cost_per_mmbtu"] = [1,2,1,1,1,1,1,1,1,1,1,1]
+        post["Boiler"]["fuel_cost_per_mmbtu"] = [0.5,1,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5]
 
         post["APIMeta"]["run_uuid"] = uuid.uuid4()
 
@@ -215,7 +193,8 @@ class InputValidatorTests(TestCase):
 
         self.assertAlmostEqual(len(validator.models["ExistingBoiler"].fuel_cost_per_mmbtu), 8760)
         self.assertEqual(sum(validator.models["ExistingBoiler"].fuel_cost_per_mmbtu), 9432.0)
-        # With old code, the total for last assertion would have been 9490 (i.e. 8760+730)
+        self.assertAlmostEqual(len(validator.models["Boiler"].fuel_cost_per_mmbtu), 8760)
+        self.assertEqual(sum(validator.models["Boiler"].fuel_cost_per_mmbtu), 9432.0*0.5)
 
     def test_missing_required_keys(self):
         #start with on_grid, and keep all keys
@@ -343,9 +322,26 @@ class InputValidatorTests(TestCase):
         validator.clean_fields()
         validator.clean()
         validator.cross_clean()
-        self.assertAlmostEquals(validator.models["PV"].tilt, post["Site"]["latitude"], places=-3)
+        self.assertAlmostEquals(validator.models["PV"].tilt, 20)
 
 
+    def boiler_validation(self):
+        """
+        Validate clean, cross-clean methods are working as expected
+        """
+        post_file = os.path.join('job', 'test', 'posts', 'boiler_test.json')
+        post = json.load(open(post_file, 'r'))
 
+        post["APIMeta"]["run_uuid"] = uuid.uuid4()
 
+        validator = InputValidator(post)
+        validator.clean_fields()
+        validator.clean()
+        validator.cross_clean()
+        self.assertEquals(validator.is_valid, True)
+
+        # Update with Boiler test fields
+        # self.assertAlmostEqual(validator.models["ExistingBoiler"].emissions_factor_lb_CO2_per_mmbtu, 117, places=-1)
+        # self.assertAlmostEqual(len(validator.models["ExistingBoiler"].fuel_cost_per_mmbtu), 8760)
+        # self.assertAlmostEqual(sum(validator.models["ExistingBoiler"].fuel_cost_per_mmbtu), 8760*0.5)
 

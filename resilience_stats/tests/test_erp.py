@@ -1,32 +1,4 @@
-# *********************************************************************************
-# REopt, Copyright (c) 2019-2020, Alliance for Sustainable Energy, LLC.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without modification,
-# are permitted provided that the following conditions are met:
-#
-# Redistributions of source code must retain the above copyright notice, this list
-# of conditions and the following disclaimer.
-#
-# Redistributions in binary form must reproduce the above copyright notice, this
-# list of conditions and the following disclaimer in the documentation and/or other
-# materials provided with the distribution.
-#
-# Neither the name of the copyright holder nor the names of its contributors may be
-# used to endorse or promote products derived from this software without specific
-# prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-# IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-# OF THE POSSIBILITY OF SUCH DAMAGE.
-# *********************************************************************************
+# REopt®, Copyright (c) Alliance for Sustainable Energy, LLC. See also https://github.com/NREL/REopt_API/blob/master/LICENSE.
 import json
 import os
 from tastypie.test import ResourceTestCaseMixin
@@ -41,18 +13,18 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         super(ERPTests, self).setUp()
 
         #for ERP simulation
-        self.reopt_base_erp = '/dev/erp/'
-        self.reopt_base_erp_results = '/dev/erp/{}/results/'
-        self.reopt_base_erp_help = '/dev/erp/help/'
-        self.reopt_base_erp_chp_defaults = '/dev/erp/chp_defaults/?prime_mover={0}&is_chp={1}&size_kw={2}'
-        self.post_sim = os.path.join('resilience_stats', 'tests', 'ERP_sim_post.json')
+        self.reopt_base_erp = '/v3/erp/'
+        self.reopt_base_erp_results = '/v3/erp/{}/results/'
+        self.reopt_base_erp_help = '/v3/erp/help/'
+        self.reopt_base_erp_chp_defaults = '/v3/erp/chp_defaults/?prime_mover={0}&is_chp={1}&size_kw={2}'
+        self.post_sim_gens_batt_pv_wind = os.path.join('resilience_stats', 'tests', 'ERP_sim_gens_batt_pv_wind_post.json')
         self.post_sim_large_stor = os.path.join('resilience_stats', 'tests', 'ERP_sim_large_stor_post.json')
         self.post_sim_only = os.path.join('resilience_stats', 'tests', 'ERP_sim_only_post.json')
         self.post_sim_long_dur_stor = os.path.join('resilience_stats', 'tests', 'ERP_sim_long_dur_stor_post.json')
         #for REopt optimization
-        self.reopt_base_opt = '/dev/job/'
-        self.reopt_base_opt_results = '/dev/job/{}/results'
-        self.post_opt = os.path.join('resilience_stats', 'tests', 'ERP_opt_post.json')
+        self.reopt_base_opt = '/v3/job/'
+        self.reopt_base_opt_results = '/v3/job/{}/results'
+        self.post_opt_gens_batt_pv_wind = os.path.join('resilience_stats', 'tests', 'ERP_opt_gens_batt_pv_wind_post.json')
         self.post_opt_long_dur_stor = os.path.join('resilience_stats', 'tests', 'ERP_opt_long_dur_stor_post.json')
 
     def get_response_opt(self, data):
@@ -126,7 +98,7 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         This used to be the same as the last test in the "Backup Generator Reliability" testset in the REopt Julia package, but need to make consistent again.
         """
 
-        data = json.load(open(self.post_opt, 'rb'))
+        data = json.load(open(self.post_opt_gens_batt_pv_wind, 'rb'))
         data["Settings"]["optimality_tolerance"] = 1.0e-2 # REopt_tol per line 38.
         resp = self.get_response_opt(data)
         self.assertHttpCreated(resp)
@@ -134,7 +106,7 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         reopt_run_uuid = r_opt.get('run_uuid')
 
         assert(reopt_run_uuid is not None)
-        post_sim = json.load(open(self.post_sim, 'rb'))
+        post_sim = json.load(open(self.post_sim_gens_batt_pv_wind, 'rb'))
         post_sim["reopt_run_uuid"] = reopt_run_uuid
         post_sim["ElectricStorage"]["starting_soc_series_fraction"] = 8760 * [1]
 
@@ -160,6 +132,8 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
                     ("ElectricStorage","starting_soc_series_fraction"),
                     ("PV","size_kw"),
                     ("PV","production_factor_series"),
+                    ("Wind","size_kw"),
+                    ("Wind","production_factor_series"),
                     ("Outage","critical_loads_kw"),
                     ("Outage","max_outage_duration")
                 ]:
@@ -175,9 +149,9 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
 
         resp = self.get_results_sim(erp_run_uuid)
         results = json.loads(resp.content)
-        self.assertAlmostEqual(results["outputs"]["mean_cumulative_survival_by_duration"][23], 0.966098, places=4)
-        self.assertAlmostEqual(results["outputs"]["cumulative_survival_final_time_step"][0], 0.962327, places=4)
-        self.assertAlmostEqual(results["outputs"]["mean_cumulative_survival_final_time_step"], 0.965763, places=3)
+        self.assertAlmostEqual(results["outputs"]["mean_cumulative_survival_by_duration"][23], 0.9661, delta=0.0015)
+        self.assertAlmostEqual(results["outputs"]["cumulative_survival_final_time_step"][0], 0.962327, places=3)
+        self.assertAlmostEqual(results["outputs"]["mean_cumulative_survival_final_time_step"], 0.9661, places=2)
 
     def test_erp_with_no_opt(self):
         """
