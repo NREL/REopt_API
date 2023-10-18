@@ -98,8 +98,8 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         # Test heating load because REopt.jl separates SpaceHeating and DHW, so had to aggregate for this endpoint
         inputs = {"load_type": "heating",
                 "doe_reference_name": "Hospital",
-                "latitude": 37.78,
-                "longitude": -122.45
+                "latitude": 36.12,
+                "longitude": -115.5
         }
 
         # The /v3/simulated_load endpoint calls the http.jl /simulated_load endpoint
