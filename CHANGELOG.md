@@ -29,7 +29,7 @@ Classify the change according to the following categories:
 ## Develop 2023-10-11
 ### Minor Updates
 ##### Changed
-- Updates to CHP cost and performance defaults, from updating REopt.jl
+- Updates to CHP cost and performance defaults, including prime generator, from updating REopt.jl
 - Changed upper limit on `CHPInputs.size_class` to 7 to reflect changes in CHP defaults.
 
 ## v3.1.1
