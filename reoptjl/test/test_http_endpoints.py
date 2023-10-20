@@ -35,6 +35,38 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         self.assertEqual(http_response["prime_mover"], "combustion_turbine")
         self.assertEqual(http_response["size_class"], 2)
         self.assertGreater(http_response["chp_elec_size_heuristic_kw"], 3500.0)
+        self.assertEqual(http_response["default_inputs"]["federal_itc_fraction"], 0.3)
+
+        inputs = {
+            "prime_mover": "micro_turbine",
+            "avg_electric_load_kw": 885.0247784246575,
+            "max_electric_load_kw": 1427.334,
+            "is_electric_only": "true"
+        }
+
+        # Direct call of the http.jl endpoint /chp_defaults
+        julia_host = os.environ.get('JULIA_HOST', "julia")
+        response = requests.get("http://" + julia_host + ":8081/chp_defaults/", json=inputs)
+        http_response = response.json()
+
+        # Check the endpoint logic with the expected selection
+        self.assertEqual(http_response["default_inputs"]["federal_itc_fraction"], 0.3)
+
+        inputs = {
+            "prime_mover": "combustion_turbine",
+            "size_class": 4,
+            "is_electric_only": "true",
+            "avg_electric_load_kw": 885.0247784246575,
+            "max_electric_load_kw": 1427.334
+            }
+
+        # Direct call of the http.jl endpoint /chp_defaults
+        julia_host = os.environ.get('JULIA_HOST', "julia")
+        response = requests.get("http://" + julia_host + ":8081/chp_defaults/", json=inputs)
+        http_response = response.json()
+
+        # Check the endpoint logic with the expected selection
+        self.assertEqual(http_response["default_inputs"]["federal_itc_fraction"], 0.0)
     
     def test_steamturbine_defaults(self):
 
