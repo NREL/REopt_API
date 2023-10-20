@@ -220,7 +220,8 @@ function chp_defaults(req::HTTP.Request)
                 "avg_electric_load_kw",
                 "max_electric_load_kw"]
     int_vals = ["size_class"]
-    all_vals = vcat(string_vals, float_vals, int_vals)
+    bool_vals = ["is_electric_only"]
+    all_vals = vcat(string_vals, float_vals, int_vals, bool_vals)
     # Process .json inputs and convert to correct type if needed
     for k in all_vals
         if !haskey(d, k)
@@ -228,8 +229,10 @@ function chp_defaults(req::HTTP.Request)
         elseif !isnothing(d[k])
             if k in float_vals && typeof(d[k]) == String
                 d[k] = parse(Float64, d[k])
-            elseif k == int_vals && typeof(d[k]) == String
+            elseif k in int_vals && typeof(d[k]) == String
                 d[k] = parse(Int64, d[k])
+            elseif k in bool_vals && typeof(d[k]) == String
+                d[k] = parse(Bool, d[k])
             end
         end
     end
