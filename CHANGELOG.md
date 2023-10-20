@@ -26,7 +26,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop 2023-10-11
+## Develop 2023-10-20
 ### Minor Updates
 ##### Changed
 - Updates to CHP cost and performance defaults, including prime generator, from updating REopt.jl
