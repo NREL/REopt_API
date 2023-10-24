@@ -67,6 +67,21 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
 
         # Check the endpoint logic with the expected selection
         self.assertEqual(http_response["default_inputs"]["federal_itc_fraction"], 0.0)
+
+        inputs = {
+            "prime_mover": "recip_engine",
+            "size_class": 4,
+            "is_electric_only": "true",
+            "avg_electric_load_kw": 885.0247784246575,
+            "max_electric_load_kw": 1427.334
+            }
+
+        # Call to the django view endpoint /chp_defaults which calls the http.jl endpoint
+        resp = self.api_client.get(f'/v3/chp_defaults', data=inputs)
+        view_response = json.loads(resp.content)
+
+        # Check the endpoint logic with the expected selection
+        self.assertEqual(http_response["default_inputs"]["federal_itc_fraction"], 0.0)
     
     def test_steamturbine_defaults(self):
 
