@@ -367,6 +367,9 @@ function simulated_load(req::HTTP.Request)
     for key in vector_types
         if key in keys(d) && typeof(d[key]) <: Vector{}
             d[key] = convert(Vector{Real}, d[key])
+        elseif key == "addressable_load_fraction"
+            # Scalar version of input, convert Any to Real
+            d[key] = convert(Real, d[key])
         end
     end 
 
