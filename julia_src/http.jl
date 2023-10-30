@@ -220,7 +220,8 @@ function chp_defaults(req::HTTP.Request)
                 "avg_electric_load_kw",
                 "max_electric_load_kw"]
     int_vals = ["size_class"]
-    all_vals = vcat(string_vals, float_vals, int_vals)
+    bool_vals = ["is_electric_only"]
+    all_vals = vcat(string_vals, float_vals, int_vals, bool_vals)
     # Process .json inputs and convert to correct type if needed
     for k in all_vals
         if !haskey(d, k)
@@ -228,8 +229,10 @@ function chp_defaults(req::HTTP.Request)
         elseif !isnothing(d[k])
             if k in float_vals && typeof(d[k]) == String
                 d[k] = parse(Float64, d[k])
-            elseif k == int_vals && typeof(d[k]) == String
+            elseif k in int_vals && typeof(d[k]) == String
                 d[k] = parse(Int64, d[k])
+            elseif k in bool_vals && typeof(d[k]) == String
+                d[k] = parse(Bool, d[k])
             end
         end
     end
@@ -359,11 +362,14 @@ function simulated_load(req::HTTP.Request)
     end
 
     # Convert vectors which come in as Vector{Any} to Vector{Float} (within Vector{<:Real})
-    vector_types = ["percent_share", "cooling_pct_share", "monthly_kwh", "monthly_mmbtu", 
+    vector_types = ["percent_share", "cooling_pct_share", "monthly_totals_kwh", "monthly_mmbtu", 
                     "monthly_tonhour", "addressable_load_fraction"]
     for key in vector_types
         if key in keys(d) && typeof(d[key]) <: Vector{}
-            d[key] = convert(Vector{Float64}, d[key])
+            d[key] = convert(Vector{Real}, d[key])
+        elseif key in keys(d) && key == "addressable_load_fraction"
+            # Scalar version of input, convert Any to Real
+            d[key] = convert(Real, d[key])
         end
     end 
 
