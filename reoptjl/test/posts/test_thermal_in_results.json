@@ -37,7 +37,7 @@
     },
     "ExistingBoiler": {
         "efficiency": 0.72,
-        "production_type": "steam",
+        "production_type": "hot_water",
         "fuel_cost_per_mmbtu": 10
     },
     "ExistingChiller": {

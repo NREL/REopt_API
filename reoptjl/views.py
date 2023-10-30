@@ -375,6 +375,7 @@ def chp_defaults(request):
         "boiler_efficiency": request.GET.get("boiler_efficiency"),
         "avg_electric_load_kw": request.GET.get("avg_electric_load_kw"),
         "max_electric_load_kw": request.GET.get("max_electric_load_kw"),
+        "is_electric_only": request.GET.get("is_electric_only")
     }
     if (request.GET.get("size_class")):
         inputs["size_class"] = int(request.GET.get("size_class"))
@@ -434,7 +435,7 @@ def simulated_load(request):
         valid_keys = ["doe_reference_name","latitude","longitude","load_type","percent_share","annual_kwh",
                         "monthly_totals_kwh","annual_mmbtu","annual_fraction","annual_tonhour","monthly_tonhour",
                         "monthly_mmbtu","monthly_fraction","max_thermal_factor_on_peak_load","chiller_cop",
-                        "addressable_load_fraction", "cooling_doe_ref_name", "cooling_pct_share"]
+                        "addressable_load_fraction", "cooling_doe_ref_name", "cooling_pct_share", "boiler_efficiency"]
         for key in request.GET.keys():
             k = key
             if "[" in key:

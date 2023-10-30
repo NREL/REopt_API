@@ -33,18 +33,55 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
 
         # Check the endpoint logic with the expected selection
         self.assertEqual(http_response["prime_mover"], "combustion_turbine")
-        self.assertEqual(http_response["size_class"], 3)
+        self.assertEqual(http_response["size_class"], 2)
         self.assertGreater(http_response["chp_elec_size_heuristic_kw"], 3500.0)
+        self.assertEqual(http_response["default_inputs"]["federal_itc_fraction"], 0.3)
 
-        # Check that size_class logic is the same
-        # Modify input names for v2
-        inputs_v2 = {
-            "existing_boiler_production_type_steam_or_hw": inputs["hot_water_or_steam"],
-            "avg_boiler_fuel_load_mmbtu_per_hr": inputs["avg_boiler_fuel_load_mmbtu_per_hour"]
+        inputs = {
+            "prime_mover": "micro_turbine",
+            "avg_electric_load_kw": 885.0247784246575,
+            "max_electric_load_kw": 1427.334,
+            "is_electric_only": "true"
         }
-        resp = self.api_client.get(f'/v2/chp_defaults', data=inputs_v2)
-        v2_response = json.loads(resp.content)
-        self.assertEqual(http_response["size_class"], v2_response["size_class"])
+
+        # Direct call of the http.jl endpoint /chp_defaults
+        julia_host = os.environ.get('JULIA_HOST', "julia")
+        response = requests.get("http://" + julia_host + ":8081/chp_defaults/", json=inputs)
+        http_response = response.json()
+
+        # Check the endpoint logic with the expected selection
+        self.assertEqual(http_response["default_inputs"]["federal_itc_fraction"], 0.3)
+
+        inputs = {
+            "prime_mover": "combustion_turbine",
+            "size_class": 4,
+            "is_electric_only": "true",
+            "avg_electric_load_kw": 885.0247784246575,
+            "max_electric_load_kw": 1427.334
+            }
+
+        # Direct call of the http.jl endpoint /chp_defaults
+        julia_host = os.environ.get('JULIA_HOST', "julia")
+        response = requests.get("http://" + julia_host + ":8081/chp_defaults/", json=inputs)
+        http_response = response.json()
+
+        # Check the endpoint logic with the expected selection
+        self.assertEqual(http_response["default_inputs"]["federal_itc_fraction"], 0.0)
+
+        inputs = {
+            "prime_mover": "recip_engine",
+            "size_class": 4,
+            "is_electric_only": "true",
+            "avg_electric_load_kw": 885.0247784246575,
+            "max_electric_load_kw": 1427.334
+            }
+
+        # Call to the django view endpoint /chp_defaults which calls the http.jl endpoint
+        resp = self.api_client.get(f'/v3/chp_defaults', data=inputs)
+        view_response = json.loads(resp.content)
+
+        # Check the endpoint logic with the expected selection
+        self.assertEqual(http_response["default_inputs"]["federal_itc_fraction"], 0.0)
     
     def test_steamturbine_defaults(self):
 
@@ -108,8 +145,8 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         # Test heating load because REopt.jl separates SpaceHeating and DHW, so had to aggregate for this endpoint
         inputs = {"load_type": "heating",
                 "doe_reference_name": "Hospital",
-                "latitude": 37.78,
-                "longitude": -122.45
+                "latitude": 36.12,
+                "longitude": -115.5
         }
 
         # The /v3/simulated_load endpoint calls the http.jl /simulated_load endpoint
@@ -222,7 +259,6 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         # Call to the django view endpoint /get_existing_chiller_default_cop which calls the http.jl endpoint
         resp = self.api_client.get(f'/v3/get_existing_chiller_default_cop', data=inputs_dict)
         view_response = json.loads(resp.content)
-        print(view_response)
 
         self.assertEqual(view_response["existing_chiller_cop"], 4.4)
 
@@ -232,7 +268,6 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         # Call to the django view endpoint /get_existing_chiller_default_cop which calls the http.jl endpoint
         resp = self.api_client.get(f'/v3/get_existing_chiller_default_cop', data=inputs_dict)
         view_response = json.loads(resp.content)
-        print(view_response)
 
         self.assertEqual(view_response["existing_chiller_cop"], 4.545)
 
@@ -246,7 +281,6 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         # Call to the django view endpoint /get_existing_chiller_default_cop which calls the http.jl endpoint
         resp = self.api_client.get(f'/v3/get_existing_chiller_default_cop', data=inputs_dict)
         view_response = json.loads(resp.content)
-        print(view_response)
 
         self.assertEqual(view_response["existing_chiller_cop"], 4.69)
 
@@ -259,7 +293,6 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         # Call to the django view endpoint /get_existing_chiller_default_cop which calls the http.jl endpoint
         resp = self.api_client.get(f'/v3/get_existing_chiller_default_cop', data=inputs_dict)
         view_response = json.loads(resp.content)
-        print(view_response)
 
         self.assertEqual(view_response["existing_chiller_cop"], 4.69)
 
@@ -271,7 +304,6 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         # Call to the django view endpoint /get_existing_chiller_default_cop which calls the http.jl endpoint
         resp = self.api_client.get(f'/v3/get_existing_chiller_default_cop', data=inputs_dict)
         view_response = json.loads(resp.content)
-        print(view_response)
 
         self.assertEqual(view_response["existing_chiller_cop"], 4.4)
 
