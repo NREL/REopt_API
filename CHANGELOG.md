@@ -26,7 +26,14 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop 2023-10-20
+## v3.2.1
+### Minor Updates
+##### Fixed
+- CHP-only for multiple/stochastic outages
+- Allow negative fuel_burn and thermal_prod intercepts for CPH
+- Correct after_tax CHP results
+
+## v3.2.0
 ### Minor Updates
 ##### Changed
 - Updates to CHP cost and performance defaults, including prime generator, from updating REopt.jl
