@@ -26,11 +26,17 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+
+## v3.2.2
+### Minor Updates
+##### Changed
+- Do NOT enforce `min_turn_down_fraction` for CHP during multiple/stochastic outages
+
 ## v3.2.1
 ### Minor Updates
 ##### Fixed
 - CHP-only for multiple/stochastic outages
-- Allow negative fuel_burn and thermal_prod intercepts for CPH
+- Allow negative fuel_burn and thermal_prod intercepts for CHP
 - Correct after_tax CHP results
 
 ## v3.2.0
