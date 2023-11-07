@@ -729,9 +729,11 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [[deps.REopt]]
 deps = ["ArchGDAL", "CSV", "CoolProp", "DataFrames", "Dates", "DelimitedFiles", "HTTP", "JLD", "JSON", "JuMP", "LinDistFlow", "LinearAlgebra", "Logging", "MathOptInterface", "Requires", "Roots", "Statistics", "TestEnv"]
-git-tree-sha1 = "09bf72fce9a954f219e3ac3129ab83221fb21ff1"
+git-tree-sha1 = "a77b7a53b3b9f795228699c23bc76ec1d681f8a7"
+repo-rev = "chp-unavail-outages"
+repo-url = "https://github.com/NREL/REopt.jl.git"
 uuid = "d36ad4e8-d74a-4f7a-ace1-eaea049febf6"
-version = "0.37.2"
+version = "0.37.1"
 
 [[deps.Random]]
 deps = ["SHA", "Serialization"]
