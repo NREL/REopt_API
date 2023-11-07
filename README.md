@@ -24,8 +24,7 @@ The REopt Julia package will soon become the backend of the REopt API. That mean
 - You do not want to modify the code or host the API on your own server. 
 - You do not want to install or use your own optimization solver (simply POSTing to the REopt API does not require a solver, whereas using the Julia package does).
 - You want to be able to access or share results saved in a database using a runuuid.
-- You want to be able to view your API results in the REopt web tool using a runuuid. (we can do this?)
-- **How do I use the REopt API?:** you can access our production version of the API via the [NREL Developer Network](https://developer.nrel.gov/docs/energy-optimization/reopt/). You can view examples of using the API in the [REopt-API-Analysis Repo](https://github.com/NREL/REopt-API-Analysis/wiki).
+- **How do I use the REopt API?:** you can access our production version of the API via the [NREL Developer Network](https://developer.nrel.gov/docs/energy-optimization/reopt/). You can view examples of using the API in the [REopt-Analysis-Scripts Repo](https://github.com/NREL/REopt-Analysis-Scripts/wiki).
 
 **4. When and how to _modify_ the REopt_API:**
 - You have made changes to the REopt Julia package that include modified inputs or outputs, and want to reflect those in the REopt API.
