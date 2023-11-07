@@ -27,6 +27,11 @@ Classify the change according to the following categories:
     ### Patches
 
 
+## v3.2.3
+### Minor Updates
+##### Changed
+- Ignore `CHP` unavailability during stochastic, multiple outages; this is consistent with deterministic single outage
+
 ## v3.2.2
 ### Minor Updates
 ##### Changed
