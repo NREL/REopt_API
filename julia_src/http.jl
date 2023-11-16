@@ -43,6 +43,7 @@ function reopt(req::HTTP.Request)
         ENV["NREL_DEVELOPER_API_KEY"] = pop!(d, "api_key")
     else
         ENV["NREL_DEVELOPER_API_KEY"] = test_nrel_developer_api_key
+        delete!(d, "api_key")
     end
 	timeout_seconds = -pop!(settings, "timeout_seconds")
 	optimality_tolerance = pop!(settings, "optimality_tolerance")
