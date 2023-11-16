@@ -1,5 +1,6 @@
 [deps]
 AxisArrays = "39de3d68-74b9-583c-8d2d-e117c070f3a9"
+DotEnv = "4dc1fcf4-5e3b-5448-94ab-0c38ec0385c1"
 GhpGhx = "7ce85f02-24a8-4d69-a3f0-14b5daa7d30c"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"

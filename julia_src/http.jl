@@ -3,6 +3,10 @@ import Xpress
 include("REopt.jl")
 import REopt as reoptjl
 using GhpGhx
+using DotEnv
+DotEnv.config()
+
+const test_nrel_developer_api_key = ENV["NREL_DEVELOPER_API_KEY"]
 
 function job(req::HTTP.Request)
     d = JSON.parse(String(req.body))
@@ -35,6 +39,11 @@ end
 function reopt(req::HTTP.Request)
     d = JSON.parse(String(req.body))
 	settings = d["Settings"]
+    if !isempty(get(d, "api_key", ""))
+        ENV["NREL_DEVELOPER_API_KEY"] = pop!(d, "api_key")
+    else
+        ENV["NREL_DEVELOPER_API_KEY"] = test_nrel_developer_api_key
+    end
 	timeout_seconds = -pop!(settings, "timeout_seconds")
 	optimality_tolerance = pop!(settings, "optimality_tolerance")
 	run_bau = pop!(settings, "run_bau")
