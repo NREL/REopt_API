@@ -26,6 +26,8 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop - 2023-11-16
+- Update REopt.jl version to v0.37.5
 
 ## v3.2.3
 ### Minor Updates
