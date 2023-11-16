@@ -72,7 +72,7 @@ class Job(ModelResource):
 
     def obj_create(self, bundle, **kwargs):
         run_uuid = str(uuid.uuid4())
-
+        api_key = bundle.request.GET.get("api_key", "")
         if 'user_uuid' in bundle.data.keys():
 
             if type(bundle.data['user_uuid']) == str:
@@ -106,6 +106,9 @@ class Job(ModelResource):
         
         if webtool_uuid is not None:
             bundle.data['APIMeta']['webtool_uuid'] = webtool_uuid
+        
+        if api_key != "":
+            bundle.data['APIMeta']['api_key'] = api_key
 
         log.addFilter(UUIDFilter(run_uuid))
 
