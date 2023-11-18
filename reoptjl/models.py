@@ -172,6 +172,11 @@ class APIMeta(BaseModel, models.Model):
         default="",
         help_text="Version number of the Julia package for REopt that is used to solve the problem."
     )
+    api_key = models.TextField(
+        blank=True,
+        default="",
+        help_text="NREL Developer API key of the user"
+    )
 
 class UserUnlinkedRuns(models.Model):
     run_uuid = models.UUIDField(unique=True)
@@ -6867,6 +6872,7 @@ def get_input_dict_from_run_uuid(run_uuid:str):
 
     d = dict()
     d["user_uuid"] = meta.user_uuid
+    d["api_key"] = meta.api_key
     d["Settings"] = filter_none_and_empty_array(meta.Settings.dict)
     d["Financial"] = filter_none_and_empty_array(meta.FinancialInputs.dict)
     d["Site"] = filter_none_and_empty_array(meta.SiteInputs.dict)
