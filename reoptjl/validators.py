@@ -229,39 +229,39 @@ class InputValidator(object):
             else:
                 pvmodel.__setattr__("operating_reserve_required_fraction", 0.0) # override any user provided values
 
-        def update_pv_defaults_offgrid(self):
-            if self.models["PV"].__getattribute__("can_net_meter") == None:
+        def update_pv_defaults_offgrid(self, pvmodel):
+            if pvmodel.__getattribute__("can_net_meter") == None:
                 if self.models["Settings"].off_grid_flag==False:
-                    self.models["PV"].can_net_meter = True
+                    pvmodel.__setattr__("can_net_meter", True)
                 else:
-                    self.models["PV"].can_net_meter = False
+                    pvmodel.__setattr__("can_net_meter", False)
             
-            if self.models["PV"].__getattribute__("can_wholesale") == None:
+            if pvmodel.__getattribute__("can_wholesale") == None:
                 if self.models["Settings"].off_grid_flag==False:
-                    self.models["PV"].can_wholesale = True
+                    pvmodel.__setattr__("can_wholesale", True)
                 else:
-                    self.models["PV"].can_wholesale = False
+                    pvmodel.__setattr__("can_wholesale", False)
             
-            if self.models["PV"].__getattribute__("can_export_beyond_nem_limit") == None:
+            if pvmodel.__getattribute__("can_export_beyond_nem_limit") == None:
                 if self.models["Settings"].off_grid_flag==False:
-                    self.models["PV"].can_export_beyond_nem_limit = True
+                    pvmodel.__setattr__("can_export_beyond_nem_limit", True)
                 else:
-                    self.models["PV"].can_export_beyond_nem_limit = False
+                    pvmodel.__setattr__("can_export_beyond_nem_limit", False)
 
-            if self.models["PV"].__getattribute__("operating_reserve_required_fraction") == None:
+            if pvmodel.__getattribute__("operating_reserve_required_fraction") == None:
                 if self.models["Settings"].off_grid_flag==False:
-                    self.models["PV"].operating_reserve_required_fraction = 0.0
+                    pvmodel.__setattr__("operating_reserve_required_fraction", 0.0)
                 else:
-                    self.models["PV"].operating_reserve_required_fraction = 0.25
+                    pvmodel.__setattr__("operating_reserve_required_fraction", 0.25)
 
         if "PV" in self.models.keys():  # single PV
             cross_clean_pv(self.models["PV"])
-            update_pv_defaults_offgrid(self)
+            update_pv_defaults_offgrid(self, self.models["PV"])
 
         if len(self.pvnames) > 0:  # multiple PV
             for pvname in self.pvnames:
                 cross_clean_pv(self.models[pvname])
-                update_pv_defaults_offgrid(self)
+                update_pv_defaults_offgrid(self, self.models[pvname])
 
         """
         Time series values are up or down sampled to align with Settings.time_steps_per_hour
