@@ -611,64 +611,6 @@ def get_existing_chiller_default_cop(request):
         return JsonResponse({"Error": "Unexpected error in get_existing_chiller_default_cop endpoint. Check log for more."}, status=500)
 
 
-def portfolio_ids_for_user_uuid(request, user_uuid):
-
-    # Validate that user UUID is valid.
-    try:
-        uuid.UUID(user_uuid)  # raises ValueError if not valid uuid
-
-    except ValueError as e:
-        if e.args[0] == "badly formed hexadecimal UUID string":
-            return JsonResponse({"Error": str(e.message)}, status=404)
-        else:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', user_uuid=user_uuid)
-            err.save_to_db()
-            return JsonResponse({"Error": str(err.message)}, status=404)
-    
-    try:
-        # Dictionary to store all results. Primary key = portfolio_uuid and secondary key = array of run_uuids tied to each portfolio uuid
-        summary_dict = dict()
-
-        # Create Querysets: Select all objects associate with a user_uuid, portfolio_uuid="", Order by `created` column
-        portfolio_ids = APIMeta.objects.filter(
-            user_uuid=user_uuid
-        ).exclude(
-            portfolio_uuid=""
-        ).only(
-            'portfolio_uuid',
-            'created'
-        ).order_by("-created")
-
-        if len(portfolio_ids) > 0:
-            # Loop over all the APIMetas associated with a user_uuid, do something if needed
-            for p in portfolio_ids:
-                # print(3, meta.run_uuid) #acces Meta fields like this
-                summary_dict[str(p.portfolio_uuid)] = dict()
-                summary_dict[str(p.portfolio_uuid)]['run_uuids'] = []
-
-                # Create query of all UserProvidedMeta objects where their run_uuid is in api_metas run_uuids.
-                run_uuids = APIMeta.objects.filter(portfolio_uuid=p.portfolio_uuid).only(
-                    'run_uuid'
-                )
-                
-                if len(run_uuids) > 0:
-                    for r in run_uuids:
-                        summary_dict[str(p.portfolio_uuid)]['run_uuids'].append(r.run_uuid)
-            
-            response = JsonResponse(summary_dict, status=200, safe=False)
-            return response
-        else:
-            response = JsonResponse({"Error": "No scenarios portfolios found for user_uuids '{}'".format(user_uuid)}, content_type='application/json', status=404)
-            return response
-
-    except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', user_uuid=user_uuid)
-        err.save_to_db()
-        return JsonResponse({"Error": err.message}, status=404)
-
-
 # Inputs: 1-many run_uuids as single comma separated string
 # This function will query those UUIDs and return as summary endpoint
 # Output: list of JSONs
@@ -1083,6 +1025,31 @@ def queryset_for_summary(api_metas,summary_dict:dict):
                     summary_dict[str(m.meta.run_uuid)]['ghp_heating_ton'] = m.size_wwhp_heating_pump_ton
                 summary_dict[str(m.meta.run_uuid)]['ghp_n_bores'] = m.ghpghx_chosen_outputs['number_of_boreholes']
     
+    hottes = HotThermalStorageOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'size_gal'
+    )
+    if len(hottes) > 0:
+        for m in hottes:
+            summary_dict[str(m.meta.run_uuid)]['hottes_gal'] = m.size_gal
+    
+    coldtes = ColdThermalStorageOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'size_gal'
+    )
+    if len(coldtes) > 0:
+        for m in coldtes:
+            summary_dict[str(m.meta.run_uuid)]['coldtes_gal'] = m.size_gal
+    
+
+    abschillTon = AbsorptionChillerOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'size_ton'
+    )
+    if len(abschillTon) > 0:
+        for m in abschillTon:
+            summary_dict[str(m.meta.run_uuid)]['size_ton'] = m.size_ton
+
     return summary_dict
 
 # Unlink a user_uuid from a run_uuid.

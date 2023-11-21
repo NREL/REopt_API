@@ -21,6 +21,5 @@ urlpatterns = [
     re_path(r'^invalid_urdb/?$', reoviews.invalid_urdb),
     re_path(r'^schedule_stats/?$', reoviews.schedule_stats),
     re_path(r'^get_existing_chiller_default_cop/?$', views.get_existing_chiller_default_cop),
-    re_path(r'^summary_by_runuuids/?$', views.summary_by_runuuids),
-    re_path(r'^user/(?P<user_uuid>[0-9a-f-]+)/portfolio_ids_for_user_uuid/?$', views.portfolio_ids_for_user_uuid)
+    re_path(r'^summary_by_runuuids/?$', views.summary_by_runuuids)
 ]
