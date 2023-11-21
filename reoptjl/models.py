@@ -177,6 +177,12 @@ class APIMeta(BaseModel, models.Model):
         default="",
         help_text="NREL Developer API key of the user"
     )
+    portfolio_uuid = models.TextField(
+        blank=True,
+        default="",
+        help_text=("The unique ID of a portfolio (set of associated runs) created by the REopt Webtool. Note that this ID can be shared by "
+                   "several REopt API Scenarios and one user can have one-to-many portfolio_uuid tied to them.")
+    )
 
 class UserUnlinkedRuns(models.Model):
     run_uuid = models.UUIDField(unique=True)

@@ -93,6 +93,16 @@ class Job(ModelResource):
         else:
             webtool_uuid = None
         
+        if 'portfolio_uuid' in bundle.data.keys():
+
+            if type(bundle.data['portfolio_uuid']) == str:
+                if len(bundle.data['portfolio_uuid']) == len(run_uuid):
+                    portfolio_uuid = bundle.data['portfolio_uuid']
+                else:
+                    portfolio_uuid = ''
+        else:
+            portfolio_uuid = None
+        
         meta = {
             "run_uuid": run_uuid,
             "api_version": 3,
@@ -109,6 +119,9 @@ class Job(ModelResource):
         
         if api_key != "":
             bundle.data['APIMeta']['api_key'] = api_key
+            
+        if portfolio_uuid is not None:
+            bundle.data['APIMeta']['portfolio_uuid'] = portfolio_uuid
 
         log.addFilter(UUIDFilter(run_uuid))
 
