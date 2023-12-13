@@ -30,25 +30,6 @@ export DYLD_LIBRARY_PATH  # for Mac
 
 
 #------------------------------------------------------------------------------
-
-#  Uncomment the following if you are using the Xpress solver
-#------------------------------------------------------------------------------
-#XPRESSDIR="/usr/local/opt/xpress"
-#DYLD_LIBRARY_PATH="${XPRESSDIR}/lib:${SRC_DIR}:${DYLD_LIBRARY_PATH}"  # for Mac
-#LD_LIBRARY_PATH="${XPRESSDIR}/lib:${SRC_DIR}:${LD_LIBRARY_PATH}"  # for Linux
-#CLASSPATH="${XPRESSDIR}/lib/xprs.jar:${XPRESSDIR}/lib/xprb.jar:${XPRESSDIR}/lib/xprm.jar:${CLASSPATH}"
-#PATH="${XPRESSDIR}/bin:${PATH}"
-#
-#export PATH
-#export XPRESS="$XPRESSDIR/bin"
-#export DYLD_LIBRARY_PATH
-#export LD_LIBRARY_PATH
-#export CLASSPATH
-#source /opt/xpressmp/bin/xpvars.sh
-#==============================================================================
-
-
-#------------------------------------------------------------------------------
 #  You can change the following to add Julia to your system Path
 #------------------------------------------------------------------------------
 PATH="/usr/lib/julia-1.3.1/bin:${PATH}"
