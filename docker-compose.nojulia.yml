@@ -65,14 +65,5 @@ services:
     volumes:
       - .:/opt/reopt
 
-  licenseserver:
-    container_name: licenseserver-nojul
-    build:
-      context: julia_src/xpress/licenseserver
-    mac_address: c4:b3:01:d3:d5:eb
-    command: xpserver
-    expose:
-      - 27100
-
 volumes:
   pgdata:
