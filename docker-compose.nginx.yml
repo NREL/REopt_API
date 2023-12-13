@@ -74,14 +74,6 @@ services:
       - django-nginx
     restart: "on-failure"
 
-  licenseserver:
-    build:
-      context: julia_src/xpress/licenseserver
-    mac_address: c4:b3:01:d3:d5:eb
-    command: xpserver
-    expose:
-      - 27100
-
   julia-nginx:
     container_name: julia-nginx
     build:
@@ -91,8 +83,6 @@ services:
       - JULIA_NUM_THREADS=2
     expose:
       - 8081
-    depends_on:
-      - licenseserver
     volumes:
       - ./julia_src:/opt/julia_src
 
