@@ -82,7 +82,7 @@ target/
 celerybeat-schedule
 
 # dotenv
-.env
+# .env
 
 # virtualenv
 venv/
@@ -113,9 +113,5 @@ all_data*
 # Math Forumlation Latex
 docs/formulation/*aux
 docs/formulation/*log
-
-# Customized docker files
-docker-compose.xpressOS.yml
-Dockerfile.xpressOS.pyjul
 
 /.werf_secret_key

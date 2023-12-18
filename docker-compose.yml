@@ -58,26 +58,13 @@ services:
       - 8000:8000
     volumes:
       - .:/opt/reopt
-
-  licenseserver:
-    container_name: xpress_license_server
-    build:
-      context: julia_src/xpress/licenseserver
-    mac_address: c4:b3:01:d3:d5:eb
-    command: xpserver
-    expose:
-      - 27100
   
   julia:
     container_name: julia_api
     build:
       context: julia_src/
-      args:
-        - XPRESS_LICENSE_HOST=xpress_license_server
     command: julia --project=/opt/julia_src http.jl
     ports:
       - "8081:8081"
-    depends_on: 
-      - licenseserver
     volumes:
       - ./julia_src:/opt/julia_src

@@ -26,7 +26,25 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop 2023-10-20
+
+## v3.2.3
+### Minor Updates
+##### Changed
+- Ignore `CHP` unavailability during stochastic, multiple outages; this is consistent with deterministic single outage
+
+## v3.2.2
+### Minor Updates
+##### Changed
+- Do NOT enforce `min_turn_down_fraction` for CHP during multiple/stochastic outages
+
+## v3.2.1
+### Minor Updates
+##### Fixed
+- CHP-only for multiple/stochastic outages
+- Allow negative fuel_burn and thermal_prod intercepts for CHP
+- Correct after_tax CHP results
+
+## v3.2.0
 ### Minor Updates
 ##### Changed
 - Updates to CHP cost and performance defaults, including prime generator, from updating REopt.jl
