@@ -352,7 +352,7 @@ function simulated_load(req::HTTP.Request)
     data = Dict()
     error_response = Dict()
     try
-        data = simulated_load(d)
+        data = REopt.simulated_load(d)
     catch e
         @error "Something went wrong in the simulated_load" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
