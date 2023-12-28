@@ -6,7 +6,7 @@ echo "starting $1 julia servers ..."
 
 for (( c=$START; c<=$END; c++ ))
 do
-	julia --project=/opt/julia_src/highs http.jl &
+	julia --project=/opt/julia_src/highs highs/http.jl &
 done
 
 wait
