@@ -5,10 +5,6 @@ ARG NREL_ROOT_CERT_URL_ROOT=""
 RUN set -x && if [ -n "$NREL_ROOT_CERT_URL_ROOT" ]; then curl -fsSLk -o /usr/local/share/ca-certificates/nrel_root.crt "${NREL_ROOT_CERT_URL_ROOT}/nrel_root.pem" && curl -fsSLk -o /usr/local/share/ca-certificates/nrel_xca1.crt "${NREL_ROOT_CERT_URL_ROOT}/nrel_xca1.pem" &&  update-ca-certificates; fi
 ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 
-# Install gfortran for /ghpghx
-RUN apt-get update && apt-get install -y \
-    gfortran
-
 # Install Julia packages
 ENV JULIA_NUM_THREADS=2
 WORKDIR /opt/julia_src/
