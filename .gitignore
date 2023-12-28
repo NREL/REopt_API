@@ -115,3 +115,8 @@ docs/formulation/*aux
 docs/formulation/*log
 
 /.werf_secret_key
+
+# Customized solver setup and docker files
+julia_src/xpress/licenseserver
+julia_src/Dockerfile.xpress
+docker-compose.xpress.yml
