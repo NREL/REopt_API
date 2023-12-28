@@ -1,6 +1,7 @@
 using HTTP, JSON, JuMP
 import Xpress
 include("REopt.jl")
+using GhpGhx
 import REopt as reoptjl
 using GhpGhx
 using DotEnv
