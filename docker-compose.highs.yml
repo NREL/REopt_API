@@ -1,0 +1,73 @@
+version: "2.1"
+
+services:
+
+  redis:
+    image: redis
+    command: redis-server
+    expose:
+      - 6379
+
+  db:
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=reopt
+      - POSTGRES_PASSWORD=reopt
+      - POSTGRES_DB=reopt
+    expose:
+      - 5432
+
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: base-api-image
+    command:  >
+      "celery -A reopt_api worker -l info"
+    environment:
+      - APP_ENV=local
+      - SQL_HOST=db
+      - SQL_PORT=5432
+      - REDIS_HOST=redis
+    volumes:
+      - .:/opt/reopt
+    depends_on:
+      - db
+      - redis
+      - julia
+
+  django:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: base-api-image
+    command:  >
+      "python manage.py migrate
+      && /opt/reopt/bin/wait-for-it.bash -t 0 julia:8081 -- python manage.py runserver 0.0.0.0:8000"
+    environment:
+      - APP_ENV=local
+      - SQL_HOST=db
+      - SQL_PORT=5432
+      - REDIS_HOST=redis
+    depends_on:
+      - db
+      - redis
+      - julia
+    ports:
+      - 8000:8000
+    volumes:
+      - .:/opt/reopt
+  
+  julia:
+    container_name: julia_api
+    build:
+      context: julia_src/
+      dockerfile: Dockerfile.highs
+    environment:
+      - SOLVER=HiGHS      
+    command: julia --project=/opt/julia_src/highs highs/http.jl
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./julia_src:/opt/julia_src
