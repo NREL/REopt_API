@@ -26,4 +26,4 @@ jobs:
       - name: Check django logs
         run: docker logs django
       - name: test
-        run: docker-compose exec -T celery python manage.py test reo.tests.test_custom_rates reo.tests.test_demand_ratchet -v 2 --failfast --no-input
+        run: docker-compose exec -T celery python manage.py test reoptjl.test.test_job_endpoint -v 2 --failfast --no-input
