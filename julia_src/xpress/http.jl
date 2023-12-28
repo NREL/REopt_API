@@ -480,6 +480,7 @@ function get_existing_chiller_default_cop(req::HTTP.Request)
     @info "Getting default existing chiller COP..."
     error_response = Dict()
     try
+        # Have to specify "reoptjl.get_existing..." because http function has the same name
         chiller_cop = reoptjl.get_existing_chiller_default_cop(;
                 existing_chiller_max_thermal_factor_on_peak_load=d["existing_chiller_max_thermal_factor_on_peak_load"], 
                 max_load_kw=d["max_load_kw"],

@@ -219,7 +219,7 @@ function chp_defaults(req::HTTP.Request)
         d_symb = REopt.dictkeys_tosymbols(d)
         if haskey(d_symb, :prime_mover) && d_symb[:prime_mover] == "steam_turbine"
             # delete!(d_symb, :prime_mover)
-            data = REopt.get_steam_turbine_defaults_size_class(;
+            data = get_steam_turbine_defaults_size_class(;
                     avg_boiler_fuel_load_mmbtu_per_hour=get(d_symb, :avg_boiler_fuel_load_mmbtu_per_hour, nothing),
                     size_class=get(d_symb, :size_class, nothing))
         else
@@ -444,7 +444,8 @@ function get_existing_chiller_default_cop(req::HTTP.Request)
     @info "Getting default existing chiller COP..."
     error_response = Dict()
     try
-        chiller_cop = get_existing_chiller_default_cop(;
+        # Have to specify "REopt.get_existing..." because http function has the same name
+        chiller_cop = REopt.get_existing_chiller_default_cop(;
                 existing_chiller_max_thermal_factor_on_peak_load=d["existing_chiller_max_thermal_factor_on_peak_load"], 
                 max_load_kw=d["max_load_kw"],
                 max_load_kw_thermal=d["max_load_kw_thermal"])      
