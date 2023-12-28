@@ -18,21 +18,23 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2      
-      - name: Decrypt
-        env:
-          TRANSCRYPT_PASSWORD: ${{ secrets.TRANSCRYPT_PASSWORD }}
-        run: ./.github/scripts/decrypt.sh 
+      # - name: Decrypt
+      #   env:
+      #     TRANSCRYPT_PASSWORD: ${{ secrets.TRANSCRYPT_PASSWORD }}
+      #   run: ./.github/scripts/decrypt.sh 
       - name: Make keys.py
         env:
           NREL_DEV_API_KEY: ${{ secrets.NREL_DEV_API_KEY }}
         run: ./.github/scripts/make_keys.py.sh 
       - name: Build containers
-        run: docker-compose up -d
+        run: docker-compose -f docker-compose.highs.yml up -d
       - name: Check running containers
         run: docker ps -a
       - name: Wait for julia_api
         uses: jakejarvis/wait-action@master
         with:
           time: '150s'
-      - name: test
-        run: docker exec reopt_api_celery_1 python manage.py test -v 2 --failfast --no-input
+      - name: test v3 validator
+        run: docker exec reopt_api_celery_1 python manage.py test reoptjl.test.test_validator -v 2 --failfast --no-input          
+      - name: test v3 http.jl endpoints
+        run: docker exec reopt_api_celery_1 python manage.py test reoptjl.test.test_http_endpoints -v 2 --failfast --no-input
