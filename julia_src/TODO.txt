@@ -1,0 +1,3 @@
+Make separate functions which all/some http.jl uses for any solver
+Added HiGHS and Cbc to the same Julia env setup with http.jl, in julia_src/highs env
+Add input to Settings input for choice of solver between HiGHS and Cbc
