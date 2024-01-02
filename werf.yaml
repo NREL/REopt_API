@@ -11,6 +11,7 @@ args:
 image: julia-api
 context: julia_src/
 dockerfile: Dockerfile.xpress
+contextAddFiles: Dockerfile.xpress
 args:
   XPRESS_LICENSE_HOST: {{ env "XPRESS_LICENSE_HOST" | quote }}
   NREL_ROOT_CERT_URL_ROOT: {{ env "NREL_ROOT_CERT_URL_ROOT" | quote }}
