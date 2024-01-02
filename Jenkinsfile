@@ -74,7 +74,9 @@ pipeline {
           stages {
             stage("solver setup") {
               steps {
-                sh "git clone ${LICENSESERVER_URL} julia_src/xpress/licenseserver"
+                dir("julia_src/xpress/licenseserver") {
+                  git url: env.LICENSESERVER_URL
+                }
                 sh "cp julia_src/xpress/licenseserver/Dockerfile.xpress julia_src/"
               }
             }
