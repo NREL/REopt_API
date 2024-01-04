@@ -120,3 +120,4 @@ docs/formulation/*log
 julia_src/xpress/licenseserver
 julia_src/Dockerfile.xpress
 docker-compose.xpress.yml
+julia_src/xpress/solver_setup.sh
