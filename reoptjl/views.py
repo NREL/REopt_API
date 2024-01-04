@@ -37,6 +37,7 @@ def help(request):
         d = dict()
         d["Meta"] = UserProvidedMeta.info_dict(UserProvidedMeta)
         d["Settings"] = Settings.info_dict(Settings)
+        d["Financial"] = FinancialInputs.info_dict(FinancialInputs)
         d["ElectricLoad"] = ElectricLoadInputs.info_dict(ElectricLoadInputs)
         d["ElectricTariff"] = ElectricTariffInputs.info_dict(ElectricTariffInputs)
         d["ElectricUtility"] = ElectricUtilityInputs.info_dict(ElectricUtilityInputs)
@@ -82,6 +83,7 @@ def outputs(request):
 
     try:
         d = dict()
+        d["Financial"] = FinancialOutputs.info_dict(FinancialOutputs)
         d["ElectricLoad"] = ElectricLoadOutputs.info_dict(ElectricLoadOutputs)
         d["ElectricTariff"] = ElectricTariffOutputs.info_dict(ElectricTariffOutputs)
         d["ElectricUtility"] = ElectricUtilityOutputs.info_dict(ElectricUtilityOutputs)
