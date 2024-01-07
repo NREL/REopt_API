@@ -455,13 +455,16 @@ class InputValidator(object):
             if self.models["Generator"].__getattribute__("om_cost_per_kw") == None:
                 if self.models["Settings"].off_grid_flag==False:
                     self.models["Generator"].om_cost_per_kw = 20.0
+                else:
+                    self.models["Generator"].om_cost_per_kw = 10.0
+
+            if self.models["generator"].__getattribute__("installed_cost_per_kw") == None:
+                if self.models["Settings"].off_grid_flag==False:
                     if self.models["Generator"].only_runs_during_grid_outage:
                         self.models["Generator"].installed_cost_per_kw = 650.0
                     else: 
                         self.models["Generator"].installed_cost_per_kw = 800.0
-                    self.models["Generator"]
-                else:
-                    self.models["Generator"].om_cost_per_kw = 10.0
+                else: 
                     self.models["Generator"].installed_cost_per_kw = 880.0
 
             if self.models["Generator"].__getattribute__("min_turn_down_fraction") == None:
