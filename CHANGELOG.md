@@ -27,6 +27,11 @@ Classify the change according to the following categories:
     ### Patches
 
 
+## Develop - 2024-01-07
+### Minor Updates
+#### Fixed
+- Fixed setting of default Generator `installed_cost_per_kw` so that user inputs are not overridden 
+
 ## v3.2.3
 ### Minor Updates
 ##### Changed
