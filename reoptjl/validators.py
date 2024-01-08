@@ -458,7 +458,7 @@ class InputValidator(object):
                 else:
                     self.models["Generator"].om_cost_per_kw = 10.0
 
-            if self.models["generator"].__getattribute__("installed_cost_per_kw") == None:
+            if self.models["Generator"].__getattribute__("installed_cost_per_kw") == None:
                 if self.models["Settings"].off_grid_flag==False:
                     if self.models["Generator"].only_runs_during_grid_outage:
                         self.models["Generator"].installed_cost_per_kw = 650.0
