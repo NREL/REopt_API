@@ -27,6 +27,11 @@ Classify the change according to the following categories:
     ### Patches
 
 
+## Develop - 2024-01-07
+### Minor Updates
+#### Fixed
+- Fixed setting of default Generator `installed_cost_per_kw` so that user inputs are not overridden 
+
 ## Develop - 2023-11-27
 #### Added 
 - Added the following BAU outputs:  lifecycle_chp_standby_cost_after_tax, lifecycle_elecbill_after_tax, lifecycle_production_incentive_after_tax, lifecycle_outage_cost, lifecycle_MG_upgrade_and_fuel_cost
