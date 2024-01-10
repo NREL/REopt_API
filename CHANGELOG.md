@@ -26,6 +26,15 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop - 2024-01-09 Cambium Branch
+### Changed 
+- Updated default fuel emissions factors from CO2 to CO2-equivalent (CO2e) values. In `reoptjl/models.py`, updated **GeneratorInputs : emissions_factor_lb_CO2_per_gal** from 22.51 to 22.58. And **FUEL_DEFAULTS: emissions_factor_lb_CO2_per_mmbtu** => Dict(
+        "natural_gas"=>116.9 to 117.03,
+        "landfill_bio_gas"=>114,8 to 115.38,
+        "propane"=>138.6 to 139.16,
+        "diesel_oil"=>163.1 to 163.61
+    )
+    
 
 ## Develop - 2024-01-07
 ### Minor Updates

@@ -43,10 +43,10 @@ FUEL_DEFAULTS = {
         "diesel_oil" : 0.0
     },
     "emissions_factor_lb_CO2_per_mmbtu" : {
-        "natural_gas" : 116.9,
-        "landfill_bio_gas" : 114.8,
-        "propane" : 138.6,
-        "diesel_oil" : 163.1
+        "natural_gas" : 117.03,
+        "landfill_bio_gas" : 115.38,
+        "propane" : 139.16,
+        "diesel_oil" : 163.61
     },
     "emissions_factor_lb_NOx_per_mmbtu" : {
         "natural_gas" : 0.09139,
@@ -3726,7 +3726,7 @@ class GeneratorInputs(BaseModel, models.Model):
         help_text="Fraction of the generator fuel considered renewable."
     )
     emissions_factor_lb_CO2_per_gal = models.FloatField(
-        default=22.51,
+        default=22.58,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1e4)
