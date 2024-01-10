@@ -1020,13 +1020,25 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text=("Component of lifecycle costs (LCC). This value is the present value of all CHP standby charges, after tax.")
     )
+    lifecycle_chp_standby_cost_after_tax_bau = models.FloatField(
+        null=True, blank=True,
+        help_text=("BAU Component of lifecycle costs (LCC). This value is the present value of all CHP standby charges, after tax.")
+    )
     lifecycle_elecbill_after_tax = models.FloatField(
         null=True, blank=True,
         help_text=("Component of lifecycle costs (LCC). This value is the present value of all electric utility charges, after tax.")
     )
+    lifecycle_elecbill_after_tax_bau = models.FloatField(
+        null=True, blank=True,
+        help_text=("BAU Component of lifecycle costs (LCC). This value is the present value of all electric utility charges, after tax.")
+    )
     lifecycle_production_incentive_after_tax = models.FloatField(
         null=True, blank=True,
         help_text=("Component of lifecycle costs (LCC). This value is the present value of all production-based incentives, after tax.")
+    )
+    lifecycle_production_incentive_after_tax_bau = models.FloatField(
+        null=True, blank=True,
+        help_text=("BAU Component of lifecycle costs (LCC). This value is the present value of all production-based incentives, after tax.")
     )
     lifecycle_offgrid_other_annual_costs_after_tax = models.FloatField(
         null=True, blank=True,
@@ -1041,9 +1053,18 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text=("Component of lifecycle costs (LCC). Expected outage cost.")
     )
+    lifecycle_outage_cost_bau = models.FloatField(
+        null=True, blank=True,
+        help_text=("BAU Component of lifecycle costs (LCC). Expected outage cost.")
+    )
     lifecycle_MG_upgrade_and_fuel_cost = models.FloatField(
         null=True, blank=True,
         help_text=("Component of lifecycle costs (LCC). This is the cost to upgrade generation and storage technologies to be included in microgrid"
+                    "plus present value of microgrid fuel costs.")
+    )
+    lifecycle_MG_upgrade_and_fuel_cost_bau = models.FloatField(
+        null=True, blank=True,
+        help_text=("BAU Component of lifecycle costs (LCC). This is the cost to upgrade generation and storage technologies to be included in microgrid"
                     "plus present value of microgrid fuel costs.")
     )
     replacements_future_cost_after_tax = models.FloatField(
