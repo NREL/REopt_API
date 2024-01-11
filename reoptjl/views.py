@@ -855,7 +855,7 @@ def queryset_for_summary(api_metas,summary_dict:dict):
     )
     if len(tariffOuts) > 0:
         for m in tariffOuts:
-            if len(tariffInputs) > 0:
+            if (m.year_one_bill_before_tax_bau is not None) and (m.year_one_bill_before_tax is not None):
                 summary_dict[str(m.meta.run_uuid)]['year_one_savings_us_dollars'] = m.year_one_bill_before_tax_bau - m.year_one_bill_before_tax
             else:
                 summary_dict[str(m.meta.run_uuid)]['year_one_savings_us_dollars'] = 0.0
