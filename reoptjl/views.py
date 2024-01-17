@@ -830,7 +830,17 @@ def queryset_for_summary(api_metas,summary_dict:dict):
                 summary_dict[str(m.meta.run_uuid)]['focus'] = "Financial"
             else:
                 summary_dict[str(m.meta.run_uuid)]['focus'] = "Resilience"
-    
+
+    # Use settings to find out if it is an off-grid evaluation
+    settings = Settings.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'off_grid_flag'
+    )
+    if len(settings) > 0:
+        for m in settings:
+            if m.off_grid_flag:
+                summary_dict[str(m.meta.run_uuid)]['focus'] = "Off-grid"
+
     tariffInputs = ElectricTariffInputs.objects.filter(meta__run_uuid__in=run_uuids).only(
         'meta__run_uuid',
         'urdb_rate_name'
@@ -858,7 +868,7 @@ def queryset_for_summary(api_metas,summary_dict:dict):
             if (m.year_one_bill_before_tax_bau is not None) and (m.year_one_bill_before_tax is not None):
                 summary_dict[str(m.meta.run_uuid)]['year_one_savings_us_dollars'] = m.year_one_bill_before_tax_bau - m.year_one_bill_before_tax
             else:
-                summary_dict[str(m.meta.run_uuid)]['year_one_savings_us_dollars'] = 0.0
+                summary_dict[str(m.meta.run_uuid)]['year_one_savings_us_dollars'] = None
 
     load = ElectricLoadInputs.objects.filter(meta__run_uuid__in=run_uuids).only(
         'meta__run_uuid',
@@ -880,7 +890,10 @@ def queryset_for_summary(api_metas,summary_dict:dict):
     )
     if len(fin) > 0:
         for m in fin:
-            summary_dict[str(m.meta.run_uuid)]['npv_us_dollars'] = m.npv
+            if m.npv is not None:
+                summary_dict[str(m.meta.run_uuid)]['npv_us_dollars'] = m.npv
+            else:
+                summary_dict[str(m.meta.run_uuid)]['npv_us_dollars'] = None
             summary_dict[str(m.meta.run_uuid)]['net_capital_costs'] = m.initial_capital_costs_after_incentives
     
     batt = ElectricStorageOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
