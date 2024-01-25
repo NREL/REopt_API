@@ -36,14 +36,20 @@ Classify the change according to the following categories:
     )
     
 
-## Develop - 2024-01-07
+## v3.4.0
 ### Minor Updates
-#### Fixed
-- Fixed setting of default Generator `installed_cost_per_kw` so that user inputs are not overridden 
-
-## Develop - 2023-11-27
 #### Added 
 - Added the following BAU outputs:  lifecycle_chp_standby_cost_after_tax, lifecycle_elecbill_after_tax, lifecycle_production_incentive_after_tax, lifecycle_outage_cost, lifecycle_MG_upgrade_and_fuel_cost
+### Changed
+- Updated REopt.jl version to 0.39.1 along with updates to other dependencies
+#### Fixed
+- Fixed setting of default Generator `installed_cost_per_kw` so that user inputs are not overridden 
+- Avoid /summary endpoint error with off-grid runs where there is no ElectricTariff
+
+## v3.3.0
+### Changed
+- Updates to REopt.jl for passing API key
+
 ## v3.2.3
 ### Minor Updates
 ##### Changed
