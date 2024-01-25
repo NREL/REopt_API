@@ -17,6 +17,7 @@ from reo.exceptions import UnexpectedError, REoptError
 from ghpghx.models import GHPGHXInputs
 from django.core.exceptions import ValidationError
 from reoptjl.models import APIMeta
+import keys
 log = logging.getLogger(__name__)
  
 
@@ -72,7 +73,8 @@ class Job(ModelResource):
 
     def obj_create(self, bundle, **kwargs):
         run_uuid = str(uuid.uuid4())
-        api_key = bundle.request.GET.get("api_key", "")
+        # Attempt to get POSTed api_key assigned to APIMeta.api_key (or try method below for user_uuid)
+        api_key = keys.developer_nrel_gov_key #bundle.request.GET.get("api_key", "")
         if 'user_uuid' in bundle.data.keys():
 
             if type(bundle.data['user_uuid']) == str:
@@ -96,7 +98,7 @@ class Job(ModelResource):
         meta = {
             "run_uuid": run_uuid,
             "api_version": 3,
-            "reopt_version": "0.38.1",
+            "reopt_version": "0.39.1",
             "status": "Validating..."
         }
         bundle.data.update({"APIMeta": meta})
