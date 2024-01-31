@@ -1064,7 +1064,7 @@ def cambium_emissions_profile(request):
             "lifetime": request.GET['lifetime'],
             "metric_col": request.GET['metric_col'],
             "grid_level": request.GET['grid_level'],
-            "time_steps_per_hour": request.GET['time_steps_per_hour'],
+            # "time_steps_per_hour": request.GET['time_steps_per_hour'],
             "load_year": request.GET['load_year']
         }
         julia_host = os.environ.get(

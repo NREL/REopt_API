@@ -281,25 +281,25 @@ function absorption_chiller_defaults(req::HTTP.Request)
     end
 end
 
-function emissions_profile(req::HTTP.Request)
+function avert_emissions_profile(req::HTTP.Request)
     d = JSON.parse(String(req.body))
-    @info "Getting emissions profile..."
+    @info "Getting AVERT emissions profile..."
     data = Dict()
     error_response = Dict()
     try
 		latitude = typeof(d["latitude"]) == String ? parse(Float64, d["latitude"]) : d["latitude"]
 		longitude = typeof(d["longitude"]) == String ? parse(Float64, d["longitude"]) : d["longitude"]
-        data = emissions_profiles(;latitude=latitude, longitude=longitude, time_steps_per_hour=1)
+        data = avert_emissions_profiles(;latitude=latitude, longitude=longitude, time_steps_per_hour=1)
         if haskey(data, "error")
-            @info "An error occured getting the emissions data"
+            @info "An error occured getting the AVERT emissions data"
             return HTTP.Response(400, JSON.json(data))
         end
     catch e
-        @error "Something went wrong getting the emissions data" exception=(e, catch_backtrace())
+        @error "Something went wrong getting the AVERT emissions data" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
         return HTTP.Response(500, JSON.json(error_response))
     end
-    @info "Emissions profile determined."
+    @info "AVERT emissions profile determined."
     return HTTP.Response(200, JSON.json(data))
 end
 
@@ -471,7 +471,8 @@ HTTP.register!(ROUTER, "POST", "/reopt", reopt)
 HTTP.register!(ROUTER, "POST", "/erp", erp)
 HTTP.register!(ROUTER, "POST", "/ghpghx", ghpghx)
 HTTP.register!(ROUTER, "GET", "/chp_defaults", chp_defaults)
-HTTP.register!(ROUTER, "GET", "/emissions_profile", emissions_profile)
+HTTP.register!(ROUTER, "GET", "/avert_emissions_profile", avert_emissions_profile)
+HTTP.register!(ROUTER, "GET", "/cambium_emissions_profile", cambium_emissions_profile)
 HTTP.register!(ROUTER, "GET", "/easiur_costs", easiur_costs)
 HTTP.register!(ROUTER, "GET", "/simulated_load", simulated_load)
 HTTP.register!(ROUTER, "GET", "/absorption_chiller_defaults", absorption_chiller_defaults)

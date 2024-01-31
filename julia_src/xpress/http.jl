@@ -341,18 +341,19 @@ function avert_emissions_profile(req::HTTP.Request)
 end
 
 function cambium_emissions_profile(req::HTTP.Request)
+    @info "Made it here. ADF" # temp
     d = JSON.parse(String(req.body))
     @info "Getting Cambium emissions profile..."
     data = Dict()
     error_response = Dict()
     try
-		
         latitude = typeof(d["latitude"]) == String ? parse(Float64, d["latitude"]) : d["latitude"]
 		longitude = typeof(d["longitude"]) == String ? parse(Float64, d["longitude"]) : d["longitude"]
         start_year = typeof(d["start_year"]) == String ? parse(Int, d["start_year"]) : d["start_year"]
         lifetime = typeof(d["lifetime"]) == String ? parse(Int, d["lifetime"]) : d["lifetime"]
         load_year = typeof(d["load_year"]) == String ? parse(Int, d["load_year"]) : d["load_year"]
 
+        println(latitude, "Made it to http.jl!")
         data = reoptjl.cambium_emissions_profile(;scenario= d["scenario"],
                                                 location_type = d["location_type"],  
                                                 latitude=latitude, 
@@ -547,7 +548,7 @@ HTTP.register!(ROUTER, "POST", "/erp", erp)
 HTTP.register!(ROUTER, "POST", "/ghpghx", ghpghx)
 HTTP.register!(ROUTER, "GET", "/chp_defaults", chp_defaults)
 HTTP.register!(ROUTER, "GET", "/avert_emissions_profile", avert_emissions_profile)
-#HTTP.register!(ROUTER, "GET", "/cambium_emissions_profile", cambium_emissions_profile)
+HTTP.register!(ROUTER, "GET", "/cambium_emissions_profile", cambium_emissions_profile)
 HTTP.register!(ROUTER, "GET", "/easiur_costs", easiur_costs)
 HTTP.register!(ROUTER, "GET", "/simulated_load", simulated_load)
 HTTP.register!(ROUTER, "GET", "/absorption_chiller_defaults", absorption_chiller_defaults)
