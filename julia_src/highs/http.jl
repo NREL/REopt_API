@@ -317,7 +317,7 @@ function cambium_emissions_profile(req::HTTP.Request)
         lifetime = typeof(d["lifetime"]) == String ? parse(Int, d["lifetime"]) : d["lifetime"]
         load_year = typeof(d["load_year"]) == String ? parse(Int, d["load_year"]) : d["load_year"]
 
-        data = cambium_emissions_profile(;scenario= d["scenario"],
+        data = REopt.cambium_emissions_profile(;scenario= d["scenario"],
                                                 location_type = d["location_type"],  
                                                 latitude=latitude, 
                                                 longitude=longitude, 
