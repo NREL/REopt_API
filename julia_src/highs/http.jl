@@ -289,7 +289,9 @@ function avert_emissions_profile(req::HTTP.Request)
     try
 		latitude = typeof(d["latitude"]) == String ? parse(Float64, d["latitude"]) : d["latitude"]
 		longitude = typeof(d["longitude"]) == String ? parse(Float64, d["longitude"]) : d["longitude"]
-        data = avert_emissions_profiles(;latitude=latitude, longitude=longitude, time_steps_per_hour=1)
+        load_year = typeof(d["load_year"]) == String ? parse(Int, d["load_year"]) : d["load_year"]
+        
+        data = avert_emissions_profiles(;latitude=latitude, longitude=longitude, time_steps_per_hour=1, load_year=load_year)
         if haskey(data, "error")
             @info "An error occured getting the AVERT emissions data"
             return HTTP.Response(400, JSON.json(data))

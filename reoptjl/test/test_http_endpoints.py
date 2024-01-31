@@ -225,7 +225,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         self.assertEquals(len(view_response["emissions_factor_series_lb_CO2_per_kwh"]), 8760)
         inputs["longitude"] = 122.336052 # China
         resp = self.api_client.get(f'/v3/cambium_emissions_profile', data=inputs)
-        self.assertHttpBadRequest(resp) # TODO: check this
+        self.assertHttpBadRequest(resp) 
         view_response = json.loads(resp.content)
         self.assertTrue("error" in view_response)
 
