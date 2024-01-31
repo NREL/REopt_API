@@ -418,23 +418,23 @@ class SiteOutputs(BaseModel, models.Model):
     )
     annual_emissions_tonnes_CO2 = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of CO2 emissions associated with the site's energy consumption in an one."
+        help_text="Average annual total tons of emissions associated with the site's grid-purchased electricity and on-site fuel consumption."
     )
     annual_emissions_tonnes_NOx = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of NOx emissions associated with the site's energy consumption in an average year."
+        help_text="Average annual total tons of emissions associated with the site's grid-purchased electricity and on-site fuel consumption."
     )
     annual_emissions_tonnes_SO2 = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of SO2 emissions associated with the site's energy consumption in an average year."
+        help_text="Average annual total tons of emissions associated with the site's grid-purchased electricity and on-site fuel consumption."
     )
     annual_emissions_tonnes_PM25 = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of PM2.5 emissions associated with the site's energy consumption in an average year."
+        help_text="Average annual total tons of emissions associated with the site's grid-purchased electricity and on-site fuel consumption."
     )
     annual_emissions_from_fuelburn_tonnes_CO2 = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of CO2 emissions associated with the site's onsite fuel burn in an average year."
+        help_text="Total tons of CO2e emissions associated with the site's onsite fuel burn in an average year."
     )
     annual_emissions_from_fuelburn_tonnes_NOx = models.FloatField(
         null=True, blank=True,
@@ -450,7 +450,7 @@ class SiteOutputs(BaseModel, models.Model):
     )
     lifecycle_emissions_tonnes_CO2 = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of CO2 emissions associated with the site's energy consumption over the analysis period."
+        help_text="Total tons of CO2e emissions associated with the site's energy consumption over the analysis period."
     )
     lifecycle_emissions_tonnes_NOx = models.FloatField(
         null=True, blank=True,
@@ -466,7 +466,7 @@ class SiteOutputs(BaseModel, models.Model):
     )
     lifecycle_emissions_from_fuelburn_tonnes_CO2 = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of CO2 emissions associated with the site's onsite fuel burn over the analysis period."
+        help_text="Total tons of CO2e emissions associated with the site's onsite fuel burn over the analysis period."
     )
     lifecycle_emissions_from_fuelburn_tonnes_NOx = models.FloatField(
         null=True, blank=True,
@@ -508,7 +508,7 @@ class SiteOutputs(BaseModel, models.Model):
     )
     annual_emissions_tonnes_CO2_bau = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of CO2 emissions associated with the site's energy consumption in an average year in the BAU case."
+        help_text="Total tons of CO2e emissions associated with the site's energy consumption in an average year in the BAU case."
     )
     annual_emissions_tonnes_NOx_bau = models.FloatField(
         null=True, blank=True,
@@ -524,7 +524,7 @@ class SiteOutputs(BaseModel, models.Model):
     )
     annual_emissions_from_fuelburn_tonnes_CO2_bau = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of CO2 emissions associated with the site's onsite fuel burn in an average year in the BAU case."
+        help_text="Total tons of CO2e emissions associated with the site's onsite fuel burn in an average year in the BAU case."
     )
     annual_emissions_from_fuelburn_tonnes_NOx_bau = models.FloatField(
         null=True, blank=True,
@@ -540,7 +540,7 @@ class SiteOutputs(BaseModel, models.Model):
     )
     lifecycle_emissions_tonnes_CO2_bau = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of CO2 emissions associated with the site's energy consumption over the analysis period in the BAU case."
+        help_text="Total tons of CO2e emissions associated with the site's energy consumption over the analysis period in the BAU case."
     )
     lifecycle_emissions_tonnes_NOx_bau = models.FloatField(
         null=True, blank=True,
@@ -556,7 +556,7 @@ class SiteOutputs(BaseModel, models.Model):
     )
     lifecycle_emissions_from_fuelburn_tonnes_CO2_bau = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of CO2 emissions associated with the site's onsite fuel burn over the analysis period in the BAU case."
+        help_text="Total tons of CO2e emissions associated with the site's onsite fuel burn over the analysis period in the BAU case."
     )
     lifecycle_emissions_from_fuelburn_tonnes_NOx_bau = models.FloatField(
         null=True, blank=True,
@@ -1690,7 +1690,7 @@ class ElectricUtilityInputs(BaseModel, models.Model):
     cambium_location_type = models.TextField(
         blank=True,
         default = "States",
-        help_text=("Geographic boundary at which emissions are calculated. Options: ['Nations', 'GEA Regions', 'States', 'Balancing Areas'].")
+        help_text=("Geographic boundary at which emissions are calculated. Options: ['Nations', 'GEA Regions', 'States'].")
     )
     cambium_metric_col = models.TextField(
         blank=True,
@@ -1709,7 +1709,7 @@ class ElectricUtilityInputs(BaseModel, models.Model):
     cambium_levelization_years = models.IntegerField(
         validators=[
             MinValueValidator(1),
-            MaxValueValidator(1000)
+            MaxValueValidator(100)
         ],
         blank=True,
         null=True,
@@ -1719,7 +1719,7 @@ class ElectricUtilityInputs(BaseModel, models.Model):
     cambium_grid_level = models.TextField(
         blank=True,
         default = "enduse",
-        help_text=("Impacts grid climate emissions calculation. Options: enduse or busbar. Busbar refers to point where bulk generating stations connect to grid; enduse refers to point of consumption (includes distribution loss rate).")
+        help_text=("Impacts grid climate emissions calculation. Options: ['enduse' or 'busbar']. Busbar refers to point where bulk generating stations connect to grid; enduse refers to point of consumption (includes distribution loss rate).")
     )
     co2_from_avert = models.BooleanField(
         default=False,
@@ -1827,9 +1827,7 @@ class ElectricUtilityInputs(BaseModel, models.Model):
             self.outage_probabilities = [1/len(self.outage_durations)] * len(self.outage_durations)
 
         if self.co2_from_avert or len(self.emissions_factor_series_lb_CO2_per_kwh) > 0:
-            self.emissions_factor_CO2_decrease_fraction = 0.02163
-        else:
-            self.emissions_factor_CO2_decrease_fraction = 0.0 
+            self.emissions_factor_CO2_decrease_fraction = 0.02163 # leave blank otherwise; the Julia Pkg will set to 0 unless site is in AK or HI
 
         if error_messages:
             raise ValidationError(error_messages)
@@ -2426,11 +2424,11 @@ class ElectricTariffOutputs(BaseModel, models.Model):
     )
     year_one_export_benefit_before_tax = models.FloatField(
         null=True, blank=True,
-        help_text="Optimal year one value of exported energy"
+        help_text="Optimal year one value of exported energy. A positive value indicates a benefit."
     )
     year_one_export_benefit_before_tax_bau = models.FloatField(
         null=True, blank=True,
-        help_text="Business as usual year one value of exported energy"
+        help_text="Business as usual year one value of exported energy. A positive value indicates a benefit."
     )
     year_one_coincident_peak_cost_before_tax = models.FloatField(
         null=True, blank=True,
@@ -3732,7 +3730,7 @@ class GeneratorInputs(BaseModel, models.Model):
             MaxValueValidator(1e4)
         ],
         blank=True,
-        help_text="Pounds of CO2 emitted per gallon of generator fuel burned."
+        help_text="Pounds of CO2e emitted per gallon of generator fuel burned."
     )
     emissions_factor_lb_NOx_per_gal = models.FloatField(
         default=0.0775544,
@@ -3741,7 +3739,7 @@ class GeneratorInputs(BaseModel, models.Model):
             MaxValueValidator(1e4)
         ],
         blank=True,
-        help_text="Pounds of CO2 emitted per gallon of generator fuel burned."
+        help_text="Pounds of NOx emitted per gallon of generator fuel burned."
     )
     emissions_factor_lb_SO2_per_gal = models.FloatField(
         default=0.040020476,
@@ -3750,7 +3748,7 @@ class GeneratorInputs(BaseModel, models.Model):
             MaxValueValidator(1e4)
         ],
         blank=True,
-        help_text="Pounds of CO2 emitted per gallon of generator fuel burned."
+        help_text="Pounds of SO2 emitted per gallon of generator fuel burned."
     )
     emissions_factor_lb_PM25_per_gal = models.FloatField(
         default=0.0,
@@ -3759,7 +3757,7 @@ class GeneratorInputs(BaseModel, models.Model):
             MaxValueValidator(1e4)
         ],
         blank=True,
-        help_text="Pounds of CO2 emitted per gallon of generator fuel burned."
+        help_text="Pounds of PM2.5 emitted per gallon of generator fuel burned."
     )
     replacement_year = models.IntegerField(
         validators=[
