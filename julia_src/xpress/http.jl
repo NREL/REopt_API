@@ -341,9 +341,8 @@ function avert_emissions_profile(req::HTTP.Request)
 end
 
 function cambium_emissions_profile(req::HTTP.Request)
-    @info "Made it here. ADF" # temp
     d = JSON.parse(String(req.body))
-    @info "Getting Cambium emissions profile..."
+    @info "Getting Cambium CO2 emissions profile..."
     data = Dict()
     error_response = Dict()
     try
@@ -353,7 +352,6 @@ function cambium_emissions_profile(req::HTTP.Request)
         lifetime = typeof(d["lifetime"]) == String ? parse(Int, d["lifetime"]) : d["lifetime"]
         load_year = typeof(d["load_year"]) == String ? parse(Int, d["load_year"]) : d["load_year"]
 
-        println(latitude, "Made it to http.jl!")
         data = reoptjl.cambium_emissions_profile(;scenario= d["scenario"],
                                                 location_type = d["location_type"],  
                                                 latitude=latitude, 

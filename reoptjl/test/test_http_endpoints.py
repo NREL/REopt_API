@@ -204,7 +204,6 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         view_response = json.loads(resp.content)
         self.assertTrue("error" in view_response)
 
-    ## TODO: Get this working
     def test_cambium_emissions_profile_endpoint(self):
         # Call to the django view endpoint v3/cambium_emissions_profile which calls the http.jl endpoint
         inputs = {
@@ -219,10 +218,10 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
             "grid_level": "enduse"
         }
         resp = self.api_client.get(f'/v3/cambium_emissions_profile', data=inputs) 
-        self.assertHttpOK(resp) # Currently returning 400 (Bad Request) due to http_jl_response not found
+        self.assertHttpOK(resp)
         view_response = json.loads(resp.content)
         self.assertEquals(view_response["metric_col"], "lrmer_co2e")
-        self.assertEquals(view_response["location"], "NWPPc") 
+        self.assertEquals(view_response["location"], "Washington") 
         self.assertEquals(len(view_response["emissions_factor_series_lb_CO2_per_kwh"]), 8760)
         inputs["longitude"] = 122.336052 # China
         resp = self.api_client.get(f'/v3/cambium_emissions_profile', data=inputs)
