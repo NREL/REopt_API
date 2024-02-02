@@ -288,7 +288,7 @@ class InputValidator(object):
                 for time_series in ["production_factor_series"] + wind_resource_inputs:
                     self.clean_time_series("Wind", time_series)
 
-                if not all([self.models["Wind"].__getattribute__(wr) for wr in wind_resource_inputs]):
+                if not all([self.models["Wind"].__getattribute__(wr) for wr in wind_resource_inputs]) and not self.models["Wind"].__getattribute__("production_factor_series"):
                     # then no wind_resource_inputs provided, so we need to get the resource from WindToolkit
                     if not lat_lon_in_windtoolkit(self.models["Site"].__getattribute__("latitude"),
                                                   self.models["Site"].__getattribute__("longitude")):
@@ -666,5 +666,5 @@ def lat_lon_in_windtoolkit(lat, lon):
     y = int(round((point[1] - origin[1]) / 2000))
     y_max, x_max = (1602, 2976)
     if (x < 0) or (y < 0) or (x >= x_max) or (y >= y_max):
-        raise ValueError("Latitude/Longitude is outside of wind resource dataset bounds.")
+        return None
     return y, x

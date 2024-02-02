@@ -40,6 +40,13 @@ Classify the change according to the following categories:
 ### Added 
 - Added endpoint `v3/cambium_emissions_profile` to `urls.py`, `views.py`, `http.jl` to obtain Cambium emissions profile. Mainly for use in web tool.
 
+## Develop - 2024-01-30
+### Minor Updates
+#### Fixed
+- Fixed Wind validation code to prevent erroring when user provides `production_factor_series` for location outside of WindToolkit bounds. 
+#### Changed
+- Updated `reopt_version` in `ERPJob` to 0.39.1
+ 
 ## v3.4.0
 ### Minor Updates
 #### Added 
