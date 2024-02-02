@@ -27,7 +27,7 @@ Classify the change according to the following categories:
     ### Patches
 
 
-## Develop - 2024-01-30
+## v3.4.1
 ### Minor Updates
 #### Fixed
 - Fixed Wind validation code to prevent erroring when user provides `production_factor_series` for location outside of WindToolkit bounds. 
