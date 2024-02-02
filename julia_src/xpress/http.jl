@@ -99,7 +99,7 @@ function reopt(req::HTTP.Request)
 				:NOx_onsite_fuelburn_cost_per_tonne, :SO2_onsite_fuelburn_cost_per_tonne, :PM25_onsite_fuelburn_cost_per_tonne,
 				:NOx_cost_escalation_rate_fraction, :SO2_cost_escalation_rate_fraction, :PM25_cost_escalation_rate_fraction
 			]
-			inputs_with_defaults_from_avert = [
+			inputs_with_defaults_from_avert_or_cambium = [
 				:emissions_factor_series_lb_CO2_per_kwh, :emissions_factor_series_lb_NOx_per_kwh,
 				:emissions_factor_series_lb_SO2_per_kwh, :emissions_factor_series_lb_PM25_per_kwh
 			]
@@ -144,7 +144,7 @@ function reopt(req::HTTP.Request)
             end          
 			inputs_with_defaults_set_in_julia = Dict(
 				"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_easiur),
-				"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert),
+				"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert_or_cambium),
                 "CHP" => chp_dict,
 				"SteamTurbine" => steamturbine_dict,
                 "GHP" => ghp_dict,
