@@ -1689,7 +1689,7 @@ class ElectricUtilityInputs(BaseModel, models.Model):
     )
     cambium_location_type = models.TextField(
         blank=True,
-        default = "States",
+        default = "GEA Regions",
         help_text=("Geographic boundary at which emissions are calculated. Options: ['Nations', 'GEA Regions', 'States'].")
     )
     cambium_metric_col = models.TextField(
