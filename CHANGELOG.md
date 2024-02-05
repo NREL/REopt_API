@@ -26,15 +26,11 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop
-### Minor Updates
-#### Fixed
-- Fixed divide by zero error when POSTing to the `/erp` endpoint with a `battery_size_kw` of 0
-
 ## v3.4.1
 ### Minor Updates
 #### Fixed
 - Fixed Wind validation code to prevent erroring when user provides `production_factor_series` for location outside of WindToolkit bounds. 
+- Fixed divide by zero error when POSTing to the `/erp` endpoint with a `battery_size_kw` of 0
 #### Changed
 - Updated `reopt_version` in `ERPJob` to 0.39.1
  
