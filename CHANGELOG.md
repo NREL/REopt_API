@@ -26,6 +26,10 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop
+### Minor Updates
+#### Fixed
+- Fixed divide by zero error when POSTing to the `/erp` endpoint with a `battery_size_kw` of 0
 
 ## v3.4.1
 ### Minor Updates

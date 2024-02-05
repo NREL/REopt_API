@@ -47,7 +47,7 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
             self.reopt_base_erp_chp_defaults.format(prime_mover, is_chp, size_kw),
             format='json'
         )
-
+        
     def test_erp_long_duration_battery(self):
         post_opt = json.load(open(self.post_opt_long_dur_stor, 'rb'))
         resp = self.get_response_opt(post_opt)
@@ -171,7 +171,17 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         results = json.loads(resp.content)
 
         self.assertAlmostEqual(results["outputs"]["mean_cumulative_survival_final_time_step"], 0.904242, places=4) #0.990784, places=4)
-    
+
+        # Test that zero battery doesn't cause error
+        post_sim["ElectricStorage"]["size_kwh"] = 0
+        post_sim["ElectricStorage"]["size_kwh"] = 0
+        resp = self.get_response_sim(post_sim)
+        self.assertHttpCreated(resp)
+        r_sim = json.loads(resp.content)
+        erp_run_uuid = r_sim.get('run_uuid')
+        resp = self.get_results_sim(erp_run_uuid)
+        self.assertHttpOK(resp)
+
     def test_erp_help_view(self):
         """
         Tests hiting the erp/help url to get defaults and other info about inputs
