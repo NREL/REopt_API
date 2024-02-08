@@ -26,6 +26,12 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop
+### Minor Updates
+#### Changed
+- Updated CHP `macrs_option_years` default to MACRS_YEARS_CHOICES.FIVE to align with REopt.jl default
+- Changed **macrs_bonus_fraction** to from 0.80 to 0.60 (60%) for CHP, ElectricStorage, ColdThermalStorage, HotThermalStorage GHP, PV, Wind. Aligns with 20% annual decrease per Tax Cuts and Jobs Act of 2017.
+
 ## v3.4.1
 ### Minor Updates
 #### Fixed
