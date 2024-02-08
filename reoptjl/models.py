@@ -2481,7 +2481,7 @@ class PVInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.8,
+        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -2903,7 +2903,7 @@ class WindInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.8,
+        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -3281,7 +3281,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.8,
+        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -3490,7 +3490,7 @@ class GeneratorInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=1.0,
+        default=0.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -4020,13 +4020,13 @@ class CHPInputs(BaseModel, models.Model):
 
     #Financial and emissions    
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.ZERO,
+        default=MACRS_YEARS_CHOICES.FIVE,
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.8,
+        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -5349,7 +5349,7 @@ class SteamTurbineInputs(BaseModel, models.Model):
     )
 
     macrs_bonus_fraction = models.FloatField(
-        default=1.0,
+        default=0.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -5533,7 +5533,7 @@ class HotThermalStorageInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.8,
+        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -5704,7 +5704,7 @@ class ColdThermalStorageInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.8,
+        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -6728,7 +6728,7 @@ class GHPInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.8,
+        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
