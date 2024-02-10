@@ -34,7 +34,7 @@ Classify the change according to the following categories:
         "propane"=>138.6 to 139.16,
         "diesel_oil"=>163.1 to 163.61
     )
-- Changed default source for CO2 grid emissions values to NREL's Cambium 2022 Database (by default: CO2e, long-run marginal emissions rates levelized (averaged) over the analysis period, assuming start year 2024). Added new emissions inputs and call to Cambium API in `ElectricUtilityInputs`. Include option for user to use AVERT data for CO2 using **co2_from_avert** boolian. 
+- Changed default source for CO2 grid emissions values to NREL's Cambium 2022 Database (by default: CO2e, long-run marginal emissions rates levelized (averaged) over the analysis period, assuming start year 2024). Added new emissions inputs in `ElectricUtilityInputs`. Include option for user to use AVERT data for CO2 using **co2_from_avert** boolian. 
 - Update `ElectricUtility` **emissions_region** to **avert_emissions_region** and **distance_to_emissions_region_meters** to **distance_to_avert_emissions_region_meters**.
 
 ### Added 
