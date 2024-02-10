@@ -4251,13 +4251,13 @@ class CHPInputs(BaseModel, models.Model):
         help_text="True/False for if technology has the ability to curtail energy production."
     )
     fuel_renewable_energy_fraction = models.FloatField(
-        default=0.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
         ],
         blank=True,
-        help_text="Fraction of the CHP fuel considered renewable."
+        null=True,
+        help_text="Fraction of the CHP fuel considered renewable. Default depends on fuel type."
     )
     emissions_factor_lb_CO2_per_mmbtu = models.FloatField(
         validators=[
@@ -4265,6 +4265,7 @@ class CHPInputs(BaseModel, models.Model):
             MaxValueValidator(1e4)
         ],
         blank=True,
+        null=True,
         help_text="Pounds of CO2 emitted per MMBTU of CHP fuel burned."
     )
     emissions_factor_lb_NOx_per_mmbtu = models.FloatField(
@@ -4273,6 +4274,7 @@ class CHPInputs(BaseModel, models.Model):
             MaxValueValidator(1e4)
         ],
         blank=True,
+        null=True,
         help_text="Pounds of CO2 emitted per MMBTU of CHP fuel burned."
     )
     emissions_factor_lb_SO2_per_mmbtu = models.FloatField(
@@ -4281,6 +4283,7 @@ class CHPInputs(BaseModel, models.Model):
             MaxValueValidator(1e4)
         ],
         blank=True,
+        null=True,
         help_text="Pounds of CO2 emitted per MMBTU of CHP fuel burned."
     )
     emissions_factor_lb_PM25_per_mmbtu = models.FloatField(
@@ -4289,6 +4292,7 @@ class CHPInputs(BaseModel, models.Model):
             MaxValueValidator(1e4)
         ],
         blank=True,
+        null=True,
         help_text="Pounds of CO2 emitted per MMBTU of CHP fuel burned."
     )
     
@@ -4301,7 +4305,10 @@ class CHPInputs(BaseModel, models.Model):
             raise ValidationError(error_messages)
 
         self.fuel_cost_per_mmbtu = scalar_or_monthly_to_8760(self.fuel_cost_per_mmbtu)
-
+        
+        if self.fuel_renewable_energy_fraction == None:
+            self.fuel_renewable_energy_fraction = FUEL_DEFAULTS["fuel_renewable_energy_fraction"].get(self.fuel_type, 0.0)
+        
         if self.emissions_factor_lb_CO2_per_mmbtu == None:
             self.emissions_factor_lb_CO2_per_mmbtu = FUEL_DEFAULTS["emissions_factor_lb_CO2_per_mmbtu"].get(self.fuel_type, 0.0)
         
@@ -4800,6 +4807,16 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         help_text="Existing boiler system efficiency - conversion of fuel to usable heating thermal energy."
     )
 
+    fuel_renewable_energy_fraction = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        null=True,
+        help_text="Fraction of the fuel considered renewable. Default depends on fuel type."
+    )
+
     emissions_factor_lb_CO2_per_mmbtu = models.FloatField(
         validators=[
             MinValueValidator(0.0),
@@ -4807,7 +4824,7 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        help_text=""
+        help_text="Pounds of CO2e emitted per MMBTU of fuel burned."
     )
 
     emissions_factor_lb_NOx_per_mmbtu = models.FloatField(
@@ -4817,7 +4834,7 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        help_text=""
+        help_text="Pounds of NOx emitted per MMBTU of fuel burned."
     )
 
     emissions_factor_lb_SO2_per_mmbtu = models.FloatField(
@@ -4827,7 +4844,7 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        help_text=""
+        help_text="Pounds of SO2 emitted per MMBTU of fuel burned."
     )
 
     emissions_factor_lb_PM25_per_mmbtu = models.FloatField(
@@ -4837,7 +4854,7 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        help_text=""
+        help_text="Pounds of PM2.5 emitted per MMBTU fuel burned."
     )
 
     fuel_cost_per_mmbtu = ArrayField(
@@ -4880,6 +4897,9 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         
         self.fuel_cost_per_mmbtu = scalar_or_monthly_to_8760(self.fuel_cost_per_mmbtu)
 
+        if self.fuel_renewable_energy_fraction == None:
+            self.fuel_renewable_energy_fraction = FUEL_DEFAULTS["fuel_renewable_energy_fraction"].get(self.fuel_type, 0.0)
+        
         if self.emissions_factor_lb_CO2_per_mmbtu == None:
             self.emissions_factor_lb_CO2_per_mmbtu = FUEL_DEFAULTS["emissions_factor_lb_CO2_per_mmbtu"].get(self.fuel_type, 0.0)
         
