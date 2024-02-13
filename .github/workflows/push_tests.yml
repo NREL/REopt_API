@@ -31,4 +31,4 @@ jobs:
         with:
           time: '150s'
       - name: test v3 (stable)
-        run: docker exec reopt_api_celery_1 python manage.py test reoptjl.test -v 2 --no-input        
+        run: docker exec reopt_api-celery-1 python manage.py test reoptjl.test -v 2 --no-input        
