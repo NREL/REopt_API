@@ -24,7 +24,7 @@ jobs:
         run: ./.github/scripts/make_keys.py.sh 
       - name: Build containers
         run: docker compose up -d
-    - name: Check running containers
+      - name: Check running containers
         run: docker ps -a
       - name: Wait for julia_api
         uses: jakejarvis/wait-action@master
