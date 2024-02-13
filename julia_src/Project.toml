@@ -1,0 +1,18 @@
+[deps]
+AxisArrays = "39de3d68-74b9-583c-8d2d-e117c070f3a9"
+Cbc = "9961bab8-2fa3-5c5a-9d89-47fab24efd76"
+DotEnv = "4dc1fcf4-5e3b-5448-94ab-0c38ec0385c1"
+GhpGhx = "7ce85f02-24a8-4d69-a3f0-14b5daa7d30c"
+HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
+HiGHS = "87dc4568-4c63-4d18-b0c0-bb2238e4078b"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
+MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
+MutableArithmetics = "d8a4904e-b15c-11e9-3269-09a3773c0cb0"
+PROJ_jll = "58948b4f-47e0-5654-a9ad-f609743f8632"
+REopt = "d36ad4e8-d74a-4f7a-ace1-eaea049febf6"
+SCIP = "82193955-e24f-5292-bf16-6f2c5261a85f"
+Xpress = "9e70acf3-d6c9-5be6-b5bd-4e2c73e3e054"
+
+[compat]
+PROJ_jll = "900.0.0"
