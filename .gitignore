@@ -118,6 +118,7 @@ docs/formulation/*log
 
 # Customized solver setup and docker files
 julia_src/xpress/licenseserver
+julia_src/licenseserver
 julia_src/Dockerfile.xpress
 docker-compose.xpress.yml
-julia_src/xpress/solver_setup.sh
+julia_src/solver_setup.sh
