@@ -63,10 +63,10 @@ services:
     container_name: julia_api
     build:
       context: julia_src/
-      dockerfile: Dockerfile.opensource
+      dockerfile: Dockerfile
     environment:
-      - SOLVER=HiGHS
-    command: julia --project=/opt/julia_src/opensource opensource/http.jl
+      - XPRESS_JL_SKIP_LIB_CHECK=True
+    command: julia --project=/opt/julia_src http.jl
     ports:
       - "8081:8081"
     volumes:
