@@ -1685,7 +1685,7 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         blank=True,
         default = "Mid-case",
         help_text=("Cambium Scenario for evolution of electricity sector (see Cambium documentation for descriptions)."
-                   "Options: ['Mid-case', 'Low Renewable Energy and Battery Costs', 'High Renewable Energy and Battery Costs', 'Electricifcation', 'Low Natural Gas Price', 'High Natural Gas Price', 'Mid-case with 95% Decarbonization by 2050', 'Mid-case with 100% Decarbonization by 2035', 'Mid-case (with tax credit phaseout)', 'Low Renewable Energy and Battery Costs (with tax credit phaseout)']")
+                   "Options: ['Mid-case',  'Mid-case with tax credit expiration',  'Low renewable energy cost', 'Low renewable energy cost with tax credit expiration',   'High renewable energy cost', 'High electrification',  'Low natrual gas prices', 'High natrual gas prices', 'Mid-case with 95% decarbonization by 2050',  'Mid-case with 100% decarbonization by 2035']")
     )
     cambium_location_type = models.TextField(
         blank=True,
