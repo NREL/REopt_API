@@ -26,6 +26,27 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.4.1
+### Minor Updates
+#### Fixed
+- Fixed Wind validation code to prevent erroring when user provides `production_factor_series` for location outside of WindToolkit bounds. 
+- Fixed divide by zero error when POSTing to the `/erp` endpoint with a `battery_size_kw` of 0
+#### Changed
+- Updated `reopt_version` in `ERPJob` to 0.39.1
+ 
+## v3.4.0
+### Minor Updates
+#### Added 
+- Added the following BAU outputs:  lifecycle_chp_standby_cost_after_tax, lifecycle_elecbill_after_tax, lifecycle_production_incentive_after_tax, lifecycle_outage_cost, lifecycle_MG_upgrade_and_fuel_cost
+### Changed
+- Updated REopt.jl version to 0.39.1 along with updates to other dependencies
+#### Fixed
+- Fixed setting of default Generator `installed_cost_per_kw` so that user inputs are not overridden 
+- Avoid /summary endpoint error with off-grid runs where there is no ElectricTariff
+
+## v3.3.0
+### Changed
+- Updates to REopt.jl for passing API key
 
 ## v3.2.3
 ### Minor Updates

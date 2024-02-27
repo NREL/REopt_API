@@ -34,7 +34,7 @@ spec:
       containers:
         - name: {{ .Chart.Name }}-julia
           image: {{ index .Values.werf.image "julia-api" }}
-          args: ["julia", "--project=/opt/julia_src", "http.jl"]
+          args: ["julia", "--project=/opt/julia_src/xpress", "xpress/http.jl"]
           ports:
             - containerPort: 8081
           envFrom:
