@@ -287,6 +287,19 @@ class Settings(BaseModel, models.Model):
         help_text=("Set to true to enable off-grid analyses, not connected to a bulk power system.")
     )
 
+    class SOLVERS(models.TextChoices):
+        HIGHS = "HiGHS"
+        CBC = "Cbc"
+        SCIP = "SCIP"
+        XPRESS = "Xpress"
+
+    solver_name = models.TextField(
+        blank=True,
+        default=SOLVERS.XPRESS,
+        choices=SOLVERS.choices,
+        help_text=("Solver used for REopt.jl. Options include HiGHS, Cbc, SCIP, and Xpress")
+    )
+
     def clean(self):
         if self.off_grid_flag:
             self.run_bau = False
