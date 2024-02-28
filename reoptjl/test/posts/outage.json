@@ -33,7 +33,8 @@
         "fuel_cost_per_mmbtu": 12.0,
         "min_kw": 150.0,
         "max_kw": 150.0,
-        "macrs_bonus_fraction": 0.8
+        "macrs_bonus_fraction": 0.8,
+        "macrs_option_years": 0
     }, 
     "PV": {
         "min_kw": 282.3629,
