@@ -16,7 +16,7 @@ if xpress_installed == "True"
     include("REopt.jl")
     include("xpress_functions.jl")  # Includes both get_solver_model(XpressModel) and job endpoint for v1/v2
 else
-    @warn "Xpress solver is not setup, so only HiGHS, Cbc, or SCIP solver options are available"
+    @warn "Xpress solver is not setup, so only Settings.solver_choice = 'HiGHS', 'Cbc', or 'SCIP' options are available."
 end
 
 function reopt(req::HTTP.Request)
@@ -31,8 +31,9 @@ function reopt(req::HTTP.Request)
     end
     solver_name = pop!(settings, "solver_name")
     if solver_name == "Xpress" && !(xpress_installed=="True")
-        error_response["error"] = "Xpress solver_name was input (default), but Xpress is not installed."
-        return HTTP.Response(500, JSON.json(error_response))
+        solver_name = "HiGHS"
+        @warn "Changing solver_choice from Xpress to $solver_name because Xpress is not installed. Next time 
+                Specify Settings.solver_choice = 'HiGHS' or 'Cbc' or 'SCIP'"
     end
 	timeout_seconds = pop!(settings, "timeout_seconds")
 	optimality_tolerance = pop!(settings, "optimality_tolerance")
