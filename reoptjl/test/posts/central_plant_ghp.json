@@ -1,4 +1,5 @@
 {
+    "Settings": {"solver_name": "HiGHS"},
     "Site": {
         "latitude": 41.878, 
         "longitude": -87.63
