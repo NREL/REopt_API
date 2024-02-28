@@ -12,7 +12,7 @@ include("os_solvers.jl")
 # Load Xpress only if it is installed, as indicated by ENV["XPRESS_INSTALLED"]="True"
 xpress_installed = get(ENV, "XPRESS_INSTALLED", "False")
 if xpress_installed == "True"
-    using Xpress  # Why not "using Xpress"?
+    using Xpress
     include("REopt.jl")
     include("xpress_functions.jl")  # Includes both get_solver_model(XpressModel) and job endpoint for v1/v2
 else
