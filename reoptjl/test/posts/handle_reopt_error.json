@@ -2,7 +2,8 @@
     "Settings":{
         "optimality_tolerance":0.005,
         "timeout_seconds":420,
-        "run_bau":false
+        "run_bau":false,
+        "solver_name": "HiGHS"
     },
     "ElectricTariff": {
         "urdb_label": "539fc1a6ec4f024c27d8a8f7"

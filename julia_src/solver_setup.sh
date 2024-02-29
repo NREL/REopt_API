@@ -8,6 +8,6 @@ cd licenseserver
 transcrypt/transcrypt --flush-credentials -y || true
 transcrypt/transcrypt -c aes-256-cbc -p "$TRANSCRYPT_PASSWORD" -y
 # Needed for deploys to NREL servers
-cp Dockerfile.xpress ../..
+cp Dockerfile.xpress ..
 # Only need for local testing
-cp docker-compose.xpress.yml ../../..
+cp docker-compose.xpress.yml ../..

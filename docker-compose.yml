@@ -63,6 +63,10 @@ services:
     container_name: julia_api
     build:
       context: julia_src/
+      dockerfile: Dockerfile
+    environment:
+      - XPRESS_JL_SKIP_LIB_CHECK=True
+      - XPRESS_INSTALLED=False
     command: julia --project=/opt/julia_src http.jl
     ports:
       - "8081:8081"

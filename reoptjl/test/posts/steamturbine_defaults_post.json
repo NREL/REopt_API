@@ -1,4 +1,5 @@
 {
+    "Settings": {"solver_name": "HiGHS"},
     "DomesticHotWaterLoad": {
         "annual_mmbtu": 67140.53099999999,
         "doe_reference_name": "Hospital"

@@ -1,82 +1,53 @@
 using HTTP, JSON, JuMP
-import Xpress
-include("REopt.jl")
+using HiGHS, Cbc, SCIP
 using GhpGhx
-import REopt as reoptjl
-using GhpGhx
+import REopt as reoptjl  # For REopt.jl, needed because we still have local REopt.jl module for V1/V2
 using DotEnv
 DotEnv.config()
 
 const test_nrel_developer_api_key = ENV["NREL_DEVELOPER_API_KEY"]
 
-function job(req::HTTP.Request)
-    d = JSON.parse(String(req.body))
-    timeout = pop!(d, "timeout_seconds")
-    tol = pop!(d, "tolerance")
-    m = REopt.xpress_model(timeout, tol)
-    @info "Starting REopt with timeout of $(timeout) seconds..."
-	error_response = Dict()
-	results = Dict()
-	try
-    	results = REopt.reopt(m, d)
-	catch e
-		@error "Something went wrong in the Julia code!" exception=(e, catch_backtrace())
-		error_response["error"] = sprint(showerror, e)
-	end
-    optimizer = backend(m)
-	finalize(optimizer)
-    Xpress.postsolve(optimizer.inner)
-	empty!(m)
-	GC.gc()
-	if isempty(error_response)
-    	@info "REopt model solved with status $(results["status"])."
-    	return HTTP.Response(200, JSON.json(results))
-	else
-		@info "An error occured in the Julia code."
-		return HTTP.Response(500, JSON.json(error_response))
-	end
+include("os_solvers.jl")
+
+# Load Xpress only if it is installed, as indicated by ENV["XPRESS_INSTALLED"]="True"
+xpress_installed = get(ENV, "XPRESS_INSTALLED", "False")
+if xpress_installed == "True"
+    using Xpress
+    include("REopt.jl")
+    include("xpress_functions.jl")  # Includes both get_solver_model(XpressModel) and job endpoint for v1/v2
+else
+    @warn "Xpress solver is not setup, so only Settings.solver_choice = 'HiGHS', 'Cbc', or 'SCIP' options are available."
 end
 
 function reopt(req::HTTP.Request)
     d = JSON.parse(String(req.body))
-	settings = d["Settings"]
+	error_response = Dict()
+    settings = d["Settings"]
     if !isempty(get(d, "api_key", ""))
         ENV["NREL_DEVELOPER_API_KEY"] = pop!(d, "api_key")
     else
         ENV["NREL_DEVELOPER_API_KEY"] = test_nrel_developer_api_key
         delete!(d, "api_key")
     end
-	timeout_seconds = -pop!(settings, "timeout_seconds")
+    solver_name = pop!(settings, "solver_name")
+    if solver_name == "Xpress" && !(xpress_installed=="True")
+        solver_name = "HiGHS"
+        @warn "Changing solver_choice from Xpress to $solver_name because Xpress is not installed. Next time 
+                Specify Settings.solver_choice = 'HiGHS' or 'Cbc' or 'SCIP'"
+    end
+	timeout_seconds = pop!(settings, "timeout_seconds")
 	optimality_tolerance = pop!(settings, "optimality_tolerance")
+    solver_attributes = SolverAttributes(timeout_seconds, optimality_tolerance)    
 	run_bau = pop!(settings, "run_bau")
 	ms = nothing
 	if run_bau
-		m1 = direct_model(
-			Xpress.Optimizer(
-				MAXTIME = timeout_seconds,
-				MIPRELSTOP = optimality_tolerance,
-				OUTPUTLOG = 0
-			)
-		)
-		m2 = direct_model(
-			Xpress.Optimizer(
-				MAXTIME = timeout_seconds,
-				MIPRELSTOP = optimality_tolerance,
-				OUTPUTLOG = 0
-			)
-		)
+		m1 = get_solver_model(get_solver_model_type(solver_name), solver_attributes)
+		m2 = get_solver_model(get_solver_model_type(solver_name), solver_attributes)
 		ms = [m1, m2]
 	else
-		ms = direct_model(
-			Xpress.Optimizer(
-				MAXTIME = timeout_seconds,
-				MIPRELSTOP = optimality_tolerance,
-				OUTPUTLOG = 0
-			)
-		)
+		ms = get_solver_model(get_solver_model_type(solver_name), solver_attributes)
 	end
-	@info "Starting REopt..."
-    error_response = Dict()
+	@info "Starting REopt with $(solver_name) solver..."
     results = Dict()
 	inputs_with_defaults_set_in_julia = Dict()
 	model_inputs = nothing
@@ -210,7 +181,6 @@ function erp(req::HTTP.Request)
         return HTTP.Response(500, JSON.json(error_response))
     end
 end
-
 
 function ghpghx(req::HTTP.Request)
     inputs_dict = JSON.parse(String(req.body))
@@ -519,7 +489,7 @@ function get_existing_chiller_default_cop(req::HTTP.Request)
     @info "Getting default existing chiller COP..."
     error_response = Dict()
     try
-        # Have to specify "reoptjl.get_existing..." because http function has the same name
+        # Have to specify "REopt.get_existing..." because http function has the same name
         chiller_cop = reoptjl.get_existing_chiller_default_cop(;
                 existing_chiller_max_thermal_factor_on_peak_load=d["existing_chiller_max_thermal_factor_on_peak_load"], 
                 max_load_kw=d["max_load_kw"],
@@ -538,10 +508,19 @@ function get_existing_chiller_default_cop(req::HTTP.Request)
     end
 end    
 
+function job_no_xpress(req::HTTP.Request)
+    error_response = Dict("error" => "V1 and V2 not available without Xpress installation.")
+    return HTTP.Response(500, JSON.json(error_response))
+end
+
 # define REST endpoints to dispatch to "service" functions
 const ROUTER = HTTP.Router()
 
-HTTP.register!(ROUTER, "POST", "/job", job)
+if xpress_installed == "True"
+    HTTP.register!(ROUTER, "POST", "/job", job)
+else
+    HTTP.register!(ROUTER, "POST", "/job", job_no_xpress)
+end
 HTTP.register!(ROUTER, "POST", "/reopt", reopt)
 HTTP.register!(ROUTER, "POST", "/erp", erp)
 HTTP.register!(ROUTER, "POST", "/ghpghx", ghpghx)
