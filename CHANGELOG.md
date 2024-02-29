@@ -26,15 +26,11 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop
+## v3.5.0
 ### Minor Updates
 #### Changed
 - Updated CHP `macrs_option_years` default to MACRS_YEARS_CHOICES.FIVE to align with REopt.jl default
 - Changed **macrs_bonus_fraction** to from 0.80 to 0.60 (60%) for CHP, ElectricStorage, ColdThermalStorage, HotThermalStorage GHP, PV, Wind. Aligns with 20% annual decrease per Tax Cuts and Jobs Act of 2017.
-
-## Develop 02-28-2024
-### Minor Updates
-##### Changed
 - Makes **one Julia environment** to avoid needing to update REopt.jl and other dependencies in multiple locations
 - Makes **one http.jl** file with conditional loading for Xpress.jl, if it is installed
 - Changes all the GitHub Actions `test_job_endpoint.py` tests to use an open source solver so we can have full V3 **CI testing** again
