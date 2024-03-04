@@ -3,7 +3,7 @@ using HiGHS, Cbc, SCIP
 using GhpGhx
 import REopt as reoptjl  # For REopt.jl, needed because we still have local REopt.jl module for V1/V2
 using DotEnv
-DotEnv.config()
+DotEnv.load!()
 
 const test_nrel_developer_api_key = ENV["NREL_DEVELOPER_API_KEY"]
 
