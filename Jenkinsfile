@@ -74,10 +74,10 @@ pipeline {
           stages {
             stage("solver setup") {
               steps {
-                dir("julia_src/xpress/licenseserver") {
+                dir("julia_src/licenseserver") {
                   git url: env.LICENSESERVER_URL
                 }
-                sh "cp julia_src/xpress/licenseserver/Dockerfile.xpress julia_src/"
+                sh "cp julia_src/licenseserver/Dockerfile.xpress julia_src/"
               }
             }
 
