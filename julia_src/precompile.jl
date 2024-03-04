@@ -6,3 +6,6 @@ using MathOptInterface
 using MutableArithmetics
 using REopt
 using GhpGhx
+using HiGHS
+using Cbc
+using SCIP

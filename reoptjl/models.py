@@ -281,6 +281,19 @@ class Settings(BaseModel, models.Model):
         help_text=("Set to true to enable off-grid analyses, not connected to a bulk power system.")
     )
 
+    class SOLVERS(models.TextChoices):
+        HIGHS = "HiGHS"
+        CBC = "Cbc"
+        SCIP = "SCIP"
+        XPRESS = "Xpress"
+
+    solver_name = models.TextField(
+        blank=True,
+        default=SOLVERS.XPRESS,
+        choices=SOLVERS.choices,
+        help_text=("Solver used for REopt.jl. Options include HiGHS, Cbc, SCIP, and Xpress")
+    )
+
     def clean(self):
         if self.off_grid_flag:
             self.run_bau = False
@@ -2481,7 +2494,7 @@ class PVInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.8,
+        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -2903,7 +2916,7 @@ class WindInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.8,
+        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -3281,7 +3294,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.8,
+        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -3490,7 +3503,7 @@ class GeneratorInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=1.0,
+        default=0.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -4020,13 +4033,13 @@ class CHPInputs(BaseModel, models.Model):
 
     #Financial and emissions    
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.ZERO,
+        default=MACRS_YEARS_CHOICES.FIVE,
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.8,
+        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -5349,7 +5362,7 @@ class SteamTurbineInputs(BaseModel, models.Model):
     )
 
     macrs_bonus_fraction = models.FloatField(
-        default=1.0,
+        default=0.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -5533,7 +5546,7 @@ class HotThermalStorageInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.8,
+        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -5704,7 +5717,7 @@ class ColdThermalStorageInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.8,
+        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -6728,7 +6741,7 @@ class GHPInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.8,
+        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)

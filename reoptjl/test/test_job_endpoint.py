@@ -227,7 +227,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         r = json.loads(resp.content)
         results = r["outputs"]
 
-        self.assertAlmostEqual(results["Financial"]["npv"], 11323.01, places=0)
+        self.assertAlmostEqual(results["Financial"]["npv"], -258533.19, places=-3)
         assert(resp.status_code==200)   
 
     def test_steamturbine_defaults_from_julia(self):

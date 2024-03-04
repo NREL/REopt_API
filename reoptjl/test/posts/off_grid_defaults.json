@@ -1,7 +1,8 @@
 {
     "Settings":{
         "off_grid_flag": true,
-        "optimality_tolerance":0.05
+        "optimality_tolerance":0.05,
+        "solver_name": "HiGHS"
     },
     "Site": {
         "longitude": -118.1164613,
