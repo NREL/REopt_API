@@ -49,6 +49,7 @@ Classify the change according to the following categories:
 - Makes **one Julia environment** to avoid needing to update REopt.jl and other dependencies in multiple locations
 - Makes **one http.jl** file with conditional loading for Xpress.jl, if it is installed
 - Changes all the GitHub Actions `test_job_endpoint.py` tests to use an open source solver so we can have full V3 **CI testing** again
+- In julia_src/Manifest.toml, updated REopt.jl version to v0.40.0  
 ##### Added
 - Adds a **choice of solver** in `Settings.solver_name`, and useful error messages if trying to use Xpress without installation
 - Updated the Wiki in this repo with open source solver setup info

@@ -66,6 +66,7 @@ pipeline {
         WERF_SYNCHRONIZATION = ":local"
         XPRESS_LICENSE_HOST = credentials("reopt-api-xpress-license-host")
         LICENSESERVER_URL = credentials("reopt-api-xpress-licenseserver-url")
+        XPRESS_INSTALLED = "True"
         NREL_ROOT_CERT_URL_ROOT = credentials("reopt-api-nrel-root-cert-url-root")
       }
 
@@ -74,10 +75,10 @@ pipeline {
           stages {
             stage("solver setup") {
               steps {
-                dir("julia_src/xpress/licenseserver") {
+                dir("julia_src/licenseserver") {
                   git url: env.LICENSESERVER_URL
                 }
-                sh "cp julia_src/xpress/licenseserver/Dockerfile.xpress julia_src/"
+                sh "cp julia_src/licenseserver/Dockerfile.xpress julia_src/"
               }
             }
 
