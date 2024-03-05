@@ -66,7 +66,7 @@ pipeline {
         WERF_SYNCHRONIZATION = ":local"
         XPRESS_LICENSE_HOST = credentials("reopt-api-xpress-license-host")
         LICENSESERVER_URL = credentials("reopt-api-xpress-licenseserver-url")
-        XPRESS_INSTALLED = "true"
+        XPRESS_INSTALLED = "True"
         NREL_ROOT_CERT_URL_ROOT = credentials("reopt-api-nrel-root-cert-url-root")
       }
 
