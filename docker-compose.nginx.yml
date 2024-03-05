@@ -78,7 +78,6 @@ services:
     container_name: julia-nginx
     build:
       context: julia_src/
-      dockerfile: Dockerfile.highs
     command: bash ./run_julia_servers.sh 8
     environment:
       - JULIA_NUM_THREADS=2
