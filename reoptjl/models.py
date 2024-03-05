@@ -68,6 +68,13 @@ FUEL_DEFAULTS = {
     }
 }
 
+EMISSIONS_DECREASE_DEFAULTS = { # year over year decrease in grid emissions rate
+    "CO2e" : 0.02163,
+    "NOx" : 0.02163,
+    "SO2" : 0.02163,
+    "PM25" : 0.02163
+}
+
 WIND_COST_DEFAULTS = { # size_class_to_installed_cost 
     "residential" : 6339.0,
     "commercial" : 4760.0,
@@ -1786,7 +1793,6 @@ class ElectricUtilityInputs(BaseModel, models.Model):
     )
     
     emissions_factor_NOx_decrease_fraction = models.FloatField(
-        default=0.02163,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -1795,7 +1801,6 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         help_text="Annual percent decrease in the total annual NOx marginal emissions rate of the grid. A negative value indicates an annual increase."
     )
     emissions_factor_SO2_decrease_fraction = models.FloatField(
-        default=0.02163,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -1804,7 +1809,6 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         help_text="Annual percent decrease in the total annual SO2 marginal emissions rate of the grid. A negative value indicates an annual increase."
     )
     emissions_factor_PM25_decrease_fraction = models.FloatField(
-        default=0.02163,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -1840,7 +1844,14 @@ class ElectricUtilityInputs(BaseModel, models.Model):
             self.outage_probabilities = [1/len(self.outage_durations)] * len(self.outage_durations)
 
         if self.co2_from_avert or len(self.emissions_factor_series_lb_CO2_per_kwh) > 0:
-            self.emissions_factor_CO2_decrease_fraction = 0.02163 # leave blank otherwise; the Julia Pkg will set to 0 unless site is in AK or HI
+            self.emissions_factor_CO2_decrease_fraction = EMISSIONS_DECREASE_DEFAULTS.get("CO2e", None) # leave blank otherwise; the Julia Pkg will set to 0 unless site is in AK or HI
+
+        if self.emissions_factor_NOx_decrease_fraction == None:
+            self.emissions_factor_NOx_decrease_fraction = EMISSIONS_DECREASE_DEFAULTS.get("NOx", 0.0)
+        if self.emissions_factor_SO2_decrease_fraction == None:
+            self.emissions_factor_SO2_decrease_fraction = EMISSIONS_DECREASE_DEFAULTS.get("SO2", 0.0)
+        if self.emissions_factor_PM25_decrease_fraction == None:
+            self.emissions_factor_PM25_decrease_fraction = EMISSIONS_DECREASE_DEFAULTS.get("PM25", 0.0)
 
         if error_messages:
             raise ValidationError(error_messages)
