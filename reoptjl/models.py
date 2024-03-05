@@ -1748,8 +1748,8 @@ class ElectricUtilityInputs(BaseModel, models.Model):
     )
     emissions_factor_CO2_decrease_fraction = models.FloatField(
         validators=[
-            MinValueValidator(-3),
-            MaxValueValidator(3)
+            MinValueValidator(-1),
+            MaxValueValidator(1)
         ],
         null=True, blank=True,
         help_text="Not applied with use of Cambium data for climate emissions. Annual percent decrease in the total annual CO2 emissions rate of the grid. A negative value indicates an annual increase."
