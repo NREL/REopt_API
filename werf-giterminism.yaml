@@ -9,4 +9,4 @@ config:
       - julia_src/Dockerfile.xpress
     allowContextAddFiles:
       - julia_src/Dockerfile.xpress
-      - julia_src/xpress/licenseserver
+      - julia_src/licenseserver

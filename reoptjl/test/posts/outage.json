@@ -24,14 +24,17 @@
         "electric_efficiency_full_load": 0.323289797,
         "electric_efficiency_half_load": 0.323289797,
         "om_cost_per_kw": 10.0,
-        "fuel_cost_per_gallon": 3.0
+        "fuel_cost_per_gallon": 3.0,
+        "macrs_bonus_fraction": 1.0
     },
     "CHP": {
         "thermal_efficiency_full_load": 0.0,
         "prime_mover": "recip_engine",
         "fuel_cost_per_mmbtu": 12.0,
         "min_kw": 150.0,
-        "max_kw": 150.0
+        "max_kw": 150.0,
+        "macrs_bonus_fraction": 0.8,
+        "macrs_option_years": 0
     }, 
     "PV": {
         "min_kw": 282.3629,
