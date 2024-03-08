@@ -210,13 +210,14 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         #case 3: Honolulu, HI (works for AVERT but not Cambium)
         inputs = {
             "latitude": 21.3099, 
-            "longitude": -74.759292,
+            "longitude": -157.8581,
             "load_year": 2021
         }
+        resp = self.api_client.get(f'/v3/avert_emissions_profile', data=inputs)
         self.assertHttpOK(resp)
         view_response = json.loads(resp.content)
-        self.assertAlmostEqual(view_response["avert_meters_to_region"], 760.62, delta=1.0)
-        self.assertEquals(view_response["avert_region"], "Mid-Atlantic")
+        self.assertEquals(view_response["avert_meters_to_region"], 0.0)
+        self.assertEquals(view_response["avert_region"], "Hawaii (Oahu)")
         self.assertEquals(len(view_response["emissions_factor_series_lb_NOx_per_kwh"]), 8760)
         #case 4: location well outside of US (does not work)
         inputs = {
@@ -228,6 +229,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         self.assertHttpBadRequest(resp)
         view_response = json.loads(resp.content)
         self.assertTrue("error" in view_response)
+        
 
     def test_cambium_emissions_profile_endpoint(self):
         # Call to the django view endpoint v3/cambium_emissions_profile which calls the http.jl endpoint
@@ -257,8 +259,8 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         view_response = json.loads(resp.content)
         self.assertTrue("error" in view_response)
         #case 3: Honolulu, HI (works for AVERT but not Cambium)
-        inputs["latitude"] = 47.606211
-        inputs["longitude"] = 157.8581
+        inputs["latitude"] = 21.3099
+        inputs["longitude"] = -157.8581
         resp = self.api_client.get(f'/v3/cambium_emissions_profile', data=inputs)
         self.assertHttpBadRequest(resp) 
         view_response = json.loads(resp.content)
