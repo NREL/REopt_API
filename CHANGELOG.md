@@ -26,11 +26,6 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop 3/7/24
-### Minor Updates
-#### Fixed
-- added missing wind outage outputs to list of multi dimentional outputs to transpose in `process_results()`
-
 ## v3.6.0
 ### Minor Updates
 #### Changed 
@@ -47,6 +42,8 @@ Classify the change according to the following categories:
 #### Added 
 - Added endpoint `v3/cambium_emissions_profile` to `urls.py`, `views.py`, `http.jl` to obtain Cambium emissions profile. Mainly for use in web tool.
 - Added **fuel_renewable_energy_fraction** input to `ExistingBoilerInputs`
+#### Fixed
+- added missing wind outage outputs to list of multi dimentional outputs to transpose in `process_results()`
 
 ## v3.5.0
 ### Minor Updates
