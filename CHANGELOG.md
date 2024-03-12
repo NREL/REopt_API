@@ -26,6 +26,11 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop 3/7/24
+### Minor Updates
+#### Fixed
+- added missing wind outage outputs to list of multi dimentional outputs to transpose in `process_results()`
+
 ## v3.6.0
 ### Minor Updates
 #### Changed 
