@@ -86,7 +86,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         results = r["outputs"]
     
         # Validate that we got off-grid response fields
-        self.assertAlmostEqual(results["Financial"]     ["offgrid_microgrid_lcoe_dollars_per_kwh"], 0.337, places=-3)
+        self.assertAlmostEqual(results["Financial"]["offgrid_microgrid_lcoe_dollars_per_kwh"], 0.337, places=-3)
         self.assertAlmostEqual(results["ElectricTariff"]["year_one_bill_before_tax"], 0.0)
         self.assertAlmostEqual(results["ElectricLoad"]["offgrid_load_met_fraction"], 0.99999, places=-2)
         self.assertAlmostEqual(sum(results["ElectricLoad"]["offgrid_load_met_series_kw"]), 8760.0, places=-1)
