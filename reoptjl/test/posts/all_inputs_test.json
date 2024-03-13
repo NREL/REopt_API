@@ -136,7 +136,7 @@
         "outage_probabilities": [1],
         "interconnection_limit_kw": 1000000000.0,
         "net_metering_limit_kw": 0.0,
-        "avert_emissions_region": "",
+        "emissions_region": "",
         "emissions_factor_series_lb_CO2_per_kwh": [],
         "emissions_factor_series_lb_NOx_per_kwh": [],
         "emissions_factor_series_lb_SO2_per_kwh": [],

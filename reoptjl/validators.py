@@ -144,7 +144,7 @@ class InputValidator(object):
             if "ElectricUtility" in self.models.keys():
                 msg_dict["ignored inputs"] = ("ElectricUtility inputs are not applicable when off_grid_flag is true, and will be ignored. "
                                 "Provided ElectricUtility can be removed from inputs")
-            msg_dict["info"] = ("When off_grid_flag is true, only PV, ElectricStorage, Generator, and Wind technologies can be modeled.")
+            msg_dict["info"] = ("When off_grid_flag is true, only PV, ElectricStorage, Generator technologies can be modeled.")
         return msg_dict
 
     @property
@@ -392,9 +392,6 @@ class InputValidator(object):
                                                 f"Value is greater than the max allowable ({max_ts} - {max_start_time_step_input})")
                     if not self.models["Site"].min_resil_time_steps:
                         self.models["Site"].min_resil_time_steps = max(self.models["ElectricUtility"].outage_durations)
-            if self.models["ElectricUtility"].__getattribute__("cambium_levelization_years") == None:
-                self.models["ElectricUtility"].cambium_levelization_years = self.models["Financial"].analysis_years
-
         
         """
         CoolingLoad

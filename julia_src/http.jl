@@ -70,7 +70,7 @@ function reopt(req::HTTP.Request)
 				:NOx_onsite_fuelburn_cost_per_tonne, :SO2_onsite_fuelburn_cost_per_tonne, :PM25_onsite_fuelburn_cost_per_tonne,
 				:NOx_cost_escalation_rate_fraction, :SO2_cost_escalation_rate_fraction, :PM25_cost_escalation_rate_fraction
 			]
-			inputs_with_defaults_from_avert_or_cambium = [
+			inputs_with_defaults_from_avert = [
 				:emissions_factor_series_lb_CO2_per_kwh, :emissions_factor_series_lb_NOx_per_kwh,
 				:emissions_factor_series_lb_SO2_per_kwh, :emissions_factor_series_lb_PM25_per_kwh
 			]
@@ -115,7 +115,7 @@ function reopt(req::HTTP.Request)
             end          
 			inputs_with_defaults_set_in_julia = Dict(
 				"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_easiur),
-				"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert_or_cambium),
+				"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert),
                 "CHP" => chp_dict,
 				"SteamTurbine" => steamturbine_dict,
                 "GHP" => ghp_dict,
@@ -287,66 +287,27 @@ function absorption_chiller_defaults(req::HTTP.Request)
     end
 end
 
-function avert_emissions_profile(req::HTTP.Request)
+function emissions_profile(req::HTTP.Request)
     d = JSON.parse(String(req.body))
-    @info "Getting AVERT emissions profiles..."
+    @info "Getting emissions profile..."
     data = Dict()
     error_response = Dict()
     try
 		latitude = typeof(d["latitude"]) == String ? parse(Float64, d["latitude"]) : d["latitude"]
 		longitude = typeof(d["longitude"]) == String ? parse(Float64, d["longitude"]) : d["longitude"]
-        load_year = typeof(d["load_year"]) == String ? parse(Int, d["load_year"]) : d["load_year"]
-        
-        data = reoptjl.avert_emissions_profiles(;latitude=latitude, longitude=longitude, time_steps_per_hour=1, load_year=load_year)
+        data = reoptjl.emissions_profiles(;latitude=latitude, longitude=longitude, time_steps_per_hour=1)
         if haskey(data, "error")
-            @info "An error occured getting the AVERT emissions data"
+            @info "An error occured getting the emissions data"
             return HTTP.Response(400, JSON.json(data))
         end
     catch e
-        @error "Something went wrong getting the AVERT emissions data" exception=(e, catch_backtrace())
+        @error "Something went wrong getting the emissions data" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
         return HTTP.Response(500, JSON.json(error_response))
     end
-    @info "AVERT emissions profiles determined."
+    @info "Emissions profile determined."
     return HTTP.Response(200, JSON.json(data))
 end
-
-function cambium_emissions_profile(req::HTTP.Request)
-    d = JSON.parse(String(req.body))
-    @info "Getting Cambium CO2 emissions profile..."
-    data = Dict()
-    error_response = Dict()
-    try
-        latitude = typeof(d["latitude"]) == String ? parse(Float64, d["latitude"]) : d["latitude"]
-		longitude = typeof(d["longitude"]) == String ? parse(Float64, d["longitude"]) : d["longitude"]
-        start_year = typeof(d["start_year"]) == String ? parse(Int, d["start_year"]) : d["start_year"]
-        lifetime = typeof(d["lifetime"]) == String ? parse(Int, d["lifetime"]) : d["lifetime"]
-        load_year = typeof(d["load_year"]) == String ? parse(Int, d["load_year"]) : d["load_year"]
-
-        data = reoptjl.cambium_emissions_profile(;scenario= d["scenario"],
-                                                location_type = d["location_type"],  
-                                                latitude=latitude, 
-                                                longitude=longitude, 
-                                                start_year=start_year,
-                                                lifetime=lifetime,
-                                                metric_col=d["metric_col"],
-                                                grid_level=d["grid_level"],
-                                                time_steps_per_hour=1, 
-                                                load_year=load_year
-                                                )
-        if haskey(data, "error")
-            @info "An error occured getting the Cambium emissions data"
-            return HTTP.Response(400, JSON.json(data))
-        end
-    catch e
-        @error "Something went wrong getting the Cambium emissions data" exception=(e, catch_backtrace())
-        error_response["error"] = sprint(showerror, e)
-        return HTTP.Response(500, JSON.json(error_response))
-    end
-    @info "Cambium emissions profile determined."
-    return HTTP.Response(200, JSON.json(data))
-end
-
 
 function easiur_costs(req::HTTP.Request)
     d = JSON.parse(String(req.body))
@@ -525,8 +486,7 @@ HTTP.register!(ROUTER, "POST", "/reopt", reopt)
 HTTP.register!(ROUTER, "POST", "/erp", erp)
 HTTP.register!(ROUTER, "POST", "/ghpghx", ghpghx)
 HTTP.register!(ROUTER, "GET", "/chp_defaults", chp_defaults)
-HTTP.register!(ROUTER, "GET", "/avert_emissions_profile", avert_emissions_profile)
-HTTP.register!(ROUTER, "GET", "/cambium_emissions_profile", cambium_emissions_profile)
+HTTP.register!(ROUTER, "GET", "/emissions_profile", emissions_profile)
 HTTP.register!(ROUTER, "GET", "/easiur_costs", easiur_costs)
 HTTP.register!(ROUTER, "GET", "/simulated_load", simulated_load)
 HTTP.register!(ROUTER, "GET", "/absorption_chiller_defaults", absorption_chiller_defaults)
