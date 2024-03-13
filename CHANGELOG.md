@@ -26,21 +26,6 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop - 2024-02-29 Cambium Branch
-### Changed 
-- Updated default fuel emissions factors from CO2 to CO2-equivalent (CO2e) values. In `reoptjl/models.py`, updated **GeneratorInputs : emissions_factor_lb_CO2_per_gal** from 22.51 to 22.58. And **FUEL_DEFAULTS: emissions_factor_lb_CO2_per_mmbtu** => Dict(
-        "natural_gas"=>116.9 to 117.03,
-        "landfill_bio_gas"=>114,8 to 115.38,
-        "propane"=>138.6 to 139.16,
-        "diesel_oil"=>163.1 to 163.61
-    )
-- Changed default source for CO2 grid emissions values to NREL's Cambium 2022 Database (by default: CO2e, long-run marginal emissions rates levelized (averaged) over the analysis period, assuming start year 2024). Added new emissions inputs in `ElectricUtilityInputs`. Include option for user to use AVERT data for CO2 using **co2_from_avert** boolian. 
-- Update `ElectricUtility` **emissions_region** to **avert_emissions_region** and **distance_to_emissions_region_meters** to **distance_to_avert_emissions_region_meters**.
-
-### Added 
-- Added endpoint `v3/cambium_emissions_profile` to `urls.py`, `views.py`, `http.jl` to obtain Cambium emissions profile. Mainly for use in web tool.
-- Added **fuel_renewable_energy_fraction** input to `ExistingBoilerInputs`
-
 ## v3.5.0
 ### Minor Updates
 #### Changed
