@@ -67,8 +67,7 @@ def process_results(results: dict, run_uuid: str) -> None:
             if "Outages" in results.keys():
                 for multi_dim_array_name in ["unserved_load_series_kw", "unserved_load_per_outage_kwh", 
                                             "storage_discharge_series_kw", "pv_to_storage_series_kw", 
-                                            "pv_curtailed_series_kw", "pv_to_load_series_kw", "wind_to_storage_series_kw", 
-                                            "wind_curtailed_series_kw", "wind_to_load_series_kw", 
+                                            "pv_curtailed_series_kw", "pv_to_load_series_kw", 
                                             "generator_to_storage_series_kw", "generator_curtailed_series_kw", 
                                             "generator_to_load_series_kw", "generator_fuel_used_per_outage_gal",
                                             "chp_to_storage_series_kw", "chp_curtailed_series_kw", 
