@@ -38,10 +38,11 @@ Classify the change according to the following categories:
 - Changed default source for CO2 grid emissions values to NREL's Cambium 2022 Database (by default: CO2e, long-run marginal emissions rates levelized (averaged) over the analysis period, assuming start year 2024). Added new emissions inputs in `ElectricUtilityInputs` to specify climate emissions rate type from Cambium. Include option for user to use AVERT data for CO2 using **co2_from_avert** boolian. 
 - Update `ElectricUtility` inputs and outputs: **emissions_region** to **avert_emissions_region** and **distance_to_emissions_region_meters** to **distance_to_avert_emissions_region_meters**.
 - Changed name of endpoint **emissions_profile** to **avert_emissions_profile**
-
 #### Added 
 - Added endpoint `v3/cambium_emissions_profile` to `urls.py`, `views.py`, `http.jl` to obtain Cambium emissions profile. Mainly for use in web tool.
 - Added **fuel_renewable_energy_fraction** input to `ExistingBoilerInputs`
+#### Fixed
+- added missing wind outage outputs to list of multi dimentional outputs to transpose in `process_results()`
 
 ## v3.5.0
 ### Minor Updates
