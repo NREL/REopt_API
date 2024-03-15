@@ -1114,18 +1114,19 @@ def unlink(request, user_uuid, run_uuid):
         err.save_to_db()
         return JsonResponse({"Error": err.message}, status=404)
 
-def emissions_profile(request):
+def avert_emissions_profile(request):
     try:
         inputs = {
             "latitude": request.GET['latitude'], # need to do float() to convert unicode?
-            "longitude": request.GET['longitude']
+            "longitude": request.GET['longitude'],
+            "load_year": request.GET['load_year']
         }
         julia_host = os.environ.get(
             'JULIA_HOST', 
             "julia"
         )
         http_jl_response = requests.get(
-            "http://" + julia_host + ":8081/emissions_profile/", 
+            "http://" + julia_host + ":8081/avert_emissions_profile/", 
             json=inputs
         )
         response = JsonResponse(
@@ -1148,6 +1149,47 @@ def emissions_profile(request):
         log.error(debug_msg)
         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
 
+def cambium_emissions_profile(request):
+    try:
+        inputs = {
+            "scenario": request.GET['scenario'], 
+            "location_type": request.GET['location_type'],
+            "latitude": request.GET['latitude'], 
+            "longitude": request.GET['longitude'],
+            "start_year": request.GET['start_year'],
+            "lifetime": request.GET['lifetime'],
+            "metric_col": request.GET['metric_col'],
+            "grid_level": request.GET['grid_level'],
+            # "time_steps_per_hour": request.GET['time_steps_per_hour'],
+            "load_year": request.GET['load_year']
+        }
+        julia_host = os.environ.get(
+            'JULIA_HOST', 
+            "julia"
+        )
+        http_jl_response = requests.get(
+            "http://" + julia_host + ":8081/cambium_emissions_profile/", 
+            json=inputs
+        )
+        response = JsonResponse(
+            http_jl_response.json(),
+            status=http_jl_response.status_code
+        )
+        return response
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing Parameter": str(e.args[0])}, status=400)
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=400)
+
+    except Exception:
+
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.error(debug_msg)
+        return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
 
 def easiur_costs(request):
     try:
