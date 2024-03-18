@@ -36,7 +36,7 @@ Fiona==1.8.20
 future==0.18.3
 geopandas==0.10.2
 gitdb==4.0.9
-GitPython==3.1.30
+GitPython==3.1.37
 google-api-core==2.4.0
 google-api-python-client==2.36.0
 google-auth==1.35.0
