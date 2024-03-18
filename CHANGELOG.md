@@ -26,6 +26,11 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.6.1
+### Minor Updates
+#### Fixed
+- See updates from REopt.jl v0.43.0: https://github.com/NREL/REopt.jl/pull/364
+
 ## v3.6.0
 ### Minor Updates
 #### Changed 
