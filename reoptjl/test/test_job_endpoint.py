@@ -15,6 +15,24 @@ import os
 
 class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
 
+    def test_solvers(self):
+        for solver in [
+                "HiGHS", 
+                "Cbc", 
+                "SCIP"]:
+            scenario_name = "res_{}".format(solver)
+            scenario_file = os.path.join('reoptjl', 'test', 'posts', '{}.json'.format(scenario_name))
+            scenario = json.load(open(scenario_file, 'r'))
+            # scenario["Settings"]["solver_name"] = solver
+            resp = self.api_client.post('/v3/job/', format='json', data=scenario)
+            r = json.loads(resp.content)
+            run_uuid = r.get('run_uuid')
+            resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
+            r = json.loads(resp.content)
+            results = r["outputs"]
+            output_file = os.path.join('reoptjl', 'test', 'outputs', "{}_outputs.json".format(scenario_name))
+            json.dump(r, open(output_file, "w"))
+        
     def test_multiple_outages(self):
 
         scenario_file = os.path.join('reoptjl', 'test', 'posts', 'outage.json')
