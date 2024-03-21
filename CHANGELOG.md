@@ -26,7 +26,50 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.6.1
+### Minor Updates
+#### Fixed
+- See updates from REopt.jl v0.43.0: https://github.com/NREL/REopt.jl/pull/364
 
+## v3.6.0
+### Minor Updates
+#### Changed 
+- Updated default fuel emissions factors from CO2 to CO2-equivalent (CO2e) values. In `reoptjl/models.py`, updated **GeneratorInputs : emissions_factor_lb_CO2_per_gal** from 22.51 to 22.58. And **FUEL_DEFAULTS: emissions_factor_lb_CO2_per_mmbtu** => Dict(
+        "natural_gas"=>116.9 to 117.03,
+        "landfill_bio_gas"=>114,8 to 115.38,
+        "propane"=>138.6 to 139.16,
+        "diesel_oil"=>163.1 to 163.61
+    )
+- Changed default source for CO2 grid emissions values to NREL's Cambium 2022 Database (by default: CO2e, long-run marginal emissions rates levelized (averaged) over the analysis period, assuming start year 2024). Added new emissions inputs in `ElectricUtilityInputs` to specify climate emissions rate type from Cambium. Include option for user to use AVERT data for CO2 using **co2_from_avert** boolian. 
+- Update `ElectricUtility` inputs and outputs: **emissions_region** to **avert_emissions_region** and **distance_to_emissions_region_meters** to **distance_to_avert_emissions_region_meters**.
+- Changed name of endpoint **emissions_profile** to **avert_emissions_profile**
+#### Added 
+- Added endpoint `v3/cambium_emissions_profile` to `urls.py`, `views.py`, `http.jl` to obtain Cambium emissions profile. Mainly for use in web tool.
+- Added **fuel_renewable_energy_fraction** input to `ExistingBoilerInputs`
+#### Fixed
+- added missing wind outage outputs to list of multi dimentional outputs to transpose in `process_results()`
+
+## v3.5.0
+### Minor Updates
+#### Changed
+- Updated CHP `macrs_option_years` default to MACRS_YEARS_CHOICES.FIVE to align with REopt.jl default
+- Changed **macrs_bonus_fraction** to from 0.80 to 0.60 (60%) for CHP, ElectricStorage, ColdThermalStorage, HotThermalStorage GHP, PV, Wind. Aligns with 20% annual decrease per Tax Cuts and Jobs Act of 2017.
+- Makes **one Julia environment** to avoid needing to update REopt.jl and other dependencies in multiple locations
+- Makes **one http.jl** file with conditional loading for Xpress.jl, if it is installed
+- Changes all the GitHub Actions `test_job_endpoint.py` tests to use an open source solver so we can have full V3 **CI testing** again
+- In julia_src/Manifest.toml, updated REopt.jl version to v0.40.0  
+##### Added
+- Adds a **choice of solver** in `Settings.solver_name`, and useful error messages if trying to use Xpress without installation
+- Updated the Wiki in this repo with open source solver setup info
+
+## v3.4.1
+### Minor Updates
+#### Fixed
+- Fixed Wind validation code to prevent erroring when user provides `production_factor_series` for location outside of WindToolkit bounds. 
+- Fixed divide by zero error when POSTing to the `/erp` endpoint with a `battery_size_kw` of 0
+#### Changed
+- Updated `reopt_version` in `ERPJob` to 0.39.1
+ 
 ## v3.4.0
 ### Minor Updates
 #### Added 

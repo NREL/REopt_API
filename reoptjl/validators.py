@@ -144,7 +144,7 @@ class InputValidator(object):
             if "ElectricUtility" in self.models.keys():
                 msg_dict["ignored inputs"] = ("ElectricUtility inputs are not applicable when off_grid_flag is true, and will be ignored. "
                                 "Provided ElectricUtility can be removed from inputs")
-            msg_dict["info"] = ("When off_grid_flag is true, only PV, ElectricStorage, Generator technologies can be modeled.")
+            msg_dict["info"] = ("When off_grid_flag is true, only PV, Wind, ElectricStorage, Generator technologies can be modeled.")
         return msg_dict
 
     @property
@@ -288,7 +288,7 @@ class InputValidator(object):
                 for time_series in ["production_factor_series"] + wind_resource_inputs:
                     self.clean_time_series("Wind", time_series)
 
-                if not all([self.models["Wind"].__getattribute__(wr) for wr in wind_resource_inputs]):
+                if not all([self.models["Wind"].__getattribute__(wr) for wr in wind_resource_inputs]) and not self.models["Wind"].__getattribute__("production_factor_series"):
                     # then no wind_resource_inputs provided, so we need to get the resource from WindToolkit
                     if not lat_lon_in_windtoolkit(self.models["Site"].__getattribute__("latitude"),
                                                   self.models["Site"].__getattribute__("longitude")):
@@ -392,6 +392,8 @@ class InputValidator(object):
                                                 f"Value is greater than the max allowable ({max_ts} - {max_start_time_step_input})")
                     if not self.models["Site"].min_resil_time_steps:
                         self.models["Site"].min_resil_time_steps = max(self.models["ElectricUtility"].outage_durations)
+                if self.models["ElectricUtility"].__getattribute__("cambium_levelization_years") == None:
+                    self.models["ElectricUtility"].cambium_levelization_years = self.models["Financial"].analysis_years
         
         """
         CoolingLoad
@@ -663,5 +665,5 @@ def lat_lon_in_windtoolkit(lat, lon):
     y = int(round((point[1] - origin[1]) / 2000))
     y_max, x_max = (1602, 2976)
     if (x < 0) or (y < 0) or (x >= x_max) or (y >= y_max):
-        raise ValueError("Latitude/Longitude is outside of wind resource dataset bounds.")
+        return None
     return y, x

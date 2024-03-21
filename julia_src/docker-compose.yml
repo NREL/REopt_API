@@ -6,6 +6,8 @@ services:
     container_name: julia_api_dev
     build:
       context: .
+    environment:
+      - XPRESS_JL_SKIP_LIB_CHECK=True
     command: julia --project="/opt/julia_src" http.jl
     ports:
       - "8081:8081"

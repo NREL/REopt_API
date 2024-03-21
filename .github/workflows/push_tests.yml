@@ -1,4 +1,4 @@
-name: Built-in Tests for Push (Xpress in latest Ubuntu)
+name: Built-in Tests for Push (open source solvers in latest Ubuntu)
 
 on:
 
@@ -23,14 +23,12 @@ jobs:
           NREL_DEV_API_KEY: ${{ secrets.NREL_DEV_API_KEY }}
         run: ./.github/scripts/make_keys.py.sh 
       - name: Build containers
-        run: docker-compose -f docker-compose.highs.yml up -d
+        run: docker compose up -d
       - name: Check running containers
         run: docker ps -a
       - name: Wait for julia_api
         uses: jakejarvis/wait-action@master
         with:
           time: '150s'
-      - name: test v3 validator
-        run: docker exec reopt_api_celery_1 python manage.py test reoptjl.test.test_validator -v 2 --failfast --no-input          
-      - name: test v3 http.jl endpoints
-        run: docker exec reopt_api_celery_1 python manage.py test reoptjl.test.test_http_endpoints -v 2 --failfast --no-input
+      - name: test v3 (stable)
+        run: docker exec reopt_api-celery-1 python manage.py test reoptjl.test -v 2 --no-input        

@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 
 """
 Guidance:
-- start all Model fields with required fields (do not need to include `blank` b/c the default value of blank is False)
+- start all Model fields with required fields (do not need to include `blank` b/c the default value of blank is False. Set blank=True to allow field to be blank)
 - TextField and CharField should not have null=True
 - description: use square brackets for units, eg. [dollars per kWh]
 - Output models need to have null=True, blank=True for cases when results are not generated 
@@ -43,10 +43,10 @@ FUEL_DEFAULTS = {
         "diesel_oil" : 0.0
     },
     "emissions_factor_lb_CO2_per_mmbtu" : {
-        "natural_gas" : 116.9,
-        "landfill_bio_gas" : 114.8,
-        "propane" : 138.6,
-        "diesel_oil" : 163.1
+        "natural_gas" : 117.03,
+        "landfill_bio_gas" : 115.38,
+        "propane" : 139.16,
+        "diesel_oil" : 163.61
     },
     "emissions_factor_lb_NOx_per_mmbtu" : {
         "natural_gas" : 0.09139,
@@ -66,6 +66,13 @@ FUEL_DEFAULTS = {
         "propane" : 0.009906836,
         "diesel_oil" : 0.0
     }
+}
+
+EMISSIONS_DECREASE_DEFAULTS = { # year over year decrease in grid emissions rate
+    "CO2e" : 0.02163,
+    "NOx" : 0.02163,
+    "SO2" : 0.02163,
+    "PM25" : 0.02163
 }
 
 WIND_COST_DEFAULTS = { # size_class_to_installed_cost 
@@ -281,6 +288,19 @@ class Settings(BaseModel, models.Model):
         help_text=("Set to true to enable off-grid analyses, not connected to a bulk power system.")
     )
 
+    class SOLVERS(models.TextChoices):
+        HIGHS = "HiGHS"
+        CBC = "Cbc"
+        SCIP = "SCIP"
+        XPRESS = "Xpress"
+
+    solver_name = models.TextField(
+        blank=True,
+        default=SOLVERS.XPRESS,
+        choices=SOLVERS.choices,
+        help_text=("Solver used for REopt.jl. Options include HiGHS, Cbc, SCIP, and Xpress")
+    )
+
     def clean(self):
         if self.off_grid_flag:
             self.run_bau = False
@@ -333,6 +353,7 @@ class SiteInputs(BaseModel, models.Model):
         blank=True,
         help_text="The minimum number consecutive timesteps that load must be fully met once an outage begins. "
                     "Only applies to multiple outage modeling using inputs outage_start_time_steps and outage_durations."
+                    "If no value is provided, will default to max([ElectricUtility].outage_durations)."
     )
     # don't provide mg_tech_sizes_equal_grid_sizes in the API, effectively force it to true (the REopt.jl default)
 
@@ -417,23 +438,23 @@ class SiteOutputs(BaseModel, models.Model):
     )
     annual_emissions_tonnes_CO2 = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of CO2 emissions associated with the site's energy consumption in an one."
+        help_text="Average annual total tons of emissions associated with the site's grid-purchased electricity and on-site fuel consumption."
     )
     annual_emissions_tonnes_NOx = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of NOx emissions associated with the site's energy consumption in an average year."
+        help_text="Average annual total tons of emissions associated with the site's grid-purchased electricity and on-site fuel consumption."
     )
     annual_emissions_tonnes_SO2 = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of SO2 emissions associated with the site's energy consumption in an average year."
+        help_text="Average annual total tons of emissions associated with the site's grid-purchased electricity and on-site fuel consumption."
     )
     annual_emissions_tonnes_PM25 = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of PM2.5 emissions associated with the site's energy consumption in an average year."
+        help_text="Average annual total tons of emissions associated with the site's grid-purchased electricity and on-site fuel consumption."
     )
     annual_emissions_from_fuelburn_tonnes_CO2 = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of CO2 emissions associated with the site's onsite fuel burn in an average year."
+        help_text="Total tons of CO2e emissions associated with the site's onsite fuel burn in an average year."
     )
     annual_emissions_from_fuelburn_tonnes_NOx = models.FloatField(
         null=True, blank=True,
@@ -449,7 +470,7 @@ class SiteOutputs(BaseModel, models.Model):
     )
     lifecycle_emissions_tonnes_CO2 = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of CO2 emissions associated with the site's energy consumption over the analysis period."
+        help_text="Total tons of CO2e emissions associated with the site's energy consumption over the analysis period."
     )
     lifecycle_emissions_tonnes_NOx = models.FloatField(
         null=True, blank=True,
@@ -465,7 +486,7 @@ class SiteOutputs(BaseModel, models.Model):
     )
     lifecycle_emissions_from_fuelburn_tonnes_CO2 = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of CO2 emissions associated with the site's onsite fuel burn over the analysis period."
+        help_text="Total tons of CO2e emissions associated with the site's onsite fuel burn over the analysis period."
     )
     lifecycle_emissions_from_fuelburn_tonnes_NOx = models.FloatField(
         null=True, blank=True,
@@ -507,7 +528,7 @@ class SiteOutputs(BaseModel, models.Model):
     )
     annual_emissions_tonnes_CO2_bau = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of CO2 emissions associated with the site's energy consumption in an average year in the BAU case."
+        help_text="Total tons of CO2e emissions associated with the site's energy consumption in an average year in the BAU case."
     )
     annual_emissions_tonnes_NOx_bau = models.FloatField(
         null=True, blank=True,
@@ -539,7 +560,7 @@ class SiteOutputs(BaseModel, models.Model):
     )
     lifecycle_emissions_tonnes_CO2_bau = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of CO2 emissions associated with the site's energy consumption over the analysis period in the BAU case."
+        help_text="Total tons of CO2e emissions associated with the site's energy consumption over the analysis period in the BAU case."
     )
     lifecycle_emissions_tonnes_NOx_bau = models.FloatField(
         null=True, blank=True,
@@ -555,7 +576,7 @@ class SiteOutputs(BaseModel, models.Model):
     )
     lifecycle_emissions_from_fuelburn_tonnes_CO2_bau = models.FloatField(
         null=True, blank=True,
-        help_text="Total tons of CO2 emissions associated with the site's onsite fuel burn over the analysis period in the BAU case."
+        help_text="Total tons of CO2e emissions associated with the site's onsite fuel burn over the analysis period in the BAU case."
     )
     lifecycle_emissions_from_fuelburn_tonnes_NOx_bau = models.FloatField(
         null=True, blank=True,
@@ -1200,21 +1221,18 @@ class ElectricLoadInputs(BaseModel, models.Model):
                    )
     )
     loads_kw_is_net = models.BooleanField(
-        null=True,
         blank=True,
         default=True,
         help_text=("If there is existing PV, must specify whether provided load is the net load after existing PV or "
                    "not.")
     )
     critical_loads_kw_is_net = models.BooleanField(
-        null=True,
         blank=True,
         default=False,
         help_text=("If there is existing PV, must specify whether provided load is the net load after existing PV or "
                    "not.")
     )
     critical_load_fraction = models.FloatField(
-        null=True,
         blank=True,
         default = 0.5,
         validators=[
@@ -1678,14 +1696,55 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Upper limit on the total capacity of technologies that can participate in net metering agreement."
     )
-    emissions_region = models.TextField(
+    allow_simultaneous_export_import = models.BooleanField(
         blank=True,
-        help_text=("Name of the AVERT emissions region to use. Options are: "
-                "'California', 'Central', 'Florida', 'Mid-Atlantic', 'Midwest', 'Carolinas', "
-                "'New England', 'Northwest', 'New York', 'Rocky Mountains', 'Southeast', 'Southwest', "
-                "'Tennessee', 'Texas', 'Alaska', 'Hawaii (except Oahu)', 'Hawaii (Oahu)'. "
-                "If emissions_factor_series_lb_<pollutant>_per_kwh inputs are not provided, "
-                "emissions_region overrides latitude and longitude in determining emissions factors.")
+        default = True,
+        help_text=("If true the site has two meters (in effect).")
+    )
+    cambium_scenario = models.TextField(
+        blank=True,
+        default = "Mid-case",
+        help_text=("Cambium Scenario for evolution of electricity sector (see Cambium documentation for descriptions)."
+                   "Options: ['Mid-case',  'Mid-case with tax credit expiration',  'Low renewable energy cost', 'Low renewable energy cost with tax credit expiration',   'High renewable energy cost', 'High electrification',  'Low natrual gas prices', 'High natrual gas prices', 'Mid-case with 95% decarbonization by 2050',  'Mid-case with 100% decarbonization by 2035']")
+    )
+    cambium_location_type = models.TextField(
+        blank=True,
+        default = "GEA Regions",
+        help_text=("Geographic boundary at which emissions are calculated. Options: ['Nations', 'GEA Regions', 'States'].")
+    )
+    cambium_metric_col = models.TextField(
+        blank=True,
+        default = "lrmer_co2e",
+        help_text=("Emissions metric used. Default is Long-run marginal emissions rate for CO2-equivalant, combined combustion and pre-combustion emissions rates. Options: See metric definitions and names in the Cambium documentation.")
+    )
+    cambium_start_year = models.IntegerField(
+        default=2024,
+        validators=[
+            MinValueValidator(2023),
+            MaxValueValidator(2050)
+        ],
+        blank=True,
+        help_text="First year of operation of system. Emissions will be levelized starting in this year for the duration of cambium_levelization_years."
+    )
+    cambium_levelization_years = models.IntegerField(
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(100)
+        ],
+        blank=True,
+        null=True,
+        help_text=("Expected lifetime or analysis period of the intervention being studied. "
+                    "Emissions will be averaged over this period. Default: analysis_years (from Financial struct)")
+    )
+    cambium_grid_level = models.TextField(
+        blank=True,
+        default = "enduse",
+        help_text=("Impacts grid climate emissions calculation. Options: ['enduse' or 'busbar']. Busbar refers to point where bulk generating stations connect to grid; enduse refers to point of consumption (includes distribution loss rate).")
+    )
+    co2_from_avert = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text="Default is to use Cambium data for CO2 grid emissions. Set to `true` to instead use data from the EPA's AVERT database. "
     )
     emissions_factor_series_lb_CO2_per_kwh = ArrayField(
         models.FloatField(
@@ -1693,6 +1752,23 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         ),
         default=list, blank=True,
         help_text=("CO2 emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.")
+    )
+    emissions_factor_CO2_decrease_fraction = models.FloatField(
+        validators=[
+            MinValueValidator(-1),
+            MaxValueValidator(1)
+        ],
+        null=True, blank=True,
+        help_text="Not applied with use of Cambium data for climate emissions. Annual percent decrease in the total annual CO2 emissions rate of the grid. A negative value indicates an annual increase."
+    )
+    avert_emissions_region = models.TextField(
+        blank=True,
+        help_text=("Name of the AVERT emissions region to use. Options are: "
+                "'California', 'Central', 'Florida', 'Mid-Atlantic', 'Midwest', 'Carolinas', "
+                "'New England', 'Northwest', 'New York', 'Rocky Mountains', 'Southeast', 'Southwest', "
+                "'Tennessee', 'Texas', 'Alaska', 'Hawaii (except Oahu)', 'Hawaii (Oahu)'. "
+                "If emissions_factor_series_lb_<pollutant>_per_kwh inputs are not provided, "
+                "avert_emissions_region overrides latitude and longitude in determining emissions factors.")
     )
     emissions_factor_series_lb_NOx_per_kwh = ArrayField(
         models.FloatField(
@@ -1715,17 +1791,8 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         default=list, blank=True,
         help_text=("PM2.5 emissions factor over all hours in one year. Can be provided as either a single constant fraction that will be applied across all timesteps, or an annual timeseries array at an hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples) resolution.")
     )
-    emissions_factor_CO2_decrease_fraction = models.FloatField(
-        default=0.01174,
-        validators=[
-            MinValueValidator(-1),
-            MaxValueValidator(1)
-        ],
-        null=True, blank=True,
-        help_text="Annual percent decrease in the total annual CO2 marginal emissions rate of the grid. A negative value indicates an annual increase."
-    )
+    
     emissions_factor_NOx_decrease_fraction = models.FloatField(
-        default=0.01174,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -1734,7 +1801,6 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         help_text="Annual percent decrease in the total annual NOx marginal emissions rate of the grid. A negative value indicates an annual increase."
     )
     emissions_factor_SO2_decrease_fraction = models.FloatField(
-        default=0.01174,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -1743,7 +1809,6 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         help_text="Annual percent decrease in the total annual SO2 marginal emissions rate of the grid. A negative value indicates an annual increase."
     )
     emissions_factor_PM25_decrease_fraction = models.FloatField(
-        default=0.01174,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -1751,8 +1816,6 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Annual percent decrease in the total annual PM2.5 marginal emissions rate of the grid. A negative value indicates an annual increase."
     )
-
-    # TODO add: allow_simultaneous_export_import, multiple outages inputs, emissions inputs
 
     def clean(self):
         error_messages = {}
@@ -1779,6 +1842,16 @@ class ElectricUtilityInputs(BaseModel, models.Model):
                 error_messages["missing required inputs"] = "outage_durations is required if outage_probabilities is present."
         elif self.outage_durations not in [None,[]]: 
             self.outage_probabilities = [1/len(self.outage_durations)] * len(self.outage_durations)
+
+        if self.co2_from_avert or len(self.emissions_factor_series_lb_CO2_per_kwh) > 0:
+            self.emissions_factor_CO2_decrease_fraction = EMISSIONS_DECREASE_DEFAULTS.get("CO2e", None) # leave blank otherwise; the Julia Pkg will set to 0 unless site is in AK or HI
+
+        if self.emissions_factor_NOx_decrease_fraction == None:
+            self.emissions_factor_NOx_decrease_fraction = EMISSIONS_DECREASE_DEFAULTS.get("NOx", 0.0)
+        if self.emissions_factor_SO2_decrease_fraction == None:
+            self.emissions_factor_SO2_decrease_fraction = EMISSIONS_DECREASE_DEFAULTS.get("SO2", 0.0)
+        if self.emissions_factor_PM25_decrease_fraction == None:
+            self.emissions_factor_PM25_decrease_fraction = EMISSIONS_DECREASE_DEFAULTS.get("PM25", 0.0)
 
         if error_messages:
             raise ValidationError(error_messages)
@@ -1920,14 +1993,24 @@ class ElectricUtilityOutputs(BaseModel, models.Model):
                     "If include_exported_elec_emissions_in_total is False, this value only reflects grid purchaes. "
                     "Otherwise, it accounts for emissions offset from any export to the grid.")
     )
-    emissions_region = models.TextField(
+    avert_emissions_region = models.TextField(
         blank=True,
-        help_text=("Name of the AVERT emissions region used. Determined from site longitude and latitude if "
-                "emissions_region and emissions_factor_series_lb_<pollutant>_per_kwh inputs were not provided.")
+        help_text=("Name of the AVERT emissions region to use. Options are: "
+                "'California', 'Central', 'Florida', 'Mid-Atlantic', 'Midwest', 'Carolinas', "
+                "'New England', 'Northwest', 'New York', 'Rocky Mountains', 'Southeast', 'Southwest', "
+                "'Tennessee', 'Texas', 'Alaska', 'Hawaii (except Oahu)', 'Hawaii (Oahu)'. "
+                "If emissions_factor_series_lb_<pollutant>_per_kwh inputs are not provided, "
+                "avert_emissions_region overrides latitude and longitude in determining emissions factors.")
     )
-    distance_to_emissions_region_meters = models.FloatField(
+    distance_to_avert_emissions_region_meters = models.FloatField(
         null=True, blank=True,
         help_text=("Distance in meters from the site to the nearest AVERT emissions region.")
+    )
+    cambium_emissions_region = models.TextField(
+        blank=True,
+        help_text=("Name of the Cambium emissions region used for climate emissions for grid electricity. " 
+                   "Determined from site longitude and latitude and the cambium_location_type if "
+                   "custom emissions_factor_series_lb_CO2_per_kwh not provided and co2_from_avert is false.")
     )
 
 class OutageOutputs(BaseModel, models.Model):
@@ -2366,11 +2449,11 @@ class ElectricTariffOutputs(BaseModel, models.Model):
     )
     year_one_export_benefit_before_tax = models.FloatField(
         null=True, blank=True,
-        help_text="Optimal year one value of exported energy"
+        help_text="Optimal year one value of exported energy. A positive value indicates a benefit."
     )
     year_one_export_benefit_before_tax_bau = models.FloatField(
         null=True, blank=True,
-        help_text="Business as usual year one value of exported energy"
+        help_text="Business as usual year one value of exported energy. A positive value indicates a benefit."
     )
     year_one_coincident_peak_cost_before_tax = models.FloatField(
         null=True, blank=True,
@@ -2481,7 +2564,7 @@ class PVInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.8,
+        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -2903,7 +2986,7 @@ class WindInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.8,
+        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -3281,7 +3364,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.8,
+        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -3490,7 +3573,7 @@ class GeneratorInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=1.0,
+        default=0.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -3666,13 +3749,13 @@ class GeneratorInputs(BaseModel, models.Model):
         help_text="Fraction of the generator fuel considered renewable."
     )
     emissions_factor_lb_CO2_per_gal = models.FloatField(
-        default=22.51,
+        default=22.58,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1e4)
         ],
         blank=True,
-        help_text="Pounds of CO2 emitted per gallon of generator fuel burned."
+        help_text="Pounds of CO2e emitted per gallon of generator fuel burned."
     )
     emissions_factor_lb_NOx_per_gal = models.FloatField(
         default=0.0775544,
@@ -3681,7 +3764,7 @@ class GeneratorInputs(BaseModel, models.Model):
             MaxValueValidator(1e4)
         ],
         blank=True,
-        help_text="Pounds of CO2 emitted per gallon of generator fuel burned."
+        help_text="Pounds of NOx emitted per gallon of generator fuel burned."
     )
     emissions_factor_lb_SO2_per_gal = models.FloatField(
         default=0.040020476,
@@ -3690,7 +3773,7 @@ class GeneratorInputs(BaseModel, models.Model):
             MaxValueValidator(1e4)
         ],
         blank=True,
-        help_text="Pounds of CO2 emitted per gallon of generator fuel burned."
+        help_text="Pounds of SO2 emitted per gallon of generator fuel burned."
     )
     emissions_factor_lb_PM25_per_gal = models.FloatField(
         default=0.0,
@@ -3699,7 +3782,7 @@ class GeneratorInputs(BaseModel, models.Model):
             MaxValueValidator(1e4)
         ],
         blank=True,
-        help_text="Pounds of CO2 emitted per gallon of generator fuel burned."
+        help_text="Pounds of PM2.5 emitted per gallon of generator fuel burned."
     )
     replacement_year = models.IntegerField(
         validators=[
@@ -4020,13 +4103,13 @@ class CHPInputs(BaseModel, models.Model):
 
     #Financial and emissions    
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.ZERO,
+        default=MACRS_YEARS_CHOICES.FIVE,
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.8,
+        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -4193,13 +4276,13 @@ class CHPInputs(BaseModel, models.Model):
         help_text="True/False for if technology has the ability to curtail energy production."
     )
     fuel_renewable_energy_fraction = models.FloatField(
-        default=0.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
         ],
         blank=True,
-        help_text="Fraction of the CHP fuel considered renewable."
+        null=True,
+        help_text="Fraction of the CHP fuel considered renewable. Default depends on fuel type."
     )
     emissions_factor_lb_CO2_per_mmbtu = models.FloatField(
         validators=[
@@ -4207,6 +4290,7 @@ class CHPInputs(BaseModel, models.Model):
             MaxValueValidator(1e4)
         ],
         blank=True,
+        null=True,
         help_text="Pounds of CO2 emitted per MMBTU of CHP fuel burned."
     )
     emissions_factor_lb_NOx_per_mmbtu = models.FloatField(
@@ -4215,6 +4299,7 @@ class CHPInputs(BaseModel, models.Model):
             MaxValueValidator(1e4)
         ],
         blank=True,
+        null=True,
         help_text="Pounds of CO2 emitted per MMBTU of CHP fuel burned."
     )
     emissions_factor_lb_SO2_per_mmbtu = models.FloatField(
@@ -4223,6 +4308,7 @@ class CHPInputs(BaseModel, models.Model):
             MaxValueValidator(1e4)
         ],
         blank=True,
+        null=True,
         help_text="Pounds of CO2 emitted per MMBTU of CHP fuel burned."
     )
     emissions_factor_lb_PM25_per_mmbtu = models.FloatField(
@@ -4231,6 +4317,7 @@ class CHPInputs(BaseModel, models.Model):
             MaxValueValidator(1e4)
         ],
         blank=True,
+        null=True,
         help_text="Pounds of CO2 emitted per MMBTU of CHP fuel burned."
     )
     
@@ -4243,6 +4330,9 @@ class CHPInputs(BaseModel, models.Model):
             raise ValidationError(error_messages)
 
         self.fuel_cost_per_mmbtu = scalar_or_monthly_to_8760(self.fuel_cost_per_mmbtu)
+
+        if self.fuel_renewable_energy_fraction == None:
+            self.fuel_renewable_energy_fraction = FUEL_DEFAULTS["fuel_renewable_energy_fraction"].get(self.fuel_type, 0.0)
 
         if self.emissions_factor_lb_CO2_per_mmbtu == None:
             self.emissions_factor_lb_CO2_per_mmbtu = FUEL_DEFAULTS["emissions_factor_lb_CO2_per_mmbtu"].get(self.fuel_type, 0.0)
@@ -4742,6 +4832,16 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         help_text="Existing boiler system efficiency - conversion of fuel to usable heating thermal energy."
     )
 
+    fuel_renewable_energy_fraction = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        null=True,
+        help_text="Fraction of the fuel considered renewable. Default depends on fuel type."
+    )
+
     emissions_factor_lb_CO2_per_mmbtu = models.FloatField(
         validators=[
             MinValueValidator(0.0),
@@ -4749,7 +4849,7 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        help_text=""
+        help_text="Pounds of CO2e emitted per MMBTU of fuel burned."
     )
 
     emissions_factor_lb_NOx_per_mmbtu = models.FloatField(
@@ -4759,7 +4859,7 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        help_text=""
+        help_text="Pounds of NOx emitted per MMBTU of fuel burned."
     )
 
     emissions_factor_lb_SO2_per_mmbtu = models.FloatField(
@@ -4769,7 +4869,7 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        help_text=""
+        help_text="Pounds of SO2 emitted per MMBTU of fuel burned."
     )
 
     emissions_factor_lb_PM25_per_mmbtu = models.FloatField(
@@ -4779,7 +4879,7 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        help_text=""
+        help_text="Pounds of PM2.5 emitted per MMBTU fuel burned."
     )
 
     fuel_cost_per_mmbtu = ArrayField(
@@ -4821,6 +4921,9 @@ class ExistingBoilerInputs(BaseModel, models.Model):
             raise ValidationError(error_messages)
         
         self.fuel_cost_per_mmbtu = scalar_or_monthly_to_8760(self.fuel_cost_per_mmbtu)
+
+        if self.fuel_renewable_energy_fraction == None:
+            self.fuel_renewable_energy_fraction = FUEL_DEFAULTS["fuel_renewable_energy_fraction"].get(self.fuel_type, 0.0)
 
         if self.emissions_factor_lb_CO2_per_mmbtu == None:
             self.emissions_factor_lb_CO2_per_mmbtu = FUEL_DEFAULTS["emissions_factor_lb_CO2_per_mmbtu"].get(self.fuel_type, 0.0)
@@ -5349,7 +5452,7 @@ class SteamTurbineInputs(BaseModel, models.Model):
     )
 
     macrs_bonus_fraction = models.FloatField(
-        default=1.0,
+        default=0.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -5533,7 +5636,7 @@ class HotThermalStorageInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.8,
+        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -5704,7 +5807,7 @@ class ColdThermalStorageInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.8,
+        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -6728,7 +6831,7 @@ class GHPInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.8,
+        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)

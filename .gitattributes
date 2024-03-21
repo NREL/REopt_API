@@ -1,2 +1,2 @@
 #pattern  filter=crypt diff=crypt
-julia_src/xpress/licenseserver/xpauth.xpr filter=crypt diff=crypt merge=crypt
+julia_src/licenseserver/xpauth.xpr filter=crypt diff=crypt merge=crypt
