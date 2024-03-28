@@ -1063,7 +1063,7 @@ def queryset_for_summary(api_metas,summary_dict:dict):
     )
     if len(abschillTon) > 0:
         for m in abschillTon:
-            summary_dict[str(m.meta.run_uuid)]['size_ton'] = m.size_ton
+            summary_dict[str(m.meta.run_uuid)]['absorpchl_ton'] = m.size_ton
 
     return summary_dict
 
