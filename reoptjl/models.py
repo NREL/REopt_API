@@ -233,10 +233,10 @@ class Settings(BaseModel, models.Model):
         FOUR = 4
 
     timeout_seconds = models.IntegerField(
-        default=420,
+        default=600,
         validators=[
             MinValueValidator(1),
-            MaxValueValidator(420)
+            MaxValueValidator(1200)
         ],
         help_text="The number of seconds allowed before the optimization times out."
     )
@@ -251,7 +251,7 @@ class Settings(BaseModel, models.Model):
         default=0.001,
         validators=[
             MinValueValidator(5.0e-6),
-            MaxValueValidator(0.05)
+            MaxValueValidator(0.20)
         ],
         help_text=("The threshold for the difference between the solution's objective value and the best possible "
                    "value at which the solver terminates")
@@ -296,7 +296,7 @@ class Settings(BaseModel, models.Model):
 
     solver_name = models.TextField(
         blank=True,
-        default=SOLVERS.XPRESS,
+        default=SOLVERS.HIGHS,
         choices=SOLVERS.choices,
         help_text=("Solver used for REopt.jl. Options include HiGHS, Cbc, SCIP, and Xpress")
     )
