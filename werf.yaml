@@ -10,7 +10,7 @@ args:
 ---
 image: julia-api
 context: julia_src/
-# dockerfile: Dockerfile.xpress
+dockerfile: Dockerfile
 # contextAddFiles:
 #   - Dockerfile.xpress
 #   - licenseserver
