@@ -1168,7 +1168,7 @@ class ElectricLoadInputs(BaseModel, models.Model):
     annual_kwh = models.FloatField(
         validators=[
             MinValueValidator(1),
-            MaxValueValidator(100000000)
+            MaxValueValidator(10000000000)
         ],
         null=True, blank=True,
         help_text=("Annual site energy consumption from electricity, in kWh, used to scale simulated default building "
