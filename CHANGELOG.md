@@ -26,6 +26,15 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.7.0
+### Minor Updates
+#### Changed
+- Default `Settings.solver_name` = `HiGHS`
+- See updates from REopt.jl v0.44.0: https://github.com/NREL/REopt.jl/releases/tag/v0.44.0
+- HiGHS, Cbc, and SCIP solvers use Big M notation constraints only in REopt.jl
+#### Deprecated
+- End-of-Life for v1 and v2 of the API for external/public interfacing from NREL servers
+
 ## v3.6.1
 ### Minor Updates
 #### Fixed
