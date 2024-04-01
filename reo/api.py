@@ -93,7 +93,7 @@ class Job(ModelResource):
         # End-of-Life for V1 and V2 - as of March 2024
         data['inputs'] = bundle.data
         data['messages'] = {}
-        data['messages']['error'] = "v1 and v2 of the REopt API are NO longer available; End-of-Life. Please use /stable (v3)"
+        data['messages']['error'] = "v1 and v2 of the REopt API are NO longer available; End-of-Life. Please use /stable (v3). See https://github.com/NREL/REopt-Analysis-Scripts/discussions/148 for more details."
         raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
                                             content_type='application/json',
                                             status=410))  # "Gone" code for "no longer available"        
@@ -269,7 +269,7 @@ class Job2(ModelResource):
         # End-of-Life for V1 and V2 - as of March 2024
         data['inputs'] = bundle.data
         data['messages'] = {}
-        data['messages']['error'] = "v1 and v2 of the REopt API are NO longer available; End-of-Life. Please use /stable (v3)"
+        data['messages']['error'] = "v1 and v2 of the REopt API are NO longer available; End-of-Life. Please use /stable (v3). See https://github.com/NREL/REopt-Analysis-Scripts/discussions/148 for more details."
         raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
                                             content_type='application/json',
                                             status=410))  # "Gone" code for "no longer available"
