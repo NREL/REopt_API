@@ -5228,7 +5228,7 @@ class SteamTurbineInputs(BaseModel, models.Model):
         ZERO = 0,
         ONE = 1
         TWO = 2
-        FOUR = 4
+        THREE = 3
 
     min_kw = models.FloatField(
         null=True,        
