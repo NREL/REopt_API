@@ -1,13 +1,6 @@
 appEnv: staging
 djangoSettingsModule: reopt_api.staging_settings
-djangoReplicas: 3
-djangoMemoryRequest: "2800Mi"
-djangoMemoryLimit: "2800Mi"
-celeryReplicas: 6
-celeryMemoryRequest: "900Mi"
-celeryMemoryLimit: "900Mi"
-juliaReplicas: 6
 juliaCpuRequest: "1000m"
 juliaCpuLimit: "4000m"
-juliaMemoryRequest: "12000Mi"
-juliaMemoryLimit: "12000Mi"
+juliaMemoryRequest: "8000Mi"
+juliaMemoryLimit: "8000Mi"
