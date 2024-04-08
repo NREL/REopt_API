@@ -3291,6 +3291,11 @@ class ElectricStorageInputs(BaseModel, models.Model):
         blank=True,
         help_text="Minimum allowable battery state of charge as fraction of energy capacity."
     )
+    soc_min_applies_during_outages = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text="Whether the minimum allowable battery state of charge is enforced during outages in addition to normal operations."
+    )
     soc_init_fraction = models.FloatField(
         validators=[
             MinValueValidator(0),
