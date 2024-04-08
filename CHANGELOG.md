@@ -26,6 +26,11 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop 4/8/24
+### Minor Updates
+#### Changed
+- Added **soc_min_applies_during_outages** boolean field to **ElectricStorageInputs** (defaults to _false_)
+
 ## v3.6.1
 ### Minor Updates
 #### Fixed
