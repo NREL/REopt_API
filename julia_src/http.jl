@@ -29,11 +29,11 @@ function reopt(req::HTTP.Request)
         ENV["NREL_DEVELOPER_API_KEY"] = test_nrel_developer_api_key
         delete!(d, "api_key")
     end
-    solver_name = pop!(settings, "solver_name")
+    solver_name = get(settings, "solver_name", "HiGHS")    
     if solver_name == "Xpress" && !(xpress_installed=="True")
         solver_name = "HiGHS"
-        @warn "Changing solver_choice from Xpress to $solver_name because Xpress is not installed. Next time 
-                Specify Settings.solver_choice = 'HiGHS' or 'Cbc' or 'SCIP'"
+        @warn "Changing solver_name from Xpress to $solver_name because Xpress is not installed. Next time 
+                Specify Settings.solver_name = 'HiGHS' or 'Cbc' or 'SCIP'"
     end
 	timeout_seconds = pop!(settings, "timeout_seconds")
 	optimality_tolerance = pop!(settings, "optimality_tolerance")

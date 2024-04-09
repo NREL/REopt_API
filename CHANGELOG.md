@@ -31,6 +31,15 @@ Classify the change according to the following categories:
 #### Changed
 - Added **soc_min_applies_during_outages** boolean field to **ElectricStorageInputs** (defaults to _false_)
 
+## v3.7.0
+### Minor Updates
+#### Changed
+- Default `Settings.solver_name` = `HiGHS`
+- See updates from REopt.jl v0.44.0: https://github.com/NREL/REopt.jl/releases/tag/v0.44.0
+- HiGHS, Cbc, and SCIP solvers use Big M notation constraints only in REopt.jl
+#### Deprecated
+- End-of-Life for v1 and v2 of the API for external/public interfacing from NREL servers. See https://github.com/NREL/REopt-Analysis-Scripts/discussions/148 for more details.
+
 ## v3.6.1
 ### Minor Updates
 #### Fixed
