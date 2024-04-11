@@ -901,6 +901,17 @@ def queryset_for_summary(api_metas,summary_dict:dict):
                 summary_dict[str(m.meta.run_uuid)]['focus'] = "Financial"
             else:
                 summary_dict[str(m.meta.run_uuid)]['focus'] = "Resilience"
+    
+    site = SiteOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'lifecycle_emissions_reduction_CO2_fraction'
+    )
+    if len(site) > 0:
+        for m in site:
+            try:
+                summary_dict[str(m.meta.run_uuid)]['emission_reduction_pct'] = m.lifecycle_emissions_reduction_CO2_fraction
+            except:
+                summary_dict[str(m.meta.run_uuid)]['emission_reduction_pct'] = 0.0
 
     # Use settings to find out if it is an off-grid evaluation
     settings = Settings.objects.filter(meta__run_uuid__in=run_uuids).only(
@@ -957,7 +968,10 @@ def queryset_for_summary(api_metas,summary_dict:dict):
     fin = FinancialOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
         'meta__run_uuid',
         'npv',
-        'initial_capital_costs_after_incentives'
+        'initial_capital_costs_after_incentives',
+        'lcc',
+        'replacements_present_cost_after_tax',
+        'lifecycle_capital_costs_plus_om_after_tax'
     )
     if len(fin) > 0:
         for m in fin:
@@ -966,6 +980,9 @@ def queryset_for_summary(api_metas,summary_dict:dict):
             else:
                 summary_dict[str(m.meta.run_uuid)]['npv_us_dollars'] = None
             summary_dict[str(m.meta.run_uuid)]['net_capital_costs'] = m.initial_capital_costs_after_incentives
+            summary_dict[str(m.meta.run_uuid)]['lcc_us_dollars'] = m.lcc
+            summary_dict[str(m.meta.run_uuid)]['replacements_present_cost_after_tax'] = m.replacements_present_cost_after_tax
+            summary_dict[str(m.meta.run_uuid)]['lifecycle_capital_costs_plus_om_after_tax'] = m.lifecycle_capital_costs_plus_om_after_tax
     
     batt = ElectricStorageOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
         'meta__run_uuid',
