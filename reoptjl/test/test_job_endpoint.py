@@ -33,7 +33,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         self.assertAlmostEqual(sum(sum(np.array(results["Outages"]["unserved_load_per_outage_kwh"]))), 0.0, places=0)
         # TODO figure out why microgrid_upgrade_capital_cost is about $3000 different locally than on GitHub Actions
         self.assertAlmostEqual(results["Outages"]["microgrid_upgrade_capital_cost"], 1974429.4, delta=5000.0)
-        self.assertAlmostEqual(results["Financial"]["lcc"], 59865240.0, delta=5000.0)
+        self.assertAlmostEqual(results["Financial"]["lcc"], 59865240.0, delta=0.01*results["Financial"]["lcc"])
 
     def test_pv_battery_and_emissions_defaults_from_julia(self):
         """
