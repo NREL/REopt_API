@@ -216,7 +216,6 @@ class UserProvidedMeta(BaseModel, models.Model):
         help_text="Optional user defined address (street address, city, state or zip code)"
     )
 
-
 class Settings(BaseModel, models.Model):
     key = "Settings"
 
