@@ -227,6 +227,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         r = json.loads(resp.content)
         results = r["outputs"]
         
+        self.maxDiff = None
         self.assertEqual(r, {})
         self.assertAlmostEqual(results["Financial"]["npv"], -258533.19, places=-3)
         assert(resp.status_code==200)   
