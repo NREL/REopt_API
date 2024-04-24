@@ -63,6 +63,10 @@
         "urdb_label": "5e611fec5457a3665e019406"
     },
     "ElectricStorage": {
+        "min_kw": 701.97,
+        "max_kw": 701.97,
+        "min_kwh": 3441.15,
+        "max_kwh": 3441.15,
         "soc_min_applies_during_outages": true,
         "can_grid_charge": false,
         "total_itc_fraction": 0.26,
