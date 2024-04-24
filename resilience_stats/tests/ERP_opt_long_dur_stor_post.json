@@ -9,7 +9,6 @@
                 "min_kwh": 40000,
                 "max_kwh": 40000,
                 "soc_min_fraction": 0.8,
-                "soc_min_applies_during_outages": true,
                 "soc_init_fraction": 0.9
         },
         "ElectricLoad": {

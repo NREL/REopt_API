@@ -19043,7 +19043,6 @@
     "inverter_efficiency_fraction": 0.97,
     "rectifier_efficiency_fraction": 0.97,
     "soc_min_fraction": 0.2,
-    "soc_min_applies_during_outages": true,
     "soc_init_fraction": 0.6,
     "canGridCharge": true,
     "installed_cost_us_dollars_per_kw": 500,
