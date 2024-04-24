@@ -26,9 +26,10 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop 4/8/24
+## Develop - 2024-04-19
 ### Minor Updates
 #### Changed
+- In `core/pv.jl` a change was made to make sure we are using the same assumptions as PVWatts guidelines, the default `tilt` angle for a fixed array should be 20 degrees, irrespective of it being a rooftop `(0)` or ground-mounted (open-rack)`(1)` system. By default the `tilt` will be set to 20 degrees for fixed ground-mount and rooftop, and 0 degrees for axis-tracking (`array_type = (2), (3), or (4)`)
 - Added **soc_min_applies_during_outages** boolean field to **ElectricStorageInputs** (defaults to _false_)
 
 ## v3.7.0
