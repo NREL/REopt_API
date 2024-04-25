@@ -216,7 +216,6 @@ class UserProvidedMeta(BaseModel, models.Model):
         help_text="Optional user defined address (street address, city, state or zip code)"
     )
 
-
 class Settings(BaseModel, models.Model):
     key = "Settings"
 
@@ -3290,6 +3289,11 @@ class ElectricStorageInputs(BaseModel, models.Model):
         ],
         blank=True,
         help_text="Minimum allowable battery state of charge as fraction of energy capacity."
+    )
+    soc_min_applies_during_outages = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text="Whether the minimum allowable battery state of charge is enforced during outages in addition to normal operations."
     )
     soc_init_fraction = models.FloatField(
         validators=[
