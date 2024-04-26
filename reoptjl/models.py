@@ -2789,7 +2789,7 @@ class PVInputs(BaseModel, models.Model):
         ],
         blank=True,
         null=True,
-        help_text="PV system tilt: Set tilt angle to 20 degrees for fixed arrays (rooftop or ground-mounted). Set tilt angle to 0 degrees for axis-tracking systems."
+        help_text="PV system tilt angle. Default tilt is 20 degrees for fixed arrays (rooftop or ground-mounted) and 0 degrees for axis-tracking systems."
     )
     location = models.TextField(
         default=PV_LOCATION_CHOICES.BOTH,
