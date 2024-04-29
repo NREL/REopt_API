@@ -216,7 +216,6 @@ class UserProvidedMeta(BaseModel, models.Model):
         help_text="Optional user defined address (street address, city, state or zip code)"
     )
 
-
 class Settings(BaseModel, models.Model):
     key = "Settings"
 
@@ -2790,7 +2789,7 @@ class PVInputs(BaseModel, models.Model):
         ],
         blank=True,
         null=True,
-        help_text="PV system tilt. If PV system type is rooftop-fixed, then tilt=10 degrees, else tilt=20 degrees"
+        help_text="PV system tilt angle. Default tilt is 20 degrees for fixed arrays (rooftop or ground-mounted) and 0 degrees for axis-tracking systems."
     )
     location = models.TextField(
         default=PV_LOCATION_CHOICES.BOTH,
@@ -3290,6 +3289,11 @@ class ElectricStorageInputs(BaseModel, models.Model):
         ],
         blank=True,
         help_text="Minimum allowable battery state of charge as fraction of energy capacity."
+    )
+    soc_min_applies_during_outages = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text="Whether the minimum allowable battery state of charge is enforced during outages in addition to normal operations."
     )
     soc_init_fraction = models.FloatField(
         validators=[

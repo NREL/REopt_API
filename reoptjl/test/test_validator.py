@@ -314,16 +314,15 @@ class InputValidatorTests(TestCase):
         validator.clean_fields()
         validator.clean()
         validator.cross_clean()
-        self.assertEquals(validator.models["PV"].tilt, 10)
+        self.assertEquals(validator.models["PV"].tilt, 20)
 
         post["APIMeta"]["run_uuid"] = uuid.uuid4()
-        post["PV"]["array_type"] = 0
+        post["PV"]["array_type"] = 2
         validator = InputValidator(post)
         validator.clean_fields()
         validator.clean()
         validator.cross_clean()
-        self.assertAlmostEquals(validator.models["PV"].tilt, 20)
-
+        self.assertAlmostEquals(validator.models["PV"].tilt, 0)
 
     def boiler_validation(self):
         """
