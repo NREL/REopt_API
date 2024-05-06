@@ -2834,6 +2834,24 @@ class PVInputs(BaseModel, models.Model):
         blank=True,
         help_text="True/False for if technology has the ability to curtail energy production."
     )
+    can_serve_dhw = models.BooleanField(
+        default=False,
+        null=True,        
+        blank=True,
+        help_text="Boolean indicator if steam turbine can serve space heating load"
+    )
+    can_serve_space_heating = models.BooleanField(
+        default=False,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if steam turbine can serve space heating load"   
+    )
+    can_serve_process_heat = models.BooleanField(
+        default=False,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if steam turbine can serve process heat load"   
+    )
 
     operating_reserve_required_fraction = models.FloatField(
         validators=[
@@ -4105,6 +4123,25 @@ class CHPInputs(BaseModel, models.Model):
         blank=True,
         help_text="Boolean indicator if CHP can supply steam to the steam turbine for electric production"   
     )
+    can_serve_dhw = models.BooleanField(
+        default=False,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if CHP can serve domestice hot water load"   
+    )
+    can_serve_space_heating = models.BooleanField(
+        default=False,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if CHP can serve space heating load"   
+    )
+    can_serve_process_heat = models.BooleanField(
+        default=False,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if CHP can serve process heat load"   
+    )
+
 
     #Financial and emissions    
     macrs_option_years = models.IntegerField(
@@ -4916,6 +4953,25 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         help_text="If the boiler can supply steam to the steam turbine for electric production"
     )
 
+    can_serve_dhw = models.BooleanField(
+        default=False,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if the existing boiler can serve domestice hot water load"   
+    )
+    can_serve_space_heating = models.BooleanField(
+        default=False,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if the existing boiler can serve space heating load"   
+    )
+    can_serve_process_heat = models.BooleanField(
+        default=False,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if the existing boiler can serve process heat load"   
+    )
+
     # For custom validations within model.
     def clean(self):
         error_messages = {}
@@ -5151,6 +5207,28 @@ class BoilerInputs(BaseModel, models.Model):
         null=True,
         help_text="If the boiler can supply steam to the steam turbine for electric production"
     )
+
+    can_serve_dhw = models.BooleanField(
+        default=False,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if boiler can serve domestice hot water load"   
+    )
+
+    can_serve_space_heating = models.BooleanField(
+        default=False,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if boiler can serve space heating load"   
+    )
+
+    can_serve_process_heat = models.BooleanField(
+        default=False,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if boiler can serve process heat load"   
+    )
+    
 
     # For custom validations within model.
     def clean(self):
@@ -5448,6 +5526,8 @@ class SteamTurbineInputs(BaseModel, models.Model):
         help_text="True/False for if technology has the ability to curtail energy production."
     )
 
+    
+
     macrs_option_years = models.IntegerField(
         default=MACRS_YEARS_CHOICES.ZERO,
         choices=MACRS_YEARS_CHOICES.choices,
@@ -5676,6 +5756,25 @@ class HotThermalStorageInputs(BaseModel, models.Model):
         blank=True,
         help_text="Rebate per unit installed energy capacity"
     )
+    can_serve_dhw = models.BooleanField(
+        default=False,
+        null=True,        
+        blank=True,
+        help_text="Boolean indicator if hot thermal storage can serve space heating load"
+    )
+    can_serve_space_heating = models.BooleanField(
+        default=False,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if hot thermal storage can serve space heating load"   
+    )
+    can_serve_process_heat = models.BooleanField(
+        default=False,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if hot thermal storage can serve process heat load"   
+    )
+    
 
     def clean(self):
         # perform custom validation here.
@@ -6827,6 +6926,20 @@ class GHPInputs(BaseModel, models.Model):
         null=True,        
         blank=True,
         help_text="If GHP can serve the domestic hot water (DHW) portion of the heating load"
+    )
+    
+    can_serve_space_heating = models.BooleanField(
+        default=False,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if GHP can serve space heating load"   
+    )
+
+    can_serve_process_heat = models.BooleanField(
+        default=False,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if GHP can serve process heat load"   
     )
 
     macrs_option_years = models.IntegerField(
