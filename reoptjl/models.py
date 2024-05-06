@@ -1842,8 +1842,9 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         elif self.outage_durations not in [None,[]]: 
             self.outage_probabilities = [1/len(self.outage_durations)] * len(self.outage_durations)
 
-        if self.co2_from_avert or len(self.emissions_factor_series_lb_CO2_per_kwh) > 0:
-            self.emissions_factor_CO2_decrease_fraction = EMISSIONS_DECREASE_DEFAULTS.get("CO2e", None) # leave blank otherwise; the Julia Pkg will set to 0 unless site is in AK or HI
+        if (self.co2_from_avert or len(self.emissions_factor_series_lb_CO2_per_kwh) > 0) and self.emissions_factor_CO2_decrease_fraction == None:
+            # use default if not provided and using AVERT or custom EFs. Leave blank otherwise and the Julia Pkg will set to 0 unless site is in AK or HI.
+            self.emissions_factor_CO2_decrease_fraction = EMISSIONS_DECREASE_DEFAULTS.get("CO2e", None) 
 
         if self.emissions_factor_NOx_decrease_fraction == None:
             self.emissions_factor_NOx_decrease_fraction = EMISSIONS_DECREASE_DEFAULTS.get("NOx", 0.0)
