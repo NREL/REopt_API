@@ -4874,6 +4874,13 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         help_text="Existing boiler system efficiency - conversion of fuel to usable heating thermal energy."
     )
 
+    retire_in_optimal = models.BooleanField(
+        default=False,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if the existing boiler is unavailable in the optimal case (still used in BAU)"   
+    )
+
     fuel_renewable_energy_fraction = models.FloatField(
         validators=[
             MinValueValidator(0),
