@@ -6528,6 +6528,12 @@ class AbsorptionChillerInputs(BaseModel, models.Model):
         'hot_water'
     ))
 
+    HEATING_LOAD_INPUT = models.TextChoices('HEATING_LOAD_INPUT', (
+        'DomesitHotWater',
+        'SpaceHeating',
+        'ProcessHeat'
+    ))
+
     thermal_consumption_hot_water_or_steam = models.TextField(
         blank=True,
         null=True,
@@ -6615,6 +6621,13 @@ class AbsorptionChillerInputs(BaseModel, models.Model):
         ],
         blank=True,
         help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
+    )
+
+    heating_load_input = models.TextField(
+        blank=True,
+        null=True,
+        choices=HEATING_LOAD_INPUT.choices,
+        help_text="Absorption chiller heat input - determines what heating load is added to by absorption chiller use"
     )
 
     def clean(self):
