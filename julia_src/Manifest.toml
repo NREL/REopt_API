@@ -917,9 +917,9 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [[deps.REopt]]
 deps = ["ArchGDAL", "CSV", "CoolProp", "DataFrames", "Dates", "DelimitedFiles", "HTTP", "JLD", "JSON", "JuMP", "LinDistFlow", "LinearAlgebra", "Logging", "MathOptInterface", "Requires", "Roots", "Statistics", "TestEnv"]
-git-tree-sha1 = "d2bbcbb8344f19ed87ee8cb6a196d4ed8415255b"
+git-tree-sha1 = "889950d32d143d0af8f4dd699c7e453e0b0b9589"
 uuid = "d36ad4e8-d74a-4f7a-ace1-eaea049febf6"
-version = "0.45.0"
+rev="add-process-heat-load"
 
 [[deps.Random]]
 deps = ["SHA"]
