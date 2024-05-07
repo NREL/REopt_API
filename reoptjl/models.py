@@ -6441,7 +6441,19 @@ class HeatingLoadOutputs(BaseModel, models.Model):
             blank=True
         ),
         default=list, blank=True,
-        help_text=("Hourly domestic space heating load [MMBTU/hr]")
+        help_text=("Hourly space heating load [MMBTU/hr]")
+    )
+
+    process_heat_thermal_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(MAX_BIG_NUMBER)
+            ],
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Hourly process heat load [MMBTU/hr]")
     )
 
     total_heating_thermal_load_series_mmbtu_per_hour = ArrayField(
@@ -6465,7 +6477,7 @@ class HeatingLoadOutputs(BaseModel, models.Model):
             blank=True
         ),
         default=list, blank=True,
-        help_text=("Hourly domestic hot water load [MMBTU/hr]")
+        help_text=("Hourly domestic hot water boiler fuel load [MMBTU/hr]")
     )
 
     space_heating_boiler_fuel_load_series_mmbtu_per_hour = ArrayField(
@@ -6477,7 +6489,19 @@ class HeatingLoadOutputs(BaseModel, models.Model):
             blank=True
         ),
         default=list, blank=True,
-        help_text=("Hourly domestic space heating load [MMBTU/hr]")
+        help_text=("Hourly space heating boiler fuel load [MMBTU/hr]")
+    )
+
+    process_heat_boiler_fuel_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(MAX_BIG_NUMBER)
+            ],
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Hourly process heat boiler fuel load [MMBTU/hr]")
     )
 
     total_heating_boiler_fuel_load_series_mmbtu_per_hour = ArrayField(
@@ -6489,7 +6513,7 @@ class HeatingLoadOutputs(BaseModel, models.Model):
             blank=True
         ),
         default=list, blank=True,
-        help_text=("Hourly total heating load [MMBTU/hr]")
+        help_text=("Hourly total boiler fuel load [MMBTU/hr]")
     )
 
     annual_calculated_dhw_thermal_load_mmbtu = models.FloatField(
@@ -6512,6 +6536,17 @@ class HeatingLoadOutputs(BaseModel, models.Model):
         blank=True,
         default=0,
         help_text=("Annual site space heating load [MMBTU]")
+    )
+
+    annual_calculated_process_heat_thermal_load_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default=0,
+        help_text=("Annual site process heat load [MMBTU]")
     )
 
     annual_calculated_total_heating_thermal_load_mmbtu = models.FloatField(
@@ -6545,6 +6580,17 @@ class HeatingLoadOutputs(BaseModel, models.Model):
         blank=True,
         default=0,
         help_text=("Annual site space heating boiler fuel load [MMBTU]")
+    )
+
+    annual_calculated_process_heat_boiler_fuel_load_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default=0,
+        help_text=("Annual site process heat boiler fuel load [MMBTU]")
     )
 
     annual_calculated_total_heating_boiler_fuel_load_mmbtu = models.FloatField(
