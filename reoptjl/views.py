@@ -14,7 +14,7 @@ from reoptjl.models import Settings, PVInputs, ElectricStorageInputs, WindInputs
     CoolingLoadOutputs, HeatingLoadOutputs, REoptjlMessageOutputs, HotThermalStorageInputs, HotThermalStorageOutputs,\
     ColdThermalStorageInputs, ColdThermalStorageOutputs, AbsorptionChillerInputs, AbsorptionChillerOutputs,\
     FinancialInputs, FinancialOutputs, UserUnlinkedRuns, BoilerInputs, BoilerOutputs, SteamTurbineInputs, \
-    SteamTurbineOutputs, GHPInputs, GHPOutputs
+    SteamTurbineOutputs, GHPInputs, GHPOutputs, ProcessHeatLoadInputs
 import os
 import requests
 import numpy as np
@@ -53,6 +53,7 @@ def help(request):
         d["ColdThermalStorage"] = ColdThermalStorageInputs.info_dict(ColdThermalStorageInputs)
         d["SpaceHeatingLoad"] = SpaceHeatingLoadInputs.info_dict(SpaceHeatingLoadInputs)
         d["DomesticHotWaterLoad"] = DomesticHotWaterLoadInputs.info_dict(DomesticHotWaterLoadInputs)
+        d["ProcessHeatLoad"] = ProcessHeatLoadInputs.info_dict(ProcessHeatLoadInputs)
         d["Site"] = SiteInputs.info_dict(SiteInputs)
         d["CHP"] = CHPInputs.info_dict(CHPInputs)
         d["AbsorptionChiller"] = AbsorptionChillerInputs.info_dict(AbsorptionChillerInputs)
@@ -212,6 +213,9 @@ def results(request, run_uuid):
     except: pass
 
     try: r["inputs"]["DomesticHotWaterLoad"] = meta.DomesticHotWaterLoadInputs.dict
+    except: pass
+
+    try: r["inputs"]["ProcessHeatLoad"] = meta.ProcessHeatLoadInputs.dict
     except: pass
 
     try: r["inputs"]["CHP"] = meta.CHPInputs.dict
