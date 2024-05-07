@@ -169,21 +169,6 @@ class Migration(migrations.Migration):
             field=django.contrib.postgres.fields.ArrayField(base_field=models.FloatField(blank=True, null=True), default=list, size=None),
         ),
         migrations.AddField(
-            model_name='pvinputs',
-            name='can_serve_dhw',
-            field=models.BooleanField(blank=True, default=True, help_text='Boolean indicator if steam turbine can serve space heating load', null=True),
-        ),
-        migrations.AddField(
-            model_name='pvinputs',
-            name='can_serve_process_heat',
-            field=models.BooleanField(blank=True, default=True, help_text='Boolean indicator if steam turbine can serve process heat load', null=True),
-        ),
-        migrations.AddField(
-            model_name='pvinputs',
-            name='can_serve_space_heating',
-            field=models.BooleanField(blank=True, default=True, help_text='Boolean indicator if steam turbine can serve space heating load', null=True),
-        ),
-        migrations.AddField(
             model_name='steamturbineoutputs',
             name='thermal_to_dhw_load_series_mmbtu_per_hour',
             field=django.contrib.postgres.fields.ArrayField(base_field=models.FloatField(blank=True, null=True), default=list, size=None),

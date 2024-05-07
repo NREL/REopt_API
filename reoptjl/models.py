@@ -2834,24 +2834,6 @@ class PVInputs(BaseModel, models.Model):
         blank=True,
         help_text="True/False for if technology has the ability to curtail energy production."
     )
-    can_serve_dhw = models.BooleanField(
-        default=True,
-        null=True,        
-        blank=True,
-        help_text="Boolean indicator if steam turbine can serve space heating load"
-    )
-    can_serve_space_heating = models.BooleanField(
-        default=True,
-        null=True, 
-        blank=True,
-        help_text="Boolean indicator if steam turbine can serve space heating load"   
-    )
-    can_serve_process_heat = models.BooleanField(
-        default=True,
-        null=True, 
-        blank=True,
-        help_text="Boolean indicator if steam turbine can serve process heat load"   
-    )
 
     operating_reserve_required_fraction = models.FloatField(
         validators=[
