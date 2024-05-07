@@ -6301,6 +6301,55 @@ class DomesticHotWaterLoadInputs(BaseModel, models.Model):
         if self.addressable_load_fraction == None:
             self.addressable_load_fraction = list([1.0]) # should not convert to timeseries, in case it is to be used with monthly_mmbtu or annual_mmbtu
 
+class ProcessHeatLoadInputs(BaseModel, models.Model):
+    # DHW
+    key = "ProcessHeatLoad"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="ProcessHeatLoadInputs",
+        primary_key=True
+    )
+
+    possible_sets = [
+        ["fuel_loads_mmbtu_per_hour"],
+        ["annual_mmbtu"],
+        [],
+    ]
+
+    annual_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        help_text=("Annual site process heat consumption, used "
+                   "to scale simulated load profile [MMBtu]")
+    )
+
+    fuel_loads_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        help_text=("Typical load over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,"
+                   "520 samples), or 15 minute (35,040 samples). All non-net load values must be greater than or "
+                   "equal to zero. "
+                   )
+
+    )
+
+    def clean(self):
+        error_messages = {}
+
+        # possible sets for defining load profile
+        if not at_least_one_set(self.dict, self.possible_sets):
+            error_messages["required inputs"] = \
+                "Must provide at least one set of valid inputs from {}.".format(self.possible_sets)
+
 class HeatingLoadOutputs(BaseModel, models.Model):
 
     key = "HeatingLoadOutputs"
