@@ -4,7 +4,7 @@ import pandas as pd
 from reoptjl.models import MAX_BIG_NUMBER, APIMeta, ExistingBoilerInputs, UserProvidedMeta, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
     FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs, SpaceHeatingLoadInputs, \
     DomesticHotWaterLoadInputs, CHPInputs, CoolingLoadInputs, ExistingChillerInputs, HotThermalStorageInputs, ColdThermalStorageInputs, \
-    AbsorptionChillerInputs, BoilerInputs, SteamTurbineInputs, GHPInputs
+    AbsorptionChillerInputs, BoilerInputs, SteamTurbineInputs, GHPInputs, ProcessHeatLoadInputs
 from django.core.exceptions import ValidationError
 from pyproj import Proj
 from typing import Tuple
@@ -79,7 +79,8 @@ class InputValidator(object):
             ColdThermalStorageInputs,
             AbsorptionChillerInputs,
             SteamTurbineInputs,
-            GHPInputs
+            GHPInputs,
+            ProcessHeatLoadInputs
         )
         self.pvnames = []
         on_grid_required_object_names = [
@@ -520,6 +521,12 @@ class InputValidator(object):
             else:
                 self.add_validation_error(load_to_assign, "doe_reference_name",
                                         f"Must provide DOE commercial reference building profiles either under {load_to_assign} or ElectricLoad")
+
+        """
+        ProcessHeatLaod
+        """
+        if "ProcessHeatLoad" in self.models.keys():
+            self.clean_time_series("ProcessHeatLoad", "fuel_loads_mmbtu_per_hour")
 
         """
         Off-grid input keys validation
