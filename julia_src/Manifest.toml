@@ -917,11 +917,11 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [[deps.REopt]]
 deps = ["ArchGDAL", "CSV", "CoolProp", "DataFrames", "Dates", "DelimitedFiles", "HTTP", "JLD", "JSON", "JuMP", "LinDistFlow", "LinearAlgebra", "Logging", "MathOptInterface", "Requires", "Roots", "Statistics", "TestEnv"]
-git-tree-sha1 = "386a43d35bb0328bf8ab28e33925cfdead6d1f29"
-repo-rev = "add-process-heat-load"
+git-tree-sha1 = "a72618235b98d6617e51c1e823e8ca01b5c7e404"
+repo-rev = "develop"
 repo-url = "https://github.com/NREL/REopt.jl.git"
 uuid = "d36ad4e8-d74a-4f7a-ace1-eaea049febf6"
-version = "0.45.0"
+version = "0.46.0"
 
 [[deps.Random]]
 deps = ["SHA"]
