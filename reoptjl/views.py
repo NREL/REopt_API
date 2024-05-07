@@ -14,7 +14,7 @@ from reoptjl.models import Settings, PVInputs, ElectricStorageInputs, WindInputs
     CoolingLoadOutputs, HeatingLoadOutputs, REoptjlMessageOutputs, HotThermalStorageInputs, HotThermalStorageOutputs,\
     ColdThermalStorageInputs, ColdThermalStorageOutputs, AbsorptionChillerInputs, AbsorptionChillerOutputs,\
     FinancialInputs, FinancialOutputs, UserUnlinkedRuns, BoilerInputs, BoilerOutputs, SteamTurbineInputs, \
-    SteamTurbineOutputs, GHPInputs, GHPOutputs
+    SteamTurbineOutputs, GHPInputs, GHPOutputs, PortfolioUnlinkedRuns
 import os
 import requests
 import numpy as np
@@ -727,16 +727,24 @@ def summary(request, user_uuid):
         # Create Querysets: Select all objects associate with a user_uuid, portfolio_uuid="", Order by `created` column
         scenarios = APIMeta.objects.filter(
             user_uuid=user_uuid
-        ).filter(
-            portfolio_uuid=""
         ).only(
             'run_uuid',
+            'portfolio_uuid',
             'status',
             'created'
         ).order_by("-created")
 
         unlinked_run_uuids = [i.run_uuid for i in UserUnlinkedRuns.objects.filter(user_uuid=user_uuid)]
-        api_metas = [s for s in scenarios if s.run_uuid not in unlinked_run_uuids]
+        unlinked_por_uuids = [i.run_uuid for i in PortfolioUnlinkedRuns.objects.filter(user_uuid=user_uuid)]
+
+        api_metas = []
+        for s in scenarios:
+            if s.run_uuid not in unlinked_run_uuids:
+                api_metas.append(s)
+            elif s.portfolio_uuid != '' and s.run_uuid in (set(unlinked_por_uuids)-set(unlinked_run_uuids)):
+                api_metas.append(s)
+            else:
+                pass
 
         if len(api_metas) > 0:
             summary_dict = queryset_for_summary(api_metas, summary_dict)
@@ -1128,6 +1136,55 @@ def unlink(request, user_uuid, run_uuid):
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         err = UnexpectedError(exc_type, exc_value, exc_traceback, task='unlink', user_uuid=user_uuid)
+        err.save_to_db()
+        return JsonResponse({"Error": err.message}, status=404)
+
+def unlink_from_portfolio(request, user_uuid, portfolio_uuid, run_uuid):
+
+    """
+    add an entry to the PortfolioUnlinkedRuns for the given portfolio_uuid and run_uuid
+    """
+    content = {'user_uuid': user_uuid, 'portfolio_uuid': portfolio_uuid, 'run_uuid': run_uuid}
+    for name, check_id in content.items():
+        try:
+            uuid.UUID(check_id)  # raises ValueError if not valid uuid
+        except ValueError as e:
+            if e.args[0] == "badly formed hexadecimal UUID string":
+                return JsonResponse({"Error": "{} {}".format(name, e.args[0]) }, status=400)
+            else:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                if name == 'user_uuid':
+                    err = UnexpectedError(exc_type, exc_value, exc_traceback, task='unlink', user_uuid=check_id)
+                if name == 'portfolio_uuid':
+                    err = UnexpectedError(exc_type, exc_value, exc_traceback, task='unlink', portfolio_uuid=check_id)
+                if name == 'run_uuid':
+                    err = UnexpectedError(exc_type, exc_value, exc_traceback, task='unlink', run_uuid=check_id)
+                err.save_to_db()
+                return JsonResponse({"Error": str(err.message)}, status=400)
+    
+    try:
+        if not APIMeta.objects.filter(portfolio_uuid=portfolio_uuid).exists():
+            return JsonResponse({"Error": "Portfolio {} does not exist".format(portfolio_uuid)}, status=400)
+
+
+        runs = APIMeta.objects.filter(run_uuid=run_uuid)
+        if len(runs) == 0:
+            return JsonResponse({"Error": "Run {} does not exist".format(run_uuid)}, status=400)
+        else:
+            if runs[0].portfolio_uuid != portfolio_uuid:
+                return JsonResponse({"Error": "Run {} is not associated with portfolio {}".format(run_uuid, portfolio_uuid)}, status=400)
+        
+        # Run exists and is tied to porfolio provided in request, hence unlink now.
+        if not PortfolioUnlinkedRuns.objects.filter(run_uuid=run_uuid).exists():
+            PortfolioUnlinkedRuns.create(**content)
+            return JsonResponse({"Success": "run_uuid {} unlinked from portfolio_uuid {}".format(run_uuid, portfolio_uuid)},
+                                status=201)
+        else:
+            return JsonResponse({"Nothing changed": "run_uuid {} is already unlinked from portfolio_uuid {}".format(run_uuid, portfolio_uuid)},
+                                status=208)
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='unlink', portfolio_uuid=portfolio_uuid)
         err.save_to_db()
         return JsonResponse({"Error": err.message}, status=404)
 

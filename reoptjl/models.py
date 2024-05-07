@@ -201,6 +201,17 @@ class UserUnlinkedRuns(models.Model):
         obj.save()
         return obj
 
+class PortfolioUnlinkedRuns(models.Model):
+    portfolio_uuid = models.UUIDField(unique=False)
+    user_uuid = models.UUIDField(unique=False)
+    run_uuid = models.UUIDField(unique=True)
+
+    @classmethod
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
+        obj.save()
+        return obj
+
 class UserProvidedMeta(BaseModel, models.Model):
     """
     User provided values that are not necessary for running REopt
