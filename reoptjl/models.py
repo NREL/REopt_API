@@ -4127,7 +4127,7 @@ class CHPInputs(BaseModel, models.Model):
         default=True,
         null=True, 
         blank=True,
-        help_text="Boolean indicator if CHP can serve domestice hot water load"   
+        help_text="Boolean indicator if CHP can serve  hot water load"   
     )
     can_serve_space_heating = models.BooleanField(
         default=True,
@@ -4964,7 +4964,7 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         default=True,
         null=True, 
         blank=True,
-        help_text="Boolean indicator if the existing boiler can serve domestice hot water load"   
+        help_text="Boolean indicator if the existing boiler can serve domestic hot water load"   
     )
 
     can_serve_space_heating = models.BooleanField(
@@ -5236,7 +5236,7 @@ class BoilerInputs(BaseModel, models.Model):
         default=True,
         null=True, 
         blank=True,
-        help_text="Boolean indicator if boiler can serve domestice hot water load"   
+        help_text="Boolean indicator if boiler can serve domestic hot water load"   
     )
 
     can_serve_space_heating = models.BooleanField(
