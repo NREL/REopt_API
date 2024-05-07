@@ -5053,6 +5053,21 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
         default = list,
     )
 
+    thermal_to_dhw_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
+
+    thermal_to_space_heating_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
+
+    thermal_to_process_heat_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
+
     def clean(self):
         # perform custom validation here.
         pass
@@ -5303,6 +5318,21 @@ class BoilerOutputs(BaseModel, models.Model):
     )
 
     annual_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
+
+    thermal_to_dhw_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
+
+    thermal_to_space_heating_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
+
+    thermal_to_process_heat_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
 
 
 class SteamTurbineInputs(BaseModel, models.Model):
@@ -5622,6 +5652,21 @@ class SteamTurbineOutputs(BaseModel, models.Model):
         default = list,
     )
 
+    thermal_to_dhw_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
+
+    thermal_to_space_heating_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
+
+    thermal_to_process_heat_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
+
 class HotThermalStorageInputs(BaseModel, models.Model):
     key = "HotThermalStorage"
 
@@ -5806,6 +5851,20 @@ class HotThermalStorageOutputs(BaseModel, models.Model):
     storage_to_load_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
         default = list,
+    )
+    storage_to_dhw_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
+
+    storage_to_space_heating_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
+
+    storage_to_process_heat_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
     )
 
     def clean(self):
