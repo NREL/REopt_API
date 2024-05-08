@@ -26,6 +26,21 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.8.0
+### Minor Updates
+#### Changed
+- In `core/pv.jl` a change was made to make sure we are using the same assumptions as PVWatts guidelines, the default `tilt` angle for a fixed array should be 20 degrees, irrespective of it being a rooftop `(0)` or ground-mounted (open-rack)`(1)` system. By default the `tilt` will be set to 20 degrees for fixed ground-mount and rooftop, and 0 degrees for axis-tracking (`array_type = (2), (3), or (4)`)
+- Added **soc_min_applies_during_outages** boolean field to **ElectricStorageInputs** (defaults to _false_)
+
+## v3.7.0
+### Minor Updates
+#### Changed
+- Default `Settings.solver_name` = `HiGHS`
+- See updates from REopt.jl v0.44.0: https://github.com/NREL/REopt.jl/releases/tag/v0.44.0
+- HiGHS, Cbc, and SCIP solvers use Big M notation constraints only in REopt.jl
+#### Deprecated
+- End-of-Life for v1 and v2 of the API for external/public interfacing from NREL servers. See https://github.com/NREL/REopt-Analysis-Scripts/discussions/148 for more details.
+
 ## v3.6.1
 ### Minor Updates
 #### Fixed

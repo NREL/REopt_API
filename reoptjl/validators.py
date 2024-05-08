@@ -203,12 +203,14 @@ class InputValidator(object):
         """
         PV validation
         """
-        def cross_clean_pv(pvmodel):
-            if pvmodel.__getattribute__("tilt") == None:
-                if pvmodel.__getattribute__("array_type") == pvmodel.ARRAY_TYPE_CHOICES.ROOFTOP_FIXED:
-                    pvmodel.__setattr__("tilt", 10)
-                else:
+        def cross_clean_pv(pvmodel):     
+            if pvmodel.__getattribute__("tilt") is None:
+                if pvmodel.__getattribute__("array_type") in (pvmodel.ARRAY_TYPE_CHOICES.GROUND_MOUNT_FIXED_OPEN_RACK, 
+                                                            pvmodel.ARRAY_TYPE_CHOICES.ROOFTOP_FIXED):
                     pvmodel.__setattr__("tilt", 20)
+                else:
+                    pvmodel.__setattr__("tilt", 0)
+                
             
             if pvmodel.__getattribute__("azimuth") == None:
                 if self.models["Site"].__getattribute__("latitude") >= 0:

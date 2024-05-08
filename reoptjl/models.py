@@ -216,7 +216,6 @@ class UserProvidedMeta(BaseModel, models.Model):
         help_text="Optional user defined address (street address, city, state or zip code)"
     )
 
-
 class Settings(BaseModel, models.Model):
     key = "Settings"
 
@@ -233,10 +232,10 @@ class Settings(BaseModel, models.Model):
         FOUR = 4
 
     timeout_seconds = models.IntegerField(
-        default=420,
+        default=600,
         validators=[
             MinValueValidator(1),
-            MaxValueValidator(420)
+            MaxValueValidator(1200)
         ],
         help_text="The number of seconds allowed before the optimization times out."
     )
@@ -251,7 +250,7 @@ class Settings(BaseModel, models.Model):
         default=0.001,
         validators=[
             MinValueValidator(5.0e-6),
-            MaxValueValidator(0.05)
+            MaxValueValidator(0.20)
         ],
         help_text=("The threshold for the difference between the solution's objective value and the best possible "
                    "value at which the solver terminates")
@@ -296,7 +295,7 @@ class Settings(BaseModel, models.Model):
 
     solver_name = models.TextField(
         blank=True,
-        default=SOLVERS.XPRESS,
+        default=SOLVERS.HIGHS,
         choices=SOLVERS.choices,
         help_text=("Solver used for REopt.jl. Options include HiGHS, Cbc, SCIP, and Xpress")
     )
@@ -1168,7 +1167,7 @@ class ElectricLoadInputs(BaseModel, models.Model):
     annual_kwh = models.FloatField(
         validators=[
             MinValueValidator(1),
-            MaxValueValidator(100000000)
+            MaxValueValidator(10000000000)
         ],
         null=True, blank=True,
         help_text=("Annual site energy consumption from electricity, in kWh, used to scale simulated default building "
@@ -1843,8 +1842,9 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         elif self.outage_durations not in [None,[]]: 
             self.outage_probabilities = [1/len(self.outage_durations)] * len(self.outage_durations)
 
-        if self.co2_from_avert or len(self.emissions_factor_series_lb_CO2_per_kwh) > 0:
-            self.emissions_factor_CO2_decrease_fraction = EMISSIONS_DECREASE_DEFAULTS.get("CO2e", None) # leave blank otherwise; the Julia Pkg will set to 0 unless site is in AK or HI
+        if (self.co2_from_avert or len(self.emissions_factor_series_lb_CO2_per_kwh) > 0) and self.emissions_factor_CO2_decrease_fraction == None:
+            # use default if not provided and using AVERT or custom EFs. Leave blank otherwise and the Julia Pkg will set to 0 unless site is in AK or HI.
+            self.emissions_factor_CO2_decrease_fraction = EMISSIONS_DECREASE_DEFAULTS.get("CO2e", None) 
 
         if self.emissions_factor_NOx_decrease_fraction == None:
             self.emissions_factor_NOx_decrease_fraction = EMISSIONS_DECREASE_DEFAULTS.get("NOx", 0.0)
@@ -2790,7 +2790,7 @@ class PVInputs(BaseModel, models.Model):
         ],
         blank=True,
         null=True,
-        help_text="PV system tilt. If PV system type is rooftop-fixed, then tilt=10 degrees, else tilt=20 degrees"
+        help_text="PV system tilt angle. Default tilt is 20 degrees for fixed arrays (rooftop or ground-mounted) and 0 degrees for axis-tracking systems."
     )
     location = models.TextField(
         default=PV_LOCATION_CHOICES.BOTH,
@@ -3290,6 +3290,11 @@ class ElectricStorageInputs(BaseModel, models.Model):
         ],
         blank=True,
         help_text="Minimum allowable battery state of charge as fraction of energy capacity."
+    )
+    soc_min_applies_during_outages = models.BooleanField(
+        default=False,
+        blank=True,
+        help_text="Whether the minimum allowable battery state of charge is enforced during outages in addition to normal operations."
     )
     soc_init_fraction = models.FloatField(
         validators=[
@@ -5228,7 +5233,7 @@ class SteamTurbineInputs(BaseModel, models.Model):
         ZERO = 0,
         ONE = 1
         TWO = 2
-        FOUR = 4
+        THREE = 3
 
     min_kw = models.FloatField(
         null=True,        
