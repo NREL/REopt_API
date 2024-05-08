@@ -1,5 +1,6 @@
 # REopt®, Copyright (c) Alliance for Sustainable Energy, LLC. See also https://github.com/NREL/REopt_API/blob/master/LICENSE.
 from django.db import models
+from django.db.models import Q
 import uuid
 import sys
 import traceback as tb
@@ -724,27 +725,18 @@ def summary(request, user_uuid):
         # Dictionary to store all results. Primary key = run_uuid and secondary key = data values from each uuid
         summary_dict = dict()
 
-        # Create Querysets: Select all objects associate with a user_uuid, portfolio_uuid="", Order by `created` column
-        scenarios = APIMeta.objects.filter(
-            user_uuid=user_uuid
+        # Create Querysets: Select all objects associate with a user_uuid. portfolio_uuid must be "" (empty) or in unlinked portfolio runs
+        # Remove any unlinked runs and finally order by `created` column
+        api_metas = APIMeta.objects.filter(
+            Q(user_uuid=user_uuid),
+            Q(portfolio_uuid = "") | Q(run_uuid__in=[i.run_uuid for i in PortfolioUnlinkedRuns.objects.filter(user_uuid=user_uuid)])
+        ).exclude(
+            run_uuid__in=[i.run_uuid for i in UserUnlinkedRuns.objects.filter(user_uuid=user_uuid)]
         ).only(
             'run_uuid',
-            'portfolio_uuid',
             'status',
             'created'
         ).order_by("-created")
-
-        unlinked_run_uuids = [i.run_uuid for i in UserUnlinkedRuns.objects.filter(user_uuid=user_uuid)]
-        unlinked_por_uuids = [i.run_uuid for i in PortfolioUnlinkedRuns.objects.filter(user_uuid=user_uuid)]
-
-        api_metas = []
-        for s in scenarios:
-            if s.run_uuid not in unlinked_run_uuids:
-                api_metas.append(s)
-            elif s.portfolio_uuid != '' and s.run_uuid in (set(unlinked_por_uuids)-set(unlinked_run_uuids)):
-                api_metas.append(s)
-            else:
-                pass
 
         if len(api_metas) > 0:
             summary_dict = queryset_for_summary(api_metas, summary_dict)
