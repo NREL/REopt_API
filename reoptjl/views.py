@@ -793,18 +793,16 @@ def summary_by_chunk(request, user_uuid, chunk):
             return JsonResponse({"Error": "Chunk number must be a 1-indexed integer."}, status=400)
         
         # Create Querysets: Select all objects associate with a user_uuid, portfolio_uuid="", Order by `created` column
-        scenarios = APIMeta.objects.filter(
-            user_uuid=user_uuid
-        ).filter(
-            portfolio_uuid=""
+        api_metas = APIMeta.objects.filter(
+            Q(user_uuid=user_uuid),
+            Q(portfolio_uuid = "") | Q(run_uuid__in=[i.run_uuid for i in PortfolioUnlinkedRuns.objects.filter(user_uuid=user_uuid)])
+        ).exclude(
+            run_uuid__in=[i.run_uuid for i in UserUnlinkedRuns.objects.filter(user_uuid=user_uuid)]
         ).only(
             'run_uuid',
             'status',
             'created'
         ).order_by("-created")
-
-        unlinked_run_uuids = [i.run_uuid for i in UserUnlinkedRuns.objects.filter(user_uuid=user_uuid)]
-        api_metas = [s for s in scenarios if s.run_uuid not in unlinked_run_uuids]
         
         total_scenarios = len(api_metas)
         if total_scenarios == 0:
