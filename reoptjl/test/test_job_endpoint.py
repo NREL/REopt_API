@@ -226,8 +226,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
         r = json.loads(resp.content)
         results = r["outputs"]
-        print(r["Messages"])
-        self.assertAlmostEqual(results["Financial"]["npv"], -258533.19, delta=0.01*results["Financiel"]["lcc"])
+        self.assertAlmostEqual(results["Financial"]["npv"], -258533.19, delta=0.01*results["Financial"]["lcc"])
         assert(resp.status_code==200)   
 
     def test_steamturbine_defaults_from_julia(self):
