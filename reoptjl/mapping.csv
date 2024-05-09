@@ -1,201 +1,387 @@
-Idx,Field,Type
-0,Results Summary and Inputs,header_format
-1,OPTIMAL SYSTEM DESIGN (with existing),subheader_format
-2,"PV Nameplate capacity (kW), purchased",text_format
-3,"PV Nameplate capacity (kW), existing",text_format
-4,PV degradation rate (%/year),text_format
-5,"PV LCOE of New Capacity ($/kWh), nominal",text_format
-6,"Wind Nameplate capacity (kW), purchased",text_format
-7,"Wind LCOE ($/kWh), nominal",text_format
-8,"Backup Generator Nameplate capacity (kW), purchased",text_format
-9,"Backup Generator Nameplate capacity (kW), existing",text_format
-10,Battery power (kW),text_format
-11,Battery capacity (kWh),text_format
-12,CHP capacity (kW),text_format
-13,Absorption chiller capacity (tons),text_format
-14,Chilled water TES capacity (gallons),text_format
-15,Hot water TES capacity (gallons),text_format
-16,Steam turbine capacity (kW),text_format
-17,GHP heat pump capacity (ton),text_format
-18,GHP ground heat exchanger size (ft),text_format
-19,0,0
-20,ANNUAL RESULTS,subheader_format
-21,Present value of annual Business as Usual electric utility bill ($/year),text_format
-22,Present value of annual Business as Usual export credits ($/year),text_format
-23,Present value of annual Optimal electric utility bill($/year),text_format
-24,Present value of annual Optimal export credits ($/year),text_format
-25,"Existing PV electricity produced (kWh), Year 1",text_format
-26,"Total PV optimal electricity produced (kWh), Year 1",text_format
-27,"PV optimal electricity produced (kWh), Annual Average",text_format
-28,Nominal annual optimal wind electricity produced (kWh/year),text_format
-29,Nominal annual optimal backup generator electricity produced (kWh/year),text_format
-30,CHP annual optimal electricity produced (kWh/year),text_format
-31,CHP annual runtime (hours/year),text_format
-32,Steam turbine annual optimal electricity produced (kWh/year),text_format
-33,Total optimal electricity produced (kWh/year),text_format
-34,Present value of annual Business as Usual boiler fuels utility bill ($/year),text_format
-35,Present value of annual Optimal boiler fuels utility bill ($/year),text_format
-36,Present value of annual CHP fuels utility bill ($/year),text_format
-37,CHP annual optimal thermal energy produced (MMBtu/year),text_format
-38,Steam turbine annual optimal thermal energy produced (MMBtu/year),text_format
-39,Percent electricity from on-site renewable resources,text_format
-40,Percent reduction in annual electricity bill,text_format
-41,Percent reduction in annual fuels bill,text_format
-42,Year one total site carbon dioxide emissions (ton CO2),text_format
-43,Year one total site carbon dioxide emissions BAU (ton CO2),text_format
-44,Year one total carbon dioxide emissions from electric utility purchases (ton CO2),text_format
-45,Year one total carbon dioxide emissions from electric utility purchases BAU (ton CO2),text_format
-46,Year one total carbon dioxide emissions from on-site fuel burn (ton CO2),text_format
-47,Year one total carbon dioxide emissions from on-site fuel burn BAU (ton CO2),text_format
-48,0,0
-49,SYSTEM COSTS,subheader_format
-50,Total Installed Cost ($),text_format
-51,PV Installed Cost ($),text_format
-52,Wind Installed Cost ($),text_format
-53,Backup generator Installed Cost ($),text_format
-54,Battery Installed Cost ($),text_format
-55,CHP Installed Cost ($),text_format
-56,Absorption Chiller Installed Cost ($),text_format
-57,Hot water TES Installed Cost ($),text_format
-58,Chilled water TES Installed Cost ($),text_format
-59,Steam turbine Installed Cost ($),text_format
-60,GHP Installed Cost ($),text_format
-61,Operation and Maintenance (O&M),text_format
-62,Fixed PV O&M ($/kW-yr),text_format
-63,Fixed Wind O&M ($/kW-yr),text_format
-64,Fixed Backup Generator O&M ($/kW-yr),text_format
-65,Variable Backup Generator O&M ($/kWh),text_format
-66,Diesel fuel used cost ($),text_format
-67,Diesel BAU fuel used cost ($),text_format
-68,Battery replacement cost ($/kW),text_format
-69,Battery kW replacement year,text_format
-70,Battery replacement cost ($/kWh),text_format
-71,Battery kWh replacement year,text_format
-72,Fixed CHP O&M cost ($/kW-yr),text_format
-73,Variable CHP O&M cost ($/kWh),text_format
-74,Runtime CHP O&M cost ($/kW-rated/run-hour),text_format
-75,Fixed Absorption Chiller O&M cost ($/ton-yr),text_format
-76,Fixed Chilled water TES O&M cost ($/gallon-year),text_format
-77,Fixed Hot water TES O&M cost ($/gallon-year),text_format
-78,Fixed Steam Turbine O&M ($/kW-yr),text_format
-79,Variable Steam Turbine O&M ($/kWh),text_format
-80,Fixed GHP O&M ($/yr),text_format
-81,0,0
-82,ANALYSIS PARAMETERS,subheader_format
-83,Analysis period (years),text_format
-84,Nominal O&M cost escalation rate (%/year),text_format
-85,Nominal electric utility cost escalation rate (%/year),text_format
-86,Nominal boiler fuel cost escalation rate (%/year),text_format
-87,Nominal CHP fuel cost escalation rate (%/year),text_format
-88,Nominal discount rate (%/year),text_format
-89,0,0
-90,TAX AND INSURANCE PARAMETERS,subheader_format
-91,Federal income tax rate (%),text_format
-92,0,0
-93,PV TAX CREDITS,subheader_format
-94,Investment tax credit (ITC),text_format
-95,As percentage,text_format
-96,Federal,text_format
-97,0,0
-98,PV DIRECT CASH INCENTIVES,subheader_format
-99,Investment based incentive (IBI),text_format
-100,As percentage,text_format
-101,State (% of total installed cost),text_format
-102,Utility (% of total installed cost),text_format
-103,Capacity based incentive (CBI),text_format
-104,Federal ($/W),text_format
-105,State  ($/W),text_format
-106,Utility  ($/W),text_format
-107,Production based incentive (PBI),text_format
-108,Combined ($/kWh),text_format
-109,0,0
-110,WIND TAX CREDITS,subheader_format
-111,Investment tax credit (ITC),text_format
-112,As percentage,text_format
-113,Federal,text_format
-114,0,0
-115,WIND DIRECT CASH INCENTIVES,subheader_format
-116,Investment based incentive (IBI),text_format
-117,As percentage,text_format
-118,State (% of total installed cost),text_format
-119,Utility (% of total installed cost),text_format
-120,Capacity based incentive (CBI),text_format
-121,Federal ($/W),text_format
-122,State  ($/W),text_format
-123,Utility  ($/W),text_format
-124,Production based incentive (PBI),text_format
-125,Combined ($/kWh),text_format
-126,0,0
-127,BATTERY TAX CREDITS,subheader_format
-128,Investment tax credit (ITC),text_format
-129,As percentage,text_format
-130,Federal,text_format
-131,0,0
-132,BATTERY DIRECT CASH INCENTIVES,subheader_format
-133,Investment based incentive (IBI),text_format
-134,As percentage,text_format
-135,State (% of total installed cost),text_format
-136,Utility (% of total installed cost),text_format
-137,Capacity based incentive (CBI),text_format
-138,Total ($/W),text_format
-139,Total  ($/Wh),text_format
-140,0,0
-141,CHP TAX CREDITS,subheader_format
-142,Investment tax credit (ITC),text_format
-143,As percentage,text_format
-144,Federal,text_format
-145,0,0
-146,CHP DIRECT CASH INCENTIVES,subheader_format
-147,Investment based incentive (IBI),text_format
-148,As percentage,text_format
-149,State (% of total installed cost),text_format
-150,Utility (% of total installed cost),text_format
-151,Capacity based incentive (CBI),text_format
-152,Federal ($/W),text_format
-153,State  ($/W),text_format
-154,Utility  ($/W),text_format
-155,Production based incentive (PBI),text_format
-156,Combined ($/kWh),text_format
-157,0,0
-158,GHP TAX CREDITS,subheader_format
-159,Investment tax credit (ITC),text_format
-160,As percentage,text_format
-161,Federal,text_format
-162,0,0
-163,GHP DIRECT CASH INCENTIVES,subheader_format
-164,Investment based incentive (IBI),text_format
-165,As percentage,text_format
-166,State (% of total installed cost),text_format
-167,Utility (% of total installed cost),text_format
-168,Capacity based incentive (CBI),text_format
-169,Federal ($/ton),text_format
-170,State  ($/ton),text_format
-171,Utility  ($/ton),text_format
-172,Production based incentive (PBI),text_format
-173,Combined ($/kWh),text_format
-174,0,0
-175,DEPRECIATION,subheader_format
-176,Federal (years),text_format
-177,Federal bonus fraction,text_format
-178,0,0
-179,0,0
-180,ANNUAL VALUES,subheader_format
-181,PV Annual electricity (kWh),text_format
-182,Existing PV Annual electricity (kWh),text_format
-183,Wind Annual electricity (kWh),text_format
-184,Backup Generator Annual electricity (kWh),text_format
-185,CHP Annual electricity (kWh),text_format
-186,CHP Annual heat (MMBtu),text_format
-187,Steam Turbine Annual electricity (kWh),text_format
-188,Steam Turbine Annual heat (MMBtu),text_format
-189,PV Federal depreciation percentages (fraction),text_format
-190,Wind Federal depreciation percentages (fraction),text_format
-191,Battery Federal depreciation percentages (fraction),text_format
-192,CHP Federal depreciation percentages (fraction),text_format
-193,Absorption Chiller Federal depreciation percentages (fraction),text_format
-194,Hot TES Federal depreciation percentages (fraction),text_format
-195,Cold TES Federal depreciation percentages (fraction),text_format
-196,Steam turbine Federal depreciation percentages (fraction),text_format
-197,GHP Federal depreciation percentages (fraction),text_format
-198,Free Cash Flow,text_format
-199,Cumulative Free Cash Flow,text_format
+Idx,Field,Type,sheet
+0,Results Summary and Inputs,header_format,inandout_sheet
+1,OPTIMAL SYSTEM DESIGN (with existing),subheader_format,inandout_sheet
+2,"PV Nameplate capacity (kW), purchased",text_format,inandout_sheet
+3,"PV Nameplate capacity (kW), existing",text_format,inandout_sheet
+4,PV degradation rate (%/year),text_format,inandout_sheet
+5,"PV LCOE of New Capacity ($/kWh), nominal",text_format,inandout_sheet
+6,"Wind Nameplate capacity (kW), purchased",text_format,inandout_sheet
+7,"Wind LCOE ($/kWh), nominal",text_format,inandout_sheet
+8,"Backup Generator Nameplate capacity (kW), purchased",text_format,inandout_sheet
+9,"Backup Generator Nameplate capacity (kW), existing",text_format,inandout_sheet
+10,Battery power (kW),text_format,inandout_sheet
+11,Battery capacity (kWh),text_format,inandout_sheet
+12,CHP capacity (kW),text_format,inandout_sheet
+13,Absorption chiller capacity (tons),text_format,inandout_sheet
+14,Chilled water TES capacity (gallons),text_format,inandout_sheet
+15,Hot water TES capacity (gallons),text_format,inandout_sheet
+16,Steam turbine capacity (kW),text_format,inandout_sheet
+17,GHP heat pump capacity (ton),text_format,inandout_sheet
+18,GHP ground heat exchanger size (ft),text_format,inandout_sheet
+19,0,0,inandout_sheet
+20,ANNUAL RESULTS,subheader_format,inandout_sheet
+21,Present value of annual Business as Usual electric utility bill ($/year),text_format,inandout_sheet
+22,Present value of annual Business as Usual export credits ($/year),text_format,inandout_sheet
+23,Present value of annual Optimal electric utility bill($/year),text_format,inandout_sheet
+24,Present value of annual Optimal export credits ($/year),text_format,inandout_sheet
+25,"Existing PV electricity produced (kWh), Year 1",text_format,inandout_sheet
+26,"Total PV optimal electricity produced (kWh), Year 1",text_format,inandout_sheet
+27,"PV optimal electricity produced (kWh), Annual Average",text_format,inandout_sheet
+28,Nominal annual optimal wind electricity produced (kWh/year),text_format,inandout_sheet
+29,Nominal annual optimal backup generator electricity produced (kWh/year),text_format,inandout_sheet
+30,CHP annual optimal electricity produced (kWh/year),text_format,inandout_sheet
+31,CHP annual runtime (hours/year),text_format,inandout_sheet
+32,Steam turbine annual optimal electricity produced (kWh/year),text_format,inandout_sheet
+33,Total optimal electricity produced (kWh/year),text_format,inandout_sheet
+34,Present value of annual Business as Usual boiler fuels utility bill ($/year),text_format,inandout_sheet
+35,Present value of annual Optimal boiler fuels utility bill ($/year),text_format,inandout_sheet
+36,Present value of annual CHP fuels utility bill ($/year),text_format,inandout_sheet
+37,CHP annual optimal thermal energy produced (MMBtu/year),text_format,inandout_sheet
+38,Steam turbine annual optimal thermal energy produced (MMBtu/year),text_format,inandout_sheet
+39,Percent electricity from on-site renewable resources,text_format,inandout_sheet
+40,Percent reduction in annual electricity bill,text_format,inandout_sheet
+41,Percent reduction in annual fuels bill,text_format,inandout_sheet
+42,Year one total site carbon dioxide emissions (ton CO2),text_format,inandout_sheet
+43,Year one total site carbon dioxide emissions BAU (ton CO2),text_format,inandout_sheet
+44,Year one total carbon dioxide emissions from electric utility purchases (ton CO2),text_format,inandout_sheet
+45,Year one total carbon dioxide emissions from electric utility purchases BAU (ton CO2),text_format,inandout_sheet
+46,Year one total carbon dioxide emissions from on-site fuel burn (ton CO2),text_format,inandout_sheet
+47,Year one total carbon dioxide emissions from on-site fuel burn BAU (ton CO2),text_format,inandout_sheet
+48,0,0,inandout_sheet
+49,SYSTEM COSTS,subheader_format,inandout_sheet
+50,Total Installed Cost ($),text_format,inandout_sheet
+51,PV Installed Cost ($),text_format,inandout_sheet
+52,Wind Installed Cost ($),text_format,inandout_sheet
+53,Backup generator Installed Cost ($),text_format,inandout_sheet
+54,Battery Installed Cost ($),text_format,inandout_sheet
+55,CHP Installed Cost ($),text_format,inandout_sheet
+56,Absorption Chiller Installed Cost ($),text_format,inandout_sheet
+57,Hot water TES Installed Cost ($),text_format,inandout_sheet
+58,Chilled water TES Installed Cost ($),text_format,inandout_sheet
+59,Steam turbine Installed Cost ($),text_format,inandout_sheet
+60,GHP Installed Cost ($),text_format,inandout_sheet
+61,Operation and Maintenance (O&M),bold_text_format,inandout_sheet
+62,Fixed PV O&M ($/kW-yr),text_format_indent,inandout_sheet
+63,Fixed Wind O&M ($/kW-yr),text_format_indent,inandout_sheet
+64,Fixed Backup Generator O&M ($/kW-yr),text_format_indent,inandout_sheet
+65,Variable Backup Generator O&M ($/kWh),text_format_indent,inandout_sheet
+66,Diesel fuel used cost ($),text_format_indent,inandout_sheet
+67,Diesel BAU fuel used cost ($),text_format_indent,inandout_sheet
+68,Battery replacement cost ($/kW),text_format_indent,inandout_sheet
+69,Battery kW replacement year,text_format_indent,inandout_sheet
+70,Battery replacement cost ($/kWh),text_format_indent,inandout_sheet
+71,Battery kWh replacement year,text_format_indent,inandout_sheet
+72,Fixed CHP O&M cost ($/kW-yr),text_format_indent,inandout_sheet
+73,Variable CHP O&M cost ($/kWh),text_format_indent,inandout_sheet
+74,Runtime CHP O&M cost ($/kW-rated/run-hour),text_format_indent,inandout_sheet
+75,Fixed Absorption Chiller O&M cost ($/ton-yr),text_format_indent,inandout_sheet
+76,Fixed Chilled water TES O&M cost ($/gallon-year),text_format_indent,inandout_sheet
+77,Fixed Hot water TES O&M cost ($/gallon-year),text_format_indent,inandout_sheet
+78,Fixed Steam Turbine O&M ($/kW-yr),text_format_indent,inandout_sheet
+79,Variable Steam Turbine O&M ($/kWh),text_format_indent,inandout_sheet
+80,Fixed GHP O&M ($/yr),text_format_indent,inandout_sheet
+81,0,0,inandout_sheet
+82,ANALYSIS PARAMETERS,subheader_format,inandout_sheet
+83,Analysis period (years),text_format,inandout_sheet
+84,Nominal O&M cost escalation rate (%/year),text_format,inandout_sheet
+85,Nominal electric utility cost escalation rate (%/year),text_format,inandout_sheet
+86,Nominal boiler fuel cost escalation rate (%/year),text_format,inandout_sheet
+87,Nominal CHP fuel cost escalation rate (%/year),text_format,inandout_sheet
+88,Nominal discount rate (%/year),text_format,inandout_sheet
+89,0,0,inandout_sheet
+90,TAX AND INSURANCE PARAMETERS,subheader_format,inandout_sheet
+91,Federal income tax rate (%),text_format,inandout_sheet
+92,0,0,inandout_sheet
+93,PV TAX CREDITS,subheader_format,inandout_sheet
+94,Investment tax credit (ITC),bold_text_format,inandout_sheet
+95,As percentage,text_format_indent,inandout_sheet
+96,Federal,text_format_indent_2,inandout_sheet
+97,0,0,inandout_sheet
+98,PV DIRECT CASH INCENTIVES,subheader_format,inandout_sheet
+99,Investment based incentive (IBI),bold_text_format,inandout_sheet
+100,As percentage,text_format_indent,inandout_sheet
+101,State (% of total installed cost),text_format_indent_2,inandout_sheet
+102,Utility (% of total installed cost),text_format_indent_2,inandout_sheet
+103,Capacity based incentive (CBI),bold_text_format,inandout_sheet
+104,Federal ($/W),text_format_indent_2,inandout_sheet
+105,State  ($/W),text_format_indent_2,inandout_sheet
+106,Utility  ($/W),text_format_indent_2,inandout_sheet
+107,Production based incentive (PBI),bold_text_format,inandout_sheet
+108,Combined ($/kWh),text_format_indent_2,inandout_sheet
+109,0,0,inandout_sheet
+110,WIND TAX CREDITS,subheader_format,inandout_sheet
+111,Investment tax credit (ITC),bold_text_format,inandout_sheet
+112,As percentage,text_format_indent,inandout_sheet
+113,Federal,text_format_indent_2,inandout_sheet
+114,0,0,inandout_sheet
+115,WIND DIRECT CASH INCENTIVES,subheader_format,inandout_sheet
+116,Investment based incentive (IBI),bold_text_format,inandout_sheet
+117,As percentage,text_format_indent,inandout_sheet
+118,State (% of total installed cost),text_format_indent_2,inandout_sheet
+119,Utility (% of total installed cost),text_format_indent_2,inandout_sheet
+120,Capacity based incentive (CBI),bold_text_format,inandout_sheet
+121,Federal ($/W),text_format_indent_2,inandout_sheet
+122,State  ($/W),text_format_indent_2,inandout_sheet
+123,Utility  ($/W),text_format_indent_2,inandout_sheet
+124,Production based incentive (PBI),bold_text_format,inandout_sheet
+125,Combined ($/kWh),text_format_indent_2,inandout_sheet
+126,0,0,inandout_sheet
+127,BATTERY TAX CREDITS,subheader_format,inandout_sheet
+128,Investment tax credit (ITC),bold_text_format,inandout_sheet
+129,As percentage,text_format_indent,inandout_sheet
+130,Federal,text_format_indent_2,inandout_sheet
+131,0,0,inandout_sheet
+132,BATTERY DIRECT CASH INCENTIVES,subheader_format,inandout_sheet
+133,Investment based incentive (IBI),bold_text_format,inandout_sheet
+134,As percentage,text_format_indent,inandout_sheet
+135,State (% of total installed cost),text_format_indent_2,inandout_sheet
+136,Utility (% of total installed cost),text_format_indent_2,inandout_sheet
+137,Capacity based incentive (CBI),bold_text_format,inandout_sheet
+138,Total ($/W),text_format_indent_2,inandout_sheet
+139,Total  ($/Wh),text_format_indent_2,inandout_sheet
+140,0,0,inandout_sheet
+141,CHP TAX CREDITS,subheader_format,inandout_sheet
+142,Investment tax credit (ITC),bold_text_format,inandout_sheet
+143,As percentage,text_format_indent,inandout_sheet
+144,Federal,text_format_indent_2,inandout_sheet
+145,0,0,inandout_sheet
+146,CHP DIRECT CASH INCENTIVES,subheader_format,inandout_sheet
+147,Investment based incentive (IBI),bold_text_format,inandout_sheet
+148,As percentage,text_format_indent,inandout_sheet
+149,State (% of total installed cost),text_format_indent_2,inandout_sheet
+150,Utility (% of total installed cost),text_format_indent_2,inandout_sheet
+151,Capacity based incentive (CBI),bold_text_format,inandout_sheet
+152,Federal ($/W),text_format_indent_2,inandout_sheet
+153,State  ($/W),text_format_indent_2,inandout_sheet
+154,Utility  ($/W),text_format_indent_2,inandout_sheet
+155,Production based incentive (PBI),bold_text_format,inandout_sheet
+156,Combined ($/kWh),text_format_indent_2,inandout_sheet
+157,0,0,inandout_sheet
+158,GHP TAX CREDITS,subheader_format,inandout_sheet
+159,Investment tax credit (ITC),bold_text_format,inandout_sheet
+160,As percentage,text_format_indent,inandout_sheet
+161,Federal,text_format_indent_2,inandout_sheet
+162,0,0,inandout_sheet
+163,GHP DIRECT CASH INCENTIVES,subheader_format,inandout_sheet
+164,Investment based incentive (IBI),bold_text_format,inandout_sheet
+165,As percentage,text_format_indent,inandout_sheet
+166,State (% of total installed cost),text_format_indent_2,inandout_sheet
+167,Utility (% of total installed cost),text_format_indent_2,inandout_sheet
+168,Capacity based incentive (CBI),bold_text_format,inandout_sheet
+169,Federal ($/ton),text_format_indent_2,inandout_sheet
+170,State  ($/ton),text_format_indent_2,inandout_sheet
+171,Utility  ($/ton),text_format_indent_2,inandout_sheet
+172,Production based incentive (PBI),bold_text_format,inandout_sheet
+173,Combined ($/kWh),text_format_indent_2,inandout_sheet
+174,0,0,inandout_sheet
+175,DEPRECIATION,subheader_format,inandout_sheet
+176,Federal (years),text_format,inandout_sheet
+177,Federal bonus fraction,text_format,inandout_sheet
+178,0,0,inandout_sheet
+179,0,0,inandout_sheet
+180,ANNUAL VALUES,subheader_format,inandout_sheet
+181,PV Annual electricity (kWh),text_format,inandout_sheet
+182,Existing PV Annual electricity (kWh),text_format,inandout_sheet
+183,Wind Annual electricity (kWh),text_format,inandout_sheet
+184,Backup Generator Annual electricity (kWh),text_format,inandout_sheet
+185,CHP Annual electricity (kWh),text_format,inandout_sheet
+186,CHP Annual heat (MMBtu),text_format,inandout_sheet
+187,Steam Turbine Annual electricity (kWh),text_format,inandout_sheet
+188,Steam Turbine Annual heat (MMBtu),text_format,inandout_sheet
+189,PV Federal depreciation percentages (fraction),text_format,inandout_sheet
+190,Wind Federal depreciation percentages (fraction),text_format,inandout_sheet
+191,Battery Federal depreciation percentages (fraction),text_format,inandout_sheet
+192,CHP Federal depreciation percentages (fraction),text_format,inandout_sheet
+193,Absorption Chiller Federal depreciation percentages (fraction),text_format,inandout_sheet
+194,Hot TES Federal depreciation percentages (fraction),text_format,inandout_sheet
+195,Cold TES Federal depreciation percentages (fraction),text_format,inandout_sheet
+196,Steam turbine Federal depreciation percentages (fraction),text_format,inandout_sheet
+197,GHP Federal depreciation percentages (fraction),text_format,inandout_sheet
+198,Free Cash Flow,text_format,inandout_sheet
+199,Cumulative Free Cash Flow,text_format,inandout_sheet
+200,Optimal Cash Flow,header_format,optcashf_sheet
+201,Operating Year,year_format,optcashf_sheet
+202,0,0,optcashf_sheet
+203,Operating Expenses,subheader_format,optcashf_sheet
+204,Electricity bill with system before export credits,text_format,optcashf_sheet
+205,Export credits with system,text_format,optcashf_sheet
+206,Boiler fuel bill with system,text_format,optcashf_sheet
+207,CHP fuel bill,text_format,optcashf_sheet
+208,Operation and Maintenance (O&M),text_format,optcashf_sheet
+209,New PV fixed O&M cost,text_format_indent,optcashf_sheet
+210,Existing PV fixed O&M cost,text_format_indent,optcashf_sheet
+211,Wind fixed O&M cost,text_format_indent,optcashf_sheet
+212,Generator fixed O&M cost,text_format_indent,optcashf_sheet
+213,Generator variable O&M cost,text_format_indent,optcashf_sheet
+214,Generator diesel fuel cost ($),text_format_indent,optcashf_sheet
+215,Battery kW replacement cost ,text_format_indent,optcashf_sheet
+216,Battery kWh replacement cost ,text_format_indent,optcashf_sheet
+217,CHP fixed O&M cost,text_format_indent,optcashf_sheet
+218,CHP variable generation O&M cost,text_format_indent,optcashf_sheet
+219,CHP runtime O&M cost,text_format_indent,optcashf_sheet
+220,Absorption Chiller fixed O&M cost,text_format_indent,optcashf_sheet
+221,Chilled water TES fixed O&M cost,text_format_indent,optcashf_sheet
+222,Hot water TES fixed O&M cost,text_format_indent,optcashf_sheet
+223,Steam turbine fixed O&M cost,text_format_indent,optcashf_sheet
+224,Steam turbine variable generation O&M cost,text_format_indent,optcashf_sheet
+225,GHP fixed O&M cost,text_format_indent,optcashf_sheet
+226,Total operating expenses,text_format_2,optcashf_sheet
+227,Tax deductible operating expenses,text_format_2,optcashf_sheet
+228,0,0,optcashf_sheet
+229,Direct Cash Incentives,subheader_format,optcashf_sheet
+230,PV Investment-based incentives (IBI),text_format,optcashf_sheet
+231,State IBI,text_format_indent,optcashf_sheet
+232,Utility IBI,text_format_indent,optcashf_sheet
+233,Total,text_format_indent,optcashf_sheet
+234,PV Capacity-based incentives (CBI),text_format,optcashf_sheet
+235,Federal CBI,text_format_indent,optcashf_sheet
+236,State CBI,text_format_indent,optcashf_sheet
+237,Utility CBI,text_format_indent,optcashf_sheet
+238,Total,text_format_indent,optcashf_sheet
+239,Wind Investment-based incentives (IBI),text_format,optcashf_sheet
+240,State IBI,text_format_indent,optcashf_sheet
+241,Utility IBI,text_format_indent,optcashf_sheet
+242,Total,text_format_indent,optcashf_sheet
+243,Wind Capacity-based incentives (CBI),text_format,optcashf_sheet
+244,Federal CBI,text_format_indent,optcashf_sheet
+245,State CBI,text_format_indent,optcashf_sheet
+246,Utility CBI,text_format_indent,optcashf_sheet
+247,Total,text_format_indent,optcashf_sheet
+248,Battery Investment-based incentives (IBI),text_format,optcashf_sheet
+249,State IBI,text_format_indent,optcashf_sheet
+250,Utility IBI,text_format_indent,optcashf_sheet
+251,Total,text_format_indent,optcashf_sheet
+252,Battery Capacity-based incentives (CBI),text_format,optcashf_sheet
+253,Total Power (per kW) CBI,text_format_indent,optcashf_sheet
+254,Total Storage Capacity (per kWh) CBI,text_format_indent,optcashf_sheet
+255,Total,text_format_indent,optcashf_sheet
+256,CHP Investment-based incentives (IBI),text_format,optcashf_sheet
+257,State IBI,text_format_indent,optcashf_sheet
+258,Utility IBI,text_format_indent,optcashf_sheet
+259,Total,text_format_indent,optcashf_sheet
+260,CHP Capacity-based incentives (CBI),text_format,optcashf_sheet
+261,Federal CBI,text_format_indent,optcashf_sheet
+262,State CBI,text_format_indent,optcashf_sheet
+263,Utility CBI,text_format_indent,optcashf_sheet
+264,Total,text_format_indent,optcashf_sheet
+265,0,0,optcashf_sheet
+266,Total CBI and IBI,text_format,optcashf_sheet
+267,0,0,optcashf_sheet
+268,GHP Investment-based incentives (IBI),text_format,optcashf_sheet
+269,State IBI,text_format_indent,optcashf_sheet
+270,Utility IBI,text_format_indent,optcashf_sheet
+271,Total,text_format_indent,optcashf_sheet
+272,GHP Capacity-based incentives (CBI),text_format,optcashf_sheet
+273,Federal CBI,text_format_indent,optcashf_sheet
+274,State CBI,text_format_indent,optcashf_sheet
+275,Utility CBI,text_format_indent,optcashf_sheet
+276,Total,text_format_indent,optcashf_sheet
+277,0,0,optcashf_sheet
+278,Total CBI and IBI,text_format,optcashf_sheet
+279,0,0,optcashf_sheet
+280,Production-based incentives (PBI),text_format,optcashf_sheet
+281,New PV Combined PBI,text_format_indent,optcashf_sheet
+282,Existing PV Combined PBI,text_format_indent,optcashf_sheet
+283,Wind Combined PBI,text_format_indent,optcashf_sheet
+284,CHP Combined PBI,text_format_indent,optcashf_sheet
+285,Total taxable cash incentives,text_format_2,optcashf_sheet
+286,Total non-taxable cash incentives,text_format_2,optcashf_sheet
+287,0,0,optcashf_sheet
+288,Capital Depreciation,subheader_format,optcashf_sheet
+289,"PV Depreciation, Commercial only",text_format,optcashf_sheet
+290,Percentage,text_format_indent,optcashf_sheet
+291,Bonus Basis,text_format_indent,optcashf_sheet
+292,Basis,text_format_indent,optcashf_sheet
+293,Amount,text_format_indent,optcashf_sheet
+294,"Wind Depreciation, Commercial only",text_format,optcashf_sheet
+295,Percentage,text_format_indent,optcashf_sheet
+296,Bonus Basis,text_format_indent,optcashf_sheet
+297,Basis,text_format_indent,optcashf_sheet
+298,Amount,text_format_indent,optcashf_sheet
+299,"Battery Depreciation, Commercial only",text_format,optcashf_sheet
+300,Percentage,text_format_indent,optcashf_sheet
+301,Bonus Basis,text_format_indent,optcashf_sheet
+302,Basis,text_format_indent,optcashf_sheet
+303,Amount,text_format_indent,optcashf_sheet
+304,"CHP Depreciation, Commercial only",text_format,optcashf_sheet
+305,Percentage,text_format_indent,optcashf_sheet
+306,Bonus Basis,text_format_indent,optcashf_sheet
+307,Basis,text_format_indent,optcashf_sheet
+308,Amount,text_format_indent,optcashf_sheet
+309,"Absorption Chiller Depreciation, Commercial only",text_format,optcashf_sheet
+310,Percentage,text_format_indent,optcashf_sheet
+311,Bonus Basis,text_format_indent,optcashf_sheet
+312,Basis,text_format_indent,optcashf_sheet
+313,Amount,text_format_indent,optcashf_sheet
+314,"Hot TES Depreciation, Commercial only",text_format,optcashf_sheet
+315,Percentage,text_format_indent,optcashf_sheet
+316,Bonus Basis,text_format_indent,optcashf_sheet
+317,Basis,text_format_indent,optcashf_sheet
+318,Amount,text_format_indent,optcashf_sheet
+319,"Cold TES Depreciation, Commercial only",text_format,optcashf_sheet
+320,Percentage,text_format_indent,optcashf_sheet
+321,Bonus Basis,text_format_indent,optcashf_sheet
+322,Basis,text_format_indent,optcashf_sheet
+323,Amount,text_format_indent,optcashf_sheet
+324,"Steam Turbine Depreciation, Commercial only",text_format,optcashf_sheet
+325,Percentage,text_format_indent,optcashf_sheet
+326,Bonus Basis,text_format_indent,optcashf_sheet
+327,Basis,text_format_indent,optcashf_sheet
+328,Amount,text_format_indent,optcashf_sheet
+329,"GHP Depreciation, Commercial only",text_format,optcashf_sheet
+330,Percentage,text_format_indent,optcashf_sheet
+331,Bonus Basis,text_format_indent,optcashf_sheet
+332,Basis,text_format_indent,optcashf_sheet
+333,Amount,text_format_indent,optcashf_sheet
+334,Total depreciation,text_format_2,optcashf_sheet
+335,0,0,optcashf_sheet
+336,Tax benefits for LCOE Calculations,subheader_format,optcashf_sheet
+337,"PV income tax savings, $",text_format_2,optcashf_sheet
+338,"Wind income tax savings, $",text_format_2,optcashf_sheet
+339,0,0,optcashf_sheet
+340,Federal Investment Tax Credit,subheader_format,optcashf_sheet
+341,Federal ITC basis: PV,text_format,optcashf_sheet
+342,Federal ITC amount: PV,text_format,optcashf_sheet
+343,Federal ITC basis: Wind,text_format,optcashf_sheet
+344,Federal ITC amount: Wind,text_format,optcashf_sheet
+345,Federal ITC basis: Battery,text_format,optcashf_sheet
+346,Federal ITC amount: Battery,text_format,optcashf_sheet
+347,Federal ITC basis: CHP,text_format,optcashf_sheet
+348,Federal ITC amount: CHP,text_format,optcashf_sheet
+349,Federal ITC basis: GHP,text_format,optcashf_sheet
+350,Federal ITC amount: GHP,text_format,optcashf_sheet
+351,Total Federal ITC,text_format_2,optcashf_sheet
+352,0,0,optcashf_sheet
+353,Total Cash Flows,subheader_format,optcashf_sheet
+354,Upfront Capital Cost,text_format,optcashf_sheet
+355,"Operating expenses, after-tax",text_format,optcashf_sheet
+356,"Total Cash incentives, after-tax",text_format,optcashf_sheet
+357,Depreciation Tax Shield,text_format,optcashf_sheet
+358,Investment Tax Credit,text_format,optcashf_sheet
+359,Free Cash Flow before income,text_format_2,optcashf_sheet
+360,Discounted Cash Flow,text_format_2,optcashf_sheet
+361,Optimal Life Cycle Cost,standalone_bold_text_format,optcashf_sheet
+362,BAU Cash Flow,0,baucashf_sheet
+363,Operating Expenses,year_format,baucashf_sheet
+364,Business as Usual electricity bill ($),text_format,baucashf_sheet
+365,Business as Usual export credits ($),text_format,baucashf_sheet
+366,Business as Usual boiler fuel bill ($),text_format,baucashf_sheet
+367,Operation and Maintenance (O&M),text_format,baucashf_sheet
+368,Existing PV cost in $/kW,0,baucashf_sheet
+369,Existing Generator fixed O&M cost,0,baucashf_sheet
+370,Existing Generator variable O&M cost,0,baucashf_sheet
+371,Existing Generator fuel cost ($),0,baucashf_sheet
+372,Total operating expenses,text_format_2,baucashf_sheet
+373,Tax deductible operating expenses,text_format_2,baucashf_sheet
+374,0,0,baucashf_sheet
+375,Production-based incentives (PBI),subheader_format,baucashf_sheet
+376,Existing PV Combined PBI,text_format_2,baucashf_sheet
+377,Total taxable cash incentives,text_format_2,baucashf_sheet
+378,Total non-taxable cash incentives,text_format_2,baucashf_sheet
+379,0,0,baucashf_sheet
+380,Total Cash Flows,subheader_format,baucashf_sheet
+381,"Net Operating expenses, after-tax",text_format,baucashf_sheet
+382,"Total Cash incentives, after-tax",text_format,baucashf_sheet
+383,Free Cash Flow,text_format_2,baucashf_sheet
+384,Discounted Cash Flow,text_format_2,baucashf_sheet
+385,BAU Life Cycle Cost,standalone_bold_text_format,baucashf_sheet
