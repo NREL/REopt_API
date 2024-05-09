@@ -37,6 +37,9 @@
         "doe_reference_name": "Hospital",
         "annual_mmbtu": 500.0
     },
+    "ProcessHeatLoad": {
+        "annual_mmbtu": 100
+    },
     "ExistingBoiler": {
         "efficiency": 0.72,
         "production_type": "hot_water",

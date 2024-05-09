@@ -136,6 +136,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         self.assertIn("ExistingChiller",list(results.keys()))
         self.assertIn("ExistingBoiler", list(results.keys()))
         self.assertIn("HeatingLoad", list(results.keys()))
+        self.assertIn("process_heat_thermal_load_series_mmbtu_per_hour", list(results["HeatingLoad"].keys()))
         self.assertIn("HotThermalStorage", list(results.keys()))
         self.assertIn("ColdThermalStorage", list(results.keys()))      
         self.assertIn("AbsorptionChiller", list(results.keys()))
