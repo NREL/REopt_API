@@ -5559,7 +5559,24 @@ class SteamTurbineInputs(BaseModel, models.Model):
         help_text="True/False for if technology has the ability to curtail energy production."
     )
 
-    
+    can_serve_dhw = models.BooleanField(
+        default=True,
+        null=True,        
+        blank=True,
+        help_text="Boolean indicator if steam turbine can serve space heating load"
+    )
+    can_serve_space_heating = models.BooleanField(
+        default=True,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if steam turbine can serve space heating load"   
+    )
+    can_serve_process_heat = models.BooleanField(
+        default=False,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if steam turbine can serve process heat load"   
+    )
 
     macrs_option_years = models.IntegerField(
         default=MACRS_YEARS_CHOICES.ZERO,
