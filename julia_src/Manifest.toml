@@ -917,8 +917,8 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [[deps.REopt]]
 deps = ["ArchGDAL", "CSV", "CoolProp", "DataFrames", "Dates", "DelimitedFiles", "HTTP", "JLD", "JSON", "JuMP", "LinDistFlow", "LinearAlgebra", "Logging", "MathOptInterface", "Requires", "Roots", "Statistics", "TestEnv"]
-git-tree-sha1 = "01338b98d1a5a63ce1ae08dd14f7370f76ad6051"
-repo-rev = "develop"
+git-tree-sha1 = "28bbe232da58b84194f3c1b4f0d60d577f24ba2c"
+repo-rev = "fix-ghp-storage-dispatch"
 repo-url = "https://github.com/NREL/REopt.jl.git"
 uuid = "d36ad4e8-d74a-4f7a-ace1-eaea049febf6"
 version = "0.46.0"
