@@ -26,6 +26,19 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop 2024-05-09
+### Minor Updates
+#### Added
+- In `reoptjl/models.py`, added the following fields:
+  - booleans **can_serve_dhw**, **can_serve_space_heating**, and **can_serve_process_heat** to models **CHPInputs**, **ExistingBoilerInputs**, **BoilerInputs**, **SteamTurbineInputs**, and **HotThermalStorageInputs**
+  - booleans **can_serve_space_heating** and **can_serve_process_heat** to model **GHPInputs**
+  - arrays **storage_to_dhw_load_series_mmbtu_per_hour**, **storage_to_space_heating_load_series_mmbtu_per_hour** and **storage_to_process_heat_load_series_mmbtu_per_hour** to model **HotThermalStorageOutputs**
+  - **heating_load_input** to model **AbsorptionChillerInputs**
+  - arrays **thermal_to_dhw_load_series_mmbtu_per_hour**, **thermal_to_space_heating_load_series_mmbtu_per_hour**, and **thermal_to_process_heat_load_series_mmbtu_per_hour** to models **CHPOutputs**, **ExistingBoilerOutputs**, **BoilerOutputs**, **SteamTurbineOutputs**, and **HotThermalStorageOutputs**
+- In `reopt.jl/models.py`, added new model **ProcessHeatLoadInputs** with references in `reoptjl/validators.py` and `reoptjl/views.py`
+- Added process heat load to test scenario `reoptjl/test/posts/test_thermal_in_results.json`
+- Added tests for the presence of process heat load and heat-load-specfic outputs to `test_thermal_in_results` within `reoptjl/test/test_job_endpoint.py`
+
 ## v3.8.0
 ### Minor Updates
 #### Changed
