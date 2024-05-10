@@ -191,7 +191,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='steamturbineinputs',
             name='can_serve_process_heat',
-            field=models.BooleanField(blank=True, default=False, help_text='Boolean indicator if steam turbine can serve process heat load', null=True),
+            field=models.BooleanField(blank=True, default=True, help_text='Boolean indicator if steam turbine can serve process heat load', null=True),
         ),
         migrations.AddField(
             model_name='steamturbineinputs',

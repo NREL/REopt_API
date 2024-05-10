@@ -5572,7 +5572,7 @@ class SteamTurbineInputs(BaseModel, models.Model):
         help_text="Boolean indicator if steam turbine can serve space heating load"   
     )
     can_serve_process_heat = models.BooleanField(
-        default=False,
+        default=True,
         null=True, 
         blank=True,
         help_text="Boolean indicator if steam turbine can serve process heat load"   
