@@ -6372,7 +6372,7 @@ class DomesticHotWaterLoadInputs(BaseModel, models.Model):
             self.addressable_load_fraction = list([1.0]) # should not convert to timeseries, in case it is to be used with monthly_mmbtu or annual_mmbtu
 
 class ProcessHeatLoadInputs(BaseModel, models.Model):
-    # DHW
+    # Process Heat
     key = "ProcessHeatLoad"
 
     meta = models.OneToOneField(
