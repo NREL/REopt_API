@@ -6694,7 +6694,7 @@ class AbsorptionChillerInputs(BaseModel, models.Model):
     ))
 
     HEATING_LOAD_INPUT = models.TextChoices('HEATING_LOAD_INPUT', (
-        'DomesitHotWater',
+        'DomesticHotWater',
         'SpaceHeating',
         'ProcessHeat'
     ))
