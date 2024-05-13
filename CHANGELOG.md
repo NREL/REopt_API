@@ -41,6 +41,8 @@ Classify the change according to the following categories:
 - Added tests for the presence of process heat load and heat-load-specfic outputs to `test_thermal_in_results` within `reoptjl/test/test_job_endpoint.py`
 #### Changed
 - Point to REopt.jl v0.46.1 which includes bug fixes in net metering and updated PV resource data calls
+#### Fixed
+- Fix bug in setting default ElectricUtility.emissions_factor_CO2_decrease_fraction. Previously, user-input values were getting overwritten. 
 
 ## v3.8.0
 ### Minor Updates
