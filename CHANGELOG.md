@@ -26,7 +26,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop 2024-05-09
+## v3.9.0
 ### Minor Updates
 #### Added
 - In `reoptjl/models.py`, added the following fields:
@@ -39,6 +39,8 @@ Classify the change according to the following categories:
 - In `reopt.jl/models.py`, added new model **ProcessHeatLoadInputs** with references in `reoptjl/validators.py` and `reoptjl/views.py`
 - Added process heat load to test scenario `reoptjl/test/posts/test_thermal_in_results.json`
 - Added tests for the presence of process heat load and heat-load-specfic outputs to `test_thermal_in_results` within `reoptjl/test/test_job_endpoint.py`
+#### Changed
+- Point to REopt.jl v0.46.1 which includes bug fixes in net metering and updated PV resource data calls
 
 ## v3.8.0
 ### Minor Updates
