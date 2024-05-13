@@ -1842,8 +1842,9 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         elif self.outage_durations not in [None,[]]: 
             self.outage_probabilities = [1/len(self.outage_durations)] * len(self.outage_durations)
 
-        if self.co2_from_avert or len(self.emissions_factor_series_lb_CO2_per_kwh) > 0:
-            self.emissions_factor_CO2_decrease_fraction = EMISSIONS_DECREASE_DEFAULTS.get("CO2e", None) # leave blank otherwise; the Julia Pkg will set to 0 unless site is in AK or HI
+        if (self.co2_from_avert or len(self.emissions_factor_series_lb_CO2_per_kwh) > 0) and self.emissions_factor_CO2_decrease_fraction == None:
+            # use default if not provided and using AVERT or custom EFs. Leave blank otherwise and the Julia Pkg will set to 0 unless site is in AK or HI.
+            self.emissions_factor_CO2_decrease_fraction = EMISSIONS_DECREASE_DEFAULTS.get("CO2e", None) 
 
         if self.emissions_factor_NOx_decrease_fraction == None:
             self.emissions_factor_NOx_decrease_fraction = EMISSIONS_DECREASE_DEFAULTS.get("NOx", 0.0)
@@ -4104,6 +4105,25 @@ class CHPInputs(BaseModel, models.Model):
         blank=True,
         help_text="Boolean indicator if CHP can supply steam to the steam turbine for electric production"   
     )
+    can_serve_dhw = models.BooleanField(
+        default=True,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if CHP can serve  hot water load"   
+    )
+    can_serve_space_heating = models.BooleanField(
+        default=True,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if CHP can serve space heating load"   
+    )
+    can_serve_process_heat = models.BooleanField(
+        default=True,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if CHP can serve process heat load"   
+    )
+
 
     #Financial and emissions    
     macrs_option_years = models.IntegerField(
@@ -4453,6 +4473,18 @@ class CHPOutputs(BaseModel, models.Model):
         help_text="Present value of all CHP standby charges, after tax."
     )
     thermal_production_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+    thermal_to_dhw_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+    thermal_to_space_heating_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+    thermal_to_process_heat_load_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
         default = list,
     )
@@ -4836,6 +4868,13 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         help_text="Existing boiler system efficiency - conversion of fuel to usable heating thermal energy."
     )
 
+    retire_in_optimal = models.BooleanField(
+        default=False,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if the existing boiler is unavailable in the optimal case (still used in BAU)"   
+    )
+
     fuel_renewable_energy_fraction = models.FloatField(
         validators=[
             MinValueValidator(0),
@@ -4915,6 +4954,27 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         help_text="If the boiler can supply steam to the steam turbine for electric production"
     )
 
+    can_serve_dhw = models.BooleanField(
+        default=True,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if the existing boiler can serve domestic hot water load"   
+    )
+
+    can_serve_space_heating = models.BooleanField(
+        default=True,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if the existing boiler can serve space heating load"   
+    )
+
+    can_serve_process_heat = models.BooleanField(
+        default=True,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if the existing boiler can serve process heat load"   
+    )
+
     # For custom validations within model.
     def clean(self):
         error_messages = {}
@@ -4985,6 +5045,21 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
     thermal_to_load_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
         default = list,
+    )
+
+    thermal_to_dhw_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
+
+    thermal_to_space_heating_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
+
+    thermal_to_process_heat_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
     )
 
     def clean(self):
@@ -5151,6 +5226,28 @@ class BoilerInputs(BaseModel, models.Model):
         help_text="If the boiler can supply steam to the steam turbine for electric production"
     )
 
+    can_serve_dhw = models.BooleanField(
+        default=True,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if boiler can serve domestic hot water load"   
+    )
+
+    can_serve_space_heating = models.BooleanField(
+        default=True,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if boiler can serve space heating load"   
+    )
+
+    can_serve_process_heat = models.BooleanField(
+        default=True,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if boiler can serve process heat load"   
+    )
+    
+
     # For custom validations within model.
     def clean(self):
         error_messages = {}
@@ -5215,6 +5312,21 @@ class BoilerOutputs(BaseModel, models.Model):
     )
 
     annual_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
+
+    thermal_to_dhw_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
+
+    thermal_to_space_heating_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
+
+    thermal_to_process_heat_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
 
 
 class SteamTurbineInputs(BaseModel, models.Model):
@@ -5447,6 +5559,25 @@ class SteamTurbineInputs(BaseModel, models.Model):
         help_text="True/False for if technology has the ability to curtail energy production."
     )
 
+    can_serve_dhw = models.BooleanField(
+        default=True,
+        null=True,        
+        blank=True,
+        help_text="Boolean indicator if steam turbine can serve space heating load"
+    )
+    can_serve_space_heating = models.BooleanField(
+        default=True,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if steam turbine can serve space heating load"   
+    )
+    can_serve_process_heat = models.BooleanField(
+        default=True,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if steam turbine can serve process heat load"   
+    )
+
     macrs_option_years = models.IntegerField(
         default=MACRS_YEARS_CHOICES.ZERO,
         choices=MACRS_YEARS_CHOICES.choices,
@@ -5530,6 +5661,21 @@ class SteamTurbineOutputs(BaseModel, models.Model):
     thermal_to_load_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
         default = list,
+    )
+
+    thermal_to_dhw_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
+
+    thermal_to_space_heating_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
+
+    thermal_to_process_heat_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
     )
 
 class HotThermalStorageInputs(BaseModel, models.Model):
@@ -5675,6 +5821,25 @@ class HotThermalStorageInputs(BaseModel, models.Model):
         blank=True,
         help_text="Rebate per unit installed energy capacity"
     )
+    can_serve_dhw = models.BooleanField(
+        default=True,
+        null=True,        
+        blank=True,
+        help_text="Boolean indicator if hot thermal storage can serve space heating load"
+    )
+    can_serve_space_heating = models.BooleanField(
+        default=True,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if hot thermal storage can serve space heating load"   
+    )
+    can_serve_process_heat = models.BooleanField(
+        default=False,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if hot thermal storage can serve process heat load"   
+    )
+    
 
     def clean(self):
         # perform custom validation here.
@@ -5697,6 +5862,20 @@ class HotThermalStorageOutputs(BaseModel, models.Model):
     storage_to_load_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
         default = list,
+    )
+    storage_to_dhw_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
+
+    storage_to_space_heating_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
+
+    storage_to_process_heat_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
     )
 
     def clean(self):
@@ -6192,6 +6371,55 @@ class DomesticHotWaterLoadInputs(BaseModel, models.Model):
         if self.addressable_load_fraction == None:
             self.addressable_load_fraction = list([1.0]) # should not convert to timeseries, in case it is to be used with monthly_mmbtu or annual_mmbtu
 
+class ProcessHeatLoadInputs(BaseModel, models.Model):
+    # Process Heat
+    key = "ProcessHeatLoad"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="ProcessHeatLoadInputs",
+        primary_key=True
+    )
+
+    possible_sets = [
+        ["fuel_loads_mmbtu_per_hour"],
+        ["annual_mmbtu"],
+        [],
+    ]
+
+    annual_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        help_text=("Annual site process heat consumption, used "
+                   "to scale simulated load profile [MMBtu]")
+    )
+
+    fuel_loads_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        help_text=("Typical load over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,"
+                   "520 samples), or 15 minute (35,040 samples). All non-net load values must be greater than or "
+                   "equal to zero. "
+                   )
+
+    )
+
+    def clean(self):
+        error_messages = {}
+
+        # possible sets for defining load profile
+        if not at_least_one_set(self.dict, self.possible_sets):
+            error_messages["required inputs"] = \
+                "Must provide at least one set of valid inputs from {}.".format(self.possible_sets)
+
 class HeatingLoadOutputs(BaseModel, models.Model):
 
     key = "HeatingLoadOutputs"
@@ -6224,7 +6452,19 @@ class HeatingLoadOutputs(BaseModel, models.Model):
             blank=True
         ),
         default=list, blank=True,
-        help_text=("Hourly domestic space heating load [MMBTU/hr]")
+        help_text=("Hourly space heating load [MMBTU/hr]")
+    )
+
+    process_heat_thermal_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(MAX_BIG_NUMBER)
+            ],
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Hourly process heat load [MMBTU/hr]")
     )
 
     total_heating_thermal_load_series_mmbtu_per_hour = ArrayField(
@@ -6248,7 +6488,7 @@ class HeatingLoadOutputs(BaseModel, models.Model):
             blank=True
         ),
         default=list, blank=True,
-        help_text=("Hourly domestic hot water load [MMBTU/hr]")
+        help_text=("Hourly domestic hot water boiler fuel load [MMBTU/hr]")
     )
 
     space_heating_boiler_fuel_load_series_mmbtu_per_hour = ArrayField(
@@ -6260,7 +6500,19 @@ class HeatingLoadOutputs(BaseModel, models.Model):
             blank=True
         ),
         default=list, blank=True,
-        help_text=("Hourly domestic space heating load [MMBTU/hr]")
+        help_text=("Hourly space heating boiler fuel load [MMBTU/hr]")
+    )
+
+    process_heat_boiler_fuel_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(MAX_BIG_NUMBER)
+            ],
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Hourly process heat boiler fuel load [MMBTU/hr]")
     )
 
     total_heating_boiler_fuel_load_series_mmbtu_per_hour = ArrayField(
@@ -6272,7 +6524,7 @@ class HeatingLoadOutputs(BaseModel, models.Model):
             blank=True
         ),
         default=list, blank=True,
-        help_text=("Hourly total heating load [MMBTU/hr]")
+        help_text=("Hourly total boiler fuel load [MMBTU/hr]")
     )
 
     annual_calculated_dhw_thermal_load_mmbtu = models.FloatField(
@@ -6295,6 +6547,17 @@ class HeatingLoadOutputs(BaseModel, models.Model):
         blank=True,
         default=0,
         help_text=("Annual site space heating load [MMBTU]")
+    )
+
+    annual_calculated_process_heat_thermal_load_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default=0,
+        help_text=("Annual site process heat load [MMBTU]")
     )
 
     annual_calculated_total_heating_thermal_load_mmbtu = models.FloatField(
@@ -6328,6 +6591,17 @@ class HeatingLoadOutputs(BaseModel, models.Model):
         blank=True,
         default=0,
         help_text=("Annual site space heating boiler fuel load [MMBTU]")
+    )
+
+    annual_calculated_process_heat_boiler_fuel_load_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default=0,
+        help_text=("Annual site process heat boiler fuel load [MMBTU]")
     )
 
     annual_calculated_total_heating_boiler_fuel_load_mmbtu = models.FloatField(
@@ -6419,6 +6693,12 @@ class AbsorptionChillerInputs(BaseModel, models.Model):
         'hot_water'
     ))
 
+    HEATING_LOAD_INPUT = models.TextChoices('HEATING_LOAD_INPUT', (
+        'DomesticHotWater',
+        'SpaceHeating',
+        'ProcessHeat'
+    ))
+
     thermal_consumption_hot_water_or_steam = models.TextField(
         blank=True,
         null=True,
@@ -6506,6 +6786,13 @@ class AbsorptionChillerInputs(BaseModel, models.Model):
         ],
         blank=True,
         help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
+    )
+
+    heating_load_input = models.TextField(
+        blank=True,
+        null=True,
+        choices=HEATING_LOAD_INPUT.choices,
+        help_text="Absorption chiller heat input - determines what heating load is added to by absorption chiller use"
     )
 
     def clean(self):
@@ -6827,6 +7114,20 @@ class GHPInputs(BaseModel, models.Model):
         blank=True,
         help_text="If GHP can serve the domestic hot water (DHW) portion of the heating load"
     )
+    
+    can_serve_space_heating = models.BooleanField(
+        default=True,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if GHP can serve space heating load"   
+    )
+
+    can_serve_process_heat = models.BooleanField(
+        default=False,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if GHP can serve process heat load"   
+    )
 
     macrs_option_years = models.IntegerField(
         default=MACRS_YEARS_CHOICES.FIVE,
@@ -7049,6 +7350,9 @@ def get_input_dict_from_run_uuid(run_uuid:str):
     except: pass
 
     try: d["DomesticHotWaterLoad"] = filter_none_and_empty_array(meta.DomesticHotWaterLoadInputs.dict)
+    except: pass
+
+    try: d["ProcessHeatLoad"] = filter_none_and_empty_array(meta.ProcessHeatLoadInputs.dict)
     except: pass
 
     try: d["HotThermalStorage"] = filter_none_and_empty_array(meta.HotThermalStorageInputs.dict)
