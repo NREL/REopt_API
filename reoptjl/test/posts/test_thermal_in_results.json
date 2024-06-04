@@ -38,6 +38,7 @@
         "annual_mmbtu": 500.0
     },
     "ProcessHeatLoad": {
+        "industry_reference_name": "FlatLoad",
         "annual_mmbtu": 100
     },
     "ExistingBoiler": {

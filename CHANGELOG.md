@@ -26,6 +26,13 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.9.1
+### Minor Updates
+#### Added
+- Added `ProcessHeatLoadInputs` for new ways to input `ProcessHeatLoad`, similar to other loads
+#### Fixed
+- See fixes and changes here: https://github.com/NREL/REopt.jl/releases/tag/v0.47.0
+
 ## v3.9.0
 ### Minor Updates
 #### Added
