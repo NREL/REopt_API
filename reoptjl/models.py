@@ -6384,9 +6384,23 @@ class ProcessHeatLoadInputs(BaseModel, models.Model):
 
     possible_sets = [
         ["fuel_loads_mmbtu_per_hour"],
-        ["annual_mmbtu"],
-        [],
+        ["industry_reference_name", "monthly_mmbtu"],
+        ["annual_mmbtu", "industry_reference_name"],
+        ["industry_reference_name"],
+        ["blended_industry_reference_names", "blended_industry_reference_percents"],
+        []
     ]
+
+    INDUSTRY_REFERENCE_NAME = models.TextChoices('INDUSTRY_REFERENCE_NAME', (
+        'Chemical '
+        'Warehouse '
+        'FlatLoad '
+        'FlatLoad_24_5 '
+        'FlatLoad_16_7 '
+        'FlatLoad_16_5 '
+        'FlatLoad_8_7 '
+        'FlatLoad_8_5'        
+    ))
 
     annual_mmbtu = models.FloatField(
         validators=[
@@ -6395,8 +6409,28 @@ class ProcessHeatLoadInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        help_text=("Annual site process heat consumption, used "
-                   "to scale simulated load profile [MMBtu]")
+        help_text=("Annual site process heat fuel consumption, used "
+                   "to scale simulated default industry load profile [MMBtu]")
+    )
+
+    industry_reference_name = models.TextField(
+        null=True,
+        blank=True,
+        choices=INDUSTRY_REFERENCE_NAME.choices,
+        help_text=("Industrial process heat load reference facility/sector type")
+    )
+
+    monthly_mmbtu = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(MAX_BIG_NUMBER)
+            ],
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Monthly site process heat fuel consumption in [MMbtu], used "
+                   "to scale simulated default building load profile for the site's climate zone")
     )
 
     fuel_loads_mmbtu_per_hour = ArrayField(
@@ -6405,15 +6439,73 @@ class ProcessHeatLoadInputs(BaseModel, models.Model):
         ),
         default=list,
         blank=True,
-        help_text=("Typical load over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,"
+        help_text=("Vector of process heat fuel loads [mmbtu/hr] over one year. Must be hourly (8,760 samples), 30 minute (17,"
                    "520 samples), or 15 minute (35,040 samples). All non-net load values must be greater than or "
                    "equal to zero. "
                    )
+    )
 
+    blended_industry_reference_names = ArrayField(
+        models.TextField(
+            choices=INDUSTRY_REFERENCE_NAME.choices,
+            blank=True,
+            null=True
+        ),
+        default=list,
+        blank=True,
+        help_text=("Used in concert with blended_industry_reference_percents to create a blended load profile from multiple "
+                   "Industrial reference facility/sector types.")
+    )
+
+    blended_industry_reference_percents = ArrayField(
+        models.FloatField(
+            null=True, blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1.0)
+            ],
+        ),
+        default=list,
+        blank=True,
+        help_text=("Used in concert with blended_industry_reference_names to create a blended load profile from multiple "
+                   "Industrial reference facility/sector types. Must sum to 1.0.")
+    )
+
+    addressable_load_fraction = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1.0)
+            ],
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        help_text=( "Fraction of input fuel load which is addressable by heating technologies (default is 1.0)." 
+                    "Can be a scalar or vector with length aligned with use of monthly_mmbtu (12) or fuel_loads_mmbtu_per_hour.")
     )
 
     def clean(self):
         error_messages = {}
+
+        # possible sets for defining load profile
+        if not at_least_one_set(self.dict, self.possible_sets):
+            error_messages["required inputs"] = \
+                "Must provide at least one set of valid inputs from {}.".format(self.possible_sets)
+
+        if len(self.blended_industry_reference_names) > 0 and self.industry_reference_name == "":
+            if len(self.blended_industry_reference_names) != len(self.blended_industry_reference_percents):
+                error_messages["blended_industry_reference_names"] = \
+                    "The number of blended_industry_reference_names must equal the number of blended_industry_reference_percents."
+            if not math.isclose(sum(self.blended_industry_reference_percents),  1.0):
+                error_messages["blended_industry_reference_percents"] = "Sum must = 1.0."
+
+        if self.industry_reference_name != "" or \
+                len(self.blended_industry_reference_names) > 0:
+            self.year = 2017  # the validator provides an "info" message regarding this)
+        
+        if self.addressable_load_fraction == None:
+            self.addressable_load_fraction = list([1.0]) # should not convert to timeseries, in case it is to be used with monthly_mmbtu or annual_mmbtu
 
         # possible sets for defining load profile
         if not at_least_one_set(self.dict, self.possible_sets):
