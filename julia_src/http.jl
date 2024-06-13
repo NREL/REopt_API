@@ -140,21 +140,17 @@ function reopt(req::HTTP.Request)
 
     if isempty(error_response)
         @info "REopt model solved with status $(results["status"])."
+        response = Dict(
+            "results" => results,
+            "reopt_version" => pkgversion(reoptjl)
+        )
 		if results["status"] == "error"
-			response = Dict(
-				"results" => results,
-                "reopt_version" => pkgversion(reoptjl)
-			)
 			if !isempty(inputs_with_defaults_set_in_julia)
 				response["inputs_with_defaults_set_in_julia"] = inputs_with_defaults_set_in_julia
 			end
 			return HTTP.Response(400, JSON.json(response))
 		else
-			response = Dict(
-				"results" => results,
-                "reopt_version" => pkgversion(reoptjl),
-				"inputs_with_defaults_set_in_julia" => inputs_with_defaults_set_in_julia
-			)
+            response["inputs_with_defaults_set_in_julia"] = inputs_with_defaults_set_in_julia
 			return HTTP.Response(200, JSON.json(response))
 		end
     else
