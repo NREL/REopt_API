@@ -142,7 +142,7 @@ function reopt(req::HTTP.Request)
         @info "REopt model solved with status $(results["status"])."
         response = Dict(
             "results" => results,
-            "reopt_version" => pkgversion(reoptjl)
+            "reopt_version" => string(pkgversion(reoptjl))
         )
 		if results["status"] == "error"
 			if !isempty(inputs_with_defaults_set_in_julia)
@@ -155,7 +155,7 @@ function reopt(req::HTTP.Request)
 		end
     else
         @info "An error occured in the Julia code."
-        error_response["reopt_version"] = pkgversion(reoptjl)
+        error_response["reopt_version"] = string(pkgversion(reoptjl))
         return HTTP.Response(500, JSON.json(error_response))
     end
 end
