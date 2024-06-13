@@ -22,13 +22,13 @@ end
 function reopt(req::HTTP.Request)
     d = JSON.parse(String(req.body))
 	error_response = Dict()
-    settings = d["Settings"]
     if !isempty(get(d, "api_key", ""))
         ENV["NREL_DEVELOPER_API_KEY"] = pop!(d, "api_key")
     else
         ENV["NREL_DEVELOPER_API_KEY"] = test_nrel_developer_api_key
         delete!(d, "api_key")
     end
+    settings = d["Settings"]
     solver_name = get(settings, "solver_name", "HiGHS")    
     if solver_name == "Xpress" && !(xpress_installed=="True")
         solver_name = "HiGHS"
@@ -142,7 +142,8 @@ function reopt(req::HTTP.Request)
         @info "REopt model solved with status $(results["status"])."
 		if results["status"] == "error"
 			response = Dict(
-				"results" => results
+				"results" => results,
+                "reopt_version" => pkgversion(reoptjl)
 			)
 			if !isempty(inputs_with_defaults_set_in_julia)
 				response["inputs_with_defaults_set_in_julia"] = inputs_with_defaults_set_in_julia
@@ -151,12 +152,14 @@ function reopt(req::HTTP.Request)
 		else
 			response = Dict(
 				"results" => results,
+                "reopt_version" => pkgversion(reoptjl),
 				"inputs_with_defaults_set_in_julia" => inputs_with_defaults_set_in_julia
 			)
 			return HTTP.Response(200, JSON.json(response))
 		end
     else
         @info "An error occured in the Julia code."
+        error_response["reopt_version"] = pkgversion(reoptjl)
         return HTTP.Response(500, JSON.json(error_response))
     end
 end

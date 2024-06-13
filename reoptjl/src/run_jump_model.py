@@ -69,6 +69,7 @@ def run_jump_model(run_uuid):
         if response.status_code == 500:
             raise REoptFailedToStartError(task=name, message=response_json["error"], run_uuid=run_uuid, user_uuid=user_uuid)
         results = response_json["results"]
+        reopt_version = response_json["reopt_version"]
         if results["status"].strip().lower() != "error":
             inputs_with_defaults_set_in_julia = response_json["inputs_with_defaults_set_in_julia"]
         time_dict["pyjulia_run_reopt_seconds"] = time.time() - t_start
@@ -107,6 +108,7 @@ def run_jump_model(run_uuid):
 
     profiler.profileEnd()
     # TODO save profile times
+    APIMeta.objects.filter(run_uuid=run_uuid).update(reopt_version=reopt_version)
     if status.strip().lower() != 'error':
         update_inputs_in_database(inputs_with_defaults_set_in_julia, run_uuid)
     process_results(results, run_uuid)
