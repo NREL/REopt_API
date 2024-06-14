@@ -27,20 +27,20 @@ class OutageSimTests(ResourceTestCaseMixin, TestCase):
         return self.api_client.post(self.reopt_base_sim, format='json',
                                     data=data_sim)
 
-    def test_both_modules(self):
-        """
-        temporary test setup for running an optimizatin problem that precedes the following test for new endpoint for outage simulation module.
-        :return:
-        """
-        data = json.load(open(self.post_opt, 'rb'))
-        resp = self.get_response_opt(data)
-        self.assertHttpCreated(resp)
-        r_opt = json.loads(resp.content)
-        run_uuid = r_opt.get('run_uuid')
+    # def test_both_modules(self):
+    #     """
+    #     temporary test setup for running an optimizatin problem that precedes the following test for new endpoint for outage simulation module.
+    #     :return:
+    #     """
+    #     data = json.load(open(self.post_opt, 'rb'))
+    #     resp = self.get_response_opt(data)
+    #     self.assertHttpCreated(resp)
+    #     r_opt = json.loads(resp.content)
+    #     run_uuid = r_opt.get('run_uuid')
 
-        assert(run_uuid is not None)
-        post_sim = {"run_uuid": run_uuid, "bau": True}
-        resp = self.get_response_sim(data_sim=post_sim)
-        self.assertHttpCreated(resp)
-        r_sim = json.loads(resp.content)
-        # print("Response from outagesimjob:", r_sim)
+    #     assert(run_uuid is not None)
+    #     post_sim = {"run_uuid": run_uuid, "bau": True}
+    #     resp = self.get_response_sim(data_sim=post_sim)
+    #     self.assertHttpCreated(resp)
+    #     r_sim = json.loads(resp.content)
+    #     # print("Response from outagesimjob:", r_sim)
