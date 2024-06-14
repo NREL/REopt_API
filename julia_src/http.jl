@@ -168,9 +168,11 @@ function erp(req::HTTP.Request)
     results = Dict()
     try
 		results = reoptjl.backup_reliability(erp_inputs)
+        results["reopt_version"] = string(pkgversion(reoptjl))
     catch e
         @error "Something went wrong in the ERP Julia code!" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
+        error_response["reopt_version"] = string(pkgversion(reoptjl))
     end
     GC.gc()
     if isempty(error_response)
