@@ -9,8 +9,7 @@ logging.disable(logging.CRITICAL)
 
 class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
 
-    def test_chp_defaults(self):
-        self.assertEqual(1, 1)
+    # def test_chp_defaults(self):
 
     #     inputs = {"hot_water_or_steam": "hot_water",
     #             "avg_boiler_fuel_load_mmbtu_per_hour": 28.0
