@@ -1,0 +1,101 @@
+{
+    "ProposedSiteLocation": {
+        "IdentifiedObject.mRID": "A9C5BFEE-FFFB-4CDC-94EC-813291D042A4",
+        "IdentifiedObject.name": "proposedSite1",
+        "RavensModel.CimObjectType": "Ravens.ProposedSiteLocation",
+        "LoadForecastGroup":"ResidentialGroup",
+        "ProposedSiteLocation.availableArea": 4000.0,
+        "Location.PositionPoints": [
+            {
+                "PositionPoint.sequenceNumber": 1,
+                "PositionPoint.xPosition": -87.68,
+                "PositionPoint.yPosition": 33.55,
+                "RavensModel.CimObjectType": "PositionPoint",
+                "IdentifiedObject.mRID": "704184d0-6fc1-4f99-8d14-9e51cef1a206"
+            }
+        ]
+    },
+    "LoadForecast": {
+        "ResidentialGroup": {
+          "RavensModel.CimObjectType": "ConformLoadGroup",
+          "IdentifiedObject.name": "ResidentialGroup",
+          "IdentifiedObject.mRID": "146813dc-3f62-4430-93be-860f5f584fcb",
+          "ConformLoadGroup.ConformLoadSchedules": [
+            {
+              "RavensModel.CimObjectType": "ConformLoadSchedule",
+              "IdentifiedObject.mRID": "4771e5b2-8924-4a76-ac17-47f860e41149",
+              "BasicIntervalSchedule.value1Unit": "W",
+              "BasicIntervalSchedule.value1Multiplier": "k",
+              "BasicIntervalSchedule.value2Unit": "VAr",
+              "BasicIntervalSchedule.value2Multiplier": "k",
+              "RegularIntervalSchedule.timeStep": 3600,
+              "RegularIntervalSchedule.TimePoints": [
+                {
+                  "RegularTimePoint.sequenceNumber": 1,
+                  "RegularTimePoint.value1": 1.3,
+                  "RegularTimePoint.value2": 1.5
+                },
+                {
+                  "RegularTimePoint.sequenceNumber": 2,
+                  "RegularTimePoint.value1": 0.98,
+                  "RegularTimePoint.value2": 0.75
+                },
+                {
+                  "RegularTimePoint.sequenceNumber": 3,
+                  "RegularTimePoint.value1": 1.48,
+                  "RegularTimePoint.value2": 0.69
+                }
+            
+              ]
+            }
+          ],
+          "ConformLoadGroup.EnergyConsumers": ["Factory1", "Factory2"]
+        }
+      },
+    "LocationalMarginalPrices": {
+        "IdentifiedObject.mRID": "8f78e131-a843-4f12-9f32-c9f170f1f2cb",
+        "IdentifiedObject.name": "LocationalMarginalPrices_1",
+        "RavensModel.CimObjectType": "Ravens.LocationalMarginalPrices",
+        "EnergyPrices.Regions": ["Region_1"],
+        "LocationalMarginalPrices.LMPCurve": {
+          "IdentifiedObject.mRID": "4919302c-135b-429e-afe2-ad3cbd0479a3",
+          "IdentifiedObject.name": "LMPCurve_1",
+          "xUnit": "h",
+          "y1Unit": "USD",
+          "PriceCurve.CurveDatas": [
+            { "CurveData.xvalue": 0, "CurveData.yvalue": 0.51 },
+            { "CurveData.xvalue": 1, "CurveData.yvalue": 0.99 },
+            { "CurveData.xvalue": 2, "CurveData.yvalue": 0.75 },
+            { "CurveData.xvalue": 3, "CurveData.yvalue": 0.86 },
+            { "CurveData.xvalue": 4, "CurveData.yvalue": 0.42 },
+            { "CurveData.xvalue": 5, "CurveData.yvalue": 0.11 }
+          ]
+        }
+      },
+    "CapacityPrices": {
+        "IdentifiedObject.mRID": "5407c621-70bb-4ff2-85ca-8cee8a84d10a",
+        "IdentifiedObject.name": "CapacityPrices_1",
+        "RavensModel.CimObjectType": "Ravens.CapacityPrices",
+        "EnergyPrices.Regions": ["Region_1"],
+        "CapacityPrices.CapacityPriceCurve": {
+          "IdentifiedObject.mRID": "4f8bbd63-0cd0-40c3-b7ac-3156b666f938",
+          "IdentifiedObject.name": "CapacityPriceCurve_1",
+          "xUnit": "h",
+          "y1Unit": "USD",
+          "PriceCurve.CurveDatas": [
+            { "CurveData.xvalue": 0, "CurveData.yvalue": 0.11 },
+            { "CurveData.xvalue": 1, "CurveData.yvalue": 0.29 },
+            { "CurveData.xvalue": 2, "CurveData.yvalue": 0.44 },
+            { "CurveData.xvalue": 3, "CurveData.yvalue": 0.08 },
+            { "CurveData.xvalue": 4, "CurveData.yvalue": 0.52 },
+            { "CurveData.xvalue": 5, "CurveData.yvalue": 0.0 },
+            { "CurveData.xvalue": 6, "CurveData.yvalue": 0.77 },
+            { "CurveData.xvalue": 7, "CurveData.yvalue": 0.86 },
+            { "CurveData.xvalue": 8, "CurveData.yvalue": 0.01 },
+            { "CurveData.xvalue": 9, "CurveData.yvalue": 0.41 },
+            { "CurveData.xvalue": 10, "CurveData.yvalue": 0.25 },
+            { "CurveData.xvalue": 11, "CurveData.yvalue": 0.82 }
+          ]
+        }
+      }   
+}

@@ -5,8 +5,8 @@ def convert_inputs(mgravens_inputs):
     # Format is (MG-RAVENS input, REopt input) with each as list of indexing in order of nesting high to low; 
     #    most are keys of the dictionary, and some are an array/list index. Include brackets for lists.
     required_inputs = [(['ProposedSiteLocation', 'Location.PositionPoints', '[0]', 'PositionPoint.xPosition'], ['Site', 'longitude']), 
-                       (['ProposedSiteLocation', 'Location.PositionPoints', '[0]', 'PositionPoint.yPosition'], ['Site', 'latitude'])]
-                    #    (['LoadForecast', '[]', 'ConformLoadGroup.ConformLoadSchedules', '[]'])]
+                       (['ProposedSiteLocation', 'Location.PositionPoints', '[0]', 'PositionPoint.yPosition'], ['Site', 'latitude']),
+                       (['LoadForecast', 'ResidentialGroup', 'ConformLoadGroup.ConformLoadSchedules', '[0]', 'RegularIntervalSchedule.TimePoints'], ['LoadForecast', 'Load'])]    
     # TODO handle multiple potential top level LoadForecast keys (ResGrp, IndGrp) and N number of 'ConformLoadGroup.ConformLoadSchedules'
     #   to add them all up into one array for ElectricLoad.loads_kw
     optional_inputs = [(['ProposedSiteLocation', 'ProposedSiteLocation.availableArea'], ['Site', 'land_acres'])]
@@ -36,10 +36,20 @@ def convert_inputs(mgravens_inputs):
                 position_points = mgravens_inputs.get("Location.PositionPoints")
                 if position_points and len(position_points) > 1:
                     warnings["required_inputs"] = "provided more than one Location.PositionPoints - REopt is going to use the first location entry"
+                # If target mgravens_value is an array, loop through the array and pull relevant values
+                if isinstance(mgravens_value, list):
+                    regular_time_point_values = []
+                    for timepoint in mgravens_value:
+                        value1 = timepoint.get('RegularTimePoint.value1', None)
+                        if value1 is not None:
+                            regular_time_point_values.append(value1)
+                    if regular_time_point_values:
+                        mgravens_value = regular_time_point_values
+                        
                 # Assign to REopt input, build up the dictionary if not already
                 add_keys_nested_dict(reopt_inputs, input[1])
                 reopt_input = convert_list_to_nested_index(input[1])
-                exec("reopt_inputs" + reopt_input + "= mgravens_value") 
+                exec("reopt_inputs" + reopt_input + "= mgravens_value") # reopt_inputs[reopt_input] = mgravens_value
         except Exception as e:
             # This exception could be caused by either a missing required input or an unhandled error
             errors["unhandled"] = "Error occurred when processing input " + str(input) + " : " + repr(e)
