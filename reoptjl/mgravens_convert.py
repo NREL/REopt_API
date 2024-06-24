@@ -6,7 +6,8 @@ def convert_inputs(mgravens_inputs):
     #    most are keys of the dictionary, and some are an array/list index. Include brackets for lists.
     required_inputs = [(['ProposedSiteLocation', 'Location.PositionPoints', '[0]', 'PositionPoint.xPosition'], ['Site', 'longitude']), 
                        (['ProposedSiteLocation', 'Location.PositionPoints', '[0]', 'PositionPoint.yPosition'], ['Site', 'latitude']),
-                       (['LoadForecast', 'ResidentialGroup', 'ConformLoadGroup.ConformLoadSchedules', '[0]', 'RegularIntervalSchedule.TimePoints'], ['LoadForecast', 'Load'])]    
+                       (['LoadForecast', 'ResidentialGroup', 'ConformLoadGroup.ConformLoadSchedules', '[0]', 'RegularIntervalSchedule.TimePoints'], ['ElectricLoad', 'loads_kw'])]
+                       #(['LocationalMarginalPrices', 'LocationalMarginalPrices.LMPCurve', 'PriceCurve.CurveDatas'],['Utility', 'Rate Price'])]    
     # TODO handle multiple potential top level LoadForecast keys (ResGrp, IndGrp) and N number of 'ConformLoadGroup.ConformLoadSchedules'
     #   to add them all up into one array for ElectricLoad.loads_kw
     optional_inputs = [(['ProposedSiteLocation', 'ProposedSiteLocation.availableArea'], ['Site', 'land_acres'])]
@@ -14,6 +15,7 @@ def convert_inputs(mgravens_inputs):
     reopt_inputs = {}
     errors = {}
     warnings = {}
+    
 
     missing = []
     unused = copy.deepcopy(mgravens_inputs)
@@ -39,12 +41,19 @@ def convert_inputs(mgravens_inputs):
                 # If target mgravens_value is an array, loop through the array and pull relevant values
                 if isinstance(mgravens_value, list):
                     regular_time_point_values = []
+                    utility_price = []
                     for timepoint in mgravens_value:
                         value1 = timepoint.get('RegularTimePoint.value1', None)
                         if value1 is not None:
                             regular_time_point_values.append(value1)
                     if regular_time_point_values:
                         mgravens_value = regular_time_point_values
+                    # for pricecurve in mgravens_value:
+                    #     yvalue = pricecurve.get('CurveData.yvalue', None)
+                    #     if yvalue is not None:
+                    #         utility_price.append(yvalue)
+                    # if utility_price:
+                    #     mgravens_value = utility_price
                         
                 # Assign to REopt input, build up the dictionary if not already
                 add_keys_nested_dict(reopt_inputs, input[1])
@@ -92,4 +101,4 @@ reopt_inputs, errors, warnings, unused = test_convert()
 print("reopt_inputs = ", reopt_inputs)
 print("errors = ", errors)
 print("warnings = ", warnings)
-print("unused = ", unused)
+#print("unused = ", unused)

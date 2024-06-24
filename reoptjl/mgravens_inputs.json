@@ -3,6 +3,7 @@
         "IdentifiedObject.mRID": "A9C5BFEE-FFFB-4CDC-94EC-813291D042A4",
         "IdentifiedObject.name": "proposedSite1",
         "RavensModel.CimObjectType": "Ravens.ProposedSiteLocation",
+        "LoadGroup": "Residential",
         "ProposedSiteLocation.availableArea": 4000.0,
         "Location.PositionPoints": [
             {
