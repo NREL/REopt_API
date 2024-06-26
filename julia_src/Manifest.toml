@@ -917,9 +917,11 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [[deps.REopt]]
 deps = ["ArchGDAL", "CSV", "CoolProp", "DataFrames", "Dates", "DelimitedFiles", "HTTP", "JLD", "JSON", "JuMP", "LinDistFlow", "LinearAlgebra", "Logging", "MathOptInterface", "Requires", "Roots", "Statistics", "TestEnv"]
-git-tree-sha1 = "b51d56a6398f302100004184b64bbe3d1e137277"
+git-tree-sha1 = "f4a44705bd9038f920be6998ec553897c09eb5d5"
+repo-rev = "mt-therm-effic"
+repo-url = "https://github.com/NREL/REopt.jl.git"
 uuid = "d36ad4e8-d74a-4f7a-ace1-eaea049febf6"
-version = "0.47.1"
+version = "0.47.0"
 
 [[deps.Random]]
 deps = ["SHA"]
