@@ -381,7 +381,8 @@ def chp_defaults(request):
         "boiler_efficiency": request.GET.get("boiler_efficiency"),
         "avg_electric_load_kw": request.GET.get("avg_electric_load_kw"),
         "max_electric_load_kw": request.GET.get("max_electric_load_kw"),
-        "is_electric_only": request.GET.get("is_electric_only")
+        "is_electric_only": request.GET.get("is_electric_only"),
+        "thermal_efficiency": request.GET.get("thermal_efficiency")
     }
     if (request.GET.get("size_class")):
         inputs["size_class"] = int(request.GET.get("size_class"))

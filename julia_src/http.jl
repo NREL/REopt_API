@@ -199,7 +199,8 @@ function chp_defaults(req::HTTP.Request)
     float_vals = ["avg_boiler_fuel_load_mmbtu_per_hour",
                 "boiler_efficiency",
                 "avg_electric_load_kw",
-                "max_electric_load_kw"]
+                "max_electric_load_kw",
+                "thermal_efficiency"]
     int_vals = ["size_class"]
     bool_vals = ["is_electric_only"]
     all_vals = vcat(string_vals, float_vals, int_vals, bool_vals)
