@@ -207,7 +207,9 @@ function chp_defaults(req::HTTP.Request)
     # Process .json inputs and convert to correct type if needed
     for k in all_vals
         if !haskey(d, k)
-            d[k] = nothing
+            if !(k == "thermal_efficiency")  # thermal_efficiency is of type Float64 (incl NaN), so it can't be "nothing"
+                d[k] = nothing
+            end
         elseif !isnothing(d[k])
             if k in float_vals && typeof(d[k]) == String
                 d[k] = parse(Float64, d[k])
