@@ -5111,8 +5111,6 @@ class ElectricHeaterInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(MAX_BIG_NUMBER)
         ],
-        blank=True,
-        null=True,
         help_text="Thermal power-based cost"
     )
 
@@ -5123,8 +5121,6 @@ class ElectricHeaterInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(MAX_BIG_NUMBER)
         ],
-        blank=True,
-        null=True,
         help_text="Thermal power-based fixed O&M cost"
     )
 
