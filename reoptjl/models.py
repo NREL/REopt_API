@@ -4732,6 +4732,13 @@ class ExistingChillerInputs(BaseModel, models.Model):
                     "This factor limits the max production which could otherwise be exploited with ColdThermalStorage")
     )
 
+    retire_in_optimal = models.BooleanField(
+        default=False,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if the existing chiller is unavailable in the optimal case (still used in BAU)"   
+    )
+
     def clean(self):
         pass
 
