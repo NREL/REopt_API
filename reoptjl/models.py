@@ -5073,6 +5073,516 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
         # perform custom validation here.
         pass
 
+class ElectricHeaterInputs(BaseModel, models.Model):
+    key = "ElectricHeater"
+    meta = models.OneToOneField(
+        to=APIMeta,
+        on_delete=models.CASCADE,
+        related_name="ElectricHeaterInputs",
+        primary_key=True
+    )
+    
+    min_mmbtu_per_hour = models.FloatField(
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        default=0.0,
+        help_text="Minimum thermal power size"
+    )
+
+    max_mmbtu_per_hour = models.FloatField(
+        null=True,
+        blank=True,        
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        default=1.0E7,
+        help_text="Maximum thermal power size"
+    )
+
+    installed_cost_per_mmbtu_per_hour = models.FloatField(
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        blank=True,
+        null=True,
+        help_text="Thermal power-based cost"
+    )
+
+    om_cost_per_mmbtu_per_hour = models.FloatField(
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        blank=True,
+        null=True,
+        help_text="Thermal power-based fixed O&M cost"
+    )
+
+    macrs_option_years = models.IntegerField(
+        default=MACRS_YEARS_CHOICES.ZERO,
+        choices=MACRS_YEARS_CHOICES.choices,
+        blank=True,
+        null=True,
+        help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
+    )
+
+    macrs_bonus_fraction = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        null=True,
+        help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
+    )
+
+    cop = models.FloatField(
+        validators=[
+            MinValueValidator(0.01),
+            MaxValueValidator(20)
+        ],
+        null=True,
+        blank=True,
+        help_text=("Electric heater system coefficient of performance (COP) "
+                    "(ratio of usable thermal energy produced per unit electric energy consumed)")
+    )
+
+    can_supply_steam_turbine = models.BooleanField(
+        default=True,
+        blank=True,
+        null=True,
+        help_text="If the boiler can supply steam to the steam turbine for electric production"
+    )
+
+    can_serve_dhw = models.BooleanField(
+        default=True,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if the electric heater can serve domestic hot water load"   
+    )
+
+    can_serve_space_heating = models.BooleanField(
+        default=True,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if the electric heater can serve space heating load"   
+    )
+
+    can_serve_process_heat = models.BooleanField(
+        default=True,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if the electric heater can serve process heat load"   
+    )
+
+class ElectricHeaterOutputs(BaseModel, models.Model):
+    key = "ElectricHeaterOutputs"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="ElectricHeaterOutputs",
+        primary_key=True
+    )
+
+    size_mmbtu_per_hour = models.FloatField(null=True, blank=True)
+    annual_electric_consumption_kwh = models.FloatField(null=True, blank=True)
+
+    electric_consumption_series_kw = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default=list,
+    )
+
+    annual_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
+
+    thermal_to_storage_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    thermal_to_steamturbine_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    thermal_production_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    thermal_to_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    thermal_to_dhw_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
+
+    thermal_to_space_heating_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
+
+    thermal_to_process_heat_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
+
+class ASHPSpaceHeaterInputs(BaseModel, models.Model):
+    key = "ASHPSpaceHeater"
+    meta = models.OneToOneField(
+        to=APIMeta,
+        on_delete=models.CASCADE,
+        related_name="ASHPSpaceHeaterInputs",
+        primary_key=True
+    )
+    
+    min_ton = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default = 0.0,
+        help_text=("Minimum thermal power size constraint for optimization [ton]")
+    )
+
+    max_ton = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default = MAX_BIG_NUMBER,
+        help_text=("Maximum thermal power size constraint for optimization [ton]")
+    )
+    
+    installed_cost_per_ton = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        default=2250.0,
+        null=True,
+        blank=True,
+        help_text=("Thermal power-based cost of ASHP space heater [$/ton] (3.5 ton to 1 kWt)")
+    )
+
+    om_cost_per_ton = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        default=0.0,
+        null=True,
+        blank=True,
+        help_text=("Thermal power-based cost of ASHP space heater [$/ton] (3.5 ton to 1 kWt)")
+    )
+
+    macrs_option_years = models.IntegerField(
+        default=MACRS_YEARS_CHOICES.ZERO,
+        choices=MACRS_YEARS_CHOICES.choices,
+        blank=True,
+        null=True,
+        help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
+    )
+
+    macrs_bonus_fraction = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        null=True,
+        help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
+    )
+
+    heating_cop = ArrayField(
+        models.FloatField(
+            null=True, blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(20.0)
+            ],
+        ),
+        default=list,
+        blank=True,
+        help_text=(("ASHP space heating system heating coefficient of performance (COP) "
+                    "(ratio of usable heating thermal energy produced per unit electric energy consumed)"))
+    )
+
+    cooling_cop = ArrayField(
+        models.FloatField(
+            null=True, blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(20.0)
+            ],
+        ),
+        default=list,
+        blank=True,
+        help_text=(("ASHP space heating system cooling coefficient of performance (COP) "
+                    "(ratio of usable cooling thermal energy produced per unit electric energy consumed)"))
+    )
+
+    heating_cf = ArrayField(
+        models.FloatField(
+            null=True, blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(20.0)
+            ],
+        ),
+        default=list,
+        blank=True,
+        help_text=(("ASHP space heating system heating capacity factor"
+                    "(ratio of heating thermal power to rated capacity)"))
+    )
+
+    cooling_cf = ArrayField(
+        models.FloatField(
+            null=True, blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(20.0)
+            ],
+        ),
+        default=list,
+        blank=True,
+        help_text=(("ASHP space heater cooling capacity factor"
+                    "(ratio of cooling thermal power to rated capacity)"))
+    )
+
+    can_serve_cooling = models.BooleanField(
+        default=True,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if ASHP space heater can serve cooling load"   
+    )
+
+    force_into_system = models.BooleanField(
+        default=False,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if ASHP space heater serves compatible thermal loads exclusively in optimized scenario"   
+    )
+
+
+class ASHPSpaceHeaterOutputs(BaseModel, models.Model):
+    key = "ASHPSpaceHeaterOutputs"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="ASHPSpaceHeaterOutputs",
+        primary_key=True
+    )
+
+    size_ton = models.FloatField(null=True, blank=True)
+    annual_electric_consumption_kwh = models.FloatField(null=True, blank=True)
+
+    electric_consumption_series_kw = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default=list,
+    )
+
+    annual_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
+    annual_thermal_production_tonhour = models.FloatField(null=True, blank=True)
+
+    thermal_to_storage_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    thermal_production_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    thermal_to_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    thermal_to_space_heating_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
+
+    thermal_to_storage_series_ton = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    thermal_to_load_series_ton = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+class ASHPWaterHeaterInputs(BaseModel, models.Model):
+    key = "ASHPWaterHeater"
+    meta = models.OneToOneField(
+        to=APIMeta,
+        on_delete=models.CASCADE,
+        related_name="ASHPWaterHeaterInputs",
+        primary_key=True
+    )
+    
+    min_ton = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default = 0.0,
+        help_text=("Minimum thermal power size constraint for optimization [ton]")
+    )
+
+    max_ton = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default = MAX_BIG_NUMBER,
+        help_text=("Maximum thermal power size constraint for optimization [ton]")
+    )
+    
+    installed_cost_per_ton = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        default=2250.0,
+        null=True,
+        blank=True,
+        help_text=("Thermal power-based cost of ASHP water heater [$/ton] (3.5 ton to 1 kWt)")
+    )
+
+    om_cost_per_ton = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        default=0.0,
+        null=True,
+        blank=True,
+        help_text=("Thermal power-based cost of ASHP water heater [$/ton] (3.5 ton to 1 kWt)")
+    )
+
+    macrs_option_years = models.IntegerField(
+        default=MACRS_YEARS_CHOICES.ZERO,
+        choices=MACRS_YEARS_CHOICES.choices,
+        blank=True,
+        null=True,
+        help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
+    )
+
+    macrs_bonus_fraction = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        null=True,
+        help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
+    )
+
+    heating_cop = ArrayField(
+        models.FloatField(
+            null=True, blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(20.0)
+            ],
+        ),
+        default=list,
+        blank=True,
+        help_text=(("ASHP space heating system heating coefficient of performance (COP) "
+                    "(ratio of usable heating thermal energy produced per unit electric energy consumed)"))
+    )
+
+    heating_cf = ArrayField(
+        models.FloatField(
+            null=True, blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(20.0)
+            ],
+        ),
+        default=list,
+        blank=True,
+        help_text=(("ASHP space heating system heating capacity factor"
+                    "(ratio of heating thermal power to rated capacity)"))
+    )
+
+    force_into_system = models.BooleanField(
+        default=False,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if ASHP space heater serves compatible thermal loads exclusively in optimized scenario"   
+    )
+
+
+class ASHPWaterHeaterOutputs(BaseModel, models.Model):
+    key = "ASHPWaterHeaterOutputs"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="ASHPWaterHeaterOutputs",
+        primary_key=True
+    )
+
+    size_ton = models.FloatField(null=True, blank=True)
+    annual_electric_consumption_kwh = models.FloatField(null=True, blank=True)
+
+    electric_consumption_series_kw = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default=list,
+    )
+
+    annual_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
+
+    thermal_to_storage_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    thermal_production_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    thermal_to_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    thermal_to_dhw_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
+
 class REoptjlMessageOutputs(BaseModel, models.Model):
     
     key = "Messages"
