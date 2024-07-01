@@ -105,6 +105,11 @@ def erp_results(request, run_uuid):
         return JsonResponse(resp, status=500)
 
 def erp_help(request):
+    """
+    Served at host/erp/help
+    :param request: 
+    :return: JSON response with all erp inputs
+    """
     try:
         d = dict()
         d["reopt_run_uuid"] = ERPMeta.info_dict(ERPMeta)["reopt_run_uuid"]
@@ -116,6 +121,19 @@ def erp_help(request):
         d[ERPGeneratorInputs.key] = ERPGeneratorInputs.info_dict(ERPGeneratorInputs)
         d[ERPPrimeGeneratorInputs.key] = ERPPrimeGeneratorInputs.info_dict(ERPPrimeGeneratorInputs)
         #TODO: add wind once implemented
+        return JsonResponse(d)
+
+    except Exception as e:
+        return JsonResponse({"Error": "Unexpected error in ERP help endpoint: {}".format(e.args[0])}, status=500)
+
+def erp_outputs(request):
+    """
+    Served at host/erp/outputs
+    :return: JSON response with all erp outputs
+    """
+
+    try:
+        d = ERPOutputs.info_dict(ERPOutputs)
         return JsonResponse(d)
 
     except Exception as e:
