@@ -26,6 +26,12 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop
+### Minor Updates
+#### Added
+- `/erp/inputs` endpoint (calls `erp_help()`, same as `/erp/help`)
+- `/erp/outputs` endpoint that GETs the ERP output field info (calls `erp_outputs()`)
+
 ## v3.9.1
 ### Minor Updates
 #### Added
