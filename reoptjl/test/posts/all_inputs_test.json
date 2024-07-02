@@ -282,7 +282,7 @@
     },
     "ProcessHeatLoad": { 
         "annual_mmbtu": 8760.0,
-        "doe_reference_name": "Warehouse"
+        "industry_reference_name": "Warehouse"
     },
     "Boiler": {
         "min_mmbtu_per_hour": 5.0,
