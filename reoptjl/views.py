@@ -14,7 +14,8 @@ from reoptjl.models import Settings, PVInputs, ElectricStorageInputs, WindInputs
     CoolingLoadOutputs, HeatingLoadOutputs, REoptjlMessageOutputs, HotThermalStorageInputs, HotThermalStorageOutputs,\
     ColdThermalStorageInputs, ColdThermalStorageOutputs, AbsorptionChillerInputs, AbsorptionChillerOutputs,\
     FinancialInputs, FinancialOutputs, UserUnlinkedRuns, BoilerInputs, BoilerOutputs, SteamTurbineInputs, \
-    SteamTurbineOutputs, GHPInputs, GHPOutputs, ProcessHeatLoadInputs
+    SteamTurbineOutputs, GHPInputs, GHPOutputs, ProcessHeatLoadInputs, ElectricHeaterInputs, ElectricHeaterOutputs, \
+    ASHPSpaceHeaterInputs, ASHPSpaceHeaterOutputs, ASHPWaterHeaterInputs, ASHPWaterHeaterOutputs
 import os
 import requests
 import numpy as np
@@ -59,6 +60,10 @@ def help(request):
         d["AbsorptionChiller"] = AbsorptionChillerInputs.info_dict(AbsorptionChillerInputs)
         d["SteamTurbine"] = SteamTurbineInputs.info_dict(SteamTurbineInputs)
         d["GHP"] = GHPInputs.info_dict(GHPInputs)
+        d["ElectricHeater"] = ElectricHeaterInputs.info_dict(ElectricHeaterInputs)
+        d["ASHP_SpaceHeater"] = ASHPSpaceHeaterInputs.info_dict(ASHPSpaceHeaterInputs)
+        d["ASHP_WaterHeater"] = ASHPWaterHeaterInputs.info_dict(ASHPWaterHeaterInputs)
+
         return JsonResponse(d)
 
     except Exception as e:
@@ -104,6 +109,9 @@ def outputs(request):
         d["CHP"] = CHPOutputs.info_dict(CHPOutputs)
         d["AbsorptionChiller"] = AbsorptionChillerOutputs.info_dict(AbsorptionChillerOutputs)
         d["GHP"] = GHPOutputs.info_dict(GHPOutputs)
+        d["ElectricHeater"] = ElectricHeaterOutputs.info_dict(ElectricHeaterOutputs)
+        d["ASHP_SpaceHeater"] = ASHPSpaceHeaterOutputs.info_dict(ASHPSpaceHeaterOutputs)
+        d["ASHP_WaterHeater"] = ASHPWaterHeaterOutputs.info_dict(ASHPWaterHeaterOutputs)
         d["Messages"] = REoptjlMessageOutputs.info_dict(REoptjlMessageOutputs)
         d["SteamTurbine"] = SteamTurbineOutputs.info_dict(SteamTurbineOutputs)
         return JsonResponse(d)
@@ -226,8 +234,18 @@ def results(request, run_uuid):
 
     try: r["inputs"]["SteamTurbine"] = meta.SteamTurbineInputs.dict
     except: pass
+
     try: r["inputs"]["GHP"] = meta.GHPInputs.dict
     except: pass    
+
+    try: r["inputs"]["ElectricHeater"] = meta.ElectricHeaterInputs.dict
+    except: pass    
+
+    try: r["inputs"]["ASHP_SpaceHeater"] = meta.ASHPSpaceHeaterInputs.dict
+    except: pass    
+
+    try: r["inputs"]["ASHP_WaterHeater"] = meta.ASHPWaterHeaterInputs.dict
+    except: pass  
 
     try:
         r["outputs"] = dict()
@@ -300,6 +318,12 @@ def results(request, run_uuid):
         try: r["outputs"]["SteamTurbine"] = meta.SteamTurbineOutputs.dict
         except: pass
         try: r["outputs"]["GHP"] = meta.GHPOutputs.dict
+        except: pass
+        try: r["outputs"]["ElectricHeater"] = meta.ElectricHeaterOutputs.dict
+        except: pass    
+        try: r["outputs"]["ASHP_SpaceHeater"] = meta.ASHPSpaceHeaterOutputs.dict
+        except: pass  
+        try: r["outputs"]["ASHP_WaterHeater"] = meta.ASHPWaterHeaterOutputs.dict
         except: pass
 
         for d in r["outputs"].values():
@@ -973,6 +997,30 @@ def queryset_for_summary(api_metas,summary_dict:dict):
                     summary_dict[str(m.meta.run_uuid)]['ghp_heating_ton'] = m.size_wwhp_heating_pump_ton
                 summary_dict[str(m.meta.run_uuid)]['ghp_n_bores'] = m.ghpghx_chosen_outputs['number_of_boreholes']
     
+    elecHeater = ElectricHeaterOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+            'meta__run_uuid',
+            'size_mmbtu_per_hour'
+    )
+    if len(elecHeater) > 0:
+        for m in elecHeater:
+            summary_dict[str(m.meta.run_uuid)]['electric_heater_mmbtu_per_hour'] = m.size_mmbtu_per_hour
+
+    ashpSpaceHeater = ASHPSpaceHeaterOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+            'meta__run_uuid',
+            'size_ton'
+    )
+    if len(ashpSpaceHeater) > 0:
+        for m in ashpSpaceHeater:
+            summary_dict[str(m.meta.run_uuid)]['ashp_space_heater_ton'] = m.size_ton
+
+    ashpWaterHeater = ASHPWaterHeaterOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+            'meta__run_uuid',
+            'size_ton'
+    )
+    if len(ashpSpaceHeater) > 0:
+        for m in ashpSpaceHeater:
+            summary_dict[str(m.meta.run_uuid)]['ashp_water_heater_ton'] = m.size_ton
+
     return summary_dict
 
 # Unlink a user_uuid from a run_uuid.
