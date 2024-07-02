@@ -258,7 +258,10 @@
         "emissions_factor_lb_SO2_per_mmbtu": 0.000578592,
         "emissions_factor_lb_PM25_per_mmbtu": 0.007328833,
         "fuel_cost_per_mmbtu": [0.0],
-        "fuel_type": "natural_gas"
+        "fuel_type": "natural_gas",
+        "can_serve_dhw": true,
+        "can_serve_space_heating": true,
+        "can_serve_process_heat": true
     },
     "SpaceHeatingLoad": {
         "annual_mmbtu": null,
@@ -277,6 +280,10 @@
         "blended_doe_reference_names": [],
         "blended_doe_reference_percents": []
     },
+    "ProcessHeatLoad": { 
+        "annual_mmbtu": 8760.0,
+        "doe_reference_name": "Warehouse"
+    },
     "Boiler": {
         "min_mmbtu_per_hour": 5.0,
         "max_mmbtu_per_hour": 5.0,
@@ -288,7 +295,10 @@
         "om_cost_per_mmbtu_per_hour": 0.0,
         "om_cost_per_mmbtu": 0.0,
         "fuel_type": "natural_gas",
-        "can_supply_steam_turbine": true
+        "can_supply_steam_turbine": true,
+        "can_serve_dhw": true,
+        "can_serve_space_heating": true,
+        "can_serve_process_heat": true
     },
     "SteamTurbine": {
         "size_class": null,
@@ -311,6 +321,47 @@
         "can_export_beyond_nem_limit": false,
         "can_curtail": false,
         "macrs_option_years": 0,
-        "macrs_bonus_fraction": 1.0
+        "macrs_bonus_fraction": 1.0,
+        "can_serve_dhw": true,
+        "can_serve_space_heating": true,
+        "can_serve_process_heat": true
+    },
+    "ElectricHeater": {
+        "min_mmbtu_per_hour": 100.0,
+        "max_mmbtu_per_hour": 100.0,
+        "installed_cost_per_mmbtu_per_hour": 2250.0,
+        "om_cost_per_mmbtu_per_hour": 0.0,
+        "macrs_option_years": 0,
+        "macrs_bonus_fraction": 1.0,
+        "cop": 1.0,
+        "can_supply_steam_turbine": true,
+        "can_serve_dhw": true,
+        "can_serve_space_heating": true,
+        "can_serve_process_heat": true
+    },
+    "ASHP_SpaceHeater": {
+        "min_ton": 100.0,
+        "max_ton": 100.0,
+        "installed_cost_per_ton": 2250.0,
+        "om_cost_per_ton": 0.0,
+        "macrs_option_years": 0,
+        "macrs_bonus_fraction": 1.0,
+        "heating_cop": [],
+        "cooling_cop": [],
+        "heating_cf": [],
+        "cooling_cf": [],
+        "can_serve_cooling": true,
+        "force_into_system": false
+    },
+    "ASHP_WaterHeater": {
+        "min_ton": 100.0,
+        "max_ton": 100.0,
+        "installed_cost_per_ton": 2250.0,
+        "om_cost_per_ton": 0.0,
+        "macrs_option_years": 0,
+        "macrs_bonus_fraction": 1.0,
+        "heating_cop": [],
+        "heating_cf": [],
+        "force_into_system": false
     }
 }
