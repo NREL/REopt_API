@@ -5105,6 +5105,7 @@ class ElectricHeaterInputs(BaseModel, models.Model):
     )
 
     installed_cost_per_mmbtu_per_hour = models.FloatField(
+        default=154902.0,
         null=True,
         blank=True,
         validators=[
@@ -5115,6 +5116,7 @@ class ElectricHeaterInputs(BaseModel, models.Model):
     )
 
     om_cost_per_mmbtu_per_hour = models.FloatField(
+        default=0.0,
         null=True,
         blank=True,
         validators=[
@@ -5148,6 +5150,7 @@ class ElectricHeaterInputs(BaseModel, models.Model):
             MinValueValidator(0.01),
             MaxValueValidator(20)
         ],
+        default=1.0,
         null=True,
         blank=True,
         help_text=("Electric heater system coefficient of performance (COP) "
@@ -7976,6 +7979,15 @@ def get_input_dict_from_run_uuid(run_uuid:str):
     except: pass  
 
     try: d["GHP"] = filter_none_and_empty_array(meta.GHPInputs.dict)
+    except: pass   
+
+    try: d["ElectricHeater"] = filter_none_and_empty_array(meta.ElectricHeaterInputs.dict)
+    except: pass
+
+    try: d["ASHP_SpaceHeater"] = filter_none_and_empty_array(meta.ASHPSpaceHeaterInputs.dict)
+    except: pass   
+
+    try: d["ASHP_WaterHeater"] = filter_none_and_empty_array(meta.ASHPWaterHeaterInputs.dict)
     except: pass   
 
     return d
