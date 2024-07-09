@@ -26,6 +26,12 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.9.2
+#### Added
+- Added attribute `thermal_efficiency` to the arguments of http endpoint `chp_defaults`
+#### Fixed
+- See fixes and changes here: https://github.com/NREL/REopt.jl/releases/tag/v0.47.2
+
 ## v3.9.1
 ### Minor Updates
 #### Added
