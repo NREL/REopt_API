@@ -199,14 +199,17 @@ function chp_defaults(req::HTTP.Request)
     float_vals = ["avg_boiler_fuel_load_mmbtu_per_hour",
                 "boiler_efficiency",
                 "avg_electric_load_kw",
-                "max_electric_load_kw"]
+                "max_electric_load_kw",
+                "thermal_efficiency"]
     int_vals = ["size_class"]
     bool_vals = ["is_electric_only"]
     all_vals = vcat(string_vals, float_vals, int_vals, bool_vals)
     # Process .json inputs and convert to correct type if needed
     for k in all_vals
         if !haskey(d, k)
-            d[k] = nothing
+            if !(k == "thermal_efficiency")  # thermal_efficiency is of type Float64 (incl NaN), so it can't be "nothing"
+                d[k] = nothing
+            end
         elseif !isnothing(d[k])
             if k in float_vals && typeof(d[k]) == String
                 d[k] = parse(Float64, d[k])
