@@ -26,7 +26,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop 2024-07-08
+## v3.9.2
 #### Added
 - Added attribute `thermal_efficiency` to the arguments of http endpoint `chp_defaults`
 #### Fixed
