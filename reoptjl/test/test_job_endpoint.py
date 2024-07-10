@@ -25,7 +25,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         run_uuid = r.get('run_uuid')
         resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
         r = json.loads(resp.content)
-        self.assertIn("reopt_version", resp.keys())
+        self.assertIn("reopt_version", r.keys())
         results = r["outputs"]
         self.assertEqual(np.array(results["Outages"]["unserved_load_series_kw"]).shape, (1,2,5))
         self.assertEqual(np.array(results["Outages"]["generator_fuel_used_per_outage_gal"]).shape, (1,2))
