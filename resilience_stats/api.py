@@ -62,7 +62,6 @@ class ERPJob(ModelResource):
 
         meta_dict = {
             "run_uuid": erp_run_uuid,
-            # "reopt_version": "0.45.0",
             "status": "Validating..."
         }
 
