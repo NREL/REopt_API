@@ -106,7 +106,7 @@ def erp_results(request, run_uuid):
 
 def erp_help(request):
     """
-    Served at host/erp/help
+    Served at host/erp/help and host/erp/inputs
     :param request: 
     :return: JSON response with all erp inputs
     """
