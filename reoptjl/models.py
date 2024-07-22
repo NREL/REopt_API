@@ -176,6 +176,7 @@ class APIMeta(BaseModel, models.Model):
     created = models.DateTimeField(auto_now_add=True)
     reopt_version = models.TextField(
         blank=True,
+        null=True,
         default="",
         help_text="Version number of the Julia package for REopt that is used to solve the problem."
     )

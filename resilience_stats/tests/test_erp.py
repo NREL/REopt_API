@@ -74,7 +74,9 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         r_sim = json.loads(resp.content)
         erp_run_uuid = r_sim.get('run_uuid')
         resp = self.get_results_sim(erp_run_uuid)
-        results_sim = json.loads(resp.content)["outputs"]
+        r = json.loads(resp.content)
+        self.assertIn("reopt_version", r.keys())
+        results_sim = r["outputs"]
 
         expected_result = ([1]*79)+[0.999543,0.994178,0.9871,0.97774,0.965753,0.949429,0.926712,0.899543,0.863584,0.826712,0.785616,0.736416,0.683105,0.626256,0.571005,0.519064,0.47226,0.429909,0.391553,0.357306,0]
         #TODO: resolve bug where unlimted fuel markov portion of results goes to zero 1 timestep early
