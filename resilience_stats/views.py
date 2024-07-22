@@ -104,27 +104,44 @@ def erp_results(request, run_uuid):
         resp['status'] = 'Error'
         return JsonResponse(resp, status=500)
 
+def get_erp_inputs_info():
+    d = dict()
+    d["reopt_run_uuid"] = ERPMeta.info_dict(ERPMeta)["reopt_run_uuid"]
+    # do models need to be passed in as arg?
+    d[ERPOutageInputs.key] = ERPOutageInputs.info_dict(ERPOutageInputs)
+    d[ERPPVInputs.key] = ERPPVInputs.info_dict(ERPPVInputs)
+    d[ERPWindInputs.key] = ERPWindInputs.info_dict(ERPWindInputs)
+    d[ERPElectricStorageInputs.key] = ERPElectricStorageInputs.info_dict(ERPElectricStorageInputs)
+    d[ERPGeneratorInputs.key] = ERPGeneratorInputs.info_dict(ERPGeneratorInputs)
+    d[ERPPrimeGeneratorInputs.key] = ERPPrimeGeneratorInputs.info_dict(ERPPrimeGeneratorInputs)
+    #TODO: add wind once implemented
+    return JsonResponse(d)
+
 def erp_help(request):
     """
-    Served at host/erp/help and host/erp/inputs
+    Served at host/erp/help
     :param request: 
     :return: JSON response with all erp inputs
     """
     try:
-        d = dict()
-        d["reopt_run_uuid"] = ERPMeta.info_dict(ERPMeta)["reopt_run_uuid"]
-        # do models need to be passed in as arg?
-        d[ERPOutageInputs.key] = ERPOutageInputs.info_dict(ERPOutageInputs)
-        d[ERPPVInputs.key] = ERPPVInputs.info_dict(ERPPVInputs)
-        d[ERPWindInputs.key] = ERPWindInputs.info_dict(ERPWindInputs)
-        d[ERPElectricStorageInputs.key] = ERPElectricStorageInputs.info_dict(ERPElectricStorageInputs)
-        d[ERPGeneratorInputs.key] = ERPGeneratorInputs.info_dict(ERPGeneratorInputs)
-        d[ERPPrimeGeneratorInputs.key] = ERPPrimeGeneratorInputs.info_dict(ERPPrimeGeneratorInputs)
-        #TODO: add wind once implemented
-        return JsonResponse(d)
+        resp = get_erp_inputs_info()
+        return resp
 
     except Exception as e:
         return JsonResponse({"Error": "Unexpected error in ERP help endpoint: {}".format(e.args[0])}, status=500)
+
+def erp_inputs(request):
+    """
+    Served at host/erp/inputs
+    :param request: 
+    :return: JSON response with all erp inputs
+    """
+    try:
+        resp = get_erp_inputs_info()
+        return resp
+
+    except Exception as e:
+        return JsonResponse({"Error": "Unexpected error in ERP inputs endpoint: {}".format(e.args[0])}, status=500)
 
 def erp_outputs(request):
     """
@@ -137,7 +154,7 @@ def erp_outputs(request):
         return JsonResponse(d)
 
     except Exception as e:
-        return JsonResponse({"Error": "Unexpected error in ERP help endpoint: {}".format(e.args[0])}, status=500)
+        return JsonResponse({"Error": "Unexpected error in ERP outputs endpoint: {}".format(e.args[0])}, status=500)
 
 def erp_chp_prime_gen_defaults(request):
     prime_mover = str(request.GET.get('prime_mover'))
