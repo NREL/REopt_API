@@ -16,6 +16,8 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         self.reopt_base_erp = '/v3/erp/'
         self.reopt_base_erp_results = '/v3/erp/{}/results/'
         self.reopt_base_erp_help = '/v3/erp/help/'
+        self.reopt_base_erp_inputs = '/v3/erp/inputs/'
+        self.reopt_base_erp_outputs = '/v3/erp/outputs/'
         self.reopt_base_erp_chp_defaults = '/v3/erp/chp_defaults/?prime_mover={0}&is_chp={1}&size_kw={2}'
         self.post_sim_gens_batt_pv_wind = os.path.join('resilience_stats', 'tests', 'ERP_sim_gens_batt_pv_wind_post.json')
         self.post_sim_large_stor = os.path.join('resilience_stats', 'tests', 'ERP_sim_large_stor_post.json')
@@ -41,6 +43,12 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
 
     def get_help(self):
         return self.api_client.get(self.reopt_base_erp_help)
+    
+    def get_inputs(self):
+        return self.api_client.get(self.reopt_base_erp_inputs)
+    
+    def get_outputs(self):
+        return self.api_client.get(self.reopt_base_erp_outputs)
     
     def get_chp_defaults(self, prime_mover, is_chp, size_kw):
         return self.api_client.get(
@@ -184,12 +192,20 @@ class ERPTests(ResourceTestCaseMixin, TestCase):
         resp = self.get_results_sim(erp_run_uuid)
         self.assertHttpOK(resp)
 
-    def test_erp_help_view(self):
+    def test_erp_help_views(self):
         """
         Tests hiting the erp/help url to get defaults and other info about inputs
         """
         
         resp = self.get_help()
+        self.assertHttpOK(resp)
+        resp = json.loads(resp.content)
+        
+        resp = self.get_inputs()
+        self.assertHttpOK(resp)
+        resp = json.loads(resp.content)
+        
+        resp = self.get_outputs()
         self.assertHttpOK(resp)
         resp = json.loads(resp.content)
 

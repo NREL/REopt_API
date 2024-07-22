@@ -28,6 +28,9 @@ Classify the change according to the following categories:
 
 ## Develop
 ### Minor Updates
+#### Added
+- `/erp/inputs` endpoint (calls `erp_help()`, same as `/erp/help`)
+- `/erp/outputs` endpoint that GETs the ERP output field info (calls `erp_outputs()`)
 #### Changed
 - Set **reopt_version** in **APIMeta** and **ERPMeta** programatically based on actual REopt.jl package version in Julia environment instead of hardcoded so doesn't need to be updated by hand
 
