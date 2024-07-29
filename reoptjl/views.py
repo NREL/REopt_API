@@ -652,6 +652,8 @@ def summary_by_runuuids(request):
             'status',
             'created'
         ).order_by("-created")
+        
+        #### Here we could sum the long vectors for a single value to reduce the memory expense
 
         if len(scenarios) > 0:
             summary_dict = queryset_for_summary(scenarios, summary_dict)
@@ -1081,6 +1083,10 @@ def queryset_for_summary(api_metas,summary_dict:dict):
             summary_dict[str(m.meta.run_uuid)]['absorpchl_ton'] = m.size_ton
 
     return summary_dict
+
+#placeholder to query
+def query_for_summary_table(api_metas,summary_dict:dict):
+    pass
 
 # Unlink a user_uuid from a run_uuid.
 def unlink(request, user_uuid, run_uuid):
