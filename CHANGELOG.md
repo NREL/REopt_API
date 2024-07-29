@@ -26,6 +26,14 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.9.3
+### Minor Updates
+#### Added
+- `/erp/inputs` endpoint (calls `erp_help()`, same as `/erp/help`)
+- `/erp/outputs` endpoint that GETs the ERP output field info (calls `erp_outputs()`)
+#### Changed
+- Set **reopt_version** in **APIMeta** and **ERPMeta** programatically based on actual REopt.jl package version in Julia environment instead of hardcoded so doesn't need to be updated by hand
+
 ## v3.9.2
 #### Added
 - Added attribute `thermal_efficiency` to the arguments of http endpoint `chp_defaults`
