@@ -9,7 +9,7 @@ bandit==1.7.1
 billiard==3.6.4.0
 cachetools==4.2.4
 celery==5.2.3
-certifi==2022.12.7
+certifi==2023.7.22
 cffi==1.15.0
 chardet==4.0.0
 charset-normalizer==2.0.10
