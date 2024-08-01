@@ -1136,7 +1136,6 @@ def easiur_costs(request):
         log.error(debug_msg)
         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
 
-
 def proforma_for_runuuid(request, run_uuid):
     
     # Validate that user UUID is valid.
@@ -1163,48 +1162,15 @@ def proforma_for_runuuid(request, run_uuid):
         if len(api_metas) > 0:
 
             res = json.loads(results(request, run_uuid).content)
-            print(type(res))
-            print(res.keys())
 
-            # create spreadsheet template
-            # Create a workbook and add a worksheet.
+            # create bytestream to return resposne
             output = io.BytesIO()
-            print(type(output))
+            # generate proforma
             proforma = proforma_helper(res, output)
-            # xlsxwriter.Workbook(output, {"in_memory": True})
-            # inandout_sheet = proforma.add_worksheet('Inputs and Outputs')
-            # inandout_sheet.set_column('A:A', 100)
-            # inandout_sheet.set_column('B:B', 14.75)
-            # inandout_sheet.set_column('C:C', 13.25)
-            # inandout_sheet.set_column('D:D', 23.88)
-            # inandout_sheet.set_column('E:E', 23.88)
-            # inandout_sheet.set_column('F:F', 26.88)
-
-            # optcashf_sheet = proforma.add_worksheet('Optimal Cash Flow')
-            # optcashf_sheet.set_column('A:A', 31.75)
-            # optcashf_sheet.set_column('B:AA', 10.38)
-
-            # baucashf_sheet = proforma.add_worksheet('BAU Cash Flow')
-
-            # d, o = create_proforma_format(proforma)
-
-            # mapping = pd.read_csv('reoptjl/mapping.csv')
-            # base_upper_case_letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
-            #               'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA']
-            
-            # inandout_sheet = do_inandout_sheet(mapping, inandout_sheet, d, res)
-            # optcashf_sheet = do_optcashf_sheet(mapping, optcashf_sheet, o, base_upper_case_letters)
-            # baucashf_sheet = do_baucashf_sheet(mapping, baucashf_sheet, o, d, base_upper_case_letters)
-
-            # proforma.close()
-
-            # per https://xlsxwriter.readthedocs.io/example_django_simple.html
-            # Rewind the buffer.
-            
             output.seek(0)
 
             # Set up the Http response.
-            filename = "django_simple.xlsx"
+            filename = "directown_proforma.xlsx"
             response = HttpResponse(
                 output,
                 content_type='application/vnd.ms-excel.sheet.macroEnabled.12',
@@ -1213,7 +1179,7 @@ def proforma_for_runuuid(request, run_uuid):
 
             return response
         else:
-            response = JsonResponse({"Error": "No scenarios found for user '{}'".format(run_uuid)}, content_type='application/json', status=404)
+            response = JsonResponse({"Error": "No scenarios found for run '{}'".format(run_uuid)}, content_type='application/json', status=404)
             return response
 
     except Exception as e:
@@ -1221,113 +1187,6 @@ def proforma_for_runuuid(request, run_uuid):
         err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', run_uuid=run_uuid)
         err.save_to_db()
         return JsonResponse({"Error": err.message}, status=404)
-
-
-def fetch_data_for_proforma(api_metas):
-
-    for m in api_metas:
-        # print(3, meta.run_uuid) #acces Meta fields like this
-        run_uuid = m.run_uuid
-
-    data = dict()
-
-    data['PVOutputs'] = PVOutputs.objects.filter(meta__run_uuid=run_uuid)
-
-    if len(data['PVOutputs']) > 0:
-        data['PVInputs'] = PVInputs.objects.filter(meta__run_uuid=run_uuid)
-    else:
-        data["PVOutputs"] = None
-        data["PVInputs"] = None
-
-    data['ElectricStorageOutputs'] = ElectricStorageOutputs.objects.filter(meta__run_uuid=run_uuid)
-
-    if len(data['ElectricStorageOutputs']) > 0:
-        data['ElectricStorageInputs'] = ElectricStorageInputs.objects.filter(meta__run_uuid=run_uuid)
-    else:
-        data["ElectricStorageOutputs"] = None
-        data["ElectricStorageInputs"] = None
-    
-    data['WindOutputs'] = WindOutputs.objects.filter(meta__run_uuid=run_uuid)
-
-    if len(data['WindOutputs']) > 0:
-        data['WindInputs'] = WindInputs.objects.filter(meta__run_uuid=run_uuid)
-    else:
-        data["WindOutputs"] = None
-        data["WindInputs"] = None
-    
-    data['GeneratorOutputs'] = GeneratorOutputs.objects.filter(meta__run_uuid=run_uuid)
-
-    if len(data['GeneratorOutputs']) > 0:
-        data['GeneratorInputs'] = GeneratorInputs.objects.filter(meta__run_uuid=run_uuid)
-    else:
-        data["GeneratorOutputs"] = None
-        data["GeneratorInputs"] = None
-
-    data['CHPOutputs'] = CHPOutputs.objects.filter(meta__run_uuid=run_uuid)
-
-    if len(data['CHPOutputs']) > 0:
-        data["CHPInputs"] = CHPInputs.objects.filter(meta__run_uuid=run_uuid)
-    else:
-        data["CHPOutputs"] = None
-        data["CHPInputs"] = None
-    
-    data['AbsorptionChillerOutputs'] = AbsorptionChillerOutputs.objects.filter(meta__run_uuid=run_uuid)
-
-    if len(data['AbsorptionChillerOutputs']) > 0:
-        data["AbsorptionChillerInputs"] = AbsorptionChillerInputs.objects.filter(meta__run_uuid=run_uuid)
-    else:
-        data["AbsorptionChillerOutputs"] = None
-        data["AbsorptionChillerInputs"] = None
-    
-    data['ColdThermalStorageOutputs'] = ColdThermalStorageOutputs.objects.filter(meta__run_uuid=run_uuid)
-
-    if len(data['ColdThermalStorageOutputs']) > 0:
-        data["ColdThermalStorageInputs"] = ColdThermalStorageInputs.objects.filter(meta__run_uuid=run_uuid)
-    else:
-        data["ColdThermalStorageOutputs"] = None
-        data["ColdThermalStorageInputs"] = None
-    
-    data['HotThermalStorageOutputs'] = HotThermalStorageOutputs.objects.filter(meta__run_uuid=run_uuid)
-
-    if len(data['HotThermalStorageOutputs']) > 0:
-        data["HotThermalStorageInputs"] = HotThermalStorageInputs.objects.filter(meta__run_uuid=run_uuid)
-    else:
-        data["HotThermalStorageOutputs"] = None
-        data["HotThermalStorageInputs"] = None
-
-    data['SteamTurbineOutputs'] = SteamTurbineOutputs.objects.filter(meta__run_uuid=run_uuid)
-
-    if len(data['SteamTurbineOutputs']) > 0:
-        data["SteamTurbineInputs"] = SteamTurbineInputs.objects.filter(meta__run_uuid=run_uuid)
-    else:
-        data["SteamTurbineOutputs"] = None
-        data["SteamTurbineInputs"] = None
-    
-    data['GHPOutputs'] = GHPOutputs.objects.filter(meta__run_uuid=run_uuid)
-
-    if len(data['GHPOutputs']) > 0:
-        data["GHPInputs"] = GHPInputs.objects.filter(meta__run_uuid=run_uuid)
-    else:
-        data["GHPOutputs"] = None
-        data["GHPInputs"] = None
-    
-    data['ElectricTariffOutputs'] = ElectricTariffOutputs.objects.filter(meta__run_uuid=run_uuid)
-
-    if len(data['ElectricTariffOutputs']) > 0:
-        data["ElectricTariffInputs"] = ElectricTariffInputs.objects.filter(meta__run_uuid=run_uuid)
-    else:
-        data["ElectricTariffOutputs"] = None
-        data["ElectricTariffInputs"] = None
-
-    data['SiteOutputs'] = SiteOutputs.objects.filter(meta__run_uuid=run_uuid)
-
-    if len(data['SiteOutputs']) > 0:
-        data["SiteInputs"] = SiteInputs.objects.filter(meta__run_uuid=run_uuid).dict
-    else:
-        data["SiteOutputs"] = None
-        data["SiteInputs"] = None
-    
-    return data
 
 
 # def fuel_emissions_rates(request):
