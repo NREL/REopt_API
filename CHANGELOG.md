@@ -26,6 +26,45 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.9.3
+### Minor Updates
+#### Added
+- `/erp/inputs` endpoint (calls `erp_help()`, same as `/erp/help`)
+- `/erp/outputs` endpoint that GETs the ERP output field info (calls `erp_outputs()`)
+#### Changed
+- Set **reopt_version** in **APIMeta** and **ERPMeta** programatically based on actual REopt.jl package version in Julia environment instead of hardcoded so doesn't need to be updated by hand
+
+## v3.9.2
+#### Added
+- Added attribute `thermal_efficiency` to the arguments of http endpoint `chp_defaults`
+#### Fixed
+- See fixes and changes here: https://github.com/NREL/REopt.jl/releases/tag/v0.47.2
+
+## v3.9.1
+### Minor Updates
+#### Added
+- Added `ProcessHeatLoadInputs` for new ways to input `ProcessHeatLoad`, similar to other loads
+#### Fixed
+- See fixes and changes here: https://github.com/NREL/REopt.jl/releases/tag/v0.47.0
+
+## v3.9.0
+### Minor Updates
+#### Added
+- In `reoptjl/models.py`, added the following fields:
+  - booleans **can_serve_dhw**, **can_serve_space_heating**, and **can_serve_process_heat** to models **CHPInputs**, **ExistingBoilerInputs**, **BoilerInputs**, **SteamTurbineInputs**, and **HotThermalStorageInputs**
+  - booleans **can_serve_space_heating** and **can_serve_process_heat** to model **GHPInputs**
+  - arrays **storage_to_dhw_load_series_mmbtu_per_hour**, **storage_to_space_heating_load_series_mmbtu_per_hour** and **storage_to_process_heat_load_series_mmbtu_per_hour** to model **HotThermalStorageOutputs**
+  - **heating_load_input** to model **AbsorptionChillerInputs**
+  - arrays **thermal_to_dhw_load_series_mmbtu_per_hour**, **thermal_to_space_heating_load_series_mmbtu_per_hour**, and **thermal_to_process_heat_load_series_mmbtu_per_hour** to models **CHPOutputs**, **ExistingBoilerOutputs**, **BoilerOutputs**, **SteamTurbineOutputs**, and **HotThermalStorageOutputs**
+  - boolean **retire_in_optimal** to **ExistingBoilerInputs**
+- In `reopt.jl/models.py`, added new model **ProcessHeatLoadInputs** with references in `reoptjl/validators.py` and `reoptjl/views.py`
+- Added process heat load to test scenario `reoptjl/test/posts/test_thermal_in_results.json`
+- Added tests for the presence of process heat load and heat-load-specfic outputs to `test_thermal_in_results` within `reoptjl/test/test_job_endpoint.py`
+#### Changed
+- Point to REopt.jl v0.46.1 which includes bug fixes in net metering and updated PV resource data calls
+#### Fixed
+- Fix bug in setting default ElectricUtility.emissions_factor_CO2_decrease_fraction. Previously, user-input values were getting overwritten. 
+
 ## v3.8.0
 ### Minor Updates
 #### Changed

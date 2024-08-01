@@ -16,7 +16,7 @@ from reoptjl.models import Settings, PVInputs, ElectricStorageInputs, WindInputs
     CoolingLoadOutputs, HeatingLoadOutputs, REoptjlMessageOutputs, HotThermalStorageInputs, HotThermalStorageOutputs,\
     ColdThermalStorageInputs, ColdThermalStorageOutputs, AbsorptionChillerInputs, AbsorptionChillerOutputs,\
     FinancialInputs, FinancialOutputs, UserUnlinkedRuns, BoilerInputs, BoilerOutputs, SteamTurbineInputs, \
-    SteamTurbineOutputs, GHPInputs, GHPOutputs
+    SteamTurbineOutputs, GHPInputs, GHPOutputs, ProcessHeatLoadInputs
 import os
 import requests
 import numpy as np
@@ -59,6 +59,7 @@ def help(request):
         d["ColdThermalStorage"] = ColdThermalStorageInputs.info_dict(ColdThermalStorageInputs)
         d["SpaceHeatingLoad"] = SpaceHeatingLoadInputs.info_dict(SpaceHeatingLoadInputs)
         d["DomesticHotWaterLoad"] = DomesticHotWaterLoadInputs.info_dict(DomesticHotWaterLoadInputs)
+        d["ProcessHeatLoad"] = ProcessHeatLoadInputs.info_dict(ProcessHeatLoadInputs)
         d["Site"] = SiteInputs.info_dict(SiteInputs)
         d["CHP"] = CHPInputs.info_dict(CHPInputs)
         d["AbsorptionChiller"] = AbsorptionChillerInputs.info_dict(AbsorptionChillerInputs)
@@ -218,6 +219,9 @@ def results(request, run_uuid):
     except: pass
 
     try: r["inputs"]["DomesticHotWaterLoad"] = meta.DomesticHotWaterLoadInputs.dict
+    except: pass
+
+    try: r["inputs"]["ProcessHeatLoad"] = meta.ProcessHeatLoadInputs.dict
     except: pass
 
     try: r["inputs"]["CHP"] = meta.CHPInputs.dict
@@ -385,8 +389,13 @@ def chp_defaults(request):
         "max_electric_load_kw": request.GET.get("max_electric_load_kw"),
         "is_electric_only": request.GET.get("is_electric_only")
     }
-    if (request.GET.get("size_class")):
-        inputs["size_class"] = int(request.GET.get("size_class"))
+
+    if request.GET.get("size_class"):
+        inputs["size_class"] = int(request.GET.get("size_class"))  # Not sure if this is necessary because we convert to int in http.jl
+
+    if request.GET.get("thermal_efficiency"):
+        inputs["thermal_efficiency"] = request.GET.get("thermal_efficiency")  # Conversion to correct type happens in http.jl
+
     try:
         julia_host = os.environ.get('JULIA_HOST', "julia")
         http_jl_response = requests.get("http://" + julia_host + ":8081/chp_defaults/", json=inputs)
