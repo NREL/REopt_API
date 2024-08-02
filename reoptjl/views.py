@@ -613,7 +613,6 @@ def get_existing_chiller_default_cop(request):
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in get_existing_chiller_default_cop endpoint. Check log for more."}, status=500)
 
-
 # Inputs: 1-many run_uuids as single comma separated string
 # This function will query those UUIDs and return as summary endpoint
 # Output: list of JSONs
