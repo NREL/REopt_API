@@ -1139,6 +1139,206 @@ def easiur_costs(request):
         log.error(debug_msg)
         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
 
+########################################
+####### Custom Tables and Reports ######
+########################################
+import xlsxwriter
+import pandas as pd
+import requests
+import json
+from collections import defaultdict
+import re
+import uuid
+
+#### Helper Functions
+def get_with_suffix(df, key, suffix, default_val=0):
+    """Fetch value from dataframe with an optional retriaval of _bau suffix."""
+    if not key.endswith("_bau"):
+        key = f"{key}{suffix}"
+    return df.get(key, default_val)
+
+def flatten_dict(d, parent_key='', sep='.'):
+    """Flatten nested dictionary."""
+    items = []
+    for k, v in d.items():
+        new_key = f"{parent_key}{sep}{k}" if parent_key else k
+        if isinstance(v, dict):
+            items.extend(flatten_dict(v, new_key, sep=sep).items())
+        else:
+            items.append((new_key, v))
+    return dict(items)
+
+def clean_data_dict(data_dict):
+    """Clean data dictionary by removing default values."""
+    for key, value_array in data_dict.items():
+        new_value_array = [
+            "" if v in [0, float("nan"), "NaN", "0", "0.0", "$0.0", -0, "-0", "-0.0", "-$0.0", None] else v
+            for v in value_array
+        ]
+        data_dict[key] = new_value_array
+    return data_dict
+
+def sum_vectors(data):
+    """Sum numerical vectors within a nested data structure."""
+    if isinstance(data, dict):
+        return {key: sum_vectors(value) for key, value in data.items()}
+    elif isinstance(data, list):
+        if all(isinstance(item, (int, float)) for item in data):
+            return sum(data)
+        else:
+            return [sum_vectors(item) for item in data]
+    else:
+        return data
+
+#### Core Functions
+def generate_data_dict(config, df_gen, suffix):
+    """Generate data dictionary based on configuration and dataframe."""
+    data_dict = defaultdict(list)
+    for var_key, col_name in config:
+        if callable(var_key):
+            val = var_key(df_gen)
+        else:
+            val = get_with_suffix(df_gen, var_key, suffix, "-")
+        data_dict[col_name].append(val)
+    return data_dict
+
+def get_REopt_data(data_f, scenario_name, config):
+    """Fetch and format data for a specific REopt scenario."""
+    scenario_name_str = str(scenario_name)
+    suffix = "_bau" if re.search(r"(?i)\bBAU\b", scenario_name_str) else ""
+    
+    df_gen = flatten_dict(data_f)
+    data_dict = generate_data_dict(config, df_gen, suffix)
+    data_dict["Scenario"] = [scenario_name_str]
+
+    col_order = ["Scenario"] + [col_name for _, col_name in config]
+    df_res = pd.DataFrame(data_dict)
+    df_res = df_res[col_order]
+
+    return df_res
+
+def get_bau_values(mock_scenarios, config):
+    """Retrieve BAU values for comparison."""
+    bau_values = {col_name: None for _, col_name in config}
+    for scenario in mock_scenarios:
+        df_gen = flatten_dict(scenario["outputs"])
+        for var_key, col_name in config:
+            try:
+                key = var_key.__code__.co_consts[1]
+            except IndexError:
+                print(f"Warning: Could not find constant in lambda for {col_name}. Skipping...")
+                continue
+
+            key_bau = f"{key}_bau"
+            if key_bau in df_gen:
+                value = df_gen[key_bau]
+                if bau_values[col_name] is None:
+                    bau_values[col_name] = value
+                elif bau_values[col_name] != value:
+                    raise ValueError(f"Inconsistent BAU values for {col_name}. This should only be used for portfolio cases with the same Site, ElectricLoad, and ElectricTariff for energy consumption and energy costs.")
+    return bau_values
+
+# def get_scenario_results(run_uuid):
+#     """Retrieve scenario results from an external API."""
+#     results_url = f"{root_url}/job/{run_uuid}/results/?api_key={API_KEY}"
+#     response = requests.get(results_url, verify=False)
+#     response.raise_for_status()
+#     result_data = response.json()
+    
+#     processed_data = sum_vectors(result_data) #vectors are summed into a single value
+    
+#     # ## outputs json with the simplified REopt results where vectors are summed into a single value
+#     # with open(f"{run_uuid}.json", "w") as json_file:
+#     #     json.dump(processed_data, json_file, indent=4)
+    
+#     return processed_data
+
+
+def process_scenarios(scenarios, reopt_data_config):
+    """Process multiple scenarios and generate a combined dataframe."""
+    config = reopt_data_config
+    bau_values = get_bau_values(scenarios, config)
+    combined_df = pd.DataFrame()
+    for scenario in scenarios:
+        run_uuid = scenario['run_uuid']
+        df_result = get_REopt_data(scenario["outputs"], run_uuid, config)
+        df_result = df_result.set_index('Scenario').T
+        df_result.columns = [run_uuid]
+        combined_df = df_result if combined_df.empty else combined_df.join(df_result, how='outer')
+
+    bau_data = {key: [value] for key, value in bau_values.items()}
+    bau_data["Scenario"] = ["BAU"]
+    df_bau = pd.DataFrame(bau_data)
+
+    combined_df = pd.concat([df_bau, combined_df.T]).reset_index(drop=True)
+    combined_df = clean_data_dict(combined_df.to_dict(orient="list"))
+    combined_df = pd.DataFrame(combined_df)
+    combined_df = combined_df[["Scenario"] + [col for col in combined_df.columns if col != "Scenario"]]
+
+    return combined_df
+
+# def summary_by_runuuids(run_uuids):
+#     """Fetch summary for multiple run UUIDs."""
+#     if not run_uuids:
+#         return {'Error': 'Must provide one or more run_uuids'}
+
+#     for r_uuid in run_uuids:
+#         if not isinstance(r_uuid, str):
+#             return {'Error': f'Provided run_uuids type error, must be string. {r_uuid}'}
+        
+#         try:
+#             uuid.UUID(r_uuid)
+#         except ValueError as e:
+#             return {"Error": str(e)}
+    
+#     try:
+#         scenarios = [get_scenario_results(run_uuid) for run_uuid in run_uuids]
+#         return {'scenarios': scenarios}
+#     except Exception as e:
+#         return {"Error": str(e)}
+
+def summary_by_runuuids(request):
+    """
+    Fetch summary for multiple run UUIDs.
+    """
+    try:
+        # Parse the request body
+        body = json.loads(request.body)
+        run_uuids = body.get('run_uuids', [])
+
+        if not run_uuids:
+            return JsonResponse({'Error': 'Must provide one or more run_uuids'}, status=400)
+
+        for r_uuid in run_uuids:
+            if not isinstance(r_uuid, str):
+                return JsonResponse({'Error': f'Provided run_uuids type error, must be string. {r_uuid}'}, status=400)
+            try:
+                uuid.UUID(r_uuid)
+            except ValueError as e:
+                return JsonResponse({"Error": str(e)}, status=400)
+
+        scenarios = []
+        for run_uuid in run_uuids:
+            # Call the existing results function
+            response = results(request, run_uuid)
+            if response.status_code == 200:
+                scenarios.append(json.loads(response.content))
+            else:
+                return JsonResponse({"Error": f"Error fetching results for run_uuid {run_uuid}: {response.content}"}, status=response.status_code)
+
+        return JsonResponse({'scenarios': scenarios}, status=200)
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e)}, status=400)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing": str(e)}, status=400)
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value, tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected error. Check log for more."}, status=500)
 # def fuel_emissions_rates(request):
 #     try:
 
