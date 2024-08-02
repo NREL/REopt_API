@@ -22,13 +22,13 @@ end
 function reopt(req::HTTP.Request)
     d = JSON.parse(String(req.body))
 	error_response = Dict()
-    settings = d["Settings"]
     if !isempty(get(d, "api_key", ""))
         ENV["NREL_DEVELOPER_API_KEY"] = pop!(d, "api_key")
     else
         ENV["NREL_DEVELOPER_API_KEY"] = test_nrel_developer_api_key
         delete!(d, "api_key")
     end
+    settings = d["Settings"]
     solver_name = get(settings, "solver_name", "HiGHS")    
     if solver_name == "Xpress" && !(xpress_installed=="True")
         solver_name = "HiGHS"
@@ -140,23 +140,22 @@ function reopt(req::HTTP.Request)
 
     if isempty(error_response)
         @info "REopt model solved with status $(results["status"])."
+        response = Dict(
+            "results" => results,
+            "reopt_version" => string(pkgversion(reoptjl))
+        )
 		if results["status"] == "error"
-			response = Dict(
-				"results" => results
-			)
 			if !isempty(inputs_with_defaults_set_in_julia)
 				response["inputs_with_defaults_set_in_julia"] = inputs_with_defaults_set_in_julia
 			end
 			return HTTP.Response(400, JSON.json(response))
 		else
-			response = Dict(
-				"results" => results,
-				"inputs_with_defaults_set_in_julia" => inputs_with_defaults_set_in_julia
-			)
+            response["inputs_with_defaults_set_in_julia"] = inputs_with_defaults_set_in_julia
 			return HTTP.Response(200, JSON.json(response))
 		end
     else
         @info "An error occured in the Julia code."
+        error_response["reopt_version"] = string(pkgversion(reoptjl))
         return HTTP.Response(500, JSON.json(error_response))
     end
 end
@@ -169,9 +168,11 @@ function erp(req::HTTP.Request)
     results = Dict()
     try
 		results = reoptjl.backup_reliability(erp_inputs)
+        results["reopt_version"] = string(pkgversion(reoptjl))
     catch e
         @error "Something went wrong in the ERP Julia code!" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
+        error_response["reopt_version"] = string(pkgversion(reoptjl))
     end
     GC.gc()
     if isempty(error_response)
@@ -199,14 +200,17 @@ function chp_defaults(req::HTTP.Request)
     float_vals = ["avg_boiler_fuel_load_mmbtu_per_hour",
                 "boiler_efficiency",
                 "avg_electric_load_kw",
-                "max_electric_load_kw"]
+                "max_electric_load_kw",
+                "thermal_efficiency"]
     int_vals = ["size_class"]
     bool_vals = ["is_electric_only"]
     all_vals = vcat(string_vals, float_vals, int_vals, bool_vals)
     # Process .json inputs and convert to correct type if needed
     for k in all_vals
         if !haskey(d, k)
-            d[k] = nothing
+            if !(k == "thermal_efficiency")  # thermal_efficiency is of type Float64 (incl NaN), so it can't be "nothing"
+                d[k] = nothing
+            end
         elseif !isnothing(d[k])
             if k in float_vals && typeof(d[k]) == String
                 d[k] = parse(Float64, d[k])
