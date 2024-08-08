@@ -1233,7 +1233,17 @@ def get_bau_values(mock_scenarios, config):
                     raise ValueError(f"Inconsistent BAU values for {col_name}. This should only be used for portfolio cases with the same Site, ElectricLoad, and ElectricTariff for energy consumption and energy costs.")
     return bau_values
 
-def fetch_raw_data(request, run_uuid):
+def access_raw_data(run_uuids, request):
+    full_summary_dict = {"scenarios": []}
+    for run_uuid in run_uuids:
+        scenario_data = {
+            "run_uuid": str(run_uuid),
+            "full_data": process_raw_data(request, run_uuid)
+        }
+        full_summary_dict["scenarios"].append(scenario_data)
+    return full_summary_dict
+
+def process_raw_data(request, run_uuid):
     response = results(request, run_uuid)
     if response.status_code == 200:
         result_data = json.loads(response.content)
@@ -1241,16 +1251,6 @@ def fetch_raw_data(request, run_uuid):
         return processed_data
     else:
         return {"error": f"Failed to fetch data for run_uuid {run_uuid}"}
-
-def access_raw_data(run_uuids, request):
-    full_summary_dict = {"scenarios": []}
-    for run_uuid in run_uuids:
-        scenario_data = {
-            "run_uuid": str(run_uuid),
-            "full_data": fetch_raw_data(request, run_uuid)
-        }
-        full_summary_dict["scenarios"].append(scenario_data)
-    return full_summary_dict
 
 def process_scenarios(scenarios, reopt_data_config):
     config = reopt_data_config
@@ -1276,7 +1276,7 @@ def process_scenarios(scenarios, reopt_data_config):
 
 def create_custom_table_excel(df, custom_table, calculations, output):
     workbook = xlsxwriter.Workbook(output, {'in_memory': True})
-    worksheet = workbook.add_worksheet('ITA Report Template')
+    worksheet = workbook.add_worksheet('Custom Table')
 
     data_format = workbook.add_format({'align': 'center', 'valign': 'center', 'border': 1})
     formula_format = workbook.add_format({'bg_color': '#C1EE86', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': 'red'})
