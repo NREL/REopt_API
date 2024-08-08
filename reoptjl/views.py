@@ -1237,7 +1237,7 @@ def fetch_raw_data(request, run_uuid):
     response = results(request, run_uuid)
     if response.status_code == 200:
         result_data = json.loads(response.content)
-        processed_data = sum_vectors(result_data)  # Summing vectors into a single value
+        processed_data = sum_vectors(result_data)
         return processed_data
     else:
         return {"error": f"Failed to fetch data for run_uuid {run_uuid}"}
@@ -1330,45 +1330,60 @@ def create_custom_table_excel(df, custom_table, calculations, output):
     workbook.close()
 
 def create_comparison_table(request):
-    run_uuids = json.loads(request.body).get('run_uuids', [])
-    if not run_uuids:
+    # Parse run_uuids from request body
+    try:
+        run_uuids = json.loads(request.body)['run_uuids']
+    except (json.JSONDecodeError, KeyError):
+        return JsonResponse({'Error': 'Invalid JSON format or missing run_uuids'}, status=400)
+    
+    if len(run_uuids) == 0:
         return JsonResponse({'Error': 'Must provide one or more run_uuids'}, status=400)
 
     # Validate run UUIDs
     for r_uuid in run_uuids:
         if not isinstance(r_uuid, str):
-            return JsonResponse({'Error': 'Provided run_uuids type error, must be string. ' + str(r_uuid)}, status=400)
-        
+            return JsonResponse({'Error': f'Provided run_uuid {r_uuid} must be a string'}, status=400)
         try:
-            uuid.UUID(r_uuid)  # raises ValueError if not valid UUID
-        except ValueError as e:
-            return JsonResponse({"Error": str(e)}, status=404)
+            uuid.UUID(r_uuid)  # raises ValueError if not a valid UUID
+        except ValueError:
+            return JsonResponse({'Error': f'Invalid UUID format: {r_uuid}'}, status=400)
 
-    scenarios = access_raw_data(run_uuids, request)
-    if 'scenarios' not in scenarios:
-        return JsonResponse({"Error": "Failed to fetch scenarios"}, content_type='application/json', status=404)
+    try:
+        # Access raw data
+        scenarios = access_raw_data(run_uuids, request)
+        if 'scenarios' not in scenarios:
+            return JsonResponse({'Error': 'Failed to fetch scenarios'}, content_type='application/json', status=404)
 
-    final_df = process_scenarios(scenarios['scenarios'], ita_custom_table)
-    final_df.iloc[1:, 0] = run_uuids
+        # Process scenarios
+        final_df = process_scenarios(scenarios['scenarios'], ita_custom_table)
+        final_df.iloc[1:, 0] = run_uuids
 
-    final_df_transpose = final_df.transpose()
-    final_df_transpose.columns = final_df_transpose.iloc[0]
-    final_df_transpose = final_df_transpose.drop(final_df_transpose.index[0])
+        # Transpose and format DataFrame
+        final_df_transpose = final_df.transpose()
+        final_df_transpose.columns = final_df_transpose.iloc[0]
+        final_df_transpose = final_df_transpose.drop(final_df_transpose.index[0])
 
-    output = io.BytesIO()
+        # Create Excel file
+        output = io.BytesIO()
+        create_custom_table_excel(final_df_transpose, ita_custom_table, calculations, output)
+        output.seek(0)
+
+        # Set up the HTTP response
+        filename = "comparison_table.xlsx"
+        response = HttpResponse(
+            output,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename={filename}'
+
+        return response
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_comparison_table', run_uuids=run_uuids)
+        err.save_to_db()
+        return JsonResponse({"Error": str(err.message)}, status=500)
     
-    create_custom_table_excel(final_df_transpose, ita_custom_table, calculations, output)
-    output.seek(0)
-
-    filename = "comparison_table.xlsx"
-    response = HttpResponse(
-        output,
-        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
-    response['Content-Disposition'] = f'attachment; filename={filename}'
-
-    return response
-
 # Configuration
 # Set up table needed along with REopt dictionaries to grab data 
 ita_custom_table = [
