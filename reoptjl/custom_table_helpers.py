@@ -1,8 +1,4 @@
 # custom table helpers.py
-
-import pandas as pd
-from collections import defaultdict
-
 def get_with_suffix(df, key, suffix, default_val=0):
     """Fetch value from dataframe with an optional retriaval of _bau suffix."""
     if not key.endswith("_bau"):

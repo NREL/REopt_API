@@ -18,10 +18,12 @@ from reoptjl.models import Settings, PVInputs, ElectricStorageInputs, WindInputs
 import os
 import requests
 import numpy as np
+import pandas as pd
 import json
 import logging
 from reoptjl.custom_table_helpers import get_with_suffix, flatten_dict, clean_data_dict, sum_vectors, colnum_string
 import xlsxwriter
+from collections import defaultdict
 import io
 
 log = logging.getLogger(__name__)
