@@ -20,7 +20,7 @@ import requests
 import numpy as np
 import json
 import logging
-from reoptjl.custom_table_helpers import *
+from reoptjl.custom_table_helpers import get_with_suffix, flatten_dict, clean_data_dict, sum_vectors, colnum_string
 import xlsxwriter
 import io
 
@@ -1240,14 +1240,12 @@ def fetch_raw_data(request, run_uuid):
     else:
         return {"error": f"Failed to fetch data for run_uuid {run_uuid}"}
 
-def access_raw_data(api_metas, request):
+def access_raw_data(run_uuids, request):
     full_summary_dict = {"scenarios": []}
-    for m in api_metas:
+    for run_uuid in run_uuids:
         scenario_data = {
-            "run_uuid": str(m.run_uuid),
-            "status": m.status,
-            "created": str(m.created),
-            "full_data": fetch_raw_data(request, m.run_uuid)  
+            "run_uuid": str(run_uuid),
+            "full_data": fetch_raw_data(request, run_uuid)
         }
         full_summary_dict["scenarios"].append(scenario_data)
     return full_summary_dict
@@ -1275,11 +1273,9 @@ def process_scenarios(scenarios, reopt_data_config):
     return combined_df
 
 def create_custom_table_excel(df, custom_table, calculations, output):
-    # Create a new Excel file and add a worksheet
     workbook = xlsxwriter.Workbook(output, {'in_memory': True})
     worksheet = workbook.add_worksheet('ITA Report Template')
 
-    # Define formats
     data_format = workbook.add_format({'align': 'center', 'valign': 'center', 'border': 1})
     formula_format = workbook.add_format({'bg_color': '#C1EE86', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': 'red'})
     scenario_header_format = workbook.add_format({'bold': True, 'bg_color': '#0079C2', 'border': 1, 'align': 'center', 'font_color': 'white'})
@@ -1331,56 +1327,45 @@ def create_custom_table_excel(df, custom_table, calculations, output):
 
     workbook.close()
 
-def create_comparison_table(request, user_uuid):
-    def fetch_data_for_comparison(api_metas):
-        return access_raw_data(api_metas, request)
+def create_comparison_table(request):
+    run_uuids = json.loads(request.body).get('run_uuids', [])
+    if not run_uuids:
+        return JsonResponse({'Error': 'Must provide one or more run_uuids'}, status=400)
 
-    # Validate that user UUID is valid.
-    try:
-        uuid.UUID(user_uuid)
-    except ValueError as e:
-        return JsonResponse({"Error": str(e)}, status=404)
-
-    try:
-        api_metas = APIMeta.objects.filter(user_uuid=user_uuid).only(
-            'user_uuid',
-            'status',
-            'created'
-        ).order_by("-created")
-
-        if api_metas.exists():
-            scenarios = fetch_data_for_comparison(api_metas)
-            if 'scenarios' not in scenarios:
-                return JsonResponse({"Error": scenarios['error']}, content_type='application/json', status=404)
+    # Validate run UUIDs
+    for r_uuid in run_uuids:
+        if not isinstance(r_uuid, str):
+            return JsonResponse({'Error': 'Provided run_uuids type error, must be string. ' + str(r_uuid)}, status=400)
         
-            final_df = process_scenarios(scenarios['scenarios'], ita_custom_table)
-            final_df.iloc[1:, 0] = [meta.run_uuid for meta in api_metas]
+        try:
+            uuid.UUID(r_uuid)  # raises ValueError if not valid UUID
+        except ValueError as e:
+            return JsonResponse({"Error": str(e)}, status=404)
 
-            final_df_transpose = final_df.transpose()
-            final_df_transpose.columns = final_df_transpose.iloc[0]
-            final_df_transpose = final_df_transpose.drop(final_df_transpose.index[0])
+    scenarios = access_raw_data(run_uuids, request)
+    if 'scenarios' not in scenarios:
+        return JsonResponse({"Error": "Failed to fetch scenarios"}, content_type='application/json', status=404)
 
-            output = io.BytesIO()
-            create_custom_table_excel(final_df_transpose, ita_custom_table, calculations, output)
-            output.seek(0)
+    final_df = process_scenarios(scenarios['scenarios'], ita_custom_table)
+    final_df.iloc[1:, 0] = run_uuids
 
-            filename = "comparison_table.xlsx"
-            response = HttpResponse(
-                output,
-                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-            )
-            response['Content-Disposition'] = f'attachment; filename={filename}'
+    final_df_transpose = final_df.transpose()
+    final_df_transpose.columns = final_df_transpose.iloc[0]
+    final_df_transpose = final_df_transpose.drop(final_df_transpose.index[0])
 
-            return response
+    output = io.BytesIO()
+    
+    create_custom_table_excel(final_df_transpose, ita_custom_table, calculations, output)
+    output.seek(0)
 
-        else:
-            return JsonResponse({"Error": f"No scenarios found for user '{user_uuid}'"}, content_type='application/json', status=404)
+    filename = "comparison_table.xlsx"
+    response = HttpResponse(
+        output,
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename={filename}'
 
-    except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='comparison', user_uuid=user_uuid)
-        err.save_to_db()
-        return JsonResponse({"Error": str(err)}, status=404)
+    return response
 
 # Configuration
 # Set up table needed along with REopt dictionaries to grab data 
