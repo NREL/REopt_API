@@ -4,7 +4,7 @@ import uuid
 import sys
 import traceback as tb
 import re
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from reo.exceptions import UnexpectedError
 from reoptjl.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, GeneratorInputs, ElectricLoadInputs,\
     ElectricTariffInputs, ElectricUtilityInputs, SpaceHeatingLoadInputs, PVOutputs, ElectricStorageOutputs,\
@@ -20,6 +20,10 @@ import requests
 import numpy as np
 import json
 import logging
+from reoptjl.custom_table_helpers import *
+import xlsxwriter
+import io
+
 log = logging.getLogger(__name__)
 
 def make_error_resp(msg):
@@ -694,115 +698,6 @@ def summary(request, user_uuid):
         err.save_to_db()
         return JsonResponse({"Error": err.message}, status=404)
 
-def summary_by_chunk(request, user_uuid, chunk):
-
-    # Dictionary to store all results. Primary key = run_uuid and secondary key = data values from each uuid
-    summary_dict = dict()
-
-    try:
-        uuid.UUID(user_uuid)  # raises ValueError if not valid uuid
-
-    except ValueError as e:
-        if e.args[0] == "badly formed hexadecimal UUID string":
-            return JsonResponse({"Error": str(e.message)}, status=404)
-        else:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', user_uuid=user_uuid)
-            err.save_to_db()
-            return JsonResponse({"Error": str(err.message)}, status=404)
-    
-    try:
-        try:
-            # chunk size is an optional URL parameter which defines the number of chunks into which to 
-            # divide all user summary results. It must be a positive integer.
-            default_chunk_size = 30
-            chunk_size = int(request.GET.get('chunk_size') or default_chunk_size)
-            if chunk_size != float(request.GET.get('chunk_size') or default_chunk_size):
-                return JsonResponse({"Error": "Chunk size must be an integer."}, status=400)    
-        except:
-            return JsonResponse({"Error": "Chunk size must be a positive integer."}, status=400)
-        
-        try:
-            # chunk is the 1-indexed indice of the chunks for which to return results.
-            # chunk is a mandatory input from URL, different from chunk_size.
-            # It must be a positive integer.
-            chunk = int(chunk)
-            if chunk < 1:
-                response = JsonResponse({"Error": "Chunks are 1-indexed, please provide a chunk index greater than or equal to 1"}
-                    , content_type='application/json', status=400)
-                return response
-        except:
-            return JsonResponse({"Error": "Chunk number must be a 1-indexed integer."}, status=400)
-        
-        # Create Querysets: Select all objects associate with a user_uuid, Order by `created` column
-        scenarios = APIMeta.objects.filter(user_uuid=user_uuid).only(
-            'run_uuid',
-            'status',
-            'created'
-        ).order_by("-created")
-
-        unlinked_run_uuids = [i.run_uuid for i in UserUnlinkedRuns.objects.filter(user_uuid=user_uuid)]
-        api_metas = [s for s in scenarios if s.run_uuid not in unlinked_run_uuids]
-        
-        total_scenarios = len(api_metas)
-        if total_scenarios == 0:
-            response = JsonResponse({"Error": "No scenarios found for user '{}'".format(user_uuid)}, content_type='application/json', status=404)
-            return response
-        
-        # Determine total number of chunks from current query of user results based on the chunk size
-        total_chunks = total_scenarios/float(chunk_size)
-        # If the last chunk is only patially full, i.e. there is a remainder, then add 1 so when it 
-        # is converted to an integer the result will reflect the true total number of chunks
-        if total_chunks%1 > 0: 
-            total_chunks = total_chunks + 1
-        # Make sure total chunks is an integer
-        total_chunks = int(total_chunks)
-        
-        # Catch cases where user queries for a chunk that is more than the total chunks for the user
-        if chunk > total_chunks:
-            response = JsonResponse({"Error": "Chunk index {} is greater than the total number of chunks ({}) at a chunk size of {}".format(
-                chunk, total_chunks, chunk_size)}, content_type='application/json', status=400)
-            return response
-        
-        # Filter scenarios to the chunk
-        start_idx = max((chunk-1) * chunk_size, 0)
-        end_idx = min(chunk * chunk_size, total_scenarios)
-        api_metas_by_chunk = api_metas[start_idx: end_idx]
-
-        summary_dict = queryset_for_summary(api_metas_by_chunk, summary_dict)
-        response = JsonResponse(create_summary_dict(user_uuid,summary_dict), status=200, safe=False)
-        return response
-
-    except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', user_uuid=user_uuid)
-        err.save_to_db()
-        return JsonResponse({"Error": err.message}, status=404)
-
-# Take summary_dict and convert it to the desired format for response. Also add any missing key/val pairs
-def create_summary_dict(user_uuid:str,summary_dict:dict):
-
-    # if these keys are missing from a `scenario` we add 0s for them, all Floats.
-    optional_keys = ["npv_us_dollars", "net_capital_costs", "year_one_savings_us_dollars", "pv_kw", "wind_kw", "gen_kw", "batt_kw", "batt_kwh"]
-
-    # Create eventual response dictionary
-    return_dict = dict()
-    return_dict['user_uuid'] = user_uuid
-    scenario_summaries = []
-    for k in summary_dict.keys():
-
-        d = summary_dict[k]
-
-        # for opt_key in optional_keys:
-        #     if opt_key not in d.keys():
-        #         d[opt_key] = 0.0
-        
-        scenario_summaries.append(d)
-    
-    return_dict['scenarios'] = scenario_summaries
-    
-    return return_dict
-
 # Query all django models for all run_uuids found for given user_uuid
 def queryset_for_summary(api_metas,summary_dict:dict):
 
@@ -980,6 +875,116 @@ def queryset_for_summary(api_metas,summary_dict:dict):
     
     return summary_dict
 
+def summary_by_chunk(request, user_uuid, chunk):
+
+    # Dictionary to store all results. Primary key = run_uuid and secondary key = data values from each uuid
+    summary_dict = dict()
+
+    try:
+        uuid.UUID(user_uuid)  # raises ValueError if not valid uuid
+
+    except ValueError as e:
+        if e.args[0] == "badly formed hexadecimal UUID string":
+            return JsonResponse({"Error": str(e.message)}, status=404)
+        else:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', user_uuid=user_uuid)
+            err.save_to_db()
+            return JsonResponse({"Error": str(err.message)}, status=404)
+    
+    try:
+        try:
+            # chunk size is an optional URL parameter which defines the number of chunks into which to 
+            # divide all user summary results. It must be a positive integer.
+            default_chunk_size = 30
+            chunk_size = int(request.GET.get('chunk_size') or default_chunk_size)
+            if chunk_size != float(request.GET.get('chunk_size') or default_chunk_size):
+                return JsonResponse({"Error": "Chunk size must be an integer."}, status=400)    
+        except:
+            return JsonResponse({"Error": "Chunk size must be a positive integer."}, status=400)
+        
+        try:
+            # chunk is the 1-indexed indice of the chunks for which to return results.
+            # chunk is a mandatory input from URL, different from chunk_size.
+            # It must be a positive integer.
+            chunk = int(chunk)
+            if chunk < 1:
+                response = JsonResponse({"Error": "Chunks are 1-indexed, please provide a chunk index greater than or equal to 1"}
+                    , content_type='application/json', status=400)
+                return response
+        except:
+            return JsonResponse({"Error": "Chunk number must be a 1-indexed integer."}, status=400)
+        
+        # Create Querysets: Select all objects associate with a user_uuid, Order by `created` column
+        scenarios = APIMeta.objects.filter(user_uuid=user_uuid).only(
+            'run_uuid',
+            'status',
+            'created'
+        ).order_by("-created")
+
+        unlinked_run_uuids = [i.run_uuid for i in UserUnlinkedRuns.objects.filter(user_uuid=user_uuid)]
+        api_metas = [s for s in scenarios if s.run_uuid not in unlinked_run_uuids]
+        
+        total_scenarios = len(api_metas)
+        if total_scenarios == 0:
+            response = JsonResponse({"Error": "No scenarios found for user '{}'".format(user_uuid)}, content_type='application/json', status=404)
+            return response
+        
+        # Determine total number of chunks from current query of user results based on the chunk size
+        total_chunks = total_scenarios/float(chunk_size)
+        # If the last chunk is only patially full, i.e. there is a remainder, then add 1 so when it 
+        # is converted to an integer the result will reflect the true total number of chunks
+        if total_chunks%1 > 0: 
+            total_chunks = total_chunks + 1
+        # Make sure total chunks is an integer
+        total_chunks = int(total_chunks)
+        
+        # Catch cases where user queries for a chunk that is more than the total chunks for the user
+        if chunk > total_chunks:
+            response = JsonResponse({"Error": "Chunk index {} is greater than the total number of chunks ({}) at a chunk size of {}".format(
+                chunk, total_chunks, chunk_size)}, content_type='application/json', status=400)
+            return response
+        
+        # Filter scenarios to the chunk
+        start_idx = max((chunk-1) * chunk_size, 0)
+        end_idx = min(chunk * chunk_size, total_scenarios)
+        api_metas_by_chunk = api_metas[start_idx: end_idx]
+
+        summary_dict = queryset_for_summary(api_metas_by_chunk, summary_dict)
+        response = JsonResponse(create_summary_dict(user_uuid,summary_dict), status=200, safe=False)
+        return response
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', user_uuid=user_uuid)
+        err.save_to_db()
+        return JsonResponse({"Error": err.message}, status=404)
+
+# Take summary_dict and convert it to the desired format for response. Also add any missing key/val pairs
+def create_summary_dict(user_uuid:str,summary_dict:dict):
+
+    # if these keys are missing from a `scenario` we add 0s for them, all Floats.
+    optional_keys = ["npv_us_dollars", "net_capital_costs", "year_one_savings_us_dollars", "pv_kw", "wind_kw", "gen_kw", "batt_kw", "batt_kwh"]
+
+    # Create eventual response dictionary
+    return_dict = dict()
+    return_dict['user_uuid'] = user_uuid
+    scenario_summaries = []
+    for k in summary_dict.keys():
+
+        d = summary_dict[k]
+
+        # for opt_key in optional_keys:
+        #     if opt_key not in d.keys():
+        #         d[opt_key] = 0.0
+        
+        scenario_summaries.append(d)
+    
+    return_dict['scenarios'] = scenario_summaries
+    
+    return return_dict
+
+
 # Unlink a user_uuid from a run_uuid.
 def unlink(request, user_uuid, run_uuid):
 
@@ -1139,206 +1144,6 @@ def easiur_costs(request):
         log.error(debug_msg)
         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
 
-########################################
-####### Custom Tables and Reports ######
-########################################
-import xlsxwriter
-import pandas as pd
-import requests
-import json
-from collections import defaultdict
-import re
-import uuid
-
-#### Helper Functions
-def get_with_suffix(df, key, suffix, default_val=0):
-    """Fetch value from dataframe with an optional retriaval of _bau suffix."""
-    if not key.endswith("_bau"):
-        key = f"{key}{suffix}"
-    return df.get(key, default_val)
-
-def flatten_dict(d, parent_key='', sep='.'):
-    """Flatten nested dictionary."""
-    items = []
-    for k, v in d.items():
-        new_key = f"{parent_key}{sep}{k}" if parent_key else k
-        if isinstance(v, dict):
-            items.extend(flatten_dict(v, new_key, sep=sep).items())
-        else:
-            items.append((new_key, v))
-    return dict(items)
-
-def clean_data_dict(data_dict):
-    """Clean data dictionary by removing default values."""
-    for key, value_array in data_dict.items():
-        new_value_array = [
-            "" if v in [0, float("nan"), "NaN", "0", "0.0", "$0.0", -0, "-0", "-0.0", "-$0.0", None] else v
-            for v in value_array
-        ]
-        data_dict[key] = new_value_array
-    return data_dict
-
-def sum_vectors(data):
-    """Sum numerical vectors within a nested data structure."""
-    if isinstance(data, dict):
-        return {key: sum_vectors(value) for key, value in data.items()}
-    elif isinstance(data, list):
-        if all(isinstance(item, (int, float)) for item in data):
-            return sum(data)
-        else:
-            return [sum_vectors(item) for item in data]
-    else:
-        return data
-
-#### Core Functions
-def generate_data_dict(config, df_gen, suffix):
-    """Generate data dictionary based on configuration and dataframe."""
-    data_dict = defaultdict(list)
-    for var_key, col_name in config:
-        if callable(var_key):
-            val = var_key(df_gen)
-        else:
-            val = get_with_suffix(df_gen, var_key, suffix, "-")
-        data_dict[col_name].append(val)
-    return data_dict
-
-def get_REopt_data(data_f, scenario_name, config):
-    """Fetch and format data for a specific REopt scenario."""
-    scenario_name_str = str(scenario_name)
-    suffix = "_bau" if re.search(r"(?i)\bBAU\b", scenario_name_str) else ""
-    
-    df_gen = flatten_dict(data_f)
-    data_dict = generate_data_dict(config, df_gen, suffix)
-    data_dict["Scenario"] = [scenario_name_str]
-
-    col_order = ["Scenario"] + [col_name for _, col_name in config]
-    df_res = pd.DataFrame(data_dict)
-    df_res = df_res[col_order]
-
-    return df_res
-
-def get_bau_values(mock_scenarios, config):
-    """Retrieve BAU values for comparison."""
-    bau_values = {col_name: None for _, col_name in config}
-    for scenario in mock_scenarios:
-        df_gen = flatten_dict(scenario["outputs"])
-        for var_key, col_name in config:
-            try:
-                key = var_key.__code__.co_consts[1]
-            except IndexError:
-                print(f"Warning: Could not find constant in lambda for {col_name}. Skipping...")
-                continue
-
-            key_bau = f"{key}_bau"
-            if key_bau in df_gen:
-                value = df_gen[key_bau]
-                if bau_values[col_name] is None:
-                    bau_values[col_name] = value
-                elif bau_values[col_name] != value:
-                    raise ValueError(f"Inconsistent BAU values for {col_name}. This should only be used for portfolio cases with the same Site, ElectricLoad, and ElectricTariff for energy consumption and energy costs.")
-    return bau_values
-
-# def get_scenario_results(run_uuid):
-#     """Retrieve scenario results from an external API."""
-#     results_url = f"{root_url}/job/{run_uuid}/results/?api_key={API_KEY}"
-#     response = requests.get(results_url, verify=False)
-#     response.raise_for_status()
-#     result_data = response.json()
-    
-#     processed_data = sum_vectors(result_data) #vectors are summed into a single value
-    
-#     # ## outputs json with the simplified REopt results where vectors are summed into a single value
-#     # with open(f"{run_uuid}.json", "w") as json_file:
-#     #     json.dump(processed_data, json_file, indent=4)
-    
-#     return processed_data
-
-
-def process_scenarios(scenarios, reopt_data_config):
-    """Process multiple scenarios and generate a combined dataframe."""
-    config = reopt_data_config
-    bau_values = get_bau_values(scenarios, config)
-    combined_df = pd.DataFrame()
-    for scenario in scenarios:
-        run_uuid = scenario['run_uuid']
-        df_result = get_REopt_data(scenario["outputs"], run_uuid, config)
-        df_result = df_result.set_index('Scenario').T
-        df_result.columns = [run_uuid]
-        combined_df = df_result if combined_df.empty else combined_df.join(df_result, how='outer')
-
-    bau_data = {key: [value] for key, value in bau_values.items()}
-    bau_data["Scenario"] = ["BAU"]
-    df_bau = pd.DataFrame(bau_data)
-
-    combined_df = pd.concat([df_bau, combined_df.T]).reset_index(drop=True)
-    combined_df = clean_data_dict(combined_df.to_dict(orient="list"))
-    combined_df = pd.DataFrame(combined_df)
-    combined_df = combined_df[["Scenario"] + [col for col in combined_df.columns if col != "Scenario"]]
-
-    return combined_df
-
-# def summary_by_runuuids(run_uuids):
-#     """Fetch summary for multiple run UUIDs."""
-#     if not run_uuids:
-#         return {'Error': 'Must provide one or more run_uuids'}
-
-#     for r_uuid in run_uuids:
-#         if not isinstance(r_uuid, str):
-#             return {'Error': f'Provided run_uuids type error, must be string. {r_uuid}'}
-        
-#         try:
-#             uuid.UUID(r_uuid)
-#         except ValueError as e:
-#             return {"Error": str(e)}
-    
-#     try:
-#         scenarios = [get_scenario_results(run_uuid) for run_uuid in run_uuids]
-#         return {'scenarios': scenarios}
-#     except Exception as e:
-#         return {"Error": str(e)}
-
-def summary_by_runuuids(request):
-    """
-    Fetch summary for multiple run UUIDs.
-    """
-    try:
-        # Parse the request body
-        body = json.loads(request.body)
-        run_uuids = body.get('run_uuids', [])
-
-        if not run_uuids:
-            return JsonResponse({'Error': 'Must provide one or more run_uuids'}, status=400)
-
-        for r_uuid in run_uuids:
-            if not isinstance(r_uuid, str):
-                return JsonResponse({'Error': f'Provided run_uuids type error, must be string. {r_uuid}'}, status=400)
-            try:
-                uuid.UUID(r_uuid)
-            except ValueError as e:
-                return JsonResponse({"Error": str(e)}, status=400)
-
-        scenarios = []
-        for run_uuid in run_uuids:
-            # Call the existing results function
-            response = results(request, run_uuid)
-            if response.status_code == 200:
-                scenarios.append(json.loads(response.content))
-            else:
-                return JsonResponse({"Error": f"Error fetching results for run_uuid {run_uuid}: {response.content}"}, status=response.status_code)
-
-        return JsonResponse({'scenarios': scenarios}, status=200)
-
-    except ValueError as e:
-        return JsonResponse({"Error": str(e)}, status=400)
-
-    except KeyError as e:
-        return JsonResponse({"Error. Missing": str(e)}, status=400)
-
-    except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value, tb.format_tb(exc_traceback))
-        log.debug(debug_msg)
-        return JsonResponse({"Error": "Unexpected error. Check log for more."}, status=500)
 # def fuel_emissions_rates(request):
 #     try:
 
@@ -1378,3 +1183,323 @@ def summary_by_runuuids(request):
 #                                                                             tb.format_tb(exc_traceback))
 #         log.error(debug_msg)
 #         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
+
+###############################################################
+################ Custom Table #################################
+###############################################################
+
+def generate_data_dict(config, df_gen, suffix):
+    data_dict = defaultdict(list)
+    for var_key, col_name in config:
+        if callable(var_key):
+            val = var_key(df_gen)
+        else:
+            val = get_with_suffix(df_gen, var_key, suffix, "-")
+        data_dict[col_name].append(val)
+    return data_dict
+
+def get_REopt_data(data_f, scenario_name, config):
+    scenario_name_str = str(scenario_name)
+    suffix = "_bau" if re.search(r"(?i)\bBAU\b", scenario_name_str) else ""
+    
+    df_gen = flatten_dict(data_f)
+    data_dict = generate_data_dict(config, df_gen, suffix)
+    data_dict["Scenario"] = [scenario_name_str]
+
+    col_order = ["Scenario"] + [col_name for _, col_name in config]
+    df_res = pd.DataFrame(data_dict)
+    df_res = df_res[col_order]
+
+    return df_res
+
+def get_bau_values(mock_scenarios, config):
+    bau_values = {col_name: None for _, col_name in config}
+    for scenario in mock_scenarios:
+        df_gen = flatten_dict(scenario)
+        for var_key, col_name in config:
+            try:
+                key = var_key.__code__.co_consts[1]
+            except IndexError:
+                continue
+
+            key_bau = f"{key}_bau"
+            if key_bau in df_gen:
+                value = df_gen[key_bau]
+                if bau_values[col_name] is None:
+                    bau_values[col_name] = value
+                elif bau_values[col_name] != value:
+                    raise ValueError(f"Inconsistent BAU values for {col_name}. This should only be used for portfolio cases with the same Site, ElectricLoad, and ElectricTariff for energy consumption and energy costs.")
+    return bau_values
+
+def fetch_raw_data(request, run_uuid):
+    response = results(request, run_uuid)
+    if response.status_code == 200:
+        result_data = json.loads(response.content)
+        processed_data = sum_vectors(result_data)  # Summing vectors into a single value
+        return processed_data
+    else:
+        return {"error": f"Failed to fetch data for run_uuid {run_uuid}"}
+
+def access_raw_data(api_metas, request):
+    full_summary_dict = {"scenarios": []}
+    for m in api_metas:
+        scenario_data = {
+            "run_uuid": str(m.run_uuid),
+            "status": m.status,
+            "created": str(m.created),
+            "full_data": fetch_raw_data(request, m.run_uuid)  
+        }
+        full_summary_dict["scenarios"].append(scenario_data)
+    return full_summary_dict
+
+def process_scenarios(scenarios, reopt_data_config):
+    config = reopt_data_config
+    bau_values = get_bau_values(scenarios, config)
+    combined_df = pd.DataFrame()
+    for scenario in scenarios:
+        run_uuid = scenario['run_uuid']
+        df_result = get_REopt_data(scenario['full_data'], run_uuid, config)
+        df_result = df_result.set_index('Scenario').T
+        df_result.columns = [run_uuid]
+        combined_df = df_result if combined_df.empty else combined_df.join(df_result, how='outer')
+
+    bau_data = {key: [value] for key, value in bau_values.items()}
+    bau_data["Scenario"] = ["BAU"]
+    df_bau = pd.DataFrame(bau_data)
+
+    combined_df = pd.concat([df_bau, combined_df.T]).reset_index(drop=True)
+    combined_df = clean_data_dict(combined_df.to_dict(orient="list"))
+    combined_df = pd.DataFrame(combined_df)
+    combined_df = combined_df[["Scenario"] + [col for col in combined_df.columns if col != "Scenario"]]
+
+    return combined_df
+
+def create_custom_table_excel(df, custom_table, calculations, output):
+    # Create a new Excel file and add a worksheet
+    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+    worksheet = workbook.add_worksheet('ITA Report Template')
+
+    # Define formats
+    data_format = workbook.add_format({'align': 'center', 'valign': 'center', 'border': 1})
+    formula_format = workbook.add_format({'bg_color': '#C1EE86', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': 'red'})
+    scenario_header_format = workbook.add_format({'bold': True, 'bg_color': '#0079C2', 'border': 1, 'align': 'center', 'font_color': 'white'})
+    variable_name_format = workbook.add_format({'bold': True, 'bg_color': '#DEE2E5', 'border': 1, 'align': 'left'})
+
+    worksheet.write(1, len(df.columns) + 2, "Values in red are formulas. Do not input anything.", formula_format)
+
+    column_width = 35
+    for col_num in range(len(df.columns) + 3):
+        worksheet.set_column(col_num, col_num, column_width)
+    
+    worksheet.write('A1', 'Scenario', scenario_header_format)
+    for col_num, header in enumerate(df.columns):
+        worksheet.write(0, col_num + 1, header, scenario_header_format)
+    
+    for row_num, variable in enumerate(df.index):
+        worksheet.write(row_num + 1, 0, variable, variable_name_format)
+
+    for row_num, row_data in enumerate(df.itertuples(index=False)):
+        for col_num, value in enumerate(row_data):
+            worksheet.write(row_num + 1, col_num + 1, "" if pd.isnull(value) or value == '-' else value, data_format)
+
+    headers = {header: idx for idx, header in enumerate(df.index)}
+
+    bau_cells = {
+        'grid_value': f'{colnum_string(2)}{headers["Grid Purchased Electricity (kWh)"] + 2}' if "Grid Purchased Electricity (kWh)" in headers else None,
+        'net_cost_value': f'{colnum_string(2)}{headers["Net Electricity Cost ($)"] + 2}' if "Net Electricity Cost ($)" in headers else None,
+        'ng_reduction_value': f'{colnum_string(2)}{headers["Total Fuel (MMBtu)"] + 2}' if "Total Fuel (MMBtu)" in headers else None,
+        'util_cost_value': f'{colnum_string(2)}{headers["Total Utility Cost ($)"] + 2}' if "Total Utility Cost ($)" in headers else None,
+        'co2_reduction_value': f'{colnum_string(2)}{headers["CO2 Emissions (tonnes)"] + 2}' if "CO2 Emissions (tonnes)" in headers else None
+    }
+
+    missing_entries = []
+    for col in range(2, len(df.columns) + 2):
+        col_letter = colnum_string(col)
+        for calc in calculations:
+            if calc["name"] in headers:
+                row_idx = headers[calc["name"]]
+                formula = calc["formula"](col_letter, bau_cells, headers)
+                if formula:
+                    worksheet.write_formula(row_idx + 1, col-1, formula, formula_format)
+                else:
+                    missing_entries.append(calc["name"])
+            else:
+                missing_entries.append(calc["name"])
+
+    if missing_entries:
+        print(f"Missing entries in the input table: {', '.join(set(missing_entries))}. Please update the configuration if necessary.")
+
+    workbook.close()
+
+def create_comparison_table(request, user_uuid):
+    def fetch_data_for_comparison(api_metas):
+        return access_raw_data(api_metas, request)
+
+    # Validate that user UUID is valid.
+    try:
+        uuid.UUID(user_uuid)
+    except ValueError as e:
+        return JsonResponse({"Error": str(e)}, status=404)
+
+    try:
+        api_metas = APIMeta.objects.filter(user_uuid=user_uuid).only(
+            'user_uuid',
+            'status',
+            'created'
+        ).order_by("-created")
+
+        if api_metas.exists():
+            scenarios = fetch_data_for_comparison(api_metas)
+            if 'scenarios' not in scenarios:
+                return JsonResponse({"Error": scenarios['error']}, content_type='application/json', status=404)
+        
+            final_df = process_scenarios(scenarios['scenarios'], ita_custom_table)
+            final_df.iloc[1:, 0] = [meta.run_uuid for meta in api_metas]
+
+            final_df_transpose = final_df.transpose()
+            final_df_transpose.columns = final_df_transpose.iloc[0]
+            final_df_transpose = final_df_transpose.drop(final_df_transpose.index[0])
+
+            output = io.BytesIO()
+            create_custom_table_excel(final_df_transpose, ita_custom_table, calculations, output)
+            output.seek(0)
+
+            filename = "comparison_table.xlsx"
+            response = HttpResponse(
+                output,
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = f'attachment; filename={filename}'
+
+            return response
+
+        else:
+            return JsonResponse({"Error": f"No scenarios found for user '{user_uuid}'"}, content_type='application/json', status=404)
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='comparison', user_uuid=user_uuid)
+        err.save_to_db()
+        return JsonResponse({"Error": str(err)}, status=404)
+
+# Configuration
+# Set up table needed along with REopt dictionaries to grab data 
+ita_custom_table = [
+    (lambda df: get_with_suffix(df, "outputs.PV.size_kw", ""), "PV Size (kW)"),
+    (lambda df: get_with_suffix(df, "outputs.Wind.size_kw", ""), "Wind Size (kW)"),
+    (lambda df: get_with_suffix(df, "outputs.CHP.size_kw", ""), "CHP Size (kW)"),
+    (lambda df: get_with_suffix(df, "outputs.PV.annual_energy_produced_kwh", ""), "PV Total Electricity Produced (kWh)"),
+    (lambda df: get_with_suffix(df, "outputs.PV.electric_to_grid_series_kw", ""), "PV Exported to Grid (kWh)"),
+    (lambda df: get_with_suffix(df, "outputs.PV.electric_to_load_series_kw", ""), "PV Serving Load (kWh)"),
+    (lambda df: get_with_suffix(df, "outputs.Wind.annual_energy_produced_kwh", ""), "Wind Total Electricity Produced (kWh)"),
+    (lambda df: get_with_suffix(df, "outputs.Wind.electric_to_grid_series_kw", ""), "Wind Exported to Grid (kWh)"),
+    (lambda df: get_with_suffix(df, "outputs.Wind.electric_to_load_series_kw", ""), "Wind Serving Load (kWh)"),
+    (lambda df: get_with_suffix(df, "outputs.CHP.annual_electric_production_kwh", ""), "CHP Total Electricity Produced (kWh)"),
+    (lambda df: get_with_suffix(df, "outputs.CHP.electric_to_grid_series_kw", ""), "CHP Exported to Grid (kWh)"),
+    (lambda df: get_with_suffix(df, "outputs.CHP.electric_to_load_series_kw", ""), "CHP Serving Load (kWh)"),
+    (lambda df: get_with_suffix(df, "outputs.CHP.thermal_to_load_series_mmbtu_per_hour", ""), "CHP Serving Thermal Load (MMBtu)"),
+    (lambda df: get_with_suffix(df, "outputs.ElectricUtility.annual_energy_supplied_kwh", ""), "Grid Purchased Electricity (kWh)"),
+    (lambda df: get_with_suffix(df, "outputs.ElectricUtility.electric_to_load_series_kw", ""), "Total Site Electricity Use (kWh)"),
+    (lambda df: get_with_suffix(df, "outputs.ElectricUtility.electric_to_load_series_kwsdf", ""), "Net Purchased Electricity Reduction (%)"),
+    (lambda df: get_with_suffix(df, "outputs.ElectricTariff.year_one_energy_cost_before_tax", ""), "Electricity Energy Cost ($)"),
+    (lambda df: get_with_suffix(df, "outputs.ElectricTariff.year_one_demand_cost_before_tax", ""), "Electricity Demand Cost ($)"),
+    (lambda df: get_with_suffix(df, "outputs.ElectricTariff.year_one_fixed_cost_before_tax", ""), "Utility Fixed Cost ($)"),
+    (lambda df: get_with_suffix(df, "outputs.ElectricTariff.year_one_bill_before_tax", ""), "Purchased Electricity Cost ($)"),
+    (lambda df: get_with_suffix(df, "outputs.ElectricTariff.year_one_export_benefit_before_tax", ""), "Electricity Export Benefit ($)"),
+    (lambda df: get_with_suffix(df, "outputs.ElectricTariff.lifecycle_energy_cost_after_tax", ""), "Net Electricity Cost ($)"),
+    (lambda df: get_with_suffix(df, "outputs.ElectricTariff.lifecycle_energy_cost_after_tax_bau", ""), "Electricity Cost Savings ($/year)"),
+    (lambda df: get_with_suffix(df, "outputs.Boiler.fuel_used_mmbtu", ""), "Boiler Fuel (MMBtu)"),
+    (lambda df: get_with_suffix(df, "outputs.CHP.annual_fuel_consumption_mmbtu", ""), "CHP Fuel (MMBtu)"),
+    (lambda df: get_with_suffix(df, "outputs.ElectricUtility.total_energy_supplied_kwh", ""), "Total Fuel (MMBtu)"),
+    (lambda df: get_with_suffix(df, "outputs.ElectricUtility.annual_energy_supplied_kwh_bau", ""), "Natural Gas Reduction (%)"),
+    (lambda df: get_with_suffix(df, "outputs.Boiler.annual_thermal_production_mmbtu", ""), "Boiler Thermal Production (MMBtu)"),
+    (lambda df: get_with_suffix(df, "outputs.CHP.annual_thermal_production_mmbtu", ""), "CHP Thermal Production (MMBtu)"),
+    (lambda df: get_with_suffix(df, "outputs.CHP.annual_thermal_production_mmbtu", ""), "Total Thermal Production (MMBtu)"),
+    (lambda df: get_with_suffix(df, "outputs.Site.heating_system_fuel_cost_us_dollars", ""), "Heating System Fuel Cost ($)"),
+    (lambda df: get_with_suffix(df, "outputs.CHP.year_one_fuel_cost_before_tax", ""), "CHP Fuel Cost ($)"),
+    (lambda df: get_with_suffix(df, "outputs.Site.total_fuel_cost_us_dollars", ""), "Total Fuel (NG) Cost ($)"),
+    (lambda df: get_with_suffix(df, "outputs.Site.total_utility_cost_us_dollars", ""), "Total Utility Cost ($)"),
+    (lambda df: get_with_suffix(df, "outputs.Financial.om_and_replacement_present_cost_after_tax", ""), "O&M Cost Increase ($)"),
+    (lambda df: get_with_suffix(df, "outputs.Financial.simple_payback_years", ""), "Payback Period (years)"),
+    (lambda df: get_with_suffix(df, "outputs.Financial.lifecycle_capital_costs", ""), "Gross Capital Cost ($)"),
+    (lambda df: get_with_suffix(df, "outputs.Financial.total_incentives_us_dollars", ""), "Federal Tax Incentive (30%)"),
+    (lambda df: get_with_suffix(df, "outputs.Financial.iac_grant_us_dollars", ""), "IAC Grant ($)"),
+    (lambda df: get_with_suffix(df, "outputs.Financial.total_incentives_value_us_dollars", ""), "Incentive Value ($)"),
+    (lambda df: get_with_suffix(df, "outputs.Financial.net_capital_cost_us_dollars", ""), "Net Capital Cost ($)"),
+    (lambda df: get_with_suffix(df, "outputs.Financial.annual_cost_savings_us_dollars", ""), "Annual Cost Savings ($)"),
+    (lambda df: get_with_suffix(df, "outputs.Financial.simple_payback_years", ""), "Simple Payback (years)"),
+    (lambda df: get_with_suffix(df, "outputs.Site.annual_emissions_tonnes_CO2", ""), "CO2 Emissions (tonnes)"),
+    (lambda df: get_with_suffix(df, "outputs.Site.lifecycle_emissions_tonnes_CO2", ""), "CO2 Reduction (tonnes)"),
+    (lambda df: get_with_suffix(df, "outputs.Site.lifecycle_emissions_tonnes_CO2_bau", ""), "CO2 (%) savings "),
+    (lambda df: get_with_suffix(df, "outputs.Financial.npv", ""), "NPV"),
+    (lambda df: get_with_suffix(df, "inputs.PV.federal_itc_fraction", ""), "PV Federal Tax Incentive (%)"),
+    (lambda df: get_with_suffix(df, "inputs.ElectricStorage.total_itc_fraction", ""), "Storage Federal Tax Incentive (%)")
+]
+
+# Configuration for calculations
+calculations = [
+    {
+        "name": "Total Site Electricity Use (kWh)",
+        "formula": lambda col, bau, headers: f'={col}{headers["PV Serving Load (kWh)"] + 2}+{col}{headers["Wind Serving Load (kWh)"] + 2}+{col}{headers["CHP Serving Load (kWh)"] + 2}+{col}{headers["Grid Purchased Electricity (kWh)"] + 2}'
+    },
+    {
+        "name": "Net Purchased Electricity Reduction (%)",
+        "formula": lambda col, bau, headers: f'=({bau["grid_value"]}-{col}{headers["Grid Purchased Electricity (kWh)"] + 2})/{bau["grid_value"]}'
+    },
+    {
+        "name": "Purchased Electricity Cost ($)",
+        "formula": lambda col, bau, headers: f'={col}{headers["Electricity Energy Cost ($)"] + 2}+{col}{headers["Electricity Demand Cost ($)"] + 2}+{col}{headers["Utility Fixed Cost ($)"] + 2}'
+    },
+    {
+        "name": "Net Electricity Cost ($)",
+        "formula": lambda col, bau, headers: f'={col}{headers["Purchased Electricity Cost ($)"] + 2}-{col}{headers["Electricity Export Benefit ($)"] + 2}'
+    },
+    {
+        "name": "Electricity Cost Savings ($/year)",
+        "formula": lambda col, bau, headers: f'={bau["net_cost_value"]}-{col}{headers["Net Electricity Cost ($)"] + 2}'
+    },
+    {
+        "name": "Total Fuel (MMBtu)",
+        "formula": lambda col, bau, headers: f'={col}{headers["Boiler Fuel (MMBtu)"] + 2}+{col}{headers["CHP Fuel (MMBtu)"] + 2}'
+    },
+    {
+        "name": "Natural Gas Reduction (%)",
+        "formula": lambda col, bau, headers: f'=({bau["ng_reduction_value"]}-{col}{headers["Total Fuel (MMBtu)"] + 2})/{bau["ng_reduction_value"]}'
+    },
+    {
+        "name": "Total Thermal Production (MMBtu)",
+        "formula": lambda col, bau, headers: f'={col}{headers["Boiler Thermal Production (MMBtu)"] + 2}+{col}{headers["CHP Thermal Production (MMBtu)"] + 2}'
+    },
+    {
+        "name": "Total Fuel (NG) Cost ($)",
+        "formula": lambda col, bau, headers: f'={col}{headers["Heating System Fuel Cost ($)"] + 2}+{col}{headers["CHP Fuel Cost ($)"] + 2}'
+    },
+    {
+        "name": "Total Utility Cost ($)",
+        "formula": lambda col, bau, headers: f'={col}{headers["Net Electricity Cost ($)"] + 2}+{col}{headers["Total Fuel (NG) Cost ($)"] + 2}'
+    },
+    {
+        "name": "Incentive Value ($)",
+        "formula": lambda col, bau, headers: f'={col}{headers["Federal Tax Incentive (30%)"] + 2}*{col}{headers["Gross Capital Cost ($)"] + 2}+{col}{headers["IAC Grant ($)"] + 2}'
+    },
+    {
+        "name": "Net Capital Cost ($)",
+        "formula": lambda col, bau, headers: f'={col}{headers["Gross Capital Cost ($)"] + 2}-{col}{headers["Incentive Value ($)"] + 2}'
+    },
+    {
+        "name": "Annual Cost Savings ($)",
+        "formula": lambda col, bau, headers: f'={bau["util_cost_value"]}-{col}{headers["Total Utility Cost ($)"] + 2}+{col}{headers["O&M Cost Increase ($)"] + 2}'
+    },
+    {
+        "name": "Simple Payback (years)",
+        "formula": lambda col, bau, headers: f'={col}{headers["Net Capital Cost ($)"] + 2}/{col}{headers["Annual Cost Savings ($)"] + 2}'
+    },
+    {
+        "name": "CO2 Reduction (tonnes)",
+        "formula": lambda col, bau, headers: f'={bau["co2_reduction_value"]}-{col}{headers["CO2 Emissions (tonnes)"] + 2}'
+    },
+    {
+        "name": "CO2 (%) savings ",
+        "formula": lambda col, bau, headers: f'=({bau["co2_reduction_value"]}-{col}{headers["CO2 Emissions (tonnes)"] + 2})/{bau["co2_reduction_value"]}'
+    }
+]
