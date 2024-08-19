@@ -1187,7 +1187,7 @@ def easiur_costs(request):
 #         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
 
 ###############################################################
-################ Custom Table #################################
+################ START Custom Table ###########################
 ###############################################################
 
 def generate_data_dict(config, df_gen, suffix):
@@ -1330,37 +1330,21 @@ def create_custom_table_excel(df, custom_table, calculations, output):
     workbook.close()
 
 # def create_custom_comparison_table(request, run_uuids):
-#     # Validate and parse run UUIDs from request body
-#     try:
-#         run_uuids = json.loads(request.body)['run_uuids']
-#     except (json.JSONDecodeError, KeyError):
-#         return JsonResponse({'Error': 'Invalid JSON format or missing run_uuids'}, status=400)
-
-#     if len(run_uuids) == 0:
-#         return JsonResponse({'Error': 'Must provide one or more run_uuids'}, status=400)
-
-#     # Validate each run_uuid
-#     for r_uuid in run_uuids:
-#         if not isinstance(r_uuid, str):
-#             return JsonResponse({'Error': f'Provided run_uuid {r_uuid} must be a string'}, status=400)
+#     if request.method == 'GET':
+#         print("Handling GET request for comparison table")  # Debug print
+#         # Ensure run_uuids is a list of valid UUIDs
 #         try:
-#             uuid.UUID(r_uuid)  # raises ValueError if not a valid UUID
-#         except ValueError:
-#             return JsonResponse({'Error': f'Invalid UUID format: {r_uuid}'}, status=400)
+#             run_uuids = [uuid.UUID(r_uuid) for r_uuid in run_uuids]
+#         except ValueError as e:
+#             return JsonResponse({"Error": f"Invalid UUID format: {str(e)}"}, status=400)
 
-#     try:
-#         # Create Querysets: Select all objects associated with the provided run_uuids
-#         api_metas = APIMeta.objects.filter(run_uuid__in=run_uuids).only(
-#             'run_uuid', 'status', 'created'
-#         ).order_by("-created")
-
-#         if api_metas.exists():
-#             # Access raw data for each run_uuid
+#         try:
+#             # Access raw data using the UUIDs
 #             scenarios = access_raw_data(run_uuids, request)
 #             if 'scenarios' not in scenarios:
 #                 return JsonResponse({'Error': 'Failed to fetch scenarios'}, content_type='application/json', status=404)
 
-#             # Process scenarios
+#             # Process the scenarios and generate the comparison table
 #             final_df = process_scenarios(scenarios['scenarios'], ita_custom_table)
 #             final_df.iloc[1:, 0] = run_uuids
 
@@ -1369,7 +1353,7 @@ def create_custom_table_excel(df, custom_table, calculations, output):
 #             final_df_transpose.columns = final_df_transpose.iloc[0]
 #             final_df_transpose = final_df_transpose.drop(final_df_transpose.index[0])
 
-#             # Create Excel file in memory
+#             # Create Excel file
 #             output = io.BytesIO()
 #             create_custom_table_excel(final_df_transpose, ita_custom_table, calculations, output)
 #             output.seek(0)
@@ -1383,61 +1367,66 @@ def create_custom_table_excel(df, custom_table, calculations, output):
 #             response['Content-Disposition'] = f'attachment; filename={filename}'
 
 #             return response
-#         else:
-#             return JsonResponse({"Error": "No scenarios found for the provided run UUIDs."}, content_type='application/json', status=404)
 
-#     except Exception as e:
-#         exc_type, exc_value, exc_traceback = sys.exc_info()
-#         err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table', run_uuids=run_uuids)
-#         err.save_to_db()
-#         return JsonResponse({"Error": str(err.message)}, status=500)
-    
+#         except Exception as e:
+#             exc_type, exc_value, exc_traceback = sys.exc_info()
+#             err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table', run_uuids=run_uuids)
+#             err.save_to_db()
+#             return JsonResponse({"Error": str(err.message)}, status=500)
+
+#     return JsonResponse({"Error": "Method not allowed"}, status=405)
+
 def create_custom_comparison_table(request, run_uuids):
-    # Split the comma-separated run_uuids into a list
-    run_ids_str = ';'.join(run_uuids)
+    if request.method == 'GET':
+        print(f"Handling GET request with run_uuids: {run_uuids}")
 
-    # Validate run UUIDs
-    for r_uuid in run_uuids:
+        # Convert the string of UUIDs back into a list
+        run_uuids = run_uuids.split(';')
+
+        # Validate that all run UUIDs are valid
+        for r_uuid in run_uuids:
+            try:
+                uuid.UUID(r_uuid)  # raises ValueError if not a valid UUID
+            except ValueError as e:
+                return JsonResponse({"Error": f"Invalid UUID format: {r_uuid}"}, status=400)
+
         try:
-            uuid.UUID(r_uuid)  # raises ValueError if not a valid UUID
-        except ValueError:
-            return JsonResponse({'Error': f'Invalid UUID format: {r_uuid}'}, status=400)
+            # Access raw data using the list of UUIDs
+            scenarios = access_raw_data(run_uuids, request)
+            if 'scenarios' not in scenarios:
+                return JsonResponse({'Error': 'Failed to fetch scenarios'}, content_type='application/json', status=404)
 
-    try:
-        # Access raw data
-        scenarios = access_raw_data(run_uuids, request)
-        if 'scenarios' not in scenarios:
-            return JsonResponse({'Error': 'Failed to fetch scenarios'}, content_type='application/json', status=404)
+            # Process scenarios
+            final_df = process_scenarios(scenarios['scenarios'], ita_custom_table)
+            final_df.iloc[1:, 0] = run_uuids
 
-        # Process scenarios
-        final_df = process_scenarios(scenarios['scenarios'], ita_custom_table)
-        final_df.iloc[1:, 0] = run_uuids
+            # Transpose and format DataFrame
+            final_df_transpose = final_df.transpose()
+            final_df_transpose.columns = final_df_transpose.iloc[0]
+            final_df_transpose = final_df_transpose.drop(final_df_transpose.index[0])
 
-        # Transpose and format DataFrame
-        final_df_transpose = final_df.transpose()
-        final_df_transpose.columns = final_df_transpose.iloc[0]
-        final_df_transpose = final_df_transpose.drop(final_df_transpose.index[0])
+            # Create Excel file
+            output = io.BytesIO()
+            create_custom_table_excel(final_df_transpose, ita_custom_table, calculations, output)
+            output.seek(0)
 
-        # Create Excel file
-        output = io.BytesIO()
-        create_custom_table_excel(final_df_transpose, ita_custom_table, calculations, output)
-        output.seek(0)
+            # Set up the HTTP response
+            filename = "comparison_table.xlsx"
+            response = HttpResponse(
+                output,
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = f'attachment; filename={filename}'
 
-        # Set up the HTTP response
-        filename = "comparison_table.xlsx"
-        response = HttpResponse(
-            output,
-            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
-        response['Content-Disposition'] = f'attachment; filename={filename}'
+            return response
 
-        return response
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table', run_uuids=run_uuids)
+            err.save_to_db()
+            return JsonResponse({"Error": str(err.message)}, status=500)
 
-    except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table', run_uuids=run_uuids)
-        err.save_to_db()
-        return JsonResponse({"Error": str(err.message)}, status=500)
+    return JsonResponse({"Error": "Method not allowed"}, status=405)
 
 # Configuration
 # Set up table needed along with REopt dictionaries to grab data 
@@ -1560,3 +1549,7 @@ calculations = [
         "formula": lambda col, bau, headers: f'=({bau["co2_reduction_value"]}-{col}{headers["CO2 Emissions (tonnes)"] + 2})/{bau["co2_reduction_value"]}'
     }
 ]
+
+###############################################################
+################ END Custom Table #############################
+###############################################################
