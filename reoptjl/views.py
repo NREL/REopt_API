@@ -1191,269 +1191,328 @@ def easiur_costs(request):
 ###############################################################
 
 def generate_data_dict(config, df_gen, suffix):
-    data_dict = defaultdict(list)
-    for var_key, col_name in config:
-        if callable(var_key):
-            val = var_key(df_gen)
-        else:
-            val = get_with_suffix(df_gen, var_key, suffix, "-")
-        data_dict[col_name].append(val)
-    return data_dict
+    try:
+        data_dict = defaultdict(list)
+        for var_key, col_name in config:
+            if callable(var_key):
+                val = var_key(df_gen)
+            else:
+                val = get_with_suffix(df_gen, var_key, suffix, "-")
+            data_dict[col_name].append(val)
+        return data_dict
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table')
+        err.save_to_db()
+        raise
 
 def get_REopt_data(data_f, scenario_name, config):
-    scenario_name_str = str(scenario_name)
-    suffix = "_bau" if re.search(r"(?i)\bBAU\b", scenario_name_str) else ""
-    
-    df_gen = flatten_dict(data_f)
-    data_dict = generate_data_dict(config, df_gen, suffix)
-    data_dict["Scenario"] = [scenario_name_str]
+    try:
+        scenario_name_str = str(scenario_name)
+        suffix = "_bau" if re.search(r"(?i)\bBAU\b", scenario_name_str) else ""
+        
+        df_gen = flatten_dict(data_f)
+        data_dict = generate_data_dict(config, df_gen, suffix)
+        data_dict["Scenario"] = [scenario_name_str]
 
-    col_order = ["Scenario"] + [col_name for _, col_name in config]
-    df_res = pd.DataFrame(data_dict)
-    df_res = df_res[col_order]
+        col_order = ["Scenario"] + [col_name for _, col_name in config]
+        df_res = pd.DataFrame(data_dict)
+        df_res = df_res[col_order]
 
-    return df_res
+        return df_res
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table')
+        err.save_to_db()
+        raise
+
 
 # def get_bau_values(mock_scenarios, config):
-#     bau_values = {col_name: None for _, col_name in config}
-#     for scenario in mock_scenarios:
-#         df_gen = flatten_dict(scenario)
-#         for var_key, col_name in config:
-#             try:
-#                 key = var_key.__code__.co_consts[1]
-#             except IndexError:
-#                 continue
+#     try:
+#         bau_values = {col_name: None for _, col_name in config}
 
-#             key_bau = f"{key}_bau"
-#             if key_bau in df_gen:
-#                 value = df_gen[key_bau]
-#                 if bau_values[col_name] is None:
-#                     bau_values[col_name] = value
-#                 elif bau_values[col_name] != value:
-#                     raise ValueError(f"Inconsistent BAU values for {col_name}. This should only be used for portfolio cases with the same Site, ElectricLoad, and ElectricTariff for energy consumption and energy costs.")
-#     return bau_values
+#         consistent_fields = {
+#             "full_data.inputs.Site.latitude": None,
+#             "full_data.inputs.Site.longitude": None,
+#             "full_data.inputs.ElectricLoad.doe_reference_name": None,
+#             "full_data.inputs.ElectricTariff.urdb_label": None
+#         }
 
+#         for scenario_index, scenario in enumerate(mock_scenarios):
+#             df_gen = flatten_dict(scenario)
+
+#             if scenario_index == 0:
+#                 for key in consistent_fields:
+#                     consistent_fields[key] = df_gen.get(key)
+
+#             else:
+#                 for key, reference_value in consistent_fields.items():
+#                     current_value = df_gen.get(key)
+#                     if current_value != reference_value:
+#                         raise ValueError(
+#                             f"Inconsistent scenario input values found across scenarios. "
+#                             f"Scenario {scenario_index + 1} has {current_value} "
+#                             f"while reference scenario has {reference_value}. "
+#                             "This should only be used for portfolio cases with the same Site, "
+#                             "ElectricLoad, and ElectricTariff for energy consumption and energy costs."
+#                         )
+
+#             for var_key, col_name in config:
+#                 try:
+#                     key = var_key.__code__.co_consts[1]
+#                 except IndexError:
+#                     continue
+
+#                 key_bau = f"{key}_bau"
+#                 if key_bau in df_gen:
+#                     value = df_gen[key_bau]
+#                     if bau_values[col_name] is None:
+#                         bau_values[col_name] = value
+#                     elif bau_values[col_name] != value:
+#                         raise ValueError(f"Inconsistent BAU values for {col_name}. This should only be used for portfolio cases with the same Site, ElectricLoad, and ElectricTariff for energy consumption and energy costs.")
+
+#         return bau_values
+#     except ValueError as e:
+#         raise
+#     except Exception as e:
+#         exc_type, exc_value, exc_traceback = sys.exc_info()
+#         err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table')
+#         err.save_to_db()
+#         raise
 
 def get_bau_values(mock_scenarios, config):
-    # Initialize bau_values for the config keys
-    bau_values = {col_name: None for _, col_name in config}
+    try:
+        bau_values = {col_name: None for _, col_name in config}
 
-    # Fields that should be consistent across all scenarios
-    consistent_fields = {
-        "full_data.inputs.Site.latitude": None,
-        "full_data.inputs.Site.longitude": None,
-        "full_data.inputs.ElectricLoad.doe_reference_name": None,
-        "full_data.inputs.ElectricTariff.urdb_label": None
-    }
+        # Assuming the first scenario has the BAU data
+        first_scenario = mock_scenarios[0]
+        df_gen = flatten_dict(first_scenario['full_data'])
 
-    # Iterate through all scenarios and flatten them
-    for scenario_index, scenario in enumerate(mock_scenarios):
-        df_gen = flatten_dict(scenario)
-
-        # On the first pass, store the reference values
-        if scenario_index == 0:
-            for key in consistent_fields:
-                consistent_fields[key] = df_gen.get(key)
-
-        # On subsequent passes, compare against the reference values
-        else:
-            for key, reference_value in consistent_fields.items():
-                current_value = df_gen.get(key)
-                # Compare with the reference value
-                if current_value != reference_value:
-                    raise ValueError(
-                        f"Inconsistent scenario input values found across scenarios. "
-                        f"Scenario {scenario_index + 1} has {current_value} "
-                        f"while reference scenario has {reference_value}. "
-                        "This should only be used for portfolio cases with the same Site, "
-                        "ElectricLoad, and ElectricTariff for energy consumption and energy costs."
-                    )
-
-        # Process the scenario with existing logic for BAU values
         for var_key, col_name in config:
-            try:
-                key = var_key.__code__.co_consts[1]
-            except IndexError:
-                continue
+            if callable(var_key):
+                # Extract the key being referenced in the lambda function
+                try:
+                    key = var_key.__code__.co_consts[1]
+                except IndexError:
+                    continue
+            else:
+                key = var_key
 
+            # Append the '_bau' suffix to match BAU values
             key_bau = f"{key}_bau"
-            if key_bau in df_gen:
-                value = df_gen[key_bau]
-                if bau_values[col_name] is None:
-                    bau_values[col_name] = value
-                elif bau_values[col_name] != value:
-                    raise ValueError(f"Inconsistent BAU values for {col_name}. This should only be used for portfolio cases with the same Site, ElectricLoad, and ElectricTariff for energy consumption and energy costs.")
+            value = df_gen.get(key_bau)
 
-    return bau_values
+            if value is not None:
+                bau_values[col_name] = value
+
+        return bau_values
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table')
+        err.save_to_db()
+        raise
 
 
 def access_raw_data(run_uuids, request):
-    full_summary_dict = {"scenarios": []}
-    for run_uuid in run_uuids:
-        scenario_data = {
-            "run_uuid": str(run_uuid),
-            "full_data": process_raw_data(request, run_uuid)
+    try:
+        full_summary_dict = {"scenarios": []}
+        
+        # Fetch UserProvidedMeta data for the relevant run_uuids
+        usermeta = UserProvidedMeta.objects.filter(meta__run_uuid__in=run_uuids).only(
+            'meta__run_uuid',
+            'description',
+            'address'
+        )
+
+        # Create a dictionary to map run_uuids to their associated meta data
+        meta_data_dict = {
+            um.meta.run_uuid: {
+                "description": um.description,
+                "address": um.address
+            }
+            for um in usermeta
         }
-        full_summary_dict["scenarios"].append(scenario_data)
-    return full_summary_dict
+
+        for run_uuid in run_uuids:
+            scenario_data = {
+                "run_uuid": str(run_uuid),
+                "full_data": process_raw_data(request, run_uuid),
+                "meta_data": meta_data_dict.get(run_uuid, {})
+            }
+            full_summary_dict["scenarios"].append(scenario_data)
+
+        return full_summary_dict
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table')
+        err.save_to_db()
+        raise
+
 
 def process_raw_data(request, run_uuid):
-    response = results(request, run_uuid)
-    if response.status_code == 200:
-        result_data = json.loads(response.content)
-        processed_data = sum_vectors(result_data)
-        return processed_data
-    else:
-        return {"error": f"Failed to fetch data for run_uuid {run_uuid}"}
+    try:
+        response = results(request, run_uuid)
+        if response.status_code == 200:
+            result_data = json.loads(response.content)
+            processed_data = sum_vectors(result_data)
+            return processed_data
+        else:
+            return {"error": f"Failed to fetch data for run_uuid {run_uuid}"}
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table')
+        err.save_to_db()
+        raise
 
 def process_scenarios(scenarios, reopt_data_config):
-    config = reopt_data_config
-    bau_values = get_bau_values(scenarios, config)
-    combined_df = pd.DataFrame()
-    for scenario in scenarios:
-        run_uuid = scenario['run_uuid']
-        df_result = get_REopt_data(scenario['full_data'], run_uuid, config)
-        df_result = df_result.set_index('Scenario').T
-        df_result.columns = [run_uuid]
-        combined_df = df_result if combined_df.empty else combined_df.join(df_result, how='outer')
+    try:
+        config = reopt_data_config
+        bau_values = get_bau_values(scenarios, config)
+        combined_df = pd.DataFrame()
 
-    bau_data = {key: [value] for key, value in bau_values.items()}
-    bau_data["Scenario"] = ["BAU"]
-    df_bau = pd.DataFrame(bau_data)
+        for scenario in scenarios:
+            run_uuid = scenario['run_uuid']
+            df_result = get_REopt_data(scenario['full_data'], run_uuid, config)
+            df_result = df_result.set_index('Scenario').T
+            df_result.columns = [run_uuid]
+            combined_df = df_result if combined_df.empty else combined_df.join(df_result, how='outer')
 
-    combined_df = pd.concat([df_bau, combined_df.T]).reset_index(drop=True)
-    combined_df = clean_data_dict(combined_df.to_dict(orient="list"))
-    combined_df = pd.DataFrame(combined_df)
-    combined_df = combined_df[["Scenario"] + [col for col in combined_df.columns if col != "Scenario"]]
+        # Adding BAU data as the first row in the DataFrame
+        bau_data = {key: [value] for key, value in bau_values.items()}
+        bau_data["Scenario"] = ["BAU"]
+        df_bau = pd.DataFrame(bau_data)
 
-    return combined_df
+        # Combine BAU data with scenario results
+        combined_df = pd.concat([df_bau, combined_df.T]).reset_index(drop=True)
+        combined_df = clean_data_dict(combined_df.to_dict(orient="list"))
+        combined_df = pd.DataFrame(combined_df)
+        combined_df = combined_df[["Scenario"] + [col for col in combined_df.columns if col != "Scenario"]]
+
+        return combined_df
+    except ValueError as e:
+        raise
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table')
+        err.save_to_db()
+        raise
 
 def create_custom_table_excel(df, custom_table, calculations, output):
-    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
-    worksheet = workbook.add_worksheet('Custom Table')
+    try:
+        workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+        worksheet = workbook.add_worksheet('Custom Table')
 
-    # Formats
-    data_format = workbook.add_format({'align': 'center', 'valign': 'center', 'border': 1})
-    formula_format = workbook.add_format({'bg_color': '#FECF86', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': 'red'})
-    error_format = workbook.add_format({'bg_color': '#FFC7CE', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': 'black'})  # For missing data
-    scenario_header_format = workbook.add_format({'bold': True, 'bg_color': '#0079C2', 'border': 1, 'align': 'center', 'font_color': 'white'})
-    variable_name_format = workbook.add_format({'bold': True, 'bg_color': '#DEE2E5', 'border': 1, 'align': 'left'})
+        data_format = workbook.add_format({'align': 'center', 'valign': 'center', 'border': 1})
+        formula_format = workbook.add_format({'bg_color': '#FECF86', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': 'red'})
+        error_format = workbook.add_format({'bg_color': '#FFC7CE', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': 'black'})  # For missing data
+        scenario_header_format = workbook.add_format({'bold': True, 'bg_color': '#0079C2', 'border': 1, 'align': 'center', 'font_color': 'white'})
+        variable_name_format = workbook.add_format({'bold': True, 'bg_color': '#DEE2E5', 'border': 1, 'align': 'left'})
 
-    # Add warning note
-    worksheet.write(1, len(df.columns) + 2, "Values in red are formulas. Do not input anything.", formula_format)
+        worksheet.write(1, len(df.columns) + 2, "Values in red are formulas. Do not input anything.", formula_format)
 
-    column_width = 35
-    for col_num in range(len(df.columns) + 3):
-        worksheet.set_column(col_num, col_num, column_width)
+        column_width = 35
+        for col_num in range(len(df.columns) + 3):
+            worksheet.set_column(col_num, col_num, column_width)
 
-    # Write headers
-    worksheet.write('A1', 'Scenario', scenario_header_format)
-    for col_num, header in enumerate(df.columns):
-        worksheet.write(0, col_num + 1, header, scenario_header_format)
-    
-    # Write variable names
-    for row_num, variable in enumerate(df.index):
-        worksheet.write(row_num + 1, 0, variable, variable_name_format)
+        worksheet.write('A1', 'Scenario', scenario_header_format)
+        for col_num, header in enumerate(df.columns):
+            worksheet.write(0, col_num + 1, header, scenario_header_format)
 
-    # Write data values
-    for row_num, row_data in enumerate(df.itertuples(index=False)):
-        for col_num, value in enumerate(row_data):
-            worksheet.write(row_num + 1, col_num + 1, "" if pd.isnull(value) or value == '-' else value, data_format)
+        for row_num, variable in enumerate(df.index):
+            worksheet.write(row_num + 1, 0, variable, variable_name_format)
 
-    headers = {header: idx for idx, header in enumerate(df.index)}
+        for row_num, row_data in enumerate(df.itertuples(index=False)):
+            for col_num, value in enumerate(row_data):
+                worksheet.write(row_num + 1, col_num + 1, "" if pd.isnull(value) or value == '-' else value, data_format)
 
-    # Define BAU cells
-    bau_cells = {
-        'grid_value': f'{colnum_string(2)}{headers["Grid Purchased Electricity (kWh)"] + 2}' if "Grid Purchased Electricity (kWh)" in headers else None,
-        'net_cost_value': f'{colnum_string(2)}{headers["Net Electricity Cost ($)"] + 2}' if "Net Electricity Cost ($)" in headers else None,
-        'ng_reduction_value': f'{colnum_string(2)}{headers["Total Fuel (MMBtu)"] + 2}' if "Total Fuel (MMBtu)" in headers else None,
-        'util_cost_value': f'{colnum_string(2)}{headers["Total Utility Cost ($)"] + 2}' if "Total Utility Cost ($)" in headers else None,
-        'co2_reduction_value': f'{colnum_string(2)}{headers["CO2 Emissions (tonnes)"] + 2}' if "CO2 Emissions (tonnes)" in headers else None
-    }
+        headers = {header: idx for idx, header in enumerate(df.index)}
 
-    relevant_columns = [col_name for _, col_name in custom_table]
-    relevant_calculations = [calc for calc in calculations if calc["name"] in relevant_columns]
+        bau_cells = {
+            'grid_value': f'{colnum_string(2)}{headers["Grid Purchased Electricity (kWh)"] + 2}' if "Grid Purchased Electricity (kWh)" in headers else None,
+            'net_cost_value': f'{colnum_string(2)}{headers["Net Electricity Cost ($)"] + 2}' if "Net Electricity Cost ($)" in headers else None,
+            'ng_reduction_value': f'{colnum_string(2)}{headers["Total Fuel (MMBtu)"] + 2}' if "Total Fuel (MMBtu)" in headers else None,
+            'util_cost_value': f'{colnum_string(2)}{headers["Total Utility Cost ($)"] + 2}' if "Total Utility Cost ($)" in headers else None,
+            'co2_reduction_value': f'{colnum_string(2)}{headers["CO2 Emissions (tonnes)"] + 2}' if "CO2 Emissions (tonnes)" in headers else None
+        }
 
-    logged_messages = set()  # Set to track unique error messages
-    missing_entries = []
+        relevant_columns = [col_name for _, col_name in custom_table]
+        relevant_calculations = [calc for calc in calculations if calc["name"] in relevant_columns]
 
-    for col in range(2, len(df.columns) + 2):
-        col_letter = colnum_string(col)
-        for calc in relevant_calculations:
-            try:
-                # Check if all required keys are present in headers or bau_cells
-                if all(key in headers or key in bau_cells for key in calc["formula"].__code__.co_names):
-                    row_idx = headers.get(calc["name"])
-                    if row_idx is not None:
-                        formula = calc["formula"](col_letter, bau_cells, headers)
-                        worksheet.write_formula(row_idx + 1, col-1, formula, formula_format)
-                    else:
-                        missing_entries.append(calc["name"])
-                else:
-                    # Identify missing keys and set the cell to "MISSING DATA"
-                    missing_keys = [key for key in calc["formula"].__code__.co_names if key not in headers and key not in bau_cells]
-                    if missing_keys:
+        logged_messages = set()
+        missing_entries = []
+
+        for col in range(2, len(df.columns) + 2):
+            col_letter = colnum_string(col)
+            for calc in relevant_calculations:
+                try:
+                    if all(key in headers or key in bau_cells for key in calc["formula"].__code__.co_names):
                         row_idx = headers.get(calc["name"])
                         if row_idx is not None:
-                            worksheet.write(row_idx + 1, col - 1, "MISSING DATA", error_format)
-                        message = f"Cannot calculate '{calc['name']}' because the required fields are missing: {', '.join(missing_keys)} in the Custom Table configuration. Update the Custom Table to include {missing_keys}. Writing 'MISSING DATA' instead."
-                        if message not in logged_messages:
-                            print(message)
-                            logged_messages.add(message)
-                        missing_entries.append(calc["name"])
-            except KeyError as e:
-                missing_field = str(e)
-                message = f"Cannot calculate '{calc['name']}' because the field '{missing_field}' is missing in the Custom Table configuration. Update the Custom Table to include {missing_field} . Writing 'MISSING DATA' instead."
-                if message not in logged_messages:
-                    print(message)
-                    logged_messages.add(message)
-                row_idx = headers.get(calc["name"])
-                if row_idx is not None:
-                    worksheet.write(row_idx + 1, col - 1, "MISSING DATA", error_format)
-                missing_entries.append(calc["name"])
+                            formula = calc["formula"](col_letter, bau_cells, headers)
+                            worksheet.write_formula(row_idx + 1, col-1, formula, formula_format)
+                        else:
+                            missing_entries.append(calc["name"])
+                    else:
+                        missing_keys = [key for key in calc["formula"].__code__.co_names if key not in headers and key not in bau_cells]
+                        if missing_keys:
+                            row_idx = headers.get(calc["name"])
+                            if row_idx is not None:
+                                worksheet.write(row_idx + 1, col - 1, "MISSING DATA", error_format)
+                            message = f"Cannot calculate '{calc['name']}' because the required fields are missing: {', '.join(missing_keys)} in the Custom Table configuration. Update the Custom Table to include {missing_keys}. Writing 'MISSING DATA' instead."
+                            if message not in logged_messages:
+                                print(message)
+                                logged_messages.add(message)
+                            missing_entries.append(calc["name"])
+                except KeyError as e:
+                    missing_field = str(e)
+                    message = f"Cannot calculate '{calc['name']}' because the field '{missing_field}' is missing in the Custom Table configuration. Update the Custom Table to include {missing_field}. Writing 'MISSING DATA' instead."
+                    if message not in logged_messages:
+                        print(message)
+                        logged_messages.add(message)
+                    row_idx = headers.get(calc["name"])
+                    if row_idx is not None:
+                        worksheet.write(row_idx + 1, col - 1, "MISSING DATA", error_format)
+                    missing_entries.append(calc["name"])
 
-    if missing_entries:
-        print(f"Missing entries in the input table: {', '.join(set(missing_entries))}. Please update the configuration if necessary.")
+        if missing_entries:
+            print(f"Missing entries in the input table: {', '.join(set(missing_entries))}. Please update the configuration if necessary.")
 
-    workbook.close()
+        workbook.close()
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table')
+        err.save_to_db()
+        raise
 
 def create_custom_comparison_table(request, run_uuids):
     if request.method == 'GET':
-        print(f"Handling GET request with run_uuids: {run_uuids}")
-
-        # Convert the string of UUIDs back into a list
-        run_uuids = run_uuids.split(';')
-
-        #### Selected Table
-        target_custom_table = ita_custom_table
-        # Validate that all run UUIDs are valid
-        for r_uuid in run_uuids:
-            try:
-                uuid.UUID(r_uuid)  # raises ValueError if not a valid UUID
-            except ValueError as e:
-                return JsonResponse({"Error": f"Invalid UUID format: {r_uuid}"}, status=400)
-
         try:
-            # Access raw data using the list of UUIDs
+            print(f"Handling GET request with run_uuids: {run_uuids}")
+
+            run_uuids = run_uuids.split(';')
+            target_custom_table = ita_custom_table
+
+            for r_uuid in run_uuids:
+                try:
+                    uuid.UUID(r_uuid)
+                except ValueError as e:
+                    return JsonResponse({"Error": f"Invalid UUID format: {r_uuid}"}, status=400)
+
             scenarios = access_raw_data(run_uuids, request)
             if 'scenarios' not in scenarios:
                 return JsonResponse({'Error': 'Failed to fetch scenarios'}, content_type='application/json', status=404)
 
-            # Process scenarios
             final_df = process_scenarios(scenarios['scenarios'], target_custom_table)
             final_df.iloc[1:, 0] = run_uuids
 
-            # Transpose and format DataFrame
             final_df_transpose = final_df.transpose()
             final_df_transpose.columns = final_df_transpose.iloc[0]
             final_df_transpose = final_df_transpose.drop(final_df_transpose.index[0])
 
-            # Create Excel file
             output = io.BytesIO()
             create_custom_table_excel(final_df_transpose, target_custom_table, calculations, output)
             output.seek(0)
 
-            # Set up the HTTP response
             filename = "comparison_table.xlsx"
             response = HttpResponse(
                 output,
@@ -1471,6 +1530,7 @@ def create_custom_comparison_table(request, run_uuids):
 
     return JsonResponse({"Error": "Method not allowed"}, status=405)
 
+
 # Configuration
 # Set up table needed along with REopt dictionaries to grab data 
 
@@ -1482,11 +1542,13 @@ other_custom_table = [
     (lambda df: get_with_suffix(df, "outputs.PV.electric_to_grid_series_kw", ""), "PV Exported to Grid (kWh)"),
     (lambda df: get_with_suffix(df, "outputs.PV.electric_to_load_series_kw", ""), "PV Serving Load (kWh)"),
     (lambda df: get_with_suffix(df, "outputs.Financial.lifecycle_capital_costs", ""), "Gross Capital Cost ($)"),
+    (lambda df: get_with_suffix(df, "outputs.ElectricTariff.year_one_energy_cost_before_tax", ""), "Electricity Energy Cost ($)"),
+    (lambda df: get_with_suffix(df, "outputs.ElectricTariff.year_one_demand_cost_before_tax", ""), "Electricity Demand Cost ($)"),
+    (lambda df: get_with_suffix(df, "outputs.ElectricTariff.year_one_fixed_cost_before_tax", ""), "Utility Fixed Cost ($)"),
     (lambda df: get_with_suffix(df, "outputs.Financial.total_incentives_us_dollars", ""), "Federal Tax Incentive (30%)"),
     (lambda df: get_with_suffix(df, "outputs.Financial.iac_grant_us_dollars", ""), "IAC Grant ($)"),
     (lambda df: get_with_suffix(df, "outputs.Financial.total_incentives_value_us_dollars", ""), "Incentive Value ($)"),
     (lambda df: get_with_suffix(df, "outputs.Financial.net_capital_cost_us_dollars", ""), "Net Capital Cost ($)"),
-    (lambda df: get_with_suffix(df, "outputs.Site.lifecycle_emissions_tonnes_CO2_bau", ""), "CO2 (%) savings "),
     (lambda df: get_with_suffix(df, "outputs.Financial.npv", ""), "NPV"),
     (lambda df: get_with_suffix(df, "inputs.PV.federal_itc_fraction", ""), "PV Federal Tax Incentive (%)"),
     (lambda df: get_with_suffix(df, "inputs.ElectricStorage.total_itc_fraction", ""), "Storage Federal Tax Incentive (%)")
