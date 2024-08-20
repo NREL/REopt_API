@@ -407,8 +407,13 @@ def chp_defaults(request):
         "max_electric_load_kw": request.GET.get("max_electric_load_kw"),
         "is_electric_only": request.GET.get("is_electric_only")
     }
-    if (request.GET.get("size_class")):
-        inputs["size_class"] = int(request.GET.get("size_class"))
+
+    if request.GET.get("size_class"):
+        inputs["size_class"] = int(request.GET.get("size_class"))  # Not sure if this is necessary because we convert to int in http.jl
+
+    if request.GET.get("thermal_efficiency"):
+        inputs["thermal_efficiency"] = request.GET.get("thermal_efficiency")  # Conversion to correct type happens in http.jl
+
     try:
         julia_host = os.environ.get('JULIA_HOST', "julia")
         http_jl_response = requests.get("http://" + julia_host + ":8081/chp_defaults/", json=inputs)

@@ -921,7 +921,7 @@ git-tree-sha1 = "0edd0826a69c8b3e1332ddf9192c78741fb64477"
 repo-rev = "add-ashp"
 repo-url = "https://github.com/NREL/REopt.jl.git"
 uuid = "d36ad4e8-d74a-4f7a-ace1-eaea049febf6"
-version = "0.47.1"
+version = "0.47.2"
 
 [[deps.Random]]
 deps = ["SHA"]

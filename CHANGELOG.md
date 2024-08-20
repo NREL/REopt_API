@@ -26,7 +26,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop 2024-07-02
+## Develop 2024-08-20
 ### Major Updates
 #### Added
 - Added new model **ElectricHeaterInputs**
@@ -36,6 +36,19 @@ Classify the change according to the following categories:
 - Added new model **ASHPSpaceHeaterInputs**
 - Added new model **ASHPSpaceHeaterOutputs**
 
+## v3.9.3
+### Minor Updates
+#### Added
+- `/erp/inputs` endpoint (calls `erp_help()`, same as `/erp/help`)
+- `/erp/outputs` endpoint that GETs the ERP output field info (calls `erp_outputs()`)
+#### Changed
+- Set **reopt_version** in **APIMeta** and **ERPMeta** programatically based on actual REopt.jl package version in Julia environment instead of hardcoded so doesn't need to be updated by hand
+
+## v3.9.2
+#### Added
+- Added attribute `thermal_efficiency` to the arguments of http endpoint `chp_defaults`
+#### Fixed
+- See fixes and changes here: https://github.com/NREL/REopt.jl/releases/tag/v0.47.2
 
 ## v3.9.1
 ### Minor Updates
