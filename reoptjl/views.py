@@ -1428,11 +1428,71 @@ def create_custom_table_excel(df, custom_table, calculations, output):
         err.save_to_db()
         raise
 
+# def create_custom_comparison_table(request):
+#     if request.method == 'GET':
+#         try:
+#             # Log the entire request GET parameters
+#             print(f"GET parameters: {request.GET}")
+
+#             # Manually collect the run_uuid values by iterating over the keys
+#             run_uuids = []
+#             for key in request.GET.keys():
+#                 if key.startswith('run_uuid['):
+#                     run_uuids.append(request.GET[key])
+
+#             print(f"Handling GET request with run_uuids: {run_uuids}")
+
+#             if not run_uuids:
+#                 return JsonResponse({"Error": "No run_uuids provided"}, status=400)
+
+#             # Validate each UUID
+#             for r_uuid in run_uuids:
+#                 try:
+#                     uuid.UUID(r_uuid)
+#                 except ValueError as e:
+#                     return JsonResponse({"Error": f"Invalid UUID format: {r_uuid}"}, status=400)
+
+#             target_custom_table = ita_custom_table
+
+#             # Process scenarios and generate the custom table
+#             scenarios = access_raw_data(run_uuids, request)
+#             if 'scenarios' not in scenarios or not scenarios['scenarios']:
+#                 return JsonResponse({'Error': 'Failed to fetch scenarios'}, content_type='application/json', status=404)
+
+#             final_df = process_scenarios(scenarios['scenarios'], target_custom_table)
+#             final_df.iloc[1:, 0] = run_uuids
+
+#             final_df_transpose = final_df.transpose()
+#             final_df_transpose.columns = final_df_transpose.iloc[0]
+#             final_df_transpose = final_df_transpose.drop(final_df_transpose.index[0])
+
+#             # Create and send the Excel file
+#             output = io.BytesIO()
+#             create_custom_table_excel(final_df_transpose, target_custom_table, calculations, output)
+#             output.seek(0)
+
+#             filename = "comparison_table.xlsx"
+#             response = HttpResponse(
+#                 output,
+#                 content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+#             )
+#             response['Content-Disposition'] = f'attachment; filename={filename}'
+
+#             return response
+
+#         except Exception as e:
+#             exc_type, exc_value, exc_traceback = sys.exc_info()
+#             err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table')
+#             err.save_to_db()
+#             return JsonResponse({"Error": str(err.message)}, status=500)
+
+#     return JsonResponse({"Error": "Method not allowed"}, status=405)
+
 def create_custom_comparison_table(request):
     if request.method == 'GET':
         try:
             # Log the entire request GET parameters
-            print(f"GET parameters: {request.GET}")
+            log.debug(f"GET parameters: {request.GET}")
 
             # Manually collect the run_uuid values by iterating over the keys
             run_uuids = []
@@ -1440,7 +1500,7 @@ def create_custom_comparison_table(request):
                 if key.startswith('run_uuid['):
                     run_uuids.append(request.GET[key])
 
-            print(f"Handling GET request with run_uuids: {run_uuids}")
+            log.debug(f"Handling GET request with run_uuids: {run_uuids}")
 
             if not run_uuids:
                 return JsonResponse({"Error": "No run_uuids provided"}, status=400)
@@ -1450,6 +1510,7 @@ def create_custom_comparison_table(request):
                 try:
                     uuid.UUID(r_uuid)
                 except ValueError as e:
+                    log.debug(f"Invalid UUID format: {r_uuid}")
                     return JsonResponse({"Error": f"Invalid UUID format: {r_uuid}"}, status=400)
 
             target_custom_table = ita_custom_table
@@ -1457,6 +1518,7 @@ def create_custom_comparison_table(request):
             # Process scenarios and generate the custom table
             scenarios = access_raw_data(run_uuids, request)
             if 'scenarios' not in scenarios or not scenarios['scenarios']:
+                log.debug("Failed to fetch scenarios")
                 return JsonResponse({'Error': 'Failed to fetch scenarios'}, content_type='application/json', status=404)
 
             final_df = process_scenarios(scenarios['scenarios'], target_custom_table)
@@ -1480,13 +1542,19 @@ def create_custom_comparison_table(request):
 
             return response
 
-        except Exception as e:
+        except ValueError as e:
+            log.debug(f"ValueError: {str(e.args[0])}")
+            return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+        except Exception:
             exc_type, exc_value, exc_traceback = sys.exc_info()
+            log.debug(f"exc_type: {exc_type}; exc_value: {exc_value}; exc_traceback: {tb.format_tb(exc_traceback)}")
             err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table')
             err.save_to_db()
             return JsonResponse({"Error": str(err.message)}, status=500)
 
     return JsonResponse({"Error": "Method not allowed"}, status=405)
+
 
 # Configuration
 # Set up table needed along with REopt dictionaries to grab data 
