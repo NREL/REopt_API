@@ -1226,60 +1226,6 @@ def get_REopt_data(data_f, scenario_name, config):
         err.save_to_db()
         raise
 
-
-# def get_bau_values(mock_scenarios, config):
-#     try:
-#         bau_values = {col_name: None for _, col_name in config}
-
-#         consistent_fields = {
-#             "full_data.inputs.Site.latitude": None,
-#             "full_data.inputs.Site.longitude": None,
-#             "full_data.inputs.ElectricLoad.doe_reference_name": None,
-#             "full_data.inputs.ElectricTariff.urdb_label": None
-#         }
-
-#         for scenario_index, scenario in enumerate(mock_scenarios):
-#             df_gen = flatten_dict(scenario)
-
-#             if scenario_index == 0:
-#                 for key in consistent_fields:
-#                     consistent_fields[key] = df_gen.get(key)
-
-#             else:
-#                 for key, reference_value in consistent_fields.items():
-#                     current_value = df_gen.get(key)
-#                     if current_value != reference_value:
-#                         raise ValueError(
-#                             f"Inconsistent scenario input values found across scenarios. "
-#                             f"Scenario {scenario_index + 1} has {current_value} "
-#                             f"while reference scenario has {reference_value}. "
-#                             "This should only be used for portfolio cases with the same Site, "
-#                             "ElectricLoad, and ElectricTariff for energy consumption and energy costs."
-#                         )
-
-#             for var_key, col_name in config:
-#                 try:
-#                     key = var_key.__code__.co_consts[1]
-#                 except IndexError:
-#                     continue
-
-#                 key_bau = f"{key}_bau"
-#                 if key_bau in df_gen:
-#                     value = df_gen[key_bau]
-#                     if bau_values[col_name] is None:
-#                         bau_values[col_name] = value
-#                     elif bau_values[col_name] != value:
-#                         raise ValueError(f"Inconsistent BAU values for {col_name}. This should only be used for portfolio cases with the same Site, ElectricLoad, and ElectricTariff for energy consumption and energy costs.")
-
-#         return bau_values
-#     except ValueError as e:
-#         raise
-#     except Exception as e:
-#         exc_type, exc_value, exc_traceback = sys.exc_info()
-#         err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table')
-#         err.save_to_db()
-#         raise
-
 def get_bau_values(mock_scenarios, config):
     try:
         bau_values = {col_name: None for _, col_name in config}
@@ -1311,7 +1257,6 @@ def get_bau_values(mock_scenarios, config):
         err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table')
         err.save_to_db()
         raise
-
 
 def access_raw_data(run_uuids, request):
     try:
@@ -1347,7 +1292,6 @@ def access_raw_data(run_uuids, request):
         err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table')
         err.save_to_db()
         raise
-
 
 def process_raw_data(request, run_uuid):
     try:
@@ -1484,22 +1428,85 @@ def create_custom_table_excel(df, custom_table, calculations, output):
         err.save_to_db()
         raise
 
-def create_custom_comparison_table(request, run_uuids):
+# def create_custom_comparison_table(request):
+#     if request.method == 'GET':
+#         try:
+#             # Extract the run_uuid[] values from the query parameters
+#             run_uuids = request.GET.getlist('run_uuid[]')
+#             print(f"Handling GET request with run_uuids: {run_uuids}")
+
+#             # Validate each UUID
+#             for r_uuid in run_uuids:
+#                 try:
+#                     uuid.UUID(r_uuid)
+#                 except ValueError as e:
+#                     return JsonResponse({"Error": f"Invalid UUID format: {r_uuid}"}, status=400)
+            
+#             target_custom_table = other_custom_table
+
+#             # Process scenarios and generate the custom table
+#             scenarios = access_raw_data(run_uuids, request)
+#             if 'scenarios' not in scenarios:
+#                 return JsonResponse({'Error': 'Failed to fetch scenarios'}, content_type='application/json', status=404)
+
+#             final_df = process_scenarios(scenarios['scenarios'], target_custom_table)
+#             final_df.iloc[1:, 0] = run_uuids
+
+#             final_df_transpose = final_df.transpose()
+#             final_df_transpose.columns = final_df_transpose.iloc[0]
+#             final_df_transpose = final_df_transpose.drop(final_df_transpose.index[0])
+
+#             # Create and send the Excel file
+#             output = io.BytesIO()
+#             create_custom_table_excel(final_df_transpose, target_custom_table, calculations, output)
+#             output.seek(0)
+
+#             filename = "comparison_table.xlsx"
+#             response = HttpResponse(
+#                 output,
+#                 content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+#             )
+#             response['Content-Disposition'] = f'attachment; filename={filename}'
+
+#             return response
+
+#         except Exception as e:
+#             exc_type, exc_value, exc_traceback = sys.exc_info()
+#             err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table', run_uuids=run_uuids)
+#             err.save_to_db()
+#             return JsonResponse({"Error": str(err.message)}, status=500)
+
+#     return JsonResponse({"Error": "Method not allowed"}, status=405)
+
+def create_custom_comparison_table(request):
     if request.method == 'GET':
         try:
+            # Log the entire request GET parameters
+            print(f"GET parameters: {request.GET}")
+
+            # Manually collect the run_uuid values by iterating over the keys
+            run_uuids = []
+            for key in request.GET.keys():
+                if key.startswith('run_uuid['):
+                    run_uuids.append(request.GET[key])
+
             print(f"Handling GET request with run_uuids: {run_uuids}")
 
-            run_uuids = run_uuids.split(';')
-            target_custom_table = ita_custom_table
+            if not run_uuids:
+                return JsonResponse({"Error": "No run_uuids provided"}, status=400)
 
+            # Validate each UUID
             for r_uuid in run_uuids:
                 try:
                     uuid.UUID(r_uuid)
                 except ValueError as e:
                     return JsonResponse({"Error": f"Invalid UUID format: {r_uuid}"}, status=400)
 
+            target_custom_table = other_custom_table
+
+            # Process scenarios and generate the custom table
             scenarios = access_raw_data(run_uuids, request)
-            if 'scenarios' not in scenarios:
+            if 'scenarios' not in scenarios or not scenarios['scenarios']:
                 return JsonResponse({'Error': 'Failed to fetch scenarios'}, content_type='application/json', status=404)
 
             final_df = process_scenarios(scenarios['scenarios'], target_custom_table)
@@ -1509,6 +1516,7 @@ def create_custom_comparison_table(request, run_uuids):
             final_df_transpose.columns = final_df_transpose.iloc[0]
             final_df_transpose = final_df_transpose.drop(final_df_transpose.index[0])
 
+            # Create and send the Excel file
             output = io.BytesIO()
             create_custom_table_excel(final_df_transpose, target_custom_table, calculations, output)
             output.seek(0)
@@ -1524,7 +1532,7 @@ def create_custom_comparison_table(request, run_uuids):
 
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table', run_uuids=run_uuids)
+            err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table')
             err.save_to_db()
             return JsonResponse({"Error": str(err.message)}, status=500)
 

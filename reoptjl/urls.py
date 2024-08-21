@@ -1,19 +1,7 @@
 # REopt®, Copyright (c) Alliance for Sustainable Energy, LLC. See also https://github.com/NREL/REopt_API/blob/master/LICENSE.
 from . import views
 from reo import views as reoviews
-from django.urls import register_converter, re_path
-
-class UUIDListConverter:
-    regex = r'([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(;([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}))*'
-
-    def to_python(self, value):
-        return value.split(';')
-
-    def to_url(self, value):
-        return ';'.join(value)
-
-# Register the custom converter
-register_converter(UUIDListConverter, 'uuidlist')
+from django.urls import re_path
 
 urlpatterns = [
     re_path(r'^job/(?P<run_uuid>[0-9a-f-]+)/results/?$', views.results),
@@ -34,5 +22,5 @@ urlpatterns = [
     re_path(r'^invalid_urdb/?$', reoviews.invalid_urdb),
     re_path(r'^schedule_stats/?$', reoviews.schedule_stats),
     re_path(r'^get_existing_chiller_default_cop/?$', views.get_existing_chiller_default_cop),
-    re_path(r'^job/comparison_table/(?P<run_uuids>[0-9a-f\-;]+)/$', views.create_custom_comparison_table),
+    re_path(r'^job/comparison_table/?$', views.create_custom_comparison_table),
 ]
