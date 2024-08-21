@@ -1428,56 +1428,6 @@ def create_custom_table_excel(df, custom_table, calculations, output):
         err.save_to_db()
         raise
 
-# def create_custom_comparison_table(request):
-#     if request.method == 'GET':
-#         try:
-#             # Extract the run_uuid[] values from the query parameters
-#             run_uuids = request.GET.getlist('run_uuid[]')
-#             print(f"Handling GET request with run_uuids: {run_uuids}")
-
-#             # Validate each UUID
-#             for r_uuid in run_uuids:
-#                 try:
-#                     uuid.UUID(r_uuid)
-#                 except ValueError as e:
-#                     return JsonResponse({"Error": f"Invalid UUID format: {r_uuid}"}, status=400)
-            
-#             target_custom_table = other_custom_table
-
-#             # Process scenarios and generate the custom table
-#             scenarios = access_raw_data(run_uuids, request)
-#             if 'scenarios' not in scenarios:
-#                 return JsonResponse({'Error': 'Failed to fetch scenarios'}, content_type='application/json', status=404)
-
-#             final_df = process_scenarios(scenarios['scenarios'], target_custom_table)
-#             final_df.iloc[1:, 0] = run_uuids
-
-#             final_df_transpose = final_df.transpose()
-#             final_df_transpose.columns = final_df_transpose.iloc[0]
-#             final_df_transpose = final_df_transpose.drop(final_df_transpose.index[0])
-
-#             # Create and send the Excel file
-#             output = io.BytesIO()
-#             create_custom_table_excel(final_df_transpose, target_custom_table, calculations, output)
-#             output.seek(0)
-
-#             filename = "comparison_table.xlsx"
-#             response = HttpResponse(
-#                 output,
-#                 content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-#             )
-#             response['Content-Disposition'] = f'attachment; filename={filename}'
-
-#             return response
-
-#         except Exception as e:
-#             exc_type, exc_value, exc_traceback = sys.exc_info()
-#             err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table', run_uuids=run_uuids)
-#             err.save_to_db()
-#             return JsonResponse({"Error": str(err.message)}, status=500)
-
-#     return JsonResponse({"Error": "Method not allowed"}, status=405)
-
 def create_custom_comparison_table(request):
     if request.method == 'GET':
         try:
@@ -1502,7 +1452,7 @@ def create_custom_comparison_table(request):
                 except ValueError as e:
                     return JsonResponse({"Error": f"Invalid UUID format: {r_uuid}"}, status=400)
 
-            target_custom_table = other_custom_table
+            target_custom_table = ita_custom_table
 
             # Process scenarios and generate the custom table
             scenarios = access_raw_data(run_uuids, request)
@@ -1537,7 +1487,6 @@ def create_custom_comparison_table(request):
             return JsonResponse({"Error": str(err.message)}, status=500)
 
     return JsonResponse({"Error": "Method not allowed"}, status=405)
-
 
 # Configuration
 # Set up table needed along with REopt dictionaries to grab data 
