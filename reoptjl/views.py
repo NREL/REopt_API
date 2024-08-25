@@ -662,7 +662,7 @@ def summary_by_runuuids(request):
             'created'
         ).order_by("-created")
 
-        if len(scenarios) > 0:
+        if len(scenarios) > 0: # this should be either 0 or 1 as there are no duplicate run_uuids
             summary_dict = queryset_for_summary(scenarios, summary_dict)
 
             # Create eventual response dictionary
@@ -675,6 +675,59 @@ def summary_by_runuuids(request):
             return_dict['scenarios'] = scenario_summaries
 
             response = JsonResponse(return_dict, status=200, safe=False)
+            return response
+        else:
+            response = JsonResponse({"Error": "No scenarios found for run_uuids '{}'".format(run_uuids)}, content_type='application/json', status=404)
+            return response
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary_by_runuuids', run_uuids=run_uuids)
+        err.save_to_db()
+        return JsonResponse({"Error": err.message}, status=404)
+
+def link_run_uuids_to_portfolio_uuid(request):
+
+    request_body = json.loads(request.body)
+    run_uuids = request_body['run_uuids']
+    por_uuids = request_body['portfolio_uuids']
+
+    if len(run_uuids) != len(por_uuids):
+        return JsonResponse({'Error': 'Must provide one or more run_uuids and the same number of portfolio_uuids'}, status=400)
+
+    # Validate that all UUIDs are valid.
+    for r_uuid in run_uuids+por_uuids:
+
+        if type(r_uuid) != str:
+            return JsonResponse({'Error': 'Provided uuid type error, must be string. ' + str(r_uuid)}, status=400)
+        
+        try:
+            uuid.UUID(r_uuid)  # raises ValueError if not valid uuid
+
+        except ValueError as e:
+            if e.args[0] == "badly formed hexadecimal UUID string":
+                return JsonResponse({"Error": str(e.message)}, status=404)
+            else:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary_by_runuuids', run_uuids=run_uuids)
+                err.save_to_db()
+                return JsonResponse({"Error": str(err.message)}, status=404)
+    
+    try:
+        
+        for r_uuid,p_uuid in zip(run_uuids, por_uuids):
+        
+            # Create Querysets: Select all objects associate with a user_uuid, Order by `created` column
+            scenario = APIMeta.objects.filter(run_uuid=r_uuid).only(
+                'run_uuid',
+                'portfolio_uuid'
+            )
+
+            for s in scenario:
+                s.portfolio_uuid = p_uuid
+                s.save()
+
+            response = JsonResponse({"Success": "Success message"}, status=200, safe=False)
             return response
         else:
             response = JsonResponse({"Error": "No scenarios found for run_uuids '{}'".format(run_uuids)}, content_type='application/json', status=404)
@@ -920,15 +973,40 @@ def queryset_for_summary(api_metas,summary_dict:dict):
             except:
                 summary_dict[str(m.meta.run_uuid)]['emission_reduction_pct'] = 0.0
 
+    
+    site_inputs = SiteInputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'renewable_electricity_min_fraction',
+        'renewable_electricity_max_fraction'
+    )
+    if len(site_inputs) > 0:
+        for m in site_inputs:
+            try: # can be NoneType
+                if m.renewable_electricity_min_fraction > 0:
+                    summary_dict[str(m.meta.run_uuid)]['focus'] = "Clean-energy"
+            except:
+                pass # is NoneType
+
+            try: # can be NoneType
+                if m.renewable_electricity_max_fraction > 0:
+                    summary_dict[str(m.meta.run_uuid)]['focus'] = "Clean-energy"
+            except:
+                pass # is NoneType
+
     # Use settings to find out if it is an off-grid evaluation
     settings = Settings.objects.filter(meta__run_uuid__in=run_uuids).only(
         'meta__run_uuid',
-        'off_grid_flag'
+        'off_grid_flag',
+        'include_climate_in_objective',
+        'include_health_in_objective'
     )
     if len(settings) > 0:
         for m in settings:
             if m.off_grid_flag:
                 summary_dict[str(m.meta.run_uuid)]['focus'] = "Off-grid"
+            
+            if m.include_climate_in_objective or m.include_health_in_objective:
+                summary_dict[str(m.meta.run_uuid)]['focus'] = "Clean-energy"
 
     tariffInputs = ElectricTariffInputs.objects.filter(meta__run_uuid__in=run_uuids).only(
         'meta__run_uuid',
@@ -978,7 +1056,10 @@ def queryset_for_summary(api_metas,summary_dict:dict):
         'initial_capital_costs_after_incentives',
         'lcc',
         'replacements_present_cost_after_tax',
-        'lifecycle_capital_costs_plus_om_after_tax'
+        'lifecycle_capital_costs_plus_om_after_tax',
+        'lifecycle_generation_tech_capital_costs',
+        'lifecycle_storage_capital_costs',
+        'lifecycle_production_incentive_after_tax'
     )
     if len(fin) > 0:
         for m in fin:
@@ -990,7 +1071,8 @@ def queryset_for_summary(api_metas,summary_dict:dict):
             summary_dict[str(m.meta.run_uuid)]['lcc_us_dollars'] = m.lcc
             summary_dict[str(m.meta.run_uuid)]['replacements_present_cost_after_tax'] = m.replacements_present_cost_after_tax
             summary_dict[str(m.meta.run_uuid)]['lifecycle_capital_costs_plus_om_after_tax'] = m.lifecycle_capital_costs_plus_om_after_tax
-    
+            summary_dict[str(m.meta.run_uuid)]['total_capital_costs'] = m.lifecycle_generation_tech_capital_costs + m.lifecycle_storage_capital_costs - m.lifecycle_production_incentive_after_tax
+
     batt = ElectricStorageOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
         'meta__run_uuid',
         'size_kw',
