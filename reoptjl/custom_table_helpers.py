@@ -44,6 +44,14 @@ def safe_get(df, key, default=0):
     return df.get(key, default)
 
 def check_bau_consistency(scenarios, tolerance_percentage=0.1):
+    """
+    Check the consistency of BAU values within the 'outputs.Financial' section across all scenarios with a percentage-based tolerance.
+
+    Args:
+        scenarios (list): List of scenario dictionaries to check.
+        tolerance_percentage (float): Tolerance percentage for allowable differences.
+                                      For example, 0.1 for 0.1% tolerance.
+    """
     bau_values_list = []
     all_bau_keys = set()
 
@@ -52,13 +60,14 @@ def check_bau_consistency(scenarios, tolerance_percentage=0.1):
 
         current_bau_values = {}
         for key, value in df_gen.items():
-            if key.endswith('_bau'):
+            # Focus only on keys related to 'outputs.Financial' and ending with '_bau'
+            if key.startswith('outputs.Financial') and key.endswith('_bau'):
                 current_bau_values[key] = value
                 all_bau_keys.add(key)
 
         bau_values_list.append(current_bau_values)
 
-    # Perform consistency check across all `_bau` values
+    # Perform consistency check across all `_bau` values within 'outputs.Financial'
     first_bau_values = bau_values_list[0]
     for idx, other_bau_values in enumerate(bau_values_list[1:], start=1):
         for key in all_bau_keys:
