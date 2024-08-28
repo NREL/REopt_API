@@ -1,10 +1,4 @@
 # custom table helpers.py
-def get_with_suffix(df, key, suffix, default_val=0):
-    """Fetch value from dataframe with an optional retriaval of _bau suffix."""
-    if not key.endswith("_bau"):
-        key = f"{key}{suffix}"
-    return df.get(key, default_val)
-
 def flatten_dict(d, parent_key='', sep='.'):
     """Flatten nested dictionary."""
     items = []
@@ -45,3 +39,37 @@ def colnum_string(n):
         n, remainder = divmod(n - 1, 26)
         string = chr(65 + remainder) + string
     return string
+
+def safe_get(df, key, default=0):
+    return df.get(key, default)
+
+def check_bau_consistency(scenarios):
+    """Check the consistency of BAU values across all scenarios."""
+    bau_values_list = []
+    all_bau_keys = set()
+
+    for scenario in scenarios:
+        df_gen = flatten_dict(scenario['full_data'])
+
+        current_bau_values = {}
+        for key, value in df_gen.items():
+            if key.endswith('_bau'):
+                current_bau_values[key] = value
+                all_bau_keys.add(key)
+
+        bau_values_list.append(current_bau_values)
+
+    # Perform consistency check across all `_bau` values
+    first_bau_values = bau_values_list[0]
+    for idx, other_bau_values in enumerate(bau_values_list[1:], start=1):
+        differences = {
+            key: (first_bau_values[key], other_bau_values[key])
+            for key in all_bau_keys
+            if first_bau_values.get(key) != other_bau_values.get(key)
+        }
+
+        if differences:
+            diff_message = "\n".join(
+                [f" - {key}: {first_bau_values[key]} vs {other_bau_values[key]}" for key in differences]
+            )
+            raise ValueError(f"Inconsistent BAU values found between scenario 1 and scenario {idx + 1}:\n{diff_message}")

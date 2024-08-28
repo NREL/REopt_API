@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 import json
 import logging
-from reoptjl.custom_table_helpers import get_with_suffix, flatten_dict, clean_data_dict, sum_vectors, colnum_string
+from reoptjl.custom_table_helpers import safe_get,flatten_dict, clean_data_dict, sum_vectors, colnum_string, check_bau_consistency
 import xlsxwriter
 from collections import defaultdict
 import io
@@ -1190,133 +1190,144 @@ def easiur_costs(request):
 ################ START Custom Table ###########################
 ###############################################################
 
-def generate_data_dict(config, df_gen, suffix):
+def access_raw_data(run_uuids, request):
+    try:
+        # Fetch UserProvidedMeta data for the relevant run_uuids
+        usermeta = UserProvidedMeta.objects.filter(meta__run_uuid__in=run_uuids).only(
+            'meta__run_uuid', 'description', 'address'
+        )
+
+        # Create a dictionary to map run_uuids to their associated meta data
+        meta_data_dict = {um.meta.run_uuid: {"description": um.description, "address": um.address} for um in usermeta}
+
+        full_summary_dict = {
+            "scenarios": [
+                {
+                    "run_uuid": str(run_uuid),
+                    "full_data": process_raw_data(request, run_uuid),
+                    "meta_data": meta_data_dict.get(run_uuid, {})
+                }
+                for run_uuid in run_uuids
+            ]
+        }
+
+        # Perform the BAU consistency check
+        check_bau_consistency(full_summary_dict['scenarios'])
+
+        return full_summary_dict
+
+    except ValueError as e:
+        log.error(f"ValueError in access_raw_data: {e}")
+        raise
+    except Exception:
+        log.error(f"Error in access_raw_data: {tb.format_exc()}")
+        raise
+    
+def process_raw_data(request, run_uuid):
+    try:
+        response = results(request, run_uuid)
+        if response.status_code == 200:
+            return sum_vectors(json.loads(response.content))
+        return {"error": f"Failed to fetch data for run_uuid {run_uuid}"}
+    except Exception:
+        err = UnexpectedError(*sys.exc_info(), task='create_custom_comparison_table')
+        err.save_to_db()
+        raise
+
+def generate_data_dict(config, df_gen, suffix=""):
     try:
         data_dict = defaultdict(list)
-        for var_key, col_name in config:
-            if callable(var_key):
-                val = var_key(df_gen)
-            else:
-                val = get_with_suffix(df_gen, var_key, suffix, "-")
-            data_dict[col_name].append(val)
+        for entry in config:
+            val = entry["scenario_value"](df_gen)
+            data_dict[entry["label"]].append(val)
+        log.debug(f"Generated data_dict: {data_dict}")
         return data_dict
-    except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table')
-        err.save_to_db()
+    except Exception:
+        log.error(f"Error in generate_data_dict: {tb.format_exc()}")
         raise
 
 def get_REopt_data(data_f, scenario_name, config):
     try:
         scenario_name_str = str(scenario_name)
-        suffix = "_bau" if re.search(r"(?i)\bBAU\b", scenario_name_str) else ""
-        
+        suffix = "_bau" if "BAU" in scenario_name_str.upper() else ""
+
         df_gen = flatten_dict(data_f)
+        log.debug(f"Flattened data_f in get_REopt_data: {df_gen}")
         data_dict = generate_data_dict(config, df_gen, suffix)
         data_dict["Scenario"] = [scenario_name_str]
 
-        col_order = ["Scenario"] + [col_name for _, col_name in config]
-        df_res = pd.DataFrame(data_dict)
-        df_res = df_res[col_order]
+        col_order = ["Scenario"] + [entry["label"] for entry in config]
+        df_res = pd.DataFrame(data_dict)[col_order]
 
+        log.debug(f"Generated DataFrame in get_REopt_data: {df_res}")
         return df_res
-    except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table')
-        err.save_to_db()
+    except Exception:
+        log.error(f"Error in get_REopt_data: {tb.format_exc()}")
         raise
 
-def get_bau_values(mock_scenarios, config):
+def get_bau_values(scenarios, config):
     try:
-        bau_values = {col_name: None for _, col_name in config}
+        bau_values = {entry["label"]: None for entry in config}
+        log.debug(f"Initialized BAU values: {bau_values}")
 
-        # Assuming the first scenario has the BAU data
-        first_scenario = mock_scenarios[0]
-        df_gen = flatten_dict(first_scenario['full_data'])
+        # Extract and compare BAU values across all scenarios
+        bau_values_list = []
 
-        for var_key, col_name in config:
-            if callable(var_key):
-                # Extract the key being referenced in the lambda function
-                try:
-                    key = var_key.__code__.co_consts[1]
-                except IndexError:
-                    continue
-            else:
-                key = var_key
+        for scenario in scenarios:
+            df_gen = flatten_dict(scenario['full_data'])
+            log.debug(f"Flattened data for scenario {scenario['run_uuid']}: {df_gen}")
 
-            # Append the '_bau' suffix to match BAU values
-            key_bau = f"{key}_bau"
-            value = df_gen.get(key_bau)
+            current_bau_values = {}
+            for entry in config:
+                bau_func = entry.get("bau_value")
+                value = bau_func(df_gen) if bau_func else df_gen.get(f"{entry['key']}_bau")
+                current_bau_values[entry["label"]] = value
 
-            if value is not None:
-                bau_values[col_name] = value
+            bau_values_list.append(current_bau_values)
 
+        # Check consistency of BAU values across all scenarios
+        first_bau_values = bau_values_list[0]
+        for idx, other_bau_values in enumerate(bau_values_list[1:], start=1):
+            differences = {
+                key: (first_bau_values[key], other_bau_values[key])
+                for key in first_bau_values
+                if first_bau_values[key] != other_bau_values[key]
+            }
+
+            if differences:
+                # Log each difference in a user-friendly way
+                diff_message = "\n".join(
+                    [f" - {key}: {first_bau_values[key]} vs {other_bau_values[key]}" for key in differences]
+                )
+                log.warning(
+                    f"Inconsistent BAU values found between scenario 1 and scenario {idx + 1}:\n{diff_message}"
+                )
+                raise ValueError(
+                    "Inconsistent BAU values across scenarios. Please check the differences in the logs."
+                )
+
+        # If consistent, use the first set of BAU values
+        bau_values.update(first_bau_values)
+        log.debug(f"Final consolidated BAU values: {bau_values}")
         return bau_values
-    except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table')
-        err.save_to_db()
+
+    except ValueError as e:
+        log.error(f"ValueError in get_bau_values: {e}")
         raise
-
-def access_raw_data(run_uuids, request):
-    try:
-        full_summary_dict = {"scenarios": []}
-        
-        # Fetch UserProvidedMeta data for the relevant run_uuids
-        usermeta = UserProvidedMeta.objects.filter(meta__run_uuid__in=run_uuids).only(
-            'meta__run_uuid',
-            'description',
-            'address'
-        )
-
-        # Create a dictionary to map run_uuids to their associated meta data
-        meta_data_dict = {
-            um.meta.run_uuid: {
-                "description": um.description,
-                "address": um.address
-            }
-            for um in usermeta
-        }
-
-        for run_uuid in run_uuids:
-            scenario_data = {
-                "run_uuid": str(run_uuid),
-                "full_data": process_raw_data(request, run_uuid),
-                "meta_data": meta_data_dict.get(run_uuid, {})
-            }
-            full_summary_dict["scenarios"].append(scenario_data)
-
-        return full_summary_dict
-    except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table')
-        err.save_to_db()
-        raise
-
-def process_raw_data(request, run_uuid):
-    try:
-        response = results(request, run_uuid)
-        if response.status_code == 200:
-            result_data = json.loads(response.content)
-            processed_data = sum_vectors(result_data)
-            return processed_data
-        else:
-            return {"error": f"Failed to fetch data for run_uuid {run_uuid}"}
-    except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table')
-        err.save_to_db()
+    except Exception:
+        log.error(f"Error in get_bau_values: {tb.format_exc()}")
         raise
 
 def process_scenarios(scenarios, reopt_data_config):
     try:
-        config = reopt_data_config
-        bau_values = get_bau_values(scenarios, config)
+        log.debug(f"Starting process_scenarios with config: {reopt_data_config}")
+        bau_values = get_bau_values(scenarios, reopt_data_config)
+        log.debug(f"BAU values: {bau_values}")
         combined_df = pd.DataFrame()
 
         for scenario in scenarios:
             run_uuid = scenario['run_uuid']
-            df_result = get_REopt_data(scenario['full_data'], run_uuid, config)
+            df_result = get_REopt_data(scenario['full_data'], run_uuid, reopt_data_config)
             df_result = df_result.set_index('Scenario').T
             df_result.columns = [run_uuid]
             combined_df = df_result if combined_df.empty else combined_df.join(df_result, how='outer')
@@ -1328,171 +1339,27 @@ def process_scenarios(scenarios, reopt_data_config):
 
         # Combine BAU data with scenario results
         combined_df = pd.concat([df_bau, combined_df.T]).reset_index(drop=True)
+        log.debug(f"Final DataFrame before clean_data_dict:\n{combined_df}")
+
         combined_df = clean_data_dict(combined_df.to_dict(orient="list"))
         combined_df = pd.DataFrame(combined_df)
         combined_df = combined_df[["Scenario"] + [col for col in combined_df.columns if col != "Scenario"]]
 
+        log.debug(f"Final DataFrame in process_scenarios:\n{combined_df}")
         return combined_df
-    except ValueError as e:
+    except Exception:
+        log.error(f"Error in process_scenarios: {tb.format_exc()}")
         raise
-    except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table')
-        err.save_to_db()
-        raise
-
-def create_custom_table_excel(df, custom_table, calculations, output):
-    try:
-        workbook = xlsxwriter.Workbook(output, {'in_memory': True})
-        worksheet = workbook.add_worksheet('Custom Table')
-
-        data_format = workbook.add_format({'align': 'center', 'valign': 'center', 'border': 1})
-        formula_format = workbook.add_format({'bg_color': '#FECF86', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': 'red'})
-        error_format = workbook.add_format({'bg_color': '#FFC7CE', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': 'black'})  # For missing data
-        scenario_header_format = workbook.add_format({'bold': True, 'bg_color': '#0079C2', 'border': 1, 'align': 'center', 'font_color': 'white'})
-        variable_name_format = workbook.add_format({'bold': True, 'bg_color': '#DEE2E5', 'border': 1, 'align': 'left'})
-
-        worksheet.write(1, len(df.columns) + 2, "Values in red are formulas. Do not input anything.", formula_format)
-
-        column_width = 35
-        for col_num in range(len(df.columns) + 3):
-            worksheet.set_column(col_num, col_num, column_width)
-
-        worksheet.write('A1', 'Scenario', scenario_header_format)
-        for col_num, header in enumerate(df.columns):
-            worksheet.write(0, col_num + 1, header, scenario_header_format)
-
-        for row_num, variable in enumerate(df.index):
-            worksheet.write(row_num + 1, 0, variable, variable_name_format)
-
-        for row_num, row_data in enumerate(df.itertuples(index=False)):
-            for col_num, value in enumerate(row_data):
-                worksheet.write(row_num + 1, col_num + 1, "" if pd.isnull(value) or value == '-' else value, data_format)
-
-        headers = {header: idx for idx, header in enumerate(df.index)}
-
-        bau_cells = {
-            'grid_value': f'{colnum_string(2)}{headers["Grid Purchased Electricity (kWh)"] + 2}' if "Grid Purchased Electricity (kWh)" in headers else None,
-            'net_cost_value': f'{colnum_string(2)}{headers["Net Electricity Cost ($)"] + 2}' if "Net Electricity Cost ($)" in headers else None,
-            'ng_reduction_value': f'{colnum_string(2)}{headers["Total Fuel (MMBtu)"] + 2}' if "Total Fuel (MMBtu)" in headers else None,
-            'util_cost_value': f'{colnum_string(2)}{headers["Total Utility Cost ($)"] + 2}' if "Total Utility Cost ($)" in headers else None,
-            'co2_reduction_value': f'{colnum_string(2)}{headers["CO2 Emissions (tonnes)"] + 2}' if "CO2 Emissions (tonnes)" in headers else None
-        }
-
-        relevant_columns = [col_name for _, col_name in custom_table]
-        relevant_calculations = [calc for calc in calculations if calc["name"] in relevant_columns]
-
-        logged_messages = set()
-        missing_entries = []
-
-        for col in range(2, len(df.columns) + 2):
-            col_letter = colnum_string(col)
-            for calc in relevant_calculations:
-                try:
-                    if all(key in headers or key in bau_cells for key in calc["formula"].__code__.co_names):
-                        row_idx = headers.get(calc["name"])
-                        if row_idx is not None:
-                            formula = calc["formula"](col_letter, bau_cells, headers)
-                            worksheet.write_formula(row_idx + 1, col-1, formula, formula_format)
-                        else:
-                            missing_entries.append(calc["name"])
-                    else:
-                        missing_keys = [key for key in calc["formula"].__code__.co_names if key not in headers and key not in bau_cells]
-                        if missing_keys:
-                            row_idx = headers.get(calc["name"])
-                            if row_idx is not None:
-                                worksheet.write(row_idx + 1, col - 1, "MISSING DATA", error_format)
-                            message = f"Cannot calculate '{calc['name']}' because the required fields are missing: {', '.join(missing_keys)} in the Custom Table configuration. Update the Custom Table to include {missing_keys}. Writing 'MISSING DATA' instead."
-                            if message not in logged_messages:
-                                print(message)
-                                logged_messages.add(message)
-                            missing_entries.append(calc["name"])
-                except KeyError as e:
-                    missing_field = str(e)
-                    message = f"Cannot calculate '{calc['name']}' because the field '{missing_field}' is missing in the Custom Table configuration. Update the Custom Table to include {missing_field}. Writing 'MISSING DATA' instead."
-                    if message not in logged_messages:
-                        print(message)
-                        logged_messages.add(message)
-                    row_idx = headers.get(calc["name"])
-                    if row_idx is not None:
-                        worksheet.write(row_idx + 1, col - 1, "MISSING DATA", error_format)
-                    missing_entries.append(calc["name"])
-
-        if missing_entries:
-            print(f"Missing entries in the input table: {', '.join(set(missing_entries))}. Please update the configuration if necessary.")
-
-        workbook.close()
-    except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table')
-        err.save_to_db()
-        raise
-
-# def create_custom_comparison_table(request):
-#     if request.method == 'GET':
-#         try:
-#             # Log the entire request GET parameters
-#             print(f"GET parameters: {request.GET}")
-
-#             # Manually collect the run_uuid values by iterating over the keys
-#             run_uuids = []
-#             for key in request.GET.keys():
-#                 if key.startswith('run_uuid['):
-#                     run_uuids.append(request.GET[key])
-
-#             print(f"Handling GET request with run_uuids: {run_uuids}")
-
-#             if not run_uuids:
-#                 return JsonResponse({"Error": "No run_uuids provided"}, status=400)
-
-#             # Validate each UUID
-#             for r_uuid in run_uuids:
-#                 try:
-#                     uuid.UUID(r_uuid)
-#                 except ValueError as e:
-#                     return JsonResponse({"Error": f"Invalid UUID format: {r_uuid}"}, status=400)
-
-#             target_custom_table = ita_custom_table
-
-#             # Process scenarios and generate the custom table
-#             scenarios = access_raw_data(run_uuids, request)
-#             if 'scenarios' not in scenarios or not scenarios['scenarios']:
-#                 return JsonResponse({'Error': 'Failed to fetch scenarios'}, content_type='application/json', status=404)
-
-#             final_df = process_scenarios(scenarios['scenarios'], target_custom_table)
-#             final_df.iloc[1:, 0] = run_uuids
-
-#             final_df_transpose = final_df.transpose()
-#             final_df_transpose.columns = final_df_transpose.iloc[0]
-#             final_df_transpose = final_df_transpose.drop(final_df_transpose.index[0])
-
-#             # Create and send the Excel file
-#             output = io.BytesIO()
-#             create_custom_table_excel(final_df_transpose, target_custom_table, calculations, output)
-#             output.seek(0)
-
-#             filename = "comparison_table.xlsx"
-#             response = HttpResponse(
-#                 output,
-#                 content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-#             )
-#             response['Content-Disposition'] = f'attachment; filename={filename}'
-
-#             return response
-
-#         except Exception as e:
-#             exc_type, exc_value, exc_traceback = sys.exc_info()
-#             err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table')
-#             err.save_to_db()
-#             return JsonResponse({"Error": str(err.message)}, status=500)
-
-#     return JsonResponse({"Error": "Method not allowed"}, status=405)
 
 def create_custom_comparison_table(request):
     if request.method == 'GET':
         try:
             # Log the entire request GET parameters
             log.debug(f"GET parameters: {request.GET}")
+
+            # Get the table configuration name from the query parameters
+            table_config_name = request.GET.get('table_config_name', 'example_table_config')  # Default to 'example_table_config' if not provided
+            log.debug(f"Using table configuration: {table_config_name}")
 
             # Manually collect the run_uuid values by iterating over the keys
             run_uuids = []
@@ -1513,7 +1380,11 @@ def create_custom_comparison_table(request):
                     log.debug(f"Invalid UUID format: {r_uuid}")
                     return JsonResponse({"Error": f"Invalid UUID format: {r_uuid}"}, status=400)
 
-            target_custom_table = ita_custom_table
+            # Dynamically select the table configuration
+            if table_config_name in globals():
+                target_custom_table = globals()[table_config_name]
+            else:
+                return JsonResponse({"Error": f"Invalid table configuration: {table_config_name}"}, status=400)
 
             # Process scenarios and generate the custom table
             scenarios = access_raw_data(run_uuids, request)
@@ -1522,6 +1393,8 @@ def create_custom_comparison_table(request):
                 return JsonResponse({'Error': 'Failed to fetch scenarios'}, content_type='application/json', status=404)
 
             final_df = process_scenarios(scenarios['scenarios'], target_custom_table)
+            log.debug(f"Final DataFrame (before transpose):\n{final_df}")
+
             final_df.iloc[1:, 0] = run_uuids
 
             final_df_transpose = final_df.transpose()
@@ -1555,80 +1428,589 @@ def create_custom_comparison_table(request):
 
     return JsonResponse({"Error": "Method not allowed"}, status=405)
 
+def create_custom_table_excel(df, custom_table, calculations, output):
+    try:
+        workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+        worksheet = workbook.add_worksheet('Custom Table')
+
+        # Formats for general data, percentages, and currency values
+        # General formatting
+        data_format = workbook.add_format({
+            'align'    : 'center',
+            'valign'   : 'center',
+            'border'   : 1,
+            'font_size': 10
+        })
+
+        # Formatting for formulas
+        formula_format = workbook.add_format({
+            'bg_color'  : '#FFE599', # Light yellow background
+            'align'     : 'center',
+            'valign'    : 'center',
+            'border'    : 1,
+            'font_color': 'red',
+            'font_size' : 10,
+            'italic'    : True  # Italic to highlight it's a formula
+        })
+
+        # Formatting for errors
+        error_format = workbook.add_format({
+            'bg_color'  : '#FFC7CE', # Light red background
+            'align'     : 'center',
+            'valign'    : 'center',
+            'border'    : 1,
+            'font_color': 'black',
+            'font_size' : 10
+        })
+
+        # Formatting for percentages, showing as whole numbers (e.g., 9%)
+        percent_format = workbook.add_format({
+            'num_format': '0%',     # Whole number percentage (e.g., 9%)
+            'align'     : 'center',
+            'valign'    : 'center',
+            'border'    : 1,
+            'font_size' : 10
+        })
+
+        # Formatting for currency values with two decimal places
+        currency_format = workbook.add_format({
+            'num_format': '$#,##0.00', # Currency with two decimal places
+            'align'     : 'center',
+            'valign'    : 'center',
+            'border'    : 1,
+            'font_size' : 10
+        })
+
+        # Formatting for formulas that are percentages
+        formula_percent_format = workbook.add_format({
+            'bg_color'  : '#FFE599', # Light yellow background
+            'num_format': '0%',      # Whole number percentage
+            'align'     : 'center',
+            'valign'    : 'center',
+            'border'    : 1,
+            'font_color': 'red',
+            'font_size' : 10,
+            'italic'    : True
+        })
+
+        # Formatting for formulas that are currency values
+        formula_currency_format = workbook.add_format({
+            'bg_color'  : '#FFE599',   # Light yellow background
+            'num_format': '$#,##0.00', # Currency with two decimal places
+            'align'     : 'center',
+            'valign'    : 'center',
+            'border'    : 1,
+            'font_color': 'red',
+            'font_size' : 10,
+            'italic'    : True
+        })
+
+        # Header format for the scenario column
+        scenario_header_format = workbook.add_format({
+            'bold'      : True,
+            'bg_color'  : '#0079C2', # Dark blue background
+            'border'    : 1,
+            'align'     : 'center',
+            'font_color': 'white',
+            'font_size' : 10
+        })
+
+        # Format for the variable names in the first column
+        variable_name_format = workbook.add_format({
+            'bold'     : True,
+            'bg_color' : '#DEE2E5', # Light gray background
+            'border'   : 1,
+            'align'    : 'left',
+            'font_size': 10
+        })
+        
+        worksheet.write(1, len(df.columns) + 2, "Values in red are formulas. Do not input anything.", formula_format)
+
+        column_width = 35
+        for col_num in range(len(df.columns) + 3):
+            worksheet.set_column(col_num, col_num, column_width)
+
+        worksheet.write('A1', 'Scenario', scenario_header_format)
+        for col_num, header in enumerate(df.columns):
+            worksheet.write(0, col_num + 1, header, scenario_header_format)
+
+        for row_num, variable in enumerate(df.index):
+            worksheet.write(row_num + 1, 0, variable, variable_name_format)
+
+        # Use the custom table to determine format
+        def get_format(label):
+            entry = next((item for item in custom_table if item["label"] == label), None)
+            if entry:
+                if '$' in entry["label"]:
+                    return currency_format, formula_currency_format
+                elif '%' in entry["label"]:
+                    return percent_format, formula_percent_format
+            return data_format, formula_format
+
+        # Writing data to cells with the appropriate format
+        for row_num, variable in enumerate(df.index):
+            cell_format, cell_formula_format = get_format(variable)
+            for col_num, value in enumerate(df.loc[variable]):
+                if pd.isnull(value) or value == '-':
+                    worksheet.write(row_num + 1, col_num + 1, "", data_format)
+                else:
+                    worksheet.write(row_num + 1, col_num + 1, value, cell_format)
+
+        headers = {header: idx for idx, header in enumerate(df.index)}
+
+        bau_cells = {
+            'grid_value': f'{colnum_string(2)}{headers["Grid Purchased Electricity (kWh)"] + 2}' if "Grid Purchased Electricity (kWh)" in headers else None,
+            'net_cost_value': f'{colnum_string(2)}{headers["Net Electricity Cost ($)"] + 2}' if "Net Electricity Cost ($)" in headers else None,
+            'ng_reduction_value': f'{colnum_string(2)}{headers["Total Fuel (MMBtu)"] + 2}' if "Total Fuel (MMBtu)" in headers else None,
+            'util_cost_value': f'{colnum_string(2)}{headers["Total Utility Cost ($)"] + 2}' if "Total Utility Cost ($)" in headers else None,
+            'co2_reduction_value': f'{colnum_string(2)}{headers["CO2 Emissions (tonnes)"] + 2}' if "CO2 Emissions (tonnes)" in headers else None,
+            # New placeholders added based on Example 6 and 7 calculations
+            'placeholder1_value': f'{colnum_string(2)}{headers["Placeholder1"] + 2}' if "Placeholder1" in headers else None,
+    }
+
+        relevant_columns = [entry["label"] for entry in custom_table]
+        relevant_calculations = [calc for calc in calculations if calc["name"] in relevant_columns]
+
+        logged_messages = set()
+        missing_entries = []
+
+        for col in range(2, len(df.columns) + 2):
+            col_letter = colnum_string(col)
+            for calc in relevant_calculations:
+                try:
+                    if all(key in headers or key in bau_cells for key in calc["formula"].__code__.co_names):
+                        row_idx = headers.get(calc["name"])
+                        if row_idx is not None:
+                            formula = calc["formula"](col_letter, bau_cells, headers)
+                            cell_format, cell_formula_format = get_format(calc["name"])
+                            worksheet.write_formula(row_idx + 1, col-1, formula, cell_formula_format)
+                        else:
+                            missing_entries.append(calc["name"])
+                    else:
+                        missing_keys = [key for key in calc["formula"].__code__.co_names if key not in headers and key not in bau_cells]
+                        if missing_keys:
+                            row_idx = headers.get(calc["name"])
+                            if row_idx is not None:
+                                worksheet.write(row_idx + 1, col - 1, "MISSING DATA", error_format)
+                            message = f"Cannot calculate '{calc['name']}' because the required fields are missing: {', '.join(missing_keys)} in the Table configuration provided. Update the Table to include {missing_keys}. Writing 'MISSING DATA' instead."
+                            if message not in logged_messages:
+                                print(message)
+                                logged_messages.add(message)
+                            missing_entries.append(calc["name"])
+                except KeyError as e:
+                    missing_field = str(e)
+                    message = f"Cannot calculate '{calc['name']}' because the field '{missing_field}' is missing in the Table configuration provided. Update the Table to include {missing_field}. Writing 'MISSING DATA' instead."
+                    if message not in logged_messages:
+                        print(message)
+                        logged_messages.add(message)
+                    row_idx = headers.get(calc["name"])
+                    if row_idx is not None:
+                        worksheet.write(row_idx + 1, col - 1, "MISSING DATA", error_format)
+                    missing_entries.append(calc["name"])
+
+        if missing_entries:
+            print(f"Missing entries in the input table: {', '.join(set(missing_entries))}. Please update the configuration if necessary.")
+
+        workbook.close()
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table')
+        err.save_to_db()
+        raise
 
 # Configuration
 # Set up table needed along with REopt dictionaries to grab data 
 
-other_custom_table = [
-    (lambda df: get_with_suffix(df, "outputs.PV.size_kw", ""), "PV Size (kW)"),
-    (lambda df: get_with_suffix(df, "outputs.Wind.size_kw", ""), "Wind Size (kW)"),
-    (lambda df: get_with_suffix(df, "outputs.CHP.size_kw", ""), "CHP Size (kW)"),
-    (lambda df: get_with_suffix(df, "outputs.PV.annual_energy_produced_kwh", ""), "PV Total Electricity Produced (kWh)"),
-    (lambda df: get_with_suffix(df, "outputs.PV.electric_to_grid_series_kw", ""), "PV Exported to Grid (kWh)"),
-    (lambda df: get_with_suffix(df, "outputs.PV.electric_to_load_series_kw", ""), "PV Serving Load (kWh)"),
-    (lambda df: get_with_suffix(df, "outputs.Financial.lifecycle_capital_costs", ""), "Gross Capital Cost ($)"),
-    (lambda df: get_with_suffix(df, "outputs.ElectricTariff.year_one_energy_cost_before_tax", ""), "Electricity Energy Cost ($)"),
-    (lambda df: get_with_suffix(df, "outputs.ElectricTariff.year_one_demand_cost_before_tax", ""), "Electricity Demand Cost ($)"),
-    (lambda df: get_with_suffix(df, "outputs.ElectricTariff.year_one_fixed_cost_before_tax", ""), "Utility Fixed Cost ($)"),
-    (lambda df: get_with_suffix(df, "outputs.Financial.total_incentives_us_dollars", ""), "Federal Tax Incentive (30%)"),
-    (lambda df: get_with_suffix(df, "outputs.Financial.iac_grant_us_dollars", ""), "IAC Grant ($)"),
-    (lambda df: get_with_suffix(df, "outputs.Financial.total_incentives_value_us_dollars", ""), "Incentive Value ($)"),
-    (lambda df: get_with_suffix(df, "outputs.Financial.net_capital_cost_us_dollars", ""), "Net Capital Cost ($)"),
-    (lambda df: get_with_suffix(df, "outputs.Financial.npv", ""), "NPV"),
-    (lambda df: get_with_suffix(df, "inputs.PV.federal_itc_fraction", ""), "PV Federal Tax Incentive (%)"),
-    (lambda df: get_with_suffix(df, "inputs.ElectricStorage.total_itc_fraction", ""), "Storage Federal Tax Incentive (%)")
-]
+# Example Custom Table Configuration
+example_table = [
+    # Example 1: Basic Key Retrieval with Data Values
+    {
+        "label": "Site Name",
+        "key": "site",
+        "bau_value": lambda df: safe_get(df, "inputs.Meta.description", "None provided"),
+        "scenario_value": lambda df: safe_get(df, "inputs.Meta.description", "None provided")
+    },
+    {
+        "label": "Site Location",
+        "key": "site_lat_long",
+        "bau_value": lambda df: f"({safe_get(df, 'inputs.Site.latitude')}, {safe_get(df, 'inputs.Site.longitude')})",
+        "scenario_value": lambda df: f"({safe_get(df, 'inputs.Site.latitude')}, {safe_get(df, 'inputs.Site.longitude')})"
+    },
+    # Example 2: Concatenating Strings
+    {
+        "label": "Site Address",
+        "key": "site_address",
+        "bau_value": lambda df: safe_get(df, "inputs.Meta.address", "None provided"),
+        "scenario_value": lambda df: safe_get(df, "inputs.Meta.address", "None provided")
+    },
 
-ita_custom_table = [
-    (lambda df: get_with_suffix(df, "outputs.PV.size_kw", ""), "PV Size (kW)"),
-    (lambda df: get_with_suffix(df, "outputs.Wind.size_kw", ""), "Wind Size (kW)"),
-    (lambda df: get_with_suffix(df, "outputs.CHP.size_kw", ""), "CHP Size (kW)"),
-    (lambda df: get_with_suffix(df, "outputs.PV.annual_energy_produced_kwh", ""), "PV Total Electricity Produced (kWh)"),
-    (lambda df: get_with_suffix(df, "outputs.PV.electric_to_grid_series_kw", ""), "PV Exported to Grid (kWh)"),
-    (lambda df: get_with_suffix(df, "outputs.PV.electric_to_load_series_kw", ""), "PV Serving Load (kWh)"),
-    (lambda df: get_with_suffix(df, "outputs.Wind.annual_energy_produced_kwh", ""), "Wind Total Electricity Produced (kWh)"),
-    (lambda df: get_with_suffix(df, "outputs.Wind.electric_to_grid_series_kw", ""), "Wind Exported to Grid (kWh)"),
-    (lambda df: get_with_suffix(df, "outputs.Wind.electric_to_load_series_kw", ""), "Wind Serving Load (kWh)"),
-    (lambda df: get_with_suffix(df, "outputs.CHP.annual_electric_production_kwh", ""), "CHP Total Electricity Produced (kWh)"),
-    (lambda df: get_with_suffix(df, "outputs.CHP.electric_to_grid_series_kw", ""), "CHP Exported to Grid (kWh)"),
-    (lambda df: get_with_suffix(df, "outputs.CHP.electric_to_load_series_kw", ""), "CHP Serving Load (kWh)"),
-    (lambda df: get_with_suffix(df, "outputs.CHP.thermal_to_load_series_mmbtu_per_hour", ""), "CHP Serving Thermal Load (MMBtu)"),
-    (lambda df: get_with_suffix(df, "outputs.ElectricUtility.annual_energy_supplied_kwh", ""), "Grid Purchased Electricity (kWh)"),
-    (lambda df: get_with_suffix(df, "outputs.ElectricUtility.electric_to_load_series_kw", ""), "Total Site Electricity Use (kWh)"),
-    (lambda df: get_with_suffix(df, "outputs.ElectricUtility.electric_to_load_series_kwsdf", ""), "Net Purchased Electricity Reduction (%)"),
-    (lambda df: get_with_suffix(df, "outputs.ElectricTariff.year_one_energy_cost_before_tax", ""), "Electricity Energy Cost ($)"),
-    (lambda df: get_with_suffix(df, "outputs.ElectricTariff.year_one_demand_cost_before_tax", ""), "Electricity Demand Cost ($)"),
-    (lambda df: get_with_suffix(df, "outputs.ElectricTariff.year_one_fixed_cost_before_tax", ""), "Utility Fixed Cost ($)"),
-    (lambda df: get_with_suffix(df, "outputs.ElectricTariff.year_one_bill_before_tax", ""), "Purchased Electricity Cost ($)"),
-    (lambda df: get_with_suffix(df, "outputs.ElectricTariff.year_one_export_benefit_before_tax", ""), "Electricity Export Benefit ($)"),
-    (lambda df: get_with_suffix(df, "outputs.ElectricTariff.lifecycle_energy_cost_after_tax", ""), "Net Electricity Cost ($)"),
-    (lambda df: get_with_suffix(df, "outputs.ElectricTariff.lifecycle_energy_cost_after_tax_bau", ""), "Electricity Cost Savings ($/year)"),
-    (lambda df: get_with_suffix(df, "outputs.Boiler.fuel_used_mmbtu", ""), "Boiler Fuel (MMBtu)"),
-    (lambda df: get_with_suffix(df, "outputs.CHP.annual_fuel_consumption_mmbtu", ""), "CHP Fuel (MMBtu)"),
-    (lambda df: get_with_suffix(df, "outputs.ElectricUtility.total_energy_supplied_kwh", ""), "Total Fuel (MMBtu)"),
-    (lambda df: get_with_suffix(df, "outputs.ElectricUtility.annual_energy_supplied_kwh_bau", ""), "Natural Gas Reduction (%)"),
-    (lambda df: get_with_suffix(df, "outputs.Boiler.annual_thermal_production_mmbtu", ""), "Boiler Thermal Production (MMBtu)"),
-    (lambda df: get_with_suffix(df, "outputs.CHP.annual_thermal_production_mmbtu", ""), "CHP Thermal Production (MMBtu)"),
-    (lambda df: get_with_suffix(df, "outputs.CHP.annual_thermal_production_mmbtu", ""), "Total Thermal Production (MMBtu)"),
-    (lambda df: get_with_suffix(df, "outputs.Site.heating_system_fuel_cost_us_dollars", ""), "Heating System Fuel Cost ($)"),
-    (lambda df: get_with_suffix(df, "outputs.CHP.year_one_fuel_cost_before_tax", ""), "CHP Fuel Cost ($)"),
-    (lambda df: get_with_suffix(df, "outputs.Site.total_fuel_cost_us_dollars", ""), "Total Fuel (NG) Cost ($)"),
-    (lambda df: get_with_suffix(df, "outputs.Site.total_utility_cost_us_dollars", ""), "Total Utility Cost ($)"),
-    (lambda df: get_with_suffix(df, "outputs.Financial.om_and_replacement_present_cost_after_tax", ""), "O&M Cost Increase ($)"),
-    (lambda df: get_with_suffix(df, "outputs.Financial.simple_payback_years", ""), "Payback Period (years)"),
-    (lambda df: get_with_suffix(df, "outputs.Financial.lifecycle_capital_costs", ""), "Gross Capital Cost ($)"),
-    (lambda df: get_with_suffix(df, "outputs.Financial.total_incentives_us_dollars", ""), "Federal Tax Incentive (30%)"),
-    (lambda df: get_with_suffix(df, "outputs.Financial.iac_grant_us_dollars", ""), "IAC Grant ($)"),
-    (lambda df: get_with_suffix(df, "outputs.Financial.total_incentives_value_us_dollars", ""), "Incentive Value ($)"),
-    (lambda df: get_with_suffix(df, "outputs.Financial.net_capital_cost_us_dollars", ""), "Net Capital Cost ($)"),
-    (lambda df: get_with_suffix(df, "outputs.Financial.annual_cost_savings_us_dollars", ""), "Annual Cost Savings ($)"),
-    (lambda df: get_with_suffix(df, "outputs.Financial.simple_payback_years", ""), "Simple Payback (years)"),
-    (lambda df: get_with_suffix(df, "outputs.Site.annual_emissions_tonnes_CO2", ""), "CO2 Emissions (tonnes)"),
-    (lambda df: get_with_suffix(df, "outputs.Site.lifecycle_emissions_tonnes_CO2", ""), "CO2 Reduction (tonnes)"),
-    (lambda df: get_with_suffix(df, "outputs.Site.lifecycle_emissions_tonnes_CO2_bau", ""), "CO2 (%) savings "),
-    (lambda df: get_with_suffix(df, "outputs.Financial.npv", ""), "NPV"),
-    (lambda df: get_with_suffix(df, "inputs.PV.federal_itc_fraction", ""), "PV Federal Tax Incentive (%)"),
-    (lambda df: get_with_suffix(df, "inputs.ElectricStorage.total_itc_fraction", ""), "Storage Federal Tax Incentive (%)")
+    # Example 3: Calculated Value (Sum of Two Fields), this does not show up in formulas
+    {
+        "label": "Combined Renewable Size (kW)",
+        "key": "combined_renewable_size",
+        "bau_value": lambda df: 0,
+        "scenario_value": lambda df: safe_get(df, "outputs.PV.size_kw") + safe_get(df, "outputs.Wind.size_kw")     #NOTE: These calculations will not show up as in the excel calculations
+    },
+
+    # Example 4: Hardcoded Values
+    {
+        "label": "Hardcoded Values (kWh)",
+        "key": "hardcoded_value",
+        "bau_value": lambda df: 500,  # BAU scenario
+        "scenario_value": lambda df: 1000  # Regular scenarios
+    },
+
+    # Example 5: Conditional Formatting
+    {
+        "label": "PV Size Status",
+        "key": "pv_size_status",
+        "bau_value": lambda df: 0,
+        "scenario_value": lambda df: "Above Threshold" if safe_get(df, "outputs.PV.size_kw") > 2500 else "Below Threshold"
+    },
+    #Example 6 and 7: First define any data that might need to be referenced, Here I've defined two placeholders
+    # Define Placeholder1
+    {
+        "label": "Placeholder1",
+        "key": "placeholder1",
+        "bau_value": lambda df: 100,  # BAU value
+        "scenario_value": lambda df: 200  # Scenario value
+    },
+    # Define Placeholder2
+    {
+        "label": "Placeholder2",
+        "key": "placeholder2",
+        "bau_value": lambda df: 50,  # BAU value
+        "scenario_value": lambda df: 100  # Scenario value
+    },
+    # Example 6: Calculation Without Reference to BAU
+    {
+        "label": "Placeholder Calculation Without BAU Reference",
+        "key": "placeholder_calculation_without_bau",
+        "bau_value": lambda df: 0,  # Placeholder, replaced by formula in Excel
+        "scenario_value": lambda df: 0  # Placeholder, replaced by formula in Excel
+    },
+    # Example 7: Calculation With Reference to BAU
+    {
+        "label": "Placeholder Calculation With BAU Reference",
+        "key": "placeholder_calculation_with_bau",
+        "bau_value": lambda df: 0,  # Placeholder, replaced by formula in Excel
+        "scenario_value": lambda df: 0  # Placeholder, replaced by formula in Excel
+    }]
+
+# TASC/Single Site Configuration
+single_site_custom_table = [
+    {
+        "label": "Site Name",
+        "key": "site",
+        "bau_value": lambda df: safe_get(df, "inputs.Meta.description", "None provided"),
+        "scenario_value": lambda df: safe_get(df, "inputs.Meta.description", "None provided")
+    },
+    {
+        "label": "Site Location",
+        "key": "site_lat_long",
+        "bau_value": lambda df: f"({safe_get(df, 'inputs.Site.latitude')}, {safe_get(df, 'inputs.Site.longitude')})",
+        "scenario_value": lambda df: f"({safe_get(df, 'inputs.Site.latitude')}, {safe_get(df, 'inputs.Site.longitude')})"
+    },
+    {
+        "label": "Site Address",
+        "key": "site_address",
+        "bau_value": lambda df: safe_get(df, "inputs.Meta.address", "None provided"),
+        "scenario_value": lambda df: safe_get(df, "inputs.Meta.address", "None provided")
+    },
+    {
+        "label": "PV Size (kW)",
+        "key": "pv_size",
+        "bau_value": lambda df: safe_get(df, "outputs.PV.size_kw_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.PV.size_kw")
+    },
+    {
+        "label": "Wind Size (kW)",
+        "key": "wind_size",
+        "bau_value": lambda df: safe_get(df, "outputs.Wind.size_kw_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Wind.size_kw")
+    },
+    {
+        "label": "CHP Size (kW)",
+        "key": "chp_size",
+        "bau_value": lambda df: safe_get(df, "outputs.CHP.size_kw_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.CHP.size_kw")
+    },
+    {
+        "label": "PV Total Electricity Produced (kWh)",
+        "key": "pv_total_electricity_produced",
+        "bau_value": lambda df: safe_get(df, "outputs.PV.annual_energy_produced_kwh_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.PV.annual_energy_produced_kwh")
+    },
+    {
+        "label": "PV Exported to Grid (kWh)",
+        "key": "pv_exported_to_grid",
+        "bau_value": lambda df: safe_get(df, "outputs.PV.electric_to_grid_series_kw_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.PV.electric_to_grid_series_kw")
+    },
+    {
+        "label": "PV Serving Load (kWh)",
+        "key": "pv_serving_load",
+        "bau_value": lambda df: safe_get(df, "outputs.PV.electric_to_load_series_kw_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.PV.electric_to_load_series_kw")
+    },
+    {
+        "label": "Wind Total Electricity Produced (kWh)",
+        "key": "wind_total_electricity_produced",
+        "bau_value": lambda df: safe_get(df, "outputs.Wind.annual_energy_produced_kwh_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Wind.annual_energy_produced_kwh")
+    },
+    {
+        "label": "Wind Exported to Grid (kWh)",
+        "key": "wind_exported_to_grid",
+        "bau_value": lambda df: safe_get(df, "outputs.Wind.electric_to_grid_series_kw_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Wind.electric_to_grid_series_kw")
+    },
+    {
+        "label": "Wind Serving Load (kWh)",
+        "key": "wind_serving_load",
+        "bau_value": lambda df: safe_get(df, "outputs.Wind.electric_to_load_series_kw_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Wind.electric_to_load_series_kw")
+    },
+    {
+        "label": "CHP Total Electricity Produced (kWh)",
+        "key": "chp_total_electricity_produced",
+        "bau_value": lambda df: safe_get(df, "outputs.CHP.annual_electric_production_kwh_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.CHP.annual_electric_production_kwh")
+    },
+    {
+        "label": "CHP Exported to Grid (kWh)",
+        "key": "chp_exported_to_grid",
+        "bau_value": lambda df: safe_get(df, "outputs.CHP.electric_to_grid_series_kw_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.CHP.electric_to_grid_series_kw")
+    },
+    {
+        "label": "CHP Serving Load (kWh)",
+        "key": "chp_serving_load",
+        "bau_value": lambda df: safe_get(df, "outputs.CHP.electric_to_load_series_kw_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.CHP.electric_to_load_series_kw")
+    },
+    {
+        "label": "CHP Serving Thermal Load (MMBtu)",
+        "key": "chp_serving_thermal_load",
+        "bau_value": lambda df: safe_get(df, "outputs.CHP.thermal_to_load_series_mmbtu_per_hour_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.CHP.thermal_to_load_series_mmbtu_per_hour")
+    },
+    {
+        "label": "Grid Purchased Electricity (kWh)",
+        "key": "grid_purchased_electricity",
+        "bau_value": lambda df: safe_get(df, "outputs.ElectricUtility.annual_energy_supplied_kwh_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricUtility.annual_energy_supplied_kwh")
+    },
+    {
+        "label": "Total Site Electricity Use (kWh)",
+        "key": "total_site_electricity_use",
+        "bau_value": lambda df: safe_get(df, "outputs.ElectricUtility.electric_to_load_series_kw_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricUtility.electric_to_load_series_kw")
+    },
+    {
+        "label": "Net Purchased Electricity Reduction (%)",
+        "key": "net_purchased_electricity_reduction",
+        "bau_value": lambda df: safe_get(df, "outputs.ElectricUtility.electric_to_load_series_kwsdf_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricUtility.electric_to_load_series_kwsdf")
+    },
+    {
+        "label": "Electricity Energy Cost ($)",
+        "key": "electricity_energy_cost",
+        "bau_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_energy_cost_before_tax_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_energy_cost_before_tax")
+    },
+    {
+        "label": "Electricity Demand Cost ($)",
+        "key": "electricity_demand_cost",
+        "bau_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_demand_cost_before_tax_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_demand_cost_before_tax")
+    },
+    {
+        "label": "Utility Fixed Cost ($)",
+        "key": "utility_fixed_cost",
+        "bau_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_fixed_cost_before_tax_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_fixed_cost_before_tax")
+    },
+    {
+        "label": "Purchased Electricity Cost ($)",
+        "key": "purchased_electricity_cost",
+        "bau_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_bill_before_tax_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_bill_before_tax")
+    },
+    {
+        "label": "Electricity Export Benefit ($)",
+        "key": "electricity_export_benefit",
+        "bau_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_export_benefit_before_tax_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_export_benefit_before_tax")
+    },
+    {
+        "label": "Net Electricity Cost ($)",
+        "key": "net_electricity_cost",
+        "bau_value": lambda df: safe_get(df, "outputs.ElectricTariff.lifecycle_energy_cost_after_tax_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.lifecycle_energy_cost_after_tax")
+    },
+    {
+        "label": "Electricity Cost Savings ($/year)",
+        "key": "electricity_cost_savings",
+        "bau_value": lambda df: safe_get(df, "outputs.ElectricTariff.lifecycle_energy_cost_after_tax_bau_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.lifecycle_energy_cost_after_tax_bau")
+    },
+    {
+        "label": "Boiler Fuel (MMBtu)",
+        "key": "boiler_fuel",
+        "bau_value": lambda df: safe_get(df, "outputs.ExistingBoiler.fuel_used_mmbtu_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.ExistingBoiler.fuel_used_mmbtu")
+    },
+    {
+        "label": "CHP Fuel (MMBtu)",
+        "key": "chp_fuel",
+        "bau_value": lambda df: safe_get(df, "outputs.CHP.annual_fuel_consumption_mmbtu_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.CHP.annual_fuel_consumption_mmbtu")
+    },
+    {
+        "label": "Total Fuel (MMBtu)",
+        "key": "total_fuel",
+        "bau_value": lambda df: safe_get(df, "outputs.ElectricUtility.total_energy_supplied_kwh_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricUtility.total_energy_supplied_kwh")
+    },
+    {
+        "label": "Natural Gas Reduction (%)",
+        "key": "natural_gas_reduction",
+        "bau_value": lambda df: safe_get(df, "outputs.ElectricUtility.annual_energy_supplied_kwh_bau_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricUtility.annual_energy_supplied_kwh_bau")
+    },
+    {
+        "label": "Boiler Thermal Production (MMBtu)",
+        "key": "boiler_thermal_production",
+        "bau_value": lambda df: safe_get(df, "outputs.ExistingBoiler.annual_thermal_production_mmbtu_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.ExistingBoiler.annual_thermal_production_mmbtu")
+    },
+    {
+        "label": "CHP Thermal Production (MMBtu)",
+        "key": "chp_thermal_production",
+        "bau_value": lambda df: safe_get(df, "outputs.CHP.annual_thermal_production_mmbtu_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.CHP.annual_thermal_production_mmbtu")
+    },
+    {
+        "label": "Total Thermal Production (MMBtu)",
+        "key": "total_thermal_production",
+        "bau_value": lambda df: safe_get(df, "outputs.CHP.annual_thermal_production_mmbtu_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.CHP.annual_thermal_production_mmbtu")
+    },
+    {
+        "label": "Heating System Fuel Cost ($)",
+        "key": "heating_system_fuel_cost",
+        "bau_value": lambda df: safe_get(df, "outputs.Site.heating_system_fuel_cost_us_dollars_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Site.heating_system_fuel_cost_us_dollars")
+    },
+    {
+        "label": "CHP Fuel Cost ($)",
+        "key": "chp_fuel_cost",
+        "bau_value": lambda df: safe_get(df, "outputs.CHP.year_one_fuel_cost_before_tax_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.CHP.year_one_fuel_cost_before_tax")
+    },
+    {
+        "label": "Total Fuel (NG) Cost ($)",
+        "key": "total_fuel_ng_cost",
+        "bau_value": lambda df: safe_get(df, "outputs.Site.total_fuel_cost_us_dollars_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Site.total_fuel_cost_us_dollars")
+    },
+    {
+        "label": "Total Utility Cost ($)",
+        "key": "total_utility_cost",
+        "bau_value": lambda df: safe_get(df, "outputs.Site.total_utility_cost_us_dollars_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Site.total_utility_cost_us_dollars")
+    },
+    {
+        "label": "O&M Cost Increase ($)",
+        "key": "om_cost_increase",
+        "bau_value": lambda df: safe_get(df, "outputs.Financial.om_and_replacement_present_cost_after_tax_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Financial.om_and_replacement_present_cost_after_tax")
+    },
+    {
+        "label": "Payback Period (years)",
+        "key": "payback_period",
+        "bau_value": lambda df: safe_get(df, "outputs.Financial.simple_payback_years_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Financial.simple_payback_years")
+    },
+    {
+        "label": "Gross Capital Cost ($)",
+        "key": "gross_capital_cost",
+        "bau_value": lambda df: safe_get(df, "outputs.Financial.lifecycle_capital_costs_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Financial.lifecycle_capital_costs")
+    },
+    {
+        "label": "Federal Tax Incentive (30%)",
+        "key": "federal_tax_incentive",
+        "bau_value": lambda df: 0.3,
+        "scenario_value": lambda df: 0.3
+    },
+    {
+        "label": "Additional Grant ($)",
+        "key": "additional_grant",
+        "bau_value": lambda df: 0,  
+        "scenario_value": lambda df: 0
+    },
+    {
+        "label": "Incentive Value ($)",
+        "key": "incentive_value",
+        "bau_value": lambda df: safe_get(df, "outputs.Financial.total_incentives_value_us_dollars_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Financial.total_incentives_value_us_dollars")
+    },
+    {
+        "label": "Net Capital Cost ($)",
+        "key": "net_capital_cost",
+        "bau_value": lambda df: safe_get(df, "outputs.Financial.net_capital_cost_us_dollars_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Financial.net_capital_cost_us_dollars")
+    },
+    {
+        "label": "Annual Cost Savings ($)",
+        "key": "annual_cost_savings",
+        "bau_value": lambda df: safe_get(df, "outputs.Financial.annual_cost_savings_us_dollars_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Financial.annual_cost_savings_us_dollars")
+    },
+    {
+        "label": "Simple Payback (years)",
+        "key": "simple_payback",
+        "bau_value": lambda df: safe_get(df, "outputs.Financial.simple_payback_years_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Financial.simple_payback_years")
+    },
+    {
+        "label": "CO2 Emissions (tonnes)",
+        "key": "co2_emissions",
+        "bau_value": lambda df: safe_get(df, "outputs.Site.annual_emissions_tonnes_CO2_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Site.annual_emissions_tonnes_CO2")
+    },
+    {
+        "label": "CO2 Reduction (tonnes)",
+        "key": "co2_reduction",
+        "bau_value": lambda df: safe_get(df, "outputs.Site.lifecycle_emissions_tonnes_CO2_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Site.lifecycle_emissions_tonnes_CO2")
+    },
+    {
+        "label": "CO2 (%) savings",
+        "key": "co2_savings_percentage",
+        "bau_value": lambda df: 0,
+        "scenario_value": lambda df: 0
+    },
+    {
+        "label": "NPV ($)",
+        "key": "npv",
+        "bau_value": lambda df: safe_get(df, "outputs.Financial.npv_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Financial.npv")
+    },
+    {
+        "label": "PV Federal Tax Incentive (%)",
+        "key": "pv_federal_tax_incentive",
+        "bau_value": lambda df: safe_get(df, "inputs.PV.federal_itc_fraction_bau"),
+        "scenario_value": lambda df: safe_get(df, "inputs.PV.federal_itc_fraction")
+    },
+    {
+        "label": "Storage Federal Tax Incentive (%)",
+        "key": "storage_federal_tax_incentive",
+        "bau_value": lambda df: safe_get(df, "inputs.ElectricStorage.total_itc_fraction_bau"),
+        "scenario_value": lambda df: safe_get(df, "inputs.ElectricStorage.total_itc_fraction")
+    }
 ]
 
 # Configuration for calculations
@@ -1675,7 +2057,7 @@ calculations = [
     },
     {
         "name": "Incentive Value ($)",
-        "formula": lambda col, bau, headers: f'={col}{headers["Federal Tax Incentive (30%)"] + 2}*{col}{headers["Gross Capital Cost ($)"] + 2}+{col}{headers["IAC Grant ($)"] + 2}'
+        "formula": lambda col, bau, headers: f'=({col}{headers["Federal Tax Incentive (30%)"] + 2}*{col}{headers["Gross Capital Cost ($)"] + 2})+{col}{headers["Additional Grant ($)"] + 2}'
     },
     {
         "name": "Net Capital Cost ($)",
@@ -1694,8 +2076,22 @@ calculations = [
         "formula": lambda col, bau, headers: f'={bau["co2_reduction_value"]}-{col}{headers["CO2 Emissions (tonnes)"] + 2}'
     },
     {
-        "name": "CO2 (%) savings ",
+        "name": "CO2 (%) savings",
         "formula": lambda col, bau, headers: f'=({bau["co2_reduction_value"]}-{col}{headers["CO2 Emissions (tonnes)"] + 2})/{bau["co2_reduction_value"]}'
+    },
+    #Example Calculations
+    # Calculation Without Reference to bau_cells
+    {
+        "name": "Placeholder Calculation Without BAU Reference",
+        "formula": lambda col, bau, headers: f'={col}{headers["Placeholder1"] + 2}+{col}{headers["Placeholder2"] + 2}'
+        # This formula adds Placeholder1 and Placeholder2 values from the scenario.
+    },
+
+    # Calculation With Reference to bau_cells
+    {
+        "name": "Placeholder Calculation With BAU Reference",
+        "formula": lambda col, bau, headers: f'=({bau["placeholder1_value"]}-{col}{headers["Placeholder2"] + 2})/{bau["placeholder1_value"]}'
+        # This formula calculates the percentage change of Placeholder2 using Placeholder1's BAU value as the reference.
     }
 ]
 
