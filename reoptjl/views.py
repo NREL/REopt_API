@@ -1358,7 +1358,7 @@ def create_custom_comparison_table(request):
             log.debug(f"GET parameters: {request.GET}")
 
             # Get the table configuration name from the query parameters
-            table_config_name = request.GET.get('table_config_name', 'example_table_config')  # Default to 'example_table_config' if not provided
+            table_config_name = request.GET.get('table_config_name', 'single_site_custom_table')  # Default to 'example_table_config' if not provided
             log.debug(f"Using table configuration: {table_config_name}")
 
             # Manually collect the run_uuid values by iterating over the keys
