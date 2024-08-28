@@ -1220,7 +1220,10 @@ def access_raw_data(run_uuids, request):
         log.error(f"ValueError in access_raw_data: {e}")
         raise
     except Exception:
-        log.error(f"Error in access_raw_data: {tb.format_exc()}")
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        log.error(f"Error in access_raw_data: {exc_value}, traceback: {tb.format_tb(exc_traceback)}")
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='access_raw_data')
+        err.save_to_db()
         raise
     
 def process_raw_data(request, run_uuid):
@@ -1270,50 +1273,18 @@ def get_bau_values(scenarios, config):
         bau_values = {entry["label"]: None for entry in config}
         log.debug(f"Initialized BAU values: {bau_values}")
 
-        # Extract and compare BAU values across all scenarios
-        bau_values_list = []
+        # Extract BAU values from the first scenario
+        df_gen = flatten_dict(scenarios[0]['full_data'])
+        log.debug(f"Flattened data for scenario {scenarios[0]['run_uuid']}: {df_gen}")
 
-        for scenario in scenarios:
-            df_gen = flatten_dict(scenario['full_data'])
-            log.debug(f"Flattened data for scenario {scenario['run_uuid']}: {df_gen}")
+        for entry in config:
+            bau_func = entry.get("bau_value")
+            value = bau_func(df_gen) if bau_func else df_gen.get(f"{entry['key']}_bau")
+            bau_values[entry["label"]] = value
 
-            current_bau_values = {}
-            for entry in config:
-                bau_func = entry.get("bau_value")
-                value = bau_func(df_gen) if bau_func else df_gen.get(f"{entry['key']}_bau")
-                current_bau_values[entry["label"]] = value
-
-            bau_values_list.append(current_bau_values)
-
-        # Check consistency of BAU values across all scenarios
-        first_bau_values = bau_values_list[0]
-        for idx, other_bau_values in enumerate(bau_values_list[1:], start=1):
-            differences = {
-                key: (first_bau_values[key], other_bau_values[key])
-                for key in first_bau_values
-                if first_bau_values[key] != other_bau_values[key]
-            }
-
-            if differences:
-                # Log each difference in a user-friendly way
-                diff_message = "\n".join(
-                    [f" - {key}: {first_bau_values[key]} vs {other_bau_values[key]}" for key in differences]
-                )
-                log.warning(
-                    f"Inconsistent BAU values found between scenario 1 and scenario {idx + 1}:\n{diff_message}"
-                )
-                raise ValueError(
-                    "Inconsistent BAU values across scenarios. Please check the differences in the logs."
-                )
-
-        # If consistent, use the first set of BAU values
-        bau_values.update(first_bau_values)
         log.debug(f"Final consolidated BAU values: {bau_values}")
         return bau_values
 
-    except ValueError as e:
-        log.error(f"ValueError in get_bau_values: {e}")
-        raise
     except Exception:
         log.error(f"Error in get_bau_values: {tb.format_exc()}")
         raise
