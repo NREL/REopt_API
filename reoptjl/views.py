@@ -1323,11 +1323,8 @@ def process_scenarios(scenarios, reopt_data_config):
         raise
 
 def create_custom_comparison_table(request):
-    """
-    Create a custom comparison table based on user-provided run UUIDs.
-    """
-    try:
-        if request.method == 'GET':
+    if request.method == 'GET':
+        try:
             log.debug(f"GET parameters: {request.GET}")
 
             table_config_name = request.GET.get('table_config_name', 'single_site_custom_table')
@@ -1342,15 +1339,9 @@ def create_custom_comparison_table(request):
             for r_uuid in run_uuids:
                 try:
                     uuid.UUID(r_uuid)
-                except ValueError as e:
-                    if e.args[0] == "badly formed hexadecimal UUID string":
-                        resp = {"Error": f"Invalid UUID format: {r_uuid}. Ensure that each run_uuid is a valid UUID."}
-                        return JsonResponse(resp, status=400)
-                    else:
-                        exc_type, exc_value, exc_traceback = sys.exc_info()
-                        err = UnexpectedError(exc_type, exc_value.args[0], tb.format_tb(exc_traceback), task='create_custom_comparison_table', run_uuid=r_uuid)
-                        err.save_to_db()
-                        return JsonResponse({"Error": str(err.args[0])}, status=400)
+                except ValueError:
+                    log.debug(f"Invalid UUID format: {r_uuid}")
+                    return JsonResponse({"Error": f"Invalid UUID format: {r_uuid}. Ensure that each run_uuid is a valid UUID."}, status=400)
 
             if table_config_name in globals():
                 target_custom_table = globals()[table_config_name]
@@ -1359,11 +1350,10 @@ def create_custom_comparison_table(request):
 
             scenarios = access_raw_data(run_uuids, request)
             if 'scenarios' not in scenarios or not scenarios['scenarios']:
-                response = JsonResponse({'Error': 'Failed to fetch scenarios. The provided run_uuids might be incorrect or not associated with any data.'}, content_type='application/json', status=404)
-                return response
+                log.debug("Failed to fetch scenarios")
+                return JsonResponse({'Error': 'Failed to fetch scenarios. The provided run_uuids contains inconsistent BAU data. This should be used for scenarios with the same site inputs'}, content_type='application/json', status=404)
 
             final_df = process_scenarios(scenarios['scenarios'], target_custom_table)
-            log.debug(f"Final DataFrame (before transpose):\n{final_df}")
 
             final_df.iloc[1:, 0] = run_uuids
 
@@ -1384,15 +1374,18 @@ def create_custom_comparison_table(request):
 
             return response
 
-        else:
-            return JsonResponse({"Error": "Method not allowed. This endpoint only supports GET requests."}, status=405)
+        except ValueError as e:
+            log.debug(f"ValueError: {str(e)}")
+            return JsonResponse({"Error": f"A ValueError occurred: {str(e)}. Please check the input values and try again."}, status=500)
 
-    except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        err = UnexpectedError(exc_type, exc_value.args[0], tb.format_tb(exc_traceback), task='create_custom_comparison_table')
-        err.save_to_db()
-        resp = {"Error": err.message}
-        return JsonResponse(resp, status=500)
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            log.debug(f"exc_type: {exc_type}; exc_value: {exc_value}; exc_traceback: {tb.format_tb(exc_traceback)}")
+            err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table')
+            err.save_to_db()
+            return JsonResponse({"Error": f"An unexpected error occurred while creating the comparison table. Please try again later or contact support if the issue persists. Error details: {str(e)}"}, status=500)
+
+    return JsonResponse({"Error": "Method not allowed. This endpoint only supports GET requests."}, status=405)
 
 def create_custom_table_excel(df, custom_table, calculations, output):
     try:
@@ -1593,7 +1586,7 @@ example_table = [
     {
         "label": "Site Name",
         "key": "site",
-        "bau_value": lambda df: safe_get(df, "inputs.Meta.description", "None provided"),
+        "bau_value": lambda df: "",
         "scenario_value": lambda df: safe_get(df, "inputs.Meta.description", "None provided")
     },
     {
