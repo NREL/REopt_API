@@ -1190,7 +1190,7 @@ def easiur_costs(request):
 ################ START Custom Table ###########################
 ###############################################################
 
-def access_raw_data(run_uuids, request):
+def access_raw_data(run_uuids, request, table_config_name):
     try:
         # Fetch UserProvidedMeta data for the relevant run_uuids
         usermeta = UserProvidedMeta.objects.filter(meta__run_uuid__in=run_uuids).only(
@@ -1211,15 +1211,17 @@ def access_raw_data(run_uuids, request):
             ]
         }
 
-        # Perform the BAU consistency check
-        check_bau_consistency(full_summary_dict['scenarios'])
+        config = globals().get(table_config_name)
+        if not config:
+            raise ValueError(f"Invalid table configuration: {table_config_name}. Please provide a valid configuration name.")
+
+        # Check if the BAU consistency check should be performed
+        if any("bau_value" in entry for entry in config):
+            check_bau_consistency(full_summary_dict['scenarios'])
 
         return full_summary_dict
 
-    except ValueError as e:
-        log.error(f"ValueError in access_raw_data: {e}")
-        raise
-    except Exception:
+    except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         log.error(f"Error in access_raw_data: {exc_value}, traceback: {tb.format_tb(exc_traceback)}")
         err = UnexpectedError(exc_type, exc_value, exc_traceback, task='access_raw_data')
@@ -1243,7 +1245,6 @@ def generate_data_dict(config, df_gen, suffix=""):
         for entry in config:
             val = entry["scenario_value"](df_gen)
             data_dict[entry["label"]].append(val)
-        log.debug(f"Generated data_dict: {data_dict}")
         return data_dict
     except Exception:
         log.error(f"Error in generate_data_dict: {tb.format_exc()}")
@@ -1255,14 +1256,12 @@ def get_REopt_data(data_f, scenario_name, config):
         suffix = "_bau" if "BAU" in scenario_name_str.upper() else ""
 
         df_gen = flatten_dict(data_f)
-        log.debug(f"Flattened data_f in get_REopt_data: {df_gen}")
         data_dict = generate_data_dict(config, df_gen, suffix)
         data_dict["Scenario"] = [scenario_name_str]
 
         col_order = ["Scenario"] + [entry["label"] for entry in config]
         df_res = pd.DataFrame(data_dict)[col_order]
 
-        log.debug(f"Generated DataFrame in get_REopt_data: {df_res}")
         return df_res
     except Exception:
         log.error(f"Error in get_REopt_data: {tb.format_exc()}")
@@ -1271,18 +1270,20 @@ def get_REopt_data(data_f, scenario_name, config):
 def get_bau_values(scenarios, config):
     try:
         bau_values = {entry["label"]: None for entry in config}
-        log.debug(f"Initialized BAU values: {bau_values}")
+
+        # Only proceed if at least one config entry has a bau_value
+        if not any("bau_value" in entry for entry in config):
+            return None
 
         # Extract BAU values from the first scenario
         df_gen = flatten_dict(scenarios[0]['full_data'])
-        log.debug(f"Flattened data for scenario {scenarios[0]['run_uuid']}: {df_gen}")
 
         for entry in config:
             bau_func = entry.get("bau_value")
-            value = bau_func(df_gen) if bau_func else df_gen.get(f"{entry['key']}_bau")
-            bau_values[entry["label"]] = value
+            if bau_func:  # Only extract BAU values if `bau_value` exists
+                value = bau_func(df_gen)
+                bau_values[entry["label"]] = value
 
-        log.debug(f"Final consolidated BAU values: {bau_values}")
         return bau_values
 
     except Exception:
@@ -1291,9 +1292,8 @@ def get_bau_values(scenarios, config):
 
 def process_scenarios(scenarios, reopt_data_config):
     try:
-        log.debug(f"Starting process_scenarios with config: {reopt_data_config}")
+        # Check if BAU values exist
         bau_values = get_bau_values(scenarios, reopt_data_config)
-        log.debug(f"BAU values: {bau_values}")
         combined_df = pd.DataFrame()
 
         for scenario in scenarios:
@@ -1303,21 +1303,25 @@ def process_scenarios(scenarios, reopt_data_config):
             df_result.columns = [run_uuid]
             combined_df = df_result if combined_df.empty else combined_df.join(df_result, how='outer')
 
-        # Adding BAU data as the first row in the DataFrame
-        bau_data = {key: [value] for key, value in bau_values.items()}
-        bau_data["Scenario"] = ["BAU"]
-        df_bau = pd.DataFrame(bau_data)
+        if bau_values:
+            # Single site scenario with BAU data
+            bau_data = {key: [value] for key, value in bau_values.items()}
+            bau_data["Scenario"] = ["BAU"]
+            df_bau = pd.DataFrame(bau_data)
 
-        # Combine BAU data with scenario results
-        combined_df = pd.concat([df_bau, combined_df.T]).reset_index(drop=True)
-        log.debug(f"Final DataFrame before clean_data_dict:\n{combined_df}")
+            # Combine BAU data with scenario results
+            combined_df = pd.concat([df_bau, combined_df.T]).reset_index(drop=True)
+        else:
+            # Portfolio scenario without BAU data
+            combined_df = combined_df.T.reset_index()
+            combined_df.rename(columns={'index': 'Scenario'}, inplace=True)
 
         combined_df = clean_data_dict(combined_df.to_dict(orient="list"))
         combined_df = pd.DataFrame(combined_df)
         combined_df = combined_df[["Scenario"] + [col for col in combined_df.columns if col != "Scenario"]]
 
-        log.debug(f"Final DataFrame in process_scenarios:\n{combined_df}")
         return combined_df
+
     except Exception:
         log.error(f"Error in process_scenarios: {tb.format_exc()}")
         raise
@@ -1325,14 +1329,10 @@ def process_scenarios(scenarios, reopt_data_config):
 def create_custom_comparison_table(request):
     if request.method == 'GET':
         try:
-            log.debug(f"GET parameters: {request.GET}")
-
+            # Set default table configuration name to 'single_site_custom_table'
             table_config_name = request.GET.get('table_config_name', 'single_site_custom_table')
-            log.debug(f"Using table configuration: {table_config_name}")
 
             run_uuids = [request.GET[key] for key in request.GET.keys() if key.startswith('run_uuid[')]
-            log.debug(f"Handling GET request with run_uuids: {run_uuids}")
-
             if not run_uuids:
                 return JsonResponse({"Error": "No run_uuids provided. Please include at least one run_uuid in the request."}, status=400)
 
@@ -1340,22 +1340,24 @@ def create_custom_comparison_table(request):
                 try:
                     uuid.UUID(r_uuid)
                 except ValueError:
-                    log.debug(f"Invalid UUID format: {r_uuid}")
                     return JsonResponse({"Error": f"Invalid UUID format: {r_uuid}. Ensure that each run_uuid is a valid UUID."}, status=400)
 
-            if table_config_name in globals():
-                target_custom_table = globals()[table_config_name]
-            else:
-                return JsonResponse({"Error": f"Invalid table configuration: {table_config_name}. Please provide a valid configuration name."}, status=400)
+            # Access raw data and check for BAU consistency if needed
+            scenarios = access_raw_data(run_uuids, request, table_config_name)
+            if not scenarios.get('scenarios'):
+                return JsonResponse({'Error': 'Failed to fetch scenarios or inconsistent BAU data. Ensure that scenarios have consistent site inputs.'}, content_type='application/json', status=404)
 
-            scenarios = access_raw_data(run_uuids, request)
-            if 'scenarios' not in scenarios or not scenarios['scenarios']:
-                log.debug("Failed to fetch scenarios")
-                return JsonResponse({'Error': 'Failed to fetch scenarios. The provided run_uuids contains inconsistent BAU data. This should be used for scenarios with the same site inputs'}, content_type='application/json', status=404)
+            target_custom_table = globals().get(table_config_name)
+            if not target_custom_table:
+                return JsonResponse({"Error": f"Invalid table configuration: {table_config_name}. Please provide a valid configuration name."}, status=400)
 
             final_df = process_scenarios(scenarios['scenarios'], target_custom_table)
 
-            final_df.iloc[1:, 0] = run_uuids
+            # Ensure correct alignment of run_uuids with the DataFrame
+            if len(run_uuids) == final_df.shape[0] - 1:  # Exclude BAU row if present
+                final_df.iloc[1:, 0] = run_uuids
+            elif len(run_uuids) == final_df.shape[0]:
+                final_df.iloc[:, 0] = run_uuids
 
             final_df_transpose = final_df.transpose()
             final_df_transpose.columns = final_df_transpose.iloc[0]
@@ -1365,22 +1367,18 @@ def create_custom_comparison_table(request):
             create_custom_table_excel(final_df_transpose, target_custom_table, calculations, output)
             output.seek(0)
 
-            filename = "comparison_table.xlsx"
             response = HttpResponse(
                 output,
                 content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             )
-            response['Content-Disposition'] = f'attachment; filename={filename}'
-
+            response['Content-Disposition'] = 'attachment; filename="comparison_table.xlsx"'
             return response
 
         except ValueError as e:
-            log.debug(f"ValueError: {str(e)}")
             return JsonResponse({"Error": f"A ValueError occurred: {str(e)} Please check the input values and try again."}, status=500)
 
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            log.debug(f"exc_type: {exc_type}; exc_value: {exc_value}; exc_traceback: {tb.format_tb(exc_traceback)}")
             err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table')
             err.save_to_db()
             return JsonResponse({"Error": f"An unexpected error occurred while creating the comparison table. Please try again later or contact support if the issue persists. Error details: {str(e)}"}, status=500)
@@ -1412,14 +1410,14 @@ def create_custom_table_excel(df, custom_table, calculations, output):
 
         # Message format to match formula style
         message_format = workbook.add_format({
-            'bg_color': '#FFE599',  # Light yellow background to match formula cells
+            'bg_color': '#FFE599',  
             'align': 'center',
             'valign': 'center',
             'border': 1,
-            'font_color': formula_color,  # Match the formula text color
-            'bold': True,  # Bold to make it stand out
-            'font_size': 12,  # Larger font size for visibility
-            'italic': True  # Italic to match formula cells
+            'font_color': formula_color,  
+            'bold': True, 
+            'font_size': 12,  
+            'italic': True 
         })
         
         # Combine row color with cell format, excluding formulas
@@ -1453,10 +1451,9 @@ def create_custom_table_excel(df, custom_table, calculations, output):
             row_color = row_colors[row_num % 2]
             worksheet.write(row_num + 1, 0, variable, workbook.add_format({'bg_color': row_color, 'border': 1}))
 
-            # Determine the format for each data cell
             for col_num, value in enumerate(df.loc[variable]):
-                is_formula = False  # Logic to detect if this cell should be a formula
-                if isinstance(value, str) and "formula" in value.lower():  # Example logic for formulas
+                is_formula = False  
+                if isinstance(value, str) and "formula" in value.lower(): 
                     is_formula = True
 
                 cell_format = get_combined_format(variable, row_color, is_formula)
@@ -1466,10 +1463,6 @@ def create_custom_table_excel(df, custom_table, calculations, output):
                     worksheet.write(row_num + 1, col_num + 1, value, cell_format)
 
         worksheet.merge_range(len(df.index) + 2, 0, len(df.index) + 2, len(df.columns), "Values in orange are formulas. Do not input anything.", message_format)
-
-        # Adjust row heights for better readability
-        for row_num in range(1, len(df.index) + 2):
-            worksheet.set_row(row_num, 20)
 
         headers = {header: idx for idx, header in enumerate(df.index)}
 
@@ -1508,14 +1501,12 @@ def create_custom_table_excel(df, custom_table, calculations, output):
                                 worksheet.write(row_idx + 1, col - 1, "MISSING DATA", error_format)
                             message = f"Cannot calculate '{calc['name']}' because the required fields are missing: {', '.join(missing_keys)} in the Table configuration provided. Update the Table to include {missing_keys}. Writing 'MISSING DATA' instead."
                             if message not in logged_messages:
-                                print(message)
                                 logged_messages.add(message)
                             missing_entries.append(calc["name"])
                 except KeyError as e:
                     missing_field = str(e)
                     message = f"Cannot calculate '{calc['name']}' because the field '{missing_field}' is missing in the Table configuration provided. Update the Table to include {missing_field}. Writing 'MISSING DATA' instead."
                     if message not in logged_messages:
-                        print(message)
                         logged_messages.add(message)
                     row_idx = headers.get(calc["name"])
                     if row_idx is not None:
@@ -1532,10 +1523,26 @@ def create_custom_table_excel(df, custom_table, calculations, output):
         err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table')
         err.save
 
-
-
 # Configuration
 # Set up table needed along with REopt dictionaries to grab data 
+# Portfolio configuration should not include "bau_value" in the keys
+example_table_portfolio = [
+    {
+        "label": "Site Name",
+        "key": "site",
+        "scenario_value": lambda df: safe_get(df, "inputs.Meta.description", "None provided")
+    },
+    {
+        "label": "Site Address",
+        "key": "site_address",
+        "scenario_value": lambda df: safe_get(df, "inputs.Meta.address", "None provided")
+    },
+    {
+        "label": "Site Location",
+        "key": "site_lat_long",
+        "scenario_value": lambda df: f"({safe_get(df, 'inputs.Site.latitude')}, {safe_get(df, 'inputs.Site.longitude')})"
+    }
+]
 
 # Example Custom Table Configuration
 example_table = [
