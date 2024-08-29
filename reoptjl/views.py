@@ -723,15 +723,18 @@ def link_run_uuids_to_portfolio_uuid(request):
                 'portfolio_uuid'
             )
 
-            for s in scenario:
-                s.portfolio_uuid = p_uuid
-                s.save()
+            if len(scenario) > 0:
 
-            response = JsonResponse({"Success": "Success message"}, status=200, safe=False)
-            return response
-        else:
-            response = JsonResponse({"Error": "No scenarios found for run_uuids '{}'".format(run_uuids)}, content_type='application/json', status=404)
-            return response
+                for s in scenario:
+                    s.portfolio_uuid = p_uuid
+                    s.save()
+            else:
+                # Stop processing on first bad run_uuid
+                response = JsonResponse({"Error": "No scenarios found for run_uuid '{}'".format(r_uuid)}, content_type='application/json', status=500)
+                return response
+        
+        response = JsonResponse({"Success": "All runs associated with given prortfolios"}, status=200, safe=False)
+        return response
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -953,13 +956,22 @@ def queryset_for_summary(api_metas,summary_dict:dict):
     utility = ElectricUtilityInputs.objects.filter(meta__run_uuid__in=run_uuids).only(
         'meta__run_uuid',
         'outage_start_time_step',
+        'outage_end_time_step',
+        'outage_durations',
         'outage_start_time_steps'
     )
     if len(utility) > 0:
         for m in utility:
-            if len(m.outage_start_time_steps) == 0:
-                summary_dict[str(m.meta.run_uuid)]['focus'] = "Financial"
+
+            if m.outage_start_time_step is None:
+                if len(m.outage_start_time_steps) == 0:
+                    summary_dict[str(m.meta.run_uuid)]['focus'] = "Financial"
+                else:
+                    summary_dict[str(m.meta.run_uuid)]['focus'] = "Resilience"
+                    summary_dict[str(m.meta.run_uuid)]['outage_duration'] = m.outage_durations[0] # all durations are same.
             else:
+                # outage start timestep was provided, is 1 or more
+                summary_dict[str(m.meta.run_uuid)]['outage_duration'] = m.outage_end_time_step - m.outage_start_time_step + 1
                 summary_dict[str(m.meta.run_uuid)]['focus'] = "Resilience"
     
     site = SiteOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
