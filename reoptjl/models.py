@@ -5271,6 +5271,40 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
         default = MAX_BIG_NUMBER,
         help_text=("Maximum thermal power size constraint for optimization [ton]")
     )
+
+    min_allowable_ton = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default = 0.0,
+        help_text=("Minimum nonzero thermal power size constraint for optimization [ton]")
+    )
+
+    min_allowable_peak_load_fraction = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default = 0.0,
+        help_text=("Minimum nonzero thermal power as a fucniton of coincident peak load - constraint for optimization [ton]")
+    )
+
+    sizing_factor = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default = 0.0,
+        help_text=("Size of system relative to max dispatch output [fraction]")
+    )
+    
     
     installed_cost_per_ton = models.FloatField(
         validators=[
@@ -5409,6 +5443,29 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
         help_text="Boolean indicator if ASHP space heater serves compatible thermal loads exclusively in optimized scenario"   
     )
 
+    avoided_capex_by_ashp_present_value = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default = MAX_BIG_NUMBER,
+        help_text=("Maximum thermal power size constraint for optimization [ton]")
+    )
+
+    back_up_temp_threshold_degF = models.FloatField(
+        validators=[
+            MinValueValidator(-275.0),
+            MaxValueValidator(200.0)
+        ],
+        null=True,
+        blank=True,
+        default = MAX_BIG_NUMBER,
+        help_text=("Maximum thermal power size constraint for optimization [ton]")
+    )
+
+
 
 class ASHPSpaceHeaterOutputs(BaseModel, models.Model):
     key = "ASHPSpaceHeaterOutputs"
@@ -5461,6 +5518,26 @@ class ASHPSpaceHeaterOutputs(BaseModel, models.Model):
         default = list,
     )
 
+    heating_cop = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    heating_cf = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    cooling_cop = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    cooling_cf = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
 class ASHPWaterHeaterInputs(BaseModel, models.Model):
     key = "ASHPWaterHeater"
     meta = models.OneToOneField(
@@ -5490,6 +5567,39 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
         blank=True,
         default = MAX_BIG_NUMBER,
         help_text=("Maximum thermal power size constraint for optimization [ton]")
+    )
+
+    min_allowable_ton = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default = 0.0,
+        help_text=("Minimum nonzero thermal power size constraint for optimization [ton]")
+    )
+
+    min_allowable_peak_capacity_fraction = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default = 0.0,
+        help_text=("Minimum nonzero thermal power as a function of coincident peak load / CF - constraint for optimization [ton]")
+    )
+
+    sizing_factor = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default = 0.0,
+        help_text=("Size of system relative to max dispatch output [fraction]")
     )
     
     installed_cost_per_ton = models.FloatField(
@@ -5565,13 +5675,35 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
         models.FloatField(
             null=True, blank=True,
             validators=[
-                MinValueValidator(-275),
+                MinValueValidator(-275.0),
                 MaxValueValidator(200.0)
             ],
         ),
         default=list,
         blank=True,
         help_text=(("Reference temperatures for ASHP space heating system's heating COP and CF"))
+    )
+
+    avoided_capex_by_ashp_present_value = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default = MAX_BIG_NUMBER,
+        help_text=("Maximum thermal power size constraint for optimization [ton]")
+    )
+
+    back_up_temp_threshold_degF = models.FloatField(
+        validators=[
+            MinValueValidator(-275.0),
+            MaxValueValidator(200.0)
+        ],
+        null=True,
+        blank=True,
+        default = MAX_BIG_NUMBER,
+        help_text=("Maximum thermal power size constraint for optimization [ton]")
     )
 
     force_into_system = models.BooleanField(
@@ -5621,6 +5753,17 @@ class ASHPWaterHeaterOutputs(BaseModel, models.Model):
         models.FloatField(null=True, blank=True),
         default = list
     )
+
+    heating_cop = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    heating_cf = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
 
 class REoptjlMessageOutputs(BaseModel, models.Model):
     
