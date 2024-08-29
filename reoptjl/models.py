@@ -8167,10 +8167,10 @@ def get_input_dict_from_run_uuid(run_uuid:str):
     try: d["ElectricHeater"] = filter_none_and_empty_array(meta.ElectricHeaterInputs.dict)
     except: pass
 
-    try: d["ASHP_SpaceHeater"] = filter_none_and_empty_array(meta.ASHPSpaceHeaterInputs.dict)
+    try: d["ASHPSpaceHeater"] = filter_none_and_empty_array(meta.ASHPSpaceHeaterInputs.dict)
     except: pass   
 
-    try: d["ASHP_WaterHeater"] = filter_none_and_empty_array(meta.ASHPWaterHeaterInputs.dict)
+    try: d["ASHPWaterHeater"] = filter_none_and_empty_array(meta.ASHPWaterHeaterInputs.dict)
     except: pass   
 
     return d

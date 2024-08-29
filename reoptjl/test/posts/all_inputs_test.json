@@ -339,7 +339,7 @@
         "can_serve_space_heating": true,
         "can_serve_process_heat": true
     },
-    "ASHP_SpaceHeater": {
+    "ASHPSpaceHeater": {
         "min_ton": 100.0,
         "max_ton": 100.0,
         "installed_cost_per_ton": 2250.0,
@@ -353,7 +353,7 @@
         "can_serve_cooling": true,
         "force_into_system": false
     },
-    "ASHP_WaterHeater": {
+    "ASHPWaterHeater": {
         "min_ton": 100.0,
         "max_ton": 100.0,
         "installed_cost_per_ton": 2250.0,
