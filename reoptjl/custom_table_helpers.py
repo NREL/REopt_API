@@ -73,9 +73,12 @@ def check_bau_consistency(scenarios, tolerance_percentage=0.1):
         for key in all_bau_keys:
             first_value = first_bau_values.get(key, 0)
             other_value = other_bau_values.get(key, 0)
+            
+            # Assign a default tolerance value before performing checks
+            tolerance = abs(first_value) * (tolerance_percentage / 100) if first_value != 0 else tolerance_percentage
+            
             if first_value != 0:  # Avoid division by zero
                 difference = abs(first_value - other_value)
-                tolerance = abs(first_value) * (tolerance_percentage / 100)
                 if difference > tolerance:
                     raise ValueError(f"Inconsistent BAU values found between scenario 1 and scenario {idx + 1}. Please check the BAU values for consistency.")
             else:  # Handle the case where the first value is 0
