@@ -5313,7 +5313,7 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
         help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
     )
 
-    heating_cop = ArrayField(
+    heating_cop_reference = ArrayField(
         models.FloatField(
             null=True, blank=True,
             validators=[
@@ -5323,11 +5323,11 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
         ),
         default=list,
         blank=True,
-        help_text=(("ASHP space heating system heating coefficient of performance (COP) "
+        help_text=(("Reference points for ASHP space heating system heating coefficient of performance (COP) "
                     "(ratio of usable heating thermal energy produced per unit electric energy consumed)"))
     )
 
-    cooling_cop = ArrayField(
+    heating_cf_reference = ArrayField(
         models.FloatField(
             null=True, blank=True,
             validators=[
@@ -5337,25 +5337,24 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
         ),
         default=list,
         blank=True,
-        help_text=(("ASHP space heating system cooling coefficient of performance (COP) "
-                    "(ratio of usable cooling thermal energy produced per unit electric energy consumed)"))
-    )
-
-    heating_cf = ArrayField(
-        models.FloatField(
-            null=True, blank=True,
-            validators=[
-                MinValueValidator(0),
-                MaxValueValidator(20.0)
-            ],
-        ),
-        default=list,
-        blank=True,
-        help_text=(("ASHP space heating system heating capacity factor"
+        help_text=(("Reference points for ASHP space heating system heating capac)ity factor"
                     "(ratio of heating thermal power to rated capacity)"))
     )
 
-    cooling_cf = ArrayField(
+    heating_reference_temps = ArrayField(
+        models.FloatField(
+            null=True, blank=True,
+            validators=[
+                MinValueValidator(-275),
+                MaxValueValidator(200.0)
+            ],
+        ),
+        default=list,
+        blank=True,
+        help_text=(("Reference temperatures for ASHP space heating system's heating COP and CF"))
+    )
+
+    cooling_cop_reference = ArrayField(
         models.FloatField(
             null=True, blank=True,
             validators=[
@@ -5365,8 +5364,35 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
         ),
         default=list,
         blank=True,
-        help_text=(("ASHP space heater cooling capacity factor"
-                    "(ratio of cooling thermal power to rated capacity)"))
+        help_text=(("Reference points for ASHP space heating system cooling coefficient of performance (COP) "
+                    "(ratio of usable heating thermal energy produced per unit electric energy consumed)"))
+    )
+
+    cooling_cf_reference = ArrayField(
+        models.FloatField(
+            null=True, blank=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(20.0)
+            ],
+        ),
+        default=list,
+        blank=True,
+        help_text=(("Reference points for ASHP space heating system cooling capac)ity factor"
+                    "(ratio of heating thermal power to rated capacity)"))
+    )
+
+    cooling_reference_temps = ArrayField(
+        models.FloatField(
+            null=True, blank=True,
+            validators=[
+                MinValueValidator(-275),
+                MaxValueValidator(200.0)
+            ],
+        ),
+        default=list,
+        blank=True,
+        help_text=(("Reference temperatures for ASHP space heating system's cooling COP and CF"))
     )
 
     can_serve_cooling = models.BooleanField(
@@ -5507,7 +5533,7 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
         help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
     )
 
-    heating_cop = ArrayField(
+    heating_cop_reference = ArrayField(
         models.FloatField(
             null=True, blank=True,
             validators=[
@@ -5517,11 +5543,11 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
         ),
         default=list,
         blank=True,
-        help_text=(("ASHP space heating system heating coefficient of performance (COP) "
+        help_text=(("Reference points for ASHP space heating system heating coefficient of performance (COP) "
                     "(ratio of usable heating thermal energy produced per unit electric energy consumed)"))
     )
 
-    heating_cf = ArrayField(
+    heating_cf_reference = ArrayField(
         models.FloatField(
             null=True, blank=True,
             validators=[
@@ -5531,8 +5557,21 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
         ),
         default=list,
         blank=True,
-        help_text=(("ASHP space heating system heating capacity factor"
+        help_text=(("Reference points for ASHP space heating system heating capac)ity factor"
                     "(ratio of heating thermal power to rated capacity)"))
+    )
+
+    heating_reference_temps = ArrayField(
+        models.FloatField(
+            null=True, blank=True,
+            validators=[
+                MinValueValidator(-275),
+                MaxValueValidator(200.0)
+            ],
+        ),
+        default=list,
+        blank=True,
+        help_text=(("Reference temperatures for ASHP space heating system's heating COP and CF"))
     )
 
     force_into_system = models.BooleanField(
