@@ -1376,7 +1376,7 @@ def create_custom_comparison_table(request):
 
         except ValueError as e:
             log.debug(f"ValueError: {str(e)}")
-            return JsonResponse({"Error": f"A ValueError occurred: {str(e)}. Please check the input values and try again."}, status=500)
+            return JsonResponse({"Error": f"A ValueError occurred: {str(e)} Please check the input values and try again."}, status=500)
 
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -1392,128 +1392,84 @@ def create_custom_table_excel(df, custom_table, calculations, output):
         workbook = xlsxwriter.Workbook(output, {'in_memory': True})
         worksheet = workbook.add_worksheet('Custom Table')
 
-        # Formats for general data, percentages, and currency values
-        # General formatting
-        data_format = workbook.add_format({
-            'align'    : 'center',
-            'valign'   : 'center',
-            'border'   : 1,
-            'font_size': 10
-        })
+        # Scenario header formatting with colors
+        scenario_colors = ['#0079C2', '#00A2E8', '#22B573', '#FFB300', '#E05A24', '#FF5050']
+        scenario_formats = [workbook.add_format({'bold': True, 'bg_color': color, 'border': 1, 'align': 'center', 'font_color': 'white', 'font_size': 10}) for color in scenario_colors]
 
-        # Formatting for formulas
-        formula_format = workbook.add_format({
-            'bg_color'  : '#FFE599', # Light yellow background
-            'align'     : 'center',
-            'valign'    : 'center',
-            'border'    : 1,
-            'font_color': 'red',
-            'font_size' : 10,
-            'italic'    : True  # Italic to highlight it's a formula
-        })
+        # Row alternating colors
+        row_colors = ['#d1d5d8', '#fafbfb']
 
-        # Formatting for errors
-        error_format = workbook.add_format({
-            'bg_color'  : '#FFC7CE', # Light red background
-            'align'     : 'center',
-            'valign'    : 'center',
-            'border'    : 1,
-            'font_color': 'black',
-            'font_size' : 10
-        })
+        # Base formats for errors, percentages, and currency values
+        error_format = workbook.add_format({'bg_color': '#FFC7CE', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': 'white', 'bold': True, 'font_size': 10})
+        base_percent_format = {'num_format': '0%', 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10}
+        base_currency_format = {'num_format': '$#,##0.00', 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10}
 
-        # Formatting for percentages, showing as whole numbers (e.g., 9%)
-        percent_format = workbook.add_format({
-            'num_format': '0%',     # Whole number percentage (e.g., 9%)
-            'align'     : 'center',
-            'valign'    : 'center',
-            'border'    : 1,
-            'font_size' : 10
-        })
+        # Formula formats using a medium-dark orange
+        formula_color = '#FF8C00'
+        formula_format = workbook.add_format({'bg_color': '#FFE599', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': formula_color, 'font_size': 10, 'italic': True})
+        formula_percent_format = workbook.add_format({'bg_color': '#FFE599', 'num_format': '0%', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': formula_color, 'font_size': 10, 'italic': True})
+        formula_currency_format = workbook.add_format({'bg_color': '#FFE599', 'num_format': '$#,##0.00', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': formula_color, 'font_size': 10, 'italic': True})
 
-        # Formatting for currency values with two decimal places
-        currency_format = workbook.add_format({
-            'num_format': '$#,##0.00', # Currency with two decimal places
-            'align'     : 'center',
-            'valign'    : 'center',
-            'border'    : 1,
-            'font_size' : 10
-        })
-
-        # Formatting for formulas that are percentages
-        formula_percent_format = workbook.add_format({
-            'bg_color'  : '#FFE599', # Light yellow background
-            'num_format': '0%',      # Whole number percentage
-            'align'     : 'center',
-            'valign'    : 'center',
-            'border'    : 1,
-            'font_color': 'red',
-            'font_size' : 10,
-            'italic'    : True
-        })
-
-        # Formatting for formulas that are currency values
-        formula_currency_format = workbook.add_format({
-            'bg_color'  : '#FFE599',   # Light yellow background
-            'num_format': '$#,##0.00', # Currency with two decimal places
-            'align'     : 'center',
-            'valign'    : 'center',
-            'border'    : 1,
-            'font_color': 'red',
-            'font_size' : 10,
-            'italic'    : True
-        })
-
-        # Header format for the scenario column
-        scenario_header_format = workbook.add_format({
-            'bold'      : True,
-            'bg_color'  : '#0079C2', # Dark blue background
-            'border'    : 1,
-            'align'     : 'center',
-            'font_color': 'white',
-            'font_size' : 10
-        })
-
-        # Format for the variable names in the first column
-        variable_name_format = workbook.add_format({
-            'bold'     : True,
-            'bg_color' : '#DEE2E5', # Light gray background
-            'border'   : 1,
-            'align'    : 'left',
-            'font_size': 10
+        # Message format to match formula style
+        message_format = workbook.add_format({
+            'bg_color': '#FFE599',  # Light yellow background to match formula cells
+            'align': 'center',
+            'valign': 'center',
+            'border': 1,
+            'font_color': formula_color,  # Match the formula text color
+            'bold': True,  # Bold to make it stand out
+            'font_size': 12,  # Larger font size for visibility
+            'italic': True  # Italic to match formula cells
         })
         
-        worksheet.write(1, len(df.columns) + 2, "Values in red are formulas. Do not input anything.", formula_format)
+        # Combine row color with cell format, excluding formulas
+        def get_combined_format(label, row_color, is_formula=False):
+            if is_formula:
+                if '$' in label:
+                    return formula_currency_format
+                elif '%' in label:
+                    return formula_percent_format
+                return formula_format
+            base_data_format = {'bg_color': row_color, 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10}
+            if label:
+                if '$' in label:
+                    return workbook.add_format({**base_currency_format, 'bg_color': row_color})
+                elif '%' in label:
+                    return workbook.add_format({**base_percent_format, 'bg_color': row_color})
+            return workbook.add_format(base_data_format)
 
+        # Setting column widths and writing headers
         column_width = 35
         for col_num in range(len(df.columns) + 3):
             worksheet.set_column(col_num, col_num, column_width)
 
-        worksheet.write('A1', 'Scenario', scenario_header_format)
+        # Write scenario headers with different colors
+        worksheet.write('A1', 'Scenario', scenario_formats[0])
         for col_num, header in enumerate(df.columns):
-            worksheet.write(0, col_num + 1, header, scenario_header_format)
+            worksheet.write(0, col_num + 1, header, scenario_formats[col_num % len(scenario_formats)])
 
+        # Write variable names and data with full-row formatting
         for row_num, variable in enumerate(df.index):
-            worksheet.write(row_num + 1, 0, variable, variable_name_format)
+            row_color = row_colors[row_num % 2]
+            worksheet.write(row_num + 1, 0, variable, workbook.add_format({'bg_color': row_color, 'border': 1}))
 
-        # Use the custom table to determine format
-        def get_format(label):
-            entry = next((item for item in custom_table if item["label"] == label), None)
-            if entry:
-                if '$' in entry["label"]:
-                    return currency_format, formula_currency_format
-                elif '%' in entry["label"]:
-                    return percent_format, formula_percent_format
-            return data_format, formula_format
-
-        # Writing data to cells with the appropriate format
-        for row_num, variable in enumerate(df.index):
-            cell_format, cell_formula_format = get_format(variable)
+            # Determine the format for each data cell
             for col_num, value in enumerate(df.loc[variable]):
+                is_formula = False  # Logic to detect if this cell should be a formula
+                if isinstance(value, str) and "formula" in value.lower():  # Example logic for formulas
+                    is_formula = True
+
+                cell_format = get_combined_format(variable, row_color, is_formula)
                 if pd.isnull(value) or value == '-':
-                    worksheet.write(row_num + 1, col_num + 1, "", data_format)
+                    worksheet.write(row_num + 1, col_num + 1, "", cell_format)
                 else:
                     worksheet.write(row_num + 1, col_num + 1, value, cell_format)
+
+        worksheet.merge_range(len(df.index) + 2, 0, len(df.index) + 2, len(df.columns), "Values in orange are formulas. Do not input anything.", message_format)
+
+        # Adjust row heights for better readability
+        for row_num in range(1, len(df.index) + 2):
+            worksheet.set_row(row_num, 20)
 
         headers = {header: idx for idx, header in enumerate(df.index)}
 
@@ -1523,9 +1479,8 @@ def create_custom_table_excel(df, custom_table, calculations, output):
             'ng_reduction_value': f'{colnum_string(2)}{headers["Total Fuel (MMBtu)"] + 2}' if "Total Fuel (MMBtu)" in headers else None,
             'util_cost_value': f'{colnum_string(2)}{headers["Total Utility Cost ($)"] + 2}' if "Total Utility Cost ($)" in headers else None,
             'co2_reduction_value': f'{colnum_string(2)}{headers["CO2 Emissions (tonnes)"] + 2}' if "CO2 Emissions (tonnes)" in headers else None,
-            # New placeholders added based on Example 6 and 7 calculations
             'placeholder1_value': f'{colnum_string(2)}{headers["Placeholder1"] + 2}' if "Placeholder1" in headers else None,
-    }
+        }
 
         relevant_columns = [entry["label"] for entry in custom_table]
         relevant_calculations = [calc for calc in calculations if calc["name"] in relevant_columns]
@@ -1541,8 +1496,8 @@ def create_custom_table_excel(df, custom_table, calculations, output):
                         row_idx = headers.get(calc["name"])
                         if row_idx is not None:
                             formula = calc["formula"](col_letter, bau_cells, headers)
-                            cell_format, cell_formula_format = get_format(calc["name"])
-                            worksheet.write_formula(row_idx + 1, col-1, formula, cell_formula_format)
+                            cell_format = get_combined_format(calc["name"], row_colors[row_idx % 2], is_formula=True)
+                            worksheet.write_formula(row_idx + 1, col-1, formula, cell_format)
                         else:
                             missing_entries.append(calc["name"])
                     else:
@@ -1568,14 +1523,16 @@ def create_custom_table_excel(df, custom_table, calculations, output):
                     missing_entries.append(calc["name"])
 
         if missing_entries:
-            print(f"Missing entries in the input table: {', '.join(set(missing_entries))}. Please update the configuration if necessary.")
+            print(f"missing_entries in the input table: {', '.join(set(missing_entries))}. Please update the configuration if necessary.")
 
         workbook.close()
+
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table')
-        err.save_to_db()
-        raise
+        err.save
+
+
 
 # Configuration
 # Set up table needed along with REopt dictionaries to grab data 
@@ -1590,19 +1547,18 @@ example_table = [
         "scenario_value": lambda df: safe_get(df, "inputs.Meta.description", "None provided")
     },
     {
-        "label": "Site Location",
-        "key": "site_lat_long",
-        "bau_value": lambda df: f"({safe_get(df, 'inputs.Site.latitude')}, {safe_get(df, 'inputs.Site.longitude')})",
-        "scenario_value": lambda df: f"({safe_get(df, 'inputs.Site.latitude')}, {safe_get(df, 'inputs.Site.longitude')})"
-    },
-    # Example 2: Concatenating Strings
-    {
         "label": "Site Address",
         "key": "site_address",
         "bau_value": lambda df: safe_get(df, "inputs.Meta.address", "None provided"),
         "scenario_value": lambda df: safe_get(df, "inputs.Meta.address", "None provided")
     },
-
+    # Example 2: Concatenating Strings
+    {
+        "label": "Site Location",
+        "key": "site_lat_long",
+        "bau_value": lambda df: f"({safe_get(df, 'inputs.Site.latitude')}, {safe_get(df, 'inputs.Site.longitude')})",
+        "scenario_value": lambda df: f"({safe_get(df, 'inputs.Site.latitude')}, {safe_get(df, 'inputs.Site.longitude')})"
+    },
     # Example 3: Calculated Value (Sum of Two Fields), this does not show up in formulas
     {
         "label": "Combined Renewable Size (kW)",
@@ -1616,7 +1572,7 @@ example_table = [
         "label": "Hardcoded Values (kWh)",
         "key": "hardcoded_value",
         "bau_value": lambda df: 500,  # BAU scenario
-        "scenario_value": lambda df: 1000  # Regular scenarios
+        "scenario_value": lambda df: 1000  # other scenarios
     },
 
     # Example 5: Conditional Formatting
