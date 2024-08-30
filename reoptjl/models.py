@@ -5375,7 +5375,7 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
                     "(ratio of heating thermal power to rated capacity)"))
     )
 
-    heating_reference_temps = ArrayField(
+    heating_reference_temps_degF = ArrayField(
         models.FloatField(
             null=True, blank=True,
             validators=[
@@ -5416,7 +5416,7 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
                     "(ratio of heating thermal power to rated capacity)"))
     )
 
-    cooling_reference_temps = ArrayField(
+    cooling_reference_temps_degF = ArrayField(
         models.FloatField(
             null=True, blank=True,
             validators=[
@@ -5671,7 +5671,7 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
                     "(ratio of heating thermal power to rated capacity)"))
     )
 
-    heating_reference_temps = ArrayField(
+    heating_reference_temps_degF = ArrayField(
         models.FloatField(
             null=True, blank=True,
             validators=[
