@@ -1402,23 +1402,14 @@ def create_custom_table_excel(df, custom_table, calculations, output):
         base_percent_format = {'num_format': '0%', 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10}
         base_currency_format = {'num_format': '$#,##0.00', 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10}
 
-        # Formula formats using a medium-dark orange
-        formula_color = '#FF8C00'
-        formula_format = workbook.add_format({'bg_color': '#FFE599', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': formula_color, 'font_size': 10, 'italic': True})
-        formula_percent_format = workbook.add_format({'bg_color': '#FFE599', 'num_format': '0%', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': formula_color, 'font_size': 10, 'italic': True})
-        formula_currency_format = workbook.add_format({'bg_color': '#FFE599', 'num_format': '$#,##0.00', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': formula_color, 'font_size': 10, 'italic': True})
+        # Formula formats using dark blue background
+        formula_color = '#F8F8FF'
+        formula_format = workbook.add_format({'bg_color': '#0B5E90', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': formula_color, 'font_size': 10, 'italic': True})
+        formula_percent_format = workbook.add_format({'bg_color': '#0B5E90', 'num_format': '0%', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': formula_color, 'font_size': 10, 'italic': True})
+        formula_currency_format = workbook.add_format({'bg_color': '#0B5E90', 'num_format': '$#,##0.00', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': formula_color, 'font_size': 10, 'italic': True})
 
         # Message format to match formula style
-        message_format = workbook.add_format({
-            'bg_color': '#FFE599',  
-            'align': 'center',
-            'valign': 'center',
-            'border': 1,
-            'font_color': formula_color,  
-            'bold': True, 
-            'font_size': 12,  
-            'italic': True 
-        })
+        message_format = workbook.add_format({'bg_color': '#0B5E90',  'align': 'center','valign': 'center','border': 1,'font_color': formula_color,  'bold': True, 'font_size': 12,  'italic': True })
         
         # Combine row color with cell format, excluding formulas
         def get_combined_format(label, row_color, is_formula=False):
@@ -1462,7 +1453,7 @@ def create_custom_table_excel(df, custom_table, calculations, output):
                 else:
                     worksheet.write(row_num + 1, col_num + 1, value, cell_format)
 
-        worksheet.merge_range(len(df.index) + 2, 0, len(df.index) + 2, len(df.columns), "Values in orange are formulas. Do not input anything.", message_format)
+        worksheet.merge_range(len(df.index) + 2, 0, len(df.index) + 2, len(df.columns), "Values in white are formulas. Do not input anything.", message_format)
 
         headers = {header: idx for idx, header in enumerate(df.index)}
 
@@ -1498,7 +1489,7 @@ def create_custom_table_excel(df, custom_table, calculations, output):
                         if missing_keys:
                             row_idx = headers.get(calc["name"])
                             if row_idx is not None:
-                                worksheet.write(row_idx + 1, col - 1, "MISSING DATA", error_format)
+                                worksheet.write(row_idx + 1, col - 1, "MISSING REFERENCE IN FORMULA", error_format)
                             message = f"Cannot calculate '{calc['name']}' because the required fields are missing: {', '.join(missing_keys)} in the Table configuration provided. Update the Table to include {missing_keys}. Writing 'MISSING DATA' instead."
                             if message not in logged_messages:
                                 logged_messages.add(message)
@@ -1628,46 +1619,28 @@ single_site_custom_table = [
         "scenario_value": lambda df: safe_get(df, "inputs.Meta.description", "None provided")
     },
     {
-        "label": "Site Location",
-        "key": "site_lat_long",
-        "bau_value": lambda df: f"({safe_get(df, 'inputs.Site.latitude')}, {safe_get(df, 'inputs.Site.longitude')})",
-        "scenario_value": lambda df: f"({safe_get(df, 'inputs.Site.latitude')}, {safe_get(df, 'inputs.Site.longitude')})"
-    },
-    {
         "label": "Site Address",
         "key": "site_address",
         "bau_value": lambda df: safe_get(df, "inputs.Meta.address", "None provided"),
         "scenario_value": lambda df: safe_get(df, "inputs.Meta.address", "None provided")
     },
     {
-        "label": "PV Size (kW)",
-        "key": "pv_size",
+        "label": "Site Location",
+        "key": "site_lat_long",
+        "bau_value": lambda df: f"({safe_get(df, 'inputs.Site.latitude')}, {safe_get(df, 'inputs.Site.longitude')})",
+        "scenario_value": lambda df: f"({safe_get(df, 'inputs.Site.latitude')}, {safe_get(df, 'inputs.Site.longitude')})"
+    },
+    {
+        "label": "PV Nameplate capacity (kW), purchased",
+        "key": "pv_size_purchased",
         "bau_value": lambda df: safe_get(df, "outputs.PV.size_kw_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.PV.size_kw")
     },
     {
-        "label": "Wind Size (kW)",
-        "key": "wind_size",
-        "bau_value": lambda df: safe_get(df, "outputs.Wind.size_kw_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Wind.size_kw")
-    },
-    {
-        "label": "CHP Size (kW)",
-        "key": "chp_size",
-        "bau_value": lambda df: safe_get(df, "outputs.CHP.size_kw_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.CHP.size_kw")
-    },
-    {
-        "label": "PV Total Electricity Produced (kWh)",
-        "key": "pv_total_electricity_produced",
-        "bau_value": lambda df: safe_get(df, "outputs.PV.annual_energy_produced_kwh_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.PV.annual_energy_produced_kwh")
-    },
-    {
-        "label": "PV Exported to Grid (kWh)",
-        "key": "pv_exported_to_grid",
-        "bau_value": lambda df: safe_get(df, "outputs.PV.electric_to_grid_series_kw"),
-        "scenario_value": lambda df: safe_get(df, "outputs.PV.electric_to_grid_series_kw")
+        "label": "PV Nameplate capacity (kW), existing",
+        "key": "pv_size_existing",
+        "bau_value": lambda df: safe_get(df, "outputs.PV.existing_kw_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.PV.existing_kw")
     },
     {
         "label": "PV Serving Load (kWh)",
@@ -1676,16 +1649,10 @@ single_site_custom_table = [
         "scenario_value": lambda df: safe_get(df, "outputs.PV.electric_to_load_series_kw")
     },
     {
-        "label": "Wind Total Electricity Produced (kWh)",
-        "key": "wind_total_electricity_produced",
-        "bau_value": lambda df: safe_get(df, "outputs.Wind.annual_energy_produced_kwh_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Wind.annual_energy_produced_kwh")
-    },
-    {
-        "label": "Wind Exported to Grid (kWh)",
-        "key": "wind_exported_to_grid",
-        "bau_value": lambda df: safe_get(df, "outputs.Wind.electric_to_grid_series_kw_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Wind.electric_to_grid_series_kw")
+        "label": "Wind Nameplate capacity (kW), purchased",
+        "key": "wind_size_purchased",
+        "bau_value": lambda df: safe_get(df, "outputs.Wind.size_kw_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Wind.size_kw")
     },
     {
         "label": "Wind Serving Load (kWh)",
@@ -1694,16 +1661,46 @@ single_site_custom_table = [
         "scenario_value": lambda df: safe_get(df, "outputs.Wind.electric_to_load_series_kw")
     },
     {
-        "label": "CHP Total Electricity Produced (kWh)",
-        "key": "chp_total_electricity_produced",
-        "bau_value": lambda df: safe_get(df, "outputs.CHP.annual_electric_production_kwh_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.CHP.annual_electric_production_kwh")
+        "label": "Backup Generator Nameplate capacity (kW), purchased",
+        "key": "backup_generator_capacity_purchased",
+        "bau_value": lambda df: safe_get(df, "outputs.Generator.size_kw_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Generator.size_kw")
     },
     {
-        "label": "CHP Exported to Grid (kWh)",
-        "key": "chp_exported_to_grid",
-        "bau_value": lambda df: safe_get(df, "outputs.CHP.electric_to_grid_series_kw_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.CHP.electric_to_grid_series_kw")
+        "label": "Backup Generator Nameplate capacity (kW), existing",
+        "key": "backup_generator_capacity_existing",
+        "bau_value": lambda df: safe_get(df, "outputs.Generator.existing_kw_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Generator.existing_kw")
+    },
+    {
+        "label": "Backup Generator Serving Load (kWh)",
+        "key": "backup_generator_serving_load",
+        "bau_value": lambda df: safe_get(df, "outputs.Generator.electric_to_load_series_kw_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Generator.electric_to_load_series_kw")
+    },
+    {
+        "label": "Battery power (kW)",
+        "key": "battery_power",
+        "bau_value": lambda df: safe_get(df, "outputs.ElectricStorage.size_kw_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricStorage.size_kw")
+    },
+    {
+        "label": "Battery capacity (kWh)",
+        "key": "battery_capacity",
+        "bau_value": lambda df: safe_get(df, "outputs.ElectricStorage.size_kwh_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricStorage.size_kwh")
+    },
+    {
+        "label": "Battery Serving Load (kWh)",
+        "key": "battery_serving_load",
+        "bau_value": lambda df: safe_get(df, "outputs.ElectricStorage.storage_to_load_series_kw_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricStorage.storage_to_load_series_kw")
+    },
+    {
+        "label": "CHP capacity (kW)",
+        "key": "chp_capacity",
+        "bau_value": lambda df: safe_get(df, "outputs.CHP.size_kw_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.CHP.size_kw")
     },
     {
         "label": "CHP Serving Load (kWh)",
@@ -1712,10 +1709,64 @@ single_site_custom_table = [
         "scenario_value": lambda df: safe_get(df, "outputs.CHP.electric_to_load_series_kw")
     },
     {
-        "label": "CHP Serving Thermal Load (MMBtu)",
-        "key": "chp_serving_thermal_load",
-        "bau_value": lambda df: safe_get(df, "outputs.CHP.thermal_to_load_series_mmbtu_per_hour_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.CHP.thermal_to_load_series_mmbtu_per_hour")
+        "label": "Absorption chiller capacity (tons)",
+        "key": "absorption_chiller_capacity",
+        "bau_value": lambda df: safe_get(df, "outputs.AbsorptionChiller.size_ton_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.AbsorptionChiller.size_ton")
+    },
+    {
+        "label": "Absorption Chiller Serving Load (ton)",
+        "key": "absorption_chiller_serving_load",
+        "bau_value": lambda df: safe_get(df, "outputs.AbsorptionChiller.thermal_to_load_series_ton_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.AbsorptionChiller.thermal_to_load_series_ton")
+    },
+    {
+        "label": "Chilled water TES capacity (gallons)",
+        "key": "chilled_water_tes_capacity",
+        "bau_value": lambda df: safe_get(df, "outputs.ColdThermalStorage.size_gal_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.ColdThermalStorage.size_gal")
+    },
+    {
+        "label": "Chilled Water TES Serving Load (ton)",
+        "key": "chilled_water_tes_serving_load",
+        "bau_value": lambda df: safe_get(df, "outputs.ColdThermalStorage.storage_to_load_series_ton_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.ColdThermalStorage.storage_to_load_series_ton")
+    },
+    {
+        "label": "Hot water TES capacity (gallons)",
+        "key": "hot_water_tes_capacity",
+        "bau_value": lambda df: safe_get(df, "outputs.HotThermalStorage.size_gal_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.HotThermalStorage.size_gal")
+    },
+    {
+        "label": "Hot Water TES Serving Load (MMBtu)",
+        "key": "hot_water_tes_serving_load",
+        "bau_value": lambda df: safe_get(df, "outputs.HotThermalStorage.storage_to_load_series_mmbtu_per_hour_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.HotThermalStorage.storage_to_load_series_mmbtu_per_hour")
+    },
+    {
+        "label": "Steam turbine capacity (kW)",
+        "key": "steam_turbine_capacity",
+        "bau_value": lambda df: safe_get(df, "outputs.SteamTurbine.size_kw_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.SteamTurbine.size_kw")
+    },
+    {
+        "label": "Steam Turbine Serving Load (kWh)",
+        "key": "steam_turbine_serving_load",
+        "bau_value": lambda df: safe_get(df, "outputs.SteamTurbine.electric_to_load_series_kw_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.SteamTurbine.electric_to_load_series_kw")
+    },
+    {
+        "label": "GHP heat pump capacity (ton)",
+        "key": "ghp_heat_pump_capacity",
+        "bau_value": lambda df: safe_get(df, "outputs.GHP.size_ton_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.GHP.size_ton")
+    },
+    {
+        "label": "GHP ground heat exchanger size (ft)",
+        "key": "ghp_ground_heat_exchanger_size",
+        "bau_value": lambda df: safe_get(df, "outputs.GHP.length_boreholes_ft_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.GHP.length_boreholes_ft")
     },
     {
         "label": "Grid Purchased Electricity (kWh)",
@@ -1726,8 +1777,8 @@ single_site_custom_table = [
     {
         "label": "Total Site Electricity Use (kWh)",
         "key": "total_site_electricity_use",
-        "bau_value": lambda df: safe_get(df, "outputs.ElectricUtility.electric_to_load_series_kw_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricUtility.electric_to_load_series_kw")
+        "bau_value": lambda df: 0,
+        "scenario_value": lambda df: 0
     },
     {
         "label": "Net Purchased Electricity Reduction (%)",
@@ -1939,7 +1990,15 @@ single_site_custom_table = [
 calculations = [
     {
         "name": "Total Site Electricity Use (kWh)",
-        "formula": lambda col, bau, headers: f'={col}{headers["PV Serving Load (kWh)"] + 2}+{col}{headers["Wind Serving Load (kWh)"] + 2}+{col}{headers["CHP Serving Load (kWh)"] + 2}+{col}{headers["Grid Purchased Electricity (kWh)"] + 2}'
+        "formula": lambda col, bau, headers: (
+            f'={col}{headers["PV Serving Load (kWh)"] + 2}+'
+            f'{col}{headers["Wind Serving Load (kWh)"] + 2}+'
+            f'{col}{headers["CHP Serving Load (kWh)"] + 2}+'
+            f'{col}{headers["Battery Serving Load (kWh)"] + 2}+'
+            f'{col}{headers["Backup Generator Serving Load (kWh)"] + 2}+'
+            f'{col}{headers["Steam Turbine Serving Load (kWh)"] + 2}+'
+            f'{col}{headers["Grid Purchased Electricity (kWh)"] + 2}'
+        )
     },
     {
         "name": "Net Purchased Electricity Reduction (%)",
