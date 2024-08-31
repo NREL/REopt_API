@@ -5283,14 +5283,14 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
         help_text=("Minimum nonzero thermal power size constraint for optimization [ton]")
     )
 
-    min_allowable_peak_load_fraction = models.FloatField(
+    min_allowable_peak_capacity_fraction = models.FloatField(
         validators=[
             MinValueValidator(0),
             MaxValueValidator(MAX_BIG_NUMBER)
         ],
         null=True,
         blank=True,
-        default = 0.0,
+        default = 0.5,
         help_text=("Minimum nonzero thermal power as a fucniton of coincident peak load - constraint for optimization [ton]")
     )
 
@@ -5301,7 +5301,7 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        default = 0.0,
+        default = 1.0,
         help_text=("Size of system relative to max dispatch output [fraction]")
     )
     
@@ -5450,8 +5450,8 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        default = MAX_BIG_NUMBER,
-        help_text=("Maximum thermal power size constraint for optimization [ton]")
+        default = 0.0,
+        help_text=("net present value of avoided capital expenditures due to ASHP system being present [$]")
     )
 
     back_up_temp_threshold_degF = models.FloatField(
@@ -5461,8 +5461,8 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        default = MAX_BIG_NUMBER,
-        help_text=("Maximum thermal power size constraint for optimization [ton]")
+        default = -10.0,
+        help_text=("Temperature threshold below which resistive back-up heater turns on [Fahrenheit]")
     )
 
 
@@ -5681,7 +5681,7 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
         ),
         default=list,
         blank=True,
-        help_text=(("Reference temperatures for ASHP space heating system's heating COP and CF"))
+        help_text=(("Reference temperatures for ASHP space heating system's heating COP and CF [Fahrenheit]"))
     )
 
     avoided_capex_by_ashp_present_value = models.FloatField(
@@ -5691,8 +5691,8 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        default = MAX_BIG_NUMBER,
-        help_text=("Maximum thermal power size constraint for optimization [ton]")
+        default = 0.0,
+        help_text=("Net present value of avoided capital expenditures due to ASHP system being present [$]")
     )
 
     back_up_temp_threshold_degF = models.FloatField(
@@ -5702,8 +5702,8 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        default = MAX_BIG_NUMBER,
-        help_text=("Maximum thermal power size constraint for optimization [ton]")
+        default = -10.0,
+        help_text=("Temperature threshold below which resistive back-up heater turns on [Fahrenheit]")
     )
 
     force_into_system = models.BooleanField(
