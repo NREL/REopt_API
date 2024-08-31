@@ -342,26 +342,39 @@
     "ASHPSpaceHeater": {
         "min_ton": 100.0,
         "max_ton": 100.0,
+        "min_allowable_ton": null,
+        "min_allowable_peak_capacity_fraction": 0.0,
+        "sizing_factor": 1.0,
         "installed_cost_per_ton": 2250.0,
         "om_cost_per_ton": 0.0,
         "macrs_option_years": 0,
         "macrs_bonus_fraction": 1.0,
-        "heating_cop": [],
-        "cooling_cop": [],
-        "heating_cf": [],
-        "cooling_cf": [],
+        "heating_cop_reference": [],
+        "heating_cf_reference": [],
+        "heating_reference_temps_degF": [],
+        "cooling_cop_reference": [],
+        "cooling_cf_reference": [],
+        "cooling_reference_temps_degF": [],
         "can_serve_cooling": true,
-        "force_into_system": false
+        "force_into_system": false,
+        "avoided_capex_by_ashp_present_value": 0,
+        "back_up_temp_threshold_degF": -10.0
     },
     "ASHPWaterHeater": {
         "min_ton": 100.0,
         "max_ton": 100.0,
+        "min_allowable_ton": null,
+        "min_allowable_peak_capacity_fraction": 0.0,
+        "sizing_factor": 1.0,
         "installed_cost_per_ton": 2250.0,
         "om_cost_per_ton": 0.0,
         "macrs_option_years": 0,
         "macrs_bonus_fraction": 1.0,
-        "heating_cop": [],
-        "heating_cf": [],
-        "force_into_system": false
+        "heating_cop_reference": [],
+        "heating_cf_reference": [],
+        "heating_reference_temps_degF": [],
+        "force_into_system": false,
+        "avoided_capex_by_ashp_present_value": 0,
+        "back_up_temp_threshold_degF": -10.0
     }
 }
