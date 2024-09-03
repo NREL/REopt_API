@@ -1456,7 +1456,8 @@ def create_custom_table_excel(df, custom_table, calculations, output):
         worksheet.merge_range(len(df.index) + 2, 0, len(df.index) + 2, len(df.columns), "Values in white are formulas. Do not input anything.", message_format)
 
         headers = {header: idx for idx, header in enumerate(df.index)}
-
+        headers["Scenario"] = 0
+        
         bau_cells = {
             'grid_value': f'{colnum_string(2)}{headers["Grid Purchased Electricity (kWh)"] + 2}' if "Grid Purchased Electricity (kWh)" in headers else None,
             'net_cost_value': f'{colnum_string(2)}{headers["Net Electricity Cost ($)"] + 2}' if "Net Electricity Cost ($)" in headers else None,
@@ -1516,28 +1517,16 @@ def create_custom_table_excel(df, custom_table, calculations, output):
 
 # Configuration
 # Set up table needed along with REopt dictionaries to grab data 
-# Portfolio configuration should not include "bau_value" in the keys
-example_table_portfolio = [
-    {
-        "label": "Site Name",
-        "key": "site",
-        "scenario_value": lambda df: safe_get(df, "inputs.Meta.description", "None provided")
-    },
-    {
-        "label": "Site Address",
-        "key": "site_address",
-        "scenario_value": lambda df: safe_get(df, "inputs.Meta.address", "None provided")
-    },
-    {
-        "label": "Site Location",
-        "key": "site_lat_long",
-        "scenario_value": lambda df: f"({safe_get(df, 'inputs.Site.latitude')}, {safe_get(df, 'inputs.Site.longitude')})"
-    }
-]
-
 # Example Custom Table Configuration
 example_table = [
+    {
+        "label": "Results URL",
+        "key": "url",
+        "bau_value": lambda df: "",
+        "scenario_value": lambda df: ""
+    },
     # Example 1: Basic Key Retrieval with Data Values
+    
     {
         "label": "Site Name",
         "key": "site",
@@ -1608,7 +1597,14 @@ example_table = [
         "key": "placeholder_calculation_with_bau",
         "bau_value": lambda df: 0,  # Placeholder, replaced by formula in Excel
         "scenario_value": lambda df: 0  # Placeholder, replaced by formula in Excel
-    }]
+    },
+    {
+        "label": "Results URL",
+        "key": "url",
+        "bau_value": lambda df: f"https://custom-table-download-reopt-stage.its.nrel.gov/tool/"+safe_get(df, "run_uuid"),
+        "scenario_value": lambda df: f"https://custom-table-download-reopt-stage.its.nrel.gov/tool/"+safe_get(df, "run_uuid")
+    },
+    ]
 
 # TASC/Single Site Configuration
 single_site_custom_table = [
@@ -1983,7 +1979,13 @@ single_site_custom_table = [
         "key": "storage_federal_tax_incentive",
         "bau_value": lambda df: safe_get(df, "inputs.ElectricStorage.total_itc_fraction_bau"),
         "scenario_value": lambda df: safe_get(df, "inputs.ElectricStorage.total_itc_fraction")
-    }
+    },
+    {
+        "label": "Results URL",
+        "key": "url",
+        "bau_value": lambda df: f"https://custom-table-download-reopt-stage.its.nrel.gov/tool/"+safe_get(df, "run_uuid"),
+        "scenario_value": lambda df: f"https://custom-table-download-reopt-stage.its.nrel.gov/tool/"+safe_get(df, "run_uuid")
+    },
 ]
 
 # Configuration for calculations
@@ -2074,6 +2076,31 @@ calculations = [
         "formula": lambda col, bau, headers: f'=({bau["placeholder1_value"]}-{col}{headers["Placeholder2"] + 2})/{bau["placeholder1_value"]}'
         # This formula calculates the percentage change of Placeholder2 using Placeholder1's BAU value as the reference.
     }
+]
+
+
+# Portfolio configuration should not include "bau_value" in the keys
+example_table_portfolio = [
+    {
+        "label": "Site Name",
+        "key": "site",
+        "scenario_value": lambda df: safe_get(df, "inputs.Meta.description", "None provided")
+    },
+    {
+        "label": "Site Address",
+        "key": "site_address",
+        "scenario_value": lambda df: safe_get(df, "inputs.Meta.address", "None provided")
+    },
+    {
+        "label": "Site Location",
+        "key": "site_lat_long",
+        "scenario_value": lambda df: f"({safe_get(df, 'inputs.Site.latitude')}, {safe_get(df, 'inputs.Site.longitude')})"
+    },
+    {
+        "label": "Results URL",
+        "key": "url",
+        "scenario_value": lambda df: f"https://custom-table-download-reopt-stage.its.nrel.gov/tool/"+safe_get(df, "run_uuid")
+    },
 ]
 
 ###############################################################
