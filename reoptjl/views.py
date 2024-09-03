@@ -1520,14 +1520,6 @@ def create_custom_table_excel(df, custom_table, calculations, output):
 # Example Custom Table Configuration
 example_table = [
     {
-        "label": "Results URL",
-        "key": "url",
-        "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
-    },
-    # Example 1: Basic Key Retrieval with Data Values
-    
-    {
         "label": "Site Name",
         "key": "site",
         "bau_value": lambda df: "",
@@ -1601,9 +1593,9 @@ example_table = [
     {
         "label": "Results URL",
         "key": "url",
-        "bau_value": lambda df: f"https://custom-table-download-reopt-stage.its.nrel.gov/tool/"+safe_get(df, "run_uuid"),
-        "scenario_value": lambda df: f"https://custom-table-download-reopt-stage.its.nrel.gov/tool/"+safe_get(df, "run_uuid")
-    },
+        "bau_value": lambda df: f"https://custom-table-download-reopt-stage.its.nrel.gov/tool/results/"+safe_get(df, "webtool_uuid"),
+        "scenario_value": lambda df: f"https://custom-table-download-reopt-stage.its.nrel.gov/tool/results/"+safe_get(df, "webtool_uuid")
+    }
     ]
 
 # TASC/Single Site Configuration
@@ -1983,8 +1975,8 @@ single_site_custom_table = [
     {
         "label": "Results URL",
         "key": "url",
-        "bau_value": lambda df: f"https://custom-table-download-reopt-stage.its.nrel.gov/tool/"+safe_get(df, "run_uuid"),
-        "scenario_value": lambda df: f"https://custom-table-download-reopt-stage.its.nrel.gov/tool/"+safe_get(df, "run_uuid")
+        "bau_value": lambda df: f"https://custom-table-download-reopt-stage.its.nrel.gov/tool/results/"+safe_get(df, "webtool_uuid"),
+        "scenario_value": lambda df: f"https://custom-table-download-reopt-stage.its.nrel.gov/tool/results/"+safe_get(df, "webtool_uuid")
     },
 ]
 
@@ -2099,7 +2091,7 @@ example_table_portfolio = [
     {
         "label": "Results URL",
         "key": "url",
-        "scenario_value": lambda df: f"https://custom-table-download-reopt-stage.its.nrel.gov/tool/"+safe_get(df, "run_uuid")
+        "scenario_value": lambda df: f"https://custom-table-download-reopt-stage.its.nrel.gov/tool/results/"+safe_get(df, "webtool_uuid")
     },
 ]
 
