@@ -5371,7 +5371,7 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
         ),
         default=list,
         blank=True,
-        help_text=(("Reference points for ASHP space heating system heating capacity factor"
+        help_text=(("Reference points for ASHP space heating system heating capac)ity factor"
                     "(ratio of heating thermal power to rated capacity)"))
     )
 
@@ -5412,7 +5412,7 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
         ),
         default=list,
         blank=True,
-        help_text=(("Reference points for ASHP space heating system cooling capacity factor"
+        help_text=(("Reference points for ASHP space heating system cooling capac)ity factor"
                     "(ratio of heating thermal power to rated capacity)"))
     )
 
