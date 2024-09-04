@@ -511,11 +511,12 @@ function get_existing_chiller_default_cop(req::HTTP.Request)
     end
 end    
 
-function ashp_defaults(req::HTTP.Request)
+function get_ashp_defaults(req::HTTP.Request)
     d = JSON.parse(String(req.body))
-    ashp_defaults = nothing
+    defaults = nothing
 
     if !("load_served" in keys(d))
+        @info("ASHP load served not provided. Using default of SpaceHeating.")
         d["load_served"] = "SpaceHeating"
     end 
     
@@ -523,14 +524,14 @@ function ashp_defaults(req::HTTP.Request)
     error_response = Dict()
     try
         # Have to specify "REopt.get_existing..." because http function has the same name
-        ashp_defaults = reoptjl.get_ashp_defaults(load_served=d["load_served"])      
+        defaults = reoptjl.get_ashp_defaults(d["load_served"])      
     catch e
         @error "Something went wrong in the get_ashp_defaults endpoint" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
     end
     if isempty(error_response)
         @info("ASHP defaults obtained.")
-        response = Dict([("existing_chiller_cop", ashp_defaults)])
+        response = defaults
         return HTTP.Response(200, JSON.json(response))
     else
         @info "An error occured in the get_ashp_defaults endpoint"
@@ -565,5 +566,5 @@ HTTP.register!(ROUTER, "GET", "/ghp_efficiency_thermal_factors", ghp_efficiency_
 HTTP.register!(ROUTER, "GET", "/ground_conductivity", ground_conductivity)
 HTTP.register!(ROUTER, "GET", "/health", health)
 HTTP.register!(ROUTER, "GET", "/get_existing_chiller_default_cop", get_existing_chiller_default_cop)
-HTTP.register!(ROUTER, "GET", "/ashp_defaults", ashp_defaults)
+HTTP.register!(ROUTER, "GET", "/get_ashp_defaults", get_ashp_defaults)
 HTTP.serve(ROUTER, "0.0.0.0", 8081, reuseaddr=true)
