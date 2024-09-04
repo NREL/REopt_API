@@ -464,33 +464,11 @@ def absorption_chiller_defaults(request):
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in absorption_chiller_defaults endpoint. Check log for more."}, status=500)
 
-def electric_heater_defaults():
+def ashp_defaults(request):
+    inputs = {"load_served": request.GET.get("load_served")}
     try:
         julia_host = os.environ.get('JULIA_HOST', "julia")
-        http_jl_response = requests.get("http://" + julia_host + ":8081/electric_heater_defaults/")
-        response = JsonResponse(
-            http_jl_response.json(),
-            status=http_jl_response.status_code
-        )
-        return response
-
-    except ValueError as e:
-        return JsonResponse({"Error": str(e.args[0])}, status=400)
-
-    except KeyError as e:
-        return JsonResponse({"Error. Missing": str(e.args[0])}, status=400)
-
-    except Exception:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
-                                                                            tb.format_tb(exc_traceback))
-        log.debug(debug_msg)
-        return JsonResponse({"Error": "Unexpected error in electric_heater_defaults endpoint. Check log for more."}, status=500)
-
-def ashp_defaults():
-    try:
-        julia_host = os.environ.get('JULIA_HOST', "julia")
-        http_jl_response = requests.get("http://" + julia_host + ":8081/ashp_defaults/")
+        http_jl_response = requests.get("http://" + julia_host + ":8081/ashp_defaults/", json=inputs)
         response = JsonResponse(
             http_jl_response.json(),
             status=http_jl_response.status_code

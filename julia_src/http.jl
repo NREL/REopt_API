@@ -511,7 +511,7 @@ function get_existing_chiller_default_cop(req::HTTP.Request)
     end
 end    
 
-function get_ashp_defaults(req::HTTP.Request)
+function ashp_defaults(req::HTTP.Request)
     d = JSON.parse(String(req.body))
     ashp_defaults = nothing
 
