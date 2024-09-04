@@ -378,4 +378,25 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
 
         self.assertEqual(view_response["existing_chiller_cop"], 4.4)
 
+    def test_get_ashp_defaults(self):
+        inputs_dict = {
+            "load_served": "SpaceHeating"
+        }
+
+        # Call to the django view endpoint /get_existing_chiller_default_cop which calls the http.jl endpoint
+        resp = self.api_client.get(f'/v3/get_ashp_defaults', data=inputs_dict)
+        view_response = json.loads(resp.content)
+
+        self.assertEqual(view_response["installed_cost_per_ton"], 2250)
+
+        inputs_dict = {
+            "load_served": "DomesticHotWater"
+        }
+
+        # Call to the django view endpoint /get_existing_chiller_default_cop which calls the http.jl endpoint
+        resp = self.api_client.get(f'/v3/get_ashp_defaults', data=inputs_dict)
+        view_response = json.loads(resp.content)
+
+        self.assertNotIn("cooling_cf_reference", view_response.keys())
+
 
