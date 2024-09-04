@@ -511,6 +511,34 @@ function get_existing_chiller_default_cop(req::HTTP.Request)
     end
 end    
 
+function get_ashp_defaults(req::HTTP.Request)
+    d = JSON.parse(String(req.body))
+    ashp_defaults = nothing
+
+    if !("load_served" in keys(d))
+        d["load_served"] = "SpaceHeating"
+    end 
+    
+    @info "Getting default ASHP attributes..."
+    error_response = Dict()
+    try
+        # Have to specify "REopt.get_existing..." because http function has the same name
+        ashp_defaults = reoptjl.get_ashp_defaults(load_served=d["load_served"])      
+    catch e
+        @error "Something went wrong in the get_ashp_defaults endpoint" exception=(e, catch_backtrace())
+        error_response["error"] = sprint(showerror, e)
+    end
+    if isempty(error_response)
+        @info("ASHP defaults obtained.")
+        response = Dict([("existing_chiller_cop", ashp_defaults)])
+        return HTTP.Response(200, JSON.json(response))
+    else
+        @info "An error occured in the get_ashp_defaults endpoint"
+        return HTTP.Response(500, JSON.json(error_response))
+    end
+end
+
+
 function job_no_xpress(req::HTTP.Request)
     error_response = Dict("error" => "V1 and V2 not available without Xpress installation.")
     return HTTP.Response(500, JSON.json(error_response))
