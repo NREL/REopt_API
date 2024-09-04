@@ -5464,10 +5464,10 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
         default = -10.0,
         help_text=("Temperature threshold below which resistive back-up heater turns on [Fahrenheit]")
     )
-    
+
     def clean(self):
         error_messages = {}
-        if self.dict.get("min_allowable_ton") > 0 and self.dict.get("min_allowable_peak_capacity_fraction") > 0:
+        if self.dict.get("min_allowable_ton") not in [None, "", []] and self.dict.get("min_allowable_peak_capacity_fraction") not in [None, "", []]:
             error_messages["bad inputs"] = "At most one of min_allowable_ton and min_allowable_peak_capacity_fraction may be input to model {}".format(self.key)
 
         if error_messages:
@@ -5736,7 +5736,7 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
 
     def clean(self):
         error_messages = {}
-        if self.dict.get("min_allowable_ton") > 0 and self.dict.get("min_allowable_peak_capacity_fraction") > 0:
+        if self.dict.get("min_allowable_ton") not in [None, "", []] and self.dict.get("min_allowable_peak_capacity_fraction") not in [None, "", []]:
             error_messages["bad inputs"] = "At most one of min_allowable_ton and min_allowable_peak_capacity_fraction may be input to model {}".format(self.key)
 
         if error_messages:
