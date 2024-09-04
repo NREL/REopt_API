@@ -65,7 +65,7 @@
         "include_climate_in_objective": false,
         "include_health_in_objective": false,
         "off_grid_flag": false,
-        "solver_name": "SCIP"
+        "solver_name": "HiGHS"
     },
     "PV": {
         "name": "PV",
@@ -327,8 +327,8 @@
         "can_serve_process_heat": true
     },
     "ElectricHeater": {
-        "min_mmbtu_per_hour": 100.0,
-        "max_mmbtu_per_hour": 100.0,
+        "min_mmbtu_per_hour": 10.0,
+        "max_mmbtu_per_hour": 10.0,
         "installed_cost_per_mmbtu_per_hour": 2250.0,
         "om_cost_per_mmbtu_per_hour": 0.0,
         "macrs_option_years": 0,
@@ -340,10 +340,10 @@
         "can_serve_process_heat": true
     },
     "ASHPSpaceHeater": {
-        "min_ton": 100.0,
-        "max_ton": 100.0,
-        "min_allowable_ton": null,
-        "min_allowable_peak_capacity_fraction": 0.0,
+        "min_ton": 10.0,
+        "max_ton": 10.0,
+        "min_allowable_ton": 0.0,
+        "min_allowable_peak_capacity_fraction": null,
         "sizing_factor": 1.0,
         "installed_cost_per_ton": 2250.0,
         "om_cost_per_ton": 0.0,
@@ -361,8 +361,8 @@
         "back_up_temp_threshold_degF": -10.0
     },
     "ASHPWaterHeater": {
-        "min_ton": 100.0,
-        "max_ton": 100.0,
+        "min_ton": 10.0,
+        "max_ton": 10.0,
         "min_allowable_ton": null,
         "min_allowable_peak_capacity_fraction": 0.0,
         "sizing_factor": 1.0,
@@ -370,9 +370,9 @@
         "om_cost_per_ton": 0.0,
         "macrs_option_years": 0,
         "macrs_bonus_fraction": 1.0,
-        "heating_cop_reference": [],
-        "heating_cf_reference": [],
-        "heating_reference_temps_degF": [],
+        "heating_cop_reference": [1.1,2.1,3.5],
+        "heating_cf_reference": [0.4, 0.65, 1.0],
+        "heating_reference_temps_degF": [-5, 17, 47],
         "force_into_system": false,
         "avoided_capex_by_ashp_present_value": 0,
         "back_up_temp_threshold_degF": -10.0
