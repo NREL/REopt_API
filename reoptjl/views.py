@@ -1046,8 +1046,8 @@ def queryset_for_summary(api_metas,summary_dict:dict):
             'meta__run_uuid',
             'size_ton'
     )
-    if len(ashpSpaceHeater) > 0:
-        for m in ashpSpaceHeater:
+    if len(ashpWaterHeater) > 0:
+        for m in ashpWaterHeater:
             summary_dict[str(m.meta.run_uuid)]['ASHPWater_heater_ton'] = m.size_ton
 
     return summary_dict
