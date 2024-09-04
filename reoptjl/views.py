@@ -1179,7 +1179,7 @@ def proforma_for_runuuid(request, run_uuid):
             output.seek(0)
 
             # Set up the Http response.
-            filename = "directown_proforma.xlsx"
+            filename = "proforma.xlsx"
             response = HttpResponse(
                 output,
                 content_type='application/vnd.ms-excel.sheet.macroEnabled.12',
