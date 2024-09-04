@@ -5538,6 +5538,19 @@ class ASHPSpaceHeaterOutputs(BaseModel, models.Model):
         default = list,
     )
 
+    electric_consumption_for_cooling_series_kw = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    electric_consumption_for_heating_series_kw = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+
+    annual_electric_consumption_for_cooling_kwh = models.FloatField(null=True, blank=True)
+    annual_electric_consumption_for_heating_kwh = models.FloatField(null=True, blank=True)
+
 class ASHPWaterHeaterInputs(BaseModel, models.Model):
     key = "ASHPWaterHeater"
     meta = models.OneToOneField(
