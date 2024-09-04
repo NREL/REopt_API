@@ -565,4 +565,5 @@ HTTP.register!(ROUTER, "GET", "/ghp_efficiency_thermal_factors", ghp_efficiency_
 HTTP.register!(ROUTER, "GET", "/ground_conductivity", ground_conductivity)
 HTTP.register!(ROUTER, "GET", "/health", health)
 HTTP.register!(ROUTER, "GET", "/get_existing_chiller_default_cop", get_existing_chiller_default_cop)
+HTTP.register!(ROUTER, "GET", "/ashp_defaults", ashp_defaults)
 HTTP.serve(ROUTER, "0.0.0.0", 8081, reuseaddr=true)
