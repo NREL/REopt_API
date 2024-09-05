@@ -5490,7 +5490,7 @@ class ASHPSpaceHeaterOutputs(BaseModel, models.Model):
 
     electric_consumption_series_kw = ArrayField(
         models.FloatField(null=True, blank=True),
-        default=list,
+        default=list
     )
 
     annual_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
@@ -5498,17 +5498,17 @@ class ASHPSpaceHeaterOutputs(BaseModel, models.Model):
 
     thermal_to_storage_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
-        default = list,
+        default = list
     )
 
     thermal_production_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
-        default = list,
+        default = list
     )
 
     thermal_to_load_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
-        default = list,
+        default = list
     )
 
     thermal_to_space_heating_load_series_mmbtu_per_hour = ArrayField(
@@ -5518,42 +5518,42 @@ class ASHPSpaceHeaterOutputs(BaseModel, models.Model):
 
     thermal_to_storage_series_ton = ArrayField(
         models.FloatField(null=True, blank=True),
-        default = list,
+        default = list
     )
 
     thermal_to_load_series_ton = ArrayField(
         models.FloatField(null=True, blank=True),
-        default = list,
+        default = list
     )
 
     heating_cop = ArrayField(
         models.FloatField(null=True, blank=True),
-        default = list,
+        default = list
     )
 
     heating_cf = ArrayField(
         models.FloatField(null=True, blank=True),
-        default = list,
+        default = list
     )
 
     cooling_cop = ArrayField(
         models.FloatField(null=True, blank=True),
-        default = list,
+        default = list
     )
 
     cooling_cf = ArrayField(
         models.FloatField(null=True, blank=True),
-        default = list,
+        default = list
     )
 
     electric_consumption_for_cooling_series_kw = ArrayField(
         models.FloatField(null=True, blank=True),
-        default = list,
+        default = list
     )
 
     electric_consumption_for_heating_series_kw = ArrayField(
         models.FloatField(null=True, blank=True),
-        default = list,
+        default = list
     )
 
     annual_electric_consumption_for_cooling_kwh = models.FloatField(null=True, blank=True)
@@ -5758,24 +5758,24 @@ class ASHPWaterHeaterOutputs(BaseModel, models.Model):
 
     electric_consumption_series_kw = ArrayField(
         models.FloatField(null=True, blank=True),
-        default=list,
+        default=list
     )
 
     annual_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
 
     thermal_to_storage_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
-        default = list,
+        default = list
     )
 
     thermal_production_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
-        default = list,
+        default = list
     )
 
     thermal_to_load_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
-        default = list,
+        default = list
     )
 
     thermal_to_dhw_load_series_mmbtu_per_hour = ArrayField(
@@ -5785,12 +5785,12 @@ class ASHPWaterHeaterOutputs(BaseModel, models.Model):
 
     heating_cop = ArrayField(
         models.FloatField(null=True, blank=True),
-        default = list,
+        default = list
     )
 
     heating_cf = ArrayField(
         models.FloatField(null=True, blank=True),
-        default = list,
+        default = list
     )
 
 
