@@ -5279,7 +5279,6 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        default = 0.0,
         help_text=("Minimum nonzero thermal power size constraint for optimization [ton]")
     )
 
@@ -5290,7 +5289,6 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        default = 0.5,
         help_text=("Minimum nonzero thermal power as a fucniton of coincident peak load - constraint for optimization [ton]")
     )
 
@@ -5597,7 +5595,6 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        default = 0.0,
         help_text=("Minimum nonzero thermal power size constraint for optimization [ton]")
     )
 
@@ -5608,7 +5605,6 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        default = 0.0,
         help_text=("Minimum nonzero thermal power as a function of coincident peak load / CF - constraint for optimization [ton]")
     )
 
