@@ -1186,11 +1186,11 @@ def easiur_costs(request):
 #         log.error(debug_msg)
 #         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
 
-###############################################################
-################ START Custom Table ###########################
-###############################################################
+##############################################################################################################################
+################################################# START Custom Table #########################################################
+##############################################################################################################################
 
-def access_raw_data(run_uuids, request, table_config_name):
+def access_raw_data(run_uuids, request):
     try:
         # Fetch UserProvidedMeta data for the relevant run_uuids
         usermeta = UserProvidedMeta.objects.filter(meta__run_uuid__in=run_uuids).only(
@@ -1210,14 +1210,6 @@ def access_raw_data(run_uuids, request, table_config_name):
                 for run_uuid in run_uuids
             ]
         }
-
-        config = globals().get(table_config_name)
-        if not config:
-            raise ValueError(f"Invalid table configuration: {table_config_name}. Please provide a valid configuration name.")
-
-        # Check if the BAU consistency check should be performed
-        if any("bau_value" in entry for entry in config):
-            check_bau_consistency(full_summary_dict['scenarios'])
 
         return full_summary_dict
 
@@ -1269,22 +1261,20 @@ def get_REopt_data(data_f, scenario_name, config):
 
 def get_bau_values(scenarios, config):
     try:
-        bau_values = {entry["label"]: None for entry in config}
+        # Dictionary to store BAU values for each scenario
+        bau_values_per_scenario = {scenario['run_uuid']: {entry["label"]: None for entry in config} for scenario in scenarios}
 
-        # Only proceed if at least one config entry has a bau_value
-        if not any("bau_value" in entry for entry in config):
-            return None
+        for scenario in scenarios:
+            run_uuid = scenario['run_uuid']
+            df_gen = flatten_dict(scenario['full_data'])
 
-        # Extract BAU values from the first scenario
-        df_gen = flatten_dict(scenarios[0]['full_data'])
+            for entry in config:
+                bau_func = entry.get("bau_value")
+                if bau_func:  # Only extract BAU values if `bau_value` exists
+                    value = bau_func(df_gen)
+                    bau_values_per_scenario[run_uuid][entry["label"]] = value
 
-        for entry in config:
-            bau_func = entry.get("bau_value")
-            if bau_func:  # Only extract BAU values if `bau_value` exists
-                value = bau_func(df_gen)
-                bau_values[entry["label"]] = value
-
-        return bau_values
+        return bau_values_per_scenario
 
     except Exception:
         log.error(f"Error in get_bau_values: {tb.format_exc()}")
@@ -1292,32 +1282,38 @@ def get_bau_values(scenarios, config):
 
 def process_scenarios(scenarios, reopt_data_config):
     try:
-        # Check if BAU values exist
-        bau_values = get_bau_values(scenarios, reopt_data_config)
+        # Fetch BAU values for each scenario
+        bau_values_per_scenario = get_bau_values(scenarios, reopt_data_config)
         combined_df = pd.DataFrame()
 
-        for scenario in scenarios:
+        for idx, scenario in enumerate(scenarios):
             run_uuid = scenario['run_uuid']
-            df_result = get_REopt_data(scenario['full_data'], run_uuid, reopt_data_config)
-            df_result = df_result.set_index('Scenario').T
-            df_result.columns = [run_uuid]
-            combined_df = df_result if combined_df.empty else combined_df.join(df_result, how='outer')
 
-        if bau_values:
-            # Single site scenario with BAU data
-            bau_data = {key: [value] for key, value in bau_values.items()}
-            bau_data["Scenario"] = ["BAU"]
+            # Process scenario data
+            df_result = get_REopt_data(scenario['full_data'], run_uuid, reopt_data_config)
+
+            # Ensure the run_uuid is assigned to the Scenario column
+            df_result["Scenario"] = run_uuid
+
+            # Create BAU DataFrame for this scenario
+            bau_data = {key: [value] for key, value in bau_values_per_scenario[run_uuid].items()}
+            bau_data["Scenario"] = [f"BAU {idx + 1}"]  # Assign distinct BAU labels (BAU 1, BAU 2)
             df_bau = pd.DataFrame(bau_data)
 
-            # Combine BAU data with scenario results
-            combined_df = pd.concat([df_bau, combined_df.T]).reset_index(drop=True)
-        else:
-            # Portfolio scenario without BAU data
-            combined_df = combined_df.T.reset_index()
-            combined_df.rename(columns={'index': 'Scenario'}, inplace=True)
+            # Append BAU row followed by scenario result row, preserve UUIDs
+            if combined_df.empty:
+                combined_df = pd.concat([df_bau, df_result], axis=0)
+            else:
+                combined_df = pd.concat([combined_df, df_bau, df_result], axis=0)
 
+        # Reset index and remove any misalignment
+        combined_df.reset_index(drop=True, inplace=True)
+
+        # Clean up and format the data for final output
         combined_df = clean_data_dict(combined_df.to_dict(orient="list"))
         combined_df = pd.DataFrame(combined_df)
+        
+        # Ensure 'Scenario' is the first column, with others following
         combined_df = combined_df[["Scenario"] + [col for col in combined_df.columns if col != "Scenario"]]
 
         return combined_df
@@ -1342,31 +1338,27 @@ def create_custom_comparison_table(request):
                 except ValueError:
                     return JsonResponse({"Error": f"Invalid UUID format: {r_uuid}. Ensure that each run_uuid is a valid UUID."}, status=400)
 
-            # Access raw data and check for BAU consistency if needed
-            scenarios = access_raw_data(run_uuids, request, table_config_name)
-            if not scenarios.get('scenarios'):
-                return JsonResponse({'Error': 'Failed to fetch scenarios or inconsistent BAU data. Ensure that scenarios have consistent site inputs.'}, content_type='application/json', status=404)
+            # Access raw data
+            scenarios = access_raw_data(run_uuids, request)
 
+            # Process scenarios and generate the final DataFrame
             target_custom_table = globals().get(table_config_name)
             if not target_custom_table:
                 return JsonResponse({"Error": f"Invalid table configuration: {table_config_name}. Please provide a valid configuration name."}, status=400)
 
             final_df = process_scenarios(scenarios['scenarios'], target_custom_table)
 
-            # Ensure correct alignment of run_uuids with the DataFrame
-            if len(run_uuids) == final_df.shape[0] - 1:  # Exclude BAU row if present
-                final_df.iloc[1:, 0] = run_uuids
-            elif len(run_uuids) == final_df.shape[0]:
-                final_df.iloc[:, 0] = run_uuids
-
+            # Transpose the final DataFrame
             final_df_transpose = final_df.transpose()
             final_df_transpose.columns = final_df_transpose.iloc[0]
             final_df_transpose = final_df_transpose.drop(final_df_transpose.index[0])
 
+            # Create the Excel file
             output = io.BytesIO()
             create_custom_table_excel(final_df_transpose, target_custom_table, calculations, output)
             output.seek(0)
 
+            # Return the Excel file as a response
             response = HttpResponse(
                 output,
                 content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -1391,8 +1383,8 @@ def create_custom_table_excel(df, custom_table, calculations, output):
         worksheet = workbook.add_worksheet('Custom Table')
 
         # Scenario header formatting with colors
-        scenario_colors = ['#0079C2', '#00A2E8', '#22B573', '#FFB300', '#E05A24', '#FF5050']
-        scenario_formats = [workbook.add_format({'bold': True, 'bg_color': color, 'border': 1, 'align': 'center', 'font_color': 'white', 'font_size': 10}) for color in scenario_colors]
+        scenario_colors = ['#0B5E90','#00A4E4' ,'#F7A11A', '#D9531E', '#FFB300', '#D1D5D8', '#FF5050']
+        scenario_formats = [workbook.add_format({'bold': True, 'bg_color': color, 'border': 1, 'align': 'center', 'font_color': 'white', 'font_size': 12}) for color in scenario_colors]
 
         # Row alternating colors
         row_colors = ['#d1d5d8', '#fafbfb']
@@ -1411,6 +1403,9 @@ def create_custom_table_excel(df, custom_table, calculations, output):
         # Message format to match formula style
         message_format = workbook.add_format({'bg_color': '#0B5E90',  'align': 'center','valign': 'center','border': 1,'font_color': formula_color,  'bold': True, 'font_size': 12,  'italic': True })
         
+        # Separator format for rows that act as visual dividers
+        separator_format = workbook.add_format({'bg_color': '#8CC63F', 'bold': True, 'border': 1,'font_size': 11})
+        
         # Combine row color with cell format, excluding formulas
         def get_combined_format(label, row_color, is_formula=False):
             if is_formula:
@@ -1427,45 +1422,93 @@ def create_custom_table_excel(df, custom_table, calculations, output):
                     return workbook.add_format({**base_percent_format, 'bg_color': row_color})
             return workbook.add_format(base_data_format)
 
-        # Setting column widths and writing headers
-        column_width = 35
-        for col_num in range(len(df.columns) + 3):
-            worksheet.set_column(col_num, col_num, column_width)
+        # Set column width for the first column (labels column)
+        worksheet.set_column(0, 0, 35)
 
-        # Write scenario headers with different colors
+        # Setting column widths and writing headers for other columns
+        column_width = 25
+        columns_to_hide = set()
+
+        # Loop through BAU columns and check if all values are identical across all BAU columns
+        bau_columns = [i for i, header in enumerate(df.columns) if "BAU" in header]
+
+        # Only proceed if there are BAU columns
+        if bau_columns:
+            identical_bau_columns = True  # Assume all BAU columns are identical unless proven otherwise
+
+            # Loop through each row and check the values across BAU columns
+            for row_num in range(len(df)):
+                row_values = df.iloc[row_num, bau_columns].values  # Get all BAU values for this row
+
+                # Check if all BAU values in this row are the same
+                first_bau_value = row_values[0]
+                if not all(value == first_bau_value for value in row_values):
+                    identical_bau_columns = False
+                    break  # If any row has different BAU values, stop checking further
+
+            # If all BAU columns are identical across all rows, hide all but the first BAU column
+            if identical_bau_columns:
+                for col_num in bau_columns[1:]:
+                    columns_to_hide.add(col_num)
+
+        # Now set the column properties for hiding BAU columns and leaving others unchanged
+        for col_num, header in enumerate(df.columns):
+            if "BAU" in header and col_num in columns_to_hide:
+                # Hide the BAU columns that have been marked
+                worksheet.set_column(col_num + 1, col_num + 1, column_width, None, {'hidden': True})
+            else:
+                # Set the normal column width for non-hidden columns
+                worksheet.set_column(col_num + 1, col_num + 1, column_width)
+
+        # Write scenario headers
         worksheet.write('A1', 'Scenario', scenario_formats[0])
         for col_num, header in enumerate(df.columns):
-            worksheet.write(0, col_num + 1, header, scenario_formats[col_num % len(scenario_formats)])
+            worksheet.write(0, col_num + 1, header, scenario_formats[(col_num // 2) % (len(scenario_formats) - 1) + 1])
 
         # Write variable names and data with full-row formatting
-        for row_num, variable in enumerate(df.index):
-            row_color = row_colors[row_num % 2]
-            worksheet.write(row_num + 1, 0, variable, workbook.add_format({'bg_color': row_color, 'border': 1}))
+        row_offset = 0  # To keep track of the current row in the worksheet
+        for row_num, entry in enumerate(custom_table):
+            key = entry['key']  # Extract the key from custom_table
 
-            for col_num, value in enumerate(df.loc[variable]):
-                is_formula = False  
-                if isinstance(value, str) and "formula" in value.lower(): 
-                    is_formula = True
+            # Check if the key contains 'separator'
+            if 'separator' in key.lower():
+                # Merge the first few columns for the separator
+                worksheet.merge_range(row_num + 1 + row_offset, 0, row_num + 1 + row_offset, len(df.columns), entry['label'], separator_format)
+            else:
+                # Regular row data writing
+                row_color = row_colors[(row_num + row_offset) % 2]  # Alternating row colors
+                
+                # Write the label in the first column
+                worksheet.write(row_num + 1 + row_offset, 0, entry['label'], workbook.add_format({'bg_color': row_color, 'border': 1}))
 
-                cell_format = get_combined_format(variable, row_color, is_formula)
-                if pd.isnull(value) or value == '-':
-                    worksheet.write(row_num + 1, col_num + 1, "", cell_format)
-                else:
-                    worksheet.write(row_num + 1, col_num + 1, value, cell_format)
+                # Write the data for each column
+                variable = entry['label']  # Assuming df index or columns match the label
+                for col_num, value in enumerate(df.loc[variable]):
+                    is_formula = False  # Detect if this cell contains a formula
+                    if isinstance(value, str) and "formula" in value.lower():
+                        is_formula = True
 
-        worksheet.merge_range(len(df.index) + 2, 0, len(df.index) + 2, len(df.columns), "Values in white are formulas. Do not input anything.", message_format)
+                    cell_format = get_combined_format(variable, row_color, is_formula)
+                    if pd.isnull(value) or value == '-':
+                        worksheet.write(row_num + 1 + row_offset, col_num + 1, "", cell_format)
+                    else:
+                        worksheet.write(row_num + 1 + row_offset, col_num + 1, value, cell_format)
+
+        # Update the message to include clear information about BAU values being hidden for novice users
+        message_text = (
+            "Values in white are formulas, so please do not enter anything in those cells."
+        )
+
+        # Merge the range and apply the updated message
+        worksheet.merge_range(len(df.index) + 2, 0, len(df.index) + 2, len(df.columns), message_text, message_format)
 
         headers = {header: idx for idx, header in enumerate(df.index)}
         headers["Scenario"] = 0
-        
-        bau_cells = {
-            'grid_value': f'{colnum_string(2)}{headers["Grid Purchased Electricity (kWh)"] + 2}' if "Grid Purchased Electricity (kWh)" in headers else None,
-            'net_cost_value': f'{colnum_string(2)}{headers["Net Electricity Cost ($)"] + 2}' if "Net Electricity Cost ($)" in headers else None,
-            'ng_reduction_value': f'{colnum_string(2)}{headers["Total Fuel (MMBtu)"] + 2}' if "Total Fuel (MMBtu)" in headers else None,
-            'util_cost_value': f'{colnum_string(2)}{headers["Total Utility Cost ($)"] + 2}' if "Total Utility Cost ($)" in headers else None,
-            'co2_reduction_value': f'{colnum_string(2)}{headers["CO2 Emissions (tonnes)"] + 2}' if "CO2 Emissions (tonnes)" in headers else None,
-            'placeholder1_value': f'{colnum_string(2)}{headers["Placeholder1"] + 2}' if "Placeholder1" in headers else None,
-        }
+
+        # Function to get the correct BAU reference column dynamically
+        def get_bau_column(col):
+            # BAU column will always be right before the corresponding scenario column
+            return col - 1 if col > 1 else 1
 
         relevant_columns = [entry["label"] for entry in custom_table]
         relevant_calculations = [calc for calc in calculations if calc["name"] in relevant_columns]
@@ -1474,7 +1517,23 @@ def create_custom_table_excel(df, custom_table, calculations, output):
         missing_entries = []
 
         for col in range(2, len(df.columns) + 2):
+            # Skip BAU columns (BAU columns should not have formulas)
+            if col % 2 == 0:
+                continue  # Skip the BAU column
+
             col_letter = colnum_string(col)
+            bau_col = get_bau_column(col)  # Get the corresponding BAU column
+            bau_col_letter = colnum_string(bau_col)  # Convert the column number to letter for Excel reference
+
+            bau_cells = {
+                'grid_value': f'{bau_col_letter}{headers["Grid Purchased Electricity (kWh)"] + 2}' if "Grid Purchased Electricity (kWh)" in headers else None,
+                'net_cost_value': f'{bau_col_letter}{headers["Net Electricity Cost ($)"] + 2}' if "Net Electricity Cost ($)" in headers else None,
+                'ng_reduction_value': f'{bau_col_letter}{headers["Total Fuel (MMBtu)"] + 2}' if "Total Fuel (MMBtu)" in headers else None,
+                'util_cost_value': f'{bau_col_letter}{headers["Total Utility Cost ($)"] + 2}' if "Total Utility Cost ($)" in headers else None,
+                'co2_reduction_value': f'{bau_col_letter}{headers["CO2 Emissions (tonnes)"] + 2}' if "CO2 Emissions (tonnes)" in headers else None,
+                'placeholder1_value': f'{bau_col_letter}{headers["Placeholder1"] + 2}' if "Placeholder1" in headers else None,
+            }
+
             for calc in relevant_calculations:
                 try:
                     if all(key in headers or key in bau_cells for key in calc["formula"].__code__.co_names):
@@ -1482,7 +1541,7 @@ def create_custom_table_excel(df, custom_table, calculations, output):
                         if row_idx is not None:
                             formula = calc["formula"](col_letter, bau_cells, headers)
                             cell_format = get_combined_format(calc["name"], row_colors[row_idx % 2], is_formula=True)
-                            worksheet.write_formula(row_idx + 1, col-1, formula, cell_format)
+                            worksheet.write_formula(row_idx + 1, col - 1, formula, cell_format)
                         else:
                             missing_entries.append(calc["name"])
                     else:
@@ -1513,7 +1572,7 @@ def create_custom_table_excel(df, custom_table, calculations, output):
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         err = UnexpectedError(exc_type, exc_value, exc_traceback, task='create_custom_comparison_table')
-        err.save
+
 
 # Configuration
 # Set up table needed along with REopt dictionaries to grab data 
@@ -1537,6 +1596,12 @@ example_table = [
         "key": "site_lat_long",
         "bau_value": lambda df: f"({safe_get(df, 'inputs.Site.latitude')}, {safe_get(df, 'inputs.Site.longitude')})",
         "scenario_value": lambda df: f"({safe_get(df, 'inputs.Site.latitude')}, {safe_get(df, 'inputs.Site.longitude')})"
+    },
+    {
+        "label": "Technology Sizing",  # This is your separator label
+        "key": "tech_separator", #MUST HAVE "separator" somewhere in the name
+        "bau_value": lambda df: "",
+        "scenario_value": lambda df: ""
     },
     # Example 3: Calculated Value (Sum of Two Fields), this does not show up in formulas
     {
@@ -1619,7 +1684,13 @@ single_site_custom_table = [
         "scenario_value": lambda df: f"({safe_get(df, 'inputs.Site.latitude')}, {safe_get(df, 'inputs.Site.longitude')})"
     },
     {
-        "label": "PV Nameplate capacity (kW), purchased",
+        "label": "Technology Sizing",  # This is your separator label
+        "key": "tech_separator", #MUST HAVE "separator" somewhere in the name
+        "bau_value": lambda df: "",
+        "scenario_value": lambda df: ""
+    },
+    {
+        "label": "PV Nameplate capacity (kW), new",
         "key": "pv_size_purchased",
         "bau_value": lambda df: safe_get(df, "outputs.PV.size_kw_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.PV.size_kw")
@@ -1637,7 +1708,7 @@ single_site_custom_table = [
         "scenario_value": lambda df: safe_get(df, "outputs.PV.electric_to_load_series_kw")
     },
     {
-        "label": "Wind Nameplate capacity (kW), purchased",
+        "label": "Wind Nameplate capacity (kW), new",
         "key": "wind_size_purchased",
         "bau_value": lambda df: safe_get(df, "outputs.Wind.size_kw_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.Wind.size_kw")
@@ -1649,7 +1720,7 @@ single_site_custom_table = [
         "scenario_value": lambda df: safe_get(df, "outputs.Wind.electric_to_load_series_kw")
     },
     {
-        "label": "Backup Generator Nameplate capacity (kW), purchased",
+        "label": "Backup Generator Nameplate capacity (kW), new",
         "key": "backup_generator_capacity_purchased",
         "bau_value": lambda df: safe_get(df, "outputs.Generator.size_kw_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.Generator.size_kw")
@@ -1773,6 +1844,12 @@ single_site_custom_table = [
         "key": "net_purchased_electricity_reduction",
         "bau_value": lambda df: safe_get(df, "outputs.ElectricUtility.electric_to_load_series_kwsdf_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.ElectricUtility.electric_to_load_series_kwsdf")
+    },
+    {
+        "label": "Financials",  # This is your separator label
+        "key": "fin_separator", #MUST HAVE "separator" somewhere in the name
+        "bau_value": lambda df: "",
+        "scenario_value": lambda df: ""
     },
     {
         "label": "Electricity Energy Cost ($)",
@@ -1994,6 +2071,7 @@ calculations = [
             f'{col}{headers["Grid Purchased Electricity (kWh)"] + 2}'
         )
     },
+    
     {
         "name": "Net Purchased Electricity Reduction (%)",
         "formula": lambda col, bau, headers: f'=({bau["grid_value"]}-{col}{headers["Grid Purchased Electricity (kWh)"] + 2})/{bau["grid_value"]}'
@@ -2068,31 +2146,6 @@ calculations = [
         "formula": lambda col, bau, headers: f'=({bau["placeholder1_value"]}-{col}{headers["Placeholder2"] + 2})/{bau["placeholder1_value"]}'
         # This formula calculates the percentage change of Placeholder2 using Placeholder1's BAU value as the reference.
     }
-]
-
-
-# Portfolio configuration should not include "bau_value" in the keys
-example_table_portfolio = [
-    {
-        "label": "Site Name",
-        "key": "site",
-        "scenario_value": lambda df: safe_get(df, "inputs.Meta.description", "None provided")
-    },
-    {
-        "label": "Site Address",
-        "key": "site_address",
-        "scenario_value": lambda df: safe_get(df, "inputs.Meta.address", "None provided")
-    },
-    {
-        "label": "Site Location",
-        "key": "site_lat_long",
-        "scenario_value": lambda df: f"({safe_get(df, 'inputs.Site.latitude')}, {safe_get(df, 'inputs.Site.longitude')})"
-    },
-    {
-        "label": "Results URL",
-        "key": "url",
-        "scenario_value": lambda df: f"https://custom-table-download-reopt-stage.its.nrel.gov/tool/results/"+safe_get(df, "webtool_uuid")
-    },
 ]
 
 ###############################################################
