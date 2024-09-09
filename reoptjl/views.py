@@ -1429,7 +1429,7 @@ def create_custom_table_excel(df, custom_table, calculations, output):
         column_width = 25
         columns_to_hide = set()
 
-        # Loop through BAU columns and check if all values are identical across all BAU columns
+        # Loop through BAU columns and check if all numerical values are identical across all BAU columns
         bau_columns = [i for i, header in enumerate(df.columns) if "BAU" in header]
 
         # Only proceed if there are BAU columns
@@ -1440,11 +1440,15 @@ def create_custom_table_excel(df, custom_table, calculations, output):
             for row_num in range(len(df)):
                 row_values = df.iloc[row_num, bau_columns].values  # Get all BAU values for this row
 
-                # Check if all BAU values in this row are the same
-                first_bau_value = row_values[0]
-                if not all(value == first_bau_value for value in row_values):
-                    identical_bau_columns = False
-                    break  # If any row has different BAU values, stop checking further
+                # Filter only numerical values for comparison
+                numerical_values = [value for value in row_values if isinstance(value, (int, float))]
+
+                # Check if all numerical BAU values in this row are the same
+                if numerical_values:  # Proceed only if there are numerical values to compare
+                    first_bau_value = numerical_values[0]
+                    if not all(value == first_bau_value for value in numerical_values):
+                        identical_bau_columns = False
+                        break  # If any row has different BAU values, stop checking further
 
             # If all BAU columns are identical across all rows, hide all but the first BAU column
             if identical_bau_columns:
