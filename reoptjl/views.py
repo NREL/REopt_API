@@ -1383,7 +1383,8 @@ def create_custom_table_excel(df, custom_table, calculations, output):
         worksheet = workbook.add_worksheet('Custom Table')
 
         # Scenario header formatting with colors
-        scenario_colors = ['#0B5E90','#00A4E4' ,'#F7A11A', '#D9531E', '#FFB300', '#D1D5D8', '#FF5050']
+        scenario_colors = ['#0B5E90', '#00A4E4','#f46d43','#fdae61', '#66c2a5', '#d53e4f', '#3288bd']  
+        
         scenario_formats = [workbook.add_format({'bold': True, 'bg_color': color, 'border': 1, 'align': 'center', 'font_color': 'white', 'font_size': 12}) for color in scenario_colors]
 
         # Row alternating colors
