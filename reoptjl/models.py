@@ -5287,7 +5287,6 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        default = 0.0,
         help_text=("Minimum nonzero thermal power size constraint for optimization [ton]")
     )
 
@@ -5298,7 +5297,6 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        default = 0.5,
         help_text=("Minimum nonzero thermal power as a fucniton of coincident peak load - constraint for optimization [ton]")
     )
 
@@ -5475,6 +5473,9 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
 
     def clean(self):
         error_messages = {}
+        if self.dict.get("min_allowable_ton") in [None, "", []] and self.dict.get("min_allowable_peak_capacity_fraction") in [None, "", []]:
+            self.min_allowable_peak_capacity_fraction = 0.5
+
         if self.dict.get("min_allowable_ton") not in [None, "", []] and self.dict.get("min_allowable_peak_capacity_fraction") not in [None, "", []]:
             error_messages["bad inputs"] = "At most one of min_allowable_ton and min_allowable_peak_capacity_fraction may be input to model {}".format(self.key)
 
@@ -5605,7 +5606,6 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        default = 0.0,
         help_text=("Minimum nonzero thermal power size constraint for optimization [ton]")
     )
 
@@ -5616,7 +5616,6 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        default = 0.0,
         help_text=("Minimum nonzero thermal power as a function of coincident peak load / CF - constraint for optimization [ton]")
     )
 
@@ -5744,6 +5743,9 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
 
     def clean(self):
         error_messages = {}
+        if self.dict.get("min_allowable_ton") in [None, "", []] and self.dict.get("min_allowable_peak_capacity_fraction") in [None, "", []]:
+            self.min_allowable_peak_capacity_fraction = 0.5
+
         if self.dict.get("min_allowable_ton") not in [None, "", []] and self.dict.get("min_allowable_peak_capacity_fraction") not in [None, "", []]:
             error_messages["bad inputs"] = "At most one of min_allowable_ton and min_allowable_peak_capacity_fraction may be input to model {}".format(self.key)
 
