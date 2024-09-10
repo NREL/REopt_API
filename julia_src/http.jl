@@ -112,7 +112,12 @@ function reopt(req::HTTP.Request)
                 chiller_dict = Dict(key=>getfield(model_inputs.s.existing_chiller, key) for key in inputs_with_defaults_from_chiller)
             else
                 chiller_dict = Dict()
-            end          
+            end
+            if !isnothing(model_inputs.s.site.outdoor_air_temperature_degF)
+                site_dict = Dict(:outdoor_air_temperature_degF => model_inputs.s.site.outdoor_air_temperature_degF)
+            else
+                site_dict = Dict()
+            end
 			inputs_with_defaults_set_in_julia = Dict(
 				"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_easiur),
 				"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert_or_cambium),
@@ -120,7 +125,7 @@ function reopt(req::HTTP.Request)
 				"SteamTurbine" => steamturbine_dict,
                 "GHP" => ghp_dict,
                 "ExistingChiller" => chiller_dict,
-                "Site" => Dict(key=>getfield(model_inputs.s.site, key) for key in [:outdoor_air_temperature_degF]),
+                "Site" => site_dict,
 			)
 		catch e
 			@error "Something went wrong in REopt optimization!" exception=(e, catch_backtrace())
