@@ -7,7 +7,8 @@ from reoptjl.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorage
                         HotThermalStorageOutputs, ColdThermalStorageOutputs, OutageOutputs,\
                         REoptjlMessageOutputs, AbsorptionChillerOutputs, BoilerOutputs, SteamTurbineInputs, \
                         SteamTurbineOutputs, GHPInputs, GHPOutputs, ExistingChillerInputs, \
-                        ElectricHeaterOutputs, ASHPSpaceHeaterOutputs, ASHPWaterHeaterOutputs
+                        ElectricHeaterOutputs, ASHPSpaceHeaterOutputs, ASHPWaterHeaterOutputs, \
+                        SiteInputs
 import numpy as np
 import sys
 import traceback as tb
@@ -120,6 +121,7 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
         # get input models that need updating
         FinancialInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["Financial"])
         ElectricUtilityInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["ElectricUtility"])
+        SiteInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["Site"])
 
         if inputs_to_update["CHP"]:  # Will be an empty dictionary if CHP is not considered
             CHPInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["CHP"])

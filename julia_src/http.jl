@@ -119,8 +119,9 @@ function reopt(req::HTTP.Request)
                 "CHP" => chp_dict,
 				"SteamTurbine" => steamturbine_dict,
                 "GHP" => ghp_dict,
-                "ExistingChiller" => chiller_dict
-			)            
+                "ExistingChiller" => chiller_dict,
+                "Site" => Dict(key=>getfield(model_inputs.s.site, key) for key in [:outdoor_air_temperature_degF]),
+			)
 		catch e
 			@error "Something went wrong in REopt optimization!" exception=(e, catch_backtrace())
 			error_response["error"] = sprint(showerror, e) # append instead of rewrite?
