@@ -8102,6 +8102,9 @@ class GHPOutputs(BaseModel, models.Model):
     cooling_thermal_load_reduction_with_ghp_ton = ArrayField(
             models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
     ghx_residual_value_present_value = models.FloatField(null=True, blank=True)
+    thermal_to_space_heating_load_series_mmbtu_per_hour = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
+    thermal_to_dhw_load_series_mmbtu_per_hour = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
+    thermal_to_load_series_ton = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
 
 
 def get_input_dict_from_run_uuid(run_uuid:str):
