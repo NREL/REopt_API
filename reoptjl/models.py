@@ -401,9 +401,11 @@ class SiteInputs(BaseModel, models.Model):
     )
     outdoor_air_temperature_degF = ArrayField(
         models.FloatField(
+            null=True,
             blank=True
         ),
         default=list,
+        null=True,
         blank=True,
         help_text=("The outdoor air (dry-bulb) temperature in degrees Fahrenheit as determined by the site's location TMY3 data from the PVWatts call or user input. This is used for GHP COP and ASHP COP and CF values based on the default or custom mapping of those.")
     )
