@@ -399,6 +399,14 @@ class SiteInputs(BaseModel, models.Model):
         blank=True,
         help_text=("If True, then renewable energy exported to the grid is counted in renewable electricity percent calculation.")
     )
+    outdoor_air_temperature_degF = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list,
+        blank=True,
+        help_text=("The outdoor air (dry-bulb) temperature in degrees Fahrenheit as determined by the site's location TMY3 data from the PVWatts call or user input. This is used for GHP COP and ASHP COP and CF values based on the default or custom mapping of those.")
+    )
 
 class SiteOutputs(BaseModel, models.Model):
     key = "SiteOutputs"
