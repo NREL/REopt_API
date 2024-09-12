@@ -4,9 +4,9 @@ config:
     allowEnvVariables:
       - XPRESS_LICENSE_HOST
       - NREL_ROOT_CERT_URL_ROOT
-  dockerfile:
-    allowUncommitted:
-      - julia_src/Dockerfile.xpress
-    allowContextAddFiles:
-      - julia_src/Dockerfile.xpress
-      - julia_src/licenseserver
+  # dockerfile:
+  #   allowUncommitted:
+  #     - julia_src/Dockerfile.xpress
+  #   allowContextAddFiles:
+  #     - julia_src/Dockerfile.xpress
+  #     - julia_src/licenseserver

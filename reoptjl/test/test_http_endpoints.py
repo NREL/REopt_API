@@ -163,8 +163,8 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         inputs["annual_kwh"] = 1.5E7
         inputs["doe_reference_name[0]"] = "Hospital"
         inputs["doe_reference_name[1]"] = "LargeOffice"
-        inputs["percent_share[0]"] = 25.0
-        inputs["percent_share[1]"] = 100.0 - inputs["percent_share[0]"]
+        inputs["percent_share[0]"] = 0.25
+        inputs["percent_share[1]"] = 1.0 - inputs["percent_share[0]"]
         
         # The /v3/simulated_load endpoint calls the http.jl /simulated_load endpoint
         response = self.api_client.get(f'/v3/simulated_load', data=inputs)

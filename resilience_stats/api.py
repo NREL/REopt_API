@@ -62,7 +62,6 @@ class ERPJob(ModelResource):
 
         meta_dict = {
             "run_uuid": erp_run_uuid,
-            "reopt_version": "0.41.0",
             "status": "Validating..."
         }
 
@@ -450,7 +449,8 @@ def process_erp_results(results: dict, run_uuid: str) -> None:
     #TODO: get success or error status from julia
     meta = ERPMeta.objects.get(run_uuid=run_uuid)
     meta.status = 'Completed' #results.get("status")
-    meta.save(update_fields=['status'])
+    meta.reopt_version = results.pop("reopt_version")
+    meta.save(update_fields=['status','reopt_version'])
     ERPOutputs.create(meta=meta, **results).save()
     
 
