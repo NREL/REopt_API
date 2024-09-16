@@ -121,7 +121,9 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
         # get input models that need updating
         FinancialInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["Financial"])
         ElectricUtilityInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["ElectricUtility"])
-        SiteInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["Site"])
+        
+        if inputs_to_update["Site"]:
+            SiteInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["Site"])
 
         if inputs_to_update["CHP"]:  # Will be an empty dictionary if CHP is not considered
             CHPInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["CHP"])

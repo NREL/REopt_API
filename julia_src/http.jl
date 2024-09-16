@@ -121,11 +121,11 @@ function reopt(req::HTTP.Request)
 			inputs_with_defaults_set_in_julia = Dict(
 				"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_easiur),
 				"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert_or_cambium),
+                "Site" => site_dict,
                 "CHP" => chp_dict,
 				"SteamTurbine" => steamturbine_dict,
                 "GHP" => ghp_dict,
-                "ExistingChiller" => chiller_dict,
-                "Site" => site_dict,
+                "ExistingChiller" => chiller_dict
 			)
 		catch e
 			@error "Something went wrong in REopt optimization!" exception=(e, catch_backtrace())
