@@ -5628,7 +5628,7 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        default = 0.0,
+        default = 1.0,
         help_text=("Size of system relative to max dispatch output [fraction]")
     )
     
