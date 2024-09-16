@@ -5030,6 +5030,7 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
         primary_key=True
     )
 
+    size_mmbtu_per_hour = models.FloatField(null=True, blank=True)
     annual_fuel_consumption_mmbtu = models.FloatField(null=True, blank=True)
     annual_fuel_consumption_mmbtu_bau = models.FloatField(null=True, blank=True)
 
