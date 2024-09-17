@@ -5279,7 +5279,6 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        default = MAX_BIG_NUMBER,
         help_text=("Maximum thermal power size constraint for optimization [ton]")
     )
 
@@ -5310,7 +5309,6 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        default = 1.0,
         help_text=("Size of system relative to max dispatch output [fraction]")
     )
     
@@ -5320,7 +5318,6 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(MAX_BIG_NUMBER)
         ],
-        default=2250.0,
         null=True,
         blank=True,
         help_text=("Thermal power-based cost of ASHP space heater [$/ton] (3.5 ton to 1 kWt)")
@@ -5331,14 +5328,12 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(MAX_BIG_NUMBER)
         ],
-        default=0.0,
         null=True,
         blank=True,
         help_text=("Thermal power-based cost of ASHP space heater [$/ton] (3.5 ton to 1 kWt)")
     )
 
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.ZERO,
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
         null=True,
@@ -5346,7 +5341,6 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
     )
 
     macrs_bonus_fraction = models.FloatField(
-        default=0.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -5439,14 +5433,12 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
     )
 
     can_serve_cooling = models.BooleanField(
-        default=True,
         null=True, 
         blank=True,
         help_text="Boolean indicator if ASHP space heater can serve cooling load"   
     )
 
     force_into_system = models.BooleanField(
-        default=False,
         null=True, 
         blank=True,
         help_text="Boolean indicator if ASHP space heater serves compatible thermal loads exclusively in optimized scenario"   
@@ -5470,7 +5462,6 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        default = -10.0,
         help_text=("Temperature threshold below which resistive back-up heater turns on [Fahrenheit]")
     )
 
@@ -5598,7 +5589,6 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        default = MAX_BIG_NUMBER,
         help_text=("Maximum thermal power size constraint for optimization [ton]")
     )
 
@@ -5629,7 +5619,6 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        default = 1.0,
         help_text=("Size of system relative to max dispatch output [fraction]")
     )
     
@@ -5638,7 +5627,6 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(MAX_BIG_NUMBER)
         ],
-        default=2250.0,
         null=True,
         blank=True,
         help_text=("Thermal power-based cost of ASHP water heater [$/ton] (3.5 ton to 1 kWt)")
@@ -5649,14 +5637,12 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
             MinValueValidator(0),
             MaxValueValidator(MAX_BIG_NUMBER)
         ],
-        default=0.0,
         null=True,
         blank=True,
         help_text=("Thermal power-based cost of ASHP water heater [$/ton] (3.5 ton to 1 kWt)")
     )
 
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.ZERO,
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
         null=True,
@@ -5664,7 +5650,6 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
     )
 
     macrs_bonus_fraction = models.FloatField(
-        default=0.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -5733,12 +5718,10 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
         ],
         null=True,
         blank=True,
-        default = -10.0,
         help_text=("Temperature threshold below which resistive back-up heater turns on [Fahrenheit]")
     )
 
     force_into_system = models.BooleanField(
-        default=False,
         null=True, 
         blank=True,
         help_text="Boolean indicator if ASHP space heater serves compatible thermal loads exclusively in optimized scenario"   
