@@ -623,9 +623,9 @@ def get_existing_chiller_default_cop(request):
         return JsonResponse({"Error": "Unexpected error in get_existing_chiller_default_cop endpoint. Check log for more."}, status=500)
 
 
-# Inputs: 1-many run_uuids as single comma separated string
-# This function will query those UUIDs and return as summary endpoint
-# Output: list of JSONs
+# Inputs: 1-many run_uuid strings as single comma separated array
+# Output: list of JSON summaries
+# This function will query requested UUIDs and return their summary back to requestor
 def summary_by_runuuids(request):
 
     run_uuids = json.loads(request.body)['run_uuids']
@@ -663,6 +663,8 @@ def summary_by_runuuids(request):
         ).order_by("-created")
 
         if len(scenarios) > 0: # this should be either 0 or 1 as there are no duplicate run_uuids
+            
+            # Get summary information for all selected scenarios
             summary_dict = queryset_for_summary(scenarios, summary_dict)
 
             # Create eventual response dictionary
@@ -686,6 +688,10 @@ def summary_by_runuuids(request):
         err.save_to_db()
         return JsonResponse({"Error": err.message}, status=404)
 
+# Inputs: 1-many run_uuid strings as single comma separated array
+# Inputs: 1-many portfolio_uuid strings as single comma separated array
+# Output: 200 or OK
+# This function link independent run_uuids to a portfolio_uuid. The portfolio ID doesnt have to exit, run_uuids must exist in DB.
 def link_run_uuids_to_portfolio_uuid(request):
 
     request_body = json.loads(request.body)
@@ -742,6 +748,11 @@ def link_run_uuids_to_portfolio_uuid(request):
         err.save_to_db()
         return JsonResponse({"Error": err.message}, status=404)
 
+# Inputs: 1 user_uuid
+# Output: Return summary information for all runs associated with the user
+# Output: Portfolio_uuid for returned runs must be "" (empty) or in unlinked portfolio runs (i.e. user unlinked a run from a portforlio)
+# Output: Remove any user unlinked runs and finally order by `created` column
+# Returns all user runs not actively tied to a portfolio
 def summary(request, user_uuid):
     """
     Retrieve a summary of scenarios for given user_uuid
@@ -817,6 +828,7 @@ def summary(request, user_uuid):
         err.save_to_db()
         return JsonResponse({"Error": err.message}, status=404)
 
+# Same as Summary but by chunks
 def summary_by_chunk(request, user_uuid, chunk):
 
     # Dictionary to store all results. Primary key = run_uuid and secondary key = data values from each uuid
@@ -928,7 +940,8 @@ def create_summary_dict(user_uuid:str,summary_dict:dict):
     
     return return_dict
 
-# Query all django models for all run_uuids found for given user_uuid
+# Query all django models for 1 or more run_uuids provided in inputs
+# Return summary_dict which contains summary information for valid run_uuids
 def queryset_for_summary(api_metas,summary_dict:dict):
 
     # Loop over all the APIMetas associated with a user_uuid, do something if needed
@@ -1185,7 +1198,9 @@ def queryset_for_summary(api_metas,summary_dict:dict):
 
     return summary_dict
 
-# Unlink a user_uuid from a run_uuid.
+# Inputs: user_uuid and run_uuid to unlink from the user
+# Outputs: 200 or OK
+# add an entry to the PortfolioUnlinkedRuns for the given portfolio_uuid and run_uuid, indicating they have been unlinked
 def unlink(request, user_uuid, run_uuid):
 
     """
@@ -1232,6 +1247,9 @@ def unlink(request, user_uuid, run_uuid):
         err.save_to_db()
         return JsonResponse({"Error": err.message}, status=404)
 
+# Inputs: user_uuid, portfolio_uuid, and run_uuid to unlink from the portfolio
+# Outputs: 200 or OK
+# add an entry to the PortfolioUnlinkedRuns for the given portfolio_uuid and run_uuid, indicating they have been unlinked
 def unlink_from_portfolio(request, user_uuid, portfolio_uuid, run_uuid):
 
     """
@@ -1266,6 +1284,10 @@ def unlink_from_portfolio(request, user_uuid, portfolio_uuid, run_uuid):
         else:
             if runs[0].portfolio_uuid != portfolio_uuid:
                 return JsonResponse({"Error": "Run {} is not associated with portfolio {}".format(run_uuid, portfolio_uuid)}, status=400)
+            elif runs[0].user_uuid != user_uuid:
+                return JsonResponse({"Error": "Run {} is not associated with user {}".format(run_uuid, user_uuid)}, status=400)
+            else:
+                return JsonResponse({"Error": "Error in unlinking run {} from portfolio {}".format(run_uuid, portfolio_uuid)}, status=400)
         
         # Run exists and is tied to porfolio provided in request, hence unlink now.
         if not PortfolioUnlinkedRuns.objects.filter(run_uuid=run_uuid).exists():
