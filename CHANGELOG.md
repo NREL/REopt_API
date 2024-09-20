@@ -29,7 +29,7 @@ Classify the change according to the following categories:
 ## Develop - 2024-09-19
 ### Minor Updates
 #### Added
-- **portfolio_uuid** is now a field all models
+- **portfolio_uuid** is now a field that can be added to API objects
 - **PortfolioUnlinkedRuns** tracks which run_uuids were separated from their portfolios
 - `/user/<user_uuid>/unlink_from_portfolio/` endpoint (calls `views.unlink_from_portfolio`)
 - `/summary_by_runuuids/` endpoint (calls `views.summary_by_runuuids`)
