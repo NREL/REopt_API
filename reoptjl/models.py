@@ -926,6 +926,10 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Up-front capital costs for all technologies, in present value, excluding replacement costs, including incentives."
     )
+    initial_capital_costs_after_incentives_without_macrs = models.FloatField(
+        null=True, blank=True,
+        help_text="Up-front capital costs for all technologies, in present value, excluding replacement costs, including incentives except for MACRS."
+    )
     om_and_replacement_present_cost_after_tax = models.FloatField(
         null=True, blank=True,
         help_text="Net O&M and replacement costs in present value, after-tax."
@@ -7430,6 +7434,28 @@ class HeatingLoadOutputs(BaseModel, models.Model):
         default=0,
         help_text=("Annual site total heating boiler fuel load [MMBTU]")
     )
+
+    annual_total_unaddressable_heating_load_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default=0,
+        help_text=("Annual site total unaddressable heating fuel [MMBTU]")
+    )
+
+    annual_emissions_from_unaddressable_heating_load_tonnes_CO2 = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        default=0,
+        help_text=("Annual site total unaddressable heating fuel climate CO2 emissions [tonnes]")
+    )      
 
     def clean(self):
         pass
