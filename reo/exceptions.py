@@ -159,11 +159,11 @@ class UnexpectedError(REoptError):
 
     __name__ = 'UnexpectedError'
 
-    def __init__(self, exc_type, exc_value, exc_traceback, task='', run_uuid='', user_uuid='', message=None):
+    def __init__(self, exc_type, exc_value, exc_traceback, task='', run_uuid='', user_uuid='', portfolio_uuid='', message=None):
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value, exc_traceback)
         if message is None:
             message = "Unexpected Error."
-        super(UnexpectedError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid,
+        super(UnexpectedError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid, portfolio_uuid=portfolio_uuid,
                                               message=message, traceback=debug_msg)
 
 
