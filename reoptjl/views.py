@@ -1,6 +1,7 @@
 # REopt®, Copyright (c) Alliance for Sustainable Energy, LLC. See also https://github.com/NREL/REopt_API/blob/master/LICENSE.
 from django.db import models
 import uuid
+from typing import List, Dict, Any
 import sys
 import traceback as tb
 import re
@@ -21,12 +22,22 @@ import numpy as np
 import pandas as pd
 import json
 import logging
-from reoptjl.custom_table_helpers import safe_get,flatten_dict, clean_data_dict, sum_vectors, colnum_string, check_bau_consistency
+
+from reoptjl.custom_table_helpers import flatten_dict, clean_data_dict, sum_vectors, colnum_string
+from reoptjl.custom_table_config import *
+
 import xlsxwriter
 from collections import defaultdict
 import io
 
 log = logging.getLogger(__name__)
+class CustomTableError(Exception):
+    pass
+
+def log_and_raise_error(task_name: str) -> None:
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    log.error(f"Error in {task_name}: {exc_value}, traceback: {tb.format_tb(exc_traceback)}")
+    raise CustomTableError(f"Error in {task_name}")
 
 def make_error_resp(msg):
     resp = dict()
@@ -116,7 +127,6 @@ def outputs(request):
 
     except Exception as e:
         return JsonResponse({"Error": "Unexpected error in help endpoint: {}".format(e.args[0])}, status=500)
-
 
 def results(request, run_uuid):
     """
@@ -1189,14 +1199,7 @@ def easiur_costs(request):
 ##############################################################################################################################
 ################################################# START Custom Table #########################################################
 ##############################################################################################################################
-def log_and_raise_error(task_name):
-    exc_type, exc_value, exc_traceback = sys.exc_info()
-    log.error(f"Error in {task_name}: {exc_value}, traceback: {tb.format_tb(exc_traceback)}")
-    err = UnexpectedError(exc_type, exc_value, exc_traceback, task=task_name)
-    err.save_to_db()
-    raise
-
-def access_raw_data(run_uuids, request):
+def access_raw_data(run_uuids: List[str], request: Any) -> Dict[str, List[Dict[str, Any]]]:
     try:
         usermeta = UserProvidedMeta.objects.filter(meta__run_uuid__in=run_uuids).only('meta__run_uuid', 'description', 'address')
         meta_data_dict = {um.meta.run_uuid: {"description": um.description, "address": um.address} for um in usermeta}
@@ -1205,7 +1208,7 @@ def access_raw_data(run_uuids, request):
             "scenarios": [
                 {
                     "run_uuid": str(run_uuid),
-                    "full_data": process_raw_data(request, run_uuid),
+                    "full_data": summarize_vector_data(request, run_uuid),
                     "meta_data": meta_data_dict.get(run_uuid, {})
                 }
                 for run_uuid in run_uuids
@@ -1213,24 +1216,17 @@ def access_raw_data(run_uuids, request):
         }
     except Exception:
         log_and_raise_error('access_raw_data')
-
-    except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        log.error(f"Error in access_raw_data: {exc_value}, traceback: {tb.format_tb(exc_traceback)}")
-        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='access_raw_data')
-        err.save_to_db()
-        raise
     
-def process_raw_data(request, run_uuid):
+def summarize_vector_data(request: Any, run_uuid: str) -> Dict[str, Any]:
     try:
         response = results(request, run_uuid)
         if response.status_code == 200:
             return sum_vectors(json.loads(response.content))
         return {"error": f"Failed to fetch data for run_uuid {run_uuid}"}
     except Exception:
-        log_and_raise_error('process_raw_data')
+        log_and_raise_error('summarize_vector_data')
 
-def generate_data_dict(config, df_gen, suffix=""):
+def generate_data_dict(config: List[Dict[str, Any]], df_gen: Dict[str, Any]) -> Dict[str, List[Any]]:
     try:
         data_dict = defaultdict(list)
         for entry in config:
@@ -1240,18 +1236,18 @@ def generate_data_dict(config, df_gen, suffix=""):
     except Exception:
         log_and_raise_error('generate_data_dict')
 
-def get_REopt_data(data_f, scenario_name, config):
+def generate_reopt_dataframe(data_f: Dict[str, Any], scenario_name: str, config: List[Dict[str, Any]]) -> pd.DataFrame:
     try:
         scenario_name_str = str(scenario_name)
         df_gen = flatten_dict(data_f)
-        data_dict = generate_data_dict(config, df_gen, "_bau" if "BAU" in scenario_name_str.upper() else "")
+        data_dict = generate_data_dict(config, df_gen)
         data_dict["Scenario"] = [scenario_name_str]
         col_order = ["Scenario"] + [entry["label"] for entry in config]
         return pd.DataFrame(data_dict)[col_order]
     except Exception:
-        log_and_raise_error('get_REopt_data')
+        log_and_raise_error('generate_reopt_dataframe')
 
-def get_bau_values(scenarios, config):
+def get_bau_values(scenarios: List[Dict[str, Any]], config: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
     try:
         bau_values_per_scenario = {
             scenario['run_uuid']: {entry["label"]: None for entry in config} for scenario in scenarios
@@ -1268,15 +1264,15 @@ def get_bau_values(scenarios, config):
         return bau_values_per_scenario
     except Exception:
         log_and_raise_error('get_bau_values')
-
-def process_scenarios(scenarios, reopt_data_config):
+        
+def process_scenarios(scenarios: List[Dict[str, Any]], reopt_data_config: List[Dict[str, Any]]) -> pd.DataFrame:
     try:
         bau_values_per_scenario = get_bau_values(scenarios, reopt_data_config)
         combined_df = pd.DataFrame()
 
         for idx, scenario in enumerate(scenarios):
             run_uuid = scenario['run_uuid']
-            df_result = get_REopt_data(scenario['full_data'], run_uuid, reopt_data_config)
+            df_result = generate_reopt_dataframe(scenario['full_data'], run_uuid, reopt_data_config)
             df_result["Scenario"] = run_uuid
 
             bau_data = {key: [value] for key, value in bau_values_per_scenario[run_uuid].items()}
@@ -1291,12 +1287,12 @@ def process_scenarios(scenarios, reopt_data_config):
     except Exception:
         log_and_raise_error('process_scenarios')
 
-def create_custom_comparison_table(request):
+def generate_custom_comparison_table(request: Any) -> HttpResponse:
     if request.method != 'GET':
         return JsonResponse({"Error": "Method not allowed. This endpoint only supports GET requests."}, status=405)
 
     try:
-        table_config_name = request.GET.get('table_config_name', 'webtool_table')
+        table_config_name = request.GET.get('table_config_name', 'custom_table_webtool')
         run_uuids = [request.GET[key] for key in request.GET.keys() if key.startswith('run_uuid[')]
         if not run_uuids:
             return JsonResponse({"Error": "No run_uuids provided. Please include at least one run_uuid in the request."}, status=400)
@@ -1307,29 +1303,30 @@ def create_custom_comparison_table(request):
             except ValueError:
                 return JsonResponse({"Error": f"Invalid UUID format: {r_uuid}. Ensure that each run_uuid is a valid UUID."}, status=400)
 
-        scenarios = access_raw_data(run_uuids, request)
         target_custom_table = globals().get(table_config_name)
         if not target_custom_table:
             return JsonResponse({"Error": f"Invalid table configuration: {table_config_name}. Please provide a valid configuration name."}, status=400)
 
+        scenarios = access_raw_data(run_uuids, request)
         final_df = process_scenarios(scenarios['scenarios'], target_custom_table)
         final_df_transpose = final_df.transpose()
         final_df_transpose.columns = final_df_transpose.iloc[0]
         final_df_transpose = final_df_transpose.drop(final_df_transpose.index[0])
 
         output = io.BytesIO()
-        create_custom_table_excel(final_df_transpose, target_custom_table, calculations, output)
+        generate_excel_workbook(final_df_transpose, target_custom_table, output)
         output.seek(0)
 
         response = HttpResponse(output, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
         response['Content-Disposition'] = 'attachment; filename="comparison_table.xlsx"'
         return response
-    except ValueError as e:
-        log_and_return_error(e, 'create_custom_comparison_table', 500)
-    except Exception:
-        log_and_raise_error('create_custom_comparison_table')
-        
-def create_custom_table_excel(df, custom_table, calculations, output):
+    except CustomTableError as e:
+        return JsonResponse({"Error": str(e)}, status=500)
+    except Exception as e:
+        log.error(f"Unexpected error in generate_custom_comparison_table: {e}")
+        return JsonResponse({"Error": "An unexpected error occurred. Please try again later."}, status=500)
+    
+def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]], output: io.BytesIO) -> None:
     try:
         workbook = xlsxwriter.Workbook(output, {'in_memory': True})
         worksheet = workbook.add_worksheet('Custom Table')
@@ -1466,7 +1463,7 @@ def create_custom_table_excel(df, custom_table, calculations, output):
             return col - 1 if col > 1 else 1
 
         relevant_columns = [entry["label"] for entry in custom_table]
-        relevant_calculations = [calc for calc in calculations if calc["name"] in relevant_columns]
+        relevant_calculations = [calc for calc in calculations_config if calc["name"] in relevant_columns]
 
         logged_messages = set()
         missing_entries = []
@@ -1480,16 +1477,7 @@ def create_custom_table_excel(df, custom_table, calculations, output):
             bau_col = get_bau_column(col)  # Get the corresponding BAU column
             bau_col_letter = colnum_string(bau_col)  # Convert the column number to letter for Excel reference
 
-            bau_cells = {
-                'grid_value': f'{bau_col_letter}{headers["Grid Purchased Electricity (kWh)"] + 2}' if "Grid Purchased Electricity (kWh)" in headers else None,
-                'elec_cost_value': f'{bau_col_letter}{headers["Purchased Electricity Cost ($)"] + 2}' if "Purchased Electricity Cost ($)" in headers else None,
-                'ng_reduction_value': f'{bau_col_letter}{headers["Total Fuel (MMBtu)"] + 2}' if "Total Fuel (MMBtu)" in headers else None,
-                # 'util_cost_value': f'{bau_col_letter}{headers["Total Utility Costs ($)"] + 2}' if "Total Utility Costs ($)" in headers else None,
-                'total_elec_costs': f'{bau_col_letter}{headers["Total Electric Costs ($)"] + 2}' if "Total Electric Costs ($)" in headers else None,
-                'total_fuel_costs': f'{bau_col_letter}{headers["Total Fuel Costs ($)"] + 2}' if "Total Fuel Costs ($)" in headers else None,
-                'co2_reduction_value': f'{bau_col_letter}{headers["CO2 Emissions (tonnes)"] + 2}' if "CO2 Emissions (tonnes)" in headers else None,
-                'placeholder1_value': f'{bau_col_letter}{headers["Placeholder1"] + 2}' if "Placeholder1" in headers else None,
-            }
+            bau_cells = {cell_name: f'{bau_col_letter}{headers[header] + 2}' for cell_name, header in bau_cells_config.items() if header in headers}
 
             for calc in relevant_calculations:
                 try:
@@ -1507,18 +1495,18 @@ def create_custom_table_excel(df, custom_table, calculations, output):
                             row_idx = headers.get(calc["name"])
                             if row_idx is not None:
                                 worksheet.write(row_idx + 1, col - 1, "MISSING REFERENCE IN FORMULA", error_format)
-                            message = f"Cannot calculate '{calc['name']}' because the required fields are missing: {', '.join(missing_keys)} in the Table configuration provided. Update the Table to include {missing_keys}. Writing 'MISSING DATA' instead."
+                            message = f"Cannot calculate '{calc['name']}' because the required fields are missing: {', '.join(missing_keys)} in the Table configuration provided. Update the Table to include {missing_keys}."
                             if message not in logged_messages:
                                 logged_messages.add(message)
                             missing_entries.append(calc["name"])
                 except KeyError as e:
                     missing_field = str(e)
-                    message = f"Cannot calculate '{calc['name']}' because the field '{missing_field}' is missing in the Table configuration provided. Update the Table to include {missing_field}. Writing 'MISSING DATA' instead."
+                    message = f"Cannot calculate '{calc['name']}' because the field '{missing_field}' is missing in the Table configuration provided. Update the Table to include {missing_field}."
                     if message not in logged_messages:
                         logged_messages.add(message)
                     row_idx = headers.get(calc["name"])
                     if row_idx is not None:
-                        worksheet.write(row_idx + 1, col - 1, "MISSING DATA", error_format)
+                        worksheet.write(row_idx + 1, col - 1, "MISSING REFERENCE IN FORMULA", error_format)
                     missing_entries.append(calc["name"])
 
         if missing_entries:
@@ -1527,1038 +1515,8 @@ def create_custom_table_excel(df, custom_table, calculations, output):
         workbook.close()
 
     except Exception:
-        log_and_raise_error('create_custom_table_excel')
+        log_and_raise_error('generate_excel_workbook')
 
-
-# Configuration
-# Set up table needed along with REopt dictionaries to grab data 
-# Example Custom Table Configuration
-# example_table = [
-#     {
-#         "label": "Site Name",
-#         "key": "site",
-#         "bau_value": lambda df: "",
-#         "scenario_value": lambda df: safe_get(df, "inputs.Meta.description", "None provided")
-#     },
-#     {
-#         "label": "Site Address",
-#         "key": "site_address",
-#         "bau_value": lambda df: safe_get(df, "inputs.Meta.address", "None provided"),
-#         "scenario_value": lambda df: safe_get(df, "inputs.Meta.address", "None provided")
-#     },
-#     # Example 2: Concatenating Strings
-#     {
-#         "label": "Site Location",
-#         "key": "site_lat_long",
-#         "bau_value": lambda df: f"({safe_get(df, 'inputs.Site.latitude')}, {safe_get(df, 'inputs.Site.longitude')})",
-#         "scenario_value": lambda df: f"({safe_get(df, 'inputs.Site.latitude')}, {safe_get(df, 'inputs.Site.longitude')})"
-#     },
-#     {
-#         "label": "Technology Sizing",  # This is your separator label
-#         "key": "tech_separator", #MUST HAVE "separator" somewhere in the name
-#         "bau_value": lambda df: "",
-#         "scenario_value": lambda df: ""
-#     },
-#     # Example 3: Calculated Value (Sum of Two Fields), this does not show up in formulas
-#     {
-#         "label": "Combined Renewable Size (kW)",
-#         "key": "combined_renewable_size",
-#         "bau_value": lambda df: 0,
-#         "scenario_value": lambda df: safe_get(df, "outputs.PV.size_kw") + safe_get(df, "outputs.Wind.size_kw")     #NOTE: These calculations will not show up as in the excel calculations
-#     },
-
-#     # Example 4: Hardcoded Values
-#     {
-#         "label": "Hardcoded Values (kWh)",
-#         "key": "hardcoded_value",
-#         "bau_value": lambda df: 500,  # BAU scenario
-#         "scenario_value": lambda df: 1000  # other scenarios
-#     },
-
-#     # Example 5: Conditional Formatting
-#     {
-#         "label": "PV Size Status",
-#         "key": "pv_size_status",
-#         "bau_value": lambda df: 0,
-#         "scenario_value": lambda df: "Above Threshold" if safe_get(df, "outputs.PV.size_kw") > 2500 else "Below Threshold"
-#     },
-#     #Example 6 and 7: First define any data that might need to be referenced, Here I've defined two placeholders
-#     # Define Placeholder1
-#     {
-#         "label": "Placeholder1",
-#         "key": "placeholder1",
-#         "bau_value": lambda df: 100,  # BAU value
-#         "scenario_value": lambda df: 200  # Scenario value
-#     },
-#     # Define Placeholder2
-#     {
-#         "label": "Placeholder2",
-#         "key": "placeholder2",
-#         "bau_value": lambda df: 50,  # BAU value
-#         "scenario_value": lambda df: 100  # Scenario value
-#     },
-#     # Example 6: Calculation Without Reference to BAU
-#     {
-#         "label": "Placeholder Calculation Without BAU Reference",
-#         "key": "placeholder_calculation_without_bau",
-#         "bau_value": lambda df: 0,  # Placeholder, replaced by formula in Excel
-#         "scenario_value": lambda df: 0  # Placeholder, replaced by formula in Excel
-#     },
-#     # Example 7: Calculation With Reference to BAU
-#     {
-#         "label": "Placeholder Calculation With BAU Reference",
-#         "key": "placeholder_calculation_with_bau",
-#         "bau_value": lambda df: 0,  # Placeholder, replaced by formula in Excel
-#         "scenario_value": lambda df: 0  # Placeholder, replaced by formula in Excel
-#     },
-#     {
-#         "label": "Results URL",
-#         "key": "url",
-#         "bau_value": lambda df: f"https://custom-table-download-reopt-stage.its.nrel.gov/tool/results/"+safe_get(df, "webtool_uuid"),
-#         "scenario_value": lambda df: f"https://custom-table-download-reopt-stage.its.nrel.gov/tool/results/"+safe_get(df, "webtool_uuid")
-#     }
-#     ]
-
-# # TASC/Single Site Configuration
-# single_site_custom_table = [
-#     {
-#         "label": "Site Name",
-#         "key": "site",
-#         "bau_value": lambda df: safe_get(df, "inputs.Meta.description", "None provided"),
-#         "scenario_value": lambda df: safe_get(df, "inputs.Meta.description", "None provided")
-#     },
-#     {
-#         "label": "Site Address",
-#         "key": "site_address",
-#         "bau_value": lambda df: safe_get(df, "inputs.Meta.address", "None provided"),
-#         "scenario_value": lambda df: safe_get(df, "inputs.Meta.address", "None provided")
-#     },
-#     {
-#         "label": "Site Location",
-#         "key": "site_lat_long",
-#         "bau_value": lambda df: f"({safe_get(df, 'inputs.Site.latitude')}, {safe_get(df, 'inputs.Site.longitude')})",
-#         "scenario_value": lambda df: f"({safe_get(df, 'inputs.Site.latitude')}, {safe_get(df, 'inputs.Site.longitude')})"
-#     },
-#     {
-#         "label": "Technology Sizing",  # This is your separator label
-#         "key": "tech_separator", #MUST HAVE "separator" somewhere in the name to be identified correctly as a section separator
-#         "bau_value": lambda df: "",
-#         "scenario_value": lambda df: ""
-#     },
-#     {
-#         "label": "PV Nameplate capacity (kW), new",
-#         "key": "pv_size_purchased",
-#         "bau_value": lambda df: safe_get(df, "outputs.PV.size_kw_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.PV.size_kw")
-#     },
-#     {
-#         "label": "PV Nameplate capacity (kW), existing",
-#         "key": "pv_size_existing",
-#         "bau_value": lambda df: safe_get(df, "outputs.PV.existing_kw_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.PV.existing_kw")
-#     },
-#     {
-#         "label": "PV Serving Load (kWh)",
-#         "key": "pv_serving_load",
-#         "bau_value": lambda df: safe_get(df, "outputs.PV.electric_to_load_series_kw_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.PV.electric_to_load_series_kw")
-#     },
-#     {
-#         "label": "Wind Nameplate capacity (kW), new",
-#         "key": "wind_size_purchased",
-#         "bau_value": lambda df: safe_get(df, "outputs.Wind.size_kw_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.Wind.size_kw")
-#     },
-#     {
-#         "label": "Wind Serving Load (kWh)",
-#         "key": "wind_serving_load",
-#         "bau_value": lambda df: safe_get(df, "outputs.Wind.electric_to_load_series_kw_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.Wind.electric_to_load_series_kw")
-#     },
-#     {
-#         "label": "Backup Generator Nameplate capacity (kW), new",
-#         "key": "backup_generator_capacity_purchased",
-#         "bau_value": lambda df: safe_get(df, "outputs.Generator.size_kw_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.Generator.size_kw")
-#     },
-#     {
-#         "label": "Backup Generator Nameplate capacity (kW), existing",
-#         "key": "backup_generator_capacity_existing",
-#         "bau_value": lambda df: safe_get(df, "outputs.Generator.existing_kw_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.Generator.existing_kw")
-#     },
-#     {
-#         "label": "Backup Generator Serving Load (kWh)",
-#         "key": "backup_generator_serving_load",
-#         "bau_value": lambda df: safe_get(df, "outputs.Generator.electric_to_load_series_kw_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.Generator.electric_to_load_series_kw")
-#     },
-#     {
-#         "label": "Battery power (kW)",
-#         "key": "battery_power",
-#         "bau_value": lambda df: safe_get(df, "outputs.ElectricStorage.size_kw_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.ElectricStorage.size_kw")
-#     },
-#     {
-#         "label": "Battery capacity (kWh)",
-#         "key": "battery_capacity",
-#         "bau_value": lambda df: safe_get(df, "outputs.ElectricStorage.size_kwh_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.ElectricStorage.size_kwh")
-#     },
-#     {
-#         "label": "Battery Serving Load (kWh)",
-#         "key": "battery_serving_load",
-#         "bau_value": lambda df: safe_get(df, "outputs.ElectricStorage.storage_to_load_series_kw_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.ElectricStorage.storage_to_load_series_kw")
-#     },
-#     {
-#         "label": "CHP capacity (kW)",
-#         "key": "chp_capacity",
-#         "bau_value": lambda df: safe_get(df, "outputs.CHP.size_kw_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.CHP.size_kw")
-#     },
-#     {
-#         "label": "CHP Serving Load (kWh)",
-#         "key": "chp_serving_load",
-#         "bau_value": lambda df: safe_get(df, "outputs.CHP.electric_to_load_series_kw_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.CHP.electric_to_load_series_kw")
-#     },
-#     {
-#         "label": "Absorption chiller capacity (tons)",
-#         "key": "absorption_chiller_capacity",
-#         "bau_value": lambda df: safe_get(df, "outputs.AbsorptionChiller.size_ton_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.AbsorptionChiller.size_ton")
-#     },
-#     {
-#         "label": "Absorption Chiller Serving Load (ton)",
-#         "key": "absorption_chiller_serving_load",
-#         "bau_value": lambda df: safe_get(df, "outputs.AbsorptionChiller.thermal_to_load_series_ton_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.AbsorptionChiller.thermal_to_load_series_ton")
-#     },
-#     {
-#         "label": "Chilled water TES capacity (gallons)",
-#         "key": "chilled_water_tes_capacity",
-#         "bau_value": lambda df: safe_get(df, "outputs.ColdThermalStorage.size_gal_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.ColdThermalStorage.size_gal")
-#     },
-#     {
-#         "label": "Chilled Water TES Serving Load (ton)",
-#         "key": "chilled_water_tes_serving_load",
-#         "bau_value": lambda df: safe_get(df, "outputs.ColdThermalStorage.storage_to_load_series_ton_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.ColdThermalStorage.storage_to_load_series_ton")
-#     },
-#     {
-#         "label": "Hot water TES capacity (gallons)",
-#         "key": "hot_water_tes_capacity",
-#         "bau_value": lambda df: safe_get(df, "outputs.HotThermalStorage.size_gal_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.HotThermalStorage.size_gal")
-#     },
-#     {
-#         "label": "Hot Water TES Serving Load (MMBtu)",
-#         "key": "hot_water_tes_serving_load",
-#         "bau_value": lambda df: safe_get(df, "outputs.HotThermalStorage.storage_to_load_series_mmbtu_per_hour_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.HotThermalStorage.storage_to_load_series_mmbtu_per_hour")
-#     },
-#     {
-#         "label": "Steam turbine capacity (kW)",
-#         "key": "steam_turbine_capacity",
-#         "bau_value": lambda df: safe_get(df, "outputs.SteamTurbine.size_kw_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.SteamTurbine.size_kw")
-#     },
-#     {
-#         "label": "Steam Turbine Serving Load (kWh)",
-#         "key": "steam_turbine_serving_load",
-#         "bau_value": lambda df: safe_get(df, "outputs.SteamTurbine.electric_to_load_series_kw_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.SteamTurbine.electric_to_load_series_kw")
-#     },
-#     {
-#         "label": "GHP heat pump capacity (ton)",
-#         "key": "ghp_heat_pump_capacity",
-#         "bau_value": lambda df: safe_get(df, "outputs.GHP.size_ton_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.GHP.size_ton")
-#     },
-#     {
-#         "label": "GHP ground heat exchanger size (ft)",
-#         "key": "ghp_ground_heat_exchanger_size",
-#         "bau_value": lambda df: safe_get(df, "outputs.GHP.length_boreholes_ft_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.GHP.length_boreholes_ft")
-#     },
-#     {
-#         "label": "Grid Purchased Electricity (kWh)",
-#         "key": "grid_purchased_electricity",
-#         "bau_value": lambda df: safe_get(df, "outputs.ElectricUtility.annual_energy_supplied_kwh_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.ElectricUtility.annual_energy_supplied_kwh")
-#     },
-#     {
-#         "label": "Total Site Electricity Use (kWh)",
-#         "key": "total_site_electricity_use",
-#         "bau_value": lambda df: 0,
-#         "scenario_value": lambda df: 0
-#     },
-#     {
-#         "label": "Net Purchased Electricity Reduction (%)",
-#         "key": "net_purchased_electricity_reduction",
-#         "bau_value": lambda df: safe_get(df, "outputs.ElectricUtility.electric_to_load_series_kwsdf_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.ElectricUtility.electric_to_load_series_kwsdf")
-#     },
-#     {
-#         "label": "Financials",  # This is your separator label
-#         "key": "fin_separator", #MUST HAVE "separator" somewhere in the name
-#         "bau_value": lambda df: "",
-#         "scenario_value": lambda df: ""
-#     },
-#     {
-#         "label": "Electricity Energy Cost ($)",
-#         "key": "electricity_energy_cost",
-#         "bau_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_energy_cost_before_tax_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_energy_cost_before_tax")
-#     },
-#     {
-#         "label": "Electricity Demand Cost ($)",
-#         "key": "electricity_demand_cost",
-#         "bau_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_demand_cost_before_tax_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_demand_cost_before_tax")
-#     },
-#     {
-#         "label": "Utility Fixed Cost ($)",
-#         "key": "utility_fixed_cost",
-#         "bau_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_fixed_cost_before_tax_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_fixed_cost_before_tax")
-#     },
-#     {
-#         "label": "Purchased Electricity Cost ($)",
-#         "key": "purchased_electricity_cost",
-#         "bau_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_bill_before_tax_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_bill_before_tax")
-#     },
-#     {
-#         "label": "Electricity Export Benefit ($)",
-#         "key": "electricity_export_benefit",
-#         "bau_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_export_benefit_before_tax_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_export_benefit_before_tax")
-#     },
-#     {
-#         "label": "Net Electricity Cost ($)",
-#         "key": "net_electricity_cost",
-#         "bau_value": lambda df: safe_get(df, "outputs.ElectricTariff.lifecycle_energy_cost_after_tax_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.lifecycle_energy_cost_after_tax")
-#     },
-#     {
-#         "label": "Electricity Cost Savings ($/year)",
-#         "key": "electricity_cost_savings",
-#         "bau_value": lambda df: safe_get(df, "outputs.ElectricTariff.lifecycle_energy_cost_after_tax_bau_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.lifecycle_energy_cost_after_tax_bau")
-#     },
-#     {
-#         "label": "Boiler Fuel (MMBtu)",
-#         "key": "boiler_fuel",
-#         "bau_value": lambda df: safe_get(df, "outputs.ExistingBoiler.fuel_used_mmbtu_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.ExistingBoiler.fuel_used_mmbtu")
-#     },
-#     {
-#         "label": "CHP Fuel (MMBtu)",
-#         "key": "chp_fuel",
-#         "bau_value": lambda df: safe_get(df, "outputs.CHP.annual_fuel_consumption_mmbtu_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.CHP.annual_fuel_consumption_mmbtu")
-#     },
-#     {
-#         "label": "Total Fuel (MMBtu)",
-#         "key": "total_fuel",
-#         "bau_value": lambda df: safe_get(df, "outputs.ElectricUtility.total_energy_supplied_kwh_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.ElectricUtility.total_energy_supplied_kwh")
-#     },
-#     {
-#         "label": "Natural Gas Reduction (%)",
-#         "key": "natural_gas_reduction",
-#         "bau_value": lambda df: safe_get(df, "outputs.ElectricUtility.annual_energy_supplied_kwh_bau_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.ElectricUtility.annual_energy_supplied_kwh_bau")
-#     },
-#     {
-#         "label": "Boiler Thermal Production (MMBtu)",
-#         "key": "boiler_thermal_production",
-#         "bau_value": lambda df: safe_get(df, "outputs.ExistingBoiler.annual_thermal_production_mmbtu_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.ExistingBoiler.annual_thermal_production_mmbtu")
-#     },
-#     {
-#         "label": "CHP Thermal Production (MMBtu)",
-#         "key": "chp_thermal_production",
-#         "bau_value": lambda df: safe_get(df, "outputs.CHP.annual_thermal_production_mmbtu_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.CHP.annual_thermal_production_mmbtu")
-#     },
-#     {
-#         "label": "Total Thermal Production (MMBtu)",
-#         "key": "total_thermal_production",
-#         "bau_value": lambda df: safe_get(df, "outputs.CHP.annual_thermal_production_mmbtu_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.CHP.annual_thermal_production_mmbtu")
-#     },
-#     {
-#         "label": "Heating System Fuel Cost ($)",
-#         "key": "heating_system_fuel_cost",
-#         "bau_value": lambda df: safe_get(df, "outputs.Site.heating_system_fuel_cost_us_dollars_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.Site.heating_system_fuel_cost_us_dollars")
-#     },
-#     {
-#         "label": "CHP Fuel Cost ($)",
-#         "key": "chp_fuel_cost",
-#         "bau_value": lambda df: safe_get(df, "outputs.CHP.year_one_fuel_cost_before_tax_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.CHP.year_one_fuel_cost_before_tax")
-#     },
-#     {
-#         "label": "Total Fuel (NG) Cost ($)",
-#         "key": "total_fuel_ng_cost",
-#         "bau_value": lambda df: safe_get(df, "outputs.Site.total_fuel_cost_us_dollars_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.Site.total_fuel_cost_us_dollars")
-#     },
-#     {
-#         "label": "Total Utility Cost ($)",
-#         "key": "total_utility_cost",
-#         "bau_value": lambda df: safe_get(df, "outputs.Site.total_utility_cost_us_dollars_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.Site.total_utility_cost_us_dollars")
-#     },
-#     {
-#         "label": "O&M Cost Increase ($)",
-#         "key": "om_cost_increase",
-#         "bau_value": lambda df: safe_get(df, "outputs.Financial.om_and_replacement_present_cost_after_tax_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.Financial.om_and_replacement_present_cost_after_tax")
-#     },
-#     {
-#         "label": "Payback Period (years)",
-#         "key": "payback_period",
-#         "bau_value": lambda df: safe_get(df, "outputs.Financial.simple_payback_years_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.Financial.simple_payback_years")
-#     },
-#     {
-#         "label": "Gross Capital Cost ($)",
-#         "key": "gross_capital_cost",
-#         "bau_value": lambda df: safe_get(df, "outputs.Financial.lifecycle_capital_costs_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.Financial.lifecycle_capital_costs")
-#     },
-#     {
-#         "label": "Federal Tax Incentive (30%)",
-#         "key": "federal_tax_incentive",
-#         "bau_value": lambda df: 0.3,
-#         "scenario_value": lambda df: 0.3
-#     },
-#     {
-#         "label": "Additional Grant ($)",
-#         "key": "additional_grant",
-#         "bau_value": lambda df: 0,  
-#         "scenario_value": lambda df: 0
-#     },
-#     {
-#         "label": "Incentive Value ($)",
-#         "key": "incentive_value",
-#         "bau_value": lambda df: safe_get(df, "outputs.Financial.total_incentives_value_us_dollars_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.Financial.total_incentives_value_us_dollars")
-#     },
-#     {
-#         "label": "Net Capital Cost ($)",
-#         "key": "net_capital_cost",
-#         "bau_value": lambda df: safe_get(df, "outputs.Financial.lifecycle_capital_costs_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.Financial.lifecycle_capital_costs")
-#     },
-#     {
-#         "label": "Annual Cost Savings ($)",
-#         "key": "annual_cost_savings",
-#         "bau_value": lambda df: safe_get(df, "outputs.Financial.annual_cost_savings_us_dollars_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.Financial.annual_cost_savings_us_dollars")
-#     },
-#     {
-#         "label": "Simple Payback (years)",
-#         "key": "simple_payback",
-#         "bau_value": lambda df: safe_get(df, "outputs.Financial.simple_payback_years_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.Financial.simple_payback_years")
-#     },
-#     {
-#         "label": "CO2 Emissions (tonnes)",
-#         "key": "co2_emissions",
-#         "bau_value": lambda df: safe_get(df, "outputs.Site.annual_emissions_tonnes_CO2_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.Site.annual_emissions_tonnes_CO2")
-#     },
-#     {
-#         "label": "CO2 Reduction (tonnes)",
-#         "key": "co2_reduction",
-#         "bau_value": lambda df: safe_get(df, "outputs.Site.lifecycle_emissions_tonnes_CO2_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.Site.lifecycle_emissions_tonnes_CO2")
-#     },
-#     {
-#         "label": "CO2 (%) savings",
-#         "key": "co2_savings_percentage",
-#         "bau_value": lambda df: 0,
-#         "scenario_value": lambda df: 0
-#     },
-#     {
-#         "label": "NPV ($)",
-#         "key": "npv",
-#         "bau_value": lambda df: safe_get(df, "outputs.Financial.npv_bau"),
-#         "scenario_value": lambda df: safe_get(df, "outputs.Financial.npv")
-#     },
-#     {
-#         "label": "PV Federal Tax Incentive (%)",
-#         "key": "pv_federal_tax_incentive",
-#         "bau_value": lambda df: safe_get(df, "inputs.PV.federal_itc_fraction_bau"),
-#         "scenario_value": lambda df: safe_get(df, "inputs.PV.federal_itc_fraction")
-#     },
-#     {
-#         "label": "Storage Federal Tax Incentive (%)",
-#         "key": "storage_federal_tax_incentive",
-#         "bau_value": lambda df: safe_get(df, "inputs.ElectricStorage.total_itc_fraction_bau"),
-#         "scenario_value": lambda df: safe_get(df, "inputs.ElectricStorage.total_itc_fraction")
-#     },
-#     {
-#         "label": "Results URL",
-#         "key": "url",
-#         "bau_value": lambda df: f"https://custom-table-download-reopt-stage.its.nrel.gov/tool/results/"+safe_get(df, "webtool_uuid"),
-#         "scenario_value": lambda df: f"https://custom-table-download-reopt-stage.its.nrel.gov/tool/results/"+safe_get(df, "webtool_uuid")
-#     },
-# ]
-
-webtool_table = [
-    {
-        "label": "Evaluation Name",
-        "key": "evaluation_name",
-        "bau_value": lambda df: safe_get(df, "inputs.Meta.description", "None provided"),
-        "scenario_value": lambda df: safe_get(df, "inputs.Meta.description", "None provided")
-    },
-    {
-        "label": "BAU or Optimal Case?",
-        "key": "bau_or_optimal_case",
-        "bau_value": lambda df: "BAU",
-        "scenario_value": lambda df: "Optimal"
-    },
-    {
-        "label": "Site Location",
-        "key": "site_location",
-        "bau_value": lambda df: f"({safe_get(df, 'inputs.Site.latitude')}, {safe_get(df, 'inputs.Site.longitude')})",
-        "scenario_value": lambda df: f"({safe_get(df, 'inputs.Site.latitude')}, {safe_get(df, 'inputs.Site.longitude')})"
-    },
-    {
-        "label": "Results URL",
-        "key": "url",
-        "bau_value": lambda df: f'=HYPERLINK("https://custom-table-download-reopt-stage.its.nrel.gov/tool/results/{safe_get(df, "webtool_uuid")}", "Results Link")',
-        "scenario_value": lambda df: f'=HYPERLINK("https://custom-table-download-reopt-stage.its.nrel.gov/tool/results/{safe_get(df, "webtool_uuid")}", "Results Link")'
-    },
-    {
-        "label": "System Capacities",
-        "key": "system_capacities_separator",
-        "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
-    },
-    {
-        "label": "PV capacity, new (kW)",
-        "key": "pv_capacity_new",
-        "bau_value": lambda df: safe_get(df, "outputs.PV.size_kw_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.PV.size_kw")
-    },
-    {
-        "label": "PV capacity, existing (kW)",
-        "key": "pv_size_purchased",
-        "bau_value": lambda df: safe_get(df, "outputs.PV.existing_kw_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.PV.existing_kw")
-    },
-    {
-        "label": "Wind Capacity (kW)",
-        "key": "wind_capacity",
-        "bau_value": lambda df: safe_get(df, "outputs.Wind.size_kw"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Wind.size_kw")
-    },
-    {
-        "label": "Backup Generator Capacity, New (kW)",
-        "key": "backup_generator_new",
-        "bau_value": lambda df: safe_get(df, "outputs.Generator.size_kw_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Generator.size_kw")
-    },
-    {
-        "label": "Backup Generator Capacity, Existing (kW)",
-        "key": "backup_generator_existing",
-        "bau_value": lambda df: safe_get(df, "outputs.Generator.existing_kw_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Generator.existing_kw")
-    },
-    {
-        "label": "Generator Annual Fuel Consumption (gallons)",
-        "key": "backup_generator_fuel_consumption",
-        "bau_value": lambda df: safe_get(df, "outputs.Generator.annual_fuel_consumption_gal_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Generator.annual_fuel_consumption_gal")
-    },
-    {
-        "label": "Generator Fuel Cost ($)",
-        "key": "backup_generator_fuel_cost",
-        "bau_value": lambda df: safe_get(df, "outputs.Generator.year_one_fuel_cost_before_tax_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Generator.year_one_fuel_cost_before_tax")
-    },
-    {
-        "label": "Generator Lifecycle Fuel Cost ($)",
-        "key": "lifecycle_fuel_cost",
-        "bau_value": lambda df: safe_get(df, "outputs.Generator.lifecycle_fuel_cost_after_tax_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Generator.lifecycle_fuel_cost_after_tax")
-    },
-    {
-        "label": "Battery Power Capacity (kW)",
-        "key": "battery_power_capacity",
-        "bau_value": lambda df: safe_get(df, "outputs.ElectricStorage.size_kw_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricStorage.size_kw")
-    },
-    {
-        "label": "Battery Energy Capacity (kWh)",
-        "key": "battery_energy_capacity",
-        "bau_value": lambda df: safe_get(df, "outputs.ElectricStorage.size_kwh_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricStorage.size_kwh")
-    },
-    {
-        "label": "CHP Capacity (kW)",
-        "key": "chp_capacity",
-        "bau_value": lambda df: safe_get(df, "outputs.CHP.size_kw_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.CHP.size_kw")
-    },
-    {
-        "label": "Absorption Chiller Capacity (tons)",
-        "key": "absorption_chiller_capacity",
-        "bau_value": lambda df: safe_get(df, "outputs.AbsorptionChiller.size_ton_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.AbsorptionChiller.size_ton")
-    },
-    {
-        "label": "Chilled Water TES Capacity (gallons)",
-        "key": "chilled_water_tes_capacity",
-        "bau_value": lambda df: safe_get(df, "outputs.ColdThermalStorage.size_gal_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.ColdThermalStorage.size_gal")
-    },
-    {
-        "label": "Hot Water TES Capacity (gallons)",
-        "key": "hot_water_tes_capacity",
-        "bau_value": lambda df: safe_get(df, "outputs.HotThermalStorage.size_gal_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.HotThermalStorage.size_gal")
-    },
-    {
-        "label": "Steam Turbine Capacity (kW)",
-        "key": "steam_turbine_capacity",
-        "bau_value": lambda df: safe_get(df, "outputs.SteamTurbine.size_kw_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.SteamTurbine.size_kw")
-    },
-    {
-        "label": "GHP Heat Pump Capacity (ton)",
-        "key": "ghp_heat_pump_capacity",
-        "bau_value": lambda df: safe_get(df, "outputs.GHP.size_ton_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.GHP.size_ton")
-    },
-    {
-        "label": "GHP Ground Heat Exchanger Size (ft)",
-        "key": "ghp_ground_heat_exchanger_size",
-        "bau_value": lambda df: safe_get(df, "outputs.GHP.length_boreholes_ft_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.GHP.length_boreholes_ft")
-    },
-    {
-        "label": "Summary Financial Metrics",
-        "key": "summary_financial_metrics_separator",
-        "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
-    },
-    {
-        "label": "Gross Capital Costs, Before Incentives ($)",
-        "key": "gross_capital_costs_before_incentives",
-        "bau_value": lambda df: safe_get(df, "outputs.Financial.initial_capital_costs_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Financial.initial_capital_costs")
-    },
-    {
-        "label": "Present Value of Incentives ($)",
-        "key": "present_value_of_incentives",
-        "bau_value": lambda df: safe_get(df, "outputs.Financial.production_incentive_max_benefit_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Financial.production_incentive_max_benefit")
-    },
-    {
-        "label": "Net Capital Cost ($)",
-        "key": "net_capital_cost",
-        "bau_value": lambda df: safe_get(df, "outputs.Financial.lifecycle_capital_costs_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Financial.lifecycle_capital_costs")
-    },
-    {
-        "label": "Year 1 O&M Cost, Before Tax ($)",
-        "key": "year_1_om_cost_before_tax",
-        "bau_value": lambda df: safe_get(df, "outputs.Financial.year_one_om_costs_before_tax_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Financial.year_one_om_costs_before_tax")
-    },
-    {
-        "label": "Total Life Cycle Costs ($)",
-        "key": "total_life_cycle_costs",
-        "bau_value": lambda df: safe_get(df, "outputs.Financial.lcc_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Financial.lcc")
-    },
-    {
-        "label": "Net Present Value ($)",
-        "key": "npv",
-        "bau_value": lambda df: safe_get(df, "outputs.Financial.npv_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Financial.npv")
-    },
-    {
-        "label": "Payback Period (years)",
-        "key": "payback_period",
-        "bau_value": lambda df: safe_get(df, "outputs.Financial.simple_payback_years_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Financial.simple_payback_years")
-    },
-    {
-        "label": "Simple Payback (years)",
-        "key": "simple_payback_period",
-        "bau_value": lambda df: safe_get(df, ""),
-        "scenario_value": lambda df: safe_get(df, "")
-    },
-    {
-        "label": "Internal Rate of Return (%)",
-        "key": "internal_rate_of_return",
-        "bau_value": lambda df: safe_get(df, "outputs.Financial.internal_rate_of_return_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Financial.internal_rate_of_return")
-    },
-    {
-        "label": "Life Cycle Cost Breakdown",
-        "key": "lifecycle_cost_breakdown_separator",
-        "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
-    },
-    {
-        "label": "Technology Capital Costs + Replacements, After Incentives ($)",
-        "key": "technology_capital_costs_after_incentives",
-        "bau_value": lambda df: safe_get(df, "outputs.Financial.lifecycle_generation_tech_capital_costs_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Financial.lifecycle_generation_tech_capital_costs")
-    },
-    {
-        "label": "O&M Costs ($)",
-        "key": "om_costs",
-        "bau_value": lambda df: safe_get(df, "outputs.Financial.om_and_replacement_present_cost_after_tax_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Financial.om_and_replacement_present_cost_after_tax")
-    },
-    {
-        "label": "Total Electric Costs ($)",
-        "key": "total_electric_utility_costs",
-        "bau_value": lambda df: safe_get(df, "outputs.Financial.lifecycle_elecbill_after_tax_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Financial.lifecycle_elecbill_after_tax")
-    },
-    {
-        "label": "Total Fuel Costs ($)",
-        "key": "total_fuel_costs",
-        "bau_value": lambda df: safe_get(df, "outputs.Financial.lifecycle_fuel_costs_after_tax_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Financial.lifecycle_fuel_costs_after_tax")
-    },
-    {
-        "label": "Total Utility Costs ($)",
-        "key": "total_fuel_costs",
-        "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
-    },
-    {
-        "label": "Total Emissions Costs ($)",
-        "key": "total_emissions_costs",
-        "bau_value": lambda df: safe_get(df, "outputs.Site.lifecycle_emissions_cost_health_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Site.lifecycle_emissions_cost_health")
-    },
-    {
-        "label": "LCC ($)",
-        "key": "lcc",
-        "bau_value": lambda df: safe_get(df, "outputs.Financial.lcc_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Financial.lcc")
-    },
-    {
-        "label": "NPV as a % of BAU LCC (%)",
-        "key": "npv_bau_percent",
-        "bau_value": lambda df: safe_get(df, "outputs.Financial.npv_as_bau_lcc_percent_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Financial.npv_as_bau_lcc_percent")
-    },
-    {
-        "label": "Year 1 Electric Bill",
-        "key": "year_1_electric_bill_separator",
-        "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
-    },
-    {
-        "label": "Electric Grid Purchases (kWh)",
-        "key": "electric_grid_purchases",
-        "bau_value": lambda df: safe_get(df, "outputs.ElectricUtility.annual_energy_supplied_kwh_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricUtility.annual_energy_supplied_kwh")
-    },
-    {
-        "label": "Energy Charges ($)",
-        "key": "electricity_energy_cost",
-        "bau_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_energy_cost_before_tax_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_energy_cost_before_tax")
-    },
-    {
-        "label": "Demand Charges ($)",
-        "key": "electricity_demand_cost",
-        "bau_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_demand_cost_before_tax_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_demand_cost_before_tax")
-    },
-    {
-        "label": "Fixed Charges ($)",
-        "key": "utility_fixed_cost",
-        "bau_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_fixed_cost_before_tax_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_fixed_cost_before_tax")
-    },
-    {
-        "label": "Purchased Electricity Cost ($)",
-        "key": "purchased_electricity_cost",
-        "bau_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_bill_before_tax_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_bill_before_tax")
-    },
-    {
-        "label": "Annual Cost Savings ($)",
-        "key": "annual_cost_savings",
-        "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
-    },
-    {
-        "label": "Year 1 Fuel Costs & Consumption",
-        "key": "year_1_fuel_costs_separator",
-        "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
-    },
-    {
-        "label": "Boiler Fuel Consumption (mmbtu)",
-        "key": "boiler_fuel_consumption",
-        "bau_value": lambda df: safe_get(df, "outputs.ExistingBoiler.annual_fuel_consumption_mmbtu_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.ExistingBoiler.annual_fuel_consumption_mmbtu")
-    },
-    {
-        "label": "Boiler Fuel Costs ($)",
-        "key": "boiler_fuel_costs",
-        "bau_value": lambda df: safe_get(df, "outputs.ExistingBoiler.year_one_fuel_cost_before_tax_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.ExistingBoiler.year_one_fuel_cost_before_tax")
-    },
-    {
-        "label": "CHP Fuel Consumption (mmbtu)",
-        "key": "chp_fuel_consumption",
-        "bau_value": lambda df: safe_get(df, "outputs.CHP.annual_fuel_consumption_mmbtu_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.CHP.annual_fuel_consumption_mmbtu")
-    },
-    {
-        "label": "CHP Fuel Cost ($)",
-        "key": "chp_fuel_cost",
-        "bau_value": lambda df: safe_get(df, "outputs.CHP.year_one_fuel_cost_before_tax_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.CHP.year_one_fuel_cost_before_tax")
-    },
-    {
-        "label": "Backup Generator Fuel Consumption (gallons)",
-        "key": "backup_generator_fuel_consumption",
-        "bau_value": lambda df: safe_get(df, "outputs.Generator.annual_fuel_consumption_gal_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Generator.annual_fuel_consumption_gal")
-    },
-    {
-        "label": "Backup Generator Fuel Cost ($)",
-        "key": "backup_generator_fuel_cost",
-        "bau_value": lambda df: safe_get(df, "outputs.Generator.year_one_fuel_cost_before_tax_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Generator.year_one_fuel_cost_before_tax")
-    },
-    {
-        "label": "Renewable Energy & Emissions",
-        "key": "renewable_energy_emissions_separator",
-        "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
-    },
-    {
-        "label": "Annual % Renewable Electricity (%)",
-        "key": "annual_renewable_electricity",
-        "bau_value": lambda df: safe_get(df, "outputs.Site.renewable_electricity_fraction_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Site.renewable_electricity_fraction")
-    },
-    {
-        "label": "Year 1 CO2 Emissions (tonnes)",
-        "key": "year_1_co2_emissions",
-        "bau_value": lambda df: safe_get(df, "outputs.Site.annual_emissions_tonnes_CO2_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Site.annual_emissions_tonnes_CO2")
-    },
-    {
-        "label": "CO2 Emissions (tonnes)",
-        "key": "co2_emissions",
-        "bau_value": lambda df: safe_get(df, "outputs.Site.lifecycle_emissions_tonnes_CO2_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Site.lifecycle_emissions_tonnes_CO2")
-    },
-    {
-        "label": "CO2 (%) savings",
-        "key": "co2_savings_percentage",
-        "bau_value": lambda df: 0,
-        "scenario_value": lambda df: 0
-    },
-    {
-        "label": "Annual Energy Production & Throughput",
-        "key": "energy_production_throughput_separator",
-        "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
-    },
-    {
-        "label": "PV (kWh)",
-        "key": "pv_kwh",
-        "bau_value": lambda df: safe_get(df, "outputs.PV.annual_energy_produced_kwh_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.PV.annual_energy_produced_kwh")
-    },
-    {
-        "label": "Wind (kWh)",
-        "key": "wind_kwh",
-        "bau_value": lambda df: safe_get(df, "outputs.Wind.annual_energy_produced_kwh_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Wind.annual_energy_produced_kwh")
-    },
-    {
-        "label": "CHP (kWh)",
-        "key": "chp_kwh",
-        "bau_value": lambda df: safe_get(df, "outputs.CHP.annual_electric_production_kwh_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.CHP.annual_electric_production_kwh")
-    },
-    {
-        "label": "CHP (MMBtu)",
-        "key": "chp_mmbtu",
-        "bau_value": lambda df: safe_get(df, "outputs.CHP.annual_thermal_production_mmbtu_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.CHP.annual_thermal_production_mmbtu")
-    },
-    {
-        "label": "Boiler (MMBtu)",
-        "key": "boiler_mmbtu",
-        "bau_value": lambda df: safe_get(df, "outputs.ExistingBoiler.annual_thermal_production_mmbtu_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.ExistingBoiler.annual_thermal_production_mmbtu")
-    },
-    {
-        "label": "Battery (kWh)",
-        "key": "battery_kwh",
-        "bau_value": lambda df: safe_get(df, "outputs.ElectricStorage.storage_to_load_series_kw_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricStorage.storage_to_load_series_kw")
-    },
-    {
-        "label": "HW-TES (MMBtu)",
-        "key": "hw_tes_mmbtu",
-        "bau_value": lambda df: safe_get(df, "outputs.HotThermalStorage.annual_energy_produced_mmbtu_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.HotThermalStorage.annual_energy_produced_mmbtu")
-    },
-    {
-        "label": "CW-TES (MMBtu)",
-        "key": "cw_tes_mmbtu",
-        "bau_value": lambda df: safe_get(df, "outputs.ColdThermalStorage.annual_energy_produced_mmbtu_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.ColdThermalStorage.annual_energy_produced_mmbtu")
-    },
-    {
-        "label": "Breakdown of Incentives",
-        "key": "breakdown_of_incentives_separator",
-        "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
-    },
-    {
-        "label": "Federal Tax Incentive (30%)",
-        "key": "federal_tax_incentive_30",
-        "bau_value": lambda df: 0.3,
-        "scenario_value": lambda df: 0.3
-    },
-    {
-        "label": "PV Federal Tax Incentive (%)",
-        "key": "pv_federal_tax_incentive",
-        "bau_value": lambda df: safe_get(df, "inputs.PV.federal_itc_fraction_bau"),
-        "scenario_value": lambda df: safe_get(df, "inputs.PV.federal_itc_fraction")
-    },
-    {
-        "label": "Storage Federal Tax Incentive (%)",
-        "key": "storage_federal_tax_incentive",
-        "bau_value": lambda df: safe_get(df, "inputs.ElectricStorage.total_itc_fraction_bau"),
-        "scenario_value": lambda df: safe_get(df, "inputs.ElectricStorage.total_itc_fraction")
-    },
-    # {
-    #     "label": "Incentive Value ($)",
-    #     "key": "incentive_value",
-    #     "bau_value": lambda df: safe_get(df, "outputs.Financial.breakeven_cost_of_emissions_reduction_per_tonne_CO2_bau"),
-    #     "scenario_value": lambda df: safe_get(df, "outputs.Financial.breakeven_cost_of_emissions_reduction_per_tonne_CO2")
-    # },
-    {
-        "label": "Additional Grant ($)",
-        "key": "iac_grant",
-        "bau_value": lambda df: safe_get(df, "outputs.Financial.lifecycle_production_incentive_after_tax_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Financial.lifecycle_production_incentive_after_tax")
-    }
-]
-
-
-
-# Configuration for calculations
-calculations = [
-    {
-        "name": "Total Site Electricity Use (kWh)",
-        "formula": lambda col, bau, headers: (
-            f'={col}{headers["PV Serving Load (kWh)"] + 2}+'
-            f'{col}{headers["Wind Serving Load (kWh)"] + 2}+'
-            f'{col}{headers["CHP Serving Load (kWh)"] + 2}+'
-            f'{col}{headers["Battery Serving Load (kWh)"] + 2}+'
-            f'{col}{headers["Backup Generator Serving Load (kWh)"] + 2}+'
-            f'{col}{headers["Steam Turbine Serving Load (kWh)"] + 2}+'
-            f'{col}{headers["Grid Purchased Electricity (kWh)"] + 2}'
-        )
-    },
-    
-    {
-        "name": "Net Purchased Electricity Reduction (%)",
-        "formula": lambda col, bau, headers: f'=({bau["grid_value"]}-{col}{headers["Grid Purchased Electricity (kWh)"] + 2})/{bau["grid_value"]}'
-    },
-    {
-        "name": "Purchased Electricity Cost ($)",
-        "formula": lambda col, bau, headers: f'={col}{headers["Energy Charges ($)"] + 2}+{col}{headers["Demand Charges ($)"] + 2}+{col}{headers["Fixed Charges ($)"] + 2}'
-    },
-    {
-        "name": "Net Electricity Cost ($)",
-        "formula": lambda col, bau, headers: f'={col}{headers["Purchased Electricity Cost ($)"] + 2}-{col}{headers["Electricity Export Benefit ($)"] + 2}'
-    },
-    {
-        "name": "Electricity Cost Savings ($/year)",
-        "formula": lambda col, bau, headers: f'={bau["elec_cost_value"]}-{col}{headers["Purchased Electricity Cost ($)"] + 2}'
-    },
-    {
-        "name": "Total Fuel (MMBtu)",
-        "formula": lambda col, bau, headers: f'={col}{headers["Boiler Fuel (MMBtu)"] + 2}+{col}{headers["CHP Fuel (MMBtu)"] + 2}'
-    },
-    {
-        "name": "Natural Gas Reduction (%)",
-        "formula": lambda col, bau, headers: f'=({bau["ng_reduction_value"]}-{col}{headers["Total Fuel (MMBtu)"] + 2})/{bau["ng_reduction_value"]}'
-    },
-    {
-        "name": "Total Thermal Production (MMBtu)",
-        "formula": lambda col, bau, headers: f'={col}{headers["Boiler Thermal Production (MMBtu)"] + 2}+{col}{headers["CHP Thermal Production (MMBtu)"] + 2}'
-    },
-    # {
-    #     "name": "Total Fuel Costs ($)",
-    #     "formula": lambda col, bau, headers: f'={col}{headers["Heating System Fuel Cost ($)"] + 2}+{col}{headers["CHP Fuel Cost ($)"] + 2}'
-    # },
-    {
-        "name": "Total Utility Costs ($)",
-        "formula": lambda col, bau, headers: f'={col}{headers["Total Electric Costs ($)"] + 2}+{col}{headers["Total Fuel Costs ($)"] + 2}'
-    },
-    # {
-    #     "name": "Incentive Value ($)",
-    #     "formula": lambda col, bau, headers: f'=({col}{headers["Federal Tax Incentive (30%)"] + 2}*{col}{headers["Gross Capital Cost ($)"] + 2})+{col}{headers["Additional Grant ($)"] + 2}'
-    # },
-    # {
-    #     "name": "Net Capital Cost ($)",
-    #     "formula": lambda col, bau, headers: f'={col}{headers["Gross Capital Cost ($)"] + 2}-{col}{headers["Incentive Value ($)"] + 2}'
-    # },
-    {
-        "name": "Annual Cost Savings ($)",
-        "formula": lambda col, bau, headers: f'={bau["elec_cost_value"]}+-{col}{headers["Purchased Electricity Cost ($)"] + 2}'
-    },
-    {
-        "name": "Simple Payback (years)",
-        "formula": lambda col, bau, headers: f'={col}{headers["Net Capital Cost ($)"] + 2}/{col}{headers["Annual Cost Savings ($)"] + 2}'
-    },
-    # {
-    #     "name": "CO2 Reduction (tonnes)",
-    #     "formula": lambda col, bau, headers: f'={bau["co2_reduction_value"]}-{col}{headers["CO2 Emissions (tonnes)"] + 2}'
-    # },
-    {
-        "name": "CO2 (%) savings",
-        "formula": lambda col, bau, headers: f'=({bau["co2_reduction_value"]}-{col}{headers["CO2 Emissions (tonnes)"] + 2})/{bau["co2_reduction_value"]}'
-    },
-    #Example Calculations
-    # Calculation Without Reference to bau_cells
-    {
-        "name": "Placeholder Calculation Without BAU Reference",
-        "formula": lambda col, bau, headers: f'={col}{headers["Placeholder1"] + 2}+{col}{headers["Placeholder2"] + 2}'
-        # This formula adds Placeholder1 and Placeholder2 values from the scenario.
-    },
-
-    # Calculation With Reference to bau_cells
-    {
-        "name": "Placeholder Calculation With BAU Reference",
-        "formula": lambda col, bau, headers: f'=({bau["placeholder1_value"]}-{col}{headers["Placeholder2"] + 2})/{bau["placeholder1_value"]}'
-        # This formula calculates the percentage change of Placeholder2 using Placeholder1's BAU value as the reference.
-    }
-]
-
-###############################################################
-################ END Custom Table #############################
-###############################################################
+##############################################################################################################################
+################################################### END Custom Table #########################################################
+##############################################################################################################################
