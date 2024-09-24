@@ -15,7 +15,8 @@ from reoptjl.models import Settings, PVInputs, ElectricStorageInputs, WindInputs
     CoolingLoadOutputs, HeatingLoadOutputs, REoptjlMessageOutputs, HotThermalStorageInputs, HotThermalStorageOutputs,\
     ColdThermalStorageInputs, ColdThermalStorageOutputs, AbsorptionChillerInputs, AbsorptionChillerOutputs,\
     FinancialInputs, FinancialOutputs, UserUnlinkedRuns, BoilerInputs, BoilerOutputs, SteamTurbineInputs, \
-    SteamTurbineOutputs, GHPInputs, GHPOutputs, ProcessHeatLoadInputs
+    SteamTurbineOutputs, GHPInputs, GHPOutputs, ProcessHeatLoadInputs, ElectricHeaterInputs, ElectricHeaterOutputs, \
+    ASHPSpaceHeaterInputs, ASHPSpaceHeaterOutputs, ASHPWaterHeaterInputs, ASHPWaterHeaterOutputs
 import os
 import requests
 import numpy as np
@@ -76,6 +77,10 @@ def help(request):
         d["AbsorptionChiller"] = AbsorptionChillerInputs.info_dict(AbsorptionChillerInputs)
         d["SteamTurbine"] = SteamTurbineInputs.info_dict(SteamTurbineInputs)
         d["GHP"] = GHPInputs.info_dict(GHPInputs)
+        d["ElectricHeater"] = ElectricHeaterInputs.info_dict(ElectricHeaterInputs)
+        d["ASHPSpaceHeater"] = ASHPSpaceHeaterInputs.info_dict(ASHPSpaceHeaterInputs)
+        d["ASHPWaterHeater"] = ASHPWaterHeaterInputs.info_dict(ASHPWaterHeaterInputs)
+
         return JsonResponse(d)
 
     except Exception as e:
@@ -121,6 +126,9 @@ def outputs(request):
         d["CHP"] = CHPOutputs.info_dict(CHPOutputs)
         d["AbsorptionChiller"] = AbsorptionChillerOutputs.info_dict(AbsorptionChillerOutputs)
         d["GHP"] = GHPOutputs.info_dict(GHPOutputs)
+        d["ElectricHeater"] = ElectricHeaterOutputs.info_dict(ElectricHeaterOutputs)
+        d["ASHPSpaceHeater"] = ASHPSpaceHeaterOutputs.info_dict(ASHPSpaceHeaterOutputs)
+        d["ASHPWaterHeater"] = ASHPWaterHeaterOutputs.info_dict(ASHPWaterHeaterOutputs)
         d["Messages"] = REoptjlMessageOutputs.info_dict(REoptjlMessageOutputs)
         d["SteamTurbine"] = SteamTurbineOutputs.info_dict(SteamTurbineOutputs)
         return JsonResponse(d)
@@ -242,8 +250,18 @@ def results(request, run_uuid):
 
     try: r["inputs"]["SteamTurbine"] = meta.SteamTurbineInputs.dict
     except: pass
+
     try: r["inputs"]["GHP"] = meta.GHPInputs.dict
     except: pass    
+
+    try: r["inputs"]["ElectricHeater"] = meta.ElectricHeaterInputs.dict
+    except: pass    
+
+    try: r["inputs"]["ASHPSpaceHeater"] = meta.ASHPSpaceHeaterInputs.dict
+    except: pass    
+
+    try: r["inputs"]["ASHPWaterHeater"] = meta.ASHPWaterHeaterInputs.dict
+    except: pass  
 
     try:
         r["outputs"] = dict()
@@ -316,6 +334,12 @@ def results(request, run_uuid):
         try: r["outputs"]["SteamTurbine"] = meta.SteamTurbineOutputs.dict
         except: pass
         try: r["outputs"]["GHP"] = meta.GHPOutputs.dict
+        except: pass
+        try: r["outputs"]["ElectricHeater"] = meta.ElectricHeaterOutputs.dict
+        except: pass    
+        try: r["outputs"]["ASHPSpaceHeater"] = meta.ASHPSpaceHeaterOutputs.dict
+        except: pass  
+        try: r["outputs"]["ASHPWaterHeater"] = meta.ASHPWaterHeaterOutputs.dict
         except: pass
 
         for d in r["outputs"].values():
@@ -455,6 +479,30 @@ def absorption_chiller_defaults(request):
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in absorption_chiller_defaults endpoint. Check log for more."}, status=500)
+
+def get_ashp_defaults(request):
+    inputs = {"load_served": request.GET.get("load_served")}
+    try:
+        julia_host = os.environ.get('JULIA_HOST', "julia")
+        http_jl_response = requests.get("http://" + julia_host + ":8081/get_ashp_defaults/", json=inputs)
+        response = JsonResponse(
+            http_jl_response.json(),
+            status=http_jl_response.status_code
+        )
+        return response
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=400)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=400)
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected error in get_ashp_defaults endpoint. Check log for more."}, status=500)
 
 
 def simulated_load(request):
@@ -885,6 +933,30 @@ def queryset_for_summary(api_metas,summary_dict:dict):
                     summary_dict[str(m.meta.run_uuid)]['ghp_heating_ton'] = m.size_wwhp_heating_pump_ton
                 summary_dict[str(m.meta.run_uuid)]['ghp_n_bores'] = m.ghpghx_chosen_outputs['number_of_boreholes']
     
+    elecHeater = ElectricHeaterOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+            'meta__run_uuid',
+            'size_mmbtu_per_hour'
+    )
+    if len(elecHeater) > 0:
+        for m in elecHeater:
+            summary_dict[str(m.meta.run_uuid)]['electric_heater_mmbtu_per_hour'] = m.size_mmbtu_per_hour
+
+    ashpSpaceHeater = ASHPSpaceHeaterOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+            'meta__run_uuid',
+            'size_ton'
+    )
+    if len(ashpSpaceHeater) > 0:
+        for m in ashpSpaceHeater:
+            summary_dict[str(m.meta.run_uuid)]['ASHPSpace_heater_ton'] = m.size_ton
+
+    ashpWaterHeater = ASHPWaterHeaterOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+            'meta__run_uuid',
+            'size_ton'
+    )
+    if len(ashpWaterHeater) > 0:
+        for m in ashpWaterHeater:
+            summary_dict[str(m.meta.run_uuid)]['ASHPWater_heater_ton'] = m.size_ton
+
     return summary_dict
 
 def summary_by_chunk(request, user_uuid, chunk):

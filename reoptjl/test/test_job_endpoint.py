@@ -235,8 +235,12 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
         r = json.loads(resp.content)
         results = r["outputs"]
-        self.assertAlmostEqual(results["Financial"]["npv"], -258533.19, delta=0.01*results["Financial"]["lcc"])
+        self.assertAlmostEqual(results["Financial"]["npv"], -326156.69, delta=0.01*results["Financial"]["lcc"])
         assert(resp.status_code==200)   
+        self.assertIn("ElectricHeater", list(results.keys()))
+        self.assertIn("ASHPSpaceHeater", list(results.keys()))
+        self.assertIn("ASHPWaterHeater", list(results.keys()))
+
 
     def test_steamturbine_defaults_from_julia(self):
         # Test that the inputs_with_defaults_set_in_julia feature worked for SteamTurbine, consistent with /chp_defaults

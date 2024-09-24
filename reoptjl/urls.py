@@ -22,5 +22,6 @@ urlpatterns = [
     re_path(r'^invalid_urdb/?$', reoviews.invalid_urdb),
     re_path(r'^schedule_stats/?$', reoviews.schedule_stats),
     re_path(r'^get_existing_chiller_default_cop/?$', views.get_existing_chiller_default_cop),
-    re_path(r'^job/comparison_table/?$', views.create_custom_comparison_table),
+    re_path(r'^job/generate_custom_comparison_table/?$', views.generate_custom_comparison_table),
+    re_path(r'^get_ashp_defaults/?$', views.get_ashp_defaults)
 ]
