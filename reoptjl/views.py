@@ -745,12 +745,15 @@ def link_run_uuids_to_portfolio_uuid(request):
                 if PortfolioUnlinkedRuns.objects.filter(run_uuid=r_uuid).exists():
                     obj = PortfolioUnlinkedRuns.objects.get(run_uuid=r_uuid)
                     obj.delete()
+                    resp_str = ' and deleted run entry from PortfolioUnlinkedRuns'
+                else:
+                    resp_str = ''
             else:
                 # Stop processing on first bad run_uuid
                 response = JsonResponse({"Error": "No scenarios found for run_uuid '{}'".format(r_uuid)}, content_type='application/json', status=500)
                 return response
         
-        response = JsonResponse({"Success": "All runs associated with given portfolios"}, status=200, safe=False)
+        response = JsonResponse({"Success": "All runs associated with given portfolios'{}'".format(resp_str)}, status=200, safe=False)
         return response
 
     except Exception as e:
