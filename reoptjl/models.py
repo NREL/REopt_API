@@ -5494,6 +5494,12 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
         if self.dict.get("min_allowable_ton") not in [None, "", []] and self.dict.get("min_allowable_peak_capacity_fraction") not in [None, "", []]:
             error_messages["bad inputs"] = "At most one of min_allowable_ton and min_allowable_peak_capacity_fraction may be input to model {}".format(self.key)
 
+        if len(self.dict.get("heating_cop_reference")) != len(self.dict.get("heating_cf_reference")) or len(self.dict.get("heating_cop_reference")) != len(self.dict.get("heating_reference_temps_degF")):
+            error_messages["mismatched length"] = "Model {} inputs heating_cop_reference, heating_cf_reference, and heating_reference_temps_degF must all have the same length.".format(self.key)
+
+        if len(self.dict.get("cooling_cop_reference")) != len(self.dict.get("cooling_cf_reference")) or len(self.dict.get("cooling_cop_reference")) != len(self.dict.get("cooling_reference_temps_degF")):
+            error_messages["mismatched length"] = "Model {} inputs cooling_cop_reference, cooling_cf_reference, and cooling_reference_temps_degF must all have the same length.".format(self.key)
+
         if error_messages:
             raise ValidationError(error_messages)
 
@@ -5755,6 +5761,9 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
 
         if self.dict.get("min_allowable_ton") not in [None, "", []] and self.dict.get("min_allowable_peak_capacity_fraction") not in [None, "", []]:
             error_messages["bad inputs"] = "At most one of min_allowable_ton and min_allowable_peak_capacity_fraction may be input to model {}".format(self.key)
+
+        if len(self.dict.get("heating_cop_reference")) != len(self.dict.get("heating_cf_reference")) or len(self.dict.get("heating_cop_reference")) != len(self.dict.get("heating_reference_temps_degF")):
+            error_messages["mismatched length"] = "Model {} inputs heating_cop_reference, heating_cf_reference, and heating_reference_temps_degF must all have the same length.".format(self.key)
 
         if error_messages:
             raise ValidationError(error_messages)

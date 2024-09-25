@@ -344,3 +344,30 @@ class InputValidatorTests(TestCase):
         # self.assertAlmostEqual(len(validator.models["ExistingBoiler"].fuel_cost_per_mmbtu), 8760)
         # self.assertAlmostEqual(sum(validator.models["ExistingBoiler"].fuel_cost_per_mmbtu), 8760*0.5)
 
+    def ashp_validation(self):
+        """
+        Ensure that bad inputs are caught by clean() for ASHP systems.
+        """
+        post_file = os.path.join('job', 'test', 'posts', 'all_inputs_test.json')
+        post = json.load(open(post_file, 'r'))
+
+        post["APIMeta"]["run_uuid"] = uuid.uuid4()
+        post["ASHPSpaceHeater"]["cooling_cf_reference"] = []
+
+        validator = InputValidator(post)
+        validator.clean_fields()
+        validator.clean()
+        validator.cross_clean()
+        assert("mismatched length" in validator.validation_errors["ASHPSpaceHeater"].keys())
+        
+        post = json.load(open(post_file, 'r'))
+        post["APIMeta"]["run_uuid"] = uuid.uuid4()
+        post["ASHPWaterHeater"]["min_allowable_ton"] = 1000
+        post["ASHPWaterHeater"]["min_allowable_peak_capacity_fraction"] = 0.9
+
+        validator = InputValidator(post)
+        validator.clean_fields()
+        validator.clean()
+        validator.cross_clean()
+        assert("bad inputs" in validator.validation_errors["ASHPWaterHeater"].keys())
+        
