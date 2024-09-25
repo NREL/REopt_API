@@ -26,7 +26,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop - 2024-09-19
+## v3.9.4
 ### Minor Updates
 #### Added
 - **portfolio_uuid** is now a field that can be added to API objects
