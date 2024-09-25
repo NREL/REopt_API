@@ -555,6 +555,8 @@ function get_ashp_defaults(req::HTTP.Request)
     if !("force_into_system" in keys(d))
         @info("ASHP force_into_system not provided. Using default of false.")
         d["force_into_system"] = false
+    elseif typeof(d["force_into_system"]) == String
+        d["force_into_system"] = parse(Bool, d["force_into_system"])
     end 
     
     @info "Getting default ASHP attributes..."
