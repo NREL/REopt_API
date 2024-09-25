@@ -734,12 +734,26 @@ def link_run_uuids_to_portfolio_uuid(request):
                 for s in scenario:
                     s.portfolio_uuid = p_uuid
                     s.save()
+
+                # Existing portfolio runs could have been "unlinked" from portfolio
+                # so they are independent and show up in summary endpoint. If these runs
+                # are re-linked with a portfolio, their portfolio_id is updated above.
+                # BUT these runs could still show up under `Summary` results (niche case)
+                # because they are present in PortfolioUnlinkedRuns.
+                # Below, these runs are removed from PortfolioUnlinkedRuns
+                # so they are "linked" to a portfolio and do not show up under `Summary`
+                if PortfolioUnlinkedRuns.objects.filter(run_uuid=r_uuid).exists():
+                    obj = PortfolioUnlinkedRuns.objects.get(run_uuid=r_uuid)
+                    obj.delete()
+                    resp_str = ' and deleted run entry from PortfolioUnlinkedRuns'
+                else:
+                    resp_str = ''
             else:
                 # Stop processing on first bad run_uuid
                 response = JsonResponse({"Error": "No scenarios found for run_uuid '{}'".format(r_uuid)}, content_type='application/json', status=500)
                 return response
         
-        response = JsonResponse({"Success": "All runs associated with given prortfolios"}, status=200, safe=False)
+        response = JsonResponse({"Success": "All runs associated with given portfolios'{}'".format(resp_str)}, status=200, safe=False)
         return response
 
     except Exception as e:
@@ -810,6 +824,8 @@ def summary(request, user_uuid):
             run_uuid__in=[i.run_uuid for i in UserUnlinkedRuns.objects.filter(user_uuid=user_uuid)]
         ).only(
             'run_uuid',
+            'user_uuid',
+            'portfolio_uuid',
             'status',
             'created'
         ).order_by("-created")
@@ -950,6 +966,8 @@ def queryset_for_summary(api_metas,summary_dict:dict):
         summary_dict[str(m.run_uuid)] = dict()
         summary_dict[str(m.run_uuid)]['status'] = m.status
         summary_dict[str(m.run_uuid)]['run_uuid'] = str(m.run_uuid)
+        summary_dict[str(m.run_uuid)]['user_uuid'] = str(m.user_uuid)
+        summary_dict[str(m.run_uuid)]['portfolio_uuid'] = str(m.portfolio_uuid)
         summary_dict[str(m.run_uuid)]['created'] = str(m.created)
         
     run_uuids = summary_dict.keys()
@@ -1287,7 +1305,7 @@ def unlink_from_portfolio(request, user_uuid, portfolio_uuid, run_uuid):
             elif runs[0].user_uuid != user_uuid:
                 return JsonResponse({"Error": "Run {} is not associated with user {}".format(run_uuid, user_uuid)}, status=400)
             else:
-                return JsonResponse({"Error": "Error in unlinking run {} from portfolio {}".format(run_uuid, portfolio_uuid)}, status=400)
+                pass
         
         # Run exists and is tied to porfolio provided in request, hence unlink now.
         if not PortfolioUnlinkedRuns.objects.filter(run_uuid=run_uuid).exists():
