@@ -105,6 +105,31 @@ function reopt(req::HTTP.Request)
             else
                 ghp_dict = Dict()
             end
+            if haskey(d, "ASHPSpaceHeater")
+                inputs_with_defaults_from_ashp = [
+                    :max_ton, :installed_cost_per_ton, :om_cost_per_ton, 
+                    :macrs_option_years, :macrs_bonus_fraction, :can_supply_steam_turbine,
+                    :can_serve_process_heat, :can_serve_dhw, :can_serve_space_heating, :can_serve_cooling,
+                    :back_up_temp_threshold_degF, :sizing_factor, :heating_cop_reference, :heating_cf_reference,
+                    :heating_reference_temps_degF, :cooling_cop_reference, :cooling_cf_reference, 
+                    :cooling_reference_temps_degF
+                ]
+                ashp_dict = Dict(key=>getfield(model_inputs.s.ashp, key) for key in inputs_with_defaults_from_ashp)
+            else
+                ashp_dict = Dict()
+            end
+            if haskey(d, "ASHPWaterHeater")
+                inputs_with_defaults_from_ashp_wh = [
+                    :max_ton, :installed_cost_per_ton, :om_cost_per_ton, 
+                    :macrs_option_years, :macrs_bonus_fraction, :can_supply_steam_turbine,
+                    :can_serve_process_heat, :can_serve_dhw, :can_serve_space_heating, :can_serve_cooling,
+                    :back_up_temp_threshold_degF, :sizing_factor, :heating_cop_reference, :heating_cf_reference,
+                    :heating_reference_temps_degF
+                ]
+                ashp_wh_dict = Dict(key=>getfield(model_inputs.s.ashp_wh, key) for key in inputs_with_defaults_from_ashp_wh)
+            else
+                ashp_wh_dict = Dict()
+            end
             if haskey(d, "CoolingLoad")
                 inputs_with_defaults_from_chiller = [
                     :cop
@@ -125,7 +150,9 @@ function reopt(req::HTTP.Request)
                 "CHP" => chp_dict,
 				"SteamTurbine" => steamturbine_dict,
                 "GHP" => ghp_dict,
-                "ExistingChiller" => chiller_dict
+                "ExistingChiller" => chiller_dict,
+                "ASHPSpaceHeater" => ashp_dict,
+                "ASHPWaterHeater" => ashp_wh_dict
 			)
 		catch e
 			@error "Something went wrong in REopt optimization!" exception=(e, catch_backtrace())

@@ -8,7 +8,7 @@ from reoptjl.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorage
                         REoptjlMessageOutputs, AbsorptionChillerOutputs, BoilerOutputs, SteamTurbineInputs, \
                         SteamTurbineOutputs, GHPInputs, GHPOutputs, ExistingChillerInputs, \
                         ElectricHeaterOutputs, ASHPSpaceHeaterOutputs, ASHPWaterHeaterOutputs, \
-                        SiteInputs
+                        SiteInputs, ASHPSpaceHeaterInputs, ASHPWaterHeaterInputs
 import numpy as np
 import sys
 import traceback as tb
@@ -138,6 +138,10 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
                 ExistingChillerInputs.create(meta=meta, **inputs_to_update["ExistingChiller"]).save()
             else:
                 ExistingChillerInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["ExistingChiller"])
+        if inputs_to_update["ASHPSpaceHeater"]:
+            ASHPSpaceHeaterInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["ASHPSpaceHeater"])
+        if inputs_to_update["ASHPWaterHeater"]:
+            ASHPWaterHeaterInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["ASHPWaterHeater"])
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(
