@@ -1470,7 +1470,7 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
             return workbook.add_format(base_data_format)
 
         # Set column width for the first column (labels column)
-        worksheet.set_column(0, 0, 35)
+        worksheet.set_column(0, 0, 45)
 
         # Setting column widths and writing headers for other columns
         column_width = 25
@@ -1699,8 +1699,8 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
             "- Additional Upfront Cost ($): Input any extra upfront costs (e.g., interconnection upgrades, microgrid components).",
             "- Additional Yearly Cost Savings ($/year): Input any ongoing yearly savings (e.g., improved productivity, product sales with ESG designation).",
             "- Additional Yearly Cost ($/year): Input any additional yearly costs (e.g., microgrid operation and maintenance).",
-            "- Playground-Modified Net Upfront Capital Cost ($): This value recalculates based on your inputs.",
-            "- Playground-Modified Simple Payback Period (years): Recalculates the payback period based on your inputs, providing a more conventional 'simple' payback period."
+            "- Modified Net Upfront Capital Cost ($): This value recalculates based on your inputs.",
+            "- Modified Simple Payback Period (years): Recalculates the payback period based on your inputs, providing a more conventional 'simple' payback period."
         ]
         for item in playground_items:
             instructions_worksheet.write(row, 0, item, bullet_format)
@@ -1721,7 +1721,7 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
         row += 2
 
         # Final Note and Contact Info
-        instructions_worksheet.write(row, 0, "Thank you for using the REopt Output Workbook!", text_format)
+        instructions_worksheet.write(row, 0, "Thank you for using the REopt Results Table Workbook!", text_format)
         row += 1
         contact_info = "For support or feedback, please contact the REopt team at reopt@nrel.gov."
         instructions_worksheet.write(row, 0, contact_info, text_format)
