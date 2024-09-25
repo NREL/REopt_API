@@ -467,7 +467,10 @@ def absorption_chiller_defaults(request):
         return JsonResponse({"Error": "Unexpected error in absorption_chiller_defaults endpoint. Check log for more."}, status=500)
 
 def get_ashp_defaults(request):
-    inputs = {"load_served": request.GET.get("load_served")}
+    inputs = {
+        "load_served": request.GET.get("load_served"),
+        "force_into_system": request.GET.get("force_into_system")
+    }
     try:
         julia_host = os.environ.get('JULIA_HOST', "julia")
         http_jl_response = requests.get("http://" + julia_host + ":8081/get_ashp_defaults/", json=inputs)

@@ -525,12 +525,16 @@ function get_ashp_defaults(req::HTTP.Request)
         @info("ASHP load served not provided. Using default of SpaceHeating.")
         d["load_served"] = "SpaceHeating"
     end 
+    if !("force_into_system" in keys(d))
+        @info("ASHP force_into_system not provided. Using default of false.")
+        d["force_into_system"] = false
+    end 
     
     @info "Getting default ASHP attributes..."
     error_response = Dict()
     try
         # Have to specify "REopt.get_existing..." because http function has the same name
-        defaults = reoptjl.get_ashp_defaults(d["load_served"])      
+        defaults = reoptjl.get_ashp_defaults(d["load_served"],d["force_into_system"])      
     catch e
         @error "Something went wrong in the get_ashp_defaults endpoint" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
