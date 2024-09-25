@@ -1,5 +1,6 @@
 # REopt®, Copyright (c) Alliance for Sustainable Energy, LLC. See also https://github.com/NREL/REopt_API/blob/master/LICENSE.
 from django.db import models
+from django.db.models import Q
 import uuid
 import sys
 import traceback as tb
@@ -15,7 +16,8 @@ from reoptjl.models import Settings, PVInputs, ElectricStorageInputs, WindInputs
     ColdThermalStorageInputs, ColdThermalStorageOutputs, AbsorptionChillerInputs, AbsorptionChillerOutputs,\
     FinancialInputs, FinancialOutputs, UserUnlinkedRuns, BoilerInputs, BoilerOutputs, SteamTurbineInputs, \
     SteamTurbineOutputs, GHPInputs, GHPOutputs, ProcessHeatLoadInputs, ElectricHeaterInputs, ElectricHeaterOutputs, \
-    ASHPSpaceHeaterInputs, ASHPSpaceHeaterOutputs, ASHPWaterHeaterInputs, ASHPWaterHeaterOutputs
+    ASHPSpaceHeaterInputs, ASHPSpaceHeaterOutputs, ASHPWaterHeaterInputs, ASHPWaterHeaterOutputs, PortfolioUnlinkedRuns
+
 import os
 import requests
 import numpy as np
@@ -669,7 +671,137 @@ def get_existing_chiller_default_cop(request):
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in get_existing_chiller_default_cop endpoint. Check log for more."}, status=500)
 
+
+# Inputs: 1-many run_uuid strings as single comma separated array
+# Output: list of JSON summaries
+# This function will query requested UUIDs and return their summary back to requestor
+def summary_by_runuuids(request):
+
+    run_uuids = json.loads(request.body)['run_uuids']
+
+    if len(run_uuids) == 0:
+        return JsonResponse({'Error': 'Must provide one or more run_uuids'}, status=400)
+
+    # Validate that user UUID is valid.
+    for r_uuid in run_uuids:
+
+        if type(r_uuid) != str:
+            return JsonResponse({'Error': 'Provided run_uuids type error, must be string. ' + str(r_uuid)}, status=400)
+        
+        try:
+            uuid.UUID(r_uuid)  # raises ValueError if not valid uuid
+
+        except ValueError as e:
+            if e.args[0] == "badly formed hexadecimal UUID string":
+                return JsonResponse({"Error": str(e.message)}, status=404)
+            else:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary_by_runuuids', run_uuids=run_uuids)
+                err.save_to_db()
+                return JsonResponse({"Error": str(err.message)}, status=404)
     
+    try:
+        # Dictionary to store all results. Primary key = run_uuid and secondary key = data values from each uuid
+        summary_dict = dict()
+
+        # Create Querysets: Select all objects associate with a user_uuid, Order by `created` column
+        scenarios = APIMeta.objects.filter(run_uuid__in=run_uuids).only(
+            'run_uuid',
+            'status',
+            'created'
+        ).order_by("-created")
+
+        if len(scenarios) > 0: # this should be either 0 or 1 as there are no duplicate run_uuids
+            
+            # Get summary information for all selected scenarios
+            summary_dict = queryset_for_summary(scenarios, summary_dict)
+
+            # Create eventual response dictionary
+            return_dict = dict()
+            # return_dict['user_uuid'] = user_uuid # no user uuid
+            scenario_summaries = []
+            for k in summary_dict.keys():
+                scenario_summaries.append(summary_dict[k])
+            
+            return_dict['scenarios'] = scenario_summaries
+
+            response = JsonResponse(return_dict, status=200, safe=False)
+            return response
+        else:
+            response = JsonResponse({"Error": "No scenarios found for run_uuids '{}'".format(run_uuids)}, content_type='application/json', status=404)
+            return response
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary_by_runuuids', run_uuids=run_uuids)
+        err.save_to_db()
+        return JsonResponse({"Error": err.message}, status=404)
+
+# Inputs: 1-many run_uuid strings as single comma separated array
+# Inputs: 1-many portfolio_uuid strings as single comma separated array
+# Output: 200 or OK
+# This function link independent run_uuids to a portfolio_uuid. The portfolio ID doesnt have to exit, run_uuids must exist in DB.
+def link_run_uuids_to_portfolio_uuid(request):
+
+    request_body = json.loads(request.body)
+    run_uuids = request_body['run_uuids']
+    por_uuids = request_body['portfolio_uuids']
+
+    if len(run_uuids) != len(por_uuids):
+        return JsonResponse({'Error': 'Must provide one or more run_uuids and the same number of portfolio_uuids'}, status=400)
+
+    # Validate that all UUIDs are valid.
+    for r_uuid in run_uuids+por_uuids:
+
+        if type(r_uuid) != str:
+            return JsonResponse({'Error': 'Provided uuid type error, must be string. ' + str(r_uuid)}, status=400)
+        
+        try:
+            uuid.UUID(r_uuid)  # raises ValueError if not valid uuid
+
+        except ValueError as e:
+            if e.args[0] == "badly formed hexadecimal UUID string":
+                return JsonResponse({"Error": str(e.message)}, status=404)
+            else:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary_by_runuuids', run_uuids=run_uuids)
+                err.save_to_db()
+                return JsonResponse({"Error": str(err.message)}, status=404)
+    
+    try:
+        
+        for r_uuid,p_uuid in zip(run_uuids, por_uuids):
+        
+            # Create Querysets: Select all objects associate with a user_uuid, Order by `created` column
+            scenario = APIMeta.objects.filter(run_uuid=r_uuid).only(
+                'run_uuid',
+                'portfolio_uuid'
+            )
+
+            if len(scenario) > 0:
+
+                for s in scenario:
+                    s.portfolio_uuid = p_uuid
+                    s.save()
+            else:
+                # Stop processing on first bad run_uuid
+                response = JsonResponse({"Error": "No scenarios found for run_uuid '{}'".format(r_uuid)}, content_type='application/json', status=500)
+                return response
+        
+        response = JsonResponse({"Success": "All runs associated with given prortfolios"}, status=200, safe=False)
+        return response
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary_by_runuuids', run_uuids=run_uuids)
+        err.save_to_db()
+        return JsonResponse({"Error": err.message}, status=404)
+
+# Inputs: 1 user_uuid
+# Output: Return summary information for all runs associated with the user
+# Output: Portfolio_uuid for returned runs must be "" (empty) or in unlinked portfolio runs (i.e. user unlinked a run from a portforlio)
+# Output: Remove any user unlinked runs and finally order by `created` column
+# Returns all user runs not actively tied to a portfolio
 def summary(request, user_uuid):
     """
     Retrieve a summary of scenarios for given user_uuid
@@ -718,15 +850,18 @@ def summary(request, user_uuid):
         # Dictionary to store all results. Primary key = run_uuid and secondary key = data values from each uuid
         summary_dict = dict()
 
-        # Create Querysets: Select all objects associate with a user_uuid, Order by `created` column
-        scenarios = APIMeta.objects.filter(user_uuid=user_uuid).only(
+        # Create Querysets: Select all objects associate with a user_uuid. portfolio_uuid must be "" (empty) or in unlinked portfolio runs
+        # Remove any unlinked runs and finally order by `created` column
+        api_metas = APIMeta.objects.filter(
+            Q(user_uuid=user_uuid),
+            Q(portfolio_uuid = "") | Q(run_uuid__in=[i.run_uuid for i in PortfolioUnlinkedRuns.objects.filter(user_uuid=user_uuid)])
+        ).exclude(
+            run_uuid__in=[i.run_uuid for i in UserUnlinkedRuns.objects.filter(user_uuid=user_uuid)]
+        ).only(
             'run_uuid',
             'status',
             'created'
         ).order_by("-created")
-
-        unlinked_run_uuids = [i.run_uuid for i in UserUnlinkedRuns.objects.filter(user_uuid=user_uuid)]
-        api_metas = [s for s in scenarios if s.run_uuid not in unlinked_run_uuids]
 
         if len(api_metas) > 0:
             summary_dict = queryset_for_summary(api_metas, summary_dict)
@@ -742,6 +877,7 @@ def summary(request, user_uuid):
         err.save_to_db()
         return JsonResponse({"Error": err.message}, status=404)
 
+# Same as Summary but by chunks
 def summary_by_chunk(request, user_uuid, chunk):
 
     # Dictionary to store all results. Primary key = run_uuid and secondary key = data values from each uuid
@@ -782,15 +918,17 @@ def summary_by_chunk(request, user_uuid, chunk):
         except:
             return JsonResponse({"Error": "Chunk number must be a 1-indexed integer."}, status=400)
         
-        # Create Querysets: Select all objects associate with a user_uuid, Order by `created` column
-        scenarios = APIMeta.objects.filter(user_uuid=user_uuid).only(
+        # Create Querysets: Select all objects associate with a user_uuid, portfolio_uuid="", Order by `created` column
+        api_metas = APIMeta.objects.filter(
+            Q(user_uuid=user_uuid),
+            Q(portfolio_uuid = "") | Q(run_uuid__in=[i.run_uuid for i in PortfolioUnlinkedRuns.objects.filter(user_uuid=user_uuid)])
+        ).exclude(
+            run_uuid__in=[i.run_uuid for i in UserUnlinkedRuns.objects.filter(user_uuid=user_uuid)]
+        ).only(
             'run_uuid',
             'status',
             'created'
         ).order_by("-created")
-
-        unlinked_run_uuids = [i.run_uuid for i in UserUnlinkedRuns.objects.filter(user_uuid=user_uuid)]
-        api_metas = [s for s in scenarios if s.run_uuid not in unlinked_run_uuids]
         
         total_scenarios = len(api_metas)
         if total_scenarios == 0:
@@ -851,7 +989,8 @@ def create_summary_dict(user_uuid:str,summary_dict:dict):
     
     return return_dict
 
-# Query all django models for all run_uuids found for given user_uuid
+# Query all django models for 1 or more run_uuids provided in inputs
+# Return summary_dict which contains summary information for valid run_uuids
 def queryset_for_summary(api_metas,summary_dict:dict):
 
     # Loop over all the APIMetas associated with a user_uuid, do something if needed
@@ -879,24 +1018,69 @@ def queryset_for_summary(api_metas,summary_dict:dict):
     utility = ElectricUtilityInputs.objects.filter(meta__run_uuid__in=run_uuids).only(
         'meta__run_uuid',
         'outage_start_time_step',
+        'outage_end_time_step',
+        'outage_durations',
         'outage_start_time_steps'
     )
     if len(utility) > 0:
         for m in utility:
-            if len(m.outage_start_time_steps) == 0:
-                summary_dict[str(m.meta.run_uuid)]['focus'] = "Financial"
+
+            if m.outage_start_time_step is None:
+                if len(m.outage_start_time_steps) == 0:
+                    summary_dict[str(m.meta.run_uuid)]['focus'] = "Financial"
+                else:
+                    summary_dict[str(m.meta.run_uuid)]['focus'] = "Resilience"
+                    summary_dict[str(m.meta.run_uuid)]['outage_duration'] = m.outage_durations[0] # all durations are same.
             else:
+                # outage start timestep was provided, is 1 or more
+                summary_dict[str(m.meta.run_uuid)]['outage_duration'] = m.outage_end_time_step - m.outage_start_time_step + 1
                 summary_dict[str(m.meta.run_uuid)]['focus'] = "Resilience"
+    
+    site = SiteOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'lifecycle_emissions_reduction_CO2_fraction'
+    )
+    if len(site) > 0:
+        for m in site:
+            try:
+                summary_dict[str(m.meta.run_uuid)]['emission_reduction_pct'] = m.lifecycle_emissions_reduction_CO2_fraction
+            except:
+                summary_dict[str(m.meta.run_uuid)]['emission_reduction_pct'] = 0.0
+
+    
+    site_inputs = SiteInputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'renewable_electricity_min_fraction',
+        'renewable_electricity_max_fraction'
+    )
+    if len(site_inputs) > 0:
+        for m in site_inputs:
+            try: # can be NoneType
+                if m.renewable_electricity_min_fraction > 0:
+                    summary_dict[str(m.meta.run_uuid)]['focus'] = "Clean-energy"
+            except:
+                pass # is NoneType
+
+            try: # can be NoneType
+                if m.renewable_electricity_max_fraction > 0:
+                    summary_dict[str(m.meta.run_uuid)]['focus'] = "Clean-energy"
+            except:
+                pass # is NoneType
 
     # Use settings to find out if it is an off-grid evaluation
     settings = Settings.objects.filter(meta__run_uuid__in=run_uuids).only(
         'meta__run_uuid',
-        'off_grid_flag'
+        'off_grid_flag',
+        'include_climate_in_objective',
+        'include_health_in_objective'
     )
     if len(settings) > 0:
         for m in settings:
             if m.off_grid_flag:
                 summary_dict[str(m.meta.run_uuid)]['focus'] = "Off-grid"
+            
+            if m.include_climate_in_objective or m.include_health_in_objective:
+                summary_dict[str(m.meta.run_uuid)]['focus'] = "Clean-energy"
 
     tariffInputs = ElectricTariffInputs.objects.filter(meta__run_uuid__in=run_uuids).only(
         'meta__run_uuid',
@@ -943,7 +1127,13 @@ def queryset_for_summary(api_metas,summary_dict:dict):
     fin = FinancialOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
         'meta__run_uuid',
         'npv',
-        'initial_capital_costs_after_incentives'
+        'initial_capital_costs_after_incentives',
+        'lcc',
+        'replacements_present_cost_after_tax',
+        'lifecycle_capital_costs_plus_om_after_tax',
+        'lifecycle_generation_tech_capital_costs',
+        'lifecycle_storage_capital_costs',
+        'lifecycle_production_incentive_after_tax'
     )
     if len(fin) > 0:
         for m in fin:
@@ -952,7 +1142,11 @@ def queryset_for_summary(api_metas,summary_dict:dict):
             else:
                 summary_dict[str(m.meta.run_uuid)]['npv_us_dollars'] = None
             summary_dict[str(m.meta.run_uuid)]['net_capital_costs'] = m.initial_capital_costs_after_incentives
-    
+            summary_dict[str(m.meta.run_uuid)]['lcc_us_dollars'] = m.lcc
+            summary_dict[str(m.meta.run_uuid)]['replacements_present_cost_after_tax'] = m.replacements_present_cost_after_tax
+            summary_dict[str(m.meta.run_uuid)]['lifecycle_capital_costs_plus_om_after_tax'] = m.lifecycle_capital_costs_plus_om_after_tax
+            summary_dict[str(m.meta.run_uuid)]['total_capital_costs'] = m.lifecycle_generation_tech_capital_costs + m.lifecycle_storage_capital_costs - m.lifecycle_production_incentive_after_tax
+
     batt = ElectricStorageOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
         'meta__run_uuid',
         'size_kw',
@@ -1049,10 +1243,36 @@ def queryset_for_summary(api_metas,summary_dict:dict):
     if len(ashpWaterHeater) > 0:
         for m in ashpWaterHeater:
             summary_dict[str(m.meta.run_uuid)]['ASHPWater_heater_ton'] = m.size_ton
+    hottes = HotThermalStorageOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'size_gal'
+    )
+    if len(hottes) > 0:
+        for m in hottes:
+            summary_dict[str(m.meta.run_uuid)]['hottes_gal'] = m.size_gal
+    
+    coldtes = ColdThermalStorageOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'size_gal'
+    )
+    if len(coldtes) > 0:
+        for m in coldtes:
+            summary_dict[str(m.meta.run_uuid)]['coldtes_gal'] = m.size_gal
+    
+
+    abschillTon = AbsorptionChillerOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'size_ton'
+    )
+    if len(abschillTon) > 0:
+        for m in abschillTon:
+            summary_dict[str(m.meta.run_uuid)]['absorpchl_ton'] = m.size_ton
 
     return summary_dict
 
-# Unlink a user_uuid from a run_uuid.
+# Inputs: user_uuid and run_uuid to unlink from the user
+# Outputs: 200 or OK
+# add an entry to the PortfolioUnlinkedRuns for the given portfolio_uuid and run_uuid, indicating they have been unlinked
 def unlink(request, user_uuid, run_uuid):
 
     """
@@ -1096,6 +1316,62 @@ def unlink(request, user_uuid, run_uuid):
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         err = UnexpectedError(exc_type, exc_value, exc_traceback, task='unlink', user_uuid=user_uuid)
+        err.save_to_db()
+        return JsonResponse({"Error": err.message}, status=404)
+
+# Inputs: user_uuid, portfolio_uuid, and run_uuid to unlink from the portfolio
+# Outputs: 200 or OK
+# add an entry to the PortfolioUnlinkedRuns for the given portfolio_uuid and run_uuid, indicating they have been unlinked
+def unlink_from_portfolio(request, user_uuid, portfolio_uuid, run_uuid):
+
+    """
+    add an entry to the PortfolioUnlinkedRuns for the given portfolio_uuid and run_uuid
+    """
+    content = {'user_uuid': user_uuid, 'portfolio_uuid': portfolio_uuid, 'run_uuid': run_uuid}
+    for name, check_id in content.items():
+        try:
+            uuid.UUID(check_id)  # raises ValueError if not valid uuid
+        except ValueError as e:
+            if e.args[0] == "badly formed hexadecimal UUID string":
+                return JsonResponse({"Error": "{} {}".format(name, e.args[0]) }, status=400)
+            else:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                if name == 'user_uuid':
+                    err = UnexpectedError(exc_type, exc_value, exc_traceback, task='unlink', user_uuid=check_id)
+                if name == 'portfolio_uuid':
+                    err = UnexpectedError(exc_type, exc_value, exc_traceback, task='unlink', portfolio_uuid=check_id)
+                if name == 'run_uuid':
+                    err = UnexpectedError(exc_type, exc_value, exc_traceback, task='unlink', run_uuid=check_id)
+                err.save_to_db()
+                return JsonResponse({"Error": str(err.message)}, status=400)
+    
+    try:
+        if not APIMeta.objects.filter(portfolio_uuid=portfolio_uuid).exists():
+            return JsonResponse({"Error": "Portfolio {} does not exist".format(portfolio_uuid)}, status=400)
+
+
+        runs = APIMeta.objects.filter(run_uuid=run_uuid)
+        if len(runs) == 0:
+            return JsonResponse({"Error": "Run {} does not exist".format(run_uuid)}, status=400)
+        else:
+            if runs[0].portfolio_uuid != portfolio_uuid:
+                return JsonResponse({"Error": "Run {} is not associated with portfolio {}".format(run_uuid, portfolio_uuid)}, status=400)
+            elif runs[0].user_uuid != user_uuid:
+                return JsonResponse({"Error": "Run {} is not associated with user {}".format(run_uuid, user_uuid)}, status=400)
+            else:
+                return JsonResponse({"Error": "Error in unlinking run {} from portfolio {}".format(run_uuid, portfolio_uuid)}, status=400)
+        
+        # Run exists and is tied to porfolio provided in request, hence unlink now.
+        if not PortfolioUnlinkedRuns.objects.filter(run_uuid=run_uuid).exists():
+            PortfolioUnlinkedRuns.create(**content)
+            return JsonResponse({"Success": "run_uuid {} unlinked from portfolio_uuid {}".format(run_uuid, portfolio_uuid)},
+                                status=201)
+        else:
+            return JsonResponse({"Nothing changed": "run_uuid {} is already unlinked from portfolio_uuid {}".format(run_uuid, portfolio_uuid)},
+                                status=208)
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='unlink', portfolio_uuid=portfolio_uuid)
         err.save_to_db()
         return JsonResponse({"Error": err.message}, status=404)
 

@@ -17,10 +17,13 @@ urlpatterns = [
     re_path(r'^user/(?P<user_uuid>[0-9a-f-]+)/summary/?$', views.summary),
     re_path(r'^user/(?P<user_uuid>[0-9a-f-]+)/summary_by_chunk/(?P<chunk>[0-9]+)/?$', views.summary_by_chunk),
     re_path(r'^user/(?P<user_uuid>[0-9a-f-]+)/unlink/(?P<run_uuid>[0-9a-f-]+)/?$', views.unlink),
+    re_path(r'^user/(?P<user_uuid>[0-9a-f-]+)/unlink_from_portfolio/(?P<portfolio_uuid>[0-9a-f-]+)/(?P<run_uuid>[0-9a-f-]+)/?$', views.unlink_from_portfolio),
     re_path(r'^ghp_efficiency_thermal_factors/?$', views.ghp_efficiency_thermal_factors),
     re_path(r'^peak_load_outage_times/?$', views.peak_load_outage_times),
     re_path(r'^invalid_urdb/?$', reoviews.invalid_urdb),
     re_path(r'^schedule_stats/?$', reoviews.schedule_stats),
     re_path(r'^get_existing_chiller_default_cop/?$', views.get_existing_chiller_default_cop),
-    re_path(r'^get_ashp_defaults/?$', views.get_ashp_defaults)
+    re_path(r'^get_ashp_defaults/?$', views.get_ashp_defaults),
+    re_path(r'^summary_by_runuuids/?$', views.summary_by_runuuids),
+    re_path(r'^link_run_to_portfolios/?$', views.link_run_uuids_to_portfolio_uuid)
 ]
