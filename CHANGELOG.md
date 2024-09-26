@@ -26,6 +26,16 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.10.0
+### Minor Updates
+#### Added
+- Added new model **ElectricHeaterInputs**
+- Added new model **ElectricHeaterOutputs**
+- Added new model **ASHPWaterHeaterInputs**
+- Added new model **ASHPWaterHeaterOutputs**
+- Added new model **ASHPSpaceHeaterInputs**
+- Added new model **ASHPSpaceHeaterOutputs**
+
 ## v3.9.4
 ### Minor Updates
 #### Added

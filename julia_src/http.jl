@@ -105,6 +105,31 @@ function reopt(req::HTTP.Request)
             else
                 ghp_dict = Dict()
             end
+            if haskey(d, "ASHPSpaceHeater")
+                inputs_with_defaults_from_ashp = [
+                    :max_ton, :installed_cost_per_ton, :om_cost_per_ton, 
+                    :macrs_option_years, :macrs_bonus_fraction, :can_supply_steam_turbine,
+                    :can_serve_process_heat, :can_serve_dhw, :can_serve_space_heating, :can_serve_cooling,
+                    :back_up_temp_threshold_degF, :sizing_factor, :heating_cop_reference, :heating_cf_reference,
+                    :heating_reference_temps_degF, :cooling_cop_reference, :cooling_cf_reference, 
+                    :cooling_reference_temps_degF
+                ]
+                ashp_dict = Dict(key=>getfield(model_inputs.s.ashp, key) for key in inputs_with_defaults_from_ashp)
+            else
+                ashp_dict = Dict()
+            end
+            if haskey(d, "ASHPWaterHeater")
+                inputs_with_defaults_from_ashp_wh = [
+                    :max_ton, :installed_cost_per_ton, :om_cost_per_ton, 
+                    :macrs_option_years, :macrs_bonus_fraction, :can_supply_steam_turbine,
+                    :can_serve_process_heat, :can_serve_dhw, :can_serve_space_heating, :can_serve_cooling,
+                    :back_up_temp_threshold_degF, :sizing_factor, :heating_cop_reference, :heating_cf_reference,
+                    :heating_reference_temps_degF
+                ]
+                ashp_wh_dict = Dict(key=>getfield(model_inputs.s.ashp_wh, key) for key in inputs_with_defaults_from_ashp_wh)
+            else
+                ashp_wh_dict = Dict()
+            end
             if haskey(d, "CoolingLoad")
                 inputs_with_defaults_from_chiller = [
                     :cop
@@ -112,15 +137,23 @@ function reopt(req::HTTP.Request)
                 chiller_dict = Dict(key=>getfield(model_inputs.s.existing_chiller, key) for key in inputs_with_defaults_from_chiller)
             else
                 chiller_dict = Dict()
-            end          
+            end
+            if !isnothing(model_inputs.s.site.outdoor_air_temperature_degF)
+                site_dict = Dict(:outdoor_air_temperature_degF => model_inputs.s.site.outdoor_air_temperature_degF)
+            else
+                site_dict = Dict()
+            end
 			inputs_with_defaults_set_in_julia = Dict(
 				"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_easiur),
 				"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert_or_cambium),
+                "Site" => site_dict,
                 "CHP" => chp_dict,
 				"SteamTurbine" => steamturbine_dict,
                 "GHP" => ghp_dict,
-                "ExistingChiller" => chiller_dict
-			)            
+                "ExistingChiller" => chiller_dict,
+                "ASHPSpaceHeater" => ashp_dict,
+                "ASHPWaterHeater" => ashp_wh_dict
+			)
 		catch e
 			@error "Something went wrong in REopt optimization!" exception=(e, catch_backtrace())
 			error_response["error"] = sprint(showerror, e) # append instead of rewrite?
@@ -511,6 +544,41 @@ function get_existing_chiller_default_cop(req::HTTP.Request)
     end
 end    
 
+function get_ashp_defaults(req::HTTP.Request)
+    d = JSON.parse(String(req.body))
+    defaults = nothing
+
+    if !("load_served" in keys(d))
+        @info("ASHP load served not provided. Using default of SpaceHeating.")
+        d["load_served"] = "SpaceHeating"
+    end 
+    if !("force_into_system" in keys(d))
+        @info("ASHP force_into_system not provided. Using default of false.")
+        d["force_into_system"] = false
+    elseif typeof(d["force_into_system"]) == String
+        d["force_into_system"] = parse(Bool, d["force_into_system"])
+    end 
+    
+    @info "Getting default ASHP attributes..."
+    error_response = Dict()
+    try
+        # Have to specify "REopt.get_existing..." because http function has the same name
+        defaults = reoptjl.get_ashp_defaults(d["load_served"],d["force_into_system"])      
+    catch e
+        @error "Something went wrong in the get_ashp_defaults endpoint" exception=(e, catch_backtrace())
+        error_response["error"] = sprint(showerror, e)
+    end
+    if isempty(error_response)
+        @info("ASHP defaults obtained.")
+        response = defaults
+        return HTTP.Response(200, JSON.json(response))
+    else
+        @info "An error occured in the get_ashp_defaults endpoint"
+        return HTTP.Response(500, JSON.json(error_response))
+    end
+end
+
+
 function job_no_xpress(req::HTTP.Request)
     error_response = Dict("error" => "V1 and V2 not available without Xpress installation.")
     return HTTP.Response(500, JSON.json(error_response))
@@ -537,4 +605,5 @@ HTTP.register!(ROUTER, "GET", "/ghp_efficiency_thermal_factors", ghp_efficiency_
 HTTP.register!(ROUTER, "GET", "/ground_conductivity", ground_conductivity)
 HTTP.register!(ROUTER, "GET", "/health", health)
 HTTP.register!(ROUTER, "GET", "/get_existing_chiller_default_cop", get_existing_chiller_default_cop)
+HTTP.register!(ROUTER, "GET", "/get_ashp_defaults", get_ashp_defaults)
 HTTP.serve(ROUTER, "0.0.0.0", 8081, reuseaddr=true)
