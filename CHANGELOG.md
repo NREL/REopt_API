@@ -26,7 +26,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## v3.9.5
+## v3.10.0
 ### Minor Updates
 #### Added
 - Added new model **ElectricHeaterInputs**
