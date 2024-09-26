@@ -6,7 +6,9 @@ from reoptjl.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorage
                         ExistingChillerOutputs, CoolingLoadOutputs, HeatingLoadOutputs,\
                         HotThermalStorageOutputs, ColdThermalStorageOutputs, OutageOutputs,\
                         REoptjlMessageOutputs, AbsorptionChillerOutputs, BoilerOutputs, SteamTurbineInputs, \
-                        SteamTurbineOutputs, GHPInputs, GHPOutputs, ExistingChillerInputs
+                        SteamTurbineOutputs, GHPInputs, GHPOutputs, ExistingChillerInputs, \
+                        ElectricHeaterOutputs, ASHPSpaceHeaterOutputs, ASHPWaterHeaterOutputs, \
+                        SiteInputs, ASHPSpaceHeaterInputs, ASHPWaterHeaterInputs
 import numpy as np
 import sys
 import traceback as tb
@@ -82,6 +84,12 @@ def process_results(results: dict, run_uuid: str) -> None:
                 SteamTurbineOutputs.create(meta=meta, **results["SteamTurbine"]).save()
             if "GHP" in results.keys():
                 GHPOutputs.create(meta=meta, **results["GHP"]).save() 
+            if "ElectricHeater" in results.keys():
+                ElectricHeaterOutputs.create(meta=meta, **results["ElectricHeater"]).save()
+            if "ASHPSpaceHeater" in results.keys():
+                ASHPSpaceHeaterOutputs.create(meta=meta, **results["ASHPSpaceHeater"]).save()
+            if "ASHPWaterHeater" in results.keys():
+                ASHPWaterHeaterOutputs.create(meta=meta, **results["ASHPWaterHeater"]).save()
             # TODO process rest of results
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -113,6 +121,9 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
         # get input models that need updating
         FinancialInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["Financial"])
         ElectricUtilityInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["ElectricUtility"])
+        
+        if inputs_to_update["Site"]:
+            SiteInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["Site"])
 
         if inputs_to_update["CHP"]:  # Will be an empty dictionary if CHP is not considered
             CHPInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["CHP"])
@@ -127,6 +138,10 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
                 ExistingChillerInputs.create(meta=meta, **inputs_to_update["ExistingChiller"]).save()
             else:
                 ExistingChillerInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["ExistingChiller"])
+        if inputs_to_update["ASHPSpaceHeater"]:
+            ASHPSpaceHeaterInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["ASHPSpaceHeater"])
+        if inputs_to_update["ASHPWaterHeater"]:
+            ASHPWaterHeaterInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["ASHPWaterHeater"])
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(
