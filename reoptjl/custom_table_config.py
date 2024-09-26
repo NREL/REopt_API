@@ -231,8 +231,8 @@ custom_table_webtool = [
     {
         "label"         : "GHP Ground Heat Exchanger Size (ft)",
         "key"           : "ghp_ground_heat_exchanger_size",
-        "bau_value"     : lambda df: safe_get(df, "outputs.GHP.ghpghx_chosen_outputs.length_boreholes_ft_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.GHP.ghpghx_chosen_outputs.length_boreholes_ft")
+        "bau_value"     : lambda df: safe_get(df, "outputs.GHP.ghpghx_chosen_outputs.length_boreholes_ft_bau")*safe_get(df, "outputs.GHP.ghpghx_chosen_outputs.number_of_boreholes_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.GHP.ghpghx_chosen_outputs.length_boreholes_ft")*safe_get(df, "outputs.GHP.ghpghx_chosen_outputs.number_of_boreholes")
     },
     # New ASHP entries
     {
