@@ -26,8 +26,8 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop 2024-09-24
-### Major Updates
+## v3.9.5
+### Minor Updates
 #### Added
 - Added new model **ElectricHeaterInputs**
 - Added new model **ElectricHeaterOutputs**
@@ -35,6 +35,7 @@ Classify the change according to the following categories:
 - Added new model **ASHPWaterHeaterOutputs**
 - Added new model **ASHPSpaceHeaterInputs**
 - Added new model **ASHPSpaceHeaterOutputs**
+
 ## v3.9.4
 ### Minor Updates
 #### Added
