@@ -225,14 +225,14 @@ custom_table_webtool = [
     {
         "label"         : "GHP Heat Pump Capacity (ton)",
         "key"           : "ghp_heat_pump_capacity",
-        "bau_value"     : lambda df: safe_get(df, "outputs.GHP.size_ton_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.GHP.size_ton")
+        "bau_value"     : lambda df: safe_get(df, "outputs.GHP.size_heat_pump_ton_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.GHP.size_heat_pump_ton")
     },
     {
         "label"         : "GHP Ground Heat Exchanger Size (ft)",
         "key"           : "ghp_ground_heat_exchanger_size",
-        "bau_value"     : lambda df: safe_get(df, "outputs.GHP.length_boreholes_ft_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.GHP.length_boreholes_ft")
+        "bau_value"     : lambda df: safe_get(df, "outputs.GHP.ghpghx_chosen_outputs.length_boreholes_ft_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.GHP.ghpghx_chosen_outputs.length_boreholes_ft")
     },
     # New ASHP entries
     {
@@ -939,7 +939,7 @@ custom_table_webtool = [
 - Note: It is safe to define bau cells that are not being used. If they are not associated with an entry in the custom table, they will be safely ignored
 '''
 
-# Define bau_cells configuration for calculations that reference bau cells
+# Define bau_cells configuration for calculations that reference bau cells, call these bau values within calculations
 bau_cells_config = {
     "grid_value"                : "Grid Purchased Electricity (kWh)",
     "elec_cost_value"           : "Purchased Electricity Cost ($)",
