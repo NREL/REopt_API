@@ -23,5 +23,6 @@ urlpatterns = [
     re_path(r'^schedule_stats/?$', reoviews.schedule_stats),
     re_path(r'^get_existing_chiller_default_cop/?$', views.get_existing_chiller_default_cop),
     re_path(r'^job/generate_custom_comparison_table/?$', views.generate_custom_comparison_table),
-    re_path(r'^get_ashp_defaults/?$', views.get_ashp_defaults)
+    re_path(r'^get_ashp_defaults/?$', views.get_ashp_defaults),
+    re_path(r'^job/(?P<run_uuid>[0-9a-f-]+)/proforma/?$', views.proforma_for_runuuid)
 ]
