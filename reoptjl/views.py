@@ -2,10 +2,11 @@
 from django.db import models
 from django.db.models import Q
 import uuid
+from typing import List, Dict, Any
 import sys
 import traceback as tb
 import re
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from reo.exceptions import UnexpectedError
 from reoptjl.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, GeneratorInputs, ElectricLoadInputs,\
     ElectricTariffInputs, ElectricUtilityInputs, SpaceHeatingLoadInputs, PVOutputs, ElectricStorageOutputs,\
@@ -21,9 +22,25 @@ from reoptjl.models import Settings, PVInputs, ElectricStorageInputs, WindInputs
 import os
 import requests
 import numpy as np
+import pandas as pd
 import json
 import logging
+
+from reoptjl.custom_table_helpers import flatten_dict, clean_data_dict, sum_vectors, colnum_string
+from reoptjl.custom_table_config import *
+
+import xlsxwriter
+from collections import defaultdict
+import io
+
 log = logging.getLogger(__name__)
+class CustomTableError(Exception):
+    pass
+
+def log_and_raise_error(task_name: str) -> None:
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    log.error(f"Error in {task_name}: {exc_value}, traceback: {tb.format_tb(exc_traceback)}")
+    raise CustomTableError(f"Error in {task_name}")
 
 def make_error_resp(msg):
     resp = dict()
@@ -120,7 +137,6 @@ def outputs(request):
 
     except Exception as e:
         return JsonResponse({"Error": "Unexpected error in help endpoint: {}".format(e.args[0])}, status=500)
-
 
 def results(request, run_uuid):
     """
@@ -1552,3 +1568,480 @@ def easiur_costs(request):
 #                                                                             tb.format_tb(exc_traceback))
 #         log.error(debug_msg)
 #         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
+
+##############################################################################################################################
+################################################# START Results Table #########################################################
+##############################################################################################################################
+def access_raw_data(run_uuids: List[str], request: Any) -> Dict[str, List[Dict[str, Any]]]:
+    try:
+        usermeta = UserProvidedMeta.objects.filter(meta__run_uuid__in=run_uuids).only('meta__run_uuid', 'description', 'address')
+        meta_data_dict = {um.meta.run_uuid: {"description": um.description, "address": um.address} for um in usermeta}
+
+        return {
+            "scenarios": [
+                {
+                    "run_uuid": str(run_uuid),
+                    "full_data": summarize_vector_data(request, run_uuid),
+                    "meta_data": meta_data_dict.get(run_uuid, {})
+                }
+                for run_uuid in run_uuids
+            ]
+        }
+    except Exception:
+        log_and_raise_error('access_raw_data')
+    
+def summarize_vector_data(request: Any, run_uuid: str) -> Dict[str, Any]:
+    try:
+        response = results(request, run_uuid)
+        if response.status_code == 200:
+            return sum_vectors(json.loads(response.content))
+        return {"error": f"Failed to fetch data for run_uuid {run_uuid}"}
+    except Exception:
+        log_and_raise_error('summarize_vector_data')
+
+def generate_data_dict(config: List[Dict[str, Any]], df_gen: Dict[str, Any]) -> Dict[str, List[Any]]:
+    try:
+        data_dict = defaultdict(list)
+        for entry in config:
+            val = entry["scenario_value"](df_gen)
+            data_dict[entry["label"]].append(val)
+        return data_dict
+    except Exception:
+        log_and_raise_error('generate_data_dict')
+
+def generate_reopt_dataframe(data_f: Dict[str, Any], scenario_name: str, config: List[Dict[str, Any]]) -> pd.DataFrame:
+    try:
+        scenario_name_str = str(scenario_name)
+        df_gen = flatten_dict(data_f)
+        data_dict = generate_data_dict(config, df_gen)
+        data_dict["Scenario"] = [scenario_name_str]
+        col_order = ["Scenario"] + [entry["label"] for entry in config]
+        return pd.DataFrame(data_dict)[col_order]
+    except Exception:
+        log_and_raise_error('generate_reopt_dataframe')
+
+def get_bau_values(scenarios: List[Dict[str, Any]], config: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+    try:
+        bau_values_per_scenario = {
+            scenario['run_uuid']: {entry["label"]: None for entry in config} for scenario in scenarios
+        }
+
+        for scenario in scenarios:
+            run_uuid = scenario['run_uuid']
+            df_gen = flatten_dict(scenario['full_data'])
+            for entry in config:
+                bau_func = entry.get("bau_value")
+                # Try to apply the BAU function, and if it fails, set value to 0
+                if bau_func:
+                    try:
+                        bau_values_per_scenario[run_uuid][entry["label"]] = bau_func(df_gen)
+                    except Exception:
+                        bau_values_per_scenario[run_uuid][entry["label"]] = 0
+                else:
+                    bau_values_per_scenario[run_uuid][entry["label"]] = 0 
+
+        return bau_values_per_scenario
+    except Exception:
+        log_and_raise_error('get_bau_values')
+
+def process_scenarios(scenarios: List[Dict[str, Any]], reopt_data_config: List[Dict[str, Any]]) -> pd.DataFrame:
+    try:
+        bau_values_per_scenario = get_bau_values(scenarios, reopt_data_config)
+        combined_df = pd.DataFrame()
+
+        for idx, scenario in enumerate(scenarios):
+            run_uuid = scenario['run_uuid']
+            df_result = generate_reopt_dataframe(scenario['full_data'], run_uuid, reopt_data_config)
+            df_result["Scenario"] = run_uuid
+
+            bau_data = {key: [value] for key, value in bau_values_per_scenario[run_uuid].items()}
+            bau_data["Scenario"] = [f"BAU {idx + 1}"]
+            df_bau = pd.DataFrame(bau_data)
+
+            combined_df = pd.concat([combined_df, df_bau, df_result], axis=0) if not combined_df.empty else pd.concat([df_bau, df_result], axis=0)
+
+        combined_df.reset_index(drop=True, inplace=True)
+        combined_df = pd.DataFrame(clean_data_dict(combined_df.to_dict(orient="list")))
+        return combined_df[["Scenario"] + [col for col in combined_df.columns if col != "Scenario"]]
+    except Exception:
+        log_and_raise_error('process_scenarios')
+
+def generate_results_table(request: Any) -> HttpResponse:
+    if request.method != 'GET':
+        return JsonResponse({"Error": "Method not allowed. This endpoint only supports GET requests."}, status=405)
+
+    try:
+        table_config_name = request.GET.get('table_config_name', 'custom_table_webtool')
+        run_uuids = [request.GET[key] for key in request.GET.keys() if key.startswith('run_uuid[')]
+        if not run_uuids:
+            return JsonResponse({"Error": "No run_uuids provided. Please include at least one run_uuid in the request."}, status=400)
+
+        for r_uuid in run_uuids:
+            try:
+                uuid.UUID(r_uuid)
+            except ValueError:
+                return JsonResponse({"Error": f"Invalid UUID format: {r_uuid}. Ensure that each run_uuid is a valid UUID."}, status=400)
+
+        target_custom_table = globals().get(table_config_name)
+        if not target_custom_table:
+            return JsonResponse({"Error": f"Invalid table configuration: {table_config_name}. Please provide a valid configuration name."}, status=400)
+
+        scenarios = access_raw_data(run_uuids, request)
+        final_df = process_scenarios(scenarios['scenarios'], target_custom_table)
+        final_df_transpose = final_df.transpose()
+        final_df_transpose.columns = final_df_transpose.iloc[0]
+        final_df_transpose = final_df_transpose.drop(final_df_transpose.index[0])
+
+        output = io.BytesIO()
+        generate_excel_workbook(final_df_transpose, target_custom_table, output)
+        output.seek(0)
+
+        response = HttpResponse(output, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="comparison_table.xlsx"'
+        return response
+    except CustomTableError as e:
+        return JsonResponse({"Error": str(e)}, status=500)
+    except Exception as e:
+        log.error(f"Unexpected error in generate_results_table: {e}")
+        return JsonResponse({"Error": "An unexpected error occurred. Please try again later."}, status=500)
+    
+def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]], output: io.BytesIO) -> None:
+    try:
+        workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+        # Add the 'Instructions' worksheet
+        instructions_worksheet = workbook.add_worksheet('Instructions')
+        
+        # Add the 'Results Table' worksheet
+        worksheet = workbook.add_worksheet('Results Table')
+
+        # Scenario header formatting with colors
+        scenario_colors = ['#0B5E90', '#00A4E4','#f46d43','#fdae61', '#66c2a5', '#d53e4f', '#3288bd']  
+        
+        scenario_formats = [workbook.add_format({'bold': True, 'bg_color': color, 'border': 1, 'align': 'center', 'font_color': 'white', 'font_size': 12}) for color in scenario_colors]
+
+        # Row alternating colors
+        row_colors = ['#d1d5d8', '#fafbfb']
+
+        # Base formats for errors, percentages, and currency values
+        error_format = workbook.add_format({'bg_color': '#FFC7CE', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': 'white', 'bold': True, 'font_size': 10})
+        base_percent_format = {'num_format': '0%', 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10}
+        base_currency_format = {'num_format': '$#,##0', 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10}
+
+        # Formula formats using dark blue background
+        formula_color = '#F8F8FF'
+        formula_format = workbook.add_format({'num_format': '#,##0','bg_color': '#0B5E90', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': formula_color, 'font_size': 10, 'italic': True})
+        formula_percent_format = workbook.add_format({'bg_color': '#0B5E90', 'num_format': '0%', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': formula_color, 'font_size': 10, 'italic': True})
+        formula_currency_format = workbook.add_format({'bg_color': '#0B5E90', 'num_format': '$#,##0', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': formula_color, 'font_size': 10, 'italic': True})
+
+        # Message format for formula cells (blue background with white text)
+        formula_message_format = workbook.add_format({
+            'bg_color': '#0B5E90',
+            'font_color': '#F8F8FF',
+            'align': 'center',
+            'valign': 'center',
+            'border': 1,
+            'bold': True,
+            'font_size': 12,
+            'italic': True
+        })
+
+        # Message format for input cells (yellow background)
+        input_message_format = workbook.add_format({
+            'bg_color': '#FFFC79',
+            'align': 'center',
+            'valign': 'center',
+            'border': 1,
+            'bold': True,
+            'font_size': 12
+        })
+        
+        # Separator format for rows that act as visual dividers
+        separator_format = workbook.add_format({'bg_color': '#5D6A71', 'bold': True, 'border': 1,'font_size': 11,'font_color': 'white'})
+        
+        input_cell_format = workbook.add_format({'bg_color': '#FFFC79', 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10})
+
+        # Combine row color with cell format, excluding formulas
+        def get_combined_format(label, row_color, is_formula=False):
+            if is_formula:
+                if '$' in label:
+                    return formula_currency_format
+                elif '%' in label:
+                    return formula_percent_format
+                return formula_format
+            base_data_format = {'num_format': '#,##0','bg_color': row_color, 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10}
+            if label:
+                if '$' in label:
+                    return workbook.add_format({**base_currency_format, 'bg_color': row_color})
+                elif '%' in label:
+                    return workbook.add_format({**base_percent_format, 'bg_color': row_color})
+            return workbook.add_format(base_data_format)
+
+        # Set column width for the first column (labels column)
+        worksheet.set_column(0, 0, 45)
+
+        # Setting column widths and writing headers for other columns
+        column_width = 25
+        columns_to_hide = set()
+
+        # Loop through BAU columns and check if all numerical values are identical across all BAU columns
+        bau_columns = [i for i, header in enumerate(df.columns) if "BAU" in header]
+
+        # Only proceed if there are BAU columns
+        if bau_columns:
+            identical_bau_columns = True  # Assume all BAU columns are identical unless proven otherwise
+
+            # Loop through each row and check the values across BAU columns
+            for row_num in range(len(df)):
+                row_values = df.iloc[row_num, bau_columns].values  # Get all BAU values for this row
+
+                # Filter only numerical values for comparison
+                numerical_values = [value for value in row_values if isinstance(value, (int, float))]
+
+                # Check if all numerical BAU values in this row are the same
+                if numerical_values:  # Proceed only if there are numerical values to compare
+                    first_bau_value = numerical_values[0]
+                    if not all(value == first_bau_value for value in numerical_values):
+                        identical_bau_columns = False
+                        break  # If any row has different BAU values, stop checking further
+
+            # If all BAU columns are identical across all rows, hide all but the first BAU column
+            if identical_bau_columns:
+                for col_num in bau_columns[1:]:
+                    columns_to_hide.add(col_num)
+
+        # Now set the column properties for hiding BAU columns and leaving others unchanged
+        for col_num, header in enumerate(df.columns):
+            if "BAU" in header and col_num in columns_to_hide:
+                # Hide the BAU columns that have been marked
+                worksheet.set_column(col_num + 1, col_num + 1, column_width, None, {'hidden': True})
+            else:
+                # Set the normal column width for non-hidden columns
+                worksheet.set_column(col_num + 1, col_num + 1, column_width)
+
+        # Write scenario headers
+        worksheet.write('A1', 'Scenario', scenario_formats[0])
+        for col_num, header in enumerate(df.columns):
+            worksheet.write(0, col_num + 1, header, scenario_formats[(col_num // 2) % (len(scenario_formats) - 1) + 1])
+
+        # Write variable names and data with full-row formatting
+        row_offset = 0  # To keep track of the current row in the worksheet
+        for row_num, entry in enumerate(custom_table):
+            key = entry['key']  # Extract the key from custom_table
+
+            # Check if the key contains 'separator'
+            if 'separator' in key.lower():
+                # Merge the first few columns for the separator
+                worksheet.merge_range(row_num + 1 + row_offset, 0, row_num + 1 + row_offset, len(df.columns), entry['label'], separator_format)
+            else:
+                # Regular row data writing
+                row_color = row_colors[(row_num + row_offset) % 2]  # Alternating row colors
+                
+                # Write the label in the first column
+                worksheet.write(row_num + 1 + row_offset, 0, entry['label'], workbook.add_format({'bg_color': row_color, 'border': 1}))
+
+                # Write the data for each column
+                variable = entry['label']  # Assuming df index or columns match the label
+                for col_num, value in enumerate(df.loc[variable]):
+                    is_formula = False  # Detect if this cell contains a formula
+                    if isinstance(value, str) and "formula" in value.lower():
+                        is_formula = True
+                    # Check if the key contains 'input' to apply the input format
+                    if 'input' in key.lower():
+                        cell_format = input_cell_format
+                    else:
+                        cell_format = get_combined_format(variable, row_color, is_formula)
+                    # cell_format = get_combined_format(variable, row_color, is_formula)
+                    if pd.isnull(value) or value == '-':
+                        worksheet.write(row_num + 1 + row_offset, col_num + 1, "", cell_format)
+                    else:
+                        worksheet.write(row_num + 1 + row_offset, col_num + 1, value, cell_format)
+
+        # Update the messages
+        formula_message_text = "Values with white text on blue background are formulas; please do not edit these cells."
+        input_message_text = "Yellow cells are inputs; you can modify these to explore consideration of additional Incentives or Costs, outside of REopt."
+
+        # Determine the placement of the messages
+        last_row = len(df.index) + 2  # Adjust the row index for message placement
+
+        # Place the first message about formulas
+        worksheet.merge_range(
+            last_row, 0,
+            last_row, len(df.columns),
+            formula_message_text, formula_message_format
+        )
+        last_row += 1  # Move to the next row for the second message
+
+        # Place the second message about inputs
+        worksheet.merge_range(
+            last_row, 0,
+            last_row, len(df.columns),
+            input_message_text, input_message_format
+        )
+
+        headers = {header: idx for idx, header in enumerate(df.index)}
+        headers["Scenario"] = 0
+
+        def get_bau_column(col):
+            return col - 1 if col > 1 else 1
+
+        relevant_columns = [entry["label"] for entry in custom_table]
+        relevant_calculations = [calc for calc in calculations_config if calc["name"] in relevant_columns]
+
+        logged_messages = set()
+        missing_entries = []
+
+        for col in range(2, len(df.columns) + 2):
+            # Skip BAU columns (BAU columns should not have formulas)
+            if col % 2 == 0:
+                continue  # Skip the BAU column
+
+            col_letter = colnum_string(col)
+            bau_col = get_bau_column(col)  # Get the corresponding BAU column
+            bau_col_letter = colnum_string(bau_col)  # Convert the column number to letter for Excel reference
+
+            bau_cells = {cell_name: f'{bau_col_letter}{headers[header] + 2}' for cell_name, header in bau_cells_config.items() if header in headers}
+
+            for calc in relevant_calculations:
+                try:
+                    if all(key in headers or key in bau_cells for key in calc["formula"].__code__.co_names):
+                        row_idx = headers.get(calc["name"])
+                        if row_idx is not None:
+                            formula = calc["formula"](col_letter, bau_cells, headers)
+                            cell_format = get_combined_format(calc["name"], row_colors[row_idx % 2], is_formula=True)
+                            worksheet.write_formula(row_idx + 1, col - 1, formula, cell_format)
+                        else:
+                            missing_entries.append(calc["name"])
+                    else:
+                        missing_keys = [key for key in calc["formula"].__code__.co_names if key not in headers and key not in bau_cells]
+                        if missing_keys:
+                            row_idx = headers.get(calc["name"])
+                            if row_idx is not None:
+                                worksheet.write(row_idx + 1, col - 1, "MISSING REFERENCE IN FORMULA", error_format)
+                            message = f"Cannot calculate '{calc['name']}' because the required fields are missing: {', '.join(missing_keys)} in the Table configuration provided. Update the Table to include {missing_keys}."
+                            if message not in logged_messages:
+                                logged_messages.add(message)
+                            missing_entries.append(calc["name"])
+                except KeyError as e:
+                    missing_field = str(e)
+                    message = f"Cannot calculate '{calc['name']}' because the field '{missing_field}' is missing in the Table configuration provided. Update the Table to include {missing_field}."
+                    if message not in logged_messages:
+                        logged_messages.add(message)
+                    row_idx = headers.get(calc["name"])
+                    if row_idx is not None:
+                        worksheet.write(row_idx + 1, col - 1, "MISSING REFERENCE IN FORMULA", error_format)
+                    missing_entries.append(calc["name"])
+
+        if missing_entries:
+            print(f"missing_entries in the input table: {', '.join(set(missing_entries))}. Please update the configuration if necessary.")
+
+        # Formats for the instructions sheet
+        title_format = workbook.add_format({
+            'bold': True, 'font_size': 18, 'align': 'left', 'valign': 'top'
+        })
+        subtitle_format = workbook.add_format({
+            'bold': True, 'font_size': 14, 'align': 'left', 'valign': 'top'
+        })
+        text_format = workbook.add_format({
+            'font_size': 12, 'align': 'left', 'valign': 'top', 'text_wrap': True
+        })
+        bullet_format = workbook.add_format({
+            'font_size': 12, 'align': 'left', 'valign': 'top', 'text_wrap': True, 'indent': 1
+        })
+
+        # Set column width and default row height
+        instructions_worksheet.set_column(0, 0, 100)
+        instructions_worksheet.set_default_row(15)
+
+        # Start writing instructions
+        row = 0
+        instructions_worksheet.write(row, 0, "Instructions for Using the REopt Results Table Workbook", title_format)
+        row += 2
+
+        # General Introduction
+        general_instructions = (
+            "Welcome to the REopt Results Table Workbook !\n\n"
+            "This workbook contains all of the results of your selected REopt analysis scenarios. "
+            "Please read the following instructions carefully to understand how to use this workbook effectively."
+        )
+        instructions_worksheet.write(row, 0, general_instructions, text_format)
+        row += 4
+
+        # Using the 'Results Table' Sheet with formula format
+        instructions_worksheet.write(row, 0, "Using the 'Results Table' Sheet", subtitle_format)
+        row += 1
+
+        custom_table_instructions = (
+            "The 'Results Table' sheet displays the scenario results of your REopt analysis in a structured format. "
+            "Here's how to use it:"
+        )
+        instructions_worksheet.write(row, 0, custom_table_instructions, text_format)
+        row += 2
+
+        steps = [
+            "1. Review the Results: Browse through the table to understand the system capacities, financial metrics, and energy production details.",
+            "2. Identify Editable Fields: Look for yellow cells in the 'Playground' section where you can input additional incentives or costs.",
+            "3. Avoid Editing Formulas: Do not edit cells with blue background and white text, as they contain important formulas.",
+            "4. Interpreting BAU and Optimal Scenarios: 'BAU' stands for 'Business as Usual' and represents the baseline scenario without any new investments. 'Optimal' scenarios show the results with optimized investments.",
+            "5. Hidden BAU Columns: If all scenarios are for a single site, identical BAU columns may be hidden except for the first one. For multiple sites where financials and energy consumption differ, all BAU columns will be visible."
+        ]
+        for step in steps:
+            instructions_worksheet.write(row, 0, step, bullet_format)
+            row += 1
+        row += 2
+
+        # Notes for the Playground Section
+        instructions_worksheet.write(row, 0, "Notes for the Playground Section", subtitle_format)
+        row += 1
+
+        playground_notes = (
+            "The 'Playground' section allows you to explore the effects of additional incentives or costs on your project's financial metrics."
+        )
+        instructions_worksheet.write(row, 0, playground_notes, text_format)
+        row += 2
+
+        playground_items = [
+            "- Net Upfront Capital Cost After Incentives but without MACRS ($): Represents the upfront cost after incentives, excluding MACRS depreciation benefits.",
+            "- Net Upfront Capital Cost After Incentives with MACRS ($): Includes MACRS depreciation, which provides tax benefits over the first 5-7 years.",
+            "- Additional Upfront Incentive ($): Input any additional grants or incentives (e.g., IAC grant, state or local grants).",
+            "- Additional Upfront Cost ($): Input any extra upfront costs (e.g., interconnection upgrades, microgrid components).",
+            "- Additional Yearly Cost Savings ($/year): Input any ongoing yearly savings (e.g., improved productivity, product sales with ESG designation).",
+            "- Additional Yearly Cost ($/year): Input any additional yearly costs (e.g., microgrid operation and maintenance).",
+            "- Modified Net Upfront Capital Cost ($): This value recalculates based on your inputs.",
+            "- Modified Simple Payback Period (years): Recalculates the payback period based on your inputs, providing a more conventional 'simple' payback period."
+        ]
+        for item in playground_items:
+            instructions_worksheet.write(row, 0, item, bullet_format)
+            row += 1
+        row += 2
+
+        # Unaddressable Heating Load and Emissions
+        instructions_worksheet.write(row, 0, "Unaddressable Heating Load and Emissions", subtitle_format)
+        row += 1
+
+        unaddressable_notes = (
+            "In scenarios where there is an unaddressable heating load (heating demand that cannot be served by the technologies analyzed), "
+            "the associated fuel consumption and emissions are not accounted for in the standard REopt outputs.\n\n"
+            "The 'Unaddressable CO₂ Emissions' row in the 'Playground' section includes these emissions, providing a more comprehensive view of your site's total emissions. "
+            "Including unaddressable emissions results in a lower percentage reduction because the total emissions baseline is larger."
+        )
+        instructions_worksheet.write(row, 0, unaddressable_notes, text_format)
+        row += 2
+
+        # Final Note and Contact Info
+        instructions_worksheet.write(row, 0, "Thank you for using the REopt Results Table Workbook!", text_format)
+        row += 1
+        contact_info = "For support or feedback, please contact the REopt team at reopt@nrel.gov."
+        instructions_worksheet.write(row, 0, contact_info, text_format)
+
+        # Freeze panes to keep the title visible
+        instructions_worksheet.freeze_panes(1, 0)
+
+        # Close the workbook after all sheets are written
+        workbook.close()
+        
+    except Exception:
+        log_and_raise_error('generate_excel_workbook')
+
+##############################################################################################################################
+################################################### END Results Table #########################################################
+##############################################################################################################################
