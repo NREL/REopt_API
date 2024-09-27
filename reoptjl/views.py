@@ -1379,6 +1379,7 @@ def generate_reopt_dataframe(data_f: Dict[str, Any], scenario_name: str, config:
 
 def get_bau_values(scenarios: List[Dict[str, Any]], config: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
     try:
+        # Initialize the dictionary with None values for each scenario and config entry
         bau_values_per_scenario = {
             scenario['run_uuid']: {entry["label"]: None for entry in config} for scenario in scenarios
         }
@@ -1388,13 +1389,19 @@ def get_bau_values(scenarios: List[Dict[str, Any]], config: List[Dict[str, Any]]
             df_gen = flatten_dict(scenario['full_data'])
             for entry in config:
                 bau_func = entry.get("bau_value")
+                # Try to apply the BAU function, and if it fails, set value to 0
                 if bau_func:
-                    bau_values_per_scenario[run_uuid][entry["label"]] = bau_func(df_gen)
+                    try:
+                        bau_values_per_scenario[run_uuid][entry["label"]] = bau_func(df_gen)
+                    except Exception:
+                        bau_values_per_scenario[run_uuid][entry["label"]] = 0  # Set to 0 if there's an issue with the function
+                else:
+                    bau_values_per_scenario[run_uuid][entry["label"]] = 0  # Set to 0 if bau_func is not defined
 
         return bau_values_per_scenario
     except Exception:
         log_and_raise_error('get_bau_values')
-        
+
 def process_scenarios(scenarios: List[Dict[str, Any]], reopt_data_config: List[Dict[str, Any]]) -> pd.DataFrame:
     try:
         bau_values_per_scenario = get_bau_values(scenarios, reopt_data_config)
@@ -1405,13 +1412,16 @@ def process_scenarios(scenarios: List[Dict[str, Any]], reopt_data_config: List[D
             df_result = generate_reopt_dataframe(scenario['full_data'], run_uuid, reopt_data_config)
             df_result["Scenario"] = run_uuid
 
+            # Convert BAU data to a dataframe and add Scenario identifier
             bau_data = {key: [value] for key, value in bau_values_per_scenario[run_uuid].items()}
             bau_data["Scenario"] = [f"BAU {idx + 1}"]
             df_bau = pd.DataFrame(bau_data)
 
+            # Concatenate the BAU and result dataframes
             combined_df = pd.concat([combined_df, df_bau, df_result], axis=0) if not combined_df.empty else pd.concat([df_bau, df_result], axis=0)
 
         combined_df.reset_index(drop=True, inplace=True)
+        # Clean data and reorganize columns, making sure Scenario comes first
         combined_df = pd.DataFrame(clean_data_dict(combined_df.to_dict(orient="list")))
         return combined_df[["Scenario"] + [col for col in combined_df.columns if col != "Scenario"]]
     except Exception:
