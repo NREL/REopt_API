@@ -917,11 +917,9 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [[deps.REopt]]
 deps = ["ArchGDAL", "CSV", "CoolProp", "DataFrames", "Dates", "DelimitedFiles", "HTTP", "JLD", "JSON", "JuMP", "LinDistFlow", "LinearAlgebra", "Logging", "MathOptInterface", "Requires", "Roots", "Statistics", "TestEnv"]
-git-tree-sha1 = "125328678059c4650d8024c0c25676527667eb22"
-repo-rev = "add-ASHP"
-repo-url = "https://github.com/NREL/REopt.jl.git"
+git-tree-sha1 = "32499f329265d270e9f77c8831892772b5fbf28f"
 uuid = "d36ad4e8-d74a-4f7a-ace1-eaea049febf6"
-version = "0.47.2"
+version = "0.48.0"
 
 [[deps.Random]]
 deps = ["SHA"]
