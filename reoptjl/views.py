@@ -1719,13 +1719,13 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
         # Base formats for errors, percentages, and currency values
         error_format = workbook.add_format({'bg_color': '#FFC7CE', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': 'white', 'bold': True, 'font_size': 10})
         base_percent_format = {'num_format': '0%', 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10}
-        base_currency_format = {'num_format': '$#,##0.00', 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10}
+        base_currency_format = {'num_format': '$#,##0', 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10}
 
         # Formula formats using dark blue background
         formula_color = '#F8F8FF'
-        formula_format = workbook.add_format({'num_format': '#,##0.00','bg_color': '#0B5E90', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': formula_color, 'font_size': 10, 'italic': True})
+        formula_format = workbook.add_format({'num_format': '#,##0','bg_color': '#0B5E90', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': formula_color, 'font_size': 10, 'italic': True})
         formula_percent_format = workbook.add_format({'bg_color': '#0B5E90', 'num_format': '0%', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': formula_color, 'font_size': 10, 'italic': True})
-        formula_currency_format = workbook.add_format({'bg_color': '#0B5E90', 'num_format': '$#,##0.00', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': formula_color, 'font_size': 10, 'italic': True})
+        formula_currency_format = workbook.add_format({'bg_color': '#0B5E90', 'num_format': '$#,##0', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': formula_color, 'font_size': 10, 'italic': True})
 
         # Message format for formula cells (blue background with white text)
         formula_message_format = workbook.add_format({
@@ -1762,7 +1762,7 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
                 elif '%' in label:
                     return formula_percent_format
                 return formula_format
-            base_data_format = {'num_format': '#,##0.00','bg_color': row_color, 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10}
+            base_data_format = {'num_format': '#,##0','bg_color': row_color, 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10}
             if label:
                 if '$' in label:
                     return workbook.add_format({**base_currency_format, 'bg_color': row_color})
