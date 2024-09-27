@@ -35,6 +35,7 @@ Classify the change according to the following categories:
 - Added new model **ASHPWaterHeaterOutputs**
 - Added new model **ASHPSpaceHeaterInputs**
 - Added new model **ASHPSpaceHeaterOutputs**
+- Added /job/generate_results_table endpoint which takes a list of run_uuid's and creates a results table spreadsheet to download in response
 
 ## v3.9.4
 ### Minor Updates

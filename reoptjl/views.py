@@ -1660,7 +1660,7 @@ def process_scenarios(scenarios: List[Dict[str, Any]], reopt_data_config: List[D
     except Exception:
         log_and_raise_error('process_scenarios')
 
-def generate_custom_comparison_table(request: Any) -> HttpResponse:
+def generate_results_table(request: Any) -> HttpResponse:
     if request.method != 'GET':
         return JsonResponse({"Error": "Method not allowed. This endpoint only supports GET requests."}, status=405)
 
@@ -1696,7 +1696,7 @@ def generate_custom_comparison_table(request: Any) -> HttpResponse:
     except CustomTableError as e:
         return JsonResponse({"Error": str(e)}, status=500)
     except Exception as e:
-        log.error(f"Unexpected error in generate_custom_comparison_table: {e}")
+        log.error(f"Unexpected error in generate_results_table: {e}")
         return JsonResponse({"Error": "An unexpected error occurred. Please try again later."}, status=500)
     
 def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]], output: io.BytesIO) -> None:
