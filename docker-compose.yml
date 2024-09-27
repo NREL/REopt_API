@@ -72,4 +72,3 @@ services:
       - "8081:8081"
     volumes:
       - ./julia_src:/opt/julia_src
-      
