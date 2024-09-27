@@ -1631,13 +1631,19 @@ def get_bau_values(scenarios: List[Dict[str, Any]], config: List[Dict[str, Any]]
             df_gen = flatten_dict(scenario['full_data'])
             for entry in config:
                 bau_func = entry.get("bau_value")
+                # Try to apply the BAU function, and if it fails, set value to 0
                 if bau_func:
-                    bau_values_per_scenario[run_uuid][entry["label"]] = bau_func(df_gen)
+                    try:
+                        bau_values_per_scenario[run_uuid][entry["label"]] = bau_func(df_gen)
+                    except Exception:
+                        bau_values_per_scenario[run_uuid][entry["label"]] = 0
+                else:
+                    bau_values_per_scenario[run_uuid][entry["label"]] = 0 
 
         return bau_values_per_scenario
     except Exception:
         log_and_raise_error('get_bau_values')
-        
+
 def process_scenarios(scenarios: List[Dict[str, Any]], reopt_data_config: List[Dict[str, Any]]) -> pd.DataFrame:
     try:
         bau_values_per_scenario = get_bau_values(scenarios, reopt_data_config)
