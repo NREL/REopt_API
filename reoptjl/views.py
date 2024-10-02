@@ -2,11 +2,13 @@
 from django.db import models
 from django.http import HttpResponse
 import io
+from django.db.models import Q
 import uuid
+from typing import List, Dict, Any
 import sys
 import traceback as tb
 import re
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from reo.exceptions import UnexpectedError
 from reoptjl.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, GeneratorInputs, ElectricLoadInputs,\
     ElectricTariffInputs, ElectricUtilityInputs, SpaceHeatingLoadInputs, PVOutputs, ElectricStorageOutputs,\
@@ -16,17 +18,32 @@ from reoptjl.models import Settings, PVInputs, ElectricStorageInputs, WindInputs
     CoolingLoadOutputs, HeatingLoadOutputs, REoptjlMessageOutputs, HotThermalStorageInputs, HotThermalStorageOutputs,\
     ColdThermalStorageInputs, ColdThermalStorageOutputs, AbsorptionChillerInputs, AbsorptionChillerOutputs,\
     FinancialInputs, FinancialOutputs, UserUnlinkedRuns, BoilerInputs, BoilerOutputs, SteamTurbineInputs, \
-    SteamTurbineOutputs, GHPInputs, GHPOutputs, ProcessHeatLoadInputs
+    SteamTurbineOutputs, GHPInputs, GHPOutputs, ProcessHeatLoadInputs, ElectricHeaterInputs, ElectricHeaterOutputs, \
+    ASHPSpaceHeaterInputs, ASHPSpaceHeaterOutputs, ASHPWaterHeaterInputs, ASHPWaterHeaterOutputs, PortfolioUnlinkedRuns
+
 import os
 import requests
 import numpy as np
+import pandas as pd
 import json
 import logging
-import pandas as pd
-import xlsxwriter
 from reoptjl.proforma_helper import proforma_helper
 
+from reoptjl.custom_table_helpers import flatten_dict, clean_data_dict, sum_vectors, colnum_string
+from reoptjl.custom_table_config import *
+
+import xlsxwriter
+from collections import defaultdict
+import io
+
 log = logging.getLogger(__name__)
+class CustomTableError(Exception):
+    pass
+
+def log_and_raise_error(task_name: str) -> None:
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    log.error(f"Error in {task_name}: {exc_value}, traceback: {tb.format_tb(exc_traceback)}")
+    raise CustomTableError(f"Error in {task_name}")
 
 def make_error_resp(msg):
     resp = dict()
@@ -65,6 +82,10 @@ def help(request):
         d["AbsorptionChiller"] = AbsorptionChillerInputs.info_dict(AbsorptionChillerInputs)
         d["SteamTurbine"] = SteamTurbineInputs.info_dict(SteamTurbineInputs)
         d["GHP"] = GHPInputs.info_dict(GHPInputs)
+        d["ElectricHeater"] = ElectricHeaterInputs.info_dict(ElectricHeaterInputs)
+        d["ASHPSpaceHeater"] = ASHPSpaceHeaterInputs.info_dict(ASHPSpaceHeaterInputs)
+        d["ASHPWaterHeater"] = ASHPWaterHeaterInputs.info_dict(ASHPWaterHeaterInputs)
+
         return JsonResponse(d)
 
     except Exception as e:
@@ -110,13 +131,15 @@ def outputs(request):
         d["CHP"] = CHPOutputs.info_dict(CHPOutputs)
         d["AbsorptionChiller"] = AbsorptionChillerOutputs.info_dict(AbsorptionChillerOutputs)
         d["GHP"] = GHPOutputs.info_dict(GHPOutputs)
+        d["ElectricHeater"] = ElectricHeaterOutputs.info_dict(ElectricHeaterOutputs)
+        d["ASHPSpaceHeater"] = ASHPSpaceHeaterOutputs.info_dict(ASHPSpaceHeaterOutputs)
+        d["ASHPWaterHeater"] = ASHPWaterHeaterOutputs.info_dict(ASHPWaterHeaterOutputs)
         d["Messages"] = REoptjlMessageOutputs.info_dict(REoptjlMessageOutputs)
         d["SteamTurbine"] = SteamTurbineOutputs.info_dict(SteamTurbineOutputs)
         return JsonResponse(d)
 
     except Exception as e:
         return JsonResponse({"Error": "Unexpected error in help endpoint: {}".format(e.args[0])}, status=500)
-
 
 def results(request, run_uuid):
     """
@@ -232,8 +255,18 @@ def results(request, run_uuid):
 
     try: r["inputs"]["SteamTurbine"] = meta.SteamTurbineInputs.dict
     except: pass
+
     try: r["inputs"]["GHP"] = meta.GHPInputs.dict
     except: pass    
+
+    try: r["inputs"]["ElectricHeater"] = meta.ElectricHeaterInputs.dict
+    except: pass    
+
+    try: r["inputs"]["ASHPSpaceHeater"] = meta.ASHPSpaceHeaterInputs.dict
+    except: pass    
+
+    try: r["inputs"]["ASHPWaterHeater"] = meta.ASHPWaterHeaterInputs.dict
+    except: pass  
 
     try:
         r["outputs"] = dict()
@@ -306,6 +339,12 @@ def results(request, run_uuid):
         try: r["outputs"]["SteamTurbine"] = meta.SteamTurbineOutputs.dict
         except: pass
         try: r["outputs"]["GHP"] = meta.GHPOutputs.dict
+        except: pass
+        try: r["outputs"]["ElectricHeater"] = meta.ElectricHeaterOutputs.dict
+        except: pass    
+        try: r["outputs"]["ASHPSpaceHeater"] = meta.ASHPSpaceHeaterOutputs.dict
+        except: pass  
+        try: r["outputs"]["ASHPWaterHeater"] = meta.ASHPWaterHeaterOutputs.dict
         except: pass
 
         for d in r["outputs"].values():
@@ -445,6 +484,38 @@ def absorption_chiller_defaults(request):
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in absorption_chiller_defaults endpoint. Check log for more."}, status=500)
+
+def get_ashp_defaults(request):
+    inputs = {}
+    if request.GET.get("load_served") not in [None, "", []]:
+        inputs["load_served"] = request.GET.get("load_served")
+    else: 
+        return JsonResponse({"Error: Missing input load_served in get_ashp_defualts endpoint."}, status=400)
+    if request.GET.get("force_into_system") not in [None, "", []]:
+        inputs["force_into_system"] = request.GET.get("force_into_system")
+    else: 
+        return JsonResponse({"Error: Missing input force_into_system in get_ashp_defualts endpoint."}, status=400)
+    try:
+        julia_host = os.environ.get('JULIA_HOST', "julia")
+        http_jl_response = requests.get("http://" + julia_host + ":8081/get_ashp_defaults/", json=inputs)
+        response = JsonResponse(
+            http_jl_response.json(),
+            status=http_jl_response.status_code
+        )
+        return response
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=400)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=400)
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected error in get_ashp_defaults endpoint. Check log for more."}, status=500)
 
 
 def simulated_load(request):
@@ -627,7 +698,151 @@ def get_existing_chiller_default_cop(request):
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in get_existing_chiller_default_cop endpoint. Check log for more."}, status=500)
 
+
+# Inputs: 1-many run_uuid strings as single comma separated array
+# Output: list of JSON summaries
+# This function will query requested UUIDs and return their summary back to requestor
+def summary_by_runuuids(request):
+
+    run_uuids = json.loads(request.body)['run_uuids']
+
+    if len(run_uuids) == 0:
+        return JsonResponse({'Error': 'Must provide one or more run_uuids'}, status=400)
+
+    # Validate that user UUID is valid.
+    for r_uuid in run_uuids:
+
+        if type(r_uuid) != str:
+            return JsonResponse({'Error': 'Provided run_uuids type error, must be string. ' + str(r_uuid)}, status=400)
+        
+        try:
+            uuid.UUID(r_uuid)  # raises ValueError if not valid uuid
+
+        except ValueError as e:
+            if e.args[0] == "badly formed hexadecimal UUID string":
+                return JsonResponse({"Error": str(e.message)}, status=404)
+            else:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary_by_runuuids', run_uuids=run_uuids)
+                err.save_to_db()
+                return JsonResponse({"Error": str(err.message)}, status=404)
     
+    try:
+        # Dictionary to store all results. Primary key = run_uuid and secondary key = data values from each uuid
+        summary_dict = dict()
+
+        # Create Querysets: Select all objects associate with a user_uuid, Order by `created` column
+        scenarios = APIMeta.objects.filter(run_uuid__in=run_uuids).only(
+            'run_uuid',
+            'status',
+            'created'
+        ).order_by("-created")
+
+        if len(scenarios) > 0: # this should be either 0 or 1 as there are no duplicate run_uuids
+            
+            # Get summary information for all selected scenarios
+            summary_dict = queryset_for_summary(scenarios, summary_dict)
+
+            # Create eventual response dictionary
+            return_dict = dict()
+            # return_dict['user_uuid'] = user_uuid # no user uuid
+            scenario_summaries = []
+            for k in summary_dict.keys():
+                scenario_summaries.append(summary_dict[k])
+            
+            return_dict['scenarios'] = scenario_summaries
+
+            response = JsonResponse(return_dict, status=200, safe=False)
+            return response
+        else:
+            response = JsonResponse({"Error": "No scenarios found for run_uuids '{}'".format(run_uuids)}, content_type='application/json', status=404)
+            return response
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary_by_runuuids', run_uuids=run_uuids)
+        err.save_to_db()
+        return JsonResponse({"Error": err.message}, status=404)
+
+# Inputs: 1-many run_uuid strings as single comma separated array
+# Inputs: 1-many portfolio_uuid strings as single comma separated array
+# Output: 200 or OK
+# This function link independent run_uuids to a portfolio_uuid. The portfolio ID doesnt have to exit, run_uuids must exist in DB.
+def link_run_uuids_to_portfolio_uuid(request):
+
+    request_body = json.loads(request.body)
+    run_uuids = request_body['run_uuids']
+    por_uuids = request_body['portfolio_uuids']
+
+    if len(run_uuids) != len(por_uuids):
+        return JsonResponse({'Error': 'Must provide one or more run_uuids and the same number of portfolio_uuids'}, status=400)
+
+    # Validate that all UUIDs are valid.
+    for r_uuid in run_uuids+por_uuids:
+
+        if type(r_uuid) != str:
+            return JsonResponse({'Error': 'Provided uuid type error, must be string. ' + str(r_uuid)}, status=400)
+        
+        try:
+            uuid.UUID(r_uuid)  # raises ValueError if not valid uuid
+
+        except ValueError as e:
+            if e.args[0] == "badly formed hexadecimal UUID string":
+                return JsonResponse({"Error": str(e.message)}, status=404)
+            else:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary_by_runuuids', run_uuids=run_uuids)
+                err.save_to_db()
+                return JsonResponse({"Error": str(err.message)}, status=404)
+    
+    try:
+        
+        for r_uuid,p_uuid in zip(run_uuids, por_uuids):
+        
+            # Create Querysets: Select all objects associate with a user_uuid, Order by `created` column
+            scenario = APIMeta.objects.filter(run_uuid=r_uuid).only(
+                'run_uuid',
+                'portfolio_uuid'
+            )
+
+            if len(scenario) > 0:
+
+                for s in scenario:
+                    s.portfolio_uuid = p_uuid
+                    s.save()
+
+                # Existing portfolio runs could have been "unlinked" from portfolio
+                # so they are independent and show up in summary endpoint. If these runs
+                # are re-linked with a portfolio, their portfolio_id is updated above.
+                # BUT these runs could still show up under `Summary` results (niche case)
+                # because they are present in PortfolioUnlinkedRuns.
+                # Below, these runs are removed from PortfolioUnlinkedRuns
+                # so they are "linked" to a portfolio and do not show up under `Summary`
+                if PortfolioUnlinkedRuns.objects.filter(run_uuid=r_uuid).exists():
+                    obj = PortfolioUnlinkedRuns.objects.get(run_uuid=r_uuid)
+                    obj.delete()
+                    resp_str = ' and deleted run entry from PortfolioUnlinkedRuns'
+                else:
+                    resp_str = ''
+            else:
+                # Stop processing on first bad run_uuid
+                response = JsonResponse({"Error": "No scenarios found for run_uuid '{}'".format(r_uuid)}, content_type='application/json', status=500)
+                return response
+        
+        response = JsonResponse({"Success": "All runs associated with given portfolios'{}'".format(resp_str)}, status=200, safe=False)
+        return response
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary_by_runuuids', run_uuids=run_uuids)
+        err.save_to_db()
+        return JsonResponse({"Error": err.message}, status=404)
+
+# Inputs: 1 user_uuid
+# Output: Return summary information for all runs associated with the user
+# Output: Portfolio_uuid for returned runs must be "" (empty) or in unlinked portfolio runs (i.e. user unlinked a run from a portforlio)
+# Output: Remove any user unlinked runs and finally order by `created` column
+# Returns all user runs not actively tied to a portfolio
 def summary(request, user_uuid):
     """
     Retrieve a summary of scenarios for given user_uuid
@@ -676,15 +891,20 @@ def summary(request, user_uuid):
         # Dictionary to store all results. Primary key = run_uuid and secondary key = data values from each uuid
         summary_dict = dict()
 
-        # Create Querysets: Select all objects associate with a user_uuid, Order by `created` column
-        scenarios = APIMeta.objects.filter(user_uuid=user_uuid).only(
+        # Create Querysets: Select all objects associate with a user_uuid. portfolio_uuid must be "" (empty) or in unlinked portfolio runs
+        # Remove any unlinked runs and finally order by `created` column
+        api_metas = APIMeta.objects.filter(
+            Q(user_uuid=user_uuid),
+            Q(portfolio_uuid = "") | Q(run_uuid__in=[i.run_uuid for i in PortfolioUnlinkedRuns.objects.filter(user_uuid=user_uuid)])
+        ).exclude(
+            run_uuid__in=[i.run_uuid for i in UserUnlinkedRuns.objects.filter(user_uuid=user_uuid)]
+        ).only(
             'run_uuid',
+            'user_uuid',
+            'portfolio_uuid',
             'status',
             'created'
         ).order_by("-created")
-
-        unlinked_run_uuids = [i.run_uuid for i in UserUnlinkedRuns.objects.filter(user_uuid=user_uuid)]
-        api_metas = [s for s in scenarios if s.run_uuid not in unlinked_run_uuids]
 
         if len(api_metas) > 0:
             summary_dict = queryset_for_summary(api_metas, summary_dict)
@@ -700,6 +920,7 @@ def summary(request, user_uuid):
         err.save_to_db()
         return JsonResponse({"Error": err.message}, status=404)
 
+# Same as Summary but by chunks
 def summary_by_chunk(request, user_uuid, chunk):
 
     # Dictionary to store all results. Primary key = run_uuid and secondary key = data values from each uuid
@@ -740,15 +961,17 @@ def summary_by_chunk(request, user_uuid, chunk):
         except:
             return JsonResponse({"Error": "Chunk number must be a 1-indexed integer."}, status=400)
         
-        # Create Querysets: Select all objects associate with a user_uuid, Order by `created` column
-        scenarios = APIMeta.objects.filter(user_uuid=user_uuid).only(
+        # Create Querysets: Select all objects associate with a user_uuid, portfolio_uuid="", Order by `created` column
+        api_metas = APIMeta.objects.filter(
+            Q(user_uuid=user_uuid),
+            Q(portfolio_uuid = "") | Q(run_uuid__in=[i.run_uuid for i in PortfolioUnlinkedRuns.objects.filter(user_uuid=user_uuid)])
+        ).exclude(
+            run_uuid__in=[i.run_uuid for i in UserUnlinkedRuns.objects.filter(user_uuid=user_uuid)]
+        ).only(
             'run_uuid',
             'status',
             'created'
         ).order_by("-created")
-
-        unlinked_run_uuids = [i.run_uuid for i in UserUnlinkedRuns.objects.filter(user_uuid=user_uuid)]
-        api_metas = [s for s in scenarios if s.run_uuid not in unlinked_run_uuids]
         
         total_scenarios = len(api_metas)
         if total_scenarios == 0:
@@ -809,7 +1032,8 @@ def create_summary_dict(user_uuid:str,summary_dict:dict):
     
     return return_dict
 
-# Query all django models for all run_uuids found for given user_uuid
+# Query all django models for 1 or more run_uuids provided in inputs
+# Return summary_dict which contains summary information for valid run_uuids
 def queryset_for_summary(api_metas,summary_dict:dict):
 
     # Loop over all the APIMetas associated with a user_uuid, do something if needed
@@ -818,6 +1042,8 @@ def queryset_for_summary(api_metas,summary_dict:dict):
         summary_dict[str(m.run_uuid)] = dict()
         summary_dict[str(m.run_uuid)]['status'] = m.status
         summary_dict[str(m.run_uuid)]['run_uuid'] = str(m.run_uuid)
+        summary_dict[str(m.run_uuid)]['user_uuid'] = str(m.user_uuid)
+        summary_dict[str(m.run_uuid)]['portfolio_uuid'] = str(m.portfolio_uuid)
         summary_dict[str(m.run_uuid)]['created'] = str(m.created)
         
     run_uuids = summary_dict.keys()
@@ -837,24 +1063,69 @@ def queryset_for_summary(api_metas,summary_dict:dict):
     utility = ElectricUtilityInputs.objects.filter(meta__run_uuid__in=run_uuids).only(
         'meta__run_uuid',
         'outage_start_time_step',
+        'outage_end_time_step',
+        'outage_durations',
         'outage_start_time_steps'
     )
     if len(utility) > 0:
         for m in utility:
-            if len(m.outage_start_time_steps) == 0:
-                summary_dict[str(m.meta.run_uuid)]['focus'] = "Financial"
+
+            if m.outage_start_time_step is None:
+                if len(m.outage_start_time_steps) == 0:
+                    summary_dict[str(m.meta.run_uuid)]['focus'] = "Financial"
+                else:
+                    summary_dict[str(m.meta.run_uuid)]['focus'] = "Resilience"
+                    summary_dict[str(m.meta.run_uuid)]['outage_duration'] = m.outage_durations[0] # all durations are same.
             else:
+                # outage start timestep was provided, is 1 or more
+                summary_dict[str(m.meta.run_uuid)]['outage_duration'] = m.outage_end_time_step - m.outage_start_time_step + 1
                 summary_dict[str(m.meta.run_uuid)]['focus'] = "Resilience"
+    
+    site = SiteOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'lifecycle_emissions_reduction_CO2_fraction'
+    )
+    if len(site) > 0:
+        for m in site:
+            try:
+                summary_dict[str(m.meta.run_uuid)]['emission_reduction_pct'] = m.lifecycle_emissions_reduction_CO2_fraction
+            except:
+                summary_dict[str(m.meta.run_uuid)]['emission_reduction_pct'] = 0.0
+
+    
+    site_inputs = SiteInputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'renewable_electricity_min_fraction',
+        'renewable_electricity_max_fraction'
+    )
+    if len(site_inputs) > 0:
+        for m in site_inputs:
+            try: # can be NoneType
+                if m.renewable_electricity_min_fraction > 0:
+                    summary_dict[str(m.meta.run_uuid)]['focus'] = "Clean-energy"
+            except:
+                pass # is NoneType
+
+            try: # can be NoneType
+                if m.renewable_electricity_max_fraction > 0:
+                    summary_dict[str(m.meta.run_uuid)]['focus'] = "Clean-energy"
+            except:
+                pass # is NoneType
 
     # Use settings to find out if it is an off-grid evaluation
     settings = Settings.objects.filter(meta__run_uuid__in=run_uuids).only(
         'meta__run_uuid',
-        'off_grid_flag'
+        'off_grid_flag',
+        'include_climate_in_objective',
+        'include_health_in_objective'
     )
     if len(settings) > 0:
         for m in settings:
             if m.off_grid_flag:
                 summary_dict[str(m.meta.run_uuid)]['focus'] = "Off-grid"
+            
+            if m.include_climate_in_objective or m.include_health_in_objective:
+                summary_dict[str(m.meta.run_uuid)]['focus'] = "Clean-energy"
 
     tariffInputs = ElectricTariffInputs.objects.filter(meta__run_uuid__in=run_uuids).only(
         'meta__run_uuid',
@@ -901,7 +1172,13 @@ def queryset_for_summary(api_metas,summary_dict:dict):
     fin = FinancialOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
         'meta__run_uuid',
         'npv',
-        'initial_capital_costs_after_incentives'
+        'initial_capital_costs_after_incentives',
+        'lcc',
+        'replacements_present_cost_after_tax',
+        'lifecycle_capital_costs_plus_om_after_tax',
+        'lifecycle_generation_tech_capital_costs',
+        'lifecycle_storage_capital_costs',
+        'lifecycle_production_incentive_after_tax'
     )
     if len(fin) > 0:
         for m in fin:
@@ -910,7 +1187,11 @@ def queryset_for_summary(api_metas,summary_dict:dict):
             else:
                 summary_dict[str(m.meta.run_uuid)]['npv_us_dollars'] = None
             summary_dict[str(m.meta.run_uuid)]['net_capital_costs'] = m.initial_capital_costs_after_incentives
-    
+            summary_dict[str(m.meta.run_uuid)]['lcc_us_dollars'] = m.lcc
+            summary_dict[str(m.meta.run_uuid)]['replacements_present_cost_after_tax'] = m.replacements_present_cost_after_tax
+            summary_dict[str(m.meta.run_uuid)]['lifecycle_capital_costs_plus_om_after_tax'] = m.lifecycle_capital_costs_plus_om_after_tax
+            summary_dict[str(m.meta.run_uuid)]['total_capital_costs'] = m.lifecycle_generation_tech_capital_costs + m.lifecycle_storage_capital_costs - m.lifecycle_production_incentive_after_tax
+
     batt = ElectricStorageOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
         'meta__run_uuid',
         'size_kw',
@@ -984,9 +1265,59 @@ def queryset_for_summary(api_metas,summary_dict:dict):
                     summary_dict[str(m.meta.run_uuid)]['ghp_heating_ton'] = m.size_wwhp_heating_pump_ton
                 summary_dict[str(m.meta.run_uuid)]['ghp_n_bores'] = m.ghpghx_chosen_outputs['number_of_boreholes']
     
+    elecHeater = ElectricHeaterOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+            'meta__run_uuid',
+            'size_mmbtu_per_hour'
+    )
+    if len(elecHeater) > 0:
+        for m in elecHeater:
+            summary_dict[str(m.meta.run_uuid)]['electric_heater_mmbtu_per_hour'] = m.size_mmbtu_per_hour
+
+    ashpSpaceHeater = ASHPSpaceHeaterOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+            'meta__run_uuid',
+            'size_ton'
+    )
+    if len(ashpSpaceHeater) > 0:
+        for m in ashpSpaceHeater:
+            summary_dict[str(m.meta.run_uuid)]['ASHPSpace_heater_ton'] = m.size_ton
+
+    ashpWaterHeater = ASHPWaterHeaterOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+            'meta__run_uuid',
+            'size_ton'
+    )
+    if len(ashpWaterHeater) > 0:
+        for m in ashpWaterHeater:
+            summary_dict[str(m.meta.run_uuid)]['ASHPWater_heater_ton'] = m.size_ton
+    hottes = HotThermalStorageOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'size_gal'
+    )
+    if len(hottes) > 0:
+        for m in hottes:
+            summary_dict[str(m.meta.run_uuid)]['hottes_gal'] = m.size_gal
+    
+    coldtes = ColdThermalStorageOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'size_gal'
+    )
+    if len(coldtes) > 0:
+        for m in coldtes:
+            summary_dict[str(m.meta.run_uuid)]['coldtes_gal'] = m.size_gal
+    
+
+    abschillTon = AbsorptionChillerOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'size_ton'
+    )
+    if len(abschillTon) > 0:
+        for m in abschillTon:
+            summary_dict[str(m.meta.run_uuid)]['absorpchl_ton'] = m.size_ton
+
     return summary_dict
 
-# Unlink a user_uuid from a run_uuid.
+# Inputs: user_uuid and run_uuid to unlink from the user
+# Outputs: 200 or OK
+# add an entry to the PortfolioUnlinkedRuns for the given portfolio_uuid and run_uuid, indicating they have been unlinked
 def unlink(request, user_uuid, run_uuid):
 
     """
@@ -1030,6 +1361,62 @@ def unlink(request, user_uuid, run_uuid):
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         err = UnexpectedError(exc_type, exc_value, exc_traceback, task='unlink', user_uuid=user_uuid)
+        err.save_to_db()
+        return JsonResponse({"Error": err.message}, status=404)
+
+# Inputs: user_uuid, portfolio_uuid, and run_uuid to unlink from the portfolio
+# Outputs: 200 or OK
+# add an entry to the PortfolioUnlinkedRuns for the given portfolio_uuid and run_uuid, indicating they have been unlinked
+def unlink_from_portfolio(request, user_uuid, portfolio_uuid, run_uuid):
+
+    """
+    add an entry to the PortfolioUnlinkedRuns for the given portfolio_uuid and run_uuid
+    """
+    content = {'user_uuid': user_uuid, 'portfolio_uuid': portfolio_uuid, 'run_uuid': run_uuid}
+    for name, check_id in content.items():
+        try:
+            uuid.UUID(check_id)  # raises ValueError if not valid uuid
+        except ValueError as e:
+            if e.args[0] == "badly formed hexadecimal UUID string":
+                return JsonResponse({"Error": "{} {}".format(name, e.args[0]) }, status=400)
+            else:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                if name == 'user_uuid':
+                    err = UnexpectedError(exc_type, exc_value, exc_traceback, task='unlink', user_uuid=check_id)
+                if name == 'portfolio_uuid':
+                    err = UnexpectedError(exc_type, exc_value, exc_traceback, task='unlink', portfolio_uuid=check_id)
+                if name == 'run_uuid':
+                    err = UnexpectedError(exc_type, exc_value, exc_traceback, task='unlink', run_uuid=check_id)
+                err.save_to_db()
+                return JsonResponse({"Error": str(err.message)}, status=400)
+    
+    try:
+        if not APIMeta.objects.filter(portfolio_uuid=portfolio_uuid).exists():
+            return JsonResponse({"Error": "Portfolio {} does not exist".format(portfolio_uuid)}, status=400)
+
+
+        runs = APIMeta.objects.filter(run_uuid=run_uuid)
+        if len(runs) == 0:
+            return JsonResponse({"Error": "Run {} does not exist".format(run_uuid)}, status=400)
+        else:
+            if runs[0].portfolio_uuid != portfolio_uuid:
+                return JsonResponse({"Error": "Run {} is not associated with portfolio {}".format(run_uuid, portfolio_uuid)}, status=400)
+            elif runs[0].user_uuid != user_uuid:
+                return JsonResponse({"Error": "Run {} is not associated with user {}".format(run_uuid, user_uuid)}, status=400)
+            else:
+                pass
+        
+        # Run exists and is tied to porfolio provided in request, hence unlink now.
+        if not PortfolioUnlinkedRuns.objects.filter(run_uuid=run_uuid).exists():
+            PortfolioUnlinkedRuns.create(**content)
+            return JsonResponse({"Success": "run_uuid {} unlinked from portfolio_uuid {}".format(run_uuid, portfolio_uuid)},
+                                status=201)
+        else:
+            return JsonResponse({"Nothing changed": "run_uuid {} is already unlinked from portfolio_uuid {}".format(run_uuid, portfolio_uuid)},
+                                status=208)
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='unlink', portfolio_uuid=portfolio_uuid)
         err.save_to_db()
         return JsonResponse({"Error": err.message}, status=404)
 
@@ -1237,3 +1624,480 @@ def proforma_for_runuuid(request, run_uuid):
 #                                                                             tb.format_tb(exc_traceback))
 #         log.error(debug_msg)
 #         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
+
+##############################################################################################################################
+################################################# START Results Table #########################################################
+##############################################################################################################################
+def access_raw_data(run_uuids: List[str], request: Any) -> Dict[str, List[Dict[str, Any]]]:
+    try:
+        usermeta = UserProvidedMeta.objects.filter(meta__run_uuid__in=run_uuids).only('meta__run_uuid', 'description', 'address')
+        meta_data_dict = {um.meta.run_uuid: {"description": um.description, "address": um.address} for um in usermeta}
+
+        return {
+            "scenarios": [
+                {
+                    "run_uuid": str(run_uuid),
+                    "full_data": summarize_vector_data(request, run_uuid),
+                    "meta_data": meta_data_dict.get(run_uuid, {})
+                }
+                for run_uuid in run_uuids
+            ]
+        }
+    except Exception:
+        log_and_raise_error('access_raw_data')
+    
+def summarize_vector_data(request: Any, run_uuid: str) -> Dict[str, Any]:
+    try:
+        response = results(request, run_uuid)
+        if response.status_code == 200:
+            return sum_vectors(json.loads(response.content))
+        return {"error": f"Failed to fetch data for run_uuid {run_uuid}"}
+    except Exception:
+        log_and_raise_error('summarize_vector_data')
+
+def generate_data_dict(config: List[Dict[str, Any]], df_gen: Dict[str, Any]) -> Dict[str, List[Any]]:
+    try:
+        data_dict = defaultdict(list)
+        for entry in config:
+            val = entry["scenario_value"](df_gen)
+            data_dict[entry["label"]].append(val)
+        return data_dict
+    except Exception:
+        log_and_raise_error('generate_data_dict')
+
+def generate_reopt_dataframe(data_f: Dict[str, Any], scenario_name: str, config: List[Dict[str, Any]]) -> pd.DataFrame:
+    try:
+        scenario_name_str = str(scenario_name)
+        df_gen = flatten_dict(data_f)
+        data_dict = generate_data_dict(config, df_gen)
+        data_dict["Scenario"] = [scenario_name_str]
+        col_order = ["Scenario"] + [entry["label"] for entry in config]
+        return pd.DataFrame(data_dict)[col_order]
+    except Exception:
+        log_and_raise_error('generate_reopt_dataframe')
+
+def get_bau_values(scenarios: List[Dict[str, Any]], config: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+    try:
+        bau_values_per_scenario = {
+            scenario['run_uuid']: {entry["label"]: None for entry in config} for scenario in scenarios
+        }
+
+        for scenario in scenarios:
+            run_uuid = scenario['run_uuid']
+            df_gen = flatten_dict(scenario['full_data'])
+            for entry in config:
+                bau_func = entry.get("bau_value")
+                # Try to apply the BAU function, and if it fails, set value to 0
+                if bau_func:
+                    try:
+                        bau_values_per_scenario[run_uuid][entry["label"]] = bau_func(df_gen)
+                    except Exception:
+                        bau_values_per_scenario[run_uuid][entry["label"]] = 0
+                else:
+                    bau_values_per_scenario[run_uuid][entry["label"]] = 0 
+
+        return bau_values_per_scenario
+    except Exception:
+        log_and_raise_error('get_bau_values')
+
+def process_scenarios(scenarios: List[Dict[str, Any]], reopt_data_config: List[Dict[str, Any]]) -> pd.DataFrame:
+    try:
+        bau_values_per_scenario = get_bau_values(scenarios, reopt_data_config)
+        combined_df = pd.DataFrame()
+
+        for idx, scenario in enumerate(scenarios):
+            run_uuid = scenario['run_uuid']
+            df_result = generate_reopt_dataframe(scenario['full_data'], run_uuid, reopt_data_config)
+            df_result["Scenario"] = run_uuid
+
+            bau_data = {key: [value] for key, value in bau_values_per_scenario[run_uuid].items()}
+            bau_data["Scenario"] = [f"BAU {idx + 1}"]
+            df_bau = pd.DataFrame(bau_data)
+
+            combined_df = pd.concat([combined_df, df_bau, df_result], axis=0) if not combined_df.empty else pd.concat([df_bau, df_result], axis=0)
+
+        combined_df.reset_index(drop=True, inplace=True)
+        combined_df = pd.DataFrame(clean_data_dict(combined_df.to_dict(orient="list")))
+        return combined_df[["Scenario"] + [col for col in combined_df.columns if col != "Scenario"]]
+    except Exception:
+        log_and_raise_error('process_scenarios')
+
+def generate_results_table(request: Any) -> HttpResponse:
+    if request.method != 'GET':
+        return JsonResponse({"Error": "Method not allowed. This endpoint only supports GET requests."}, status=405)
+
+    try:
+        table_config_name = request.GET.get('table_config_name', 'custom_table_webtool')
+        run_uuids = [request.GET[key] for key in request.GET.keys() if key.startswith('run_uuid[')]
+        if not run_uuids:
+            return JsonResponse({"Error": "No run_uuids provided. Please include at least one run_uuid in the request."}, status=400)
+
+        for r_uuid in run_uuids:
+            try:
+                uuid.UUID(r_uuid)
+            except ValueError:
+                return JsonResponse({"Error": f"Invalid UUID format: {r_uuid}. Ensure that each run_uuid is a valid UUID."}, status=400)
+
+        target_custom_table = globals().get(table_config_name)
+        if not target_custom_table:
+            return JsonResponse({"Error": f"Invalid table configuration: {table_config_name}. Please provide a valid configuration name."}, status=400)
+
+        scenarios = access_raw_data(run_uuids, request)
+        final_df = process_scenarios(scenarios['scenarios'], target_custom_table)
+        final_df_transpose = final_df.transpose()
+        final_df_transpose.columns = final_df_transpose.iloc[0]
+        final_df_transpose = final_df_transpose.drop(final_df_transpose.index[0])
+
+        output = io.BytesIO()
+        generate_excel_workbook(final_df_transpose, target_custom_table, output)
+        output.seek(0)
+
+        response = HttpResponse(output, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="comparison_table.xlsx"'
+        return response
+    except CustomTableError as e:
+        return JsonResponse({"Error": str(e)}, status=500)
+    except Exception as e:
+        log.error(f"Unexpected error in generate_results_table: {e}")
+        return JsonResponse({"Error": "An unexpected error occurred. Please try again later."}, status=500)
+    
+def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]], output: io.BytesIO) -> None:
+    try:
+        workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+        # Add the 'Instructions' worksheet
+        instructions_worksheet = workbook.add_worksheet('Instructions')
+        
+        # Add the 'Results Table' worksheet
+        worksheet = workbook.add_worksheet('Results Table')
+
+        # Scenario header formatting with colors
+        scenario_colors = ['#0B5E90', '#00A4E4','#f46d43','#fdae61', '#66c2a5', '#d53e4f', '#3288bd']  
+        
+        scenario_formats = [workbook.add_format({'bold': True, 'bg_color': color, 'border': 1, 'align': 'center', 'font_color': 'white', 'font_size': 12}) for color in scenario_colors]
+
+        # Row alternating colors
+        row_colors = ['#d1d5d8', '#fafbfb']
+
+        # Base formats for errors, percentages, and currency values
+        error_format = workbook.add_format({'bg_color': '#FFC7CE', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': 'white', 'bold': True, 'font_size': 10})
+        base_percent_format = {'num_format': '0%', 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10}
+        base_currency_format = {'num_format': '$#,##0', 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10}
+
+        # Formula formats using dark blue background
+        formula_color = '#F8F8FF'
+        formula_format = workbook.add_format({'num_format': '#,##0','bg_color': '#0B5E90', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': formula_color, 'font_size': 10, 'italic': True})
+        formula_percent_format = workbook.add_format({'bg_color': '#0B5E90', 'num_format': '0%', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': formula_color, 'font_size': 10, 'italic': True})
+        formula_currency_format = workbook.add_format({'bg_color': '#0B5E90', 'num_format': '$#,##0', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': formula_color, 'font_size': 10, 'italic': True})
+
+        # Message format for formula cells (blue background with white text)
+        formula_message_format = workbook.add_format({
+            'bg_color': '#0B5E90',
+            'font_color': '#F8F8FF',
+            'align': 'center',
+            'valign': 'center',
+            'border': 1,
+            'bold': True,
+            'font_size': 12,
+            'italic': True
+        })
+
+        # Message format for input cells (yellow background)
+        input_message_format = workbook.add_format({
+            'bg_color': '#FFFC79',
+            'align': 'center',
+            'valign': 'center',
+            'border': 1,
+            'bold': True,
+            'font_size': 12
+        })
+        
+        # Separator format for rows that act as visual dividers
+        separator_format = workbook.add_format({'bg_color': '#5D6A71', 'bold': True, 'border': 1,'font_size': 11,'font_color': 'white'})
+        
+        input_cell_format = workbook.add_format({'bg_color': '#FFFC79', 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10})
+
+        # Combine row color with cell format, excluding formulas
+        def get_combined_format(label, row_color, is_formula=False):
+            if is_formula:
+                if '$' in label:
+                    return formula_currency_format
+                elif '%' in label:
+                    return formula_percent_format
+                return formula_format
+            base_data_format = {'num_format': '#,##0','bg_color': row_color, 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10}
+            if label:
+                if '$' in label:
+                    return workbook.add_format({**base_currency_format, 'bg_color': row_color})
+                elif '%' in label:
+                    return workbook.add_format({**base_percent_format, 'bg_color': row_color})
+            return workbook.add_format(base_data_format)
+
+        # Set column width for the first column (labels column)
+        worksheet.set_column(0, 0, 45)
+
+        # Setting column widths and writing headers for other columns
+        column_width = 25
+        columns_to_hide = set()
+
+        # Loop through BAU columns and check if all numerical values are identical across all BAU columns
+        bau_columns = [i for i, header in enumerate(df.columns) if "BAU" in header]
+
+        # Only proceed if there are BAU columns
+        if bau_columns:
+            identical_bau_columns = True  # Assume all BAU columns are identical unless proven otherwise
+
+            # Loop through each row and check the values across BAU columns
+            for row_num in range(len(df)):
+                row_values = df.iloc[row_num, bau_columns].values  # Get all BAU values for this row
+
+                # Filter only numerical values for comparison
+                numerical_values = [value for value in row_values if isinstance(value, (int, float))]
+
+                # Check if all numerical BAU values in this row are the same
+                if numerical_values:  # Proceed only if there are numerical values to compare
+                    first_bau_value = numerical_values[0]
+                    if not all(value == first_bau_value for value in numerical_values):
+                        identical_bau_columns = False
+                        break  # If any row has different BAU values, stop checking further
+
+            # If all BAU columns are identical across all rows, hide all but the first BAU column
+            if identical_bau_columns:
+                for col_num in bau_columns[1:]:
+                    columns_to_hide.add(col_num)
+
+        # Now set the column properties for hiding BAU columns and leaving others unchanged
+        for col_num, header in enumerate(df.columns):
+            if "BAU" in header and col_num in columns_to_hide:
+                # Hide the BAU columns that have been marked
+                worksheet.set_column(col_num + 1, col_num + 1, column_width, None, {'hidden': True})
+            else:
+                # Set the normal column width for non-hidden columns
+                worksheet.set_column(col_num + 1, col_num + 1, column_width)
+
+        # Write scenario headers
+        worksheet.write('A1', 'Scenario', scenario_formats[0])
+        for col_num, header in enumerate(df.columns):
+            worksheet.write(0, col_num + 1, header, scenario_formats[(col_num // 2) % (len(scenario_formats) - 1) + 1])
+
+        # Write variable names and data with full-row formatting
+        row_offset = 0  # To keep track of the current row in the worksheet
+        for row_num, entry in enumerate(custom_table):
+            key = entry['key']  # Extract the key from custom_table
+
+            # Check if the key contains 'separator'
+            if 'separator' in key.lower():
+                # Merge the first few columns for the separator
+                worksheet.merge_range(row_num + 1 + row_offset, 0, row_num + 1 + row_offset, len(df.columns), entry['label'], separator_format)
+            else:
+                # Regular row data writing
+                row_color = row_colors[(row_num + row_offset) % 2]  # Alternating row colors
+                
+                # Write the label in the first column
+                worksheet.write(row_num + 1 + row_offset, 0, entry['label'], workbook.add_format({'bg_color': row_color, 'border': 1}))
+
+                # Write the data for each column
+                variable = entry['label']  # Assuming df index or columns match the label
+                for col_num, value in enumerate(df.loc[variable]):
+                    is_formula = False  # Detect if this cell contains a formula
+                    if isinstance(value, str) and "formula" in value.lower():
+                        is_formula = True
+                    # Check if the key contains 'input' to apply the input format
+                    if 'input' in key.lower():
+                        cell_format = input_cell_format
+                    else:
+                        cell_format = get_combined_format(variable, row_color, is_formula)
+                    # cell_format = get_combined_format(variable, row_color, is_formula)
+                    if pd.isnull(value) or value == '-':
+                        worksheet.write(row_num + 1 + row_offset, col_num + 1, "", cell_format)
+                    else:
+                        worksheet.write(row_num + 1 + row_offset, col_num + 1, value, cell_format)
+
+        # Update the messages
+        formula_message_text = "Values with white text on blue background are formulas; please do not edit these cells."
+        input_message_text = "Yellow cells are inputs; you can modify these to explore consideration of additional Incentives or Costs, outside of REopt."
+
+        # Determine the placement of the messages
+        last_row = len(df.index) + 2  # Adjust the row index for message placement
+
+        # Place the first message about formulas
+        worksheet.merge_range(
+            last_row, 0,
+            last_row, len(df.columns),
+            formula_message_text, formula_message_format
+        )
+        last_row += 1  # Move to the next row for the second message
+
+        # Place the second message about inputs
+        worksheet.merge_range(
+            last_row, 0,
+            last_row, len(df.columns),
+            input_message_text, input_message_format
+        )
+
+        headers = {header: idx for idx, header in enumerate(df.index)}
+        headers["Scenario"] = 0
+
+        def get_bau_column(col):
+            return col - 1 if col > 1 else 1
+
+        relevant_columns = [entry["label"] for entry in custom_table]
+        relevant_calculations = [calc for calc in calculations_config if calc["name"] in relevant_columns]
+
+        logged_messages = set()
+        missing_entries = []
+
+        for col in range(2, len(df.columns) + 2):
+            # Skip BAU columns (BAU columns should not have formulas)
+            if col % 2 == 0:
+                continue  # Skip the BAU column
+
+            col_letter = colnum_string(col)
+            bau_col = get_bau_column(col)  # Get the corresponding BAU column
+            bau_col_letter = colnum_string(bau_col)  # Convert the column number to letter for Excel reference
+
+            bau_cells = {cell_name: f'{bau_col_letter}{headers[header] + 2}' for cell_name, header in bau_cells_config.items() if header in headers}
+
+            for calc in relevant_calculations:
+                try:
+                    if all(key in headers or key in bau_cells for key in calc["formula"].__code__.co_names):
+                        row_idx = headers.get(calc["name"])
+                        if row_idx is not None:
+                            formula = calc["formula"](col_letter, bau_cells, headers)
+                            cell_format = get_combined_format(calc["name"], row_colors[row_idx % 2], is_formula=True)
+                            worksheet.write_formula(row_idx + 1, col - 1, formula, cell_format)
+                        else:
+                            missing_entries.append(calc["name"])
+                    else:
+                        missing_keys = [key for key in calc["formula"].__code__.co_names if key not in headers and key not in bau_cells]
+                        if missing_keys:
+                            row_idx = headers.get(calc["name"])
+                            if row_idx is not None:
+                                worksheet.write(row_idx + 1, col - 1, "MISSING REFERENCE IN FORMULA", error_format)
+                            message = f"Cannot calculate '{calc['name']}' because the required fields are missing: {', '.join(missing_keys)} in the Table configuration provided. Update the Table to include {missing_keys}."
+                            if message not in logged_messages:
+                                logged_messages.add(message)
+                            missing_entries.append(calc["name"])
+                except KeyError as e:
+                    missing_field = str(e)
+                    message = f"Cannot calculate '{calc['name']}' because the field '{missing_field}' is missing in the Table configuration provided. Update the Table to include {missing_field}."
+                    if message not in logged_messages:
+                        logged_messages.add(message)
+                    row_idx = headers.get(calc["name"])
+                    if row_idx is not None:
+                        worksheet.write(row_idx + 1, col - 1, "MISSING REFERENCE IN FORMULA", error_format)
+                    missing_entries.append(calc["name"])
+
+        if missing_entries:
+            print(f"missing_entries in the input table: {', '.join(set(missing_entries))}. Please update the configuration if necessary.")
+
+        # Formats for the instructions sheet
+        title_format = workbook.add_format({
+            'bold': True, 'font_size': 18, 'align': 'left', 'valign': 'top'
+        })
+        subtitle_format = workbook.add_format({
+            'bold': True, 'font_size': 14, 'align': 'left', 'valign': 'top'
+        })
+        text_format = workbook.add_format({
+            'font_size': 12, 'align': 'left', 'valign': 'top', 'text_wrap': True
+        })
+        bullet_format = workbook.add_format({
+            'font_size': 12, 'align': 'left', 'valign': 'top', 'text_wrap': True, 'indent': 1
+        })
+
+        # Set column width and default row height
+        instructions_worksheet.set_column(0, 0, 100)
+        instructions_worksheet.set_default_row(15)
+
+        # Start writing instructions
+        row = 0
+        instructions_worksheet.write(row, 0, "Instructions for Using the REopt Results Table Workbook", title_format)
+        row += 2
+
+        # General Introduction
+        general_instructions = (
+            "Welcome to the REopt Results Table Workbook !\n\n"
+            "This workbook contains all of the results of your selected REopt analysis scenarios. "
+            "Please read the following instructions carefully to understand how to use this workbook effectively."
+        )
+        instructions_worksheet.write(row, 0, general_instructions, text_format)
+        row += 4
+
+        # Using the 'Results Table' Sheet with formula format
+        instructions_worksheet.write(row, 0, "Using the 'Results Table' Sheet", subtitle_format)
+        row += 1
+
+        custom_table_instructions = (
+            "The 'Results Table' sheet displays the scenario results of your REopt analysis in a structured format. "
+            "Here's how to use it:"
+        )
+        instructions_worksheet.write(row, 0, custom_table_instructions, text_format)
+        row += 2
+
+        steps = [
+            "1. Review the Results: Browse through the table to understand the system capacities, financial metrics, and energy production details.",
+            "2. Identify Editable Fields: Look for yellow cells in the 'Playground' section where you can input additional incentives or costs.",
+            "3. Avoid Editing Formulas: Do not edit cells with blue background and white text, as they contain important formulas.",
+            "4. Interpreting BAU and Optimal Scenarios: 'BAU' stands for 'Business as Usual' and represents the baseline scenario without any new investments. 'Optimal' scenarios show the results with optimized investments.",
+            "5. Hidden BAU Columns: If all scenarios are for a single site, identical BAU columns may be hidden except for the first one. For multiple sites where financials and energy consumption differ, all BAU columns will be visible."
+        ]
+        for step in steps:
+            instructions_worksheet.write(row, 0, step, bullet_format)
+            row += 1
+        row += 2
+
+        # Notes for the Playground Section
+        instructions_worksheet.write(row, 0, "Notes for the Playground Section", subtitle_format)
+        row += 1
+
+        playground_notes = (
+            "The 'Playground' section allows you to explore the effects of additional incentives or costs on your project's financial metrics."
+        )
+        instructions_worksheet.write(row, 0, playground_notes, text_format)
+        row += 2
+
+        playground_items = [
+            "- Net Upfront Capital Cost After Incentives but without MACRS ($): Represents the upfront cost after incentives, excluding MACRS depreciation benefits.",
+            "- Net Upfront Capital Cost After Incentives with MACRS ($): Includes MACRS depreciation, which provides tax benefits over the first 5-7 years.",
+            "- Additional Upfront Incentive ($): Input any additional grants or incentives (e.g., IAC grant, state or local grants).",
+            "- Additional Upfront Cost ($): Input any extra upfront costs (e.g., interconnection upgrades, microgrid components).",
+            "- Additional Yearly Cost Savings ($/year): Input any ongoing yearly savings (e.g., improved productivity, product sales with ESG designation).",
+            "- Additional Yearly Cost ($/year): Input any additional yearly costs (e.g., microgrid operation and maintenance).",
+            "- Modified Net Upfront Capital Cost ($): This value recalculates based on your inputs.",
+            "- Modified Simple Payback Period (years): Recalculates the payback period based on your inputs, providing a more conventional 'simple' payback period."
+        ]
+        for item in playground_items:
+            instructions_worksheet.write(row, 0, item, bullet_format)
+            row += 1
+        row += 2
+
+        # Unaddressable Heating Load and Emissions
+        instructions_worksheet.write(row, 0, "Unaddressable Heating Load and Emissions", subtitle_format)
+        row += 1
+
+        unaddressable_notes = (
+            "In scenarios where there is an unaddressable heating load (heating demand that cannot be served by the technologies analyzed), "
+            "the associated fuel consumption and emissions are not accounted for in the standard REopt outputs.\n\n"
+            "The 'Unaddressable CO₂ Emissions' row in the 'Playground' section includes these emissions, providing a more comprehensive view of your site's total emissions. "
+            "Including unaddressable emissions results in a lower percentage reduction because the total emissions baseline is larger."
+        )
+        instructions_worksheet.write(row, 0, unaddressable_notes, text_format)
+        row += 2
+
+        # Final Note and Contact Info
+        instructions_worksheet.write(row, 0, "Thank you for using the REopt Results Table Workbook!", text_format)
+        row += 1
+        contact_info = "For support or feedback, please contact the REopt team at reopt@nrel.gov."
+        instructions_worksheet.write(row, 0, contact_info, text_format)
+
+        # Freeze panes to keep the title visible
+        instructions_worksheet.freeze_panes(1, 0)
+
+        # Close the workbook after all sheets are written
+        workbook.close()
+        
+    except Exception:
+        log_and_raise_error('generate_excel_workbook')
+
+##############################################################################################################################
+################################################### END Results Table #########################################################
+##############################################################################################################################

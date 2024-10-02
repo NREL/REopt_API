@@ -26,6 +26,29 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.10.0
+### Minor Updates
+#### Added
+- Added new model **ElectricHeaterInputs**
+- Added new model **ElectricHeaterOutputs**
+- Added new model **ASHPWaterHeaterInputs**
+- Added new model **ASHPWaterHeaterOutputs**
+- Added new model **ASHPSpaceHeaterInputs**
+- Added new model **ASHPSpaceHeaterOutputs**
+- Added /job/generate_results_table endpoint which takes a list of run_uuid's and creates a results table spreadsheet to download in response
+
+## v3.9.4
+### Minor Updates
+#### Added
+- **portfolio_uuid** is now a field that can be added to API objects
+- **PortfolioUnlinkedRuns** tracks which run_uuids were separated from their portfolios
+- `/user/<user_uuid>/unlink_from_portfolio/` endpoint (calls `views.unlink_from_portfolio`)
+- `/summary_by_runuuids/` endpoint (calls `views.summary_by_runuuids`)
+- `/link_run_to_portfolios/` endpoint (calls `views.link_run_to_portfolios`)
+
+#### Changed
+- `UnexpectedError`, added portfolio_uuid as a field that can be returned in case of errors
+
 ## v3.9.3
 ### Minor Updates
 #### Added
