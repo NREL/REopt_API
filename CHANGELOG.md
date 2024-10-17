@@ -26,6 +26,14 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.10.1
+### Minor Updates
+##### Fixed
+- ASHP min allowable sizing
+- Prevent battery simultaneous charge/discharge
+##### Changed
+- Updated GHP to allow costs to be calculated for GHP and GHX separately and without running GhpGhx.jl, for district energy applications
+
 ## v3.10.0
 ### Minor Updates
 #### Added
