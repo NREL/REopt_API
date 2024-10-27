@@ -7138,14 +7138,14 @@ class ProcessHeatLoadInputs(BaseModel, models.Model):
 
     possible_sets = [
         ["fuel_loads_mmbtu_per_hour"],
-        ["industry_reference_name", "monthly_mmbtu"],
-        ["annual_mmbtu", "industry_reference_name"],
-        ["industry_reference_name"],
-        ["blended_industry_reference_names", "blended_industry_reference_percents"],
+        ["industrial_reference_name", "monthly_mmbtu"],
+        ["annual_mmbtu", "industrial_reference_name"],
+        ["industrial_reference_name"],
+        ["blended_industrial_reference_names", "blended_industrial_reference_percents"],
         []
     ]
 
-    INDUSTRY_REFERENCE_NAME = models.TextChoices('INDUSTRY_REFERENCE_NAME', (
+    INDUSTRIAL_REFERENCE_NAME = models.TextChoices('INDUSTRIAL_REFERENCE_NAME', (
         'Chemical '
         'Warehouse '
         'FlatLoad '
@@ -7167,10 +7167,10 @@ class ProcessHeatLoadInputs(BaseModel, models.Model):
                    "to scale simulated default industry load profile [MMBtu]")
     )
 
-    industry_reference_name = models.TextField(
+    industrial_reference_name = models.TextField(
         null=True,
         blank=True,
-        choices=INDUSTRY_REFERENCE_NAME.choices,
+        choices=INDUSTRIAL_REFERENCE_NAME.choices,
         help_text=("Industrial process heat load reference facility/sector type")
     )
 
@@ -7199,19 +7199,19 @@ class ProcessHeatLoadInputs(BaseModel, models.Model):
                    )
     )
 
-    blended_industry_reference_names = ArrayField(
+    blended_industrial_reference_names = ArrayField(
         models.TextField(
-            choices=INDUSTRY_REFERENCE_NAME.choices,
+            choices=INDUSTRIAL_REFERENCE_NAME.choices,
             blank=True,
             null=True
         ),
         default=list,
         blank=True,
-        help_text=("Used in concert with blended_industry_reference_percents to create a blended load profile from multiple "
+        help_text=("Used in concert with blended_industrial_reference_percents to create a blended load profile from multiple "
                    "Industrial reference facility/sector types.")
     )
 
-    blended_industry_reference_percents = ArrayField(
+    blended_industrial_reference_percents = ArrayField(
         models.FloatField(
             null=True, blank=True,
             validators=[
@@ -7221,7 +7221,7 @@ class ProcessHeatLoadInputs(BaseModel, models.Model):
         ),
         default=list,
         blank=True,
-        help_text=("Used in concert with blended_industry_reference_names to create a blended load profile from multiple "
+        help_text=("Used in concert with blended_industrial_reference_names to create a blended load profile from multiple "
                    "Industrial reference facility/sector types. Must sum to 1.0.")
     )
 
@@ -7247,15 +7247,15 @@ class ProcessHeatLoadInputs(BaseModel, models.Model):
             error_messages["required inputs"] = \
                 "Must provide at least one set of valid inputs from {}.".format(self.possible_sets)
 
-        if len(self.blended_industry_reference_names) > 0 and self.industry_reference_name == "":
-            if len(self.blended_industry_reference_names) != len(self.blended_industry_reference_percents):
-                error_messages["blended_industry_reference_names"] = \
-                    "The number of blended_industry_reference_names must equal the number of blended_industry_reference_percents."
-            if not math.isclose(sum(self.blended_industry_reference_percents),  1.0):
-                error_messages["blended_industry_reference_percents"] = "Sum must = 1.0."
+        if len(self.blended_industrial_reference_names) > 0 and self.industrial_reference_name == "":
+            if len(self.blended_industrial_reference_names) != len(self.blended_industrial_reference_percents):
+                error_messages["blended_industrial_reference_names"] = \
+                    "The number of blended_industrial_reference_names must equal the number of blended_industrial_reference_percents."
+            if not math.isclose(sum(self.blended_industrial_reference_percents),  1.0):
+                error_messages["blended_industrial_reference_percents"] = "Sum must = 1.0."
 
-        if self.industry_reference_name != "" or \
-                len(self.blended_industry_reference_names) > 0:
+        if self.industrial_reference_name != "" or \
+                len(self.blended_industrial_reference_names) > 0:
             self.year = 2017  # the validator provides an "info" message regarding this)
         
         if self.addressable_load_fraction == None:
