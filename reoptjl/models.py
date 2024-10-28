@@ -1244,6 +1244,11 @@ class ElectricLoadInputs(BaseModel, models.Model):
                    "equal to zero. "
                    )
     )
+    normalize_and_scale_load_profile_input = models.BooleanField(
+        blank=True,
+        default=True,
+        help_text=("Takes the input loads_kw and normalizes and scales it to annual or monthly energy inputs.")
+    )
     critical_loads_kw = ArrayField(
         models.FloatField(blank=True),
         default=list, blank=True,
@@ -6896,6 +6901,12 @@ class SpaceHeatingLoadInputs(BaseModel, models.Model):
                    )
     )
 
+    normalize_and_scale_load_profile_input = models.BooleanField(
+        blank=True,
+        default=True,
+        help_text=("Takes the input fuel_loads_mmbtu_per_hour and normalizes and scales it to annual or monthly energy inputs.")
+    )
+
     blended_doe_reference_names = ArrayField(
         models.TextField(
             choices=DOE_REFERENCE_NAME.choices,
@@ -7055,7 +7066,12 @@ class DomesticHotWaterLoadInputs(BaseModel, models.Model):
                    "520 samples), or 15 minute (35,040 samples). All non-net load values must be greater than or "
                    "equal to zero. "
                    )
+    )
 
+    normalize_and_scale_load_profile_input = models.BooleanField(
+        blank=True,
+        default=True,
+        help_text=("Takes the input fuel_loads_mmbtu_per_hour and normalizes and scales it to annual or monthly energy inputs.")
     )
 
     blended_doe_reference_names = ArrayField(
@@ -7197,6 +7213,12 @@ class ProcessHeatLoadInputs(BaseModel, models.Model):
                    "520 samples), or 15 minute (35,040 samples). All non-net load values must be greater than or "
                    "equal to zero. "
                    )
+    )
+
+    normalize_and_scale_load_profile_input = models.BooleanField(
+        blank=True,
+        default=True,
+        help_text=("Takes the input fuel_loads_mmbtu_per_hour and normalizes and scales it to annual or monthly energy inputs.")
     )
 
     blended_industrial_reference_names = ArrayField(
