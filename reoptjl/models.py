@@ -1246,7 +1246,7 @@ class ElectricLoadInputs(BaseModel, models.Model):
     )
     normalize_and_scale_load_profile_input = models.BooleanField(
         blank=True,
-        default=True,
+        default=False,
         help_text=("Takes the input loads_kw and normalizes and scales it to annual or monthly energy inputs.")
     )
     critical_loads_kw = ArrayField(
@@ -6903,7 +6903,7 @@ class SpaceHeatingLoadInputs(BaseModel, models.Model):
 
     normalize_and_scale_load_profile_input = models.BooleanField(
         blank=True,
-        default=True,
+        default=False,
         help_text=("Takes the input fuel_loads_mmbtu_per_hour and normalizes and scales it to annual or monthly energy inputs.")
     )
     
@@ -7083,7 +7083,7 @@ class DomesticHotWaterLoadInputs(BaseModel, models.Model):
 
     normalize_and_scale_load_profile_input = models.BooleanField(
         blank=True,
-        default=True,
+        default=False,
         help_text=("Takes the input fuel_loads_mmbtu_per_hour and normalizes and scales it to annual or monthly energy inputs.")
     )
 
@@ -7256,10 +7256,10 @@ class ProcessHeatLoadInputs(BaseModel, models.Model):
 
     normalize_and_scale_load_profile_input = models.BooleanField(
         blank=True,
-        default=True,
+        default=False,
         help_text=("Takes the input fuel_loads_mmbtu_per_hour and normalizes and scales it to annual or monthly energy inputs.")
     )
-    
+
     year = models.IntegerField(
         default=2022,
         validators=[
