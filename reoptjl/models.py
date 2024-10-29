@@ -6906,6 +6906,19 @@ class SpaceHeatingLoadInputs(BaseModel, models.Model):
         default=True,
         help_text=("Takes the input fuel_loads_mmbtu_per_hour and normalizes and scales it to annual or monthly energy inputs.")
     )
+    
+    year = models.IntegerField(
+        default=2022,
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(9999)
+        ],
+        null=True, blank=True,
+        help_text=("Year of Custom Load Profile. If a custom load profile is uploaded via the fuel_loads_mmbtu_per_hour parameter, it "
+                   "is important that this year correlates with the electric load profile so that weekdays/weekends are "
+                   "determined correctly for the utility rate tariff. If a DOE Reference Building profile (aka "
+                   "'simulated' profile) is used, the year is set to 2017 since the DOE profiles start on a Sunday.")
+    )    
 
     blended_doe_reference_names = ArrayField(
         models.TextField(
@@ -7074,6 +7087,19 @@ class DomesticHotWaterLoadInputs(BaseModel, models.Model):
         help_text=("Takes the input fuel_loads_mmbtu_per_hour and normalizes and scales it to annual or monthly energy inputs.")
     )
 
+    year = models.IntegerField(
+        default=2022,
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(9999)
+        ],
+        null=True, blank=True,
+        help_text=("Year of Custom Load Profile. If a custom load profile is uploaded via the fuel_loads_mmbtu_per_hour parameter, it "
+                   "is important that this year correlates with the electric load profile so that weekdays/weekends are "
+                   "determined correctly for the utility rate tariff. If a DOE Reference Building profile (aka "
+                   "'simulated' profile) is used, the year is set to 2017 since the DOE profiles start on a Sunday.")
+    )    
+
     blended_doe_reference_names = ArrayField(
         models.TextField(
             choices=DOE_REFERENCE_NAME.choices,
@@ -7215,11 +7241,37 @@ class ProcessHeatLoadInputs(BaseModel, models.Model):
                    )
     )
 
+    year = models.IntegerField(
+        default=2022,
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(9999)
+        ],
+        null=True, blank=True,
+        help_text=("Year of Custom Load Profile. If a custom load profile is uploaded via the fuel_loads_mmbtu_per_hour parameter, it "
+                   "is important that this year correlates with the electric load profile so that weekdays/weekends are "
+                   "determined correctly for the utility rate tariff. If a DOE Reference Building profile (aka "
+                   "'simulated' profile) is used, the year is set to 2017 since the DOE profiles start on a Sunday.")
+    )    
+
     normalize_and_scale_load_profile_input = models.BooleanField(
         blank=True,
         default=True,
         help_text=("Takes the input fuel_loads_mmbtu_per_hour and normalizes and scales it to annual or monthly energy inputs.")
     )
+    
+    year = models.IntegerField(
+        default=2022,
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(9999)
+        ],
+        null=True, blank=True,
+        help_text=("Year of Custom Load Profile. If a custom load profile is uploaded via the fuel_loads_mmbtu_per_hour parameter, it "
+                   "is important that this year correlates with the electric load profile so that weekdays/weekends are "
+                   "determined correctly for the utility rate tariff. If a DOE Reference Building profile (aka "
+                   "'simulated' profile) is used, the year is set to 2017 since the DOE profiles start on a Sunday.")
+    )    
 
     blended_industrial_reference_names = ArrayField(
         models.TextField(
