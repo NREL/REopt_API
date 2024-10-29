@@ -487,11 +487,11 @@ def get_ashp_defaults(request):
     if request.GET.get("load_served") not in [None, "", []]:
         inputs["load_served"] = request.GET.get("load_served")
     else: 
-        return JsonResponse({"Error: Missing input load_served in get_ashp_defualts endpoint."}, status=400)
+        return JsonResponse({"Error: Missing input load_served in get_ashp_defaults endpoint."}, status=400)
     if request.GET.get("force_into_system") not in [None, "", []]:
         inputs["force_into_system"] = request.GET.get("force_into_system")
     else: 
-        return JsonResponse({"Error: Missing input force_into_system in get_ashp_defualts endpoint."}, status=400)
+        return JsonResponse({"Error: Missing input force_into_system in get_ashp_defaults endpoint."}, status=400)
     try:
         julia_host = os.environ.get('JULIA_HOST', "julia")
         http_jl_response = requests.get("http://" + julia_host + ":8081/get_ashp_defaults/", json=inputs)
@@ -516,70 +516,96 @@ def get_ashp_defaults(request):
 
 
 def simulated_load(request):
-    try:
-        valid_keys = ["doe_reference_name","latitude","longitude","load_type","percent_share","annual_kwh",
-                        "monthly_totals_kwh","annual_mmbtu","annual_fraction","annual_tonhour","monthly_tonhour",
-                        "monthly_mmbtu","monthly_fraction","max_thermal_factor_on_peak_load","chiller_cop",
-                        "addressable_load_fraction", "cooling_doe_ref_name", "cooling_pct_share", "boiler_efficiency"]
-        for key in request.GET.keys():
-            k = key
-            if "[" in key:
-                k = key.split('[')[0]
-            if k not in valid_keys:
-                raise ValueError("{} is not a valid input parameter".format(key))
+    try:      
         # Build inputs dictionary to send to http.jl /simulated_load endpoint
         inputs = {}
-        # Required - will throw a Missing Error if not included
-        inputs["latitude"] = float(request.GET['latitude'])  # need float to convert unicode
-        inputs["longitude"] = float(request.GET['longitude'])
-        # Optional load_type - will default to "electric"
-        inputs["load_type"] = request.GET.get('load_type')
+        
+        # Required for GET - will throw a Missing Error if not included
+        if request.method == "GET":
+            valid_keys = ["doe_reference_name","latitude","longitude","load_type","percent_share","annual_kwh",
+                "monthly_totals_kwh","annual_mmbtu","annual_fraction","annual_tonhour","monthly_tonhour",
+                "monthly_mmbtu","monthly_fraction","max_thermal_factor_on_peak_load","chiller_cop",
+                "addressable_load_fraction", "cooling_doe_ref_name", "cooling_pct_share", "boiler_efficiency",
+                "normalize_and_scale_load_profile_input", "year"]
+            for key in request.GET.keys():
+                k = key
+                if "[" in key:
+                    k = key.split('[')[0]
+                if k not in valid_keys:
+                    raise ValueError("{} is not a valid input parameter".format(key))
+            
+            inputs["latitude"] = float(request.GET['latitude'])  # need float to convert unicode
+            inputs["longitude"] = float(request.GET['longitude'])
+            # Optional load_type - will default to "electric"
+            inputs["load_type"] = request.GET.get('load_type')
 
-        # This parses the GET request way of sending a list/array for doe_reference_name, 
-        # i.e. doe_reference_name[0], doe_reference_name[1], etc along with percent_share[0], percent_share[1]
-        if 'doe_reference_name' in request.GET.keys():
-            inputs["doe_reference_name"] = str(request.GET.get('doe_reference_name'))
-        elif 'doe_reference_name[0]' in request.GET.keys():
-            idx = 0
-            doe_reference_name = []
-            percent_share_list = []
-            while 'doe_reference_name[{}]'.format(idx) in request.GET.keys():
-                doe_reference_name.append(str(request.GET['doe_reference_name[{}]'.format(idx)]))
-                if 'percent_share[{}]'.format(idx) in request.GET.keys():
-                    percent_share_list.append(float(request.GET['percent_share[{}]'.format(idx)]))
-                idx += 1
-            inputs["doe_reference_name"] = doe_reference_name
-            inputs["percent_share"] = percent_share_list
+            # This parses the GET request way of sending a list/array for doe_reference_name, 
+            # i.e. doe_reference_name[0], doe_reference_name[1], etc along with percent_share[0], percent_share[1]
+            if 'doe_reference_name' in request.GET.keys():
+                inputs["doe_reference_name"] = str(request.GET.get('doe_reference_name'))
+            elif 'doe_reference_name[0]' in request.GET.keys():
+                idx = 0
+                doe_reference_name = []
+                percent_share_list = []
+                while 'doe_reference_name[{}]'.format(idx) in request.GET.keys():
+                    doe_reference_name.append(str(request.GET['doe_reference_name[{}]'.format(idx)]))
+                    if 'percent_share[{}]'.format(idx) in request.GET.keys():
+                        percent_share_list.append(float(request.GET['percent_share[{}]'.format(idx)]))
+                    idx += 1
+                inputs["doe_reference_name"] = doe_reference_name
+                inputs["percent_share"] = percent_share_list
 
-        # When wanting cooling profile based on building type(s) for cooling, need separate cooling building(s)
-        if 'cooling_doe_ref_name' in request.GET.keys():
-            inputs["cooling_doe_ref_name"] = str(request.GET.get('cooling_doe_ref_name'))
-        elif 'cooling_doe_ref_name[0]' in request.GET.keys():
-            idx = 0
-            cooling_doe_ref_name = []
-            cooling_pct_share_list = []
-            while 'cooling_doe_ref_name[{}]'.format(idx) in request.GET.keys():
-                cooling_doe_ref_name.append(str(request.GET['cooling_doe_ref_name[{}]'.format(idx)]))
-                if 'cooling_pct_share[{}]'.format(idx) in request.GET.keys():
-                    cooling_pct_share_list.append(float(request.GET['cooling_pct_share[{}]'.format(idx)]))
-                idx += 1
-            inputs["cooling_doe_ref_name"] = cooling_doe_ref_name
-            inputs["cooling_pct_share"] = cooling_pct_share_list                
+            # When wanting cooling profile based on building type(s) for cooling, need separate cooling building(s)
+            if 'cooling_doe_ref_name' in request.GET.keys():
+                inputs["cooling_doe_ref_name"] = str(request.GET.get('cooling_doe_ref_name'))
+            elif 'cooling_doe_ref_name[0]' in request.GET.keys():
+                idx = 0
+                cooling_doe_ref_name = []
+                cooling_pct_share_list = []
+                while 'cooling_doe_ref_name[{}]'.format(idx) in request.GET.keys():
+                    cooling_doe_ref_name.append(str(request.GET['cooling_doe_ref_name[{}]'.format(idx)]))
+                    if 'cooling_pct_share[{}]'.format(idx) in request.GET.keys():
+                        cooling_pct_share_list.append(float(request.GET['cooling_pct_share[{}]'.format(idx)]))
+                    idx += 1
+                inputs["cooling_doe_ref_name"] = cooling_doe_ref_name
+                inputs["cooling_pct_share"] = cooling_pct_share_list                
 
-        # Build the rest of inputs for http.jl /simulated_load endpoint
-        other_keys_types = ["annual", "monthly", "max_thermal_factor", "chiller_cop", "addressable"]
-        for key in valid_keys:
-            for key_type in other_keys_types:
-                if key_type in key:
-                    if (key_type in ["monthly", "addressable"]) and request.GET.get(key + "[0]") is not None:
-                        try: 
-                            monthly_list  = [float(request.GET.get(key+'[{}]'.format(i))) for i in range(12)]
-                            inputs[key] = monthly_list
-                        except: 
-                            return JsonResponse({"Error. Monthly data does not contain 12 valid entries"})
-                    elif request.GET.get(key) is not None:
-                        inputs[key] = float(request.GET.get(key))
+            # Build the rest of inputs for http.jl /simulated_load endpoint
+            other_keys_types = ["annual", "monthly", "max_thermal_factor", "chiller_cop", "addressable"]
+            for key in valid_keys:
+                for key_type in other_keys_types:
+                    if key_type in key:
+                        if (key_type in ["monthly", "addressable"]) and request.GET.get(key + "[0]") is not None:
+                            try: 
+                                monthly_list  = [float(request.GET.get(key+'[{}]'.format(i))) for i in range(12)]
+                                inputs[key] = monthly_list
+                            except: 
+                                return JsonResponse({"Error. Monthly data does not contain 12 valid entries"})
+                        elif request.GET.get(key) is not None:
+                            inputs[key] = float(request.GET.get(key))            
 
+        if request.method == "POST":
+            data = json.loads(request.body)
+            required_post_fields = ["load_type", "normalize_and_scale_load_profile_input", "load_profile", "year"]
+            for field in required_post_fields:
+                # TODO make year optional?
+                inputs[field] = data[field]
+            if inputs["load_type"] == "electric":
+                for energy in ["annual_kwh", "monthly_totals_kwh"]:
+                    if data.get(energy) is not None:
+                        inputs[energy] = data.get(energy)
+            elif inputs["load_type"] in ["space_heating", "domestic_hot_water", "process_heat"]:
+                for energy in ["annual_mmbtu", "monthly_mmbtu"]:
+                    if data.get(energy) is not None:
+                        inputs[energy] = data.get(energy)
+            elif inputs["load_type"] == "cooling":
+                for energy in ["annual_tonhour", "monthly_tonhour"]:
+                    if data.get(energy) is not None:
+                        inputs[energy] = data.get(energy)
+            # TODO cooling, not in REopt.jl yet
+        
+        # TODO consider changing all requests to POST so that we don't have to do the weird array processing like percent_share[0], [1], etc?
+        # json.dump(inputs, open("sim_load_post.json", "w"))
         julia_host = os.environ.get('JULIA_HOST', "julia")
         http_jl_response = requests.get("http://" + julia_host + ":8081/simulated_load/", json=inputs)
         response = JsonResponse(
