@@ -26,7 +26,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop - 2024-10-24
+## v3.10.2
 ### Minor Updates
 ##### Changed
 - Summary focus can now be a string with multiple types of focus such as `A,B,C`
