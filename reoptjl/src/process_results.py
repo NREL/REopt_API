@@ -126,6 +126,8 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
             SiteInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["Site"])
 
         if inputs_to_update["CHP"]:  # Will be an empty dictionary if CHP is not considered
+            if inputs_to_update["CHP"].get("installed_cost_per_kw") and type(inputs_to_update["CHP"].get("installed_cost_per_kw")) == float:
+                inputs_to_update["CHP"]["installed_cost_per_kw"] = [inputs_to_update["CHP"]["installed_cost_per_kw"]]
             CHPInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["CHP"])
         if inputs_to_update["SteamTurbine"]:  # Will be an empty dictionary if SteamTurbine is not considered
             SteamTurbineInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["SteamTurbine"])
