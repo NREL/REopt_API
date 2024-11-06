@@ -30,6 +30,8 @@ Classify the change according to the following categories:
 ### Minor Updates
 ##### Changed
 - Summary focus can now be a string with multiple types of focus such as `A,B,C`
+##### Fixed
+- Issue with `CHP.installed_cost_per_kw` not being an array when updating the inputs model object (which expects an array) in process_results.py, from Julia
 
 ## v3.10.1
 ### Minor Updates
