@@ -26,6 +26,11 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## gridRE
+### Minor Updates
+#### Changed
+- Changed v3 endpoint "cambium_emissions_profile" to "cambium_profile"
+
 ## v3.10.2
 ### Minor Updates
 ##### Changed
