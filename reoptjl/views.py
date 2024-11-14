@@ -1066,7 +1066,8 @@ def queryset_for_summary(api_metas,summary_dict:dict):
     )
     if len(utility) > 0:
         for m in utility:
-            summary_dict[str(m.meta.run_uuid)]['focus'] = ''
+            if 'focus' not in summary_dict[str(m.meta.run_uuid)].keys():
+                summary_dict[str(m.meta.run_uuid)]['focus'] = ''
             if m.outage_start_time_step is None:
                 if len(m.outage_start_time_steps) == 0:
                     summary_dict[str(m.meta.run_uuid)]['focus'] += "Financial,"
@@ -1097,6 +1098,9 @@ def queryset_for_summary(api_metas,summary_dict:dict):
     )
     if len(site_inputs) > 0:
         for m in site_inputs:
+            # if focus key doesnt exist, create it
+            if 'focus' not in summary_dict[str(m.meta.run_uuid)].keys():
+                summary_dict[str(m.meta.run_uuid)]['focus'] = ''
             try: # can be NoneType
                 if m.renewable_electricity_min_fraction > 0:
                     summary_dict[str(m.meta.run_uuid)]['focus'] += "Clean-energy,"
@@ -1118,6 +1122,9 @@ def queryset_for_summary(api_metas,summary_dict:dict):
     )
     if len(settings) > 0:
         for m in settings:
+            # if focus key doesnt exist, create it
+            if 'focus' not in summary_dict[str(m.meta.run_uuid)].keys():
+                summary_dict[str(m.meta.run_uuid)]['focus'] = ''
             if m.off_grid_flag:
                 summary_dict[str(m.meta.run_uuid)]['focus'] += "Off-grid,"
             
