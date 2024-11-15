@@ -141,8 +141,10 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
             else:
                 ExistingChillerInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["ExistingChiller"])
         if inputs_to_update["ASHPSpaceHeater"]:
+            prune_update_fields(ASHPSpaceHeaterInputs, inputs_to_update["ASHPSpaceHeater"])
             ASHPSpaceHeaterInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["ASHPSpaceHeater"])
         if inputs_to_update["ASHPWaterHeater"]:
+            prune_update_fields(ASHPWaterHeaterInputs, inputs_to_update["ASHPWaterHeater"])
             ASHPWaterHeaterInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["ASHPWaterHeater"])
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -152,3 +154,13 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
                                                                         tb.format_tb(exc_traceback)
                                                                     )
         log.debug(debug_msg)
+
+def prune_update_fields(model_obj, dict_to_update):
+    """
+    REopt.jl may return more fields than the API has to update, so prune those extra ones before updating the model/db object
+    """
+    field_names = [field.name for field in model_obj._meta.get_fields()]
+    dict_to_update_keys = list(dict_to_update.keys())
+    for key in dict_to_update_keys:
+        if key not in field_names:
+            del dict_to_update[key]
