@@ -6,7 +6,7 @@ The REopt API provides concurrent, multiple technology integration and optimizat
 
 ## Should I be using or modifying the REopt API or the REopt Julia Package? 
 
-The REopt Julia package will soon become the backend of the REopt API. That means that the optimization model will be contained in [REopt.jl](https://github.com/NREL/REopt.jl), and that a user could supply the same inputs to the API and Julia package and get the same results. So which should you use? 
+The REopt Julia package is the backend of the REopt API. That means that the optimization model is contained in [REopt.jl](https://github.com/NREL/REopt.jl), and that a user could supply the same inputs to the API and Julia package and get the same results. So which should you use? 
 
 **1. When and how to _use_ the REopt Julia package:**
 - You want to be able to use the REopt model without incorporating an API call (and associated rate limits).

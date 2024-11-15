@@ -26,16 +26,16 @@ class GHPGHXInputs(models.Model):
     
     # Single value inputs
     borehole_depth_ft = models.FloatField(blank=True, 
-        default=400.0, validators=[MinValueValidator(10.0), MaxValueValidator(600.0)],
+        default=443.0, validators=[MinValueValidator(10.0), MaxValueValidator(600.0)],
         help_text="Vertical depth of each borehole [ft]")
     ghx_header_depth_ft = models.FloatField(blank=True, 
-        default=4.0, validators=[MinValueValidator(0.1), MaxValueValidator(50.0)],
+        default=6.6, validators=[MinValueValidator(0.1), MaxValueValidator(50.0)],
         help_text="Depth under the ground of the GHX header pipe [ft]")
     borehole_spacing_ft = models.FloatField(blank=True, 
         default=20.0, validators=[MinValueValidator(1.0), MaxValueValidator(100.0)],
         help_text="Distance from the centerline of each borehole to the centerline of its adjacent boreholes [ft]")
     borehole_diameter_inch = models.FloatField(blank=True, 
-        default=5.0, validators=[MinValueValidator(0.25), MaxValueValidator(24.0)],
+        default=6.0, validators=[MinValueValidator(0.25), MaxValueValidator(24.0)],
         help_text="Diameter of the borehole/well drilled in the ground [in]")
     borehole_choices = [("rectangular", "rectangular"),
                         ("hexagonal", "hexagonal")]
@@ -49,10 +49,10 @@ class GHPGHXInputs(models.Model):
         default=0.16, validators=[MinValueValidator(0.01), MaxValueValidator(5.0)],
         help_text="Wall thickness of the GHX pipe [in]")
     ghx_pipe_thermal_conductivity_btu_per_hr_ft_f = models.FloatField(blank=True, 
-        default=0.25, validators=[MinValueValidator(0.01), MaxValueValidator(10.0)],
+        default=0.23, validators=[MinValueValidator(0.01), MaxValueValidator(10.0)],
         help_text="Thermal conductivity of the GHX pipe [Btu/(hr-ft-degF)]")
     ghx_shank_space_inch = models.FloatField(blank=True, 
-        default=2.5, validators=[MinValueValidator(0.5), MaxValueValidator(100.0)],
+        default=1.27, validators=[MinValueValidator(0.5), MaxValueValidator(100.0)],
         help_text="Distance between the centerline of the upwards and downwards u-tube legs [in]")
     # Default for ground_thermal_conductivity_btu_per_hr_ft_f varies by ASHRAE climate zone
     ground_thermal_conductivity_btu_per_hr_ft_f = models.FloatField(blank=True, 
@@ -65,7 +65,7 @@ class GHPGHXInputs(models.Model):
         default=0.211, validators=[MinValueValidator(0.01), MaxValueValidator(5.0)],
         help_text="Specific heat of the ground surrounding the borehole field")
     grout_thermal_conductivity_btu_per_hr_ft_f = models.FloatField(blank=True, 
-        default=1.0, validators=[MinValueValidator(0.01), MaxValueValidator(10.0)],
+        default=0.75, validators=[MinValueValidator(0.01), MaxValueValidator(10.0)],
         help_text="Thermal conductivity of the grout material in a borehole [Btu/(hr-ft-degF)]")
     ghx_fluid_specific_heat_btu_per_lb_f = models.FloatField(blank=True, 
         default=1.0, validators=[MinValueValidator(0.1), MaxValueValidator(10.0)],
