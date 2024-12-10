@@ -140,17 +140,19 @@ Base.@kwdef struct Parameter
 	 GridChargeEfficiency::Float64   # \eta^{esig}: Efficiency of charging electrical storage using grid power [fraction] (NEW)
      DischargeEfficiency::AxisArray  # \eta^{eso}_{b}: Efficiency of discharging storage system b [fraction] (NEW)
 
-	 ###  Storage Parameters ###   # \ubar{w}^{bkW}_{b}: Minimum power capacity of storage system b (needs to be indexed on b )
+	 ###  Storage Parameters ###        # \ubar{w}^{bkW}_{b}: Minimum power capacity of storage system b (needs to be indexed on b )
      StorageMinChargePcent::Float64     #  \ubar{w}^{mcp}_{b}: Minimum state of charge of storage system b
-     InitSOC::Float64    # w^{i}_{b} Initial percent state of charge for storage system b
-     StorageMinSizeEnergy::AxisArray     # \bar{w}^{bkWh}_{b}: Maximum energy capacity of storage system b [kWh]
-     StorageMaxSizeEnergy::AxisArray     # \ubar{w}^{bkWh}_{b}: Minimum energy capacity of storage system b [kWh]
+     InitSOC::Float64                   # w^{i}_{b} Initial percent state of charge for storage system b
+     StorageMinSizeEnergy::AxisArray    # \bar{w}^{bkWh}_{b}: Maximum energy capacity of storage system b [kWh]
+     StorageMaxSizeEnergy::AxisArray    # \ubar{w}^{bkWh}_{b}: Minimum energy capacity of storage system b [kWh]
      StorageMinSizePower::AxisArray     # \bar{w}^{bkW}_{b}: Maximum power capacity of storage system b [kW]
      StorageMaxSizePower::AxisArray     # \ubar{w}^{bkW}_{b}: Minimum power capacity of storage system b [kW]
-     StorageMinSOC::AxisArray     #  \ubar{w}^{mcp}_{b}: Minimum state of charge of storage system b [fraction]
-     StorageInitSOC::AxisArray  #Initial state of charge of storage system b [fraction]
-     StorageCanGridCharge::Bool  # Boolean for storage system [fraction]
-
+     StorageMinSOC::AxisArray           #  \ubar{w}^{mcp}_{b}: Minimum state of charge of storage system b [fraction]
+     StorageInitSOC::AxisArray          # Initial state of charge of storage system b [fraction]
+     StorageCanGridCharge::Bool         # Boolean for storage system [fraction]
+     MinDurationHours::Float64          # Minimum amount of time electric storage can discharge at its rated power capacity      
+     MaxDurationHours::Float64          # Maximum amount of time storage can discharge at its rated power capacity         
+  
 	 ###  Fuel Burn Parameters ###
 	 FuelBurnSlope::AxisArray # m^\text{fm}_{t}: Fuel burn rate slope parameter for technology t
 	 FuelBurnYInt::AxisArray # m^\text{fb}_{t}: Fuel burn rate slope parameter for technology t

@@ -1154,6 +1154,8 @@ class DataManager:
         storage_min_energy = [self.storage.min_kwh]
         storage_max_energy = [self.storage.max_kwh]
         storage_decay_rate = [0.0]
+        storage_min_duration_hours = [self.storage.min_duration_hours]
+        storage_max_duration_hours = [self.storage.max_duration_hours]
 
         # Obtain storage costs and params
         sf = self.site.financial
@@ -1263,7 +1265,8 @@ class DataManager:
         return storage_techs, thermal_storage_techs, hot_tes_techs, \
             cold_tes_techs, storage_power_cost, storage_energy_cost, \
             storage_min_power, storage_max_power, storage_min_energy, \
-            storage_max_energy, storage_decay_rate
+            storage_max_energy, storage_decay_rate, storage_min_duration_hours, \
+            storage_max_duration_hours
 
     def _get_export_curtailment_params(self, techs, export_rates, net_metering_limit_kw):
         """
@@ -1429,7 +1432,8 @@ class DataManager:
         storage_techs, thermal_storage_techs, hot_tes_techs, \
             cold_tes_techs, storage_power_cost, storage_energy_cost, \
             storage_min_power, storage_max_power, storage_min_energy, \
-            storage_max_energy, storage_decay_rate = self._get_REopt_storage_techs_and_params()
+            storage_max_energy, storage_decay_rate, storage_min_duration_hours, \
+            storage_max_duration_hours = self._get_REopt_storage_techs_and_params()
 
         parser = UrdbParse(big_number=big_number, elec_tariff=self.elec_tariff,
                            techs=get_techs_not_none(self.available_techs, self),
@@ -1752,6 +1756,8 @@ class DataManager:
             'StorageMaxSizePower': storage_max_power,
             'StorageMinSOC': [self.storage.soc_min_pct, self.hot_tes.soc_min_pct, self.cold_tes.soc_min_pct],
             'StorageInitSOC': [self.storage.soc_init_pct, self.hot_tes.soc_init_pct, self.cold_tes.soc_init_pct],
+            'MinDurationHours': storage_min_duration_hours,
+            'MaxDurationHours': storage_max_duration_hours,
             'StorageCanGridCharge': self.storage.canGridCharge,
             'SegmentMinSize': segment_min_size,
             'SegmentMaxSize': segment_max_size,
@@ -1947,6 +1953,8 @@ class DataManager:
 	        'StorageMaxSizeEnergy': [0.0 for _ in storage_techs],
 	        'StorageMinSizePower': [0.0 for _ in storage_techs],
 	        'StorageMaxSizePower': [0.0 for _ in storage_techs],
+            'MinDurationHours': [0.0 for _ in storage_techs],
+            'MaxDurationHours': [0.0 for _ in storage_techs],
 	        'StorageMinSOC': [0.0 for _ in storage_techs],
 	        'StorageInitSOC': [0.0 for _ in storage_techs],
             'StorageCanGridCharge': self.storage.canGridCharge,
