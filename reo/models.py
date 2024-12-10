@@ -662,7 +662,8 @@ class StorageModel(models.Model):
     total_itc_pct = models.FloatField(null=True, blank=True)
     total_rebate_us_dollars_per_kw = models.IntegerField(null=True, blank=True)
     total_rebate_us_dollars_per_kwh = models.IntegerField(null=True, blank=True)
-
+    min_duration_hours = models.IntegerField(null=True, blank=True)
+    max_duration_hours = models.IntegerField(null=True, blank=True)
 
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)
