@@ -1743,7 +1743,7 @@ class ElectricUtilityInputs(BaseModel, models.Model):
         default = "GEA Regions",
         help_text=("Geographic boundary at which emissions are calculated. Options: ['Nations', 'GEA Regions', 'States'].")
     )
-    cambium_metric_col = models.TextField(
+    cambium_co2_metric = models.TextField(
         blank=True,
         default = "lrmer_co2e",
         help_text=("Emissions metric used. Default is Long-run marginal emissions rate for CO2-equivalant, combined combustion and pre-combustion emissions rates. Options: See metric definitions and names in the Cambium documentation.")
@@ -2038,7 +2038,7 @@ class ElectricUtilityOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text=("Distance in meters from the site to the nearest AVERT emissions region.")
     )
-    cambium_emissions_region = models.TextField(
+    cambium_region = models.TextField(
         blank=True,
         help_text=("Name of the Cambium emissions region used for climate emissions for grid electricity. " 
                    "Determined from site longitude and latitude and the cambium_location_type if "
