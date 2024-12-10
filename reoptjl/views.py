@@ -522,7 +522,7 @@ def simulated_load(request):
         
         # Required for GET - will throw a Missing Error if not included
         if request.method == "GET":
-            valid_keys = ["doe_reference_name","latitude","longitude","load_type","percent_share","annual_kwh",
+            valid_keys = ["doe_reference_name","industrial_reference_name","latitude","longitude","load_type","percent_share","annual_kwh",
                 "monthly_totals_kwh","annual_mmbtu","annual_fraction","annual_tonhour","monthly_tonhour",
                 "monthly_mmbtu","monthly_fraction","max_thermal_factor_on_peak_load","chiller_cop",
                 "addressable_load_fraction", "cooling_doe_ref_name", "cooling_pct_share", "boiler_efficiency",
@@ -539,20 +539,25 @@ def simulated_load(request):
             # Optional load_type - will default to "electric"
             inputs["load_type"] = request.GET.get('load_type')
 
+            if inputs["load_type"] == 'process_heat':
+                expected_reference_name = 'industrial_reference_name'
+            else:
+                expected_reference_name = 'doe_reference_name'
+
             # This parses the GET request way of sending a list/array for doe_reference_name, 
             # i.e. doe_reference_name[0], doe_reference_name[1], etc along with percent_share[0], percent_share[1]
-            if 'doe_reference_name' in request.GET.keys():
-                inputs["doe_reference_name"] = str(request.GET.get('doe_reference_name'))
-            elif 'doe_reference_name[0]' in request.GET.keys():
+            if expected_reference_name in request.GET.keys():
+                inputs[expected_reference_name] = str(request.GET.get(expected_reference_name))
+            elif f'{expected_reference_name}[0]' in request.GET.keys():
                 idx = 0
                 doe_reference_name = []
                 percent_share_list = []
-                while 'doe_reference_name[{}]'.format(idx) in request.GET.keys():
-                    doe_reference_name.append(str(request.GET['doe_reference_name[{}]'.format(idx)]))
+                while '{}[{}]'.format(expected_reference_name, idx) in request.GET.keys():
+                    doe_reference_name.append(str(request.GET['{}[{}]'.format(expected_reference_name, idx)]))
                     if 'percent_share[{}]'.format(idx) in request.GET.keys():
                         percent_share_list.append(float(request.GET['percent_share[{}]'.format(idx)]))
                     idx += 1
-                inputs["doe_reference_name"] = doe_reference_name
+                inputs[expected_reference_name] = doe_reference_name
                 inputs["percent_share"] = percent_share_list
 
             # When wanting cooling profile based on building type(s) for cooling, need separate cooling building(s)

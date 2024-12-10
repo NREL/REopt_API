@@ -411,7 +411,7 @@ function simulated_load(req::HTTP.Request)
     d = JSON.parse(String(req.body))
 
     # Arrays in d are being parsed as type Vector{Any} instead of fixed type Vector{String or <:Real} without conversion
-    for key in ["doe_reference_name", "cooling_doe_ref_name"]
+    for key in ["doe_reference_name", "cooling_doe_ref_name", "industrial_reference_name"]
         if key in keys(d) && typeof(d[key]) <: Vector{}
             d[key] = convert(Vector{String}, d[key])
         end
