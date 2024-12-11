@@ -452,9 +452,9 @@ function add_storage_size_constraints(m, p)
 	# Constraint (4c)-2: Upper bound on Storage Power Capacity
 	@constraint(m, StoragePowerUBCon[b in p.Storage], m[:dvStorageCapPower][b] <= p.StorageMaxSizePower[b])
     # Constraint (4c)-3: Lower bound on Storage Energy Capacity based on Battery Duration
-	constraint(m, StorageEnergyLBCon["Elec"], m[:dvStorageCapEnergy]["Elec"] >= m[:dvStorageCapPower]["Elec"] * p.MinDurationHours)
+	constraint(m, StorageMinDurationCon["Elec"], m[:dvStorageCapEnergy]["Elec"] >= m[:dvStorageCapPower]["Elec"] * p.MinDurationHours)
 	# Constraint (4c)-4: Upper bound on Storage Energy Capacity based on Battery Duration
-	constraint(m, StorageEnergyLBCon["Elec"], m[:dvStorageCapEnergy]["Elec"] <= m[:dvStorageCapPower]["Elec"] * p.MaxDurationHours)
+	constraint(m, StorageMaxDurationCon["Elec"], m[:dvStorageCapEnergy]["Elec"] <= m[:dvStorageCapPower]["Elec"] * p.MaxDurationHours)
 end
 
 
