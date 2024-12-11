@@ -3449,7 +3449,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         default=0.0,
         validators=[
             MinValueValidator(0),
-            MaxValueValidator(1.0e6)
+            MaxValueValidator(1.0e9)
         ],
         blank=True,
         help_text="Minimum amount of time storage can discharge at its rated power capacity"
@@ -3458,7 +3458,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         default=100000.0,
         validators=[
             MinValueValidator(0),
-            MaxValueValidator(1.0e6)
+            MaxValueValidator(1.0e9)
         ],
         blank=True,
         help_text="Maximum amount of time storage can discharge at its rated power capacity"
