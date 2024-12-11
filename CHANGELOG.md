@@ -26,6 +26,11 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.10.3
+### Minor Updates
+##### Added
+- Added `min_duration_hours` and `max_duration_hours` for limitting electric storage's energy capacity
+
 ## v3.10.2
 ### Minor Updates
 ##### Changed
