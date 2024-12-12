@@ -27,7 +27,7 @@ Classify the change according to the following categories:
     ### Patches
 
 ## gridRE
-### Minor Updates
+### Major Updates
 ### Added 
 - Added the following inputs to account for the clean or renewable energy fraction of grid-purchased electricity: 
   - ElectricUtility **cambium_cef_metric** to utilize clean energy data from NREL's Cambium database
