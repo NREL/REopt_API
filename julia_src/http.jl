@@ -72,7 +72,8 @@ function reopt(req::HTTP.Request)
 			]
 			inputs_with_defaults_from_avert_or_cambium = [
 				:emissions_factor_series_lb_CO2_per_kwh, :emissions_factor_series_lb_NOx_per_kwh,
-				:emissions_factor_series_lb_SO2_per_kwh, :emissions_factor_series_lb_PM25_per_kwh
+				:emissions_factor_series_lb_SO2_per_kwh, :emissions_factor_series_lb_PM25_per_kwh,
+                :renewable_energy_fraction_series
 			]
             if haskey(d, "CHP")
                 inputs_with_defaults_from_chp = [
