@@ -1776,8 +1776,8 @@ class ElectricUtilityInputs(BaseModel, models.Model):
     )
     cambium_location_type = models.TextField(
         blank=True,
-        default = "GEA Regions",
-        help_text=("Geographic boundary at which emissions and clean energy fraction are calculated. Options: ['Nations', 'GEA Regions'].")
+        default = "GEA Regions 2023",
+        help_text=("Geographic boundary at which emissions and clean energy fraction are calculated. Options: ['Nations', 'GEA Regions 2023'].")
     )
     cambium_co2_metric = models.TextField(
         blank=True,
