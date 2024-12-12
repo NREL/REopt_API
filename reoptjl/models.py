@@ -460,7 +460,7 @@ class SiteOutputs(BaseModel, models.Model):
                   "divided by total annual electric consumption."
                   )
     )
-    onsite_renewable_energy_fraction_of_elec_and_thermal_load = models.FloatField(
+    onsite_renewable_energy_fraction_of_total_load = models.FloatField(
         null=True, blank=True,
         help_text=(
                   "Portion of annual total energy consumption that is derived from on-site renewable resource generation."
@@ -481,7 +481,7 @@ class SiteOutputs(BaseModel, models.Model):
     onsite_and_grid_renewable_energy_fraction_of_total_load = models.FloatField(
         null=True, blank=True,
         help_text=(
-                  "Calculation is the same as onsite_renewable_energy_fraction_of_elec_and_thermal_load, but additionally includes the renewable energy"
+                  "Calculation is the same as onsite_renewable_energy_fraction_of_total_load, but additionally includes the renewable energy"
                   "content of grid-purchased electricity, accounting for any battery efficiency losses."
                   )
     )
@@ -564,7 +564,7 @@ class SiteOutputs(BaseModel, models.Model):
                   "divided by total annual electric consumption."
                   )
     )
-    onsite_renewable_energy_fraction_of_elec_and_thermal_load_bau = models.FloatField(
+    onsite_renewable_energy_fraction_of_total_load_bau = models.FloatField(
         null=True, blank=True,
         help_text=(
                   "Portion of annual total energy consumption that is derived from on-site renewable resource generation in the BAU case."
@@ -585,7 +585,7 @@ class SiteOutputs(BaseModel, models.Model):
     onsite_and_grid_renewable_energy_fraction_of_total_load_bau = models.FloatField(
         null=True, blank=True,
         help_text=(
-                  "Calculation is the same as onsite_renewable_energy_fraction_of_elec_and_thermal_load, but additionally includes the renewable energy"
+                  "Calculation is the same as onsite_renewable_energy_fraction_of_total_load, but additionally includes the renewable energy"
                   "content of grid-purchased electricity, accounting for any battery efficiency losses."
                   )
     )

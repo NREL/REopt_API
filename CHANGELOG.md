@@ -45,7 +45,7 @@ Classify the change according to the following categories:
   - ElectricUtility **cambium_emissions_region** changed to **cambium_region**
   - Site **annual_renewable_electricity_kwh** changed to **annual_onsite_renewable_electricity_kwh**
   - Site **renewable_electricity_fraction** changed to **onsite_renewable_electricity_fraction_of_elec_load** 
-  - Site **total_renewable_energy_fraction** changed to **onsite_renewable_energy_fraction_of_elec_and_thermal_load**
+  - Site **total_renewable_energy_fraction** changed to **onsite_renewable_energy_fraction_of_total_load**
 - Changed v3 endpoint "cambium_emissions_profile" to "cambium_profile"
 - In REopt.jl: Updated Cambium API call to Cambium 2023 dataset, Updated AVERT emissions data to v4.3, which uses Regional Data Files for year 2023 for CONUS. For Alaska and Hawaii (regions AKGD, HIMS, HIOA), updated eGRID data to eGRID2022 datafile, adjusted to CO2e values.
 
