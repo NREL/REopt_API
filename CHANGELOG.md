@@ -36,7 +36,7 @@ Classify the change according to the following categories:
 - Added the following outputs: 
   - ElectricUtility **annual_renewable_electricity_supplied_kwh**
   - Site **onsite_and_grid_renewable_electricity_fraction_of_elec_load**
-  - Site **onsite_and_grid_renewable_energy_fraction_of_elec_and_thermal_load**
+  - Site **onsite_and_grid_renewable_energy_fraction_of_total_load**
 - Added input option optimize_soc_init_fraction (defaults to false) to ElectricStorage, which makes the optimization choose the inital SOC (equal to final SOC) instead of using soc_init_fraction. The initial SOC is also constrained to equal the final SOC, which eliminates the "free energy" issue. We currently do not fix SOC when soc_init_fraction is used because this has caused infeasibility.
 ### Changed
 - Changed name of the following inputs: 
