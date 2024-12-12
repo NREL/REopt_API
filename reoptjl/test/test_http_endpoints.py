@@ -231,8 +231,8 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         self.assertTrue("error" in view_response)
         
 
-    def test_cambium_emissions_profile_endpoint(self):
-        # Call to the django view endpoint v3/cambium_emissions_profile which calls the http.jl endpoint
+    def test_cambium_profile_endpoint(self):
+        # Call to the django view endpoint v3/cambium_profile which calls the http.jl endpoint
         #case 1: location in CONUS (Seattle, WA)
         inputs = {
             "load_year": 2021,
@@ -245,7 +245,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
             "metric_col": "lrmer_co2e",
             "grid_level": "enduse"
         }
-        resp = self.api_client.get(f'/v3/cambium_emissions_profile', data=inputs) 
+        resp = self.api_client.get(f'/v3/cambium_profile', data=inputs) 
         self.assertHttpOK(resp)
         view_response = json.loads(resp.content)
         self.assertEquals(view_response["metric_col"], "lrmer_co2e")
@@ -254,21 +254,21 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         #case 2: location off shore of NJ (works for AVERT, not Cambium)
         inputs["latitude"] = 39.034417
         inputs["longitude"] = -74.759292
-        resp = self.api_client.get(f'/v3/cambium_emissions_profile', data=inputs) 
+        resp = self.api_client.get(f'/v3/cambium_profile', data=inputs) 
         self.assertHttpBadRequest(resp)
         view_response = json.loads(resp.content)
         self.assertTrue("error" in view_response)
         #case 3: Honolulu, HI (works for AVERT but not Cambium)
         inputs["latitude"] = 21.3099
         inputs["longitude"] = -157.8581
-        resp = self.api_client.get(f'/v3/cambium_emissions_profile', data=inputs)
+        resp = self.api_client.get(f'/v3/cambium_profile', data=inputs)
         self.assertHttpBadRequest(resp) 
         view_response = json.loads(resp.content)
         self.assertTrue("error" in view_response)
         #case 4: location well outside of US (does not work)
         inputs["latitude"] = 0.0
         inputs["longitude"] = 0.0
-        resp = self.api_client.get(f'/v3/cambium_emissions_profile', data=inputs)
+        resp = self.api_client.get(f'/v3/cambium_profile', data=inputs)
         self.assertHttpBadRequest(resp) 
         view_response = json.loads(resp.content)
         self.assertTrue("error" in view_response)
