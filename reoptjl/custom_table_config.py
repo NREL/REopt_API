@@ -137,8 +137,8 @@ custom_table_webtool = [
     {
         "label"         : "Results URL",
         "key"           : "url",
-        "bau_value"     : lambda df: f'=HYPERLINK("https://custom-table-download-reopt-stage.its.nrel.gov/tool/results/{safe_get(df, "webtool_uuid")}", "Results Link")',
-        "scenario_value": lambda df: f'=HYPERLINK("https://custom-table-download-reopt-stage.its.nrel.gov/tool/results/{safe_get(df, "webtool_uuid")}", "Results Link")'
+        "bau_value"     : lambda df: f'=HYPERLINK("https://reopt.nrel.gov/tool/results/{safe_get(df, "webtool_uuid")}", "Results Link")',
+        "scenario_value": lambda df: f'=HYPERLINK("https://reopt.nrel.gov/tool/results/{safe_get(df, "webtool_uuid")}", "Results Link")'
     },
     #####################################################################################################
     ######################### System Capacities #############################
