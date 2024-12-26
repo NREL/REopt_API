@@ -1097,17 +1097,18 @@ def queryset_for_summary(api_metas,summary_dict:dict):
     )
     if len(utility) > 0:
         for m in utility:
-
+            if 'focus' not in summary_dict[str(m.meta.run_uuid)].keys():
+                summary_dict[str(m.meta.run_uuid)]['focus'] = ''
             if m.outage_start_time_step is None:
                 if len(m.outage_start_time_steps) == 0:
-                    summary_dict[str(m.meta.run_uuid)]['focus'] = "Financial"
+                    summary_dict[str(m.meta.run_uuid)]['focus'] += "Financial,"
                 else:
-                    summary_dict[str(m.meta.run_uuid)]['focus'] = "Resilience"
+                    summary_dict[str(m.meta.run_uuid)]['focus'] += "Resilience,"
                     summary_dict[str(m.meta.run_uuid)]['outage_duration'] = m.outage_durations[0] # all durations are same.
             else:
                 # outage start timestep was provided, is 1 or more
                 summary_dict[str(m.meta.run_uuid)]['outage_duration'] = m.outage_end_time_step - m.outage_start_time_step + 1
-                summary_dict[str(m.meta.run_uuid)]['focus'] = "Resilience"
+                summary_dict[str(m.meta.run_uuid)]['focus'] += "Resilience,"
     
     site = SiteOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
         'meta__run_uuid',
@@ -1128,15 +1129,18 @@ def queryset_for_summary(api_metas,summary_dict:dict):
     )
     if len(site_inputs) > 0:
         for m in site_inputs:
+            # if focus key doesnt exist, create it
+            if 'focus' not in summary_dict[str(m.meta.run_uuid)].keys():
+                summary_dict[str(m.meta.run_uuid)]['focus'] = ''
             try: # can be NoneType
                 if m.renewable_electricity_min_fraction > 0:
-                    summary_dict[str(m.meta.run_uuid)]['focus'] = "Clean-energy"
+                    summary_dict[str(m.meta.run_uuid)]['focus'] += "Clean-energy,"
             except:
                 pass # is NoneType
 
             try: # can be NoneType
                 if m.renewable_electricity_max_fraction > 0:
-                    summary_dict[str(m.meta.run_uuid)]['focus'] = "Clean-energy"
+                    summary_dict[str(m.meta.run_uuid)]['focus'] += "Clean-energy,"
             except:
                 pass # is NoneType
 
@@ -1149,11 +1153,14 @@ def queryset_for_summary(api_metas,summary_dict:dict):
     )
     if len(settings) > 0:
         for m in settings:
+            # if focus key doesnt exist, create it
+            if 'focus' not in summary_dict[str(m.meta.run_uuid)].keys():
+                summary_dict[str(m.meta.run_uuid)]['focus'] = ''
             if m.off_grid_flag:
-                summary_dict[str(m.meta.run_uuid)]['focus'] = "Off-grid"
+                summary_dict[str(m.meta.run_uuid)]['focus'] += "Off-grid,"
             
             if m.include_climate_in_objective or m.include_health_in_objective:
-                summary_dict[str(m.meta.run_uuid)]['focus'] = "Clean-energy"
+                summary_dict[str(m.meta.run_uuid)]['focus'] += "Clean-energy,"
 
     tariffInputs = ElectricTariffInputs.objects.filter(meta__run_uuid__in=run_uuids).only(
         'meta__run_uuid',
