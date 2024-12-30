@@ -41,7 +41,8 @@
         "operating_reserve_required_fraction": 0.0,
         "min_load_met_annual_fraction": 1.0,
         "blended_doe_reference_names": [],
-        "blended_doe_reference_percents": []
+        "blended_doe_reference_percents": [],
+        "normalize_and_scale_load_profile_input": false
     },
     "Site": {
         "latitude": 38.96345294964369,
@@ -265,12 +266,13 @@
     },
     "SpaceHeatingLoad": {
         "annual_mmbtu": null,
-        "year": 2017,
         "doe_reference_name": "MidriseApartment",
         "monthly_mmbtu": [],
         "fuel_loads_mmbtu_per_hour": [],
         "blended_doe_reference_names": [],
-        "blended_doe_reference_percents": []
+        "blended_doe_reference_percents": [],
+        "normalize_and_scale_load_profile_input": false,
+        "year": 2017
     },
     "DomesticHotWaterLoad": {
         "annual_mmbtu": 8760.0,
@@ -278,11 +280,19 @@
         "monthly_mmbtu": [],
         "fuel_loads_mmbtu_per_hour": [],
         "blended_doe_reference_names": [],
-        "blended_doe_reference_percents": []
+        "blended_doe_reference_percents": [],
+        "normalize_and_scale_load_profile_input": false,
+        "year": 2017        
     },
     "ProcessHeatLoad": { 
         "annual_mmbtu": 8760.0,
-        "industry_reference_name": "Warehouse"
+        "industrial_reference_name": "Chemical",
+        "monthly_mmbtu": [],
+        "fuel_loads_mmbtu_per_hour": [],
+        "blended_industrial_reference_names": [],
+        "blended_industrial_reference_percents": [],
+        "normalize_and_scale_load_profile_input": false,
+        "year": 2017
     },
     "Boiler": {
         "min_mmbtu_per_hour": 5.0,
