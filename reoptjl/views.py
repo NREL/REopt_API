@@ -1600,7 +1600,7 @@ def proforma_for_runuuid(request, run_uuid):
             # create bytestream to return resposne
             output = io.BytesIO()
             # generate proforma
-            proforma = proforma_helper(res, output)
+            proforma_helper(res, output)
             output.seek(0)
 
             # Set up the Http response.
