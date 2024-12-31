@@ -1,0 +1,51 @@
+{
+    "user_uuid": "1d2ef71e-fd93-4c4a-b5c3-1485a87f772e",
+    "webtool_uuid": "1ab7530f-74b8-4ea8-b8ed-f11bd953f61f",
+    "Settings": {
+        "optimality_tolerance": 0.001,
+        "solver_name": "HiGHS",
+        "off_grid_flag": false,
+        "include_climate_in_objective": false,
+        "include_health_in_objective": false
+    },
+    "Meta": {
+        "address": "San Francisco CA USA"
+    },
+    "Site": {
+        "latitude": 37.7749295,
+        "longitude": -122.4194155,
+        "include_exported_renewable_electricity_in_total": true,
+        "include_exported_elec_emissions_in_total": true,
+        "land_acres": 1000000.0,
+        "roof_squarefeet": 0
+    },
+    "ElectricLoad": {
+        "doe_reference_name": "Hospital"
+    },
+    "ElectricTariff": {
+        "blended_annual_energy_rate": 0.15,
+        "blended_annual_demand_rate": 0.0
+    },
+    "ElectricUtility": {
+        "cambium_location_type": "GEA Regions",
+        "cambium_metric_col": "lrmer_co2e",
+        "cambium_scenario": "Mid-case",
+        "cambium_grid_level": "enduse"
+    },
+    "SpaceHeatingLoad": {
+        "annual_mmbtu": 11570.916,
+        "doe_reference_name": "Hospital"
+    },
+    "DomesticHotWaterLoad": {
+        "annual_mmbtu": 671.405,
+        "doe_reference_name": "Hospital"
+    },
+    "ExistingBoiler": {
+        "fuel_type": "natural_gas",
+        "fuel_cost_per_mmbtu": 25.0
+    },
+    "ASHPSpaceHeater": {
+        "force_into_system": true,
+        "can_serve_cooling": false
+    }
+}
