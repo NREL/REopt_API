@@ -4725,10 +4725,6 @@ class CoolingLoadInputs(BaseModel, models.Model):
                     "The number of blended_doe_reference_names must equal the number of blended_doe_reference_percents."
             if not math.isclose(sum(self.blended_doe_reference_percents),  1.0):
                 error_messages["blended_doe_reference_percents"] = "Sum must = 1.0."
-
-        if self.doe_reference_name != "" or \
-                len(self.blended_doe_reference_names) > 0:
-            self.year = 2017  # the validator provides an "info" message regarding this)
         
         if len(self.monthly_fractions_of_electric_load) > 0:
             if len(self.monthly_fractions_of_electric_load) != 12:
@@ -6989,10 +6985,6 @@ class SpaceHeatingLoadInputs(BaseModel, models.Model):
                     "The number of blended_doe_reference_names must equal the number of blended_doe_reference_percents."
             if not math.isclose(sum(self.blended_doe_reference_percents),  1.0):
                 error_messages["blended_doe_reference_percents"] = "Sum must = 1.0."
-
-        if self.doe_reference_name != "" or \
-                len(self.blended_doe_reference_names) > 0:
-            self.year = 2017  # the validator provides an "info" message regarding this)
         
         if self.addressable_load_fraction == None:
             self.addressable_load_fraction = list([1.0]) # should not convert to timeseries, in case it is to be used with monthly_mmbtu or annual_mmbtu
@@ -7168,10 +7160,6 @@ class DomesticHotWaterLoadInputs(BaseModel, models.Model):
                     "The number of blended_doe_reference_names must equal the number of blended_doe_reference_percents."
             if not math.isclose(sum(self.blended_doe_reference_percents),  1.0):
                 error_messages["blended_doe_reference_percents"] = "Sum must = 1.0."
-
-        if self.doe_reference_name != "" or \
-                len(self.blended_doe_reference_names) > 0:
-            self.year = 2017  # the validator provides an "info" message regarding this)
         
         if self.addressable_load_fraction == None:
             self.addressable_load_fraction = list([1.0]) # should not convert to timeseries, in case it is to be used with monthly_mmbtu or annual_mmbtu
@@ -7322,10 +7310,6 @@ class ProcessHeatLoadInputs(BaseModel, models.Model):
                     "The number of blended_industrial_reference_names must equal the number of blended_industrial_reference_percents."
             if not math.isclose(sum(self.blended_industrial_reference_percents),  1.0):
                 error_messages["blended_industrial_reference_percents"] = "Sum must = 1.0."
-
-        if self.industrial_reference_name != "" or \
-                len(self.blended_industrial_reference_names) > 0:
-            self.year = 2017  # the validator provides an "info" message regarding this)
         
         if self.addressable_load_fraction == None:
             self.addressable_load_fraction = list([1.0]) # should not convert to timeseries, in case it is to be used with monthly_mmbtu or annual_mmbtu
