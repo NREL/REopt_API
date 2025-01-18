@@ -5477,6 +5477,12 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
         help_text="Boolean indicator if ASHP space heater serves compatible thermal loads exclusively in optimized scenario"   
     )
 
+    force_dispatch = models.BooleanField(
+        null=True, 
+        default=True,
+        help_text="Boolean indicator if ASHP space heater is forced to its maximize output if true"   
+    )
+
     avoided_capex_by_ashp_present_value = models.FloatField(
         validators=[
             MinValueValidator(0),
@@ -5708,7 +5714,7 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
         ),
         default=list,
         blank=True,
-        help_text=(("Reference points for ASHP space heating system heating coefficient of performance (COP) "
+        help_text=(("Reference points for ASHP water heating system heating coefficient of performance (COP) "
                     "(ratio of usable heating thermal energy produced per unit electric energy consumed)"))
     )
 
@@ -5722,7 +5728,7 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
         ),
         default=list,
         blank=True,
-        help_text=(("Reference points for ASHP space heating system heating capac)ity factor"
+        help_text=(("Reference points for ASHP water heating system heating capacity factor"
                     "(ratio of heating thermal power to rated capacity)"))
     )
 
@@ -5736,7 +5742,7 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
         ),
         default=list,
         blank=True,
-        help_text=(("Reference temperatures for ASHP space heating system's heating COP and CF [Fahrenheit]"))
+        help_text=(("Reference temperatures for ASHP water heating system's heating COP and CF [Fahrenheit]"))
     )
 
     avoided_capex_by_ashp_present_value = models.FloatField(
@@ -5763,7 +5769,13 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
     force_into_system = models.BooleanField(
         null=True, 
         blank=True,
-        help_text="Boolean indicator if ASHP space heater serves compatible thermal loads exclusively in optimized scenario"   
+        help_text="Boolean indicator if ASHP water heater serves compatible thermal loads exclusively in optimized scenario"   
+    )
+
+    force_dispatch = models.BooleanField(
+        null=True, 
+        default=True,
+        help_text="Boolean indicator if ASHP water heater is forced to its maximize output if true"   
     )
 
     def clean(self):
