@@ -368,7 +368,8 @@
         "can_serve_cooling": true,
         "force_into_system": false,
         "avoided_capex_by_ashp_present_value": 0,
-        "back_up_temp_threshold_degF": -10.0
+        "back_up_temp_threshold_degF": -10.0,
+        "force_dispatch": false
     },
     "ASHPWaterHeater": {
         "min_ton": 10.0,
@@ -385,6 +386,7 @@
         "heating_reference_temps_degF": [-5, 17, 47],
         "force_into_system": false,
         "avoided_capex_by_ashp_present_value": 0,
-        "back_up_temp_threshold_degF": -10.0
+        "back_up_temp_threshold_degF": -10.0,
+        "force_dispatch": false
     }
 }
