@@ -5781,7 +5781,7 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
     def clean(self):
         error_messages = {}
         if self.dict.get("min_allowable_ton") in [None, "", []] and self.dict.get("min_allowable_peak_capacity_fraction") in [None, "", []]:
-            self.min_allowable_peak_capacity_fraction = 0.5
+            self.min_allowable_peak_capacity_fraction = 0.25
 
         if self.dict.get("min_allowable_ton") not in [None, "", []] and self.dict.get("min_allowable_peak_capacity_fraction") not in [None, "", []]:
             error_messages["bad inputs"] = "At most one of min_allowable_ton and min_allowable_peak_capacity_fraction may be input to model {}".format(self.key)
