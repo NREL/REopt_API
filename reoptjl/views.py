@@ -538,6 +538,9 @@ def simulated_load(request):
             inputs["longitude"] = float(request.GET['longitude'])
             # Optional load_type - will default to "electric"
             inputs["load_type"] = request.GET.get('load_type')
+            # Optional year parameter to shift the CRB profile from 2017 (also 2023) to the input year
+            if 'year' in request.GET:
+                inputs["year"] = int(request.GET['year'])
 
             if inputs["load_type"] == 'process_heat':
                 expected_reference_name = 'industrial_reference_name'
