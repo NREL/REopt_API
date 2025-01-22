@@ -26,6 +26,14 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.11.0
+### Minor Updates
+##### Changed
+- Require `year` for all custom 8760/35040 load profile inputs
+- Truncate the last day of the year instead of the leap day for leap years
+##### Added
+- Option for ASHP to `force_dispatch` (default = true) which maximizes ASHP thermal output
+
 ## v3.10.2
 ### Minor Updates
 ##### Changed
