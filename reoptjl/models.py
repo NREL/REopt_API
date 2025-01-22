@@ -5480,7 +5480,7 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
     force_dispatch = models.BooleanField(
         null=True, 
         default=True,
-        help_text="Boolean indicator if ASHP space heater is forced to its maximize output if true"   
+        help_text="Boolean indicator that ASHP space heater outputs either maximum capacity or site load if true"   
     )
 
     avoided_capex_by_ashp_present_value = models.FloatField(
@@ -5775,7 +5775,7 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
     force_dispatch = models.BooleanField(
         null=True, 
         default=True,
-        help_text="Boolean indicator if ASHP water heater is forced to its maximize output if true"   
+        help_text="Boolean indicator that ASHP water heater outputs either maximum capacity or site load if true"   
     )
 
     def clean(self):

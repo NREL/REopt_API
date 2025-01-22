@@ -15,12 +15,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='ashpspaceheaterinputs',
             name='force_dispatch',
-            field=models.BooleanField(default=True, help_text='Boolean indicator if ASHP space heater is forced to its maximize output if true', null=True),
+            field=models.BooleanField(default=True, help_text='Boolean indicator that ASHP space heater outputs either maximum capacity or site load if true', null=True),
         ),
         migrations.AddField(
             model_name='ashpwaterheaterinputs',
             name='force_dispatch',
-            field=models.BooleanField(default=True, help_text='Boolean indicator if ASHP water heater is forced to its maximize output if true', null=True),
+            field=models.BooleanField(default=True, help_text='Boolean indicator that ASHP water heater outputs either maximum capacity or site load if true', null=True),
         ),
         migrations.AlterField(
             model_name='ashpwaterheaterinputs',
