@@ -48,6 +48,13 @@ Classify the change according to the following categories:
   - Site **total_renewable_energy_fraction** changed to **onsite_renewable_energy_fraction_of_total_load**
 - Changed v3 endpoint "cambium_emissions_profile" to "cambium_profile"
 - In REopt.jl: Updated Cambium API call to Cambium 2023 dataset, Updated AVERT emissions data to v4.3, which uses Regional Data Files for year 2023 for CONUS. For Alaska and Hawaii (regions AKGD, HIMS, HIOA), updated eGRID data to eGRID2022 datafile, adjusted to CO2e values.
+## v3.11.0
+### Minor Updates
+##### Changed
+- Require `year` for all custom 8760/35040 load profile inputs
+- Truncate the last day of the year instead of the leap day for leap years
+##### Added
+- Option for ASHP to `force_dispatch` (default = true) which maximizes ASHP thermal output
 
 ## v3.10.2
 ### Minor Updates
