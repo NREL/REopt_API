@@ -28,7 +28,7 @@
     },
     "ElectricUtility": {
         "cambium_location_type": "GEA Regions 2023",
-        "cambium_metric_col": "lrmer_co2e",
+        "cambium_co2_metric": "lrmer_co2e",
         "cambium_scenario": "Mid-case",
         "cambium_grid_level": "enduse"
     },

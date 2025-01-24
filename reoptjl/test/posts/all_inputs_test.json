@@ -145,7 +145,8 @@
         "emissions_factor_CO2_decrease_fraction": 0.01174,
         "emissions_factor_NOx_decrease_fraction": 0.01174,
         "emissions_factor_SO2_decrease_fraction": 0.01174,
-        "emissions_factor_PM25_decrease_fraction": 0.01174
+        "emissions_factor_PM25_decrease_fraction": 0.01174,
+        "cambium_co2_metric": "lrmer_co2e"
     },
     "ElectricStorage": {
         "min_kw": 100.0,
