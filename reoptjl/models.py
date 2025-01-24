@@ -1213,7 +1213,6 @@ class ElectricLoadInputs(BaseModel, models.Model):
                    "https://energy.gov/eere/buildings/commercial-reference-buildings")
     )
     year = models.IntegerField(
-        default=2022,
         validators=[
             MinValueValidator(1),
             MaxValueValidator(9999)
@@ -4682,6 +4681,18 @@ class CoolingLoadInputs(BaseModel, models.Model):
                    )
     )
 
+    year = models.IntegerField(
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(9999)
+        ],
+        null=True, blank=True,
+        help_text=("Year of Custom Load Profile. If a custom load profile is uploaded via the thermal_loads_ton parameter, it "
+                   "is important that this year correlates with the electric load profile so that weekdays/weekends are "
+                   "determined correctly for the utility rate tariff. If a DOE Reference Building profile (aka "
+                   "'simulated' profile) is used, the year is set to 2017 since the DOE profiles start on a Sunday.")
+    )    
+
     annual_fraction_of_electric_load = models.FloatField(
         validators=[
             MinValueValidator(0),
@@ -4732,10 +4743,6 @@ class CoolingLoadInputs(BaseModel, models.Model):
                     "The number of blended_doe_reference_names must equal the number of blended_doe_reference_percents."
             if not math.isclose(sum(self.blended_doe_reference_percents),  1.0):
                 error_messages["blended_doe_reference_percents"] = "Sum must = 1.0."
-
-        if self.doe_reference_name != "" or \
-                len(self.blended_doe_reference_names) > 0:
-            self.year = 2017  # the validator provides an "info" message regarding this)
         
         if len(self.monthly_fractions_of_electric_load) > 0:
             if len(self.monthly_fractions_of_electric_load) != 12:
@@ -5488,6 +5495,12 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
         help_text="Boolean indicator if ASHP space heater serves compatible thermal loads exclusively in optimized scenario"   
     )
 
+    force_dispatch = models.BooleanField(
+        null=True, 
+        default=True,
+        help_text="Boolean indicator that ASHP space heater outputs either maximum capacity or site load if true"   
+    )
+
     avoided_capex_by_ashp_present_value = models.FloatField(
         validators=[
             MinValueValidator(0),
@@ -5512,7 +5525,7 @@ class ASHPSpaceHeaterInputs(BaseModel, models.Model):
     def clean(self):
         error_messages = {}
         if self.dict.get("min_allowable_ton") in [None, "", []] and self.dict.get("min_allowable_peak_capacity_fraction") in [None, "", []]:
-            self.min_allowable_peak_capacity_fraction = 0.5
+            self.min_allowable_peak_capacity_fraction = 0.25
 
         if self.dict.get("min_allowable_ton") not in [None, "", []] and self.dict.get("min_allowable_peak_capacity_fraction") not in [None, "", []]:
             error_messages["bad inputs"] = "At most one of min_allowable_ton and min_allowable_peak_capacity_fraction may be input to model {}".format(self.key)
@@ -5719,7 +5732,7 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
         ),
         default=list,
         blank=True,
-        help_text=(("Reference points for ASHP space heating system heating coefficient of performance (COP) "
+        help_text=(("Reference points for ASHP water heating system heating coefficient of performance (COP) "
                     "(ratio of usable heating thermal energy produced per unit electric energy consumed)"))
     )
 
@@ -5733,7 +5746,7 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
         ),
         default=list,
         blank=True,
-        help_text=(("Reference points for ASHP space heating system heating capac)ity factor"
+        help_text=(("Reference points for ASHP water heating system heating capacity factor"
                     "(ratio of heating thermal power to rated capacity)"))
     )
 
@@ -5747,7 +5760,7 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
         ),
         default=list,
         blank=True,
-        help_text=(("Reference temperatures for ASHP space heating system's heating COP and CF [Fahrenheit]"))
+        help_text=(("Reference temperatures for ASHP water heating system's heating COP and CF [Fahrenheit]"))
     )
 
     avoided_capex_by_ashp_present_value = models.FloatField(
@@ -5774,13 +5787,19 @@ class ASHPWaterHeaterInputs(BaseModel, models.Model):
     force_into_system = models.BooleanField(
         null=True, 
         blank=True,
-        help_text="Boolean indicator if ASHP space heater serves compatible thermal loads exclusively in optimized scenario"   
+        help_text="Boolean indicator if ASHP water heater serves compatible thermal loads exclusively in optimized scenario"   
+    )
+
+    force_dispatch = models.BooleanField(
+        null=True, 
+        default=True,
+        help_text="Boolean indicator that ASHP water heater outputs either maximum capacity or site load if true"   
     )
 
     def clean(self):
         error_messages = {}
         if self.dict.get("min_allowable_ton") in [None, "", []] and self.dict.get("min_allowable_peak_capacity_fraction") in [None, "", []]:
-            self.min_allowable_peak_capacity_fraction = 0.5
+            self.min_allowable_peak_capacity_fraction = 0.25
 
         if self.dict.get("min_allowable_ton") not in [None, "", []] and self.dict.get("min_allowable_peak_capacity_fraction") not in [None, "", []]:
             error_messages["bad inputs"] = "At most one of min_allowable_ton and min_allowable_peak_capacity_fraction may be input to model {}".format(self.key)
@@ -6926,7 +6945,6 @@ class SpaceHeatingLoadInputs(BaseModel, models.Model):
     )
     
     year = models.IntegerField(
-        default=2022,
         validators=[
             MinValueValidator(1),
             MaxValueValidator(9999)
@@ -6997,10 +7015,6 @@ class SpaceHeatingLoadInputs(BaseModel, models.Model):
                     "The number of blended_doe_reference_names must equal the number of blended_doe_reference_percents."
             if not math.isclose(sum(self.blended_doe_reference_percents),  1.0):
                 error_messages["blended_doe_reference_percents"] = "Sum must = 1.0."
-
-        if self.doe_reference_name != "" or \
-                len(self.blended_doe_reference_names) > 0:
-            self.year = 2017  # the validator provides an "info" message regarding this)
         
         if self.addressable_load_fraction == None:
             self.addressable_load_fraction = list([1.0]) # should not convert to timeseries, in case it is to be used with monthly_mmbtu or annual_mmbtu
@@ -7106,7 +7120,6 @@ class DomesticHotWaterLoadInputs(BaseModel, models.Model):
     )
 
     year = models.IntegerField(
-        default=2022,
         validators=[
             MinValueValidator(1),
             MaxValueValidator(9999)
@@ -7177,10 +7190,6 @@ class DomesticHotWaterLoadInputs(BaseModel, models.Model):
                     "The number of blended_doe_reference_names must equal the number of blended_doe_reference_percents."
             if not math.isclose(sum(self.blended_doe_reference_percents),  1.0):
                 error_messages["blended_doe_reference_percents"] = "Sum must = 1.0."
-
-        if self.doe_reference_name != "" or \
-                len(self.blended_doe_reference_names) > 0:
-            self.year = 2017  # the validator provides an "info" message regarding this)
         
         if self.addressable_load_fraction == None:
             self.addressable_load_fraction = list([1.0]) # should not convert to timeseries, in case it is to be used with monthly_mmbtu or annual_mmbtu
@@ -7260,7 +7269,6 @@ class ProcessHeatLoadInputs(BaseModel, models.Model):
     )
 
     year = models.IntegerField(
-        default=2022,
         validators=[
             MinValueValidator(1),
             MaxValueValidator(9999)
@@ -7268,28 +7276,15 @@ class ProcessHeatLoadInputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text=("Year of Custom Load Profile. If a custom load profile is uploaded via the fuel_loads_mmbtu_per_hour parameter, it "
                    "is important that this year correlates with the electric load profile so that weekdays/weekends are "
-                   "determined correctly for the utility rate tariff. If a DOE Reference Building profile (aka "
-                   "'simulated' profile) is used, the year is set to 2017 since the DOE profiles start on a Sunday.")
+                   "determined correctly for the utility rate tariff. If a Industrial Reference Building profile (aka "
+                   "'simulated' profile) is used, the year is set to 2017 to be consistent with the DOE reference building year which starts on a Sunday.")
     )    
 
     normalize_and_scale_load_profile_input = models.BooleanField(
         blank=True,
         default=False,
         help_text=("Takes the input fuel_loads_mmbtu_per_hour and normalizes and scales it to annual or monthly energy inputs.")
-    )
-
-    year = models.IntegerField(
-        default=2022,
-        validators=[
-            MinValueValidator(1),
-            MaxValueValidator(9999)
-        ],
-        null=True, blank=True,
-        help_text=("Year of Custom Load Profile. If a custom load profile is uploaded via the fuel_loads_mmbtu_per_hour parameter, it "
-                   "is important that this year correlates with the electric load profile so that weekdays/weekends are "
-                   "determined correctly for the utility rate tariff. If a DOE Reference Building profile (aka "
-                   "'simulated' profile) is used, the year is set to 2017 since the DOE profiles start on a Sunday.")
-    )    
+    )   
 
     blended_industrial_reference_names = ArrayField(
         models.TextField(
@@ -7345,10 +7340,6 @@ class ProcessHeatLoadInputs(BaseModel, models.Model):
                     "The number of blended_industrial_reference_names must equal the number of blended_industrial_reference_percents."
             if not math.isclose(sum(self.blended_industrial_reference_percents),  1.0):
                 error_messages["blended_industrial_reference_percents"] = "Sum must = 1.0."
-
-        if self.industrial_reference_name != "" or \
-                len(self.blended_industrial_reference_names) > 0:
-            self.year = 2017  # the validator provides an "info" message regarding this)
         
         if self.addressable_load_fraction == None:
             self.addressable_load_fraction = list([1.0]) # should not convert to timeseries, in case it is to be used with monthly_mmbtu or annual_mmbtu

@@ -26,10 +26,13 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## v3.10.3
+## v3.11.0
 ### Minor Updates
+##### Changed
+- Require `year` for all custom 8760/35040 load profile inputs
+- Truncate the last day of the year instead of the leap day for leap years
 ##### Added
-- Added `min_duration_hours` and `max_duration_hours` for limitting electric storage's energy capacity
+- Option for ASHP to `force_dispatch` (default = true) which maximizes ASHP thermal output
 
 ## v3.10.2
 ### Minor Updates
