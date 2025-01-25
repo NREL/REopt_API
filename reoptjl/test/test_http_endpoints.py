@@ -250,7 +250,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         view_response = json.loads(resp.content)
         self.assertEquals(view_response["metric_col"], "lrmer_co2e")
         self.assertEquals(view_response["location"], "Northern Grid West") 
-        self.assertEquals(len(view_response["emissions_factor_series_lb_CO2_per_kwh"]), 8760)
+        self.assertEquals(len(view_response["data_series"]), 8760)
         #case 2: location off shore of NJ (works for AVERT, not Cambium)
         inputs["latitude"] = 39.034417
         inputs["longitude"] = -74.759292
