@@ -237,7 +237,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         inputs = {
             "load_year": 2021,
             "scenario": "Mid-case",
-            "location_type": "States", 
+            "location_type": "GEA Regions 2023", 
             "latitude": 47.606211, # Seattle 
             "longitude": -122.336052, # Seattle 
             "start_year": 2024,
@@ -249,7 +249,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         self.assertHttpOK(resp)
         view_response = json.loads(resp.content)
         self.assertEquals(view_response["metric_col"], "lrmer_co2e")
-        self.assertEquals(view_response["location"], "Washington") 
+        self.assertEquals(view_response["location"], "Northern Grid West") 
         self.assertEquals(len(view_response["emissions_factor_series_lb_CO2_per_kwh"]), 8760)
         #case 2: location off shore of NJ (works for AVERT, not Cambium)
         inputs["latitude"] = 39.034417
