@@ -33,6 +33,7 @@ Classify the change according to the following categories:
 - Truncate the last day of the year instead of the leap day for leap years
 ##### Added
 - Option for ASHP to `force_dispatch` (default = true) which maximizes ASHP thermal output
+- Added `min_duration_hours` and `max_duration_hours` for limitting electric storage's energy capacity
 
 ## v3.10.2
 ### Minor Updates
