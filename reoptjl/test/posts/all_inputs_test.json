@@ -153,6 +153,8 @@
         "max_kw": 100.0,
         "min_kwh": 200.0,
         "max_kwh": 200.0,
+        "min_duration_hours": 2.0,
+        "max_duration_hours": 2.0,
         "internal_efficiency_fraction": 0.975,
         "inverter_efficiency_fraction": 0.96,
         "rectifier_efficiency_fraction": 0.96,

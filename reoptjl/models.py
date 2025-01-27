@@ -3507,6 +3507,24 @@ class ElectricStorageInputs(BaseModel, models.Model):
         blank=True,
         help_text="Rebate based on installed energy capacity"
     )
+    min_duration_hours = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Minimum amount of time storage can discharge at its rated power capacity"
+    )
+    max_duration_hours = models.FloatField(
+        default=100000.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Maximum amount of time storage can discharge at its rated power capacity"
+    )
 
     optimize_soc_init_fraction = models.BooleanField(
         default=False,
