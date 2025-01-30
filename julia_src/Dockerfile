@@ -1,4 +1,4 @@
-FROM julia:1.10.2
+FROM julia:1.11.2
 
 # Install NREL root certs for machines running on NREL's network.
 ARG NREL_ROOT_CERT_URL_ROOT=""
