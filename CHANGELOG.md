@@ -31,7 +31,7 @@ Classify the change according to the following categories:
 ### Added 
 - Added the following inputs to account for the clean or renewable energy fraction of grid-purchased electricity: 
   - ElectricUtility **cambium_cef_metric** to utilize clean energy data from NREL's Cambium database
-  - **renewable_energy_fraction_series** to supply a custom grid clean or renewable energy scalar or series
+  - ElectricUtility **renewable_energy_fraction_series** to supply a custom grid clean or renewable energy scalar or series
   - Site **include_grid_renewable_fraction_in_RE_constraints** - to allow user to choose whether to include grid RE in min max constraints
 - Added the following outputs: 
   - ElectricUtility **annual_renewable_electricity_supplied_kwh**
