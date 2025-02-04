@@ -53,7 +53,15 @@ def run_jump_model(run_uuid):
     name = 'run_jump_model'
     data = get_input_dict_from_run_uuid(run_uuid)
     user_uuid = data.get('user_uuid')
-    
+    # data['Settings']['name'] = data.get('description', "")
+    if data.get('webtool_uuid') not in [None, ""]:
+        data['Settings']['webtool_run'] = True
+    else:
+        data['Settings']['direct_api_run'] = True
+    data['Settings']['webtool_user_uuid'] = user_uuid
+    data['Settings']['webtool_portfolio_uuid'] = data.get('portfolio_uuid', "")
+    data['Settings']['api_run_uuid'] = run_uuid
+    print("data['Settings'] = ", data['Settings'])
     data.pop('user_uuid',None) # Remove user uuid from inputs dict to avoid downstream errors
 
     # can uncomment for debugging
