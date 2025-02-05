@@ -408,7 +408,7 @@ class SiteInputs(BaseModel, models.Model):
     )
 
     include_grid_renewable_fraction_in_RE_constraints = models.BooleanField(
-        default=True,
+        default=False,
         blank=True,
         help_text=("If True, then the renewable energy content of energy from the grid is included in any min or max renewable energy requirements.")
     )
