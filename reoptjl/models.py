@@ -451,7 +451,6 @@ class SiteOutputs(BaseModel, models.Model):
                   "Calculated as total annual RE electric generation, minus storage losses and curtailment, with the user selecting whether exported renewable generation is included). "
                   )
     )
-    # TODO: I think "incl. electric heating/cooling loads" is not currently true
     onsite_renewable_electricity_fraction_of_elec_load = models.FloatField(
         null=True, blank=True,
         help_text=(
@@ -578,14 +577,14 @@ class SiteOutputs(BaseModel, models.Model):
     onsite_and_grid_renewable_electricity_fraction_of_elec_load_bau = models.FloatField(
         null=True, blank=True,
         help_text=(
-                  "Calculation is the same as onsite_renewable_electricity_fraction_of_elec_load, but additionally includes the renewable energy"
+                  "Calculation is the same as onsite_renewable_electricity_fraction_of_elec_load_bau, but additionally includes the renewable energy"
                   "content of grid-purchased electricity, accounting for any battery efficiency losses."
                   )
     )
     onsite_and_grid_renewable_energy_fraction_of_total_load_bau = models.FloatField(
         null=True, blank=True,
         help_text=(
-                  "Calculation is the same as onsite_renewable_energy_fraction_of_total_load, but additionally includes the renewable energy"
+                  "Calculation is the same as onsite_renewable_energy_fraction_of_total_load_bau, but additionally includes the renewable energy"
                   "content of grid-purchased electricity, accounting for any battery efficiency losses."
                   )
     )
