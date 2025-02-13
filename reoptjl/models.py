@@ -1412,7 +1412,7 @@ class ElectricLoadOutputs(BaseModel, models.Model):
             null=True, blank=True
         ),
         default=list,
-        help_text="Annual hourly time series of electric load"
+        help_text="Annual time series of BAU electric load. Does not include electric load for any new heating or cooling techs."
     )
     critical_load_series_kw = ArrayField(
         models.FloatField(
@@ -1424,7 +1424,11 @@ class ElectricLoadOutputs(BaseModel, models.Model):
     )
     annual_calculated_kwh = models.FloatField(
         null=True, blank=True,
-        help_text="Annual energy consumption calculated by summing up 8760 load profile"
+        help_text="Annual energy consumption calculated by summing up load_series_kw. Does not include electric load for any new heating or cooling techs."
+    )
+    annual_electric_load_with_thermal_conversions_kwh = models.FloatField(
+        null=True, blank=True,
+        help_text="Total end-use electrical load, including electrified heating and cooling end-use load."
     )
     bau_critical_load_met = models.BooleanField(
         null=True, blank=True,
