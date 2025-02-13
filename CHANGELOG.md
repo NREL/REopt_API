@@ -29,25 +29,26 @@ Classify the change according to the following categories:
 ## gridRE
 ### Major Updates
 ### Added 
-- Added the following inputs to account for the clean or renewable energy fraction of grid-purchased electricity: 
-  - ElectricUtility **cambium_cef_metric** to utilize clean energy data from NREL's Cambium database
-  - ElectricUtility **renewable_energy_fraction_series** to supply a custom grid clean or renewable energy scalar or series
-  - Site **include_grid_renewable_fraction_in_RE_constraints** - to allow user to choose whether to include grid RE in min max constraints
-- Added the following outputs: 
-  - ElectricUtility **annual_renewable_electricity_supplied_kwh**
-  - Site **onsite_and_grid_renewable_electricity_fraction_of_elec_load**
-  - Site **onsite_and_grid_renewable_energy_fraction_of_total_load**
-- Added input option optimize_soc_init_fraction (defaults to false) to ElectricStorage, which makes the optimization choose the inital SOC (equal to final SOC) instead of using soc_init_fraction. The initial SOC is also constrained to equal the final SOC, which eliminates the "free energy" issue. We currently do not fix SOC when soc_init_fraction is used because this has caused infeasibility.
+- Add inputs: 
+  - **ElectricUtility.cambium_cef_metric** to utilize clean energy data from NREL's Cambium database
+  - **ElectricUtility.renewable_energy_fraction_series** to supply a custom grid clean or renewable energy scalar or series
+  - **Site.include_grid_renewable_fraction_in_RE_constraints** - to allow user to choose whether to include grid RE in min max constraints
+  - **ElectricStorage.optimize_soc_init_fraction** (defaults to false), which makes the optimization choose the inital SOC (equal to final SOC) instead of using soc_init_fraction. The initial SOC is also constrained to equal the final SOC, which eliminates the "free energy" issue. We currently do not fix SOC when soc_init_fraction is used because this has caused infeasibility.
+- Add the following outputs: 
+  - **ElectricUtility.annual_renewable_electricity_supplied_kwh**
+  - **Site.onsite_and_grid_renewable_electricity_fraction_of_elec_load**
+  - **Site.onsite_and_grid_renewable_energy_fraction_of_total_load**
+  - **ElectricLoad.annual_electric_load_with_thermal_conversions_kwh**
 ### Changed
-- Changed name of the following inputs: 
-  - ElectricUtility input **cambium_metric_col** changed to **cambium_co2_metric**, to distinguish between the CO2 and clean energy fraction metrics
-- Changed name of the following outputs:
-  - ElectricUtility **cambium_emissions_region** changed to **cambium_region**
-  - Site **annual_renewable_electricity_kwh** changed to **annual_onsite_renewable_electricity_kwh**
-  - Site **renewable_electricity_fraction** changed to **onsite_renewable_electricity_fraction_of_elec_load** 
-  - Site **total_renewable_energy_fraction** changed to **onsite_renewable_energy_fraction_of_total_load**
-- Changed v3 endpoint "cambium_emissions_profile" to "cambium_profile"
-- In REopt.jl: Updated Cambium API call to Cambium 2023 dataset, Updated AVERT emissions data to v4.3, which uses Regional Data Files for year 2023 for CONUS. For Alaska and Hawaii (regions AKGD, HIMS, HIOA), updated eGRID data to eGRID2022 datafile, adjusted to CO2e values.
+- Change name of the following inputs: 
+  -  **ElectricUtility.cambium_metric_col** changed to **ElectricUtility.cambium_co2_metric**, to distinguish between the CO2 and clean energy fraction metrics
+- Change name of the following outputs:
+  - **ElectricUtility.cambium_emissions_region** changed to **ElectricUtility.cambium_region**
+  - **Site.annual_renewable_electricity_kwh** changed to **Site.annual_onsite_renewable_electricity_kwh**
+  - **Site.renewable_electricity_fraction** changed to **Site.onsite_renewable_electricity_fraction_of_elec_load** 
+  - **Site.total_renewable_energy_fraction** changed to **Site.onsite_renewable_energy_fraction_of_total_load**
+- Change v3 endpoint `cambium_emissions_profile` to `cambium_profile`
+
 ## v3.11.0
 ### Minor Updates
 ##### Changed
