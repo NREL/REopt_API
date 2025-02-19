@@ -929,11 +929,11 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [[deps.REopt]]
 deps = ["ArchGDAL", "CSV", "CoolProp", "DataFrames", "Dates", "DelimitedFiles", "HTTP", "JLD", "JSON", "JuMP", "LinDistFlow", "LinearAlgebra", "Logging", "MathOptInterface", "Requires", "Roots", "Statistics", "TestEnv"]
-git-tree-sha1 = "b58ddeb73296aadfb077c2bb41229fec4091834f"
+git-tree-sha1 = "75daf556277a532d38706a1289a5ab0443f94ee1"
 repo-rev = "gridRE-dev"
 repo-url = "https://github.com/NREL/REopt.jl.git"
 uuid = "d36ad4e8-d74a-4f7a-ace1-eaea049febf6"
-version = "0.49.1"
+version = "0.50.0"
 
 [[deps.Random]]
 deps = ["SHA"]
