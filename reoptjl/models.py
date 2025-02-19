@@ -3915,6 +3915,8 @@ class GeneratorOutputs(BaseModel, models.Model):
     year_one_variable_om_cost_before_tax_bau = models.FloatField(null=True, blank=True)
     year_one_fuel_cost_before_tax = models.FloatField(null=True, blank=True)
     year_one_fuel_cost_before_tax_bau = models.FloatField(null=True, blank=True)
+    year_one_fuel_cost_after_tax = models.FloatField(null=True, blank=True)
+    year_one_fuel_cost_after_tax_bau = models.FloatField(null=True, blank=True)    
     year_one_fixed_om_cost_before_tax = models.FloatField(null=True, blank=True)
     year_one_fixed_om_cost_before_tax_bau = models.FloatField(null=True, blank=True)
     lifecycle_variable_om_cost_after_tax = models.FloatField(null=True, blank=True)
