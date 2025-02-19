@@ -947,6 +947,10 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Up-front capital costs for all technologies, in present value, excluding replacement costs, including incentives except for MACRS."
     )
+    capital_costs_after_non_discounted_incentives = models.FloatField(
+        null=True, blank=True,
+        help_text="Capital costs for all technologies, in present value, after all non-discounted incentives including MACRS, including present value of replacement costs"
+    )  
     om_and_replacement_present_cost_after_tax = models.FloatField(
         null=True, blank=True,
         help_text="Net O&M and replacement costs in present value, after-tax."
@@ -954,6 +958,10 @@ class FinancialOutputs(BaseModel, models.Model):
     year_one_om_costs_after_tax = models.FloatField(
         null=True, blank=True,
         help_text="Year one operations and maintenance cost after tax."
+    )
+    year_one_om_costs_after_tax_bau = models.FloatField(
+        null=True, blank=True,
+        help_text="Year one operations and maintenance cost after tax in the BAU case."
     )
     lifecycle_om_costs_before_tax = models.FloatField(
         null=True, blank=True,
@@ -967,6 +975,22 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Year one operations and maintenance cost before tax in the BAU case."
     )
+    year_one_fuel_cost_before_tax = models.FloatField(
+        null=True, blank=True,
+        help_text="Year one fuel cost of all combined fuel-burning techs, before tax."
+    )
+    year_one_fuel_cost_before_tax_bau = models.FloatField(
+        null=True, blank=True,
+        help_text="Year one fuel cost of all combined fuel-burning techs, before tax in the BAU case."
+    )        
+    year_one_fuel_cost_after_tax = models.FloatField(
+        null=True, blank=True,
+        help_text="Year one fuel cost of all combined fuel-burning techs, after tax."
+    )
+    year_one_fuel_cost_after_tax_bau = models.FloatField(
+        null=True, blank=True,
+        help_text="Year one fuel cost of all combined fuel-burning techs, after tax in the BAU case."
+    )    
     simple_payback_years = models.FloatField(
         null=True, blank=True,
         help_text=("Number of years until the cumulative annual cashflows turn positive. "
@@ -2483,6 +2507,14 @@ class ElectricTariffOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Business as usual year one utility bill"
     )
+    year_one_bill_after_tax = models.FloatField(
+        null=True, blank=True,
+        help_text="Optimal year one utility bill, after tax"
+    )
+    year_one_bill_after_tax_bau = models.FloatField(
+        null=True, blank=True,
+        help_text="Business as usual year one utility bill, after tax"
+    )    
     year_one_export_benefit_before_tax = models.FloatField(
         null=True, blank=True,
         help_text="Optimal year one value of exported energy. A positive value indicates a benefit."
@@ -2491,6 +2523,14 @@ class ElectricTariffOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Business as usual year one value of exported energy. A positive value indicates a benefit."
     )
+    year_one_export_benefit_after_tax = models.FloatField(
+        null=True, blank=True,
+        help_text="Optimal year one value of exported energy, after tax. A positive value indicates a benefit."
+    )
+    year_one_export_benefit_after_tax_bau = models.FloatField(
+        null=True, blank=True,
+        help_text="Business as usual year one value of exported energy, after tax. A positive value indicates a benefit."
+    )    
     year_one_coincident_peak_cost_before_tax = models.FloatField(
         null=True, blank=True,
         help_text="Optimal year one coincident peak charges"
@@ -4496,6 +4536,10 @@ class CHPOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Cost of fuel consumed by the CHP system in year one [\$]"
     )
+    year_one_fuel_cost_after_tax = models.FloatField(
+        null=True, blank=True,
+        help_text="Cost of fuel consumed by the CHP system in year one, after tax [\$]"
+    )    
     lifecycle_fuel_cost_after_tax = models.FloatField(
         null=True, blank=True,
         help_text="Present value of cost of fuel consumed by the CHP system, after tax [\$]"
@@ -4504,6 +4548,10 @@ class CHPOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="CHP standby charges in year one [\$]"
     )
+    year_one_standby_cost_after_tax = models.FloatField(
+        null=True, blank=True,
+        help_text="CHP standby charges in year one, after tax [\$]"
+    )    
     lifecycle_standby_cost_after_tax = models.FloatField(
         null=True, blank=True,
         help_text="Present value of all CHP standby charges, after tax."
@@ -5077,7 +5125,9 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
     annual_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
     annual_thermal_production_mmbtu_bau = models.FloatField(null=True, blank=True)
     year_one_fuel_cost_before_tax = models.FloatField(null=True, blank=True)
+    year_one_fuel_cost_after_tax = models.FloatField(null=True, blank=True)
     year_one_fuel_cost_before_tax_bau = models.FloatField(null=True, blank=True)
+    year_one_fuel_cost_after_tax_bau = models.FloatField(null=True, blank=True)
 
     thermal_to_storage_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
@@ -6061,6 +6111,10 @@ class BoilerOutputs(BaseModel, models.Model):
     year_one_fuel_cost_before_tax = models.FloatField(
         null=True, blank=True
     )
+
+    year_one_fuel_cost_after_tax = models.FloatField(
+        null=True, blank=True
+    )    
 
     thermal_to_steamturbine_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
@@ -8218,7 +8272,7 @@ class GHPOutputs(BaseModel, models.Model):
     thermal_to_space_heating_load_series_mmbtu_per_hour = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
     thermal_to_dhw_load_series_mmbtu_per_hour = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
     thermal_to_load_series_ton = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
-
+    avoided_capex_by_ghp_present_value = models.FloatField(null=True, blank=True) 
 
 def get_input_dict_from_run_uuid(run_uuid:str):
     """
