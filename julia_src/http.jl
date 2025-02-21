@@ -419,7 +419,7 @@ function simulated_load(req::HTTP.Request)
 
     # Convert vectors which come in as Vector{Any} to Vector{Float} (within Vector{<:Real})
     vector_types = ["percent_share", "cooling_pct_share", "monthly_totals_kwh", "monthly_mmbtu", 
-                    "monthly_tonhour", "addressable_load_fraction", "load_profile"]
+                    "monthly_tonhour", "monthly_fraction", "addressable_load_fraction", "load_profile"]
     for key in vector_types
         if key in keys(d) && typeof(d[key]) <: Vector{}
             d[key] = convert(Vector{Real}, d[key])
