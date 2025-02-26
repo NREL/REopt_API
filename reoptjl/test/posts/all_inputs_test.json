@@ -55,7 +55,8 @@
         "renewable_electricity_max_fraction": null,
         "include_exported_elec_emissions_in_total": true,
         "include_exported_renewable_electricity_in_total": true,
-        "min_resil_time_steps": 100
+        "min_resil_time_steps": 100,
+        "include_grid_renewable_fraction_in_RE_constraints": false
     },
     "Settings": {
         "timeout_seconds": 420,
@@ -145,7 +146,10 @@
         "emissions_factor_CO2_decrease_fraction": 0.01174,
         "emissions_factor_NOx_decrease_fraction": 0.01174,
         "emissions_factor_SO2_decrease_fraction": 0.01174,
-        "emissions_factor_PM25_decrease_fraction": 0.01174
+        "emissions_factor_PM25_decrease_fraction": 0.01174,
+        "cambium_co2_metric": "lrmer_co2e",
+        "cambium_cef_metric": "cef_load",
+        "renewable_energy_fraction_series": []
     },
     "ElectricStorage": {
         "min_kw": 100.0,
@@ -172,7 +176,8 @@
         "macrs_itc_reduction": 0.5,
         "total_itc_fraction": 0.0,
         "total_rebate_per_kw": 0.0,
-        "total_rebate_per_kwh": 0.0
+        "total_rebate_per_kwh": 0.0,
+        "optimize_soc_init_fraction": false
     },
     "Generator": {
         "existing_kw": 0.0,
