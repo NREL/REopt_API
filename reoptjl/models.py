@@ -3213,7 +3213,7 @@ class WindInputs(BaseModel, models.Model):
     )
 
     def clean(self):
-        if self.size_class != "":
+        if self.size_class != "" and self.installed_cost_per_kw is None:
             self.installed_cost_per_kw = WIND_COST_DEFAULTS.get(self.size_class, None) # will get set in REopt.jl if size_class not supplied
 
 class WindOutputs(BaseModel, models.Model):
