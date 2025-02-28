@@ -26,7 +26,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## gridRE
+## v3.12.0
 ### Major Updates
 ### Added 
 - Add inputs: 
@@ -48,6 +48,7 @@ Classify the change according to the following categories:
   - **Site.renewable_electricity_fraction** changed to **Site.onsite_renewable_electricity_fraction_of_elec_load** 
   - **Site.total_renewable_energy_fraction** changed to **Site.onsite_renewable_energy_fraction_of_total_load**
 - Change v3 endpoint `cambium_emissions_profile` to `cambium_profile`
+- Change to using REopt.jl v0.51.0
 
 ## v3.11.0
 ### Minor Updates
