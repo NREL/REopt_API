@@ -34,6 +34,7 @@ Classify the change according to the following categories:
   - **ElectricUtility.renewable_energy_fraction_series** to supply a custom grid clean or renewable energy scalar or series
   - **Site.include_grid_renewable_fraction_in_RE_constraints** - to allow user to choose whether to include grid RE in min max constraints
   - **ElectricStorage.optimize_soc_init_fraction** (defaults to false), which makes the optimization choose the inital SOC (equal to final SOC) instead of using soc_init_fraction. The initial SOC is also constrained to equal the final SOC, which eliminates the "free energy" issue. We currently do not fix SOC when soc_init_fraction is used because this has caused infeasibility.
+  - **ElectricStorage.min_duration_hours** and **ElectricStorage.max_duration_hours** for limitting electric storage's energy capacity relative to its power capacity
 - Add the following outputs: 
   - **ElectricUtility.annual_renewable_electricity_supplied_kwh**
   - **Site.onsite_and_grid_renewable_electricity_fraction_of_elec_load**
@@ -50,6 +51,7 @@ Classify the change according to the following categories:
 - Change v3 endpoint `cambium_emissions_profile` to `cambium_profile`
 - Change to using REopt.jl v0.51.0
 
+
 ## v3.11.0
 ### Minor Updates
 ##### Changed
@@ -57,7 +59,6 @@ Classify the change according to the following categories:
 - Truncate the last day of the year instead of the leap day for leap years
 ##### Added
 - Option for ASHP to `force_dispatch` (default = true) which maximizes ASHP thermal output
-- Added `min_duration_hours` and `max_duration_hours` for limitting electric storage's energy capacity
 
 ## v3.10.2
 ### Minor Updates
