@@ -495,8 +495,8 @@ custom_table_webtool = [
     {
         "label"         : "Annual % Renewable Electricity (%)",
         "key"           : "annual_renewable_electricity",
-        "bau_value"     : lambda df: safe_get(df, "outputs.Site.renewable_electricity_fraction_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Site.renewable_electricity_fraction")
+        "bau_value"     : lambda df: safe_get(df, "outputs.Site.onsite_renewable_electricity_fraction_of_elec_load_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Site.onsite_renewable_electricity_fraction_of_elec_load")
     },
     {
         "label"         : "Annual CO2 Emissions (tonnes)",

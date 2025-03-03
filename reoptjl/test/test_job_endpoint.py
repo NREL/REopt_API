@@ -59,7 +59,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         self.assertAlmostEqual(results["ElectricStorage"]["size_kw"], 49.05, places=1)
         self.assertAlmostEqual(results["ElectricStorage"]["size_kwh"], 83.32, places=1)
     
-        self.assertIsNotNone(results["Site"]["total_renewable_energy_fraction"])
+        self.assertIsNotNone(results["Site"]["onsite_renewable_energy_fraction_of_total_load"])
         self.assertIsNotNone(results["Site"]["annual_emissions_tonnes_CO2"])
         self.assertIsNotNone(results["Site"]["lifecycle_emissions_tonnes_NOx"])
 
