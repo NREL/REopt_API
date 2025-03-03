@@ -955,14 +955,6 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Net O&M and replacement costs in present value, after-tax."
     )
-    year_one_om_costs_after_tax = models.FloatField(
-        null=True, blank=True,
-        help_text="Year one operations and maintenance cost after tax."
-    )
-    year_one_om_costs_after_tax_bau = models.FloatField(
-        null=True, blank=True,
-        help_text="Year one operations and maintenance cost after tax in the BAU case."
-    )
     lifecycle_om_costs_before_tax = models.FloatField(
         null=True, blank=True,
         help_text="Life cycle operations and maintenance cost over analysis period before tax."
@@ -975,6 +967,14 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Year one operations and maintenance cost before tax in the BAU case."
     )
+    year_one_om_costs_after_tax = models.FloatField(
+        null=True, blank=True,
+        help_text="Year one operations and maintenance cost after tax."
+    )
+    year_one_om_costs_after_tax_bau = models.FloatField(
+        null=True, blank=True,
+        help_text="Year one operations and maintenance cost after tax in the BAU case."
+    )    
     year_one_fuel_cost_before_tax = models.FloatField(
         null=True, blank=True,
         help_text="Year one fuel cost of all combined fuel-burning techs, before tax."
@@ -990,7 +990,39 @@ class FinancialOutputs(BaseModel, models.Model):
     year_one_fuel_cost_after_tax_bau = models.FloatField(
         null=True, blank=True,
         help_text="Year one fuel cost of all combined fuel-burning techs, after tax in the BAU case."
-    )    
+    )
+    year_one_chp_standby_cost_before_tax = models.FloatField(
+        null=True, blank=True,
+        help_text=("Year one CHP standby charges, before tax.")
+    )
+    year_one_chp_standby_cost_after_tax = models.FloatField(
+        null=True, blank=True,
+        help_text=("Year one CHP standby charges, after tax.")
+    )
+    year_one_total_cost_before_tax = models.FloatField(
+        null=True, blank=True,
+        help_text=("Year one total operating (electricity, fuel, O&M) costs, before tax.")
+    )
+    year_one_total_cost_before_tax_bau = models.FloatField(
+        null=True, blank=True,
+        help_text=("Year one total operating (electricity, fuel, O&M) costs, before tax in the BAU case.")
+    )
+    year_one_total_cost_after_tax = models.FloatField(
+        null=True, blank=True,
+        help_text=("Year one total operating (electricity, fuel, O&M) costs, after tax.")
+    )
+    year_one_total_cost_after_tax_bau = models.FloatField(
+        null=True, blank=True,
+        help_text=("Year one total operating (electricity, fuel, O&M) costs, after tax in the BAU case.")
+    )
+    year_one_total_cost_savings_before_tax = models.FloatField(
+        null=True, blank=True,
+        help_text=("Year one total operating (electricity, fuel, O&M) cost savings compared to BAU case, before tax.")
+    )
+    year_one_total_cost_savings_after_tax = models.FloatField(
+        null=True, blank=True,
+        help_text=("Year one total operating (electricity, fuel, O&M) cost savings compared to BAU case, after tax.")
+    )
     simple_payback_years = models.FloatField(
         null=True, blank=True,
         help_text=("Number of years until the cumulative annual cashflows turn positive. "
@@ -1085,12 +1117,10 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text=("Component of lifecycle costs (LCC). This value is the present value of all fuel costs over the analysis period, after tax.")
     )
-
     lifecycle_fuel_costs_after_tax_bau = models.FloatField(
         null=True, blank=True,
         help_text=("Component of lifecycle costs (LCC). This value is the present value of all fuel costs over the analysis period, after tax in the BAU case.")
     )
-
     lifecycle_chp_standby_cost_after_tax = models.FloatField(
         null=True, blank=True,
         help_text=("Component of lifecycle costs (LCC). This value is the present value of all CHP standby charges, after tax.")
