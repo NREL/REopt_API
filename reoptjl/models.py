@@ -943,13 +943,13 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Up-front capital costs for all technologies, in present value, excluding replacement costs, including incentives."
     )
-    initial_capital_costs_after_incentives_without_macrs = models.FloatField(
+    capital_costs_after_incentives_without_macrs = models.FloatField(
         null=True, blank=True,
-        help_text="Up-front capital costs for all technologies, in present value, excluding replacement costs, including incentives except for MACRS."
+        help_text="Capital costs for all technologies, including present value of replacement costs and incentives except for MACRS."
     )
     capital_costs_after_non_discounted_incentives = models.FloatField(
         null=True, blank=True,
-        help_text="Capital costs for all technologies, in present value, after all non-discounted incentives including MACRS, including present value of replacement costs"
+        help_text="Capital costs for all technologies, including present value of replacement costs and all non-discounted incentives including MACRS."
     )  
     om_and_replacement_present_cost_after_tax = models.FloatField(
         null=True, blank=True,
