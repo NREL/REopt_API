@@ -282,13 +282,19 @@ custom_table_webtool = [
         "scenario_value": lambda df: safe_get(df, "outputs.Financial.year_one_om_costs_before_tax")
     },
     {
+        "label"         : "Year 1 O&M Cost, After Tax ($)",
+        "key"           : "year_1_om_cost_after_tax",
+        "bau_value"     : lambda df: safe_get(df, "outputs.Financial.year_one_om_costs_after_tax_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Financial.year_one_om_costs_after_tax")
+    },    
+    {
         "label"         : "Net Present Value ($)",
         "key"           : "npv",
         "bau_value"     : lambda df: safe_get(df, "outputs.Financial.npv_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.Financial.npv")
     },
     {
-        "label"         : "Payback Period (years)",
+        "label"         : "Payback Period, with escalation and inflation (years)",
         "key"           : "payback_period",
         "bau_value"     : lambda df: safe_get(df, "outputs.Financial.simple_payback_years_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.Financial.simple_payback_years")
@@ -311,8 +317,8 @@ custom_table_webtool = [
     {
         "label"         : "Technology Capital Costs + Replacements, After Incentives ($)",
         "key"           : "technology_capital_costs_after_incentives",
-        "bau_value"     : lambda df: safe_get(df, "outputs.Financial.lifecycle_generation_tech_capital_costs_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Financial.lifecycle_generation_tech_capital_costs")
+        "bau_value"     : lambda df: safe_get(df, "outputs.Financial.lifecycle_capital_costs_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Financial.lifecycle_capital_costs")
     },
     {
         "label"         : "O&M Costs ($)",
@@ -323,8 +329,8 @@ custom_table_webtool = [
     {
         "label"         : "Total Electric Costs ($)",
         "key"           : "total_electric_utility_costs",
-        "bau_value"     : lambda df: safe_get(df, "outputs.Financial.lifecycle_elecbill_after_tax_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Financial.lifecycle_elecbill_after_tax")
+        "bau_value"     : lambda df: safe_get(df, "outputs.Financial.lifecycle_elecbill_after_tax_bau") - safe_get(df, "outputs.Financial.lifecycle_export_benefit_after_tax_bau") + safe_get(df, "outputs.CHP.lifecycle_chp_standby_cost_after_tax_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Financial.lifecycle_elecbill_after_tax") - safe_get(df, "outputs.Financial.lifecycle_export_benefit_after_tax") + safe_get(df, "outputs.CHP.lifecycle_chp_standby_cost_after_tax")
     },
     {
         "label"         : "Total Fuel Costs ($)",
@@ -361,7 +367,7 @@ custom_table_webtool = [
     ############################ Year 1 Electric Bill ###########################
     #####################################################################################################
     {
-        "label"         : "Year 1 Electric Bill",
+        "label"         : "Year 1 Electric Bill, Before Tax Unless Noted",
         "key"           : "year_1_electric_bill_separator",
         "bau_value"     : lambda df: "",
         "scenario_value": lambda df: ""
@@ -391,22 +397,46 @@ custom_table_webtool = [
         "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_fixed_cost_before_tax")
     },
     {
+        "label"         : "Standby Charges For CHP ($)",
+        "key"           : "standby_charges_for_CHP",
+        "bau_value"     : lambda df: safe_get(df, "outputs.CHP.year_one_standby_cost_before_tax_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.CHP.year_one_standby_cost_before_tax")
+    },      
+    {
+        "label"         : "Export Credits ($)",
+        "key"           : "export_credits",
+        "bau_value"     : lambda df: -1 * safe_get(df, "outputs.ElectricTariff.year_one_export_benefit_before_tax_bau"),
+        "scenario_value": lambda df: -1 * safe_get(df, "outputs.ElectricTariff.year_one_export_benefit_before_tax")
+    },    
+    {
         "label"         : "Purchased Electricity Cost ($)",
         "key"           : "purchased_electricity_cost",
-        "bau_value"     : lambda df: safe_get(df, "outputs.ElectricTariff.year_one_bill_before_tax_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_bill_before_tax")
+        "bau_value"     : lambda df: safe_get(df, "outputs.ElectricTariff.year_one_bill_before_tax_bau") + safe_get(df, "outputs.CHP.year_one_standby_cost_before_tax_bau") - safe_get(df, "outputs.ElectricTariff.year_one_export_benefit_before_tax_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_bill_before_tax") + safe_get(df, "outputs.CHP.year_one_standby_cost_before_tax") - safe_get(df, "outputs.ElectricTariff.year_one_export_benefit_before_tax")
     },
+    {
+        "label"         : "Purchased Electricity Cost, After Tax ($)",
+        "key"           : "purchased_electricity_cost",
+        "bau_value"     : lambda df: safe_get(df, "outputs.ElectricTariff.year_one_bill_after_tax_bau") + safe_get(df, "outputs.CHP.year_one_standby_cost_after_tax_bau") - safe_get(df, "outputs.ElectricTariff.year_one_export_benefit_after_tax_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_bill_after_tax") + safe_get(df, "outputs.CHP.year_one_standby_cost_after_tax") - safe_get(df, "outputs.ElectricTariff.year_one_export_benefit_after_tax")
+    },    
     {
         "label"         : "Electricity Cost Savings ($)",
         "key"           : "electricity_cost_savings",
         "bau_value"     : lambda df: "",
         "scenario_value": lambda df: ""
     },
+    {
+        "label"         : "Electricity Cost Savings, After Tax ($)",
+        "key"           : "electricity_cost_savings_after_tax",
+        "bau_value"     : lambda df: "",
+        "scenario_value": lambda df: ""
+    },    
     #####################################################################################################
     ############################ Year 1 Fuel Cost ###########################
     #####################################################################################################
     {
-        "label"         : "Year 1 Fuel Cost",
+        "label"         : "Year 1 Fuel Cost, Before Tax Unless Noted",
         "key"           : "year_1_fuel_cost_separator",
         "bau_value"     : lambda df: "",
         "scenario_value": lambda df: ""
@@ -432,15 +462,27 @@ custom_table_webtool = [
     {
         "label"         : "Fuel Cost ($)",
         "key"           : "fuel_cost",
-        "bau_value"     : lambda df: safe_get(df, "outputs.ExistingBoiler.year_one_fuel_cost_before_tax_bau")+safe_get(df, "outputs.CHP.year_one_fuel_cost_before_tax_bau")+safe_get(df, "outputs.Generator.year_one_fuel_cost_before_tax_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.ExistingBoiler.year_one_fuel_cost_before_tax")+safe_get(df, "outputs.CHP.year_one_fuel_cost_before_tax")+safe_get(df, "outputs.Generator.year_one_fuel_cost_before_tax")
+        "bau_value"     : lambda df: safe_get(df, "outputs.Financial.year_one_fuel_cost_before_tax_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Financial.year_one_fuel_cost_before_tax")
+    },
+    {
+        "label"         : "Fuel Cost, After Tax ($)",
+        "key"           : "fuel_cost",
+        "bau_value"     : lambda df: safe_get(df, "outputs.Financial.year_one_fuel_cost_after_tax_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Financial.year_one_fuel_cost_after_tax")
     },
     {
         "label"         : "Fuel Cost Savings ($)",
-        "key"           : "uel_cost_savings",
+        "key"           : "fuel_cost_savings",
         "bau_value"     : lambda df: "",
         "scenario_value": lambda df: ""
     },
+    {
+        "label"         : "Fuel Cost Savings, After Tax ($)",
+        "key"           : "fuel_cost_savings_after_tax",
+        "bau_value"     : lambda df: "",
+        "scenario_value": lambda df: ""
+    },    
     #####################################################################################################
     ############################ Renewable Energy & Emissions ###########################
     #####################################################################################################
@@ -492,22 +534,40 @@ custom_table_webtool = [
     ##################### Playground - Explore Effect of Additional Incentives or Costs, outside of REopt ##############################
     #####################################################################################################
     {
-        "label": "Playground - Explore Effect of Additional Incentives or Costs, outside of REopt",
+        "label": "Playground - Explore Effect of Additional Incentives or Costs, Outside of REopt",
         "key": "playground_separator",
         "bau_value": lambda df: "",
         "scenario_value": lambda df: ""
+    }, 
+    {
+        "label": "Total Capital Cost Before Incentives ($)",
+        "key": "total_capital_cost_before_incentives",
+        "bau_value": lambda df: safe_get(df, "outputs.Financial.initial_capital_costs_bau") + safe_get(df, "outputs.Financial.replacements_present_cost_after_tax_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Financial.initial_capital_costs") + safe_get(df, "outputs.Financial.replacements_present_cost_after_tax")
     },
     {
-        "label": "Net Upfront Capital Cost After Incentives but without MACRS ($)",
-        "key": "net_upfront_capital_cost_without_macrs",
-        "bau_value": lambda df: safe_get(df, "outputs.Financial.initial_capital_costs_after_incentives_without_macrs_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Financial.initial_capital_costs_after_incentives_without_macrs")
+        "label": "Total Capital Cost After Incentives Without MACRS ($)",
+        "key": "total_capital_cost_after_incentives_without_macrs",
+        "bau_value": lambda df: safe_get(df, "outputs.Financial.capital_costs_after_incentives_without_macrs_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Financial.capital_costs_after_incentives_without_macrs")
     },
     {
-        "label": "Net Upfront Capital Cost After Incentives with MACRS ($)",
-        "key": "net_upfront_capital_cost_with_macrs",
-        "bau_value": lambda df: safe_get(df, "outputs.Financial.initial_capital_costs_after_incentives_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Financial.initial_capital_costs_after_incentives")
+        "label": "Total Capital Cost After Non-Discounted Incentives ($)",
+        "key": "total_capital_cost_after_non_discounted_incentives",
+        "bau_value": lambda df: safe_get(df, "outputs.Financial.capital_costs_after_non_discounted_incentives_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Financial.capital_costs_after_non_discounted_incentives")
+    },    
+    {
+        "label": "Tax Rate, For Reference (%)",
+        "key": "tax_rate",
+        "bau_value": lambda df: safe_get(df, "inputs.Financial.offtaker_tax_rate_fraction"),
+        "scenario_value": lambda df: safe_get(df, "inputs.Financial.offtaker_tax_rate_fraction")
+    },    
+    {
+        "label": "Total Year One Savings, After Tax ($)",
+        "key": "total_year_one_savings_after_tax",
+        "bau_value": lambda df: "",
+        "scenario_value": lambda df: ""
     },
     {
         "label": "Additional Upfront Incentive ($)",
@@ -534,7 +594,13 @@ custom_table_webtool = [
         "scenario_value": lambda df: ""
     },
     {
-        "label": "Modified Net Upfront Capital Cost ($)",
+        "label": "Modified Total Year One Savings, After Tax ($)",
+        "key": "modified_total_year_one_savings_after_tax",
+        "bau_value": lambda df: "",
+        "scenario_value": lambda df: ""
+    },    
+    {
+        "label": "Modified Total Capital Cost ($)",
         "key": "modified_net_upfront_capital_cost",
         "bau_value": lambda df: "",
         "scenario_value": lambda df: ""
@@ -943,9 +1009,12 @@ custom_table_webtool = [
 bau_cells_config = {
     "grid_value"                : "Grid Purchased Electricity (kWh)",
     "elec_cost_value"           : "Purchased Electricity Cost ($)",
+    "elec_cost_after_tax"       : "Purchased Electricity Cost, After Tax ($)",
     "ng_reduction_value"        : "Total Fuel (MMBtu)",
     "total_elec_costs"          : "Total Electric Costs ($)",
     "fuel_costs"                : "Fuel Cost ($)",
+    "fuel_costs_after_tax"      : "Fuel Cost, After Tax ($)",
+    "om_costs_after_tax"        : "Year 1 O&M Cost, After Tax ($)",
     "total_co2_emission_value"  : "Total CO2 Emissions (tonnes)",
     "placeholder1_value"        : "Placeholder1",
     "lcc_value"                 : "Lifecycle Costs ($)",
@@ -986,6 +1055,10 @@ calculations_config = [
         "formula": lambda col, bau, headers: f'={bau["elec_cost_value"]}-{col}{headers["Purchased Electricity Cost ($)"] + 2}'
     },
     {
+        "name": "Electricity Cost Savings, After Tax ($)",
+        "formula": lambda col, bau, headers: f'={bau["elec_cost_after_tax"]}-{col}{headers["Purchased Electricity Cost, After Tax ($)"] + 2}'
+    },    
+    {
         "name": "NPV as a % of BAU LCC (%)",
         "formula": lambda col, bau, headers: f'=({col}{headers["Net Present Value ($)"] + 2}/{bau["lcc_value"]})'
     },
@@ -993,15 +1066,29 @@ calculations_config = [
         "name": "Fuel Cost Savings ($)",
         "formula": lambda col, bau, headers: f'={bau["fuel_costs"]}-{col}{headers["Fuel Cost ($)"] + 2}'
     },
-    
     {
-        "name": "Modified Net Upfront Capital Cost ($)",
-        "formula": lambda col, bau, headers: f'={col}{headers["Net Upfront Capital Cost After Incentives but without MACRS ($)"] + 2} - {col}{headers["Additional Upfront Incentive ($)"] + 2}+{col}{headers["Additional Upfront Cost ($)"] + 2}'    
+        "name": "Fuel Cost Savings, After Tax ($)",
+        "formula": lambda col, bau, headers: f'={bau["fuel_costs_after_tax"]}-{col}{headers["Fuel Cost, After Tax ($)"] + 2}'
+    },    
+    {
+        "name": "Electricity Cost Savings, After Tax ($)",
+        "formula": lambda col, bau, headers: f'={bau["elec_cost_after_tax"]}-{col}{headers["Purchased Electricity Cost, After Tax ($)"] + 2}'
+    }, 
+    {
+        "name": "Total Year One Savings, After Tax ($)",
+        "formula": lambda col, bau, headers: f'=({col}{headers["Electricity Cost Savings, After Tax ($)"] + 2}+{col}{headers["Fuel Cost Savings, After Tax ($)"] + 2}+({bau["om_costs_after_tax"]}-{col}{headers["Year 1 O&M Cost, After Tax ($)"] + 2}))'
     },
-        
+    {
+        "name": "Modified Total Year One Savings, After Tax ($)",
+        "formula": lambda col, bau, headers: f'={col}{headers["Total Year One Savings, After Tax ($)"] + 2}+{col}{headers["Additional Yearly Cost Savings ($/Year)"] + 2}-{col}{headers["Additional Yearly Cost ($/Year)"] + 2}'
+    },
+    {
+        "name": "Modified Total Capital Cost ($)",
+        "formula": lambda col, bau, headers: f'={col}{headers["Total Capital Cost After Non-Discounted Incentives ($)"] + 2}-{col}{headers["Additional Upfront Incentive ($)"] + 2}+{col}{headers["Additional Upfront Cost ($)"] + 2}'        
+    },
     {
         "name": "Modified Simple Payback Period (years)",
-        "formula": lambda col, bau, headers: f'=({col}{headers["Modified Net Upfront Capital Cost ($)"] + 2})/({col}{headers["Electricity Cost Savings ($)"] + 2}+{col}{headers["Fuel Cost Savings ($)"] + 2}+{col}{headers["Additional Yearly Cost Savings ($/Year)"] + 2}-{col}{headers["Year 1 O&M Cost, Before Tax ($)"] + 2}-{col}{headers["Additional Yearly Cost ($/Year)"] + 2})'    
+        "formula": lambda col, bau, headers: f'={col}{headers["Modified Total Capital Cost ($)"] + 2}/{col}{headers["Modified Total Year One Savings, After Tax ($)"] + 2}'
     },
     {
         "name": "CO2 Savings Including Unaddressable (%)",

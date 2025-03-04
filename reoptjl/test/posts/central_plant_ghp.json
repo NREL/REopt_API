@@ -45,6 +45,7 @@
         "macrs_bonus_fraction": 0.0,
         "macrs_itc_reduction": 0.5,
         "federal_itc_fraction": 0.3,
+        "ghx_useful_life_years": 25,
         "ghpghx_inputs": [{
             "borehole_depth_ft": 400.0,
             "simulation_years": 20,
