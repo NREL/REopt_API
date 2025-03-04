@@ -1493,7 +1493,7 @@ def avert_emissions_profile(request):
         log.error(debug_msg)
         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
 
-def cambium_emissions_profile(request):
+def cambium_profile(request):
     try:
         inputs = {
             "scenario": request.GET['scenario'], 
@@ -1512,7 +1512,7 @@ def cambium_emissions_profile(request):
             "julia"
         )
         http_jl_response = requests.get(
-            "http://" + julia_host + ":8081/cambium_emissions_profile/", 
+            "http://" + julia_host + ":8081/cambium_profile/", 
             json=inputs
         )
         response = JsonResponse(
