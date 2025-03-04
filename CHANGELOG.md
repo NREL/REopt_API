@@ -49,7 +49,7 @@ Classify the change according to the following categories:
   - **Site.renewable_electricity_fraction** changed to **Site.onsite_renewable_electricity_fraction_of_elec_load** 
   - **Site.total_renewable_energy_fraction** changed to **Site.onsite_renewable_energy_fraction_of_total_load**
 - Change v3 endpoint `cambium_emissions_profile` to `cambium_profile`
-- Change to using REopt.jl v0.51.0
+- Change to using REopt.jl v0.51.0, which includes updates to the Cambium, AVERT, and eGRID data used
 
 
 ## v3.11.0
