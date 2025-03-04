@@ -26,6 +26,11 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## add-pvdensity
+### Minor Updates
+### Added
+- Add inputs: **PV.acres_per_kw** and **PV.kw_per_square_footw** 
+
 ## v3.12.0
 ### Major Updates
 ### Added 
