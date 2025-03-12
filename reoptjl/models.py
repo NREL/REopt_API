@@ -978,7 +978,7 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Up-front capital costs for all technologies, in present value, excluding replacement costs, including incentives."
     )
-    capital_costs_after_incentives_without_macrs = models.FloatField(
+    capital_costs_after_non_discounted_incentives_without_macrs = models.FloatField(
         null=True, blank=True,
         help_text="Capital costs for all technologies, including present value of replacement costs and incentives except for MACRS."
     )
@@ -1034,27 +1034,27 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text=("Year one CHP standby charges, after tax.")
     )
-    year_one_total_cost_before_tax = models.FloatField(
+    year_one_total_operating_cost_before_tax = models.FloatField(
         null=True, blank=True,
         help_text=("Year one total operating (electricity, fuel, O&M) costs, before tax.")
     )
-    year_one_total_cost_before_tax_bau = models.FloatField(
+    year_one_total_operating_cost_before_tax_bau = models.FloatField(
         null=True, blank=True,
         help_text=("Year one total operating (electricity, fuel, O&M) costs, before tax in the BAU case.")
     )
-    year_one_total_cost_after_tax = models.FloatField(
+    year_one_total_operating_cost_after_tax = models.FloatField(
         null=True, blank=True,
         help_text=("Year one total operating (electricity, fuel, O&M) costs, after tax.")
     )
-    year_one_total_cost_after_tax_bau = models.FloatField(
+    year_one_total_operating_cost_after_tax_bau = models.FloatField(
         null=True, blank=True,
         help_text=("Year one total operating (electricity, fuel, O&M) costs, after tax in the BAU case.")
     )
-    year_one_total_cost_savings_before_tax = models.FloatField(
+    year_one_total_operating_cost_savings_before_tax = models.FloatField(
         null=True, blank=True,
         help_text=("Year one total operating (electricity, fuel, O&M) cost savings compared to BAU case, before tax.")
     )
-    year_one_total_cost_savings_after_tax = models.FloatField(
+    year_one_total_operating_cost_savings_after_tax = models.FloatField(
         null=True, blank=True,
         help_text=("Year one total operating (electricity, fuel, O&M) cost savings compared to BAU case, after tax.")
     )

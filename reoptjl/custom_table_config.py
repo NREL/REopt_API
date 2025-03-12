@@ -548,8 +548,8 @@ custom_table_webtool = [
     {
         "label": "Total Capital Cost After Incentives Without MACRS ($)",
         "key": "total_capital_cost_after_incentives_without_macrs",
-        "bau_value": lambda df: safe_get(df, "outputs.Financial.capital_costs_after_incentives_without_macrs_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Financial.capital_costs_after_incentives_without_macrs")
+        "bau_value": lambda df: safe_get(df, "outputs.Financial.capital_costs_after_non_discounted_incentives_without_macrs_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Financial.capital_costs_after_non_discounted_incentives_without_macrs")
     },
     {
         "label": "Total Capital Cost After Non-Discounted Incentives ($)",
