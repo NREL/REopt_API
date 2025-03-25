@@ -7992,7 +7992,34 @@ class GHPInputs(BaseModel, models.Model):
         blank=True,
         null=True,
         help_text="Annual GHP incremental operations and maintenance costs in $/ft^2-building/year"
-    ) 
+    )
+
+    max_ton = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        help_text=("Maximum thermal power size constraint for GHP [ton]")
+    )
+
+    max_number_of_boreholes = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        help_text=("Maximum number of boreholes for GHX")
+    )
+
+    load_served_by_ghp = models.TextField(
+        null=False,
+        blank=True,
+        default="nonpeak",
+        help_text="How to split between load served by GHP and load served by backup system"
+    )
 
     # REQUIRED FOR GHP
     building_sqft = models.FloatField(
