@@ -211,7 +211,7 @@ custom_table_webtool = [
         "scenario_value": lambda df: safe_get(df, "outputs.HotThermalStorage.size_gal")
     },
     {
-        "label"         : "Absorption Chiller Capacity (tons)",
+        "label"         : "Absorption Chiller Capacity (ton)",
         "key"           : "absorption_chiller_capacity",
         "bau_value"     : lambda df: safe_get(df, "outputs.AbsorptionChiller.size_ton_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.AbsorptionChiller.size_ton")
@@ -294,7 +294,7 @@ custom_table_webtool = [
         "scenario_value": lambda df: safe_get(df, "outputs.Financial.npv")
     },
     {
-        "label"         : "Payback Period, with escalation and inflation (years)",
+        "label"         : "Payback Period, with escalation and inflation (yrs)",
         "key"           : "payback_period",
         "bau_value"     : lambda df: safe_get(df, "outputs.Financial.simple_payback_years_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.Financial.simple_payback_years")
@@ -323,8 +323,8 @@ custom_table_webtool = [
     {
         "label"         : "O&M Costs ($)",
         "key"           : "om_costs",
-        "bau_value"     : lambda df: safe_get(df, "outputs.Financial.om_and_replacement_present_cost_after_tax_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Financial.om_and_replacement_present_cost_after_tax")
+        "bau_value"     : lambda df: safe_get(df, "outputs.Financial.lifecycle_om_costs_after_tax_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Financial.lifecycle_om_costs_after_tax")
     },
     {
         "label"         : "Total Electric Costs ($)",
@@ -345,7 +345,7 @@ custom_table_webtool = [
         "scenario_value": lambda df: safe_get(df, "outputs.Financial.lifecycle_fuel_costs_after_tax")+ safe_get(df, "outputs.Financial.lifecycle_elecbill_after_tax")
     },
     {
-        "label"         : "Total Hypothetical Emissions Costs (not included in LCC)",
+        "label"         : "Total Hypothetical Emissions Costs (not included in LCC) ($)",
         "key"           : "total_emissions_costs",
         "bau_value"     : lambda df: safe_get(df, "outputs.Financial.lifecycle_emissions_cost_climate_bau") + safe_get(df, "outputs.Financial.lifecycle_emissions_cost_health_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.Financial.lifecycle_emissions_cost_climate") + safe_get(df, "outputs.Financial.lifecycle_emissions_cost_health")
@@ -493,11 +493,17 @@ custom_table_webtool = [
         "scenario_value": lambda df: ""
     },
     {
-        "label"         : "Annual % Renewable Electricity (%)",
+        "label"         : "Annual % On-Site Renewable Electricity (%)",
         "key"           : "annual_renewable_electricity",
         "bau_value"     : lambda df: safe_get(df, "outputs.Site.onsite_renewable_electricity_fraction_of_elec_load_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.Site.onsite_renewable_electricity_fraction_of_elec_load")
     },
+    {
+        "label"         : "Annual % On-Site Renewable Energy (Elec+Fuel) (%)",
+        "key"           : "annual_renewable_energy",
+        "bau_value"     : lambda df: safe_get(df, "outputs.Site.onsite_renewable_energy_fraction_of_total_load_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Site.onsite_renewable_energy_fraction_of_total_load")
+    },    
     {
         "label"         : "Annual CO2 Emissions (tonnes)",
         "key"           : "annual_co2_emissions",
@@ -523,13 +529,64 @@ custom_table_webtool = [
         "bau_value"     : lambda df: safe_get(df, "outputs.Site.lifecycle_emissions_tonnes_CO2_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.Site.lifecycle_emissions_tonnes_CO2")
     },
-    # CO2 (%) savings calculation
+    # CO2 savings (%) calculation
     {
-        "label"         : "CO2 (%) savings",
+        "label"         : "CO2 savings (%)",
         "key"           : "co2_savings_percentage",
         "bau_value"     : lambda df: "",
         "scenario_value": lambda df: ""
     },
+    ####################################################################################################################################
+    ##################### Playground - Consider Unaddressable Fuel Consumption in Emissions Reduction % Calculation ####################
+    #####################################################################################################################################
+    {
+        "label": "Playground - Consider Unaddressable Fuel Consumption in Emissions Reduction % Calculation",
+        "key": "playground_emissions_reduction_separator",
+        "bau_value": lambda df: "",
+        "scenario_value": lambda df: ""
+    },
+    {
+        "label": "Unaddressable Heating Fuel from REopt Input (MMBtu/yr)",
+        "key": "unaddressable_heating_fuel_reopt",
+        "bau_value": lambda df: safe_get(df, "outputs.HeatingLoad.annual_total_unaddressable_heating_load_mmbtu"),
+        "scenario_value": lambda df: safe_get(df, "outputs.HeatingLoad.annual_total_unaddressable_heating_load_mmbtu")
+    },
+    {
+        "label": "Unaddressable Heating Fuel CO2e Emissions from REopt Input (tonnes/yr)",
+        "key": "unaddressable_heating_fuel_co2_emissions_reopt",
+        "bau_value": lambda df: safe_get(df, "outputs.HeatingLoad.annual_emissions_from_unaddressable_heating_load_tonnes_CO2"),
+        "scenario_value": lambda df: safe_get(df, "outputs.HeatingLoad.annual_emissions_from_unaddressable_heating_load_tonnes_CO2")
+    },    
+    {
+        "label": "Additional Unaddressable Fuel Consumption (MMBtu/yr)",
+        "key": "additional_unaddressable_fuel_input",
+        "bau_value": lambda df: "",
+        "scenario_value": lambda df: ""
+    },
+    {
+        "label": "Additional Unaddressable Fuel Emissions Factor (lb-CO2e/MMBtu)",
+        "key": "additional_unaddressable_fuel_emissions_factor_input",
+        "bau_value": lambda df: safe_get(df, "inputs.ExistingBoiler.emissions_factor_lb_CO2_per_mmbtu"),
+        "scenario_value": lambda df: safe_get(df, "inputs.ExistingBoiler.emissions_factor_lb_CO2_per_mmbtu")
+    },
+    {
+        "label": "Additional Unaddressable Fuel CO2e Emissions (tonnes/yr)",
+        "key": "additional_unaddressable_fuel_emissions",
+        "bau_value": lambda df: "",
+        "scenario_value": lambda df: ""
+    },    
+    {
+        "label": "Total Unaddressable Fuel CO2e Emissions (tonnes/yr)",
+        "key": "total_unaddressable_co2_emissions",
+        "bau_value": lambda df: "",
+        "scenario_value": lambda df: ""
+    },
+    {
+        "label": "CO2e Savings Including Unaddressable Fuel (%)",
+        "key": "co2_savings_including_unaddressable",
+        "bau_value": lambda df: "",
+        "scenario_value": lambda df: ""
+    },    
     ####################################################################################################################################
     ##################### Playground - Explore Effect of Additional Incentives or Costs, outside of REopt ##############################
     #####################################################################################################
@@ -582,13 +639,13 @@ custom_table_webtool = [
         "scenario_value": lambda df: ""
     },
     {
-        "label": "Additional Yearly Cost Savings ($/Year)",
+        "label": "Additional Yearly Cost Savings ($/yr)",
         "key": "additional_yearly_cost_savings_input",
         "bau_value": lambda df: "",
         "scenario_value": lambda df: ""
     },
     {
-        "label": "Additional Yearly Cost ($/Year)",
+        "label": "Additional Yearly Cost ($/yr)",
         "key": "additional_yearly_cost_input",
         "bau_value": lambda df: "",
         "scenario_value": lambda df: ""
@@ -606,35 +663,8 @@ custom_table_webtool = [
         "scenario_value": lambda df: ""
     },
     {
-        "label": "Modified Simple Payback Period (years)",
+        "label": "Modified Simple Payback Period (yrs)",
         "key": "modified_simple_payback_period",
-        "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
-    },
-    ####################################################################################################################################
-    ##################### Playground - Consider Unaddressable Fuel Consumption in Emissions Reduction % Calculation ####################
-    #####################################################################################################################################
-    {
-        "label": "Playground - Consider Unaddressable Fuel Consumption in Emissions Reduction % Calculation",
-        "key": "playground_emissions_reduction_separator",
-        "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
-    },
-    {
-        "label": "Unaddressable Heating Load (Mmbtu/Year)",
-        "key": "unaddressable_heating_load",
-        "bau_value": lambda df: safe_get(df, "outputs.HeatingLoad.annual_total_unaddressable_heating_load_mmbtu"),
-        "scenario_value": lambda df: safe_get(df, "outputs.HeatingLoad.annual_total_unaddressable_heating_load_mmbtu")
-    },
-    {
-        "label": "Unaddressable CO2 Emissions (tonnes)",
-        "key": "unaddressable_co2_emissions",
-        "bau_value": lambda df: safe_get(df, "outputs.HeatingLoad.annual_emissions_from_unaddressable_heating_load_tonnes_CO2"),
-        "scenario_value": lambda df: safe_get(df, "outputs.HeatingLoad.annual_emissions_from_unaddressable_heating_load_tonnes_CO2")
-    },
-    {
-        "label": "CO2 Savings Including Unaddressable (%)",
-        "key": "co2_savings_including_unaddressable",
         "bau_value": lambda df: "",
         "scenario_value": lambda df: ""
     },
@@ -1080,19 +1110,27 @@ calculations_config = [
     },
     {
         "name": "Modified Total Year One Savings, After Tax ($)",
-        "formula": lambda col, bau, headers: f'={col}{headers["Total Year One Savings, After Tax ($)"] + 2}+{col}{headers["Additional Yearly Cost Savings ($/Year)"] + 2}-{col}{headers["Additional Yearly Cost ($/Year)"] + 2}'
+        "formula": lambda col, bau, headers: f'={col}{headers["Total Year One Savings, After Tax ($)"] + 2}+{col}{headers["Additional Yearly Cost Savings ($/yr)"] + 2}-{col}{headers["Additional Yearly Cost ($/yr)"] + 2}'
     },
     {
         "name": "Modified Total Capital Cost ($)",
         "formula": lambda col, bau, headers: f'={col}{headers["Total Capital Cost After Non-Discounted Incentives ($)"] + 2}-{col}{headers["Additional Upfront Incentive ($)"] + 2}+{col}{headers["Additional Upfront Cost ($)"] + 2}'        
     },
     {
-        "name": "Modified Simple Payback Period (years)",
+        "name": "Modified Simple Payback Period (yrs)",
         "formula": lambda col, bau, headers: f'={col}{headers["Modified Total Capital Cost ($)"] + 2}/{col}{headers["Modified Total Year One Savings, After Tax ($)"] + 2}'
     },
     {
-        "name": "CO2 Savings Including Unaddressable (%)",
-        "formula": lambda col, bau, headers: f'=({bau["annual_co2_emissions_value"]}-{col}{headers["Annual CO2 Emissions (tonnes)"] + 2})/({bau["annual_co2_emissions_value"]}+{col}{headers["Unaddressable CO2 Emissions (tonnes)"] + 2})'    
+        "name": "Additional Unaddressable Fuel CO2e Emissions (tonnes/yr)",
+        "formula": lambda col, bau, headers: f'={col}{headers["Additional Unaddressable Fuel Consumption (MMBtu/yr)"] + 2}*{col}{headers["Additional Unaddressable Fuel Emissions Factor (lb-CO2e/MMBtu)"] + 2}/2204.62'
+    },    
+    {
+        "name": "Total Unaddressable Fuel CO2e Emissions (tonnes/yr)",
+        "formula": lambda col, bau, headers: f'={col}{headers["Unaddressable Heating Fuel CO2e Emissions from REopt Input (tonnes/yr)"] + 2}+{col}{headers["Additional Unaddressable Fuel CO2e Emissions (tonnes/yr)"] + 2}'
+    },
+    {
+        "name": "CO2e Savings Including Unaddressable Fuel (%)",
+        "formula": lambda col, bau, headers: f'=({bau["annual_co2_emissions_value"]}-{col}{headers["Annual CO2 Emissions (tonnes)"] + 2})/({bau["annual_co2_emissions_value"]}+{col}{headers["Total Unaddressable Fuel CO2e Emissions (tonnes/yr)"] + 2})'    
     },
     {
         "name": "Total Site Electricity Use (kWh)",
@@ -1131,11 +1169,11 @@ calculations_config = [
         "formula": lambda col, bau, headers: f'={bau["elec_cost_value"]}+-{col}{headers["Purchased Electricity Cost ($)"] + 2}'
     },
     {
-        "name": "Simple Payback (years)",
+        "name": "Simple Payback (yrs)",
         "formula": lambda col, bau, headers: f'={col}{headers["Net Capital Cost ($)"] + 2}/{col}{headers["Annual Cost Savings ($)"] + 2}'
     },
     {
-        "name": "CO2 (%) savings",
+        "name": "CO2 savings (%)",
         "formula": lambda col, bau, headers: f'=({bau["total_co2_emission_value"]}-{col}{headers["Total CO2 Emissions (tonnes)"] + 2})/{bau["total_co2_emission_value"]}'
     },
     #Example Calculations

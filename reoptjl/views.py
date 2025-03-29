@@ -1809,22 +1809,25 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
                     return formula_currency_format
                 elif '%' in label:
                     return formula_percent_format
-                elif 'years' in label:
+                elif 'yrs' in label:
                     return formula_payback_format
                 return formula_format
             base_data_format = {'num_format': '#,##0','bg_color': row_color, 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10}
             payback_data_format = {'num_format': '0.0','bg_color': row_color, 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10}
+            blue_text_format = {'font_color': 'blue', 'bg_color': row_color, 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10}
             if label:
                 if '$' in label:
                     return workbook.add_format({**base_currency_format, 'bg_color': row_color})
                 elif '%' in label:
                     return workbook.add_format({**base_percent_format, 'bg_color': row_color})
-                elif 'years' in label:
-                    return workbook.add_format({**payback_data_format, 'bg_color': row_color})                
+                elif 'yrs' in label:
+                    return workbook.add_format({**payback_data_format, 'bg_color': row_color})
+                elif 'URL' in label:
+                    return workbook.add_format({**blue_text_format, 'bg_color': row_color})
             return workbook.add_format(base_data_format)
 
         # Set column width for the first column (labels column)
-        worksheet.set_column(0, 0, 45)
+        worksheet.set_column(0, 0, 65)
 
         # Setting column widths and writing headers for other columns
         column_width = 25
