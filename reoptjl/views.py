@@ -2051,14 +2051,17 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
         row += 2
 
         playground_items = [
-            "- Net Upfront Capital Cost After Incentives but without MACRS ($): Represents the upfront cost after incentives, excluding MACRS depreciation benefits.",
-            "- Net Upfront Capital Cost After Incentives with MACRS ($): Includes MACRS depreciation, which provides tax benefits over the first 5-7 years.",
-            "- Additional Upfront Incentive ($): Input any additional grants or incentives (e.g., IAC grant, state or local grants).",
+            "- Total Capital Cost Before Incentives ($): For reference, to view what the payback would be without incentives.",
+            "- Total Capital Cost After Incentives Without MACRS ($): Represents the capital cost after incentives, but excludes MACRS depreciation benefits.",
+            "- Total Capital Cost After Non-Discounted Incentives ($): Same as above, but includes non-discounted MACRS depreciation, which provides tax benefits over the first 5-7 years.",
+            "- Additional Upfront Incentive ($): Input any additional grants or incentives (e.g., state or local grants).",
             "- Additional Upfront Cost ($): Input any extra upfront costs (e.g., interconnection upgrades, microgrid components).",
-            "- Additional Yearly Cost Savings ($/year): Input any ongoing yearly savings (e.g., improved productivity, product sales with ESG designation).",
-            "- Additional Yearly Cost ($/year): Input any additional yearly costs (e.g., microgrid operation and maintenance).",
-            "- Modified Net Upfront Capital Cost ($): This value recalculates based on your inputs.",
-            "- Modified Simple Payback Period (years): Recalculates the payback period based on your inputs, providing a more conventional 'simple' payback period."
+            "- Additional Yearly Cost Savings ($/yr): Input any ongoing yearly savings (e.g., avoided cost of outages, improved productivity, product sales with ESG designation).",
+            "- Additional Yearly Cost ($/yr): Input any additional yearly costs (e.g., microgrid operation and maintenance).",
+            "- Modified Total Year One Savings, After Tax ($): Updated total yearly savings to include any user-input additional yearly savings and cost."
+            "- Modified Total Capital Cost ($): Updated total cost to include any user-input additional incentive and cost.",
+            "- Modified Simple Payback Period Without Incentives (yrs): Uses Total Capital Cost Before Incentives ($) to calculate payback, for reference."
+            "- Modified Simple Payback Period (yrs): Calculates a simple payback period with Modified Total Year One Savings, After Tax ($) and Modified Total Capital Cost ($)."
         ]
         for item in playground_items:
             instructions_worksheet.write(row, 0, item, bullet_format)
@@ -2070,9 +2073,9 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
         row += 1
 
         unaddressable_notes = (
-            "In scenarios where there is an unaddressable heating load (heating demand that cannot be served by the technologies analyzed), "
+            "In scenarios where there is an unaddressable fuel load (e.g. heating demand that cannot be served by the technologies analyzed), "
             "the associated fuel consumption and emissions are not accounted for in the standard REopt outputs.\n\n"
-            "The 'Unaddressable CO₂ Emissions' row in the 'Playground' section includes these emissions, providing a more comprehensive view of your site's total emissions. "
+            "The 'Unaddressable Fuel CO₂ Emissions' row in the 'Playground' section includes these emissions, providing a more comprehensive view of your site's total emissions. "
             "Including unaddressable emissions results in a lower percentage reduction because the total emissions baseline is larger."
         )
         instructions_worksheet.write(row, 0, unaddressable_notes, text_format)
