@@ -1749,11 +1749,12 @@ def generate_results_table(request: Any) -> HttpResponse:
 def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]], output: io.BytesIO) -> None:
     try:
         workbook = xlsxwriter.Workbook(output, {'in_memory': True})
-        # Add the 'Instructions' worksheet
-        instructions_worksheet = workbook.add_worksheet('Instructions')
-        
+
         # Add the 'Results Table' worksheet
         worksheet = workbook.add_worksheet('Results Table')
+
+        # Add the 'Instructions' worksheet
+        instructions_worksheet = workbook.add_worksheet('Instructions')
 
         # Scenario header formatting with colors
         scenario_colors = ['#0B5E90', '#00A4E4','#f46d43','#fdae61', '#66c2a5', '#d53e4f', '#3288bd']  
