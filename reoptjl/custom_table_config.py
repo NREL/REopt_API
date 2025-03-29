@@ -505,33 +505,33 @@ custom_table_webtool = [
         "scenario_value": lambda df: safe_get(df, "outputs.Site.onsite_renewable_energy_fraction_of_total_load")
     },    
     {
-        "label"         : "Annual CO2 Emissions (tonnes)",
+        "label"         : "Annual CO2e Emissions (tonnes)",
         "key"           : "annual_co2_emissions",
         "bau_value"     : lambda df: safe_get(df, "outputs.Site.annual_emissions_tonnes_CO2_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.Site.annual_emissions_tonnes_CO2")
     },
     # Added emissions from electricity and fuels
     {
-        "label"         : "Annual CO2 Emissions from Electricity (tonnes)",
+        "label"         : "Annual CO2e Emissions from Electricity (tonnes)",
         "key"           : "annual_co2_emissions_electricity",
         "bau_value"     : lambda df: safe_get(df, "outputs.ElectricUtility.annual_emissions_tonnes_CO2_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.ElectricUtility.annual_emissions_tonnes_CO2")
     },
     {
-        "label"         : "Annual CO2 Emissions from Fuel (tonnes)",
+        "label"         : "Annual CO2e Emissions from Fuel (tonnes)",
         "key"           : "annual_co2_emissions_fuel",
         "bau_value"     : lambda df: safe_get(df, "outputs.Site.annual_emissions_from_fuelburn_tonnes_CO2_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.Site.annual_emissions_from_fuelburn_tonnes_CO2")
     },
     {
-        "label"         : "Total CO2 Emissions (tonnes)",
+        "label"         : "Total CO2e Emissions (tonnes)",
         "key"           : "co2_emissions",
         "bau_value"     : lambda df: safe_get(df, "outputs.Site.lifecycle_emissions_tonnes_CO2_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.Site.lifecycle_emissions_tonnes_CO2")
     },
-    # CO2 savings (%) calculation
+    # CO2e savings (%) calculation
     {
-        "label"         : "CO2 savings (%)",
+        "label"         : "CO2e savings (%)",
         "key"           : "co2_savings_percentage",
         "bau_value"     : lambda df: "",
         "scenario_value": lambda df: ""
@@ -662,6 +662,12 @@ custom_table_webtool = [
         "bau_value": lambda df: "",
         "scenario_value": lambda df: ""
     },
+    {
+        "label": "Modified Simple Payback Period Without Incentives (yrs)",
+        "key": "modified_simple_payback_period_without_incentives",
+        "bau_value": lambda df: "",
+        "scenario_value": lambda df: ""
+    },    
     {
         "label": "Modified Simple Payback Period (yrs)",
         "key": "modified_simple_payback_period",
@@ -1045,10 +1051,10 @@ bau_cells_config = {
     "fuel_costs"                : "Fuel Cost ($)",
     "fuel_costs_after_tax"      : "Fuel Cost, After Tax ($)",
     "om_costs_after_tax"        : "Year 1 O&M Cost, After Tax ($)",
-    "total_co2_emission_value"  : "Total CO2 Emissions (tonnes)",
+    "total_co2_emission_value"  : "Total CO2e Emissions (tonnes)",
     "placeholder1_value"        : "Placeholder1",
     "lcc_value"                 : "Lifecycle Costs ($)",
-    "annual_co2_emissions_value": "Annual CO2 Emissions (tonnes)"
+    "annual_co2_emissions_value": "Annual CO2e Emissions (tonnes)"
 }
 
 '''
@@ -1117,6 +1123,10 @@ calculations_config = [
         "formula": lambda col, bau, headers: f'={col}{headers["Total Capital Cost After Non-Discounted Incentives ($)"] + 2}-{col}{headers["Additional Upfront Incentive ($)"] + 2}+{col}{headers["Additional Upfront Cost ($)"] + 2}'        
     },
     {
+        "name": "Modified Simple Payback Period Without Incentives (yrs)",
+        "formula": lambda col, bau, headers: f'={col}{headers["Total Capital Cost Before Incentives ($)"] + 2}/{col}{headers["Modified Total Year One Savings, After Tax ($)"] + 2}'
+    },    
+    {
         "name": "Modified Simple Payback Period (yrs)",
         "formula": lambda col, bau, headers: f'={col}{headers["Modified Total Capital Cost ($)"] + 2}/{col}{headers["Modified Total Year One Savings, After Tax ($)"] + 2}'
     },
@@ -1130,7 +1140,7 @@ calculations_config = [
     },
     {
         "name": "CO2e Savings Including Unaddressable Fuel (%)",
-        "formula": lambda col, bau, headers: f'=({bau["annual_co2_emissions_value"]}-{col}{headers["Annual CO2 Emissions (tonnes)"] + 2})/({bau["annual_co2_emissions_value"]}+{col}{headers["Total Unaddressable Fuel CO2e Emissions (tonnes/yr)"] + 2})'    
+        "formula": lambda col, bau, headers: f'=({bau["annual_co2_emissions_value"]}-{col}{headers["Annual CO2e Emissions (tonnes)"] + 2})/({bau["annual_co2_emissions_value"]}+{col}{headers["Total Unaddressable Fuel CO2e Emissions (tonnes/yr)"] + 2})'    
     },
     {
         "name": "Total Site Electricity Use (kWh)",
@@ -1173,8 +1183,8 @@ calculations_config = [
         "formula": lambda col, bau, headers: f'={col}{headers["Net Capital Cost ($)"] + 2}/{col}{headers["Annual Cost Savings ($)"] + 2}'
     },
     {
-        "name": "CO2 savings (%)",
-        "formula": lambda col, bau, headers: f'=({bau["total_co2_emission_value"]}-{col}{headers["Total CO2 Emissions (tonnes)"] + 2})/{bau["total_co2_emission_value"]}'
+        "name": "CO2e savings (%)",
+        "formula": lambda col, bau, headers: f'=({bau["total_co2_emission_value"]}-{col}{headers["Total CO2e Emissions (tonnes)"] + 2})/{bau["total_co2_emission_value"]}'
     },
     #Example Calculations
     # Calculation Without Reference to bau_cells
