@@ -721,10 +721,10 @@ custom_table_webtool = [
         "scenario_value": lambda df: safe_get(df, "outputs.PV.electric_curtailed_series_kw")
     },
     {
-        "label"         : "PV Year One Electricity Produced (kWh/yr)",
-        "key"           : "pv_year_one_electricity_produced",
-        "bau_value"     : lambda df: safe_get(df, "outputs.PV.year_one_energy_produced_kwh_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.PV.year_one_energy_produced_kwh")
+        "label"         : "PV Total Electricity Produced (kWh/yr)",
+        "key"           : "pv_total_electricity_produced",
+        "bau_value"     : lambda df: "",
+        "scenario_value": lambda df: ""
     },
     {
         "label"         : "Wind Serving Load (kWh/yr)",
@@ -753,8 +753,8 @@ custom_table_webtool = [
     {
         "label"         : "Wind Total Electricity Produced (kWh/yr)",
         "key"           : "wind_total_electricity_produced",
-        "bau_value"     : lambda df: safe_get(df, "outputs.Wind.annual_energy_produced_kwh_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Wind.annual_energy_produced_kwh")
+        "bau_value"     : lambda df: "",
+        "scenario_value": lambda df: ""
     },
     {
         "label"         : "Battery Serving Load (kWh/yr)",
@@ -1044,17 +1044,17 @@ custom_table_webtool = [
 # Define bau_cells configuration for calculations that reference bau cells, call these bau values within calculations
 bau_cells_config = {
     "grid_value"                : "Grid Purchased Electricity (kWh)",
-    "elec_cost_value"           : "Purchased Electricity Cost ($)",
-    "elec_cost_after_tax"       : "Purchased Electricity Cost, After Tax ($)",
+    "elec_cost_value"           : "Purchased Electricity Cost ($/yr)",
+    "elec_cost_after_tax"       : "Purchased Electricity Cost, After Tax ($/yr)",
     "ng_reduction_value"        : "Total Fuel (MMBtu)",
     "total_elec_costs"          : "Total Electric Costs ($)",
-    "fuel_costs"                : "Fuel Cost ($)",
-    "fuel_costs_after_tax"      : "Fuel Cost, After Tax ($)",
-    "om_costs_after_tax"        : "Year 1 O&M Cost, After Tax ($)",
+    "fuel_costs"                : "Fuel Cost ($/yr)",
+    "fuel_costs_after_tax"      : "Fuel Cost, After Tax ($/yr)",
+    "om_costs_after_tax"        : "Year 1 O&M Cost, After Tax ($/yr)",
     "total_co2_emission_value"  : "Total CO2e Emissions (tonnes)",
     "placeholder1_value"        : "Placeholder1",
     "lcc_value"                 : "Lifecycle Costs ($)",
-    "annual_co2_emissions_value": "Annual CO2e Emissions (tonnes)"
+    "annual_co2_emissions_value": "Annual CO2e Emissions (tonnes/yr)"
 }
 
 '''
@@ -1087,36 +1087,36 @@ calculations_config = [
         "formula": lambda col, bau, headers: f'={col}{headers["Gross Upfront Capital Costs, Before Incentives ($)"] + 2} - {col}{headers["Net Upfront Capital Cost, After Incentives ($)"] + 2}'    
     },
     {
-        "name": "Electricity Cost Savings ($)",
-        "formula": lambda col, bau, headers: f'={bau["elec_cost_value"]}-{col}{headers["Purchased Electricity Cost ($)"] + 2}'
+        "name": "Electricity Cost Savings ($/yr)",
+        "formula": lambda col, bau, headers: f'={bau["elec_cost_value"]}-{col}{headers["Purchased Electricity Cost ($/yr)"] + 2}'
     },
     {
-        "name": "Electricity Cost Savings, After Tax ($)",
-        "formula": lambda col, bau, headers: f'={bau["elec_cost_after_tax"]}-{col}{headers["Purchased Electricity Cost, After Tax ($)"] + 2}'
+        "name": "Electricity Cost Savings, After Tax ($/yr)",
+        "formula": lambda col, bau, headers: f'={bau["elec_cost_after_tax"]}-{col}{headers["Purchased Electricity Cost, After Tax ($/yr)"] + 2}'
     },    
     {
         "name": "NPV as a % of BAU LCC (%)",
         "formula": lambda col, bau, headers: f'=({col}{headers["Net Present Value ($)"] + 2}/{bau["lcc_value"]})'
     },
     {
-        "name": "Fuel Cost Savings ($)",
-        "formula": lambda col, bau, headers: f'={bau["fuel_costs"]}-{col}{headers["Fuel Cost ($)"] + 2}'
+        "name": "Fuel Cost Savings ($/yr)",
+        "formula": lambda col, bau, headers: f'={bau["fuel_costs"]}-{col}{headers["Fuel Cost ($/yr)"] + 2}'
     },
     {
-        "name": "Fuel Cost Savings, After Tax ($)",
-        "formula": lambda col, bau, headers: f'={bau["fuel_costs_after_tax"]}-{col}{headers["Fuel Cost, After Tax ($)"] + 2}'
+        "name": "Fuel Cost Savings, After Tax ($/yr)",
+        "formula": lambda col, bau, headers: f'={bau["fuel_costs_after_tax"]}-{col}{headers["Fuel Cost, After Tax ($/yr)"] + 2}'
     },    
     {
-        "name": "Electricity Cost Savings, After Tax ($)",
-        "formula": lambda col, bau, headers: f'={bau["elec_cost_after_tax"]}-{col}{headers["Purchased Electricity Cost, After Tax ($)"] + 2}'
+        "name": "Electricity Cost Savings, After Tax ($/yr)",
+        "formula": lambda col, bau, headers: f'={bau["elec_cost_after_tax"]}-{col}{headers["Purchased Electricity Cost, After Tax ($/yr)"] + 2}'
     }, 
     {
-        "name": "Total Year One Savings, After Tax ($)",
-        "formula": lambda col, bau, headers: f'=({col}{headers["Electricity Cost Savings, After Tax ($)"] + 2}+{col}{headers["Fuel Cost Savings, After Tax ($)"] + 2}+({bau["om_costs_after_tax"]}-{col}{headers["Year 1 O&M Cost, After Tax ($)"] + 2}))'
+        "name": "Total Year One Savings, After Tax ($/yr)",
+        "formula": lambda col, bau, headers: f'=({col}{headers["Electricity Cost Savings, After Tax ($/yr)"] + 2}+{col}{headers["Fuel Cost Savings, After Tax ($/yr)"] + 2}+({bau["om_costs_after_tax"]}-{col}{headers["Year 1 O&M Cost, After Tax ($/yr)"] + 2}))'
     },
     {
-        "name": "Modified Total Year One Savings, After Tax ($)",
-        "formula": lambda col, bau, headers: f'={col}{headers["Total Year One Savings, After Tax ($)"] + 2}+{col}{headers["Additional Yearly Cost Savings ($/yr)"] + 2}-{col}{headers["Additional Yearly Cost ($/yr)"] + 2}'
+        "name": "Modified Total Year One Savings, After Tax ($/yr)",
+        "formula": lambda col, bau, headers: f'={col}{headers["Total Year One Savings, After Tax ($/yr)"] + 2}+{col}{headers["Additional Yearly Cost Savings ($/yr)"] + 2}-{col}{headers["Additional Yearly Cost ($/yr)"] + 2}'
     },
     {
         "name": "Modified Total Capital Cost ($)",
@@ -1124,11 +1124,11 @@ calculations_config = [
     },
     {
         "name": "Modified Simple Payback Period Without Incentives (yrs)",
-        "formula": lambda col, bau, headers: f'={col}{headers["Total Capital Cost Before Incentives ($)"] + 2}/{col}{headers["Modified Total Year One Savings, After Tax ($)"] + 2}'
+        "formula": lambda col, bau, headers: f'={col}{headers["Total Capital Cost Before Incentives ($)"] + 2}/{col}{headers["Modified Total Year One Savings, After Tax ($/yr)"] + 2}'
     },    
     {
         "name": "Modified Simple Payback Period (yrs)",
-        "formula": lambda col, bau, headers: f'={col}{headers["Modified Total Capital Cost ($)"] + 2}/{col}{headers["Modified Total Year One Savings, After Tax ($)"] + 2}'
+        "formula": lambda col, bau, headers: f'={col}{headers["Modified Total Capital Cost ($)"] + 2}/{col}{headers["Modified Total Year One Savings, After Tax ($/yr)"] + 2}'
     },
     {
         "name": "Additional Unaddressable Fuel CO2e Emissions (tonnes/yr)",
@@ -1140,8 +1140,16 @@ calculations_config = [
     },
     {
         "name": "CO2e Savings Including Unaddressable Fuel (%)",
-        "formula": lambda col, bau, headers: f'=({bau["annual_co2_emissions_value"]}-{col}{headers["Annual CO2e Emissions (tonnes)"] + 2})/({bau["annual_co2_emissions_value"]}+{col}{headers["Total Unaddressable Fuel CO2e Emissions (tonnes/yr)"] + 2})'    
+        "formula": lambda col, bau, headers: f'=({bau["annual_co2_emissions_value"]}-{col}{headers["Annual CO2e Emissions (tonnes/yr)"] + 2})/({bau["annual_co2_emissions_value"]}+{col}{headers["Total Unaddressable Fuel CO2e Emissions (tonnes/yr)"] + 2})'    
     },
+    {
+        "name": "PV Total Electricity Produced (kWh/yr)",
+        "formula": lambda col, bau, headers: f'={col}{headers["PV Serving Load (kWh/yr)"] + 2}+{col}{headers["PV Charging Battery (kWh/yr)"] + 2}+{col}{headers["PV Exported to Grid (kWh/yr)"] + 2}'
+    },
+    {
+        "name": "Wind Total Electricity Produced (kWh/yr)",
+        "formula": lambda col, bau, headers: f'={col}{headers["Wind Serving Load (kWh/yr)"] + 2}+{col}{headers["Wind Charging Battery (kWh/yr)"] + 2}+{col}{headers["Wind Exported to Grid (kWh/yr)"] + 2}'
+    },    
     # These below don't seem to be used currently
     {
         "name": "Total Site Electricity Use (kWh)",
