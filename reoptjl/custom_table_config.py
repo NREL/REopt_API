@@ -276,13 +276,13 @@ custom_table_webtool = [
         "scenario_value": lambda df: ""
     },
     {
-        "label"         : "Year 1 O&M Cost, Before Tax ($)",
+        "label"         : "Year 1 O&M Cost, Before Tax ($/yr)",
         "key"           : "year_1_om_cost_before_tax",
         "bau_value"     : lambda df: safe_get(df, "outputs.Financial.year_one_om_costs_before_tax_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.Financial.year_one_om_costs_before_tax")
     },
     {
-        "label"         : "Year 1 O&M Cost, After Tax ($)",
+        "label"         : "Year 1 O&M Cost, After Tax ($/yr)",
         "key"           : "year_1_om_cost_after_tax",
         "bau_value"     : lambda df: safe_get(df, "outputs.Financial.year_one_om_costs_after_tax_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.Financial.year_one_om_costs_after_tax")
@@ -373,61 +373,61 @@ custom_table_webtool = [
         "scenario_value": lambda df: ""
     },
     {
-        "label"         : "Electric Grid Purchases (kWh)",
+        "label"         : "Electric Grid Purchases (kWh/yr)",
         "key"           : "electric_grid_purchases",
         "bau_value"     : lambda df: safe_get(df, "outputs.ElectricUtility.annual_energy_supplied_kwh_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.ElectricUtility.annual_energy_supplied_kwh")
     },
     {
-        "label"         : "Energy Charges ($)",
+        "label"         : "Energy Charges ($/yr)",
         "key"           : "electricity_energy_cost",
         "bau_value"     : lambda df: safe_get(df, "outputs.ElectricTariff.year_one_energy_cost_before_tax_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_energy_cost_before_tax")
     },
     {
-        "label"         : "Demand Charges ($)",
+        "label"         : "Demand Charges ($/yr)",
         "key"           : "electricity_demand_cost",
         "bau_value"     : lambda df: safe_get(df, "outputs.ElectricTariff.year_one_demand_cost_before_tax_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_demand_cost_before_tax")
     },
     {
-        "label"         : "Fixed Charges ($)",
+        "label"         : "Fixed Charges ($/yr)",
         "key"           : "utility_fixed_cost",
         "bau_value"     : lambda df: safe_get(df, "outputs.ElectricTariff.year_one_fixed_cost_before_tax_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_fixed_cost_before_tax")
     },
     {
-        "label"         : "Standby Charges For CHP ($)",
+        "label"         : "Standby Charges For CHP ($/yr)",
         "key"           : "standby_charges_for_CHP",
         "bau_value"     : lambda df: safe_get(df, "outputs.CHP.year_one_standby_cost_before_tax_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.CHP.year_one_standby_cost_before_tax")
     },      
     {
-        "label"         : "Export Credits ($)",
+        "label"         : "Export Credits ($/yr)",
         "key"           : "export_credits",
         "bau_value"     : lambda df: -1 * safe_get(df, "outputs.ElectricTariff.year_one_export_benefit_before_tax_bau"),
         "scenario_value": lambda df: -1 * safe_get(df, "outputs.ElectricTariff.year_one_export_benefit_before_tax")
     },    
     {
-        "label"         : "Purchased Electricity Cost ($)",
+        "label"         : "Purchased Electricity Cost ($/yr)",
         "key"           : "purchased_electricity_cost",
         "bau_value"     : lambda df: safe_get(df, "outputs.ElectricTariff.year_one_bill_before_tax_bau") + safe_get(df, "outputs.CHP.year_one_standby_cost_before_tax_bau") - safe_get(df, "outputs.ElectricTariff.year_one_export_benefit_before_tax_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_bill_before_tax") + safe_get(df, "outputs.CHP.year_one_standby_cost_before_tax") - safe_get(df, "outputs.ElectricTariff.year_one_export_benefit_before_tax")
     },
     {
-        "label"         : "Purchased Electricity Cost, After Tax ($)",
+        "label"         : "Purchased Electricity Cost, After Tax ($/yr)",
         "key"           : "purchased_electricity_cost",
         "bau_value"     : lambda df: safe_get(df, "outputs.ElectricTariff.year_one_bill_after_tax_bau") + safe_get(df, "outputs.CHP.year_one_standby_cost_after_tax_bau") - safe_get(df, "outputs.ElectricTariff.year_one_export_benefit_after_tax_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_bill_after_tax") + safe_get(df, "outputs.CHP.year_one_standby_cost_after_tax") - safe_get(df, "outputs.ElectricTariff.year_one_export_benefit_after_tax")
     },    
     {
-        "label"         : "Electricity Cost Savings ($)",
+        "label"         : "Electricity Cost Savings ($/yr)",
         "key"           : "electricity_cost_savings",
         "bau_value"     : lambda df: "",
         "scenario_value": lambda df: ""
     },
     {
-        "label"         : "Electricity Cost Savings, After Tax ($)",
+        "label"         : "Electricity Cost Savings, After Tax ($/yr)",
         "key"           : "electricity_cost_savings_after_tax",
         "bau_value"     : lambda df: "",
         "scenario_value": lambda df: ""
@@ -442,43 +442,43 @@ custom_table_webtool = [
         "scenario_value": lambda df: ""
     },
     {
-        "label"         : "Boiler Fuel Cost ($)",
+        "label"         : "Boiler Fuel Cost ($/yr)",
         "key"           : "boiler_fuel_cost",
         "bau_value"     : lambda df: safe_get(df, "outputs.ExistingBoiler.year_one_fuel_cost_before_tax_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.ExistingBoiler.year_one_fuel_cost_before_tax")
     },
     {
-        "label"         : "CHP Fuel Cost ($)",
+        "label"         : "CHP Fuel Cost ($/yr)",
         "key"           : "chp_fuel_cost",
         "bau_value"     : lambda df          : safe_get(df, "outputs.CHP.year_one_fuel_cost_before_tax_bau"),
         "scenario_value": lambda df          : safe_get(df, "outputs.CHP.year_one_fuel_cost_before_tax")
     },
     {
-        "label"         : "Backup Generator Fuel Cost ($)",
+        "label"         : "Backup Generator Fuel Cost ($/yr)",
         "key"           : "backup_generator_fuel_cost",
         "bau_value"     : lambda df: safe_get(df, "outputs.Generator.year_one_fuel_cost_before_tax_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.Generator.year_one_fuel_cost_before_tax")
     },
     {
-        "label"         : "Fuel Cost ($)",
+        "label"         : "Fuel Cost ($/yr)",
         "key"           : "fuel_cost",
         "bau_value"     : lambda df: safe_get(df, "outputs.Financial.year_one_fuel_cost_before_tax_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.Financial.year_one_fuel_cost_before_tax")
     },
     {
-        "label"         : "Fuel Cost, After Tax ($)",
+        "label"         : "Fuel Cost, After Tax ($/yr)",
         "key"           : "fuel_cost",
         "bau_value"     : lambda df: safe_get(df, "outputs.Financial.year_one_fuel_cost_after_tax_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.Financial.year_one_fuel_cost_after_tax")
     },
     {
-        "label"         : "Fuel Cost Savings ($)",
+        "label"         : "Fuel Cost Savings ($/yr)",
         "key"           : "fuel_cost_savings",
         "bau_value"     : lambda df: "",
         "scenario_value": lambda df: ""
     },
     {
-        "label"         : "Fuel Cost Savings, After Tax ($)",
+        "label"         : "Fuel Cost Savings, After Tax ($/yr)",
         "key"           : "fuel_cost_savings_after_tax",
         "bau_value"     : lambda df: "",
         "scenario_value": lambda df: ""
@@ -505,20 +505,20 @@ custom_table_webtool = [
         "scenario_value": lambda df: safe_get(df, "outputs.Site.onsite_renewable_energy_fraction_of_total_load")
     },    
     {
-        "label"         : "Annual CO2e Emissions (tonnes)",
+        "label"         : "Annual CO2e Emissions (tonnes/yr)",
         "key"           : "annual_co2_emissions",
         "bau_value"     : lambda df: safe_get(df, "outputs.Site.annual_emissions_tonnes_CO2_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.Site.annual_emissions_tonnes_CO2")
     },
     # Added emissions from electricity and fuels
     {
-        "label"         : "Annual CO2e Emissions from Electricity (tonnes)",
+        "label"         : "Annual CO2e Emissions from Electricity (tonnes/yr)",
         "key"           : "annual_co2_emissions_electricity",
         "bau_value"     : lambda df: safe_get(df, "outputs.ElectricUtility.annual_emissions_tonnes_CO2_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.ElectricUtility.annual_emissions_tonnes_CO2")
     },
     {
-        "label"         : "Annual CO2e Emissions from Fuel (tonnes)",
+        "label"         : "Annual CO2e Emissions from Fuel (tonnes/yr)",
         "key"           : "annual_co2_emissions_fuel",
         "bau_value"     : lambda df: safe_get(df, "outputs.Site.annual_emissions_from_fuelburn_tonnes_CO2_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.Site.annual_emissions_from_fuelburn_tonnes_CO2")
@@ -621,7 +621,7 @@ custom_table_webtool = [
         "scenario_value": lambda df: safe_get(df, "inputs.Financial.offtaker_tax_rate_fraction")
     },    
     {
-        "label": "Total Year One Savings, After Tax ($)",
+        "label": "Total Year One Savings, After Tax ($/yr)",
         "key": "total_year_one_savings_after_tax",
         "bau_value": lambda df: "",
         "scenario_value": lambda df: ""
@@ -651,7 +651,7 @@ custom_table_webtool = [
         "scenario_value": lambda df: ""
     },
     {
-        "label": "Modified Total Year One Savings, After Tax ($)",
+        "label": "Modified Total Year One Savings, After Tax ($/yr)",
         "key": "modified_total_year_one_savings_after_tax",
         "bau_value": lambda df: "",
         "scenario_value": lambda df: ""
@@ -685,151 +685,151 @@ custom_table_webtool = [
         "comments"      : "Split into Electric, Heating, and Cooling Sections"
     },
     {
-        "label"         : "Grid Serving Load (kWh)",
+        "label"         : "Grid Serving Load (kWh/yr)",
         "key"           : "grid_serving_load",
         "bau_value"     : lambda df: safe_get(df, "outputs.ElectricUtility.electric_to_load_series_kw_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.ElectricUtility.electric_to_load_series_kw")
     },
     {
-        "label"         : "Grid Charging Battery (kWh)",
+        "label"         : "Grid Charging Battery (kWh/yr)",
         "key"           : "grid_charging_battery",
         "bau_value"     : lambda df: safe_get(df, "outputs.ElectricUtility.electric_to_storage_series_kw_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.ElectricUtility.electric_to_storage_series_kw")
     },
     {
-        "label"         : "PV Serving Load (kWh)",
+        "label"         : "PV Serving Load (kWh/yr)",
         "key"           : "pv_serving_load",
         "bau_value"     : lambda df: safe_get(df, "outputs.PV.electric_to_load_series_kw_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.PV.electric_to_load_series_kw")
     },
     {
-        "label"         : "PV Charging Battery (kWh)",
+        "label"         : "PV Charging Battery (kWh/yr)",
         "key"           : "pv_charging_battery",
         "bau_value"     : lambda df: safe_get(df, "outputs.PV.electric_to_storage_series_kw_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.PV.electric_to_storage_series_kw")
     },
     {
-        "label"         : "PV Exported to Grid (kWh)",
+        "label"         : "PV Exported to Grid (kWh/yr)",
         "key"           : "pv_exported_to_grid",
         "bau_value"     : lambda df: safe_get(df, "outputs.PV.electric_to_grid_series_kw_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.PV.electric_to_grid_series_kw")
     },
     {
-        "label"         : "PV Curtailment (kWh)",
+        "label"         : "PV Curtailment (kWh/yr)",
         "key"           : "pv_curtailment",
         "bau_value"     : lambda df: safe_get(df, "outputs.PV.electric_curtailed_series_kw_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.PV.electric_curtailed_series_kw")
     },
     {
-        "label"         : "PV Year One Electricity Produced (kWh)",
+        "label"         : "PV Year One Electricity Produced (kWh/yr)",
         "key"           : "pv_year_one_electricity_produced",
         "bau_value"     : lambda df: safe_get(df, "outputs.PV.year_one_energy_produced_kwh_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.PV.year_one_energy_produced_kwh")
     },
     {
-        "label"         : "Wind Serving Load (kWh)",
+        "label"         : "Wind Serving Load (kWh/yr)",
         "key"           : "wind_serving_load",
         "bau_value"     : lambda df: safe_get(df, "outputs.Wind.electric_to_load_series_kw_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.Wind.electric_to_load_series_kw")
     },
     {
-        "label"         : "Wind Charging Battery (kWh)",
+        "label"         : "Wind Charging Battery (kWh/yr)",
         "key"           : "wind_charging_battery",
         "bau_value"     : lambda df: safe_get(df, "outputs.Wind.electric_to_storage_series_kw_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.Wind.electric_to_storage_series_kw")
     },
     {
-        "label"         : "Wind Exported to Grid (kWh)",
+        "label"         : "Wind Exported to Grid (kWh/yr)",
         "key"           : "wind_exported_to_grid",
         "bau_value"     : lambda df: safe_get(df, "outputs.Wind.electric_to_grid_series_kw_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.Wind.electric_to_grid_series_kw")
     },
     {
-        "label"         : "Wind Curtailment (kWh)",
+        "label"         : "Wind Curtailment (kWh/yr)",
         "key"           : "wind_curtailment",
         "bau_value"     : lambda df: safe_get(df, "outputs.Wind.electric_curtailed_series_kw_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.Wind.electric_curtailed_series_kw")
     },
     {
-        "label"         : "Wind Total Electricity Produced (kWh)",
+        "label"         : "Wind Total Electricity Produced (kWh/yr)",
         "key"           : "wind_total_electricity_produced",
         "bau_value"     : lambda df: safe_get(df, "outputs.Wind.annual_energy_produced_kwh_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.Wind.annual_energy_produced_kwh")
     },
     {
-        "label"         : "Battery Serving Load (kWh)",
+        "label"         : "Battery Serving Load (kWh/yr)",
         "key"           : "battery_serving_load",
         "bau_value"     : lambda df: safe_get(df, "outputs.ElectricStorage.storage_to_load_series_kw_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.ElectricStorage.storage_to_load_series_kw")
     },
     {
-        "label"         : "Generator Serving Load (kWh)",
+        "label"         : "Generator Serving Load (kWh/yr)",
         "key"           : "generator_serving_load",
         "bau_value"     : lambda df: safe_get(df, "outputs.Generator.electric_to_load_series_kw_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.Generator.electric_to_load_series_kw")
     },
     {
-        "label"         : "Generator Charging Battery (kWh)",
+        "label"         : "Generator Charging Battery (kWh/yr)",
         "key"           : "generator_charging_battery",
         "bau_value"     : lambda df: safe_get(df, "outputs.Generator.electric_to_storage_series_kw_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.Generator.electric_to_storage_series_kw")
     },
     {
-        "label"         : "Generator Exported to Grid (kWh)",
+        "label"         : "Generator Exported to Grid (kWh/yr)",
         "key"           : "generator_exported_to_grid",
         "bau_value"     : lambda df: safe_get(df, "outputs.Generator.electric_to_grid_series_kw_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.Generator.electric_to_grid_series_kw")
     },
     {
-        "label"         : "Generator Total Electricity Produced (kWh)",
+        "label"         : "Generator Total Electricity Produced (kWh/yr)",
         "key"           : "generator_total_electricity_produced",
         "bau_value"     : lambda df: safe_get(df, "outputs.Generator.annual_energy_produced_kwh_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.Generator.annual_energy_produced_kwh")
     },
     {
-        "label"         : "CHP Serving Load (kWh)",
+        "label"         : "CHP Serving Load (kWh/yr)",
         "key"           : "chp_serving_load",
         "bau_value"     : lambda df: safe_get(df, "outputs.CHP.electric_to_load_series_kw_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.CHP.electric_to_load_series_kw")
     },
     {
-        "label"         : "CHP Charging Battery (kWh)",
+        "label"         : "CHP Charging Battery (kWh/yr)",
         "key"           : "chp_charging_battery",
         "bau_value"     : lambda df: safe_get(df, "outputs.CHP.electric_to_storage_series_kw_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.CHP.electric_to_storage_series_kw")
     },
     {
-        "label"         : "CHP Exported to Grid (kWh)",
+        "label"         : "CHP Exported to Grid (kWh/yr)",
         "key"           : "chp_exported_to_grid",
         "bau_value"     : lambda df: safe_get(df, "outputs.CHP.electric_to_grid_series_kw_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.CHP.electric_to_grid_series_kw")
     },
     {
-        "label"         : "CHP Total Electricity Produced (kWh)",
+        "label"         : "CHP Total Electricity Produced (kWh/yr)",
         "key"           : "chp_total_electricity_produced",
         "bau_value"     : lambda df: safe_get(df, "outputs.CHP.annual_electric_production_kwh_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.CHP.annual_electric_production_kwh")
     },
     {
-        "label"         : "Steam Turbine Serving Load (kWh)",
+        "label"         : "Steam Turbine Serving Load (kWh/yr)",
         "key"           : "steam_turbine_serving_load",
         "bau_value"     : lambda df: safe_get(df, "outputs.SteamTurbine.electric_to_load_series_kw_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.SteamTurbine.electric_to_load_series_kw")
     },
     {
-        "label"         : "Steam Turbine Charging Battery (kWh)",
+        "label"         : "Steam Turbine Charging Battery (kWh/yr)",
         "key"           : "steam_turbine_charging_battery",
         "bau_value"     : lambda df: safe_get(df, "outputs.SteamTurbine.electric_to_storage_series_kw_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.SteamTurbine.electric_to_storage_series_kw")
     },
     {
-        "label"         : "Steam Turbine Exported to Grid (kWh)",
+        "label"         : "Steam Turbine Exported to Grid (kWh/yr)",
         "key"           : "steam_turbine_exported_to_grid",
         "bau_value"     : lambda df: safe_get(df, "outputs.SteamTurbine.electric_to_grid_series_kw_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.SteamTurbine.electric_to_grid_series_kw")
     },
     {
-        "label"         : "Steam Turbine Total Electricity Produced (kWh)",
+        "label"         : "Steam Turbine Total Electricity Produced (kWh/yr)",
         "key"           : "steam_turbine_total_electricity_produced",
         "bau_value"     : lambda df: safe_get(df, "outputs.SteamTurbine.annual_electric_production_kwh_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.SteamTurbine.annual_electric_production_kwh")
@@ -844,115 +844,115 @@ custom_table_webtool = [
         "scenario_value": lambda df: ""
     },
     {
-        "label"         : "Existing Heating System Serving Thermal Load (MMBtu)",
+        "label"         : "Existing Heating System Serving Thermal Load (MMBtu/yr)",
         "key"           : "existing_heating_system_serving_thermal_load",
         "bau_value"     : lambda df: safe_get(df, "outputs.ExistingBoiler.thermal_to_load_series_mmbtu_per_hour_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.ExistingBoiler.thermal_to_load_series_mmbtu_per_hour")
     },
     {
-        "label"         : "Existing Heating System Thermal to Steam Turbine (MMBtu)",
+        "label"         : "Existing Heating System Thermal to Steam Turbine (MMBtu/yr)",
         "key"           : "existing_heating_system_thermal_to_steam_turbine",
         "bau_value"     : lambda df: safe_get(df, "outputs.ExistingBoiler.thermal_to_steamturbine_series_mmbtu_per_hour_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.ExistingBoiler.thermal_to_steamturbine_series_mmbtu_per_hour")
     },
     {
-        "label"         : "Existing Heating System Charging Hot Water Storage (MMBtu)",
+        "label"         : "Existing Heating System Charging Hot Water Storage (MMBtu/yr)",
         "key"           : "existing_heating_system_charging_hot_water_storage",
         "bau_value"     : lambda df: safe_get(df, "outputs.ExistingBoiler.thermal_to_storage_series_mmbtu_per_hour_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.ExistingBoiler.thermal_to_storage_series_mmbtu_per_hour")
     },
     {
-        "label"         : "Existing Heating System Total Thermal Produced (MMBtu)",
+        "label"         : "Existing Heating System Total Thermal Produced (MMBtu/yr)",
         "key"           : "existing_heating_system_total_thermal_produced",
         "bau_value"     : lambda df                                               : safe_get(df, "outputs.ExistingBoiler.annual_thermal_production_mmbtu_bau"),
         "scenario_value": lambda df                                               : safe_get(df, "outputs.ExistingBoiler.annual_thermal_production_mmbtu")
     },
     {
-        "label"         : "CHP Serving Thermal Load (MMBtu)",
+        "label"         : "CHP Serving Thermal Load (MMBtu/yr)",
         "key"           : "chp_serving_thermal_load",
         "bau_value"     : lambda df: safe_get(df, "outputs.CHP.thermal_to_load_series_mmbtu_per_hour_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.CHP.thermal_to_load_series_mmbtu_per_hour")
     },
     {
-        "label"         : "CHP Charging Hot Water Storage (MMBtu)",
+        "label"         : "CHP Charging Hot Water Storage (MMBtu/yr)",
         "key"           : "chp_charging_hot_water_storage",
         "bau_value"     : lambda df: safe_get(df, "outputs.CHP.thermal_to_storage_series_mmbtu_per_hour_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.CHP.thermal_to_storage_series_mmbtu_per_hour")
     },
     {
-        "label"         : "CHP Thermal to Steam Turbine (MMBtu)",
+        "label"         : "CHP Thermal to Steam Turbine (MMBtu/yr)",
         "key"           : "chp_thermal_to_steam_turbine",
         "bau_value"     : lambda df: safe_get(df, "outputs.CHP.thermal_to_steamturbine_series_mmbtu_per_hour_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.CHP.thermal_to_steamturbine_series_mmbtu_per_hour")
     },
     {
-        "label"         : "CHP Thermal Vented (MMBtu)",
+        "label"         : "CHP Thermal Vented (MMBtu/yr)",
         "key"           : "chp_thermal_vented",
         "bau_value"     : lambda df: safe_get(df, "outputs.CHP.thermal_curtailed_series_mmbtu_per_hour_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.CHP.thermal_curtailed_series_mmbtu_per_hour")
     },
     {
-        "label"         : "CHP Total Thermal Produced (MMBtu)",
+        "label"         : "CHP Total Thermal Produced (MMBtu/yr)",
         "key"           : "chp_total_thermal_produced",
         "bau_value"     : lambda df: safe_get(df, "outputs.CHP.annual_thermal_production_mmbtu_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.CHP.annual_thermal_production_mmbtu")
     },
     {
-        "label"         : "Steam Turbine Serving Thermal Load (MMBtu)",
+        "label"         : "Steam Turbine Serving Thermal Load (MMBtu/yr)",
         "key"           : "steam_turbine_serving_thermal_load",
         "bau_value"     : lambda df: safe_get(df, "outputs.SteamTurbine.thermal_to_load_series_mmbtu_per_hour_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.SteamTurbine.thermal_to_load_series_mmbtu_per_hour")
     },
     {
-        "label"         : "Steam Turbine Charging Hot Water Storage (MMBtu)",
+        "label"         : "Steam Turbine Charging Hot Water Storage (MMBtu/yr)",
         "key"           : "steam_turbine_charging_hot_water_storage",
         "bau_value"     : lambda df: safe_get(df, "outputs.SteamTurbine.thermal_to_storage_series_mmbtu_per_hour_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.SteamTurbine.thermal_to_storage_series_mmbtu_per_hour")
     },
     {
-        "label"         : "Steam Turbine Total Thermal Produced (MMBtu)",
+        "label"         : "Steam Turbine Total Thermal Produced (MMBtu/yr)",
         "key"           : "steam_turbine_total_thermal_produced",
         "bau_value"     : lambda df                                     : safe_get(df, "outputs.SteamTurbine.annual_thermal_production_mmbtu_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.SteamTurbine.annual_thermal_production_mmbtu")
     },
     {
-        "label"         : "GHP Reduction of Thermal Load (MMBtu)",
+        "label"         : "GHP Reduction of Thermal Load (MMBtu/yr)",
         "key"           : "ghp_reduction_of_thermal_load",
         "bau_value"     : lambda df: safe_get(df, "outputs.GHP.space_heating_thermal_load_reduction_with_ghp_mmbtu_per_hour_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.GHP.space_heating_thermal_load_reduction_with_ghp_mmbtu_per_hour")
     },
     {
-        "label"         : "GHP Serving Thermal Load (MMBtu)",
+        "label"         : "GHP Serving Thermal Load (MMBtu/yr)",
         "key"           : "ghp_serving_thermal_load",
         "bau_value"     : lambda df: safe_get(df, "outputs.GHP.thermal_to_space_heating_load_series_mmbtu_per_hour_bau") + safe_get(df, "outputs.GHP.thermal_to_dhw_load_series_mmbtu_per_hour_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.GHP.thermal_to_space_heating_load_series_mmbtu_per_hour") + safe_get(df, "outputs.GHP.thermal_to_dhw_load_series_mmbtu_per_hour")
     },
     {
-        "label"         : "ASHP Serving Thermal Load (MMBtu)",
+        "label"         : "ASHP Serving Thermal Load (MMBtu/yr)",
         "key"           : "ashp_serving_thermal_load",
         "bau_value"     : lambda df                          : safe_get(df, "outputs.ASHPSpaceHeater.thermal_to_load_series_mmbtu_per_hour_bau"),
         "scenario_value": lambda df                          : safe_get(df, "outputs.ASHPSpaceHeater.thermal_to_load_series_mmbtu_per_hour")
     },
     {
-        "label"         : "ASHP Charging Hot Water Storage (MMBtu)",
+        "label"         : "ASHP Charging Hot Water Storage (MMBtu/yr)",
         "key"           : "ashp_charging_hot_water_storage",
         "bau_value"     : lambda df: safe_get(df, "outputs.ASHPSpaceHeater.thermal_to_storage_series_mmbtu_per_hour_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.ASHPSpaceHeater.thermal_to_storage_series_mmbtu_per_hour")
     },
     {
-        "label"         : "ASHP Water Heater Serving Thermal Load (MMBtu)",
+        "label"         : "ASHP Water Heater Serving Thermal Load (MMBtu/yr)",
         "key"           : "ashp_water_heater_serving_thermal_load",
         "bau_value"     : lambda df: safe_get(df, "outputs.ASHPWaterHeater.thermal_to_load_series_mmbtu_per_hour_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.ASHPWaterHeater.thermal_to_load_series_mmbtu_per_hour")
     },
     {
-        "label"         : "ASHP Water Heater Charging Hot Water Storage (MMBtu)",
+        "label"         : "ASHP Water Heater Charging Hot Water Storage (MMBtu/yr)",
         "key"           : "ashp_water_heater_charging_hot_water_storage",
         "bau_value"     : lambda df: safe_get(df, "outputs.ASHPWaterHeater.thermal_to_storage_series_mmbtu_per_hour_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.ASHPWaterHeater.thermal_to_storage_series_mmbtu_per_hour")
     },
     {
-        "label"         : "Hot Water Storage Serving Thermal Load (MMBtu)",
+        "label"         : "Hot Water Storage Serving Thermal Load (MMBtu/yr)",
         "key"           : "hot_water_storage_serving_thermal_load",
         "bau_value"     : lambda df: safe_get(df, "outputs.HotThermalStorage.storage_to_load_series_mmbtu_per_hour_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.HotThermalStorage.storage_to_load_series_mmbtu_per_hour")
@@ -968,55 +968,55 @@ custom_table_webtool = [
         "scenario_value": lambda df: ""
     },
     {
-        "label"         : "Existing Cooling Plant Serving Thermal Load (ton-hr)",
+        "label"         : "Existing Cooling Plant Serving Thermal Load (ton-hr/yr)",
         "key"           : "existing_cooling_plant_serving_thermal_load",
         "bau_value"     : lambda df: safe_get(df, "outputs.ExistingChiller.thermal_to_load_series_ton_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.ExistingChiller.thermal_to_load_series_ton")
     },
     {
-        "label"         : "Existing Cooling Plant Charging Chilled Water Storage (ton-hr)",
+        "label"         : "Existing Cooling Plant Charging Chilled Water Storage (ton-hr/yr)",
         "key"           : "existing_cooling_plant_charging_chilled_water_storage",
         "bau_value"     : lambda df: safe_get(df, "outputs.ExistingChiller.thermal_to_storage_series_ton_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.ExistingChiller.thermal_to_storage_series_ton")
     },
     {
-        "label"         : "GHP Reduction of Thermal Load (ton-hr)",
+        "label"         : "GHP Reduction of Thermal Load (ton-hr/yr)",
         "key"           : "ghp_reduction_of_thermal_load_cooling",
         "bau_value"     : lambda df: safe_get(df, "outputs.GHP.cooling_thermal_load_reduction_with_ghp_ton_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.GHP.cooling_thermal_load_reduction_with_ghp_ton")
     },
     {
-        "label"         : "GHP Serving Thermal Load (ton-hr)",
+        "label"         : "GHP Serving Thermal Load (ton-hr/yr)",
         "key"           : "ghp_serving_thermal_load_cooling",
         "bau_value"     : lambda df: safe_get(df, "outputs.GHP.thermal_to_load_series_ton_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.GHP.thermal_to_load_series_ton")
     },
     {
-        "label"         : "ASHP Serving Thermal Load (ton-hr)",
+        "label"         : "ASHP Serving Thermal Load (ton-hr/yr)",
         "key"           : "ashp_serving_thermal_load_cooling",
         "bau_value"     : lambda df: safe_get(df, "outputs.ASHPSpaceHeater.thermal_to_load_series_ton_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.ASHPSpaceHeater.thermal_to_load_series_ton")
     },
     {
-        "label"         : "ASHP Charging Chilled Water Storage (ton-hr)",
+        "label"         : "ASHP Charging Chilled Water Storage (ton-hr/yr)",
         "key"           : "ashp_charging_chilled_water_storage",
         "bau_value"     : lambda df: safe_get(df, "outputs.ASHPSpaceHeater.thermal_to_storage_series_ton_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.ASHPSpaceHeater.thermal_to_storage_series_ton")
     },
     {
-        "label"         : "Absorption Chiller Serving Thermal Load (ton-hr)",
+        "label"         : "Absorption Chiller Serving Thermal Load (ton-hr/yr)",
         "key"           : "absorption_chiller_serving_thermal_load",
         "bau_value"     : lambda df: safe_get(df, "outputs.AbsorptionChiller.thermal_to_load_series_ton_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.AbsorptionChiller.thermal_to_load_series_ton")
     },
     {
-        "label"         : "Absorption Chiller Charging Chilled Water Storage (ton-hr)",
+        "label"         : "Absorption Chiller Charging Chilled Water Storage (ton-hr/yr)",
         "key"           : "absorption_chiller_charging_chilled_water_storage",
         "bau_value"     : lambda df: safe_get(df, "outputs.AbsorptionChiller.thermal_to_storage_series_ton_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.AbsorptionChiller.thermal_to_storage_series_ton")
     },
     {
-        "label"         : "Chilled Water Storage Serving Thermal Load (ton-hr)",
+        "label"         : "Chilled Water Storage Serving Thermal Load (ton-hr/yr)",
         "key"           : "chilled_water_storage_serving_thermal_load",
         "bau_value"     : lambda df: safe_get(df, "outputs.ColdThermalStorage.storage_to_load_series_ton_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.ColdThermalStorage.storage_to_load_series_ton")
