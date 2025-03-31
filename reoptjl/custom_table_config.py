@@ -846,7 +846,7 @@ custom_table_webtool = [
     {
         "label"         : "Existing Heating System Serving Thermal Load (MMBtu/yr)",
         "key"           : "existing_heating_system_serving_thermal_load",
-        "bau_value"     : lambda df: safe_get(df, "outputs.ExistingBoiler.thermal_to_load_series_mmbtu_per_hour_bau"),
+        "bau_value"     : lambda df: safe_get(df, "outputs.ExistingBoiler.annual_thermal_production_mmbtu_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.ExistingBoiler.thermal_to_load_series_mmbtu_per_hour")
     },
     {
