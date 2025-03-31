@@ -329,8 +329,8 @@ custom_table_webtool = [
     {
         "label"         : "Total Electric Costs ($)",
         "key"           : "total_electric_utility_costs",
-        "bau_value"     : lambda df: safe_get(df, "outputs.Financial.lifecycle_elecbill_after_tax_bau") - safe_get(df, "outputs.Financial.lifecycle_export_benefit_after_tax_bau") + safe_get(df, "outputs.CHP.lifecycle_chp_standby_cost_after_tax_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Financial.lifecycle_elecbill_after_tax") - safe_get(df, "outputs.Financial.lifecycle_export_benefit_after_tax") + safe_get(df, "outputs.CHP.lifecycle_chp_standby_cost_after_tax")
+        "bau_value"     : lambda df: safe_get(df, "outputs.Financial.lifecycle_elecbill_after_tax_bau") + safe_get(df, "outputs.Financial.lifecycle_chp_standby_cost_after_tax_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Financial.lifecycle_elecbill_after_tax") + safe_get(df, "outputs.Financial.lifecycle_chp_standby_cost_after_tax")
     },
     {
         "label"         : "Total Fuel Costs ($)",
@@ -341,8 +341,8 @@ custom_table_webtool = [
     {
         "label"         : "Total Utility Costs ($)",
         "key"           : "total_utility_costs",
-        "bau_value"     : lambda df: safe_get(df, "outputs.Financial.lifecycle_fuel_costs_after_tax_bau")+ safe_get(df, "outputs.Financial.lifecycle_elecbill_after_tax_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.Financial.lifecycle_fuel_costs_after_tax")+ safe_get(df, "outputs.Financial.lifecycle_elecbill_after_tax")
+        "bau_value"     : lambda df: safe_get(df, "outputs.Financial.lifecycle_elecbill_after_tax_bau") + safe_get(df, "outputs.Financial.lifecycle_chp_standby_cost_after_tax_bau") + safe_get(df, "outputs.Financial.lifecycle_fuel_costs_after_tax_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.Financial.lifecycle_elecbill_after_tax") + safe_get(df, "outputs.Financial.lifecycle_chp_standby_cost_after_tax") + safe_get(df, "outputs.Financial.lifecycle_fuel_costs_after_tax")
     },
     {
         "label"         : "Total Hypothetical Emissions Costs (not included in LCC) ($)",
@@ -1142,6 +1142,7 @@ calculations_config = [
         "name": "CO2e Savings Including Unaddressable Fuel (%)",
         "formula": lambda col, bau, headers: f'=({bau["annual_co2_emissions_value"]}-{col}{headers["Annual CO2e Emissions (tonnes)"] + 2})/({bau["annual_co2_emissions_value"]}+{col}{headers["Total Unaddressable Fuel CO2e Emissions (tonnes/yr)"] + 2})'    
     },
+    # These below don't seem to be used currently
     {
         "name": "Total Site Electricity Use (kWh)",
         "formula": lambda col, bau, headers: (
