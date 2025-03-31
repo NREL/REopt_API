@@ -1992,6 +1992,9 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
         subtitle_format = workbook.add_format({
             'bold': True, 'font_size': 14, 'align': 'left', 'valign': 'top'
         })
+        subsubtitle_format = workbook.add_format({
+            'italic': True, 'font_size': 12, 'align': 'left', 'valign': 'top', 'text_wrap': True
+        })        
         text_format = workbook.add_format({
             'font_size': 12, 'align': 'left', 'valign': 'top', 'text_wrap': True
         })
@@ -2015,7 +2018,7 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
             "Please read the following instructions carefully to understand how to use this workbook effectively."
         )
         instructions_worksheet.write(row, 0, general_instructions, text_format)
-        row += 4
+        row += 3
 
         # Using the 'Results Table' Sheet with formula format
         instructions_worksheet.write(row, 0, "Using the 'Results Table' Sheet", subtitle_format)
@@ -2025,7 +2028,7 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
             "The 'Results Table' sheet displays the scenario results of your REopt analysis in a structured format. "
             "Here's how to use it:"
         )
-        instructions_worksheet.write(row, 0, custom_table_instructions, text_format)
+        instructions_worksheet.write(row, 0, custom_table_instructions, subsubtitle_format)
         row += 2
 
         steps = [
@@ -2041,13 +2044,13 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
         row += 2
 
         # Notes for the Playground Section
-        instructions_worksheet.write(row, 0, "Notes for the Playground Section", subtitle_format)
+        instructions_worksheet.write(row, 0, "Notes for the economic 'Playground' Section", subtitle_format)
         row += 1
 
         playground_notes = (
-            "The 'Playground' section allows you to explore the effects of additional incentives or costs on your project's financial metrics."
+            "The economic 'Playground' section allows you to explore the effects of additional incentives and costs and on your project's financial metrics, in particular the simple payback period."
         )
-        instructions_worksheet.write(row, 0, playground_notes, text_format)
+        instructions_worksheet.write(row, 0, playground_notes, subsubtitle_format)
         row += 2
 
         playground_items = [
@@ -2066,10 +2069,13 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
         for item in playground_items:
             instructions_worksheet.write(row, 0, item, bullet_format)
             row += 1
-        row += 2
+        row += 1
 
         # Unaddressable Heating Load and Emissions
-        instructions_worksheet.write(row, 0, "Unaddressable Heating Load and Emissions", subtitle_format)
+        instructions_worksheet.write(row, 0, "Notes for the emissions 'Playground' Section", subtitle_format)
+        row += 1
+        
+        instructions_worksheet.write(row, 0, "The emissions 'Playground' section allows you to explore the effects of unaddressable fuel emissions on the total emissions reduction %.", subsubtitle_format)
         row += 1
 
         unaddressable_notes = (
@@ -2079,14 +2085,13 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
             "Including unaddressable emissions results in a lower percentage reduction because the total emissions baseline is larger."
         )
         instructions_worksheet.write(row, 0, unaddressable_notes, text_format)
-        row += 2
+        row += 3
 
         # Final Note and Contact Info
-        instructions_worksheet.write(row, 0, "Thank you for using the REopt Results Table Workbook!", text_format)
+        instructions_worksheet.write(row, 0, "Thank you for using the REopt Results Table Workbook!", subtitle_format)
         row += 1
         contact_info = "For support or feedback, please contact the REopt team at reopt@nrel.gov."
-        instructions_worksheet.write(row, 0, contact_info, text_format)
-
+        instructions_worksheet.write(row, 0, contact_info, subtitle_format)
         # Freeze panes to keep the title visible
         instructions_worksheet.freeze_panes(1, 0)
 
