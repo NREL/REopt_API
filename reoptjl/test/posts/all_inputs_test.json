@@ -26,7 +26,9 @@
         "PM25_onsite_fuelburn_cost_per_tonne": null,
         "NOx_cost_escalation_rate_fraction": null,
         "SO2_cost_escalation_rate_fraction": null,
-        "PM25_cost_escalation_rate_fraction": null
+        "PM25_cost_escalation_rate_fraction": null,
+        "min_initial_capital_costs_before_incentives": null,
+        "max_initial_capital_costs_before_incentives": null
     },
     "ElectricLoad": {
         "annual_kwh": 190000.0,
