@@ -2991,6 +2991,210 @@ class PVOutputs(BaseModel, models.Model):
         default=list, blank=True
     )
 
+class CSTInputs(BaseModel, models.Model):
+    key = "CST"
+    meta = models.ForeignKey(
+        to=APIMeta,
+        on_delete=models.CASCADE,
+        related_name="CSTInputs",
+        unique=False
+    )
+
+    tech_type = models.TextField(
+        blank=True,
+        default="ptc",
+        help_text="Type of CST you want to implement into your system"
+    )
+    min_kw = models.FloatField(
+        default=0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Minimum CST size constraint for optimization."
+    )
+    max_kw = models.FloatField(
+        default=1.0e9,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Maximum CST size constraint for optimization (upper bound on additional capacity beyond existing_kw). Set to zero to disable PV"
+    )
+    acres_per_kw = models.FloatField(
+        default=0.006,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e3)
+        ],
+        blank=True,
+        help_text="Power density for CST"
+    )
+    installed_cost_per_kw = models.FloatField(
+        default=1200,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e5)
+        ],
+        blank=True,
+        help_text="Installed CST cost in $/kW"
+    )
+    om_cost_per_kw = models.FloatField(
+        default=18,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e3)
+        ],
+        blank=True,
+        help_text="Annual CST operations and maintenance costs in $/kW"
+    )
+    om_cost_per_kwh = models.FloatField(
+        default=18,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e3)
+        ],
+        blank=True,
+        help_text="Annual CST operations and maintenance costs in $/kWh"
+    )
+    macrs_option_years = models.IntegerField(
+        default=MACRS_YEARS_CHOICES.FIVE,
+        choices=MACRS_YEARS_CHOICES.choices,
+        blank=True,
+        help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
+    )
+    macrs_bonus_fraction = models.FloatField(
+        default=0.6,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
+    )
+    capacity_factor_series = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Optional user-defined capacity factors for CST.")
+    )
+    elec_consumption_factor_series = ArrayField(
+        models.FloatField(
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Optional user-defined electricity consumption factors for CST.")
+    )
+    can_supply_steam_turbine = models.BooleanField(
+        default=False,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if CST can supply steam to the steam turbine for electric production"   
+    )
+    can_serve_dhw = models.BooleanField(
+        default=True,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if CST can serve hot water load"   
+    )
+    can_serve_space_heating = models.BooleanField(
+        default=True,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if CST can serve space heating load"   
+    )
+    can_serve_process_heat = models.BooleanField(
+        default=True,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if CST can serve process heat load"   
+    )
+    charge_storage_only = models.BooleanField(
+        default=True,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if CST can only supply hot TES"   
+    )
+    emissions_factor_lb_CO2_per_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1e4)
+        ],
+        blank=True,
+        null=True,
+        help_text="Pounds of CO2 emitted per MMBTU of fuel burned."
+    )
+    emissions_factor_lb_NOx_per_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1e4)
+        ],
+        blank=True,
+        null=True,
+        help_text="Pounds of CO2 emitted per MMBTU of fuel burned."
+    )
+    emissions_factor_lb_SO2_per_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1e4)
+        ],
+        blank=True,
+        null=True,
+        help_text="Pounds of CO2 emitted per MMBTU of fuel burned."
+    )
+    emissions_factor_lb_PM25_per_mmbtu = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1e4)
+        ],
+        blank=True,
+        null=True,
+        help_text="Pounds of CO2 emitted per MMBTU of fuel burned."
+    )
+
+class CSTOutputs(BaseModel, models.Model):
+    key = "CSTOutputs"
+    meta = models.ForeignKey(
+        to=APIMeta,
+        on_delete=models.CASCADE,
+        related_name="CSTOutputs",
+        unique=False
+    )
+    size_kw = models.FloatField(null=True, blank=True)
+    annual_electric_consumption_kwh = models.FloatField(null=True, blank=True)
+    annual_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
+    thermal_production_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default=list, blank=True
+    )
+    electric_consumption_series_kw = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default=list, blank=True
+    )
+    thermal_to_storage_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        blank=True, default=list
+    )
+    thermal_to_hot_sensible_tes_storage_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        blank=True, default=list
+    )
+    thermal_to_steamturbine_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        blank=True, default=list
+    )
+    thermal_curtailed_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        blank=True, default=list
+    )
+    thermal_to_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default=list, blank=True
+    )
+
 
 class WindInputs(BaseModel, models.Model):
     key = "Wind"
