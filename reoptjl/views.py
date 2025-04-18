@@ -2061,7 +2061,7 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
             "- Additional Upfront Cost ($): Input any extra upfront costs (e.g., interconnection upgrades, microgrid components).",
             "- Additional Yearly Cost Savings ($/yr): Input any ongoing yearly savings (e.g., avoided cost of outages, improved productivity, product sales with ESG designation).",
             "- Additional Yearly Cost ($/yr): Input any additional yearly costs (e.g., microgrid operation and maintenance).",
-            "- Modified Total Year One Savings, After Tax ($): Updated total yearly savings to include any user-input additional yearly savings and cost."
+            "- Modified Total Year One Savings, After Tax ($): Updated total yearly savings to include any user-input additional yearly savings and cost.",
             "- Modified Total Capital Cost ($): Updated total cost to include any user-input additional incentive and cost.",
             "- Modified Simple Payback Period Without Incentives (yrs): Uses Total Capital Cost Before Incentives ($) to calculate payback, for reference."
             "- Modified Simple Payback Period (yrs): Calculates a simple payback period with Modified Total Year One Savings, After Tax ($) and Modified Total Capital Cost ($)."
