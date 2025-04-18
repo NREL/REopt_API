@@ -786,6 +786,24 @@ class FinancialInputs(BaseModel, models.Model):
         default=0.0,
         help_text=("Only applicable when off_grid_flag is true. These per year costs are considered tax deductible for owner.")
     )
+    min_initial_capital_costs_before_incentives = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1e12)
+        ],
+        blank=True,
+        null=True,
+        help_text=("Minimum up-front capital cost for all technologies, excluding replacement costs and incentives.")
+    )
+    max_initial_capital_costs_before_incentives = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1e12)
+        ],
+        blank=True,
+        null=True,
+        help_text=("Maximum up-front capital cost for all technologies, excluding replacement costs and incentives.")
+    )
     CO2_cost_per_tonne = models.FloatField(
         validators=[
             MinValueValidator(0),
