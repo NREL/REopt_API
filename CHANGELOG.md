@@ -26,6 +26,18 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.12.1
+### Minor Updates
+### Added
+- Added the following output fields: `year_one_fuel_cost_after_tax` for `ExistingBoiler`, `CHP`, `Generator`, and `Boiler`; `ElectricTariff`: `year_one_bill_after_tax` and `year_one_export_benefit_after_tax`, `Financial`: `capital_costs_after_non_discounted_incentives`, `year_one_total_operating_cost_savings_before_tax`, `year_one_total_operating_cost_savings_after_tax`, `year_one_total_operating_cost_before_tax`, `year_one_total_operating_cost_after_tax`, `year_one_fuel_cost_before_tax`, `year_one_fuel_cost_after_tax`, `year_one_chp_standby_cost_after_tax`, `year_one_chp_standby_cost_after_tax`, `GHP.avoided_capex_by_ghp_present_value`, and `ElectricUtility.peak_grid_demand_kw`
+- Added a lot of the output fields above to the custom_table_config.py file for the `job/generate_results_table` endpoint for the results table downloadable spreadsheet.
+### Changed
+- Using latest registered REopt.jl version 0.51.1
+- For the results table downloadable spreadsheet, changed some labels to include units and made other improvements, in addition to mostly adding a bunch of the after-tax outputs described above
+### Fixed
+- Fixed a GHP test with the corrected `lifecycle_capital_cost` calculation to include the avoided HVAC cost and GHX residual value
+- Fixed a type issue with the `/simulated_load` endpoing for cooling load with `monthly_fraction` input
+
 ## v3.12.0
 ### Major Updates
 ### Added 
