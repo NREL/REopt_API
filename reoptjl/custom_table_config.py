@@ -651,6 +651,18 @@ custom_table_webtool = [
         "scenario_value": lambda df: ""
     },
     {
+        "label": "Unaddressable Fuel Cost ($/MMBtu)",
+        "key": "unaddressable_fuel_cost_input",
+        "bau_value": lambda df: safe_get(df, "inputs.ExistingBoiler.fuel_cost_per_mmbtu") / 8760,
+        "scenario_value": lambda df: safe_get(df, "inputs.ExistingBoiler.fuel_cost_per_mmbtu") / 8760
+    },
+    {
+        "label": "Unaddressable Fuel Yearly Cost ($/yr)",
+        "key": "unaddressable_fuel_yearly_cost",
+        "bau_value": lambda df: "",
+        "scenario_value": lambda df: ""
+    },    
+    {
         "label": "Modified Total Year One Savings, After Tax ($/yr)",
         "key": "modified_total_year_one_savings_after_tax",
         "bau_value": lambda df: "",
@@ -1021,6 +1033,22 @@ custom_table_webtool = [
         "bau_value"     : lambda df: safe_get(df, "outputs.ColdThermalStorage.storage_to_load_series_ton_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.ColdThermalStorage.storage_to_load_series_ton")
     },
+    #####################################################################################################
+    ############################ Other Metrics ############################
+    #####################################################################################################
+
+    {
+        "label"         : "Other Metrics",
+        "key"           : "other_metrics_separator",
+        "bau_value"     : lambda df: "",
+        "scenario_value": lambda df: ""
+    },
+    {
+        "label"         : "Peak Grid Demand (kW)",
+        "key"           : "peak_grid_demand_max",
+        "bau_value"     : lambda df: safe_get(df, "outputs.ElectricUtility.peak_grid_demand_kw_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricUtility.peak_grid_demand_kw")
+    },
 ]
 
 '''
@@ -1105,7 +1133,11 @@ calculations_config = [
     {
         "name": "Fuel Cost Savings, After Tax ($/yr)",
         "formula": lambda col, bau, headers: f'={bau["fuel_costs_after_tax"]}-{col}{headers["Fuel Cost, After Tax ($/yr)"] + 2}'
-    },    
+    },
+    {
+        "name": "Unaddressable Fuel Yearly Cost ($/yr)",
+        "formula": lambda col, bau, headers: f'={col}{headers["Unaddressable Fuel Cost ($/MMBtu)"] + 2} * ({col}{headers["Unaddressable Heating Fuel from REopt Input (MMBtu/yr)"] + 2} + {col}{headers["Additional Unaddressable Fuel Consumption (MMBtu/yr)"] + 2})'
+    },
     {
         "name": "Electricity Cost Savings, After Tax ($/yr)",
         "formula": lambda col, bau, headers: f'={bau["elec_cost_after_tax"]}-{col}{headers["Purchased Electricity Cost, After Tax ($/yr)"] + 2}'
