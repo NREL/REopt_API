@@ -2984,6 +2984,26 @@ class PVInputs(BaseModel, models.Model):
         blank=True,
         help_text="Where PV can be deployed. One of [roof, ground, both] with default as both."
     )
+    kw_per_square_foot = models.FloatField(
+        default=0.01,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(10)
+        ],
+        blank=True,
+        help_text=("The installed power density for rooftop PV systems in kW per square foot, accounting for setbacks, row spacing, etc. The recommended PV system size is constrained "
+                   "based on the sum of land area available, assuming the specified ground-mount power density, and roofspace available, assuming the rooftop power density specified here.")
+    )
+    acres_per_kw = models.FloatField(
+        default=0.006,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(10)
+        ],
+        blank=True,
+        help_text=("The acres per kW-DC for ground-mount PV systems in acres per kW, accounting for setbacks, row spacing, etc. The recommended PV system size is constrained "
+                   "based on the sum of land area available, assuming the ground-mount power density specified here, and roofspace available, assuming the specified rooftop power density.")
+    )
     production_factor_series = ArrayField(
         models.FloatField(
             blank=True
