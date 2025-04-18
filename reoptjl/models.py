@@ -2163,6 +2163,25 @@ class ElectricUtilityOutputs(BaseModel, models.Model):
                    "Determined from site longitude and latitude and the cambium_location_type if "
                    "custom emissions_factor_series_lb_CO2_per_kwh not provided and co2_from_avert is false.")
     )
+    peak_grid_demand_kw = models.FloatField(
+        null=True, blank=True,
+        help_text="Maximum grid demand calculated as the maximum of (electric_to_load_series_kw .+ electric_to_storage_series_kw)."
+    )
+    peak_grid_demand_kw_bau = models.FloatField(
+        null=True, blank=True,
+        help_text="Maximum grid demand in the BAU case calculated as the maximum of electric_to_load_series_kw."
+    )
+
+    def calculate_peak_demand(self):
+        if self.electric_to_load_series_kw and self.electric_to_storage_series_kw:
+            self.peak_grid_demand_kw = max(self.electric_to_load_series_kw + self.electric_to_storage_series_kw)
+        if self.electric_to_load_series_kw_bau:
+            self.peak_grid_demand_kw_bau = max(self.electric_to_load_series_kw_bau)
+
+    def save(self, *args, **kwargs):
+        self.calculate_peak_demand()
+        super().save(*args, **kwargs)
+
 
 class OutageOutputs(BaseModel, models.Model):
     key = "OutageOutputs"
