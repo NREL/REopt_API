@@ -26,6 +26,44 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.12.1
+### Minor Updates
+### Added
+- Added the following output fields: `year_one_fuel_cost_after_tax` for `ExistingBoiler`, `CHP`, `Generator`, and `Boiler`; `ElectricTariff`: `year_one_bill_after_tax` and `year_one_export_benefit_after_tax`, `Financial`: `capital_costs_after_non_discounted_incentives`, `year_one_total_operating_cost_savings_before_tax`, `year_one_total_operating_cost_savings_after_tax`, `year_one_total_operating_cost_before_tax`, `year_one_total_operating_cost_after_tax`, `year_one_fuel_cost_before_tax`, `year_one_fuel_cost_after_tax`, `year_one_chp_standby_cost_after_tax`, `year_one_chp_standby_cost_after_tax`, `GHP.avoided_capex_by_ghp_present_value`, and `ElectricUtility.peak_grid_demand_kw`
+- Added a lot of the output fields above to the custom_table_config.py file for the `job/generate_results_table` endpoint for the results table downloadable spreadsheet.
+### Changed
+- Using latest registered REopt.jl version 0.51.1
+- For the results table downloadable spreadsheet, changed some labels to include units and made other improvements, in addition to mostly adding a bunch of the after-tax outputs described above
+### Fixed
+- Fixed a GHP test with the corrected `lifecycle_capital_cost` calculation to include the avoided HVAC cost and GHX residual value
+- Fixed a type issue with the `/simulated_load` endpoing for cooling load with `monthly_fraction` input
+
+## v3.12.0
+### Major Updates
+### Added 
+- Add inputs: 
+  - **ElectricUtility.cambium_cef_metric** to utilize clean energy data from NREL's Cambium database
+  - **ElectricUtility.renewable_energy_fraction_series** to supply a custom grid clean or renewable energy scalar or series
+  - **Site.include_grid_renewable_fraction_in_RE_constraints** - to allow user to choose whether to include grid RE in min max constraints
+  - **ElectricStorage.optimize_soc_init_fraction** (defaults to false), which makes the optimization choose the inital SOC (equal to final SOC) instead of using soc_init_fraction. The initial SOC is also constrained to equal the final SOC, which eliminates the "free energy" issue. We currently do not fix SOC when soc_init_fraction is used because this has caused infeasibility.
+  - **ElectricStorage.min_duration_hours** and **ElectricStorage.max_duration_hours** for limitting electric storage's energy capacity relative to its power capacity
+- Add the following outputs: 
+  - **ElectricUtility.annual_renewable_electricity_supplied_kwh**
+  - **Site.onsite_and_grid_renewable_electricity_fraction_of_elec_load**
+  - **Site.onsite_and_grid_renewable_energy_fraction_of_total_load**
+  - **ElectricLoad.annual_electric_load_with_thermal_conversions_kwh**
+### Changed
+- Change name of the following inputs: 
+  -  **ElectricUtility.cambium_metric_col** changed to **ElectricUtility.cambium_co2_metric**, to distinguish between the CO2 and clean energy fraction metrics
+- Change name of the following outputs:
+  - **ElectricUtility.cambium_emissions_region** changed to **ElectricUtility.cambium_region**
+  - **Site.annual_renewable_electricity_kwh** changed to **Site.annual_onsite_renewable_electricity_kwh**
+  - **Site.renewable_electricity_fraction** changed to **Site.onsite_renewable_electricity_fraction_of_elec_load** 
+  - **Site.total_renewable_energy_fraction** changed to **Site.onsite_renewable_energy_fraction_of_total_load**
+- Change v3 endpoint `cambium_emissions_profile` to `cambium_profile`
+- Change to using REopt.jl v0.51.0, which includes updates to the Cambium, AVERT, and eGRID data used
+
+
 ## v3.11.0
 ### Minor Updates
 ##### Changed

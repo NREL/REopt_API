@@ -45,6 +45,7 @@
         "macrs_bonus_fraction": 0.0,
         "macrs_itc_reduction": 0.5,
         "federal_itc_fraction": 0.3,
+        "ghx_useful_life_years": 25,
         "ghpghx_inputs": [{
             "borehole_depth_ft": 400.0,
             "simulation_years": 20,
@@ -53,7 +54,12 @@
             "tess_ghx_minimum_timesteps_per_hour": 1,
             "max_sizing_iterations": 10,
             "init_sizing_factor_ft_per_peak_ton": 300.0,
-            "heat_pump_configuration": "WWHP"   
+            "heat_pump_configuration": "WWHP",
+            "ghx_header_depth_ft": 4.0,
+            "borehole_diameter_inch": 5.0,
+            "ghx_pipe_thermal_conductivity_btu_per_hr_ft_f": 0.25,
+            "ghx_shank_space_inch": 2.5,
+            "grout_thermal_conductivity_btu_per_hr_ft_f": 1.0
         }]
     },    
     "PV": {

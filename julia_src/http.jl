@@ -72,7 +72,8 @@ function reopt(req::HTTP.Request)
 			]
 			inputs_with_defaults_from_avert_or_cambium = [
 				:emissions_factor_series_lb_CO2_per_kwh, :emissions_factor_series_lb_NOx_per_kwh,
-				:emissions_factor_series_lb_SO2_per_kwh, :emissions_factor_series_lb_PM25_per_kwh
+				:emissions_factor_series_lb_SO2_per_kwh, :emissions_factor_series_lb_PM25_per_kwh,
+                :renewable_energy_fraction_series
 			]
             if haskey(d, "CHP")
                 inputs_with_defaults_from_chp = [
@@ -348,9 +349,9 @@ function avert_emissions_profile(req::HTTP.Request)
     return HTTP.Response(200, JSON.json(data))
 end
 
-function cambium_emissions_profile(req::HTTP.Request)
+function cambium_profile(req::HTTP.Request)
     d = JSON.parse(String(req.body))
-    @info "Getting Cambium CO2 emissions profile..."
+    @info "Getting emissions or clean energy data from Cambium..."
     data = Dict()
     error_response = Dict()
     try
@@ -360,7 +361,7 @@ function cambium_emissions_profile(req::HTTP.Request)
         lifetime = typeof(d["lifetime"]) == String ? parse(Int, d["lifetime"]) : d["lifetime"]
         load_year = typeof(d["load_year"]) == String ? parse(Int, d["load_year"]) : d["load_year"]
 
-        data = reoptjl.cambium_emissions_profile(;scenario= d["scenario"],
+        data = reoptjl.cambium_profile(;scenario= d["scenario"],
                                                 location_type = d["location_type"],  
                                                 latitude=latitude, 
                                                 longitude=longitude, 
@@ -419,7 +420,7 @@ function simulated_load(req::HTTP.Request)
 
     # Convert vectors which come in as Vector{Any} to Vector{Float} (within Vector{<:Real})
     vector_types = ["percent_share", "cooling_pct_share", "monthly_totals_kwh", "monthly_mmbtu", 
-                    "monthly_tonhour", "addressable_load_fraction", "load_profile"]
+                    "monthly_tonhour", "monthly_fraction", "addressable_load_fraction", "load_profile"]
     for key in vector_types
         if key in keys(d) && typeof(d[key]) <: Vector{}
             d[key] = convert(Vector{Real}, d[key])
@@ -597,7 +598,7 @@ HTTP.register!(ROUTER, "POST", "/erp", erp)
 HTTP.register!(ROUTER, "POST", "/ghpghx", ghpghx)
 HTTP.register!(ROUTER, "GET", "/chp_defaults", chp_defaults)
 HTTP.register!(ROUTER, "GET", "/avert_emissions_profile", avert_emissions_profile)
-HTTP.register!(ROUTER, "GET", "/cambium_emissions_profile", cambium_emissions_profile)
+HTTP.register!(ROUTER, "GET", "/cambium_profile", cambium_profile)
 HTTP.register!(ROUTER, "GET", "/easiur_costs", easiur_costs)
 HTTP.register!(ROUTER, "GET", "/simulated_load", simulated_load)
 HTTP.register!(ROUTER, "GET", "/absorption_chiller_defaults", absorption_chiller_defaults)
