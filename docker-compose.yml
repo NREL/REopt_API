@@ -1,5 +1,3 @@
-version: "2.1"
-
 services:
 
   redis:
@@ -67,7 +65,8 @@ services:
     environment:
       - XPRESS_JL_SKIP_LIB_CHECK=True
       - XPRESS_INSTALLED=False
-    command: julia --project=/opt/julia_src http.jl
+    # command: julia --project=/opt/julia_src http.jl
+    command: julia --project=. -e 'using Pkg; Pkg.instantiate(); include("http.jl")'
     ports:
       - "8081:8081"
     volumes:
