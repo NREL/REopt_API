@@ -38,4 +38,6 @@ def colnum_string(n: int) -> str:
     return string
 
 def safe_get(df: Dict[str, Any], key: str, default: Any = 0) -> Any:
-    return df.get(key, default)
+    """Safely get a value from a dictionary with a default fallback."""
+    value = df.get(key, default if default is not None else 0)
+    return value if value is not None else 0
