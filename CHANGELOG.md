@@ -26,6 +26,10 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.12.2
+### Patches
+- Enable the downloadable results spreadsheet (`job/generate_results_table` endpoint) to work with previous runs by avoiding errors when trying to do math with values of type None - handle None as zero/0
+
 ## v3.12.1
 ### Minor Updates
 ### Added
