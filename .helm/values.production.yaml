@@ -13,4 +13,4 @@ juliaMemoryRequest: "8000Mi"
 juliaMemoryLimit: "8000Mi"
 juliaDeploymentStrategy:
   rollingUpdate:
-    maxSurge: 0%
+    maxSurge: "0%"
