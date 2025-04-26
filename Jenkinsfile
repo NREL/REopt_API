@@ -146,7 +146,7 @@ pipeline {
                 withDockerRegistry(url: "https://${env.WERF_REPO}", credentialsId: "ecr:us-east-2:aws-nrel-tada-ci") {
                   withCredentials([aws(credentialsId: "aws-nrel-tada-ci")]) {
                     withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod3"]) {
-                      tadaWithWerfNamespaces(rancherProject: "test-reopt", primaryBranch: "master", dbBaseName: "reopt_api_staging", baseDomain: "${STAGING_BASE_DOMAIN}") {
+                      tadaWithWerfNamespaces(rancherProject: "Default", primaryBranch: "master", dbBaseName: "reopt_api_staging", baseDomain: "${STAGING_BASE_DOMAIN}") {
                         withCredentials([string(credentialsId: "reopt-api-werf-secret-key", variable: "WERF_SECRET_KEY")]) {
                           sh """
                             werf converge \
