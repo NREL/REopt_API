@@ -16,7 +16,7 @@ COPY . /opt/reopt
 WORKDIR /opt/reopt
 RUN ["pip", "install", "-r", "requirements.txt"]
 
-RUN if [ -d "EVI-EnSitePy" ]; then \
+RUN if [ -d "EVI-EnSitePy" ] && [ "$(ls -A EVI-EnSitePy)" ]; then \
     cd EVI-EnSitePy && pip install -e .; \
 fi
 
