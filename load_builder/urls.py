@@ -5,4 +5,5 @@ from . import views
 
 urlpatterns = [
     re_path(r'^load_builder/?$', views.load_builder),
+    re_path(r'^ensite/?$', views.ensite_view),
 ]

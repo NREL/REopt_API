@@ -7,6 +7,22 @@ import numpy as np
 from django.http import JsonResponse
 from reo.exceptions import UnexpectedError
 
+try:
+    import ensitepy  # Ensure the submodule is initialized and accessible
+    from ensitepy import SystemSimulator
+
+    def ensite_view(request):
+        # Use the private package functionality
+        sim = SystemSimulator(t_start=0 * 3600, dt=30, t_end=2 * 24 * 3600)
+        # ...existing code...
+
+        return JsonResponse({"message": "Ensite view and SystemSimulator function called successfully."})
+except ImportError:
+    print("Cannot import ensitepy or failure to call ensitepy function")
+    # raise ImportError(
+    #     "The EVI-EnSitePy (ensitepy) package is required in the PROD environment. "
+    #     "Ensure the submodule is initialized and accessible."
+    # )
 
 def check_load_builder_inputs(loads_table):
     required_inputs = ["Power (W)", "Quantity", "% Run Time", "Start Mo.", "Stop Mo.", "Start Hr.", "Stop Hr."]
