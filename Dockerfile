@@ -16,5 +16,9 @@ COPY . /opt/reopt
 WORKDIR /opt/reopt
 RUN ["pip", "install", "-r", "requirements.txt"]
 
+RUN if [ -d "EVI-EnSitePy" ]; then \
+    cd EVI-EnSitePy && pip install -e .; \
+fi
+
 EXPOSE 8000
 ENTRYPOINT ["/bin/bash", "-c"]
