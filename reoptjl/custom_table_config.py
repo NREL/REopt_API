@@ -411,14 +411,14 @@ custom_table_webtool = [
     {
         "label"         : "Purchased Electricity Cost ($/yr)",
         "key"           : "purchased_electricity_cost",
-        "bau_value"     : lambda df: safe_get(df, "outputs.ElectricTariff.year_one_bill_before_tax_bau") + safe_get(df, "outputs.CHP.year_one_standby_cost_before_tax_bau") - safe_get(df, "outputs.ElectricTariff.year_one_export_benefit_before_tax_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_bill_before_tax") + safe_get(df, "outputs.CHP.year_one_standby_cost_before_tax") - safe_get(df, "outputs.ElectricTariff.year_one_export_benefit_before_tax")
+        "bau_value"     : lambda df: safe_get(df, "outputs.ElectricTariff.year_one_bill_before_tax_bau") + safe_get(df, "outputs.Financial.year_one_chp_standby_cost_before_tax_bau") - safe_get(df, "outputs.ElectricTariff.year_one_export_benefit_before_tax_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_bill_before_tax") + safe_get(df, "outputs.Financial.year_one_chp_standby_cost_before_tax") - safe_get(df, "outputs.ElectricTariff.year_one_export_benefit_before_tax")
     },
     {
         "label"         : "Purchased Electricity Cost, After Tax ($/yr)",
         "key"           : "purchased_electricity_cost",
-        "bau_value"     : lambda df: safe_get(df, "outputs.ElectricTariff.year_one_bill_after_tax_bau") + safe_get(df, "outputs.CHP.year_one_standby_cost_after_tax_bau") - safe_get(df, "outputs.ElectricTariff.year_one_export_benefit_after_tax_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_bill_after_tax") + safe_get(df, "outputs.CHP.year_one_standby_cost_after_tax") - safe_get(df, "outputs.ElectricTariff.year_one_export_benefit_after_tax")
+        "bau_value"     : lambda df: safe_get(df, "outputs.ElectricTariff.year_one_bill_after_tax_bau") + safe_get(df, "outputs.Financial.year_one_chp_standby_cost_after_tax_bau") - safe_get(df, "outputs.ElectricTariff.year_one_export_benefit_after_tax_bau"),
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_bill_after_tax") + safe_get(df, "outputs.Financial.year_one_chp_standby_cost_after_tax") - safe_get(df, "outputs.ElectricTariff.year_one_export_benefit_after_tax")
     },    
     {
         "label"         : "Electricity Cost Savings ($/yr)",
