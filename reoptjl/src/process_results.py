@@ -8,7 +8,7 @@ from reoptjl.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorage
                         REoptjlMessageOutputs, AbsorptionChillerOutputs, BoilerOutputs, SteamTurbineInputs, \
                         SteamTurbineOutputs, GHPInputs, GHPOutputs, ExistingChillerInputs, \
                         ElectricHeaterOutputs, ASHPSpaceHeaterOutputs, ASHPWaterHeaterOutputs, \
-                        SiteInputs, ASHPSpaceHeaterInputs, ASHPWaterHeaterInputs
+                        SiteInputs, ASHPSpaceHeaterInputs, ASHPWaterHeaterInputs, CSTOutputs
 import numpy as np
 import sys
 import traceback as tb
@@ -48,6 +48,8 @@ def process_results(results: dict, run_uuid: str) -> None:
                 GeneratorOutputs.create(meta=meta, **results["Generator"]).save()
             if "Wind" in results.keys():
                 WindOutputs.create(meta=meta, **results["Wind"]).save()
+            if "CST" in results.keys():
+                CSTOutputs.create(meta=meta, **results["CST"]).save()
             if "Boiler" in results.keys():
                 BoilerOutputs.create(meta=meta, **results["Boiler"]).save()
             if "ExistingBoiler" in results.keys():

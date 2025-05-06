@@ -8607,6 +8607,10 @@ def get_input_dict_from_run_uuid(run_uuid:str):
     try: d["ASHPWaterHeater"] = filter_none_and_empty_array(meta.ASHPWaterHeaterInputs.dict)
     except: pass   
 
+    try: d["CST"] = filter_none_and_empty_array(meta.CSTInputs.dict)
+    except: pass
+
+
     return d
 
 '''

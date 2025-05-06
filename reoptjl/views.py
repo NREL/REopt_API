@@ -8,7 +8,7 @@ import traceback as tb
 import re
 from django.http import JsonResponse, HttpResponse
 from reo.exceptions import UnexpectedError
-from reoptjl.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, GeneratorInputs, ElectricLoadInputs,\
+from reoptjl.models import Settings, PVInputs, CSTInputs, ElectricStorageInputs, WindInputs, GeneratorInputs, ElectricLoadInputs,\
     ElectricTariffInputs, ElectricUtilityInputs, SpaceHeatingLoadInputs, PVOutputs, ElectricStorageOutputs,\
     WindOutputs, ExistingBoilerInputs, GeneratorOutputs, ElectricTariffOutputs, ElectricUtilityOutputs, \
     ElectricLoadOutputs, ExistingBoilerOutputs, DomesticHotWaterLoadInputs, SiteInputs, SiteOutputs, APIMeta, \
@@ -62,6 +62,7 @@ def help(request):
         d["ElectricTariff"] = ElectricTariffInputs.info_dict(ElectricTariffInputs)
         d["ElectricUtility"] = ElectricUtilityInputs.info_dict(ElectricUtilityInputs)
         d["PV"] = PVInputs.info_dict(PVInputs)
+        d["CST"] = CSTInputs.info_dict(CSTInputs)
         d["ElectricStorage"] = ElectricStorageInputs.info_dict(ElectricStorageInputs)
         d["Wind"] = WindInputs.info_dict(WindInputs)
         d["Generator"] = GeneratorInputs.info_dict(GeneratorInputs)
@@ -215,6 +216,9 @@ def results(request, run_uuid):
     except: pass
 
     try: r["inputs"]["Wind"] = meta.WindInputs.dict
+    except: pass
+
+    try: r["inputs"]["CST"] = meta.CSTInputs.dict
     except: pass
 
     try: r["inputs"]["CoolingLoad"] = meta.CoolingLoadInputs.dict

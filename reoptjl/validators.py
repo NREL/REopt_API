@@ -2,7 +2,7 @@
 import logging
 import pandas as pd
 from reoptjl.models import MAX_BIG_NUMBER, APIMeta, ExistingBoilerInputs, UserProvidedMeta, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
-    FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs, SpaceHeatingLoadInputs, \
+    FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, CSTInputs, ElectricStorageInputs, GeneratorInputs, WindInputs, SpaceHeatingLoadInputs, \
     DomesticHotWaterLoadInputs, CHPInputs, CoolingLoadInputs, ExistingChillerInputs, HotThermalStorageInputs, ColdThermalStorageInputs, \
     AbsorptionChillerInputs, BoilerInputs, SteamTurbineInputs, GHPInputs, ProcessHeatLoadInputs, ElectricHeaterInputs, ASHPSpaceHeaterInputs, \
     ASHPWaterHeaterInputs
@@ -66,6 +66,7 @@ class InputValidator(object):
             FinancialInputs,
             ElectricUtilityInputs,
             PVInputs,
+            CSTInputs,
             ElectricStorageInputs,
             GeneratorInputs,
             WindInputs,
