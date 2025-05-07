@@ -8463,6 +8463,24 @@ class CSTInputs(BaseModel, models.Model):
         blank=True,
         help_text="Maximum CST size constraint for optimization (upper bound on additional capacity beyond existing_kw). Set to zero to disable PV"
     )
+    inlet_temp_degF = models.FloatField(
+        default=500,
+        validators=[
+            MinValueValidator(300),
+            MaxValueValidator(750)
+        ],
+        blank=True,
+        help_text="This is the temperature at which your process needs the heat transfer fluid specified above to be at when entering your facility. In other words, this is your 'hot' temperature."
+    )
+    outlet_temp_degF = models.FloatField(
+        default=400,
+        validators=[
+            MinValueValidator(300),
+            MaxValueValidator(750)
+        ],
+        blank=True,
+        help_text="This is the temperature at which your the heat transfer fluid specified above returns from your process after heat has been extracted. In other words, this is your cold' temperature. If you have an open system, the inlet temperature will be assumed to be ambient temperature (20 C / 68 F)."
+    )
     acres_per_kw = models.FloatField(
         default=0.006,
         validators=[
