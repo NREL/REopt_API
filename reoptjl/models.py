@@ -3102,7 +3102,7 @@ class PVOutputs(BaseModel, models.Model):
 
 class CSTInputs(BaseModel, models.Model):
     key = "CST"
-    meta = models.ForeignKey(
+    meta = models.OneToOneField(
         to=APIMeta,
         on_delete=models.CASCADE,
         related_name="CSTInputs",
