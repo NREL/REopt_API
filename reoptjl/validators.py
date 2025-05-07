@@ -5,7 +5,7 @@ from reoptjl.models import MAX_BIG_NUMBER, APIMeta, ExistingBoilerInputs, UserPr
     FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, CSTInputs, ElectricStorageInputs, GeneratorInputs, WindInputs, SpaceHeatingLoadInputs, \
     DomesticHotWaterLoadInputs, CHPInputs, CoolingLoadInputs, ExistingChillerInputs, HotThermalStorageInputs, ColdThermalStorageInputs, \
     AbsorptionChillerInputs, BoilerInputs, SteamTurbineInputs, GHPInputs, ProcessHeatLoadInputs, ElectricHeaterInputs, ASHPSpaceHeaterInputs, \
-    ASHPWaterHeaterInputs
+    ASHPWaterHeaterInputs, CSTInputs
 from django.core.exceptions import ValidationError
 from pyproj import Proj
 from typing import Tuple
@@ -66,7 +66,6 @@ class InputValidator(object):
             FinancialInputs,
             ElectricUtilityInputs,
             PVInputs,
-            CSTInputs,
             ElectricStorageInputs,
             GeneratorInputs,
             WindInputs,
@@ -85,7 +84,8 @@ class InputValidator(object):
             ProcessHeatLoadInputs,
             ElectricHeaterInputs,
             ASHPSpaceHeaterInputs,
-            ASHPWaterHeaterInputs
+            ASHPWaterHeaterInputs,
+            CSTInputs
         )
         self.pvnames = []
         on_grid_required_object_names = [

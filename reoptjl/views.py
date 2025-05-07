@@ -8,7 +8,7 @@ import traceback as tb
 import re
 from django.http import JsonResponse, HttpResponse
 from reo.exceptions import UnexpectedError
-from reoptjl.models import Settings, PVInputs, CSTInputs, ElectricStorageInputs, WindInputs, GeneratorInputs, ElectricLoadInputs,\
+from reoptjl.models import Settings, PVInputs, ElectricStorageInputs, WindInputs, GeneratorInputs, ElectricLoadInputs,\
     ElectricTariffInputs, ElectricUtilityInputs, SpaceHeatingLoadInputs, PVOutputs, ElectricStorageOutputs,\
     WindOutputs, ExistingBoilerInputs, GeneratorOutputs, ElectricTariffOutputs, ElectricUtilityOutputs, \
     ElectricLoadOutputs, ExistingBoilerOutputs, DomesticHotWaterLoadInputs, SiteInputs, SiteOutputs, APIMeta, \
@@ -17,7 +17,8 @@ from reoptjl.models import Settings, PVInputs, CSTInputs, ElectricStorageInputs,
     ColdThermalStorageInputs, ColdThermalStorageOutputs, AbsorptionChillerInputs, AbsorptionChillerOutputs,\
     FinancialInputs, FinancialOutputs, UserUnlinkedRuns, BoilerInputs, BoilerOutputs, SteamTurbineInputs, \
     SteamTurbineOutputs, GHPInputs, GHPOutputs, ProcessHeatLoadInputs, ElectricHeaterInputs, ElectricHeaterOutputs, \
-    ASHPSpaceHeaterInputs, ASHPSpaceHeaterOutputs, ASHPWaterHeaterInputs, ASHPWaterHeaterOutputs, PortfolioUnlinkedRuns
+    ASHPSpaceHeaterInputs, ASHPSpaceHeaterOutputs, ASHPWaterHeaterInputs, ASHPWaterHeaterOutputs, PortfolioUnlinkedRuns, \
+    CSTInputs, CSTOutputs
 
 import os
 import requests
@@ -62,7 +63,6 @@ def help(request):
         d["ElectricTariff"] = ElectricTariffInputs.info_dict(ElectricTariffInputs)
         d["ElectricUtility"] = ElectricUtilityInputs.info_dict(ElectricUtilityInputs)
         d["PV"] = PVInputs.info_dict(PVInputs)
-        d["CST"] = CSTInputs.info_dict(CSTInputs)
         d["ElectricStorage"] = ElectricStorageInputs.info_dict(ElectricStorageInputs)
         d["Wind"] = WindInputs.info_dict(WindInputs)
         d["Generator"] = GeneratorInputs.info_dict(GeneratorInputs)
@@ -83,6 +83,7 @@ def help(request):
         d["ElectricHeater"] = ElectricHeaterInputs.info_dict(ElectricHeaterInputs)
         d["ASHPSpaceHeater"] = ASHPSpaceHeaterInputs.info_dict(ASHPSpaceHeaterInputs)
         d["ASHPWaterHeater"] = ASHPWaterHeaterInputs.info_dict(ASHPWaterHeaterInputs)
+        d["CST"] = CSTInputs.info_dict(CSTInputs)
 
         return JsonResponse(d)
 
@@ -134,6 +135,8 @@ def outputs(request):
         d["ASHPWaterHeater"] = ASHPWaterHeaterOutputs.info_dict(ASHPWaterHeaterOutputs)
         d["Messages"] = REoptjlMessageOutputs.info_dict(REoptjlMessageOutputs)
         d["SteamTurbine"] = SteamTurbineOutputs.info_dict(SteamTurbineOutputs)
+        d["CST"] = CSTOutputs.info_dict(CSTOutputs)
+        
         return JsonResponse(d)
 
     except Exception as e:
@@ -218,9 +221,6 @@ def results(request, run_uuid):
     try: r["inputs"]["Wind"] = meta.WindInputs.dict
     except: pass
 
-    try: r["inputs"]["CST"] = meta.CSTInputs.dict
-    except: pass
-
     try: r["inputs"]["CoolingLoad"] = meta.CoolingLoadInputs.dict
     except: pass
 
@@ -268,6 +268,9 @@ def results(request, run_uuid):
 
     try: r["inputs"]["ASHPWaterHeater"] = meta.ASHPWaterHeaterInputs.dict
     except: pass  
+
+    try: r["inputs"]["CST"] = meta.CSTInputs.dict
+    except: pass
 
     try:
         r["outputs"] = dict()
@@ -346,6 +349,8 @@ def results(request, run_uuid):
         try: r["outputs"]["ASHPSpaceHeater"] = meta.ASHPSpaceHeaterOutputs.dict
         except: pass  
         try: r["outputs"]["ASHPWaterHeater"] = meta.ASHPWaterHeaterOutputs.dict
+        except: pass
+        try: r["outputs"]["CST"] = meta.CSTOutputs.dict
         except: pass
 
         for d in r["outputs"].values():
