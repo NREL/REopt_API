@@ -5491,6 +5491,11 @@ class ElectricHeaterOutputs(BaseModel, models.Model):
         default = list
     )
 
+    thermal_to_hot_sensible_tes_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
+
 class ASHPSpaceHeaterInputs(BaseModel, models.Model):
     key = "ASHPSpaceHeater"
     meta = models.OneToOneField(
@@ -8482,7 +8487,7 @@ class CSTInputs(BaseModel, models.Model):
         help_text="This is the temperature at which your the heat transfer fluid specified above returns from your process after heat has been extracted. In other words, this is your cold' temperature. If you have an open system, the inlet temperature will be assumed to be ambient temperature (20 C / 68 F)."
     )
     acres_per_kw = models.FloatField(
-        default=0.006,
+        default=0.000939,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e3)
@@ -8500,7 +8505,7 @@ class CSTInputs(BaseModel, models.Model):
         help_text="Installed CST cost in $/kW"
     )
     om_cost_per_kw = models.FloatField(
-        default=18,
+        default=0.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e3)
@@ -8509,7 +8514,7 @@ class CSTInputs(BaseModel, models.Model):
         help_text="Annual CST operations and maintenance costs in $/kW"
     )
     om_cost_per_kwh = models.FloatField(
-        default=18,
+        default=0.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e3)
@@ -8524,7 +8529,7 @@ class CSTInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.6,
+        default=0.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -8571,7 +8576,7 @@ class CSTInputs(BaseModel, models.Model):
         help_text="Boolean indicator if CST can serve process heat load"   
     )
     charge_storage_only = models.BooleanField(
-        default=True,
+        default=False,
         null=True, 
         blank=True,
         help_text="Boolean indicator if CST can only supply hot TES"   
@@ -8640,6 +8645,10 @@ class CSTOutputs(BaseModel, models.Model):
         models.FloatField(null=True, blank=True),
         blank=True, default=list
     )
+    thermal_to_hot_sensible_tes_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        blank=True, default=list
+    )
     thermal_to_steamturbine_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
         blank=True, default=list
@@ -8651,6 +8660,18 @@ class CSTOutputs(BaseModel, models.Model):
     thermal_to_load_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
         default=list, blank=True
+    )
+    thermal_to_dhw_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default=list, blank=True
+    )
+    thermal_to_space_heating_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
+    thermal_to_process_heat_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
     )
 
 
