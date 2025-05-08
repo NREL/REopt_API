@@ -8620,7 +8620,7 @@ class CSTInputs(BaseModel, models.Model):
 
 class CSTOutputs(BaseModel, models.Model):
     key = "CSTOutputs"
-    meta = models.ForeignKey(
+    meta = models.OneToOneField(
         to=APIMeta,
         on_delete=models.CASCADE,
         related_name="CSTOutputs",
