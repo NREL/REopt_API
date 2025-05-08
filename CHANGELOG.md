@@ -30,6 +30,7 @@ Classify the change according to the following categories:
 ### Minor Updates
 #### Added
 - Add **Financial** inputs **min_initial_capital_costs_before_incentives** and **max_initial_capital_costs_before_incentives**
+- Add **CHP** output **initial_capital_costs**
 
 ## v3.12.3
 ### Minor Updates

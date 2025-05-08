@@ -4746,6 +4746,10 @@ class CHPOutputs(BaseModel, models.Model):
         models.FloatField(null=True, blank=True),
         default = list,
     )
+    initial_capital_costs = models.FloatField(
+        null=True, blank=True,
+        help_text="Initial capital costs of the CHP system, before incentives [\$]"
+    )
 
     def clean():
         pass
