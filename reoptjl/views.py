@@ -514,6 +514,44 @@ def get_ashp_defaults(request):
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in get_ashp_defaults endpoint. Check log for more."}, status=500)
 
+def pv_cost_defaults(request):
+    inputs = {
+        "electric_load_annual_kwh": request.GET.get("electric_load_annual_kwh"),
+        "site_land_acres": request.GET.get("site_land_acres"),
+        "site_roof_squarefeet" : request.GET.get("site_roof_squarefeet"),
+        "min_kw": request.GET.get("min_kw"),
+        "max_kw": request.GET.get("max_kw"),
+        "kw_per_square_foot": request.GET.get("kw_per_square_foot"),
+        "acres_per_kw": request.GET.get("acres_per_kw"),
+        "size_class": request.GET.get("size_class"),
+        "array_type": request.GET.get("array_type"),
+        "location": request.GET.get("location")
+    }
+
+    inputs = {k: v for k, v in inputs.items() if v is not None}
+
+    print(inputs)
+    try:
+        julia_host = os.environ.get('JULIA_HOST', "julia")
+        http_jl_response = requests.get("http://" + julia_host + ":8081/pv_cost_defaults/", json=inputs)
+        response = JsonResponse(
+            http_jl_response.json()
+        )
+        return response
+
+    except ValueError as e:
+        print(e.args)
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected error in pv_cost_defaults endpoint. Check log for more."}, status=500)
 
 def simulated_load(request):
     try:      

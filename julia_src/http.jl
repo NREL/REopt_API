@@ -144,6 +144,14 @@ function reopt(req::HTTP.Request)
             else
                 site_dict = Dict()
             end
+            if haskey(d, "PV")
+                inputs_with_defaults_from_pv = [
+                    :size_class, :installed_cost_per_kw, :om_cost_per_kw
+                ]
+                pv_dict = Dict(key=>getfield(model_inputs.s.pvs[1], key) for key in inputs_with_defaults_from_pv)
+            else
+                pv_dict = Dict()
+            end            
 			inputs_with_defaults_set_in_julia = Dict(
 				"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_easiur),
 				"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert_or_cambium),
@@ -153,7 +161,8 @@ function reopt(req::HTTP.Request)
                 "GHP" => ghp_dict,
                 "ExistingChiller" => chiller_dict,
                 "ASHPSpaceHeater" => ashp_dict,
-                "ASHPWaterHeater" => ashp_wh_dict
+                "ASHPWaterHeater" => ashp_wh_dict,
+                "PV" => pv_dict
 			)
 		catch e
 			@error "Something went wrong in REopt optimization!" exception=(e, catch_backtrace())
@@ -579,6 +588,50 @@ function get_ashp_defaults(req::HTTP.Request)
     end
 end
 
+function pv_cost_defaults(req::HTTP.Request)
+	d = JSON.parse(String(req.body))
+    float_vals = ["electric_load_annual_kwh", "site_land_acres", 
+                    "site_roof_squarefeet", "min_kw", "max_kw",
+                    "kw_per_square_foot", "acres_per_kw"]    
+    int_vals = ["size_class", "array_type"]
+    string_vals = ["location"]
+    bool_vals = []
+    all_vals = vcat(int_vals, string_vals, float_vals, bool_vals)
+    # Process .json inputs and convert to correct type if needed
+    for k in all_vals
+        if !isnothing(get(d, k, nothing))
+            # TODO improve this by checking if the type is not the expected type, as opposed to just not string
+            if k in float_vals && typeof(d[k]) == String
+                d[k] = parse(Float64, d[k])
+            elseif k in int_vals && typeof(d[k]) == String
+                d[k] = parse(Int64, d[k])
+            elseif k in bool_vals && typeof(d[k]) == String
+                d[k] = parse(Bool, d[k])
+            end
+        end
+    end
+
+    @info "Getting PV cost defaults..."
+    data = Dict()
+    error_response = Dict()
+    try
+        data["installed_cost_per_kw"], data["om_cost_per_kw"], data["size_class"], tech_sizes_for_cost_curve = reoptjl.get_pv_cost_params(;
+             (Symbol(k) => v for (k, v) in pairs(d))...
+        )
+    catch e
+        @error "Something went wrong in the pv_cost_defaults" exception=(e, catch_backtrace())
+        error_response["error"] = sprint(showerror, e)
+    end
+    if isempty(error_response)
+        @info "PV cost defaults determined."
+		response = data
+        return HTTP.Response(200, JSON.json(response))
+    else
+        @info "An error occured in the pv_cost_defaults endpoint"
+        return HTTP.Response(500, JSON.json(error_response))
+    end
+end
+
 
 function job_no_xpress(req::HTTP.Request)
     error_response = Dict("error" => "V1 and V2 not available without Xpress installation.")
@@ -607,4 +660,5 @@ HTTP.register!(ROUTER, "GET", "/ground_conductivity", ground_conductivity)
 HTTP.register!(ROUTER, "GET", "/health", health)
 HTTP.register!(ROUTER, "GET", "/get_existing_chiller_default_cop", get_existing_chiller_default_cop)
 HTTP.register!(ROUTER, "GET", "/get_ashp_defaults", get_ashp_defaults)
+HTTP.register!(ROUTER, "GET", "/pv_cost_defaults", pv_cost_defaults)
 HTTP.serve(ROUTER, "0.0.0.0", 8081, reuseaddr=true)
