@@ -6848,6 +6848,7 @@ class HotThermalStorageOutputs(BaseModel, models.Model):
         primary_key=True
     )
     size_gal = models.FloatField(null=True, blank=True)
+    size_kwh = models.FloatField(null=True, blank=True)
     soc_series_fraction = ArrayField(
         models.FloatField(null=True, blank=True),
         default = list,
@@ -6870,10 +6871,231 @@ class HotThermalStorageOutputs(BaseModel, models.Model):
         models.FloatField(null=True, blank=True),
         default = list
     )
+    storage_to_turbine_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
 
     def clean(self):
         # perform custom validation here.
         pass
+
+class HotSensibleTESInputs(BaseModel, models.Model):
+    key = "HotSensibleTES"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="HotSensibleTESInputs",
+        primary_key=True
+    )
+
+    min_kwh = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        null=True,
+        blank=True,
+        default=0.0,
+        help_text="Minimum TES volume (energy) size constraint for optimization"
+    )
+    max_kwh = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        default=0.0,
+        help_text="Maximum TES volume (energy) size constraint for optimization. Set to zero to disable storage"
+    )
+    hot_temp_degF = models.FloatField(
+        validators=[
+            MinValueValidator(200.0),
+            MaxValueValidator(2000.0)
+        ],
+        blank=True,
+        default=1065.0,
+        help_text="Hot-side supply water temperature from HotTES (top of tank) to the heating load"
+    )
+    cool_temp_degF = models.FloatField(
+        validators=[
+            MinValueValidator(200.0),
+            MaxValueValidator(2000.0)
+        ],
+        blank=True,
+        default=554.0,
+        help_text="Cold-side return water temperature from the heating load to the HotTES (bottom of tank)"
+    )
+    internal_efficiency_fraction = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        default=0.999999,
+        help_text="Thermal losses due to mixing from thermal power entering or leaving tank"
+    )
+    soc_min_fraction = models.FloatField(
+        default=0.1,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        help_text="Minimum allowable battery state of charge as fraction of energy capacity."
+    )
+    soc_init_fraction = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0)
+        ],
+        default=0.5,
+        blank=True,
+        help_text="Battery state of charge at first hour of optimization as fraction of energy capacity."
+    )
+    installed_cost_per_kwh = models.FloatField(
+        default=1.5,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e4)
+        ],
+        blank=True,
+        help_text="Installed hot TES cost in $/kwh"
+    )
+    om_cost_per_kwh = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e3)
+        ],
+        blank=True,
+        help_text="Annual hot TES operations and maintenance costs in $/kwh"
+    )
+    thermal_decay_rate_fraction = models.FloatField(
+        default=0.0004,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        help_text="Thermal energy-based cost of TES (e.g. volume of the tank)"
+    )
+    macrs_option_years = models.IntegerField(
+        default=MACRS_YEARS_CHOICES.SEVEN,
+        choices=MACRS_YEARS_CHOICES.choices,
+        blank=True,
+        help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
+    )
+    macrs_bonus_fraction = models.FloatField(
+        default=0.6,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
+    )
+    macrs_itc_reduction = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text="Percent of the ITC value by which depreciable basis is reduced"
+    )
+    total_itc_fraction = models.FloatField(
+        default=0.3,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        blank=True,
+        help_text="Total investment tax credit in percent applied toward capital costs"
+    )
+    total_rebate_per_kwh = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Rebate per unit installed energy capacity"
+    )
+    can_serve_dhw = models.BooleanField(
+        default=False,
+        null=True,        
+        blank=True,
+        help_text="Boolean indicator if hot thermal storage can serve space heating load"
+    )
+    can_serve_space_heating = models.BooleanField(
+        default=False,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if hot thermal storage can serve space heating load"   
+    )
+    can_serve_process_heat = models.BooleanField(
+        default=True,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if hot thermal storage can serve process heat load"   
+    )
+    supply_turbine_only = models.BooleanField(
+        default=False,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if hot thermal storage can serve only steam turbine"   
+    )
+    one_direction_flow = models.BooleanField(
+        default=False,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if hot thermal storage can only"   
+    )
+    num_charge_hours = models.FloatField(
+        default=4.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1e4)
+        ],
+        blank=True,
+        help_text="Number of charge hours"
+    )
+    num_discharge_hours = models.FloatField(
+        default=10.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1e4)
+        ],
+        blank=True,
+        help_text="Number of charge hours"
+    )
+
+class HotSensibleTESOutputs(BaseModel, models.Model):
+    key = "HotSensibleTESOutputs"
+
+    meta = models.OneToOneField(
+        APIMeta,
+        on_delete=models.CASCADE,
+        related_name="HotSensibleTESOutputs",
+        primary_key=True
+    )
+    size_gal = models.FloatField(null=True, blank=True)
+    size_kwh = models.FloatField(null=True, blank=True)
+    soc_series_fraction = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+    storage_to_load_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list,
+    )
+    storage_to_turbine_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default = list
+    )
+
 
 class ColdThermalStorageInputs(BaseModel, models.Model):
     key = "ColdThermalStorage"
@@ -8747,6 +8969,9 @@ def get_input_dict_from_run_uuid(run_uuid:str):
     except: pass
 
     try: d["HotThermalStorage"] = filter_none_and_empty_array(meta.HotThermalStorageInputs.dict)
+    except: pass
+
+    try: d["HotSensibleTES"] = filter_none_and_empty_array(meta.HotSensibleTESInputs.dict)
     except: pass
 
     try: d["ColdThermalStorage"] = filter_none_and_empty_array(meta.ColdThermalStorageInputs.dict)
