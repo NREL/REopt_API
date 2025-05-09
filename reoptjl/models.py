@@ -2725,21 +2725,30 @@ class PVInputs(BaseModel, models.Model):
         blank=True,
         help_text="Maximum PV size constraint for optimization (upper bound on additional capacity beyond existing_kw). Set to zero to disable PV"
     )
+    size_class = models.IntegerField(
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(5)
+        ],
+        null=True,
+        blank=True,
+        help_text="PV size class. Must be an integer value between 1 and 5. Default is 2, representing commercial-scale"
+    )
     installed_cost_per_kw = models.FloatField(
-        default=1790,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e5)
         ],
+        null=True,
         blank=True,
         help_text="Installed PV cost in $/kW"
     )
     om_cost_per_kw = models.FloatField(
-        default=18,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e3)
         ],
+        null=True,
         blank=True,
         help_text="Annual PV operations and maintenance costs in $/kW"
     )
@@ -3067,6 +3076,8 @@ class PVOutputs(BaseModel, models.Model):
         help_text="PV description for distinguishing between multiple PV models"
     )
     size_kw = models.FloatField(null=True, blank=True)
+    installed_cost_per_kw = models.FloatField(null=True, blank=True)
+    om_cost_per_kw = models.FloatField(null=True, blank=True)
     lifecycle_om_cost_after_tax = models.FloatField(null=True, blank=True)
     lifecycle_om_cost_after_tax_bau = models.FloatField(null=True, blank=True)
     lifecycle_om_cost_bau = models.FloatField(null=True, blank=True)
