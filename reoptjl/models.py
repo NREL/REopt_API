@@ -793,7 +793,7 @@ class FinancialInputs(BaseModel, models.Model):
         ],
         blank=True,
         null=True,
-        help_text=("Minimum up-front capital cost for all technologies, excluding replacement costs and incentives.")
+        help_text=("Minimum up-front capital cost for all technologies, excluding replacement costs and incentives [\$].")
     )
     max_initial_capital_costs_before_incentives = models.FloatField(
         validators=[
@@ -802,7 +802,7 @@ class FinancialInputs(BaseModel, models.Model):
         ],
         blank=True,
         null=True,
-        help_text=("Maximum up-front capital cost for all technologies, excluding replacement costs and incentives.")
+        help_text=("Maximum up-front capital cost for all technologies, excluding replacement costs and incentives [\$].")
     )
     CO2_cost_per_tonne = models.FloatField(
         validators=[
