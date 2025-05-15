@@ -592,7 +592,8 @@ function pv_cost_defaults(req::HTTP.Request)
 	d = JSON.parse(String(req.body))
     float_vals = ["electric_load_annual_kwh", "site_land_acres", 
                     "site_roof_squarefeet", "min_kw", "max_kw",
-                    "kw_per_square_foot", "acres_per_kw"]    
+                    "kw_per_square_foot", "acres_per_kw", 
+                    "capacity_factor_estimate", "fraction_of_annual_kwh_to_size_pv"]    
     int_vals = ["size_class", "array_type"]
     string_vals = ["location"]
     bool_vals = []
@@ -615,7 +616,7 @@ function pv_cost_defaults(req::HTTP.Request)
     data = Dict()
     error_response = Dict()
     try
-        data["installed_cost_per_kw"], data["om_cost_per_kw"], data["size_class"], tech_sizes_for_cost_curve = reoptjl.get_pv_cost_params(;
+        data["installed_cost_per_kw"], data["om_cost_per_kw"], data["size_class"], tech_sizes_for_cost_curve, data["size_kw_for_size_class"] = reoptjl.get_pv_cost_params(;
              (Symbol(k) => v for (k, v) in pairs(d))...
         )
     catch e

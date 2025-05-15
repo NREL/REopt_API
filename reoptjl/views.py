@@ -515,18 +515,24 @@ def get_ashp_defaults(request):
         return JsonResponse({"Error": "Unexpected error in get_ashp_defaults endpoint. Check log for more."}, status=500)
 
 def pv_cost_defaults(request):
-    inputs = {
-        "electric_load_annual_kwh": request.GET.get("electric_load_annual_kwh"),
-        "site_land_acres": request.GET.get("site_land_acres"),
-        "site_roof_squarefeet" : request.GET.get("site_roof_squarefeet"),
-        "min_kw": request.GET.get("min_kw"),
-        "max_kw": request.GET.get("max_kw"),
-        "kw_per_square_foot": request.GET.get("kw_per_square_foot"),
-        "acres_per_kw": request.GET.get("acres_per_kw"),
-        "size_class": request.GET.get("size_class"),
-        "array_type": request.GET.get("array_type"),
-        "location": request.GET.get("location")
-    }
+
+    if request.method == "POST":
+        inputs = json.loads(request.body)
+    else: 
+        inputs = {
+            "electric_load_annual_kwh": request.GET.get("electric_load_annual_kwh"),
+            "site_land_acres": request.GET.get("site_land_acres"),
+            "site_roof_squarefeet" : request.GET.get("site_roof_squarefeet"),
+            "min_kw": request.GET.get("min_kw"),
+            "max_kw": request.GET.get("max_kw"),
+            "kw_per_square_foot": request.GET.get("kw_per_square_foot"),
+            "acres_per_kw": request.GET.get("acres_per_kw"),
+            "size_class": request.GET.get("size_class"),
+            "array_type": request.GET.get("array_type"),
+            "location": request.GET.get("location"),
+            "capacity_factor_estimate": request.GET.get("capacity_factor_estimate"),
+            "fraction_of_annual_kwh_to_size_pv": request.GET.get("fraction_of_annual_kwh_to_size_pv")
+        }
 
     inputs = {k: v for k, v in inputs.items() if v is not None}
 
