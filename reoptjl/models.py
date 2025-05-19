@@ -3532,6 +3532,15 @@ class ElectricStorageInputs(BaseModel, models.Model):
         blank=True,
         help_text="Total upfront battery costs"
     )
+    installed_cost_constant = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Fixed upfront cost for battery installation, independent of size."
+    )
     replace_cost_per_kw = models.FloatField(
         default=715.0,
         validators=[
@@ -3550,6 +3559,15 @@ class ElectricStorageInputs(BaseModel, models.Model):
         blank=True,
         help_text="Battery energy capacity replacement cost at time of replacement year"
     )
+    replace_cost_constant = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Fixed replacement cost for battery, independent of size."
+    )
     inverter_replacement_year = models.IntegerField(
         default=10,
         validators=[
@@ -3567,6 +3585,15 @@ class ElectricStorageInputs(BaseModel, models.Model):
         ],
         blank=True,
         help_text="Number of years from start of analysis period to replace battery"
+    )
+    cost_constant_replacement_year = models.IntegerField(
+        default=10,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_YEARS)
+        ],
+        blank=True,
+        help_text="Number of years from start of analysis period to apply replace_cost_constant."
     )
     macrs_option_years = models.IntegerField(
         default=MACRS_YEARS_CHOICES.SEVEN,
