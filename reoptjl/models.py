@@ -5053,6 +5053,28 @@ class ExistingChillerInputs(BaseModel, models.Model):
         help_text="Boolean indicator if the existing chiller is unavailable in the optimal case (still used in BAU)"   
     )
 
+    installed_cost_per_ton = models.FloatField(
+        default=0.0,
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        help_text="Thermal power capacity-based cost incurred in BAU and only based on what's needed in Optimal scenario"
+    )    
+
+    installed_cost_dollars = models.FloatField(
+        default=0.0,
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        help_text="Cost incurred in BAU scenario, as well as Optimal if needed still, in dollars"
+    )
+
     def clean(self):
         pass
 
@@ -5067,6 +5089,9 @@ class ExistingChillerOutputs(BaseModel, models.Model):
         related_name="ExistingChillerOutputs",
         primary_key=True
     )
+
+    size_ton = models.FloatField(null=True, blank=True)
+    size_ton_bau = models.FloatField(null=True, blank=True)
 
     thermal_to_storage_series_ton = ArrayField(
         models.FloatField(
@@ -5268,6 +5293,29 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         help_text="Existing boiler fuel type, one of natural_gas, landfill_bio_gas, propane, diesel_oil"
     )
 
+
+    installed_cost_per_mmbtu_per_hour = models.FloatField(
+        default=0.0,
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        help_text="Thermal power capacity-based cost incurred in BAU and only based on what's needed in Optimal scenario"
+    )    
+
+    installed_cost_dollars = models.FloatField(
+        default=0.0,
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        help_text="Cost incurred in BAU scenario, as well as Optimal if needed still, in dollars"
+    )
+
     can_supply_steam_turbine = models.BooleanField(
         default=False,
         blank=True,
@@ -5334,6 +5382,7 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
     )
 
     size_mmbtu_per_hour = models.FloatField(null=True, blank=True)
+    size_mmbtu_per_hour_bau = models.FloatField(null=True, blank=True)
     annual_fuel_consumption_mmbtu = models.FloatField(null=True, blank=True)
     annual_fuel_consumption_mmbtu_bau = models.FloatField(null=True, blank=True)
 
