@@ -3515,7 +3515,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Flag to set whether the battery can be charged from the grid, or just onsite generation."
     )
     installed_cost_per_kw = models.FloatField(
-        default=910.0,
+        default=905.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -3524,7 +3524,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Total upfront battery power capacity costs (e.g. inverter and balance of power systems)"
     )
     installed_cost_per_kwh = models.FloatField(
-        default=455.0,
+        default=237.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -3533,7 +3533,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Total upfront battery costs"
     )
     installed_cost_constant = models.FloatField(
-        default=0.0,
+        default=222115.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e9)
@@ -3542,7 +3542,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Fixed upfront cost for battery installation, independent of size."
     )
     replace_cost_per_kw = models.FloatField(
-        default=715.0,
+        default=0.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -3551,7 +3551,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Battery power capacity replacement cost at time of replacement year"
     )
     replace_cost_per_kwh = models.FloatField(
-        default=318.0,
+        default=0.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -3594,6 +3594,15 @@ class ElectricStorageInputs(BaseModel, models.Model):
         ],
         blank=True,
         help_text="Number of years from start of analysis period to apply replace_cost_constant."
+    )
+    om_cost_fraction_of_installed_cost = models.FloatField(
+        default=0.025,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        help_text="Annual O&M cost as a fraction of installed cost."
     )
     macrs_option_years = models.IntegerField(
         default=MACRS_YEARS_CHOICES.SEVEN,
