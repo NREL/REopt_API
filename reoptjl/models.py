@@ -3541,7 +3541,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Flag to set whether the battery can be charged from the grid, or just onsite generation."
     )
     installed_cost_per_kw = models.FloatField(
-        default=905.0,
+        default=968.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -3550,7 +3550,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Total upfront battery power capacity costs (e.g. inverter and balance of power systems)"
     )
     installed_cost_per_kwh = models.FloatField(
-        default=237.0,
+        default=253.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
