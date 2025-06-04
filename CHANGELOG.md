@@ -26,6 +26,12 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## add-capex-constraint
+### Minor Updates
+#### Added
+- Add **Financial** inputs **min_initial_capital_costs_before_incentives** and **max_initial_capital_costs_before_incentives**
+- Add **CHP** output **initial_capital_costs**
+
 ## v3.12.3
 ### Minor Updates
 ### Added
@@ -49,7 +55,7 @@ Classify the change according to the following categories:
 
 ## v3.12.0
 ### Major Updates
-### Added 
+#### Added 
 - Add inputs: 
   - **ElectricUtility.cambium_cef_metric** to utilize clean energy data from NREL's Cambium database
   - **ElectricUtility.renewable_energy_fraction_series** to supply a custom grid clean or renewable energy scalar or series
