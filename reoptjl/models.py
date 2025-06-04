@@ -8501,6 +8501,32 @@ class GHPInputs(BaseModel, models.Model):
         blank=True,
         help_text="Maximum utility rebate"
     )
+    max_ton = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        help_text=("Maximum thermal power size constraint for GHP [ton]")
+    )
+
+    max_number_of_boreholes = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        help_text=("Maximum number of boreholes for GHX")
+    )
+
+    load_served_by_ghp = models.TextField(
+        null=False,
+        blank=True,
+        default="nonpeak",
+        help_text="How to split between load served by GHP and load served by backup system"
+    )
 
 
     def clean(self):
@@ -8544,6 +8570,8 @@ class GHPOutputs(BaseModel, models.Model):
     thermal_to_dhw_load_series_mmbtu_per_hour = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
     thermal_to_load_series_ton = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
     avoided_capex_by_ghp_present_value = models.FloatField(null=True, blank=True) 
+    annual_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
+    annual_thermal_production_tonhour = models.FloatField(null=True, blank=True)
 
 def get_input_dict_from_run_uuid(run_uuid:str):
     """
