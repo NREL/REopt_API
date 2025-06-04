@@ -982,6 +982,10 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Net capital costs for all technologies, in present value, including replacement costs and incentives."
     )
+    lifecycle_capital_costs_bau = models.FloatField(
+        null=True, blank=True,
+        help_text="Net capital costs for BAU technologies such as ExistingBoiler and ExistingChiller, in present value."
+    )    
     microgrid_upgrade_cost = models.FloatField(
         null=True, blank=True,
         help_text=("Cost to make a distributed energy system islandable from the grid. Determined by multiplying the "
@@ -996,6 +1000,10 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Up-front capital costs for all technologies, in present value, excluding replacement costs, including incentives."
     )
+    initial_capital_costs_after_incentives_bau = models.FloatField(
+        null=True, blank=True,
+        help_text="Up-front capital costs for BAU technologies such as ExistingBoiler and ExistingChiller, in present value."
+    )    
     capital_costs_after_non_discounted_incentives_without_macrs = models.FloatField(
         null=True, blank=True,
         help_text="Capital costs for all technologies, including present value of replacement costs and incentives except for MACRS."
