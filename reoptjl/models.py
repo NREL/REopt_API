@@ -786,6 +786,24 @@ class FinancialInputs(BaseModel, models.Model):
         default=0.0,
         help_text=("Only applicable when off_grid_flag is true. These per year costs are considered tax deductible for owner.")
     )
+    min_initial_capital_costs_before_incentives = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1e12)
+        ],
+        blank=True,
+        null=True,
+        help_text=("Minimum up-front capital cost for all technologies, excluding replacement costs and incentives [\$].")
+    )
+    max_initial_capital_costs_before_incentives = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1e12)
+        ],
+        blank=True,
+        null=True,
+        help_text=("Maximum up-front capital cost for all technologies, excluding replacement costs and incentives [\$].")
+    )
     CO2_cost_per_tonne = models.FloatField(
         validators=[
             MinValueValidator(0),
@@ -964,6 +982,10 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Net capital costs for all technologies, in present value, including replacement costs and incentives."
     )
+    lifecycle_capital_costs_bau = models.FloatField(
+        null=True, blank=True,
+        help_text="Net capital costs for BAU technologies such as ExistingBoiler and ExistingChiller, in present value."
+    )    
     microgrid_upgrade_cost = models.FloatField(
         null=True, blank=True,
         help_text=("Cost to make a distributed energy system islandable from the grid. Determined by multiplying the "
@@ -978,6 +1000,10 @@ class FinancialOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Up-front capital costs for all technologies, in present value, excluding replacement costs, including incentives."
     )
+    initial_capital_costs_after_incentives_bau = models.FloatField(
+        null=True, blank=True,
+        help_text="Up-front capital costs for BAU technologies such as ExistingBoiler and ExistingChiller, in present value."
+    )    
     capital_costs_after_non_discounted_incentives_without_macrs = models.FloatField(
         null=True, blank=True,
         help_text="Capital costs for all technologies, including present value of replacement costs and incentives except for MACRS."
@@ -3526,7 +3552,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Flag to set whether the battery can be charged from the grid, or just onsite generation."
     )
     installed_cost_per_kw = models.FloatField(
-        default=910.0,
+        default=968.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -3535,7 +3561,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Total upfront battery power capacity costs (e.g. inverter and balance of power systems)"
     )
     installed_cost_per_kwh = models.FloatField(
-        default=455.0,
+        default=253.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -3543,8 +3569,17 @@ class ElectricStorageInputs(BaseModel, models.Model):
         blank=True,
         help_text="Total upfront battery costs"
     )
+    installed_cost_constant = models.FloatField(
+        default=222115.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Fixed upfront cost for battery installation, independent of size."
+    )
     replace_cost_per_kw = models.FloatField(
-        default=715.0,
+        default=0.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -3553,13 +3588,22 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Battery power capacity replacement cost at time of replacement year"
     )
     replace_cost_per_kwh = models.FloatField(
-        default=318.0,
+        default=0.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
         ],
         blank=True,
         help_text="Battery energy capacity replacement cost at time of replacement year"
+    )
+    replace_cost_constant = models.FloatField(
+        default=0.0,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0e9)
+        ],
+        blank=True,
+        help_text="Fixed replacement cost for battery, independent of size."
     )
     inverter_replacement_year = models.IntegerField(
         default=10,
@@ -3578,6 +3622,24 @@ class ElectricStorageInputs(BaseModel, models.Model):
         ],
         blank=True,
         help_text="Number of years from start of analysis period to replace battery"
+    )
+    cost_constant_replacement_year = models.IntegerField(
+        default=10,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_YEARS)
+        ],
+        blank=True,
+        help_text="Number of years from start of analysis period to apply replace_cost_constant."
+    )
+    om_cost_fraction_of_installed_cost = models.FloatField(
+        default=0.025,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1.0)
+        ],
+        blank=True,
+        help_text="Annual O&M cost as a fraction of installed cost."
     )
     macrs_option_years = models.IntegerField(
         default=MACRS_YEARS_CHOICES.SEVEN,
@@ -4739,6 +4801,10 @@ class CHPOutputs(BaseModel, models.Model):
         models.FloatField(null=True, blank=True),
         default = list,
     )
+    initial_capital_costs = models.FloatField(
+        null=True, blank=True,
+        help_text="Initial capital costs of the CHP system, before incentives [\$]"
+    )
 
     def clean():
         pass
@@ -4998,6 +5064,28 @@ class ExistingChillerInputs(BaseModel, models.Model):
         help_text="Boolean indicator if the existing chiller is unavailable in the optimal case (still used in BAU)"   
     )
 
+    installed_cost_per_ton = models.FloatField(
+        default=0.0,
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        help_text="Thermal power capacity-based cost incurred in BAU and only based on what's needed in Optimal scenario"
+    )    
+
+    installed_cost_dollars = models.FloatField(
+        default=0.0,
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        help_text="Cost incurred in BAU scenario, as well as Optimal if needed still, in dollars"
+    )
+
     def clean(self):
         pass
 
@@ -5012,6 +5100,9 @@ class ExistingChillerOutputs(BaseModel, models.Model):
         related_name="ExistingChillerOutputs",
         primary_key=True
     )
+
+    size_ton = models.FloatField(null=True, blank=True)
+    size_ton_bau = models.FloatField(null=True, blank=True)
 
     thermal_to_storage_series_ton = ArrayField(
         models.FloatField(
@@ -5213,6 +5304,29 @@ class ExistingBoilerInputs(BaseModel, models.Model):
         help_text="Existing boiler fuel type, one of natural_gas, landfill_bio_gas, propane, diesel_oil"
     )
 
+
+    installed_cost_per_mmbtu_per_hour = models.FloatField(
+        default=0.0,
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        help_text="Thermal power capacity-based cost incurred in BAU and only based on what's needed in Optimal scenario"
+    )    
+
+    installed_cost_dollars = models.FloatField(
+        default=0.0,
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        help_text="Cost incurred in BAU scenario, as well as Optimal if needed still, in dollars"
+    )
+
     can_supply_steam_turbine = models.BooleanField(
         default=False,
         blank=True,
@@ -5279,6 +5393,7 @@ class ExistingBoilerOutputs(BaseModel, models.Model):
     )
 
     size_mmbtu_per_hour = models.FloatField(null=True, blank=True)
+    size_mmbtu_per_hour_bau = models.FloatField(null=True, blank=True)
     annual_fuel_consumption_mmbtu = models.FloatField(null=True, blank=True)
     annual_fuel_consumption_mmbtu_bau = models.FloatField(null=True, blank=True)
 
@@ -8397,6 +8512,32 @@ class GHPInputs(BaseModel, models.Model):
         blank=True,
         help_text="Maximum utility rebate"
     )
+    max_ton = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        help_text=("Maximum thermal power size constraint for GHP [ton]")
+    )
+
+    max_number_of_boreholes = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(MAX_BIG_NUMBER)
+        ],
+        null=True,
+        blank=True,
+        help_text=("Maximum number of boreholes for GHX")
+    )
+
+    load_served_by_ghp = models.TextField(
+        null=False,
+        blank=True,
+        default="nonpeak",
+        help_text="How to split between load served by GHP and load served by backup system"
+    )
 
 
     def clean(self):
@@ -8440,6 +8581,8 @@ class GHPOutputs(BaseModel, models.Model):
     thermal_to_dhw_load_series_mmbtu_per_hour = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
     thermal_to_load_series_ton = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True, blank=True)
     avoided_capex_by_ghp_present_value = models.FloatField(null=True, blank=True) 
+    annual_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
+    annual_thermal_production_tonhour = models.FloatField(null=True, blank=True)
 
 def get_input_dict_from_run_uuid(run_uuid:str):
     """
