@@ -26,6 +26,29 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## pv-cost
+### Minor Updates
+#### Changed
+- Updated **PV.installed_cost_per_kw** and **PV.om_cost_per_kw** default values to reflect latest cost data.
+### Added
+
+## battery-cost
+### Minor Updates
+#### Changed
+- Updated **ElectricStorage.installed_cost_per_kw**, **ElectricStorage.installed_cost_per_kwh**, **ElectricStorage.replace_cost_per_kw**, and **ElectricStorage.replace_cost_per_kwh** default values to reflect latest cost data.
+- Updated **ElectricStorage** cost defaults in `reoptjl/models.py` and `nested_inputs.py` for v2 and v3.
+
+## add-ghp-inputs
+### Minor Updates
+#### Added
+- Added new **GHPInputs** fields for advanced ground heat exchanger sizing and configuration.
+- Added **hybrid_ghx_sizing_method** input to allow user selection of GHX sizing approach.
+- Added new outputs to **GHPOutputs** for reporting system sizes and borehole count.
+#### Changed
+- Updated GHP input validation and defaults in `reoptjl/models.py` and `validators.py`.
+- Updated `/ghpghx` endpoint to support new GHP input fields.
+- Added tests for new GHP input and output fields.
+
 ## add-capex-constraint
 ### Minor Updates
 #### Added
