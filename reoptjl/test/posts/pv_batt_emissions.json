@@ -35,8 +35,11 @@
         "macrs_bonus_fraction": 0.4,
         "replace_cost_per_kw": 460.0,
         "replace_cost_per_kwh": 230.0,
+        "replace_cost_constant": 0.0,        
         "installed_cost_per_kw": 1000.0,
         "installed_cost_per_kwh": 500.0,
+        "installed_cost_constant": 0.0,
+        "om_cost_fraction_of_installed_cost": 0.0,
         "total_itc_fraction": 0.0
     },
     "ElectricTariff": {

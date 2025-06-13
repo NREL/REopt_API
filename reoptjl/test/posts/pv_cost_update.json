@@ -1,0 +1,18 @@
+{
+    "Site": {
+        "latitude": 41.8809434,
+        "longitude": -72.2600655,
+        "land_acres": 0.5
+    },
+    "ElectricLoad": {
+        "annual_kwh": 2000000.0,
+        "doe_reference_name": "LargeOffice"
+    },
+    "ElectricTariff": {
+        "blended_annual_demand_rate": 20.0,
+        "blended_annual_energy_rate": 0.12
+    },
+    "PV": {
+        "array_type": 0
+    }
+}
