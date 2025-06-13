@@ -536,7 +536,6 @@ def pv_cost_defaults(request):
 
     inputs = {k: v for k, v in inputs.items() if v is not None}
 
-    print(inputs)
     try:
         julia_host = os.environ.get('JULIA_HOST', "julia")
         http_jl_response = requests.get("http://" + julia_host + ":8081/pv_cost_defaults/", json=inputs)
