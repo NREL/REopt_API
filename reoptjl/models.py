@@ -8447,6 +8447,7 @@ def get_input_dict_from_run_uuid(run_uuid:str):
 
     d = dict()
     d["user_uuid"] = meta.user_uuid
+    d["portfolio_uuid"] = meta.portfolio_uuid
     d["api_key"] = meta.api_key
     d["Settings"] = filter_none_and_empty_array(meta.Settings.dict)
     d["Financial"] = filter_none_and_empty_array(meta.FinancialInputs.dict)
