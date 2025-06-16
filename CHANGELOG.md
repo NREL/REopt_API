@@ -26,6 +26,10 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## develop
+### Minor Updates
+TODO: aggregate CHANGELOG updates from feature branches
+
 ## v3.12.3
 ### Minor Updates
 ### Added
