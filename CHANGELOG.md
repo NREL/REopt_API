@@ -26,9 +26,21 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## develop
+## v3.13.0
 ### Minor Updates
-TODO: aggregate CHANGELOG updates from feature branches
+#### Added
+- Added **Financial** inputs **min_initial_capital_costs_before_incentives** and **max_initial_capital_costs_before_incentives**
+- Added **CHP** output **initial_capital_costs**
+- Added new **GHPInputs** fields for advanced ground heat exchanger sizing and configuration.
+- Added **hybrid_ghx_sizing_method** input to allow user selection of GHX sizing approach.
+- Added new outputs to **GHPOutputs** for reporting system sizes and borehole count.
+- Added tests for new GHP input and output fields.
+#### Changed
+- Updated **PV.installed_cost_per_kw** and **PV.om_cost_per_kw** default values to reflect latest cost data.
+- Updated **ElectricStorage.installed_cost_per_kw**, **ElectricStorage.installed_cost_per_kwh**, **ElectricStorage.replace_cost_per_kw**, and **ElectricStorage.replace_cost_per_kwh** default values to reflect latest cost data.
+- Updated **ElectricStorage** cost defaults in `reoptjl/models.py`
+- Updated GHP input validation and defaults in `reoptjl/models.py` and `validators.py`.
+- Updated `/ghpghx` endpoint to support new GHP input fields.
 
 ## v3.12.3
 ### Minor Updates
@@ -53,7 +65,7 @@ TODO: aggregate CHANGELOG updates from feature branches
 
 ## v3.12.0
 ### Major Updates
-### Added 
+#### Added 
 - Add inputs: 
   - **ElectricUtility.cambium_cef_metric** to utilize clean energy data from NREL's Cambium database
   - **ElectricUtility.renewable_energy_fraction_series** to supply a custom grid clean or renewable energy scalar or series
