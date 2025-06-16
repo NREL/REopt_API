@@ -26,34 +26,21 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## pv-cost
-### Minor Updates
-#### Changed
-- Updated **PV.installed_cost_per_kw** and **PV.om_cost_per_kw** default values to reflect latest cost data.
-### Added
-
-## battery-cost
-### Minor Updates
-#### Changed
-- Updated **ElectricStorage.installed_cost_per_kw**, **ElectricStorage.installed_cost_per_kwh**, **ElectricStorage.replace_cost_per_kw**, and **ElectricStorage.replace_cost_per_kwh** default values to reflect latest cost data.
-- Updated **ElectricStorage** cost defaults in `reoptjl/models.py` and `nested_inputs.py` for v2 and v3.
-
-## add-ghp-inputs
+## v3.13.0
 ### Minor Updates
 #### Added
+- Added **Financial** inputs **min_initial_capital_costs_before_incentives** and **max_initial_capital_costs_before_incentives**
+- Added **CHP** output **initial_capital_costs**
 - Added new **GHPInputs** fields for advanced ground heat exchanger sizing and configuration.
 - Added **hybrid_ghx_sizing_method** input to allow user selection of GHX sizing approach.
 - Added new outputs to **GHPOutputs** for reporting system sizes and borehole count.
+- Added tests for new GHP input and output fields.
 #### Changed
+- Updated **PV.installed_cost_per_kw** and **PV.om_cost_per_kw** default values to reflect latest cost data.
+- Updated **ElectricStorage.installed_cost_per_kw**, **ElectricStorage.installed_cost_per_kwh**, **ElectricStorage.replace_cost_per_kw**, and **ElectricStorage.replace_cost_per_kwh** default values to reflect latest cost data.
+- Updated **ElectricStorage** cost defaults in `reoptjl/models.py`
 - Updated GHP input validation and defaults in `reoptjl/models.py` and `validators.py`.
 - Updated `/ghpghx` endpoint to support new GHP input fields.
-- Added tests for new GHP input and output fields.
-
-## add-capex-constraint
-### Minor Updates
-#### Added
-- Add **Financial** inputs **min_initial_capital_costs_before_incentives** and **max_initial_capital_costs_before_incentives**
-- Add **CHP** output **initial_capital_costs**
 
 ## v3.12.3
 ### Minor Updates
