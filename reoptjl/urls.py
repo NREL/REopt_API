@@ -23,6 +23,7 @@ urlpatterns = [
     re_path(r'^invalid_urdb/?$', reoviews.invalid_urdb),
     re_path(r'^schedule_stats/?$', reoviews.schedule_stats),
     re_path(r'^get_existing_chiller_default_cop/?$', views.get_existing_chiller_default_cop),
+    re_path(r'^job/(?P<run_uuid>[0-9a-f-]+)/proforma/?$', views.proforma_for_runuuid),
     re_path(r'^job/generate_results_table/?$', views.generate_results_table),
     re_path(r'^get_ashp_defaults/?$', views.get_ashp_defaults),
     re_path(r'^pv_cost_defaults/?$', views.pv_cost_defaults),
