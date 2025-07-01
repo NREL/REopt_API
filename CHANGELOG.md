@@ -42,6 +42,14 @@ Classify the change according to the following categories:
 - Updated GHP input validation and defaults in `reoptjl/models.py` and `validators.py`.
 - Updated `/ghpghx` endpoint to support new GHP input fields.
 
+## v3.13.2
+### Patches
+- `PV` `size_class` and cost defaults not updating correctly when both `max_kw` and the site's land or roof space are input
+
+## v3.13.1
+### Patches
+- Issue with `CHP` and `PV` cost curves when with-incentives segments is greater than no-incentives segments
+
 ## v3.12.3
 ### Minor Updates
 ### Added
