@@ -18,7 +18,7 @@ from reoptjl.models import Settings, PVInputs, ElectricStorageInputs, WindInputs
     FinancialInputs, FinancialOutputs, UserUnlinkedRuns, BoilerInputs, BoilerOutputs, SteamTurbineInputs, \
     SteamTurbineOutputs, GHPInputs, GHPOutputs, ProcessHeatLoadInputs, ElectricHeaterInputs, ElectricHeaterOutputs, \
     ASHPSpaceHeaterInputs, ASHPSpaceHeaterOutputs, ASHPWaterHeaterInputs, ASHPWaterHeaterOutputs, PortfolioUnlinkedRuns, \
-    CSTInputs, CSTOutputs, HotSensibleTESInputs, HotSensibleTESOutputs
+    CSTInputs, CSTOutputs, HotSensibleTesInputs, HotSensibleTesOutputs
 
 import os
 import requests
@@ -71,7 +71,7 @@ def help(request):
         d["ExistingBoiler"] = ExistingBoilerInputs.info_dict(ExistingBoilerInputs)
         d["Boiler"] = BoilerInputs.info_dict(BoilerInputs)
         d["HotThermalStorage"] = HotThermalStorageInputs.info_dict(HotThermalStorageInputs)
-        d["HotSensibleTES"] = HotSensibleTESInputs.info_dict(HotSensibleTESInputs)
+        d["HotSensibleTes"] = HotSensibleTesInputs.info_dict(HotSensibleTesInputs)
         d["ColdThermalStorage"] = ColdThermalStorageInputs.info_dict(ColdThermalStorageInputs)
         d["SpaceHeatingLoad"] = SpaceHeatingLoadInputs.info_dict(SpaceHeatingLoadInputs)
         d["DomesticHotWaterLoad"] = DomesticHotWaterLoadInputs.info_dict(DomesticHotWaterLoadInputs)
@@ -124,7 +124,7 @@ def outputs(request):
         d["ExistingBoiler"] = ExistingBoilerOutputs.info_dict(ExistingBoilerOutputs)
         d["Boiler"] = BoilerOutputs.info_dict(BoilerOutputs)
         d["HotThermalStorage"] = HotThermalStorageOutputs.info_dict(HotThermalStorageOutputs)
-        d["HotSensibleTES"] = HotSensibleTESOutputs.info_dict(HotSensibleTESOutputs)
+        d["HotSensibleTes"] = HotSensibleTesOutputs.info_dict(HotSensibleTesOutputs)
         d["ColdThermalStorage"] = ColdThermalStorageOutputs.info_dict(ColdThermalStorageOutputs)
         d["Site"] = SiteOutputs.info_dict(SiteOutputs)
         d["HeatingLoad"] = HeatingLoadOutputs.info_dict(HeatingLoadOutputs)
@@ -238,7 +238,7 @@ def results(request, run_uuid):
     try: r["inputs"]["HotThermalStorage"] = meta.HotThermalStorageInputs.dict
     except: pass
 
-    try: r["inputs"]["HotSensibleTES"] = meta.HotSensibleTESInputs.dict
+    try: r["inputs"]["HotSensibleTes"] = meta.HotSensibleTesInputs.dict
     except: pass
 
     try: r["inputs"]["ColdThermalStorage"] = meta.ColdThermalStorageInputs.dict
@@ -335,7 +335,7 @@ def results(request, run_uuid):
 
         try: r["outputs"]["HotThermalStorage"] = meta.HotThermalStorageOutputs.dict
         except: pass
-        try: r["outputs"]["HotSensibleTES"] = meta.HotSensibleTESOutputs.dict
+        try: r["outputs"]["HotSensibleTes"] = meta.HotSensibleTesOutputs.dict
         except: pass
         try: r["outputs"]["ColdThermalStorage"] = meta.ColdThermalStorageOutputs.dict
         except: pass

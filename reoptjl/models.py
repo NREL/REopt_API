@@ -6880,13 +6880,13 @@ class HotThermalStorageOutputs(BaseModel, models.Model):
         # perform custom validation here.
         pass
 
-class HotSensibleTESInputs(BaseModel, models.Model):
-    key = "HotSensibleTES"
+class HotSensibleTesInputs(BaseModel, models.Model):
+    key = "HotSensibleTes"
 
     meta = models.OneToOneField(
         APIMeta,
         on_delete=models.CASCADE,
-        related_name="HotSensibleTESInputs",
+        related_name="HotSensibleTesInputs",
         primary_key=True
     )
 
@@ -7072,13 +7072,13 @@ class HotSensibleTESInputs(BaseModel, models.Model):
         help_text="Number of charge hours"
     )
 
-class HotSensibleTESOutputs(BaseModel, models.Model):
-    key = "HotSensibleTESOutputs"
+class HotSensibleTesOutputs(BaseModel, models.Model):
+    key = "HotSensibleTesOutputs"
 
     meta = models.OneToOneField(
         APIMeta,
         on_delete=models.CASCADE,
-        related_name="HotSensibleTESOutputs",
+        related_name="HotSensibleTesOutputs",
         primary_key=True
     )
     size_gal = models.FloatField(null=True, blank=True)
@@ -8971,7 +8971,7 @@ def get_input_dict_from_run_uuid(run_uuid:str):
     try: d["HotThermalStorage"] = filter_none_and_empty_array(meta.HotThermalStorageInputs.dict)
     except: pass
 
-    try: d["HotSensibleTES"] = filter_none_and_empty_array(meta.HotSensibleTESInputs.dict)
+    try: d["HotSensibleTes"] = filter_none_and_empty_array(meta.HotSensibleTesInputs.dict)
     except: pass
 
     try: d["ColdThermalStorage"] = filter_none_and_empty_array(meta.ColdThermalStorageInputs.dict)
