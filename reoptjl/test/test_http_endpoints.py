@@ -404,4 +404,17 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         self.assertNotIn("cooling_cf_reference", view_response.keys())
         self.assertEqual(view_response["sizing_factor"], 1.0)
 
+    def test_pv_cost_defaults(self):
+        inputs_dict = {
+            "electric_load_annual_kwh": 2000000.0,
+            "array_type": 1,
+            "site_roof_squarefeet": 50000
+        }
+
+        # Call to the django view endpoint /get_existing_chiller_default_cop which calls the http.jl endpoint
+        resp = self.api_client.get(f'/v3/pv_cost_defaults', data=inputs_dict)
+        view_response = json.loads(resp.content)
+
+        self.assertEqual(view_response["size_class"], 3)   
+
 

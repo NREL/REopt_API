@@ -8,7 +8,7 @@ from reoptjl.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorage
                         REoptjlMessageOutputs, AbsorptionChillerOutputs, BoilerOutputs, SteamTurbineInputs, \
                         SteamTurbineOutputs, GHPInputs, GHPOutputs, ExistingChillerInputs, \
                         ElectricHeaterOutputs, ASHPSpaceHeaterOutputs, ASHPWaterHeaterOutputs, \
-                        SiteInputs, ASHPSpaceHeaterInputs, ASHPWaterHeaterInputs, CSTInputs, CSTOutputs
+                        SiteInputs, ASHPSpaceHeaterInputs, ASHPWaterHeaterInputs, CSTInputs, CSTOutputs, PVInputs
 import numpy as np
 import sys
 import traceback as tb
@@ -151,6 +151,9 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
         if inputs_to_update["CST"]:
             prune_update_fields(CSTInputs, inputs_to_update["CST"])
             CSTInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["CST"])            
+        if inputs_to_update["PV"]:
+            prune_update_fields(PVInputs, inputs_to_update["PV"])
+            PVInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["PV"])            
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(

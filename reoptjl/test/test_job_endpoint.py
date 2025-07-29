@@ -326,4 +326,19 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         r = json.loads(resp.content)
         
         self.assertEquals(r["inputs"]["ASHPSpaceHeater"]["om_cost_per_ton"], 0.0)
-        self.assertEquals(r["inputs"]["ASHPSpaceHeater"]["sizing_factor"], 1.1)        
+        self.assertEquals(r["inputs"]["ASHPSpaceHeater"]["sizing_factor"], 1.1)
+
+    def test_pv_cost_defaults_update_from_julia(self):
+        # Test that the inputs_with_defaults_set_in_julia feature worked for PV
+        post_file = os.path.join('reoptjl', 'test', 'posts', 'pv_cost_update.json')
+        post = json.load(open(post_file, 'r'))
+        resp = self.api_client.post('/stable/job/', format='json', data=post)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+
+        resp = self.api_client.get(f'/stable/job/{run_uuid}/results')
+        r = json.loads(resp.content)
+        
+        self.assertEquals(r["inputs"]["PV"]["size_class"], 2)
+        self.assertAlmostEqual(r["inputs"]["PV"]["installed_cost_per_kw"], 2914.6, delta=0.05 * 2914.6)
