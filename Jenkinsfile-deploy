@@ -12,7 +12,7 @@ properties([
       $class: "GitParameterDefinition",
       name: "PARAM_BRANCH",
       type: "PT_BRANCH",
-      defaultValue: "origin/master",
+      defaultValue: "origin/ponderosa",
       sortMode: "ASCENDING_SMART",
       selectedValue: "DEFAULT",
       quickFilterEnabled: true,
