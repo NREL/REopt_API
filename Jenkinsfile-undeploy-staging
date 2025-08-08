@@ -7,7 +7,7 @@ pipeline {
     buildDiscarder(logRotator(daysToKeepStr: "30"))
   }
   triggers {
-    cron(env.BRANCH_NAME == "master" ? "H * * * *" : "")
+    cron(env.BRANCH_NAME == "ponderosa" ? "H * * * *" : "")
   }
 
   environment {
@@ -56,7 +56,7 @@ pipeline {
         stage("undeploy-branches") {
           steps {
             withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod3"]) {
-              tadaUndeployEachBranch(rancherProject: env.RANCHER_PROJECT, undeployDeletedBranches: params.UNDEPLOY_DELETED_BRANCHES, undeployMergedBranches: params.UNDEPLOY_MERGED_BRANCHES, undeployBranchNames: params.UNDEPLOY_BRANCH_NAMES, primaryBranch: "master") {
+              tadaUndeployEachBranch(rancherProject: env.RANCHER_PROJECT, undeployDeletedBranches: params.UNDEPLOY_DELETED_BRANCHES, undeployMergedBranches: params.UNDEPLOY_MERGED_BRANCHES, undeployBranchNames: params.UNDEPLOY_BRANCH_NAMES, primaryBranch: "ponderosa") {
                 tadaWithWerfEnv(rancherProject: env.RANCHER_PROJECT, dbBaseName: env.DB_BASE_NAME) {
                   tadaUndeployBranch()
                 }
