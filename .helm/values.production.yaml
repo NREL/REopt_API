@@ -1,12 +1,12 @@
 appEnv: production
 djangoSettingsModule: reopt_api.production_settings
-djangoReplicas: 10
+djangoReplicas: 2
 djangoMemoryRequest: "2000Mi"
 djangoMemoryLimit: "2000Mi"
-celeryReplicas: 10
+celeryReplicas: 4
 celeryMemoryRequest: "900Mi"
 celeryMemoryLimit: "900Mi"
-juliaReplicas: 10
+juliaReplicas: 4
 juliaCpuRequest: "1000m"
 juliaCpuLimit: "4000m"
 juliaMemoryRequest: "8000Mi"
