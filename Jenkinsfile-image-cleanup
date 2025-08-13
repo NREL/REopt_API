@@ -38,7 +38,7 @@ pipeline {
           steps {
             withDockerRegistry(url: "https://${env.WERF_REPO}", credentialsId: "ecr:us-east-2:aws-nrel-tada-ci") {
               withCredentials([aws(credentialsId: "aws-nrel-tada-ci")]) {
-                tadaRancherAllProjectNamespacesKubeConfig(projects: [[credentialsId: "kubeconfig-nrel-reopt-test", rancherProject: "reopt-api-dev"], [credentialsId: "kubeconfig-nrel-reopt-prod2", rancherProject: "reopt-api-staging"], [credentialsId: "kubeconfig-nrel-reopt-prod2", rancherProject: "reopt-api-production"]]) {
+                tadaRancherAllProjectNamespacesKubeConfig(projects: [[credentialsId: "kubeconfig-nrel-reopt-prod4", rancherProject: "reopt-api-dev"], [credentialsId: "kubeconfig-nrel-reopt-prod4", rancherProject: "reopt-api-staging"], [credentialsId: "kubeconfig-nrel-reopt-prod5", rancherProject: "reopt-api-production"]]) {
                   withCredentials([gitUsernamePassword(credentialsId: "github-nrel-gov-admin")]) {
                     sh "werf cleanup --scan-context-namespace-only"
                   }
