@@ -385,6 +385,7 @@ def peak_load_outage_times(request):
             summer_load = critical_load[summer_start:autumn_start]
             autumn_load = critical_load[autumn_start:winter_start]
             peaks = np.array([
+                # +1s to convert to 1-based indexing because that's what outage_start_time_steps input use
                 (np.argmax(winter_load) + winter_start) % 8760 + 1, 
                 np.argmax(spring_load) + spring_start + 1, 
                 np.argmax(summer_load) + summer_start + 1, 
