@@ -110,8 +110,8 @@ pipeline {
               steps {
                 withDockerRegistry(url: "https://${env.WERF_REPO}", credentialsId: "ecr:us-east-2:aws-nrel-tada-ci") {
                   withCredentials([aws(credentialsId: "aws-nrel-tada-ci")]) {
-                    withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-test"]) {
-                      tadaWithWerfNamespaces(rancherProject: "reopt-api-dev", primaryBranch: "ponderosa", dbBaseName: "reopt_api_development", baseDomain: "${DEVELOPMENT_BASE_DOMAIN}") {
+                    withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod4"]) {
+                      tadaWithWerfNamespaces(rancherProject: "reopt-api-dev", primaryBranch: "master", dbBaseName: "reopt_api_development", baseDomain: "${DEVELOPMENT_BASE_DOMAIN}") {
                         withCredentials([string(credentialsId: "reopt-api-werf-secret-key", variable: "WERF_SECRET_KEY")]) {
                           sh """
                             werf converge \
@@ -122,7 +122,7 @@ pipeline {
                               --set='ecrAwsSecretAccessKey=${AWS_SECRET_ACCESS_KEY}' \
                               --set='branchName=${BRANCH_NAME}' \
                               --set='ingressHost=${DEPLOY_BRANCH_DOMAIN}' \
-                              --set='tempIngressHost=${tadaDeployBranchDomain(baseDomain: env.DEVELOPMENT_TEMP_BASE_DOMAIN, primaryBranch: "ponderosa")}' \
+                              --set='tempIngressHost=${tadaDeployBranchDomain(baseDomain: env.DEVELOPMENT_TEMP_BASE_DOMAIN, primaryBranch: "master")}' \
                               --set='dbName=${DEPLOY_BRANCH_DB_NAME}'
                           """
                         }
@@ -134,7 +134,7 @@ pipeline {
             }
 
             stage("deploy-staging") {
-              when { expression { params.STAGING_DEPLOY || env.BRANCH_NAME == "ponderosa" } }
+              when { expression { params.STAGING_DEPLOY || env.BRANCH_NAME == "master" } }
 
               environment {
                 DEPLOY_ENV = "staging"
@@ -145,8 +145,8 @@ pipeline {
               steps {
                 withDockerRegistry(url: "https://${env.WERF_REPO}", credentialsId: "ecr:us-east-2:aws-nrel-tada-ci") {
                   withCredentials([aws(credentialsId: "aws-nrel-tada-ci")]) {
-                    withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod3"]) {
-                      tadaWithWerfNamespaces(rancherProject: "reopt-api-staging", primaryBranch: "ponderosa", dbBaseName: "reopt_api_staging", baseDomain: "${STAGING_BASE_DOMAIN}") {
+                    withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod4"]) {
+                      tadaWithWerfNamespaces(rancherProject: "reopt-api-staging", primaryBranch: "master", dbBaseName: "reopt_api_staging", baseDomain: "${STAGING_BASE_DOMAIN}") {
                         withCredentials([string(credentialsId: "reopt-api-werf-secret-key", variable: "WERF_SECRET_KEY")]) {
                           sh """
                             werf converge \
@@ -157,7 +157,7 @@ pipeline {
                               --set='ecrAwsSecretAccessKey=${AWS_SECRET_ACCESS_KEY}' \
                               --set='branchName=${BRANCH_NAME}' \
                               --set='ingressHost=${DEPLOY_BRANCH_DOMAIN}' \
-                              --set='tempIngressHost=${tadaDeployBranchDomain(baseDomain: env.STAGING_TEMP_BASE_DOMAIN, primaryBranch: "ponderosa")}' \
+                              --set='tempIngressHost=${tadaDeployBranchDomain(baseDomain: env.STAGING_TEMP_BASE_DOMAIN, primaryBranch: "master")}' \
                               --set='dbName=${DEPLOY_BRANCH_DB_NAME}'
                           """
                         }
@@ -169,7 +169,7 @@ pipeline {
             }
 
             stage("deploy-production") {
-              when { branch "ponderosa" }
+              when { branch "master" }
 
               environment {
                 DEPLOY_ENV = "production"
@@ -180,8 +180,8 @@ pipeline {
               steps {
                 withDockerRegistry(url: "https://${env.WERF_REPO}", credentialsId: "ecr:us-east-2:aws-nrel-tada-ci") {
                   withCredentials([aws(credentialsId: "aws-nrel-tada-ci")]) {
-                    withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod4"]) {
-                      tadaWithWerfNamespaces(rancherProject: "reopt-api-production", primaryBranch: "ponderosa") {
+                    withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod5"]) {
+                      tadaWithWerfNamespaces(rancherProject: "reopt-api-production", primaryBranch: "master") {
                         withCredentials([string(credentialsId: "reopt-api-werf-secret-key", variable: "WERF_SECRET_KEY")]) {
                           sh """
                             werf converge \
