@@ -6797,6 +6797,11 @@ class SteamTurbineOutputs(BaseModel, models.Model):
         default = list
     )
 
+    thermal_to_hot_sensible_tes_series_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        blank=True, default=list
+    )    
+
 class HotThermalStorageInputs(BaseModel, models.Model):
     key = "HotThermalStorage"
 
