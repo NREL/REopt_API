@@ -76,10 +76,10 @@ EMISSIONS_DECREASE_DEFAULTS = { # year over year decrease in grid emissions rate
 }
 
 WIND_COST_DEFAULTS = { # size_class_to_installed_cost 
-    "residential" : 6339.0,
-    "commercial" : 4760.0,
-    "medium" : 3137.0,
-    "large" : 2386.0
+    "residential" : 7692.0,
+    "commercial" : 5776.0,
+    "medium" : 3807.0,
+    "large" : 2896.0
 }
 
 def at_least_one_set(model, possible_sets):
@@ -677,7 +677,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text="Analysis period in years. Must be integer."
     )
     elec_cost_escalation_rate_fraction = models.FloatField(
-        default=0.017,
+        default=0.0166,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -686,7 +686,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text="Annual nominal utility electricity cost escalation rate."
     )
     offtaker_discount_rate_fraction = models.FloatField(
-        default=0.0638,
+        default=0.0624,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -714,7 +714,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text="Annual nominal O&M cost escalation rate"
     )
     owner_discount_rate_fraction = models.FloatField(
-        default=0.0638,
+        default=0.0624,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -906,7 +906,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text=("Annual nominal escalation rate of the public health cost of 1 tonne of PM2.5 emissions (as a decimal). The default value is calculated from the EASIUR model for a height of 150m.")
     )
     generator_fuel_cost_escalation_rate_fraction = models.FloatField(
-        default=0.012,
+        default=0.0197,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -915,7 +915,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text=("Annual nominal boiler fuel cost escalation rate")
     )    
     existing_boiler_fuel_cost_escalation_rate_fraction = models.FloatField(
-        default=0.015,
+        default=0.0348,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -924,7 +924,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text=("Annual nominal existing boiler fuel cost escalation rate")
     )
     boiler_fuel_cost_escalation_rate_fraction = models.FloatField(
-        default=0.015,
+        default=0.0348,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -933,7 +933,7 @@ class FinancialInputs(BaseModel, models.Model):
         help_text=("Annual nominal boiler fuel cost escalation rate")
     )
     chp_fuel_cost_escalation_rate_fraction = models.FloatField(
-        default=0.015,
+        default=0.0348,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -2785,7 +2785,7 @@ class PVInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.6,
+        default=0.4,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -3214,7 +3214,7 @@ class WindInputs(BaseModel, models.Model):
         help_text="Installed cost in $/kW. Default cost is determined based on size_class."
     )
     om_cost_per_kw = models.FloatField(
-        default=36,
+        default=42,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e3)
@@ -3229,7 +3229,7 @@ class WindInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.6,
+        default=0.4,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -3648,7 +3648,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.6,
+        default=0.4,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -3809,7 +3809,7 @@ class GeneratorInputs(BaseModel, models.Model):
         help_text="Diesel generator per unit production (variable) operations and maintenance costs in $/kWh"
     )
     fuel_cost_per_gallon = models.FloatField(
-        default=3.0,
+        default=2.25,
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(1.0e2)
@@ -4438,7 +4438,7 @@ class CHPInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.6,
+        default=0.4,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -4456,7 +4456,7 @@ class CHPInputs(BaseModel, models.Model):
         help_text="Percent of the ITC value by which depreciable basis is reduced"
     )
     federal_itc_fraction = models.FloatField(
-        default=0.3,
+        default=0.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -6900,7 +6900,7 @@ class HotThermalStorageInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.6,
+        default=0.4,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -7104,7 +7104,7 @@ class ColdThermalStorageInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.6,
+        default=0.4,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -8405,7 +8405,7 @@ class GHPInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.6,
+        default=0.4,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
