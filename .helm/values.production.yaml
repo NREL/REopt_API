@@ -9,8 +9,8 @@ celeryMemoryLimit: "900Mi"
 juliaReplicas: 10
 juliaCpuRequest: "1000m"
 juliaCpuLimit: "4000m"
-juliaMemoryRequest: "8000Mi"
-juliaMemoryLimit: "8000Mi"
+juliaMemoryRequest: "16000Mi"
+juliaMemoryLimit: "16000Mi"
 juliaDeploymentStrategy:
   rollingUpdate:
     maxSurge: "0%"
