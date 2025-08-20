@@ -8905,7 +8905,7 @@ class CSTInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.0,
+        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -8934,13 +8934,13 @@ class CSTInputs(BaseModel, models.Model):
         help_text="Boolean indicator if CST can supply steam to the steam turbine for electric production"   
     )
     can_serve_dhw = models.BooleanField(
-        default=True,
+        default=False,
         null=True, 
         blank=True,
         help_text="Boolean indicator if CST can serve hot water load"   
     )
     can_serve_space_heating = models.BooleanField(
-        default=True,
+        default=False,
         null=True, 
         blank=True,
         help_text="Boolean indicator if CST can serve space heating load"   
