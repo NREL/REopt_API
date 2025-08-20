@@ -133,7 +133,6 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
             CHPInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["CHP"])
         if inputs_to_update["SteamTurbine"]:  # Will be an empty dictionary if SteamTurbine is not considered
             SteamTurbineInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["SteamTurbine"])
-    
         if inputs_to_update["GHP"]:
             GHPInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["GHP"])
         if inputs_to_update["ExistingChiller"]:
@@ -148,12 +147,13 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
         if inputs_to_update["ASHPWaterHeater"]:
             prune_update_fields(ASHPWaterHeaterInputs, inputs_to_update["ASHPWaterHeater"])
             ASHPWaterHeaterInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["ASHPWaterHeater"])
-        if inputs_to_update["CST"]:
-            prune_update_fields(CSTInputs, inputs_to_update["CST"])
-            CSTInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["CST"])            
         if inputs_to_update["PV"]:
             prune_update_fields(PVInputs, inputs_to_update["PV"])
-            PVInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["PV"])            
+            PVInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["PV"])  
+        # TODO CST is not added to this inputs_with_defaults_set_in_julia dictionary in http.jl, IF we need to update any CST inputs
+        if inputs_to_update.get("CST") is not None:
+            prune_update_fields(CSTInputs, inputs_to_update["CST"])
+            CSTInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["CST"])
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(
