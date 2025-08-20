@@ -10,7 +10,7 @@ RUN apt-get update && apt-get -y install git && rm -rf /var/lib/apt/lists/* /var
 ENV JULIA_PKG_USE_CLI_GIT=true
 
 # Install Julia packages
-ENV JULIA_NUM_THREADS=2
+ENV JULIA_NUM_THREADS=4
 ENV XPRESS_JL_SKIP_LIB_CHECK=True
 
 WORKDIR /opt/julia_src
