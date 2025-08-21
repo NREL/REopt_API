@@ -50,7 +50,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         http_response = response.json()
 
         # Check the endpoint logic with the expected selection
-        self.assertEqual(http_response["default_inputs"]["federal_itc_fraction"], 0.3)
+        self.assertEqual(http_response["default_inputs"]["federal_itc_fraction"], 0.0)
 
         inputs = {
             "prime_mover": "combustion_turbine",
