@@ -2785,7 +2785,7 @@ class PVInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.4,
+        default=1.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -3229,7 +3229,7 @@ class WindInputs(BaseModel, models.Model):
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.4,
+        default=1.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -3642,13 +3642,13 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Annual O&M cost as a fraction of installed cost."
     )
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.SEVEN,
+        default=MACRS_YEARS_CHOICES.FIVE,
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.4,
+        default=1.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -6894,13 +6894,13 @@ class HotThermalStorageInputs(BaseModel, models.Model):
         help_text="Thermal energy-based cost of TES (e.g. volume of the tank)"
     )
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.SEVEN,
+        default=MACRS_YEARS_CHOICES.FIVE,
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.4,
+        default=1.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -7098,13 +7098,13 @@ class ColdThermalStorageInputs(BaseModel, models.Model):
         help_text="Thermal energy-based cost of TES (e.g. volume of the tank)"
     )
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.SEVEN,
+        default=MACRS_YEARS_CHOICES.FIVE,
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.4,
+        default=1.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
