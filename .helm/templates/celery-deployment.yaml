@@ -54,9 +54,9 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ .Chart.Name }}-base-config-map
-            env:
-              - name: JULIA_HOST
-                value: "http://localhost:8081"
+          env:
+            - name: JULIA_HOST
+              value: "http://localhost:8081"
           volumeMounts:
             - name: {{ .Chart.Name }}-secrets-volume
               readOnly: true
