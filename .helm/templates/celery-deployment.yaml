@@ -56,7 +56,7 @@ spec:
                 name: {{ .Chart.Name }}-base-config-map
           env:
             - name: JULIA_HOST
-              value: "http://localhost:8081"
+              value: "localhost"
           volumeMounts:
             - name: {{ .Chart.Name }}-secrets-volume
               readOnly: true
