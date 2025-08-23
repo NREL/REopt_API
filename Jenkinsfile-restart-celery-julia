@@ -1,0 +1,18 @@
+pipeline {
+  agent any
+  environment {
+    TZ = 'America/Denver' // MST/MDT (handles daylight saving automatically)
+    CHART_NAME = 'reopt-api-staging' // Set your chart name here
+  }
+  triggers {
+    cron('15 10 * * *') // 10:15 AM MST/MDT
+  }
+  stages {
+    stage('Rolling Restart Celery and Julia') {
+      steps {
+        sh "kubectl rollout restart deployment/${CHART_NAME}-celery-deployment"
+        sh "kubectl rollout restart deployment/${CHART_NAME}-julia-deployment"
+      }
+    }
+  }
+}
