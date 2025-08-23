@@ -54,6 +54,9 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ .Chart.Name }}-base-config-map
+          env:
+            - name: JULIA_HOST
+              value: "localhost"
           volumeMounts:
             - name: {{ .Chart.Name }}-secrets-volume
               readOnly: true
@@ -79,3 +82,22 @@ spec:
             limits:
               cpu: {{ .Values.celeryCpuLimit | quote }}
               memory: {{ .Values.celeryMemoryLimit | quote }}
+
+        - name: {{ .Chart.Name }}-julia
+          image: {{ index .Values.werf.image "julia-api" }}
+          args: ["julia", "--project=/opt/julia_src", "http.jl"]
+          ports:
+            - containerPort: 8081
+          env:
+            - name: JULIA_NUM_THREADS
+              value: "4"
+          envFrom:
+            - configMapRef:
+                name: {{ .Chart.Name }}-base-config-map
+          resources:
+            requests:
+              cpu:  {{ .Values.juliaCpuRequest | quote }}
+              memory: {{ .Values.juliaMemoryRequest | quote }}
+            limits:
+              cpu: {{ .Values.juliaCpuLimit | quote }}
+              memory: {{ .Values.juliaMemoryLimit | quote }}
