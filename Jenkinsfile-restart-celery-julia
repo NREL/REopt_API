@@ -1,3 +1,5 @@
+@Library("tada-jenkins-library") _
+
 pipeline {
   agent any
   environment {
