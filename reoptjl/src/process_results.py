@@ -8,7 +8,8 @@ from reoptjl.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorage
                         REoptjlMessageOutputs, AbsorptionChillerOutputs, BoilerOutputs, SteamTurbineInputs, \
                         SteamTurbineOutputs, GHPInputs, GHPOutputs, ExistingChillerInputs, \
                         ElectricHeaterOutputs, ASHPSpaceHeaterOutputs, ASHPWaterHeaterOutputs, \
-                        SiteInputs, ASHPSpaceHeaterInputs, ASHPWaterHeaterInputs, CSTInputs, CSTOutputs, PVInputs
+                        SiteInputs, ASHPSpaceHeaterInputs, ASHPWaterHeaterInputs, CSTInputs, CSTOutputs, PVInputs, \
+                        HotSensibleTesInputs, HotSensibleTesOutputs
 import numpy as np
 import sys
 import traceback as tb
@@ -91,7 +92,9 @@ def process_results(results: dict, run_uuid: str) -> None:
             if "ASHPWaterHeater" in results.keys():
                 ASHPWaterHeaterOutputs.create(meta=meta, **results["ASHPWaterHeater"]).save()
             if "CST" in results.keys():
-                CSTOutputs.create(meta=meta, **results["CST"]).save()                
+                CSTOutputs.create(meta=meta, **results["CST"]).save()
+            if "HotSensibleTes" in results.keys():
+                HotSensibleTesOutputs.create(meta=meta, **results["HotSensibleTes"]).save()               
             # TODO process rest of results
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -154,6 +157,9 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
         if inputs_to_update.get("CST") is not None:
             prune_update_fields(CSTInputs, inputs_to_update["CST"])
             CSTInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["CST"])
+        if inputs_to_update.get("HotSensibleTes") is not None:
+            prune_update_fields(HotSensibleTesInputs, inputs_to_update["HotSensibleTes"])
+            HotSensibleTesInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["HotSensibleTes"])
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(
