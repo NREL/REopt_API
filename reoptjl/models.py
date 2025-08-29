@@ -5617,7 +5617,7 @@ class ElectricHeaterOutputs(BaseModel, models.Model):
         default = list
     )
 
-    thermal_to_hot_sensible_tes_series_mmbtu_per_hour = ArrayField(
+    thermal_to_high_temp_thermal_storage_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
         default = list
     )
@@ -6797,7 +6797,7 @@ class SteamTurbineOutputs(BaseModel, models.Model):
         default = list
     )
 
-    thermal_to_hot_sensible_tes_series_mmbtu_per_hour = ArrayField(
+    thermal_to_high_temp_thermal_storage_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
         blank=True, default=list
     )    
@@ -9021,8 +9021,7 @@ class CSTOutputs(BaseModel, models.Model):
         models.FloatField(null=True, blank=True),
         blank=True, default=list
     )
-    # Should this be changed?
-    thermal_to_hot_sensible_tes_storage_series_mmbtu_per_hour = ArrayField(
+    thermal_to_high_temp_thermal_storage_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
         blank=True, default=list
     )
