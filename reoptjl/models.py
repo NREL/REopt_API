@@ -7011,13 +7011,13 @@ class HotThermalStorageOutputs(BaseModel, models.Model):
         # perform custom validation here.
         pass
 
-class HotSensibleTesInputs(BaseModel, models.Model):
-    key = "HotSensibleTes"
+class HighTempThermalStorageInputs(BaseModel, models.Model):
+    key = "HighTempThermalStorage"
 
     meta = models.OneToOneField(
         APIMeta,
         on_delete=models.CASCADE,
-        related_name="HotSensibleTesInputs",
+        related_name="HighTempThermalStorageInputs",
         primary_key=True
     )
 
@@ -7203,16 +7203,15 @@ class HotSensibleTesInputs(BaseModel, models.Model):
         help_text="Number of charge hours"
     )
 
-class HotSensibleTesOutputs(BaseModel, models.Model):
-    key = "HotSensibleTesOutputs"
+class HighTempThermalStorageOutputs(BaseModel, models.Model):
+    key = "HighTempThermalStorageOutputs"
 
     meta = models.OneToOneField(
         APIMeta,
         on_delete=models.CASCADE,
-        related_name="HotSensibleTesOutputs",
+        related_name="HighTempThermalStorageOutputs",
         primary_key=True
     )
-    size_gal = models.FloatField(null=True, blank=True)
     size_kwh = models.FloatField(null=True, blank=True)
     soc_series_fraction = ArrayField(
         models.FloatField(null=True, blank=True),
@@ -8918,12 +8917,12 @@ class CSTInputs(BaseModel, models.Model):
         blank=True,
         help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
     )
-    capacity_factor_series = ArrayField(
+    production_factor = ArrayField(
         models.FloatField(
             blank=True
         ),
         default=list, blank=True,
-        help_text=("Optional user-defined capacity factors for CST.")
+        help_text=("Optional user-defined production factors for CST.")
     )
     elec_consumption_factor_series = ArrayField(
         models.FloatField(
@@ -9022,11 +9021,8 @@ class CSTOutputs(BaseModel, models.Model):
         models.FloatField(null=True, blank=True),
         blank=True, default=list
     )
+    # Should this be changed?
     thermal_to_hot_sensible_tes_storage_series_mmbtu_per_hour = ArrayField(
-        models.FloatField(null=True, blank=True),
-        blank=True, default=list
-    )
-    thermal_to_hot_sensible_tes_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
         blank=True, default=list
     )
@@ -9130,7 +9126,7 @@ def get_input_dict_from_run_uuid(run_uuid:str):
     try: d["HotThermalStorage"] = filter_none_and_empty_array(meta.HotThermalStorageInputs.dict)
     except: pass
 
-    try: d["HotSensibleTes"] = filter_none_and_empty_array(meta.HotSensibleTesInputs.dict)
+    try: d["HighTempThermalStorage"] = filter_none_and_empty_array(meta.HighTempThermalStorageInputs.dict)
     except: pass
 
     try: d["ColdThermalStorage"] = filter_none_and_empty_array(meta.ColdThermalStorageInputs.dict)
