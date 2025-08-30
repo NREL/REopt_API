@@ -4,9 +4,14 @@ pipeline {
   agent any
   environment {
     TZ = 'America/Denver' // MST/MDT (handles daylight saving automatically)
+    DEPLOY_IMAGE_REPO_DOMAIN = credentials("reopt-api-image-repo-domain")
     DEVELOPMENT_BASE_DOMAIN = credentials("reopt-api-development-base-domain")
+    DEVELOPMENT_TEMP_BASE_DOMAIN = credentials("reopt-api-development-temp-base-domain")
     STAGING_BASE_DOMAIN = credentials("reopt-api-staging-base-domain")
+    STAGING_TEMP_BASE_DOMAIN = credentials("reopt-api-staging-temp-base-domain")
     PRODUCTION_DOMAIN = credentials("reopt-api-production-domain")
+    XPRESS_LICENSE_HOST = credentials("reopt-api-xpress-license-host")
+    NREL_ROOT_CERT_URL_ROOT = credentials("reopt-api-nrel-root-cert-url-root")
   }
   triggers {
     cron('15 13 * * *') // 1:15 PM MST/MDT
@@ -53,7 +58,10 @@ pipeline {
                 withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod4"]) {
                   tadaWithWerfEnv(rancherProject: "reopt-api-dev", primaryBranch: "master", dbBaseName: "reopt_api_development", baseDomain: "${DEVELOPMENT_BASE_DOMAIN}") {
                     sh "kubectl -n '${env.DEPLOY_APP_NAMESPACE_NAME}' rollout restart deployment/reopt-api-celery-deployment"
+                    sh "kubectl -n '${env.DEPLOY_APP_NAMESPACE_NAME}' rollout status deployment/reopt-api-celery-deployment --timeout=10m"
+
                     sh "kubectl -n '${env.DEPLOY_APP_NAMESPACE_NAME}' rollout restart deployment/reopt-api-julia-deployment"
+                    sh "kubectl -n '${env.DEPLOY_APP_NAMESPACE_NAME}' rollout status deployment/reopt-api-julia-deployment --timeout=10m"
                   }
                 }
               }
@@ -70,7 +78,10 @@ pipeline {
                 withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod4"]) {
                   tadaWithWerfEnv(rancherProject: "reopt-api-staging", primaryBranch: "master", dbBaseName: "reopt_api_staging", baseDomain: "${STAGING_BASE_DOMAIN}") {
                     sh "kubectl -n '${env.DEPLOY_APP_NAMESPACE_NAME}' rollout restart deployment/reopt-api-celery-deployment"
+                    sh "kubectl -n '${env.DEPLOY_APP_NAMESPACE_NAME}' rollout status deployment/reopt-api-celery-deployment --timeout=10m"
+
                     sh "kubectl -n '${env.DEPLOY_APP_NAMESPACE_NAME}' rollout restart deployment/reopt-api-julia-deployment"
+                    sh "kubectl -n '${env.DEPLOY_APP_NAMESPACE_NAME}' rollout status deployment/reopt-api-julia-deployment --timeout=10m"
                   }
                 }
               }
@@ -87,7 +98,10 @@ pipeline {
                 withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod5"]) {
                   tadaWithWerfEnv(rancherProject: "reopt-api-production", primaryBranch: "master") {
                     sh "kubectl -n '${env.DEPLOY_APP_NAMESPACE_NAME}' rollout restart deployment/reopt-api-celery-deployment"
+                    sh "kubectl -n '${env.DEPLOY_APP_NAMESPACE_NAME}' rollout status deployment/reopt-api-celery-deployment --timeout=10m"
+
                     sh "kubectl -n '${env.DEPLOY_APP_NAMESPACE_NAME}' rollout restart deployment/reopt-api-julia-deployment"
+                    sh "kubectl -n '${env.DEPLOY_APP_NAMESPACE_NAME}' rollout status deployment/reopt-api-julia-deployment --timeout=10m"
                   }
                 }
               }
