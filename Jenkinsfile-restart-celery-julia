@@ -4,16 +4,96 @@ pipeline {
   agent any
   environment {
     TZ = 'America/Denver' // MST/MDT (handles daylight saving automatically)
-    CHART_NAME = 'reopt-api-staging' // Set your chart name here
+    DEVELOPMENT_BASE_DOMAIN = credentials("reopt-api-development-base-domain")
+    STAGING_BASE_DOMAIN = credentials("reopt-api-staging-base-domain")
+    PRODUCTION_DOMAIN = credentials("reopt-api-production-domain")
   }
   triggers {
     cron('15 13 * * *') // 1:15 PM MST/MDT
   }
+
+  parameters {
+    booleanParam(
+      name: "DEVELOPMENT_DEPLOY",
+      defaultValue: false,
+      description: "Development Deploy: Deploy to development.",
+    )
+
+    booleanParam(
+      name: "STAGING_DEPLOY",
+      defaultValue: false,
+      description: "Staging Deploy: Deploy to staging for a non-master branch (master will always be deployed).",
+    )
+  }
+
   stages {
-    stage('Rolling Restart Celery and Julia') {
-      steps {
-        sh "kubectl rollout restart deployment/${CHART_NAME}-celery-deployment"
-        sh "kubectl rollout restart deployment/${CHART_NAME}-julia-deployment"
+    stage("deploy-agent") {
+      agent {
+        docker {
+          image "${DEPLOY_IMAGE_REPO_DOMAIN}/tada-public/tada-jenkins-kube-deploy:werf-1.2"
+          args tadaDockerInDockerArgs()
+        }
+      }
+
+      environment {
+        TMPDIR = tadaDockerInDockerTmp()
+      }
+
+      stages {
+        stage('Rolling Restart Celery and Julia') {
+          stages {
+            stage("deploy-development") {
+              when { expression { params.DEVELOPMENT_DEPLOY } }
+
+              environment {
+                DEPLOY_ENV = "development"
+              }
+
+              steps {
+                withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod4"]) {
+                  tadaWithWerfEnv(rancherProject: "reopt-api-dev", primaryBranch: "master", dbBaseName: "reopt_api_development", baseDomain: "${DEVELOPMENT_BASE_DOMAIN}") {
+                    sh "kubectl -n '${env.DEPLOY_APP_NAMESPACE_NAME}' rollout restart deployment/reopt-api-celery-deployment"
+                    sh "kubectl -n '${env.DEPLOY_APP_NAMESPACE_NAME}' rollout restart deployment/reopt-api-julia-deployment"
+                  }
+                }
+              }
+            }
+
+            stage("deploy-staging") {
+              when { expression { params.STAGING_DEPLOY || env.BRANCH_NAME == "master" } }
+
+              environment {
+                DEPLOY_ENV = "staging"
+              }
+
+              steps {
+                withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod4"]) {
+                  tadaWithWerfEnv(rancherProject: "reopt-api-staging", primaryBranch: "master", dbBaseName: "reopt_api_staging", baseDomain: "${STAGING_BASE_DOMAIN}") {
+                    sh "kubectl -n '${env.DEPLOY_APP_NAMESPACE_NAME}' rollout restart deployment/reopt-api-celery-deployment"
+                    sh "kubectl -n '${env.DEPLOY_APP_NAMESPACE_NAME}' rollout restart deployment/reopt-api-julia-deployment"
+                  }
+                }
+              }
+            }
+
+            stage("deploy-production") {
+              when { branch "master" }
+
+              environment {
+                DEPLOY_ENV = "production"
+              }
+
+              steps {
+                withKubeConfig([credentialsId: "kubeconfig-nrel-reopt-prod5"]) {
+                  tadaWithWerfEnv(rancherProject: "reopt-api-production", primaryBranch: "master") {
+                    sh "kubectl -n '${env.DEPLOY_APP_NAMESPACE_NAME}' rollout restart deployment/reopt-api-celery-deployment"
+                    sh "kubectl -n '${env.DEPLOY_APP_NAMESPACE_NAME}' rollout restart deployment/reopt-api-julia-deployment"
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
