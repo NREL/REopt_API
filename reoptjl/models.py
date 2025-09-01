@@ -9009,6 +9009,10 @@ class CSTOutputs(BaseModel, models.Model):
     size_kw = models.FloatField(null=True, blank=True)
     annual_electric_consumption_kwh = models.FloatField(null=True, blank=True)
     annual_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
+    size_mmbtu_per_hour = ArrayField(
+        models.FloatField(null=True, blank=True),
+        default=list, blank=True
+    )
     thermal_production_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
         default=list, blank=True
