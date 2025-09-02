@@ -18,7 +18,7 @@ from reo.exceptions import UnexpectedError  #, RequestError  # should we save ba
 import logging
 log = logging.getLogger(__name__)
 from reo.src.techs import Generator, CHP, AbsorptionChiller, Boiler, SteamTurbine
-from reo.src.emissions_calculator import EmissionsCalculator, EASIURCalculator
+# from reo.src.emissions_calculator import EmissionsCalculator, EASIURCalculator
 from django.http import HttpResponse
 from django.template import  loader
 import pandas as pd
@@ -183,23 +183,24 @@ def emissions_profile(request):
         latitude = float(request.GET['latitude'])  # need float to convert unicode
         longitude = float(request.GET['longitude'])
 
-        ec_CO2 = EmissionsCalculator(latitude=latitude,longitude=longitude, pollutant='CO2')
-        ec_NOx = EmissionsCalculator(latitude=latitude,longitude=longitude, pollutant='NOx')
-        ec_SO2 = EmissionsCalculator(latitude=latitude,longitude=longitude, pollutant='SO2')
-        ec_PM25 = EmissionsCalculator(latitude=latitude,longitude=longitude, pollutant='PM25')
+        # ec_CO2 = EmissionsCalculator(latitude=latitude,longitude=longitude, pollutant='CO2')
+        # ec_NOx = EmissionsCalculator(latitude=latitude,longitude=longitude, pollutant='NOx')
+        # ec_SO2 = EmissionsCalculator(latitude=latitude,longitude=longitude, pollutant='SO2')
+        # ec_PM25 = EmissionsCalculator(latitude=latitude,longitude=longitude, pollutant='PM25')
 
         try:
-            response = JsonResponse({
-                    'region_abbr': ec_CO2.region_abbr,
-                    'region': ec_CO2.region,
-                    'emissions_factor_series_lb_CO2_per_kwh': ec_CO2.emissions_series,
-                    'emissions_factor_series_lb_NOx_per_kwh': ec_NOx.emissions_series,
-                    'emissions_factor_series_lb_SO2_per_kwh': ec_SO2.emissions_series,
-                    'emissions_factor_series_lb_PM25_per_kwh': ec_PM25.emissions_series,
-                    'units': 'Pounds emission species per kWh',
-                    'description': 'Regional hourly grid emissions factors for applicable EPA AVERT region.',
-                    'meters_to_region': ec_CO2.meters_to_region
-                })
+            response = JsonResponse({})
+            # response = JsonResponse({
+            #         'region_abbr': ec_CO2.region_abbr,
+            #         'region': ec_CO2.region,
+            #         'emissions_factor_series_lb_CO2_per_kwh': ec_CO2.emissions_series,
+            #         'emissions_factor_series_lb_NOx_per_kwh': ec_NOx.emissions_series,
+            #         'emissions_factor_series_lb_SO2_per_kwh': ec_SO2.emissions_series,
+            #         'emissions_factor_series_lb_PM25_per_kwh': ec_PM25.emissions_series,
+            #         'units': 'Pounds emission species per kWh',
+            #         'description': 'Regional hourly grid emissions factors for applicable EPA AVERT region.',
+            #         'meters_to_region': ec_CO2.meters_to_region
+            #     })
             return response
         except AttributeError as e:
             return JsonResponse({"Error": str(e.args[0])}, status=500)
