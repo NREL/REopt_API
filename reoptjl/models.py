@@ -4432,13 +4432,13 @@ class CHPInputs(BaseModel, models.Model):
 
     #Financial and emissions    
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.FIVE,
+        default=MACRS_YEARS_CHOICES.ZERO,
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.4,
+        default=0.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -8399,13 +8399,13 @@ class GHPInputs(BaseModel, models.Model):
     )
 
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.FIVE,
+        default=MACRS_YEARS_CHOICES.ZERO,
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.4,
+        default=0.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
