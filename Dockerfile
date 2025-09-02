@@ -9,7 +9,7 @@ ENV SRC_DIR=/opt/reopt/reo/src
 ENV LD_LIBRARY_PATH="/opt/reopt/reo/src:${LD_LIBRARY_PATH}"
 
 # Copy all code
-ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONDONTWRITEBYTECODE=1
 COPY . /opt/reopt
 
 # Install python packages
