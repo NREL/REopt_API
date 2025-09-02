@@ -1,4 +1,3 @@
-[submodule "EVI-EnSitePy"]
-	path = EVI-EnSitePy
-	url = https://github.nrel.gov/AVCI/EVI-EnSitePy.git
-    branch = dev_enlitepy_api_barebone
+[submodule "EVI-EnLitePy"]
+	path = EVI-EnLitePy
+	url = https://github.nrel.gov/AVCI/EVI-EnLitePy.git
