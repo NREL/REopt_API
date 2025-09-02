@@ -7020,6 +7020,11 @@ class HighTempThermalStorageInputs(BaseModel, models.Model):
         related_name="HighTempThermalStorageInputs",
         primary_key=True
     )
+    fluid = models.TextField(
+        blank=True,
+        default="INCOMP::NaK",
+        help_text="Type of fluid for your High Temp Thermal Storage system"
+    )
 
     min_kwh = models.FloatField(
         validators=[
@@ -9007,13 +9012,9 @@ class CSTOutputs(BaseModel, models.Model):
         unique=False
     )
     size_kw = models.FloatField(null=True, blank=True)
-    # size_mmbtu_per_hour = models.FloatField(null=True, blank=True)
+    size_mmbtu_per_hour = models.FloatField(null=True, blank=True)
     annual_electric_consumption_kwh = models.FloatField(null=True, blank=True)
     annual_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
-    size_mmbtu_per_hour = ArrayField(
-        models.FloatField(null=True, blank=True),
-        default=list, blank=True
-    )
     thermal_production_series_mmbtu_per_hour = ArrayField(
         models.FloatField(null=True, blank=True),
         default=list, blank=True
