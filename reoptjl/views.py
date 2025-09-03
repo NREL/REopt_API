@@ -959,7 +959,9 @@ def summary(request, user_uuid):
                   "wind_kw",                    # Wind Size (kW)
                   "gen_kw",                     # Generator Size (kW)
                   "batt_kw",                    # Battery Power (kW)
-                  "batt_kwh"                    # Battery Capacity (kWh)
+                  "batt_kwh",                   # Battery Capacity (kWh)
+                  "cst_kw",                     # CST Size (kW)
+                  "hightemptes_kwh"             # High Temp TES Capacity (kWh)
                   ""
                 }]
         }
@@ -1103,7 +1105,7 @@ def summary_by_chunk(request, user_uuid, chunk):
 def create_summary_dict(user_uuid:str,summary_dict:dict):
 
     # if these keys are missing from a `scenario` we add 0s for them, all Floats.
-    optional_keys = ["npv_us_dollars", "net_capital_costs", "year_one_savings_us_dollars", "pv_kw", "wind_kw", "gen_kw", "batt_kw", "batt_kwh"]
+    optional_keys = ["npv_us_dollars", "net_capital_costs", "year_one_savings_us_dollars", "pv_kw", "wind_kw", "gen_kw", "batt_kw", "batt_kwh", "cst_kw", "hightemptes_kwh"]
 
     # Create eventual response dictionary
     return_dict = dict()
@@ -1323,6 +1325,22 @@ def queryset_for_summary(api_metas,summary_dict:dict):
     if len(gen) > 0:
         for m in gen:
             summary_dict[str(m.meta.run_uuid)]['gen_kw'] = m.size_kw
+
+    cst = CSTOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'size_kw'
+    )
+    if len(cst) > 0:
+        for m in cst:
+            summary_dict[str(m.meta.run_uuid)]['cst_kw'] = m.size_kw
+
+    hightemptes = HighTempThermalStorageOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'size_kwh'
+    )
+    if len(hightemptes) > 0:
+        for m in hightemptes:
+            summary_dict[str(m.meta.run_uuid)]['hightemptes_kwh'] = m.size_kwh
 
     # assumes run_uuids exist in both CHPInputs and CHPOutputs
     chpInputs = CHPInputs.objects.filter(meta__run_uuid__in=run_uuids).only(
