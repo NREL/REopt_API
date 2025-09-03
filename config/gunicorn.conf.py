@@ -14,7 +14,7 @@ else:
 if os.environ.get('K8S_DEPLOY') is None:
     workers = multiprocessing.cpu_count()
 else:
-    workers = 8
+    workers = 4
 
 # Note that the app currently has threading issues, so we explicitly want a
 # non-thread worker process model.
