@@ -332,6 +332,15 @@ class SiteInputs(BaseModel, models.Model):
         primary_key=True
     )
 
+    class SECTORS(models.TextChoices):
+        COMMERCIAL = 'commercial/industrial'
+        FEDERAL = 'federal'
+
+    class FEDERAL_PROCUREMENT_TYPES(models.TextChoices):
+        FEDOWNED_DIRPURCH = 'fedowned_dirpurch'
+        FEDOWNED_THIRD_PARTY = 'fedowned_thirdparty'
+        PRIVATEOWNED_THIRD_PARTY = 'privateowned_thirdparty'
+
     latitude = models.FloatField(
         validators=[
             MinValueValidator(-90),
@@ -374,6 +383,27 @@ class SiteInputs(BaseModel, models.Model):
     )
     # don't provide mg_tech_sizes_equal_grid_sizes in the API, effectively force it to true (the REopt.jl default)
 
+    sector = models.TextField(
+        choices=SECTORS.choices,
+        blank=True,
+        null=False,
+        default=SECTORS.COMMERCIAL,
+        help_text=("")
+    )
+    federal_sector_state = models.TextField(
+        # not creating choices b/c hoping to get rid of this input ASAP and use lat/long instead
+        blank=True,
+        null=False,
+        default="",
+        help_text=("")
+    )
+    federal_procurement_type = models.TextField(
+        choices=FEDERAL_PROCUREMENT_TYPES.choices,
+        blank=True,
+        null=False,
+        default="",
+        help_text=("")
+    )
     CO2_emissions_reduction_min_fraction = models.FloatField(
         validators=[
             MinValueValidator(0),
@@ -8597,7 +8627,7 @@ def get_input_dict_from_run_uuid(run_uuid:str):
     ).get(run_uuid=run_uuid)
 
     def filter_none_and_empty_array(d:dict):
-        return {k: v for (k, v) in d.items() if v not in [None, [], {}]}
+        return {k: v for (k, v) in d.items() if v not in [None, [], {}, ""]}
 
     d = dict()
     d["user_uuid"] = meta.user_uuid
