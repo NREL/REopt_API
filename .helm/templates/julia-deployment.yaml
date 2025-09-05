@@ -37,6 +37,9 @@ spec:
           args: ["julia", "--project=/opt/julia_src", "http.jl"]
           ports:
             - containerPort: 8081
+          env:
+            - name: JULIA_NUM_THREADS
+              value: "4"
           envFrom:
             - configMapRef:
                 name: {{ .Chart.Name }}-base-config-map

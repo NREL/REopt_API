@@ -6,11 +6,11 @@ djangoMemoryLimit: "2000Mi"
 celeryReplicas: 10
 celeryMemoryRequest: "900Mi"
 celeryMemoryLimit: "900Mi"
-juliaReplicas: 10
-juliaCpuRequest: "1000m"
+juliaReplicas: 5
+juliaCpuRequest: "2000m"
 juliaCpuLimit: "4000m"
-juliaMemoryRequest: "16000Mi"
-juliaMemoryLimit: "16000Mi"
+juliaMemoryRequest: "12000Mi"
+juliaMemoryLimit: "12000Mi"
 juliaDeploymentStrategy:
   rollingUpdate:
     maxSurge: "0%"
