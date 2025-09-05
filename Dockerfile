@@ -16,9 +16,13 @@ COPY . /opt/reopt
 WORKDIR /opt/reopt
 RUN ["pip", "install", "-r", "requirements.txt"]
 
-RUN if [ -d "EVI-EnSitePy" ] && [ "$(ls -A EVI-EnSitePy)" ]; then \
-    cd EVI-EnSitePy && pip install -e .; \
+# Install EVI-EnLitePy using pip (recommended best practice)
+RUN if [ -d "/opt/reopt/EVI-EnLitePy" ] && [ "$(ls -A /opt/reopt/EVI-EnLitePy)" ]; then \
+    cd /opt/reopt/EVI-EnLitePy && pip install -e .; \
 fi
+
+# Extra packages for EVI-EnLitePy not included in the requirements.txt file currently
+RUN ["pip", "install", "plotly", "matplotlib", "pydantic"]
 
 EXPOSE 8000
 ENTRYPOINT ["/bin/bash", "-c"]
