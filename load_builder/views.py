@@ -6,6 +6,29 @@ import sys
 import numpy as np
 from django.http import JsonResponse
 from reo.exceptions import UnexpectedError
+import os
+
+def ensite_view(request):
+    """
+    Attempts to import ensitepy and return the SystemSimulator class.
+    If the package is not available, returns None.
+    """
+    try:
+        from ensitepy.simextension import enlitepyapi
+
+        inputs_path = os.path.join(os.getcwd(), "load_builder", "ensite.json")
+        with open(inputs_path, 'r') as f:
+            enlitepy_json = json.load(f)
+        print(enlitepy_json)
+
+        results = enlitepyapi.run(enlitepy_json)
+
+        return "imported ensitepy and simextension successfully"
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='ensite')
+        # err.save_to_db()
+        return JsonResponse({"Error": err.message}, status=500)
 
 
 def check_load_builder_inputs(loads_table):

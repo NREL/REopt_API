@@ -12,9 +12,9 @@ from reo.src.urdb_rate import Rate
 import re
 import uuid
 from reo.src.techs import Generator, Boiler, CHP, AbsorptionChiller, SteamTurbine
-from reo.src.emissions_calculator import EmissionsCalculator, EASIURCalculator
+# from reo.src.emissions_calculator import EmissionsCalculator, EASIURCalculator
 from reo.utilities import generate_year_profile_hourly, get_climate_zone_and_nearest_city
-from reo.src.pyeasiur import *
+# from reo.src.pyeasiur import *
 from reo.src.load_profile import BuiltInProfile
 
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
@@ -1355,10 +1355,10 @@ class ValidateNestedInput:
                             pollutant = 'SO2'
                         elif 'PM25' in key_name:
                             pollutant = 'PM25'
-                        ec = EmissionsCalculator(   latitude=self.input_dict['Scenario']['Site']['latitude'],
-                                                        longitude=self.input_dict['Scenario']['Site']['longitude'],
-                                                        pollutant = pollutant,
-                                                        time_steps_per_hour = ts_per_hour)
+                        # ec = EmissionsCalculator(   latitude=self.input_dict['Scenario']['Site']['latitude'],
+                        #                                 longitude=self.input_dict['Scenario']['Site']['longitude'],
+                        #                                 pollutant = pollutant,
+                        #                                 time_steps_per_hour = ts_per_hour)
                         # If user applies CO2 emissions constraint or includes CO2 costs in objective 
                         must_include_CO2 = self.input_dict['Scenario']['include_climate_in_objective'] or ('co2_emissions_reduction_min_pct' in self.input_dict['Scenario']['Site']) \
                             or ('co2_emissions_reduction_max_pct' in self.input_dict['Scenario']['Site'])
@@ -1366,8 +1366,9 @@ class ValidateNestedInput:
                         must_include_health = self.input_dict['Scenario']['include_health_in_objective'] 
                         emissions_series = None
                         try:
-                            emissions_series = ec.emissions_series
-                            emissions_region = ec.region
+                            pass
+                            # emissions_series = ec.emissions_series
+                            # emissions_region = ec.region
                         except AttributeError as e:
                             # Emissions warning is a specific type of warning that we check for and display to the users when it occurs
                             # If emissions are not required to do a run it tells the user why we could not get an emission series 

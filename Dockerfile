@@ -1,4 +1,4 @@
-FROM reopt/py38
+FROM python:3.11
 
 # Install NREL root certs for machines running on NREL's network.
 ARG NREL_ROOT_CERT_URL_ROOT=""
@@ -9,12 +9,20 @@ ENV SRC_DIR=/opt/reopt/reo/src
 ENV LD_LIBRARY_PATH="/opt/reopt/reo/src:${LD_LIBRARY_PATH}"
 
 # Copy all code
-ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONDONTWRITEBYTECODE=1
 COPY . /opt/reopt
 
 # Install python packages
 WORKDIR /opt/reopt
 RUN ["pip", "install", "-r", "requirements.txt"]
+
+# Install EVI-EnLitePy using pip (recommended best practice)
+RUN if [ -d "/opt/reopt/EVI-EnLitePy" ] && [ "$(ls -A /opt/reopt/EVI-EnLitePy)" ]; then \
+    cd /opt/reopt/EVI-EnLitePy && pip install -e .; \
+fi
+
+# Extra packages for EVI-EnLitePy not included in the requirements.txt file currently
+RUN ["pip", "install", "plotly", "matplotlib", "pydantic"]
 
 EXPOSE 8000
 ENTRYPOINT ["/bin/bash", "-c"]
