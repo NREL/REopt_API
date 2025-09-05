@@ -7091,7 +7091,7 @@ class HighTempThermalStorageInputs(BaseModel, models.Model):
         help_text="Battery state of charge at first hour of optimization as fraction of energy capacity."
     )
     installed_cost_per_kwh = models.FloatField(
-        default=1.5,
+        default=62,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -7118,13 +7118,13 @@ class HighTempThermalStorageInputs(BaseModel, models.Model):
         help_text="Thermal energy-based cost of TES (e.g. volume of the tank)"
     )
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.SEVEN,
+        default=MACRS_YEARS_CHOICES.FIVE,
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.6,
+        default=1.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
