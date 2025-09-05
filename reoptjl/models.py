@@ -4432,13 +4432,13 @@ class CHPInputs(BaseModel, models.Model):
 
     #Financial and emissions    
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.ZERO,
+        default=MACRS_YEARS_CHOICES.FIVE,
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.0,
+        default=1.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -6693,7 +6693,7 @@ class SteamTurbineInputs(BaseModel, models.Model):
     )
 
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.ZERO,
+        default=MACRS_YEARS_CHOICES.FIVE,
         choices=MACRS_YEARS_CHOICES.choices,
         null=True,
         blank=True,
@@ -6701,7 +6701,7 @@ class SteamTurbineInputs(BaseModel, models.Model):
     )
 
     macrs_bonus_fraction = models.FloatField(
-        default=0.0,
+        default=1.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
