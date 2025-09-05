@@ -858,12 +858,6 @@ custom_table_webtool = [
         "bau_value"     : lambda df: safe_get(df, "outputs.SteamTurbine.annual_electric_production_kwh_bau"),
         "scenario_value": lambda df: safe_get(df, "outputs.SteamTurbine.annual_electric_production_kwh")
     },
-    {
-        "label"         : "CST Total Electricity Produced (kWh/yr)",
-        "key"           : "cst_total_electricity_produced",
-        "bau_value"     : lambda df: safe_get(df, "outputs.CST.annual_electric_production_kwh_bau"),
-        "scenario_value": lambda df: safe_get(df, "outputs.CST.annual_electric_production_kwh")
-    },
     #####################################################################################################
     ##############################  Annual Heating Thermal Production #############################
     ##################################################################################################### 
