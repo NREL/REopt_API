@@ -464,6 +464,15 @@ class SiteInputs(BaseModel, models.Model):
         help_text=("The outdoor air (dry-bulb) temperature in degrees Fahrenheit as determined by the site's location TMY3 data from the PVWatts call or user input. This is used for GHP COP and ASHP COP and CF values based on the default or custom mapping of those.")
     )
 
+    def clean(self):
+        if self.sector == self.SECTORS.FEDERAL:
+            if self.federal_procurement_type == "":
+                error_messages = {"required inputs": "If sector is federal, must provide federal_procurement_type."}
+            if self.federal_sector_state == "":
+                error_messages = {"required inputs": "If sector is federal, must provide federal_sector_state."}
+            if error_messages:
+                raise ValidationError(error_messages)
+
 class SiteOutputs(BaseModel, models.Model):
     key = "SiteOutputs"
 
