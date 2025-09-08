@@ -7091,7 +7091,7 @@ class HighTempThermalStorageInputs(BaseModel, models.Model):
         help_text="Battery state of charge at first hour of optimization as fraction of energy capacity."
     )
     installed_cost_per_kwh = models.FloatField(
-        default=62,
+        default=86.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e4)
@@ -8881,7 +8881,7 @@ class CSTInputs(BaseModel, models.Model):
         help_text="Power density for CST"
     )
     installed_cost_per_kw = models.FloatField(
-        default=1200,
+        default=2200.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e5)
@@ -8890,7 +8890,7 @@ class CSTInputs(BaseModel, models.Model):
         help_text="Installed CST cost in $/kW"
     )
     om_cost_per_kw = models.FloatField(
-        default=0.0,
+        default=33.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1.0e3)
@@ -8908,13 +8908,13 @@ class CSTInputs(BaseModel, models.Model):
         help_text="Annual CST operations and maintenance costs in $/kWh"
     )
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.FIVE,
+        default=MACRS_YEARS_CHOICES.ZERO,
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.6,
+        default=0.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
