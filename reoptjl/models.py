@@ -466,10 +466,11 @@ class SiteInputs(BaseModel, models.Model):
 
     def clean(self):
         if self.sector == self.SECTORS.FEDERAL:
+            error_messages = {}
             if self.federal_procurement_type == "":
-                error_messages = {"required inputs": "If sector is federal, must provide federal_procurement_type."}
+                error_messages["required inputs"] = "If sector is federal, must provide federal_procurement_type."
             if self.federal_sector_state == "":
-                error_messages = {"required inputs": "If sector is federal, must provide federal_sector_state."}
+                error_messages["required inputs"] = "If sector is federal, must provide federal_sector_state."
             if error_messages:
                 raise ValidationError(error_messages)
 
