@@ -150,6 +150,35 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         self.assertIn("AbsorptionChiller", list(results.keys()))
         self.assertIn("GHP", list(results.keys()))
 
+    def test_sector_defaults_from_julia(self):
+        # Test that the inputs_with_defaults_set_in_julia feature worked for sector defaults, consistent with /sector_defaults
+        post_file = os.path.join('reoptjl', 'test', 'posts', 'sector_defaults_post.json')
+        post = json.load(open(post_file, 'r'))
+        resp = self.api_client.post('/v3/job/', format='json', data=post)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+
+        resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
+        r = json.loads(resp.content)
+        saved_inputs = r["inputs"]
+
+        # Call to the django view endpoint /sector_defaults which calls the http.jl endpoint
+        inputs_defaults = post["Site"]
+        inputs_defaults.pop("latitude")
+        inputs_defaults.pop("longitude")
+        resp = self.api_client.get(f'/v3/sector_defaults', data=inputs_defaults)
+        defaults_view_response = json.loads(resp.content)
+
+        for model_name, saved_model_inputs in saved_inputs.items():
+            model_category = "Storage" if "Storage" in model_name else "Techs" if model_name in ["PV", "Wind", "Generator", "CHP", "GHP"] else model_name
+            for input_key, default_input_val in defaults_view_response.get(model_category, {}).items():
+                if input_key in post[model_name].keys():
+                    # Make sure we didn't overwrite user-input
+                    self.assertEqual(saved_model_inputs.get(input_key), post[model_name][input_key])
+                else:
+                    # Check that default got assigned consistent with /chp_defaults
+                    self.assertEqual(saved_model_inputs.get(input_key), default_input_val)
 
     def test_chp_defaults_from_julia(self):
         # Test that the inputs_with_defaults_set_in_julia feature worked for CHP, consistent with /chp_defaults
