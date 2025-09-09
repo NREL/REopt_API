@@ -432,6 +432,29 @@ function easiur_costs(req::HTTP.Request)
     return HTTP.Response(200, JSON.json(data))
 end
 
+function sector_defaults(req::HTTP.Request)
+    d = JSON.parse(String(req.body))
+    @info "Getting sector dependent defaults..."
+    data = Dict()
+    error_response = Dict()
+    try
+		sector = d["sector"]
+		federal_sector_state = d["federal_sector_state"]
+		federal_procurement_type = d["federal_procurement_type"]
+        data = reoptjl.get_sector_defaults(;sector=sector, federal_procurement_type=federal_procurement_type, federal_sector_state=federal_sector_state)
+        if haskey(data, "error")
+            @info "An error occurred getting the sector defaults"
+            return HTTP.Response(400, JSON.json(data))
+        end
+    catch e
+        @error "Something went wrong getting the sector defaults" exception=(e, catch_backtrace())
+        error_response["error"] = sprint(showerror, e)
+        return HTTP.Response(500, JSON.json(error_response))
+    end
+    @info "Sector defaults determined."
+    return HTTP.Response(200, JSON.json(data))
+end
+
 function simulated_load(req::HTTP.Request)
     d = JSON.parse(String(req.body))
 
@@ -669,6 +692,7 @@ HTTP.register!(ROUTER, "GET", "/chp_defaults", chp_defaults)
 HTTP.register!(ROUTER, "GET", "/avert_emissions_profile", avert_emissions_profile)
 HTTP.register!(ROUTER, "GET", "/cambium_profile", cambium_profile)
 HTTP.register!(ROUTER, "GET", "/easiur_costs", easiur_costs)
+HTTP.register!(ROUTER, "GET", "/sector_defaults", sector_defaults)
 HTTP.register!(ROUTER, "GET", "/simulated_load", simulated_load)
 HTTP.register!(ROUTER, "GET", "/absorption_chiller_defaults", absorption_chiller_defaults)
 HTTP.register!(ROUTER, "GET", "/ghp_efficiency_thermal_factors", ghp_efficiency_thermal_factors)
