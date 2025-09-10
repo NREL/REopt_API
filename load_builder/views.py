@@ -8,28 +8,29 @@ from django.http import JsonResponse
 from reo.exceptions import UnexpectedError
 import os
 
+try:
+    from ensitepy.simextension import enlitepyapi
+except ImportError:
+    enlitepyapi = None
+
 def ensite_view(request):
-    """
-    Attempts to import ensitepy and return the SystemSimulator class.
-    If the package is not available, returns None.
-    """
-    try:
-        from ensitepy.simextension import enlitepyapi
-
-        inputs_path = os.path.join(os.getcwd(), "load_builder", "ensite.json")
-        with open(inputs_path, 'r') as f:
-            enlitepy_json = json.load(f)
-        # print(enlitepy_json)
-        # import remote_pdb
-        # remote_pdb.set_trace(host='0.0.0.0', port=4444)
-        results = enlitepyapi.run(enlitepy_json)
-
-        return JsonResponse({"message": "imported ensitepy and simextension successfully"})
-    except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='ensite')
-        # err.save_to_db()
-        return JsonResponse({"Error": err.message}, status=500)
+    if enlitepyapi is not None:
+        try:
+            if request.method == 'POST':
+                try:
+                    enlitepy_json = json.loads(request.body)
+                except Exception as e:
+                    return JsonResponse({"Error": f"Invalid JSON in request body: {e}"}, status=400)
+                results = enlitepyapi.run(enlitepy_json)
+                return JsonResponse({"results": results})
+            else:
+                return JsonResponse({"Error": "Must POST a JSON body for ensitepy."}, status=400)
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            err = UnexpectedError(exc_type, exc_value, exc_traceback, task='ensite')
+            return JsonResponse({"Error": err.message}, status=500)
+    else:
+        return JsonResponse({"Error": "ensitepy is not installed."}, status=500)
     
 
 def check_load_builder_inputs(loads_table):
