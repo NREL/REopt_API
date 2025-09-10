@@ -293,14 +293,14 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(expected['resilience_hours_avg'], resp['resilience_hours_avg'], places=3)
         self.assertAlmostEqual(expected['outage_durations'], resp['outage_durations'], places=3)
         for x, y in zip(expected['probs_of_surviving'], resp['probs_of_surviving']):
-            self.assertAlmostEquals(x, y, places=3)
+            self.assertAlmostEqual(x, y, places=3)
         for e, r in zip([0, 11], [0, 11]):
             for x, y in zip(expected['probs_of_surviving_by_month'][e], resp['probs_of_surviving_by_month'][r]):
-                self.assertAlmostEquals(x, y, places=3)
+                self.assertAlmostEqual(x, y, places=3)
         for e, r in zip([0, 23], [0, 23]):
             for x, y in zip(expected['probs_of_surviving_by_hour_of_the_day'][e],
                             resp['probs_of_surviving_by_hour_of_the_day'][r]):
-                self.assertAlmostEquals(x, y, places=3)
+                self.assertAlmostEqual(x, y, places=3)
 
     def test_outage_sim(self):
         """
@@ -334,7 +334,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(expected['resilience_hours_avg'], resp['resilience_hours_avg'], places=4)
         self.assertListEqual(expected['outage_durations'], resp['outage_durations'])
         for x, y in zip(expected['probs_of_surviving'], resp['probs_of_surviving']):
-            self.assertAlmostEquals(x, y, places=4)
+            self.assertAlmostEqual(x, y, places=4)
 
     def test_no_resilience(self):
         inputs = self.inputs
@@ -361,7 +361,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(1, resp2['resilience_hours_avg'] / resp1['resilience_hours_avg'], places=1)
 
         for x, y in zip(resp1['probs_of_surviving'], resp2['probs_of_surviving']):
-            self.assertAlmostEquals(x, y, places=1)
+            self.assertAlmostEqual(x, y, places=1)
 
     def test_resil_endpoint(self):
         post = json.load(open(os.path.join('resilience_stats', 'tests', 'POST_nested.json'), 'r'))
@@ -413,4 +413,4 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(expected['resilience_hours_avg'], resp['resilience_hours_avg'], places=4)
         self.assertListEqual(expected['outage_durations'], resp['outage_durations'])
         for x, y in zip(expected['probs_of_surviving'], resp['probs_of_surviving']):
-            self.assertAlmostEquals(x, y, places=4)
+            self.assertAlmostEqual(x, y, places=4)

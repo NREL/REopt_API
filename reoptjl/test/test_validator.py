@@ -322,7 +322,7 @@ class InputValidatorTests(TestCase):
         validator.clean_fields()
         validator.clean()
         validator.cross_clean()
-        self.assertAlmostEquals(validator.models["PV"].tilt, 0)
+        self.assertAlmostEqual(validator.models["PV"].tilt, 0)
 
     def boiler_validation(self):
         """
