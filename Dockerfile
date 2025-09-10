@@ -21,8 +21,5 @@ RUN if [ -d "/opt/reopt/EVI-EnLitePy" ] && [ "$(ls -A /opt/reopt/EVI-EnLitePy)" 
     cd /opt/reopt/EVI-EnLitePy && pip install -e .; \
 fi
 
-# Extra packages for EVI-EnLitePy not included in the requirements.txt file currently
-RUN ["pip", "install", "plotly", "matplotlib", "pydantic"]
-
 EXPOSE 8000
 ENTRYPOINT ["/bin/bash", "-c"]

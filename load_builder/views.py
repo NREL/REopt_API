@@ -19,11 +19,12 @@ def ensite_view(request):
         inputs_path = os.path.join(os.getcwd(), "load_builder", "ensite.json")
         with open(inputs_path, 'r') as f:
             enlitepy_json = json.load(f)
-        print(enlitepy_json)
-
+        # print(enlitepy_json)
+        # import remote_pdb
+        # remote_pdb.set_trace(host='0.0.0.0', port=4444)
         results = enlitepyapi.run(enlitepy_json)
 
-        return "imported ensitepy and simextension successfully"
+        return JsonResponse({"message": "imported ensitepy and simextension successfully"})
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         err = UnexpectedError(exc_type, exc_value, exc_traceback, task='ensite')
