@@ -53,7 +53,7 @@ spec:
           resources:
             requests:
               cpu: {{ .Values.juliaCpuRequest | quote }}
-              memory: {{ .Values.juliaMemoryRequest | quote }}
+              memory: "2000Mi"
             limits:
               cpu: {{ .Values.juliaCpuLimit | quote }}
-              memory: {{ .Values.juliaMemoryLimit | quote }}
+              memory: "2000Mi"

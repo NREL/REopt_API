@@ -496,12 +496,12 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             # preprocessed_BAU_year_one_emissions_tCO2 = self.results_dict.get("preprocessed_BAU_year_one_emissions_tCO2")
             # year_one_emissions_bau_tCO2_out = self.results_dict.get("year_one_emissions_tCO2_bau")
             # year_one_emissions_bau_preprocess_pct_diff = (year_one_emissions_bau_tCO2_out-preprocessed_BAU_year_one_emissions_tCO2)/year_one_emissions_bau_tCO2_out
-            # self.assertAlmostEquals(year_one_emissions_bau_preprocess_pct_diff,0.0,places=2) #(<0.5% error) 
+            # self.assertAlmostEqual(year_one_emissions_bau_preprocess_pct_diff,0.0,places=2) #(<0.5% error) 
             # check pre-processed lifecycle bau CO2 emissions calcs vs lifecycle bau CO2 emissions output
             # preprocessed_BAU_lifecycle_emissions_tCO2 = self.results_dict.get("preprocessed_BAU_lifecycle_emissions_tCO2")
             # lifecycle_emissions_bau_tCO2_out = self.results_dict.get("lifecycle_emissions_tCO2_bau")
             # lifecycle_emissions_bau_preprocess_pct_diff = (lifecycle_emissions_bau_tCO2_out-preprocessed_BAU_lifecycle_emissions_tCO2)/lifecycle_emissions_bau_tCO2_out
-            # self.assertAlmostEquals(lifecycle_emissions_bau_preprocess_pct_diff,0.0,places=2) #(<0.5% error) 
+            # self.assertAlmostEqual(lifecycle_emissions_bau_preprocess_pct_diff,0.0,places=2) #(<0.5% error) 
 
 
             # emissions reductions 

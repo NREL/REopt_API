@@ -6,7 +6,32 @@ import sys
 import numpy as np
 from django.http import JsonResponse
 from reo.exceptions import UnexpectedError
+import os
 
+try:
+    from ensitepy.simextension import enlitepyapi
+except ImportError:
+    enlitepyapi = None
+
+def ensite_view(request):
+    if enlitepyapi is not None:
+        try:
+            if request.method == 'POST':
+                try:
+                    enlitepy_json = json.loads(request.body)
+                except Exception as e:
+                    return JsonResponse({"Error": f"Invalid JSON in request body: {e}"}, status=400)
+                results = enlitepyapi.run(enlitepy_json)
+                return JsonResponse({"results": results})
+            else:
+                return JsonResponse({"Error": "Must POST a JSON body for ensitepy."}, status=400)
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            err = UnexpectedError(exc_type, exc_value, exc_traceback, task='ensite')
+            return JsonResponse({"Error": err.message}, status=500)
+    else:
+        return JsonResponse({"Error": "ensitepy is not installed."}, status=500)
+    
 
 def check_load_builder_inputs(loads_table):
     required_inputs = ["Power (W)", "Quantity", "% Run Time", "Start Mo.", "Stop Mo.", "Start Hr.", "Stop Hr."]
