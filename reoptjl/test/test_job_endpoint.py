@@ -155,8 +155,8 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         post_file = os.path.join('reoptjl', 'test', 'posts', 'sector_defaults_post.json')
         post = json.load(open(post_file, 'r'))
         resp = self.api_client.post('/v3/job/', format='json', data=post)
-        # self.assertHttpCreated(resp)
-        print(resp.content)
+        self.assertHttpCreated(resp)
+        # print(resp.content)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
 
@@ -173,7 +173,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         defaults_view_response = json.loads(resp.content)
 
         for model_name, saved_model_inputs in saved_inputs.items():
-            model_category = "Storage" if "Storage" in model_name else "Techs" if model_name in ["PV", "Wind", "Generator", "CHP", "GHP"] else model_name
+            model_category = "Storage" if "Storage" in model_name else "Techs" if model_name in ["PV", "Wind", "CHP", "GHP"] else model_name
             for input_key, default_input_val in defaults_view_response.get(model_category, {}).items():
                 if input_key in post[model_name].keys():
                     # Make sure we didn't overwrite user-input
