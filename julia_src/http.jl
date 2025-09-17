@@ -164,7 +164,7 @@ function reopt(req::HTTP.Request)
                 ]
                 wind_dict = Dict(key=>getfield(model_inputs.s.wind, key) for key in inputs_with_defaults_from_julia_wind)
             else
-                pv_dict = Dict()
+                wind_dict = Dict()
             end           
 			inputs_with_defaults_set_in_julia = Dict(
 				"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_julia_financial),
