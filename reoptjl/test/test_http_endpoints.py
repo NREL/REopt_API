@@ -307,14 +307,12 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         print(resp.content)
         # self.assertHttpOK(resp)
         view_response = json.loads(resp.content)
-        for tech in ["PV", "Wind", "CHP", "GHP"]:
-            self.assertTrue(view_response.get(tech) is not None)
-            for key in ["macrs_option_years", "macrs_bonus_fraction", "federal_itc_fraction"]:
-                self.assertTrue(view_response[tech].get(key) is not None)
-        for stor in ["ElectricStorage", "ColdThermalStorage", "HotThermalStorage"]:
-            self.assertTrue(view_response.get(stor) is not None)
-            for key in ["macrs_option_years", "macrs_bonus_fraction", "total_itc_fraction"]:
-                self.assertTrue(view_response[stor].get(key) is not None)
+        self.assertTrue(view_response.get("Techs") is not None)
+        for key in ["macrs_option_years", "macrs_bonus_fraction", "federal_itc_fraction"]:
+            self.assertTrue(view_response["Techs"].get(key) is not None)
+        self.assertTrue(view_response.get("Storage") is not None)
+        for key in ["macrs_option_years", "macrs_bonus_fraction", "total_itc_fraction"]:
+            self.assertTrue(view_response["Storage"].get(key) is not None)
         self.assertTrue(view_response.get("Financial") is not None)
         for key in ["elec_cost_escalation_rate_fraction", "existing_boiler_fuel_cost_escalation_rate_fraction", "boiler_fuel_cost_escalation_rate_fraction", "chp_fuel_cost_escalation_rate_fraction", "generator_fuel_cost_escalation_rate_fraction"]:
             self.assertTrue(view_response["Financial"].get(key) is not None)
