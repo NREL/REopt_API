@@ -17,7 +17,8 @@ from reoptjl.models import Settings, PVInputs, ElectricStorageInputs, WindInputs
     ColdThermalStorageInputs, ColdThermalStorageOutputs, AbsorptionChillerInputs, AbsorptionChillerOutputs,\
     FinancialInputs, FinancialOutputs, UserUnlinkedRuns, BoilerInputs, BoilerOutputs, SteamTurbineInputs, \
     SteamTurbineOutputs, GHPInputs, GHPOutputs, ProcessHeatLoadInputs, ElectricHeaterInputs, ElectricHeaterOutputs, \
-    ASHPSpaceHeaterInputs, ASHPSpaceHeaterOutputs, ASHPWaterHeaterInputs, ASHPWaterHeaterOutputs, PortfolioUnlinkedRuns
+    ASHPSpaceHeaterInputs, ASHPSpaceHeaterOutputs, ASHPWaterHeaterInputs, ASHPWaterHeaterOutputs, PortfolioUnlinkedRuns, \
+    CSTInputs, CSTOutputs, HighTempThermalStorageInputs, HighTempThermalStorageOutputs
 
 import os
 import requests
@@ -70,6 +71,7 @@ def help(request):
         d["ExistingBoiler"] = ExistingBoilerInputs.info_dict(ExistingBoilerInputs)
         d["Boiler"] = BoilerInputs.info_dict(BoilerInputs)
         d["HotThermalStorage"] = HotThermalStorageInputs.info_dict(HotThermalStorageInputs)
+        d["HighTempThermalStorage"] = HighTempThermalStorageInputs.info_dict(HighTempThermalStorageInputs)
         d["ColdThermalStorage"] = ColdThermalStorageInputs.info_dict(ColdThermalStorageInputs)
         d["SpaceHeatingLoad"] = SpaceHeatingLoadInputs.info_dict(SpaceHeatingLoadInputs)
         d["DomesticHotWaterLoad"] = DomesticHotWaterLoadInputs.info_dict(DomesticHotWaterLoadInputs)
@@ -82,6 +84,7 @@ def help(request):
         d["ElectricHeater"] = ElectricHeaterInputs.info_dict(ElectricHeaterInputs)
         d["ASHPSpaceHeater"] = ASHPSpaceHeaterInputs.info_dict(ASHPSpaceHeaterInputs)
         d["ASHPWaterHeater"] = ASHPWaterHeaterInputs.info_dict(ASHPWaterHeaterInputs)
+        d["CST"] = CSTInputs.info_dict(CSTInputs)
 
         return JsonResponse(d)
 
@@ -121,6 +124,7 @@ def outputs(request):
         d["ExistingBoiler"] = ExistingBoilerOutputs.info_dict(ExistingBoilerOutputs)
         d["Boiler"] = BoilerOutputs.info_dict(BoilerOutputs)
         d["HotThermalStorage"] = HotThermalStorageOutputs.info_dict(HotThermalStorageOutputs)
+        d["HighTempThermalStorage"] = HighTempThermalStorageOutputs.info_dict(HighTempThermalStorageOutputs)
         d["ColdThermalStorage"] = ColdThermalStorageOutputs.info_dict(ColdThermalStorageOutputs)
         d["Site"] = SiteOutputs.info_dict(SiteOutputs)
         d["HeatingLoad"] = HeatingLoadOutputs.info_dict(HeatingLoadOutputs)
@@ -133,6 +137,8 @@ def outputs(request):
         d["ASHPWaterHeater"] = ASHPWaterHeaterOutputs.info_dict(ASHPWaterHeaterOutputs)
         d["Messages"] = REoptjlMessageOutputs.info_dict(REoptjlMessageOutputs)
         d["SteamTurbine"] = SteamTurbineOutputs.info_dict(SteamTurbineOutputs)
+        d["CST"] = CSTOutputs.info_dict(CSTOutputs)
+        
         return JsonResponse(d)
 
     except Exception as e:
@@ -222,7 +228,7 @@ def results(request, run_uuid):
 
     try: r["inputs"]["ExistingChiller"] = meta.ExistingChillerInputs.dict
     except: pass
-	
+    
     try: r["inputs"]["ExistingBoiler"] = meta.ExistingBoilerInputs.dict
     except: pass
 
@@ -230,6 +236,9 @@ def results(request, run_uuid):
     except: pass
 
     try: r["inputs"]["HotThermalStorage"] = meta.HotThermalStorageInputs.dict
+    except: pass
+
+    try: r["inputs"]["HighTempThermalStorage"] = meta.HighTempThermalStorageInputs.dict
     except: pass
 
     try: r["inputs"]["ColdThermalStorage"] = meta.ColdThermalStorageInputs.dict
@@ -264,6 +273,9 @@ def results(request, run_uuid):
 
     try: r["inputs"]["ASHPWaterHeater"] = meta.ASHPWaterHeaterInputs.dict
     except: pass  
+
+    try: r["inputs"]["CST"] = meta.CSTInputs.dict
+    except: pass
 
     try:
         r["outputs"] = dict()
@@ -323,6 +335,8 @@ def results(request, run_uuid):
 
         try: r["outputs"]["HotThermalStorage"] = meta.HotThermalStorageOutputs.dict
         except: pass
+        try: r["outputs"]["HighTempThermalStorage"] = meta.HighTempThermalStorageOutputs.dict
+        except: pass
         try: r["outputs"]["ColdThermalStorage"] = meta.ColdThermalStorageOutputs.dict
         except: pass
         try: r["outputs"]["CHP"] = meta.CHPOutputs.dict
@@ -342,6 +356,8 @@ def results(request, run_uuid):
         try: r["outputs"]["ASHPSpaceHeater"] = meta.ASHPSpaceHeaterOutputs.dict
         except: pass  
         try: r["outputs"]["ASHPWaterHeater"] = meta.ASHPWaterHeaterOutputs.dict
+        except: pass
+        try: r["outputs"]["CST"] = meta.CSTOutputs.dict
         except: pass
 
         for d in r["outputs"].values():
@@ -943,7 +959,9 @@ def summary(request, user_uuid):
                   "wind_kw",                    # Wind Size (kW)
                   "gen_kw",                     # Generator Size (kW)
                   "batt_kw",                    # Battery Power (kW)
-                  "batt_kwh"                    # Battery Capacity (kWh)
+                  "batt_kwh",                   # Battery Capacity (kWh)
+                  "cst_kw",                     # CST Size (kW)
+                  "hightemptes_kwh"             # High Temp TES Capacity (kWh)
                   ""
                 }]
         }
@@ -1087,7 +1105,7 @@ def summary_by_chunk(request, user_uuid, chunk):
 def create_summary_dict(user_uuid:str,summary_dict:dict):
 
     # if these keys are missing from a `scenario` we add 0s for them, all Floats.
-    optional_keys = ["npv_us_dollars", "net_capital_costs", "year_one_savings_us_dollars", "pv_kw", "wind_kw", "gen_kw", "batt_kw", "batt_kwh"]
+    optional_keys = ["npv_us_dollars", "net_capital_costs", "year_one_savings_us_dollars", "pv_kw", "wind_kw", "gen_kw", "batt_kw", "batt_kwh", "cst_kw", "hightemptes_kwh"]
 
     # Create eventual response dictionary
     return_dict = dict()
@@ -1307,6 +1325,22 @@ def queryset_for_summary(api_metas,summary_dict:dict):
     if len(gen) > 0:
         for m in gen:
             summary_dict[str(m.meta.run_uuid)]['gen_kw'] = m.size_kw
+
+    cst = CSTOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'size_kw'
+    )
+    if len(cst) > 0:
+        for m in cst:
+            summary_dict[str(m.meta.run_uuid)]['cst_kw'] = m.size_kw
+
+    hightemptes = HighTempThermalStorageOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'size_kwh'
+    )
+    if len(hightemptes) > 0:
+        for m in hightemptes:
+            summary_dict[str(m.meta.run_uuid)]['hightemptes_kwh'] = m.size_kwh
 
     # assumes run_uuids exist in both CHPInputs and CHPOutputs
     chpInputs = CHPInputs.objects.filter(meta__run_uuid__in=run_uuids).only(
