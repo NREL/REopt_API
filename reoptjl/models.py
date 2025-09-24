@@ -722,6 +722,7 @@ class FinancialInputs(BaseModel, models.Model):
             MaxValueValidator(1)
         ],
         blank=True,
+        null=True,
         help_text="Annual nominal utility electricity cost escalation rate."
     )
     offtaker_discount_rate_fraction = models.FloatField(
@@ -730,6 +731,7 @@ class FinancialInputs(BaseModel, models.Model):
             MaxValueValidator(1)
         ],
         blank=True,
+        null=True,
         help_text=("Nominal energy offtaker discount rate. In single ownership model the offtaker is also the "
                    "generation owner.")
     )
@@ -739,6 +741,7 @@ class FinancialInputs(BaseModel, models.Model):
             MaxValueValidator(0.999)
         ],
         blank=True,
+        null=True,
         help_text="Host tax rate"
     )
     om_cost_escalation_rate_fraction = models.FloatField(
@@ -747,6 +750,7 @@ class FinancialInputs(BaseModel, models.Model):
             MaxValueValidator(1)
         ],
         blank=True,
+        null=True,
         help_text="Annual nominal O&M cost escalation rate"
     )
     owner_discount_rate_fraction = models.FloatField(
@@ -755,6 +759,7 @@ class FinancialInputs(BaseModel, models.Model):
             MaxValueValidator(1)
         ],
         blank=True,
+        null=True,
         help_text=("Nominal generation owner discount rate. Used for two party financing model. In two party ownership "
                    "model the offtaker does not own the generator(s).")
     )
@@ -764,11 +769,13 @@ class FinancialInputs(BaseModel, models.Model):
             MaxValueValidator(0.999)
         ],
         blank=True,
+        null=True,
         help_text=("Generation owner tax rate. Used for two party financing model. In two party ownership model the "
                    "offtaker does not own the generator(s).")
     )
     third_party_ownership = models.BooleanField(
         blank=True,
+        null=True,
         help_text=("Specify if ownership model is direct ownership or two party. In two party model the offtaker does "
                    "not purcharse the generation technologies, but pays the generation owner for energy from the "
                    "generator(s).")
@@ -944,6 +951,7 @@ class FinancialInputs(BaseModel, models.Model):
             MaxValueValidator(1)
         ],
         blank=True,
+        null=True,
         help_text=("Annual nominal boiler fuel cost escalation rate")
     )    
     existing_boiler_fuel_cost_escalation_rate_fraction = models.FloatField(
@@ -952,6 +960,7 @@ class FinancialInputs(BaseModel, models.Model):
             MaxValueValidator(1)
         ],
         blank=True,
+        null=True,
         help_text=("Annual nominal existing boiler fuel cost escalation rate")
     )
     boiler_fuel_cost_escalation_rate_fraction = models.FloatField(
@@ -960,6 +969,7 @@ class FinancialInputs(BaseModel, models.Model):
             MaxValueValidator(1)
         ],
         blank=True,
+        null=True,
         help_text=("Annual nominal boiler fuel cost escalation rate")
     )
     chp_fuel_cost_escalation_rate_fraction = models.FloatField(
@@ -968,6 +978,7 @@ class FinancialInputs(BaseModel, models.Model):
             MaxValueValidator(1)
         ],
         blank=True,
+        null=True,
         help_text=("Annual nominal chp fuel cost escalation rate")
     )
 
@@ -2810,6 +2821,7 @@ class PVInputs(BaseModel, models.Model):
     macrs_option_years = models.IntegerField(
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
+        null=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
@@ -2818,6 +2830,7 @@ class PVInputs(BaseModel, models.Model):
             MaxValueValidator(1)
         ],
         blank=True,
+        null=True,
         help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
     )
     macrs_itc_reduction = models.FloatField(
@@ -2835,6 +2848,7 @@ class PVInputs(BaseModel, models.Model):
             MaxValueValidator(1)
         ],
         blank=True,
+        null=True,
         help_text="Percentage of capital costs that are credited towards federal taxes"
     )
     state_ibi_fraction = models.FloatField(
@@ -3251,6 +3265,7 @@ class WindInputs(BaseModel, models.Model):
     macrs_option_years = models.IntegerField(
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
+        null=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
@@ -3259,6 +3274,7 @@ class WindInputs(BaseModel, models.Model):
             MaxValueValidator(1)
         ],
         blank=True,
+        null=True,
         help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
     )
     macrs_itc_reduction = models.FloatField(
@@ -3276,6 +3292,7 @@ class WindInputs(BaseModel, models.Model):
             MaxValueValidator(1)
         ],
         blank=True,
+        null=True,
         help_text="Percentage of capital costs that are credited towards federal taxes"
     )
     state_ibi_fraction = models.FloatField(
@@ -3667,6 +3684,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
     macrs_option_years = models.IntegerField(
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
+        null=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
@@ -3675,6 +3693,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
             MaxValueValidator(1)
         ],
         blank=True,
+        null=True,
         help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
     )
     macrs_itc_reduction = models.FloatField(
@@ -3692,6 +3711,7 @@ class ElectricStorageInputs(BaseModel, models.Model):
             MaxValueValidator(1)
         ],
         blank=True,
+        null=True,
         help_text="Total investment tax credit in percent applied toward capital costs"
     )
     total_rebate_per_kw = models.FloatField(
@@ -4454,6 +4474,7 @@ class CHPInputs(BaseModel, models.Model):
     macrs_option_years = models.IntegerField(
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
+        null=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
@@ -4462,6 +4483,7 @@ class CHPInputs(BaseModel, models.Model):
             MaxValueValidator(1)
         ],
         blank=True,
+        null=True,
         help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
     )
     macrs_itc_reduction = models.FloatField(
@@ -4479,6 +4501,7 @@ class CHPInputs(BaseModel, models.Model):
             MaxValueValidator(1)
         ],
         blank=True,
+        null=True,
         help_text="Percentage of capital costs that are credited towards federal taxes"
     )
     federal_rebate_per_kw = models.FloatField(
@@ -6911,6 +6934,7 @@ class HotThermalStorageInputs(BaseModel, models.Model):
     macrs_option_years = models.IntegerField(
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
+        null=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
@@ -6919,6 +6943,7 @@ class HotThermalStorageInputs(BaseModel, models.Model):
             MaxValueValidator(1)
         ],
         blank=True,
+        null=True,
         help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
     )
     macrs_itc_reduction = models.FloatField(
@@ -6936,6 +6961,7 @@ class HotThermalStorageInputs(BaseModel, models.Model):
             MaxValueValidator(1)
         ],
         blank=True,
+        null=True,
         help_text="Total investment tax credit in percent applied toward capital costs"
     )
     total_rebate_per_kwh = models.FloatField(
@@ -7112,6 +7138,7 @@ class ColdThermalStorageInputs(BaseModel, models.Model):
     macrs_option_years = models.IntegerField(
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
+        null=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
@@ -7120,6 +7147,7 @@ class ColdThermalStorageInputs(BaseModel, models.Model):
             MaxValueValidator(1)
         ],
         blank=True,
+        null=True,
         help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
     )
     macrs_itc_reduction = models.FloatField(
@@ -7137,6 +7165,7 @@ class ColdThermalStorageInputs(BaseModel, models.Model):
             MaxValueValidator(1)
         ],
         blank=True,
+        null=True,
         help_text="Total investment tax credit in percent applied toward capital costs"
     )
     total_rebate_per_kwh = models.FloatField(
@@ -8410,6 +8439,7 @@ class GHPInputs(BaseModel, models.Model):
     macrs_option_years = models.IntegerField(
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
+        null=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
@@ -8418,6 +8448,7 @@ class GHPInputs(BaseModel, models.Model):
             MaxValueValidator(1)
         ],
         blank=True,
+        null=True,
         help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
     )
     macrs_itc_reduction = models.FloatField(
@@ -8435,6 +8466,7 @@ class GHPInputs(BaseModel, models.Model):
             MaxValueValidator(1)
         ],
         blank=True,
+        null=True,
         help_text="Percentage of capital costs that are credited towards federal taxes"
     )
     state_ibi_fraction = models.FloatField(
