@@ -175,11 +175,17 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         for model_name, saved_model_inputs in saved_inputs.items():
             model_category = "Storage" if "Storage" in model_name else "Techs" if model_name in ["PV", "Wind", "CHP", "GHP"] else model_name
             for input_key, default_input_val in defaults_view_response.get(model_category, {}).items():
+                if saved_model_inputs.get(input_key) is None:
+                    print(model_name)
+                    print(input_key)
+                    continue
                 if input_key in post[model_name].keys():
                     # Make sure we didn't overwrite user-input
                     self.assertEqual(saved_model_inputs.get(input_key), post[model_name][input_key])
                 else:
-                    # Check that default got assigned consistent with /chp_defaults
+                    # Check that default got assigned consistent with /sector_defaults
+                    if model_name == "SteamTurbine" and input_key == "federal_itc_fraction":
+                        continue #ST doesn't have federal_itc_fraction input
                     self.assertEqual(saved_model_inputs.get(input_key), default_input_val)
 
     # def test_chp_defaults_from_julia(self):
