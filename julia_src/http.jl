@@ -135,7 +135,8 @@ function reopt(req::HTTP.Request)
 					:size_class, :gearbox_generator_efficiency, :isentropic_efficiency, 
 					:inlet_steam_pressure_psig, :inlet_steam_temperature_degF, :installed_cost_per_kw, :om_cost_per_kwh, 
 					:outlet_steam_pressure_psig, :net_to_gross_electric_ratio, :electric_produced_to_thermal_consumed_ratio,
-                    :thermal_produced_to_thermal_consumed_ratio
+                    :thermal_produced_to_thermal_consumed_ratio,
+                    :macrs_option_years, :macrs_bonus_fraction, :federal_itc_fraction
 				]
 				steamturbine_dict = Dict(key=>getfield(model_inputs.s.steam_turbine, key) for key in inputs_with_defaults_from_julia_steamturbine)
 			else
