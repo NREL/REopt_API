@@ -205,7 +205,31 @@ function reopt(req::HTTP.Request)
                 wind_dict = Dict(key=>getfield(model_inputs.s.wind, key) for key in inputs_with_defaults_from_julia_wind)
             else
                 wind_dict = Dict()
-            end           
+            end     
+            if haskey(d, "ElectricStorage")
+                inputs_with_defaults_from_julia_electric_storage = [
+                    :macrs_option_years, :macrs_bonus_fraction, :total_itc_fraction
+                ]
+                electric_storage_dict = Dict(key=>getfield(model_inputs.s.storage.attr["ElectricStorage"], key) for key in inputs_with_defaults_from_julia_electric_storage)
+            else
+                electric_storage_dict = Dict()
+            end      
+            if haskey(d, "ColdThermalStorage")
+                inputs_with_defaults_from_julia_cold_storage = [
+                    :macrs_option_years, :macrs_bonus_fraction, :total_itc_fraction
+                ]
+                cold_storage_dict = Dict(key=>getfield(model_inputs.s.storage.attr["ColdThermalStorage"], key) for key in inputs_with_defaults_from_julia_cold_storage)
+            else
+                cold_storage_dict = Dict()
+            end         
+            if haskey(d, "HotThermalStorage")
+                inputs_with_defaults_from_julia_hot_storage = [
+                    :macrs_option_years, :macrs_bonus_fraction, :total_itc_fraction
+                ]
+                hot_storage_dict = Dict(key=>getfield(model_inputs.s.storage.attr["HotThermalStorage"], key) for key in inputs_with_defaults_from_julia_hot_storage)
+            else
+                hot_storage_dict = Dict()
+            end    
 			inputs_with_defaults_set_in_julia = Dict(
 				"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_julia_financial),
 				"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert_or_cambium),
@@ -217,7 +241,10 @@ function reopt(req::HTTP.Request)
                 "ASHPSpaceHeater" => ashp_dict,
                 "ASHPWaterHeater" => ashp_wh_dict,
                 "PV" => pv_dict,
-                "Wind" => wind_dict
+                "Wind" => wind_dict,
+                "ElectricStorage" => electric_storage_dict,
+                "ColdThermalStorage" => cold_storage_dict,
+                "HotThermalStorage" => hot_storage_dict
 			)
 		catch e
 			@error "Something went wrong in REopt optimization!" exception=(e, catch_backtrace())
