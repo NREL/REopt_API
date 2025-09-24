@@ -1,4 +1,4 @@
-using HTTP, JSON, JuMP
+using HTTP, JSON, JuMP, JSON
 using HiGHS, Cbc, SCIP
 using GhpGhx
 import REopt as reoptjl  # For REopt.jl, needed because we still have local REopt.jl module for V1/V2
@@ -17,6 +17,40 @@ if xpress_installed == "True"
     include("xpress_functions.jl")  # Includes both get_solver_model(XpressModel) and job endpoint for v1/v2
 else
     @warn "Xpress solver is not setup, so only Settings.solver_choice = 'HiGHS', 'Cbc', or 'SCIP' options are available."
+end
+
+function struct_to_dict(obj)
+    result = Dict{String, Any}()
+    if obj === nothing
+        return result
+    end
+
+    field_names = fieldnames(typeof(obj))
+    for field_name in field_names
+        field_value = getfield(obj, field_name)
+        field_name_str = string(field_name)
+        if field_name_str == "ref" || field_name_str == "mem" || field_name_str == "ptr"
+            continue
+        end
+        if field_value === nothing
+            result[field_name_str] = ""
+        elseif typeof(field_value) <: Vector && !isempty(field_value)
+            # Handle arrays
+            if all(x -> isstructtype(typeof(x)) || hasproperty(x, :__dict__), field_value)
+                result[field_name_str] = [struct_to_dict(item) for item in field_value if item !== nothing]
+            else
+                result[field_name_str] = collect(field_value)
+            end
+        elseif isstructtype(typeof(field_value)) || hasproperty(field_value, :__dict__)
+            # Nested struct
+            result[field_name_str] = struct_to_dict(field_value)
+        else
+            # Primitive types
+            result[field_name_str] = field_value
+        end
+    end
+    
+    return result
 end
 
 function reopt(req::HTTP.Request)
@@ -38,6 +72,11 @@ function reopt(req::HTTP.Request)
 	timeout_seconds = pop!(settings, "timeout_seconds")
 	optimality_tolerance = pop!(settings, "optimality_tolerance")
     solver_attributes = SolverAttributes(timeout_seconds, optimality_tolerance)    
+    
+    open("debug_reopt_inputs_to_julia.json","w") do f
+        JSON.print(f, d, 4)
+    end
+
 	run_bau = pop!(settings, "run_bau")
 	ms = nothing
 	if run_bau
@@ -183,6 +222,13 @@ function reopt(req::HTTP.Request)
 			@error "Something went wrong in REopt optimization!" exception=(e, catch_backtrace())
 			error_response["error"] = sprint(showerror, e) # append instead of rewrite?
 		end
+
+        open("debug_reopt_all_inputs_from_julia.json","w") do f
+            JSON.print(f, struct_to_dict(model_inputs.s), 4)
+        end
+        open("debug_reopt_inputs_with_defaults_from_julia.json","w") do f
+            JSON.print(f, inputs_with_defaults_set_in_julia, 4)
+        end
 	end
     
 	if typeof(ms) <: AbstractArray
