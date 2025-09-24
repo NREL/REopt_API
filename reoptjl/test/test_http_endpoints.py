@@ -304,8 +304,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
             "federal_sector_state": "CA"
         }
         resp = self.api_client.get(f'/v3/sector_defaults', data=inputs)
-        print(resp.content)
-        # self.assertHttpOK(resp)
+        self.assertHttpOK(resp)
         view_response = json.loads(resp.content)
         self.assertTrue(view_response.get("Techs") is not None)
         for key in ["macrs_option_years", "macrs_bonus_fraction", "federal_itc_fraction"]:
