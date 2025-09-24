@@ -1,5 +1,5 @@
 {
-  "Settings": {"solver_name": "HiGHS"},
+  "Settings": {"solver_name": "HiGHS", "run_bau": false},
   "Site": {
     "latitude": 37.78, 
     "longitude": -122.45,
@@ -56,9 +56,6 @@
   "PV": {
       "max_kw": 1000.0,
       "federal_itc_fraction": 0.2
-  },
-  "Wind": {
-      "max_kw": 1000.0
   },
   "ElectricStorage": {
     "max_kw": 100.0,
