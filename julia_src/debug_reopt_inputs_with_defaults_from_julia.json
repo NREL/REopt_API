@@ -4,7 +4,7 @@
         "cop": 4.69
     },
     "CHP": {
-        "macrs_option_years": 5,
+        "macrs_option_years": 0,
         "om_cost_per_kwh": 0.0185,
         "size_class": 4,
         "unavailability_periods": [
@@ -80,14 +80,14 @@
             500.0,
             1000.0
         ],
-        "federal_itc_fraction": 0.3,
+        "federal_itc_fraction": 0.0,
         "cooling_thermal_factor": 0.85,
         "installed_cost_per_kw": [
             3150.0,
             2800.0
         ],
         "thermal_efficiency_half_load": 0.169,
-        "macrs_bonus_fraction": 0.6,
+        "macrs_bonus_fraction": 0.0,
         "min_turn_down_fraction": 0.25,
         "electric_efficiency_half_load": 0.3655
     },
@@ -43908,38 +43908,38 @@
     },
     "GHP": {
         "space_heating_efficiency_thermal_factor": 0.85,
-        "macrs_option_years": 5,
-        "macrs_bonus_fraction": 0.6,
+        "macrs_option_years": 0,
+        "macrs_bonus_fraction": 0.0,
         "cooling_efficiency_thermal_factor": 0.6,
-        "federal_itc_fraction": 0.3
+        "federal_itc_fraction": 0.0
     },
     "ASHPWaterHeater": {},
     "PV": {
-        "macrs_option_years": 5,
+        "macrs_option_years": 0,
         "installed_cost_per_kw": 1920.0,
         "size_class": 3,
         "om_cost_per_kw": 20.0,
-        "macrs_bonus_fraction": 0.6,
+        "macrs_bonus_fraction": 0.0,
         "federal_itc_fraction": 0.2
     },
     "Financial": {
         "third_party_ownership": false,
-        "generator_fuel_cost_escalation_rate_fraction": 0.012,
-        "elec_cost_escalation_rate_fraction": 0.017,
+        "generator_fuel_cost_escalation_rate_fraction": 0.0,
+        "elec_cost_escalation_rate_fraction": 0.0,
         "SO2_grid_cost_per_tonne": 60462.16262885879,
         "chp_fuel_cost_escalation_rate_fraction": 0.025,
         "NOx_grid_cost_per_tonne": 28738.983465881724,
-        "boiler_fuel_cost_escalation_rate_fraction": 0.015,
+        "boiler_fuel_cost_escalation_rate_fraction": 0.0,
         "NOx_onsite_fuelburn_cost_per_tonne": 32438.198569375425,
         "NOx_cost_escalation_rate_fraction": 0.03610448275506671,
         "SO2_cost_escalation_rate_fraction": 0.041180965039292236,
         "SO2_onsite_fuelburn_cost_per_tonne": 60470.88693177058,
-        "offtaker_tax_rate_fraction": 0.26,
+        "offtaker_tax_rate_fraction": 0.0,
         "PM25_onsite_fuelburn_cost_per_tonne": 600470.557298429,
-        "owner_tax_rate_fraction": 0.26,
-        "owner_discount_rate_fraction": 0.0638,
-        "existing_boiler_fuel_cost_escalation_rate_fraction": 0.015,
-        "offtaker_discount_rate_fraction": 0.0638,
+        "owner_tax_rate_fraction": 0.0,
+        "owner_discount_rate_fraction": 0.042,
+        "existing_boiler_fuel_cost_escalation_rate_fraction": 0.0,
+        "offtaker_discount_rate_fraction": 0.042,
         "PM25_cost_escalation_rate_fraction": 0.0379950883708564,
         "PM25_grid_cost_per_tonne": 338178.75850051065,
         "om_cost_escalation_rate_fraction": 0.02
