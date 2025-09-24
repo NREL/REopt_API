@@ -717,7 +717,6 @@ class FinancialInputs(BaseModel, models.Model):
         help_text="Analysis period in years. Must be integer."
     )
     elec_cost_escalation_rate_fraction = models.FloatField(
-        default=0.017,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -726,7 +725,6 @@ class FinancialInputs(BaseModel, models.Model):
         help_text="Annual nominal utility electricity cost escalation rate."
     )
     offtaker_discount_rate_fraction = models.FloatField(
-        default=0.0638,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -736,7 +734,6 @@ class FinancialInputs(BaseModel, models.Model):
                    "generation owner.")
     )
     offtaker_tax_rate_fraction = models.FloatField(
-        default=0.26,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(0.999)
@@ -745,7 +742,6 @@ class FinancialInputs(BaseModel, models.Model):
         help_text="Host tax rate"
     )
     om_cost_escalation_rate_fraction = models.FloatField(
-        default=0.025,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -754,7 +750,6 @@ class FinancialInputs(BaseModel, models.Model):
         help_text="Annual nominal O&M cost escalation rate"
     )
     owner_discount_rate_fraction = models.FloatField(
-        default=0.0638,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -764,7 +759,6 @@ class FinancialInputs(BaseModel, models.Model):
                    "model the offtaker does not own the generator(s).")
     )
     owner_tax_rate_fraction = models.FloatField(
-        default=0.26,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(0.999)
@@ -774,7 +768,6 @@ class FinancialInputs(BaseModel, models.Model):
                    "offtaker does not own the generator(s).")
     )
     third_party_ownership = models.BooleanField(
-        default=False,
         blank=True,
         help_text=("Specify if ownership model is direct ownership or two party. In two party model the offtaker does "
                    "not purcharse the generation technologies, but pays the generation owner for energy from the "
@@ -946,7 +939,6 @@ class FinancialInputs(BaseModel, models.Model):
         help_text=("Annual nominal escalation rate of the public health cost of 1 tonne of PM2.5 emissions (as a decimal). The default value is calculated from the EASIUR model for a height of 150m.")
     )
     generator_fuel_cost_escalation_rate_fraction = models.FloatField(
-        default=0.012,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -955,7 +947,6 @@ class FinancialInputs(BaseModel, models.Model):
         help_text=("Annual nominal boiler fuel cost escalation rate")
     )    
     existing_boiler_fuel_cost_escalation_rate_fraction = models.FloatField(
-        default=0.015,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -964,7 +955,6 @@ class FinancialInputs(BaseModel, models.Model):
         help_text=("Annual nominal existing boiler fuel cost escalation rate")
     )
     boiler_fuel_cost_escalation_rate_fraction = models.FloatField(
-        default=0.015,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -973,7 +963,6 @@ class FinancialInputs(BaseModel, models.Model):
         help_text=("Annual nominal boiler fuel cost escalation rate")
     )
     chp_fuel_cost_escalation_rate_fraction = models.FloatField(
-        default=0.015,
         validators=[
             MinValueValidator(-1),
             MaxValueValidator(1)
@@ -2819,13 +2808,11 @@ class PVInputs(BaseModel, models.Model):
         help_text="Annual PV operations and maintenance costs in $/kW"
     )
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.FIVE,
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -2843,7 +2830,6 @@ class PVInputs(BaseModel, models.Model):
         help_text="Percent of the ITC value by which depreciable basis is reduced"
     )
     federal_itc_fraction = models.FloatField(
-        default=0.3,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -3263,13 +3249,11 @@ class WindInputs(BaseModel, models.Model):
         help_text="Annual operations and maintenance costs in $/kW"
     )
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.FIVE,
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -3287,7 +3271,6 @@ class WindInputs(BaseModel, models.Model):
         help_text="Percent of the ITC value by which depreciable basis is reduced"
     )
     federal_itc_fraction = models.FloatField(
-        default=0.3,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -3682,13 +3665,11 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Annual O&M cost as a fraction of installed cost."
     )
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.SEVEN,
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -3706,7 +3687,6 @@ class ElectricStorageInputs(BaseModel, models.Model):
         help_text="Percent of the ITC value by which depreciable basis is reduced"
     )
     total_itc_fraction = models.FloatField(
-        default=0.3,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -4472,13 +4452,11 @@ class CHPInputs(BaseModel, models.Model):
 
     #Financial and emissions    
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.FIVE,
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -4496,7 +4474,6 @@ class CHPInputs(BaseModel, models.Model):
         help_text="Percent of the ITC value by which depreciable basis is reduced"
     )
     federal_itc_fraction = models.FloatField(
-        default=0.3,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -6733,7 +6710,6 @@ class SteamTurbineInputs(BaseModel, models.Model):
     )
 
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.ZERO,
         choices=MACRS_YEARS_CHOICES.choices,
         null=True,
         blank=True,
@@ -6741,7 +6717,6 @@ class SteamTurbineInputs(BaseModel, models.Model):
     )
 
     macrs_bonus_fraction = models.FloatField(
-        default=0.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -6934,13 +6909,11 @@ class HotThermalStorageInputs(BaseModel, models.Model):
         help_text="Thermal energy-based cost of TES (e.g. volume of the tank)"
     )
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.SEVEN,
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -6958,7 +6931,6 @@ class HotThermalStorageInputs(BaseModel, models.Model):
         help_text="Percent of the ITC value by which depreciable basis is reduced"
     )
     total_itc_fraction = models.FloatField(
-        default=0.3,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -7138,13 +7110,11 @@ class ColdThermalStorageInputs(BaseModel, models.Model):
         help_text="Thermal energy-based cost of TES (e.g. volume of the tank)"
     )
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.SEVEN,
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -7162,7 +7132,6 @@ class ColdThermalStorageInputs(BaseModel, models.Model):
         help_text="Percent of the ITC value by which depreciable basis is reduced"
     )
     total_itc_fraction = models.FloatField(
-        default=0.3,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -8439,13 +8408,11 @@ class GHPInputs(BaseModel, models.Model):
     )
 
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.FIVE,
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=0.6,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -8463,7 +8430,6 @@ class GHPInputs(BaseModel, models.Model):
         help_text="Percent of the ITC value by which depreciable basis is reduced"
     )
     federal_itc_fraction = models.FloatField(
-        default=0.3,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
