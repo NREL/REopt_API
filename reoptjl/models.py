@@ -8966,6 +8966,12 @@ class CSTInputs(BaseModel, models.Model):
         blank=True,
         help_text="Boolean indicator if CST can only supply hot TES"   
     )
+    can_waste_heat = models.BooleanField(
+        default=True,
+        null=True, 
+        blank=True,
+        help_text="Boolean indicator if CST waste (not use) heat relative to its potential production"   
+    )    
     emissions_factor_lb_CO2_per_mmbtu = models.FloatField(
         validators=[
             MinValueValidator(0),
