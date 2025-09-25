@@ -520,6 +520,10 @@ function sector_defaults(req::HTTP.Request)
             @info "An error occurred getting the sector defaults"
             return HTTP.Response(400, JSON.json(data))
         end
+        if isempty(data)
+            @info "No sector defaults found for the provided inputs"
+            return HTTP.Response(400, JSON.json(Dict("error" => "No sector defaults found for the provided inputs")))
+        end
     catch e
         @error "Something went wrong getting the sector defaults" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
