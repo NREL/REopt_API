@@ -6,10 +6,6 @@ djangoCpuLimit: "2000m"
 djangoMemoryRequest: "2000Mi"
 djangoMemoryLimit: "2000Mi"
 celeryReplicas: 10
-celeryMemoryRequest: "900Mi"
-celeryMemoryLimit: "900Mi"
-celeryCpuRequest: "100m"
-celeryCpuLimit: "1000m"
 juliaReplicas: 5
 juliaCpuRequest: "2000m"
 juliaCpuLimit: "4000m"
