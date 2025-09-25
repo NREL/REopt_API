@@ -286,9 +286,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--remote', help='Remote EnLitePy endpoint URL')
     ap.add_argument('--local', help='Local /stable/ensite/ endpoint URL')
-    ap.add_argument('--annual', action='store_true', help='Add annual replication & *_annual stats')
-    ap.add_argument('--clean', action='store_true', help='Normalize stats + optional annual replication')
-    ap.add_argument('--validate', action='store_true', help='Run scaling validation (implies --clean --annual)')
+    ap.add_argument('--annual', dest='annual', action='store_true', help='(Deprecated) Force annual enrichment (now default)')
+    ap.add_argument('--no-annual', dest='no_annual', action='store_true', help='Disable annual enrichment (default: enabled)')
+    ap.add_argument('--clean', dest='clean', action='store_true', help='(Deprecated) Force cleaning (now default)')
+    ap.add_argument('--no-clean', dest='no_clean', action='store_true', help='Disable cleaning/normalization (default: enabled)')
+    ap.add_argument('--validate', action='store_true', help='Run scaling validation (always implies cleaning & annual)')
     ap.add_argument('--outfile-prefix', default='compare_run', help='Prefix for output files')
     args = ap.parse_args()
 
@@ -298,9 +300,16 @@ def main():
     if not args.local:
         args.local = os.getenv('ENLITEPY_LOCAL_URL') or os.getenv('REOPT_LOCAL_ENLITEPY_URL')
 
+    # Default behavior: clean & annual ON unless explicitly disabled
+    clean_enabled = True
+    annual_enabled = True
+    if args.no_clean:
+        clean_enabled = False
+    if args.no_annual:
+        annual_enabled = False
     if args.validate:
-        args.clean = True
-        args.annual = True
+        clean_enabled = True
+        annual_enabled = True
 
     payload = build_payload()
     print('Built payload EV types:', list(payload['evInfo']['evTypes'].keys()), 'EVSE count:', sum(1 for k in payload['hubConfig']['nodes'] if k.startswith('EVSE_')))
@@ -326,11 +335,11 @@ def main():
         else:
             print(' Local OK')
 
-    if args.clean:
+    if clean_enabled:
         if remote_resp:
-            normalize_and_enrich(remote_resp, args.annual)
+            normalize_and_enrich(remote_resp, annual_enabled)
         if local_resp:
-            normalize_and_enrich(local_resp, args.annual)
+            normalize_and_enrich(local_resp, annual_enabled)
 
     if args.validate:
         if remote_resp:
@@ -353,6 +362,8 @@ def main():
     diff_issues: List[str] = []
     if remote_resp and local_resp:
         diff_issues = diff_keysets(remote_resp, local_resp)
+        # ignore enrichment_version differences in key diff
+        diff_issues = [d for d in diff_issues if 'enrichment_version' not in d]
         if diff_issues:
             print('STRUCTURAL DIFFS:')
             for d in diff_issues:
@@ -363,8 +374,8 @@ def main():
     summary = {
         'remote_status': remote_status,
         'local_status': local_status,
-        'annual_requested': args.annual,
-        'clean_requested': args.clean,
+        'annual_requested': annual_enabled,
+        'clean_requested': clean_enabled,
         'validated': args.validate,
         'remote_results_keys': keyset(remote_resp.get('results', {})) if remote_resp else None,
         'local_results_keys': keyset(local_resp.get('results', {})) if local_resp else None,

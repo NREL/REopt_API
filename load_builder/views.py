@@ -6,10 +6,6 @@ import sys
 import numpy as np
 from django.http import JsonResponse
 from reo.exceptions import UnexpectedError
-import os
-import requests
-from statistics import mean
-from typing import Any, Dict, List
 
 try:
     from ensitepy.simextension import enlitepyapi
@@ -181,28 +177,23 @@ def ensite_view(request):
                     input_data = json.loads(request.body)
                 except json.JSONDecodeError as e:
                     return JsonResponse({"Error": f"Invalid JSON in request body: {e}"}, status=400)
-                
-                # Detect input format and prepare payload
                 if is_ui_input(input_data):
-                    # Transform UI inputs to EnLitePy payload
                     try:
                         enlitepy_payload = build_enlitepy_payload(input_data)
                     except Exception as e:
                         return JsonResponse({"Error": f"Failed to build EnLitePy payload: {e}"}, status=400)
                 else:
-                    # Use direct EnLitePy payload
                     enlitepy_payload = input_data
-                
-                # Call EnLitePy
                 try:
                     results = enlitepyapi.run(enlitepy_payload)
-                    # Ensure structural parity with remote EnLitePy responses which may include a 'logs' key
                     if isinstance(results, dict) and 'logs' not in results:
                         results['logs'] = []
+                    # Always normalize and annualize for client convenience
+                    _normalize_and_enrich(results)
+                    results.setdefault('enrichment_version', 1)
                     return JsonResponse({"results": results})
                 except Exception as e:
                     return JsonResponse({"Error": f"EnLitePy execution failed: {e}"}, status=500)
-                    
             else:
                 return JsonResponse({"Error": "Must POST a JSON body for ensitepy."}, status=400)
         except Exception:
@@ -366,3 +357,107 @@ def convert_loads(loads_table):
                             hour_load += load.power_total
                 loads_kw.append(hour_load)
     return loads_kw
+
+# Annual scaling helper constants (reuse existing ones if defined)
+EQUIPMENT_ANNUAL_SCALARS = {"Energy output [kWh]", "Energy loss [kWh]"}
+EV_COUNT_SCALARS = {"Total EVs arrived [#]", "Total unique EVs arrived [#]", "EVs no queue wait [#]", "EVs arrived but not charged [#]", "EVs that did not start/complete charge [#]"}
+EV_ENERGY_SCALARS = {"Total energy charged [kWh]"}
+
+def _replicate_to_8760(series):
+    if not isinstance(series, list) or len(series) == 0:
+        return series
+    if len(series) == 8760:
+        return series
+    reps = (8760 // len(series)) + 1
+    return (series * reps)[:8760]
+
+def _annualize_equipment(stats_list):
+    if not isinstance(stats_list, list):
+        return []
+    out = []
+    for row in stats_list:
+        if not isinstance(row, dict):
+            continue
+        copy = row.copy()
+        for k in EQUIPMENT_ANNUAL_SCALARS:
+            v = copy.get(k)
+            if isinstance(v, (int, float)):
+                copy[k] = round(v * WEEK_TO_YEAR_SCALE, 2)
+        out.append(copy)
+    return out
+
+def _annualize_ev(stats_list):
+    if not isinstance(stats_list, list):
+        return []
+    out = []
+    for row in stats_list:
+        if not isinstance(row, dict):
+            continue
+        copy = row.copy()
+        for k, v in list(copy.items()):
+            if k in EV_COUNT_SCALARS or k in EV_ENERGY_SCALARS:
+                if isinstance(v, (int, float)):
+                    copy[k] = round(v * WEEK_TO_YEAR_SCALE, 2)
+            if k.endswith('[min]') and isinstance(v, (int, float)):
+                copy[k.replace('[min]', '[h]')] = round(v / 60.0, 2)
+                del copy[k]
+        out.append(copy)
+    return out
+
+def _add_grid_util(timeseries_dict, equip_annual):
+    if not isinstance(timeseries_dict, dict):
+        return
+    power = timeseries_dict.get('power_in_grid')
+    if not isinstance(power, list) or not power:
+        return
+    # Locate grid equipment row
+    grid_row = None
+    for r in equip_annual:
+        if isinstance(r, dict) and r.get('Name') in ('grid', 'Grid'):
+            grid_row = r
+            break
+    if not grid_row:
+        return
+    cap = grid_row.get('Power capacity [kW]')
+    if not isinstance(cap, (int, float)) or cap <= 0:
+        return
+    sample = [v for v in power[:50] if isinstance(v, (int, float))]
+    if not sample:
+        return
+    max_sample = max(sample)
+    to_kw = 1000.0 if max_sample > cap * 1.1 else 1.0
+    series_kw = [v / to_kw for v in power if isinstance(v, (int, float))]
+    if not series_kw:
+        return
+    grid_row.setdefault('Min capacity utilization [kW]', round(min(series_kw), 2))
+    grid_row.setdefault('Average capacity utilization [kW]', round(sum(series_kw) / len(series_kw), 2))
+
+
+def _normalize_and_enrich(results_dict):
+    if not isinstance(results_dict, dict):
+        return
+    # Normalize stringified JSON lists
+    for key in ('equipment_statistics', 'ev_statistics'):
+        val = results_dict.get(key)
+        if isinstance(val, str):
+            try:
+                parsed = json.loads(val)
+                if isinstance(parsed, list):
+                    results_dict[key] = parsed
+            except json.JSONDecodeError:
+                pass
+    equipment = results_dict.get('equipment_statistics') or []
+    evstats = results_dict.get('ev_statistics') or []
+    timeseries = results_dict.get('timeseries')
+    # Annual replication for timeseries
+    if isinstance(timeseries, dict) and 'power_in_grid' in timeseries:
+        annual_series = _replicate_to_8760(timeseries['power_in_grid'])
+        if isinstance(annual_series, list) and len(annual_series) == 8760:
+            timeseries['power_in_grid_annual'] = annual_series
+    equip_annual = _annualize_equipment(equipment) if equipment else []
+    ev_annual = _annualize_ev(evstats) if evstats else []
+    if equip_annual:
+        results_dict['equipment_statistics_annual'] = equip_annual
+        _add_grid_util(timeseries, equip_annual)
+    if ev_annual:
+        results_dict['ev_statistics_annual'] = ev_annual
