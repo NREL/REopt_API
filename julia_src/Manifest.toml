@@ -2,7 +2,7 @@
 
 julia_version = "1.11.2"
 manifest_format = "2.0"
-project_hash = "a097c2249dd9fd3fd5a713f1f4d09777adbaf02c"
+project_hash = "b3c6037c53375dada9e36c23f668bcd0efac8f34"
 
 [[deps.ASL_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -418,9 +418,9 @@ uuid = "0329782f-3d07-4b52-b9f6-d3137cf03c7a"
 version = "1.0.2"
 
 [[deps.GhpGhx]]
-git-tree-sha1 = "bddcbcddc9a4ae7ae4f1ea7d4d8ccf38507d4071"
+git-tree-sha1 = "c2f3becdf925f287778fa088da6da01e307f6ce8"
 repo-rev = "main"
-repo-url = "https://github.com/NREL/GhpGhx.jl.git"
+repo-url = "https://github.com/NREL/GhpGhx.jl"
 uuid = "7ce85f02-24a8-4d69-a3f0-14b5daa7d30c"
 version = "0.1.0"
 
@@ -948,11 +948,11 @@ version = "1.11.0"
 
 [[deps.REopt]]
 deps = ["ArchGDAL", "CSV", "CoolProp", "DataFrames", "Dates", "DelimitedFiles", "HTTP", "JLD", "JSON", "JuMP", "LinDistFlow", "LinearAlgebra", "Logging", "MathOptInterface", "Requires", "Roots", "Statistics", "TestEnv"]
-git-tree-sha1 = "b3e1ace6709f54ffb6dc2cba6860323b869fa125"
+git-tree-sha1 = "2929165f2ce7c01e13bae3eea05f38209ddbefaf"
 repo-rev = "federal-defaults"
 repo-url = "https://github.com/NREL/REopt.jl.git"
 uuid = "d36ad4e8-d74a-4f7a-ace1-eaea049febf6"
-version = "0.53.2"
+version = "0.54.0"
 
 [[deps.Random]]
 deps = ["SHA"]
