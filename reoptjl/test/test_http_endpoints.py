@@ -316,8 +316,8 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         for key in ["elec_cost_escalation_rate_fraction", "existing_boiler_fuel_cost_escalation_rate_fraction", "boiler_fuel_cost_escalation_rate_fraction", "chp_fuel_cost_escalation_rate_fraction", "generator_fuel_cost_escalation_rate_fraction"]:
             self.assertTrue(view_response["Financial"].get(key) is not None)
         inputs = {
-            "sector": "federal",
-            "federal_procurement_type": "",
+            "sector": "badsector",
+            "federal_procurement_type": "fedowned_dirpurch",
             "federal_sector_state": "CA"
         }
         resp = self.api_client.get(f'/v3/sector_defaults', data=inputs)
