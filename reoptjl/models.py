@@ -4910,8 +4910,8 @@ class CoolingLoadInputs(BaseModel, models.Model):
 
     annual_tonhour = models.FloatField(
         validators=[
-            MinValueValidator(1),
-            MaxValueValidator(MAX_BIG_NUMBER)
+            MinValueValidator(0.0),
+            MaxValueValidator(1.0e9)
         ],
         null=True,
         blank=True,
@@ -7450,7 +7450,7 @@ class SpaceHeatingLoadInputs(BaseModel, models.Model):
 
     annual_mmbtu = models.FloatField(
         validators=[
-            MinValueValidator(1),
+            MinValueValidator(0.0),
             MaxValueValidator(MAX_BIG_NUMBER)
         ],
         null=True,
@@ -7625,7 +7625,7 @@ class DomesticHotWaterLoadInputs(BaseModel, models.Model):
 
     annual_mmbtu = models.FloatField(
         validators=[
-            MinValueValidator(1),
+            MinValueValidator(0.0),
             MaxValueValidator(MAX_BIG_NUMBER)
         ],
         null=True,
@@ -7781,7 +7781,7 @@ class ProcessHeatLoadInputs(BaseModel, models.Model):
 
     annual_mmbtu = models.FloatField(
         validators=[
-            MinValueValidator(1),
+            MinValueValidator(0.0),
             MaxValueValidator(MAX_BIG_NUMBER)
         ],
         null=True,
