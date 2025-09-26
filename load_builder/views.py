@@ -66,33 +66,49 @@ def build_arrival_pmf(weekday_pct, weekend_pct, bucket_hours=2):
 
 
 def build_enlitepy_payload(ui_inputs=None):
-    """Build EnLitePy payload from UI inputs or use defaults."""
+    """Build EnLitePy payload from UI inputs or use defaults.
+
+    Parameters
+    ----------
+    ui_inputs : dict | None
+        Optional UI schema input. If provided, may include:
+        - chargers
+        - vehicles
+        - arrival
+        - maxChargeDurationHr (float/int, HOURS)
+
+    Notes
+    -----
+    * Duration: `maxChargeDurationHr` (hours) -> multiplied by 3600 -> seconds (`chgDurMax`).
+    * Power units: UI kW values converted to W where simulation expects watts.
+    * PMFs: Currently deterministic single-point distributions; can be expanded later.
+    """
     # Apply UI overrides or use defaults
     charger_config = ui_inputs.get("chargers", {}) if ui_inputs else {}
     vehicle_config = ui_inputs.get("vehicles", {}) if ui_inputs else {}
     arrival_config = ui_inputs.get("arrival", {}) if ui_inputs else {}
-    max_duration = ui_inputs.get("maxChargeDurationMin") if ui_inputs else None
-    
+    max_duration = ui_inputs.get("maxChargeDurationHr") if ui_inputs else None
+
     # Deep merge with defaults
     chargers = {}
     for cat, defaults in DEFAULT_CHARGER_DEFAULTS.items():
         chargers[cat] = {**defaults}
         if cat in charger_config:
             chargers[cat].update(charger_config[cat])
-    
+
     vehicles = {}
     for vtype, defaults in DEFAULT_VEHICLE_DEFAULTS.items():
         vehicles[vtype] = {**defaults}
         if vtype in vehicle_config:
             vehicles[vtype].update(vehicle_config[vtype])
-    
+
     # Arrival patterns
     weekday_pct = arrival_config.get("weekday", [0] * 12)
     weekend_pct = arrival_config.get("weekend", [0] * 12)
-    
+
     # Build nodes
     nodes = {"grid": {"type": "Grid", "pMax": 500_000, "pMin": 0, "eff": 0.99}}
-    
+
     # Add EVSE nodes
     for cat, cfg in chargers.items():
         for i in range(1, cfg["count"] + 1):
@@ -104,14 +120,14 @@ def build_enlitepy_payload(ui_inputs=None):
                 "nEVPort": 1,
                 "pci": cfg["pci"],
             }
-    
+
     # Build EV types
     def expand_counts(weekend, weekday):
         return [weekend, weekday, weekday, weekday, weekday, weekday, weekend]
-    
+
     weekday_weekend = {k: expand_counts(v["weekend"], v["weekday"]) for k, v in vehicles.items()}
     arrival_pmf = build_arrival_pmf(weekday_pct, weekend_pct)
-    
+
     ev_types = {}
     for k, v in vehicles.items():
         delta = max(0.0, min(1.0, v["targetSOC"] - v["initSOC"]))
@@ -125,18 +141,18 @@ def build_enlitepy_payload(ui_inputs=None):
             "arrivalTimePMF": arrival_pmf,
             "departureTimePMF": None,
         }
-    
+
     sim_cfg = dict(BASE_SIM_CONFIG)
     sim_cfg["tEnd"] = SIM_DAYS * 24 * 3600
-    
-    duration_max = None
+
+    duration_max_hr = None
     if max_duration is not None:
-        duration_max = int(max_duration * 60)  # Convert minutes to seconds
-    
+        duration_max_hr = int(max_duration * 3600)
+
     return {
         "simConfig": sim_cfg,
         "hubConfig": {"nodes": nodes, "ems": EMS_CONFIG},
-        "evInfo": {"stochasticModel": 1, "chgDurMax": duration_max, "evTypes": ev_types},
+        "evInfo": {"stochasticModel": 1, "chgDurMax": duration_max_hr, "evTypes": ev_types},
         "resultsConfig": {
             **RESULTS_CONFIG_BASE,
             "resultFieldOptions": {
@@ -156,7 +172,7 @@ def is_ui_input(data):
         return False
     
     # Check for UI-specific keys
-    ui_keys = {"chargers", "vehicles", "arrival", "maxChargeDurationMin"}
+    ui_keys = {"chargers", "vehicles", "arrival", "maxChargeDurationHr"}
     if any(key in data for key in ui_keys):
         return True
     
@@ -190,7 +206,8 @@ def ensite_view(request):
                         results['logs'] = []
                     # Always normalize and annualize for client convenience
                     _normalize_and_enrich(results)
-                    results.setdefault('enrichment_version', 1)
+                    # Bump enrichment version to 2 to reflect unit change (power_in_grid_annual now in kW)
+                    results.setdefault('enrichment_version', 2)
                     return JsonResponse({"results": results})
                 except Exception as e:
                     return JsonResponse({"Error": f"EnLitePy execution failed: {e}"}, status=500)
@@ -358,10 +375,7 @@ def convert_loads(loads_table):
                 loads_kw.append(hour_load)
     return loads_kw
 
-# Annual scaling helper constants (reuse existing ones if defined)
-EQUIPMENT_ANNUAL_SCALARS = {"Energy output [kWh]", "Energy loss [kWh]"}
-EV_COUNT_SCALARS = {"Total EVs arrived [#]", "Total unique EVs arrived [#]", "EVs no queue wait [#]", "EVs arrived but not charged [#]", "EVs that did not start/complete charge [#]"}
-EV_ENERGY_SCALARS = {"Total energy charged [kWh]"}
+# (Removed duplicate constant definitions that appeared earlier in file)
 
 def _replicate_to_8760(series):
     if not isinstance(series, list) or len(series) == 0:
@@ -431,6 +445,7 @@ def _add_grid_util(timeseries_dict, equip_annual):
         return
     grid_row.setdefault('Min capacity utilization [kW]', round(min(series_kw), 2))
     grid_row.setdefault('Average capacity utilization [kW]', round(sum(series_kw) / len(series_kw), 2))
+    grid_row.setdefault('Max capacity utilization [kW]', round(max(series_kw), 2))
 
 
 def _normalize_and_enrich(results_dict):
@@ -453,7 +468,8 @@ def _normalize_and_enrich(results_dict):
     if isinstance(timeseries, dict) and 'power_in_grid' in timeseries:
         annual_series = _replicate_to_8760(timeseries['power_in_grid'])
         if isinstance(annual_series, list) and len(annual_series) == 8760:
-            timeseries['power_in_grid_annual'] = annual_series
+            # Convert from W (simulation native) to kW for annual series exposure
+            timeseries['power_in_grid_annual'] = [x / 1000 for x in annual_series]
     equip_annual = _annualize_equipment(equipment) if equipment else []
     ev_annual = _annualize_ev(evstats) if evstats else []
     if equip_annual:
