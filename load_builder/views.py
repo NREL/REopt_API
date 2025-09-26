@@ -207,7 +207,7 @@ def ensite_view(request):
                     # Always normalize and annualize for client convenience
                     _normalize_and_enrich(results)
                     # Bump enrichment version to 2 to reflect unit change (power_in_grid_annual now in kW)
-                    results.setdefault('enrichment_version', 2)
+                    results.setdefault('version', 2)
                     return JsonResponse({"results": results})
                 except Exception as e:
                     return JsonResponse({"Error": f"EnLitePy execution failed: {e}"}, status=500)
