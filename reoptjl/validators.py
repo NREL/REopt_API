@@ -651,9 +651,9 @@ def validate_time_series(series: list, time_steps_per_hour: int) -> Tuple[list, 
 
     if time_steps_per_hour < time_steps_per_hour_in_series:
         resampling_msg = f"Downsampled to match time_steps_per_hour via average."
-        index = pd.date_range('1/1/2000', periods=n, freq=f'{int(60/time_steps_per_hour_in_series)}T')
+        index = pd.date_range('1/1/2000', periods=n, freq=f'{int(60/time_steps_per_hour_in_series)}min')
         s = pd.Series(series, index=index)
-        s = s.resample(f'{int(60/time_steps_per_hour)}T').mean()
+        s = s.resample(f'{int(60/time_steps_per_hour)}min').mean()
         return s.tolist(), resampling_msg, ""
     
     # time_steps_per_hour > time_steps_per_hour_in_series

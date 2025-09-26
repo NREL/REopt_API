@@ -96,4 +96,4 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         list_to_load = [generator_to_load, storage_to_load, pv_to_load]
         tech_to_load = self.outage_tech_to_load(list_to_load, outage_start, outage_end)
         for x, y in zip(critical_load[outage_start-1:outage_end], tech_to_load):
-            self.assertAlmostEquals(x, y, places=3)
+            self.assertAlmostEqual(x, y, places=3)
