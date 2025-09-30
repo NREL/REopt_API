@@ -14,7 +14,7 @@ pipeline {
     NREL_ROOT_CERT_URL_ROOT = credentials("reopt-api-nrel-root-cert-url-root")
   }
   triggers {
-    cron('15 13 * * *') // 1:15 PM MST/MDT
+    cron('0 1 * * *') // 1:00 AM MST/MDT
   }
 
   parameters {

@@ -7,6 +7,8 @@ DotEnv.load!()
 
 const test_nrel_developer_api_key = ENV["NREL_DEVELOPER_API_KEY"]
 
+ENV["NREL_DEVELOPER_EMAIL"] = "reopt@nrel.gov"
+
 include("os_solvers.jl")
 
 # Load Xpress only if it is installed, as indicated by ENV["XPRESS_INSTALLED"]="True"
