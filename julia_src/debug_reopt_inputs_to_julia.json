@@ -8863,6 +8863,28 @@
         "supplementary_firing_capital_cost_per_kw": 150.0,
         "can_serve_dhw": true
     },
+    "HighTempThermalStorage": {
+        "one_direction_flow": false,
+        "macrs_itc_reduction": 0.0,
+        "total_rebate_per_kwh": 0.0,
+        "hot_temp_degF": 1065.0,
+        "fluid": "INCOMP::NaK",
+        "om_cost_per_kwh": 0.0,
+        "cool_temp_degF": 554.0,
+        "can_serve_process_heat": true,
+        "installed_cost_per_kwh": 86.0,
+        "num_charge_hours": 4.0,
+        "min_kwh": 0.0,
+        "supply_turbine_only": false,
+        "soc_min_fraction": 0.1,
+        "soc_init_fraction": 0.5,
+        "thermal_decay_rate_fraction": 0.0,
+        "internal_efficiency_fraction": 0.999999,
+        "num_discharge_hours": 10.0,
+        "can_serve_dhw": false,
+        "max_kwh": 0.0,
+        "can_serve_space_heating": false
+    },
     "ExistingBoiler": {
         "can_serve_space_heating": true,
         "fuel_cost_per_mmbtu": [
