@@ -306,9 +306,13 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         resp = self.api_client.get(f'/v3/sector_defaults', data=inputs)
         self.assertHttpOK(resp)
         view_response = json.loads(resp.content)
-        self.assertTrue(view_response.get("Techs") is not None)
-        for key in ["macrs_option_years", "macrs_bonus_fraction", "federal_itc_fraction"]:
-            self.assertTrue(view_response["Techs"].get(key) is not None)
+        for tech in ["GHP", "Wind", "PV", "CHP"]:
+            self.assertTrue(view_response.get(tech) is not None)
+            for key in ["macrs_option_years", "macrs_bonus_fraction", "federal_itc_fraction"]:
+                self.assertTrue(view_response[tech].get(key) is not None)
+        self.assertTrue(view_response.get("SteamTurbine") is not None)
+        for key in ["macrs_option_years", "macrs_bonus_fraction"]:
+            self.assertTrue(view_response["SteamTurbine"].get(key) is not None)
         self.assertTrue(view_response.get("Storage") is not None)
         for key in ["macrs_option_years", "macrs_bonus_fraction", "total_itc_fraction"]:
             self.assertTrue(view_response["Storage"].get(key) is not None)
