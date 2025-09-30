@@ -8,7 +8,8 @@ from reoptjl.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorage
                         REoptjlMessageOutputs, AbsorptionChillerOutputs, BoilerOutputs, SteamTurbineInputs, \
                         SteamTurbineOutputs, GHPInputs, GHPOutputs, ExistingChillerInputs, \
                         ElectricHeaterOutputs, ASHPSpaceHeaterOutputs, ASHPWaterHeaterOutputs, \
-                        SiteInputs, ASHPSpaceHeaterInputs, ASHPWaterHeaterInputs, PVInputs
+                        SiteInputs, ASHPSpaceHeaterInputs, ASHPWaterHeaterInputs, CSTInputs, CSTOutputs, PVInputs, \
+                        HighTempThermalStorageInputs, HighTempThermalStorageOutputs
 import numpy as np
 import sys
 import traceback as tb
@@ -90,6 +91,10 @@ def process_results(results: dict, run_uuid: str) -> None:
                 ASHPSpaceHeaterOutputs.create(meta=meta, **results["ASHPSpaceHeater"]).save()
             if "ASHPWaterHeater" in results.keys():
                 ASHPWaterHeaterOutputs.create(meta=meta, **results["ASHPWaterHeater"]).save()
+            if "CST" in results.keys():
+                CSTOutputs.create(meta=meta, **results["CST"]).save()
+            if "HighTempThermalStorage" in results.keys():
+                HighTempThermalStorageOutputs.create(meta=meta, **results["HighTempThermalStorage"]).save()               
             # TODO process rest of results
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -131,7 +136,6 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
             CHPInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["CHP"])
         if inputs_to_update["SteamTurbine"]:  # Will be an empty dictionary if SteamTurbine is not considered
             SteamTurbineInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["SteamTurbine"])
-    
         if inputs_to_update["GHP"]:
             GHPInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["GHP"])
         if inputs_to_update["ExistingChiller"]:
@@ -148,7 +152,14 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
             ASHPWaterHeaterInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["ASHPWaterHeater"])
         if inputs_to_update["PV"]:
             prune_update_fields(PVInputs, inputs_to_update["PV"])
-            PVInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["PV"])            
+            PVInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["PV"])  
+        # TODO CST is not added to this inputs_with_defaults_set_in_julia dictionary in http.jl, IF we need to update any CST inputs
+        if inputs_to_update.get("CST") is not None:
+            prune_update_fields(CSTInputs, inputs_to_update["CST"])
+            CSTInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["CST"])
+        if inputs_to_update.get("HighTempThermalStorage") is not None:
+            prune_update_fields(HighTempThermalStorageInputs, inputs_to_update["HighTempThermalStorage"])
+            HighTempThermalStorageInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["HighTempThermalStorage"])
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(
