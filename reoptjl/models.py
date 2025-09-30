@@ -388,21 +388,21 @@ class SiteInputs(BaseModel, models.Model):
         blank=True,
         null=False,
         default=SECTORS.COMMERCIAL,
-        help_text=("")
+        help_text=("The sector of the site. Options: ['federal', 'commercial/industrial']")
     )
     federal_sector_state = models.TextField(
         # not creating choices b/c hoping to get rid of this input ASAP and use lat/long instead
         blank=True,
         null=False,
         default="",
-        help_text=("")
+        help_text=("The state where the site is located, if the site's sector is 'federal'. State can be written out or abbreviated.")
     )
     federal_procurement_type = models.TextField(
         choices=FEDERAL_PROCUREMENT_TYPES.choices,
         blank=True,
         null=False,
         default="",
-        help_text=("")
+        help_text=("The capital procurement type if the site's sector is 'federal'. Options: ['fedowned_dirpurch', 'fedowned_thirdparty', 'privateowned_thirdparty']")
     )
     CO2_emissions_reduction_min_fraction = models.FloatField(
         validators=[
@@ -7158,6 +7158,7 @@ class HighTempThermalStorageInputs(BaseModel, models.Model):
     macrs_option_years = models.IntegerField(
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
+        null=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
@@ -7166,6 +7167,7 @@ class HighTempThermalStorageInputs(BaseModel, models.Model):
             MaxValueValidator(1)
         ],
         blank=True,
+        null=True,
         help_text="Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
     )
     macrs_itc_reduction = models.FloatField(
@@ -7183,6 +7185,7 @@ class HighTempThermalStorageInputs(BaseModel, models.Model):
             MaxValueValidator(1)
         ],
         blank=True,
+        null=True,
         help_text="Total investment tax credit in percent applied toward capital costs"
     )
     total_rebate_per_kwh = models.FloatField(
