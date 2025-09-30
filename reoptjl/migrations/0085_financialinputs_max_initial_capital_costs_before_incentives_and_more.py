@@ -14,11 +14,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='financialinputs',
             name='max_initial_capital_costs_before_incentives',
-            field=models.FloatField(blank=True, help_text='Maximum up-front capital cost for all technologies, excluding replacement costs and incentives [\$].', null=True, validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(1000000000000.0)]),
+            field=models.FloatField(blank=True, help_text='Maximum up-front capital cost for all technologies, excluding replacement costs and incentives [\\$].', null=True, validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(1000000000000.0)]),
         ),
         migrations.AddField(
             model_name='financialinputs',
             name='min_initial_capital_costs_before_incentives',
-            field=models.FloatField(blank=True, help_text='Minimum up-front capital cost for all technologies, excluding replacement costs and incentives [\$].', null=True, validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(1000000000000.0)]),
+            field=models.FloatField(blank=True, help_text='Minimum up-front capital cost for all technologies, excluding replacement costs and incentives [\\$].', null=True, validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(1000000000000.0)]),
         ),
     ]
