@@ -13,6 +13,13 @@ except ImportError:
     enlitepyapi = None
 
 # EnLitePy Configuration Constants
+# These constants define default simulation-level parameters exposed to the UI.
+# Units & Conventions:
+#  * UI-facing aggregate power capacities (e.g., EMS/site charge cap) are in kW.
+#  * Internal model power is Watts -> we convert via (kW * 1000) at ingress.
+#  * Charging duration inputs are in hours; converted to integer seconds.
+#  * Guardrails (min/max) are deliberately generous to catch obvious typos
+#    (e.g., 0.1 kW or 1e9 kW) while not constraining legitimate large sites.
 DEFAULT_CHARGER_DEFAULTS = {
     "L1": {"count": 0, "power_kW": 2.4, "eff": 0.80, "pci": "LD"},
     "L2": {"count": 0, "power_kW": 13.0, "eff": 0.80, "pci": "LD"},
@@ -25,9 +32,13 @@ DEFAULT_VEHICLE_DEFAULTS = {
     "MD": {"weekday": 0, "weekend": 0, "battery_kWh": 200, "initSOC": 0.20, "targetSOC": 0.80, "pChgMax_kW": 300},
     "HD": {"weekday": 0, "weekend": 0, "battery_kWh": 500, "initSOC": 0.30, "targetSOC": 0.85, "pChgMax_kW": 600},
 }
+EMS_DEFAULT_PCHG_CAP_KW = 1000  # Legacy fallback (1 MW) if no chargers defined
+MAX_CHG_DURATION_DEFAULT_HR = None  # If set (e.g., 6), becomes default max charge duration (hours) unless UI overrides
 
 SIM_DAYS = 7
-EMS_CONFIG = {"type": "basic", "pChgCap": 500_000, "pap": "FCFS+SMX"}
+EMS_MIN_PCHG_CAP_KW = 10        # lower bound guardrail (practically non-zero site)
+EMS_MAX_PCHG_CAP_KW = 20000     # upper bound guardrail (20 MW campus / depot scale)
+EMS_CONFIG = {"type": "basic", "pChgCap": EMS_DEFAULT_PCHG_CAP_KW * 1000, "pap": "FCFS+SMX"}  # stored in Watts
 BASE_SIM_CONFIG = {"tStart": 0, "tEnd": 7 * 24 * 3600, "dowStart": 0}
 RESULTS_CONFIG_BASE = {"timeseriesDt": 3600, "powerMetricsDt": 3600}
 WEEK_TO_YEAR_SCALE = 365 / 7
@@ -65,6 +76,52 @@ def build_arrival_pmf(weekday_pct, weekend_pct, bucket_hours=2):
     return {"1-5": normalize(weekday_pct, "Weekday"), "0,6": normalize(weekend_pct, "Weekend")}
 
 
+def _validate_and_apply_ems_override(ems_override, base_cfg):
+    """Return new EMS config with validated overrides applied.
+
+    Inputs:
+      ems_override: dict possibly containing one or both of:
+        * pChgCap_kW (float/int)  -> preferred UI field
+        * pChgCap (int Watts)     -> legacy / fallback
+      base_cfg: existing EMS config dict (must include 'pChgCap' in Watts)
+
+    Logic:
+      * Precedence: pChgCap_kW overrides pChgCap if both present.
+      * Conversion: kW -> W, rounding to nearest integer.
+      * Validation: Enforces positive and within configured guardrails.
+
+    Returns:
+      New dict copy containing possibly updated 'pChgCap'.
+
+    Raises:
+      ValueError with a concise reason for any invalid override.
+    """
+    cfg = dict(base_cfg)
+    if not isinstance(ems_override, dict):
+        return cfg
+    pchgcap_kw = ems_override.get("pChgCap_kW")
+    pchgcap_w = ems_override.get("pChgCap") if pchgcap_kw is None else None
+    try:
+        if pchgcap_kw is not None:
+            val_kw = float(pchgcap_kw)
+            if val_kw <= 0:
+                raise ValueError("pChgCap_kW must be > 0")
+            if not (EMS_MIN_PCHG_CAP_KW <= val_kw <= EMS_MAX_PCHG_CAP_KW):
+                raise ValueError(f"pChgCap_kW must be within [{EMS_MIN_PCHG_CAP_KW}, {EMS_MAX_PCHG_CAP_KW}] kW")
+            cfg["pChgCap"] = int(round(val_kw * 1000))
+        elif pchgcap_w is not None:
+            val_w = float(pchgcap_w)
+            if val_w <= 0:
+                raise ValueError("pChgCap must be > 0")
+            val_kw = val_w / 1000.0
+            if not (EMS_MIN_PCHG_CAP_KW <= val_kw <= EMS_MAX_PCHG_CAP_KW):
+                raise ValueError(f"pChgCap equivalent must be within [{EMS_MIN_PCHG_CAP_KW}, {EMS_MAX_PCHG_CAP_KW}] kW")
+            cfg["pChgCap"] = int(round(val_w))
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Invalid EMS capacity override: {exc}")
+    return cfg
+
+
 def build_enlitepy_payload(ui_inputs=None):
     """Build EnLitePy payload from UI inputs or use defaults.
 
@@ -75,19 +132,32 @@ def build_enlitepy_payload(ui_inputs=None):
         - chargers
         - vehicles
         - arrival
+        - ems: { pChgCap_kW: <float>|None OR pChgCap: <int Watts> }
+            If both provided, pChgCap_kW takes precedence. The resulting value
+            is stored internally in Watts under 'pChgCap'.
         - maxChargeDurationHr (float/int, HOURS)
 
     Notes
     -----
     * Duration: `maxChargeDurationHr` (hours) -> multiplied by 3600 -> seconds (`chgDurMax`).
-    * Power units: UI kW values converted to W where simulation expects watts.
+        * Power units: UI kW values converted to W where simulation expects watts.
+            * EMS Capacity Default: If the UI does NOT supply an EMS override, the default
+                aggregate site charge capacity is computed as the SUM of all configured
+                charger rated powers (count * power_kW for each charger). If that sum is 0
+                (no chargers), we fall back to EMS_DEFAULT_PCHG_CAP_KW (legacy 1 MW). UI can
+                still explicitly override via ems.pChgCap_kW or ems.pChgCap.
+            * Max Charge Duration: If `maxChargeDurationHr` omitted and `MAX_CHG_DURATION_DEFAULT_HR`
+                is set, that value is applied. Only a basic >0 validation is enforced.
     * PMFs: Currently deterministic single-point distributions; can be expanded later.
     """
     # Apply UI overrides or use defaults
     charger_config = ui_inputs.get("chargers", {}) if ui_inputs else {}
     vehicle_config = ui_inputs.get("vehicles", {}) if ui_inputs else {}
     arrival_config = ui_inputs.get("arrival", {}) if ui_inputs else {}
+    ems_override = ui_inputs.get("ems", {}) if ui_inputs else {}
     max_duration = ui_inputs.get("maxChargeDurationHr") if ui_inputs else None
+    if max_duration is None and MAX_CHG_DURATION_DEFAULT_HR is not None:
+        max_duration = MAX_CHG_DURATION_DEFAULT_HR
 
     # Deep merge with defaults
     chargers = {}
@@ -106,8 +176,28 @@ def build_enlitepy_payload(ui_inputs=None):
     weekday_pct = arrival_config.get("weekday", [0] * 12)
     weekend_pct = arrival_config.get("weekend", [0] * 12)
 
-    # Build nodes
-    nodes = {"grid": {"type": "Grid", "pMax": 500_000, "pMin": 0, "eff": 0.99}}
+    # Start with EMS defaults and apply overrides
+    ems_cfg = _validate_and_apply_ems_override(ems_override, EMS_CONFIG)
+
+    # Dynamic capacity if no explicit override provided (i.e., value unchanged from base)
+    if ems_cfg.get("pChgCap") == EMS_CONFIG["pChgCap"] and not ems_override:
+        total_kw = 0.0
+        for cat, cfg in chargers.items():
+            count = cfg.get("count", 0) or 0
+            power_kw = cfg.get("power_kW", 0) or 0
+            try:
+                total_kw += float(count) * float(power_kw)
+            except (TypeError, ValueError):
+                pass
+        if total_kw > 0:
+            ems_cfg["pChgCap"] = int(round(total_kw * 1000))
+        else:
+            # retain legacy fallback already set
+            pass
+
+    # Build nodes with grid capacity synchronized to EMS pChgCap
+    grid_pmax = ems_cfg.get("pChgCap", EMS_DEFAULT_PCHG_CAP_KW * 1000)
+    nodes = {"grid": {"type": "Grid", "pMax": grid_pmax, "pMin": 0, "eff": 0.99}}
 
     # Add EVSE nodes
     for cat, cfg in chargers.items():
@@ -147,11 +237,17 @@ def build_enlitepy_payload(ui_inputs=None):
 
     duration_max_hr = None
     if max_duration is not None:
-        duration_max_hr = int(max_duration * 3600)
+        try:
+            md = float(max_duration)
+            if md <= 0:
+                raise ValueError("maxChargeDurationHr must be > 0")
+            duration_max_hr = int(round(md * 3600))
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"Invalid maxChargeDurationHr: {exc}")
 
     return {
         "simConfig": sim_cfg,
-        "hubConfig": {"nodes": nodes, "ems": EMS_CONFIG},
+        "hubConfig": {"nodes": nodes, "ems": ems_cfg},
         "evInfo": {"stochasticModel": 1, "chgDurMax": duration_max_hr, "evTypes": ev_types},
         "resultsConfig": {
             **RESULTS_CONFIG_BASE,
@@ -172,7 +268,7 @@ def is_ui_input(data):
         return False
     
     # Check for UI-specific keys
-    ui_keys = {"chargers", "vehicles", "arrival", "maxChargeDurationHr"}
+    ui_keys = {"chargers", "vehicles", "arrival", "maxChargeDurationHr", "ems"}
     if any(key in data for key in ui_keys):
         return True
     
