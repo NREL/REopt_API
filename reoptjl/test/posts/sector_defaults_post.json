@@ -39,8 +39,8 @@
     "max_kw": 100
   },
   "HighTempThermalStorage": {
-    "min_kw": 10,
-    "max_kw": 10,
+    "min_kwh": 10,
+    "max_kwh": 10,
     "thermal_decay_rate_fraction": 0.0
   }
 }
