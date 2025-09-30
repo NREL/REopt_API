@@ -26,6 +26,13 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.15.0
+### Minor Updates
+##### Added
+- `/ensite` view in the load_builder app directory
+##### Changed
+- Update python to v3.12, from v3.8, along with all dependencies; in particular, Django updated to 4.2.8 LTS.
+
 ## v3.14.0
 ### Minor Updates
 #### Added
