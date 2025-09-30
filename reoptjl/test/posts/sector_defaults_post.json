@@ -71,5 +71,10 @@
     "min_gal": 10,
     "max_gal": 10,
     "thermal_decay_rate_fraction": 0.0
+  },
+  "HighTempThermalStorage": {
+    "min_gal": 10,
+    "max_gal": 10,
+    "thermal_decay_rate_fraction": 0.0
   }
 }

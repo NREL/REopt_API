@@ -7156,13 +7156,11 @@ class HighTempThermalStorageInputs(BaseModel, models.Model):
         help_text="Thermal energy-based cost of TES (e.g. volume of the tank)"
     )
     macrs_option_years = models.IntegerField(
-        default=MACRS_YEARS_CHOICES.FIVE,
         choices=MACRS_YEARS_CHOICES.choices,
         blank=True,
         help_text="Duration over which accelerated depreciation will occur. Set to zero to disable"
     )
     macrs_bonus_fraction = models.FloatField(
-        default=1.0,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)
@@ -7180,7 +7178,6 @@ class HighTempThermalStorageInputs(BaseModel, models.Model):
         help_text="Percent of the ITC value by which depreciable basis is reduced"
     )
     total_itc_fraction = models.FloatField(
-        default=0.3,
         validators=[
             MinValueValidator(0),
             MaxValueValidator(1)

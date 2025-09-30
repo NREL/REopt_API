@@ -231,7 +231,15 @@ function reopt(req::HTTP.Request)
                 hot_storage_dict = Dict(key=>getfield(model_inputs.s.storage.attr["HotThermalStorage"], key) for key in inputs_with_defaults_from_julia_hot_storage)
             else
                 hot_storage_dict = Dict()
-            end    
+            end      
+            if haskey(d, "HighTempThermalStorage")
+                inputs_with_defaults_from_julia_high_temp_storage = [
+                    :macrs_option_years, :macrs_bonus_fraction, :total_itc_fraction
+                ]
+                high_temp_storage_dict = Dict(key=>getfield(model_inputs.s.storage.attr["HighTempThermalStorage"], key) for key in inputs_with_defaults_from_julia_high_temp_storage)
+            else
+                high_temp_storage_dict = Dict()
+            end
 			inputs_with_defaults_set_in_julia = Dict(
 				"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_julia_financial),
 				"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert_or_cambium),
@@ -246,7 +254,8 @@ function reopt(req::HTTP.Request)
                 "Wind" => wind_dict,
                 "ElectricStorage" => electric_storage_dict,
                 "ColdThermalStorage" => cold_storage_dict,
-                "HotThermalStorage" => hot_storage_dict
+                "HotThermalStorage" => hot_storage_dict,
+                "HighTempThermalStorage" => high_temp_storage_dict
 			)
 		catch e
 			@error "Something went wrong in REopt optimization!" exception=(e, catch_backtrace())
