@@ -75,11 +75,6 @@ function reopt(req::HTTP.Request)
 	optimality_tolerance = pop!(settings, "optimality_tolerance")
     solver_attributes = SolverAttributes(timeout_seconds, optimality_tolerance)    
     
-    open("debug_reopt_inputs_to_julia.json","w") do f
-        JSON.print(f, d, 4)
-    end
-    @info d["Wind"]
-
 	run_bau = pop!(settings, "run_bau")
 	ms = nothing
 	if run_bau
@@ -106,8 +101,6 @@ function reopt(req::HTTP.Request)
 	else
 		# Catch handled/unhandled exceptions in optimization
 		try
-            @warn keys(d)
-            @warn model_inputs.s.wind
 			results = reoptjl.run_reopt(ms, model_inputs)
 			inputs_with_defaults_from_julia_financial = [
 				:NOx_grid_cost_per_tonne, :SO2_grid_cost_per_tonne, :PM25_grid_cost_per_tonne, 
@@ -243,7 +236,6 @@ function reopt(req::HTTP.Request)
             else
                 high_temp_storage_dict = Dict()
             end
-            @warn wind_dict
 			inputs_with_defaults_set_in_julia = Dict(
 				"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_julia_financial),
 				"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert_or_cambium),
@@ -261,18 +253,10 @@ function reopt(req::HTTP.Request)
                 "HotThermalStorage" => hot_storage_dict,
                 "HighTempThermalStorage" => high_temp_storage_dict
 			)
-            @error (keys(d), model_inputs.s.wind)
 		catch e
 			@error "Something went wrong in REopt optimization!" exception=(e, catch_backtrace())
 			error_response["error"] = sprint(showerror, e) # append instead of rewrite?
 		end
-
-        open("debug_reopt_all_inputs_from_julia.json","w") do f
-            JSON.print(f, struct_to_dict(model_inputs.s), 4)
-        end
-        open("debug_reopt_inputs_with_defaults_from_julia.json","w") do f
-            JSON.print(f, inputs_with_defaults_set_in_julia, 4)
-        end
 	end
     
 	if typeof(ms) <: AbstractArray
