@@ -1,10 +1,10 @@
 # REopt®, Copyright (c) Alliance for Sustainable Energy, LLC. See also https://github.com/NREL/REopt_API/blob/master/LICENSE.
-from reoptjl.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorageOutputs,\
+from reoptjl.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorageInputs, ElectricStorageOutputs,\
                         ElectricTariffOutputs, SiteOutputs, ElectricUtilityOutputs,\
-                        GeneratorOutputs, ElectricLoadOutputs, WindOutputs, FinancialInputs,\
+                        GeneratorOutputs, ElectricLoadOutputs, WindInputs, WindOutputs, FinancialInputs,\
                         ElectricUtilityInputs, ExistingBoilerOutputs, CHPOutputs, CHPInputs, \
                         ExistingChillerOutputs, CoolingLoadOutputs, HeatingLoadOutputs,\
-                        HotThermalStorageOutputs, ColdThermalStorageOutputs, OutageOutputs,\
+                        HotThermalStorageInputs, HotThermalStorageOutputs, ColdThermalStorageInputs, ColdThermalStorageOutputs, OutageOutputs,\
                         REoptjlMessageOutputs, AbsorptionChillerOutputs, BoilerOutputs, SteamTurbineInputs, \
                         SteamTurbineOutputs, GHPInputs, GHPOutputs, ExistingChillerInputs, \
                         ElectricHeaterOutputs, ASHPSpaceHeaterOutputs, ASHPWaterHeaterOutputs, \
