@@ -97,6 +97,7 @@ def process_results(results: dict, run_uuid: str) -> None:
                 HighTempThermalStorageOutputs.create(meta=meta, **results["HighTempThermalStorage"]).save()               
             # TODO process rest of results
     except Exception as e:
+        print(e)
         exc_type, exc_value, exc_traceback = sys.exc_info()
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(
                                                                         exc_type, 
