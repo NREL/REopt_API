@@ -42,5 +42,9 @@
     "min_kwh": 10,
     "max_kwh": 10,
     "thermal_decay_rate_fraction": 0.0
+  },
+  "Wind": {
+    "min_kw": 100,
+    "max_kw": 100
   }
 }

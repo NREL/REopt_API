@@ -105,6 +105,7 @@ function reopt(req::HTTP.Request)
 	else
 		# Catch handled/unhandled exceptions in optimization
 		try
+            println(keys(d))
 			results = reoptjl.run_reopt(ms, model_inputs)
 			inputs_with_defaults_from_julia_financial = [
 				:NOx_grid_cost_per_tonne, :SO2_grid_cost_per_tonne, :PM25_grid_cost_per_tonne, 

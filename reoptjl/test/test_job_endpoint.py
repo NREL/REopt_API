@@ -173,7 +173,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         defaults_view_response = json.loads(resp.content)
 
         for model_name, saved_model_inputs in saved_inputs.items():
-            model_category = "Storage" if "Storage" in model_name else "Techs" if model_name in ["PV", "Wind", "CHP", "GHP"] else model_name
+            model_category = "Storage" if "Storage" in model_name else model_name
             for input_key, default_input_val in defaults_view_response.get(model_category, {}).items():
                 if saved_model_inputs.get(input_key) is None:
                     print(model_name)
