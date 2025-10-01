@@ -78,6 +78,7 @@ function reopt(req::HTTP.Request)
     open("debug_reopt_inputs_to_julia.json","w") do f
         JSON.print(f, d, 4)
     end
+    @info d["Wind"]
 
 	run_bau = pop!(settings, "run_bau")
 	ms = nothing
@@ -106,6 +107,7 @@ function reopt(req::HTTP.Request)
 		# Catch handled/unhandled exceptions in optimization
 		try
             @info keys(d)
+            @info model_inputs.s.wind
 			results = reoptjl.run_reopt(ms, model_inputs)
 			inputs_with_defaults_from_julia_financial = [
 				:NOx_grid_cost_per_tonne, :SO2_grid_cost_per_tonne, :PM25_grid_cost_per_tonne, 
@@ -241,6 +243,7 @@ function reopt(req::HTTP.Request)
             else
                 high_temp_storage_dict = Dict()
             end
+            @info wind_dict
 			inputs_with_defaults_set_in_julia = Dict(
 				"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_julia_financial),
 				"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert_or_cambium),
