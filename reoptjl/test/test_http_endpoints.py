@@ -49,7 +49,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         http_response = response.json()
 
         # Check the endpoint logic with the expected selection
-        self.assertEqual(http_response["default_inputs"]["size_class"], 3)
+        self.assertEqual(http_response["size_class"], 3)
     
     def test_steamturbine_defaults(self):
 
