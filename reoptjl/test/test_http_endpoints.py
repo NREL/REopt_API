@@ -229,7 +229,6 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         view_response = json.loads(resp.content)
         self.assertTrue("error" in view_response)
         
-
     def test_cambium_profile_endpoint(self):
         # Call to the django view endpoint v3/cambium_profile which calls the http.jl endpoint
         #case 1: location in CONUS (Seattle, WA)

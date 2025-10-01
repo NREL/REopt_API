@@ -156,13 +156,11 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         post = json.load(open(post_file, 'r'))
         resp = self.api_client.post('/v3/job/', format='json', data=post)
         self.assertHttpCreated(resp)
-        # print(resp.content)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
 
         resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
         r = json.loads(resp.content)
-        print(r.get("messages"))
         saved_inputs = r["inputs"]
 
         # Call to the django view endpoint /sector_defaults which calls the http.jl endpoint
