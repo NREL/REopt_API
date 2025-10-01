@@ -8857,6 +8857,7 @@ class GHPOutputs(BaseModel, models.Model):
     avoided_capex_by_ghp_present_value = models.FloatField(null=True, blank=True) 
     annual_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
     annual_thermal_production_tonhour = models.FloatField(null=True, blank=True)
+    number_of_boreholes_flipped_guess = models.FloatField(null=True, blank=True)
 
 
 class CSTInputs(BaseModel, models.Model):
