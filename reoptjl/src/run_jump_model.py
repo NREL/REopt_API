@@ -110,6 +110,7 @@ def run_jump_model(run_uuid):
     # TODO save profile times
     APIMeta.objects.filter(run_uuid=run_uuid).update(reopt_version=reopt_version)
     if status.strip().lower() != 'error':
+        print(inputs_with_defaults_set_in_julia)
         update_inputs_in_database(inputs_with_defaults_set_in_julia, run_uuid)
     process_results(results, run_uuid)
     return True
