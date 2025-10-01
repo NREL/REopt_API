@@ -106,8 +106,8 @@ function reopt(req::HTTP.Request)
 	else
 		# Catch handled/unhandled exceptions in optimization
 		try
-            @info keys(d)
-            @info model_inputs.s.wind
+            @warn keys(d)
+            @warn model_inputs.s.wind
 			results = reoptjl.run_reopt(ms, model_inputs)
 			inputs_with_defaults_from_julia_financial = [
 				:NOx_grid_cost_per_tonne, :SO2_grid_cost_per_tonne, :PM25_grid_cost_per_tonne, 
@@ -243,7 +243,7 @@ function reopt(req::HTTP.Request)
             else
                 high_temp_storage_dict = Dict()
             end
-            @info wind_dict
+            @warn wind_dict
 			inputs_with_defaults_set_in_julia = Dict(
 				"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_julia_financial),
 				"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert_or_cambium),
@@ -261,6 +261,7 @@ function reopt(req::HTTP.Request)
                 "HotThermalStorage" => hot_storage_dict,
                 "HighTempThermalStorage" => high_temp_storage_dict
 			)
+            @error (keys(d), model_inputs.s.wind)
 		catch e
 			@error "Something went wrong in REopt optimization!" exception=(e, catch_backtrace())
 			error_response["error"] = sprint(showerror, e) # append instead of rewrite?
