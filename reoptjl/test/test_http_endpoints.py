@@ -35,6 +35,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         self.assertEqual(http_response["prime_mover"], "combustion_turbine")
         self.assertEqual(http_response["size_class"], 2)
         self.assertGreater(http_response["chp_elec_size_heuristic_kw"], 3500.0)
+        self.assertEqual(http_response["default_inputs"]["federal_itc_fraction"], 0.0)
 
         inputs = {
             "prime_mover": "micro_turbine",
