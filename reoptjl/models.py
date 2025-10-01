@@ -793,7 +793,7 @@ class FinancialInputs(BaseModel, models.Model):
         ],
         blank=True,
         null=True,
-        help_text=("Minimum up-front capital cost for all technologies, excluding replacement costs and incentives [\$].")
+        help_text=("Minimum up-front capital cost for all technologies, excluding replacement costs and incentives [$].")
     )
     max_initial_capital_costs_before_incentives = models.FloatField(
         validators=[
@@ -802,7 +802,7 @@ class FinancialInputs(BaseModel, models.Model):
         ],
         blank=True,
         null=True,
-        help_text=("Maximum up-front capital cost for all technologies, excluding replacement costs and incentives [\$].")
+        help_text=("Maximum up-front capital cost for all technologies, excluding replacement costs and incentives [$].")
     )
     CO2_cost_per_tonne = models.FloatField(
         validators=[
@@ -4763,23 +4763,23 @@ class CHPOutputs(BaseModel, models.Model):
     )    
     year_one_fuel_cost_before_tax = models.FloatField(
         null=True, blank=True,
-        help_text="Cost of fuel consumed by the CHP system in year one [\$]"
+        help_text="Cost of fuel consumed by the CHP system in year one [$]"
     )
     year_one_fuel_cost_after_tax = models.FloatField(
         null=True, blank=True,
-        help_text="Cost of fuel consumed by the CHP system in year one, after tax [\$]"
+        help_text="Cost of fuel consumed by the CHP system in year one, after tax [$]"
     )    
     lifecycle_fuel_cost_after_tax = models.FloatField(
         null=True, blank=True,
-        help_text="Present value of cost of fuel consumed by the CHP system, after tax [\$]"
+        help_text="Present value of cost of fuel consumed by the CHP system, after tax [$]"
     )
     year_one_standby_cost_before_tax = models.FloatField(
         null=True, blank=True,
-        help_text="CHP standby charges in year one [\$]"
+        help_text="CHP standby charges in year one [$]"
     )
     year_one_standby_cost_after_tax = models.FloatField(
         null=True, blank=True,
-        help_text="CHP standby charges in year one, after tax [\$]"
+        help_text="CHP standby charges in year one, after tax [$]"
     )    
     lifecycle_standby_cost_after_tax = models.FloatField(
         null=True, blank=True,
@@ -4803,7 +4803,7 @@ class CHPOutputs(BaseModel, models.Model):
     )
     initial_capital_costs = models.FloatField(
         null=True, blank=True,
-        help_text="Initial capital costs of the CHP system, before incentives [\$]"
+        help_text="Initial capital costs of the CHP system, before incentives [$]"
     )
 
     def clean():

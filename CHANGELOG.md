@@ -26,6 +26,15 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.15.0
+### Minor Updates
+##### Added
+- `/ensite` view in the load_builder app directory
+- `load_builder` EnSite EV charging simulation endpoint (EnLitePy) accepting either a UI-friendly schema (`chargers`, `vehicles`, `arrival`, `ems`, `maxChargeDurationHr`) or a direct EnLitePy payload; auto-derives EMS capacity from charger definitions if not overridden.
+##### Changed
+- Update python to v3.12, from v3.8, along with all dependencies; in particular, Django updated to 4.2.8 LTS.
+- `load_builder` EnSite response enrichment (version 2): adds annualized outputs (`power_in_grid_annual` in kW, `equipment_statistics_annual`, `ev_statistics_annual`) and grid capacity utilization metrics (Min/Average/Max capacity utilization [kW]); normalizes statistics and scales 1-week simulation to annual values.
+
 ## v3.14.0
 ### Minor Updates
 #### Added
