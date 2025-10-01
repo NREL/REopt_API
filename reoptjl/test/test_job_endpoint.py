@@ -114,42 +114,42 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
     #     assert(resp.status_code==400)
 
 
-    # def test_thermal_in_results(self):
-    #     """
-    #     Purpose of this test is to check that the expected thermal loads, techs, and storage are included in the results
-    #     """
+    def test_thermal_in_results(self):
+        """
+        Purpose of this test is to check that the expected thermal loads, techs, and storage are included in the results
+        """
 
-    #     post_file = os.path.join('reoptjl', 'test', 'posts', 'test_thermal_in_results.json') #includes GhpGhx responses
-    #     post = json.load(open(post_file, 'r'))
+        post_file = os.path.join('reoptjl', 'test', 'posts', 'test_thermal_in_results.json') #includes GhpGhx responses
+        post = json.load(open(post_file, 'r'))
 
-    #     resp = self.api_client.post('/v3/job/', format='json', data=post)
-    #     self.assertHttpCreated(resp)
-    #     r = json.loads(resp.content)
-    #     run_uuid = r.get('run_uuid')
+        resp = self.api_client.post('/v3/job/', format='json', data=post)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
         
-    #     resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
-    #     r = json.loads(resp.content)
-    #     inputs = r["inputs"]
-    #     results = r["outputs"]
-    #     print(r["messages"])
-    #     self.assertIn("CoolingLoad", list(inputs.keys()))
-    #     self.assertIn("CoolingLoad", list(results.keys()))
-    #     self.assertIn("CHP", list(results.keys()))
-    #     self.assertIn("thermal_to_dhw_load_series_mmbtu_per_hour", list(results["CHP"].keys()))
-    #     self.assertIn("thermal_to_space_heating_load_series_mmbtu_per_hour", list(results["CHP"].keys()))
-    #     self.assertIn("thermal_to_dhw_load_series_mmbtu_per_hour", list(results["CHP"].keys()))
-    #     self.assertIn("ExistingChiller",list(results.keys()))
-    #     self.assertIn("ExistingBoiler", list(results.keys()))
-    #     self.assertIn("HeatingLoad", list(results.keys()))
-    #     self.assertIn("process_heat_thermal_load_series_mmbtu_per_hour", list(results["HeatingLoad"].keys()))
-    #     self.assertIn("process_heat_boiler_fuel_load_series_mmbtu_per_hour", list(results["HeatingLoad"].keys()))
-    #     self.assertIn("HotThermalStorage", list(results.keys()))
-    #     self.assertIn("storage_to_dhw_load_series_mmbtu_per_hour", list(results["HotThermalStorage"].keys()))
-    #     self.assertIn("storage_to_space_heating_load_series_mmbtu_per_hour", list(results["HotThermalStorage"].keys()))
-    #     self.assertIn("storage_to_dhw_load_series_mmbtu_per_hour", list(results["HotThermalStorage"].keys()))
-    #     self.assertIn("ColdThermalStorage", list(results.keys()))      
-    #     self.assertIn("AbsorptionChiller", list(results.keys()))
-    #     self.assertIn("GHP", list(results.keys()))
+        resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
+        r = json.loads(resp.content)
+        inputs = r["inputs"]
+        results = r["outputs"]
+        print(r["messages"])
+        self.assertIn("CoolingLoad", list(inputs.keys()))
+        self.assertIn("CoolingLoad", list(results.keys()))
+        self.assertIn("CHP", list(results.keys()))
+        self.assertIn("thermal_to_dhw_load_series_mmbtu_per_hour", list(results["CHP"].keys()))
+        self.assertIn("thermal_to_space_heating_load_series_mmbtu_per_hour", list(results["CHP"].keys()))
+        self.assertIn("thermal_to_dhw_load_series_mmbtu_per_hour", list(results["CHP"].keys()))
+        self.assertIn("ExistingChiller",list(results.keys()))
+        self.assertIn("ExistingBoiler", list(results.keys()))
+        self.assertIn("HeatingLoad", list(results.keys()))
+        self.assertIn("process_heat_thermal_load_series_mmbtu_per_hour", list(results["HeatingLoad"].keys()))
+        self.assertIn("process_heat_boiler_fuel_load_series_mmbtu_per_hour", list(results["HeatingLoad"].keys()))
+        self.assertIn("HotThermalStorage", list(results.keys()))
+        self.assertIn("storage_to_dhw_load_series_mmbtu_per_hour", list(results["HotThermalStorage"].keys()))
+        self.assertIn("storage_to_space_heating_load_series_mmbtu_per_hour", list(results["HotThermalStorage"].keys()))
+        self.assertIn("storage_to_dhw_load_series_mmbtu_per_hour", list(results["HotThermalStorage"].keys()))
+        self.assertIn("ColdThermalStorage", list(results.keys()))      
+        self.assertIn("AbsorptionChiller", list(results.keys()))
+        self.assertIn("GHP", list(results.keys()))
 
     def test_sector_defaults_from_julia(self):
         # Test that the inputs_with_defaults_set_in_julia feature worked for sector defaults, consistent with /sector_defaults
@@ -318,26 +318,26 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
     #             else:  # Make sure we didn't overwrite user-input
     #                 self.assertEquals(inputs_steamturbine[key], post["SteamTurbine"][key])
 
-    # def test_hybridghp(self):
-    #     post_file = os.path.join('reoptjl', 'test', 'posts', 'hybrid_ghp.json')
-    #     post = json.load(open(post_file, 'r'))
+    def test_hybridghp(self):
+        post_file = os.path.join('reoptjl', 'test', 'posts', 'hybrid_ghp.json')
+        post = json.load(open(post_file, 'r'))
 
-    #     post['GHP']['ghpghx_inputs'][0]['hybrid_ghx_sizing_method'] = 'Automatic'
-    #     post['GHP']['avoided_capex_by_ghp_present_value'] = 1.0e6
-    #     post['GHP']['ghx_useful_life_years'] = 35
+        post['GHP']['ghpghx_inputs'][0]['hybrid_ghx_sizing_method'] = 'Automatic'
+        post['GHP']['avoided_capex_by_ghp_present_value'] = 1.0e6
+        post['GHP']['ghx_useful_life_years'] = 35
 
-    #     # Call http.jl /reopt to run SteamTurbine scenario and get results for defaults from julia checking
-    #     resp = self.api_client.post('/v3/job/', format='json', data=post)
-    #     self.assertHttpCreated(resp)
-    #     r = json.loads(resp.content)
-    #     run_uuid = r.get('run_uuid')
+        # Call http.jl /reopt to run SteamTurbine scenario and get results for defaults from julia checking
+        resp = self.api_client.post('/v3/job/', format='json', data=post)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
 
-    #     resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
-    #     r = json.loads(resp.content)
-    #     print(r["outputs"])
+        resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
+        r = json.loads(resp.content)
+        print(r["outputs"])
 
-    #     # calculated_ghx_residual_value 117065.83
-    #     self.assertAlmostEqual(r["outputs"]["GHP"]["ghx_residual_value_present_value"], 117065.83, delta=500)
+        # calculated_ghx_residual_value 117065.83
+        self.assertAlmostEqual(r["outputs"]["GHP"]["ghx_residual_value_present_value"], 117065.83, delta=500)
 
     # def test_centralghp(self):
     #     post_file = os.path.join('reoptjl', 'test', 'posts', 'central_plant_ghp.json')
