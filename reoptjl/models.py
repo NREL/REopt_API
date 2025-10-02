@@ -2715,6 +2715,15 @@ class ElectricTariffOutputs(BaseModel, models.Model):
         default=list,
         help_text="Series of monthly monetary benefit from exporting power to grid above net metering limit."
     )
+
+    year_one_billed_energy_rate_series = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ),
+        default=list,
+        help_text="Series of billed energy rates for each timestep in year one."
+    )
+
     year_one_energy_cost_before_tax = models.FloatField(
         null=True, blank=True,
         help_text="Optimal year one utility energy cost"
