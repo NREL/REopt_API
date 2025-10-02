@@ -133,11 +133,11 @@ def build_enlitepy_payload(ui_inputs=None):
             charger_cfg.update(charger_in[cat])
         try:
             charger_cfg['count'] = int(charger_cfg.get('count', 0))
-        except Exception:
+        except (TypeError, ValueError):
             raise ValueError(f"Invalid charger count for '{cat}'")
         try:
             charger_cfg['power_kW'] = float(charger_cfg.get('power_kW', default_charger['power_kW']))
-        except Exception:
+        except (TypeError, ValueError):
             raise ValueError(f"Invalid charger power_kW for '{cat}'")
         chargers[cat] = charger_cfg
 
