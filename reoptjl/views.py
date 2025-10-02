@@ -1,5 +1,7 @@
 # REopt®, Copyright (c) Alliance for Sustainable Energy, LLC. See also https://github.com/NREL/REopt_API/blob/master/LICENSE.
 from django.db import models
+from django.http import HttpResponse
+import io
 from django.db.models import Q
 import uuid
 from typing import List, Dict, Any
@@ -26,6 +28,7 @@ import numpy as np
 import pandas as pd
 import json
 import logging
+from reoptjl.proforma_helper import proforma_helper
 
 from reoptjl.custom_table_helpers import flatten_dict, clean_data_dict, sum_vectors, colnum_string
 from reoptjl.custom_table_config import *
@@ -1647,6 +1650,59 @@ def easiur_costs(request):
                                                                             tb.format_tb(exc_traceback))
         log.error(debug_msg)
         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
+
+def proforma_for_runuuid(request, run_uuid):
+    
+    # Validate that user UUID is valid.
+    try:
+        uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
+
+    except ValueError as e:
+        if e.args[0] == "badly formed hexadecimal UUID string":
+            return JsonResponse({"Error": str(e.message)}, status=404)
+        else:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', user_uuid=run_uuid)
+            err.save_to_db()
+            return JsonResponse({"Error": str(err.message)}, status=404)
+
+    try:
+        # Create Querysets: Select all objects associate with a user_uuid, Order by `created` column
+        api_metas = APIMeta.objects.filter(run_uuid=run_uuid).only(
+            'run_uuid',
+            'status',
+            'created'
+        ).order_by("-created")
+
+        if len(api_metas) > 0:
+
+            res = json.loads(results(request, run_uuid).content)
+
+            # create bytestream to return resposne
+            output = io.BytesIO()
+            # generate proforma
+            proforma_helper(res, output)
+            output.seek(0)
+
+            # Set up the Http response.
+            filename = "proforma.xlsx"
+            response = HttpResponse(
+                output,
+                content_type='application/vnd.ms-excel.sheet.macroEnabled.12',
+            )
+            response["Content-Disposition"] = "attachment; filename=%s" % filename
+
+            return response
+        else:
+            response = JsonResponse({"Error": "No scenarios found for run '{}'".format(run_uuid)}, content_type='application/json', status=404)
+            return response
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', run_uuid=run_uuid)
+        err.save_to_db()
+        return JsonResponse({"Error": err.message}, status=404)
+
 
 # def fuel_emissions_rates(request):
 #     try:
