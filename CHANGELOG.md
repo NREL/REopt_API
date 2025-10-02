@@ -26,6 +26,16 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop - 2025-10-02
+### Minor Updates
+##### Added
+- `load_builder`: Optional debug echo for `/ensite` via `includeDebugPayload`; includes `debug.payloadEcho` showing resolved vehicle charge powers (W) and derived EMS capacity to aid troubleshooting.
+##### Changed
+- `load_builder`: Streamlined EnSite input schema using clear, single-purpose fields (`pChgMax_kW` for vehicles, `pChgCap_kW` for EMS override). All power normalized to Watts internally at ingress.
+- `load_builder`: Deterministic EMS/site capacity derivation when no override supplied: sum of (charger count * charger power_kW) across all configured charger categories; remains zero if no chargers defined.
+- `load_builder`: Cleaner validation and docstrings; removed extraneous guardrails so UI governs any numeric bounds. `schemaVersion` set to 6 for the stabilized semantics (debug flag renamed).
+- `load_builder`: Enrichment still provides annualized statistics; clarified comments around unit conversions (kW <-> W, kWh <-> Wh).
+
 ## v3.15.0
 ### Minor Updates
 ##### Added
