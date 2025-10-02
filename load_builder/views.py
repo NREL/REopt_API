@@ -164,7 +164,7 @@ def build_enlitepy_payload(ui_inputs=None):
         if 'pChgMax_kW' in vehicle_cfg:
             try:
                 pmax_kw = float(vehicle_cfg['pChgMax_kW'])
-            except Exception:
+            except (TypeError, ValueError):
                 raise ValueError(f"Invalid pChgMax_kW in vehicle '{vtype}'")
         else:
             pmax_kw = float(default_vehicle['pChgMax_kW'])
