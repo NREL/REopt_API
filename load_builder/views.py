@@ -28,17 +28,15 @@ DEFAULT_CHARGER_DEFAULTS = {
 }
 
 DEFAULT_VEHICLE_DEFAULTS = {
-    "LD": {"weekday": 0, "weekend": 0, "battery_kWh": 80, "initSOC": 0.10, "targetSOC": 0.80, "pChgMax_kW": 120},
+    "LD": {"weekday": 0, "weekend": 0, "battery_kWh": 80, "initSOC": 0.20, "targetSOC": 0.80, "pChgMax_kW": 120},
     "MD": {"weekday": 0, "weekend": 0, "battery_kWh": 200, "initSOC": 0.20, "targetSOC": 0.80, "pChgMax_kW": 300},
-    "HD": {"weekday": 0, "weekend": 0, "battery_kWh": 500, "initSOC": 0.30, "targetSOC": 0.85, "pChgMax_kW": 600},
+    "HD": {"weekday": 0, "weekend": 0, "battery_kWh": 500, "initSOC": 0.20, "targetSOC": 0.85, "pChgMax_kW": 600},
 }
-EMS_DEFAULT_PCHG_CAP_KW = 1000  # Legacy fallback (1 MW) if no chargers defined
 MAX_CHG_DURATION_DEFAULT_HR = None  # If set (e.g., 6), becomes default max charge duration (hours) unless UI overrides
 
 SIM_DAYS = 7
-EMS_MIN_PCHG_CAP_KW = 10        # lower bound guardrail (practically non-zero site)
-EMS_MAX_PCHG_CAP_KW = 20000     # upper bound guardrail (20 MW campus / depot scale)
-EMS_CONFIG = {"type": "basic", "pChgCap": EMS_DEFAULT_PCHG_CAP_KW * 1000, "pap": "FCFS+SMX"}  # stored in Watts
+EMS_CONFIG = {"type": "basic", "pChgCap": 0, "pap": "FCFS+SMX"}  # pChgCap (W) initialized to 0 until derived from chargers or overridden
+SCHEMA_VERSION = 3  
 BASE_SIM_CONFIG = {"tStart": 0, "tEnd": 7 * 24 * 3600, "dowStart": 0}
 RESULTS_CONFIG_BASE = {"timeseriesDt": 3600, "powerMetricsDt": 3600}
 WEEK_TO_YEAR_SCALE = 365 / 7
@@ -77,189 +75,180 @@ def build_arrival_pmf(weekday_pct, weekend_pct, bucket_hours=2):
 
 
 def _validate_and_apply_ems_override(ems_override, base_cfg):
-    """Return new EMS config with validated overrides applied.
-
-    Inputs:
-      ems_override: dict possibly containing one or both of:
-        * pChgCap_kW (float/int)  -> preferred UI field
-        * pChgCap (int Watts)     -> legacy / fallback
-      base_cfg: existing EMS config dict (must include 'pChgCap' in Watts)
-
-    Logic:
-      * Precedence: pChgCap_kW overrides pChgCap if both present.
-      * Conversion: kW -> W, rounding to nearest integer.
-      * Validation: Enforces positive and within configured guardrails.
-
-    Returns:
-      New dict copy containing possibly updated 'pChgCap'.
-
-    Raises:
-      ValueError with a concise reason for any invalid override.
-    """
+    """Validate EMS override accepting only pChgCap_kW (kW)."""
     cfg = dict(base_cfg)
     if not isinstance(ems_override, dict):
         return cfg
     pchgcap_kw = ems_override.get("pChgCap_kW")
-    pchgcap_w = ems_override.get("pChgCap") if pchgcap_kw is None else None
+    if "pChgCap" in ems_override and pchgcap_kw is None:
+        raise ValueError("Unsupported key 'pChgCap'; use 'pChgCap_kW' (kW).")
+    if pchgcap_kw is None:
+        return cfg  # no override
     try:
-        if pchgcap_kw is not None:
-            val_kw = float(pchgcap_kw)
-            if val_kw <= 0:
-                raise ValueError("pChgCap_kW must be > 0")
-            if not (EMS_MIN_PCHG_CAP_KW <= val_kw <= EMS_MAX_PCHG_CAP_KW):
-                raise ValueError(f"pChgCap_kW must be within [{EMS_MIN_PCHG_CAP_KW}, {EMS_MAX_PCHG_CAP_KW}] kW")
-            cfg["pChgCap"] = int(round(val_kw * 1000))
-        elif pchgcap_w is not None:
-            val_w = float(pchgcap_w)
-            if val_w <= 0:
-                raise ValueError("pChgCap must be > 0")
-            val_kw = val_w / 1000.0
-            if not (EMS_MIN_PCHG_CAP_KW <= val_kw <= EMS_MAX_PCHG_CAP_KW):
-                raise ValueError(f"pChgCap equivalent must be within [{EMS_MIN_PCHG_CAP_KW}, {EMS_MAX_PCHG_CAP_KW}] kW")
-            cfg["pChgCap"] = int(round(val_w))
+        val_kw = float(pchgcap_kw)
+        if val_kw <= 0:
+            raise ValueError("pChgCap_kW must be > 0")
+        cfg["pChgCap"] = int(round(val_kw * 1000))
     except (TypeError, ValueError) as exc:
         raise ValueError(f"Invalid EMS capacity override: {exc}")
     return cfg
 
 
 def build_enlitepy_payload(ui_inputs=None):
-    """Build EnLitePy payload from UI inputs or use defaults.
+    """Translate UI schema into EnLitePy payload.
 
-    Parameters
-    ----------
-    ui_inputs : dict | None
-        Optional UI schema input. If provided, may include:
-        - chargers
-        - vehicles
-        - arrival
-        - ems: { pChgCap_kW: <float>|None OR pChgCap: <int Watts> }
-            If both provided, pChgCap_kW takes precedence. The resulting value
-            is stored internally in Watts under 'pChgCap'.
-        - maxChargeDurationHr (float/int, HOURS)
+    UI INPUT SCHEMA (optional sections; omitted -> defaults):
+      chargers: { <cat>: { count:int, power_kW:float, eff:float, pci:str } }
+      vehicles: { <type>: { weekday:int, weekend:int, battery_kWh:float,
+                            initSOC:float(0-1), targetSOC:float(0-1), pChgMax_kW:float } }
+      arrival: { weekday:[12 % buckets], weekend:[12 % buckets] }
+      ems: { pChgCap_kW:float }
+      maxChargeDurationHr: float (>0)
 
-    Notes
-    -----
-    * Duration: `maxChargeDurationHr` (hours) -> multiplied by 3600 -> seconds (`chgDurMax`).
-        * Power units: UI kW values converted to W where simulation expects watts.
-            * EMS Capacity Default: If the UI does NOT supply an EMS override, the default
-                aggregate site charge capacity is computed as the SUM of all configured
-                charger rated powers (count * power_kW for each charger). If that sum is 0
-                (no chargers), we fall back to EMS_DEFAULT_PCHG_CAP_KW (legacy 1 MW). UI can
-                still explicitly override via ems.pChgCap_kW or ems.pChgCap.
-            * Max Charge Duration: If `maxChargeDurationHr` omitted and `MAX_CHG_DURATION_DEFAULT_HR`
-                is set, that value is applied. Only a basic >0 validation is enforced.
-    * PMFs: Currently deterministic single-point distributions; can be expanded later.
+        RULES / CONVERSIONS:
+            * kW->W, kWh->Wh (ints); SOC & probabilities floats.
+            * EMS capacity auto-derives from chargers if not overridden.
+            * pChgMax_kW (kW) defines vehicle max charge power; required only to differ from defaults but is the sole accepted key.
+            * Arrival arrays converted to PMF with 2h buckets.
+            * maxChargeDurationHr -> seconds (int) stored as chgDurMax.
+
+    Returns dict consumable by enlitepyapi.run(), augmented with schemaVersion.
     """
-    # Apply UI overrides or use defaults
-    charger_config = ui_inputs.get("chargers", {}) if ui_inputs else {}
-    vehicle_config = ui_inputs.get("vehicles", {}) if ui_inputs else {}
-    arrival_config = ui_inputs.get("arrival", {}) if ui_inputs else {}
-    ems_override = ui_inputs.get("ems", {}) if ui_inputs else {}
-    max_duration = ui_inputs.get("maxChargeDurationHr") if ui_inputs else None
-    if max_duration is None and MAX_CHG_DURATION_DEFAULT_HR is not None:
-        max_duration = MAX_CHG_DURATION_DEFAULT_HR
+    ui = ui_inputs or {}
 
-    # Deep merge with defaults
+    # 1. Extract raw sections (fall back to empty dicts/lists)
+    charger_in = ui.get("chargers") or {}
+    vehicle_in = ui.get("vehicles") or {}
+    arrival_in = ui.get("arrival") or {}
+    ems_override = ui.get("ems") or {}
+    max_duration_hr = ui.get("maxChargeDurationHr")
+    if max_duration_hr is None and MAX_CHG_DURATION_DEFAULT_HR is not None:
+        max_duration_hr = MAX_CHG_DURATION_DEFAULT_HR
+
+    # 2. Merge chargers with defaults
     chargers = {}
-    for cat, defaults in DEFAULT_CHARGER_DEFAULTS.items():
-        chargers[cat] = {**defaults}
-        if cat in charger_config:
-            chargers[cat].update(charger_config[cat])
+    for cat, default_charger in DEFAULT_CHARGER_DEFAULTS.items():
+        charger_cfg = {**default_charger}
+        if isinstance(charger_in.get(cat), dict):
+            charger_cfg.update(charger_in[cat])
+        try:
+            charger_cfg['count'] = int(charger_cfg.get('count', 0))
+        except (TypeError, ValueError):
+            raise ValueError(f"Invalid charger count for '{cat}'")
+        try:
+            charger_cfg['power_kW'] = float(charger_cfg.get('power_kW', default_charger['power_kW']))
+        except (TypeError, ValueError):
+            raise ValueError(f"Invalid charger power_kW for '{cat}'")
+        chargers[cat] = charger_cfg
 
+    # 3. Merge vehicles with defaults & normalize pChgMax
     vehicles = {}
-    for vtype, defaults in DEFAULT_VEHICLE_DEFAULTS.items():
-        vehicles[vtype] = {**defaults}
-        if vtype in vehicle_config:
-            vehicles[vtype].update(vehicle_config[vtype])
-
-    # Arrival patterns
-    weekday_pct = arrival_config.get("weekday", [0] * 12)
-    weekend_pct = arrival_config.get("weekend", [0] * 12)
-
-    # Start with EMS defaults and apply overrides
-    ems_cfg = _validate_and_apply_ems_override(ems_override, EMS_CONFIG)
-
-    # Dynamic capacity if no explicit override provided (i.e., value unchanged from base)
-    if ems_cfg.get("pChgCap") == EMS_CONFIG["pChgCap"] and not ems_override:
-        total_kw = 0.0
-        for cat, cfg in chargers.items():
-            count = cfg.get("count", 0) or 0
-            power_kw = cfg.get("power_kW", 0) or 0
+    for vtype, default_vehicle in DEFAULT_VEHICLE_DEFAULTS.items():
+        vehicle_cfg = {**default_vehicle}
+        if isinstance(vehicle_in.get(vtype), dict):
+            vehicle_cfg.update(vehicle_in[vtype])
+        def _num(name, cast=float, positive=False, allow_zero=True):
+            val = vehicle_cfg.get(name, default_vehicle.get(name))
             try:
-                total_kw += float(count) * float(power_kw)
+                v = cast(val)
+            except Exception:
+                raise ValueError(f"Invalid value for '{name}' in vehicle '{vtype}'")
+            if positive and (v < 0 or (not allow_zero and v == 0)):
+                raise ValueError(f"'{name}' must be > 0 in vehicle '{vtype}'")
+            return v
+        vehicle_cfg['weekday'] = _num('weekday', cast=int)
+        vehicle_cfg['weekend'] = _num('weekend', cast=int)
+        vehicle_cfg['battery_kWh'] = _num('battery_kWh', cast=float, positive=True)
+        vehicle_cfg['initSOC'] = max(0.0, min(1.0, _num('initSOC', cast=float)))
+        vehicle_cfg['targetSOC'] = max(0.0, min(1.0, _num('targetSOC', cast=float)))
+        if 'pChgMax_kW' in vehicle_cfg:
+            try:
+                pmax_kw = float(vehicle_cfg['pChgMax_kW'])
             except (TypeError, ValueError):
-                pass
-        if total_kw > 0:
-            ems_cfg["pChgCap"] = int(round(total_kw * 1000))
+                raise ValueError(f"Invalid pChgMax_kW in vehicle '{vtype}'")
         else:
-            # retain legacy fallback already set
-            pass
+            pmax_kw = float(default_vehicle['pChgMax_kW'])
+        if pmax_kw <= 0:
+            raise ValueError(f"pChgMax_kW must be > 0 for vehicle '{vtype}'")
+        vehicle_cfg['pChgMax_kW'] = pmax_kw
+        vehicles[vtype] = vehicle_cfg
 
-    # Build nodes with grid capacity synchronized to EMS pChgCap
-    grid_pmax = ems_cfg.get("pChgCap", EMS_DEFAULT_PCHG_CAP_KW * 1000)
-    nodes = {"grid": {"type": "Grid", "pMax": grid_pmax, "pMin": 0, "eff": 0.99}}
-
-    # Add EVSE nodes
-    for cat, cfg in chargers.items():
-        for i in range(1, cfg["count"] + 1):
-            nodes[f"EVSE_{cat}_{i}"] = {
-                "type": "EVSE",
-                "pMax": int(cfg["power_kW"] * 1000),
-                "pMin": 0,
-                "eff": cfg["eff"],
-                "nEVPort": 1,
-                "pci": cfg["pci"],
-            }
-
-    # Build EV types
-    def expand_counts(weekend, weekday):
-        return [weekend, weekday, weekday, weekday, weekday, weekday, weekend]
-
-    weekday_weekend = {k: expand_counts(v["weekend"], v["weekday"]) for k, v in vehicles.items()}
+    # 4. Arrival PMFs
+    weekday_pct = arrival_in.get('weekday', [0]*12)
+    weekend_pct = arrival_in.get('weekend', [0]*12)
     arrival_pmf = build_arrival_pmf(weekday_pct, weekend_pct)
 
+    # 5. EMS merge & dynamic capacity
+    ems_cfg = _validate_and_apply_ems_override(ems_override, EMS_CONFIG)
+    if ems_cfg.get('pChgCap') == 0 and not ems_override:
+        derived_kw = 0.0
+        for charger_cfg in chargers.values():
+            try:
+                derived_kw += charger_cfg['count'] * float(charger_cfg['power_kW'])
+            except Exception:
+                pass
+        ems_cfg['pChgCap'] = int(round(max(0.0, derived_kw) * 1000))  # stays 0 if no chargers
+
+    # 6. Nodes
+    nodes = {
+        'grid': {
+            'type': 'Grid',
+            'pMax': int(ems_cfg.get('pChgCap', 0)),  # no fallback; zero if not derived/overridden
+            'pMin': 0,
+            'eff': 0.99,
+        }
+    }
+    for cat, charger_cfg in chargers.items():
+        for idx in range(1, charger_cfg['count'] + 1):
+            nodes[f'EVSE_{cat}_{idx}'] = {
+                'type': 'EVSE',
+                'pMax': int(round(charger_cfg['power_kW'] * 1000)),
+                'pMin': 0,
+                'eff': charger_cfg.get('eff', 0.9),
+                'nEVPort': 1,
+                'pci': charger_cfg.get('pci', cat),
+            }
+
+    # 7. EV Types
+    def _expand_counts(weekend, weekday):
+        return [weekend, weekday, weekday, weekday, weekday, weekday, weekend]
     ev_types = {}
-    for k, v in vehicles.items():
-        delta = max(0.0, min(1.0, v["targetSOC"] - v["initSOC"]))
-        ev_types[k] = {
-            "type": k,
-            "eCap": int(v["battery_kWh"] * 1000),
-            "pChgMax": int(v["pChgMax_kW"] * 1000),
-            "count": weekday_weekend[k],
-            "targetFinalSOCPMF": {"val": [round(v["targetSOC"], 4)], "prob": [1.0]},
-            "energyDemandPMF": {"val": [round(delta, 4)], "prob": [1.0]},
-            "arrivalTimePMF": arrival_pmf,
-            "departureTimePMF": None,
+    for vtype, veh_cfg in vehicles.items():
+        delta = max(0.0, min(1.0, veh_cfg['targetSOC'] - veh_cfg['initSOC']))
+        ev_types[vtype] = {
+            'type': vtype,
+            'eCap': int(round(veh_cfg['battery_kWh'] * 1000)),
+            'pChgMax': int(round(veh_cfg['pChgMax_kW'] * 1000)),
+            'count': _expand_counts(veh_cfg['weekend'], veh_cfg['weekday']),
+            'targetFinalSOCPMF': {'val': [round(veh_cfg['targetSOC'], 4)], 'prob': [1.0]},
+            'energyDemandPMF': {'val': [round(delta, 4)], 'prob': [1.0]},
+            'arrivalTimePMF': arrival_pmf,
+            'departureTimePMF': None,
         }
 
-    sim_cfg = dict(BASE_SIM_CONFIG)
-    sim_cfg["tEnd"] = SIM_DAYS * 24 * 3600
-
-    duration_max_hr = None
-    if max_duration is not None:
+    # 8. Simulation config & duration
+    sim_cfg = {**BASE_SIM_CONFIG, 'tEnd': SIM_DAYS * 24 * 3600}
+    chg_dur_max = None
+    if max_duration_hr is not None:
         try:
-            md = float(max_duration)
+            md = float(max_duration_hr)
             if md <= 0:
-                raise ValueError("maxChargeDurationHr must be > 0")
-            duration_max_hr = int(round(md * 3600))
+                raise ValueError('maxChargeDurationHr must be > 0')
+            chg_dur_max = int(round(md * 3600))
         except (TypeError, ValueError) as exc:
-            raise ValueError(f"Invalid maxChargeDurationHr: {exc}")
+            raise ValueError(f'Invalid maxChargeDurationHr: {exc}')
 
-    return {
-        "simConfig": sim_cfg,
-        "hubConfig": {"nodes": nodes, "ems": ems_cfg},
-        "evInfo": {"stochasticModel": 1, "chgDurMax": duration_max_hr, "evTypes": ev_types},
-        "resultsConfig": {
-            **RESULTS_CONFIG_BASE,
-            "resultFieldOptions": {
-                "nodes": "Grid",
-                "portUsage": True,
-                "queueLength": True,
-                "nodeStats": True,
-                "evStats": True,
-            },
-        },
+    # 9. Compose payload
+    payload = {
+        'simConfig': sim_cfg,
+        'hubConfig': {'nodes': nodes, 'ems': ems_cfg},
+        'evInfo': {'stochasticModel': 1, 'chgDurMax': chg_dur_max, 'evTypes': ev_types},
+        'resultsConfig': {**RESULTS_CONFIG_BASE, 'resultFieldOptions': {
+            'nodes': 'Grid', 'portUsage': True, 'queueLength': True, 'nodeStats': True, 'evStats': True
+        }},
+        'schemaVersion': SCHEMA_VERSION,
     }
+    return payload
 
 
 def is_ui_input(data):
@@ -289,8 +278,10 @@ def ensite_view(request):
                     input_data = json.loads(request.body)
                 except json.JSONDecodeError as e:
                     return JsonResponse({"Error": f"Invalid JSON in request body: {e}"}, status=400)
+                include_debug_payload = False
                 if is_ui_input(input_data):
                     try:
+                        include_debug_payload = bool(input_data.get('includeDebugPayload'))
                         enlitepy_payload = build_enlitepy_payload(input_data)
                     except Exception as e:
                         return JsonResponse({"Error": f"Failed to build EnLitePy payload: {e}"}, status=400)
@@ -300,6 +291,14 @@ def ensite_view(request):
                     results = enlitepyapi.run(enlitepy_payload)
                     if isinstance(results, dict) and 'logs' not in results:
                         results['logs'] = []
+                    if include_debug_payload and isinstance(results, dict):
+                        # Attach payload echo for debugging/audit (safe subset of request inputs)
+                        results.setdefault('debug', {})
+                        results['debug']['payloadEcho'] = enlitepy_payload
+                        try:
+                            results['logs'].append('Debug: payloadEcho attached (includes computed pChgMax values in Watts).')
+                        except Exception:
+                            pass
                     # Always normalize and annualize for client convenience
                     _normalize_and_enrich(results)
                     # Bump enrichment version to 2 to reflect unit change (power_in_grid_annual now in kW)
@@ -514,34 +513,6 @@ def _annualize_ev(stats_list):
         out.append(copy)
     return out
 
-def _add_grid_util(timeseries_dict, equip_annual):
-    if not isinstance(timeseries_dict, dict):
-        return
-    power = timeseries_dict.get('power_in_grid')
-    if not isinstance(power, list) or not power:
-        return
-    # Locate grid equipment row
-    grid_row = None
-    for r in equip_annual:
-        if isinstance(r, dict) and r.get('Name') in ('grid', 'Grid'):
-            grid_row = r
-            break
-    if not grid_row:
-        return
-    cap = grid_row.get('Power capacity [kW]')
-    if not isinstance(cap, (int, float)) or cap <= 0:
-        return
-    sample = [v for v in power[:50] if isinstance(v, (int, float))]
-    if not sample:
-        return
-    max_sample = max(sample)
-    to_kw = 1000.0 if max_sample > cap * 1.1 else 1.0
-    series_kw = [v / to_kw for v in power if isinstance(v, (int, float))]
-    if not series_kw:
-        return
-    grid_row.setdefault('Min capacity utilization [kW]', round(min(series_kw), 2))
-    grid_row.setdefault('Average capacity utilization [kW]', round(sum(series_kw) / len(series_kw), 2))
-    grid_row.setdefault('Max capacity utilization [kW]', round(max(series_kw), 2))
 
 
 def _normalize_and_enrich(results_dict):
@@ -570,6 +541,5 @@ def _normalize_and_enrich(results_dict):
     ev_annual = _annualize_ev(evstats) if evstats else []
     if equip_annual:
         results_dict['equipment_statistics_annual'] = equip_annual
-        _add_grid_util(timeseries, equip_annual)
     if ev_annual:
         results_dict['ev_statistics_annual'] = ev_annual
