@@ -513,34 +513,6 @@ def _annualize_ev(stats_list):
         out.append(copy)
     return out
 
-def _add_grid_util(timeseries_dict, equip_annual):
-    if not isinstance(timeseries_dict, dict):
-        return
-    power = timeseries_dict.get('power_in_grid')
-    if not isinstance(power, list) or not power:
-        return
-    # Locate grid equipment row
-    grid_row = None
-    for r in equip_annual:
-        if isinstance(r, dict) and r.get('Name') in ('grid', 'Grid'):
-            grid_row = r
-            break
-    if not grid_row:
-        return
-    cap = grid_row.get('Power capacity [kW]')
-    if not isinstance(cap, (int, float)) or cap <= 0:
-        return
-    sample = [v for v in power[:50] if isinstance(v, (int, float))]
-    if not sample:
-        return
-    max_sample = max(sample)
-    to_kw = 1000.0 if max_sample > cap * 1.1 else 1.0
-    series_kw = [v / to_kw for v in power if isinstance(v, (int, float))]
-    if not series_kw:
-        return
-    grid_row.setdefault('Min capacity utilization [kW]', round(min(series_kw), 2))
-    grid_row.setdefault('Average capacity utilization [kW]', round(sum(series_kw) / len(series_kw), 2))
-    grid_row.setdefault('Max capacity utilization [kW]', round(max(series_kw), 2))
 
 
 def _normalize_and_enrich(results_dict):
@@ -569,6 +541,5 @@ def _normalize_and_enrich(results_dict):
     ev_annual = _annualize_ev(evstats) if evstats else []
     if equip_annual:
         results_dict['equipment_statistics_annual'] = equip_annual
-        _add_grid_util(timeseries, equip_annual)
     if ev_annual:
         results_dict['ev_statistics_annual'] = ev_annual
