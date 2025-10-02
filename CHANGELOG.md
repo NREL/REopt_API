@@ -26,7 +26,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop - 2025-10-02
+## v3.15.1
 ### Minor Updates
 ##### Added
 - `load_builder`: Optional debug echo for `/ensite` via `includeDebugPayload`; includes `debug.payloadEcho` showing resolved vehicle charge powers (W) and derived EMS capacity to aid troubleshooting.
