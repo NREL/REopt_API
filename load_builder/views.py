@@ -235,7 +235,7 @@ def build_enlitepy_payload(ui_inputs=None):
             if md <= 0:
                 raise ValueError('maxChargeDurationHr must be > 0')
             chg_dur_max = int(round(md * 3600))
-        except Exception as exc:
+        except (TypeError, ValueError) as exc:
             raise ValueError(f'Invalid maxChargeDurationHr: {exc}')
 
     # 9. Compose payload
