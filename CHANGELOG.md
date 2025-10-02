@@ -26,6 +26,45 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.15.0
+### Minor Updates
+##### Added
+- `/ensite` view in the load_builder app directory
+- `load_builder` EnSite EV charging simulation endpoint (EnLitePy) accepting either a UI-friendly schema (`chargers`, `vehicles`, `arrival`, `ems`, `maxChargeDurationHr`) or a direct EnLitePy payload; auto-derives EMS capacity from charger definitions if not overridden.
+##### Changed
+- Update python to v3.12, from v3.8, along with all dependencies; in particular, Django updated to 4.2.8 LTS.
+- `load_builder` EnSite response enrichment (version 2): adds annualized outputs (`power_in_grid_annual` in kW, `equipment_statistics_annual`, `ev_statistics_annual`) and grid capacity utilization metrics (Min/Average/Max capacity utilization [kW]); normalizes statistics and scales 1-week simulation to annual values.
+
+## v3.14.0
+### Minor Updates
+#### Added
+- `CST` (concentrating solar thermal) Intputs and Outputs models; see /help endpoint for model fields
+- `HighTempThermalStorage` Inputs and Outputs models; see /help endpoint for model fields
+
+#### Changed
+Update the following inputs from the previous --> new values:
+- `Financial.offtaker_discount_rate_fraction`: 0.0638 --> 0.0624
+- `Financial.owner_discount_rate_fraction`: 0.0638 --> 0.0624
+- `Financial.elec_cost_escalation_rate_fraction`: 0.017 --> 0.0166
+- `Financial.existing_boiler_fuel_cost_escalation_rate_fraction `: 0.015 --> 0.0348
+- `Financial.boiler_fuel_cost_escalation_rate_fraction `: 0.015 --> 0.0348
+- `Financial.chp_fuel_cost_escalation_rate_fraction `: 0.015 --> 0.0348
+- `Financial.generator_fuel_cost_escalation_rate_fraction `: 0.012 --> 0.0197
+- `Generator.fuel_cost_per_gallon`: 3.61 --> 2.25
+- `ColdThermalStorage`, `HotThermalStorage`, `ElectricStorage` `macrs_option_years`: 7 --> 5
+-  `CHP`, `ColdThermalStorage`, `HotThermalStorage`, `ElectricStorage`, `PV`, `Wind` `macrs_bonus_fraction` 0.6 --> 1.0
+- `GHP.macrs_bonus_fraction`: 0.4 --> 0.0
+- `GHP.macrs_option_years`: 5 --> 0
+- `SteamTurbine.macrs_bonus_fraction`: 0 --> 1.0 
+- `SteamTurbine.macrs_option_years`: 0 --> 5 (in order for 100% bonus depr to apply)
+- `CHP.federal_itc_fraction`: 0.3 --> 0.0
+- `Wind.om_cost_per_kw`: 36.0 --> 42.0 
+- `Wind.size_class_to_installed_cost` = Dict(
+        "residential"=> 6339.0, --> 7692.0
+        "commercial"=> 4760.0, --> 5776.0
+        "medium"=> 3137.0, --> 3807.0
+        "large"=> 2386.0 --> 2896.0)
+
 ## v3.13.0
 ### Minor Updates
 #### Added

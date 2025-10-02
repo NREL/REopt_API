@@ -2,10 +2,10 @@
 import logging
 import pandas as pd
 from reoptjl.models import MAX_BIG_NUMBER, APIMeta, ExistingBoilerInputs, UserProvidedMeta, SiteInputs, Settings, ElectricLoadInputs, ElectricTariffInputs, \
-    FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, ElectricStorageInputs, GeneratorInputs, WindInputs, SpaceHeatingLoadInputs, \
+    FinancialInputs, BaseModel, Message, ElectricUtilityInputs, PVInputs, CSTInputs, ElectricStorageInputs, GeneratorInputs, WindInputs, SpaceHeatingLoadInputs, \
     DomesticHotWaterLoadInputs, CHPInputs, CoolingLoadInputs, ExistingChillerInputs, HotThermalStorageInputs, ColdThermalStorageInputs, \
     AbsorptionChillerInputs, BoilerInputs, SteamTurbineInputs, GHPInputs, ProcessHeatLoadInputs, ElectricHeaterInputs, ASHPSpaceHeaterInputs, \
-    ASHPWaterHeaterInputs
+    ASHPWaterHeaterInputs, HighTempThermalStorageInputs
 from django.core.exceptions import ValidationError
 from pyproj import Proj
 from typing import Tuple
@@ -77,6 +77,7 @@ class InputValidator(object):
             CHPInputs,
             BoilerInputs,
             HotThermalStorageInputs,
+            HighTempThermalStorageInputs,
             ColdThermalStorageInputs,
             AbsorptionChillerInputs,
             SteamTurbineInputs,
@@ -84,7 +85,8 @@ class InputValidator(object):
             ProcessHeatLoadInputs,
             ElectricHeaterInputs,
             ASHPSpaceHeaterInputs,
-            ASHPWaterHeaterInputs
+            ASHPWaterHeaterInputs,
+            CSTInputs
         )
         self.pvnames = []
         on_grid_required_object_names = [
@@ -649,9 +651,9 @@ def validate_time_series(series: list, time_steps_per_hour: int) -> Tuple[list, 
 
     if time_steps_per_hour < time_steps_per_hour_in_series:
         resampling_msg = f"Downsampled to match time_steps_per_hour via average."
-        index = pd.date_range('1/1/2000', periods=n, freq=f'{int(60/time_steps_per_hour_in_series)}T')
+        index = pd.date_range('1/1/2000', periods=n, freq=f'{int(60/time_steps_per_hour_in_series)}min')
         s = pd.Series(series, index=index)
-        s = s.resample(f'{int(60/time_steps_per_hour)}T').mean()
+        s = s.resample(f'{int(60/time_steps_per_hour)}min').mean()
         return s.tolist(), resampling_msg, ""
     
     # time_steps_per_hour > time_steps_per_hour_in_series

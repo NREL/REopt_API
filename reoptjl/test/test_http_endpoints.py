@@ -35,7 +35,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         self.assertEqual(http_response["prime_mover"], "combustion_turbine")
         self.assertEqual(http_response["size_class"], 2)
         self.assertGreater(http_response["chp_elec_size_heuristic_kw"], 3500.0)
-        self.assertEqual(http_response["default_inputs"]["federal_itc_fraction"], 0.3)
+        self.assertEqual(http_response["default_inputs"]["federal_itc_fraction"], 0.0)
 
         inputs = {
             "prime_mover": "micro_turbine",
@@ -50,7 +50,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         http_response = response.json()
 
         # Check the endpoint logic with the expected selection
-        self.assertEqual(http_response["default_inputs"]["federal_itc_fraction"], 0.3)
+        self.assertEqual(http_response["default_inputs"]["federal_itc_fraction"], 0.0)
 
         inputs = {
             "prime_mover": "combustion_turbine",
@@ -192,9 +192,9 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         resp = self.api_client.get(f'/v3/avert_emissions_profile', data=inputs)
         self.assertHttpOK(resp)
         view_response = json.loads(resp.content)
-        self.assertEquals(view_response["avert_meters_to_region"], 0.0)
-        self.assertEquals(view_response["avert_region"], "Northwest")
-        self.assertEquals(len(view_response["emissions_factor_series_lb_NOx_per_kwh"]), 8760)
+        self.assertEqual(view_response["avert_meters_to_region"], 0.0)
+        self.assertEqual(view_response["avert_region"], "Northwest")
+        self.assertEqual(len(view_response["emissions_factor_series_lb_NOx_per_kwh"]), 8760)
         #case 2: location off shore of NJ (works for AVERT, not Cambium)
         inputs = {
             "latitude": 39.034417, 
@@ -205,8 +205,8 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         self.assertHttpOK(resp)
         view_response = json.loads(resp.content)
         self.assertAlmostEqual(view_response["avert_meters_to_region"], 760.62, delta=1.0)
-        self.assertEquals(view_response["avert_region"], "Mid-Atlantic")
-        self.assertEquals(len(view_response["emissions_factor_series_lb_NOx_per_kwh"]), 8760)
+        self.assertEqual(view_response["avert_region"], "Mid-Atlantic")
+        self.assertEqual(len(view_response["emissions_factor_series_lb_NOx_per_kwh"]), 8760)
         #case 3: Honolulu, HI (works for AVERT but not Cambium)
         inputs = {
             "latitude": 21.3099, 
@@ -216,9 +216,9 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         resp = self.api_client.get(f'/v3/avert_emissions_profile', data=inputs)
         self.assertHttpOK(resp)
         view_response = json.loads(resp.content)
-        self.assertEquals(view_response["avert_meters_to_region"], 0.0)
-        self.assertEquals(view_response["avert_region"], "Hawaii (Oahu)")
-        self.assertEquals(len(view_response["emissions_factor_series_lb_NOx_per_kwh"]), 8760)
+        self.assertEqual(view_response["avert_meters_to_region"], 0.0)
+        self.assertEqual(view_response["avert_region"], "Hawaii (Oahu)")
+        self.assertEqual(len(view_response["emissions_factor_series_lb_NOx_per_kwh"]), 8760)
         #case 4: location well outside of US (does not work)
         inputs = {
             "latitude": 0.0,
@@ -248,9 +248,9 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         resp = self.api_client.get(f'/v3/cambium_profile', data=inputs) 
         self.assertHttpOK(resp)
         view_response = json.loads(resp.content)
-        self.assertEquals(view_response["metric_col"], "lrmer_co2e")
-        self.assertEquals(view_response["location"], "Northern Grid West") 
-        self.assertEquals(len(view_response["data_series"]), 8760)
+        self.assertEqual(view_response["metric_col"], "lrmer_co2e")
+        self.assertEqual(view_response["location"], "Northern Grid West") 
+        self.assertEqual(len(view_response["data_series"]), 8760)
         #case 2: location off shore of NJ (works for AVERT, not Cambium)
         inputs["latitude"] = 39.034417
         inputs["longitude"] = -74.759292
