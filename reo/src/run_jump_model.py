@@ -82,9 +82,6 @@ def run_jump_model(dfm, data, bau=False):
 
         # ADD JULIA EXCEPTION HERE
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        print(exc_type)
-        print(exc_value)
-        print(exc_traceback)
         logger.error("REopt.py raise unexpected error: UUID: " + str(run_uuid))
         raise UnexpectedError(exc_type, exc_value, traceback.format_tb(exc_traceback), task=name, run_uuid=run_uuid, user_uuid=user_uuid)
     else:

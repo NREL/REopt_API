@@ -176,7 +176,6 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
             prune_update_fields(HighTempThermalStorageInputs, inputs_to_update["HighTempThermalStorage"])
             HighTempThermalStorageInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["HighTempThermalStorage"])
     except Exception as e:
-        print(e)
         exc_type, exc_value, exc_traceback = sys.exc_info()
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(
                                                                         exc_type, 

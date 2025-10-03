@@ -562,7 +562,6 @@ def pv_cost_defaults(request):
         return response
 
     except ValueError as e:
-        print(e.args)
         return JsonResponse({"Error": str(e.args[0])}, status=500)
 
     except KeyError as e:
