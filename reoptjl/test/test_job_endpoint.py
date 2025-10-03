@@ -335,7 +335,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         discount_rate = (1 - 1* fin["third_party_ownership"])*fin["offtaker_discount_rate_fraction"] + fin["third_party_ownership"]*fin["owner_discount_rate_fraction"]
         ghx_residual_value = ghx_only_capital_cost * (
                 (useful_life - analysis_years)/useful_life
-            )/((1 + discount_rate)^analysis_years)
+            )/((1 + discount_rate)**analysis_years)
         # Note: this value is not independently calculated
         self.assertAlmostEqual(r["outputs"]["GHP"]["ghpghx_chosen_outputs"]["number_of_boreholes"], 0, delta=.1)
         self.assertAlmostEqual(r["outputs"]["GHP"]["ghx_residual_value_present_value"], ghx_residual_value, delta=5)
