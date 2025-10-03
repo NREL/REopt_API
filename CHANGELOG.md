@@ -31,7 +31,7 @@ Classify the change according to the following categories:
 #### Added
 - Added **Site** inputs **sector**, **federal_sector_state**, and **federal_procurement_type**
 - Alternative defaults used when **sector** is "federal"
-- **GHPOutputs** fields **hybrid_solution_type**, **solve_time_min**, **number_of_boreholes_nonhybrid**, **number_of_boreholes_auto_guess**, **number_of_boreholes_flipped_guess**, **iterations_nonhybrid**, **iterations_auto_guess**, **iterations_flipped_guess**
+- **GHPOutputs** field **hybrid_solution_type**
 
 ## v3.15.1
 ### Minor Updates
