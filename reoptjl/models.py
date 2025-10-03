@@ -8858,13 +8858,6 @@ class GHPOutputs(BaseModel, models.Model):
     annual_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
     annual_thermal_production_tonhour = models.FloatField(null=True, blank=True)
     hybrid_solution_type = models.TextField(null=True, blank=True)
-    solve_time_min = models.FloatField(null=True, blank=True)
-    number_of_boreholes_nonhybrid = models.FloatField(null=True, blank=True)
-    number_of_boreholes_auto_guess = models.FloatField(null=True, blank=True)
-    number_of_boreholes_flipped_guess = models.FloatField(null=True, blank=True)
-    iterations_nonhybrid = models.FloatField(null=True, blank=True)
-    iterations_auto_guess = models.FloatField(null=True, blank=True)
-    iterations_flipped_guess = models.FloatField(null=True, blank=True)
 
 class CSTInputs(BaseModel, models.Model):
     key = "CST"
