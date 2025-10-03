@@ -326,10 +326,10 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
         r = json.loads(resp.content)
         
-        total_ghx_ft = resp["outputs"]["number_of_boreholes"] * resp["outputs"]["length_boreholes_ft"]
-        ghx_only_capital_cost = total_ghx_ft * resp["inputs"]["GHP"]["installed_cost_ghx_per_ft"]
+        total_ghx_ft = r["outputs"]["number_of_boreholes"] * r["outputs"]["length_boreholes_ft"]
+        ghx_only_capital_cost = total_ghx_ft * r["inputs"]["GHP"]["installed_cost_ghx_per_ft"]
         useful_life = post['GHP']['ghx_useful_life_years']
-        fin = resp["inputs"]["Financial"]
+        fin = r["inputs"]["Financial"]
         analysis_years = fin["analysis_years"]
         discount_rate = (1 - 1* fin["third_party_ownership"])*fin["offtaker_discount_rate_fraction"] + fin["third_party_ownership"]*fin["owner_discount_rate_fraction"]
         ghx_residual_value = ghx_only_capital_cost * (
