@@ -213,11 +213,11 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         for key in view_response["default_inputs"].keys():
             if post["CHP"].get(key) is None: # Check that default got assigned consistent with /chp_defaults
                 if key == "max_kw":
-                    self.assertEquals(inputs_chp[key], view_response["chp_max_size_kw"])
+                    self.assertEqual(inputs_chp[key], view_response["chp_max_size_kw"])
                 else:
-                    self.assertEquals(inputs_chp[key], view_response["default_inputs"][key])
+                    self.assertEqual(inputs_chp[key], view_response["default_inputs"][key])
             else:  # Make sure we didn't overwrite user-input
-                self.assertEquals(inputs_chp[key], post["CHP"][key])
+                self.assertEqual(inputs_chp[key], post["CHP"][key])
 
     def test_peak_load_outage_times(self):
         """
@@ -239,7 +239,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         resp = self.api_client.post(f'/v3/peak_load_outage_times', data=outage_inputs)
         self.assertHttpOK(resp)
         resp = json.loads(resp.content)
-        self.assertEquals(resp["outage_start_time_steps"], expected_time_steps)
+        self.assertEqual(resp["outage_start_time_steps"], expected_time_steps)
 
         outage_inputs["seasonal_peaks"] = False
         outage_inputs["start_not_center_on_peaks"] = True
@@ -247,7 +247,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         resp = self.api_client.post(f'/v3/peak_load_outage_times', data=outage_inputs)
         self.assertHttpOK(resp)
         resp = json.loads(resp.content)
-        self.assertEquals(resp["outage_start_time_steps"], expected_time_steps)
+        self.assertEqual(resp["outage_start_time_steps"], expected_time_steps)
 
     def test_superset_input_fields(self):
         """
@@ -305,9 +305,9 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
             # skip this key because its NaN in REoptInputs but is populated in /chp_defaults response.
             if key != "inlet_steam_temperature_degF":
                 if post["SteamTurbine"].get(key) is None: # Check that default got assigned consistent with /chp_defaults
-                    self.assertEquals(inputs_steamturbine[key], view_response["default_inputs"][key])
+                    self.assertEqual(inputs_steamturbine[key], view_response["default_inputs"][key])
                 else:  # Make sure we didn't overwrite user-input
-                    self.assertEquals(inputs_steamturbine[key], post["SteamTurbine"][key])
+                    self.assertEqual(inputs_steamturbine[key], post["SteamTurbine"][key])
 
     def test_hybridghp(self):
         post_file = os.path.join('reoptjl', 'test', 'posts', 'hybrid_ghp.json')
@@ -356,8 +356,8 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         resp = self.api_client.get(f'/stable/job/{run_uuid}/results')
         r = json.loads(resp.content)
         
-        self.assertEquals(r["inputs"]["ASHPSpaceHeater"]["om_cost_per_ton"], 0.0)
-        self.assertEquals(r["inputs"]["ASHPSpaceHeater"]["sizing_factor"], 1.1)
+        self.assertEqual(r["inputs"]["ASHPSpaceHeater"]["om_cost_per_ton"], 0.0)
+        self.assertEqual(r["inputs"]["ASHPSpaceHeater"]["sizing_factor"], 1.1)
 
     def test_pv_cost_defaults_update_from_julia(self):
         # Test that the inputs_with_defaults_set_in_julia feature worked for PV
@@ -371,5 +371,5 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         resp = self.api_client.get(f'/stable/job/{run_uuid}/results')
         r = json.loads(resp.content)
         
-        self.assertEquals(r["inputs"]["PV"]["size_class"], 2)
+        self.assertEqual(r["inputs"]["PV"]["size_class"], 2)
         self.assertAlmostEqual(r["inputs"]["PV"]["installed_cost_per_kw"], 2914.6, delta=0.05 * 2914.6)

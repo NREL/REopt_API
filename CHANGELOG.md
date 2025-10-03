@@ -33,6 +33,25 @@ Classify the change according to the following categories:
 - Alternative defaults used when **sector** is "federal"
 - **GHPOutputs** fields **hybrid_solution_type**, **solve_time_min**, **number_of_boreholes_nonhybrid**, **number_of_boreholes_auto_guess**, **number_of_boreholes_flipped_guess**, **iterations_nonhybrid**, **iterations_auto_guess**, **iterations_flipped_guess**
 
+## v3.15.1
+### Minor Updates
+##### Added
+- `load_builder`: Optional debug echo for `/ensite` via `includeDebugPayload`; includes `debug.payloadEcho` showing resolved vehicle charge powers (W) and derived EMS capacity to aid troubleshooting.
+##### Changed
+- `load_builder`: Streamlined EnSite input schema using clear, single-purpose fields (`pChgMax_kW` for vehicles, `pChgCap_kW` for EMS override). All power normalized to Watts internally at ingress.
+- `load_builder`: Deterministic EMS/site capacity derivation when no override supplied: sum of (charger count * charger power_kW) across all configured charger categories; remains zero if no chargers defined.
+- `load_builder`: Cleaner validation and docstrings; removed extraneous guardrails so UI governs any numeric bounds. `schemaVersion` set to 3 for the stabilized semantics (debug flag renamed).
+- `load_builder`: Enrichment still provides annualized statistics; clarified comments around unit conversions (kW <-> W, kWh <-> Wh).
+
+## v3.15.0
+### Minor Updates
+##### Added
+- `/ensite` view in the load_builder app directory
+- `load_builder` EnSite EV charging simulation endpoint (EnLitePy) accepting either a UI-friendly schema (`chargers`, `vehicles`, `arrival`, `ems`, `maxChargeDurationHr`) or a direct EnLitePy payload; auto-derives EMS capacity from charger definitions if not overridden.
+##### Changed
+- Update python to v3.12, from v3.8, along with all dependencies; in particular, Django updated to 4.2.8 LTS.
+- `load_builder` EnSite response enrichment (version 2): adds annualized outputs (`power_in_grid_annual` in kW, `equipment_statistics_annual`, `ev_statistics_annual`) and grid capacity utilization metrics (Min/Average/Max capacity utilization [kW]); normalizes statistics and scales 1-week simulation to annual values.
+
 ## v3.14.0
 ### Minor Updates
 #### Added
