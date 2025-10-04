@@ -562,7 +562,6 @@ def pv_cost_defaults(request):
         return response
 
     except ValueError as e:
-        print(e.args)
         return JsonResponse({"Error": str(e.args[0])}, status=500)
 
     except KeyError as e:
@@ -1626,6 +1625,41 @@ def easiur_costs(request):
         )
         http_jl_response = requests.get(
             "http://" + julia_host + ":8081/easiur_costs/", 
+            json=inputs
+        )
+        response = JsonResponse(
+            http_jl_response.json(),
+            status=http_jl_response.status_code
+        )
+        return response
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing Parameter": str(e.args[0])}, status=400)
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=400)
+
+    except Exception:
+
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.error(debug_msg)
+        return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
+
+def sector_defaults(request):
+    try:
+        inputs = {
+            "sector": request.GET['sector'],
+            "federal_procurement_type": request.GET['federal_procurement_type'],
+            "federal_sector_state": request.GET['federal_sector_state']
+        }
+        julia_host = os.environ.get(
+            'JULIA_HOST', 
+            "julia"
+        )
+        http_jl_response = requests.get(
+            "http://" + julia_host + ":8081/sector_defaults/", 
             json=inputs
         )
         response = JsonResponse(
