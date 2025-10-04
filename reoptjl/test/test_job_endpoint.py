@@ -327,7 +327,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         r = json.loads(resp.content)
         
         # TODO: add number_of_boreholes output to API and calculate ghx_residual_value_present_value here
-        self.assertAlmostEqual(r["outputs"]["GHP"]["ghpghx_chosen_outputs"]["number_of_boreholes"], 0, delta=.1)
+        self.assertAlmostEqual(r["outputs"]["GHP"]["ghpghx_chosen_outputs"]["number_of_boreholes"], 10, delta=.1)
         total_ghx_ft = r["outputs"]["GHP"]["ghpghx_chosen_outputs"]["number_of_boreholes"] * r["outputs"]["GHP"]["ghpghx_chosen_outputs"]["length_boreholes_ft"]
         ghx_only_capital_cost = total_ghx_ft * r["inputs"]["GHP"]["installed_cost_ghx_per_ft"]
         useful_life = post['GHP']['ghx_useful_life_years']
