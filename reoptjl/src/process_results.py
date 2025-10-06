@@ -87,7 +87,7 @@ def process_results(results: dict, run_uuid: str) -> None:
                 for pop_key in ["solve_time_min", "number_of_boreholes_nonhybrid", 
                                 "number_of_boreholes_auto_guess", "number_of_boreholes_flipped_guess",
                                 "iterations_nonhybrid", "iterations_auto_guess", "iterations_flipped_guess"]:
-                    results["GHP"].pop(pop_key)
+                    results["GHP"].pop(pop_key, None)
                 GHPOutputs.create(meta=meta, **results["GHP"]).save() 
             if "ElectricHeater" in results.keys():
                 ElectricHeaterOutputs.create(meta=meta, **results["ElectricHeater"]).save()
