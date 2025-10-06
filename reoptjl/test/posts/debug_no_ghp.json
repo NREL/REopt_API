@@ -1,0 +1,14 @@
+{
+    "Settings":{"optimality_tolerance":"0.15","solver_name":"HiGHS","off_grid_flag":false},
+    "Meta":{"address":"San Francisco CA USA"},
+    "Site":{"latitude":37.7749295,"longitude":-122.4194155,"include_exported_renewable_electricity_in_total":true,"include_exported_elec_emissions_in_total":true,"sector":"federal","federal_procurement_type":"fedowned_thirdparty","federal_sector_state":"DE","land_acres":1000000.0,"roof_squarefeet":0},
+    "ElectricLoad":{"doe_reference_name":"Hospital"},
+    "ElectricTariff":{"urdb_label":"6758702ed171911a480dc81c"},
+    "ElectricUtility":{"cambium_location_type":"GEA Regions 2023","cambium_co2_metric":"lrmer_co2e","cambium_scenario":"Mid-case","cambium_grid_level":"enduse"},
+    "CoolingLoad":{"doe_reference_name":"Hospital"},
+    "SpaceHeatingLoad":{"annual_mmbtu":11570.916,"doe_reference_name":"Hospital"},
+    "DomesticHotWaterLoad":{"annual_mmbtu":671.405,"doe_reference_name":"Hospital"},
+    "Financial":{"third_party_ownership":true},
+    "ExistingBoiler":{"fuel_type":"natural_gas","fuel_cost_per_mmbtu":9.0},
+    "Generator":{"max_kw":0,"existing_kw":0},
+    "GHP":{"building_sqft":300000.0,"require_ghp_purchase":false,"macrs_option_years":0,"macrs_bonus_fraction":0.0,"ghpghx_inputs":[{"borehole_spacing_type":"rectangular","hybrid_ghx_sizing_method":"None","heat_pump_configuration":"WSHP"}]}}

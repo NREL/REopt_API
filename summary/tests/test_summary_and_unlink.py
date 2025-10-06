@@ -4,7 +4,7 @@ from tastypie.test import ResourceTestCaseMixin
 import json
 import uuid
 import logging
-logging.disable(logging.CRITICAL)
+# logging.disable(logging.CRITICAL)
 
 
 class SummaryResourceTest(ResourceTestCaseMixin, TestCase):

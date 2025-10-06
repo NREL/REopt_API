@@ -32,6 +32,7 @@ def process_results(results: dict, run_uuid: str) -> None:
         if "Messages" in results.keys():
             REoptjlMessageOutputs.create(meta=meta, **results["Messages"]).save()
         if results.get("status") != "error":
+            log.warning(results.keys())
             FinancialOutputs.create(meta=meta, **results["Financial"]).save()
             ElectricTariffOutputs.create(meta=meta, **results["ElectricTariff"]).save()
             ElectricUtilityOutputs.create(meta=meta, **results["ElectricUtility"]).save()
@@ -107,7 +108,7 @@ def process_results(results: dict, run_uuid: str) -> None:
                                                                         exc_value.args[0],
                                                                         tb.format_tb(exc_traceback)
                                                                     )
-        log.debug(debug_msg)
+        log.warning(debug_msg)
         raise e
 
 def pop_result_keys(r:dict, keys_to_skip:list):
@@ -186,7 +187,7 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
                                                                         exc_value.args[0],
                                                                         tb.format_tb(exc_traceback)
                                                                     )
-        log.debug(debug_msg)
+        log.warning(debug_msg)
 
 def prune_update_fields(model_obj, dict_to_update):
     """
