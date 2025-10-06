@@ -85,6 +85,8 @@ def process_results(results: dict, run_uuid: str) -> None:
             if "SteamTurbine" in results.keys():
                 SteamTurbineOutputs.create(meta=meta, **results["SteamTurbine"]).save()
             if "GHP" in results.keys():
+                log.warning(results["GHP"].keys())
+                log.warning(results["GHP"]["ghpghx_chosen_outputs"].keys())
                 for pop_key in ["solve_time_min", "number_of_boreholes_nonhybrid", 
                                 "number_of_boreholes_auto_guess", "number_of_boreholes_flipped_guess",
                                 "iterations_nonhybrid", "iterations_auto_guess", "iterations_flipped_guess"]:
