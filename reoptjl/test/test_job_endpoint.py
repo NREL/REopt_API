@@ -15,7 +15,7 @@ import os
 
 class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
 
-    def debug_no_ghp(self):
+    def test_debug_no_ghp(self):
         scenario_file = os.path.join('reoptjl', 'test', 'posts', 'debug_no_ghp.json')
         scenario = json.load(open(scenario_file, 'r'))
         resp = self.api_client.post('/v3/job/', format='json', data=scenario)
