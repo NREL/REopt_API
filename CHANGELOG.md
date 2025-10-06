@@ -26,7 +26,7 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## Develop
+## v3.16.0
 ### Minor Updates
 #### Added
 - Added **Site** inputs **sector**, **federal_sector_state**, and **federal_procurement_type**
