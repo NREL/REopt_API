@@ -56,6 +56,7 @@ function reopt(req::HTTP.Request)
 	# Catch handled/unhandled exceptions in data pre-processing, JuMP setup
 	try
 		model_inputs = reoptjl.REoptInputs(d)
+        @info "Successfully processed REopt inputs."
 	catch e
 		@error "Something went wrong during REopt inputs processing!" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
@@ -67,6 +68,7 @@ function reopt(req::HTTP.Request)
 		# Catch handled/unhandled exceptions in optimization
 		try
 			results = reoptjl.run_reopt(ms, model_inputs)
+            @info "Successfully ran REopt optimization."
 			inputs_with_defaults_from_easiur = [
 				:NOx_grid_cost_per_tonne, :SO2_grid_cost_per_tonne, :PM25_grid_cost_per_tonne, 
 				:NOx_onsite_fuelburn_cost_per_tonne, :SO2_onsite_fuelburn_cost_per_tonne, :PM25_onsite_fuelburn_cost_per_tonne,
@@ -185,6 +187,9 @@ function reopt(req::HTTP.Request)
 
     if isempty(error_response)
         @info "REopt model solved with status $(results["status"])."
+        # these are matrices that need to be vector.
+        results["ElectricTariff"]["year_one_electric_to_load_energy_cost_series_before_tax"] = results["ElectricTariff"]["year_one_electric_to_load_energy_cost_series_before_tax"][:,1]
+        results["ElectricTariff"]["monthly_facility_demand_cost_series_before_tax"] = results["ElectricTariff"]["monthly_facility_demand_cost_series_before_tax"][:,1]
         response = Dict(
             "results" => results,
             "reopt_version" => string(pkgversion(reoptjl))

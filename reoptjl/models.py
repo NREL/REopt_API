@@ -2716,12 +2716,47 @@ class ElectricTariffOutputs(BaseModel, models.Model):
         help_text="Series of monthly monetary benefit from exporting power to grid above net metering limit."
     )
 
-    year_one_billed_energy_rate_series = ArrayField(
+    year_one_billed_energy_rate_series = models.JSONField(
+        null=True, blank=True,
+        help_text="Series of billed energy rates for each timestep in year one."
+    )
+
+    monthly_tou_demand_cost_series_before_tax = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
         default=list,
-        help_text="Series of billed energy rates for each timestep in year one."
+        help_text="Series of total time of use demand charges for each month."
+    )
+
+    tou_demand_metrics = models.JSONField(
+        null=True, blank=True,
+        help_text=""
+    )
+
+    year_one_billed_facilitydemand_monthly_rate_tier_limits = models.JSONField(
+        null=True, blank=True,
+        help_text=""
+    )
+
+    year_one_billed_facilitydemand_monthly_rate_series = models.JSONField(
+        null=True, blank=True,
+        help_text=""
+    )
+
+    year_one_billed_tou_demand_rate_tier_limits = models.JSONField(
+        null=True, blank=True,
+        help_text=""
+    )
+
+    year_one_billed_energy_rate_tier_limits = models.JSONField(
+        null=True, blank=True,
+        help_text=""
+    )
+
+    year_one_billed_demand_rate_series = models.JSONField(
+        null=True, blank=True,
+        help_text=""
     )
 
     year_one_energy_cost_before_tax = models.FloatField(
