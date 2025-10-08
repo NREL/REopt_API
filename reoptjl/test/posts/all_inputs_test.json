@@ -60,8 +60,8 @@
         "min_resil_time_steps": 100,
         "include_grid_renewable_fraction_in_RE_constraints": false,
         "sector": "commercial/industrial",
-        "federal_sector_state": null,
-        "federal_procurement_type": null
+        "federal_sector_state": "",
+        "federal_procurement_type": ""
     },
     "Settings": {
         "timeout_seconds": 420,
