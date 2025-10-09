@@ -26,6 +26,13 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.16.0
+### Minor Updates
+#### Added
+- Added **Site** inputs **sector**, **federal_sector_state**, and **federal_procurement_type**
+- Alternative defaults used when **sector** is "federal"
+- **GHPOutputs** field **hybrid_solution_type**
+
 ## v3.15.1
 ### Minor Updates
 ##### Added
@@ -50,7 +57,6 @@ Classify the change according to the following categories:
 #### Added
 - `CST` (concentrating solar thermal) Intputs and Outputs models; see /help endpoint for model fields
 - `HighTempThermalStorage` Inputs and Outputs models; see /help endpoint for model fields
-
 #### Changed
 Update the following inputs from the previous --> new values:
 - `Financial.offtaker_discount_rate_fraction`: 0.0638 --> 0.0624

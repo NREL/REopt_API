@@ -21,6 +21,40 @@ else
     @warn "Xpress solver is not setup, so only Settings.solver_choice = 'HiGHS', 'Cbc', or 'SCIP' options are available."
 end
 
+function struct_to_dict(obj)
+    result = Dict{String, Any}()
+    if obj === nothing
+        return result
+    end
+
+    field_names = fieldnames(typeof(obj))
+    for field_name in field_names
+        field_value = getfield(obj, field_name)
+        field_name_str = string(field_name)
+        if field_name_str == "ref" || field_name_str == "mem" || field_name_str == "ptr"
+            continue
+        end
+        if field_value === nothing
+            result[field_name_str] = ""
+        elseif typeof(field_value) <: Vector && !isempty(field_value)
+            # Handle arrays
+            if all(x -> isstructtype(typeof(x)) || hasproperty(x, :__dict__), field_value)
+                result[field_name_str] = [struct_to_dict(item) for item in field_value if item !== nothing]
+            else
+                result[field_name_str] = collect(field_value)
+            end
+        elseif isstructtype(typeof(field_value)) || hasproperty(field_value, :__dict__)
+            # Nested struct
+            result[field_name_str] = struct_to_dict(field_value)
+        else
+            # Primitive types
+            result[field_name_str] = field_value
+        end
+    end
+    
+    return result
+end
+
 function reopt(req::HTTP.Request)
     d = JSON.parse(String(req.body))
 	error_response = Dict()
@@ -40,6 +74,7 @@ function reopt(req::HTTP.Request)
 	timeout_seconds = pop!(settings, "timeout_seconds")
 	optimality_tolerance = pop!(settings, "optimality_tolerance")
     solver_attributes = SolverAttributes(timeout_seconds, optimality_tolerance)    
+    
 	run_bau = pop!(settings, "run_bau")
 	ms = nothing
 	if run_bau
@@ -67,10 +102,14 @@ function reopt(req::HTTP.Request)
 		# Catch handled/unhandled exceptions in optimization
 		try
 			results = reoptjl.run_reopt(ms, model_inputs)
-			inputs_with_defaults_from_easiur = [
+			inputs_with_defaults_from_julia_financial = [
 				:NOx_grid_cost_per_tonne, :SO2_grid_cost_per_tonne, :PM25_grid_cost_per_tonne, 
 				:NOx_onsite_fuelburn_cost_per_tonne, :SO2_onsite_fuelburn_cost_per_tonne, :PM25_onsite_fuelburn_cost_per_tonne,
-				:NOx_cost_escalation_rate_fraction, :SO2_cost_escalation_rate_fraction, :PM25_cost_escalation_rate_fraction
+				:NOx_cost_escalation_rate_fraction, :SO2_cost_escalation_rate_fraction, :PM25_cost_escalation_rate_fraction,
+                :om_cost_escalation_rate_fraction, :elec_cost_escalation_rate_fraction, :existing_boiler_fuel_cost_escalation_rate_fraction,
+                :boiler_fuel_cost_escalation_rate_fraction, :chp_fuel_cost_escalation_rate_fraction, :generator_fuel_cost_escalation_rate_fraction,
+                :offtaker_tax_rate_fraction, :offtaker_discount_rate_fraction, :third_party_ownership,
+                :owner_tax_rate_fraction, :owner_discount_rate_fraction
 			]
 			inputs_with_defaults_from_avert_or_cambium = [
 				:emissions_factor_series_lb_CO2_per_kwh, :emissions_factor_series_lb_NOx_per_kwh,
@@ -78,38 +117,41 @@ function reopt(req::HTTP.Request)
                 :renewable_energy_fraction_series
 			]
             if haskey(d, "CHP")
-                inputs_with_defaults_from_chp = [
+                inputs_with_defaults_from_julia_chp = [
                     :installed_cost_per_kw, :tech_sizes_for_cost_curve, :om_cost_per_kwh, 
                     :electric_efficiency_full_load, :thermal_efficiency_full_load, :min_allowable_kw,
                     :cooling_thermal_factor, :min_turn_down_fraction, :unavailability_periods, :max_kw,
-                    :size_class, :electric_efficiency_half_load, :thermal_efficiency_half_load
+                    :size_class, :electric_efficiency_half_load, :thermal_efficiency_half_load,
+                    :macrs_option_years, :macrs_bonus_fraction, :federal_itc_fraction
                 ]
-                chp_dict = Dict(key=>getfield(model_inputs.s.chp, key) for key in inputs_with_defaults_from_chp)
+                chp_dict = Dict(key=>getfield(model_inputs.s.chp, key) for key in inputs_with_defaults_from_julia_chp)
             else
                 chp_dict = Dict()
             end
 			if haskey(d, "SteamTurbine")
-				inputs_with_defaults_from_steamturbine = [
+				inputs_with_defaults_from_julia_steamturbine = [
 					:size_class, :gearbox_generator_efficiency, :isentropic_efficiency, 
 					:inlet_steam_pressure_psig, :inlet_steam_temperature_degF, :installed_cost_per_kw, :om_cost_per_kwh, 
 					:outlet_steam_pressure_psig, :net_to_gross_electric_ratio, :electric_produced_to_thermal_consumed_ratio,
-                    :thermal_produced_to_thermal_consumed_ratio
+                    :thermal_produced_to_thermal_consumed_ratio,
+                    :macrs_option_years, :macrs_bonus_fraction
 				]
-				steamturbine_dict = Dict(key=>getfield(model_inputs.s.steam_turbine, key) for key in inputs_with_defaults_from_steamturbine)
+				steamturbine_dict = Dict(key=>getfield(model_inputs.s.steam_turbine, key) for key in inputs_with_defaults_from_julia_steamturbine)
 			else
 				steamturbine_dict = Dict()
 			end
             if haskey(d, "GHP")
-                inputs_with_defaults_from_ghp = [
+                inputs_with_defaults_from_julia_ghp = [
                     :space_heating_efficiency_thermal_factor,
-                    :cooling_efficiency_thermal_factor
+                    :cooling_efficiency_thermal_factor,
+                    :macrs_option_years, :macrs_bonus_fraction, :federal_itc_fraction
                 ]
-                ghp_dict = Dict(key=>getfield(model_inputs.s.ghp_option_list[1], key) for key in inputs_with_defaults_from_ghp)
+                ghp_dict = Dict(key=>getfield(model_inputs.s.ghp_option_list[1], key) for key in inputs_with_defaults_from_julia_ghp)
             else
                 ghp_dict = Dict()
             end
             if haskey(d, "ASHPSpaceHeater")
-                inputs_with_defaults_from_ashp = [
+                inputs_with_defaults_from_julia_ashp = [
                     :max_ton, :installed_cost_per_ton, :om_cost_per_ton, 
                     :macrs_option_years, :macrs_bonus_fraction, :can_supply_steam_turbine,
                     :can_serve_process_heat, :can_serve_dhw, :can_serve_space_heating, :can_serve_cooling,
@@ -117,27 +159,27 @@ function reopt(req::HTTP.Request)
                     :heating_reference_temps_degF, :cooling_cop_reference, :cooling_cf_reference, 
                     :cooling_reference_temps_degF
                 ]
-                ashp_dict = Dict(key=>getfield(model_inputs.s.ashp, key) for key in inputs_with_defaults_from_ashp)
+                ashp_dict = Dict(key=>getfield(model_inputs.s.ashp, key) for key in inputs_with_defaults_from_julia_ashp)
             else
                 ashp_dict = Dict()
             end
             if haskey(d, "ASHPWaterHeater")
-                inputs_with_defaults_from_ashp_wh = [
+                inputs_with_defaults_from_julia_ashp_wh = [
                     :max_ton, :installed_cost_per_ton, :om_cost_per_ton, 
                     :macrs_option_years, :macrs_bonus_fraction, :can_supply_steam_turbine,
                     :can_serve_process_heat, :can_serve_dhw, :can_serve_space_heating, :can_serve_cooling,
                     :back_up_temp_threshold_degF, :sizing_factor, :heating_cop_reference, :heating_cf_reference,
                     :heating_reference_temps_degF
                 ]
-                ashp_wh_dict = Dict(key=>getfield(model_inputs.s.ashp_wh, key) for key in inputs_with_defaults_from_ashp_wh)
+                ashp_wh_dict = Dict(key=>getfield(model_inputs.s.ashp_wh, key) for key in inputs_with_defaults_from_julia_ashp_wh)
             else
                 ashp_wh_dict = Dict()
             end
             if haskey(d, "CoolingLoad")
-                inputs_with_defaults_from_chiller = [
+                inputs_with_defaults_from_julia_chiller = [
                     :cop
                 ]
-                chiller_dict = Dict(key=>getfield(model_inputs.s.existing_chiller, key) for key in inputs_with_defaults_from_chiller)
+                chiller_dict = Dict(key=>getfield(model_inputs.s.existing_chiller, key) for key in inputs_with_defaults_from_julia_chiller)
             else
                 chiller_dict = Dict()
             end
@@ -147,15 +189,55 @@ function reopt(req::HTTP.Request)
                 site_dict = Dict()
             end
             if haskey(d, "PV")
-                inputs_with_defaults_from_pv = [
-                    :size_class, :installed_cost_per_kw, :om_cost_per_kw
+                inputs_with_defaults_from_julia_pv = [
+                    :size_class, :installed_cost_per_kw, :om_cost_per_kw, :macrs_option_years, :macrs_bonus_fraction, :federal_itc_fraction
                 ]
-                pv_dict = Dict(key=>getfield(model_inputs.s.pvs[1], key) for key in inputs_with_defaults_from_pv)
+                pv_dict = Dict(key=>getfield(model_inputs.s.pvs[1], key) for key in inputs_with_defaults_from_julia_pv)
             else
                 pv_dict = Dict()
-            end            
+            end   
+            if haskey(d, "Wind")
+                inputs_with_defaults_from_julia_wind = [
+                    :macrs_option_years, :macrs_bonus_fraction, :federal_itc_fraction
+                ]
+                wind_dict = Dict(key=>getfield(model_inputs.s.wind, key) for key in inputs_with_defaults_from_julia_wind)
+            else
+                wind_dict = Dict()
+            end     
+            if haskey(d, "ElectricStorage")
+                inputs_with_defaults_from_julia_electric_storage = [
+                    :macrs_option_years, :macrs_bonus_fraction, :total_itc_fraction
+                ]
+                electric_storage_dict = Dict(key=>getfield(model_inputs.s.storage.attr["ElectricStorage"], key) for key in inputs_with_defaults_from_julia_electric_storage)
+            else
+                electric_storage_dict = Dict()
+            end      
+            if haskey(d, "ColdThermalStorage")
+                inputs_with_defaults_from_julia_cold_storage = [
+                    :macrs_option_years, :macrs_bonus_fraction, :total_itc_fraction
+                ]
+                cold_storage_dict = Dict(key=>getfield(model_inputs.s.storage.attr["ColdThermalStorage"], key) for key in inputs_with_defaults_from_julia_cold_storage)
+            else
+                cold_storage_dict = Dict()
+            end         
+            if haskey(d, "HotThermalStorage")
+                inputs_with_defaults_from_julia_hot_storage = [
+                    :macrs_option_years, :macrs_bonus_fraction, :total_itc_fraction
+                ]
+                hot_storage_dict = Dict(key=>getfield(model_inputs.s.storage.attr["HotThermalStorage"], key) for key in inputs_with_defaults_from_julia_hot_storage)
+            else
+                hot_storage_dict = Dict()
+            end      
+            if haskey(d, "HighTempThermalStorage")
+                inputs_with_defaults_from_julia_high_temp_storage = [
+                    :macrs_option_years, :macrs_bonus_fraction, :total_itc_fraction
+                ]
+                high_temp_storage_dict = Dict(key=>getfield(model_inputs.s.storage.attr["HighTempThermalStorage"], key) for key in inputs_with_defaults_from_julia_high_temp_storage)
+            else
+                high_temp_storage_dict = Dict()
+            end
 			inputs_with_defaults_set_in_julia = Dict(
-				"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_easiur),
+				"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_julia_financial),
 				"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert_or_cambium),
                 "Site" => site_dict,
                 "CHP" => chp_dict,
@@ -164,7 +246,12 @@ function reopt(req::HTTP.Request)
                 "ExistingChiller" => chiller_dict,
                 "ASHPSpaceHeater" => ashp_dict,
                 "ASHPWaterHeater" => ashp_wh_dict,
-                "PV" => pv_dict
+                "PV" => pv_dict,
+                "Wind" => wind_dict,
+                "ElectricStorage" => electric_storage_dict,
+                "ColdThermalStorage" => cold_storage_dict,
+                "HotThermalStorage" => hot_storage_dict,
+                "HighTempThermalStorage" => high_temp_storage_dict
 			)
 		catch e
 			@error "Something went wrong in REopt optimization!" exception=(e, catch_backtrace())
@@ -419,6 +506,33 @@ function easiur_costs(req::HTTP.Request)
     return HTTP.Response(200, JSON.json(data))
 end
 
+function sector_defaults(req::HTTP.Request)
+    d = JSON.parse(String(req.body))
+    @info "Getting sector dependent defaults..."
+    data = Dict()
+    error_response = Dict()
+    try
+		sector = d["sector"]
+		federal_sector_state = d["federal_sector_state"]
+		federal_procurement_type = d["federal_procurement_type"]
+        data = reoptjl.get_sector_defaults(;sector=sector, federal_procurement_type=federal_procurement_type, federal_sector_state=federal_sector_state)
+        if haskey(data, "error")
+            @info "An error occurred getting the sector defaults"
+            return HTTP.Response(400, JSON.json(data))
+        end
+        if isempty(data)
+            @info "No sector defaults found for the provided inputs"
+            return HTTP.Response(400, JSON.json(Dict("error" => "No sector defaults found for the provided inputs")))
+        end
+    catch e
+        @error "Something went wrong getting the sector defaults" exception=(e, catch_backtrace())
+        error_response["error"] = sprint(showerror, e)
+        return HTTP.Response(500, JSON.json(error_response))
+    end
+    @info "Sector defaults determined."
+    return HTTP.Response(200, JSON.json(data))
+end
+
 function simulated_load(req::HTTP.Request)
     d = JSON.parse(String(req.body))
 
@@ -656,6 +770,7 @@ HTTP.register!(ROUTER, "GET", "/chp_defaults", chp_defaults)
 HTTP.register!(ROUTER, "GET", "/avert_emissions_profile", avert_emissions_profile)
 HTTP.register!(ROUTER, "GET", "/cambium_profile", cambium_profile)
 HTTP.register!(ROUTER, "GET", "/easiur_costs", easiur_costs)
+HTTP.register!(ROUTER, "GET", "/sector_defaults", sector_defaults)
 HTTP.register!(ROUTER, "GET", "/simulated_load", simulated_load)
 HTTP.register!(ROUTER, "GET", "/absorption_chiller_defaults", absorption_chiller_defaults)
 HTTP.register!(ROUTER, "GET", "/ghp_efficiency_thermal_factors", ghp_efficiency_thermal_factors)
