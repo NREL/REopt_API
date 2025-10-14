@@ -195,7 +195,7 @@ def build_enlitepy_payload(ui_inputs=None):
             'type': 'Grid',
             'pMax': int(ems_cfg.get('pChgCap', 0)),  # no fallback; zero if not derived/overridden
             'pMin': 0,
-            'eff': 0.99,
+            'eff': 1.0,
         }
     }
     for cat, charger_cfg in chargers.items():
