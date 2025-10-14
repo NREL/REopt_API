@@ -26,6 +26,11 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.16.1
+### Patches
+##### Changed
+- `load_builder`: EnSite grid efficiency `grid.eff` was changed from 99% --> 100%
+
 ## v3.16.0
 ### Minor Updates
 #### Added
