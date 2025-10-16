@@ -2759,6 +2759,55 @@ class ElectricTariffOutputs(BaseModel, models.Model):
         help_text=""
     )
 
+    urdb_label = models.TextField(
+        null=True, blank=True,
+        help_text="Business as usual life cycle utility minimum charge adder, after-tax"
+    )
+    urdb_rate_name = models.TextField(
+        null=True, blank=True,
+        help_text="Business as usual life cycle utility minimum charge adder, after-tax"
+    )
+    urdb_utility = models.TextField(
+        null=True, blank=True,
+        help_text="Business as usual life cycle utility minimum charge adder, after-tax"
+    )
+    urdb_rate_effective_date = models.TextField(
+        null=True, blank=True,
+        help_text="Business as usual life cycle utility minimum charge adder, after-tax"
+    )
+    urdb_voltage_level = models.TextField(
+        null=True, blank=True,
+        help_text="Business as usual life cycle utility minimum charge adder, after-tax"
+    )
+    urdb_rate_description = models.TextField(
+        null=True, blank=True,
+        help_text="Business as usual life cycle utility minimum charge adder, after-tax"
+    )
+    urdb_peak_kw_capacity_min = models.FloatField(
+        null=True, blank=True,
+        help_text="Business as usual life cycle utility minimum charge adder, after-tax"
+    )
+    urdb_peak_kw_capacity_max = models.FloatField(
+        null=True, blank=True,
+        help_text="Business as usual life cycle utility minimum charge adder, after-tax"
+    )
+    urdb_rate_additional_info = models.TextField(
+        null=True, blank=True,
+        help_text="Business as usual life cycle utility minimum charge adder, after-tax"
+    )
+    urdb_energy_comments = models.TextField(
+        null=True, blank=True,
+        help_text="Business as usual life cycle utility minimum charge adder, after-tax"
+    )
+    urdb_demand_comments = models.TextField(
+        null=True, blank=True,
+        help_text="Business as usual life cycle utility minimum charge adder, after-tax"
+    )
+    urdb_url_link = models.TextField(
+        null=True, blank=True,
+        help_text="Business as usual life cycle utility minimum charge adder, after-tax"
+    )
+
     year_one_energy_cost_before_tax = models.FloatField(
         null=True, blank=True,
         help_text="Optimal year one utility energy cost"
