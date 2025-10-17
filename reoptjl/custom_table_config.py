@@ -110,6 +110,22 @@ custom_table_example = [
     }
     ]
 
+
+custom_table_anccr = [
+    {
+        "key": "site",
+        "bau_value": lambda df: "",
+        "scenario_value": lambda df: safe_get(df, "inputs.Meta.description", "None provided")
+    },
+    {
+        "label": "Site Address",
+        "key": "site_address",
+        "bau_value": lambda df: safe_get(df, "inputs.Meta.address", "None provided"),
+        "scenario_value": lambda df: safe_get(df, "inputs.Meta.address", "None provided")
+    },
+
+
+
 # Webtool table configuration
 custom_table_webtool = [
     #####################################################################################################
