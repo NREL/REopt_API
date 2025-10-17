@@ -35,7 +35,6 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         self.assertEqual(http_response["prime_mover"], "combustion_turbine")
         self.assertEqual(http_response["size_class"], 2)
         self.assertGreater(http_response["chp_elec_size_heuristic_kw"], 3500.0)
-        self.assertEqual(http_response["default_inputs"]["federal_itc_fraction"], 0.0)
 
         inputs = {
             "prime_mover": "micro_turbine",
@@ -50,38 +49,7 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         http_response = response.json()
 
         # Check the endpoint logic with the expected selection
-        self.assertEqual(http_response["default_inputs"]["federal_itc_fraction"], 0.0)
-
-        inputs = {
-            "prime_mover": "combustion_turbine",
-            "size_class": 4,
-            "is_electric_only": "true",
-            "avg_electric_load_kw": 885.0247784246575,
-            "max_electric_load_kw": 1427.334
-            }
-
-        # Direct call of the http.jl endpoint /chp_defaults
-        julia_host = os.environ.get('JULIA_HOST', "julia")
-        response = requests.get("http://" + julia_host + ":8081/chp_defaults/", json=inputs)
-        http_response = response.json()
-
-        # Check the endpoint logic with the expected selection
-        self.assertEqual(http_response["default_inputs"]["federal_itc_fraction"], 0.0)
-
-        inputs = {
-            "prime_mover": "recip_engine",
-            "size_class": 4,
-            "is_electric_only": "true",
-            "avg_electric_load_kw": 885.0247784246575,
-            "max_electric_load_kw": 1427.334
-            }
-
-        # Call to the django view endpoint /chp_defaults which calls the http.jl endpoint
-        resp = self.api_client.get(f'/v3/chp_defaults', data=inputs)
-        view_response = json.loads(resp.content)
-
-        # Check the endpoint logic with the expected selection
-        self.assertEqual(http_response["default_inputs"]["federal_itc_fraction"], 0.0)
+        self.assertEqual(http_response["size_class"], 3)
     
     def test_steamturbine_defaults(self):
 
@@ -192,9 +160,9 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         resp = self.api_client.get(f'/v3/avert_emissions_profile', data=inputs)
         self.assertHttpOK(resp)
         view_response = json.loads(resp.content)
-        self.assertEquals(view_response["avert_meters_to_region"], 0.0)
-        self.assertEquals(view_response["avert_region"], "Northwest")
-        self.assertEquals(len(view_response["emissions_factor_series_lb_NOx_per_kwh"]), 8760)
+        self.assertEqual(view_response["avert_meters_to_region"], 0.0)
+        self.assertEqual(view_response["avert_region"], "Northwest")
+        self.assertEqual(len(view_response["emissions_factor_series_lb_NOx_per_kwh"]), 8760)
         #case 2: location off shore of NJ (works for AVERT, not Cambium)
         inputs = {
             "latitude": 39.034417, 
@@ -205,8 +173,8 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         self.assertHttpOK(resp)
         view_response = json.loads(resp.content)
         self.assertAlmostEqual(view_response["avert_meters_to_region"], 760.62, delta=1.0)
-        self.assertEquals(view_response["avert_region"], "Mid-Atlantic")
-        self.assertEquals(len(view_response["emissions_factor_series_lb_NOx_per_kwh"]), 8760)
+        self.assertEqual(view_response["avert_region"], "Mid-Atlantic")
+        self.assertEqual(len(view_response["emissions_factor_series_lb_NOx_per_kwh"]), 8760)
         #case 3: Honolulu, HI (works for AVERT but not Cambium)
         inputs = {
             "latitude": 21.3099, 
@@ -216,9 +184,9 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         resp = self.api_client.get(f'/v3/avert_emissions_profile', data=inputs)
         self.assertHttpOK(resp)
         view_response = json.loads(resp.content)
-        self.assertEquals(view_response["avert_meters_to_region"], 0.0)
-        self.assertEquals(view_response["avert_region"], "Hawaii (Oahu)")
-        self.assertEquals(len(view_response["emissions_factor_series_lb_NOx_per_kwh"]), 8760)
+        self.assertEqual(view_response["avert_meters_to_region"], 0.0)
+        self.assertEqual(view_response["avert_region"], "Hawaii (Oahu)")
+        self.assertEqual(len(view_response["emissions_factor_series_lb_NOx_per_kwh"]), 8760)
         #case 4: location well outside of US (does not work)
         inputs = {
             "latitude": 0.0,
@@ -230,7 +198,6 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         view_response = json.loads(resp.content)
         self.assertTrue("error" in view_response)
         
-
     def test_cambium_profile_endpoint(self):
         # Call to the django view endpoint v3/cambium_profile which calls the http.jl endpoint
         #case 1: location in CONUS (Seattle, WA)
@@ -248,9 +215,9 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         resp = self.api_client.get(f'/v3/cambium_profile', data=inputs) 
         self.assertHttpOK(resp)
         view_response = json.loads(resp.content)
-        self.assertEquals(view_response["metric_col"], "lrmer_co2e")
-        self.assertEquals(view_response["location"], "Northern Grid West") 
-        self.assertEquals(len(view_response["data_series"]), 8760)
+        self.assertEqual(view_response["metric_col"], "lrmer_co2e")
+        self.assertEqual(view_response["location"], "Northern Grid West") 
+        self.assertEqual(len(view_response["data_series"]), 8760)
         #case 2: location off shore of NJ (works for AVERT, not Cambium)
         inputs["latitude"] = 39.034417
         inputs["longitude"] = -74.759292
@@ -292,6 +259,39 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
             "inflation": 0.025
         }
         resp = self.api_client.get(f'/v3/easiur_costs', data=inputs)
+        self.assertHttpBadRequest(resp)
+        view_response = json.loads(resp.content)
+        self.assertTrue("error" in view_response)
+    
+    def test_sector_defaults_endpoint(self):
+        # Call to the django view endpoint dev/sector_defaults which calls the http.jl endpoint
+        inputs = {
+            "sector": "federal",
+            "federal_procurement_type": "fedowned_dirpurch",
+            "federal_sector_state": "CA"
+        }
+        resp = self.api_client.get(f'/v3/sector_defaults', data=inputs)
+        self.assertHttpOK(resp)
+        view_response = json.loads(resp.content)
+        for tech in ["GHP", "Wind", "PV", "CHP"]:
+            self.assertTrue(view_response.get(tech) is not None)
+            for key in ["macrs_option_years", "macrs_bonus_fraction", "federal_itc_fraction"]:
+                self.assertTrue(view_response[tech].get(key) is not None)
+        self.assertTrue(view_response.get("SteamTurbine") is not None)
+        for key in ["macrs_option_years", "macrs_bonus_fraction"]:
+            self.assertTrue(view_response["SteamTurbine"].get(key) is not None)
+        self.assertTrue(view_response.get("Storage") is not None)
+        for key in ["macrs_option_years", "macrs_bonus_fraction", "total_itc_fraction"]:
+            self.assertTrue(view_response["Storage"].get(key) is not None)
+        self.assertTrue(view_response.get("Financial") is not None)
+        for key in ["elec_cost_escalation_rate_fraction", "existing_boiler_fuel_cost_escalation_rate_fraction", "boiler_fuel_cost_escalation_rate_fraction", "chp_fuel_cost_escalation_rate_fraction", "generator_fuel_cost_escalation_rate_fraction"]:
+            self.assertTrue(view_response["Financial"].get(key) is not None)
+        inputs = {
+            "sector": "badsector",
+            "federal_procurement_type": "fedowned_dirpurch",
+            "federal_sector_state": "CA"
+        }
+        resp = self.api_client.get(f'/v3/sector_defaults', data=inputs)
         self.assertHttpBadRequest(resp)
         view_response = json.loads(resp.content)
         self.assertTrue("error" in view_response)

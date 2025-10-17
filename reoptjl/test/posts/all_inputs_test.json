@@ -58,7 +58,10 @@
         "include_exported_elec_emissions_in_total": true,
         "include_exported_renewable_electricity_in_total": true,
         "min_resil_time_steps": 100,
-        "include_grid_renewable_fraction_in_RE_constraints": false
+        "include_grid_renewable_fraction_in_RE_constraints": false,
+        "sector": "commercial/industrial",
+        "federal_sector_state": "",
+        "federal_procurement_type": ""
     },
     "Settings": {
         "timeout_seconds": 420,
