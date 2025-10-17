@@ -26,6 +26,10 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## Develop
+### Added 
+- Added `CST` and `HighTempThermalStorage` to all/superset inputs test.
+
 ## v3.14.0
 ### Minor Updates
 #### Added
