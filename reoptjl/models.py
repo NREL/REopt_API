@@ -2675,84 +2675,84 @@ class ElectricTariffOutputs(BaseModel, models.Model):
         default=list,
         help_text="Series of total time of use demand charges by month."
     )
-    NEM_export_rate_series = ArrayField(
+    net_metering_export_rate_series = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
         default=list,
         help_text="Series of compensation rate in each timestep for exporting power to grid using systems sized up to net metering limit."
     )
-    NEM_electric_to_grid_series_kw = ArrayField(
+    net_metering_electric_to_grid_series_kw = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
         default=list,
         help_text="Series of power exports to the grid up to net metering limit for each timestep."
     )
-    NEM_monthly_export_series_kwh = ArrayField(
+    net_metering_monthly_export_series_kwh = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
         default=list,
         help_text="Year one cost of electricity consumed in each month."
     )
-    NEM_monthly_export_cost_benefit_before_tax = ArrayField(
+    net_metering_monthly_export_cost_benefit_before_tax = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
         default=list,
         help_text="Year one cost of electricity consumed in each month."
     )
-    WHL_export_rate_series = ArrayField(
+    wholesale_export_rate_series = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
         default=list,
         help_text="Series of compensation rate in each timestep for exporting power to grid for wholesale."
     )
-    WHL_electric_to_grid_series_kw = ArrayField(
+    wholesale_electric_to_grid_series_kw = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
         default=list,
         help_text="Series of power exports to the grid for wholesale in each timestep."
     )
-    WHL_monthly_export_series_kwh = ArrayField(
+    wholesale_monthly_export_series_kwh = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
         default=list,
         help_text="Series of monthly energy exports to grid under wholesale benefit."
     )
-    WHL_monthly_export_cost_benefit_before_tax = ArrayField(
+    wholesale_monthly_export_cost_benefit_before_tax = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
         default=list,
         help_text="Series of monthly monetary benefit from exporting power to grid at wholesale rate."
     )
-    EXC_export_rate_series = ArrayField(
+    net_metering_excess_export_rate_series = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
         default=list,
         help_text="Series of compensation rate in each timestep for exporting power to grid beyond net metering limit."
     )
-    EXC_electric_to_grid_series_kw = ArrayField(
+    net_metering_excess_electric_to_grid_series_kw = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
         default=list,
         help_text="Series of power exports to the grid above net metering limit for each timestep."
     )
-    EXC_monthly_export_series_kwh = ArrayField(
+    net_metering_excess_monthly_export_series_kwh = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
         default=list,
         help_text="Series of monthly energy exports to grid above net metering limit."
     )
-    EXC_monthly_export_cost_benefit_before_tax = ArrayField(
+    net_metering_excess_monthly_export_cost_benefit_before_tax = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
