@@ -49,7 +49,7 @@
     "Site": {
         "latitude": 38.96345294964369,
         "longitude": -77.38406208630109,
-        "land_acres": null,
+        "land_acres": 1.0e5,
         "roof_squarefeet": null,
         "CO2_emissions_reduction_min_fraction": null,
         "CO2_emissions_reduction_max_fraction": null,
@@ -58,7 +58,10 @@
         "include_exported_elec_emissions_in_total": true,
         "include_exported_renewable_electricity_in_total": true,
         "min_resil_time_steps": 100,
-        "include_grid_renewable_fraction_in_RE_constraints": false
+        "include_grid_renewable_fraction_in_RE_constraints": false,
+        "sector": "commercial/industrial",
+        "federal_sector_state": "",
+        "federal_procurement_type": ""
     },
     "Settings": {
         "timeout_seconds": 420,
@@ -401,5 +404,33 @@
         "avoided_capex_by_ashp_present_value": 0,
         "back_up_temp_threshold_degF": -10.0,
         "force_dispatch": false
+    },
+    "CST": {
+        "min_kw": 20.0,
+        "max_kw": 20.0,
+        "installed_cost_per_kw": 2200.0,
+        "om_cost_per_kw": 33.0,
+        "om_cost_per_kwh": 0.0,
+        "acres_per_kw": 0.000939,
+        "macrs_option_years": 0,
+        "macrs_bonus_fraction": 0.0,
+        "can_supply_steam_turbine": true,
+        "can_serve_process_heat": true,
+        "can_serve_dhw": true, 
+        "can_serve_space_heating": true,
+        "can_waste_heat": true,
+        "charge_storage_only": false        
+    },
+    "HighTempThermalStorage": {
+        "min_kwh": 50.0,
+        "max_kwh": 50.0,
+        "installed_cost_per_kwh": 86.0,
+        "macrs_option_years": 5,
+        "macrs_bonus_fraction": 1.0,
+        "can_serve_space_heating": false,
+        "can_serve_dhw": false,
+        "can_serve_process_heat": true,
+        "num_charge_hours": 4.0,
+        "num_discharge_hours": 10.0         
     }
 }

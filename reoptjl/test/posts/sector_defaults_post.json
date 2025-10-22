@@ -1,0 +1,66 @@
+{
+  "Settings": {"solver_name": "HiGHS", "run_bau": false},
+  "Site": {
+    "latitude": 37.78, 
+    "longitude": -122.45,
+    "sector": "federal",
+    "federal_procurement_type": "fedowned_dirpurch",
+    "federal_sector_state": "CA"
+  },
+  "ElectricLoad": {
+    "doe_reference_name": "Hospital"
+  },
+  "SpaceHeatingLoad": {
+    "doe_reference_name": "Hospital"
+  },
+  "Financial": {
+    "om_cost_escalation_rate_fraction": 0.02,
+    "chp_fuel_cost_escalation_rate_fraction": 0.025
+  },
+  "ElectricTariff": {
+    "urdb_label": "5cef0a415457a33576f60fe2"
+  },
+  "ExistingBoiler": {
+    "fuel_cost_per_mmbtu": 10.0
+  },
+  "CHP": {
+    "prime_mover": "recip_engine",
+    "max_kw": 100,
+    "fuel_cost_per_mmbtu": 10.0,
+    "can_supply_steam_turbine": true
+  },
+  "PV": {
+      "min_kw": 1000.0,
+      "max_kw": 1000.0,
+      "federal_itc_fraction": 0.2
+  },
+  "SteamTurbine":{
+    "min_kw": 100,
+    "max_kw": 100
+  },
+  "HighTempThermalStorage": {
+    "min_kwh": 10,
+    "max_kwh": 10,
+    "thermal_decay_rate_fraction": 0.0
+  },
+  "Wind": {
+    "min_kw": 100,
+    "max_kw": 100
+  },
+  "GHP": {
+    "require_ghp_purchase": true,
+    "building_sqft": 50000.0,
+    "can_serve_dhw": false,
+    "space_heating_efficiency_thermal_factor": 0.85,
+    "cooling_efficiency_thermal_factor": 0.6,
+    "ghpghx_inputs": [{
+      "borehole_depth_ft": 400.0,
+      "simulation_years": 20,
+      "solver_eft_tolerance_f": 2.0,
+      "ghx_model": "TESS",
+      "tess_ghx_minimum_timesteps_per_hour": 1,
+      "max_sizing_iterations": 10,
+      "init_sizing_factor_ft_per_peak_ton": 300.0   
+    }]
+  }
+}
