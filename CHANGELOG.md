@@ -26,6 +26,12 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.16.2
+### Patches
+- Added `CST` and `HighTempThermalStorage` to all/superset inputs test.
+- Update REopt.jl to v0.55.1 for fix to NSRDB API call for CST
+- Add CapEx to initial capex output (should have been included before)
+
 ## v3.16.1
 ### Patches
 ##### Changed
