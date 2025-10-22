@@ -238,6 +238,14 @@ function reopt(req::HTTP.Request)
             else
                 high_temp_storage_dict = Dict()
             end
+            if haskey(d, "ElectricTariff") && !isempty(get(d["ElectricTariff"], "urdb_metadata", Dict()))
+                inputs_from_julia_electric_tariff = [
+                    :urdb_metadata
+                ]
+                electric_tariff_dict = Dict(key=>getfield(model_inputs.s.electric_tariff, key) for key in inputs_from_julia_electric_tariff)
+            else
+                electric_tariff_dict = Dict()
+            end
 			inputs_with_defaults_set_in_julia = Dict(
 				"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_julia_financial),
 				"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert_or_cambium),
@@ -253,7 +261,8 @@ function reopt(req::HTTP.Request)
                 "ElectricStorage" => electric_storage_dict,
                 "ColdThermalStorage" => cold_storage_dict,
                 "HotThermalStorage" => hot_storage_dict,
-                "HighTempThermalStorage" => high_temp_storage_dict
+                "HighTempThermalStorage" => high_temp_storage_dict,
+                "ElectricTariff" => electric_tariff_dict
 			)
 		catch e
 			@error "Something went wrong in REopt optimization!" exception=(e, catch_backtrace())
