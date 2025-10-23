@@ -582,7 +582,7 @@ def simulated_load(request):
         # Required for GET - will throw a Missing Error if not included
         if request.method == "GET":
             valid_keys = ["doe_reference_name","industrial_reference_name","latitude","longitude","load_type","percent_share","annual_kwh",
-                "monthly_totals_kwh","annual_mmbtu","annual_fraction","annual_tonhour","monthly_tonhour",
+                "monthly_totals_kwh","monthly_peaks_kw","annual_mmbtu","annual_fraction","annual_tonhour","monthly_tonhour",
                 "monthly_mmbtu","monthly_fraction","max_thermal_factor_on_peak_load","chiller_cop",
                 "addressable_load_fraction", "cooling_doe_ref_name", "cooling_pct_share", "boiler_efficiency",
                 "normalize_and_scale_load_profile_input", "year"]
@@ -658,7 +658,7 @@ def simulated_load(request):
                 # TODO make year optional?
                 inputs[field] = data[field]
             if inputs["load_type"] == "electric":
-                for energy in ["annual_kwh", "monthly_totals_kwh"]:
+                for energy in ["annual_kwh", "monthly_totals_kwh", "monthly_peaks_kw"]:
                     if data.get(energy) is not None:
                         inputs[energy] = data.get(energy)
             elif inputs["load_type"] in ["space_heating", "domestic_hot_water", "process_heat"]:
