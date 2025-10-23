@@ -238,7 +238,7 @@ function reopt(req::HTTP.Request)
             else
                 high_temp_storage_dict = Dict()
             end
-            if haskey(d, "ElectricTariff") && !isempty(get(d["ElectricTariff"], "urdb_metadata", Dict()))
+            if haskey(d, "ElectricTariff") && !isempty(model_inputs.s.electric_tariff.urdb_metadata)
                 inputs_from_julia_electric_tariff = [
                     :urdb_metadata
                 ]
@@ -283,9 +283,11 @@ function reopt(req::HTTP.Request)
 
     if isempty(error_response)
         @info "REopt model solved with status $(results["status"])."
-        # these are matrices that need to be vector.
-        results["ElectricTariff"]["year_one_electric_to_load_energy_cost_series_before_tax"] = results["ElectricTariff"]["year_one_electric_to_load_energy_cost_series_before_tax"][:,1]
-        results["ElectricTariff"]["monthly_facility_demand_cost_series_before_tax"] = results["ElectricTariff"]["monthly_facility_demand_cost_series_before_tax"][:,1]
+        # These are matrices that need to be vector.
+        if haskey(results, "ElectricTariff")
+            results["ElectricTariff"]["year_one_electric_to_load_energy_cost_series_before_tax"] = results["ElectricTariff"]["year_one_electric_to_load_energy_cost_series_before_tax"][:,1]
+            results["ElectricTariff"]["monthly_facility_demand_cost_series_before_tax"] = results["ElectricTariff"]["monthly_facility_demand_cost_series_before_tax"][:,1]
+        end
         response = Dict(
             "results" => results,
             "reopt_version" => string(pkgversion(reoptjl))
