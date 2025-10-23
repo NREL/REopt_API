@@ -1553,7 +1553,7 @@ class ElectricLoadOutputs(BaseModel, models.Model):
         default=list,
         help_text="Monthly energy consumption calculated by summing up load_series_kw. Does not include electric load for any new heating or cooling techs."
     )
-    monthly_peak_kw = ArrayField(
+    monthly_peaks_kw = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
