@@ -44,6 +44,20 @@
       1200,
       1200
     ],
+    "monthly_peaks_kw": [
+      1.5,
+      1.5,
+      1.5,
+      1.5,
+      1.5,
+      1.5,
+      1.5,
+      1.5,
+      1.5,
+      1.5,
+      1.5,
+      1.5
+    ],
     "outage_start_time_step": 11,
     "outage_end_time_step": 501,
     "critical_load_fraction": 0.5,
