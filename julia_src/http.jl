@@ -555,7 +555,7 @@ function simulated_load(req::HTTP.Request)
         end
     end 
 
-    @info "Getting CRB Loads..."
+    @info "Getting CRB Loads..." # TODO: update this b/c it could be for custom loads too? 
     data = Dict()
     error_response = Dict()
     try
